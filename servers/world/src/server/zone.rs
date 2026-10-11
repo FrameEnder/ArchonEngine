@@ -21,6 +21,7 @@ use crate::{
         actor::{create_npc_common_spawn, set_character_mode},
         fate::inform_fate_spawn,
         instance::{Instance, QueuedTaskData, remove_actor_from_instance},
+        job_gauge::JobGauge,
         network::{DestinationNetwork, NetworkState},
     },
     zone_connection::{BaseParameters, TeleportQuery},
@@ -1172,6 +1173,7 @@ pub fn handle_zone_messages(
                 combo_sequence: 0,
                 autoattack_target: None,
                 autoattack_timing: 0,
+                job_gauge: JobGauge::default(),
             };
 
             true

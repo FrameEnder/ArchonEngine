@@ -5,6 +5,7 @@ use crate::{
     server::{
         WorldServer,
         instance::{Instance, QueuedTaskData},
+        job_gauge::JobGauge,
         network::{DestinationNetwork, NetworkState},
     },
     zone_connection::{BaseParameters, TeleportQuery},
@@ -89,6 +90,8 @@ pub enum NetworkedActor {
         autoattack_target: Option<ObjectId>,
         /// In half-seconds (the current server logic tick.)
         autoattack_timing: i64,
+        /// Server-side job gauge state (e.g. White Mage Lilies.)
+        job_gauge: JobGauge,
     },
     Npc {
         state: NpcState,

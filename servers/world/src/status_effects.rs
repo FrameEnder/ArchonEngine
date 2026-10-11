@@ -41,6 +41,33 @@ impl StatusEffects {
             .map(|i| self.status_effects[i])
     }
 
+    /// Changes the param (e.g. stack count) of an existing effect. Returns false if the effect isn't active.
+    pub fn set_param(&mut self, effect_id: u16, param: u16) -> bool {
+        if let Some(effect) = self
+            .status_effects
+            .iter_mut()
+            .find(|effect| effect.effect_id == effect_id)
+        {
+            effect.param = param;
+            self.dirty = true;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Changes the remaining duration of an existing effect, used when re-sending it to the client.
+    pub fn set_duration(&mut self, effect_id: u16, duration: f32) {
+        if let Some(effect) = self
+            .status_effects
+            .iter_mut()
+            .find(|effect| effect.effect_id == effect_id)
+        {
+            effect.duration = duration;
+            self.dirty = true;
+        }
+    }
+
     pub fn remove(&mut self, effect_id: u16) {
         if let Some(i) = self
             .status_effects

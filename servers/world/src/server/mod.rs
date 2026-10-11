@@ -64,10 +64,14 @@ mod chat;
 mod director;
 mod effect;
 mod instance;
+mod job_gauge;
+use job_gauge::CLASSJOB_WHITE_MAGE;
 mod linkshell;
 mod network;
 mod party;
+mod periodic;
 pub use party::{Party, PartyMember};
+use periodic::periodic_tick;
 mod fate;
 mod npc_behavior;
 mod social;
@@ -292,6 +296,9 @@ impl WorldServer {
         });
     }
 }
+
+/// How often the server logic runs, in milliseconds.
+const SERVER_TICK_MILLISECONDS: u32 = 500;
 
 fn server_logic_tick(
     data: Arc<Mutex<WorldServer>>,
@@ -669,6 +676,40 @@ fn server_logic_tick(
                 *inside_instance_exit = false;
             }
 
+            // Job gauges that fill over time (e.g. White Mage Lilies.)
+            {
+                let mut gauge_updates = Vec::new();
+                for (id, actor) in &mut instance.actors {
+                    if let NetworkedActor::Player {
+                        spawn, job_gauge, ..
+                    } = actor
+                        && spawn.common.class_job == CLASSJOB_WHITE_MAGE
+                        && spawn.common.health_points > 0
+                        && job_gauge.tick_white_mage(
+                            SERVER_TICK_MILLISECONDS,
+                            haters.contains_key(id),
+                            spawn.common.level,
+                        )
+                    {
+                        gauge_updates.push((*id, job_gauge.to_ipc(spawn.common.class_job)));
+                    }
+                }
+
+                if !gauge_updates.is_empty() {
+                    let mut network = network.lock();
+                    for (id, ipc) in gauge_updates {
+                        network.send_to_by_actor_id(
+                            id,
+                            FromServer::PacketSegment(ipc, id),
+                            DestinationNetwork::ZoneClients,
+                        );
+                    }
+                }
+            }
+
+            // Damage/healing over time
+            periodic_tick(network.clone(), instance);
+
             // NOTE: I know this isn't retail accurate
             for (id, actor) in &mut instance.actors {
                 if let NetworkedActor::Player {
@@ -835,7 +876,8 @@ pub async fn server_main_loop(
         let game_data = game_data.clone();
         let lua = lua.clone();
         tokio::task::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_millis(500)); // Be careful when changing this, as the rested EXP may become whacky.
+            let mut interval =
+                tokio::time::interval(Duration::from_millis(SERVER_TICK_MILLISECONDS as u64)); // Be careful when changing this, as the rested EXP may become whacky.
             interval.tick().await;
             loop {
                 interval.tick().await;
@@ -2405,6 +2447,13 @@ pub async fn server_main_loop(
                         let Some(actor) = instance.find_actor_mut(from_actor_id) else {
                             continue;
                         };
+
+                        // Job gauges don't carry over between classes.
+                        if actor.get_common_spawn().class_job != class_job
+                            && let NetworkedActor::Player { job_gauge, .. } = actor
+                        {
+                            job_gauge.reset();
+                        }
 
                         actor.get_common_spawn_mut().level = level;
                         actor.get_common_spawn_mut().max_health_points = new_parameters.hp;

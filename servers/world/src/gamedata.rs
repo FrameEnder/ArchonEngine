@@ -197,6 +197,45 @@ pub struct Recipe {
     pub item_id: i32,
 }
 
+/// Cost type used by the Action sheet for MP.
+pub const ACTION_COST_TYPE_MP: u8 = 3;
+
+/// Cast type used by the Action sheet for circular area-of-effect actions.
+pub const ACTION_CAST_TYPE_CIRCLE: u8 = 2;
+
+/// Targeting and cost information for an action.
+#[derive(Debug, Clone, Copy)]
+pub struct ActionInfo {
+    /// The shape of the action (1 = single target, 2 = circle, etc.)
+    pub cast_type: u8,
+    /// The radius of the action's area-of-effect, in yalms.
+    pub effect_range: u8,
+    /// How far away the target can be, in yalms. 0 means the action is centered on the caster.
+    pub range: i8,
+    /// Whether this action can be used on enemies.
+    pub can_target_hostile: bool,
+    /// What resource this action costs (3 = MP.)
+    pub primary_cost_type: u8,
+    /// How much of the resource this action costs. For MP, this is in hundreds.
+    pub primary_cost_value: u16,
+}
+
+impl ActionInfo {
+    /// Returns the MP cost of this action, if it costs MP.
+    pub fn mp_cost(&self) -> u16 {
+        if self.primary_cost_type == ACTION_COST_TYPE_MP {
+            self.primary_cost_value.saturating_mul(100)
+        } else {
+            0
+        }
+    }
+
+    /// Returns true if this action hits multiple targets.
+    pub fn is_area_of_effect(&self) -> bool {
+        self.cast_type == ACTION_CAST_TYPE_CIRCLE && self.effect_range > 0
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Modifiers {
     pub hp: u16,
@@ -1591,6 +1630,20 @@ impl GameData {
         let row = self.action_sheet.row(id).unwrap();
 
         row.CooldownGroup
+    }
+
+    /// Returns the targeting and cost information for an action, used for area-of-effect and MP costs.
+    pub fn get_action_info(&mut self, id: u32) -> Option<ActionInfo> {
+        let row = self.action_sheet.row(id)?;
+
+        Some(ActionInfo {
+            cast_type: row.CastType,
+            effect_range: row.EffectRange,
+            range: row.Range,
+            can_target_hostile: row.CanTargetHostile,
+            primary_cost_type: row.PrimaryCostType,
+            primary_cost_value: row.PrimaryCostValue,
+        })
     }
 
     /// Checks if this zone is associated with a ContentFinderCondition.
