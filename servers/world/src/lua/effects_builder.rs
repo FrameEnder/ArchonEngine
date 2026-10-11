@@ -2,9 +2,57 @@ use mlua::{FromLua, Lua, UserData, UserDataMethods, Value};
 
 use kawari::ipc::zone::{DamageElement, DamageKind, DamageType, TargetEffect, TargetEffectKind};
 
+/// What a periodic (over-time) effect does every tick.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PeriodicKind {
+    /// Damage over time, applied to whoever has the status effect.
+    Damage,
+    /// Healing over time, applied to whoever has the status effect.
+    Heal,
+    /// MP restored over time, applied to whoever has the status effect.
+    RestoreMp,
+}
+
+/// A periodic effect requested by an action script. The amount is calculated by the script when the action is used.
+#[derive(Clone, Copy, Debug)]
+pub struct PeriodicSpec {
+    /// The status effect that drives this periodic effect. Ticks stop once it's gone.
+    pub effect_id: u16,
+    pub kind: PeriodicKind,
+    /// The amount applied every tick.
+    pub amount: u32,
+    /// If true, this is applied to the caster instead of the action's targets.
+    pub on_self: bool,
+}
+
+/// Changes to a job gauge requested by an action script.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GaugeOp {
+    /// Spend one Lily (White Mage), which also nourishes the Blood Lily if the trait is unlocked.
+    SpendLily,
+    /// Spend the fully bloomed Blood Lily (White Mage.)
+    SpendBloodLily,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct EffectsBuilder {
     pub effects: Vec<TargetEffect>,
+    /// Over-time effects to start after the action resolves.
+    pub periodic: Vec<PeriodicSpec>,
+    /// If Some, replaces the MP cost from the Action sheet.
+    pub mp_cost_override: Option<u16>,
+    /// MP restored to the caster after the action resolves.
+    pub restore_mp: u32,
+    /// Status effects removed from the caster after the action resolves.
+    pub consumed_effects: Vec<u16>,
+    /// Status effects on the caster that lose a single stack after the action resolves.
+    pub consumed_stacks: Vec<u16>,
+    /// Job gauge changes to apply to the caster.
+    pub gauge_ops: Vec<GaugeOp>,
+    /// For area-of-effect damage, how much less damage (in percent) every target after the first takes.
+    pub aoe_falloff_percent: u8,
+    /// If true, heals restore the target to full HP regardless of their amount (e.g. Benediction.)
+    pub heal_to_full: bool,
 }
 
 impl UserData for EffectsBuilder {
@@ -75,6 +123,15 @@ impl UserData for EffectsBuilder {
             }));
             Ok(())
         });
+        // Restores all of the target's HP.
+        methods.add_method_mut("heal_to_full", |_, this, _: ()| {
+            this.heal_to_full = true;
+            this.effects.push(TargetEffect(TargetEffectKind::Heal {
+                unk1: [0; 5],
+                amount: u16::MAX, // Replaced with the real amount later
+            }));
+            Ok(())
+        });
         methods.add_method_mut("interrupt", |_, this, _: ()| {
             this.effects
                 .push(TargetEffect(TargetEffectKind::InterruptAction {}));
@@ -115,6 +172,117 @@ impl UserData for EffectsBuilder {
                     param4: 0,
                     value: 1,
                 }));
+            Ok(())
+        });
+
+        // Over-time effects
+
+        // Gives the target(s) a status effect that deals `tick_amount` damage every 3 seconds while it lasts.
+        methods.add_method_mut(
+            "damage_over_time",
+            |_, this, (effect_id, duration, tick_amount): (u16, f32, u32)| {
+                this.effects
+                    .push(TargetEffect(TargetEffectKind::GainEffect {
+                        unk1: 0,
+                        unk2: 0,
+                        unk3: 0,
+                        effect_id,
+                        duration,
+                        param: 0,
+                    }));
+                this.periodic.push(PeriodicSpec {
+                    effect_id,
+                    kind: PeriodicKind::Damage,
+                    amount: tick_amount,
+                    on_self: false,
+                });
+                Ok(())
+            },
+        );
+        // Gives the target(s) a status effect that heals `tick_amount` every 3 seconds while it lasts.
+        methods.add_method_mut(
+            "heal_over_time",
+            |_, this, (effect_id, duration, tick_amount): (u16, f32, u32)| {
+                this.effects
+                    .push(TargetEffect(TargetEffectKind::GainEffect {
+                        unk1: 0,
+                        unk2: 0,
+                        unk3: 0,
+                        effect_id,
+                        duration,
+                        param: 0,
+                    }));
+                this.periodic.push(PeriodicSpec {
+                    effect_id,
+                    kind: PeriodicKind::Heal,
+                    amount: tick_amount,
+                    on_self: false,
+                });
+                Ok(())
+            },
+        );
+        // Gives the caster a status effect that restores `tick_amount` MP every 3 seconds while it lasts.
+        methods.add_method_mut(
+            "restore_mp_over_time_self",
+            |_, this, (effect_id, duration, tick_amount): (u16, f32, u32)| {
+                this.effects
+                    .push(TargetEffect(TargetEffectKind::GainEffectSelf {
+                        unk1: 0,
+                        unk2: 0,
+                        unk3: 0,
+                        effect_id,
+                        duration,
+                        param: 0,
+                    }));
+                this.periodic.push(PeriodicSpec {
+                    effect_id,
+                    kind: PeriodicKind::RestoreMp,
+                    amount: tick_amount,
+                    on_self: true,
+                });
+                Ok(())
+            },
+        );
+
+        // Resources
+
+        // Restores MP to the caster.
+        methods.add_method_mut("restore_mp", |_, this, amount: u32| {
+            this.restore_mp = this.restore_mp.saturating_add(amount);
+            Ok(())
+        });
+        // Overrides the MP cost from the Action sheet (for example, 0 for a free cast.)
+        methods.add_method_mut("set_mp_cost", |_, this, cost: u16| {
+            this.mp_cost_override = Some(cost);
+            Ok(())
+        });
+        // Removes a status effect from the caster once the action resolves.
+        methods.add_method_mut("consume_effect", |_, this, effect_id: u16| {
+            this.consumed_effects.push(effect_id);
+            Ok(())
+        });
+        // Removes one stack of a status effect from the caster once the action resolves. The effect is removed at zero stacks.
+        methods.add_method_mut("consume_effect_stack", |_, this, effect_id: u16| {
+            this.consumed_stacks.push(effect_id);
+            Ok(())
+        });
+
+        // Job gauges
+
+        methods.add_method_mut("spend_lily", |_, this, _: ()| {
+            this.gauge_ops.push(GaugeOp::SpendLily);
+            Ok(())
+        });
+        methods.add_method_mut("spend_blood_lily", |_, this, _: ()| {
+            this.gauge_ops.push(GaugeOp::SpendBloodLily);
+            Ok(())
+        });
+
+        // Area-of-effect
+
+        // Every target after the first takes `percent` less damage.
+        methods.add_method_mut("aoe_falloff", |_, this, percent: u8| {
+            this.aoe_falloff_percent = percent.min(100);
             Ok(())
         });
     }

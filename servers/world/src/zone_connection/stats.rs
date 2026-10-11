@@ -15,8 +15,13 @@ use kawari::{
 use mlua::{UserData, UserDataMethods};
 
 /// Every BaseParam row, some of them may be useless.
+/// BaseParam index for Mind, the primary stat of healers.
+const BASE_PARAM_MIND: u8 = 5;
+
 #[derive(Default, Debug, Clone)]
 pub struct BaseParameters {
+    /// The BaseParam index of this class's primary stat (e.g. 5 for Mind.)
+    pub primary_stat: u8,
     pub strength: u32,
     pub dexterity: u32,
     pub vitality: u32,
@@ -203,6 +208,7 @@ impl BaseParameters {
 
         self.spell_speed = param_grow.BaseSpeed as u32;
         self.tenacity = param_grow.BaseSpeed as u32;
+        self.primary_stat = primary_stat;
         self.attack_power = *self.get_mut(primary_stat);
         self.skill_speed = self.tenacity;
         self.haste = 100; // Controls cast times
@@ -218,7 +224,12 @@ impl BaseParameters {
         modifiers: Option<&Modifiers>,
     ) {
         self.physical_damage = self.strength;
-        self.attack_magic_potency = self.intelligence;
+        // Healers' spells deal damage based on Mind, everyone else's on Intelligence.
+        self.attack_magic_potency = if self.primary_stat == BASE_PARAM_MIND {
+            self.mind
+        } else {
+            self.intelligence
+        };
         self.healing_magic_potency = self.mind;
 
         // To calculate HP, we use a formula loosely inspired by Akh Morning and take some liberties to keep it fairly simple, at least for now.

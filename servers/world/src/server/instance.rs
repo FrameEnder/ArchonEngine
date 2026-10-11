@@ -14,7 +14,9 @@ use crate::{
         actor::{NetworkedActor, NpcState},
         director::DirectorData,
         fate::{FateInstance, internally_start_fate},
+        job_gauge::JobGauge,
         network::{DestinationNetwork, NetworkState},
+        periodic::PeriodicEffect,
         zone::Zone,
     },
     zone_connection::{BaseParameters, TeleportQuery},
@@ -133,6 +135,8 @@ pub struct Instance {
     pub synced_level: Option<u8>,
     /// How long this content lasts for, if applicable.
     pub duration: Option<Duration>,
+    /// Running over-time effects (DoTs, HoTs, etc.)
+    pub periodic_effects: Vec<PeriodicEffect>,
 }
 
 impl Instance {
@@ -384,6 +388,7 @@ impl Instance {
                 combo_sequence: 0,
                 autoattack_target: None,
                 autoattack_timing: 0,
+                job_gauge: JobGauge::default(),
             },
         );
     }

@@ -117,7 +117,7 @@ pub fn send_effects_list(
 }
 
 /// Sends an updated status effects list, as needed.
-fn process_effects_list(
+pub fn process_effects_list(
     network: Arc<Mutex<NetworkState>>,
     instance: &mut Instance,
     from_actor_id: ObjectId,
@@ -217,6 +217,12 @@ pub fn gain_effect_instance(
         // We also need to send them an updated StatusEffectsList
         process_effects_list(network.clone(), instance, from_actor_id);
     }
+
+    // If this effect was already active, its old expiry would remove the refreshed effect early. Cancel it.
+    instance.retain_tasks(|task| {
+        !(task.from_actor_id == from_actor_id
+            && matches!(task.data, QueuedTaskData::LoseStatusEffect { effect_id: id, .. } if id == effect_id))
+    });
 
     // Scheduling doesn't make sense when the effect never ends.
     if effect_duration == 0.0 {
