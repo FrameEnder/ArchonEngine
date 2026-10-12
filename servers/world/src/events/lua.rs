@@ -92,6 +92,28 @@ impl LuaEventHandler {
     }
 }
 
+impl LuaEventHandler {
+    /// Tells a quest script that a battle NPC was defeated, if it cares (by defining `onBNpcKill`.)
+    pub fn on_battle_npc_killed(&self, player: &mut LuaPlayer, name_id: u32, layout_id: u32) {
+        let Ok(func) = self.lua.0.globals().get::<Function>("onBNpcKill") else {
+            return;
+        };
+
+        let result = self.lua.0.scope(|scope| {
+            let player_data = scope.create_userdata_ref_mut(player)?;
+            func.call::<()>((name_id, layout_id, player_data))?;
+            Ok(())
+        });
+        if let Err(err) = result {
+            tracing::warn!(
+                "Error while calling onBNpcKill in {}: {:?}",
+                self.file_name,
+                err
+            );
+        }
+    }
+}
+
 #[async_trait]
 impl EventHandler for LuaEventHandler {
     async fn on_enter_territory(&self, _event: &Event, player: &mut LuaPlayer) {

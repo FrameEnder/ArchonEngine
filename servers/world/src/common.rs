@@ -193,6 +193,11 @@ pub enum FromServer {
     FinishEvent,
     /// When a fish bites.
     FishBite,
+    /// A battle NPC this player (or their party) was fighting was defeated. Contains its BNpcName ID and layout ID.
+    BattleNpcKilled {
+        name_id: u32,
+        layout_id: u32,
+    },
     /// Inform the client that another player has dismounted.
     ActorDismounted(ObjectId),
     /// Inform the client of the whereabouts of their party members.
@@ -407,6 +412,8 @@ pub enum ToServer {
     SetHP(ClientId, ObjectId, u32),
     /// Inform the server to update our MP to this value.
     SetMP(ClientId, ObjectId, u16),
+    /// A quest wants a battle NPC from the zone's layout spawned, and hostile towards this player.
+    SpawnQuestBattleNpc(ClientId, ObjectId, u32),
     /// The client discovered a new location in this zone.
     NewLocationDiscovered(ClientId, u32, Position, u16),
     /// The client is sharing a strategy board with their party.

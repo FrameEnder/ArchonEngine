@@ -2422,6 +2422,36 @@ pub async fn server_main_loop(
 
                     update_actor_hp_mp(network.clone(), instance, from_actor_id);
                 }
+                ToServer::SpawnQuestBattleNpc(_from_id, from_actor_id, layout_id) => {
+                    let mut data = data.lock();
+                    let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
+                        continue;
+                    };
+
+                    let Some(npc) = instance.zone.get_battle_npc(layout_id) else {
+                        tracing::warn!(
+                            "A quest tried to spawn battle npc {layout_id}, but it isn't in this zone's layout!"
+                        );
+                        continue;
+                    };
+
+                    let npc_id = Instance::generate_actor_id();
+                    {
+                        let config = get_config();
+                        let mut game_data = game_data.lock();
+                        instance.insert_npc(npc_id, npc, &config, &mut game_data);
+                    }
+                    // Quest enemies shouldn't respawn as regular monsters once defeated.
+                    instance.quest_spawned_npcs.insert(npc_id);
+
+                    // Make it go after the player right away.
+                    if let Some(NetworkedActor::Npc {
+                        newly_hated_actor, ..
+                    }) = instance.find_actor_mut(npc_id)
+                    {
+                        *newly_hated_actor = Some(from_actor_id);
+                    }
+                }
                 ToServer::SetMP(_from_id, from_actor_id, mp) => {
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {

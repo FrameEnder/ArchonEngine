@@ -16,6 +16,7 @@ function onTalk(target, player)
     if not player:has_aetheryte(aetheryteId()) then
         -- TODO: play attunement animation
         player:unlock_aetheryte(1, aetheryteId())
+        onAetheryteAttuned(player, aetheryteId())
     end
 
     player:play_scene(SCENE_SHOW_MENU, HIDE_HOTBAR, {0})

@@ -162,3 +162,137 @@ function determineSequence(player, cutscene)
 
     return OPENING_SEQ_2
 end
+
+-- Quests
+
+-- The sequence a quest is in when it's ready to be turned in.
+SEQ_FINISH = 255
+
+-- Scene flags used by many quest cutscenes that aren't defined in Kawari's SceneFlags.
+SET_EOBJ_BASE = 0xF8400EF3
+
+-- Quest variables are six bytes, UI8A through UI8F. Each byte is split into a high (H) and low (L) nibble,
+-- and the last byte (UI8F) doubles as eight bit flags (BitFlag8). These all work on the quest running the
+-- current event (EVENT_ID), and use the same names as Sapphire and the client's quest scripts.
+local QUEST_VAR_BYTE = { A = 0, B = 1, C = 2, D = 3, E = 4, F = 5 }
+
+local function questVarLocation(name)
+    local byte = QUEST_VAR_BYTE[string.sub(name, 1, 1)]
+    if byte == nil then
+        error("Unknown quest variable " .. tostring(name))
+    end
+    return byte, string.sub(name, 2, 2)
+end
+
+-- Returns a variable of any quest (by its event ID, 65536 + quest ID.)
+function questVarOf(player, quest_id, name)
+    local byte, half = questVarLocation(name)
+    local value = player:get_quest_var(quest_id, byte)
+    if half == "H" then
+        return value >> 4
+    elseif half == "L" then
+        return value & 0x0F
+    end
+    return value
+end
+
+function setQuestVarOf(player, quest_id, name, value)
+    local byte, half = questVarLocation(name)
+    local current = player:get_quest_var(quest_id, byte)
+    if half == "H" then
+        value = (current & 0x0F) | ((value & 0x0F) << 4)
+    elseif half == "L" then
+        value = (current & 0xF0) | (value & 0x0F)
+    end
+    player:set_quest_var(quest_id, byte, value & 0xFF)
+end
+
+-- Returns a quest variable, e.g. questVar(player, "A") for UI8A or questVar(player, "AL") for UI8AL.
+function questVar(player, name)
+    return questVarOf(player, EVENT_ID, name)
+end
+
+-- Sets a quest variable, e.g. setQuestVar(player, "BH", 1).
+function setQuestVar(player, name, value)
+    setQuestVarOf(player, EVENT_ID, name, value)
+end
+
+-- BitFlag8 flags 1-8, stored in UI8F (flag 1 is the highest bit, like Sapphire.)
+function questBitFlag8(player, index)
+    return (questVar(player, "F") & (1 << (8 - index))) ~= 0
+end
+
+function setQuestBitFlag8(player, index, enabled)
+    local value = questVar(player, "F")
+    local bit = 1 << (8 - index)
+    if enabled then
+        value = value | bit
+    else
+        value = value & ~bit
+    end
+    setQuestVar(player, "F", value)
+end
+
+-- Returns the current quest's sequence, or nil if it hasn't been accepted.
+function questSequence(player)
+    return player:get_quest_sequence(EVENT_ID)
+end
+
+function setQuestSequence(player, sequence)
+    player:set_quest_sequence(EVENT_ID, sequence)
+end
+
+-- Quest scene flow
+--
+-- Quest scripts play scenes with questPlay() and implement onSceneFinished(scene, results, player), which
+-- returns true if it started another scene. Scenes can finish through either onYield or onReturn (prompts
+-- usually yield), so quest scripts point both at questOnYield/questOnReturn, which ignore any stale callback
+-- for a scene we've already moved on from and end the event once there's nothing left to play.
+function questPlay(player, scene, flags, params)
+    QUEST_CURRENT_SCENE = scene
+    player:play_scene(scene, flags or HIDE_HOTBAR, params or {})
+end
+
+local function questSceneDone(scene, results, player)
+    if scene ~= QUEST_CURRENT_SCENE then
+        return
+    end
+    QUEST_CURRENT_SCENE = nil
+
+    local continued = false
+    if onSceneFinished ~= nil then
+        continued = onSceneFinished(scene, results, player)
+    end
+
+    if not continued then
+        player:finish_event()
+    end
+end
+
+function questOnYield(scene, id, results, player)
+    questSceneDone(scene, results, player)
+end
+
+function questOnReturn(scene, results, player)
+    questSceneDone(scene, results, player)
+end
+
+-- Close to Home (all class variants) asks you to attune to New Gridania's aetheryte. If that happens through
+-- the aetheryte's own event instead of the quest's, mark the objective here.
+CLOSE_TO_HOME_QUESTS = { 65621, 65659, 65660 }
+AETHERYTE_NEW_GRIDANIA = 2
+
+function onAetheryteAttuned(player, aetheryte_id)
+    if aetheryte_id ~= AETHERYTE_NEW_GRIDANIA then
+        return
+    end
+
+    for _, quest_id in ipairs(CLOSE_TO_HOME_QUESTS) do
+        if player:get_quest_sequence(quest_id) == 1 then
+            setQuestVarOf(player, quest_id, "AL", 1)
+            if questVarOf(player, quest_id, "BH") == 1 and questVarOf(player, quest_id, "BL") == 1 then
+                player:set_quest_sequence(quest_id, SEQ_FINISH)
+            end
+        end
+    end
+end
