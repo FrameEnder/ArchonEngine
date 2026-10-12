@@ -63,7 +63,7 @@ fastrand = { version = "2.5", features = ["std"], default-features = false }
 minijinja = { version = "3.0", features = ["serde", "multi_template"], default-features = false }
 
 # For server-side scripting
-mlua = { version = "0.12", features = ["lua54", "vendored", "send", "async", "serialize", "userdata-wrappers", "serde"], default-features = false }
+mlua = { version = "0.12", features = ["lua54", "vendored", "send", "async", "userdata-wrappers", "serde"], default-features = false }
 
 # For character backup decompression
 zip = { version = "9.0", features = ["deflate", "lzma", "bzip2"], default-features = false }
@@ -94,7 +94,7 @@ strum_macros = { version = "0.28", default-features = false }
 binrw = { version = "0.15", features = ["std"], default-features = false }
 
 # Used to more cleanly handle SEStrings
-bstr = { version = "1.13" }
+bstr = { version = "1.13", default-features = false }
 
 # Reading Excel sheet data
 icarus = { git = "https://github.com/redstrate/Icarus", branch = "ver/2026.09.01.0000.0000", features = ["Warp", "Tribe", "ClassJob", "TerritoryType", "Race", "Aetheryte", "EquipSlotCategory", "Action", "WeatherRate", "PlaceName", "GilShopItem", "InstanceContent", "ContentFinderCondition", "BNpcBase", "Mount", "AetherCurrentCompFlgSet", "WarpLogic", "Item", "AetherCurrentCompFlgSet", "CustomTalk", "Opening", "ItemAction", "PreHandler", "SwitchTalkVariation", "HalloweenNpcSelect", "Quest", "TopicSelect", "ParamGrow", "FateShop", "EObj", "GimmickRect", "SpecialShop", "BaseParam", "ContentDirectorManagedSG", "FittingShopCategoryItem", "RecastNavimesh", "AetheryteSystemDefine", "GatheringPoint", "GatheringPointBase", "BNpcCustomize", "Recipe", "CraftAction", "GatheringItem", "OnlineStatus", "ItemLevel", "HousingAethernet", "Emote", "Battalion", "NpcYell", "HousingLandSet", "NpcEquip", "HousingFurniture", "ENpcBase", "IKDRoute", "GatheringItemLevelConvertTable", "PublicContent", "Fate", "Adventure", "AetherCurrent", "DawnContent", "FateProgressUI", "GoldSaucerContent", "GimmickAccessor", "Trait"], default-features = false }
@@ -115,10 +115,10 @@ libsqlite3-sys = { version = "*", features = ["bundled"], default-features = fal
 async-trait = { version = "0.1", default-features = false }
 
 # 3D math primitives
-glam = { version = "0.34", features = ["std", "all-types"], default-features = false }
+glam = { version = "0.34", features = ["std"], default-features = false }
 
 # For Windows ANSI support
-nu-ansi-term = "0.50"
+nu-ansi-term = { version = "0.50", default-features = false }
 
 # Dependency of serde-xml-rs, needed to access EmitterConfig.
 xml = { version = "1.4", default-features = false }
