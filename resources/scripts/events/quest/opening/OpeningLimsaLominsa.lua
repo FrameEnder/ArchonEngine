@@ -8,6 +8,12 @@ SCENE_BOUNDS_CHECK2   = 00020 -- Another "where are you going?" message
 SCENE_RESETUP_BOUNDS  = 00040 -- Sets up the bounds based on the current sequence
 
 function onEnterTerritory(player)
+    -- Once the opening quest is turned in, the city is open: don't set up the boundaries again.
+    if isOpeningComplete(player) then
+        player:finish_event()
+        return
+    end
+
     local sequence = determineSequence(player, NCUT_LIGHT_ALL)
     if sequence == OPENING_SEQ_0 then
         player:play_scene(SCENE_OPENING, INITIAL_CUTSCENE_FLAGS, {0})
@@ -27,6 +33,13 @@ function onReturn(scene, results, player)
 end
 
 function onEnterTrigger(player, arg)
+    -- The client keeps the boundaries it was given until the next zone change, so they can still trigger right after
+    -- the opening quest is turned in. Let the player through.
+    if isOpeningComplete(player) then
+        player:finish_event()
+        return
+    end
+
     -- Play the "where are you going?!" text when entering any trigger
     if arg == ERANGE_SEQ_1_CLOSED_1 then
         player:play_scene(SCENE_BOUNDS_CHECK2, NO_DEFAULT_CAMERA | HIDE_HOTBAR, {})
