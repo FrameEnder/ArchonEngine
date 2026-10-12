@@ -11,6 +11,8 @@ function onEnterTerritory(player)
     -- Once the opening quest is turned in, the city is open: don't set up the boundaries again.
     if isOpeningComplete(player) then
         player:finish_event()
+        -- Past Close to Home, the player belongs in the real New Gridania, not the opening's version of it.
+        leaveOpeningAreaIfDone(player)
         return
     end
 

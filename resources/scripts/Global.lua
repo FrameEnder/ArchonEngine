@@ -333,3 +333,28 @@ function onAetheryteAttuned(player, aetheryte_id)
         end
     end
 end
+
+-- Accepting Close to Home moves the player out of their city's opening area (a separate territory, e.g. 183 for
+-- Gridania) into the real city. If they ever end up back in the opening area after that, say because the server was
+-- stopped before it saved, the opening scripts call this to send them back to the real city at the same spot.
+-- TODO: Add Limsa Lominsa and Ul'dah once their real territories are confirmed from their Close to Home quests.
+OPENING_EXITS = {
+    [2] = { zone = 132, quests = CLOSE_TO_HOME_QUESTS }, -- Gridania -> New Gridania
+}
+
+function leaveOpeningAreaIfDone(player)
+    local exit = OPENING_EXITS[player.city_state]
+    if exit == nil then
+        return false
+    end
+
+    for _, quest_id in ipairs(exit.quests) do
+        if player:has_quest(quest_id - 65536) then
+            local position = player.position
+            player:change_territory(exit.zone, { x = position.x, y = position.y, z = position.z }, player.rotation)
+            return true
+        end
+    end
+
+    return false
+end
