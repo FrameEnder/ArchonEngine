@@ -54,8 +54,9 @@ impl ZoneConnection {
         ActiveQuest {
             id: quest.id,
             sequence: quest.sequence,
-            flags: 1,
+            flags: 0,
             bitflags: quest.variables,
+            accept_class_job: 0,
         }
     }
 

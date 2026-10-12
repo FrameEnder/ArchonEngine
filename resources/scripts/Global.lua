@@ -309,6 +309,7 @@ end
 -- the aetheryte's own event instead of the quest's, mark the objective here.
 CLOSE_TO_HOME_QUESTS = { 65621, 65659, 65660 }
 AETHERYTE_NEW_GRIDANIA = 2
+UNLOCK_RETURN = 1 -- UnlockLink for the Return action, learned during Close to Home
 
 function onAetheryteAttuned(player, aetheryte_id)
     if aetheryte_id ~= AETHERYTE_NEW_GRIDANIA then
@@ -317,6 +318,7 @@ function onAetheryteAttuned(player, aetheryte_id)
 
     for _, quest_id in ipairs(CLOSE_TO_HOME_QUESTS) do
         if player:get_quest_sequence(quest_id) == 1 then
+            player:unlock(UNLOCK_RETURN)
             setQuestVarOf(player, quest_id, "AL", 1)
             if questVarOf(player, quest_id, "BH") == 1 and questVarOf(player, quest_id, "BL") == 1 then
                 player:set_quest_sequence(quest_id, SEQ_FINISH)

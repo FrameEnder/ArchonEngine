@@ -1,6 +1,7 @@
 -- Quest: Close to Home (Gridania), for Conjurers
 -- NOTE: These quests are so similar, ensure changes are synced between all of them!
--- The class-specific parts (ACTOR2 is the guild to visit, ITEM0 is the letter) come from the Quest sheet.
+-- The class-specific parts (ACTOR2 is the guild to visit, ITEM0 is the delivery) come from the Quest sheet.
+-- Checked against the client's quest script (objectives in UI8AL/BH/BL, ITEM0 held in UI8CH during sequence 1.)
 
 -- Sequence 0: accept from ACTOR0 in the opening, then get moved into New Gridania (TERRITORYTYPE0.)
 -- Sequence 1, in any order:
@@ -37,13 +38,14 @@ function attuneToAetheryte(player)
     if not player:has_aetheryte(ACTOR1) then
         player:unlock_aetheryte(1, ACTOR1)
     end
+    player:unlock(UNLOCK_RETURN) -- attuning here teaches Return
     questPlay(player, SEQ_1_ACTOR1_WAIT, HIDE_HOTBAR)
 end
 
 -- Moves to turn-in once every objective is done.
 function checkCompletion(player)
     if questVar(player, "AL") == 1 and questVar(player, "BH") == 1 and questVar(player, "BL") == 1 then
-        setQuestSequence(player, SEQ_FINISH)
+        questAdvance(player, SEQ_FINISH)
     end
 end
 
