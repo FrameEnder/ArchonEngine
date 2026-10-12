@@ -13,7 +13,8 @@ use std::{
 };
 
 use icarus::{
-    BNpcName::BNpcNameSheet, ENpcResident::ENpcResidentSheet, EObjName::EObjNameSheet,
+    BNpcName::BNpcNameSheet, ClassJobCategory::ClassJobCategorySheet,
+    ENpcResident::ENpcResidentSheet, EObjName::EObjNameSheet, PlaceName::PlaceNameSheet,
     Quest::QuestSheet,
 };
 use kawari::config::get_config;
@@ -27,6 +28,7 @@ USAGE:
     kawari-questdump dump <QUEST>... [--out DIR] [--listing]
     kawari-questdump chain <QUEST> <COUNT> [--out DIR] [--listing]
     kawari-questdump extract <GAME PATH>... [--out DIR]
+    kawari-questdump index [--out DIR]
     kawari-questdump disasm <FILE.luab> [--listing]
 
 QUEST can be a quest ID (3854 or 69390), a script ID (XxaFst034_03854) or the quest's name in quotes.
@@ -35,6 +37,8 @@ COMMANDS:
     dump      Dump the given quests.
     chain     Dump the COUNT quests that follow QUEST in the same journal genre (e.g. the main story.)
     extract   Copy any game file out as-is (e.g. game_script/opening/OpeningGridania.luab.)
+    index     Write quest-index.json: every quest's name, level, prerequisites, issuer and area, for tools
+              that need the whole quest graph (Kawari Web uses it to search and to unlock prerequisites.)
     disasm    Print a readable listing of a compiled script you already have.
 
 OPTIONS:
@@ -73,15 +77,35 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
     Ok(options)
 }
 
+/// One quest, as much as tools need to find it and to walk the quest graph.
+struct QuestEntry {
+    /// Row ID in the Quest sheet (the quest ID plus `QuestSheet::STARTING_ROW`.)
+    row_id: u32,
+    script: String,
+    name: String,
+    genre: u32,
+    /// Row IDs of the quests that unlock this one.
+    previous: Vec<u32>,
+    /// How `previous` combine: 2 means any one of them, anything else means all of them.
+    previous_join: u8,
+    level: u16,
+    issuer: u32,
+    place: u16,
+    class_category: u8,
+    expansion: u8,
+}
+
 /// Everything we need from the game data, read once.
 struct GameData {
     resolver: ResourceResolver,
     quests: QuestSheet,
     /// Every quest row, for lookups by script id/name and walking chains.
-    index: Vec<(u32, String, String, u32, Vec<u32>, u16)>,
+    index: Vec<QuestEntry>,
     npc_names: HashMap<u32, String>,
     eobj_names: HashMap<u32, String>,
     bnpc_names: HashMap<u32, String>,
+    place_names: HashMap<u32, String>,
+    class_categories: HashMap<u32, String>,
 }
 
 impl GameData {
@@ -112,18 +136,24 @@ impl GameData {
             if row.Id.is_empty() {
                 continue;
             }
-            index.push((
+            index.push(QuestEntry {
                 row_id,
-                row.Id.clone(),
-                row.Name.clone(),
-                row.JournalGenre,
-                row.PreviousQuest
+                script: row.Id.clone(),
+                name: row.Name.clone(),
+                genre: row.JournalGenre,
+                previous: row
+                    .PreviousQuest
                     .iter()
                     .copied()
                     .filter(|x| *x != 0)
                     .collect(),
-                row.ClassJobLevel[0],
-            ));
+                previous_join: row.PreviousQuestJoin,
+                level: row.ClassJobLevel[0],
+                issuer: row.IssuerStart,
+                place: row.PlaceName,
+                class_category: row.ClassJobCategory0,
+                expansion: row.Expansion,
+            });
         }
 
         // Names make the dumps much easier to read, but aren't required.
@@ -152,6 +182,23 @@ impl GameData {
             }
         }
 
+        let mut place_names = HashMap::new();
+        if let Ok(sheet) = PlaceNameSheet::read_from(&mut resolver, language) {
+            for (id, row) in sheet.into_iter().flatten_subrows() {
+                if !row.Name.is_empty() {
+                    place_names.insert(id, row.Name.clone());
+                }
+            }
+        }
+        let mut class_categories = HashMap::new();
+        if let Ok(sheet) = ClassJobCategorySheet::read_from(&mut resolver, language) {
+            for (id, row) in sheet.into_iter().flatten_subrows() {
+                if !row.Name.is_empty() {
+                    class_categories.insert(id, row.Name.clone());
+                }
+            }
+        }
+
         Ok(Self {
             resolver,
             quests,
@@ -159,6 +206,8 @@ impl GameData {
             npc_names,
             eobj_names,
             bnpc_names,
+            place_names,
+            class_categories,
         })
     }
 
@@ -170,7 +219,7 @@ impl GameData {
             } else {
                 number
             };
-            if self.index.iter().any(|entry| entry.0 == row_id) {
+            if self.index.iter().any(|entry| entry.row_id == row_id) {
                 return Ok(row_id);
             }
             return Err(format!("there's no quest with ID {query}"));
@@ -180,15 +229,21 @@ impl GameData {
         let matches: Vec<_> = self
             .index
             .iter()
-            .filter(|entry| entry.1.to_lowercase() == lowered || entry.2.to_lowercase() == lowered)
+            .filter(|entry| {
+                entry.script.to_lowercase() == lowered || entry.name.to_lowercase() == lowered
+            })
             .collect();
         match matches.as_slice() {
             [] => Err(format!("couldn't find a quest called {query:?}")),
-            [only] => Ok(only.0),
+            [only] => Ok(only.row_id),
             many => Err(format!(
                 "{query:?} matches several quests, use one of their IDs instead: {}",
                 many.iter()
-                    .map(|entry| format!("{} ({})", entry.0 - QuestSheet::STARTING_ROW, entry.1))
+                    .map(|entry| format!(
+                        "{} ({})",
+                        entry.row_id - QuestSheet::STARTING_ROW,
+                        entry.script
+                    ))
                     .collect::<Vec<_>>()
                     .join(", ")
             )),
@@ -200,8 +255,8 @@ impl GameData {
         let genre = self
             .index
             .iter()
-            .find(|entry| entry.0 == start)
-            .map(|entry| entry.3)
+            .find(|entry| entry.row_id == start)
+            .map(|entry| entry.genre)
             .unwrap_or_default();
 
         let mut result = Vec::new();
@@ -212,20 +267,54 @@ impl GameData {
             let mut next: Vec<_> = self
                 .index
                 .iter()
-                .filter(|entry| entry.4.contains(&current) && entry.3 == genre)
-                .filter(|entry| !seen.contains(&entry.0))
+                .filter(|entry| entry.previous.contains(&current) && entry.genre == genre)
+                .filter(|entry| !seen.contains(&entry.row_id))
                 .collect();
-            next.sort_by_key(|entry| (entry.5, entry.0));
+            next.sort_by_key(|entry| (entry.level, entry.row_id));
             for entry in next {
-                seen.push(entry.0);
-                result.push(entry.0);
-                frontier.push(entry.0);
+                seen.push(entry.row_id);
+                result.push(entry.row_id);
+                frontier.push(entry.row_id);
                 if result.len() >= count {
                     return result;
                 }
             }
         }
         result
+    }
+
+    /// The whole quest graph as JSON, one small object per quest. IDs are quest IDs, not row IDs.
+    fn index_json(&self) -> Value {
+        let quests: Vec<Value> = self
+            .index
+            .iter()
+            .map(|entry| {
+                let mut quest = json!({
+                    "id": entry.row_id - QuestSheet::STARTING_ROW,
+                    "script": entry.script,
+                    "name": entry.name,
+                    "level": entry.level,
+                    "genre": entry.genre,
+                    "previous": entry.previous.iter().map(|x| x.saturating_sub(QuestSheet::STARTING_ROW)).collect::<Vec<_>>(),
+                    "previous_join": entry.previous_join,
+                    "issuer": entry.issuer,
+                    "place": entry.place,
+                    "class_category": entry.class_category,
+                    "expansion": entry.expansion,
+                });
+                if let Some(name) = self.npc_names.get(&entry.issuer) {
+                    quest["issuer_name"] = json!(name);
+                }
+                if let Some(name) = self.place_names.get(&(entry.place as u32)) {
+                    quest["place_name"] = json!(name);
+                }
+                if let Some(name) = self.class_categories.get(&(entry.class_category as u32)) {
+                    quest["class_category_name"] = json!(name);
+                }
+                quest
+            })
+            .collect();
+        json!({ "format": 1, "quests": quests })
     }
 
     /// Gives a readable name to a quest variable's value, where we can.
@@ -335,6 +424,9 @@ fn quest_json(data: &GameData, row_id: u32) -> Option<Value> {
         "level": row.ClassJobLevel[0],
         "journal_genre": row.JournalGenre,
         "previous_quests": row.PreviousQuest.iter().filter(|x| **x != 0).map(|x| x - QuestSheet::STARTING_ROW).collect::<Vec<_>>(),
+        "previous_join": row.PreviousQuestJoin,
+        "place": data.place_names.get(&(row.PlaceName as u32)),
+        "class_category": data.class_categories.get(&(row.ClassJobCategory0 as u32)),
         "issuer_start": named("ACTOR", row.IssuerStart),
         "target_end": named("ACTOR", row.TargetEnd),
         "client_script": quest_script_path(&row.Id),
@@ -514,6 +606,21 @@ fn run(args: &[String]) -> Result<(), String> {
                 }
                 println!("{game_path} -> {}{summary}", destination.display());
             }
+            Ok(())
+        }
+        "index" => {
+            let data = GameData::open(options.game.as_deref())?;
+            std::fs::create_dir_all(&options.out)
+                .map_err(|err| format!("couldn't create {}: {err}", options.out.display()))?;
+            let destination = options.out.join("quest-index.json");
+            let index = data.index_json();
+            std::fs::write(&destination, serde_json::to_string(&index).unwrap())
+                .map_err(|err| format!("couldn't write {}: {err}", destination.display()))?;
+            println!(
+                "Wrote {} quests to {}",
+                data.index.len(),
+                destination.display()
+            );
             Ok(())
         }
         "disasm" => {

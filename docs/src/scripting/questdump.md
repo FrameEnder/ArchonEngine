@@ -24,7 +24,14 @@ kawari-questdump extract game_script/opening/OpeningGridania.luab
 
 # Read a script you already have
 kawari-questdump disasm quest-dumps/XxaFst034_03854/XxaFst034_03854.luab --listing
+
+# The whole quest graph in one file: names, levels, prerequisites, issuers and areas
+kawari-questdump index
 ```
+
+`index` writes `quest-index.json`. Each quest's `previous` lists the quests that unlock it, and
+`previous_join` says how they combine: `2` means any one of them (the story quests that follow the three
+city starts), anything else means all of them.
 
 Everything is written to `quest-dumps/` (change it with `--out`), with an `index.txt` summarizing what was dumped.
 
@@ -43,3 +50,14 @@ Each function gets a header and a summary:
 * The scene number is in the function's name, and is what a Kawari quest script passes to `play_scene`.
 
 The client scripts only cover what's shown to the player. Which scene plays for which NPC in which sequence is decided by the server, so `quest.json`'s listeners and named variables (`SEQ_1_ACTOR2 = 2` means "talking to ACTOR2 during sequence 1 plays scene 2") fill in the rest.
+
+## From Kawari Web
+
+Kawari Web's **Quest Lab** (Dashboard → Quests) runs this tool for you, using the `kawari-questdump` from
+the active build against the server's own game install, and adds the parts around it:
+
+* browse dumps, with each quest's `quest.json` laid out, its listing, and the fork's own script side by side
+* check a script against the dump: which of the client's scenes it plays, and any quest variable it names
+  that the Quest sheet doesn't have
+* download a bundle of dumps and current scripts to hand to whoever is writing the next quests
+* put a character at any point in a quest: prerequisites done, quest accepted at a chosen sequence

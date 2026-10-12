@@ -7,7 +7,7 @@ version.workspace = true
 workspace = true
 
 [dependencies]
-icarus = { workspace = true, features = ["ENpcResident", "EObjName", "BNpcName"] }
+icarus = { workspace = true, features = ["ENpcResident", "EObjName", "BNpcName", "PlaceName", "ClassJobCategory"] }
 kawari = { path = "../../core" }
 physis = { workspace = true }
 serde_json = { workspace = true }
