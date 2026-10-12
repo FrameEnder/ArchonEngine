@@ -2720,6 +2720,10 @@ pub async fn server_main_loop(
                 }
 
                 if let Some(actor_id) = actor_id {
+                    tracing::warn!(
+                        "Removing zone client {remove_id:?} (actor {actor_id}): it disconnected, or couldn't keep up with what the server sent it"
+                    );
+
                     let mut data = data.lock();
                     // remove them from the instance
                     if let Some(current_instance) = data.find_actor_instance_mut(actor_id) {
@@ -2729,10 +2733,12 @@ pub async fn server_main_loop(
 
                 network.clients.remove(&remove_id);
             }
+            network.to_remove.clear();
 
             for remove_id in network.to_remove_chat.clone() {
                 network.chat_clients.remove(&remove_id);
             }
+            network.to_remove_chat.clear();
         }
 
         // Commit parties back to database as necessary
