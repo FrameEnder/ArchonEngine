@@ -117,6 +117,23 @@ impl LuaEventHandler {
 #[async_trait]
 impl EventHandler for LuaEventHandler {
     async fn on_enter_territory(&self, _event: &Event, player: &mut LuaPlayer) {
+        // Scripts without onEnterTerritory (most quests) have nothing to do here. The event still has to be finished,
+        // otherwise the client waits on it and the zone never finishes loading.
+        if self
+            .lua
+            .0
+            .globals()
+            .get::<Function>("onEnterTerritory")
+            .is_err()
+        {
+            tracing::info!(
+                "{} has no onEnterTerritory, finishing the event",
+                self.file_name
+            );
+            player.finish_event();
+            return;
+        }
+
         let mut run_script = || {
             self.lua.0.scope(|scope| {
                 let player_data = scope.create_userdata_ref_mut(player)?;
