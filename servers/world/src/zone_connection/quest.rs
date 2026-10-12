@@ -273,6 +273,7 @@ impl ZoneConnection {
         };
 
         self.player_data.quest.active.0[slot].sequence = sequence;
+        tracing::info!("Quest {adjusted_id}: sequence = {sequence}");
         self.send_quest_update(slot).await;
         self.send_quest_tracker().await;
     }
@@ -293,6 +294,10 @@ impl ZoneConnection {
         };
 
         *variable = value;
+        tracing::info!(
+            "Quest {adjusted_id}: UI8{} = {value:#04x}",
+            (b'A' + index) as char
+        );
         self.send_quest_update(slot).await;
     }
 
