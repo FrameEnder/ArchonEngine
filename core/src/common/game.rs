@@ -767,21 +767,21 @@ pub enum LogMessageType {
     UnableToAcceptAttachmentInventoryFull = 379,
     /// "Unable to accept linkshell invite."
     UnableToAcceptLSInvite = 477,
-    /// "<Something> line <something else>."
+    /// "\[Something\] line \[something else\]."
     FishingCastLine = 1110,
     /// "Nothing bites. The bait you are using may not be suited to this location."
     FishingNoBite = 1127,
-    /// "You purchase <item> for <amount> gil."
+    /// "You purchase \[item\] for \[amount\] gil."
     ItemBought = 1687,
-    /// "You sell <item> for <amount> gil."
+    /// "You sell \[item\] for \[amount\] gil."
     ItemSold = 1688,
-    /// "You buy back <item> for <amount> gil."
+    /// "You buy back \[item\] for \[amount\] gil."
     ItemBoughtBack = 1689,
-    /// "<Location> will be sealed off in <time>!"
+    /// "\[Location\] will be sealed off in \[time\]!"
     BossRoomSealing = 2012,
-    /// "<Location> is sealed off!"
+    /// "\[Location\] is sealed off!"
     BossRoomSealed = 2013,
-    /// "<Location> is no longer sealed!"
+    /// "\[Location\] is no longer sealed!"
     BossRoomUnsealed = 2014,
     /// "Unable to add new members. Cross-world linkshell roster is full."
     CWLSIsFull = 9259,
@@ -791,9 +791,9 @@ pub enum LogMessageType {
     PlayerAlreadyInYourCWLS = 9262,
     /// "The person you have invited cannot join any more cross-world linkshells."
     PlayerInTooManyCWLSes = 9263,
-    /// "The <item name> was moved to your storeroom."
+    /// "The \[item name\] was moved to your storeroom."
     FurnitureMovedToStoreroom = 3487,
-    /// "The <item name> was moved to your inventory."
+    /// "The \[item name\] was moved to your inventory."
     FurnitureMovedToInventory = 3488,
     /// "You cannot create any more Fellowshiops."
     UnableToCreateMoreFellowships = 5603,

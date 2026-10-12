@@ -498,7 +498,7 @@ pub enum ServerZoneIpcData {
     InviteCharacterResult {
         /// The invited character's content id.
         content_id: u64,
-        /// The pre-defined LogMessage to display. 0 seems to indicate no errors, and the client will display a default message such as "You invite <name> to a party."
+        /// The pre-defined LogMessage to display. 0 seems to indicate no errors, and the client will display a default message such as "You invite \[name\] to a party."
         message_id: u16,
         #[brw(pad_before = 2)]
         /// The invited character's home world id.
