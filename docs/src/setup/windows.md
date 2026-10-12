@@ -14,7 +14,7 @@ This guide covers how to setup Kawari on Windows, which also includes Wine.
 
 ## Downloading Kawari
 
-Download the [latest build for Windows x86_64 from xiv.zone](https://xiv.zone/distrib/kawari/kawari-windows-x86_64.zip) (or pick a specific build from [Github Actions](https://github.com/redstrate/Kawari/actions).)
+Download the [latest build for Windows x86_64 from xiv.zone](https://xiv.zone/distrib/kawari/kawari-windows-x86_64.zip) (or pick a specific build from [the CI](https://codeberg.org/redstrate/Kawari/actions).)
 
 ## Setup
 
