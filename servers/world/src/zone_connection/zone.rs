@@ -60,16 +60,16 @@ impl ZoneConnection {
 
         let bound_by_duty = content_finder_condition_id != 0;
 
-        // Commit back our zone id and other volatile info on zone change. Everything else (quests, inventory, etc.) is
-        // saved too, otherwise progress made since logging in is lost if the server stops before the player logs out,
-        // while the new zone was saved. That could put the player back somewhere their quests don't match.
+        // Commit back our zone id and other volatile info on zone change. Quests are saved too, otherwise quest progress
+        // made since logging in is lost if the server stops before the player logs out, while the new zone was saved.
         {
             self.player_data.volatile.zone_id = new_zone_id as i32;
             self.player_data.volatile.position = exit_position;
             self.player_data.volatile.rotation = exit_rotation as f64;
 
             let mut db = self.database.lock();
-            db.commit_player_data(&self.player_data);
+            db.commit_volatile(&self.player_data);
+            db.commit_quests(&self.player_data);
         }
 
         // Generate obsfucation-related keys if needed.
