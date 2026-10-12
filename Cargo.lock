@@ -775,7 +775,6 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
- "ureq",
  "xml",
 ]
 
@@ -783,7 +782,6 @@ dependencies = [
 name = "kawari-lobby"
 version = "7.56.1"
 dependencies = [
- "axum",
  "kawari",
  "physis",
  "serde_json",
@@ -814,7 +812,6 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
- "ureq",
 ]
 
 [[package]]
