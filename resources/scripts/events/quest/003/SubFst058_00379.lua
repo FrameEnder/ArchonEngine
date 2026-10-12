@@ -1,41 +1,27 @@
 -- Quest: In the Grim Darkness of the Forest (Lv. 10)
--- Sequence 0: accept from ACTOR0
--- Sequence 1: speak with ACTOR1
--- Sequence 2: search EOBJECT1, finding ITEM0 (held in UI8BH, unverified)
--- Sequence 255: hand ITEM0 to ACTOR1
--- EOBJECT0 can be examined during every sequence, but doesn't advance anything.
--- NOTE: The "searching" cast bar isn't played, the scene after it plays straight away.
+-- Checked against the client's quest script (scenes, key items, objectives.)
+-- Sequence 0: accept from ACTOR0 (scene 0)
+-- Sequence 1: speak with ACTOR1 (scene 1)
+-- Sequence 2: search EOBJECT1 (scene 3), finding ITEM0 (held in UI8BH)
+-- Sequence 255: hand ITEM0 to ACTOR1 (trade scene 5, then reward scene 94)
+-- EOBJECT0 (the campfire) can be examined throughout, but its scenes are empty and it doesn't advance anything.
+-- NOTE: The "searching" cast bar isn't played, the object's scene plays straight away.
 
 function onTalk(target, player)
     local sequence = questSequence(player)
 
     if sequence == nil and BASE_ID == ACTOR0 then
-        questPlay(player, SEQ_0_ACTOR0, HIDE_HOTBAR)
+        questPlay(player, SEQ_0_ACTOR0)
     elseif sequence == 1 and BASE_ID == ACTOR1 then
-        questPlay(player, SEQ_1_ACTOR1, HIDE_HOTBAR)
-    elseif sequence == 1 and BASE_ID == EOBJECT0 then
-        questPlay(player, SEQ_1_EOBJECT0, HIDE_HOTBAR)
+        questPlay(player, SEQ_1_ACTOR1)
     elseif sequence == 2 and BASE_ID == EOBJECT1 then
-        questPlay(player, SEQ_2_EOBJECT1, HIDE_HOTBAR)
-    elseif sequence == 2 and BASE_ID == EOBJECT0 then
-        questPlay(player, SEQ_2_EOBJECT0, HIDE_HOTBAR)
+        questPlay(player, SEQ_2_EOBJECT1)
     elseif sequence == SEQ_FINISH and BASE_ID == ACTOR1 then
-        questPlay(player, SEQ_3_ACTOR1, HIDE_HOTBAR)
-    elseif sequence == SEQ_FINISH and BASE_ID == EOBJECT0 then
-        questPlay(player, SEQ_3_EOBJECT0, HIDE_HOTBAR)
+        questPlay(player, SEQ_3_ACTOR1)
     else
         player:finish_event()
     end
 end
-
--- Prompt scene -> the scenes played when the player agrees or declines.
-FOLLOW_UPS = {
-    [SEQ_1_EOBJECT0] = { SEQ_1_EOBJECT0_EVENTACTIONOK, SEQ_1_EOBJECT0_EVENTACTIONNO },
-    [SEQ_2_EOBJECT1] = { SEQ_2_EOBJECT1_EVENTACTIONOK, SEQ_2_EOBJECT1_EVENTACTIONNO },
-    [SEQ_2_EOBJECT0] = { SEQ_2_EOBJECT0_EVENTACTIONOK, SEQ_2_EOBJECT0_EVENTACTIONNO },
-    [SEQ_3_ACTOR1] = { SEQ_3_ACTOR1_NPCTRADEOK, SEQ_3_ACTOR1_NPCTRADENO },
-    [SEQ_3_EOBJECT0] = { SEQ_3_EOBJECT0_EVENTACTIONOK, SEQ_3_EOBJECT0_EVENTACTIONNO },
-}
 
 function onSceneFinished(scene, results, player)
     if scene == SEQ_0_ACTOR0 then
@@ -43,21 +29,14 @@ function onSceneFinished(scene, results, player)
             player:accept_quest(EVENT_ID, 1)
         end
     elseif scene == SEQ_1_ACTOR1 then
-        setQuestSequence(player, 2)
-    elseif FOLLOW_UPS[scene] ~= nil then
-        local agreed = results[1] ~= 0
-        if scene == SEQ_3_ACTOR1 then
-            agreed = results[1] == 1 -- trades must be explicitly accepted
+        questAdvance(player, 2)
+    elseif scene == SEQ_2_EOBJECT1 then
+        questAdvance(player, SEQ_FINISH, { BH = 1 }) -- found ITEM0
+    elseif scene == SEQ_3_ACTOR1 then
+        if results[1] == 1 then
+            questPlay(player, SEQ_3_ACTOR1_NPCTRADEOK)
+            return true
         end
-        if agreed then
-            questPlay(player, FOLLOW_UPS[scene][1], HIDE_HOTBAR)
-        else
-            questPlay(player, FOLLOW_UPS[scene][2], HIDE_HOTBAR)
-        end
-        return true
-    elseif scene == SEQ_2_EOBJECT1_EVENTACTIONOK then
-        setQuestVar(player, "BH", 1) -- found ITEM0
-        setQuestSequence(player, SEQ_FINISH)
     elseif scene == SEQ_3_ACTOR1_NPCTRADEOK then
         if results[1] == 1 then
             player:finish_quest(EVENT_ID)

@@ -1,5 +1,5 @@
 -- Quest: Festive Endeavors (Lv. 14)
--- NOTE: The Quest sheet doesn't name this quest's scenes, so these come from Sapphire's script and are unverified for 7.56.
+-- Checked against the client's quest script (scenes, key items, objectives.)
 -- Sequence 0: accept from ACTOR0 (plus a follow-up scene)
 -- Sequence 1: speak with ACTOR2
 -- Sequence 2: speak with ACTOR3, receiving ITEM0 (UI8BH)
@@ -13,7 +13,6 @@ SCENE_ACTOR2 = 3
 SCENE_ACTOR3 = 4
 SCENE_ACTOR2_TRADE = 5
 SCENE_ACTOR2_TRADE_OK = 6
-SCENE_ACTOR2_TRADE_NO = 7
 
 function onTalk(target, player)
     local sequence = questSequence(player)
@@ -46,17 +45,14 @@ function onSceneFinished(scene, results, player)
             player:change_territory_pop_range(TERRITORYTYPE0, POPRANGE0)
         end
     elseif scene == SCENE_ACTOR2 then
-        setQuestSequence(player, 2)
+        questAdvance(player, 2)
     elseif scene == SCENE_ACTOR3 then
-        setQuestVar(player, "BH", 1) -- receive ITEM0
-        setQuestSequence(player, SEQ_FINISH)
+        questAdvance(player, SEQ_FINISH, { BH = 1 }) -- receive ITEM0
     elseif scene == SCENE_ACTOR2_TRADE then
         if results[1] == 1 then
             questPlay(player, SCENE_ACTOR2_TRADE_OK, HIDE_HOTBAR)
-        else
-            questPlay(player, SCENE_ACTOR2_TRADE_NO, HIDE_HOTBAR)
+            return true
         end
-        return true
     elseif scene == SCENE_ACTOR2_TRADE_OK then
         if results[1] == 1 then
             player:finish_quest(EVENT_ID)

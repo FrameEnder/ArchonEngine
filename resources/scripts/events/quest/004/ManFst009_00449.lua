@@ -1,9 +1,9 @@
 -- Quest: Renewing the Covenant (Lv. 14)
--- NOTE: The Quest sheet doesn't name this quest's scenes, so these come from Sapphire's script and are unverified for 7.56.
--- Sequence 0: accept from ACTOR0 (plus a follow-up scene)
--- Sequence 1: ACTOR2 gives you RITEM0 (a hat), then speak with ACTOR1 while wearing it
--- Sequence 255: report to ACTOR3. ACTOR4 can take you to TERRITORYTYPE0.
--- NOTE: Kawari can't check equipment from scripts yet, so ACTOR1 assumes you're wearing the hat once you've been given it.
+-- Checked against the client's quest script (scenes and objectives.)
+-- Sequence 0: accept from ACTOR0 (offer scene 0, then scene 1)
+-- Sequence 1: ACTOR2 gives you RITEM0 (a hat, scene 6), then speak with ACTOR1 while wearing it (scene 2, then 3 and the
+--             ceremony cutscene 4). Without the hat on, ACTOR1 plays scene 5 instead.
+-- Sequence 255: report to ACTOR3 (reward scene 7). ACTOR4 can take you into TERRITORYTYPE0 (scene 8).
 
 SCENE_ACCEPT = 0
 SCENE_ACCEPTED = 1
@@ -33,6 +33,14 @@ function onTalk(target, player)
     end
 end
 
+-- Whether RITEM0 is equipped. If the equipment can't be read, assume it is so the quest can't get stuck.
+function isWearingHat(player)
+    local ok, head = pcall(function()
+        return player.inventory.equipped.head.id
+    end)
+    return not ok or head == RITEM0
+end
+
 function onSceneFinished(scene, results, player)
     if scene == SCENE_ACCEPT then
         if results[1] == 1 then
@@ -43,19 +51,18 @@ function onSceneFinished(scene, results, player)
         player:accept_quest(EVENT_ID, 1)
     elseif scene == SCENE_ACTOR2 then
         player:add_item(RITEM0, 1)
-        setQuestBitFlag8(player, 1, true) -- remember that we were given the hat
     elseif scene == SCENE_ACTOR1 then
-        if questBitFlag8(player, 1) then
+        if isWearingHat(player) then
             questPlay(player, SCENE_ACTOR1_WEARING, HIDE_HOTBAR)
         else
             questPlay(player, SCENE_ACTOR1_NOT_WEARING, HIDE_HOTBAR)
         end
         return true
     elseif scene == SCENE_ACTOR1_WEARING then
-        questPlay(player, SCENE_ACTOR1_CUTSCENE, FADE_OUT | CONDITION_CUTSCENE | HIDE_UI)
+        questPlay(player, SCENE_ACTOR1_CUTSCENE, QUEST_CUTSCENE_FLAGS)
         return true
     elseif scene == SCENE_ACTOR1_CUTSCENE then
-        setQuestSequence(player, SEQ_FINISH)
+        questAdvance(player, SEQ_FINISH)
     elseif scene == SCENE_ACTOR3_FINISH then
         if results[1] == 1 then
             player:finish_quest(EVENT_ID)

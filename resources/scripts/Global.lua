@@ -242,6 +242,34 @@ function setQuestSequence(player, sequence)
     player:set_quest_sequence(EVENT_ID, sequence)
 end
 
+-- Moves the quest to another sequence. Each sequence has its own variable layout in the client's quest script (a key
+-- item may be counted in UI8BL during one sequence and UI8BH in the next), so every variable and flag is cleared first,
+-- then the given ones are set, e.g. questAdvance(player, SEQ_FINISH, { BH = 1 }).
+function questAdvance(player, sequence, vars)
+    for byte = 0, 5 do
+        player:set_quest_var(EVENT_ID, byte, 0)
+    end
+    for name, value in pairs(vars or {}) do
+        setQuestVar(player, name, value)
+    end
+    setQuestSequence(player, sequence)
+end
+
+-- Adds one to a counter variable and returns the new value.
+function questIncrement(player, name)
+    local value = questVar(player, name) + 1
+    setQuestVar(player, name, value)
+    return value
+end
+
+-- Tells the player that a solo quest battle was skipped, since Kawari can't run them yet.
+function questSkipBattle(player)
+    player:send_message("Quest battles aren't implemented yet, so this one was skipped.")
+end
+
+-- Scene flags for the full-screen cutscenes many quests play.
+QUEST_CUTSCENE_FLAGS = FADE_OUT | CONDITION_CUTSCENE | HIDE_UI
+
 -- Quest scene flow
 --
 -- Quest scripts play scenes with questPlay() and implement onSceneFinished(scene, results, player), which
