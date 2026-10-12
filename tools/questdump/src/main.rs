@@ -1,0 +1,573 @@
+//! Dumps quest data from your game install, for scripting quests from ground truth.
+//!
+//! For each quest this writes its Quest sheet data (NPCs, objectives, the named scene numbers), its compiled
+//! client script (`.luab`), and a readable listing of that script showing every scene and what it touches.
+//!
+//! The scripts are Square Enix's game files, so keep the dumps to yourself (the default folder is gitignored.)
+
+mod luab;
+
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
+
+use icarus::{
+    BNpcName::BNpcNameSheet, ENpcResident::ENpcResidentSheet, EObjName::EObjNameSheet,
+    Quest::QuestSheet,
+};
+use kawari::config::get_config;
+use physis::resource::{ResourceResolver, SqPackResource, UnpackedResource};
+use serde_json::{Value, json};
+
+const USAGE: &str = "\
+Dumps quest data and the client's quest scripts from your game install.
+
+USAGE:
+    kawari-questdump dump <QUEST>... [--out DIR] [--listing]
+    kawari-questdump chain <QUEST> <COUNT> [--out DIR] [--listing]
+    kawari-questdump extract <GAME PATH>... [--out DIR]
+    kawari-questdump disasm <FILE.luab> [--listing]
+
+QUEST can be a quest ID (3854 or 69390), a script ID (XxaFst034_03854) or the quest's name in quotes.
+
+COMMANDS:
+    dump      Dump the given quests.
+    chain     Dump the COUNT quests that follow QUEST in the same journal genre (e.g. the main story.)
+    extract   Copy any game file out as-is (e.g. game_script/opening/OpeningGridania.luab.)
+    disasm    Print a readable listing of a compiled script you already have.
+
+OPTIONS:
+    --out DIR     Where to write the dumps (default: quest-dumps)
+    --listing     Include every instruction, not just each function's summary.
+    --game DIR    The game's \"game\" folder (the one containing sqpack.) By default it's found the same way
+                  the server finds it: config.yaml in the current directory, or auto-detection.";
+
+struct Options {
+    out: PathBuf,
+    listing: bool,
+    game: Option<String>,
+    positional: Vec<String>,
+}
+
+fn parse_options(args: &[String]) -> Result<Options, String> {
+    let mut options = Options {
+        out: PathBuf::from("quest-dumps"),
+        listing: false,
+        game: None,
+        positional: Vec::new(),
+    };
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "--out" => {
+                options.out = PathBuf::from(iter.next().ok_or("--out needs a directory")?);
+            }
+            "--listing" => options.listing = true,
+            "--game" => {
+                options.game = Some(iter.next().ok_or("--game needs a directory")?.clone());
+            }
+            _ => options.positional.push(arg.clone()),
+        }
+    }
+    Ok(options)
+}
+
+/// Everything we need from the game data, read once.
+struct GameData {
+    resolver: ResourceResolver,
+    quests: QuestSheet,
+    /// Every quest row, for lookups by script id/name and walking chains.
+    index: Vec<(u32, String, String, u32, Vec<u32>, u16)>,
+    npc_names: HashMap<u32, String>,
+    eobj_names: HashMap<u32, String>,
+    bnpc_names: HashMap<u32, String>,
+}
+
+impl GameData {
+    fn open(game: Option<&str>) -> Result<Self, String> {
+        let config = get_config();
+        let mut resolver = ResourceResolver::new();
+        for path in &config.filesystem.additional_search_paths {
+            resolver.add_source(UnpackedResource::from_existing(path));
+        }
+        let game_path = match game {
+            Some(path) => path.to_string(),
+            None => config.filesystem.game_path(),
+        };
+        if !Path::new(&game_path).join("sqpack").is_dir() {
+            return Err(format!(
+                "{game_path} doesn't look like the game folder (there's no sqpack folder inside it)"
+            ));
+        }
+        eprintln!("Reading game data from {game_path}");
+        resolver.add_source(SqPackResource::from_existing(&game_path));
+
+        let language = config.world.language();
+        let quests = QuestSheet::read_from(&mut resolver, language)
+            .map_err(|err| format!("couldn't read the Quest sheet: {err:?}"))?;
+
+        let mut index = Vec::new();
+        for (row_id, row) in quests.into_iter().flatten_subrows() {
+            if row.Id.is_empty() {
+                continue;
+            }
+            index.push((
+                row_id,
+                row.Id.clone(),
+                row.Name.clone(),
+                row.JournalGenre,
+                row.PreviousQuest
+                    .iter()
+                    .copied()
+                    .filter(|x| *x != 0)
+                    .collect(),
+                row.ClassJobLevel[0],
+            ));
+        }
+
+        // Names make the dumps much easier to read, but aren't required.
+        let mut npc_names = HashMap::new();
+        if let Ok(sheet) = ENpcResidentSheet::read_from(&mut resolver, language) {
+            for (id, row) in sheet.into_iter().flatten_subrows() {
+                if !row.Singular.is_empty() {
+                    npc_names.insert(id, row.Singular.clone());
+                }
+            }
+        }
+        let mut eobj_names = HashMap::new();
+        if let Ok(sheet) = EObjNameSheet::read_from(&mut resolver, language) {
+            for (id, row) in sheet.into_iter().flatten_subrows() {
+                if !row.Singular.is_empty() {
+                    eobj_names.insert(id, row.Singular.clone());
+                }
+            }
+        }
+        let mut bnpc_names = HashMap::new();
+        if let Ok(sheet) = BNpcNameSheet::read_from(&mut resolver, language) {
+            for (id, row) in sheet.into_iter().flatten_subrows() {
+                if !row.Singular.is_empty() {
+                    bnpc_names.insert(id, row.Singular.clone());
+                }
+            }
+        }
+
+        Ok(Self {
+            resolver,
+            quests,
+            index,
+            npc_names,
+            eobj_names,
+            bnpc_names,
+        })
+    }
+
+    /// Finds a quest's row ID from an ID, script ID or name.
+    fn resolve(&self, query: &str) -> Result<u32, String> {
+        if let Ok(number) = query.parse::<u32>() {
+            let row_id = if number < QuestSheet::STARTING_ROW {
+                number + QuestSheet::STARTING_ROW
+            } else {
+                number
+            };
+            if self.index.iter().any(|entry| entry.0 == row_id) {
+                return Ok(row_id);
+            }
+            return Err(format!("there's no quest with ID {query}"));
+        }
+
+        let lowered = query.to_lowercase();
+        let matches: Vec<_> = self
+            .index
+            .iter()
+            .filter(|entry| entry.1.to_lowercase() == lowered || entry.2.to_lowercase() == lowered)
+            .collect();
+        match matches.as_slice() {
+            [] => Err(format!("couldn't find a quest called {query:?}")),
+            [only] => Ok(only.0),
+            many => Err(format!(
+                "{query:?} matches several quests, use one of their IDs instead: {}",
+                many.iter()
+                    .map(|entry| format!("{} ({})", entry.0 - QuestSheet::STARTING_ROW, entry.1))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )),
+        }
+    }
+
+    /// Follows the quests that come after `start` in the same journal genre, in order.
+    fn chain(&self, start: u32, count: usize) -> Vec<u32> {
+        let genre = self
+            .index
+            .iter()
+            .find(|entry| entry.0 == start)
+            .map(|entry| entry.3)
+            .unwrap_or_default();
+
+        let mut result = Vec::new();
+        let mut frontier = vec![start];
+        let mut seen = vec![start];
+        while let Some(current) = frontier.first().copied() {
+            frontier.remove(0);
+            let mut next: Vec<_> = self
+                .index
+                .iter()
+                .filter(|entry| entry.4.contains(&current) && entry.3 == genre)
+                .filter(|entry| !seen.contains(&entry.0))
+                .collect();
+            next.sort_by_key(|entry| (entry.5, entry.0));
+            for entry in next {
+                seen.push(entry.0);
+                result.push(entry.0);
+                frontier.push(entry.0);
+                if result.len() >= count {
+                    return result;
+                }
+            }
+        }
+        result
+    }
+
+    /// Gives a readable name to a quest variable's value, where we can.
+    fn describe_value(&self, name: &str, value: u32) -> Option<String> {
+        let kind = name.trim_end_matches(|c: char| c.is_ascii_digit());
+        match kind {
+            "ACTOR" => self.npc_names.get(&value).cloned(),
+            "EOBJECT" => self.eobj_names.get(&value).cloned(),
+            "ENEMY" => self.bnpc_names.get(&value).cloned(),
+            _ => None,
+        }
+        .or_else(|| {
+            // Listeners mix NPCs, objects and enemies.
+            if name == "listener" {
+                self.npc_names
+                    .get(&value)
+                    .or(self.eobj_names.get(&value))
+                    .or(self.bnpc_names.get(&value))
+                    .cloned()
+            } else {
+                None
+            }
+        })
+    }
+}
+
+/// The client script for a quest lives at `game_script/quest/<script id / 100>/<script name>.luab`.
+fn quest_script_path(script_name: &str) -> Option<String> {
+    let script_id: u32 = script_name
+        .get(script_name.len().checked_sub(5)?..)?
+        .parse()
+        .ok()?;
+    Some(format!(
+        "game_script/quest/{:03}/{script_name}.luab",
+        script_id / 100
+    ))
+}
+
+fn quest_json(data: &GameData, row_id: u32) -> Option<Value> {
+    let row = data.quests.row(row_id)?;
+    let named = |name: &str, value: u32| {
+        let mut entry = json!({ "name": name, "value": value });
+        if let Some(label) = data.describe_value(name, value) {
+            entry["label"] = json!(label);
+        }
+        entry
+    };
+
+    let params: Vec<Value> = row
+        .QuestParams
+        .iter()
+        .filter(|param| !param.ScriptInstruction.is_empty())
+        .map(|param| named(&param.ScriptInstruction, param.ScriptArg))
+        .collect();
+
+    let todos: Vec<Value> = row
+        .TodoParams
+        .iter()
+        .enumerate()
+        .filter(|(_, todo)| todo.ToDoCompleteSeq != 0 || todo.ToDoQty != 0)
+        .map(|(index, todo)| {
+            json!({
+                "index": index,
+                "complete_sequence": todo.ToDoCompleteSeq,
+                "quantity": todo.ToDoQty,
+                "countable": todo.CountableNum,
+                "locations": todo.ToDoLocation.iter().filter(|x| **x != 0).collect::<Vec<_>>(),
+            })
+        })
+        .collect();
+
+    let listeners: Vec<Value> = row
+        .QuestListenerParams
+        .iter()
+        .filter(|listener| listener.Listener != 0)
+        .map(|listener| {
+            let mut entry = json!({
+                "listener": listener.Listener,
+                "spawn_sequence": listener.ActorSpawnSeq,
+                "despawn_sequence": listener.ActorDespawnSeq,
+                "quest_uint8a": listener.QuestUInt8A,
+                "condition_type": listener.ConditionType,
+                "condition_value": listener.ConditionValue,
+                "condition_operator": listener.ConditionOperator,
+                "behavior": listener.Behavior,
+                "visible": listener.VisibleBool,
+                "condition": listener.ConditionBool,
+                "item": listener.ItemBool,
+                "announce": listener.AnnounceBool,
+                "behavior_bool": listener.BehaviorBool,
+                "accept": listener.AcceptBool,
+                "qualified": listener.QualifiedBool,
+                "can_target": listener.CanTargetBool,
+            });
+            if let Some(label) = data.describe_value("listener", listener.Listener) {
+                entry["label"] = json!(label);
+            }
+            entry
+        })
+        .collect();
+
+    Some(json!({
+        "quest_id": row_id - QuestSheet::STARTING_ROW,
+        "event_id": row_id,
+        "script": row.Id,
+        "name": row.Name,
+        "level": row.ClassJobLevel[0],
+        "journal_genre": row.JournalGenre,
+        "previous_quests": row.PreviousQuest.iter().filter(|x| **x != 0).map(|x| x - QuestSheet::STARTING_ROW).collect::<Vec<_>>(),
+        "issuer_start": named("ACTOR", row.IssuerStart),
+        "target_end": named("ACTOR", row.TargetEnd),
+        "client_script": quest_script_path(&row.Id),
+        "params": params,
+        "todos": todos,
+        "listeners": listeners,
+        "rewards": {
+            "gil": row.GilReward,
+            "exp_factor": row.ExpFactor,
+            "items": row.Reward.iter().zip(row.ItemCountReward.iter()).filter(|(id, _)| **id != 0).map(|(id, count)| json!({ "item": id, "count": count })).collect::<Vec<_>>(),
+            "optional_items": row.OptionalItemReward.iter().zip(row.OptionalItemCountReward.iter()).filter(|(id, _)| **id != 0).map(|(id, count)| json!({ "item": id, "count": count })).collect::<Vec<_>>(),
+        },
+    }))
+}
+
+/// Writes a listing of a compiled script next to it. Returns a one-line summary.
+fn write_listing(bytes: &[u8], destination: &Path, listing: bool) -> String {
+    match luab::parse(bytes) {
+        Ok(chunk) => {
+            let text = luab::disassemble(&chunk, listing);
+            if let Err(err) = std::fs::write(destination, &text) {
+                return format!("couldn't write {}: {err}", destination.display());
+            }
+            let scenes = luab::scene_functions(&chunk);
+            format!("{} scene functions", scenes.len())
+        }
+        Err(err) => {
+            // Still leave something useful behind: every readable string in the file.
+            let strings = printable_strings(bytes);
+            let _ = std::fs::write(
+                destination,
+                format!(
+                    "; Couldn't read this as Lua 5.1 bytecode: {err}\n; Printable strings found instead:\n{}\n",
+                    strings.join("\n")
+                ),
+            );
+            format!("unreadable bytecode ({err}), wrote its strings instead")
+        }
+    }
+}
+
+fn printable_strings(bytes: &[u8]) -> Vec<String> {
+    let mut found = Vec::new();
+    let mut current = Vec::new();
+    for byte in bytes {
+        if byte.is_ascii_graphic() || *byte == b' ' {
+            current.push(*byte);
+        } else {
+            if current.len() >= 4 {
+                found.push(String::from_utf8_lossy(&current).into_owned());
+            }
+            current.clear();
+        }
+    }
+    if current.len() >= 4 {
+        found.push(String::from_utf8_lossy(&current).into_owned());
+    }
+    found
+}
+
+fn dump_quests(data: &mut GameData, row_ids: &[u32], options: &Options) -> Result<(), String> {
+    std::fs::create_dir_all(&options.out)
+        .map_err(|err| format!("couldn't create {}: {err}", options.out.display()))?;
+
+    let mut index_lines = Vec::new();
+    for row_id in row_ids {
+        let Some(quest) = quest_json(data, *row_id) else {
+            eprintln!("Skipping {row_id}, it isn't in the Quest sheet");
+            continue;
+        };
+        let script = quest["script"].as_str().unwrap_or_default().to_string();
+        let name = quest["name"].as_str().unwrap_or_default().to_string();
+        let folder = options.out.join(&script);
+        std::fs::create_dir_all(&folder)
+            .map_err(|err| format!("couldn't create {}: {err}", folder.display()))?;
+
+        let json_text = serde_json::to_string_pretty(&quest).unwrap();
+        std::fs::write(folder.join("quest.json"), json_text)
+            .map_err(|err| format!("couldn't write quest.json: {err}"))?;
+
+        let script_status = match quest_script_path(&script) {
+            Some(game_path) => match data.resolver.read(&game_path) {
+                Ok(bytes) => {
+                    let _ = std::fs::write(folder.join(format!("{script}.luab")), &bytes);
+                    write_listing(
+                        &bytes,
+                        &folder.join(format!("{script}.txt")),
+                        options.listing,
+                    )
+                }
+                Err(err) => format!("no client script at {game_path} ({err:?})"),
+            },
+            None => "couldn't work out its client script path".to_string(),
+        };
+
+        let line = format!(
+            "{:>5}  {:<18} lv{:<3} {:<40} {script_status}",
+            row_id - QuestSheet::STARTING_ROW,
+            script,
+            quest["level"],
+            name
+        );
+        println!("{line}");
+        index_lines.push(line);
+    }
+
+    std::fs::write(options.out.join("index.txt"), index_lines.join("\n") + "\n")
+        .map_err(|err| format!("couldn't write index.txt: {err}"))?;
+    println!(
+        "\nWrote {} quests to {}",
+        index_lines.len(),
+        options.out.display()
+    );
+    Ok(())
+}
+
+fn run(args: &[String]) -> Result<(), String> {
+    let Some(command) = args.first() else {
+        return Err(USAGE.to_string());
+    };
+    let options = parse_options(&args[1..])?;
+
+    match command.as_str() {
+        "dump" => {
+            if options.positional.is_empty() {
+                return Err(USAGE.to_string());
+            }
+            let mut data = GameData::open(options.game.as_deref())?;
+            let row_ids = options
+                .positional
+                .iter()
+                .map(|query| data.resolve(query))
+                .collect::<Result<Vec<_>, _>>()?;
+            dump_quests(&mut data, &row_ids, &options)
+        }
+        "chain" => {
+            let [start, count] = options.positional.as_slice() else {
+                return Err(USAGE.to_string());
+            };
+            let count: usize = count
+                .parse()
+                .map_err(|_| format!("{count:?} isn't a number"))?;
+            let mut data = GameData::open(options.game.as_deref())?;
+            let start = data.resolve(start)?;
+            let row_ids = data.chain(start, count);
+            if row_ids.is_empty() {
+                return Err("no quests follow that one".to_string());
+            }
+            dump_quests(&mut data, &row_ids, &options)
+        }
+        "extract" => {
+            if options.positional.is_empty() {
+                return Err(USAGE.to_string());
+            }
+            let mut data = GameData::open(options.game.as_deref())?;
+            std::fs::create_dir_all(&options.out)
+                .map_err(|err| format!("couldn't create {}: {err}", options.out.display()))?;
+            for game_path in &options.positional {
+                let bytes = data
+                    .resolver
+                    .read(game_path)
+                    .map_err(|err| format!("couldn't read {game_path}: {err:?}"))?;
+                let file_name = Path::new(game_path)
+                    .file_name()
+                    .map(|name| name.to_string_lossy().into_owned())
+                    .unwrap_or_else(|| "file".to_string());
+                let destination = options.out.join(&file_name);
+                std::fs::write(&destination, &bytes)
+                    .map_err(|err| format!("couldn't write {}: {err}", destination.display()))?;
+                let mut summary = String::new();
+                if file_name.ends_with(".luab") {
+                    let listing_path = destination.with_extension("txt");
+                    summary = format!(
+                        ", {}",
+                        write_listing(&bytes, &listing_path, options.listing)
+                    );
+                }
+                println!("{game_path} -> {}{summary}", destination.display());
+            }
+            Ok(())
+        }
+        "disasm" => {
+            let [file] = options.positional.as_slice() else {
+                return Err(USAGE.to_string());
+            };
+            let bytes =
+                std::fs::read(file).map_err(|err| format!("couldn't read {file}: {err}"))?;
+            let chunk = luab::parse(&bytes)?;
+            print!("{}", luab::disassemble(&chunk, options.listing));
+            Ok(())
+        }
+        "help" | "--help" | "-h" => {
+            println!("{USAGE}");
+            Ok(())
+        }
+        other => Err(format!("unknown command {other:?}\n\n{USAGE}")),
+    }
+}
+
+fn main() {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    if let Err(err) = run(&args) {
+        eprintln!("{err}");
+        std::process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn script_paths() {
+        assert_eq!(
+            quest_script_path("XxaFst034_03854").as_deref(),
+            Some("game_script/quest/038/XxaFst034_03854.luab")
+        );
+        assert_eq!(
+            quest_script_path("SubFst005_00028").as_deref(),
+            Some("game_script/quest/000/SubFst005_00028.luab")
+        );
+        assert_eq!(quest_script_path("bad"), None);
+    }
+
+    #[test]
+    fn options() {
+        let args: Vec<String> = ["123", "--out", "somewhere", "--listing", "456"]
+            .iter()
+            .map(|x| x.to_string())
+            .collect();
+        let options = parse_options(&args).unwrap();
+        assert_eq!(options.out, PathBuf::from("somewhere"));
+        assert!(options.listing);
+        assert_eq!(options.positional, vec!["123", "456"]);
+    }
+}

@@ -36,6 +36,7 @@
   - [Sending Captures](packets/sending_captures.md)
   - [Opcodes](opcodes.md)
 - [Events](scripting/scripter.md)
+  - [Quest Dumps](scripting/questdump.md)
 
 # Project
 - [Acceptable Usage](acceptable_usage.md)

@@ -1,0 +1,13 @@
+[package]
+name = "kawari-questdump"
+edition.workspace = true
+version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+icarus = { workspace = true, features = ["ENpcResident", "EObjName", "BNpcName"] }
+kawari = { path = "../../core" }
+physis = { workspace = true }
+serde_json = { workspace = true }

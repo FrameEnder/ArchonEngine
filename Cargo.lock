@@ -850,6 +850,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "kawari-questdump"
+version = "7.56.1"
+dependencies = [
+ "icarus",
+ "kawari",
+ "physis",
+ "serde_json",
+]
+
+[[package]]
 name = "kawari-run"
 version = "7.56.1"
 dependencies = [
