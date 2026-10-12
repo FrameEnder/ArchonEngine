@@ -8,6 +8,14 @@ use kawari::common::{HandlerId, HandlerType};
 
 /// The sequence a quest is in when it's ready to be turned in.
 pub const SEQUENCE_FINISH: u8 = 0xFF;
+
+/// Each city-state's opening area, the real territory it's a copy of, and the quests that move the player there.
+/// Accepting Close to Home (any class variant) moves the player out of the opening, see its scripts.
+/// TODO: Add Limsa Lominsa and Ul'dah once their real territories are confirmed.
+const OPENING_EXITS: &[(u16, u16, &[u16])] = &[
+    // Gridania opening -> New Gridania, via Close to Home (Lancer, Archer, Conjurer)
+    (183, 132, &[85, 123, 124]),
+];
 use kawari::{
     constants::COMPLETED_QUEST_BITMASK_SIZE,
     ipc::zone::{
@@ -17,6 +25,30 @@ use kawari::{
 };
 
 impl ZoneConnection {
+    /// Whether the player has this quest, either active or completed.
+    pub fn has_quest(&self, quest_id: u16) -> bool {
+        self.player_data
+            .quest
+            .active
+            .0
+            .iter()
+            .any(|quest| quest.id == quest_id)
+            || self.player_data.quest.completed.contains(quest_id as u32)
+    }
+
+    /// If the player is logging into an opening area they've already left (e.g. because the server stopped before it
+    /// saved their zone), returns the real territory they belong in. Their position stays the same, like retail's
+    /// seamless transition.
+    pub fn opening_exit_zone(&self) -> Option<u16> {
+        let zone_id = self.player_data.volatile.zone_id as u16;
+        OPENING_EXITS
+            .iter()
+            .find(|(opening_zone, _, quests)| {
+                *opening_zone == zone_id && quests.iter().any(|quest| self.has_quest(*quest))
+            })
+            .map(|(_, real_zone, _)| *real_zone)
+    }
+
     /// Converts our stored quest into what the client expects.
     fn active_quest_entry(quest: &PersistentQuest) -> ActiveQuest {
         ActiveQuest {

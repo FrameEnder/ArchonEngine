@@ -141,31 +141,22 @@ OPENING_QUEST_GRIDANIA = 39 -- Coming to Gridania
 OPENING_QUEST_LIMSA = 107 -- Coming to Limsa Lominsa
 OPENING_QUEST_ULDAH = 594 -- Coming to Ul'dah
 
--- The opening quest for this player's starting city
-function openingQuest(player)
-    if player.city_state == 1 then
-        return OPENING_QUEST_LIMSA
-    elseif player.city_state == 2 then
-        return OPENING_QUEST_GRIDANIA
-    elseif player.city_state == 3 then
-        return OPENING_QUEST_ULDAH
-    end
-end
-
--- Whether the opening is over, i.e. the opening quest has been turned in. From then on the city's opening
--- boundaries (the guards turning you back) no longer apply.
-function isOpeningComplete(player)
-    local quest = openingQuest(player)
-    return quest ~= nil and player:has_quest(quest) and player:get_quest_sequence(65536 + quest) == nil
-end
-
 -- Determine the opening sequence of this player
 function determineSequence(player, cutscene)
     if not player:has_seen_cutscene(cutscene) then
         return OPENING_SEQ_0
     end
 
-    if not player:has_quest(openingQuest(player)) then
+    local quest
+    if player.city_state == 1 then
+        quest = OPENING_QUEST_LIMSA
+    elseif player.city_state == 2 then
+        quest = OPENING_QUEST_GRIDANIA
+    elseif player.city_state == 3 then
+        quest = OPENING_QUEST_ULDAH
+    end
+
+    if not player:has_quest(quest) then
        return OPENING_SEQ_1
     end
 
@@ -332,29 +323,4 @@ function onAetheryteAttuned(player, aetheryte_id)
             end
         end
     end
-end
-
--- Accepting Close to Home moves the player out of their city's opening area (a separate territory, e.g. 183 for
--- Gridania) into the real city. If they ever end up back in the opening area after that, say because the server was
--- stopped before it saved, the opening scripts call this to send them back to the real city at the same spot.
--- TODO: Add Limsa Lominsa and Ul'dah once their real territories are confirmed from their Close to Home quests.
-OPENING_EXITS = {
-    [2] = { zone = 132, quests = CLOSE_TO_HOME_QUESTS }, -- Gridania -> New Gridania
-}
-
-function leaveOpeningAreaIfDone(player)
-    local exit = OPENING_EXITS[player.city_state]
-    if exit == nil then
-        return false
-    end
-
-    for _, quest_id in ipairs(exit.quests) do
-        if player:has_quest(quest_id - 65536) then
-            local position = player.position
-            player:change_territory(exit.zone, { x = position.x, y = position.y, z = position.z }, player.rotation)
-            return true
-        end
-    end
-
-    return false
 end
