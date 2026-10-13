@@ -24,12 +24,17 @@ WAVES = {
 
 -- The quest moves to this sequence when the battle is won.
 QUEST_SEQUENCE_AFTER_WIN = 2
+-- How many updates (half a second each) to wait after the player falls before sending them out.
+FAIL_DELAY_UPDATES = 6
 
 -- Enemies still standing, by layout ID, and the order they arrived in.
 local remaining = {}
 local arrived = {}
 local next_wave = 1
-local won = false
+-- Set once the battle is won or lost.
+local over = false
+-- Counts down after the player falls, see onUpdate.
+local fail_in = nil
 
 function spawnEnemy(director, id)
     remaining[id] = true
@@ -86,6 +91,18 @@ end
 
 -- health: the health (in percent) of every living NPC, by layout ID
 function onUpdate(director, health)
+    if fail_in ~= nil then
+        fail_in = fail_in - 1
+        if fail_in <= 0 then
+            fail_in = nil
+            director:fail_quest_battle()
+        end
+        return
+    end
+    if over then
+        return
+    end
+
     local boss_health = health[BNPC_BOSS]
     if boss_health == nil then
         return
@@ -103,14 +120,25 @@ function onActorDeath(director, layout_id, position)
     end
     remaining[layout_id] = nil
 
+    if over then
+        return
+    end
+
     if next(remaining) == nil then
-        if not won then
-            won = true
-            director:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN)
-        end
+        over = true
+        director:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN)
         return
     end
 
     -- Whoever the allies were fighting may be gone, so point them at the next one.
     alliesAttack(director)
+end
+
+-- Losing sends you back to where you entered, still on the same step of the quest, so you can try again.
+function onPlayerDeath(director)
+    if over then
+        return
+    end
+    over = true
+    fail_in = FAIL_DELAY_UPDATES
 end

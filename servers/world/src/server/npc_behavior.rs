@@ -28,6 +28,9 @@ use crate::{
     },
 };
 
+/// How long an NPC that lost its target waits before sheathing its weapon.
+const NPC_SHEATHE_DELAY: Duration = Duration::from_secs(2);
+
 /// Updates NPCs in this instance.
 pub fn npc_behavior(
     network: Arc<Mutex<NetworkState>>,
@@ -137,6 +140,7 @@ pub fn npc_behavior(
     let mut newly_acquired_targets = Vec::new();
     let mut new_action_requests = Vec::new();
     let mut new_timeline_states = Vec::new();
+    let mut dropped_targets = Vec::new();
 
     // mut pass
     for (id, actor) in &mut instance.actors {
@@ -362,6 +366,9 @@ pub fn npc_behavior(
             }
 
             if reset_target {
+                if *state == NpcState::Hate {
+                    dropped_targets.push(*id);
+                }
                 *current_target = None;
                 *state = NpcState::natural_state_of(spawn);
                 spawn.common.target_id = ObjectTypeId::default();
@@ -452,6 +459,16 @@ pub fn npc_behavior(
         }
     }
 
+    // Those that lost their target sheathe their weapon, unless they find another one in the meantime.
+    for id in dropped_targets {
+        instance.insert_task(
+            ClientId::default(),
+            id,
+            NPC_SHEATHE_DELAY,
+            QueuedTaskData::SheatheWeapon,
+        );
+    }
+
     // create hate list
     for (id, actor) in &instance.actors {
         if let NetworkedActor::Npc {
@@ -491,6 +508,17 @@ pub fn npc_behavior(
                         instance,
                         *id,
                         ActorControlCategory::SetBattle { battle: true },
+                    );
+
+                    // Draw their weapon, so they stay in their battle stance between attacks.
+                    network.send_ac_in_range_instance(
+                        instance,
+                        *id,
+                        ActorControlCategory::ToggleWeapon {
+                            shown: true,
+                            unk_flag: 1,
+                            unk2: 0,
+                        },
                     );
 
                     if let Some(director) = &mut instance.directors.first_mut() {

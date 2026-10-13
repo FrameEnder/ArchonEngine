@@ -399,6 +399,14 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
         director.on_actor_death(npc_id, position.unwrap());
     }
 
+    let is_player = matches!(
+        instance.find_actor(actor_id),
+        Some(NetworkedActor::Player { .. })
+    );
+    if is_player && let Some(director) = &mut instance.directors.first_mut() {
+        director.on_player_death();
+    }
+
     // If we're associated with a Fate, that's handled by a completely different system!
     if let Some(fate_id) = fate_id
         && let Some(fate) = instance.find_fate_by_id_mut(fate_id as u32)

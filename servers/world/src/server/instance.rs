@@ -81,6 +81,8 @@ pub enum QueuedTaskData {
     WarpToPopRange { id: u32 },
     /// Reset a player's action combo status.
     ResetCombo,
+    /// An NPC leaves its battle stance, if it still has nothing to fight.
+    SheatheWeapon,
     /// Respawn a new mob.
     RespawnMob { layout_id: u32 },
     /// Ends a FATE.

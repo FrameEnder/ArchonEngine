@@ -4254,6 +4254,19 @@ async fn process_server_msg(
                     );
                 }
             }
+            FromServer::QuestBattleFailed => {
+                // Zoning back in gives them a fresh spawn, which also brings them back to life.
+                connection
+                    .handle
+                    .send(ToServer::LeaveContent(
+                        connection.id,
+                        connection.player_data.character.actor_id,
+                        connection.old_zone_id,
+                        connection.old_position,
+                        connection.old_rotation,
+                    ))
+                    .await;
+            }
             FromServer::FishBite => {
                 let handler_id = HandlerId::new(HandlerType::Fishing, 1).0;
 

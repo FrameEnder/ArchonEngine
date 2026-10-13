@@ -107,6 +107,8 @@ pub enum LuaDirectorTask {
     CompleteQuestBattle {
         sequence: u8,
     },
+    /// Lose a quest battle, which sends the players back to where they entered it.
+    FailQuestBattle,
     /// Make a BNpc go after another BNpc (by layout ID), or after the player if there's no target.
     SetHate {
         layout_id: u32,
@@ -240,6 +242,10 @@ impl UserData for LuaDirector {
         methods.add_method_mut("complete_quest_battle", |_, this, sequence: u8| {
             this.tasks
                 .push(LuaDirectorTask::CompleteQuestBattle { sequence });
+            Ok(())
+        });
+        methods.add_method_mut("fail_quest_battle", |_, this, _: ()| {
+            this.tasks.push(LuaDirectorTask::FailQuestBattle);
             Ok(())
         });
         methods.add_method_mut(
@@ -401,6 +407,37 @@ impl DirectorData {
         };
         if let Err(err) = run_script() {
             tracing::warn!("Syntax error during onEventActionCast: {err:?}");
+        }
+    }
+
+    /// Called when a player in this instance dies, if the script has `onPlayerDeath`.
+    pub fn on_player_death(&mut self) {
+        if self
+            .lua
+            .0
+            .globals()
+            .get::<Function>("onPlayerDeath")
+            .is_err()
+        {
+            return;
+        }
+
+        let mut run_script = || {
+            let mut lua_director = self.create_lua_director();
+            let err = self.lua.0.scope(|scope| {
+                let data = scope.create_userdata_ref_mut(&mut lua_director)?;
+
+                let func: Function = self.lua.0.globals().get("onPlayerDeath")?;
+
+                func.call::<()>(data)?;
+
+                Ok(())
+            });
+            self.apply_lua_director(lua_director);
+            err
+        };
+        if let Err(err) = run_script() {
+            tracing::warn!("Syntax error during onPlayerDeath: {err:?}");
         }
     }
 
@@ -931,6 +968,15 @@ pub fn director_tick(
                     ObjectId::default(),
                     instance,
                     FromServer::QuestBattleComplete(director_id, quest_id, *sequence),
+                    DestinationNetwork::ZoneClients,
+                );
+            }
+            LuaDirectorTask::FailQuestBattle => {
+                let mut network = network.lock();
+                network.send_to_instance(
+                    ObjectId::default(),
+                    instance,
+                    FromServer::QuestBattleFailed,
                     DestinationNetwork::ZoneClients,
                 );
             }

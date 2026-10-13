@@ -195,6 +195,8 @@ pub enum FromServer {
     FishBite,
     /// The quest battle was won: its director, and the quest and sequence it advances.
     QuestBattleComplete(HandlerId, u32, u8),
+    /// The quest battle was lost, send them back to where they entered it.
+    QuestBattleFailed,
     /// An event action (the progress bar for examining things and such) finished casting during a quest event.
     QuestEventActionCast,
     /// Inform the client that another player has dismounted.
