@@ -301,6 +301,31 @@ impl DirectorData {
         }
     }
 
+    /// Called every server tick for scripts that define `onUpdate`, with the health (in percent) of every living NPC
+    /// by its layout ID.
+    pub fn update(&mut self, npc_health: &HashMap<u32, u32>) {
+        let Ok(func) = self.lua.0.globals().get::<Function>("onUpdate") else {
+            return;
+        };
+
+        let mut lua_director = self.create_lua_director();
+        let err = self.lua.0.scope(|scope| {
+            let data = scope.create_userdata_ref_mut(&mut lua_director)?;
+            let health = self
+                .lua
+                .0
+                .create_table_from(npc_health.iter().map(|(k, v)| (*k, *v)))?;
+
+            func.call::<()>((data, health))?;
+
+            Ok(())
+        });
+        self.apply_lua_director(lua_director);
+        if let Err(err) = err {
+            tracing::warn!("Syntax error during onUpdate: {err:?}");
+        }
+    }
+
     /// Called when the player is ready for the content to begin, after its opening cutscene.
     pub fn commence(&mut self) {
         let mut run_script = || {
@@ -554,12 +579,43 @@ impl DirectorData {
     }
 }
 
+/// Calls the director's `onUpdate` with the health of every living NPC.
+fn update_director(instance: &mut Instance) {
+    let npc_health: HashMap<u32, u32> = instance
+        .actors
+        .values()
+        .filter_map(|actor| match actor {
+            NetworkedActor::Npc { spawn, .. }
+                if spawn.common.health_points > 0 && spawn.common.max_health_points > 0 =>
+            {
+                Some((
+                    spawn.common.layout_id,
+                    spawn.common.health_points * 100 / spawn.common.max_health_points,
+                ))
+            }
+            _ => None,
+        })
+        .collect();
+    if let Some(director) = instance.directors.first_mut() {
+        director.update(&npc_health);
+    }
+}
+
 /// Perform any queued director tasks
 pub fn director_tick(
     network: Arc<Mutex<NetworkState>>,
     instance: &mut Instance,
     game_data: Arc<Mutex<GameData>>,
 ) {
+    // Let the script see how the fight is going, if it wants to
+    let wants_update = instance
+        .directors
+        .first()
+        .is_some_and(|x| x.lua.0.globals().get::<Function>("onUpdate").is_ok());
+    if wants_update {
+        update_director(instance);
+    }
+
     let tasks = if let Some(director) = &instance.directors.first() {
         director.tasks.clone()
     } else {
