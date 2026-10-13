@@ -1425,9 +1425,12 @@ async fn process_packet(
                                         x.1.id.handler_type() == HandlerType::Quest
                                     }) =>
                                 {
-                                    // During a quest, this is the client asking to open the quest battle prompt
-                                    // (YesNoQuestBattle.) It waits for this reply, Sapphire calls it EventBattleDialog
-                                    // and echoes the level and item level sync back.
+                                    // During a quest, this is a ServerRequestCallbackManager request: the quest battle
+                                    // prompt (YesNoQuestBattle) asking with command 10 and waiting for a reply.
+                                    // TODO: The client opens the prompt when given the payload 00000000 (tested with
+                                    // Kawari Probe), but which packet carries it is still unknown. This is Sapphire's
+                                    // EventBattleDialog, which the client ignores; it's kept so the retainer list isn't
+                                    // sent instead.
                                     connection
                                         .actor_control_self(
                                             ActorControlCategory::UnkPlayerStateRelated {
