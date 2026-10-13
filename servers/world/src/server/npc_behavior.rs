@@ -28,6 +28,9 @@ use crate::{
     },
 };
 
+/// How often NPCs auto-attack, in half-second ticks. This is the same rate as before, but counted per NPC.
+const NPC_AUTO_ATTACK_TICKS: i64 = (AUTO_ATTACK_RATE + 1) * 2;
+
 /// How long an NPC that lost its target waits before sheathing its weapon.
 const NPC_SHEATHE_DELAY: Duration = Duration::from_secs(2);
 
@@ -153,7 +156,8 @@ pub fn npc_behavior(
             last_position,
             timeline_position,
             timeline,
-            newly_hated_actor,
+            enmity,
+            autoattack_timing,
             currently_invulnerable,
             last_wander_timestamp,
             ..
@@ -173,13 +177,29 @@ pub fn npc_behavior(
                 }
             }
 
-            // Pick up any newly hated actors first.
-            if let Some(actor) = newly_hated_actor.take() {
+            // Go after whoever we hate the most (that's still around), sticking with our current target on a tie.
+            enmity.retain(|actor, _| enemies.iter().any(|(id, _, _)| id == actor));
+            let current_actor = match current_target {
+                Some(NpcTarget::Actor(actor)) if *state == NpcState::Hate => Some(*actor),
+                _ => None,
+            };
+            let most_hated = enmity
+                .iter()
+                .max_by_key(|(actor, amount)| (**amount, Some(**actor) == current_actor))
+                .map(|(actor, _)| *actor);
+            if let Some(actor) = most_hated
+                && Some(actor) != current_actor
+            {
                 *state = NpcState::Hate;
                 *current_target = Some(NpcTarget::Actor(actor));
 
                 spawn.common.target_id.object_id = actor;
                 newly_acquired_targets.push(*id);
+
+                // Head for the new target from where we are, instead of finishing the old path.
+                current_path.clear();
+                *current_path_lerp = 0.0;
+                *autoattack_timing = 0;
             }
 
             if current_target.is_none() {
@@ -200,6 +220,8 @@ pub fn npc_behavior(
 
                         // TODO: hardcoded sensing range
                         if Vec3A::distance(position.0, spawn.common.position.0) < 15.0 {
+                            enmity.entry(*target_id).or_insert(1);
+                            *autoattack_timing = 0;
                             *state = NpcState::Hate;
                             *current_target = Some(NpcTarget::Actor(*target_id));
 
@@ -284,6 +306,9 @@ pub fn npc_behavior(
                             .into();
 
                         *current_path = path.clone();
+                        // Start the new path from where we actually are.
+                        *last_position = Some(current_pos);
+                        *current_path_lerp = 0.0;
 
                         // Drop the current target if we can't path to them too
                         if path.is_empty() {
@@ -346,23 +371,26 @@ pub fn npc_behavior(
                         }
                     }
                 }
+            }
 
-                if spawn.common.target_id.object_id.is_valid() && timeline.autoattack_action_id != 0
-                {
-                    // Schedule any pending auto-attacks:
-                    let should_auto_attack =
-                        (timeline_position_seconds % (AUTO_ATTACK_RATE + 1)) == AUTO_ATTACK_RATE;
-                    if should_auto_attack {
-                        let request = ActionRequest {
-                            action_id: timeline.autoattack_action_id,
-                            action_type: ActionType::Action,
-                            rotation1: spawn.common.rotation,
-                            target: spawn.common.target_id,
-                            ..Default::default()
-                        };
-                        new_action_requests.push((*id, request, 0.0));
-                    }
-                }
+            // Auto-attack every few seconds, counting from when we picked up our target.
+            if *state == NpcState::Hate {
+                *autoattack_timing += 1;
+            }
+            if can_take_action
+                && spawn.common.target_id.object_id.is_valid()
+                && timeline.autoattack_action_id != 0
+                && *autoattack_timing >= NPC_AUTO_ATTACK_TICKS
+            {
+                *autoattack_timing = 0;
+                let request = ActionRequest {
+                    action_id: timeline.autoattack_action_id,
+                    action_type: ActionType::Action,
+                    rotation1: spawn.common.rotation,
+                    target: spawn.common.target_id,
+                    ..Default::default()
+                };
+                new_action_requests.push((*id, request, 0.0));
             }
 
             if reset_target {

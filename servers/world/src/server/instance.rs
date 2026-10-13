@@ -335,7 +335,8 @@ impl Instance {
                 spawn,
                 timeline,
                 timeline_position: 0,
-                newly_hated_actor: None,
+                enmity: HashMap::new(),
+                autoattack_timing: 0,
                 currently_invulnerable: false,
                 status_effects: StatusEffects::default(),
                 last_wander_timestamp: Instant::now()

@@ -1,4 +1,8 @@
-use std::{collections::VecDeque, sync::Arc, time::Instant};
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::Arc,
+    time::Instant,
+};
 
 use crate::{
     ClientId, FromServer, GameData, StatusEffects,
@@ -103,8 +107,10 @@ pub enum NetworkedActor {
         timeline: Timeline,
         /// In half-seconds (the current server logic tick.)
         timeline_position: i64,
-        /// Used for aggros outside of the server logic loop (such as regular attacks.)
-        newly_hated_actor: Option<ObjectId>,
+        /// How much this NPC hates each actor (damage dealt to it, and so on.) It goes after whoever it hates most.
+        enmity: HashMap<ObjectId, u32>,
+        /// In half-seconds since it last auto-attacked (or picked up its target.)
+        autoattack_timing: i64,
         /// Whether this NPC is currently invulnerable to all attacks.
         currently_invulnerable: bool,
         /// This actor's status effects.
@@ -138,6 +144,13 @@ impl NetworkedActor {
             NetworkedActor::Player { spawn, .. } => &mut spawn.common,
             NetworkedActor::Npc { spawn, .. } => &mut spawn.common,
             _ => unreachable!(),
+        }
+    }
+
+    /// Makes this NPC hate `actor_id` a bit more. Does nothing for other actors.
+    pub fn add_enmity(&mut self, actor_id: ObjectId, amount: u32) {
+        if let NetworkedActor::Npc { enmity, .. } = self {
+            *enmity.entry(actor_id).or_default() += amount.max(1);
         }
     }
 

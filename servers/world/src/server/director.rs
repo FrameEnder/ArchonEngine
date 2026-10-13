@@ -109,10 +109,11 @@ pub enum LuaDirectorTask {
     },
     /// Lose a quest battle, which sends the players back to where they entered it.
     FailQuestBattle,
-    /// Make a BNpc go after another BNpc (by layout ID), or after the player if there's no target.
+    /// Make a BNpc hate another BNpc (by layout ID), or the player if there's no target, by this much enmity.
     SetHate {
         layout_id: u32,
         target: Option<u32>,
+        amount: u32,
     },
     MapEffect {
         index: u32,
@@ -250,9 +251,12 @@ impl UserData for LuaDirector {
         });
         methods.add_method_mut(
             "set_hate",
-            |_, this, (layout_id, target): (u32, Option<u32>)| {
-                this.tasks
-                    .push(LuaDirectorTask::SetHate { layout_id, target });
+            |_, this, (layout_id, target, amount): (u32, Option<u32>, Option<u32>)| {
+                this.tasks.push(LuaDirectorTask::SetHate {
+                    layout_id,
+                    target,
+                    amount: amount.unwrap_or(1),
+                });
                 Ok(())
             },
         );
@@ -980,7 +984,11 @@ pub fn director_tick(
                     DestinationNetwork::ZoneClients,
                 );
             }
-            LuaDirectorTask::SetHate { layout_id, target } => {
+            LuaDirectorTask::SetHate {
+                layout_id,
+                target,
+                amount,
+            } => {
                 let target_id = match target {
                     Some(target) => instance.find_npc(*target).map(|(id, _)| id),
                     None => instance
@@ -1001,11 +1009,8 @@ pub fn director_tick(
                 };
 
                 // Picked up on the next NPC tick, the same way as being attacked.
-                if let Some(NetworkedActor::Npc {
-                    newly_hated_actor, ..
-                }) = instance.find_actor_mut(actor_id)
-                {
-                    *newly_hated_actor = Some(target_id);
+                if let Some(actor) = instance.find_actor_mut(actor_id) {
+                    actor.add_enmity(target_id, *amount);
                 }
             }
             LuaDirectorTask::PlayCutscene { cutscene_id } => {

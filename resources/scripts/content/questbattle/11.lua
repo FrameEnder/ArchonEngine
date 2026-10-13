@@ -14,6 +14,10 @@ BNPC_PAPALYMO = 3802272
 ALLIES = { BNPC_IDA, BNPC_PAPALYMO }
 
 -- The "B" enemies go after Ida and Papalymo, the "A" enemies after you.
+-- How much they hate their first target. Damage adds to this, so hitting a "B" enemy a few times pulls it to you.
+STARTING_ENMITY = 300
+-- How much Ida and Papalymo hate their target, so they stick with the boss (Sapphire's script does the same.)
+ALLY_ENMITY = 10000
 INITIAL_ENEMIES = { a = {}, b = { 4094218, 4094220 } }
 -- What arrives as the boss's health drops to 75%, 50% and 25%.
 WAVES = {
@@ -45,12 +49,12 @@ end
 function spawnEnemies(director, enemies)
     for _, id in ipairs(enemies.a) do
         spawnEnemy(director, id)
-        director:set_hate(id) -- the player
+        director:set_hate(id, nil, 1) -- the player
     end
     -- Split them between the two allies.
     for i, id in ipairs(enemies.b) do
         spawnEnemy(director, id)
-        director:set_hate(id, ALLIES[(i - 1) % #ALLIES + 1])
+        director:set_hate(id, ALLIES[(i - 1) % #ALLIES + 1], STARTING_ENMITY)
     end
 end
 
@@ -70,7 +74,7 @@ function alliesAttack(director)
 
     if target ~= nil then
         for _, ally in ipairs(ALLIES) do
-            director:set_hate(ally, target)
+            director:set_hate(ally, target, ALLY_ENMITY)
         end
     end
 end
@@ -83,7 +87,7 @@ function onCommence(director)
     director:spawn_bnpc(BNPC_PAPALYMO)
 
     spawnEnemy(director, BNPC_BOSS)
-    director:set_hate(BNPC_BOSS, BNPC_IDA)
+    director:set_hate(BNPC_BOSS, BNPC_IDA, STARTING_ENMITY)
     spawnEnemies(director, INITIAL_ENEMIES)
 
     alliesAttack(director)

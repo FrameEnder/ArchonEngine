@@ -298,18 +298,21 @@ pub fn execute_action(
                 return;
             };
 
-            // aggro any NPCs
+            // aggro any NPCs, more so the more damage this does
             {
                 let Some(actor) = instance.find_actor_mut(request.target.object_id) else {
                     return;
                 };
 
-                if let NetworkedActor::Npc {
-                    newly_hated_actor, ..
-                } = actor
-                {
-                    *newly_hated_actor = Some(from_actor_id);
-                }
+                let damage: u32 = effects_builder
+                    .effects
+                    .iter()
+                    .filter_map(|effect| match effect.0 {
+                        TargetEffectKind::Damage { amount, .. } => Some(amount as u32),
+                        _ => None,
+                    })
+                    .sum();
+                actor.add_enmity(from_actor_id, damage);
             }
 
             // Handle invulnerability
@@ -992,12 +995,10 @@ fn apply_area_of_effect(
 
             let mut invulnerable = false;
             if let NetworkedActor::Npc {
-                newly_hated_actor,
                 currently_invulnerable,
                 ..
             } = actor
             {
-                *newly_hated_actor = Some(from_actor_id);
                 invulnerable = *currently_invulnerable;
             }
 
@@ -1017,6 +1018,7 @@ fn apply_area_of_effect(
                     }
                 })
                 .sum();
+            actor.add_enmity(from_actor_id, total);
 
             if !invulnerable {
                 let common_spawn = actor.get_common_spawn_mut();
