@@ -563,6 +563,7 @@ impl GameData {
                 for (id, row) in self.item_sheet.into_iter().flatten_subrows() {
                     if row
                         .Name
+                        .to_string() // Item names do not use SeString features
                         .to_lowercase()
                         .contains(&query_item_name.to_lowercase())
                     {
@@ -576,7 +577,7 @@ impl GameData {
         if let Some((matched_row, item_id)) = result {
             let item_info = ItemRow {
                 id: item_id,
-                name: matched_row.Name,
+                name: matched_row.Name.to_string(), // Item names do not use SeString features
                 price_mid: matched_row.PriceMid,
                 price_low: matched_row.PriceLow,
                 equip_category: EquipSlotCategory::from_repr(matched_row.EquipSlotCategory)
@@ -640,7 +641,7 @@ impl GameData {
             WarpLogicSheet::read_from(&mut self.resource, config.world.language()).unwrap();
         let warp_logic_row = warp_logic_sheet.row(warp_logic_id as u32).unwrap();
 
-        warp_logic_row.WarpName
+        warp_logic_row.WarpName.to_string() // This shouldn't use SeString features
     }
 
     pub fn get_aetheryte(
@@ -695,14 +696,14 @@ impl GameData {
 
         let offset = match which {
             TerritoryNameKind::Internal => {
-                return Some(row.Name);
+                return Some(row.Name.to_string()); // This shouldn't use use SeString features
             }
             TerritoryNameKind::Region => row.PlaceNameRegion,
             TerritoryNameKind::Place => row.PlaceName,
         };
 
         let row = self.place_name_sheet.row(offset as u32)?;
-        Some(row.Name)
+        Some(row.Name.to_string()) // This shouldn't use use SeString features
     }
 
     /// Turn an equip slot category id into a slot for the equipped inventory
@@ -1068,7 +1069,7 @@ impl GameData {
     pub fn get_custom_talk_name(&mut self, custom_talk_id: u32) -> String {
         let row = self.custom_talk_sheet.row(custom_talk_id).unwrap();
 
-        row.Name
+        row.Name.to_string() // This shouldn't use use SeString features
     }
 
     /// Returns the internal script name for this Opening event.
@@ -1076,7 +1077,7 @@ impl GameData {
         let sheet = OpeningSheet::read_from(&mut self.resource, Language::None).unwrap();
         let row = sheet.row(opening_id).unwrap();
 
-        row.Name
+        row.Name.to_string() // This shouldn't use use SeString features
     }
 
     /// Returns data useful for performing item actions.
@@ -1135,7 +1136,7 @@ impl GameData {
     pub fn get_quest_name(&mut self, quest_id: u32) -> String {
         let row = self.quest_sheet.row(quest_id).unwrap();
 
-        row.Id
+        row.Id.to_string() // This shouldn't use use SeString features
     }
 
     /// Returns the target event of a TopicSelect event.
@@ -1172,7 +1173,7 @@ impl GameData {
             .content_finder_condition_sheet
             .row(content_finder_row_id as u32)?;
 
-        Some(content_finder_row.ShortCode)
+        Some(content_finder_row.ShortCode.to_string()) // This shouldn't use use SeString features
     }
 
     /// Returns the DefaultTalk for a given FateShop and index.
@@ -1644,6 +1645,7 @@ impl GameData {
         for (id, row) in sheet.into_iter().flatten_subrows() {
             if row
                 .Singular
+                .to_string() // This shouldn't use use SeString features
                 .to_lowercase()
                 .contains(&mount_name.to_lowercase())
             {

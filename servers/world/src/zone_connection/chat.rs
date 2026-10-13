@@ -2,9 +2,9 @@
 
 use std::str::FromStr;
 
-use bstr::BString;
 use mlua::Function;
 use physis::equipment::EquipSlot;
+use physis::sestring::SeString;
 
 use crate::{
     Event, EventHandler, ItemInfoQuery, MessageInfo, ZoneConnection,
@@ -125,7 +125,7 @@ impl ZoneConnection {
     /// Returns true if the debug command is handled, otherwise false.
     pub async fn process_debug_commands(
         &mut self,
-        chat_message: &BString, // TODO: Replace this with an SEString
+        chat_message: &SeString, // TODO: Replace this with an SEString
         events: &mut Vec<(Box<dyn EventHandler>, Event)>,
     ) -> bool {
         if self.player_data.character.gm_rank == GameMasterRank::NormalUser {

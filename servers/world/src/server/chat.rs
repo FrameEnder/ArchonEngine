@@ -1,6 +1,5 @@
 use std::{sync::Arc, time::Duration};
 
-use bstr::BString;
 use kawari::{
     common::{
         DEBUG_COMMAND_TRIGGER, DirectorEvent, EOBJ_EXIT, EventState, HandlerId, HandlerType,
@@ -12,6 +11,7 @@ use kawari::{
     },
 };
 use parking_lot::Mutex;
+use physis::sestring::SeString;
 
 use crate::{
     ClientId, FromServer, GameData, ToServer,
@@ -153,7 +153,7 @@ fn process_debug_commands(
     lua: Arc<Mutex<KawariLua>>,
     from_id: ClientId,
     from_actor_id: ObjectId,
-    chat_message: &BString,
+    chat_message: &SeString,
 ) -> bool {
     // TODO: Ensure the message has no SEString macros (e.g. auto-translate phrases)?
     let chat_message = chat_message.to_string();

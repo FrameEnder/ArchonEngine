@@ -1,14 +1,13 @@
 use super::{WorldDatabase, models, schema::mail::dsl::*, unixepoch};
 use crate::inventory::GenericStorage;
-use bstr::BString;
 use diesel::prelude::*;
 use kawari::{
     common::WORLD_NAME,
     ipc::zone::{
-        AttachedItemInfo, LETTER_MSG_MAX_LENGTH, Letter, LetterPreview, LetterType,
-        MAX_MAIL_ATTACHMENTS_STORAGE, PREVIEW_MSG_MAX_LENGTH,
+        AttachedItemInfo, Letter, LetterPreview, LetterType, MAX_MAIL_ATTACHMENTS_STORAGE,
     },
 };
+use physis::sestring::SeString;
 
 impl WorldDatabase {
     /// Adds a letter from `my_content_id` to `their_content_id`'s mailbox. In reality, it's just a flat table with *everyone*'s mail.
@@ -17,7 +16,7 @@ impl WorldDatabase {
         my_content_id: u64,
         their_content_id: u64,
         letter_kind: kawari::ipc::zone::LetterType,
-        letter_message: BString,
+        letter_message: SeString,
         attachments: crate::inventory::GenericStorage<MAX_MAIL_ATTACHMENTS_STORAGE>,
     ) {
         let next_id = if let Ok(highest) = mail
@@ -35,8 +34,9 @@ impl WorldDatabase {
             .unwrap();
 
         // Before inserting the message, truncate it to the max length just in case.
-        let mut letter_message = letter_message;
-        letter_message.truncate(LETTER_MSG_MAX_LENGTH);
+        let letter_message = letter_message;
+        // TODO: How do we truncate a SeString safely?
+        // letter_message.truncate(LETTER_MSG_MAX_LENGTH);
 
         let letter = models::Mail {
             id: next_id,
@@ -45,7 +45,7 @@ impl WorldDatabase {
             timestamp: time,
             recipient_content_id: their_content_id as i64,
             sender_content_id: my_content_id as i64,
-            message: serde_json::to_string(&letter_message).unwrap(),
+            message: serde_json::to_string(&letter_message.as_bytes()).unwrap(),
             attached_items: serde_json::to_string(&attachments).unwrap(),
         };
 
@@ -87,10 +87,11 @@ impl WorldDatabase {
             };
 
             // Adjust the preview message to be no longer than PREVIEW_MSG_MAX_LENGTH bytes.
-            let full_message: BString =
-                serde_json::from_str(&letter.message.clone()).unwrap_or_default();
+            let full_message: SeString =
+                SeString::parse(serde_json::from_str(&letter.message.clone()).unwrap_or_default());
             preview.message = full_message;
-            preview.message.truncate(PREVIEW_MSG_MAX_LENGTH);
+            // TODO: How do we truncate a SeString safely?
+            // preview.message.truncate(PREVIEW_MSG_MAX_LENGTH);
 
             let attachments: crate::inventory::GenericStorage<6> =
                 serde_json::from_str(&letter.attached_items).unwrap_or_default();
@@ -134,9 +135,10 @@ impl WorldDatabase {
             .unwrap();
 
         // The message body can be no longer than LETTER_MSG_MAX_LENGTH bytes. This is probably redundant due to insertion handling this, but if manual db edits are done, this should catch any issues.
-        let mut the_message: BString =
-            serde_json::from_str(&the_mail.message.clone()).unwrap_or_default();
-        the_message.truncate(LETTER_MSG_MAX_LENGTH);
+        let the_message: SeString =
+            SeString::parse(serde_json::from_str(&the_mail.message.clone()).unwrap_or_default());
+        // TODO: How do we truncate a SeString safely?
+        // the_message.truncate(LETTER_MSG_MAX_LENGTH);
 
         let the_letter = Letter {
             sender_content_id: the_mail.sender_content_id as u64,

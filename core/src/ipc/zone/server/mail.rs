@@ -1,8 +1,7 @@
 use binrw::binrw;
-use bstr::BString;
+use physis::sestring::SeString;
 use strum_macros::FromRepr;
 
-use crate::common::{read_sestring, write_sestring};
 use crate::ipc::zone::server::{
     CHAR_NAME_MAX_LENGTH, read_bool_from, read_string, write_bool_as, write_string,
 };
@@ -56,9 +55,7 @@ pub struct LetterPreview {
     /// A preview of this message, truncated to 60 characters (fewer if multi-byte characters are used).
     #[brw(pad_size_to = PREVIEW_MSG_MAX_LENGTH + 5)] // There are 5 bytes of padding after this string (pad_after is not the correct thing to use here!)
     #[br(count = PREVIEW_MSG_MAX_LENGTH)]
-    #[br(map = read_sestring)]
-    #[bw(map = write_sestring)]
-    pub message: BString, // NOTE: This is a BString due to the fact that SEString macros can appear in its contents.
+    pub message: SeString,
 }
 
 impl LetterPreview {
@@ -99,8 +96,6 @@ pub struct Letter {
     /// The message body.
     #[brw(pad_size_to = LETTER_MSG_MAX_LENGTH)]
     #[br(count = LETTER_MSG_MAX_LENGTH)]
-    #[br(map = read_sestring)]
-    #[bw(map = write_sestring)]
     #[brw(pad_after = 3)]
-    pub message: BString, // NOTE: This is a BString due to the fact that SEString macros can appear in its contents.
+    pub message: SeString,
 }

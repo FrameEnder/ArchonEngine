@@ -1,6 +1,6 @@
 use binrw::binrw;
-use bstr::BString;
 use kawari_core_macro::opcode_data;
+use physis::sestring::SeString;
 
 mod action_request;
 pub use crate::ipc::zone::client::action_request::{ActionRequest, ActionType};
@@ -47,8 +47,8 @@ pub use super::social_list::{
 use super::config::Config;
 use crate::common::{
     CHAR_NAME_MAX_LENGTH, ClientLanguage, HandlerId, HouseId, JumpState, MoveAnimationState,
-    MoveAnimationType, ObjectId, Position, read_bool_from, read_sestring, read_string,
-    write_bool_as, write_sestring, write_string,
+    MoveAnimationType, ObjectId, Position, read_bool_from, read_string, write_bool_as,
+    write_string,
 };
 use crate::opcodes::ClientZoneIpcType;
 use crate::packet::ServerIpcSegmentHeader;
@@ -555,10 +555,8 @@ pub enum ClientZoneIpcData {
         /// The message to send. In-game it's only 200 characters, but it's larger than 201 bytes due to multi-byte characters.
         #[brw(pad_size_to = LETTER_MSG_MAX_LENGTH)]
         #[br(count = LETTER_MSG_MAX_LENGTH)]
-        #[br(map = read_sestring)]
-        #[bw(map = write_sestring)]
         #[brw(pad_after = 7)] // Seems to just be padding/garbage
-        message: BString, // NOTE: This is a BString due to the fact that SEString macros can appear in its contents.
+        message: SeString,
     },
     ViewLetter {
         /// The sender's content id.
