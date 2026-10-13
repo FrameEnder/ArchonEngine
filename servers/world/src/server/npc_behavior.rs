@@ -8,9 +8,8 @@ use std::{
 use glam::Vec3A;
 use kawari::{
     common::{
-        AUTO_ATTACK_RATE, JumpState, MINIMUM_PATHFINDING_DISTANCE, MOB_WANDER_TIME,
-        MoveAnimationState, MoveAnimationType, ObjectId, ObjectTypeId, ObjectTypeKind, Position,
-        TimepointData,
+        AUTO_ATTACK_RATE, JumpState, MOB_WANDER_TIME, MoveAnimationState, MoveAnimationType,
+        ObjectId, ObjectTypeId, ObjectTypeKind, Position, TimepointData,
     },
     ipc::zone::{
         ActionRequest, ActionType, ActorControlCategory, CharacterDataFlag, ServerZoneIpcData,
@@ -58,6 +57,7 @@ pub fn npc_behavior(
             spawn,
             last_position,
             state,
+            timeline,
             ..
         } = actor
             && let Some(current_target) = current_target
@@ -84,7 +84,7 @@ pub fn npc_behavior(
 
             let distance = Vec3A::distance(spawn.common.position.0, target_pos);
             let min_distance = if use_min_distance {
-                MINIMUM_PATHFINDING_DISTANCE
+                timeline.attack_range
             } else {
                 0.0
             };
@@ -144,6 +144,7 @@ pub fn npc_behavior(
     let mut new_action_requests = Vec::new();
     let mut new_timeline_states = Vec::new();
     let mut dropped_targets = Vec::new();
+    let mut stance_refreshes = Vec::new();
 
     // mut pass
     for (id, actor) in &mut instance.actors {
@@ -292,11 +293,11 @@ pub fn npc_behavior(
                     let distance = Vec3A::distance(spawn.common.position.0, target_pos);
                     let needs_repath = match current_target {
                         NpcTarget::Actor(_) => {
-                            current_path.is_empty() && distance > MINIMUM_PATHFINDING_DISTANCE
+                            current_path.is_empty() && distance > timeline.attack_range
                         }
                         NpcTarget::Position(_) => current_path.is_empty(),
                     };
-                    can_take_action = distance <= MINIMUM_PATHFINDING_DISTANCE;
+                    can_take_action = distance <= timeline.attack_range;
 
                     let current_pos = spawn.common.position.0;
                     if needs_repath {
@@ -383,6 +384,14 @@ pub fn npc_behavior(
                 && *autoattack_timing >= NPC_AUTO_ATTACK_TICKS
             {
                 *autoattack_timing = 0;
+                // Casters' "auto-attacks" are spells with a cast bar.
+                let cast_time;
+                {
+                    let mut game_data = game_data.lock();
+                    cast_time = game_data
+                        .get_casttime(timeline.autoattack_action_id)
+                        .unwrap_or(0);
+                }
                 let request = ActionRequest {
                     action_id: timeline.autoattack_action_id,
                     action_type: ActionType::Action,
@@ -390,7 +399,25 @@ pub fn npc_behavior(
                     target: spawn.common.target_id,
                     ..Default::default()
                 };
-                new_action_requests.push((*id, request, 0.0));
+                new_action_requests.push((*id, request, (cast_time as f32 * 100.0) / 1000.0));
+            } else if *state == NpcState::Hate
+                && (1..NPC_AUTO_ATTACK_TICKS).contains(autoattack_timing)
+                && timeline.autoattack_action_id != 0
+                && !newly_acquired_targets.contains(id)
+            {
+                // The client drops NPCs out of their battle stance after an attack, so draw their weapon again
+                // half a second after it lands (after the cast, for spells.)
+                let cast_ticks;
+                {
+                    let mut game_data = game_data.lock();
+                    let cast_time = game_data
+                        .get_casttime(timeline.autoattack_action_id)
+                        .unwrap_or(0) as i64; // in tenths of a second
+                    cast_ticks = (cast_time + 4) / 5;
+                }
+                if *autoattack_timing == cast_ticks + 1 {
+                    stance_refreshes.push(*id);
+                }
             }
 
             if reset_target {
@@ -485,6 +512,19 @@ pub fn npc_behavior(
             let mut network = network.lock();
             set_shared_group_timeline_state(instance, &mut network, actor_id, &states);
         }
+    }
+
+    for id in stance_refreshes {
+        let mut network = network.lock();
+        network.send_ac_in_range_instance(
+            instance,
+            id,
+            ActorControlCategory::ToggleWeapon {
+                shown: true,
+                unk_flag: 1,
+                unk2: 0,
+            },
+        );
     }
 
     // Those that lost their target sheathe their weapon, unless they find another one in the meantime.

@@ -14,6 +14,13 @@ pub struct Timeline {
     /// A series of actions (to play in sequence) on death.
     #[serde(default)]
     pub on_death: Vec<TimepointData>,
+    /// How close (in yalms) this NPC gets to its target before attacking, e.g. further away for casters.
+    #[serde(default = "default_attack_range")]
+    pub attack_range: f32,
+}
+
+fn default_attack_range() -> f32 {
+    crate::common::MINIMUM_PATHFINDING_DISTANCE
 }
 
 impl Timeline {
@@ -73,6 +80,7 @@ mod tests {
                 autoattack_action_id: 872,
                 timeline_always_plays: false,
                 on_death: Vec::default(),
+                attack_range: crate::common::MINIMUM_PATHFINDING_DISTANCE,
                 timepoints: vec![Timepoint {
                     time: 20,
                     data: TimepointData::Action { action_id: 872 }

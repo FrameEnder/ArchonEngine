@@ -11,12 +11,11 @@ START_ROTATION = 3.0
 BNPC_BOSS = 3802315
 BNPC_IDA = 3802271
 BNPC_PAPALYMO = 3802272
-ALLIES = { BNPC_IDA, BNPC_PAPALYMO }
 
--- The "B" enemies go after Ida and Papalymo, the "A" enemies after you.
--- How much they hate their first target. Damage adds to this, so hitting a "B" enemy a few times pulls it to you.
+-- Ida takes on the boss and Papalymo the adds. The boss and the "B" enemies go after them, the "A" enemies after you.
+-- How much enemies hate their first target. Damage adds to this, so hitting an enemy a few times pulls it to you.
 STARTING_ENMITY = 300
--- How much Ida and Papalymo hate their target, so they stick with the boss (Sapphire's script does the same.)
+-- How much more Ida and Papalymo hate each new target they're given, so they switch to it and stay on it.
 ALLY_ENMITY = 10000
 INITIAL_ENEMIES = { a = {}, b = { 4094218, 4094220 } }
 -- What arrives as the boss's health drops to 75%, 50% and 25%.
@@ -51,31 +50,39 @@ function spawnEnemies(director, enemies)
         spawnEnemy(director, id)
         director:set_hate(id, nil, 1) -- the player
     end
-    -- Split them between the two allies.
-    for i, id in ipairs(enemies.b) do
+    for _, id in ipairs(enemies.b) do
         spawnEnemy(director, id)
-        director:set_hate(id, ALLIES[(i - 1) % #ALLIES + 1], STARTING_ENMITY)
+        director:set_hate(id, BNPC_PAPALYMO, STARTING_ENMITY)
     end
 end
 
--- The allies go for the boss first, then whatever's left in the order it arrived.
-function alliesAttack(director)
-    local target = nil
-    if remaining[BNPC_BOSS] then
-        target = BNPC_BOSS
-    else
-        for _, id in ipairs(arrived) do
-            if remaining[id] then
-                target = id
-                break
-            end
+-- The oldest enemy still standing, leaving out the boss if asked.
+function oldestRemaining(skip_boss)
+    for _, id in ipairs(arrived) do
+        if remaining[id] and not (skip_boss and id == BNPC_BOSS) then
+            return id
         end
     end
+    return nil
+end
 
-    if target ~= nil then
-        for _, ally in ipairs(ALLIES) do
-            director:set_hate(ally, target, ALLY_ENMITY)
-        end
+-- Ida goes for the boss and Papalymo for the adds, oldest first. Either takes whatever's left once theirs are gone.
+local ally_priority = 0
+function alliesAttack(director)
+    local ida_target = nil
+    if remaining[BNPC_BOSS] then
+        ida_target = BNPC_BOSS
+    else
+        ida_target = oldestRemaining(false)
+    end
+    local papalymo_target = oldestRemaining(true) or ida_target
+
+    ally_priority = ally_priority + ALLY_ENMITY
+    if ida_target ~= nil then
+        director:set_hate(BNPC_IDA, ida_target, ally_priority)
+    end
+    if papalymo_target ~= nil then
+        director:set_hate(BNPC_PAPALYMO, papalymo_target, ally_priority)
     end
 end
 
@@ -115,6 +122,8 @@ function onUpdate(director, health)
     while WAVES[next_wave] ~= nil and boss_health <= WAVES[next_wave].health do
         spawnEnemies(director, WAVES[next_wave])
         next_wave = next_wave + 1
+        -- Papalymo turns to the new adds if he'd run out.
+        alliesAttack(director)
     end
 end
 
