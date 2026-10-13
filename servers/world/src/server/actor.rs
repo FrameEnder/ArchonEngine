@@ -110,6 +110,8 @@ pub enum NetworkedActor {
         last_wander_timestamp: Instant,
         /// Stat parameters.
         parameters: BaseParameters,
+        /// Whether this NPC is currently casting.
+        casting: bool,
     },
     Object {
         object: SpawnObject,

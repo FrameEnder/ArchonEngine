@@ -272,7 +272,7 @@ pub fn execute_action(
 
             // Handle combos
             {
-                // TODO: don't send this for auto-attacks. it should be harmless in the mean time
+                // TODO: don't send this for auto-attacks. it should be harmless in the meantime
 
                 let Some(actor) = instance.find_actor_mut(from_actor_id) else {
                     return;
@@ -330,7 +330,7 @@ pub fn execute_action(
                         ..
                     } => {
                         let Some(actor) = instance.find_actor_mut(request.target.object_id) else {
-                            return;
+                            continue;
                         };
                         let common_spawn = actor.get_common_spawn_mut();
                         if common_spawn.name_id != STRIKING_DUMMY_NAME_ID {
@@ -349,7 +349,7 @@ pub fn execute_action(
                     }
                     TargetEffectKind::SummonPet { .. } => {
                         let Some(actor) = instance.find_actor(from_actor_id) else {
-                            return;
+                            continue;
                         };
 
                         let pet_id = 23; // TODO: hardcoded
@@ -409,7 +409,7 @@ pub fn execute_action(
                     }
                     TargetEffectKind::SummonCompanion { .. } => {
                         let Some(actor) = instance.find_actor(from_actor_id) else {
-                            return;
+                            continue;
                         };
 
                         let mut network = network.lock();
@@ -683,6 +683,21 @@ pub fn execute_action(
     let msg = FromServer::NewTasks(lua_player.queued_tasks);
     network.send_to(from_id, msg, DestinationNetwork::ZoneClients);
 
+    // reset casting state (if applicable)
+    {
+        let mut data = data.lock();
+
+        let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
+            return;
+        };
+
+        if let Some(actor) = instance.find_actor_mut(from_actor_id)
+            && let NetworkedActor::Npc { casting, .. } = actor
+        {
+            *casting = false;
+        }
+    }
+
     // Update cooldowns, currently only for the GM command
     {
         let data = data.lock();
@@ -718,7 +733,13 @@ pub fn execute_action(
     }
 }
 
-pub fn cancel_action(network: Arc<Mutex<NetworkState>>, from_id: ClientId, action_id: u32) {
+pub fn cancel_action(
+    network: Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    from_id: ClientId,
+    actor_id: ObjectId,
+    action_id: u32,
+) {
     let msg = FromServer::ActorControlSelf(ActorControlCategory::CancelCast {
         unk1: 538,
         unk2: 1,
@@ -727,6 +748,13 @@ pub fn cancel_action(network: Arc<Mutex<NetworkState>>, from_id: ClientId, actio
 
     let mut network = network.lock();
     network.send_to(from_id, msg, DestinationNetwork::ZoneClients);
+
+    // reset casting state (if applicable)
+    if let Some(actor) = instance.find_actor_mut(actor_id)
+        && let NetworkedActor::Npc { casting, .. } = actor
+    {
+        *casting = false;
+    }
 }
 
 /// Handles normal actions, powered by Lua.

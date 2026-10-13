@@ -52,10 +52,12 @@ pub fn npc_behavior(
             spawn,
             last_position,
             state,
+            casting,
             ..
         } = actor
             && let Some(current_target) = current_target
             && *state != NpcState::Dead
+            && !*casting
             && spawn.common.health_points > 0
         {
             let target_pos;
@@ -153,9 +155,11 @@ pub fn npc_behavior(
             currently_invulnerable,
             last_wander_timestamp,
             parameters,
+            casting,
             ..
         } = actor
             && *state != NpcState::Dead
+            && !*casting
             && spawn.common.health_points > 0
         {
             // NOTE: this is *intentional* as I believe in retail the timing of actions are dependent on when the actor spawned
@@ -334,6 +338,7 @@ pub fn npc_behavior(
                                     ..Default::default()
                                 };
                                 new_action_requests.push((*id, request, cast_time_seconds));
+                                *casting = cast_time_seconds > 0.0;
                             }
                         }
                         TimepointData::TimelineState { states } => {
