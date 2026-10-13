@@ -156,7 +156,6 @@ pub enum LuaTask {
     StartTalkEvent,
     AcceptQuest {
         id: u32,
-        sequence: u8,
     },
     FinishQuest {
         id: u32,
@@ -172,14 +171,6 @@ pub enum LuaTask {
     QuestSequence {
         id: u32,
         sequence: u8,
-    },
-    QuestVariable {
-        id: u32,
-        index: u8,
-        value: u8,
-    },
-    SpawnQuestBattleNpc {
-        layout_id: u32,
     },
     CancelQuest {
         id: u32,

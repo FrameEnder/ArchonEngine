@@ -410,15 +410,6 @@ impl ZoneConnection {
                         ))
                         .await;
                 }
-                LuaTask::SpawnQuestBattleNpc { layout_id } => {
-                    self.handle
-                        .send(ToServer::SpawnQuestBattleNpc(
-                            self.id,
-                            self.player_data.character.actor_id,
-                            *layout_id,
-                        ))
-                        .await;
-                }
                 LuaTask::ToggleGlassesStyle { id } => {
                     self.toggle_glasses_style(*id).await;
                 }
@@ -567,8 +558,8 @@ impl ZoneConnection {
                         continue_nesting = true;
                     }
                 }
-                LuaTask::AcceptQuest { id, sequence } => {
-                    self.accept_quest_at_sequence(*id, *sequence).await;
+                LuaTask::AcceptQuest { id } => {
+                    self.accept_quest(*id).await;
                 }
                 LuaTask::FinishQuest { id } => {
                     // this means "all"
@@ -594,9 +585,6 @@ impl ZoneConnection {
                 }
                 LuaTask::QuestSequence { id, sequence } => {
                     self.set_quest_sequence(*id, *sequence).await;
-                }
-                LuaTask::QuestVariable { id, index, value } => {
-                    self.set_quest_variable(*id, *index, *value).await;
                 }
                 LuaTask::CancelQuest { id } => {
                     self.cancel_quest(*id).await;

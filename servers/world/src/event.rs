@@ -101,27 +101,6 @@ fn folder_from_script_id(id: u32) -> String {
     format!("{:03}", (id / 100))
 }
 
-/// Returns the path of the Lua script for a quest event (e.g. `events/quest/000/SubFst005_00028.lua`.)
-pub fn quest_script_path(
-    game_data: &Arc<Mutex<GameData>>,
-    handler_id: HandlerId,
-) -> Option<String> {
-    let script_name;
-    {
-        let mut game_data = game_data.lock();
-        script_name = game_data.get_quest_name(handler_id.0);
-    }
-    let Ok(script_id) = extract_script_id(&script_name) else {
-        tracing::error!(
-            "Unable to obtain script id from script {script_name}, the event cannot continue!"
-        );
-        return None;
-    };
-
-    let script_folder = folder_from_script_id(script_id);
-    Some(format!("events/quest/{script_folder}/{script_name}.lua"))
-}
-
 /// Finds and creates the relevant `EventHandler` for this event.
 pub fn dispatch_event(
     handler_id: HandlerId,
@@ -141,7 +120,21 @@ pub fn dispatch_event(
 
     match handler_id.handler_type() {
         HandlerType::Quest => {
-            let script_path = quest_script_path(&game_data, handler_id)?;
+            let script_name;
+            {
+                let mut game_data = game_data.lock();
+                script_name = game_data.get_quest_name(handler_id.0);
+            }
+            let Ok(script_id) = extract_script_id(&script_name) else {
+                tracing::error!(
+                    "Unable to obtain script id from script {script_name}, the event cannot continue!"
+                );
+                return None;
+            };
+
+            let script_folder = folder_from_script_id(script_id);
+            let script_path = format!("events/quest/{script_folder}/{script_name}.lua");
+
             generic_lua_event(&script_path)
         }
         HandlerType::Shop => Some(Box::new(ShopEventHandler::new())),

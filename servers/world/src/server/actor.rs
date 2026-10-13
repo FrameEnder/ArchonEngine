@@ -7,7 +7,6 @@ use crate::{
         instance::{Instance, QueuedTaskData},
         job_gauge::JobGauge,
         network::{DestinationNetwork, NetworkState},
-        party::get_party_id_from_actor_id,
     },
     zone_connection::{BaseParameters, TeleportQuery},
 };
@@ -386,9 +385,6 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
         fate_id = Some(npc.common.fate_id);
     }
 
-    // Let whoever defeated it know, for quests that ask you to defeat enemies.
-    credit_battle_npc_kill(&mut network, instance, actor_id);
-
     // Transistion into the dead state so they stop moving.
     if let Some(actor) = instance.find_actor_mut(actor_id)
         && let NetworkedActor::Npc { state, spawn, .. } = actor
@@ -413,7 +409,6 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
     // Cancel existing tasks
     instance.cancel_actor_tasks(actor_id);
     let intended_use = instance.zone.intended_use;
-    let quest_spawned = instance.quest_spawned_npcs.remove(&actor_id);
 
     // Queue up despawn if this is an NPC
     if let Some(actor) = instance.find_actor_mut(actor_id)
@@ -436,14 +431,12 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
             }
         }
 
-        let respawn_layout_id = if actor.get_common_spawn().layout_id != 0
-            && should_respawn_mobs(intended_use)
-            && !quest_spawned
-        {
-            Some(actor.get_common_spawn().layout_id)
-        } else {
-            None
-        };
+        let respawn_layout_id =
+            if actor.get_common_spawn().layout_id != 0 && should_respawn_mobs(intended_use) {
+                Some(actor.get_common_spawn().layout_id)
+            } else {
+                None
+            };
 
         for (gimmick_id, states) in new_timeline_states {
             let actor_id;
@@ -463,70 +456,6 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
                 actor_id,
                 respawn_layout_id,
             },
-        );
-    }
-}
-
-/// Informs the players that defeated a battle NPC, so their quests can count it.
-///
-/// Credit goes to whoever the NPC was fighting, along with their party members in the same instance.
-fn credit_battle_npc_kill(network: &mut NetworkState, instance: &Instance, actor_id: ObjectId) {
-    let Some(NetworkedActor::Npc {
-        spawn,
-        navmesh_target,
-        newly_hated_actor,
-        ..
-    }) = instance.find_actor(actor_id)
-    else {
-        return;
-    };
-
-    let mut credited = Vec::new();
-    let candidates = [
-        match navmesh_target {
-            Some(NpcTarget::Actor(target)) => Some(*target),
-            _ => None,
-        },
-        *newly_hated_actor,
-    ];
-    for candidate in candidates.into_iter().flatten() {
-        if !matches!(
-            instance.find_actor(candidate),
-            Some(NetworkedActor::Player { .. })
-        ) {
-            continue;
-        }
-
-        if !credited.contains(&candidate) {
-            credited.push(candidate);
-        }
-
-        // Party members in the same instance get credit too.
-        if let Some(party_id) = get_party_id_from_actor_id(network, candidate)
-            && let Some(party) = network.parties.get(&party_id)
-        {
-            for member in &party.members {
-                if member.is_valid()
-                    && !credited.contains(&member.actor_id)
-                    && matches!(
-                        instance.find_actor(member.actor_id),
-                        Some(NetworkedActor::Player { .. })
-                    )
-                {
-                    credited.push(member.actor_id);
-                }
-            }
-        }
-    }
-
-    for player_id in credited {
-        network.send_to_by_actor_id(
-            player_id,
-            FromServer::BattleNpcKilled {
-                name_id: spawn.common.name_id,
-                layout_id: spawn.common.layout_id,
-            },
-            DestinationNetwork::ZoneClients,
         );
     }
 }

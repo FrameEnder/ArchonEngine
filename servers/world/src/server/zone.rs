@@ -1247,13 +1247,7 @@ pub fn handle_zone_messages(
 
                 destination_instance_id = new_exit_box.destination_instance_id;
             } else {
-                tracing::warn!(
-                    "Actor {actor_id} isn't in the instance it was expected in. This is a bug! Instances: {:?}",
-                    data.instances
-                        .iter()
-                        .map(|instance| (instance.zone.id, instance.actors.len()))
-                        .collect::<Vec<_>>()
-                );
+                tracing::warn!("Actor isn't in the instance it was expected in. This is a bug!");
                 return true;
             }
 

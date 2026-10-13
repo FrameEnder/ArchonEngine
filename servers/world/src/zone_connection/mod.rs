@@ -49,7 +49,6 @@ mod lua;
 mod mail;
 mod party;
 mod quest;
-pub use quest::SEQUENCE_FINISH;
 mod social;
 mod stats;
 pub use stats::BaseParameters;
@@ -76,9 +75,6 @@ pub struct PersistentQuest {
     pub id: u16,
     /// Sequence in the quest.
     pub sequence: u8,
-    /// Quest variables (UI8A through UI8F), used by the quest script and the client to track objectives.
-    #[serde(default)]
-    pub variables: [u8; 6],
 }
 
 /// Persistent player data.

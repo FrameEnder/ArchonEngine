@@ -111,4 +111,3 @@ registerCommand("toggletripletriadcard",            DBG_DIR.."ToggleTripleTriadC
 registerCommand("unlockbuddyequip",                 DBG_DIR.."UnlockBuddyEquip.lua")
 registerCommand("unlockcontent",                    DBG_DIR.."UnlockContent.lua")
 registerCommand("skipintro",                        DBG_DIR.."SkipIntro.lua")
-registerCommand("questvar",                         DBG_DIR.."QuestVar.lua")

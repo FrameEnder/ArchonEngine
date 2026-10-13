@@ -1,21 +1,8 @@
 //! Quests!
 
 use crate::{
-    Event, EventHandler, LuaEventHandler, ZoneConnection, common::adjust_quest_id,
-    event::quest_script_path, inventory::Storage, lua::LuaPlayer, zone_connection::PersistentQuest,
+    ZoneConnection, common::adjust_quest_id, inventory::Storage, zone_connection::PersistentQuest,
 };
-use kawari::common::{HandlerId, HandlerType};
-
-/// The sequence a quest is in when it's ready to be turned in.
-pub const SEQUENCE_FINISH: u8 = 0xFF;
-
-/// Each city-state's opening area, the real territory it's a copy of, and the quests that move the player there.
-/// Accepting Close to Home (any class variant) moves the player out of the opening, see its scripts.
-/// TODO: Add Limsa Lominsa and Ul'dah once their real territories are confirmed.
-const OPENING_EXITS: &[(u16, u16, &[u16])] = &[
-    // Gridania opening -> New Gridania, via Close to Home (Lancer, Archer, Conjurer)
-    (183, 132, &[85, 123, 124]),
-];
 use kawari::{
     constants::COMPLETED_QUEST_BITMASK_SIZE,
     ipc::zone::{
@@ -25,68 +12,15 @@ use kawari::{
 };
 
 impl ZoneConnection {
-    /// Whether the player has this quest, either active or completed.
-    pub fn has_quest(&self, quest_id: u16) -> bool {
-        self.player_data
-            .quest
-            .active
-            .0
-            .iter()
-            .any(|quest| quest.id == quest_id)
-            || self.player_data.quest.completed.contains(quest_id as u32)
-    }
-
-    /// If the player is logging into an opening area they've already left (e.g. because the server stopped before it
-    /// saved their zone), returns the real territory they belong in. Their position stays the same, like retail's
-    /// seamless transition.
-    pub fn opening_exit_zone(&self) -> Option<u16> {
-        let zone_id = self.player_data.volatile.zone_id as u16;
-        OPENING_EXITS
-            .iter()
-            .find(|(opening_zone, _, quests)| {
-                *opening_zone == zone_id && quests.iter().any(|quest| self.has_quest(*quest))
-            })
-            .map(|(_, real_zone, _)| *real_zone)
-    }
-
-    /// Converts our stored quest into what the client expects.
-    fn active_quest_entry(quest: &PersistentQuest) -> ActiveQuest {
-        ActiveQuest {
-            id: quest.id,
-            sequence: quest.sequence,
-            flags: 0,
-            bitflags: quest.variables,
-            accept_class_job: 0,
-        }
-    }
-
-    /// Returns the journal slot of an active quest, if it's active.
-    fn quest_slot(&self, adjusted_id: u32) -> Option<usize> {
-        self.player_data
-            .quest
-            .active
-            .0
-            .iter()
-            .position(|quest| quest.id as u32 == adjusted_id)
-    }
-
-    /// Informs the client of the current state of the quest in `slot`.
-    async fn send_quest_update(&mut self, slot: usize) {
-        let Some(quest) = self.player_data.quest.active.0.get(slot) else {
-            return;
-        };
-
-        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateQuest {
-            index: slot as u8,
-            quest: Self::active_quest_entry(quest),
-        });
-        self.send_ipc_self(ipc).await;
-    }
-
     pub async fn send_active_quests(&mut self) {
         let mut quests = Vec::new();
         for quest in &self.player_data.quest.active.0 {
-            quests.push(Self::active_quest_entry(quest));
+            quests.push(ActiveQuest {
+                id: quest.id,
+                sequence: quest.sequence,
+                flags: 1,
+                ..Default::default()
+            });
         }
 
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::QuestActiveList(QuestActiveList {
@@ -138,34 +72,30 @@ impl ZoneConnection {
     }
 
     pub async fn accept_quest(&mut self, id: u32) {
-        self.accept_quest_at_sequence(id, SEQUENCE_FINISH).await;
-    }
-
-    /// Accepts a quest, starting it at `sequence`. Most quests start at sequence 1.
-    pub async fn accept_quest_at_sequence(&mut self, id: u32, sequence: u8) {
         let adjusted_id = adjust_quest_id(id);
-
-        // Don't accept the same quest twice, just move it to the requested sequence.
-        if self.quest_slot(adjusted_id).is_some() {
-            self.set_quest_sequence(id, sequence).await;
-            return;
-        }
 
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::AcceptQuest {
             quest_id: adjusted_id,
         });
         self.send_ipc_self(ipc).await;
 
-        // Add it to our own internal data model
+        // Ensure its updated in the journal or whatever
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateQuest {
+            index: 0,
+            quest: ActiveQuest {
+                id: adjusted_id as u16,
+                sequence: 0xFF,
+                flags: 1,
+                ..Default::default()
+            },
+        });
+        self.send_ipc_self(ipc).await;
+
+        // Then add it to our own internal data model
         self.player_data.quest.active.0.push(PersistentQuest {
             id: adjusted_id as u16,
-            sequence,
-            variables: [0; 6],
+            sequence: 0xFF,
         });
-
-        // Ensure its updated in the journal
-        let slot = self.player_data.quest.active.0.len() - 1;
-        self.send_quest_update(slot).await;
 
         self.send_quest_tracker().await;
     }
@@ -206,8 +136,12 @@ impl ZoneConnection {
         // Add exp
         self.add_exp(rewards.0 as i32).await;
 
-        // Quests after the removed one shift down a slot, so re-send the whole list to keep the journal in sync.
-        self.send_active_quests().await;
+        // Ensure its updated in the journal or whatever
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateQuest {
+            index: 0,
+            quest: ActiveQuest::default(),
+        });
+        self.send_ipc_self(ipc).await;
 
         self.player_data.quest.completed.set(adjusted_id);
 
@@ -263,49 +197,8 @@ impl ZoneConnection {
         self.send_quest_tracker().await;
     }
 
-    /// Moves an active quest to a new sequence (step.) 255 means it's ready to be turned in.
-    pub async fn set_quest_sequence(&mut self, id: u32, sequence: u8) {
-        let adjusted_id = adjust_quest_id(id);
-        let Some(slot) = self.quest_slot(adjusted_id) else {
-            tracing::warn!(
-                "Tried to set the sequence of quest {adjusted_id}, but it isn't active!"
-            );
-            return;
-        };
-
-        self.player_data.quest.active.0[slot].sequence = sequence;
-        tracing::info!("Quest {adjusted_id}: sequence = {sequence}");
-        self.capture
-            .note(&format!("Quest {adjusted_id}: sequence = {sequence}"));
-        self.send_quest_update(slot).await;
-        self.send_quest_tracker().await;
-    }
-
-    /// Sets one of an active quest's variables (0 = UI8A through 5 = UI8F.)
-    pub async fn set_quest_variable(&mut self, id: u32, index: u8, value: u8) {
-        let adjusted_id = adjust_quest_id(id);
-        let Some(slot) = self.quest_slot(adjusted_id) else {
-            tracing::warn!("Tried to set a variable of quest {adjusted_id}, but it isn't active!");
-            return;
-        };
-        let Some(variable) = self.player_data.quest.active.0[slot]
-            .variables
-            .get_mut(index as usize)
-        else {
-            tracing::warn!("Quest variable index {index} is out of range!");
-            return;
-        };
-
-        *variable = value;
-        tracing::info!(
-            "Quest {adjusted_id}: UI8{} = {value:#04x}",
-            (b'A' + index) as char
-        );
-        self.capture.note(&format!(
-            "Quest {adjusted_id}: UI8{} = {value:#04x}",
-            (b'A' + index) as char
-        ));
-        self.send_quest_update(slot).await;
+    pub async fn set_quest_sequence(&mut self, _id: u32, _sequence: u8) {
+        // TODO: implement
     }
 
     pub async fn incomplete_quest(&mut self, id: u32) {
@@ -319,76 +212,10 @@ impl ZoneConnection {
         self.send_quest_information().await;
     }
 
-    /// Lets every active quest know a battle NPC was defeated, so it can count it towards its objectives.
-    pub async fn on_battle_npc_killed(
-        &mut self,
-        lua_player: &mut LuaPlayer,
-        events: &mut Vec<(Box<dyn EventHandler>, Event)>,
-        name_id: u32,
-        layout_id: u32,
-    ) {
-        let quest_ids: Vec<u16> = self
-            .player_data
-            .quest
-            .active
-            .0
-            .iter()
-            .map(|quest| quest.id)
-            .collect();
-
-        // Scripts should see the latest quest state.
-        lua_player.player_data = self.player_data.clone();
-
-        for quest_id in quest_ids {
-            let handler_id = HandlerId::new(HandlerType::Quest, quest_id);
-            let Some(path) = quest_script_path(&self.game_data, handler_id) else {
-                continue;
-            };
-            let Some(handler) =
-                LuaEventHandler::new(handler_id, None, &path, self.game_data.clone())
-            else {
-                continue;
-            };
-
-            handler.on_battle_npc_killed(lua_player, name_id, layout_id);
-        }
-
-        self.process_lua_player(lua_player, events).await;
-        lua_player.player_data = self.player_data.clone();
-    }
-
     pub fn record_fate_completion(&mut self) {
         let mut game_data = self.game_data.lock();
         if let Some(row) = game_data.get_fate_progress_ui_row(self.player_data.volatile.zone_id) {
             self.player_data.quest.shared_fates.0[row as usize] += 1;
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn old_saved_quests_still_load() {
-        // Characters saved before quest variables existed don't have the field.
-        let quests: Vec<PersistentQuest> =
-            serde_json::from_str(r#"[{"id":39,"sequence":255}]"#).unwrap();
-        assert_eq!(quests[0].id, 39);
-        assert_eq!(quests[0].sequence, 255);
-        assert_eq!(quests[0].variables, [0; 6]);
-    }
-
-    #[test]
-    fn variables_are_sent_to_the_client() {
-        let quest = PersistentQuest {
-            id: 124,
-            sequence: 1,
-            variables: [0x01, 0x10, 0, 0, 0, 0x80],
-        };
-        let entry = ZoneConnection::active_quest_entry(&quest);
-        assert_eq!(entry.id, 124);
-        assert_eq!(entry.sequence, 1);
-        assert_eq!(entry.bitflags, [0x01, 0x10, 0, 0, 0, 0x80]);
     }
 }

@@ -940,15 +940,6 @@ async fn process_packet(
                                 .actor_control_self(ActorControlCategory::SetItemLevel { level })
                                 .await;
 
-                            // Players who already left their city's opening area belong in the real city.
-                            if let Some(real_zone) = connection.opening_exit_zone() {
-                                tracing::info!(
-                                    "Moving player out of opening area {} into {real_zone}",
-                                    connection.player_data.volatile.zone_id
-                                );
-                                connection.player_data.volatile.zone_id = real_zone as i32;
-                            }
-
                             connection
                                 .handle
                                 .send(ToServer::ReadySpawnPlayer(
@@ -4194,11 +4185,6 @@ async fn process_server_msg(
             }
             FromServer::FinishEvent => {
                 connection.event_finish(events).await;
-            }
-            FromServer::BattleNpcKilled { name_id, layout_id } => {
-                connection
-                    .on_battle_npc_killed(lua_player, events, name_id, layout_id)
-                    .await;
             }
             FromServer::FishBite => {
                 let handler_id = HandlerId::new(HandlerType::Fishing, 1).0;

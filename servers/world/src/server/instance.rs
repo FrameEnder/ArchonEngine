@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet, VecDeque},
+    collections::{HashMap, VecDeque},
     path::PathBuf,
     sync::Arc,
     time::{Duration, Instant},
@@ -137,8 +137,6 @@ pub struct Instance {
     pub duration: Option<Duration>,
     /// Running over-time effects (DoTs, HoTs, etc.)
     pub periodic_effects: Vec<PeriodicEffect>,
-    /// Battle NPCs spawned by quests, which shouldn't respawn after being defeated.
-    pub quest_spawned_npcs: HashSet<ObjectId>,
 }
 
 impl Instance {

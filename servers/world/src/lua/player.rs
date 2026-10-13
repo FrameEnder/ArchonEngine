@@ -8,7 +8,7 @@ use crate::{
     GameData, PlayerData, RemakeMode, StatusEffects,
     common::adjust_quest_id,
     inventory::{CrystalKind, CurrencyKind},
-    zone_connection::{BaseParameters, PersistentQuest, SEQUENCE_FINISH},
+    zone_connection::BaseParameters,
 };
 use kawari::{
     common::{ObjectTypeId, ObjectTypeKind, Position},
@@ -379,58 +379,8 @@ impl LuaPlayer {
         self.queued_tasks.push(LuaTask::StartTalkEvent {});
     }
 
-    fn accept_quest(&mut self, id: u32, sequence: u8) {
-        self.queued_tasks
-            .push(LuaTask::AcceptQuest { id, sequence });
-
-        // Keep our own copy up to date, so the rest of the script sees the change.
-        let adjusted_id = adjust_quest_id(id) as u16;
-        if !self
-            .player_data
-            .quest
-            .active
-            .0
-            .iter()
-            .any(|quest| quest.id == adjusted_id)
-        {
-            self.player_data.quest.active.0.push(PersistentQuest {
-                id: adjusted_id,
-                sequence,
-                variables: [0; 6],
-            });
-        }
-    }
-
-    /// Returns our copy of an active quest, if it's active.
-    fn active_quest_mut(&mut self, id: u32) -> Option<&mut PersistentQuest> {
-        let adjusted_id = adjust_quest_id(id) as u16;
-        self.player_data
-            .quest
-            .active
-            .0
-            .iter_mut()
-            .find(|quest| quest.id == adjusted_id)
-    }
-
-    fn get_quest_sequence(&mut self, id: u32) -> Option<u8> {
-        self.active_quest_mut(id).map(|quest| quest.sequence)
-    }
-
-    fn get_quest_variable(&mut self, id: u32, index: u8) -> u8 {
-        self.active_quest_mut(id)
-            .and_then(|quest| quest.variables.get(index as usize).copied())
-            .unwrap_or(0)
-    }
-
-    fn set_quest_variable(&mut self, id: u32, index: u8, value: u8) {
-        self.queued_tasks
-            .push(LuaTask::QuestVariable { id, index, value });
-
-        if let Some(quest) = self.active_quest_mut(id)
-            && let Some(variable) = quest.variables.get_mut(index as usize)
-        {
-            *variable = value;
-        }
+    fn accept_quest(&mut self, id: u32) {
+        self.queued_tasks.push(LuaTask::AcceptQuest { id });
     }
 
     fn finish_quest(&mut self, id: u32) {
@@ -487,18 +437,9 @@ impl LuaPlayer {
             .push(LuaTask::RegisterForContent { content_id });
     }
 
-    fn spawn_quest_battle_npc(&mut self, layout_id: u32) {
-        self.queued_tasks
-            .push(LuaTask::SpawnQuestBattleNpc { layout_id });
-    }
-
     fn quest_sequence(&mut self, id: u32, sequence: u8) {
         self.queued_tasks
             .push(LuaTask::QuestSequence { id, sequence });
-
-        if let Some(quest) = self.active_quest_mut(id) {
-            quest.sequence = sequence;
-        }
     }
 
     fn cancel_quest(&mut self, id: u32) {
@@ -946,39 +887,10 @@ impl UserData for LuaPlayer {
             this.start_talk_event();
             Ok(())
         });
-        // The sequence is optional, and defaults to 255 (ready to turn in) like before.
-        methods.add_method_mut(
-            "accept_quest",
-            |_, this, (quest_id, sequence): (u32, Option<u8>)| {
-                this.accept_quest(quest_id, sequence.unwrap_or(SEQUENCE_FINISH));
-                Ok(())
-            },
-        );
-        // Spawns a battle NPC from the zone's layout (by its layout ID) that attacks this player.
-        methods.add_method_mut("spawn_quest_bnpc", |_, this, layout_id: u32| {
-            this.spawn_quest_battle_npc(layout_id);
+        methods.add_method_mut("accept_quest", |_, this, quest_id: u32| {
+            this.accept_quest(quest_id);
             Ok(())
         });
-        methods.add_method_mut("get_quest_sequence", |_, this, quest_id: u32| {
-            Ok(this.get_quest_sequence(quest_id))
-        });
-        methods.add_method_mut(
-            "set_quest_sequence",
-            |_, this, (quest_id, sequence): (u32, u8)| {
-                this.quest_sequence(quest_id, sequence);
-                Ok(())
-            },
-        );
-        methods.add_method_mut("get_quest_var", |_, this, (quest_id, index): (u32, u8)| {
-            Ok(this.get_quest_variable(quest_id, index))
-        });
-        methods.add_method_mut(
-            "set_quest_var",
-            |_, this, (quest_id, index, value): (u32, u8, u8)| {
-                this.set_quest_variable(quest_id, index, value);
-                Ok(())
-            },
-        );
         methods.add_method_mut("finish_quest", |_, this, quest_id: u32| {
             this.finish_quest(quest_id);
             Ok(())

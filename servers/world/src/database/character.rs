@@ -189,15 +189,6 @@ impl WorldDatabase {
             .unwrap();
     }
 
-    /// Saves quest progress. Failing to is logged rather than fatal, since this happens during zone changes.
-    pub fn commit_quests(&mut self, data: &PlayerData) {
-        use models::*;
-
-        if let Err(err) = data.quest.save_changes::<Quest>(&mut self.connection) {
-            tracing::error!("Failed to save quest progress: {err:?}");
-        }
-    }
-
     pub fn commit_volatile(&mut self, data: &PlayerData) {
         use models::*;
 
