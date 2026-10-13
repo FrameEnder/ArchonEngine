@@ -9,6 +9,7 @@ Everything below was checked against that commit.
 
 - **Quest progression**: quest sequences and variables (saved, and sent to the journal), kill credit for quests (`onBNpcKill`), quest-spawned enemies, and a shared scene-flow helper in `Global.lua`. Close to Home now completes for every class.
 - **Gridania story quests**: all 20 quests after Close to Home are scripted (To the Bannock → Renewing the Covenant), and checked against the client's own quest scripts pulled with `kawari-questdump`: scene numbers, key-item variables, objective counters and object flags. Chasing Shadows, Spirithold Broken, Leia's Legacy and To Guard a Guardian skip their solo battles with a chat message.
+- **Packet capture**: `packet_capture: true` (world config) records every packet between the server and each client to `captures/*.jsonl`, with quest changes noted. Kawari Web's Diagnostics page turns it on and ships captures, logs, saved quest state and Kawari Probe (Dalamud) snapshots to the private `kawari-diagnostics` repo.
 - **kawari-questdump**: pulls Quest-sheet data and the client's compiled quest scripts (with a readable listing) for a range of quests, so scripts can be written from what the client expects. Dumps are game data and stay out of the repo (`quest-dumps/` is ignored).
 
 ## Where the code stands
