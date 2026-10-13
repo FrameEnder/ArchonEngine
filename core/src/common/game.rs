@@ -1490,6 +1490,35 @@ pub enum PublicContentType {
     OccultCrescent = 11,
 }
 
+// Corresponds to the ActionCategory Excel sheet.
+#[binrw]
+#[repr(u8)]
+#[brw(repr = u8)]
+#[derive(Debug, Clone, Copy, Default, FromRepr, PartialEq)]
+pub enum ActionCategory {
+    #[default]
+    Invalid = 0,
+    AutoAttack = 1,
+    /// Cast time is influenced by the Spell Speed stat.
+    Spell = 2,
+    /// Cast time is influenced by the Skill Speed stat.
+    Weaponskill = 3,
+    Ability = 4,
+    Item = 5,
+    DoLAbility = 6,
+    DoHAbility = 7,
+    Event = 8,
+    LimitBreak9 = 9,
+    System10 = 10,
+    System11 = 11,
+    Special = 13,
+    ItemManipulation = 14,
+    LimitBreak15 = 15,
+    Unknown16 = 16,
+    Artillery = 17,
+    Unknown18 = 18,
+}
+
 /// Returns true if the intended use is for housing, false otherwise.
 pub fn in_housing_area(intended_use: TerritoryIntendedUse) -> bool {
     matches!(

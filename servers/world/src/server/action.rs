@@ -35,30 +35,34 @@ pub fn handle_action_messages(
     msg: &ToServer,
 ) -> bool {
     if let ToServer::ActionRequest(from_id, from_actor_id, request) = msg {
-        let cast_time;
+        let (category, cast_time);
         {
             let mut game_data = game_data.lock();
-            cast_time = game_data.get_casttime(request.action_id).unwrap(); // TODO: take into account the haste stat like the client does
+            (category, cast_time) = game_data.get_casttime(request.action_id).unwrap();
         }
-
-        let delay_milliseconds = cast_time as u64 * 100;
 
         let mut data = data.lock();
         let Some(instance) = data.find_actor_instance_mut(*from_actor_id) else {
             return true;
         };
 
-        if cast_time > 0 {
-            let Some(actor) = instance.find_actor(*from_actor_id) else {
-                return true;
-            };
+        let Some(actor) = instance.find_actor(*from_actor_id) else {
+            return true;
+        };
 
+        let parameters = match actor {
+            NetworkedActor::Player { parameters, .. } => parameters,
+            NetworkedActor::Npc { parameters, .. } => parameters,
+            _ => unreachable!(),
+        };
+        let adjusted_cast_time = parameters.get_adjusted_cast_time(category, cast_time);
+        if adjusted_cast_time > 0 {
             let actor_cast = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
                 spell_id: request.action_id as u16,
                 action_id: request.action_id,
                 action_type: request.action_type,
                 omen_delay: 0,
-                cast_time: delay_milliseconds as f32 / 1000.0,
+                cast_time: adjusted_cast_time as f32 / 1000.0,
                 target: request.target.object_id,
                 rotation: request.rotation1,
                 interruptible: false,
@@ -77,10 +81,10 @@ pub fn handle_action_messages(
         instance.insert_task(
             *from_id,
             *from_actor_id,
-            Duration::from_millis(delay_milliseconds),
+            Duration::from_millis(adjusted_cast_time as u64),
             QueuedTaskData::CastAction {
                 request: request.clone(),
-                interruptible: delay_milliseconds > 0,
+                interruptible: adjusted_cast_time > 0,
             },
         );
 

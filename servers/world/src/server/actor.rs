@@ -518,7 +518,8 @@ pub fn spawn_custom_bnpc(
             return;
         };
 
-        let base_npc = create_npc_common_spawn(game_data, base_id, name_id, None, 1);
+        let base_npc =
+            create_npc_common_spawn(game_data, base_id, name_id, None, spawn.common.level as u32);
         let npc_spawn = SpawnNpc {
             common: CommonSpawn {
                 position: spawn.common.position,

@@ -152,6 +152,7 @@ pub fn npc_behavior(
             newly_hated_actor,
             currently_invulnerable,
             last_wander_timestamp,
+            parameters,
             ..
         } = actor
             && *state != NpcState::Dead
@@ -316,12 +317,15 @@ pub fn npc_behavior(
                     match &timepoint.data {
                         TimepointData::Action { action_id, .. } => {
                             if spawn.common.target_id.object_id.is_valid() && can_take_action {
-                                let cast_time;
+                                let (category, cast_time);
                                 {
                                     let mut game_data = game_data.lock();
-                                    cast_time = game_data.get_casttime(*action_id).unwrap(); // TODO: take into account the haste stat like the client does
+                                    (category, cast_time) =
+                                        game_data.get_casttime(*action_id).unwrap();
                                 }
-                                let cast_time_seconds = (cast_time as f32 * 100.0) / 1000.0; // TODO: just change how the Duration is interpreted instead of this nonsense
+                                let adjusted_cast_time =
+                                    parameters.get_adjusted_cast_time(category, cast_time);
+                                let cast_time_seconds = (adjusted_cast_time as f32) / 1000.0;
                                 let request = ActionRequest {
                                     action_id: *action_id,
                                     action_type: ActionType::Action,
@@ -435,7 +439,7 @@ pub fn npc_behavior(
                 Duration::from_secs_f32(cast_time),
                 QueuedTaskData::CastAction {
                     request: request.clone(),
-                    interruptible: true, // TODO: not always true?
+                    interruptible: false, // TODO
                 },
             );
         }

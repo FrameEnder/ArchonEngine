@@ -66,7 +66,7 @@ use physis::savedata::chardat::CustomizeData;
 use physis::{Language, TerritoryIntendedUse};
 
 use kawari::common::{
-    FateRule, InstanceContentType, PublicContentType,
+    ActionCategory, FateRule, InstanceContentType, PublicContentType,
     get_aether_current_comp_flg_set_to_screenimage,
 };
 use kawari::common::{LegacyEquipmentModelId, WeaponModelId, timestamp_secs};
@@ -793,10 +793,14 @@ impl GameData {
         })
     }
 
-    pub fn get_casttime(&mut self, action_id: u32) -> Option<u16> {
+    /// Returns the cast time in milliseconds.
+    pub fn get_casttime(&mut self, action_id: u32) -> Option<(ActionCategory, u32)> {
         let row = self.action_sheet.row(action_id)?;
 
-        Some(row.Cast100ms)
+        Some((
+            ActionCategory::from_repr(row.ActionCategory)?,
+            row.Cast100ms as u32 * 100,
+        ))
     }
 
     /// Calculates the current weather at the current time
