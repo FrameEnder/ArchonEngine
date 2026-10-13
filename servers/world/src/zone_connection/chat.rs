@@ -354,6 +354,28 @@ impl ZoneConnection {
 
                 true
             }
+            "!rawpacket" => {
+                // Sends an IPC packet with the given opcode and contents, written as hex, e.g. !rawpacket 643 00000000...
+                let parts: Vec<&str> = chat_message.split(' ').collect();
+                if parts.len() == 3 {
+                    let hex = parts[2];
+                    let data: Option<Vec<u8>> = (0..hex.len())
+                        .step_by(2)
+                        .map(|i| {
+                            hex.get(i..i + 2)
+                                .and_then(|b| u8::from_str_radix(b, 16).ok())
+                        })
+                        .collect();
+                    match (parts[1].parse(), data) {
+                        (Ok(op_code), Some(data)) => {
+                            self.send_arbitrary_packet(op_code, data).await
+                        }
+                        _ => self.send_notice("Usage: !rawpacket <opcode> <hex>").await,
+                    }
+                }
+
+                true
+            }
             "!spectator" => {
                 self.actor_control_self(ActorControlCategory::InitializeSpectatorManager {
                     row_id: 0,
