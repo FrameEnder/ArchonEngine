@@ -1166,6 +1166,25 @@ pub async fn server_main_loop(
                                     *combo_sequence = 0;
                                 }
                             }
+                            QueuedTaskData::DrawWeapon => {
+                                let mut data = data.lock();
+                                if let Some(instance) = data.instances.get_mut(*instance_index)
+                                    && let Some(NetworkedActor::Npc { state, .. }) =
+                                        instance.find_actor(task.from_actor_id)
+                                    && *state == NpcState::Hate
+                                {
+                                    let mut network = network.lock();
+                                    network.send_ac_in_range_instance(
+                                        instance,
+                                        task.from_actor_id,
+                                        ActorControlCategory::ToggleWeapon {
+                                            shown: true,
+                                            unk_flag: 1,
+                                            unk2: 0,
+                                        },
+                                    );
+                                }
+                            }
                             QueuedTaskData::SheatheWeapon => {
                                 let mut data = data.lock();
                                 if let Some(instance) = data.instances.get_mut(*instance_index)

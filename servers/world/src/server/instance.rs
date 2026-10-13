@@ -83,6 +83,8 @@ pub enum QueuedTaskData {
     ResetCombo,
     /// An NPC leaves its battle stance, if it still has nothing to fight.
     SheatheWeapon,
+    /// An NPC goes back into its battle stance after acting, if it's still fighting.
+    DrawWeapon,
     /// Respawn a new mob.
     RespawnMob { layout_id: u32 },
     /// Ends a FATE.

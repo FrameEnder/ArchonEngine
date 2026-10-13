@@ -144,7 +144,6 @@ pub fn npc_behavior(
     let mut new_action_requests = Vec::new();
     let mut new_timeline_states = Vec::new();
     let mut dropped_targets = Vec::new();
-    let mut stance_refreshes = Vec::new();
 
     // mut pass
     for (id, actor) in &mut instance.actors {
@@ -400,24 +399,6 @@ pub fn npc_behavior(
                     ..Default::default()
                 };
                 new_action_requests.push((*id, request, (cast_time as f32 * 100.0) / 1000.0));
-            } else if *state == NpcState::Hate
-                && (1..NPC_AUTO_ATTACK_TICKS).contains(autoattack_timing)
-                && timeline.autoattack_action_id != 0
-                && !newly_acquired_targets.contains(id)
-            {
-                // The client drops NPCs out of their battle stance after an attack, so draw their weapon again
-                // half a second after it lands (after the cast, for spells.)
-                let cast_ticks;
-                {
-                    let mut game_data = game_data.lock();
-                    let cast_time = game_data
-                        .get_casttime(timeline.autoattack_action_id)
-                        .unwrap_or(0) as i64; // in tenths of a second
-                    cast_ticks = (cast_time + 4) / 5;
-                }
-                if *autoattack_timing == cast_ticks + 1 {
-                    stance_refreshes.push(*id);
-                }
             }
 
             if reset_target {
@@ -452,6 +433,15 @@ pub fn npc_behavior(
     }
 
     for (id, request, cast_time) in new_action_requests {
+        // The client drops NPCs out of their battle stance after they act, so draw their weapon again half a second
+        // after this lands.
+        instance.insert_task(
+            ClientId::default(),
+            id,
+            Duration::from_secs_f32(cast_time + 0.5),
+            QueuedTaskData::DrawWeapon,
+        );
+
         if cast_time == 0.0 {
             instance.insert_task(
                 ClientId::default(),
@@ -512,19 +502,6 @@ pub fn npc_behavior(
             let mut network = network.lock();
             set_shared_group_timeline_state(instance, &mut network, actor_id, &states);
         }
-    }
-
-    for id in stance_refreshes {
-        let mut network = network.lock();
-        network.send_ac_in_range_instance(
-            instance,
-            id,
-            ActorControlCategory::ToggleWeapon {
-                shown: true,
-                unk_flag: 1,
-                unk2: 0,
-            },
-        );
     }
 
     // Those that lost their target sheathe their weapon, unless they find another one in the meantime.

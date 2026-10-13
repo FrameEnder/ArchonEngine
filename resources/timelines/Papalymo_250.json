@@ -1,6 +1,16 @@
 {
-    "autoattack_action_id": 142,
+    "autoattack_action_id": 0,
     "attack_range": 10.0,
     "timeline_always_plays": false,
-    "timepoints": []
+    "timepoints": [
+        { "time": 0, "data": { "type": "action", "action_id": 144 } },
+        { "time": 3, "data": { "type": "action", "action_id": 141 } },
+        { "time": 6, "data": { "type": "action", "action_id": 141 } },
+        { "time": 9, "data": { "type": "action", "action_id": 141 } },
+        { "time": 12, "data": { "type": "action", "action_id": 142 } },
+        { "time": 15, "data": { "type": "action", "action_id": 141 } },
+        { "time": 18, "data": { "type": "action", "action_id": 141 } },
+        { "time": 21, "data": { "type": "action", "action_id": 142 } },
+        { "time": 23, "data": { "type": "invulnerability", "invulnerable": false } }
+    ]
 }
