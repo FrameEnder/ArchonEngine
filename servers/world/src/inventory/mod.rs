@@ -317,10 +317,27 @@ impl Inventory {
                     let dst_item = *dst_slot;
                     dst_slot.clone_from(&src_item);
 
-                    // move dst item into src slot
-                    if let Some(src_slot) =
+                    // When equipping from the main inventory, the client puts whatever was equipped into the Armoury
+                    // Chest instead of the slot the new item came from (if it has room.)
+                    // NOTE: This has to match client behavior exactly! As this happens client-side.
+                    let from_main_inventory = matches!(
+                        action.src_storage_id,
+                        ContainerType::Inventory0
+                            | ContainerType::Inventory1
+                            | ContainerType::Inventory2
+                            | ContainerType::Inventory3
+                    );
+                    if from_main_inventory
+                        && action.dst_storage_id == ContainerType::Equipped
+                        && dst_item.quantity > 0
+                        && let Some(destination) =
+                            self.add_in_next_free_armory_slot(action.dst_container_index)
+                    {
+                        self.add_in_slot(dst_item, &destination.container, destination.slot);
+                    } else if let Some(src_slot) =
                         self.get_item_mut(action.src_storage_id, action.src_container_index)
                     {
+                        // move dst item into src slot
                         src_slot.clone_from(&dst_item);
                     }
                 }
@@ -866,4 +883,59 @@ pub enum DesiredHousingInventoryPages {
     ExteriorStoreroom,
     Interior,
     InteriorStoreroom,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn item(item_id: u32) -> Item {
+        Item {
+            quantity: 1,
+            item_id,
+            ..Default::default()
+        }
+    }
+
+    /// Equipping a body piece from the main inventory, like Bob did on 2026-10-13 (see kawari-diagnostics.)
+    #[test]
+    fn equip_from_inventory_moves_old_item_to_armoury() {
+        let mut inventory = Inventory::default();
+        inventory.add_in_slot(item(3010), &ContainerType::Inventory0, 2);
+        inventory.add_in_slot(item(2990), &ContainerType::Equipped, 3);
+
+        inventory.process_action(&ItemOperation {
+            operation_type: ItemOperationKind::Exchange,
+            src_storage_id: ContainerType::Inventory0,
+            src_container_index: 2,
+            dst_storage_id: ContainerType::Equipped,
+            dst_container_index: 3,
+            ..Default::default()
+        });
+
+        assert_eq!(inventory.equipped.get_slot(3).item_id, 3010);
+        assert_eq!(inventory.pages[0].get_slot(2).quantity, 0);
+        assert_eq!(inventory.armoury_body.get_slot(0).item_id, 2990);
+        assert_eq!(inventory.armoury_body.get_slot(0).quantity, 1);
+    }
+
+    /// Swapping with the Armoury Chest is still a plain swap.
+    #[test]
+    fn equip_from_armoury_swaps() {
+        let mut inventory = Inventory::default();
+        inventory.add_in_slot(item(3010), &ContainerType::ArmoryBody, 0);
+        inventory.add_in_slot(item(2990), &ContainerType::Equipped, 3);
+
+        inventory.process_action(&ItemOperation {
+            operation_type: ItemOperationKind::Exchange,
+            src_storage_id: ContainerType::ArmoryBody,
+            src_container_index: 0,
+            dst_storage_id: ContainerType::Equipped,
+            dst_container_index: 3,
+            ..Default::default()
+        });
+
+        assert_eq!(inventory.equipped.get_slot(3).item_id, 3010);
+        assert_eq!(inventory.armoury_body.get_slot(0).item_id, 2990);
+    }
 }
