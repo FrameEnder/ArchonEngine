@@ -158,13 +158,15 @@ impl WorldServer {
         zone_id: u16,
         quest_battle_id: u32,
         game_data: &mut GameData,
+        server_lua: &KawariLua,
     ) -> &mut Instance {
         tracing::info!(
             "Creating new instance for quest battle {quest_battle_id} (zone {zone_id})!"
         );
 
+        // The instance needs the server's Lua state (for FATEs, which are then removed), the director gets its own.
+        let mut instance = Instance::new(zone_id, game_data, server_lua, false, false);
         let lua = KawariLua::new();
-        let mut instance = Instance::new(zone_id, game_data, &lua, false, false);
         instance.content_id = quest_battle_id as u16;
 
         // Quest battles often take place in a copy of an overworld zone, but nothing from the overworld happens in them:
@@ -2463,10 +2465,12 @@ pub async fn server_main_loop(
                     remove_actor_from_instance(&mut data, &mut network, from_actor_id);
 
                     let mut game_data = game_data.lock();
+                    let lua = lua.lock();
                     let target_instance = data.create_instance_for_quest_battle(
                         zone_id,
                         quest_battle_id,
                         &mut game_data,
+                        &lua,
                     );
                     target_instance.insert_empty_actor(from_actor_id);
 
