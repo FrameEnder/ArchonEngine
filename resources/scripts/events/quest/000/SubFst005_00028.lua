@@ -2,7 +2,8 @@
 --
 -- Checked against the client's quest script (kawari-questdump):
 -- Sequence 0:   ACTOR0 offers the quest (scene 0), which returns 1 when it's accepted.
--- Sequence 255: report to ACTOR1 at the Bannock (scene 1) to finish. No variables or items are used.
+-- Sequence 255: report to ACTOR1 at the Bannock (scene 1) to finish. It returns 1 and the reward you picked
+--               (an item id). No variables or items are used.
 
 SCENE_OFFER = 0
 SCENE_FINISH = 1
@@ -40,7 +41,7 @@ function sceneFinished(scene, results, player)
         end
     elseif scene == SCENE_FINISH then
         if results[1] == 1 then
-            player:finish_quest(EVENT_ID)
+            player:finish_quest(EVENT_ID, results[2])
         end
     end
 
