@@ -2614,6 +2614,9 @@ pub async fn server_main_loop(
                 ToServer::QuestEventAction(from_client_id, from_actor_id, cast_time) => {
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
+                        tracing::warn!(
+                            "Couldn't find the instance of {from_actor_id} to finish its event action!"
+                        );
                         continue;
                     };
 

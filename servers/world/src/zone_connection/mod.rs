@@ -208,6 +208,8 @@ pub struct ZoneConnection {
     pub fate_motivation_npcs: HashMap<ObjectId, u16>,
     /// Used only for the local player's PlayerSpawn.
     pub content_handler_id: Option<HandlerId>,
+    /// The event action currently being cast by a quest, see `LuaTask::EventAction`.
+    pub event_action_id: u32,
     /// Whether the player can offer this teleport to their party.
     pub can_share_teleport: bool, // TODO: remove this and add more teleport reasons
     /// Packet capture for debugging, if enabled in the config.

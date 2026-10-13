@@ -196,6 +196,7 @@ async fn initial_setup(
                     initial_login: true,
                     fate_motivation_npcs: HashMap::new(),
                     content_handler_id: None,
+                    event_action_id: 0,
                     can_share_teleport: false,
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
                 };
@@ -4188,6 +4189,20 @@ async fn process_server_msg(
             }
             FromServer::QuestEventActionCast => {
                 if let Some((handler, event)) = events.last() {
+                    tracing::info!("Event action finished casting during event {}", event.id);
+
+                    // End the cast, otherwise the client stays busy and won't show anything else (like Sapphire does.)
+                    connection
+                        .actor_control_target(
+                            connection.player_data.character.actor_id,
+                            event.actor_id,
+                            ActorControlCategory::EventAction {
+                                unk1: 0,
+                                id: connection.event_action_id,
+                            },
+                        )
+                        .await;
+
                     handler.on_event_action_cast(event, lua_player).await;
                 } else {
                     tracing::warn!(

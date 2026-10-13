@@ -658,6 +658,7 @@ impl ZoneConnection {
                         ActorControlCategory::EventAction { unk1: 1, id: *id },
                     )
                     .await;
+                    self.event_action_id = *id;
 
                     self.handle
                         .send(ToServer::QuestEventAction(
