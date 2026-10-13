@@ -172,6 +172,11 @@ pub enum LuaTask {
         id: u32,
         sequence: u8,
     },
+    QuestVariable {
+        id: u32,
+        index: u8,
+        value: u8,
+    },
     CancelQuest {
         id: u32,
     },

@@ -12,15 +12,43 @@ use kawari::{
 };
 
 impl ZoneConnection {
+    /// What the client is sent for one of our active quests.
+    fn active_quest_entry(quest: &PersistentQuest) -> ActiveQuest {
+        ActiveQuest {
+            id: quest.id,
+            sequence: quest.sequence,
+            bitflags: quest.variables,
+            ..Default::default()
+        }
+    }
+
+    /// The journal slot of an active quest.
+    fn quest_slot(&self, adjusted_id: u32) -> Option<usize> {
+        self.player_data
+            .quest
+            .active
+            .0
+            .iter()
+            .position(|quest| quest.id as u32 == adjusted_id)
+    }
+
+    /// Sends the current state of the quest in `slot` to the client.
+    async fn send_quest_update(&mut self, slot: usize) {
+        let Some(quest) = self.player_data.quest.active.0.get(slot) else {
+            return;
+        };
+
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateQuest {
+            index: slot as u8,
+            quest: Self::active_quest_entry(quest),
+        });
+        self.send_ipc_self(ipc).await;
+    }
+
     pub async fn send_active_quests(&mut self) {
         let mut quests = Vec::new();
         for quest in &self.player_data.quest.active.0 {
-            quests.push(ActiveQuest {
-                id: quest.id,
-                sequence: quest.sequence,
-                flags: 1,
-                ..Default::default()
-            });
+            quests.push(Self::active_quest_entry(quest));
         }
 
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::QuestActiveList(QuestActiveList {
@@ -79,23 +107,14 @@ impl ZoneConnection {
         });
         self.send_ipc_self(ipc).await;
 
-        // Ensure its updated in the journal or whatever
-        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateQuest {
-            index: 0,
-            quest: ActiveQuest {
-                id: adjusted_id as u16,
-                sequence: 0xFF,
-                flags: 1,
-                ..Default::default()
-            },
-        });
-        self.send_ipc_self(ipc).await;
-
-        // Then add it to our own internal data model
+        // Add it to our own internal data model, then update its slot in the journal
         self.player_data.quest.active.0.push(PersistentQuest {
             id: adjusted_id as u16,
             sequence: 0xFF,
+            variables: [0; 6],
         });
+        let slot = self.player_data.quest.active.0.len() - 1;
+        self.send_quest_update(slot).await;
 
         self.send_quest_tracker().await;
     }
@@ -136,12 +155,8 @@ impl ZoneConnection {
         // Add exp
         self.add_exp(rewards.0 as i32).await;
 
-        // Ensure its updated in the journal or whatever
-        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateQuest {
-            index: 0,
-            quest: ActiveQuest::default(),
-        });
-        self.send_ipc_self(ipc).await;
+        // The quests after it moved up a slot, so send the whole journal again
+        self.send_active_quests().await;
 
         self.player_data.quest.completed.set(adjusted_id);
 
@@ -197,8 +212,36 @@ impl ZoneConnection {
         self.send_quest_tracker().await;
     }
 
-    pub async fn set_quest_sequence(&mut self, _id: u32, _sequence: u8) {
-        // TODO: implement
+    pub async fn set_quest_sequence(&mut self, id: u32, sequence: u8) {
+        let adjusted_id = adjust_quest_id(id);
+        let Some(slot) = self.quest_slot(adjusted_id) else {
+            tracing::warn!(
+                "Tried to set the sequence of quest {adjusted_id}, but it isn't active!"
+            );
+            return;
+        };
+
+        self.player_data.quest.active.0[slot].sequence = sequence;
+        self.send_quest_update(slot).await;
+        self.send_quest_tracker().await;
+    }
+
+    /// Sets one of an active quest's variables (0 = UI8A through 5 = UI8F.)
+    pub async fn set_quest_variable(&mut self, id: u32, index: u8, value: u8) {
+        let adjusted_id = adjust_quest_id(id);
+        let Some(slot) = self.quest_slot(adjusted_id) else {
+            tracing::warn!("Tried to set a variable of quest {adjusted_id}, but it isn't active!");
+            return;
+        };
+        let Some(variable) = self.player_data.quest.active.0[slot]
+            .variables
+            .get_mut(index as usize)
+        else {
+            return;
+        };
+
+        *variable = value;
+        self.send_quest_update(slot).await;
     }
 
     pub async fn incomplete_quest(&mut self, id: u32) {

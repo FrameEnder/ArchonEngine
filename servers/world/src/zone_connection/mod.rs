@@ -75,6 +75,9 @@ pub struct PersistentQuest {
     pub id: u16,
     /// Sequence in the quest.
     pub sequence: u8,
+    /// The quest's variables (UI8A through UI8F), which the quest script and the client track objectives with.
+    #[serde(default)]
+    pub variables: [u8; 6],
 }
 
 /// Persistent player data.

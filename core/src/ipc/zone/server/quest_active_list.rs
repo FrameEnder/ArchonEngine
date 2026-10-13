@@ -2,13 +2,16 @@ use binrw::binrw;
 
 #[binrw]
 #[derive(Debug, Clone, Copy, Default)]
+/// Laid out like the client's QuestWork (Application::Network::WorkDefinitions), without its 8-byte header.
 pub struct ActiveQuest {
     pub id: u16,
-    #[brw(pad_after = 1)] // padding
     pub sequence: u8,
     pub flags: u8,
-    #[brw(pad_after = 5)] // padding
+    /// The quest's variables, UI8A through UI8F.
     pub bitflags: [u8; 6],
+    /// The class/job the quest was accepted as.
+    #[brw(pad_after = 5)] // padding
+    pub accept_class_job: u8,
 }
 
 impl ActiveQuest {

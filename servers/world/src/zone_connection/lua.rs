@@ -586,6 +586,9 @@ impl ZoneConnection {
                 LuaTask::QuestSequence { id, sequence } => {
                     self.set_quest_sequence(*id, *sequence).await;
                 }
+                LuaTask::QuestVariable { id, index, value } => {
+                    self.set_quest_variable(*id, *index, *value).await;
+                }
                 LuaTask::CancelQuest { id } => {
                     self.cancel_quest(*id).await;
                 }

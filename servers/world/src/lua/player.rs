@@ -440,6 +440,43 @@ impl LuaPlayer {
     fn quest_sequence(&mut self, id: u32, sequence: u8) {
         self.queued_tasks
             .push(LuaTask::QuestSequence { id, sequence });
+
+        // Keep our copy current, so the rest of the script sees the change.
+        if let Some(quest) = self.active_quest_mut(id) {
+            quest.sequence = sequence;
+        }
+    }
+
+    /// Our copy of an active quest.
+    fn active_quest_mut(
+        &mut self,
+        id: u32,
+    ) -> Option<&mut crate::zone_connection::PersistentQuest> {
+        let adjusted_id = adjust_quest_id(id) as u16;
+        self.player_data
+            .quest
+            .active
+            .0
+            .iter_mut()
+            .find(|quest| quest.id == adjusted_id)
+    }
+
+    fn get_quest_variable(&mut self, id: u32, index: u8) -> u8 {
+        self.active_quest_mut(id)
+            .and_then(|quest| quest.variables.get(index as usize).copied())
+            .unwrap_or(0)
+    }
+
+    fn set_quest_variable(&mut self, id: u32, index: u8, value: u8) {
+        self.queued_tasks
+            .push(LuaTask::QuestVariable { id, index, value });
+
+        // Keep our copy current, so the rest of the script sees the change.
+        if let Some(quest) = self.active_quest_mut(id)
+            && let Some(variable) = quest.variables.get_mut(index as usize)
+        {
+            *variable = value;
+        }
     }
 
     fn cancel_quest(&mut self, id: u32) {
@@ -891,6 +928,21 @@ impl UserData for LuaPlayer {
             this.accept_quest(quest_id);
             Ok(())
         });
+        // The sequence of an active quest, or nil if it isn't active.
+        methods.add_method_mut("get_quest_sequence", |_, this, quest_id: u32| {
+            Ok(this.active_quest_mut(quest_id).map(|quest| quest.sequence))
+        });
+        // One of an active quest's variables: index 0 is UI8A through 5 for UI8F.
+        methods.add_method_mut("get_quest_var", |_, this, (quest_id, index): (u32, u8)| {
+            Ok(this.get_quest_variable(quest_id, index))
+        });
+        methods.add_method_mut(
+            "set_quest_var",
+            |_, this, (quest_id, index, value): (u32, u8, u8)| {
+                this.set_quest_variable(quest_id, index, value);
+                Ok(())
+            },
+        );
         methods.add_method_mut("finish_quest", |_, this, quest_id: u32| {
             this.finish_quest(quest_id);
             Ok(())
