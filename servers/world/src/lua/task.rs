@@ -159,6 +159,8 @@ pub enum LuaTask {
     },
     FinishQuest {
         id: u32,
+        /// The optional reward the player picked, as an item id. 0 if there's none.
+        optional_item: u32,
     },
     GainStatusEffect {
         effect_id: u16,

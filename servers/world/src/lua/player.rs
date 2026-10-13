@@ -383,8 +383,9 @@ impl LuaPlayer {
         self.queued_tasks.push(LuaTask::AcceptQuest { id });
     }
 
-    fn finish_quest(&mut self, id: u32) {
-        self.queued_tasks.push(LuaTask::FinishQuest { id });
+    fn finish_quest(&mut self, id: u32, optional_item: u32) {
+        self.queued_tasks
+            .push(LuaTask::FinishQuest { id, optional_item });
     }
 
     /// Returns the target DefaultTalk event for a given SwitchTalk event.
@@ -943,10 +944,13 @@ impl UserData for LuaPlayer {
                 Ok(())
             },
         );
-        methods.add_method_mut("finish_quest", |_, this, quest_id: u32| {
-            this.finish_quest(quest_id);
-            Ok(())
-        });
+        methods.add_method_mut(
+            "finish_quest",
+            |_, this, (quest_id, optional_item): (u32, Option<u32>)| {
+                this.finish_quest(quest_id, optional_item.unwrap_or(0));
+                Ok(())
+            },
+        );
         methods.add_method_mut("has_quest", |_, this, quest_id: u16| {
             Ok(this
                 .player_data

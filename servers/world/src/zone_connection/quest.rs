@@ -1,7 +1,10 @@
 //! Quests!
 
 use crate::{
-    ZoneConnection, common::adjust_quest_id, inventory::Storage, zone_connection::PersistentQuest,
+    ItemInfoQuery, ZoneConnection,
+    common::adjust_quest_id,
+    inventory::{Item, Storage},
+    zone_connection::PersistentQuest,
 };
 use kawari::{
     constants::COMPLETED_QUEST_BITMASK_SIZE,
@@ -119,7 +122,8 @@ impl ZoneConnection {
         self.send_quest_tracker().await;
     }
 
-    pub async fn finish_quest(&mut self, id: u32) {
+    /// `optional_item` is the reward the player picked (an item id, as the client returns it), or 0.
+    pub async fn finish_quest(&mut self, id: u32, optional_item: u32) {
         let adjusted_id = adjust_quest_id(id);
 
         // Remove it from our internal data model
@@ -154,6 +158,40 @@ impl ZoneConnection {
 
         // Add exp
         self.add_exp(rewards.0 as i32).await;
+
+        // Add the optional reward they picked, as long as it's really one of this quest's
+        if optional_item != 0 {
+            let new_item;
+            {
+                let mut game_data = self.game_data.lock();
+                new_item = game_data
+                    .get_quest_optional_reward(id, optional_item)
+                    .and_then(|quantity| {
+                        game_data
+                            .get_item_info(ItemInfoQuery::ById(optional_item))
+                            .map(|x| Item::new(&x, quantity as i32))
+                    });
+            }
+            match new_item {
+                Some(new_item) => {
+                    if self
+                        .player_data
+                        .inventory
+                        .add_in_next_free_slot(new_item)
+                        .is_some()
+                    {
+                        self.send_inventory().await;
+                    } else {
+                        tracing::error!(
+                            "Couldn't add the reward {optional_item} for quest {id}, the inventory is full!"
+                        );
+                    }
+                }
+                None => tracing::warn!(
+                    "Quest {id} doesn't have {optional_item} as an optional reward, so it wasn't given!"
+                ),
+            }
+        }
 
         // The quests after it moved up a slot, so send the whole journal again
         self.send_active_quests().await;

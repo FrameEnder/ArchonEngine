@@ -1194,6 +1194,16 @@ impl GameData {
         (row.ExpFactor, row.GilReward)
     }
 
+    /// Returns how many of `item_id` this Quest gives, if it's one of the optional rewards you choose from.
+    pub fn get_quest_optional_reward(&mut self, quest_id: u32, item_id: u32) -> Option<u8> {
+        let row = self.quest_sheet.row(quest_id)?;
+
+        row.OptionalItemReward
+            .iter()
+            .position(|x| *x == item_id)
+            .map(|i| row.OptionalItemCountReward[i])
+    }
+
     /// Returns the max EXP or the exp "needed to grow" for a given level.
     pub fn get_max_exp(&mut self, level: u32) -> i32 {
         let row = self.param_grow_sheet.row(level).unwrap();

@@ -561,12 +561,12 @@ impl ZoneConnection {
                 LuaTask::AcceptQuest { id } => {
                     self.accept_quest(*id).await;
                 }
-                LuaTask::FinishQuest { id } => {
+                LuaTask::FinishQuest { id, optional_item } => {
                     // this means "all"
                     if *id == 65535 {
                         self.finish_all_quests().await;
                     } else {
-                        self.finish_quest(*id).await;
+                        self.finish_quest(*id, *optional_item).await;
                     }
                 }
                 LuaTask::GainStatusEffect {
