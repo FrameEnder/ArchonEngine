@@ -802,6 +802,18 @@ pub enum ActorControlCategory {
         item_id: u32, // Index to Item sheet
     },
 
+    /// Replies to a ServerRequestCallbackManager request (client trigger 9003), such as the quest battle prompt.
+    /// Found with Kawari Probe: the client hands this to ServerRequestCallbackManager::ProcessPacket.
+    #[brw(magic = 925u32)]
+    ServerRequestReply {
+        /// The callback slot from the request.
+        callback_index: u32,
+        /// The command from the request.
+        command: u32,
+        /// The reply itself, 0 means OK for the quest battle prompt.
+        result: u32,
+    },
+
     /// Calls some method in PlayerState, unsure what it does currently.
     #[brw(magic = 924u32)]
     UnkPlayerStateRelated {

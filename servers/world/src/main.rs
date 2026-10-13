@@ -1426,18 +1426,15 @@ async fn process_packet(
                                     }) =>
                                 {
                                     // During a quest, this is a ServerRequestCallbackManager request: the quest battle
-                                    // prompt (YesNoQuestBattle) asking with command 10 and waiting for a reply.
-                                    // TODO: The client opens the prompt when given the payload 00000000 (tested with
-                                    // Kawari Probe), but which packet carries it is still unknown. This is Sapphire's
-                                    // EventBattleDialog, which the client ignores; it's kept so the retainer list isn't
-                                    // sent instead.
+                                    // prompt (YesNoQuestBattle) asks with command 10 and waits for a reply, where 0
+                                    // means it can be shown. unk1 is the callback slot and unk2 the command.
+                                    // TODO: retail probably checks whether the player can enter, we always allow it.
                                     connection
                                         .actor_control_self(
-                                            ActorControlCategory::UnkPlayerStateRelated {
-                                                unk1: 0,
-                                                unk2: unk1,
-                                                unk3: unk2,
-                                                unk4: 0,
+                                            ActorControlCategory::ServerRequestReply {
+                                                callback_index: unk1,
+                                                command: unk2,
+                                                result: 0,
                                             },
                                         )
                                         .await;
