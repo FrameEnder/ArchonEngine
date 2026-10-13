@@ -284,12 +284,16 @@ impl WorldServer {
     }
 
     /// Removes instances without players in them, which wastes resources.
+    ///
+    /// An instance whose navmesh is still being generated is kept too, so the result gets loaded. (This used to be the
+    /// other way around: an instance with a navmesh generating was removed even with players in it, which left them
+    /// stuck on the loading screen at their next zone change.)
     fn cleanup_dead_instances(&mut self) {
         self.instances.retain(|instance| {
             matches!(
                 instance.generate_navmesh,
-                NavmeshGenerationStep::None | NavmeshGenerationStep::Needed(..)
-            ) && instance
+                NavmeshGenerationStep::Started(..)
+            ) || instance
                 .actors
                 .iter()
                 .any(|x| matches!(x.1, NetworkedActor::Player { .. }))
