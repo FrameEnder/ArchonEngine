@@ -107,6 +107,11 @@ pub enum LuaDirectorTask {
     CompleteQuestBattle {
         sequence: u8,
     },
+    /// Make a BNpc go after another BNpc (by layout ID), or after the player if there's no target.
+    SetHate {
+        layout_id: u32,
+        target: Option<u32>,
+    },
     MapEffect {
         index: u32,
         timeline_id: u32,
@@ -237,6 +242,14 @@ impl UserData for LuaDirector {
                 .push(LuaDirectorTask::CompleteQuestBattle { sequence });
             Ok(())
         });
+        methods.add_method_mut(
+            "set_hate",
+            |_, this, (layout_id, target): (u32, Option<u32>)| {
+                this.tasks
+                    .push(LuaDirectorTask::SetHate { layout_id, target });
+                Ok(())
+            },
+        );
         methods.add_method_mut("map_effect", |_, this, (index, timeline_id): (u32, u32)| {
             this.tasks
                 .push(LuaDirectorTask::MapEffect { index, timeline_id });
@@ -920,6 +933,34 @@ pub fn director_tick(
                     FromServer::QuestBattleComplete(director_id, quest_id, *sequence),
                     DestinationNetwork::ZoneClients,
                 );
+            }
+            LuaDirectorTask::SetHate { layout_id, target } => {
+                let target_id = match target {
+                    Some(target) => instance.find_npc(*target).map(|(id, _)| id),
+                    None => instance
+                        .actors
+                        .iter()
+                        .find(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+                        .map(|(id, _)| *id),
+                };
+                let Some(target_id) = target_id else {
+                    tracing::warn!(
+                        "Failed to find {target:?} for SetHate, {layout_id} won't attack!"
+                    );
+                    continue;
+                };
+                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                    tracing::warn!("Failed to find bnpc {layout_id} for SetHate!");
+                    continue;
+                };
+
+                // Picked up on the next NPC tick, the same way as being attacked.
+                if let Some(NetworkedActor::Npc {
+                    newly_hated_actor, ..
+                }) = instance.find_actor_mut(actor_id)
+                {
+                    *newly_hated_actor = Some(target_id);
+                }
             }
             LuaDirectorTask::PlayCutscene { cutscene_id } => {
                 let mut network = network.lock();
