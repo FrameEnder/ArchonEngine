@@ -532,6 +532,15 @@ impl LuaPlayer {
         self.queued_tasks.push(LuaTask::JoinContent { id });
     }
 
+    fn join_quest_battle(&mut self, id: u32, zone_id: u16) {
+        self.queued_tasks
+            .push(LuaTask::JoinQuestBattle { id, zone_id });
+    }
+
+    fn event_action(&mut self, id: u32) {
+        self.queued_tasks.push(LuaTask::EventAction { id });
+    }
+
     fn finish_casting_glamour(&mut self) {
         self.queued_tasks.push(LuaTask::FinishCastingGlamour {});
     }
@@ -1021,6 +1030,14 @@ impl UserData for LuaPlayer {
         });
         methods.add_method_mut("join_content", |_, this, id: u32| {
             this.join_content(id);
+            Ok(())
+        });
+        methods.add_method_mut("join_quest_battle", |_, this, (id, zone_id): (u32, u16)| {
+            this.join_quest_battle(id, zone_id);
+            Ok(())
+        });
+        methods.add_method_mut("event_action", |_, this, id: u32| {
+            this.event_action(id);
             Ok(())
         });
         methods.add_method_mut("finish_casting_glamour", |_, this, _: ()| {

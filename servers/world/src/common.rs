@@ -193,6 +193,10 @@ pub enum FromServer {
     FinishEvent,
     /// When a fish bites.
     FishBite,
+    /// The quest battle was won: its director, and the quest and sequence it advances.
+    QuestBattleComplete(HandlerId, u32, u8),
+    /// An event action (the progress bar for examining things and such) finished casting during a quest event.
+    QuestEventActionCast,
     /// Inform the client that another player has dismounted.
     ActorDismounted(ObjectId),
     /// Inform the client of the whereabouts of their party members.
@@ -397,6 +401,10 @@ pub enum ToServer {
     PartyMemberReturned(ObjectId, i32, u64),
     /// The client is requesting to join the following content.
     JoinContent(ClientId, ObjectId, u16, DutyFinderSetting),
+    /// The client started an event action during a quest event, which finishes casting after this many seconds.
+    QuestEventAction(ClientId, ObjectId, u8),
+    /// The client is entering a quest battle: the QuestBattle ID, and the territory it takes place in.
+    JoinQuestBattle(ClientId, ObjectId, u32, u16),
     /// The c lient is requesting to leave their current content, the connection is in charge of keeping track of the old position.
     LeaveContent(ClientId, ObjectId, u16, Position, f32),
     /// Update the global server state of the client's conditions.

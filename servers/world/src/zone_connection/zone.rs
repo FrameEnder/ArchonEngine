@@ -6,8 +6,8 @@ use crate::{
 };
 use kawari::{
     common::{
-        FestivalId, HandlerId, HouseId, HouseUnit, HousingFlag, LandData, Position, WarpType,
-        timestamp_secs,
+        FestivalId, HandlerId, HandlerType, HouseId, HouseUnit, HousingFlag, LandData, Position,
+        WarpType, timestamp_secs,
     },
     constants::OBFUSCATION_ENABLED_MODE,
     ipc::zone::{
@@ -58,7 +58,9 @@ impl ZoneConnection {
         self.fate_motivation_npcs.clear();
         self.content_handler_id = handler_id;
 
-        let bound_by_duty = content_finder_condition_id != 0;
+        // Quest battles are instanced content too, but don't come from the Duty Finder.
+        let bound_by_duty = content_finder_condition_id != 0
+            || handler_id.is_some_and(|x| x.handler_type() == HandlerType::QuestBattle);
 
         // Commit back our zone id and other volatile info on zone change.
         {
@@ -491,6 +493,23 @@ impl ZoneConnection {
                 self.player_data.character.actor_id,
                 id,
                 settings,
+            ))
+            .await;
+    }
+
+    /// Enters a quest battle, `zone_id` being the territory it takes place in.
+    pub async fn join_quest_battle(&mut self, quest_battle_id: u32, zone_id: u16) {
+        // Store our old information, for when we leave the instance
+        self.old_zone_id = self.player_data.volatile.zone_id as u16;
+        self.old_position = self.player_data.volatile.position;
+        self.old_rotation = self.player_data.volatile.rotation as f32;
+
+        self.handle
+            .send(ToServer::JoinQuestBattle(
+                self.id,
+                self.player_data.character.actor_id,
+                quest_battle_id,
+                zone_id,
             ))
             .await;
     }

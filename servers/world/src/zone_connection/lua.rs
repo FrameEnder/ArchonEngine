@@ -635,6 +635,38 @@ impl ZoneConnection {
                     self.join_content(*id as u16, DutyFinderSetting::default())
                         .await;
                 }
+                LuaTask::JoinQuestBattle { id, zone_id } => {
+                    self.join_quest_battle(*id, *zone_id).await;
+                }
+                LuaTask::EventAction { id } => {
+                    // The progress bar is shown on whatever the current event is with.
+                    let Some((_, event)) = events.last() else {
+                        tracing::warn!("Tried to start event action {id} without an event!");
+                        continue;
+                    };
+                    let target = event.actor_id;
+
+                    let cast_time;
+                    {
+                        let mut game_data = self.game_data.lock();
+                        cast_time = game_data.get_event_action_cast_time(*id);
+                    }
+
+                    self.actor_control_target(
+                        self.player_data.character.actor_id,
+                        target,
+                        ActorControlCategory::EventAction { unk1: 1, id: *id },
+                    )
+                    .await;
+
+                    self.handle
+                        .send(ToServer::QuestEventAction(
+                            self.id,
+                            self.player_data.character.actor_id,
+                            cast_time,
+                        ))
+                        .await;
+                }
                 LuaTask::FinishCastingGlamour => {
                     // NOTE: Needs a replay from retail, I guessed here because TBH who manually casts glamours anymore
 

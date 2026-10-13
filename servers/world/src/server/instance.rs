@@ -69,6 +69,8 @@ pub enum QueuedTaskData {
     },
     /// Complete an EventAction
     CastEventAction { target: ObjectId },
+    /// Complete an EventAction started by a quest, which is handled by the client's connection.
+    CastQuestEventAction,
     /// Make a fish bite.
     FishBite,
     /// Seal a boss wall.
@@ -135,6 +137,8 @@ pub struct Instance {
     pub synced_level: Option<u8>,
     /// How long this content lasts for, if applicable.
     pub duration: Option<Duration>,
+    /// Where players start in a quest battle, and which way they face.
+    pub quest_battle_start: Option<(Position, f32)>,
     /// Running over-time effects (DoTs, HoTs, etc.)
     pub periodic_effects: Vec<PeriodicEffect>,
 }

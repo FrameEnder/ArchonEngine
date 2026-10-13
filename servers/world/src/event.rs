@@ -36,6 +36,9 @@ pub trait EventHandler: std::fmt::Debug + Send + Sync {
 
     async fn on_enter_trigger(&self, event: &Event, player: &mut LuaPlayer, arg: u32) {}
 
+    /// An event action started with `event_action` finished casting.
+    async fn on_event_action_cast(&self, event: &Event, player: &mut LuaPlayer) {}
+
     async fn on_talk(&self, event: &Event, target_id: ObjectTypeId, player: &mut LuaPlayer) {}
 
     async fn on_yield(
@@ -233,6 +236,7 @@ pub fn dispatch_event(
         HandlerType::HousingAethernet => generic_lua_event("events/generic/HousingAethernet.lua"),
         HandlerType::InstanceContent => Some(Box::new(ContentEventHandler::new())),
         HandlerType::PublicContent => Some(Box::new(ContentEventHandler::new())),
+        HandlerType::QuestBattle => Some(Box::new(ContentEventHandler::new())),
         HandlerType::Fate => Some(Box::new(FateEventHandler {
             fate_id: *connection.fate_motivation_npcs.get(&actor_id).unwrap(),
         })),

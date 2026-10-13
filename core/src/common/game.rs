@@ -487,7 +487,7 @@ impl HandlerType {
     pub fn is_content_director(&self) -> bool {
         matches!(
             self,
-            HandlerType::InstanceContent | HandlerType::PublicContent
+            HandlerType::InstanceContent | HandlerType::PublicContent | HandlerType::QuestBattle
         )
     }
 

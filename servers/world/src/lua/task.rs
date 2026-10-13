@@ -194,6 +194,14 @@ pub enum LuaTask {
     JoinContent {
         id: u32,
     },
+    JoinQuestBattle {
+        id: u32,
+        zone_id: u16,
+    },
+    /// Starts an event action (a progress bar, like when examining something) during the current quest event.
+    EventAction {
+        id: u32,
+    },
     FinishCastingGlamour,
     PlayScene {
         scene: u16,

@@ -103,6 +103,10 @@ pub enum LuaDirectorTask {
         actor_id: ObjectId,
     },
     CompleteDuty,
+    /// Win a quest battle, which also moves its quest to this sequence.
+    CompleteQuestBattle {
+        sequence: u8,
+    },
     MapEffect {
         index: u32,
         timeline_id: u32,
@@ -228,6 +232,11 @@ impl UserData for LuaDirector {
             this.tasks.push(LuaDirectorTask::CompleteDuty {});
             Ok(())
         });
+        methods.add_method_mut("complete_quest_battle", |_, this, sequence: u8| {
+            this.tasks
+                .push(LuaDirectorTask::CompleteQuestBattle { sequence });
+            Ok(())
+        });
         methods.add_method_mut("map_effect", |_, this, (index, timeline_id): (u32, u32)| {
             this.tasks
                 .push(LuaDirectorTask::MapEffect { index, timeline_id });
@@ -267,6 +276,8 @@ pub struct DirectorData {
     pub bosses: HashMap<u32, DirectorBoss>,
     /// What the shortcut is currently pointing to.
     pub shortcut_poprange_id: Option<u32>,
+    /// For quest battles, the quest it belongs to.
+    pub quest_battle_quest_id: u32,
 }
 
 impl DirectorData {
@@ -287,6 +298,27 @@ impl DirectorData {
         };
         if let Err(err) = run_script() {
             tracing::warn!("Syntax error during onSetup: {err:?}");
+        }
+    }
+
+    /// Called when the player is ready for the content to begin, after its opening cutscene.
+    pub fn commence(&mut self) {
+        let mut run_script = || {
+            let mut lua_director = self.create_lua_director();
+            let err = self.lua.0.scope(|scope| {
+                let data = scope.create_userdata_ref_mut(&mut lua_director)?;
+
+                let func: Function = self.lua.0.globals().get("onCommence")?;
+
+                func.call::<()>(data)?;
+
+                Ok(())
+            });
+            self.apply_lua_director(lua_director);
+            err
+        };
+        if let Err(err) = run_script() {
+            tracing::warn!("Syntax error during onCommence: {err:?}");
         }
     }
 
@@ -823,6 +855,16 @@ pub fn director_tick(
                 //     DestinationNetwork::ZoneClients,
                 // );
             }
+            LuaDirectorTask::CompleteQuestBattle { sequence } => {
+                let quest_id = instance.directors.first().unwrap().quest_battle_quest_id;
+                let mut network = network.lock();
+                network.send_to_instance(
+                    ObjectId::default(),
+                    instance,
+                    FromServer::QuestBattleComplete(director_id, quest_id, *sequence),
+                    DestinationNetwork::ZoneClients,
+                );
+            }
             LuaDirectorTask::PlayCutscene { cutscene_id } => {
                 let mut network = network.lock();
                 network.send_to_instance(
@@ -1126,6 +1168,14 @@ pub fn handle_director_messages(
                 tracing::warn!("Somehow failed to find an instance for actor?");
                 return true;
             };
+
+            // Quest battles don't have the InstanceContent duty start, their script decides what happens.
+            if let Some(director) = instance.directors.first_mut()
+                && director.id.handler_type() == HandlerType::QuestBattle
+            {
+                director.commence();
+                return true;
+            }
 
             // TODO: wait for all players to be ready, not just the first one!
 

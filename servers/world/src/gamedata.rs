@@ -19,6 +19,7 @@ use icarus::ENpcBase::ENpcBaseSheet;
 use icarus::EObj::EObjSheet;
 use icarus::Emote::EmoteSheet;
 use icarus::EquipSlotCategory::EquipSlotCategorySheet;
+use icarus::EventAction::EventActionSheet;
 use icarus::Fate::FateSheet;
 use icarus::FateProgressUI::FateProgressUISheet;
 use icarus::FateShop::FateShopSheet;
@@ -49,6 +50,7 @@ use icarus::PlaceName::PlaceNameSheet;
 use icarus::PreHandler::PreHandlerSheet;
 use icarus::PublicContent::PublicContentSheet;
 use icarus::Quest::QuestSheet;
+use icarus::QuestBattle::QuestBattleSheet;
 use icarus::Recipe::RecipeSheet;
 use icarus::SpecialShop::SpecialShopSheet;
 use icarus::SwitchTalkVariation::{SwitchTalkVariationRow, SwitchTalkVariationSheet};
@@ -72,6 +74,17 @@ use kawari::common::{
 use kawari::common::{LegacyEquipmentModelId, WeaponModelId, timestamp_secs};
 use kawari::config::get_config;
 use strum::FromRepr;
+
+/// A QuestBattle, see `GameData::get_quest_battle`.
+#[derive(Debug, Default)]
+pub struct QuestBattleInfo {
+    /// The quest it belongs to.
+    pub quest_id: u32,
+    /// In minutes.
+    pub time_limit: u16,
+    /// Its variables, such as the layout IDs of the NPCs it spawns.
+    pub variables: Vec<(String, u32)>,
+}
 
 /// Convenient methods built on top of Physis to access data relevant to the server
 #[derive(Clone)]
@@ -1192,6 +1205,34 @@ impl GameData {
         let row = self.quest_sheet.row(quest_id).unwrap();
 
         (row.ExpFactor, row.GilReward)
+    }
+
+    /// Returns how many seconds this EventAction takes to cast.
+    pub fn get_event_action_cast_time(&mut self, id: u32) -> u8 {
+        EventActionSheet::read_from(&mut self.resource, Language::None)
+            .ok()
+            .and_then(|sheet| sheet.row(id))
+            .map(|row| row.CastTime)
+            .unwrap_or(2)
+    }
+
+    /// Returns the quest this QuestBattle belongs to, its time limit and its variables.
+    pub fn get_quest_battle(&mut self, quest_battle_id: u32) -> Option<QuestBattleInfo> {
+        let sheet = QuestBattleSheet::read_from(&mut self.resource, Language::None).ok()?;
+        let row = sheet.row(quest_battle_id)?;
+
+        let variables = row
+            .QuestBattleParams
+            .iter()
+            .filter(|x| !x.ScriptInstruction.is_empty())
+            .map(|x| (x.ScriptInstruction.to_string(), x.ScriptValue))
+            .collect();
+
+        Some(QuestBattleInfo {
+            quest_id: row.Quest as u32,
+            time_limit: row.TimeLimit,
+            variables,
+        })
     }
 
     /// Returns how many of `item_id` this Quest gives, if it's one of the optional rewards you choose from.

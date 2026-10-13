@@ -37,7 +37,7 @@ use crate::{
         spawn_allocator::SpawnAllocator,
         zone::{
             MapGimmick, change_zone_to_player, change_zone_warp_to_entrance,
-            change_zone_warp_to_pop_range, handle_zone_messages,
+            change_zone_warp_to_pop_range, do_change_zone, handle_zone_messages,
         },
     },
 };
@@ -150,6 +150,101 @@ impl WorldServer {
         self.instances
             .iter_mut()
             .find(|instance| instance.actors.contains_key(&actor_id))
+    }
+
+    /// Creates a new instance for a quest battle, which is always solo.
+    fn create_instance_for_quest_battle(
+        &mut self,
+        zone_id: u16,
+        quest_battle_id: u32,
+        game_data: &mut GameData,
+    ) -> &mut Instance {
+        tracing::info!(
+            "Creating new instance for quest battle {quest_battle_id} (zone {zone_id})!"
+        );
+
+        let lua = KawariLua::new();
+        let mut instance = Instance::new(zone_id, game_data, &lua, false, false);
+        instance.content_id = quest_battle_id as u16;
+
+        // Quest battles often take place in a copy of an overworld zone, but nothing from the overworld happens in them:
+        // everything that fights is spawned by the script.
+        instance.fates.clear();
+        instance.candiate_fates.clear();
+        instance
+            .directors
+            .retain(|x| x.id.handler_type() != HandlerType::Fate);
+        instance
+            .queued_task
+            .retain(|x| !matches!(x.data, QueuedTaskData::EndFate { .. }));
+        instance
+            .actors
+            .retain(|_, actor| !matches!(actor, NetworkedActor::Npc { .. }));
+
+        let id = HandlerId::new(HandlerType::QuestBattle, quest_battle_id as u16);
+        let mut director = DirectorData {
+            id,
+            ..Default::default()
+        };
+
+        let info = game_data
+            .get_quest_battle(quest_battle_id)
+            .unwrap_or_default();
+        instance.duration = Some(Duration::from_mins(info.time_limit as u64));
+        director.quest_battle_quest_id = info.quest_id;
+
+        // The QuestBattle's variables (the NPCs it spawns and such) are available to its script, like a quest's.
+        for (name, value) in &info.variables {
+            if let Err(err) = lua.0.globals().set(name.as_str(), *value) {
+                tracing::warn!("Failed to set {name} for quest battle {quest_battle_id}: {err:?}");
+            }
+        }
+
+        let file_name = get_config()
+            .filesystem
+            .locate_script_file(&format!("content/questbattle/{quest_battle_id}.lua"));
+        match std::fs::read(&file_name) {
+            Ok(file) => {
+                if let Err(err) = lua
+                    .0
+                    .load(file)
+                    .set_name("@".to_string() + &file_name)
+                    .exec()
+                {
+                    tracing::warn!(
+                        "Syntax error in {file_name}: {err:?} the quest battle won't be scripted!"
+                    );
+                } else {
+                    // Where the player starts, since quest battles don't have an entrance like other content.
+                    let start: Option<(Position, f32)> = (|| {
+                        let position: mlua::Table = lua.0.globals().get("START_POSITION").ok()?;
+                        let rotation: f32 =
+                            lua.0.globals().get("START_ROTATION").unwrap_or_default();
+                        Some((
+                            Position(Vec3A::new(
+                                position.get("x").ok()?,
+                                position.get("y").ok()?,
+                                position.get("z").ok()?,
+                            )),
+                            rotation,
+                        ))
+                    })();
+                    instance.quest_battle_start = start;
+
+                    director.lua = lua;
+                    director.setup();
+                }
+            }
+            Err(err) => {
+                tracing::warn!(
+                    "Failed to load {file_name}: {err:?} the quest battle won't be scripted!"
+                );
+            }
+        }
+
+        instance.directors.push(director);
+        self.instances.push(instance);
+        self.instances.last_mut().unwrap()
     }
 
     fn create_instance_for_content(
@@ -1000,6 +1095,14 @@ pub async fn server_main_loop(
                                 {
                                     director.event_action_cast(task.from_actor_id, *target);
                                 }
+                            }
+                            QueuedTaskData::CastQuestEventAction => {
+                                let mut network = network.lock();
+                                network.send_to(
+                                    task.from_id,
+                                    FromServer::QuestEventActionCast,
+                                    DestinationNetwork::ZoneClients,
+                                );
                             }
                             QueuedTaskData::FishBite => {
                                 let mut network = network.lock();
@@ -2353,6 +2456,42 @@ pub async fn server_main_loop(
                         tracing::warn!("Failed to find zone id for content?!");
                     }
                 }
+                ToServer::JoinQuestBattle(from_id, from_actor_id, quest_battle_id, zone_id) => {
+                    let mut data = data.lock();
+                    let mut network = network.lock();
+
+                    remove_actor_from_instance(&mut data, &mut network, from_actor_id);
+
+                    let mut game_data = game_data.lock();
+                    let target_instance = data.create_instance_for_quest_battle(
+                        zone_id,
+                        quest_battle_id,
+                        &mut game_data,
+                    );
+                    target_instance.insert_empty_actor(from_actor_id);
+
+                    let start = target_instance.quest_battle_start;
+                    if start.is_some() {
+                        do_change_zone(
+                            &mut network,
+                            target_instance,
+                            true,
+                            start.map(|x| x.0),
+                            start.map(|x| x.1),
+                            from_id,
+                            WarpType::Normal,
+                        );
+                    } else {
+                        change_zone_warp_to_entrance(
+                            &mut network,
+                            &mut game_data,
+                            target_instance,
+                            true,
+                            from_id,
+                            WarpType::Normal,
+                        );
+                    }
+                }
                 ToServer::LeaveContent(
                     from_client_id,
                     from_actor_id,
@@ -2471,6 +2610,19 @@ pub async fn server_main_loop(
                         // The only way the game can reliably set these stats is via StatusEffectList (REALLY)
                         send_effects_list(network.clone(), instance, from_actor_id);
                     }
+                }
+                ToServer::QuestEventAction(from_client_id, from_actor_id, cast_time) => {
+                    let mut data = data.lock();
+                    let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
+                        continue;
+                    };
+
+                    instance.insert_task(
+                        from_client_id,
+                        from_actor_id,
+                        Duration::from_secs(cast_time as u64),
+                        QueuedTaskData::CastQuestEventAction,
+                    );
                 }
                 ToServer::Fish(from_client_id, from_actor_id) => {
                     let mut data = data.lock();

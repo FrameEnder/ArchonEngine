@@ -1,7 +1,15 @@
 use async_trait::async_trait;
-use kawari::ipc::zone::EventType;
+use kawari::{
+    common::HandlerType,
+    ipc::zone::{EventType, SceneFlags},
+};
 
 use crate::{Event, EventHandler, ToServer, ZoneConnection, lua::LuaPlayer};
+
+/// The "duty complete" fanfare when winning a quest battle.
+pub const QUEST_BATTLE_SCENE_COMPLETE: u16 = 60001;
+/// Played after `QUEST_BATTLE_SCENE_COMPLETE`, before the player is sent back.
+pub const QUEST_BATTLE_SCENE_FINISH: u16 = 6;
 
 /// For content director events.
 /// This is mostly a dummy struct, most of the logic exists in the global server state.
@@ -26,7 +34,7 @@ impl EventHandler for ContentEventHandler {
         &self,
         event: &Event,
         connection: &mut ZoneConnection,
-        _scene: u16,
+        scene: u16,
         _results: &[i32],
         player: &mut LuaPlayer,
     ) {
@@ -38,6 +46,32 @@ impl EventHandler for ContentEventHandler {
                 ))
                 .await;
         }
+
+        // After winning a quest battle (see FromServer::QuestBattleComplete), play its last scene and send them back.
+        if event.id.handler_type() == HandlerType::QuestBattle {
+            if scene == QUEST_BATTLE_SCENE_COMPLETE {
+                player.play_scene(
+                    QUEST_BATTLE_SCENE_FINISH,
+                    SceneFlags::HIDE_HOTBAR | SceneFlags::NO_DEFAULT_CAMERA,
+                    Vec::new(),
+                );
+                return;
+            } else if scene == QUEST_BATTLE_SCENE_FINISH {
+                player.finish_event();
+                connection
+                    .handle
+                    .send(ToServer::LeaveContent(
+                        connection.id,
+                        connection.player_data.character.actor_id,
+                        connection.old_zone_id,
+                        connection.old_position,
+                        connection.old_rotation,
+                    ))
+                    .await;
+                return;
+            }
+        }
+
         player.finish_event();
     }
 }

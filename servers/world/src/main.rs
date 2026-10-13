@@ -38,8 +38,8 @@ use kawari::packet::oodle::OodleNetwork;
 use kawari::packet::{ConnectionState, ConnectionType, SegmentData, parse_packet_header};
 use kawari_world::lua::{KawariLua, KawariLuaState, LuaPlayer};
 use kawari_world::{
-    ChatConnection, CustomIpcConnection, Event, EventHandler, GameData, ObsfucationData, Roulette,
-    TeleportReason, ZoneConnection,
+    ChatConnection, CustomIpcConnection, Event, EventHandler, GameData, ObsfucationData,
+    QUEST_BATTLE_SCENE_COMPLETE, Roulette, TeleportReason, ZoneConnection,
 };
 use kawari_world::{
     ChatConnectionChannels, ChatPlayerData, ClientHandle, ClientId, FromServer, MessageInfo,
@@ -4186,6 +4186,40 @@ async fn process_server_msg(
             FromServer::FinishEvent => {
                 connection.event_finish(events).await;
             }
+            FromServer::QuestEventActionCast => {
+                if let Some((handler, event)) = events.last() {
+                    handler.on_event_action_cast(event, lua_player).await;
+                } else {
+                    tracing::warn!(
+                        "An event action finished casting, but there's no event anymore!"
+                    );
+                }
+            }
+            FromServer::QuestBattleComplete(handler_id, quest_id, sequence) => {
+                // The quest moves on straight away, the scenes are just the victory fanfare.
+                connection.set_quest_sequence(quest_id, sequence).await;
+
+                connection
+                    .start_event(
+                        ObjectTypeId {
+                            object_id: connection.player_data.character.actor_id,
+                            object_type: ObjectTypeKind::None,
+                        },
+                        handler_id,
+                        EventType::GameProgress,
+                        1,
+                        events,
+                        lua_player,
+                    )
+                    .await;
+                if events.last_mut().is_some() {
+                    lua_player.play_scene(
+                        QUEST_BATTLE_SCENE_COMPLETE,
+                        SceneFlags::from_bits_retain(0x40000),
+                        Vec::new(),
+                    );
+                }
+            }
             FromServer::FishBite => {
                 let handler_id = HandlerId::new(HandlerType::Fishing, 1).0;
 
@@ -4429,6 +4463,18 @@ async fn process_server_msg(
                 }
             }
             FromServer::PlayInitialCutscene(duration, settings) => {
+                // Quest battles play the same opening scene, but without InstanceContent's parameters (as Sapphire does.)
+                let is_quest_battle = connection
+                    .content_handler_id
+                    .is_some_and(|x| x.handler_type() == HandlerType::QuestBattle);
+                let params = if is_quest_battle {
+                    Vec::new()
+                } else {
+                    vec![
+                        0, // BGM, according to sapphire?
+                        0, 0, 5, 14400, 0, 0, 0, 0, 0, duration, settings,
+                    ]
+                };
                 lua_player.play_scene(
                     1,
                     SceneFlags::NO_DEFAULT_CAMERA
@@ -4441,10 +4487,7 @@ async fn process_server_msg(
                         | SceneFlags::DISABLE_CANCEL_EMOTE
                         | SceneFlags::INVIS_AOE
                         | SceneFlags::UNK1,
-                    vec![
-                        0, // BGM, according to sapphire?
-                        0, 0, 5, 14400, 0, 0, 0, 0, 0, duration, settings,
-                    ],
+                    params,
                 )
             }
             FromServer::FATEComplete => {

@@ -1094,7 +1094,7 @@ pub fn change_zone_to_player(
 }
 
 /// Sends the needed information to ZoneConnection for a zone change.
-fn do_change_zone(
+pub fn do_change_zone(
     network: &mut NetworkState,
     target_instance: &mut Instance,
     needs_init_zone: bool,
