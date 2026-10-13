@@ -27,6 +27,7 @@ These special debug commands start with `!` and are custom to Kawari.
 | `!nudge <distance> <up/down (optional)>` | Teleport forward, back, up or down `distance` yalms. Specifying up or down will move the player up or down instead of forward or back. |
 | `!ofbg <id> <phase (optional)>` | Sets the background scenery to the given `id` during Ocean Fishing content. For a list of ids, refer to the `IKDSpot` Excel sheet. Changing `phase` doesn't seem to do much, but you can try it out here. |
 | `!rawpacket <opcode> <hex>` | Sends an IPC packet with a given opcode, its contents written as hex. |
+| `!rawsweep <from> <to> <hex>` | Sends the same IPC packet with every opcode in a range that Kawari doesn't know yet, to find one the client reacts to. |
 | `!reload` | Reloads `Global.lua` that is normally only loaded once at start-up. |
 | `!unlockbuddyequip <id>` | Unlocks the specified BuddyEquip (Companion Barding) ID. |
 | `!unlockcontent <id/all>` | Unlocks the specified instanced content. The ID to use is from the InstanceContent Excel sheet. |

@@ -2,6 +2,8 @@
 
 use std::str::FromStr;
 
+use binrw::BinRead;
+
 use bstr::BString;
 use mlua::Function;
 use physis::equipment::EquipSlot;
@@ -372,6 +374,48 @@ impl ZoneConnection {
                         }
                         _ => self.send_notice("Usage: !rawpacket <opcode> <hex>").await,
                     }
+                }
+
+                true
+            }
+            "!rawsweep" => {
+                // Sends the same IPC data with every opcode in a range that Kawari doesn't know yet, to find which one
+                // the client reacts to. e.g. !rawsweep 0 1100 00000000
+                let parts: Vec<&str> = chat_message.split(' ').collect();
+                let data: Option<Vec<u8>> = parts.get(3).and_then(|hex| {
+                    (0..hex.len())
+                        .step_by(2)
+                        .map(|i| {
+                            hex.get(i..i + 2)
+                                .and_then(|b| u8::from_str_radix(b, 16).ok())
+                        })
+                        .collect()
+                });
+                match (
+                    parts.get(1).and_then(|x| x.parse::<u16>().ok()),
+                    parts.get(2).and_then(|x| x.parse::<u16>().ok()),
+                    data,
+                ) {
+                    (Some(from), Some(to), Some(data)) => {
+                        let mut sent = 0;
+                        for op_code in from..=to {
+                            let known = kawari::opcodes::ServerZoneIpcType::read_le(
+                                &mut std::io::Cursor::new(op_code.to_le_bytes()),
+                            )
+                            .is_ok_and(|x| {
+                                !matches!(x, kawari::opcodes::ServerZoneIpcType::Unknown(_))
+                            });
+                            if !known {
+                                self.send_arbitrary_packet(op_code, data.clone()).await;
+                                sent += 1;
+                            }
+                        }
+                        self.send_notice(&format!(
+                            "Sent {sent} unknown opcodes from {from} to {to}."
+                        ))
+                        .await;
+                    }
+                    _ => self.send_notice("Usage: !rawsweep <from> <to> <hex>").await,
                 }
 
                 true
