@@ -47,6 +47,14 @@ const EFFECT_THIN_AIR: u16 = 1217;
 /// Extra leniency (in yalms) given to area-of-effect checks, to roughly account for target hitboxes.
 const AOE_HITBOX_LENIENCY: f32 = 1.0;
 
+/// How much of their damage NPCs deal to players, in percent.
+///
+/// NPC damage is worked out like a player's (strength or intelligence times potency), which comes out far too high
+/// against players: in Chasing Shadows a level 5 Frenzied Bulb's auto-attack did ~65 damage on Kawari, where retail
+/// footage shows ~8. Retail's enemy damage formula isn't known, so this scales it down to match. It only applies to
+/// players, so NPCs fighting each other (such as quest battle allies) are unaffected.
+const NPC_DAMAGE_TO_PLAYERS_PERCENT: u32 = 12;
+
 /// Process action-related messages.
 pub fn handle_action_messages(
     data: Arc<Mutex<WorldServer>>,
@@ -237,7 +245,7 @@ pub fn execute_action(
         }
     }
 
-    let effects_builder;
+    let mut effects_builder;
     let common_spawn;
     {
         let data = data.lock();
@@ -283,6 +291,21 @@ pub fn execute_action(
             }
             _ => unimplemented!(),
         };
+
+        // Tone down NPC damage against players, see NPC_DAMAGE_TO_PLAYERS_PERCENT.
+        let npc_hitting_player = matches!(actor, NetworkedActor::Npc { .. })
+            && matches!(
+                instance.find_actor(request.target.object_id),
+                Some(NetworkedActor::Player { .. })
+            );
+        if npc_hitting_player && let Some(effects_builder) = &mut effects_builder {
+            for effect in &mut effects_builder.effects {
+                if let TargetEffectKind::Damage { amount, .. } = &mut effect.0 {
+                    *amount =
+                        ((*amount as u32 * NPC_DAMAGE_TO_PLAYERS_PERCENT / 100).max(1)) as u16;
+                }
+            }
+        }
     }
 
     // tell them the action results
