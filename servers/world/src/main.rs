@@ -1420,6 +1420,25 @@ async fn process_packet(
                                     }
                                     connection.update_online_status().await;
                                 }
+                                ClientTriggerCommand::OpenUnk1 { unk1, unk2 }
+                                    if events.last().is_some_and(|x| {
+                                        x.1.id.handler_type() == HandlerType::Quest
+                                    }) =>
+                                {
+                                    // During a quest, this is the client asking to open the quest battle prompt
+                                    // (YesNoQuestBattle.) It waits for this reply, Sapphire calls it EventBattleDialog
+                                    // and echoes the level and item level sync back.
+                                    connection
+                                        .actor_control_self(
+                                            ActorControlCategory::UnkPlayerStateRelated {
+                                                unk1: 0,
+                                                unk2: unk1,
+                                                unk3: unk2,
+                                                unk4: 0,
+                                            },
+                                        )
+                                        .await;
+                                }
                                 ClientTriggerCommand::OpenUnk1 { .. } => {
                                     for i in 0..10 {
                                         let ipc = ServerZoneIpcSegment::new(
