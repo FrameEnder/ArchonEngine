@@ -197,6 +197,7 @@ async fn initial_setup(
                     fate_motivation_npcs: HashMap::new(),
                     content_handler_id: None,
                     can_share_teleport: false,
+                    capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
                 };
 
                 // Handle setup before passing off control to the zone connection.

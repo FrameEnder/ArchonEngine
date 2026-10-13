@@ -368,6 +368,15 @@ pub struct WorldConfig {
     /// The language to read game data as, should have no effect on regular gameplay but definitely does affect a lot of debug/GM commands.
     #[serde(default = "WorldConfig::default_language")]
     pub language: String,
+
+    /// Record every packet between the server and each game client, for debugging. One file per connection, in
+    /// `packet_capture_dir`.
+    #[serde(default)]
+    pub packet_capture: bool,
+
+    /// Where packet captures are written.
+    #[serde(default = "WorldConfig::default_packet_capture_dir")]
+    pub packet_capture_dir: String,
 }
 
 impl Default for WorldConfig {
@@ -386,6 +395,8 @@ impl Default for WorldConfig {
             accept_new_characters: Self::default_accept_new_characters(),
             exp_bonus: Self::default_exp_bonus(),
             language: Self::default_language(),
+            packet_capture: false,
+            packet_capture_dir: Self::default_packet_capture_dir(),
         }
     }
 }
@@ -437,6 +448,10 @@ impl WorldConfig {
 
     fn default_language() -> String {
         "en".to_string()
+    }
+
+    fn default_packet_capture_dir() -> String {
+        "captures".to_string()
     }
 
     pub fn language(&self) -> Language {

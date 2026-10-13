@@ -211,11 +211,17 @@ pub struct ZoneConnection {
     pub content_handler_id: Option<HandlerId>,
     /// Whether the player can offer this teleport to their party.
     pub can_share_teleport: bool, // TODO: remove this and add more teleport reasons
+    /// Packet capture for debugging, if enabled in the config.
+    pub capture: crate::capture::PacketCapture,
 }
 
 impl ZoneConnection {
     pub fn parse_packet(&mut self, data: &[u8]) -> Vec<PacketSegment<ClientZoneIpcSegment>> {
-        parse_packet(data, &mut self.state)
+        let segments = parse_packet(data, &mut self.state);
+        for segment in &segments {
+            self.capture.record_incoming(segment);
+        }
+        segments
     }
 
     /// Sends an IPC segment to the player, where the source actor is also the player.
@@ -242,6 +248,8 @@ impl ZoneConnection {
     }
 
     pub async fn send_segment(&mut self, segment: PacketSegment<ServerZoneIpcSegment>) {
+        self.capture.record_outgoing(&segment);
+
         // Ditto as above
         Box::pin(send_packet(
             &mut self.socket,

@@ -1,4 +1,7 @@
 mod chat_connection;
+
+/// Optional packet capture for debugging.
+pub mod capture;
 pub use chat_connection::{ChatConnection, ChatConnectionChannels, ChatPlayerData};
 
 mod zone_connection;
