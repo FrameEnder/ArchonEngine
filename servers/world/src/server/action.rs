@@ -65,6 +65,13 @@ const NPC_CRITICAL_MULTIPLIER: f32 = 1.5;
 /// monster landed within about 5% of each other.
 const NPC_DAMAGE_VARIANCE: f32 = 0.05;
 
+/// How often an NPC's attack on a player misses, or is parried, in percent, and how much of a parried hit gets through.
+/// From Kawari Recorder's recording of retail: of 266 attacks on a low-level player, 22 missed (8%) and 13 were parried
+/// (5%), parried ones doing about 80% of the usual damage.
+const NPC_MISS_PERCENT: u8 = 8;
+const NPC_PARRY_PERCENT: u8 = 5;
+const NPC_PARRY_MULTIPLIER: f32 = 0.8;
+
 /// What to multiply an NPC's damage against players by: its recorded retail auto-attack damage over what its stats
 /// give for one, or `NPC_DAMAGE_TO_PLAYERS_PERCENT` if it has no recording.
 fn npc_damage_scale(actor: &NetworkedActor, level: u8) -> f32 {
@@ -327,6 +334,20 @@ pub fn execute_action(
             );
         if npc_hitting_player && let Some(effects_builder) = &mut effects_builder {
             let scale = npc_damage_scale(actor, common_spawn.level);
+            let roll = fastrand::u8(..100);
+            let missed = roll < NPC_MISS_PERCENT;
+            let parried = !missed && roll < NPC_MISS_PERCENT + NPC_PARRY_PERCENT;
+            if missed {
+                // Nothing lands: no damage, and no drain either.
+                effects_builder.effects.retain(|effect| {
+                    !matches!(effect.0, TargetEffectKind::Heal { unk1, .. } if unk1[4] & EFFECT_ON_SOURCE != 0)
+                });
+                for effect in &mut effects_builder.effects {
+                    if matches!(effect.0, TargetEffectKind::Damage { .. }) {
+                        effect.0 = TargetEffectKind::Miss;
+                    }
+                }
+            }
             let mut dealt = 0u32;
             for effect in &mut effects_builder.effects {
                 if let TargetEffectKind::Damage {
@@ -337,7 +358,9 @@ pub fn execute_action(
                 {
                     let variance = 1.0 + (fastrand::f32() * 2.0 - 1.0) * NPC_DAMAGE_VARIANCE;
                     let mut damage = *amount as f32 * scale * variance;
-                    if fastrand::u8(..100) < NPC_CRITICAL_PERCENT {
+                    if parried {
+                        damage *= NPC_PARRY_MULTIPLIER;
+                    } else if fastrand::u8(..100) < NPC_CRITICAL_PERCENT {
                         damage *= NPC_CRITICAL_MULTIPLIER;
                         *damage_kind |= DamageKind::CRITICAL;
                     }

@@ -172,7 +172,8 @@ impl ZoneConnection {
         let rewards;
         {
             let mut game_data = self.game_data.lock();
-            rewards = game_data.get_quest_rewards(id);
+            let level = self.current_level(&game_data);
+            rewards = game_data.get_quest_rewards(id, level);
         }
 
         // Add gil
@@ -187,7 +188,35 @@ impl ZoneConnection {
         self.send_inventory().await;
 
         // Add exp
-        self.add_exp(rewards.0 as i32).await;
+        if rewards.0 > 0 {
+            self.add_exp(rewards.0 as i32).await;
+        }
+
+        // Add the items it always gives
+        let reward_items: Vec<Item>;
+        {
+            let mut game_data = self.game_data.lock();
+            reward_items = game_data
+                .get_quest_reward_items(id)
+                .into_iter()
+                .filter_map(|(item_id, count)| {
+                    game_data
+                        .get_item_info(ItemInfoQuery::ById(item_id))
+                        .map(|info| Item::new(&info, count as i32))
+                })
+                .collect();
+        }
+        if !reward_items.is_empty() {
+            for item in reward_items {
+                let item_id = item.item_id;
+                if !self.player_data.inventory.add_obtained_item(item) {
+                    tracing::error!(
+                        "Couldn't add the reward {item_id} for quest {id}, the inventory is full!"
+                    );
+                }
+            }
+            self.send_inventory().await;
+        }
 
         // Add the optional reward they picked, as long as it's really one of this quest's
         if optional_item != 0 {
@@ -336,9 +365,14 @@ impl ZoneConnection {
         layout_id: u32,
         level: u8,
     ) {
-        let exp = self.game_data.lock().get_bnpc_exp(level);
+        let (exp, player_level) = {
+            let mut game_data = self.game_data.lock();
+            let exp = game_data.get_bnpc_exp(level);
+            (exp, self.current_level(&game_data))
+        };
+        let bonus = self.exp_chain_bonus(level as u16 >= player_level);
         if exp > 0 {
-            self.add_exp(exp).await;
+            self.add_exp(exp * (100 + bonus as i32) / 100).await;
         }
 
         let quest_ids: Vec<u16> = self
@@ -371,6 +405,34 @@ impl ZoneConnection {
 
         self.process_lua_player(lua_player, events).await;
         lua_player.player_data = self.player_data.clone();
+    }
+
+    /// Moves the EXP chain along for a kill and returns its bonus, in percent.
+    ///
+    /// From Kawari Recorder's recording of retail: killing enemies one after another gives +20% EXP for the second,
+    /// +25% for the third and +30% from the fourth (the most seen.) Only enemies at or above your level count, and the
+    /// chain held across 45 seconds between kills but was gone after 62.
+    pub fn exp_chain_bonus(&mut self, counts: bool) -> u32 {
+        const CHAIN_WINDOW: std::time::Duration = std::time::Duration::from_secs(60);
+
+        let now = std::time::Instant::now();
+        if !counts {
+            return 0;
+        }
+        let (count, last) = self.exp_chain;
+        let count = if last.is_some_and(|last| now.duration_since(last) <= CHAIN_WINDOW) {
+            count + 1
+        } else {
+            1
+        };
+        self.exp_chain = (count, Some(now));
+
+        match count {
+            0 | 1 => 0,
+            2 => 20,
+            3 => 25,
+            _ => 30,
+        }
     }
 
     pub fn record_fate_completion(&mut self) {

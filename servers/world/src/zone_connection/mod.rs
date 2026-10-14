@@ -212,6 +212,8 @@ pub struct ZoneConnection {
     pub event_action_id: u32,
     /// Whether the player can offer this teleport to their party.
     pub can_share_teleport: bool, // TODO: remove this and add more teleport reasons
+    /// The current EXP chain: how many kills in a row, and when the last one was. See `on_battle_npc_killed`.
+    pub exp_chain: (u32, Option<std::time::Instant>),
     /// Packet capture for debugging, if enabled in the config.
     pub capture: crate::capture::PacketCapture,
 }

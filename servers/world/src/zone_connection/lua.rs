@@ -256,12 +256,7 @@ impl ZoneConnection {
                             .map(|x| Item::new(&x, *quantity));
                     }
                     if let Some(new_item) = new_item {
-                        if self
-                            .player_data
-                            .inventory
-                            .add_in_next_free_slot(new_item)
-                            .is_some()
-                        {
+                        if self.player_data.inventory.add_obtained_item(new_item) {
                             if *send_client_update {
                                 self.send_inventory().await;
                             }

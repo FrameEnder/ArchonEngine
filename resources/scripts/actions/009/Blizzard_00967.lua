@@ -1,0 +1,10 @@
+-- Trickster Imp's attack: on retail it casts this instead of auto-attacking (Kawari Recorder.)
+-- Worked out like enemies' physical attacks, so it's scaled the same way (see NPC_DAMAGE_TO_PLAYERS_PERCENT.)
+POTENCY = 100
+
+function doAction(player, in_combo)
+    effects = EffectsBuilder()
+    effects:damage(DAMAGE_TYPE_MAGIC, player.parameters:calc_physical_damage(POTENCY))
+
+    return effects
+end

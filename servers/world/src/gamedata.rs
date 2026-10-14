@@ -1203,10 +1203,51 @@ impl GameData {
     }
 
     /// Returns the rewards for this Quest, EXP and Gil respectively.
-    pub fn get_quest_rewards(&mut self, quest_id: u32) -> (u16, u32) {
+    /// A quest's EXP and gil rewards for a player of this level. EXP is its ExpFactor times ParamGrow's ScaledQuestXP
+    /// and QuestExpModifier at the player's level, over 100 (Sapphire's formula, at the player's level rather than the
+    /// quest's.) Checked against retail with Kawari Recorder: Eggs over Queasy (ExpFactor 400, a level 4 quest) gave
+    /// 2240 EXP at level 7 (400 * 80 * 7 / 100), and Surveying the Damage 2720 at level 8 (400 * 85 * 8 / 100.)
+    pub fn get_quest_rewards(&mut self, quest_id: u32, level: u16) -> (u32, u32) {
         let row = self.quest_sheet.row(quest_id).unwrap();
 
-        (row.ExpFactor, row.GilReward)
+        let level = level as u32;
+        let exp = self
+            .param_grow_sheet
+            .row(level)
+            .map(|grow| {
+                row.ExpFactor as u32 * grow.ScaledQuestXP as u32 * grow.QuestExpModifier as u32
+                    / 100
+            })
+            .unwrap_or(0);
+        tracing::info!(
+            "Quest {quest_id} gives {exp} EXP (ExpFactor {} at player level {level}) and {} gil",
+            row.ExpFactor,
+            row.GilReward
+        );
+
+        (exp, row.GilReward)
+    }
+
+    /// The items a quest always gives (not the ones you pick from): its reward items and crystals, as (item, count).
+    /// Retail gave a Hi-Potion and 13 Wind Shards for Eggs over Queasy, which are these.
+    pub fn get_quest_reward_items(&mut self, quest_id: u32) -> Vec<(u32, u32)> {
+        let Some(row) = self.quest_sheet.row(quest_id) else {
+            return Vec::new();
+        };
+
+        let items = row
+            .Reward
+            .iter()
+            .zip(row.ItemCountReward.iter())
+            .filter(|(item, count)| **item != 0 && **count != 0)
+            .map(|(item, count)| (*item, *count as u32));
+        let crystals = row
+            .ItemCatalyst
+            .iter()
+            .zip(row.ItemCountCatalyst.iter())
+            .filter(|(item, count)| **item != 0 && **count != 0)
+            .map(|(item, count)| (*item as u32, *count as u32));
+        items.chain(crystals).collect()
     }
 
     /// Returns how many seconds this EventAction takes to cast.

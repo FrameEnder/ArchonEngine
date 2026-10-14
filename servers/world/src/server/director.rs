@@ -122,6 +122,11 @@ pub enum LuaDirectorTask {
         layout_id: u32,
         key: String,
     },
+    /// Has an NPC yell a line from the NpcYell sheet: a speech bubble over them, and the line in chat.
+    Yell {
+        layout_id: u32,
+        npc_yell_id: u32,
+    },
     /// Change the director's sequence, which the client's script for it reacts to (e.g. `OnSequence001`.)
     SetSequence {
         sequence: u8,
@@ -275,6 +280,13 @@ impl UserData for LuaDirector {
         );
         methods.add_method_mut("say", |_, this, (layout_id, key): (u32, String)| {
             this.tasks.push(LuaDirectorTask::Say { layout_id, key });
+            Ok(())
+        });
+        methods.add_method_mut("yell", |_, this, (layout_id, npc_yell_id): (u32, u32)| {
+            this.tasks.push(LuaDirectorTask::Yell {
+                layout_id,
+                npc_yell_id,
+            });
             Ok(())
         });
         methods.add_method_mut("set_sequence", |_, this, sequence: u8| {
@@ -1114,10 +1126,42 @@ pub fn director_tick(
                 let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ChatMessage(ChatMessage {
                     sender_actor_id: actor_id,
                     channel: ChatChannelType::Say,
-                    sender_name: name.unwrap_or_default(),
+                    // BNpcName is lower case ("short-tempered thaumaturge"); retail shows "Short-tempered Thaumaturge".
+                    sender_name: capitalize_words(&name.unwrap_or_default()),
                     message: text.into(),
                     ..Default::default()
                 }));
+                let mut network = network.lock();
+                network.send_to_instance(
+                    ObjectId::default(),
+                    instance,
+                    FromServer::PacketSegment(ipc, actor_id),
+                    DestinationNetwork::ZoneClients,
+                );
+            }
+            LuaDirectorTask::Yell {
+                layout_id,
+                npc_yell_id,
+            } => {
+                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                    continue;
+                };
+                let name_id = game_data
+                    .lock()
+                    .get_npc_yell_name_id(*npc_yell_id)
+                    .unwrap_or_default();
+                let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::NpcYell {
+                    object_id: ObjectTypeId {
+                        object_id: actor_id,
+                        object_type: ObjectTypeKind::None,
+                    },
+                    name_id,
+                    npc_yell_id: *npc_yell_id,
+                    param1: 0,
+                    param2: 0,
+                    param3: 0,
+                    param4: 0,
+                });
                 let mut network = network.lock();
                 network.send_to_instance(
                     ObjectId::default(),
@@ -1773,4 +1817,18 @@ pub fn send_director_vars(
             );
         }
     }
+}
+
+/// Capitalizes the first letter of each word, the way retail shows NPC names in chat.
+fn capitalize_words(name: &str) -> String {
+    name.split(' ')
+        .map(|word| {
+            let mut chars = word.chars();
+            match chars.next() {
+                Some(first) => first.to_uppercase().chain(chars).collect(),
+                None => String::new(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }

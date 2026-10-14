@@ -198,6 +198,7 @@ async fn initial_setup(
                     content_handler_id: None,
                     event_action_id: 0,
                     can_share_teleport: false,
+                    exp_chain: (0, None),
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
                 };
 

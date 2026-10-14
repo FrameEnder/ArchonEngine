@@ -362,6 +362,20 @@ impl Inventory {
         None
     }
 
+    /// Adds an item where it belongs: crystals to the crystal bag, anything else to the next free slot. Returns false
+    /// if there wasn't room.
+    pub fn add_obtained_item(&mut self, item: Item) -> bool {
+        if let Some(kind) = CrystalKind::from_repr(item.item_id) {
+            let slot = self.crystals.get_item_for_id(kind);
+            if slot.quantity + item.quantity > item.stack_size as i32 {
+                return false;
+            }
+            slot.quantity += item.quantity;
+            return true;
+        }
+        self.add_in_next_free_slot(item).is_some()
+    }
+
     pub fn add_in_next_free_slot(&mut self, item: Item) -> Option<ItemInfo> {
         if item.stack_size > 1 {
             for page in &mut self.pages {

@@ -27,11 +27,17 @@ WAVES = {
 
 -- The quest moves to this sequence when the battle is won.
 QUEST_SEQUENCE_AFTER_WIN = 2
--- The director's sequence while fighting (the client's script shows the duty objective for it), and once the battle is
--- lost (the client shows "Duty Failed".) The failed sequence and the six seconds before sending the player out are
--- what Sapphire's quest battles do.
-SEQUENCE_FIGHTING = 1
+-- The director's sequence, as retail moves it along (recorded with Kawari Recorder): 1 at the start (the client's script
+-- shows the duty objective for it), 2 when the fight gets going 8.5 seconds in, 3, 4 and 5 as each wave arrives, and 6
+-- once it's won. Losing sets it to 0xFE (the client shows "Duty Failed"), and the six seconds before sending the player
+-- out are what Sapphire's quest battles do.
+SEQUENCE_START = 1
+SEQUENCE_FIGHTING = 2
+SEQUENCE_FIRST_WAVE = 3
+SEQUENCE_WON = 6
 SEQUENCE_FAILED = 0xFE
+-- How many updates (half a second each) after starting the fight gets going.
+FIGHT_STARTS_IN = 17
 -- How many updates (half a second each) to wait after the player falls before sending them out.
 FAIL_DELAY_UPDATES = 12
 
@@ -41,19 +47,26 @@ HEAL_BELOW_HEALTH = 50
 HEAL_COOLDOWN_UPDATES = 8
 
 -- Ida and Papalymo's battle chatter, by key in the quest's text sheet. The server looks the lines up in the game data.
--- (On retail these are battle talk pop-ups; until that packet is known, they're said in /say.)
+-- (On retail these are battle talk pop-ups; until that packet is known, they're said in /say.) When and in what order
+-- is from Kawari Recorder's recording of retail: the first lines 4.5 seconds after the fight gets going, the first
+-- wave's 10 seconds after it arrives, each pair 5 seconds apart.
 TEXT_PREFIX = "TEXT_MANFST005_00445_"
--- Said at the start, when the first wave arrives, and when the last one does.
 LINES_START = { { BNPC_PAPALYMO, "PAPALYMO_BATTLETALK_01" }, { BNPC_IDA, "YDA_BATTLETALK_01" } }
+LINES_START_DELAY = 9
 LINES_WAVE = {
     [1] = { { BNPC_IDA, "YDA_BATTLETALK_02" }, { BNPC_PAPALYMO, "PAPALYMO_BATTLETALK_02" } },
-    [3] = { { BNPC_PAPALYMO, "PAPALYMO_BATTLETALK_03" } },
 }
+LINES_WAVE_DELAY = 19
+-- When the last wave arrives, Papalymo yells "Curses! Not now!" (NpcYell 118, a speech bubble) about 6.5 seconds later.
+YELL_LAST_WAVE = 118
+YELL_LAST_WAVE_DELAY = 13
+-- Once the last wave's enemies are defeated, Papalymo says this.
+LINE_LAST_WAVE_CLEARED = { { BNPC_PAPALYMO, "PAPALYMO_BATTLETALK_03" } }
 -- Said when Papalymo heals the player, at most this often (in updates.)
 LINE_HEAL = "PAPALYMO_BATTLETALK_04"
 HEAL_LINE_COOLDOWN_UPDATES = 40
 -- How many updates apart lines said together are.
-LINE_GAP_UPDATES = 4
+LINE_GAP_UPDATES = 10
 
 -- Enemies still standing, by layout ID, and the order they arrived in.
 local remaining = {}
@@ -66,12 +79,16 @@ local fail_in = nil
 -- Counts down until Papalymo can heal again.
 local heal_cooldown = 0
 local heal_line_cooldown = 0
--- Lines waiting to be said: { updates left, layout ID, key }.
+-- Lines waiting to be said: { updates left, layout ID, key (a text key to say, or an NpcYell ID to yell) }.
 local pending_lines = {}
+-- Counts up once the fight starts, see onUpdate.
+local fight_starts_in = nil
+-- The last wave's enemies, until they're all defeated.
+local last_wave = nil
 
--- Queues lines to be said one after another.
-function sayLines(lines)
-    local delay = 0
+-- Queues lines to be said one after another, the first after `delay` updates.
+function sayLines(lines, delay)
+    delay = delay or 0
     for _, line in ipairs(pending_lines) do
         delay = math.max(delay, line[1] + LINE_GAP_UPDATES)
     end
@@ -85,7 +102,11 @@ function sayPendingLines(director)
     local still_pending = {}
     for _, line in ipairs(pending_lines) do
         if line[1] <= 0 then
-            director:say(line[2], TEXT_PREFIX .. line[3])
+            if type(line[3]) == "number" then
+                director:yell(line[2], line[3])
+            else
+                director:say(line[2], TEXT_PREFIX .. line[3])
+            end
         else
             table.insert(still_pending, { line[1] - 1, line[2], line[3] })
         end
@@ -144,7 +165,8 @@ function onSetup(director)
 end
 
 function onCommence(director)
-    director:set_sequence(SEQUENCE_FIGHTING)
+    director:set_sequence(SEQUENCE_START)
+    fight_starts_in = FIGHT_STARTS_IN
 
     director:spawn_bnpc(BNPC_IDA)
     director:spawn_bnpc(BNPC_PAPALYMO)
@@ -154,7 +176,6 @@ function onCommence(director)
     spawnEnemies(director, INITIAL_ENEMIES)
 
     alliesAttack(director)
-    sayLines(LINES_START)
 end
 
 -- health: the health (in percent) of every living NPC, by layout ID
@@ -170,6 +191,15 @@ function onUpdate(director, health, player_health)
     end
     if over then
         return
+    end
+
+    if fight_starts_in ~= nil then
+        fight_starts_in = fight_starts_in - 1
+        if fight_starts_in <= 0 then
+            fight_starts_in = nil
+            director:set_sequence(SEQUENCE_FIGHTING)
+            sayLines(LINES_START, LINES_START_DELAY)
+        end
     end
 
     sayPendingLines(director)
@@ -196,8 +226,15 @@ function onUpdate(director, health, player_health)
 
     while WAVES[next_wave] ~= nil and boss_health <= WAVES[next_wave].health do
         spawnEnemies(director, WAVES[next_wave])
+        director:set_sequence(SEQUENCE_FIRST_WAVE + next_wave - 1)
         if LINES_WAVE[next_wave] ~= nil then
-            sayLines(LINES_WAVE[next_wave])
+            sayLines(LINES_WAVE[next_wave], LINES_WAVE_DELAY)
+        end
+        if WAVES[next_wave + 1] == nil then
+            sayLines({ { BNPC_PAPALYMO, YELL_LAST_WAVE } }, YELL_LAST_WAVE_DELAY)
+            last_wave = {}
+            for _, id in ipairs(WAVES[next_wave].a) do last_wave[id] = true end
+            for _, id in ipairs(WAVES[next_wave].b) do last_wave[id] = true end
         end
         next_wave = next_wave + 1
         -- Papalymo turns to the new adds if he'd run out.
@@ -217,8 +254,17 @@ function onActorDeath(director, layout_id, position)
 
     if next(remaining) == nil then
         over = true
+        director:set_sequence(SEQUENCE_WON)
         director:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN)
         return
+    end
+
+    if last_wave ~= nil and last_wave[layout_id] then
+        last_wave[layout_id] = nil
+        if next(last_wave) == nil then
+            last_wave = nil
+            sayLines(LINE_LAST_WAVE_CLEARED)
+        end
     end
 
     -- Whoever the allies were fighting may be gone, so point them at the next one.
