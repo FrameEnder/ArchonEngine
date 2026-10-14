@@ -84,8 +84,12 @@ impl ZoneConnection {
             self.player_data.grand_company.active_company as u8,
         );
         let Some((last_completed, next_quest_id, layout_id)) = guide else {
+            tracing::info!("Scenario Guide: no main scenario quest to show");
             return;
         };
+        tracing::info!(
+            "Scenario Guide: next quest {next_quest_id} (issuer layout {layout_id}), last completed {last_completed}"
+        );
 
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ScenarioGuide {
             quest_id_1: last_completed,
