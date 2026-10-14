@@ -1212,7 +1212,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 [[package]]
 name = "physis"
 version = "0.7.0"
-source = "git+https://github.com/redstrate/physis#33fe7aab7054fbd343207ac00ff7c4d59c02dacd"
+source = "git+https://github.com/redstrate/physis#444e89b085d0d8a871cd87c1712b2082be5491f8"
 dependencies = [
  "binrw",
  "bitflags",
@@ -1273,7 +1273,7 @@ dependencies = [
 [[package]]
 name = "recastnavigation-sys"
 version = "1.0.3"
-source = "git+https://github.com/redstrate/recastnavigation-rs-sys#496691d73a41b60e41b9d1c3084f66894ff0c3e0"
+source = "git+https://github.com/redstrate/recastnavigation-rs-sys#e1586922ea8653df4f2a623a5abd8e9171368b7b"
 dependencies = [
  "bindgen",
  "cc",
