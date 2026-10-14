@@ -210,6 +210,8 @@ pub struct ZoneConnection {
     pub content_handler_id: Option<HandlerId>,
     /// The event action currently being cast by a quest, see `LuaTask::EventAction`.
     pub event_action_id: u32,
+    /// Whether to stay in a won quest battle after "Duty Complete", until its director sends us back.
+    pub quest_battle_stay: bool,
     /// Whether the player can offer this teleport to their party.
     pub can_share_teleport: bool, // TODO: remove this and add more teleport reasons
     /// The current EXP chain: how many kills in a row, and when the last one was. See `on_battle_npc_killed`.

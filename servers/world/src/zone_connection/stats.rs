@@ -792,10 +792,13 @@ impl ZoneConnection {
             let new_level = curr_level + level_up;
             self.set_current_level(new_level);
 
+            // The client announces each level between this and the new one ("You attain level 2!" up to the new
+            // level, with every action learned on the way) and sending 0 made it start from 1 (Bob's screenshot.) It's
+            // most likely the previous level, which is what Sapphire sends third for its level-up effect.
             self.actor_control_self(ActorControlCategory::LevelUpMessage {
                 classjob_id: self.player_data.classjob.current_class as u32,
                 level: new_level as u32,
-                unk2: 0,
+                unk2: curr_level as u32,
                 unk3: 0,
             })
             .await;

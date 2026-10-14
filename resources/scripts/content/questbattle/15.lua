@@ -10,7 +10,7 @@
 --   75.1  sequence 6; it rumbles (NpcYell 123) and casts Plaincracker, which lands at 80.2
 --   91.9  sequence 7; True Grit again, landing at 97.0, then Plaincracker landing at 103.2
 --   106.6 the masked mage: "Impossible!..." (battle talk 3), sequence 8
---   118.8 the golem falls: sequence 9
+--   118.8 the golem falls: sequence 9 and "Duty Complete"
 --   131.2, 134.0 two more lines (battle talk 4 and 5), and out at 143.5
 -- The health at which the lines and skills come is Sapphire's (65%, 60%, 30%, 15%.)
 --
@@ -72,12 +72,13 @@ PHASES = {
     },
 }
 
--- Once it falls: the last lines, then the duty is complete.
+-- Once it falls: "Duty Complete" straight away (players stay), the last lines, then they're sent back.
 WON_STEPS = {
     { 0, "sequence", 9 },
+    { 0, "complete" },
     { 25, "talk", 4, SPEAKER_UNKNOWN },
     { 6, "talk", 5, SPEAKER_UNKNOWN },
-    { 19, "complete" },
+    { 19, "leave" },
 }
 
 local next_phase = 1
@@ -114,7 +115,9 @@ function runStep(director, step)
     elseif kind == "action" then
         director:use_action(BNPC_GOLEM, step[3]) -- at the player
     elseif kind == "complete" then
-        director:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN)
+        director:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN, true) -- they stay for the last lines
+    elseif kind == "leave" then
+        director:leave_quest_battle()
     end
 end
 

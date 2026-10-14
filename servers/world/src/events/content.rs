@@ -50,6 +50,12 @@ impl EventHandler for ContentEventHandler {
         // After winning a quest battle (see FromServer::QuestBattleComplete), play its last scene and send them back.
         if event.id.handler_type() == HandlerType::QuestBattle {
             if scene == QUEST_BATTLE_SCENE_COMPLETE {
+                // Some quest battles carry on a little after "Duty Complete" (e.g. lines after the boss falls), their
+                // director sends the players back later.
+                if connection.quest_battle_stay {
+                    player.finish_event();
+                    return;
+                }
                 player.play_scene(
                     QUEST_BATTLE_SCENE_FINISH,
                     SceneFlags::HIDE_HOTBAR | SceneFlags::NO_DEFAULT_CAMERA,

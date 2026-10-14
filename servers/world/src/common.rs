@@ -202,7 +202,10 @@ pub enum FromServer {
         level: u8,
     },
     /// The quest battle was won: its director, and the quest and sequence it advances.
-    QuestBattleComplete(HandlerId, u32, u8),
+    /// Whether the players stay afterwards (until `LeaveQuestBattle`) is the last field.
+    QuestBattleComplete(HandlerId, u32, u8, bool),
+    /// Send the player back from the won quest battle they stayed in.
+    LeaveQuestBattle(HandlerId),
     /// The quest battle was lost, send them back to where they entered it.
     QuestBattleFailed,
     /// An event action (the progress bar for examining things and such) finished casting during a quest event.

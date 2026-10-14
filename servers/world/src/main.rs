@@ -43,7 +43,8 @@ use kawari::packet::{ConnectionState, ConnectionType, SegmentData, parse_packet_
 use kawari_world::lua::{KawariLua, KawariLuaState, LuaPlayer};
 use kawari_world::{
     CLIENT_QUEUE_SIZE, ChatConnection, CustomIpcConnection, Event, EventHandler, GameData,
-    ObsfucationData, QUEST_BATTLE_SCENE_COMPLETE, Roulette, TeleportReason, ZoneConnection,
+    ObsfucationData, QUEST_BATTLE_SCENE_COMPLETE, QUEST_BATTLE_SCENE_FINISH, Roulette,
+    TeleportReason, ZoneConnection,
 };
 use kawari_world::{
     ChatConnectionChannels, ChatPlayerData, ClientHandle, ClientId, FromServer, MessageInfo,
@@ -201,6 +202,7 @@ async fn initial_setup(
                     fate_motivation_npcs: HashMap::new(),
                     content_handler_id: None,
                     event_action_id: 0,
+                    quest_battle_stay: false,
                     can_share_teleport: false,
                     exp_chain: (0, None),
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
@@ -4268,9 +4270,10 @@ async fn process_server_msg(
                     );
                 }
             }
-            FromServer::QuestBattleComplete(handler_id, quest_id, sequence) => {
+            FromServer::QuestBattleComplete(handler_id, quest_id, sequence, stay) => {
                 // The quest moves on straight away, the scenes are just the victory fanfare.
                 connection.set_quest_sequence(quest_id, sequence).await;
+                connection.quest_battle_stay = stay;
 
                 connection
                     .start_event(
@@ -4289,6 +4292,30 @@ async fn process_server_msg(
                     lua_player.play_scene(
                         QUEST_BATTLE_SCENE_COMPLETE,
                         SceneFlags::from_bits_retain(0x40000),
+                        Vec::new(),
+                    );
+                }
+            }
+            FromServer::LeaveQuestBattle(handler_id) => {
+                // The last scene, after which they're sent back (see ContentEventHandler.)
+                connection.quest_battle_stay = false;
+                connection
+                    .start_event(
+                        ObjectTypeId {
+                            object_id: connection.player_data.character.actor_id,
+                            object_type: ObjectTypeKind::None,
+                        },
+                        handler_id,
+                        EventType::GameProgress,
+                        1,
+                        events,
+                        lua_player,
+                    )
+                    .await;
+                if events.last_mut().is_some() {
+                    lua_player.play_scene(
+                        QUEST_BATTLE_SCENE_FINISH,
+                        SceneFlags::HIDE_HOTBAR | SceneFlags::NO_DEFAULT_CAMERA,
                         Vec::new(),
                     );
                 }

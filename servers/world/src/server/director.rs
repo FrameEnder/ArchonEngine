@@ -109,10 +109,14 @@ pub enum LuaDirectorTask {
         actor_id: ObjectId,
     },
     CompleteDuty,
-    /// Win a quest battle, which also moves its quest to this sequence.
+    /// Win a quest battle, which also moves its quest to this sequence. "Duty Complete" shows straight away; unless
+    /// `stay`, the players are then sent back, otherwise they stay until `LeaveQuestBattle`.
     CompleteQuestBattle {
         sequence: u8,
+        stay: bool,
     },
+    /// Send the players of a won quest battle back (see `CompleteQuestBattle`'s `stay`.)
+    LeaveQuestBattle,
     /// Lose a quest battle, which sends the players back to where they entered it.
     FailQuestBattle,
     /// Make a BNpc use an action on another BNpc (by layout ID), or on the player if there's no target.
@@ -274,9 +278,18 @@ impl UserData for LuaDirector {
             this.tasks.push(LuaDirectorTask::CompleteDuty {});
             Ok(())
         });
-        methods.add_method_mut("complete_quest_battle", |_, this, sequence: u8| {
-            this.tasks
-                .push(LuaDirectorTask::CompleteQuestBattle { sequence });
+        methods.add_method_mut(
+            "complete_quest_battle",
+            |_, this, (sequence, stay): (u8, Option<bool>)| {
+                this.tasks.push(LuaDirectorTask::CompleteQuestBattle {
+                    sequence,
+                    stay: stay.unwrap_or(false),
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut("leave_quest_battle", |_, this, _: ()| {
+            this.tasks.push(LuaDirectorTask::LeaveQuestBattle);
             Ok(())
         });
         methods.add_method_mut(
@@ -1044,13 +1057,22 @@ pub fn director_tick(
                 //     DestinationNetwork::ZoneClients,
                 // );
             }
-            LuaDirectorTask::CompleteQuestBattle { sequence } => {
+            LuaDirectorTask::CompleteQuestBattle { sequence, stay } => {
                 let quest_id = instance.directors.first().unwrap().quest_battle_quest_id;
                 let mut network = network.lock();
                 network.send_to_instance(
                     ObjectId::default(),
                     instance,
-                    FromServer::QuestBattleComplete(director_id, quest_id, *sequence),
+                    FromServer::QuestBattleComplete(director_id, quest_id, *sequence, *stay),
+                    DestinationNetwork::ZoneClients,
+                );
+            }
+            LuaDirectorTask::LeaveQuestBattle => {
+                let mut network = network.lock();
+                network.send_to_instance(
+                    ObjectId::default(),
+                    instance,
+                    FromServer::LeaveQuestBattle(director_id),
                     DestinationNetwork::ZoneClients,
                 );
             }
