@@ -9,7 +9,7 @@ use glam::Vec3A;
 use kawari::{
     common::{
         AUTO_ATTACK_RATE, JumpState, MOB_WANDER_TIME, MoveAnimationState, MoveAnimationType,
-        ObjectId, ObjectTypeId, ObjectTypeKind, Position, TimepointData,
+        ObjectId, ObjectTypeId, ObjectTypeKind, Position, STRIKING_DUMMY_NAME_ID, TimepointData,
     },
     ipc::zone::{
         ActionRequest, ActionType, ActorControlCategory, CharacterDataFlag, ServerZoneIpcData,
@@ -63,6 +63,7 @@ pub fn npc_behavior(
             && let Some(current_target) = current_target
             && *state != NpcState::Dead
             && spawn.common.health_points > 0
+            && spawn.common.name_id != STRIKING_DUMMY_NAME_ID
         {
             let target_pos;
             let use_min_distance;
@@ -200,6 +201,21 @@ pub fn npc_behavior(
                 current_path.clear();
                 *current_path_lerp = 0.0;
                 *autoattack_timing = 0;
+            }
+
+            // Striking dummies only take hits: they keep whoever attacks them on their enmity list (so you stay in
+            // combat), but never move, turn or fight back, and forget about you once their enmity is reset.
+            if spawn.common.name_id == STRIKING_DUMMY_NAME_ID {
+                current_path.clear();
+                if most_hated.is_none() && current_target.is_some() {
+                    if *state == NpcState::Hate {
+                        dropped_targets.push(*id);
+                    }
+                    *current_target = None;
+                    *state = NpcState::natural_state_of(spawn);
+                    spawn.common.target_id = ObjectTypeId::default();
+                }
+                continue;
             }
 
             if current_target.is_none() {

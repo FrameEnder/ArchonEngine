@@ -1,3 +1,4 @@
+use crate::common::adjust_quest_id;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
@@ -40,6 +41,7 @@ use icarus::InstanceContent::InstanceContentSheet;
 use icarus::Item::ItemSheet;
 use icarus::ItemAction::ItemActionSheet;
 use icarus::ItemLevel::ItemLevelSheet;
+use icarus::Level::LevelSheet;
 use icarus::Mount::MountSheet;
 use icarus::NpcEquip::NpcEquipSheet;
 use icarus::NpcYell::NpcYellSheet;
@@ -1410,6 +1412,98 @@ impl GameData {
             .read_excel_sheet(&exh, "BNpcName", config.world.language())
             .ok()?;
         sheet.row(name_id)?.columns.first()?.into_string().cloned()
+    }
+
+    /// What the Scenario Guide should show: the main scenario quest that was last completed, the one to do next, and
+    /// the layout ID of whoever offers that next one (for the map.) Quest IDs are adjusted (65575 is 39.)
+    ///
+    /// The main scenario is every quest in the ScenarioTree sheet. An accepted one comes first; otherwise the next one
+    /// is the first that isn't done yet, follows on from a completed quest (PreviousQuest, all of them or any of them
+    /// by PreviousQuestJoin), and suits the player's class and Grand Company, like Sapphire's quest availability check.
+    pub fn get_scenario_guide(
+        &mut self,
+        is_completed: impl Fn(u32) -> bool,
+        active: &[u16],
+        classjob: u8,
+        grand_company: u8,
+    ) -> Option<(u32, u32, u32)> {
+        let config = get_config();
+        let exh = self.resource.read_excel_sheet_header("ScenarioTree").ok()?;
+        let sheet = self
+            .resource
+            .read_excel_sheet(&exh, "ScenarioTree", config.world.language())
+            .ok()?;
+        let quest_ids: Vec<u32> = sheet
+            .pages
+            .iter()
+            .flat_map(|page| page.entries.iter())
+            .map(|entry| entry.id)
+            .collect();
+
+        let mut next = None;
+        for quest_id in quest_ids {
+            let adjusted = adjust_quest_id(quest_id);
+            let Some(row) = self.quest_sheet.row(quest_id) else {
+                continue;
+            };
+            let previous: Vec<u32> = row
+                .PreviousQuest
+                .iter()
+                .copied()
+                .filter(|x| *x != 0)
+                .collect();
+
+            if active.contains(&(adjusted as u16)) {
+                next = Some((quest_id, row, previous));
+                break;
+            }
+            if is_completed(adjusted) || previous.is_empty() {
+                // Quests without one before them start a city's story, and are handed out by the opening.
+                continue;
+            }
+            let follows_on = if row.PreviousQuestJoin == 2 {
+                previous.iter().any(|x| is_completed(adjust_quest_id(*x)))
+            } else {
+                previous.iter().all(|x| is_completed(adjust_quest_id(*x)))
+            };
+            if !follows_on || (row.GrandCompany != 0 && row.GrandCompany != grand_company) {
+                continue;
+            }
+            let mut suits_class = |category: u8| {
+                category <= 1
+                    || self
+                        .get_applicable_classjobs(category as u16)
+                        .contains(&classjob)
+            };
+            if !suits_class(row.ClassJobCategory0) || !suits_class(row.ClassJobCategory1) {
+                continue;
+            }
+
+            let better = match &next {
+                Some((_, best, _)) => {
+                    (row.ClassJobLevel[0], row.SortKey) < (best.ClassJobLevel[0], best.SortKey)
+                }
+                None => true,
+            };
+            if better {
+                next = Some((quest_id, row, previous));
+            }
+        }
+
+        let (quest_id, row, previous) = next?;
+        let last_completed = previous
+            .iter()
+            .copied()
+            .find(|x| is_completed(adjust_quest_id(*x)))
+            .map(adjust_quest_id)
+            .unwrap_or_default();
+        let layout_id = LevelSheet::read_from(&mut self.resource, Language::None)
+            .ok()
+            .and_then(|sheet| sheet.row(row.IssuerLocation))
+            .map(|level| level.Object)
+            .unwrap_or_default();
+
+        Some((last_completed, adjust_quest_id(quest_id), layout_id))
     }
 
     /// Returns the list of applicable classjob IDs based on the ClassJobCategory.

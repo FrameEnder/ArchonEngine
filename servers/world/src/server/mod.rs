@@ -1711,6 +1711,19 @@ pub async fn server_main_loop(
                             }
                         }
                         ClientTriggerCommand::ToggleWeapon { shown, unk_flag } => {
+                            // Sheathing your weapon also stops auto-attacking, like Sapphire does. The client doesn't
+                            // always send its own request to stop, so otherwise the next auto-attack draws it again.
+                            if !*shown {
+                                let mut data = data.lock();
+                                if let Some(instance) = data.find_actor_instance_mut(from_actor_id)
+                                    && let Some(NetworkedActor::Player {
+                                        autoattack_target, ..
+                                    }) = instance.find_actor_mut(from_actor_id)
+                                {
+                                    *autoattack_target = None;
+                                }
+                            }
+
                             let msg = FromServer::ActorControl(
                                 from_actor_id,
                                 ActorControlCategory::ToggleWeapon {
@@ -2200,14 +2213,19 @@ pub async fn server_main_loop(
                             let NetworkedActor::Npc {
                                 state,
                                 navmesh_target: current_target,
+                                enmity,
+                                spawn,
                                 ..
                             } = actor
                             else {
                                 continue;
                             };
 
+                            // Forget everyone who attacked it, otherwise it goes straight back to whoever it hated most.
+                            enmity.clear();
                             *state = NpcState::Wander;
                             *current_target = None;
+                            spawn.common.target_id = ObjectTypeId::default();
 
                             // TODO: throw this into a generic de-aggro thing eventually
                             let mut network = network.lock();

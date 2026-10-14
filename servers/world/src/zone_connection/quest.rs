@@ -66,12 +66,31 @@ impl ZoneConnection {
         self.send_ipc_self(ipc).await;
     }
 
+    /// Tells the client which main scenario quest to show in the Scenario Guide, see `GameData::get_scenario_guide`.
     pub async fn send_scenario_guide(&mut self) {
-        // TODO: temporary
+        let active: Vec<u16> = self
+            .player_data
+            .quest
+            .active
+            .0
+            .iter()
+            .map(|quest| quest.id)
+            .collect();
+        let completed = &self.player_data.quest.completed;
+        let guide = self.game_data.lock().get_scenario_guide(
+            |id| completed.contains(id),
+            &active,
+            self.player_data.classjob.current_class as u8,
+            self.player_data.grand_company.active_company as u8,
+        );
+        let Some((last_completed, next_quest_id, layout_id)) = guide else {
+            return;
+        };
+
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ScenarioGuide {
-            quest_id_1: 39,
-            next_quest_id: 85,
-            layout_id: 1985113,
+            quest_id_1: last_completed,
+            next_quest_id,
+            layout_id,
         });
         self.send_ipc_self(ipc).await;
     }
@@ -233,6 +252,9 @@ impl ZoneConnection {
             tracked_quests,
         }));
         self.send_ipc_self(ipc).await;
+
+        // Quests changed, so the main scenario quest to show may have too.
+        self.send_scenario_guide().await;
     }
 
     pub async fn cancel_quest(&mut self, id: u32) {
