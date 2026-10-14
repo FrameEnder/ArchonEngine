@@ -7,7 +7,7 @@ use std::{
 };
 
 use icarus::Quest::QuestSheet;
-use tokio::sync::mpsc::Sender;
+use tokio::sync::mpsc::{Sender, error::TrySendError};
 
 use crate::{
     StatusEffects,
@@ -261,6 +261,10 @@ pub enum FromServer {
     ZoneDiceRoll(ObjectId, ZoneDiceRollResult),
 }
 
+/// How many messages can wait for a zone or chat connection to pick them up. A zone-in alone sends well over a
+/// hundred (every NPC and object nearby), on top of NPCs moving every half second.
+pub const CLIENT_QUEUE_SIZE: usize = 4096;
+
 #[derive(Debug, Clone)]
 pub struct ClientHandle {
     pub id: ClientId,
@@ -271,17 +275,28 @@ pub struct ClientHandle {
 }
 
 impl ClientHandle {
-    /// Send a message to this client actor. Will emit an error if sending does
-    /// not succeed immediately, as this means that forwarding messages to the
-    /// tcp connection cannot keep up.
+    /// Send a message to this client actor. Only fails if the connection is gone, which gets the client removed.
+    ///
+    /// If its queue is full (the connection is busy, e.g. zoning in or running a long script), the message is dropped
+    /// with a warning instead. This used to count as an error too, which quietly removed the player from the world
+    /// server while their connection carried on: monsters froze and nothing could be attacked until they relogged.
     pub fn send(&mut self, msg: FromServer) -> Result<(), std::io::Error> {
-        if self.channel.try_send(msg).is_err() {
-            Err(std::io::Error::new(
+        match self.channel.try_send(msg) {
+            Ok(()) => Ok(()),
+            Err(TrySendError::Full(msg)) => {
+                let kind = format!("{msg:?}");
+                tracing::warn!(
+                    "{:?}'s queue is full ({} messages), dropping a {}",
+                    self.id,
+                    CLIENT_QUEUE_SIZE,
+                    kind.split(['(', ' ', '{']).next().unwrap_or_default()
+                );
+                Ok(())
+            }
+            Err(TrySendError::Closed(_)) => Err(std::io::Error::new(
                 std::io::ErrorKind::BrokenPipe,
-                "Can't keep up or dead",
-            ))
-        } else {
-            Ok(())
+                "The connection is gone",
+            )),
         }
     }
 

@@ -38,8 +38,8 @@ use kawari::packet::oodle::OodleNetwork;
 use kawari::packet::{ConnectionState, ConnectionType, SegmentData, parse_packet_header};
 use kawari_world::lua::{KawariLua, KawariLuaState, LuaPlayer};
 use kawari_world::{
-    ChatConnection, CustomIpcConnection, Event, EventHandler, GameData, ObsfucationData,
-    QUEST_BATTLE_SCENE_COMPLETE, Roulette, TeleportReason, ZoneConnection,
+    CLIENT_QUEUE_SIZE, ChatConnection, CustomIpcConnection, Event, EventHandler, GameData,
+    ObsfucationData, QUEST_BATTLE_SCENE_COMPLETE, Roulette, TeleportReason, ZoneConnection,
 };
 use kawari_world::{
     ChatConnectionChannels, ChatPlayerData, ClientHandle, ClientId, FromServer, MessageInfo,
@@ -325,7 +325,7 @@ struct ClientChatData {
 
 /// Spawn a new chat connection for an incoming client.
 fn spawn_chat_connection(connection: ChatConnection) {
-    let (send, recv) = channel(64);
+    let (send, recv) = channel(CLIENT_QUEUE_SIZE);
 
     let id = &connection.id.clone();
     let actor_id = &connection.player_data.actor_id.clone();
@@ -478,7 +478,7 @@ struct ClientZoneData {
 
 /// Spawn a new client actor.
 fn spawn_client(connection: ZoneConnection) {
-    let (send, recv) = channel(64);
+    let (send, recv) = channel(CLIENT_QUEUE_SIZE);
 
     let id = &connection.id.clone();
     let actor_id = &connection.player_data.character.actor_id.clone();

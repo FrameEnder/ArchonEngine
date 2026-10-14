@@ -33,7 +33,9 @@ mod custom_ipc_connection;
 pub use custom_ipc_connection::CustomIpcConnection;
 
 mod common;
-pub use common::{ClientHandle, ClientId, FromServer, MessageInfo, ServerHandle, ToServer};
+pub use common::{
+    CLIENT_QUEUE_SIZE, ClientHandle, ClientId, FromServer, MessageInfo, ServerHandle, ToServer,
+};
 
 mod navmesh;
 pub use navmesh::{Navmesh, NavmeshParams, NavmeshTile};

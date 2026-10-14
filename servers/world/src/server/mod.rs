@@ -2905,7 +2905,11 @@ pub async fn server_main_loop(
 
             network.to_remove.append(&mut to_remove);
 
-            for remove_id in network.to_remove.clone() {
+            for remove_id in std::mem::take(&mut network.to_remove) {
+                tracing::info!(
+                    "Removing {remove_id:?} from the world server, its connection is gone"
+                );
+
                 // remove any actors they had
                 let mut actor_id = None;
                 for (id, (handle, _)) in &mut network.clients {
@@ -2925,7 +2929,7 @@ pub async fn server_main_loop(
                 network.clients.remove(&remove_id);
             }
 
-            for remove_id in network.to_remove_chat.clone() {
+            for remove_id in std::mem::take(&mut network.to_remove_chat) {
                 network.chat_clients.remove(&remove_id);
             }
         }
