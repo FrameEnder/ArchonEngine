@@ -7,7 +7,8 @@
 --               "Aiding", a progress bar), then their scene (4, 7, 10, 13 and 16.) UI8AL counts them for the todo and
 --               each sets its BitFlag8 (1 to 5, in UI8F), which stops the client offering them again. With all five
 --               found, retail clears the variables and moves to sequence 3. ACTOR7 (the Hearer) only has a line (18.)
--- Sequence 3:   go deeper, EOBJECT0, and agree to enter the quest battle (scene 19, YesNoQuestBattle returns 1.)
+-- Sequence 3:   talk to the Hearer (ACTOR7) again, or EOBJECT0 next to him, and agree to enter the quest battle
+--               (scene 19, YesNoQuestBattle returns 1.) That it's the Hearer is Sapphire's, and what the client sends.
 --               QUESTBATTLE0 takes place in TERRITORYTYPE0, and winning it moves the quest to sequence 4.
 -- Sequence 4:   coming back into the Central Shroud plays the cutscenes after it (scene 23), then sequence 5.
 -- Sequence 5:   report to ACTOR1 (scene 24.)
@@ -88,7 +89,7 @@ function onTalk(target, player)
         player:event_action(EVENT_ACTION_)
     elseif sequence == 2 and BASE_ID == ACTOR7 then
         play(player, SCENE_HEARER, HIDE_HOTBAR)
-    elseif sequence == 3 and BASE_ID == EOBJECT0 then
+    elseif sequence == 3 and (BASE_ID == ACTOR7 or BASE_ID == EOBJECT0) then
         play(player, SCENE_ENTER_BATTLE, HIDE_HOTBAR)
     elseif sequence == 5 and BASE_ID == ACTOR1 then
         play(player, SCENE_ALESTAN_AFTER, HIDE_HOTBAR)
