@@ -2121,6 +2121,7 @@ pub async fn server_main_loop(
                         } => {
                             handle_director_trigger(
                                 network.clone(),
+                                game_data.clone(),
                                 from_actor_id,
                                 *handler_id,
                                 trigger,

@@ -23,6 +23,7 @@ use icarus::Fate::FateSheet;
 use icarus::FateProgressUI::FateProgressUISheet;
 use icarus::FateShop::FateShopSheet;
 use icarus::FittingShopCategoryItem::FittingShopCategoryItemSheet;
+use icarus::GFATE::{GFATERow, GFATESheet};
 use icarus::GatheringItem::GatheringItemSheet;
 use icarus::GatheringItemLevelConvertTable::GatheringItemLevelConvertTableSheet;
 use icarus::GatheringPoint::GatheringPointSheet;
@@ -116,6 +117,7 @@ pub struct GameData {
     pub gold_saucer_content_sheet: GoldSaucerContentSheet,
     pub gimmick_accessor_sheet: GimmickAccessorSheet,
     pub trait_sheet: TraitSheet,
+    pub gfate_sheet: GFATESheet,
 
     pub gimmick_rect_lookup: HashMap<u32, u32>,
     pub fate_event_range_lookup: HashMap<u32, u32>,
@@ -476,6 +478,8 @@ impl GameData {
         let trait_sheet =
             TraitSheet::read_from(&mut resource_resolver, config.world.language()).unwrap();
 
+        let gfate_sheet = GFATESheet::read_from(&mut resource_resolver, Language::None).unwrap();
+
         let mut gimmick_rect_lookup = HashMap::new();
         for (id, row) in gimmick_rect_sheet.into_iter().flatten_subrows() {
             gimmick_rect_lookup.insert(row.LayoutID, id);
@@ -527,6 +531,7 @@ impl GameData {
             gold_saucer_content_sheet,
             gimmick_accessor_sheet,
             trait_sheet,
+            gfate_sheet,
         }
     }
 
@@ -1909,6 +1914,11 @@ impl GameData {
     pub fn get_trait_requirements(&mut self, id: u32) -> Option<(u8, u32)> {
         let row = self.trait_sheet.row(id)?;
         Some((row.Level, row.Quest))
+    }
+
+    /// Returns this GATE's information.
+    pub fn get_gate(&mut self, id: u32) -> Option<GFATERow> {
+        self.gfate_sheet.row(id)
     }
 }
 

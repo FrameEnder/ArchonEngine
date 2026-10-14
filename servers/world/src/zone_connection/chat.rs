@@ -12,7 +12,7 @@ use crate::{
     lua::{KawariLuaState, LuaPlayer},
 };
 use kawari::{
-    common::{DirectorEvent, ERR_INVENTORY_ADD_FAILED, HandlerId, HandlerType, ObjectTypeId},
+    common::{ERR_INVENTORY_ADD_FAILED, HandlerId, HandlerType, ObjectTypeId},
     config::get_config,
     ipc::zone::{
         ActorControlCategory, ChatMessage, Condition, Conditions, GameMasterRank,
@@ -300,35 +300,43 @@ impl ZoneConnection {
                 true
             }
             "!gate" => {
-                self.send_ipc_self(ServerZoneIpcSegment::new(ServerZoneIpcData::NpcYell {
-                    object_id: ObjectTypeId::default(),
-                    name_id: 1010448,
-                    npc_yell_id: 2450,
-                    param1: 3,
-                    param2: 7,
-                    param3: 0,
-                    param4: 0,
-                }))
-                .await;
+                if let Some((_, id)) = chat_message.split_once(' ')
+                    && let Ok(id) = id.parse()
+                {
+                    let handler_id = HandlerId::new(HandlerType::GoldSaucer, 119); // TODO: unsure how this is decided
+                    let row;
+                    let npc_yell_id = 2450; // <?:96>The limited-time event “<?:9>” is now underway <?:9>. All guests are encouraged to participate!
+                    let name_id;
+                    {
+                        let mut game_data = self.game_data.lock();
+                        let Some(gate_row) = game_data.get_gate(id) else {
+                            return true;
+                        };
+                        row = gate_row;
+                        let Some(yell_name_id) = game_data.get_npc_yell_name_id(2450) else {
+                            return true;
+                        };
+                        name_id = yell_name_id;
+                    }
 
-                self.actor_control_self(ActorControlCategory::InitDirector {
-                    handler_id: HandlerId::new(HandlerType::GoldSaucer, 1319),
-                    content_id: 10,
-                    flags: 0,
-                })
-                .await;
+                    self.send_ipc_self(ServerZoneIpcSegment::new(ServerZoneIpcData::NpcYell {
+                        object_id: ObjectTypeId::default(),
+                        name_id,
+                        npc_yell_id,
+                        param1: row.Unknown11 as u32, // TODO: Rename to Location
+                        param2: row.Type as u32,
+                        param3: 0,
+                        param4: 0,
+                    }))
+                    .await;
 
-                self.actor_control_self(ActorControlCategory::DirectorEvent {
-                    handler_id: HandlerId::new(HandlerType::GoldSaucer, 1319),
-                    event: DirectorEvent::Unknown {
-                        id: 11,
-                        arg1: 3,
-                        arg2: 0,
-                        arg3: 0,
-                        arg4: 0,
-                    },
-                })
-                .await;
+                    self.actor_control_self(ActorControlCategory::InitDirector {
+                        handler_id,
+                        content_id: 2, // TODO: ditto
+                        flags: 0,
+                    })
+                    .await;
+                }
 
                 true
             }
