@@ -3,8 +3,8 @@
     "timeline_always_plays": false,
     "timepoints": [
         { "time": 1, "data": { "type": "action", "action_id": 53 } },
-        { "time": 3, "data": { "type": "action", "action_id": 54 } },
-        { "time": 6, "data": { "type": "action", "action_id": 56 } },
-        { "time": 7, "data": { "type": "invulnerability", "invulnerable": false } }
+        { "time": 4, "data": { "type": "action", "action_id": 54 } },
+        { "time": 7, "data": { "type": "action", "action_id": 56 } },
+        { "time": 8, "data": { "type": "invulnerability", "invulnerable": false } }
     ]
 }

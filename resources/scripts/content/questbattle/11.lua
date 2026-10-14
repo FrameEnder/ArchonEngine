@@ -35,6 +35,11 @@ SEQUENCE_FAILED = 0xFE
 -- How many updates (half a second each) to wait after the player falls before sending them out.
 FAIL_DELAY_UPDATES = 12
 
+-- Papalymo heals the player with Cure when they drop below this much health (in percent), at most every few seconds.
+ACTION_CURE = 120
+HEAL_BELOW_HEALTH = 50
+HEAL_COOLDOWN_UPDATES = 8
+
 -- Enemies still standing, by layout ID, and the order they arrived in.
 local remaining = {}
 local arrived = {}
@@ -43,6 +48,8 @@ local next_wave = 1
 local over = false
 -- Counts down after the player falls, see onUpdate.
 local fail_in = nil
+-- Counts down until Papalymo can heal again.
+local heal_cooldown = 0
 
 function spawnEnemy(director, id)
     remaining[id] = true
@@ -108,7 +115,8 @@ function onCommence(director)
 end
 
 -- health: the health (in percent) of every living NPC, by layout ID
-function onUpdate(director, health)
+-- player_health: the player's health in percent (nil if they're not here)
+function onUpdate(director, health, player_health)
     if fail_in ~= nil then
         fail_in = fail_in - 1
         if fail_in <= 0 then
@@ -119,6 +127,14 @@ function onUpdate(director, health)
     end
     if over then
         return
+    end
+
+    if heal_cooldown > 0 then
+        heal_cooldown = heal_cooldown - 1
+    elseif player_health ~= nil and player_health > 0 and player_health < HEAL_BELOW_HEALTH
+        and health[BNPC_PAPALYMO] ~= nil then
+        director:use_action(BNPC_PAPALYMO, ACTION_CURE) -- on the player
+        heal_cooldown = HEAL_COOLDOWN_UPDATES
     end
 
     local boss_health = health[BNPC_BOSS]

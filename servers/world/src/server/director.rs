@@ -11,8 +11,8 @@ use kawari::{
     },
     config::get_config,
     ipc::zone::{
-        ActorControlCategory, ActorControlSelf, DutyFinderSetting, EventLogMessage, MapEffects,
-        ServerZoneIpcData, ServerZoneIpcSegment, WalkInEvent,
+        ActionRequest, ActionType, ActorControlCategory, ActorControlSelf, DutyFinderSetting,
+        EventLogMessage, MapEffects, ServerZoneIpcData, ServerZoneIpcSegment, WalkInEvent,
     },
 };
 use mlua::{Function, LuaSerdeExt, UserData, UserDataMethods, Value};
@@ -109,6 +109,12 @@ pub enum LuaDirectorTask {
     },
     /// Lose a quest battle, which sends the players back to where they entered it.
     FailQuestBattle,
+    /// Make a BNpc use an action on another BNpc (by layout ID), or on the player if there's no target.
+    UseAction {
+        layout_id: u32,
+        action_id: u32,
+        target: Option<u32>,
+    },
     /// Change the director's sequence, which the client's script for it reacts to (e.g. `OnSequence001`.)
     SetSequence {
         sequence: u8,
@@ -249,6 +255,17 @@ impl UserData for LuaDirector {
                 .push(LuaDirectorTask::CompleteQuestBattle { sequence });
             Ok(())
         });
+        methods.add_method_mut(
+            "use_action",
+            |_, this, (layout_id, action_id, target): (u32, u32, Option<u32>)| {
+                this.tasks.push(LuaDirectorTask::UseAction {
+                    layout_id,
+                    action_id,
+                    target,
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut("set_sequence", |_, this, sequence: u8| {
             this.tasks.push(LuaDirectorTask::SetSequence { sequence });
             Ok(())
@@ -335,7 +352,7 @@ impl DirectorData {
 
     /// Called every server tick for scripts that define `onUpdate`, with the health (in percent) of every living NPC
     /// by its layout ID.
-    pub fn update(&mut self, npc_health: &HashMap<u32, u32>) {
+    pub fn update(&mut self, npc_health: &HashMap<u32, u32>, player_health: Option<u32>) {
         let Ok(func) = self.lua.0.globals().get::<Function>("onUpdate") else {
             return;
         };
@@ -348,7 +365,7 @@ impl DirectorData {
                 .0
                 .create_table_from(npc_health.iter().map(|(k, v)| (*k, *v)))?;
 
-            func.call::<()>((data, health))?;
+            func.call::<()>((data, health, player_health))?;
 
             Ok(())
         });
@@ -659,8 +676,15 @@ fn update_director(instance: &mut Instance) {
             _ => None,
         })
         .collect();
+    // The player's health too (in percent), e.g. for allies that heal them.
+    let player_health = instance.actors.values().find_map(|actor| match actor {
+        NetworkedActor::Player { spawn, .. } if spawn.common.max_health_points > 0 => {
+            Some(spawn.common.health_points * 100 / spawn.common.max_health_points)
+        }
+        _ => None,
+    });
     if let Some(director) = instance.directors.first_mut() {
-        director.update(&npc_health);
+        director.update(&npc_health, player_health);
     }
 }
 
@@ -982,6 +1006,78 @@ pub fn director_tick(
                     instance,
                     FromServer::QuestBattleComplete(director_id, quest_id, *sequence),
                     DestinationNetwork::ZoneClients,
+                );
+            }
+            LuaDirectorTask::UseAction {
+                layout_id,
+                action_id,
+                target,
+            } => {
+                let Some((actor_id, position)) = instance.find_npc(*layout_id) else {
+                    tracing::warn!("Failed to find bnpc {layout_id} for UseAction!");
+                    continue;
+                };
+                let target_id = match target {
+                    Some(target) => instance.find_npc(*target).map(|(id, _)| id),
+                    None => instance
+                        .actors
+                        .iter()
+                        .find(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+                        .map(|(id, _)| *id),
+                };
+                let Some(target_id) = target_id else {
+                    continue;
+                };
+                let rotation = instance
+                    .find_actor(actor_id)
+                    .map(|actor| actor.rotation())
+                    .unwrap_or_default();
+                let cast_time = {
+                    let mut game_data = game_data.lock();
+                    game_data.get_casttime(*action_id).unwrap_or(0) as f32 / 10.0
+                };
+                let request = ActionRequest {
+                    action_id: *action_id,
+                    action_type: ActionType::Action,
+                    rotation1: rotation,
+                    target: ObjectTypeId {
+                        object_id: target_id,
+                        object_type: ObjectTypeKind::None,
+                    },
+                    ..Default::default()
+                };
+
+                // Show the cast bar, the same way NPCs cast their own actions.
+                if cast_time > 0.0 {
+                    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
+                        spell_id: request.action_id as u16,
+                        action_type: request.action_type,
+                        omen_delay: 0,
+                        action_id: request.action_id,
+                        cast_time,
+                        target: target_id,
+                        rotation,
+                        interruptible: false,
+                        ballista_entity_id: ObjectId::default(),
+                        position,
+                    });
+                    let mut network = network.lock();
+                    network.send_in_range_instance(
+                        actor_id,
+                        instance,
+                        FromServer::PacketSegment(ipc, actor_id),
+                        DestinationNetwork::ZoneClients,
+                    );
+                }
+
+                instance.insert_task(
+                    ClientId::default(),
+                    actor_id,
+                    Duration::from_secs_f32(cast_time),
+                    QueuedTaskData::CastAction {
+                        request,
+                        interruptible: cast_time > 0.0,
+                    },
                 );
             }
             LuaDirectorTask::SetSequence { sequence } => {
