@@ -4,7 +4,8 @@ use diesel::prelude::*;
 use kawari::{
     common::WORLD_NAME,
     ipc::zone::{
-        AttachedItemInfo, Letter, LetterPreview, LetterType, MAX_MAIL_ATTACHMENTS_STORAGE,
+        AttachedItemInfo, LETTER_MSG_MAX_LENGTH, Letter, LetterPreview, LetterType,
+        MAX_MAIL_ATTACHMENTS_STORAGE, PREVIEW_MSG_MAX_LENGTH,
     },
 };
 use physis::sestring::SeString;
@@ -34,9 +35,8 @@ impl WorldDatabase {
             .unwrap();
 
         // Before inserting the message, truncate it to the max length just in case.
-        let letter_message = letter_message;
-        // TODO: How do we truncate a SeString safely?
-        // letter_message.truncate(LETTER_MSG_MAX_LENGTH);
+        let mut letter_message = letter_message;
+        letter_message.truncate(LETTER_MSG_MAX_LENGTH);
 
         let letter = models::Mail {
             id: next_id,
@@ -90,8 +90,7 @@ impl WorldDatabase {
             let full_message: SeString =
                 SeString::parse(serde_json::from_str(&letter.message.clone()).unwrap_or_default());
             preview.message = full_message;
-            // TODO: How do we truncate a SeString safely?
-            // preview.message.truncate(PREVIEW_MSG_MAX_LENGTH);
+            preview.message.truncate(PREVIEW_MSG_MAX_LENGTH);
 
             let attachments: crate::inventory::GenericStorage<6> =
                 serde_json::from_str(&letter.attached_items).unwrap_or_default();
@@ -135,10 +134,9 @@ impl WorldDatabase {
             .unwrap();
 
         // The message body can be no longer than LETTER_MSG_MAX_LENGTH bytes. This is probably redundant due to insertion handling this, but if manual db edits are done, this should catch any issues.
-        let the_message: SeString =
+        let mut the_message: SeString =
             SeString::parse(serde_json::from_str(&the_mail.message.clone()).unwrap_or_default());
-        // TODO: How do we truncate a SeString safely?
-        // the_message.truncate(LETTER_MSG_MAX_LENGTH);
+        the_message.truncate(LETTER_MSG_MAX_LENGTH);
 
         let the_letter = Letter {
             sender_content_id: the_mail.sender_content_id as u64,
