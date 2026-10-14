@@ -17,5 +17,8 @@
             },
             "comment": "Marks the end of the loop"
         }
-    ]
+    ],
+    "damage_to_players": {
+        "2": 1.8
+    }
 }

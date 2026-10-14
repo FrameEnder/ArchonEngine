@@ -55,6 +55,10 @@ pub struct EffectsBuilder {
     pub heal_to_full: bool,
 }
 
+/// The heal effect's flag (in its last parameter) saying it lands on the one using the action, e.g. a drain.
+/// TODO: confirm against a retail drain's effect, which Kawari Bestiary 0.2 records.
+pub const EFFECT_ON_SOURCE: u8 = 0x80;
+
 impl UserData for EffectsBuilder {
     fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut(
@@ -119,6 +123,15 @@ impl UserData for EffectsBuilder {
         methods.add_method_mut("heal", |_, this, amount: u16| {
             this.effects.push(TargetEffect(TargetEffectKind::Heal {
                 unk1: [0; 5],
+                amount,
+            }));
+            Ok(())
+        });
+        // Restores HP to whoever used the action, e.g. a drain. Against players an NPC's drain gives back what the
+        // action's damage took (see action.rs), so `amount` only matters otherwise.
+        methods.add_method_mut("heal_self", |_, this, amount: u16| {
+            this.effects.push(TargetEffect(TargetEffectKind::Heal {
+                unk1: [0, 0, 0, 0, EFFECT_ON_SOURCE],
                 amount,
             }));
             Ok(())

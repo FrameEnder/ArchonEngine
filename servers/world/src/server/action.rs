@@ -10,10 +10,10 @@ use parking_lot::Mutex;
 
 use crate::{
     ActionInfo, ClientId, FromServer, GameData, PlayerData, StatusEffects, ToServer,
-    lua::{EffectsBuilder, KawariLua, KawariLuaState, LuaPlayer, LuaZone},
+    lua::{EFFECT_ON_SOURCE, EffectsBuilder, KawariLua, KawariLuaState, LuaPlayer, LuaZone},
     server::{
         WorldServer,
-        actor::{NetworkedActor, create_npc_common_spawn, update_actor_hp_mp},
+        actor::{NetworkedActor, bnpc_base_hp, create_npc_common_spawn, update_actor_hp_mp},
         effect::{gain_effect, gain_effect_instance, process_effects_list},
         instance::{Instance, QueuedTaskData},
         network::{DestinationNetwork, NetworkState},
@@ -30,7 +30,7 @@ use kawari::{
     config::get_config,
     ipc::zone::{
         ActionEffect, ActionRequest, ActionType, ActorControlCategory, BattleNpcSubKind,
-        CommonSpawn, EffectEntry, EffectResult, ObjectKind, ServerZoneIpcData,
+        CommonSpawn, DamageKind, EffectEntry, EffectResult, ObjectKind, ServerZoneIpcData,
         ServerZoneIpcSegment, SpawnNpc, TargetEffect, TargetEffectKind,
     },
 };
@@ -47,13 +47,39 @@ const EFFECT_THIN_AIR: u16 = 1217;
 /// Extra leniency (in yalms) given to area-of-effect checks, to roughly account for target hitboxes.
 const AOE_HITBOX_LENIENCY: f32 = 1.0;
 
-/// How much of their damage NPCs deal to players, in percent.
+/// How much of their damage NPCs deal to players, in percent, for NPCs whose retail damage isn't recorded in their
+/// timeline (see `Timeline::damage_to_players`.)
 ///
 /// NPC damage is worked out like a player's (strength or intelligence times potency), which comes out far too high
 /// against players: in Chasing Shadows a level 5 Frenzied Bulb's auto-attack did ~65 damage on Kawari, where retail
 /// footage shows ~8. Retail's enemy damage formula isn't known, so this scales it down to match. It only applies to
 /// players, so NPCs fighting each other (such as quest battle allies) are unaffected.
 const NPC_DAMAGE_TO_PLAYERS_PERCENT: u32 = 12;
+
+/// How often an NPC's hit on a player is critical, in percent, and how much harder it hits. From Kawari Bestiary's
+/// recording of the Central Shroud on retail: 3 of 60 recorded hits were critical, each about 1.5 times the usual.
+const NPC_CRITICAL_PERCENT: u8 = 5;
+const NPC_CRITICAL_MULTIPLIER: f32 = 1.5;
+
+/// How much NPC damage to players varies from hit to hit (plus or minus), as a fraction. Retail auto-attacks from one
+/// monster landed within about 5% of each other.
+const NPC_DAMAGE_VARIANCE: f32 = 0.05;
+
+/// What to multiply an NPC's damage against players by: its recorded retail auto-attack damage over what its stats
+/// give for one, or `NPC_DAMAGE_TO_PLAYERS_PERCENT` if it has no recording.
+fn npc_damage_scale(actor: &NetworkedActor, level: u8) -> f32 {
+    if let NetworkedActor::Npc {
+        timeline,
+        parameters,
+        ..
+    } = actor
+        && parameters.physical_damage > 0
+        && let Some(damage) = timeline.auto_attack_damage(level, bnpc_base_hp)
+    {
+        return damage / parameters.physical_damage as f32;
+    }
+    NPC_DAMAGE_TO_PLAYERS_PERCENT as f32 / 100.0
+}
 
 /// Process action-related messages.
 pub fn handle_action_messages(
@@ -292,17 +318,40 @@ pub fn execute_action(
             _ => unimplemented!(),
         };
 
-        // Tone down NPC damage against players, see NPC_DAMAGE_TO_PLAYERS_PERCENT.
+        // Bring NPC damage against players to what retail does, see npc_damage_scale. Hits vary a little, and are
+        // sometimes critical.
         let npc_hitting_player = matches!(actor, NetworkedActor::Npc { .. })
             && matches!(
                 instance.find_actor(request.target.object_id),
                 Some(NetworkedActor::Player { .. })
             );
         if npc_hitting_player && let Some(effects_builder) = &mut effects_builder {
+            let scale = npc_damage_scale(actor, common_spawn.level);
+            let mut dealt = 0u32;
             for effect in &mut effects_builder.effects {
-                if let TargetEffectKind::Damage { amount, .. } = &mut effect.0 {
-                    *amount =
-                        ((*amount as u32 * NPC_DAMAGE_TO_PLAYERS_PERCENT / 100).max(1)) as u16;
+                if let TargetEffectKind::Damage {
+                    amount,
+                    damage_kind,
+                    ..
+                } = &mut effect.0
+                {
+                    let variance = 1.0 + (fastrand::f32() * 2.0 - 1.0) * NPC_DAMAGE_VARIANCE;
+                    let mut damage = *amount as f32 * scale * variance;
+                    if fastrand::u8(..100) < NPC_CRITICAL_PERCENT {
+                        damage *= NPC_CRITICAL_MULTIPLIER;
+                        *damage_kind |= DamageKind::CRITICAL;
+                    }
+                    *amount = damage.round().clamp(1.0, u16::MAX as f32) as u16;
+                    dealt += *amount as u32;
+                }
+            }
+
+            // Drains give back what they took.
+            for effect in &mut effects_builder.effects {
+                if let TargetEffectKind::Heal { unk1, amount } = &mut effect.0
+                    && unk1[4] & EFFECT_ON_SOURCE != 0
+                {
+                    *amount = dealt.min(u16::MAX as u32) as u16;
                 }
             }
         }
@@ -442,9 +491,14 @@ pub fn execute_action(
                 let heal_to_full = effects_builder.heal_to_full;
                 for effect in &mut effects_builder.effects {
                     match &mut effect.0 {
-                        TargetEffectKind::Heal { amount, .. } => {
-                            let Some(actor) = instance.find_actor_mut(request.target.object_id)
-                            else {
+                        TargetEffectKind::Heal { unk1, amount } => {
+                            // Drains heal whoever used them, not the target.
+                            let healed = if unk1[4] & EFFECT_ON_SOURCE != 0 {
+                                from_actor_id
+                            } else {
+                                request.target.object_id
+                            };
+                            let Some(actor) = instance.find_actor_mut(healed) else {
                                 return;
                             };
                             let common_spawn = actor.get_common_spawn_mut();
@@ -621,6 +675,10 @@ pub fn execute_action(
                 }
 
                 update_actor_hp_mp(network.clone(), instance, request.target.object_id);
+                if from_actor_id != request.target.object_id {
+                    // The caster's HP may have changed too, e.g. from a drain.
+                    update_actor_hp_mp(network.clone(), instance, from_actor_id);
+                }
             }
         }
 

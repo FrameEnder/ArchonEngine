@@ -617,6 +617,14 @@ const BNPC_BASE_HP: [u32; 50] = [
     1587, 1601, 1703, 1789, 1891, 2008, 2112, 2180, 2314, 2383, 2501, 2589,
 ];
 
+/// Ordinary enemies' health at this level, if it's in the table.
+pub fn bnpc_base_hp(level: u8) -> Option<u32> {
+    level
+        .checked_sub(1)
+        .and_then(|index| BNPC_BASE_HP.get(index as usize))
+        .copied()
+}
+
 pub fn create_npc_common_spawn(
     game_data: &mut GameData,
     base_id: u32,
