@@ -193,8 +193,10 @@ pub enum FromServer {
     FinishEvent,
     /// When a fish bites.
     FishBite,
-    /// A battle NPC this player (or their party) was fighting was defeated: its BNpcName ID, layout ID and level.
+    /// A battle NPC this player (or their party) was fighting was defeated: its BNpcBase ID (what quests' ENEMY
+    /// parameters are), BNpcName ID, layout ID and level.
     BattleNpcKilled {
+        base_id: u32,
         name_id: u32,
         layout_id: u32,
         level: u8,

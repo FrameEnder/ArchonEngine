@@ -522,6 +522,7 @@ fn credit_battle_npc_kill(network: &mut NetworkState, instance: &Instance, actor
         network.send_to_by_actor_id(
             player_id,
             FromServer::BattleNpcKilled {
+                base_id: spawn.common.base_id,
                 name_id: spawn.common.name_id,
                 layout_id: spawn.common.layout_id,
                 level: spawn.common.level,

@@ -69,8 +69,6 @@ pub enum QueuedTaskData {
     },
     /// Complete an EventAction
     CastEventAction { target: ObjectId },
-    /// Complete an EventAction started by a quest, which is handled by the client's connection.
-    CastQuestEventAction,
     /// Make a fish bite.
     FishBite,
     /// Seal a boss wall.

@@ -1098,14 +1098,6 @@ pub async fn server_main_loop(
                                     director.event_action_cast(task.from_actor_id, *target);
                                 }
                             }
-                            QueuedTaskData::CastQuestEventAction => {
-                                let mut network = network.lock();
-                                network.send_to(
-                                    task.from_id,
-                                    FromServer::QuestEventActionCast,
-                                    DestinationNetwork::ZoneClients,
-                                );
-                            }
                             QueuedTaskData::FishBite => {
                                 let mut network = network.lock();
                                 network.send_to(
@@ -2677,21 +2669,18 @@ pub async fn server_main_loop(
                         send_effects_list(network.clone(), instance, from_actor_id);
                     }
                 }
-                ToServer::QuestEventAction(from_client_id, from_actor_id, cast_time) => {
-                    let mut data = data.lock();
-                    let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        tracing::warn!(
-                            "Couldn't find the instance of {from_actor_id} to finish its event action!"
+                ToServer::QuestEventAction(from_client_id, _from_actor_id, cast_time) => {
+                    // Finish the cast when the client's progress bar does. Queued tasks only run on the server's
+                    // 500 ms tick, which left up to half a second before the scene carried on.
+                    let network = network.clone();
+                    tokio::spawn(async move {
+                        tokio::time::sleep(Duration::from_secs(cast_time as u64)).await;
+                        network.lock().send_to(
+                            from_client_id,
+                            FromServer::QuestEventActionCast,
+                            DestinationNetwork::ZoneClients,
                         );
-                        continue;
-                    };
-
-                    instance.insert_task(
-                        from_client_id,
-                        from_actor_id,
-                        Duration::from_secs(cast_time as u64),
-                        QueuedTaskData::CastQuestEventAction,
-                    );
+                    });
                 }
                 ToServer::Fish(from_client_id, from_actor_id) => {
                     let mut data = data.lock();

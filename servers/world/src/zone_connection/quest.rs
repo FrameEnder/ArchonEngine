@@ -361,6 +361,7 @@ impl ZoneConnection {
         &mut self,
         lua_player: &mut LuaPlayer,
         events: &mut Vec<(Box<dyn EventHandler>, Event)>,
+        base_id: u32,
         name_id: u32,
         layout_id: u32,
         level: u8,
@@ -398,7 +399,7 @@ impl ZoneConnection {
                 continue;
             };
 
-            handler.on_battle_npc_killed(lua_player, name_id, layout_id);
+            handler.on_battle_npc_killed(lua_player, base_id, layout_id);
         }
 
         roll_drops(lua_player, name_id, level);

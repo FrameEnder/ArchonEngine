@@ -53,8 +53,8 @@ function onTalk(target, player)
 end
 
 -- Each ENEMY0 you (or your party) defeat gives you one ITEM0.
-function onBNpcKill(name_id, layout_id, player)
-    if name_id ~= ENEMY0 or player:get_quest_sequence(EVENT_ID) ~= 1 then
+function onBNpcKill(base_id, layout_id, player)
+    if base_id ~= ENEMY0 or player:get_quest_sequence(EVENT_ID) ~= 1 then
         return
     end
 

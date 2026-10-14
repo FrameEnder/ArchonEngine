@@ -85,8 +85,8 @@ function onEventActionCast(player)
 end
 
 -- Each ENEMY0 you (or your party) defeat counts, up to three.
-function onBNpcKill(name_id, layout_id, player)
-    if name_id ~= ENEMY0 or player:get_quest_sequence(EVENT_ID) ~= 1 then
+function onBNpcKill(base_id, layout_id, player)
+    if base_id ~= ENEMY0 or player:get_quest_sequence(EVENT_ID) ~= 1 then
         return
     end
 

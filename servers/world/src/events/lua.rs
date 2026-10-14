@@ -93,15 +93,16 @@ impl LuaEventHandler {
 }
 
 impl LuaEventHandler {
-    /// Tells a quest script that a battle NPC was defeated, if it cares (by defining `onBNpcKill`.)
-    pub fn on_battle_npc_killed(&self, player: &mut LuaPlayer, name_id: u32, layout_id: u32) {
+    /// Tells a quest script that a battle NPC was defeated, if it cares (by defining `onBNpcKill`.) It gets the
+    /// NPC's BNpcBase ID, which is what a quest's ENEMY parameters are (an anole is base 142 but name 120.)
+    pub fn on_battle_npc_killed(&self, player: &mut LuaPlayer, base_id: u32, layout_id: u32) {
         let Ok(func) = self.lua.0.globals().get::<Function>("onBNpcKill") else {
             return;
         };
 
         let result = self.lua.0.scope(|scope| {
             let player = scope.create_userdata_ref_mut(player)?;
-            func.call::<()>((name_id, layout_id, player))?;
+            func.call::<()>((base_id, layout_id, player))?;
             Ok(())
         });
         if let Err(err) = result {
