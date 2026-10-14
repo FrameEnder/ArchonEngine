@@ -12,13 +12,23 @@ function aetheryteId()
     return EVENT_ID & 0xFFFF
 end
 
+-- EventAction "Attuning": the attunement animation with a 5 second progress bar (Sapphire's ACTION_ATTUNE.)
+EVENT_ACTION_ATTUNE = 19
+
 function onTalk(target, player)
     if not player:has_aetheryte(aetheryteId()) then
-        -- TODO: play attunement animation
-        player:unlock_aetheryte(1, aetheryteId())
+        -- Attune first, the rest happens once the progress bar finishes (see onEventActionCast.)
+        player:event_action(EVENT_ACTION_ATTUNE)
+        return
     end
 
     player:play_scene(SCENE_SHOW_MENU, HIDE_HOTBAR, {0})
+end
+
+function onEventActionCast(player)
+    player:unlock_aetheryte(1, aetheryteId())
+    -- "You have aethernet access" and its effect, then the event ends.
+    player:play_scene(SCENE_HAVE_AETHERNET_ACCESS, HIDE_HOTBAR, {0})
 end
 
 function onReturn(scene, results, player)
