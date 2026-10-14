@@ -27,8 +27,9 @@ use crate::{
     },
 };
 
-/// How often NPCs auto-attack, in half-second ticks. This is the same rate as before, but counted per NPC.
-const NPC_AUTO_ATTACK_TICKS: i64 = (AUTO_ATTACK_RATE + 1) * 2;
+/// How often NPCs auto-attack, in half-second ticks: every 3 seconds, which is what Kawari Bestiary recorded enemies
+/// doing on retail (their hits landed 3.0-3.1 seconds apart.)
+const NPC_AUTO_ATTACK_TICKS: i64 = AUTO_ATTACK_RATE * 2;
 
 /// How long an NPC that lost its target waits before sheathing its weapon.
 const NPC_SHEATHE_DELAY: Duration = Duration::from_secs(2);

@@ -1,0 +1,28 @@
+{
+    "autoattack_action_id": 871,
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 6,
+            "data": {
+                "type": "action",
+                "action_id": 390
+            }
+        },
+        {
+            "time": 12,
+            "data": {
+                "type": "action",
+                "action_id": 391
+            }
+        },
+        {
+            "time": 14,
+            "data": {
+                "type": "invulnerability",
+                "invulnerable": false
+            },
+            "comment": "Marks the end of the loop"
+        }
+    ]
+}

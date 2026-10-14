@@ -608,12 +608,13 @@ pub fn spawn_custom_bnpc(
 
 /// Creates the NPC spawn data based off of game data and whatever parameters you require.
 /// The health of an ordinary enemy by level (1 to 50), from Sapphire's BnpcBaseHp table. Retail keeps enemy stats on
-/// its servers, so they aren't in the game data, and this is the best reference we have. Drop-ins can still set `hp`
-/// per enemy, and enemies above level 50 still use the old player-style calculation.
+/// its servers, so they aren't in the game data. Kawari Bestiary's recording of the Central Shroud on retail matched it
+/// at every level it saw (1-14, 28-34), except 43, where retail has 1891 rather than Sapphire's 1872. Drop-ins can
+/// still set `hp` per enemy (for elites and the like), and enemies above level 50 use the old player-style calculation.
 const BNPC_BASE_HP: [u32; 50] = [
     44, 51, 59, 68, 91, 108, 126, 143, 160, 192, 217, 243, 268, 293, 319, 344, 369, 394, 420, 413,
     458, 493, 532, 568, 594, 641, 677, 714, 750, 780, 887, 965, 1055, 1142, 1220, 1306, 1409, 1515,
-    1587, 1601, 1703, 1789, 1872, 2008, 2112, 2180, 2314, 2383, 2501, 2589,
+    1587, 1601, 1703, 1789, 1891, 2008, 2112, 2180, 2314, 2383, 2501, 2589,
 ];
 
 pub fn create_npc_common_spawn(
