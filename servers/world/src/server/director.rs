@@ -109,6 +109,10 @@ pub enum LuaDirectorTask {
     },
     /// Lose a quest battle, which sends the players back to where they entered it.
     FailQuestBattle,
+    /// Change the director's sequence, which the client's script for it reacts to (e.g. `OnSequence001`.)
+    SetSequence {
+        sequence: u8,
+    },
     /// Make a BNpc hate another BNpc (by layout ID), or the player if there's no target, by this much enmity.
     SetHate {
         layout_id: u32,
@@ -245,6 +249,10 @@ impl UserData for LuaDirector {
                 .push(LuaDirectorTask::CompleteQuestBattle { sequence });
             Ok(())
         });
+        methods.add_method_mut("set_sequence", |_, this, sequence: u8| {
+            this.tasks.push(LuaDirectorTask::SetSequence { sequence });
+            Ok(())
+        });
         methods.add_method_mut("fail_quest_battle", |_, this, _: ()| {
             this.tasks.push(LuaDirectorTask::FailQuestBattle);
             Ok(())
@@ -290,6 +298,7 @@ pub struct DirectorBoss {
 #[derive(Debug, Default)]
 pub struct DirectorData {
     pub id: HandlerId,
+    /// The director's sequence (DirectorVars' first byte.)
     pub flag: u8,
     pub data: [u8; 10],
     /// Lua state for this director.
@@ -974,6 +983,27 @@ pub fn director_tick(
                     FromServer::QuestBattleComplete(director_id, quest_id, *sequence),
                     DestinationNetwork::ZoneClients,
                 );
+            }
+            LuaDirectorTask::SetSequence { sequence } => {
+                let vars = if let Some(director) = instance.directors.first_mut() {
+                    director.flag = *sequence;
+                    director.build_var_segment()
+                } else {
+                    continue;
+                };
+
+                let mut network = network.lock();
+                for id in instance
+                    .actors
+                    .iter()
+                    .filter(|x| matches!(x.1, NetworkedActor::Player { .. }))
+                    .map(|x| *x.0)
+                {
+                    let Some((handle, _)) = network.get_by_actor_mut(id) else {
+                        continue;
+                    };
+                    let _ = handle.send(FromServer::PacketSegment(vars.clone(), id));
+                }
             }
             LuaDirectorTask::FailQuestBattle => {
                 let mut network = network.lock();

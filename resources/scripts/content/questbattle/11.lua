@@ -27,9 +27,13 @@ WAVES = {
 
 -- The quest moves to this sequence when the battle is won.
 QUEST_SEQUENCE_AFTER_WIN = 2
+-- The director's sequence while fighting (the client's script shows the duty objective for it), and once the battle is
+-- lost (the client shows "Duty Failed".) The failed sequence and the six seconds before sending the player out are
+-- what Sapphire's quest battles do.
+SEQUENCE_FIGHTING = 1
+SEQUENCE_FAILED = 0xFE
 -- How many updates (half a second each) to wait after the player falls before sending them out.
--- TEMPORARY: 60 seconds while testing the quest battle director's 0x10000001 update (normally 6, three seconds.)
-FAIL_DELAY_UPDATES = 120
+FAIL_DELAY_UPDATES = 12
 
 -- Enemies still standing, by layout ID, and the order they arrived in.
 local remaining = {}
@@ -91,6 +95,8 @@ function onSetup(director)
 end
 
 function onCommence(director)
+    director:set_sequence(SEQUENCE_FIGHTING)
+
     director:spawn_bnpc(BNPC_IDA)
     director:spawn_bnpc(BNPC_PAPALYMO)
 
@@ -154,5 +160,6 @@ function onPlayerDeath(director)
         return
     end
     over = true
+    director:set_sequence(SEQUENCE_FAILED)
     fail_in = FAIL_DELAY_UPDATES
 end
