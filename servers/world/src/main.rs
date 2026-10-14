@@ -2305,6 +2305,24 @@ async fn process_packet(
                                 tracing::warn!("There's no current event to return from!");
                             }
                         }
+                        ClientZoneIpcData::EventReturnHandler16(handler) => {
+                            tracing::info!(message = "Event returned", handler_id = %handler.handler_id, error_code = handler.error_code, scene = handler.scene, params = ?&handler.params[..handler.num_results as usize]);
+
+                            if let Some(event) = events.last() {
+                                event
+                                    .0
+                                    .on_return(
+                                        &event.1,
+                                        connection,
+                                        handler.scene,
+                                        &handler.params[..handler.num_results as usize],
+                                        lua_player,
+                                    )
+                                    .await;
+                            } else {
+                                tracing::warn!("There's no current event to return from!");
+                            }
+                        }
                         ClientZoneIpcData::EventYieldHandler2(handler) => {
                             tracing::info!(message = "Event yielded", handler_id = %handler.handler_id, yield_id = handler.yield_id, scene = handler.scene, params = ?&handler.params[..handler.num_results as usize]);
 

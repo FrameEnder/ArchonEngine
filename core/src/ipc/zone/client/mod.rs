@@ -159,6 +159,7 @@ pub enum ClientZoneIpcData {
     },
     EventReturnHandler2(EventReturnHandler<2>),
     EventReturnHandler8(EventReturnHandler<8>),
+    EventReturnHandler16(EventReturnHandler<16>),
     Config(Config),
     UnkCall2 {
         unk1: [u8; 8],
