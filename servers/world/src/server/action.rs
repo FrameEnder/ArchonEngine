@@ -5,11 +5,13 @@ use std::{
     time::{Duration, Instant},
 };
 
+use glam::{Vec2, Vec3A};
 use mlua::Function;
 use parking_lot::Mutex;
 
 use crate::{
     ActionInfo, ClientId, FromServer, GameData, PlayerData, StatusEffects, ToServer,
+    gamedata::AreaShape,
     lua::{EFFECT_ON_SOURCE, EffectsBuilder, KawariLua, KawariLuaState, LuaPlayer, LuaZone},
     server::{
         WorldServer,
@@ -332,6 +334,31 @@ pub fn execute_action(
                 instance.find_actor(request.target.object_id),
                 Some(NetworkedActor::Player { .. })
             );
+        // Area attacks only land on players still inside them when the cast finishes: aimed where the target was
+        // and facing the way the enemy was when it started casting.
+        if npc_hitting_player
+            && let Some(effects_builder) = &mut effects_builder
+            && let Some(shape) = action_info.and_then(|info| info.area_shape())
+            && let NetworkedActor::Npc { cast, timeline, .. } = actor
+            && let Some(target) = instance.find_actor(request.target.object_id)
+        {
+            let (rotation, aimed_at) = match cast {
+                Some(cast) => (cast.rotation, cast.target_position),
+                None => (actor.rotation(), target.position().0),
+            };
+            if !in_area(
+                shape,
+                actor.position().0,
+                rotation,
+                aimed_at,
+                target.position().0,
+                timeline.hitbox_radius,
+            ) {
+                // Dodged: it lands on nobody.
+                effects_builder.effects.clear();
+            }
+        }
+
         if npc_hitting_player && let Some(effects_builder) = &mut effects_builder {
             let scale = npc_damage_scale(actor, common_spawn.level);
             let roll = fastrand::u8(..100);
@@ -489,7 +516,14 @@ pub fn execute_action(
                     }));
             }
 
-            if let Some(info) = action_info.filter(|info| info.is_area_of_effect()) {
+            // Players' area actions hit every enemy (or ally) inside; enemies' are handled above, on their target.
+            let caster_is_player = matches!(
+                instance.find_actor(from_actor_id),
+                Some(NetworkedActor::Player { .. })
+            );
+            if let Some(info) =
+                action_info.filter(|info| info.is_area_of_effect() && caster_is_player)
+            {
                 // Fill in the damage element shown to the client.
                 {
                     let mut game_data = game_data.lock();
@@ -1625,4 +1659,106 @@ pub fn execute_ornament_action(
     );
 
     None
+}
+
+/// Whether `point` is inside an area attack of this `shape`, used by an NPC at `caster` (with a hitbox of
+/// `caster_radius`) facing `rotation` and aimed at `aimed_at`. Distances are on the ground, and the player's own hitbox
+/// (`AOE_HITBOX_LENIENCY`) counts, so grazing the edge is a hit.
+pub fn in_area(
+    shape: AreaShape,
+    caster: Vec3A,
+    rotation: f32,
+    aimed_at: Vec3A,
+    point: Vec3A,
+    caster_radius: f32,
+) -> bool {
+    let flat = |v: Vec3A| Vec2::new(v.x, v.z);
+    let reach = AOE_HITBOX_LENIENCY;
+    let offset = flat(point) - flat(caster);
+    let distance = offset.length();
+    // Facing `rotation` means looking along (sin, cos) on the ground, the same way NPCs turn to their targets.
+    let forward = Vec2::new(rotation.sin(), rotation.cos());
+
+    match shape {
+        AreaShape::Circle { radius, on_target } => {
+            if on_target {
+                flat(point).distance(flat(aimed_at)) <= radius + reach
+            } else {
+                distance <= radius + caster_radius + reach
+            }
+        }
+        AreaShape::Cone { radius, angle } => {
+            if distance > radius + caster_radius + reach {
+                return false;
+            }
+            if distance <= caster_radius + reach {
+                return true;
+            }
+            let between = (forward.dot(offset) / distance).clamp(-1.0, 1.0).acos();
+            let graze = (reach / distance).atan();
+            between <= angle.to_radians() / 2.0 + graze
+        }
+        AreaShape::Line { length, width } => {
+            let along = offset.dot(forward);
+            let across = offset.perp_dot(forward).abs();
+            along >= -reach
+                && along <= length + caster_radius + reach
+                && across <= width / 2.0 + reach
+        }
+    }
+}
+
+#[cfg(test)]
+mod area_tests {
+    use super::*;
+
+    #[test]
+    fn frost_breath_cone() {
+        // An anole (hitbox 1.12) facing +z breathes a 90 degree, 6 yalm cone.
+        let cone = AreaShape::Cone {
+            radius: 6.0,
+            angle: 90.0,
+        };
+        let at = |x: f32, z: f32| {
+            in_area(
+                cone,
+                Vec3A::ZERO,
+                0.0,
+                Vec3A::ZERO,
+                Vec3A::new(x, 0.0, z),
+                1.12,
+            )
+        };
+        assert!(at(0.0, 4.0)); // right in front
+        assert!(at(2.5, 4.0)); // inside the cone's edge
+        assert!(!at(0.0, -4.0)); // behind it
+        assert!(!at(6.0, 1.0)); // well off to the side
+        assert!(!at(0.0, 9.0)); // out of reach
+    }
+
+    #[test]
+    fn ground_circle() {
+        // Acorn Armageddon: a 6 yalm circle where the target stood.
+        let circle = AreaShape::Circle {
+            radius: 6.0,
+            on_target: true,
+        };
+        let aimed = Vec3A::new(10.0, 0.0, 0.0);
+        assert!(in_area(
+            circle,
+            Vec3A::ZERO,
+            0.0,
+            aimed,
+            Vec3A::new(14.0, 0.0, 0.0),
+            3.0
+        ));
+        assert!(!in_area(
+            circle,
+            Vec3A::ZERO,
+            0.0,
+            aimed,
+            Vec3A::new(18.0, 0.0, 0.0),
+            3.0
+        ));
+    }
 }

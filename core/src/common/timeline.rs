@@ -24,6 +24,10 @@ pub struct Timeline {
     /// ordinary enemies' health grows. Without any, NPC damage is worked out from its stats instead.
     #[serde(default)]
     pub damage_to_players: BTreeMap<u8, f32>,
+    /// This NPC's hitbox radius in yalms (as Kawari Recorder reads it on retail.) Its area attacks reach this much
+    /// further, since they're measured from the edge of its hitbox.
+    #[serde(default)]
+    pub hitbox_radius: f32,
 }
 
 impl Timeline {
@@ -111,6 +115,7 @@ mod tests {
                 on_death: Vec::default(),
                 attack_range: crate::common::MINIMUM_PATHFINDING_DISTANCE,
                 damage_to_players: BTreeMap::default(),
+                hitbox_radius: 0.0,
                 timepoints: vec![Timepoint {
                     time: 20,
                     data: TimepointData::Action { action_id: 872 }

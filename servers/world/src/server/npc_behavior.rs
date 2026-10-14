@@ -12,16 +12,20 @@ use kawari::{
         ObjectId, ObjectTypeId, ObjectTypeKind, Position, STRIKING_DUMMY_NAME_ID, TimepointData,
     },
     ipc::zone::{
-        ActionRequest, ActionType, ActorControlCategory, CharacterDataFlag, ServerZoneIpcData,
-        ServerZoneIpcSegment,
+        ActionRequest, ActionType, ActorControlCategory, BattleNpcSubKind, CharacterDataFlag,
+        ObjectKind, ServerZoneIpcData, ServerZoneIpcSegment,
     },
 };
 use parking_lot::Mutex;
 
 use crate::{
     ClientId, FromServer, GameData,
+    gamedata::AreaShape,
     server::{
-        actor::{NetworkedActor, NpcState, NpcTarget, set_shared_group_timeline_state},
+        actor::{
+            NetworkedActor, NpcCast, NpcState, NpcTarget, set_shared_group_timeline_state,
+            update_actor_hp_mp,
+        },
         instance::{Instance, QueuedTaskData},
         network::{DestinationNetwork, NetworkState},
     },
@@ -33,6 +37,20 @@ const NPC_AUTO_ATTACK_TICKS: i64 = AUTO_ATTACK_RATE * 2;
 
 /// How long an NPC that lost its target waits before sheathing its weapon.
 const NPC_SHEATHE_DELAY: Duration = Duration::from_secs(2);
+
+/// How close (in yalms) a player has to come for an aggressive enemy to notice them.
+/// TODO: per enemy, from Kawari Recorder's "World" recording (attacks on sight, from how far.)
+const AGGRO_RANGE: f32 = 15.0;
+
+/// Aggressive enemies ignore players this many levels or more above them.
+const AGGRO_LEVEL_GAP: u8 = 7;
+
+/// How far (in yalms) an enemy will chase from where it spawned before giving up, going home and healing up.
+/// TODO: per enemy, from Kawari Recorder's "World" recording (gave up at ~N yalms from spawn.)
+const LEASH_DISTANCE: f32 = 40.0;
+
+/// How close to home an enemy that gave up has to get before it pays attention again.
+const HOME_DISTANCE: f32 = 3.0;
 
 /// Updates NPCs in this instance.
 pub fn npc_behavior(
@@ -48,6 +66,13 @@ pub fn npc_behavior(
     let mut actor_moves = Vec::new();
     let mut target_actor_pos = HashMap::new();
     let enemies = instance.find_possible_enemies();
+    let levels: HashMap<ObjectId, u8> = instance
+        .actors
+        .iter()
+        .filter(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+        .map(|(id, actor)| (*id, actor.get_common_spawn().level))
+        .collect();
+    let mut healed = Vec::new();
 
     // const pass
     for (id, actor) in &instance.actors {
@@ -59,9 +84,11 @@ pub fn npc_behavior(
             last_position,
             state,
             timeline,
+            cast,
             ..
         } = actor
             && let Some(current_target) = current_target
+            && !cast.is_some_and(|cast| cast.until > Instant::now())
             && *state != NpcState::Dead
             && spawn.common.health_points > 0
             && spawn.common.name_id != STRIKING_DUMMY_NAME_ID
@@ -162,6 +189,9 @@ pub fn npc_behavior(
             autoattack_timing,
             currently_invulnerable,
             last_wander_timestamp,
+            home,
+            returning_home,
+            cast,
             ..
         } = actor
             && *state != NpcState::Dead
@@ -170,6 +200,38 @@ pub fn npc_behavior(
             // NOTE: this is *intentional* as I believe in retail the timing of actions are dependent on when the actor spawned
             // This doesn't have an effect if you re-aggro them or whatever.
             *timeline_position += 1; // NOTE: change if the length of a server tick changes
+
+            // Enemies stand still (and keep their target) while they cast.
+            // (The cast stays recorded afterwards, for the action to land where it was aimed.)
+            if cast.is_some_and(|cast| cast.until > Instant::now()) {
+                continue;
+            }
+
+            // Chased too far from home: give up, go back and heal up, paying no attention to anyone on the way.
+            let from_home = Vec3A::distance(spawn.common.position.0, *home);
+            let is_wild_enemy = !spawn.common.owner_id.is_valid()
+                && spawn.common.object_kind == ObjectKind::BattleNpc(BattleNpcSubKind::Enemy);
+            if is_wild_enemy && *state == NpcState::Hate && from_home > LEASH_DISTANCE {
+                enmity.clear();
+                dropped_targets.push(*id);
+                *state = NpcState::natural_state_of(spawn);
+                *current_target = Some(NpcTarget::Position(*home));
+                spawn.common.target_id = ObjectTypeId::default();
+                current_path.clear();
+                *current_path_lerp = 0.0;
+                *returning_home = true;
+                spawn.common.health_points = spawn.common.max_health_points;
+                healed.push(*id);
+            }
+            if *returning_home {
+                enmity.clear();
+                if from_home <= HOME_DISTANCE {
+                    *returning_home = false;
+                    *last_wander_timestamp = Instant::now();
+                } else if current_target.is_none() {
+                    *current_target = Some(NpcTarget::Position(*home));
+                }
+            }
 
             // switch to the next node if we passed this one
             if *current_path_lerp >= 1.0 {
@@ -219,34 +281,45 @@ pub fn npc_behavior(
                 continue;
             }
 
-            if current_target.is_none() {
-                if *state == NpcState::Wander
-                    && spawn
-                        .character_data_flags
-                        .contains(CharacterDataFlag::HOSTILE)
-                {
-                    let mut game_data = game_data.lock();
-                    let possible_enemies =
-                        game_data.get_battalion_enemies(spawn.common.battalion as u32);
+            // Aggressive enemies notice players who come close, whether they're standing around or wandering, unless
+            // they're far above them.
+            if *state == NpcState::Wander
+                && !*returning_home
+                && spawn
+                    .character_data_flags
+                    .contains(CharacterDataFlag::HOSTILE)
+            {
+                let mut game_data = game_data.lock();
+                let possible_enemies =
+                    game_data.get_battalion_enemies(spawn.common.battalion as u32);
 
-                    // find a player if in range
-                    for (target_id, position, battalion) in &enemies {
-                        if !possible_enemies[*battalion as usize] {
-                            continue;
-                        }
-
-                        // TODO: hardcoded sensing range
-                        if Vec3A::distance(position.0, spawn.common.position.0) < 15.0 {
-                            enmity.entry(*target_id).or_insert(1);
-                            *autoattack_timing = 0;
-                            *state = NpcState::Hate;
-                            *current_target = Some(NpcTarget::Actor(*target_id));
-
-                            spawn.common.target_id.object_id = *target_id;
-                            newly_acquired_targets.push(*id);
-                        }
+                for (target_id, position, battalion) in &enemies {
+                    if !possible_enemies[*battalion as usize] {
+                        continue;
                     }
-                } else if *state == NpcState::Follow {
+                    if levels.get(target_id).is_some_and(|level| {
+                        *level >= spawn.common.level.saturating_add(AGGRO_LEVEL_GAP)
+                    }) {
+                        continue;
+                    }
+
+                    if Vec3A::distance(position.0, spawn.common.position.0) < AGGRO_RANGE {
+                        enmity.entry(*target_id).or_insert(1);
+                        *autoattack_timing = 0;
+                        *state = NpcState::Hate;
+                        *current_target = Some(NpcTarget::Actor(*target_id));
+                        current_path.clear();
+                        *current_path_lerp = 0.0;
+
+                        spawn.common.target_id.object_id = *target_id;
+                        newly_acquired_targets.push(*id);
+                        break;
+                    }
+                }
+            }
+
+            if current_target.is_none() {
+                if *state == NpcState::Follow {
                     *current_target = Some(NpcTarget::Actor(spawn.common.owner_id));
                 }
 
@@ -254,11 +327,9 @@ pub fn npc_behavior(
                     && current_target.is_none()
                     && Instant::now().duration_since(*last_wander_timestamp) > MOB_WANDER_TIME
                 {
-                    // TODO: don't wander too far off
+                    // Wander around home, rather than drifting further away each time.
                     *current_target = Some(NpcTarget::Position(
-                        instance
-                            .navmesh
-                            .find_wander_position(spawn.common.position.0),
+                        instance.navmesh.find_wander_position(*home),
                     ));
                     *last_wander_timestamp = Instant::now();
                 }
@@ -375,6 +446,15 @@ pub fn npc_behavior(
                                     target: spawn.common.target_id,
                                     ..Default::default()
                                 };
+                                *cast = Some(NpcCast {
+                                    until: Instant::now()
+                                        + Duration::from_secs_f32(cast_time_seconds),
+                                    target_position: target_actor_pos
+                                        .get(&spawn.common.target_id.object_id)
+                                        .copied()
+                                        .unwrap_or(spawn.common.position.0),
+                                    rotation: spawn.common.rotation,
+                                });
                                 new_action_requests.push((*id, request, cast_time_seconds));
                             }
                         }
@@ -415,7 +495,16 @@ pub fn npc_behavior(
                     target: spawn.common.target_id,
                     ..Default::default()
                 };
-                new_action_requests.push((*id, request, (cast_time as f32 * 100.0) / 1000.0));
+                let cast_time_seconds = (cast_time as f32 * 100.0) / 1000.0;
+                *cast = Some(NpcCast {
+                    until: Instant::now() + Duration::from_secs_f32(cast_time_seconds),
+                    target_position: target_actor_pos
+                        .get(&spawn.common.target_id.object_id)
+                        .copied()
+                        .unwrap_or(spawn.common.position.0),
+                    rotation: spawn.common.rotation,
+                });
+                new_action_requests.push((*id, request, cast_time_seconds));
             }
 
             if reset_target {
@@ -470,10 +559,28 @@ pub fn npc_behavior(
                 },
             );
         } else {
+            // Attacks aimed at the ground (e.g. Acorn Armageddon) show their omen where the target stood.
+            let aimed_at_ground = {
+                let mut game_data = game_data.lock();
+                matches!(
+                    game_data
+                        .get_action_info(request.action_id)
+                        .and_then(|info| info.area_shape()),
+                    Some(AreaShape::Circle {
+                        on_target: true,
+                        ..
+                    })
+                )
+            };
             let position;
             {
                 let actor = instance.find_actor(id).unwrap();
-                position = actor.position();
+                position = match actor {
+                    NetworkedActor::Npc {
+                        cast: Some(cast), ..
+                    } if aimed_at_ground => Position(cast.target_position),
+                    _ => actor.position(),
+                };
             }
 
             // inform players that this enemy is casting
@@ -519,6 +626,11 @@ pub fn npc_behavior(
             let mut network = network.lock();
             set_shared_group_timeline_state(instance, &mut network, actor_id, &states);
         }
+    }
+
+    // Those that gave up a chase are back to full health.
+    for id in healed {
+        update_actor_hp_mp(network.clone(), instance, id);
     }
 
     // Those that lost their target sheathe their weapon, unless they find another one in the meantime.

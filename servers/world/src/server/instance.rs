@@ -324,6 +324,7 @@ impl Instance {
         parameters.perform_calculations(primary_stat, &attributes, &param_grow, &modifiers);
         parameters.calculate_potencies(&param_grow, Some(&modifiers));
 
+        let position = spawn.common.position.0;
         self.actors.insert(
             id,
             NetworkedActor::Npc {
@@ -342,6 +343,9 @@ impl Instance {
                 last_wander_timestamp: Instant::now()
                     + Duration::from_secs(fastrand::u64(0..MOB_WANDER_TIME.as_secs())),
                 parameters,
+                home: position,
+                returning_home: false,
+                cast: None,
             },
         );
     }

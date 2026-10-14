@@ -45,6 +45,7 @@ use icarus::Level::LevelSheet;
 use icarus::Mount::MountSheet;
 use icarus::NpcEquip::NpcEquipSheet;
 use icarus::NpcYell::NpcYellSheet;
+use icarus::Omen::OmenSheet;
 use icarus::OnlineStatus::OnlineStatusSheet;
 use icarus::Opening::OpeningSheet;
 use icarus::ParamGrow::{ParamGrowRow, ParamGrowSheet};
@@ -238,6 +239,10 @@ pub struct ActionInfo {
     pub primary_cost_type: u8,
     /// How much of the resource this action costs. For MP, this is in hundreds.
     pub primary_cost_value: u16,
+    /// The width of a line or rectangle area-of-effect, in yalms.
+    pub x_axis_modifier: u8,
+    /// How wide a cone area-of-effect is, in degrees, from its omen (e.g. "gl_fan090" is 90 degrees.)
+    pub cone_angle: f32,
 }
 
 impl ActionInfo {
@@ -254,6 +259,56 @@ impl ActionInfo {
     pub fn is_area_of_effect(&self) -> bool {
         self.cast_type == ACTION_CAST_TYPE_CIRCLE && self.effect_range > 0
     }
+
+    /// The shape this action covers on the ground, if it isn't single-target.
+    pub fn area_shape(&self) -> Option<AreaShape> {
+        let range = self.effect_range as f32;
+        match self.cast_type {
+            _ if self.effect_range == 0 => None,
+            // A circle, centered on the target (or where it was aimed) if the action has a range, else the caster.
+            2 => Some(AreaShape::Circle {
+                radius: range,
+                on_target: self.range > 0,
+            }),
+            // A circle around the caster.
+            5 => Some(AreaShape::Circle {
+                radius: range,
+                on_target: false,
+            }),
+            // Cones in front of the caster.
+            3 | 13 => Some(AreaShape::Cone {
+                radius: range,
+                angle: self.cone_angle,
+            }),
+            // Lines and rectangles in front of the caster.
+            4 | 8 | 12 => Some(AreaShape::Line {
+                length: range,
+                width: (self.x_axis_modifier as f32).max(1.0),
+            }),
+            _ => None,
+        }
+    }
+}
+
+/// The area an action covers, see `ActionInfo::area_shape`.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum AreaShape {
+    Circle { radius: f32, on_target: bool },
+    Cone { radius: f32, angle: f32 },
+    Line { length: f32, width: f32 },
+}
+
+/// Cones without an angle in their omen are 90 degrees wide, the most common.
+const DEFAULT_CONE_ANGLE: f32 = 90.0;
+
+/// Reads a cone's angle from its omen's path, e.g. "gl_fan090_1bf" or "er_gl_fan120_1bf".
+fn cone_angle_from_omen(path: &str) -> Option<f32> {
+    let start = path.find("fan")? + 3;
+    let digits: String = path[start..]
+        .chars()
+        .take_while(|c| c.is_ascii_digit())
+        .collect();
+    digits.parse().ok()
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -1945,6 +2000,17 @@ impl GameData {
     pub fn get_action_info(&mut self, id: u32) -> Option<ActionInfo> {
         let row = self.action_sheet.row(id)?;
 
+        // Only cones need their omen, for their angle.
+        let cone_angle = if matches!(row.CastType, 3 | 13) {
+            OmenSheet::read_from(&mut self.resource, Language::None)
+                .ok()
+                .and_then(|sheet| sheet.row(row.Omen as u32))
+                .and_then(|omen| cone_angle_from_omen(&omen.Path))
+                .unwrap_or(DEFAULT_CONE_ANGLE)
+        } else {
+            DEFAULT_CONE_ANGLE
+        };
+
         Some(ActionInfo {
             cast_type: row.CastType,
             effect_range: row.EffectRange,
@@ -1952,6 +2018,8 @@ impl GameData {
             can_target_hostile: row.CanTargetHostile,
             primary_cost_type: row.PrimaryCostType,
             primary_cost_value: row.PrimaryCostValue,
+            x_axis_modifier: row.XAxisModifier,
+            cone_angle,
         })
     }
 
@@ -2358,5 +2426,17 @@ impl Resource for SqPackResourceSpy {
 
     fn exists(&mut self, path: &str) -> bool {
         self.sqpack_resource.exists(path)
+    }
+}
+
+#[cfg(test)]
+mod area_tests {
+    use super::cone_angle_from_omen;
+
+    #[test]
+    fn cone_angles() {
+        assert_eq!(cone_angle_from_omen("gl_fan090_1bf"), Some(90.0));
+        assert_eq!(cone_angle_from_omen("er_gl_fan120_1bf"), Some(120.0));
+        assert_eq!(cone_angle_from_omen("general_1bf"), None);
     }
 }

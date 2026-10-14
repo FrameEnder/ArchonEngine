@@ -67,6 +67,17 @@ pub enum NpcTarget {
     Position(Vec3A),
 }
 
+/// An NPC's cast, as it was when the cast started: area attacks land where they were aimed then.
+#[derive(Debug, Clone, Copy)]
+pub struct NpcCast {
+    /// When the cast finishes.
+    pub until: Instant,
+    /// Where its target was.
+    pub target_position: Vec3A,
+    /// Which way it was facing.
+    pub rotation: f32,
+}
+
 #[derive(Debug, Clone)]
 pub enum NetworkedActor {
     Player {
@@ -120,6 +131,12 @@ pub enum NetworkedActor {
         last_wander_timestamp: Instant,
         /// Stat parameters.
         parameters: BaseParameters,
+        /// Where it spawned: it wanders around here, and gives up a chase that takes it too far away.
+        home: Vec3A,
+        /// It gave up a chase and is heading home, ignoring everyone until it's there.
+        returning_home: bool,
+        /// The cast it's in the middle of, if any. It stands still until it's done.
+        cast: Option<NpcCast>,
     },
     Object {
         object: SpawnObject,

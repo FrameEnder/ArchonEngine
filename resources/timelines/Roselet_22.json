@@ -1,4 +1,5 @@
 {
+    "hitbox_radius": 0.8,
     "autoattack_action_id": 0,
     "timeline_always_plays": false,
     "timepoints": [
