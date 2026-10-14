@@ -1429,10 +1429,22 @@ impl GameData {
     ) -> Option<(u32, u32, u32)> {
         let config = get_config();
         let exh = self.resource.read_excel_sheet_header("ScenarioTree").ok()?;
-        let sheet = self
+        // Not every sheet is translated, and asking for a language it doesn't have fails.
+        let language = if exh.languages.contains(&config.world.language()) {
+            config.world.language()
+        } else {
+            Language::None
+        };
+        let sheet = match self
             .resource
-            .read_excel_sheet(&exh, "ScenarioTree", config.world.language())
-            .ok()?;
+            .read_excel_sheet(&exh, "ScenarioTree", language)
+        {
+            Ok(sheet) => sheet,
+            Err(err) => {
+                tracing::warn!("Couldn't read the ScenarioTree sheet: {err:?}");
+                return None;
+            }
+        };
         let quest_ids: Vec<u32> = sheet
             .pages
             .iter()
@@ -1440,6 +1452,7 @@ impl GameData {
             .map(|entry| entry.id)
             .collect();
 
+        let checked = quest_ids.len();
         let mut next = None;
         for quest_id in quest_ids {
             let adjusted = adjust_quest_id(quest_id);
@@ -1466,7 +1479,14 @@ impl GameData {
             } else {
                 previous.iter().all(|x| is_completed(adjust_quest_id(*x)))
             };
-            if !follows_on || (row.GrandCompany != 0 && row.GrandCompany != grand_company) {
+            if !follows_on {
+                continue;
+            }
+            if row.GrandCompany != 0 && row.GrandCompany != grand_company {
+                tracing::info!(
+                    "Scenario Guide: skipping {adjusted}, it's for Grand Company {}",
+                    row.GrandCompany
+                );
                 continue;
             }
             let mut suits_class = |category: u8| {
@@ -1476,6 +1496,11 @@ impl GameData {
                         .contains(&classjob)
             };
             if !suits_class(row.ClassJobCategory0) || !suits_class(row.ClassJobCategory1) {
+                tracing::info!(
+                    "Scenario Guide: skipping {adjusted}, it's for classes {} / {}",
+                    row.ClassJobCategory0,
+                    row.ClassJobCategory1
+                );
                 continue;
             }
 
@@ -1490,7 +1515,12 @@ impl GameData {
             }
         }
 
-        let (quest_id, row, previous) = next?;
+        let Some((quest_id, row, previous)) = next else {
+            tracing::info!(
+                "Scenario Guide: checked {checked} main scenario quests, none are available"
+            );
+            return None;
+        };
         let last_completed = previous
             .iter()
             .copied()
