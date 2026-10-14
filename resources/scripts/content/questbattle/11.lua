@@ -28,7 +28,8 @@ WAVES = {
 -- The quest moves to this sequence when the battle is won.
 QUEST_SEQUENCE_AFTER_WIN = 2
 -- How many updates (half a second each) to wait after the player falls before sending them out.
-FAIL_DELAY_UPDATES = 6
+-- TEMPORARY: 60 seconds while testing the quest battle director's 0x10000001 update (normally 6, three seconds.)
+FAIL_DELAY_UPDATES = 120
 
 -- Enemies still standing, by layout ID, and the order they arrived in.
 local remaining = {}
