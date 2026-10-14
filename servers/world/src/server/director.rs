@@ -10,9 +10,11 @@ use kawari::{
         PublicContentType, timestamp_secs,
     },
     config::get_config,
+    ipc::chat::ChatChannelType,
     ipc::zone::{
-        ActionRequest, ActionType, ActorControlCategory, ActorControlSelf, DutyFinderSetting,
-        EventLogMessage, MapEffects, ServerZoneIpcData, ServerZoneIpcSegment, WalkInEvent,
+        ActionRequest, ActionType, ActorControlCategory, ActorControlSelf, ChatMessage,
+        DutyFinderSetting, EventLogMessage, MapEffects, ServerZoneIpcData, ServerZoneIpcSegment,
+        WalkInEvent,
     },
 };
 use mlua::{Function, LuaSerdeExt, UserData, UserDataMethods, Value};
@@ -114,6 +116,11 @@ pub enum LuaDirectorTask {
         layout_id: u32,
         action_id: u32,
         target: Option<u32>,
+    },
+    /// A BNpc says a line of quest text (by its key) in /say, e.g. an ally's battle chatter.
+    Say {
+        layout_id: u32,
+        key: String,
     },
     /// Change the director's sequence, which the client's script for it reacts to (e.g. `OnSequence001`.)
     SetSequence {
@@ -266,6 +273,10 @@ impl UserData for LuaDirector {
                 Ok(())
             },
         );
+        methods.add_method_mut("say", |_, this, (layout_id, key): (u32, String)| {
+            this.tasks.push(LuaDirectorTask::Say { layout_id, key });
+            Ok(())
+        });
         methods.add_method_mut("set_sequence", |_, this, sequence: u8| {
             this.tasks.push(LuaDirectorTask::SetSequence { sequence });
             Ok(())
@@ -1078,6 +1089,41 @@ pub fn director_tick(
                         request,
                         interruptible: cast_time > 0.0,
                     },
+                );
+            }
+            LuaDirectorTask::Say { layout_id, key } => {
+                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                    continue;
+                };
+                let name_id = instance
+                    .find_actor(actor_id)
+                    .map(|actor| actor.get_common_spawn().name_id)
+                    .unwrap_or_default();
+                let (name, text) = {
+                    let mut game_data = game_data.lock();
+                    (
+                        game_data.get_bnpc_name(name_id),
+                        game_data.get_quest_text(key),
+                    )
+                };
+                let Some(text) = text else {
+                    tracing::warn!("Couldn't find the quest text {key} for Say!");
+                    continue;
+                };
+
+                let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ChatMessage(ChatMessage {
+                    sender_actor_id: actor_id,
+                    channel: ChatChannelType::Say,
+                    sender_name: name.unwrap_or_default(),
+                    message: text.into(),
+                    ..Default::default()
+                }));
+                let mut network = network.lock();
+                network.send_to_instance(
+                    ObjectId::default(),
+                    instance,
+                    FromServer::PacketSegment(ipc, actor_id),
+                    DestinationNetwork::ZoneClients,
                 );
             }
             LuaDirectorTask::SetSequence { sequence } => {

@@ -1356,6 +1356,53 @@ impl GameData {
         Some(instance_content_row.LGBEventRange)
     }
 
+    /// Looks up a line of quest text by its key, e.g. TEXT_MANFST005_00445_PAPALYMO_BATTLETALK_01, which is in the
+    /// quest's own text sheet (quest/004/ManFst005_00445.)
+    pub fn get_quest_text(&mut self, key: &str) -> Option<String> {
+        let config = get_config();
+
+        // TEXT_<SCRIPT>_<ID>_...: the sheet is quest/<ID / 100>/<SCRIPT>_<ID>.
+        let mut parts = key.split('_');
+        let (Some("TEXT"), Some(script), Some(id)) = (parts.next(), parts.next(), parts.next())
+        else {
+            return None;
+        };
+        let folder = id.parse::<u32>().ok()? / 100;
+        let sheet_name = format!("quest/{folder:03}/{script}_{id}");
+
+        let exh = self.resource.read_excel_sheet_header(&sheet_name).ok()?;
+        let sheet = self
+            .resource
+            .read_excel_sheet(&exh, &sheet_name, config.world.language())
+            .ok()?;
+        // Rows are keyed by their first column, e.g. TEXT_MANFST005_00445_PAPALYMO_BATTLETALK_01.
+        sheet
+            .pages
+            .iter()
+            .flat_map(|page| page.entries.iter())
+            .filter_map(|entry| entry.subrows.first().map(|(_, row)| row))
+            .find(|row| {
+                row.columns
+                    .first()
+                    .and_then(|c| c.into_string())
+                    .map(|k| k.as_str())
+                    == Some(key)
+            })
+            .and_then(|row| row.columns.get(1)?.into_string().cloned())
+    }
+
+    /// The (singular) name of a BNpc, from the BNpcName sheet.
+    pub fn get_bnpc_name(&mut self, name_id: u32) -> Option<String> {
+        let config = get_config();
+
+        let exh = self.resource.read_excel_sheet_header("BNpcName").ok()?;
+        let sheet = self
+            .resource
+            .read_excel_sheet(&exh, "BNpcName", config.world.language())
+            .ok()?;
+        sheet.row(name_id)?.columns.first()?.into_string().cloned()
+    }
+
     /// Returns the list of applicable classjob IDs based on the ClassJobCategory.
     pub fn get_applicable_classjobs(&mut self, classjob_category_id: u16) -> Vec<u8> {
         let config = get_config();

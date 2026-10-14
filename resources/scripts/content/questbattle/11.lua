@@ -40,6 +40,21 @@ ACTION_CURE = 120
 HEAL_BELOW_HEALTH = 50
 HEAL_COOLDOWN_UPDATES = 8
 
+-- Ida and Papalymo's battle chatter, by key in the quest's text sheet. The server looks the lines up in the game data.
+-- (On retail these are battle talk pop-ups; until that packet is known, they're said in /say.)
+TEXT_PREFIX = "TEXT_MANFST005_00445_"
+-- Said at the start, when the first wave arrives, and when the last one does.
+LINES_START = { { BNPC_PAPALYMO, "PAPALYMO_BATTLETALK_01" }, { BNPC_IDA, "YDA_BATTLETALK_01" } }
+LINES_WAVE = {
+    [1] = { { BNPC_IDA, "YDA_BATTLETALK_02" }, { BNPC_PAPALYMO, "PAPALYMO_BATTLETALK_02" } },
+    [3] = { { BNPC_PAPALYMO, "PAPALYMO_BATTLETALK_03" } },
+}
+-- Said when Papalymo heals the player, at most this often (in updates.)
+LINE_HEAL = "PAPALYMO_BATTLETALK_04"
+HEAL_LINE_COOLDOWN_UPDATES = 40
+-- How many updates apart lines said together are.
+LINE_GAP_UPDATES = 4
+
 -- Enemies still standing, by layout ID, and the order they arrived in.
 local remaining = {}
 local arrived = {}
@@ -50,6 +65,33 @@ local over = false
 local fail_in = nil
 -- Counts down until Papalymo can heal again.
 local heal_cooldown = 0
+local heal_line_cooldown = 0
+-- Lines waiting to be said: { updates left, layout ID, key }.
+local pending_lines = {}
+
+-- Queues lines to be said one after another.
+function sayLines(lines)
+    local delay = 0
+    for _, line in ipairs(pending_lines) do
+        delay = math.max(delay, line[1] + LINE_GAP_UPDATES)
+    end
+    for _, line in ipairs(lines) do
+        table.insert(pending_lines, { delay, line[1], line[2] })
+        delay = delay + LINE_GAP_UPDATES
+    end
+end
+
+function sayPendingLines(director)
+    local still_pending = {}
+    for _, line in ipairs(pending_lines) do
+        if line[1] <= 0 then
+            director:say(line[2], TEXT_PREFIX .. line[3])
+        else
+            table.insert(still_pending, { line[1] - 1, line[2], line[3] })
+        end
+    end
+    pending_lines = still_pending
+end
 
 function spawnEnemy(director, id)
     remaining[id] = true
@@ -112,6 +154,7 @@ function onCommence(director)
     spawnEnemies(director, INITIAL_ENEMIES)
 
     alliesAttack(director)
+    sayLines(LINES_START)
 end
 
 -- health: the health (in percent) of every living NPC, by layout ID
@@ -129,12 +172,21 @@ function onUpdate(director, health, player_health)
         return
     end
 
+    sayPendingLines(director)
+    if heal_line_cooldown > 0 then
+        heal_line_cooldown = heal_line_cooldown - 1
+    end
+
     if heal_cooldown > 0 then
         heal_cooldown = heal_cooldown - 1
     elseif player_health ~= nil and player_health > 0 and player_health < HEAL_BELOW_HEALTH
         and health[BNPC_PAPALYMO] ~= nil then
         director:use_action(BNPC_PAPALYMO, ACTION_CURE) -- on the player
         heal_cooldown = HEAL_COOLDOWN_UPDATES
+        if heal_line_cooldown <= 0 then
+            sayLines({ { BNPC_PAPALYMO, LINE_HEAL } })
+            heal_line_cooldown = HEAL_LINE_COOLDOWN_UPDATES
+        end
     end
 
     local boss_health = health[BNPC_BOSS]
@@ -144,6 +196,9 @@ function onUpdate(director, health, player_health)
 
     while WAVES[next_wave] ~= nil and boss_health <= WAVES[next_wave].health do
         spawnEnemies(director, WAVES[next_wave])
+        if LINES_WAVE[next_wave] ~= nil then
+            sayLines(LINES_WAVE[next_wave])
+        end
         next_wave = next_wave + 1
         -- Papalymo turns to the new adds if he'd run out.
         alliesAttack(director)
