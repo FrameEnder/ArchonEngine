@@ -584,11 +584,14 @@ fn run(args: &[String]) -> Result<(), String> {
             let mut data = GameData::open(options.game.as_deref())?;
             std::fs::create_dir_all(&options.out)
                 .map_err(|err| format!("couldn't create {}: {err}", options.out.display()))?;
+            // Paths that don't exist are skipped, so several guesses at where a file lives can be tried at once.
+            let mut found = 0;
             for game_path in &options.positional {
-                let bytes = data
-                    .resolver
-                    .read(game_path)
-                    .map_err(|err| format!("couldn't read {game_path}: {err:?}"))?;
+                let Ok(bytes) = data.resolver.read(game_path) else {
+                    println!("{game_path}: not found");
+                    continue;
+                };
+                found += 1;
                 let file_name = Path::new(game_path)
                     .file_name()
                     .map(|name| name.to_string_lossy().into_owned())
@@ -605,6 +608,9 @@ fn run(args: &[String]) -> Result<(), String> {
                     );
                 }
                 println!("{game_path} -> {}{summary}", destination.display());
+            }
+            if found == 0 {
+                return Err("none of those files exist".to_string());
             }
             Ok(())
         }
