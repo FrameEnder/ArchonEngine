@@ -14,11 +14,15 @@ use crate::{
     lua::{KawariLuaState, LuaPlayer},
 };
 use kawari::{
-    common::{DirectorEvent, ERR_INVENTORY_ADD_FAILED, HandlerId, HandlerType, ObjectTypeId},
+    common::{
+        DirectorEvent, ERR_INVENTORY_ADD_FAILED, HandlerId, HandlerType, ObjectTypeId,
+        ObjectTypeKind,
+    },
     config::get_config,
     ipc::zone::{
-        ActorControlCategory, ChatMessage, Condition, Conditions, GameMasterRank,
-        ServerNoticeFlags, ServerNoticeMessage, ServerZoneIpcData, ServerZoneIpcSegment,
+        ActorControlCategory, ChatMessage, Condition, Conditions, EventType, GameMasterRank,
+        SceneFlags, ServerNoticeFlags, ServerNoticeMessage, ServerZoneIpcData,
+        ServerZoneIpcSegment,
     },
 };
 
@@ -205,6 +209,42 @@ impl ZoneConnection {
             "!reload" => {
                 self.reload_scripts().await;
                 self.send_notice("Scripts reloaded!").await;
+                true
+            }
+            "!directorscene" => {
+                // Plays a scene of the current content director (e.g. a quest battle's), the way its victory fanfare
+                // (60001) is played. For finding the director's other generic scenes.
+                let scene: u16 = parts.get(1).and_then(|x| x.parse().ok()).unwrap_or(0);
+                let flags: u32 = parts
+                    .get(2)
+                    .and_then(|x| u32::from_str_radix(x.trim_start_matches("0x"), 16).ok())
+                    .unwrap_or(0x40000);
+                let Some(handler_id) = self.content_handler_id else {
+                    self.send_notice("There's no content director here.").await;
+                    return true;
+                };
+                let actor_id = ObjectTypeId {
+                    object_id: self.player_data.character.actor_id,
+                    object_type: ObjectTypeKind::None,
+                };
+                self.start_event(
+                    actor_id,
+                    handler_id,
+                    EventType::GameProgress,
+                    1,
+                    events,
+                    &LuaPlayer::default(),
+                )
+                .await;
+                if let Some((_, event)) = events.last() {
+                    self.event_scene(
+                        event,
+                        scene,
+                        SceneFlags::from_bits_retain(flags),
+                        Vec::new(),
+                    )
+                    .await;
+                }
                 true
             }
             "!finishevent" => {
