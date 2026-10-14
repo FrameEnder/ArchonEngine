@@ -18,7 +18,9 @@ use icarus::{
     Quest::QuestSheet,
 };
 use kawari::config::get_config;
+use physis::Platform;
 use physis::resource::{ResourceResolver, SqPackResource, UnpackedResource};
+use physis::sqpack::{Hash, SqPackIndex};
 use serde_json::{Value, json};
 
 const USAGE: &str = "\
@@ -36,7 +38,8 @@ QUEST can be a quest ID (3854 or 69390), a script ID (XxaFst034_03854) or the qu
 COMMANDS:
     dump      Dump the given quests.
     chain     Dump the COUNT quests that follow QUEST in the same journal genre (e.g. the main story.)
-    extract   Copy any game file out as-is (e.g. game_script/opening/OpeningGridania.luab.)
+    extract   Copy any game file out as-is (e.g. game_script/opening/OpeningGridania.luab.) A game_script file
+              can also be given by its name alone (e.g. ManFst005Btl.luab) when its folder isn't known.
     index     Write quest-index.json: every quest's name, level, prerequisites, issuer and area, for tools
               that need the whole quest graph (Kawari Web uses it to search and to unlock prerequisites.)
     disasm    Print a readable listing of a compiled script you already have.
@@ -442,6 +445,88 @@ fn quest_json(data: &GameData, row_id: u32) -> Option<Value> {
     }))
 }
 
+/// Folders scripts are known (or likely) to live in, to name the folder a file was found in.
+const SCRIPT_FOLDERS: &[&str] = &[
+    "game_script/battle",
+    "game_script/content",
+    "game_script/custom",
+    "game_script/fate",
+    "game_script/guild_order",
+    "game_script/leve",
+    "game_script/opening",
+    "game_script/quest",
+    "game_script/questbattle",
+    "game_script/raid",
+    "game_script/shop",
+    "game_script/story",
+    "game_script/system",
+    "game_script/warp",
+];
+
+/// Finds a game_script file by name in every index (the index only stores hashes of the folder and the file name, so
+/// the file name alone is enough to find it), and copies it out. Returns how many copies were found.
+fn find_file(options: &Options, file_name: &str) -> Result<usize, String> {
+    let config = get_config();
+    let game_path = match options.game.as_deref() {
+        Some(path) => path.to_string(),
+        None => config.filesystem.game_path(),
+    };
+
+    // game_script is category 0x0B, in the base game and every expansion folder.
+    let sqpack = Path::new(&game_path).join("sqpack");
+    let mut indices: Vec<PathBuf> = std::fs::read_dir(&sqpack)
+        .map_err(|err| format!("couldn't read {}: {err}", sqpack.display()))?
+        .flatten()
+        .map(|entry| entry.path().join("0b0000.win32.index"))
+        .filter(|path| path.is_file())
+        .collect();
+    indices.sort();
+
+    let mut resource = SqPackResource::from_existing(&game_path);
+    let name_hash = SqPackIndex::calculate_partial_hash(file_name);
+    let mut found = 0;
+    for index_path in &indices {
+        let Some(index) = SqPackIndex::from_existing(Platform::Win32, index_path) else {
+            continue;
+        };
+        for entry in &index.entries {
+            let Hash::SplitPath { name, path } = entry.hash else {
+                continue;
+            };
+            if name != name_hash {
+                continue;
+            }
+            let folder = SCRIPT_FOLDERS
+                .iter()
+                .find(|folder| SqPackIndex::calculate_partial_hash(folder) == path)
+                .map(|folder| folder.to_string())
+                .unwrap_or_else(|| format!("an unknown folder (hash {path:#010x})"));
+            println!("{file_name}: found in {folder}, {}", index_path.display());
+
+            match resource.read_from_hash(index_path, entry.hash) {
+                Ok(bytes) => {
+                    found += 1;
+                    let destination = options.out.join(file_name);
+                    std::fs::write(&destination, &bytes).map_err(|err| {
+                        format!("couldn't write {}: {err}", destination.display())
+                    })?;
+                    let summary = if file_name.ends_with(".luab") {
+                        write_listing(&bytes, &destination.with_extension("txt"), options.listing)
+                    } else {
+                        String::new()
+                    };
+                    println!("  -> {} {summary}", destination.display());
+                }
+                Err(err) => println!("  couldn't read it: {err:?}"),
+            }
+        }
+    }
+    if found == 0 {
+        println!("{file_name}: not found in any game_script index");
+    }
+    Ok(found)
+}
+
 /// Writes a listing of a compiled script next to it. Returns a one-line summary.
 fn write_listing(bytes: &[u8], destination: &Path, listing: bool) -> String {
     match luab::parse(bytes) {
@@ -587,6 +672,11 @@ fn run(args: &[String]) -> Result<(), String> {
             // Paths that don't exist are skipped, so several guesses at where a file lives can be tried at once.
             let mut found = 0;
             for game_path in &options.positional {
+                // Just a file name: look it up in the game_script indices.
+                if !game_path.contains('/') {
+                    found += find_file(&options, game_path)?;
+                    continue;
+                }
                 let Ok(bytes) = data.resolver.read(game_path) else {
                     println!("{game_path}: not found");
                     continue;
