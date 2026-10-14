@@ -282,6 +282,8 @@ pub fn execute_action(
 
     let mut effects_builder;
     let common_spawn;
+    // Other players caught in an enemy's area attack, with what it does to each of them.
+    let mut area_bystanders: Vec<(ObjectId, Vec<TargetEffect>)> = Vec::new();
     {
         let data = data.lock();
 
@@ -334,8 +336,8 @@ pub fn execute_action(
                 instance.find_actor(request.target.object_id),
                 Some(NetworkedActor::Player { .. })
             );
-        // Area attacks only land on players still inside them when the cast finishes: aimed where the target was
-        // and facing the way the enemy was when it started casting.
+        // Area attacks land on every player inside them when the cast finishes (aimed where the target was, and
+        // facing the way the enemy was, when it started casting), not just on its target.
         if npc_hitting_player
             && let Some(effects_builder) = &mut effects_builder
             && let Some(shape) = action_info.and_then(|info| info.area_shape())
@@ -346,63 +348,43 @@ pub fn execute_action(
                 Some(cast) => (cast.rotation, cast.target_position),
                 None => (actor.rotation(), target.position().0),
             };
-            if !in_area(
-                shape,
-                actor.position().0,
-                rotation,
-                aimed_at,
-                target.position().0,
-                timeline.hitbox_radius,
-            ) {
-                // Dodged: it lands on nobody.
+            let caught = |position: Vec3A| {
+                in_area(
+                    shape,
+                    actor.position().0,
+                    rotation,
+                    aimed_at,
+                    position,
+                    timeline.hitbox_radius,
+                )
+            };
+
+            // Everyone else gets their own roll of the same attack (but drains only heal from the target.)
+            let mut unscaled = effects_builder.effects.clone();
+            unscaled.retain(|effect| {
+                !matches!(effect.0, TargetEffectKind::Heal { unk1, .. } if unk1[4] & EFFECT_ON_SOURCE != 0)
+            });
+            for (id, other) in &instance.actors {
+                if *id != request.target.object_id
+                    && matches!(other, NetworkedActor::Player { .. })
+                    && other.get_common_spawn().health_points > 0
+                    && caught(other.position().0)
+                {
+                    area_bystanders.push((*id, unscaled.clone()));
+                }
+            }
+
+            if !caught(target.position().0) {
+                // The target dodged it.
                 effects_builder.effects.clear();
             }
         }
 
         if npc_hitting_player && let Some(effects_builder) = &mut effects_builder {
             let scale = npc_damage_scale(actor, common_spawn.level);
-            let roll = fastrand::u8(..100);
-            let missed = roll < NPC_MISS_PERCENT;
-            let parried = !missed && roll < NPC_MISS_PERCENT + NPC_PARRY_PERCENT;
-            if missed {
-                // Nothing lands: no damage, and no drain either.
-                effects_builder.effects.retain(|effect| {
-                    !matches!(effect.0, TargetEffectKind::Heal { unk1, .. } if unk1[4] & EFFECT_ON_SOURCE != 0)
-                });
-                for effect in &mut effects_builder.effects {
-                    if matches!(effect.0, TargetEffectKind::Damage { .. }) {
-                        effect.0 = TargetEffectKind::Miss;
-                    }
-                }
-            }
-            let mut dealt = 0u32;
-            for effect in &mut effects_builder.effects {
-                if let TargetEffectKind::Damage {
-                    amount,
-                    damage_kind,
-                    ..
-                } = &mut effect.0
-                {
-                    let variance = 1.0 + (fastrand::f32() * 2.0 - 1.0) * NPC_DAMAGE_VARIANCE;
-                    let mut damage = *amount as f32 * scale * variance;
-                    if parried {
-                        damage *= NPC_PARRY_MULTIPLIER;
-                    } else if fastrand::u8(..100) < NPC_CRITICAL_PERCENT {
-                        damage *= NPC_CRITICAL_MULTIPLIER;
-                        *damage_kind |= DamageKind::CRITICAL;
-                    }
-                    *amount = damage.round().clamp(1.0, u16::MAX as f32) as u16;
-                    dealt += *amount as u32;
-                }
-            }
-
-            // Drains give back what they took.
-            for effect in &mut effects_builder.effects {
-                if let TargetEffectKind::Heal { unk1, amount } = &mut effect.0
-                    && unk1[4] & EFFECT_ON_SOURCE != 0
-                {
-                    *amount = dealt.min(u16::MAX as u32) as u16;
-                }
+            roll_npc_hit(&mut effects_builder.effects, scale);
+            for (_, effects) in &mut area_bystanders {
+                roll_npc_hit(effects, scale);
             }
         }
     }
@@ -735,6 +717,16 @@ pub fn execute_action(
                 if from_actor_id != request.target.object_id {
                     // The caster's HP may have changed too, e.g. from a drain.
                     update_actor_hp_mp(network.clone(), instance, from_actor_id);
+                }
+
+                for (target_id, effects) in &area_bystanders {
+                    hit_area_bystander(
+                        network.clone(),
+                        instance,
+                        from_actor_id,
+                        *target_id,
+                        effects,
+                    );
                 }
             }
         }
@@ -1761,4 +1753,121 @@ mod area_tests {
             3.0
         ));
     }
+}
+
+/// Rolls one enemy hit on a player: scaled to what retail does (see `npc_damage_scale`), with a little variance, and
+/// a chance to miss, be parried or be critical. Drains give back what they took.
+fn roll_npc_hit(effects: &mut Vec<TargetEffect>, scale: f32) {
+    let roll = fastrand::u8(..100);
+    let missed = roll < NPC_MISS_PERCENT;
+    let parried = !missed && roll < NPC_MISS_PERCENT + NPC_PARRY_PERCENT;
+    if missed {
+        // Nothing lands: no damage, and no drain either.
+        effects.retain(|effect| {
+            !matches!(effect.0, TargetEffectKind::Heal { unk1, .. } if unk1[4] & EFFECT_ON_SOURCE != 0)
+        });
+        for effect in effects.iter_mut() {
+            if matches!(effect.0, TargetEffectKind::Damage { .. }) {
+                effect.0 = TargetEffectKind::Miss;
+            }
+        }
+    }
+    let mut dealt = 0u32;
+    for effect in effects.iter_mut() {
+        if let TargetEffectKind::Damage {
+            amount,
+            damage_kind,
+            ..
+        } = &mut effect.0
+        {
+            let variance = 1.0 + (fastrand::f32() * 2.0 - 1.0) * NPC_DAMAGE_VARIANCE;
+            let mut damage = *amount as f32 * scale * variance;
+            if parried {
+                damage *= NPC_PARRY_MULTIPLIER;
+            } else if fastrand::u8(..100) < NPC_CRITICAL_PERCENT {
+                damage *= NPC_CRITICAL_MULTIPLIER;
+                *damage_kind |= DamageKind::CRITICAL;
+            }
+            *amount = damage.round().clamp(1.0, u16::MAX as f32) as u16;
+            dealt += *amount as u32;
+        }
+    }
+
+    for effect in effects.iter_mut() {
+        if let TargetEffectKind::Heal { unk1, amount } = &mut effect.0
+            && unk1[4] & EFFECT_ON_SOURCE != 0
+        {
+            *amount = dealt.min(u16::MAX as u32) as u16;
+        }
+    }
+}
+
+/// Lands an enemy's area attack on another player inside it: their damage (shown as flying text, since the
+/// ActionEffect packet only carries the target), any statuses, and their new HP.
+fn hit_area_bystander(
+    network: Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    from_actor_id: ObjectId,
+    target_id: ObjectId,
+    effects: &[TargetEffect],
+) {
+    let damage: u32 = effects
+        .iter()
+        .filter_map(|effect| match effect.0 {
+            TargetEffectKind::Damage { amount, .. } => Some(amount as u32),
+            _ => None,
+        })
+        .sum();
+    let missed = effects
+        .iter()
+        .any(|effect| matches!(effect.0, TargetEffectKind::Miss));
+
+    let Some(actor) = instance.find_actor_mut(target_id) else {
+        return;
+    };
+    let common_spawn = actor.get_common_spawn_mut();
+    if common_spawn.health_points == 0 {
+        return;
+    }
+    common_spawn.health_points = common_spawn.health_points.saturating_sub(damage);
+
+    if damage > 0 {
+        let mut network = network.lock();
+        network.send_ac_in_range_inclusive_instance(
+            instance,
+            target_id,
+            ActorControlCategory::DamageFlyingText {
+                unk1: 0,
+                amount: damage,
+                source_actor_id: from_actor_id,
+                unk4: 0,
+            },
+        );
+    }
+
+    if !missed {
+        for effect in effects {
+            if let TargetEffectKind::GainEffect {
+                effect_id,
+                duration,
+                param,
+                ..
+            } = effect.0
+            {
+                gain_effect_instance(
+                    network.clone(),
+                    ClientId::default(),
+                    instance,
+                    target_id,
+                    effect_id,
+                    param,
+                    duration,
+                    from_actor_id,
+                    true,
+                );
+            }
+        }
+    }
+
+    update_actor_hp_mp(network, instance, target_id);
 }
