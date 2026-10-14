@@ -81,6 +81,7 @@ impl ZoneConnection {
             |id| completed.contains(id),
             &active,
             self.player_data.classjob.current_class as u8,
+            self.player_data.classjob.first_class as u8,
             self.player_data.grand_company.active_company as u8,
         );
         let Some((last_completed, next_quest_id, layout_id)) = guide else {

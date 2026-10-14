@@ -51,7 +51,7 @@ use icarus::ParamGrow::{ParamGrowRow, ParamGrowSheet};
 use icarus::PlaceName::PlaceNameSheet;
 use icarus::PreHandler::PreHandlerSheet;
 use icarus::PublicContent::PublicContentSheet;
-use icarus::Quest::QuestSheet;
+use icarus::Quest::{QuestRow, QuestSheet};
 use icarus::QuestBattle::QuestBattleSheet;
 use icarus::Recipe::RecipeSheet;
 use icarus::SpecialShop::SpecialShopSheet;
@@ -1425,6 +1425,7 @@ impl GameData {
         is_completed: impl Fn(u32) -> bool,
         active: &[u16],
         classjob: u8,
+        first_class: u8,
         grand_company: u8,
     ) -> Option<(u32, u32, u32)> {
         let config = get_config();
@@ -1450,6 +1451,29 @@ impl GameData {
             .iter()
             .flat_map(|page| page.entries.iter())
             .map(|entry| entry.id)
+            .collect();
+
+        // Some steps come in variants, one per starting class (Gridania has three Close to Home quests, all after
+        // Coming to Gridania), and you only ever do one of them. Variants share a name and the quests before them, so
+        // once one is done or accepted, the others are skipped.
+        let variant_key = |row: &QuestRow| {
+            let mut previous: Vec<u32> = row
+                .PreviousQuest
+                .iter()
+                .copied()
+                .filter(|x| *x != 0)
+                .collect();
+            previous.sort();
+            (row.Name.clone(), previous)
+        };
+        let done_variants: HashSet<(String, Vec<u32>)> = quest_ids
+            .iter()
+            .filter(|id| {
+                let adjusted = adjust_quest_id(**id);
+                is_completed(adjusted) || active.contains(&(adjusted as u16))
+            })
+            .filter_map(|id| self.quest_sheet.row(*id))
+            .map(|row| variant_key(&row))
             .collect();
 
         let checked = quest_ids.len();
@@ -1479,7 +1503,7 @@ impl GameData {
             } else {
                 previous.iter().all(|x| is_completed(adjust_quest_id(*x)))
             };
-            if !follows_on {
+            if !follows_on || done_variants.contains(&variant_key(&row)) {
                 continue;
             }
             if row.GrandCompany != 0 && row.GrandCompany != grand_company {
@@ -1504,10 +1528,15 @@ impl GameData {
                 continue;
             }
 
+            // Between variants nobody has done yet, prefer the one for the class they started with. (Which of these two
+            // fields says so isn't confirmed, so either counts.)
+            let order = |row: &QuestRow| {
+                let for_first_class =
+                    row.ClassJobRequired == first_class || row.ClassJobUnlock == first_class;
+                (row.ClassJobLevel[0], !for_first_class, row.SortKey)
+            };
             let better = match &next {
-                Some((_, best, _)) => {
-                    (row.ClassJobLevel[0], row.SortKey) < (best.ClassJobLevel[0], best.SortKey)
-                }
+                Some((_, best, _)) => order(&row) < order(best),
                 None => true,
             };
             if better {
