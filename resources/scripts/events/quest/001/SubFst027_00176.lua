@@ -39,8 +39,8 @@ function sceneFinished(scene, results, player)
 
     if scene == SCENE_OFFER then
         if results[1] == 1 then
+            -- Accepting puts the quest straight into sequence 255, as retail does.
             player:accept_quest(EVENT_ID)
-            player:quest_sequence(EVENT_ID, 255)
         end
     elseif scene == SCENE_FINISH then
         if results[1] == 1 then
