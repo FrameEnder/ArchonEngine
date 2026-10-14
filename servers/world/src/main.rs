@@ -4206,6 +4206,11 @@ async fn process_server_msg(
             FromServer::FinishEvent => {
                 connection.event_finish(events).await;
             }
+            FromServer::BattleNpcKilled { name_id, layout_id } => {
+                connection
+                    .on_battle_npc_killed(lua_player, events, name_id, layout_id)
+                    .await;
+            }
             FromServer::QuestEventActionCast => {
                 if let Some((handler, event)) = events.last() {
                     tracing::info!("Event action finished casting during event {}", event.id);

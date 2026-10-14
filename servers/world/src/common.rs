@@ -193,6 +193,11 @@ pub enum FromServer {
     FinishEvent,
     /// When a fish bites.
     FishBite,
+    /// A battle NPC this player (or their party) was fighting was defeated: its BNpcName ID and layout ID.
+    BattleNpcKilled {
+        name_id: u32,
+        layout_id: u32,
+    },
     /// The quest battle was won: its director, and the quest and sequence it advances.
     QuestBattleComplete(HandlerId, u32, u8),
     /// The quest battle was lost, send them back to where they entered it.

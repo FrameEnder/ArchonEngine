@@ -1,12 +1,15 @@
 //! Quests!
 
 use crate::{
-    ItemInfoQuery, ZoneConnection,
+    Event, EventHandler, ItemInfoQuery, LuaEventHandler, ZoneConnection,
     common::adjust_quest_id,
+    event::quest_script_path,
     inventory::{Item, Storage},
+    lua::LuaPlayer,
     zone_connection::PersistentQuest,
 };
 use kawari::{
+    common::{HandlerId, HandlerType},
     constants::COMPLETED_QUEST_BITMASK_SIZE,
     ipc::zone::{
         ActiveQuest, QuestActiveList, QuestTracker, ServerZoneIpcData, ServerZoneIpcSegment,
@@ -291,6 +294,44 @@ impl ZoneConnection {
     pub async fn incomplete_all_quests(&mut self) {
         self.player_data.quest.completed.data = vec![0x0; COMPLETED_QUEST_BITMASK_SIZE];
         self.send_quest_information().await;
+    }
+
+    /// Lets every active quest know a battle NPC was defeated, so it can count it towards its objectives.
+    pub async fn on_battle_npc_killed(
+        &mut self,
+        lua_player: &mut LuaPlayer,
+        events: &mut Vec<(Box<dyn EventHandler>, Event)>,
+        name_id: u32,
+        layout_id: u32,
+    ) {
+        let quest_ids: Vec<u16> = self
+            .player_data
+            .quest
+            .active
+            .0
+            .iter()
+            .map(|quest| quest.id)
+            .collect();
+
+        // Scripts should see the latest quest state.
+        lua_player.player_data = self.player_data.clone();
+
+        for quest_id in quest_ids {
+            let handler_id = HandlerId::new(HandlerType::Quest, quest_id);
+            let Some(path) = quest_script_path(&self.game_data, handler_id) else {
+                continue;
+            };
+            let Some(handler) =
+                LuaEventHandler::new(handler_id, None, &path, self.game_data.clone())
+            else {
+                continue;
+            };
+
+            handler.on_battle_npc_killed(lua_player, name_id, layout_id);
+        }
+
+        self.process_lua_player(lua_player, events).await;
+        lua_player.player_data = self.player_data.clone();
     }
 
     pub fn record_fate_completion(&mut self) {

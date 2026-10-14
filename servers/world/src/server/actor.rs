@@ -11,6 +11,7 @@ use crate::{
         instance::{Instance, QueuedTaskData},
         job_gauge::JobGauge,
         network::{DestinationNetwork, NetworkState},
+        party::get_party_id_from_actor_id,
     },
     zone_connection::{BaseParameters, TeleportQuery},
 };
@@ -398,6 +399,9 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
         fate_id = Some(npc.common.fate_id);
     }
 
+    // Let whoever defeated it know, for quests that ask you to defeat enemies.
+    credit_battle_npc_kill(&mut network, instance, actor_id);
+
     // Transistion into the dead state so they stop moving.
     if let Some(actor) = instance.find_actor_mut(actor_id)
         && let NetworkedActor::Npc { state, spawn, .. } = actor
@@ -477,6 +481,51 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
                 actor_id,
                 respawn_layout_id,
             },
+        );
+    }
+}
+
+/// Informs the players that defeated a battle NPC, so their quests can count it.
+///
+/// Credit goes to every player it hated (that is, who fought it), along with their party members in the same instance.
+fn credit_battle_npc_kill(network: &mut NetworkState, instance: &Instance, actor_id: ObjectId) {
+    let Some(NetworkedActor::Npc { spawn, enmity, .. }) = instance.find_actor(actor_id) else {
+        return;
+    };
+    let is_player_here =
+        |id: ObjectId| matches!(instance.find_actor(id), Some(NetworkedActor::Player { .. }));
+
+    let mut credited = Vec::new();
+    for &fighter in enmity.keys() {
+        if !is_player_here(fighter) {
+            continue;
+        }
+        if !credited.contains(&fighter) {
+            credited.push(fighter);
+        }
+
+        if let Some(party_id) = get_party_id_from_actor_id(network, fighter)
+            && let Some(party) = network.parties.get(&party_id)
+        {
+            for member in &party.members {
+                if member.is_valid()
+                    && !credited.contains(&member.actor_id)
+                    && is_player_here(member.actor_id)
+                {
+                    credited.push(member.actor_id);
+                }
+            }
+        }
+    }
+
+    for player_id in credited {
+        network.send_to_by_actor_id(
+            player_id,
+            FromServer::BattleNpcKilled {
+                name_id: spawn.common.name_id,
+                layout_id: spawn.common.layout_id,
+            },
+            DestinationNetwork::ZoneClients,
         );
     }
 }
