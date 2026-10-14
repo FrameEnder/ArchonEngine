@@ -373,7 +373,7 @@ impl ZoneConnection {
         };
         let bonus = self.exp_chain_bonus(level as u16 >= player_level);
         if exp > 0 {
-            self.add_exp(exp * (100 + bonus as i32) / 100).await;
+            self.add_exp_with_bonus(exp, bonus).await;
         }
 
         let quest_ids: Vec<u16> = self

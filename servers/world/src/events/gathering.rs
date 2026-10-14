@@ -190,12 +190,12 @@ impl EventHandler for GatheringEventHandler {
                 // Add EXP
                 // TODO: don't use placeholder EXP
                 // TODO: the first time EXP doesn't take into account bonus?
-                connection.add_exp(516).await;
+                connection.add_exp_with_bonus(516, 0).await;
             }
 
             // Add EXP
             // TODO: don't use placeholder EXP
-            connection.add_exp(96).await;
+            connection.add_exp_with_bonus(96, 0).await;
 
             // The item was added to your inventory.
             connection

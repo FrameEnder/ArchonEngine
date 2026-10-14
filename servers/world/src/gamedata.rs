@@ -42,6 +42,7 @@ use icarus::Item::ItemSheet;
 use icarus::ItemAction::ItemActionSheet;
 use icarus::ItemLevel::ItemLevelSheet;
 use icarus::Level::LevelSheet;
+use icarus::Map::MapSheet;
 use icarus::Mount::MountSheet;
 use icarus::NpcEquip::NpcEquipSheet;
 use icarus::NpcYell::NpcYellSheet;
@@ -1448,6 +1449,14 @@ impl GameData {
     }
 
     /// Returns the Map column value on the TerritoryType sheet. Used for revealing portions of ingame maps.
+    /// Where a map's discovered parts are kept: its index into the discovery bitmasks, and whether it's one of the
+    /// maps with up to 16 parts (two bytes each) rather than 32 (four bytes each.)
+    pub fn get_map_discovery_index(&mut self, map_id: u32) -> Option<(i16, bool)> {
+        let sheet = MapSheet::read_from(&mut self.resource, Language::None).ok()?;
+        let row = sheet.row(map_id)?;
+        Some((row.DiscoveryIndex, row.DiscoveryArrayByte))
+    }
+
     pub fn get_territory_info_map_data(&mut self, zone_id: u16) -> Option<u16> {
         let row = self.territory_type_sheet.row(zone_id.into())?;
         Some(row.Map)

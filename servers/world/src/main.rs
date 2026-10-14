@@ -33,7 +33,11 @@ use kawari::ipc::zone::{
 };
 
 use kawari::common::{CharacterMode, NETWORK_TIMEOUT, RECEIVE_BUFFER_SIZE};
-use kawari::constants::{AETHER_CURRENT_COMP_FLG_SET_BITMASK_SIZE, CLASSJOB_ARRAY_SIZE};
+use kawari::constants::{
+    AETHER_CURRENT_COMP_FLG_SET_BITMASK_SIZE, CLASSJOB_ARRAY_SIZE,
+    DISCOVERY_MAPS_WITH_UP_TO_16_REGIONS_BITMASK_SIZE,
+    DISCOVERY_MAPS_WITH_UP_TO_32_REGIONS_BITMASK_SIZE,
+};
 use kawari::packet::oodle::OodleNetwork;
 use kawari::packet::{ConnectionState, ConnectionType, SegmentData, parse_packet_header};
 use kawari_world::lua::{KawariLua, KawariLuaState, LuaPlayer};
@@ -806,6 +810,12 @@ async fn process_packet(
                                             .unlock
                                             .chocobo_taxi_stands
                                             .data_truncated(),
+                                        maps_with_up_to_16_regions: map_discovery_u16(
+                                            &connection.player_data.unlock.map_discovery.data,
+                                        ),
+                                        maps_with_up_to_32_regions: map_discovery_u32(
+                                            &connection.player_data.unlock.map_discovery.data,
+                                        ),
                                         aether_current_comp_flg_set_bitmask1: connection
                                             .player_data
                                             .aether_current
@@ -4730,4 +4740,30 @@ async fn main() {
             );
         }
     }
+}
+
+/// The maps with up to 16 discovered parts, from a character's saved map discovery (see `MAP_DISCOVERY_BITMASK_SIZE`.)
+fn map_discovery_u16(data: &[u8]) -> Vec<u16> {
+    (0..DISCOVERY_MAPS_WITH_UP_TO_16_REGIONS_BITMASK_SIZE)
+        .map(|i| {
+            let byte = |at: usize| data.get(at).copied().unwrap_or_default();
+            u16::from_le_bytes([byte(i * 2), byte(i * 2 + 1)])
+        })
+        .collect()
+}
+
+/// The maps with up to 32 discovered parts, from a character's saved map discovery.
+fn map_discovery_u32(data: &[u8]) -> Vec<u32> {
+    let start = DISCOVERY_MAPS_WITH_UP_TO_16_REGIONS_BITMASK_SIZE * 2;
+    (0..DISCOVERY_MAPS_WITH_UP_TO_32_REGIONS_BITMASK_SIZE)
+        .map(|i| {
+            let byte = |at: usize| data.get(start + at).copied().unwrap_or_default();
+            u32::from_le_bytes([
+                byte(i * 4),
+                byte(i * 4 + 1),
+                byte(i * 4 + 2),
+                byte(i * 4 + 3),
+            ])
+        })
+        .collect()
 }

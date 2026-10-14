@@ -732,8 +732,25 @@ impl ZoneConnection {
     }
 
     /// Adds EXP to the current classjob, handles level-up and so on.
+    /// Gives EXP that the rested bonus doesn't apply to, e.g. a quest's reward.
     pub async fn add_exp(&mut self, exp: i32) {
-        let (bonus_percent, exp) = self.use_exp_bonus(exp);
+        self.gain_exp(exp, 0, false).await;
+    }
+
+    /// Gives EXP from defeating an enemy or gathering, which the rested bonus (+50%) applies to while it lasts, on top
+    /// of `bonus_percent` (e.g. a kill chain's.)
+    pub async fn add_exp_with_bonus(&mut self, exp: i32, bonus_percent: u32) {
+        self.gain_exp(exp, bonus_percent as i32, true).await;
+    }
+
+    async fn gain_exp(&mut self, exp: i32, bonus_percent: i32, rested_applies: bool) {
+        let rested_bonus = if rested_applies {
+            self.use_exp_bonus(exp)
+        } else {
+            0
+        };
+        let bonus_percent = bonus_percent + rested_bonus;
+        let exp = exp * (100 + bonus_percent) / 100;
 
         self.actor_control_self(ActorControlCategory::EXPFloatingMessage {
             classjob_id: self.player_data.classjob.current_class as u32,
@@ -810,7 +827,8 @@ impl ZoneConnection {
 
     /// "Use" an EXP bonus for the specified amount. Returns the bonus percentage and new amount of EXP earned.
     /// Remember to update rested EXP when calling this function!
-    pub fn use_exp_bonus(&mut self, exp: i32) -> (i32, i32) {
+    /// Uses up rested EXP for `exp` earned, returning its bonus in percent (50, or 0 without any rested EXP.)
+    pub fn use_exp_bonus(&mut self, exp: i32) -> i32 {
         let mut bonus_percent = 0;
 
         // TODO: Please write a unit test for this
@@ -833,16 +851,14 @@ impl ZoneConnection {
 
             // Get the amount of seconds to remove from the rested EXP bonus.
             let seconds_to_remove = new_exp_relative * max_seconds as f32;
-            self.player_data.classjob.rested_exp -= seconds_to_remove.round() as i32;
+            self.player_data.classjob.rested_exp =
+                (self.player_data.classjob.rested_exp - seconds_to_remove.round() as i32).max(0);
 
             // Add that sweet EXP bonus.
             bonus_percent += 50;
         }
 
-        // Add EXP bonus on top of already earned EXP.
-        let exp = exp + (exp * (bonus_percent as f32 / 100.0).round() as i32);
-
-        (bonus_percent, exp)
+        bonus_percent
     }
 }
 

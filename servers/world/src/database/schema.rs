@@ -149,6 +149,7 @@ diesel::table! {
         glasses_styles -> Text,
         chocobo_taxi_stands -> Text,
         titles -> Text,
+        map_discovery -> Text,
     }
 }
 

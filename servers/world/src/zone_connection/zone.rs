@@ -9,7 +9,10 @@ use kawari::{
         FestivalId, HandlerId, HandlerType, HouseId, HouseUnit, HousingFlag, LandData, Position,
         WarpType, timestamp_secs,
     },
-    constants::OBFUSCATION_ENABLED_MODE,
+    constants::{
+        DISCOVERY_MAPS_WITH_UP_TO_16_REGIONS_BITMASK_SIZE, MAP_DISCOVERY_BITMASK_SIZE,
+        OBFUSCATION_ENABLED_MODE,
+    },
     ipc::zone::{
         ActorControlCategory, Condition, DutyFinderSetting, FurnitureList, House, HouseExterior,
         HouseList, HouseStatus, HousingInteriorDetails, PlotSize, ServerZoneIpcData,
@@ -474,6 +477,31 @@ impl ZoneConnection {
     }
 
     pub async fn discover_location(&mut self, map_id: u32, map_part_id: u32) {
+        // Remember it, so the map stays discovered after logging out (sent back in PlayerSetup.)
+        let discovery = self.game_data.lock().get_map_discovery_index(map_id);
+        match discovery {
+            Some((index, two_bytes)) if index >= 0 => {
+                let discovered = &mut self.player_data.unlock.map_discovery.data;
+                discovered.resize(MAP_DISCOVERY_BITMASK_SIZE, 0);
+                let (offset, width) = if two_bytes {
+                    (index as usize * 2, 16)
+                } else {
+                    (
+                        DISCOVERY_MAPS_WITH_UP_TO_16_REGIONS_BITMASK_SIZE * 2 + index as usize * 4,
+                        32,
+                    )
+                };
+                if map_part_id < width && offset + (map_part_id as usize / 8) < discovered.len() {
+                    discovered[offset + map_part_id as usize / 8] |= 1 << (map_part_id % 8);
+                } else {
+                    tracing::warn!(
+                        "Map {map_id} part {map_part_id} doesn't fit its discovery bitmask, it won't be remembered"
+                    );
+                }
+            }
+            _ => tracing::warn!("Map {map_id} has no discovery index, it won't be remembered"),
+        }
+
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::LocationDiscovered {
             map_id,
             map_part_id,

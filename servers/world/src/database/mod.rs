@@ -101,3 +101,31 @@ extern "SQL" {
 extern "SQL" {
     fn unixepoch() -> diesel::sql_types::BigInt;
 }
+
+#[cfg(test)]
+mod migration_tests {
+    use super::*;
+
+    /// A new database gets every migration in order, and an existing one (made before map discovery was saved)
+    /// gains the column with nothing discovered.
+    #[test]
+    fn migrations_apply_in_order() {
+        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        connection.run_pending_migrations(MIGRATIONS).unwrap();
+
+        // Only the unlock table matters here, not the character it belongs to.
+        diesel::sql_query("PRAGMA foreign_keys = OFF")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query(
+            "INSERT INTO `unlock` (content_id, unlocks, seen_active_help, minions, mounts, orchestrion_rolls, \
+             cutscene_seen, ornaments, caught_fish, caught_spearfish, adventures, triple_triad_cards, \
+             glasses_styles, chocobo_taxi_stands, titles) VALUES (1, '[]', '[]', '[]', '[]', '[]', '[]', '[]', \
+             '[]', '[]', '[]', '[]', '[]', '[]', '[]')",
+        )
+        .execute(&mut connection)
+        .unwrap();
+        let unlock: models::Unlock = schema::unlock::table.first(&mut connection).unwrap();
+        assert!(unlock.map_discovery.data.is_empty());
+    }
+}
