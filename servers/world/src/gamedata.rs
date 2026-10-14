@@ -186,6 +186,11 @@ pub struct ItemRow {
     pub defense: u16,
     /// Magic defense;
     pub magic_defense: u16,
+
+    /// A weapon's physical and magic damage, and its auto-attack delay in milliseconds.
+    pub physical_damage: u16,
+    pub magic_damage: u16,
+    pub delay_ms: u16,
 }
 
 #[derive(Debug)]
@@ -644,6 +649,9 @@ impl GameData {
                 base_param_values: matched_row.BaseParamValue,
                 defense: matched_row.DefensePhys,
                 magic_defense: matched_row.DefenseMag,
+                physical_damage: matched_row.DamagePhys,
+                magic_damage: matched_row.DamageMag,
+                delay_ms: matched_row.Delayms,
                 equip_restrictions: self
                     .get_equipslot_restrictions(matched_row.EquipSlotCategory)
                     .unwrap(),

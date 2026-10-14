@@ -2,7 +2,7 @@
 
 use crate::{
     GameData, ToServer, ZoneConnection,
-    gamedata::{Attributes, Modifiers},
+    gamedata::{Attributes, ItemInfoQuery, ItemRow, Modifiers},
     inventory::{EquippedStorage, Storage},
 };
 use icarus::ParamGrow::ParamGrowRow;
@@ -17,6 +17,31 @@ use mlua::{UserData, UserDataMethods};
 /// Every BaseParam row, some of them may be useless.
 /// BaseParam index for Mind, the primary stat of healers.
 const BASE_PARAM_MIND: u8 = 5;
+/// BaseParam index for Dexterity, which physical attacks use instead of Strength for classes whose primary stat it is.
+const BASE_PARAM_DEXTERITY: u8 = 2;
+
+/// Each level's main stat modifier: what a player's main stats (Strength to Piety) start from before race and gear,
+/// what their Determination is with no gear, and the baseline attack power is measured against. Levels 1-80 are
+/// Sapphire's level table (1-10 are exactly what a fresh retail character shows as Determination); after that it rises
+/// 5 a level, to 390 at 90 and 440 at 100.
+const LEVEL_MAIN: [u16; 100] = [
+    20, 21, 22, 24, 26, 27, 29, 31, 33, 35, 36, 38, 41, 44, 46, 49, 52, 54, 57, 60, 63, 67, 71, 74,
+    78, 81, 85, 89, 92, 97, 101, 106, 110, 115, 119, 124, 128, 134, 139, 144, 150, 155, 161, 166,
+    171, 177, 183, 189, 196, 202, 204, 205, 207, 209, 210, 212, 214, 215, 217, 218, 224, 228, 236,
+    244, 252, 260, 268, 276, 284, 292, 296, 300, 305, 310, 315, 320, 325, 330, 335, 340, 345, 350,
+    355, 360, 365, 370, 375, 380, 385, 390, 395, 400, 405, 410, 415, 420, 425, 430, 435, 440,
+];
+
+/// The main stat modifier for a level, see `LEVEL_MAIN`.
+pub fn level_main(level: u16) -> u32 {
+    LEVEL_MAIN[(level.clamp(1, LEVEL_MAIN.len() as u16) - 1) as usize] as u32
+}
+
+/// How much attack power above the level's main stat adds: f(AP) = 1 + SCALE * (AP - main) / div / 100, as Sapphire
+/// has it. With this, Stone, Aero and Cure land within a few percent of what retail does at levels 6-9.
+const ATTACK_POWER_SCALE: f32 = 125.0;
+/// How much Determination above the level's main stat adds: f(DET) = 1 + SCALE * (DET - main) / div / 1000.
+const DETERMINATION_SCALE: f32 = 130.0;
 
 #[derive(Default, Debug, Clone)]
 pub struct BaseParameters {
@@ -95,6 +120,21 @@ pub struct BaseParameters {
     pub control: u32,
     pub gathering: u32,
     pub perception: u32,
+
+    // Players only: their actions do what retail's damage formula gives, rather than potency times a stat. Set by
+    // `use_retail_formula`, NPCs keep the old way (their damage is scaled to what they do on retail elsewhere.)
+    pub retail_formula: bool,
+    /// The level's main stat modifier (see `LEVEL_MAIN`.)
+    pub level_main: u32,
+    /// The level's divisor (ParamGrow's LevelModifier.)
+    pub level_div: u32,
+    /// The main hand weapon's physical and magic damage, and its auto-attack delay in milliseconds.
+    pub weapon_physical_damage: u32,
+    pub weapon_magic_damage: u32,
+    pub weapon_delay_ms: u32,
+    /// The class's modifier (percent) for the stat its physical attacks use, and for its primary stat.
+    pub physical_stat_modifier: u32,
+    pub primary_stat_modifier: u32,
 }
 
 impl BaseParameters {
@@ -187,23 +227,25 @@ impl BaseParameters {
         modifiers: &Modifiers,
     ) {
         // Akh Morning data can't be extrapolated from game sheets, and it's missing a significant amount of entries from 50-70, so let's try making a decent approximation with the BaseSpeed, HpModifier and LevelModifier columns.
+        // Players' main stats start from the level's main stat modifier, as on retail.
+        let base = self.stat_base(param_grow);
         self.strength = modifiers
-            .apply_to(1, param_grow.BaseSpeed as u32)
+            .apply_to(1, base)
             .saturating_add_signed(attributes.strength as i32);
         self.dexterity = modifiers
-            .apply_to(2, param_grow.BaseSpeed as u32)
+            .apply_to(2, base)
             .saturating_add_signed(attributes.dexterity as i32);
         self.vitality = modifiers
-            .apply_to(3, param_grow.BaseSpeed as u32)
+            .apply_to(3, base)
             .saturating_add_signed(attributes.vitality as i32);
         self.intelligence = modifiers
-            .apply_to(4, param_grow.BaseSpeed as u32)
+            .apply_to(4, base)
             .saturating_add_signed(attributes.intelligence as i32);
         self.mind = modifiers
-            .apply_to(5, param_grow.BaseSpeed as u32)
+            .apply_to(5, base)
             .saturating_add_signed(attributes.mind as i32);
         self.piety = modifiers
-            .apply_to(6, param_grow.BaseSpeed as u32)
+            .apply_to(6, base)
             .saturating_add_signed(attributes.piety as i32);
 
         self.spell_speed = param_grow.BaseSpeed as u32;
@@ -215,6 +257,52 @@ impl BaseParameters {
 
         // This is fixed and isn't modified by any items in retail, so it's safe to be set here.
         self.mp = param_grow.MpModifier as u32;
+
+        if self.retail_formula {
+            // On retail, a player's substats start at the level's sub modifier, and Determination at its main one.
+            self.critical_hit = param_grow.BaseSpeed as u32;
+            self.direct_hit_rate = param_grow.BaseSpeed as u32;
+            self.determination = self.level_main;
+            self.physical_stat_modifier = modifiers.strength as u32;
+            if primary_stat == BASE_PARAM_DEXTERITY {
+                self.physical_stat_modifier = modifiers.dexterity as u32;
+            }
+            self.primary_stat_modifier = match primary_stat {
+                1 => modifiers.strength,
+                2 => modifiers.dexterity,
+                3 => modifiers.vitality,
+                4 => modifiers.intelligence,
+                5 => modifiers.mind,
+                6 => modifiers.piety,
+                _ => 100,
+            } as u32;
+        }
+    }
+
+    /// Players use retail's stats and damage formula from now on: call before `perform_calculations`.
+    pub fn use_retail_formula(
+        &mut self,
+        level: u16,
+        param_grow: &ParamGrowRow,
+        weapon: Option<&ItemRow>,
+    ) {
+        self.retail_formula = true;
+        self.level_main = level_main(level);
+        self.level_div = (param_grow.LevelModifier as u32).max(1);
+        if let Some(weapon) = weapon {
+            self.weapon_physical_damage = weapon.physical_damage as u32;
+            self.weapon_magic_damage = weapon.magic_damage as u32;
+            self.weapon_delay_ms = weapon.delay_ms as u32;
+        }
+    }
+
+    /// What main stats start from at this level.
+    fn stat_base(&self, param_grow: &ParamGrowRow) -> u32 {
+        if self.retail_formula {
+            self.level_main
+        } else {
+            param_grow.BaseSpeed as u32
+        }
     }
 
     // This should be called after item stat calculations.
@@ -231,6 +319,16 @@ impl BaseParameters {
             self.intelligence
         };
         self.healing_magic_potency = self.mind;
+        if self.retail_formula {
+            // Physical attack power is Strength, or Dexterity for classes whose primary stat it is (a conjurer's is
+            // its Strength on retail.)
+            self.physical_damage = if self.primary_stat == BASE_PARAM_DEXTERITY {
+                self.dexterity
+            } else {
+                self.strength
+            };
+            self.attack_power = self.physical_damage;
+        }
 
         // To calculate HP, we use a formula loosely inspired by Akh Morning and take some liberties to keep it fairly simple, at least for now.
         // TODO: This formula isn't the greatest for 1-50, as near the end of that range it's fairly low compared to retail. For level 80+ though it's pretty close.
@@ -247,7 +345,7 @@ impl BaseParameters {
         };
 
         let hp_mod = param_grow.HpModifier as f32;
-        let base_vit = (param_grow.BaseSpeed as f32) * classjob_vit_mod;
+        let base_vit = (self.stat_base(param_grow) as f32) * classjob_vit_mod;
         let lv_mod = param_grow.LevelModifier as f32;
 
         self.hp = (100.0
@@ -256,20 +354,66 @@ impl BaseParameters {
             .round() as u32;
     }
 
+    /// f(WD): the weapon's damage plus a little of the level's main stat (by the class's modifier for the stat used.)
+    fn weapon_factor(&self, stat_modifier: u32, weapon_damage: u32) -> f32 {
+        (self.level_main as f32 * stat_modifier as f32 / 1000.0).floor() + weapon_damage as f32
+    }
+
+    /// Retail's damage formula, as Sapphire has it: potency/100 * f(WD) * f(AP) * f(DET), where f(AP) grows with
+    /// attack power above the level's main stat and f(DET) with Determination above it. Variance, criticals and traits
+    /// are left to the caller.
+    fn retail_damage(&self, potency: u32, attack_power: u32, weapon_factor: f32) -> u16 {
+        let main = self.level_main as f32;
+        let div = self.level_div as f32;
+        let f_ap = (ATTACK_POWER_SCALE * (attack_power as f32 - main) / div + 100.0)
+            .floor()
+            .max(1.0)
+            / 100.0;
+        let f_det = (DETERMINATION_SCALE * (self.determination as f32 - main) / div + 1000.0)
+            .floor()
+            / 1000.0;
+        (potency as f32 / 100.0 * weapon_factor * f_ap * f_det)
+            .floor()
+            .max(1.0) as u16
+    }
+
     /// Calculates amount of physical damage to apply based on potency.
     fn calc_physical_damage(&self, potency: u32) -> u16 {
+        if self.retail_formula {
+            let f_wd = self.weapon_factor(self.physical_stat_modifier, self.weapon_physical_damage);
+            return self.retail_damage(potency, self.physical_damage, f_wd);
+        }
         let normalized_potency = potency as f32 / 100.0;
         (normalized_potency * self.physical_damage as f32).floor() as u16
     }
 
+    /// Calculates amount of auto-attack damage based on potency: physical damage, with f(WD) scaled by the weapon's
+    /// delay over 3 seconds (a slow weapon hits harder, less often.)
+    fn calc_auto_attack_damage(&self, potency: u32) -> u16 {
+        if !self.retail_formula || self.weapon_delay_ms == 0 {
+            return self.calc_physical_damage(potency);
+        }
+        let f_wd = self.weapon_factor(self.physical_stat_modifier, self.weapon_physical_damage);
+        let f_auto = (f_wd * self.weapon_delay_ms as f32 / 3000.0).floor();
+        self.retail_damage(potency, self.physical_damage, f_auto)
+    }
+
     /// Calculates amount of magic damage to apply based on potency.
     fn calc_magical_damage(&self, potency: u32) -> u16 {
+        if self.retail_formula {
+            let f_wd = self.weapon_factor(self.primary_stat_modifier, self.weapon_magic_damage);
+            return self.retail_damage(potency, self.attack_magic_potency, f_wd);
+        }
         let normalized_potency = potency as f32 / 100.0;
         (normalized_potency * self.attack_magic_potency as f32).floor() as u16
     }
 
     /// Calculates amount of healing to apply based on potency.
     fn calc_heal_amount(&self, potency: u32) -> u16 {
+        if self.retail_formula {
+            let f_wd = self.weapon_factor(self.primary_stat_modifier, self.weapon_magic_damage);
+            return self.retail_damage(potency, self.healing_magic_potency, f_wd);
+        }
         let normalized_potency = potency as f32 / 100.0;
         (normalized_potency * self.healing_magic_potency as f32).floor() as u16
     }
@@ -308,6 +452,9 @@ impl UserData for BaseParameters {
     fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("calc_physical_damage", |_, this, potency: u32| {
             Ok(this.calc_physical_damage(potency))
+        });
+        methods.add_method("calc_auto_attack_damage", |_, this, potency: u32| {
+            Ok(this.calc_auto_attack_damage(potency))
         });
         methods.add_method("calc_magical_damage", |_, this, potency: u32| {
             Ok(this.calc_magical_damage(potency))
@@ -416,7 +563,12 @@ impl ZoneConnection {
             .get_job_primary_stat(self.player_data.classjob.current_class as u16)
             .unwrap_or(1);
 
+        let weapon = game_data.get_item_info(ItemInfoQuery::ById(
+            self.player_data.inventory.equipped.main_hand.item_id,
+        ));
+
         let mut base_parameters = BaseParameters::default();
+        base_parameters.use_retail_formula(level, &param_grow, weapon.as_ref());
         base_parameters.perform_calculations(primary_stat, &attributes, &param_grow, &modifiers);
         base_parameters.calculate_stat_across_all_items(
             &self.player_data.inventory.equipped,
@@ -453,7 +605,12 @@ impl ZoneConnection {
             .get_job_primary_stat(self.player_data.classjob.current_class as u16)
             .unwrap_or(1);
 
+        let weapon = game_data.get_item_info(ItemInfoQuery::ById(
+            self.player_data.inventory.equipped.main_hand.item_id,
+        ));
+
         let mut base_parameters = BaseParameters::default();
+        base_parameters.use_retail_formula(level, &param_grow, weapon.as_ref());
         base_parameters.perform_calculations(primary_stat, &attributes, &param_grow, &modifiers);
         base_parameters.calculate_stat_across_all_items(&self.player_data.inventory.equipped, None);
         base_parameters.calculate_potencies(&param_grow, Some(&modifiers));
@@ -686,5 +843,60 @@ impl ZoneConnection {
         let exp = exp + (exp * (bonus_percent as f32 / 100.0).round() as i32);
 
         (bonus_percent, exp)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A level 9 conjurer as a retail recording shows one: Mind 41, Strength 22, Determination 33, with a Maple Wand
+    /// (11 physical and magic damage, 2.4s delay).
+    fn retail_conjurer() -> BaseParameters {
+        BaseParameters {
+            retail_formula: true,
+            level_main: level_main(9),
+            level_div: 76,
+            weapon_physical_damage: 11,
+            weapon_magic_damage: 11,
+            weapon_delay_ms: 2400,
+            physical_stat_modifier: 50,
+            primary_stat_modifier: 105,
+            physical_damage: 22,
+            attack_magic_potency: 41,
+            healing_magic_potency: 41,
+            determination: 33,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn level_main_matches_retail() {
+        // A fresh retail character's Determination at levels 1-10.
+        let retail = [20, 21, 22, 24, 26, 27, 29, 31, 33, 35];
+        for (level, main) in retail.iter().enumerate() {
+            assert_eq!(level_main(level as u16 + 1), *main);
+        }
+        assert_eq!(level_main(90), 390);
+        assert_eq!(level_main(100), 440);
+    }
+
+    #[test]
+    fn damage_matches_retail() {
+        let conjurer = retail_conjurer();
+        // Retail: Stone (140) about 21.7 against level 9 enemies, Aero (50) about 8.4, Cure (450) about 72.
+        assert_eq!(conjurer.calc_magical_damage(140), 22);
+        assert_eq!(conjurer.calc_magical_damage(50), 7);
+        assert_eq!(conjurer.calc_heal_amount(450), 71);
+
+        // Retail: a level 6 conjurer's auto-attack (Strength 19) hits for about 6.
+        let level_6 = BaseParameters {
+            level_main: level_main(6),
+            level_div: 68,
+            physical_damage: 19,
+            determination: 27,
+            ..conjurer
+        };
+        assert_eq!(level_6.calc_auto_attack_damage(90), 6);
     }
 }
