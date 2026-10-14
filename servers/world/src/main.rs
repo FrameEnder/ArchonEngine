@@ -4206,9 +4206,13 @@ async fn process_server_msg(
             FromServer::FinishEvent => {
                 connection.event_finish(events).await;
             }
-            FromServer::BattleNpcKilled { name_id, layout_id } => {
+            FromServer::BattleNpcKilled {
+                name_id,
+                layout_id,
+                level,
+            } => {
                 connection
-                    .on_battle_npc_killed(lua_player, events, name_id, layout_id)
+                    .on_battle_npc_killed(lua_player, events, name_id, layout_id, level)
                     .await;
             }
             FromServer::QuestEventActionCast => {

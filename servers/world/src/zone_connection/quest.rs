@@ -1,15 +1,18 @@
 //! Quests!
 
+use mlua::Function;
+
 use crate::{
     Event, EventHandler, ItemInfoQuery, LuaEventHandler, ZoneConnection,
     common::adjust_quest_id,
     event::quest_script_path,
     inventory::{Item, Storage},
-    lua::LuaPlayer,
+    lua::{KawariLua, LuaPlayer},
     zone_connection::PersistentQuest,
 };
 use kawari::{
     common::{HandlerId, HandlerType},
+    config::get_config,
     constants::COMPLETED_QUEST_BITMASK_SIZE,
     ipc::zone::{
         ActiveQuest, QuestActiveList, QuestTracker, ServerZoneIpcData, ServerZoneIpcSegment,
@@ -296,14 +299,21 @@ impl ZoneConnection {
         self.send_quest_information().await;
     }
 
-    /// Lets every active quest know a battle NPC was defeated, so it can count it towards its objectives.
+    /// A battle NPC we fought was defeated: gives its EXP, rolls its drops (`battle/Drops.lua`), and lets every
+    /// active quest know, so it can count it towards its objectives.
     pub async fn on_battle_npc_killed(
         &mut self,
         lua_player: &mut LuaPlayer,
         events: &mut Vec<(Box<dyn EventHandler>, Event)>,
         name_id: u32,
         layout_id: u32,
+        level: u8,
     ) {
+        let exp = self.game_data.lock().get_bnpc_exp(level);
+        if exp > 0 {
+            self.add_exp(exp).await;
+        }
+
         let quest_ids: Vec<u16> = self
             .player_data
             .quest
@@ -330,6 +340,8 @@ impl ZoneConnection {
             handler.on_battle_npc_killed(lua_player, name_id, layout_id);
         }
 
+        roll_drops(lua_player, name_id, level);
+
         self.process_lua_player(lua_player, events).await;
         lua_player.player_data = self.player_data.clone();
     }
@@ -339,5 +351,30 @@ impl ZoneConnection {
         if let Some(row) = game_data.get_fate_progress_ui_row(self.player_data.volatile.zone_id) {
             self.player_data.quest.shared_fates.0[row as usize] += 1;
         }
+    }
+}
+
+/// Runs `battle/Drops.lua`'s `onBNpcKill`, which gives the player whatever the defeated battle NPC dropped.
+fn roll_drops(lua_player: &mut LuaPlayer, name_id: u32, level: u8) {
+    let file_name = get_config()
+        .filesystem
+        .locate_script_file("battle/Drops.lua");
+    let Ok(file) = std::fs::read(&file_name) else {
+        tracing::warn!("Failed to load {file_name}, enemies won't drop anything!");
+        return;
+    };
+
+    let lua = KawariLua::new();
+    let result = lua.0.scope(|scope| {
+        lua.0
+            .load(file)
+            .set_name("@".to_string() + &file_name)
+            .exec()?;
+        let player = scope.create_userdata_ref_mut(lua_player)?;
+        let func: Function = lua.0.globals().get("onBNpcKill")?;
+        func.call::<()>((name_id, level, player))
+    });
+    if let Err(err) = result {
+        tracing::warn!("Error while calling onBNpcKill in {file_name}: {err:?}");
     }
 }

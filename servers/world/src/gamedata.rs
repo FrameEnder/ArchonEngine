@@ -1246,6 +1246,15 @@ impl GameData {
     }
 
     /// Returns the max EXP or the exp "needed to grow" for a given level.
+    /// The EXP for defeating a battle NPC of this level. Like Sapphire, this is ParamGrow's ScaledQuestXP for its level
+    /// (the base that quest EXP rewards are scaled from.) Retail's own formula isn't known.
+    pub fn get_bnpc_exp(&mut self, level: u8) -> i32 {
+        self.param_grow_sheet
+            .row(level as u32)
+            .map(|row| row.ScaledQuestXP as i32)
+            .unwrap_or(0)
+    }
+
     pub fn get_max_exp(&mut self, level: u32) -> i32 {
         let row = self.param_grow_sheet.row(level).unwrap();
 

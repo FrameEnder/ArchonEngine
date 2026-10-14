@@ -524,6 +524,7 @@ fn credit_battle_npc_kill(network: &mut NetworkState, instance: &Instance, actor
             FromServer::BattleNpcKilled {
                 name_id: spawn.common.name_id,
                 layout_id: spawn.common.layout_id,
+                level: spawn.common.level,
             },
             DestinationNetwork::ZoneClients,
         );
