@@ -459,9 +459,9 @@ dependencies = [
 
 [[package]]
 name = "equivalent"
-version = "1.0.2"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
+checksum = "00d174d5400e5e8fd687ad1049e2f578285fa914201b1af7e8b112a4546bd826"
 
 [[package]]
 name = "erased-serde"
@@ -1212,7 +1212,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 [[package]]
 name = "physis"
 version = "0.7.0"
-source = "git+https://github.com/redstrate/physis#4e40f1c202d975e7530eb2eaf61c2d4958992a41"
+source = "git+https://github.com/redstrate/physis#48754f70f19ac93c82b61eb73b36071baefe23c4"
 dependencies = [
  "binrw",
  "bitflags",
