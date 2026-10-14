@@ -1,0 +1,10 @@
+{
+    "hitbox_radius": 2.2,
+    "autoattack_action_id": 872,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "damage_to_players": {
+        "10": 3.5
+    },
+    "comment": "Spirithold Broken's clay golem (quest battle 15). Its skills are used by the battle's script, content/questbattle/15.lua. From Kawari Recorder's recording of retail: level 10, 844 HP, auto-attacks for 2-6 (3.5 on average) against a level 9 conjurer."
+}

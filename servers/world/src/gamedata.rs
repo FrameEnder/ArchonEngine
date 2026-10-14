@@ -1506,6 +1506,62 @@ impl GameData {
             .and_then(|row| row.columns.get(1)?.into_string().cloned())
     }
 
+    /// A quest's battle talk lines (their keys contain "BATTLETALK"), as (key, text) sorted by key, e.g. for its quest
+    /// battle's enemies to say. Logs what it found, so the order can be checked against a recording.
+    pub fn get_quest_battle_talk(&mut self, quest_id: u32) -> Vec<(String, String)> {
+        let config = get_config();
+        let script = self.get_quest_name(quest_id);
+        let Some(id) = script
+            .rsplit('_')
+            .next()
+            .and_then(|id| id.parse::<u32>().ok())
+        else {
+            return Vec::new();
+        };
+        let sheet_name = format!("quest/{:03}/{script}", id / 100);
+        let Ok(exh) = self.resource.read_excel_sheet_header(&sheet_name) else {
+            return Vec::new();
+        };
+        let Ok(sheet) = self
+            .resource
+            .read_excel_sheet(&exh, &sheet_name, config.world.language())
+        else {
+            return Vec::new();
+        };
+
+        let mut all_keys = Vec::new();
+        let mut lines: Vec<(String, String)> = sheet
+            .pages
+            .iter()
+            .flat_map(|page| page.entries.iter())
+            .filter_map(|entry| entry.subrows.first().map(|(_, row)| row))
+            .filter_map(|row| {
+                let key = row.columns.first()?.into_string()?.clone();
+                all_keys.push(key.clone());
+                let text = row.columns.get(1)?.into_string()?.clone();
+                key.contains("BATTLETALK").then_some((key, text))
+            })
+            .collect();
+        lines.sort();
+
+        if lines.is_empty() {
+            tracing::warn!(
+                "{sheet_name} has no BATTLETALK lines, its keys are: {}",
+                all_keys.join(", ")
+            );
+        } else {
+            tracing::info!(
+                "{sheet_name} battle talk: {}",
+                lines
+                    .iter()
+                    .map(|(key, _)| key.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+        }
+        lines
+    }
+
     /// The (singular) name of a BNpc, from the BNpcName sheet.
     pub fn get_bnpc_name(&mut self, name_id: u32) -> Option<String> {
         let config = get_config();

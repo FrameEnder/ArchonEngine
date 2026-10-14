@@ -1,6 +1,10 @@
 // TODO: Restore DirectorTrigger handling, I removed it after the refactor...
 
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use kawari::{
     common::{
@@ -27,7 +31,7 @@ use crate::{
     lua::KawariLua,
     server::{
         WorldServer,
-        actor::NetworkedActor,
+        actor::{NetworkedActor, NpcCast},
         effect::gain_effect_instance,
         instance::{Instance, QueuedTaskData},
         network::{DestinationNetwork, NetworkState},
@@ -121,6 +125,14 @@ pub enum LuaDirectorTask {
     Say {
         layout_id: u32,
         key: String,
+    },
+    /// Someone says the quest battle's quest's `number`th battle talk line (1-based, in key order), see
+    /// `GameData::get_quest_battle_talk`. It comes from the BNpc at `layout_id`, under the name `name_id` (BNpcName) if
+    /// given, for speakers that aren't there, like the masked mage.
+    SayBattleTalk {
+        layout_id: u32,
+        name_id: Option<u32>,
+        number: usize,
     },
     /// Has an NPC yell a line from the NpcYell sheet: a speech bubble over them, and the line in chat.
     Yell {
@@ -282,6 +294,17 @@ impl UserData for LuaDirector {
             this.tasks.push(LuaDirectorTask::Say { layout_id, key });
             Ok(())
         });
+        methods.add_method_mut(
+            "say_battle_talk",
+            |_, this, (layout_id, number, name_id): (u32, usize, Option<u32>)| {
+                this.tasks.push(LuaDirectorTask::SayBattleTalk {
+                    layout_id,
+                    name_id,
+                    number,
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut("yell", |_, this, (layout_id, npc_yell_id): (u32, u32)| {
             this.tasks.push(LuaDirectorTask::Yell {
                 layout_id,
@@ -1070,6 +1093,19 @@ pub fn director_tick(
                     ..Default::default()
                 };
 
+                // Like their own casts, it stands still and its area lands where it was aimed now.
+                let target_position = instance
+                    .find_actor(target_id)
+                    .map(|actor| actor.position().0)
+                    .unwrap_or(position.0);
+                if let Some(NetworkedActor::Npc { cast, .. }) = instance.find_actor_mut(actor_id) {
+                    *cast = Some(NpcCast {
+                        until: Instant::now() + Duration::from_secs_f32(cast_time),
+                        target_position,
+                        rotation,
+                    });
+                }
+
                 // Show the cast bar, the same way NPCs cast their own actions.
                 if cast_time > 0.0 {
                     let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
@@ -1103,23 +1139,50 @@ pub fn director_tick(
                     },
                 );
             }
-            LuaDirectorTask::Say { layout_id, key } => {
-                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
-                    continue;
+            LuaDirectorTask::Say { .. } | LuaDirectorTask::SayBattleTalk { .. } => {
+                let (layout_id, name_override) = match task {
+                    LuaDirectorTask::Say { layout_id, .. } => (*layout_id, None),
+                    LuaDirectorTask::SayBattleTalk {
+                        layout_id, name_id, ..
+                    } => (*layout_id, *name_id),
+                    _ => unreachable!(),
                 };
-                let name_id = instance
-                    .find_actor(actor_id)
-                    .map(|actor| actor.get_common_spawn().name_id)
+                // Someone who isn't around (e.g. the golem once it's gone) still gets their line said.
+                let actor_id = instance
+                    .find_npc(layout_id)
+                    .map(|(actor_id, _)| actor_id)
+                    .unwrap_or_default();
+                let name_id = name_override.unwrap_or_else(|| {
+                    instance
+                        .find_actor(actor_id)
+                        .map(|actor| actor.get_common_spawn().name_id)
+                        .unwrap_or_default()
+                });
+                let quest_id = instance
+                    .directors
+                    .first()
+                    .map(|director| director.quest_battle_quest_id)
                     .unwrap_or_default();
                 let (name, text) = {
                     let mut game_data = game_data.lock();
-                    (
-                        game_data.get_bnpc_name(name_id),
-                        game_data.get_quest_text(key),
-                    )
+                    let text = match task {
+                        LuaDirectorTask::Say { key, .. } => game_data.get_quest_text(key),
+                        LuaDirectorTask::SayBattleTalk { number, .. } => game_data
+                            .get_quest_battle_talk(quest_id)
+                            .get(number.saturating_sub(1))
+                            .map(|(_, text)| text.clone()),
+                        _ => unreachable!(),
+                    };
+                    // BNpcName 0 is a speaker whose name isn't given yet, shown as "???" like on retail.
+                    let name = if name_id == 0 {
+                        Some("???".to_string())
+                    } else {
+                        game_data.get_bnpc_name(name_id)
+                    };
+                    (name, text)
                 };
                 let Some(text) = text else {
-                    tracing::warn!("Couldn't find the quest text {key} for Say!");
+                    tracing::warn!("Couldn't find the quest text for {task:?}!");
                     continue;
                 };
 
