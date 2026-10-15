@@ -83,21 +83,26 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y --no-install-recommends build-essential gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross cmake libclang-dev gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 rsync
-    - name: Download Oodle (Linux X64)
+        sudo apt-get install -y --no-install-recommends build-essential cmake libclang-dev rsync
+    - name: Setup Target (Linux x64)
       if: matrix.target == 'x86_64-unknown-linux-gnu'
       run: |
         wget https://github.com/WorkingRobot/OodleUE/releases/download/2026-06-04-1357/clang-x64-release.zip
         unzip clang-x64-release.zip
         mkdir oodle
         cp lib/liboodle-network-shared.so oodle/
-    - name: Download Oodle (Linux ARM64)
+    - name: Setup Target (Linux arm64)
       if: matrix.target == 'aarch64-unknown-linux-gnu'
       run: |
         wget https://github.com/WorkingRobot/OodleUE/releases/download/2026-06-04-1357/clang-arm64-release.zip
         unzip clang-arm64-release.zip
         mkdir oodle
         cp lib/liboodle-network-shared.so oodle/
+        sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross
+    - name: Setup Target (Windows x64)
+      if: matrix.target == 'aarch64-unknown-linux-gnu'
+      run: |
+        sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
     - name: Build
       env:
         CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
