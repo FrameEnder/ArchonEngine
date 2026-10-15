@@ -22,6 +22,10 @@ TRUMPETS_NEEDED = 4
 
 NOTICE_PROGRESS = 0
 
+-- The scene after a search has nothing to show, so it plays without hiding the hotbar (as Sapphire does), which
+-- would only make it flicker once the progress bar ends.
+SEARCH_SCENE_FLAGS = 0
+
 -- Quest variables: UI8A..F are bytes 0..5, H is the high nibble and L the low one.
 function getVar(player, byte, high)
     local value = player:get_quest_var(EVENT_ID, byte)
@@ -82,7 +86,7 @@ function onEventActionCast(player)
         player:finish_event()
         return
     end
-    play(player, searching.scene, HIDE_HOTBAR)
+    play(player, searching.scene, SEARCH_SCENE_FLAGS)
 end
 
 -- One trumpet searched.

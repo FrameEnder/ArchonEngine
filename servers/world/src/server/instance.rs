@@ -69,6 +69,8 @@ pub enum QueuedTaskData {
     },
     /// Complete an EventAction
     CastEventAction { target: ObjectId },
+    /// Complete a quest's EventAction (its progress bar), which an enemy's attack can interrupt.
+    QuestEventAction,
     /// Make a fish bite.
     FishBite,
     /// Seal a boss wall.
@@ -454,6 +456,27 @@ impl Instance {
                 task.from_actor_id,
                 request.action_id,
             )
+        }
+    }
+
+    /// Interrupts the quest event action (the progress bar for searching something) this player is in the middle of,
+    /// if any, like an enemy's attack does on retail. The client is told so it can end the event.
+    pub fn interrupt_event_action(&mut self, network: &mut NetworkState, actor_id: ObjectId) {
+        let mut interrupted = Vec::new();
+        self.queued_task.retain(|task| {
+            let matches = task.from_actor_id == actor_id
+                && matches!(task.data, QueuedTaskData::QuestEventAction);
+            if matches {
+                interrupted.push(task.from_id);
+            }
+            !matches
+        });
+        for from_id in interrupted {
+            network.send_to(
+                from_id,
+                FromServer::QuestEventActionInterrupted,
+                DestinationNetwork::ZoneClients,
+            );
         }
     }
 

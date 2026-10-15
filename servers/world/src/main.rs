@@ -4256,6 +4256,24 @@ async fn process_server_msg(
                     .on_battle_npc_killed(lua_player, events, base_id, name_id, layout_id, level)
                     .await;
             }
+            FromServer::QuestEventActionInterrupted => {
+                if let Some((_, event)) = events.last() {
+                    tracing::info!("Event action interrupted during event {}", event.id);
+
+                    // End the progress bar, and the event with it: the player can try again once they're clear.
+                    connection
+                        .actor_control_target(
+                            connection.player_data.character.actor_id,
+                            event.actor_id,
+                            ActorControlCategory::EventAction {
+                                unk1: 0,
+                                id: connection.event_action_id,
+                            },
+                        )
+                        .await;
+                    connection.event_finish(events).await;
+                }
+            }
             FromServer::QuestEventActionCast => {
                 if let Some((handler, event)) = events.last() {
                     tracing::info!("Event action finished casting during event {}", event.id);

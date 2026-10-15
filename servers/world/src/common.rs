@@ -210,6 +210,8 @@ pub enum FromServer {
     QuestBattleFailed,
     /// An event action (the progress bar for examining things and such) finished casting during a quest event.
     QuestEventActionCast,
+    /// An enemy's attack interrupted the event action (the progress bar) during a quest event.
+    QuestEventActionInterrupted,
     /// Inform the client that another player has dismounted.
     ActorDismounted(ObjectId),
     /// Inform the client of the whereabouts of their party members.

@@ -401,6 +401,13 @@ impl WorldServer {
 /// How often the server logic runs, in milliseconds.
 const SERVER_TICK_MILLISECONDS: u32 = 500;
 
+/// How often queued tasks (finished casts, event actions, despawns...) are checked, in milliseconds. Much finer than
+/// the logic tick, so a cast resolves when its cast bar ends rather than up to half a second later.
+const TASK_TICK_MILLISECONDS: u32 = 20;
+
+/// Moving during the last part of a cast doesn't interrupt it ("slidecasting"), like retail.
+const SLIDECAST_WINDOW: Duration = Duration::from_millis(500);
+
 fn server_logic_tick(
     data: Arc<Mutex<WorldServer>>,
     network: Arc<Mutex<NetworkState>>,
@@ -1025,19 +1032,27 @@ pub async fn server_main_loop(
         let game_data = game_data.clone();
         let lua = lua.clone();
         tokio::task::spawn(async move {
+            // Queued tasks run every TASK_TICK_MILLISECONDS, the general logic every SERVER_TICK_MILLISECONDS. Be careful
+            // when changing the latter, as the rested EXP may become whacky.
             let mut interval =
-                tokio::time::interval(Duration::from_millis(SERVER_TICK_MILLISECONDS as u64)); // Be careful when changing this, as the rested EXP may become whacky.
+                tokio::time::interval(Duration::from_millis(TASK_TICK_MILLISECONDS as u64));
             interval.tick().await;
+            let ticks_per_logic_tick = SERVER_TICK_MILLISECONDS / TASK_TICK_MILLISECONDS;
+            let mut ticks_until_logic = ticks_per_logic_tick;
             loop {
                 interval.tick().await;
 
                 // Execute general server logic
-                server_logic_tick(
-                    data.clone(),
-                    network.clone(),
-                    game_data.clone(),
-                    lua.clone(),
-                );
+                ticks_until_logic -= 1;
+                if ticks_until_logic == 0 {
+                    ticks_until_logic = ticks_per_logic_tick;
+                    server_logic_tick(
+                        data.clone(),
+                        network.clone(),
+                        game_data.clone(),
+                        lua.clone(),
+                    );
+                }
 
                 // Execute list of queued tasks
                 {
@@ -1145,6 +1160,14 @@ pub async fn server_main_loop(
                                 {
                                     director.event_action_cast(task.from_actor_id, *target);
                                 }
+                            }
+                            QueuedTaskData::QuestEventAction => {
+                                let mut network = network.lock();
+                                network.send_to(
+                                    task.from_id,
+                                    FromServer::QuestEventActionCast,
+                                    DestinationNetwork::ZoneClients,
+                                );
                             }
                             QueuedTaskData::FishBite => {
                                 let mut network = network.lock();
@@ -1520,9 +1543,12 @@ pub async fn server_main_loop(
 
                         if moved {
                             // Check if the actor has any in-progress actions, and cancel them if so.
+                            // Except near the end of the cast, which can be slidecast.
+                            let slidecast_from = Instant::now() + SLIDECAST_WINDOW;
                             for task in instance.find_tasks(actor_id) {
                                 if let QueuedTaskData::CastAction { interruptible, .. } = task.data
                                     && interruptible
+                                    && task.point > slidecast_from
                                 {
                                     instance.cancel_task(network.clone(), &task);
                                 }
@@ -2752,18 +2778,19 @@ pub async fn server_main_loop(
                         send_effects_list(network.clone(), instance, from_actor_id);
                     }
                 }
-                ToServer::QuestEventAction(from_client_id, _from_actor_id, cast_time) => {
-                    // Finish the cast when the client's progress bar does. Queued tasks only run on the server's
-                    // 500 ms tick, which left up to half a second before the scene carried on.
-                    let network = network.clone();
-                    tokio::spawn(async move {
-                        tokio::time::sleep(Duration::from_secs(cast_time as u64)).await;
-                        network.lock().send_to(
-                            from_client_id,
-                            FromServer::QuestEventActionCast,
-                            DestinationNetwork::ZoneClients,
-                        );
-                    });
+                ToServer::QuestEventAction(from_client_id, from_actor_id, cast_time) => {
+                    // Finish the cast when the client's progress bar does, unless an enemy's attack interrupts it
+                    // first (see interrupt_event_action.)
+                    let mut data = data.lock();
+                    let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
+                        continue;
+                    };
+                    instance.insert_task(
+                        from_client_id,
+                        from_actor_id,
+                        Duration::from_secs(cast_time as u64),
+                        QueuedTaskData::QuestEventAction,
+                    );
                 }
                 ToServer::Fish(from_client_id, from_actor_id) => {
                     let mut data = data.lock();

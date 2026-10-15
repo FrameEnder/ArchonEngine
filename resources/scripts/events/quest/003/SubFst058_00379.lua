@@ -28,6 +28,10 @@ NOTICE_SEQUENCE = 0
 NOTICE_ITEM = 1
 ITEM0_ICON = 25919
 
+-- The scene after a search has nothing to show, so it plays without hiding the hotbar (as Sapphire does), which
+-- would only make it flicker once the progress bar ends.
+SEARCH_SCENE_FLAGS = 0
+
 -- Quest variables: UI8A..F are bytes 0..5, H is the high nibble and L the low one.
 function getVar(player, byte, high)
     local value = player:get_quest_var(EVENT_ID, byte)
@@ -87,7 +91,7 @@ function onEventActionCast(player)
     end
     local scene = searching
     searching = nil
-    play(player, scene, HIDE_HOTBAR)
+    play(player, scene, SEARCH_SCENE_FLAGS)
 end
 
 function sceneFinished(scene, results, player)

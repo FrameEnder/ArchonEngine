@@ -572,10 +572,19 @@ pub fn execute_action(
                             else {
                                 continue;
                             };
+                            let hit_player = matches!(actor, NetworkedActor::Player { .. });
                             let common_spawn = actor.get_common_spawn_mut();
                             if common_spawn.name_id != STRIKING_DUMMY_NAME_ID {
                                 common_spawn.health_points =
                                     common_spawn.health_points.saturating_sub(*amount as u32);
+                            }
+
+                            // Being hit interrupts searching something for a quest.
+                            if hit_player && *amount > 0 {
+                                instance.interrupt_event_action(
+                                    &mut network.lock(),
+                                    request.target.object_id,
+                                );
                             }
 
                             // Update from game data
@@ -1852,6 +1861,8 @@ fn hit_area_bystander(
 
     if damage > 0 {
         let mut network = network.lock();
+        // Being hit interrupts searching something for a quest.
+        instance.interrupt_event_action(&mut network, target_id);
         network.send_ac_in_range_inclusive_instance(
             instance,
             target_id,
