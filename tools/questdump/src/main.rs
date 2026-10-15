@@ -14,9 +14,12 @@ use std::{
 
 use icarus::{
     BNpcName::BNpcNameSheet, ClassJobCategory::ClassJobCategorySheet,
-    ENpcResident::ENpcResidentSheet, EObjName::EObjNameSheet, PlaceName::PlaceNameSheet,
-    Quest::QuestSheet,
+    ENpcResident::ENpcResidentSheet, EObjName::EObjNameSheet, ExVersion::ExVersionSheet,
+    JournalCategory::JournalCategorySheet, JournalGenre::JournalGenreSheet,
+    JournalSection::JournalSectionSheet, PlaceName::PlaceNameSheet, Quest::QuestSheet,
+    ScenarioTree::ScenarioTreeSheet,
 };
+use physis::Language;
 use kawari::config::get_config;
 use physis::Platform;
 use physis::resource::{ResourceResolver, SqPackResource, UnpackedResource};
@@ -40,8 +43,9 @@ COMMANDS:
     chain     Dump the COUNT quests that follow QUEST in the same journal genre (e.g. the main story.)
     extract   Copy any game file out as-is (e.g. game_script/opening/OpeningGridania.luab.) A game_script file
               can also be given by its name alone (e.g. ManFst005Btl.luab) when its folder isn't known.
-    index     Write quest-index.json: every quest's name, level, prerequisites, issuer and area, for tools
-              that need the whole quest graph (Kawari Web uses it to search and to unlock prerequisites.)
+    index     Write quest-index.json: every quest's name, level, prerequisites, issuer, area, expansion, journal
+              section and whether it's main scenario, for tools that need the whole quest graph (Kawari Web
+              uses it to search, to unlock prerequisites and for its quest progress page.)
     disasm    Print a readable listing of a compiled script you already have.
 
 OPTIONS:
@@ -109,6 +113,64 @@ struct GameData {
     bnpc_names: HashMap<u32, String>,
     place_names: HashMap<u32, String>,
     class_categories: HashMap<u32, String>,
+    journal: Journal,
+}
+
+/// Where quests go in the journal, and what the game calls each part: JournalGenre (e.g. Gridanian Sidequests) belongs
+/// to a JournalCategory, which belongs to a JournalSection (e.g. Sidequests.) Plus the expansions' names, and which
+/// quests are the main scenario (ScenarioTree.)
+#[derive(Default)]
+struct Journal {
+    /// JournalGenre: (name, JournalCategory)
+    genres: HashMap<u32, (String, u32)>,
+    /// JournalCategory: (name, JournalSection)
+    categories: HashMap<u32, (String, u32)>,
+    sections: HashMap<u32, String>,
+    expansions: HashMap<u32, String>,
+    /// Quest row IDs in ScenarioTree.
+    main_scenario: std::collections::HashSet<u32>,
+}
+
+impl Journal {
+    fn read(resolver: &mut ResourceResolver, language: Language) -> Self {
+        let mut journal = Self::default();
+        if let Ok(sheet) = JournalGenreSheet::read_from(resolver, language) {
+            for (id, row) in sheet.into_iter().flatten_subrows() {
+                journal
+                    .genres
+                    .insert(id, (row.Name.to_string(), row.JournalCategory as u32));
+            }
+        }
+        if let Ok(sheet) = JournalCategorySheet::read_from(resolver, language) {
+            for (id, row) in sheet.into_iter().flatten_subrows() {
+                journal
+                    .categories
+                    .insert(id, (row.Name.to_string(), row.JournalSection as u32));
+            }
+        }
+        if let Ok(sheet) = JournalSectionSheet::read_from(resolver, language) {
+            for (id, row) in sheet.into_iter().flatten_subrows() {
+                journal.sections.insert(id, row.Name.to_string());
+            }
+        }
+        if let Ok(sheet) = ExVersionSheet::read_from(resolver, language) {
+            for (id, row) in sheet.into_iter().flatten_subrows() {
+                journal.expansions.insert(id, row.Name.to_string());
+            }
+        }
+        // Not every sheet is translated; ScenarioTree may only be readable without a language.
+        let scenario = ScenarioTreeSheet::read_from(resolver, language)
+            .or_else(|_| ScenarioTreeSheet::read_from(resolver, Language::None));
+        match scenario {
+            Ok(sheet) => {
+                for (id, _) in sheet.into_iter().flatten_subrows() {
+                    journal.main_scenario.insert(id);
+                }
+            }
+            Err(err) => eprintln!("Couldn't read the ScenarioTree sheet, so no quest is marked main scenario: {err:?}"),
+        }
+        journal
+    }
 }
 
 impl GameData {
@@ -202,6 +264,8 @@ impl GameData {
             }
         }
 
+        let journal = Journal::read(&mut resolver, language);
+
         Ok(Self {
             resolver,
             quests,
@@ -211,6 +275,7 @@ impl GameData {
             bnpc_names,
             place_names,
             class_categories,
+            journal,
         })
     }
 
@@ -314,10 +379,28 @@ impl GameData {
                 if let Some(name) = self.class_categories.get(&(entry.class_category as u32)) {
                     quest["class_category_name"] = json!(name);
                 }
+
+                // Where it is in the journal (format 2.)
+                let journal = &self.journal;
+                quest["main_scenario"] = json!(journal.main_scenario.contains(&entry.row_id));
+                if let Some(name) = journal.expansions.get(&(entry.expansion as u32)) {
+                    quest["expansion_name"] = json!(name);
+                }
+                if let Some((genre_name, category)) = journal.genres.get(&entry.genre) {
+                    quest["genre_name"] = json!(genre_name);
+                    quest["category"] = json!(category);
+                    if let Some((category_name, section)) = journal.categories.get(category) {
+                        quest["category_name"] = json!(category_name);
+                        quest["section"] = json!(section);
+                        if let Some(section_name) = journal.sections.get(section) {
+                            quest["section_name"] = json!(section_name);
+                        }
+                    }
+                }
                 quest
             })
             .collect();
-        json!({ "format": 1, "quests": quests })
+        json!({ "format": 2, "quests": quests })
     }
 
     /// Gives a readable name to a quest variable's value, where we can.
