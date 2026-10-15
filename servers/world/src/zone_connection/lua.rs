@@ -426,6 +426,15 @@ impl ZoneConnection {
                         ))
                         .await;
                 }
+                LuaTask::SpawnQuestBattleNpc { layout_id } => {
+                    self.handle
+                        .send(ToServer::SpawnQuestBattleNpc(
+                            self.id,
+                            self.player_data.character.actor_id,
+                            *layout_id,
+                        ))
+                        .await;
+                }
                 LuaTask::ToggleGlassesStyle { id } => {
                     self.toggle_glasses_style(*id).await;
                 }

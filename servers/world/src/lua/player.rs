@@ -187,6 +187,11 @@ impl LuaPlayer {
         });
     }
 
+    fn spawn_quest_battle_npc(&mut self, layout_id: u32) {
+        self.queued_tasks
+            .push(LuaTask::SpawnQuestBattleNpc { layout_id });
+    }
+
     fn change_weather(&mut self, id: u8) {
         self.queued_tasks.push(LuaTask::ChangeWeather { id });
     }
@@ -756,6 +761,10 @@ impl UserData for LuaPlayer {
                 Ok(())
             },
         );
+        methods.add_method_mut("spawn_quest_bnpc", |_, this, layout_id: u32| {
+            this.spawn_quest_battle_npc(layout_id);
+            Ok(())
+        });
         methods.add_method_mut("change_weather", |_, this, id: u8| {
             this.change_weather(id);
             Ok(())

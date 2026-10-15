@@ -443,6 +443,8 @@ pub enum ToServer {
     SetHP(ClientId, ObjectId, u32),
     /// Inform the server to update our MP to this value.
     SetMP(ClientId, ObjectId, u16),
+    /// A quest brings out the battle NPC at this layout ID (from the zone's drop-ins), already after this player.
+    SpawnQuestBattleNpc(ClientId, ObjectId, u32),
     /// The client discovered a new location in this zone.
     NewLocationDiscovered(ClientId, u32, Position, u16),
     /// The client is sharing a strategy board with their party.

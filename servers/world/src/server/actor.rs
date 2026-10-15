@@ -453,6 +453,7 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
     // Cancel existing tasks
     instance.cancel_actor_tasks(actor_id);
     let intended_use = instance.zone.intended_use;
+    let quest_spawned = instance.quest_spawned_npcs.remove(&actor_id);
 
     // Queue up despawn if this is an NPC
     if let Some(actor) = instance.find_actor_mut(actor_id)
@@ -475,12 +476,14 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
             }
         }
 
-        let respawn_layout_id =
-            if actor.get_common_spawn().layout_id != 0 && should_respawn_mobs(intended_use) {
-                Some(actor.get_common_spawn().layout_id)
-            } else {
-                None
-            };
+        let respawn_layout_id = if actor.get_common_spawn().layout_id != 0
+            && should_respawn_mobs(intended_use)
+            && !quest_spawned
+        {
+            Some(actor.get_common_spawn().layout_id)
+        } else {
+            None
+        };
 
         for (gimmick_id, states) in new_timeline_states {
             let actor_id;

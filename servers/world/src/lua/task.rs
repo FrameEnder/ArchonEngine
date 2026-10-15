@@ -102,6 +102,9 @@ pub enum LuaTask {
     SetMP {
         mp: u16,
     },
+    SpawnQuestBattleNpc {
+        layout_id: u32,
+    },
     ToggleGlassesStyle {
         id: u32,
     },

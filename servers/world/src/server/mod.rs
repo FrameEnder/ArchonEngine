@@ -2686,6 +2686,40 @@ pub async fn server_main_loop(
 
                     update_actor_hp_mp(network.clone(), instance, from_actor_id);
                 }
+                ToServer::SpawnQuestBattleNpc(_from_id, from_actor_id, layout_id) => {
+                    let mut data = data.lock();
+                    let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
+                        continue;
+                    };
+
+                    // Only one at a time: searching again while it's still around doesn't bring out another.
+                    if instance.find_npc(layout_id).is_some() {
+                        continue;
+                    }
+
+                    let Some(npc) = instance.zone.get_battle_npc(layout_id) else {
+                        tracing::warn!(
+                            "A quest tried to spawn battle NPC {layout_id}, but it isn't in this zone's drop-ins!"
+                        );
+                        continue;
+                    };
+
+                    let npc_id = ObjectId(fastrand::u32(..));
+                    {
+                        let config = get_config();
+                        let mut game_data = game_data.lock();
+                        instance.insert_npc(npc_id, npc, &config, &mut game_data);
+                    }
+                    // Quest enemies don't come back as regular monsters once defeated.
+                    instance.quest_spawned_npcs.insert(npc_id);
+
+                    // It comes out already after the player who brought it out.
+                    if let Some(NetworkedActor::Npc { enmity, .. }) =
+                        instance.find_actor_mut(npc_id)
+                    {
+                        enmity.insert(from_actor_id, 1);
+                    }
+                }
                 ToServer::SetNewStatValues(from_actor_id, level, class_job, new_parameters) => {
                     // Update internal data model
                     {
