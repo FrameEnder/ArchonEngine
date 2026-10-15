@@ -4168,7 +4168,15 @@ async fn process_server_msg(
             FromServer::PacketSegment(ipc, from_actor_id) => {
                 connection.send_ipc_from(from_actor_id, ipc).await;
             }
-            FromServer::NewTasks(mut tasks) => connection.queued_tasks.append(&mut tasks),
+            FromServer::NewTasks(mut tasks) => {
+                // Run them now (e.g. the warp from casting Teleport): left queued, they'd wait for the client's next
+                // packet, which can be several seconds away when the player is standing still.
+                lua_player.queued_tasks.append(&mut tasks);
+                if connection.process_lua_player(lua_player, events).await {
+                    connection.process_lua_player(lua_player, events).await;
+                }
+                lua_player.player_data = connection.player_data.clone();
+            }
             FromServer::NewStatusEffects(status_effects) => {
                 lua_player.status_effects = status_effects
             }
