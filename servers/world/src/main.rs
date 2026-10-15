@@ -2769,7 +2769,7 @@ async fn process_packet(
                                     fellowship_name: "Kawari Fellowship Test".to_string(),
                                     recruiter_name: "Kawari Player".to_string(),
                                     master_name: "Kawari Player".to_string(),
-                                    fellowship_description: b"The Fellowship's description.".into(),
+                                    fellowship_description: "The Fellowship's description.".into(),
                                 },
                                 FellowshipSearchInfo::default(),
                                 FellowshipSearchInfo::default(),

@@ -1,5 +1,5 @@
 // ! The Moogle Mail Delivery system.
-use bstr::BString;
+use physis::sestring::SeString;
 
 use crate::{
     ItemInfoQuery, ToServer, ZoneConnection,
@@ -125,7 +125,7 @@ impl ZoneConnection {
         &mut self,
         recipient_content_id: u64,
         attached_items: [MailItemInfo; MAX_MAIL_ATTACHMENTS_STORAGE],
-        message: BString,
+        message: SeString,
     ) {
         let is_online;
         let recipient_info;

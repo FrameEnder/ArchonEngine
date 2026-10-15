@@ -445,7 +445,13 @@ impl Instance {
 
         // Then actually do the work:
         if let QueuedTaskData::CastAction { request, .. } = &task.data {
-            cancel_action(network.clone(), task.from_id, request.action_id)
+            cancel_action(
+                network.clone(),
+                self,
+                task.from_id,
+                task.from_actor_id,
+                request.action_id,
+            )
         }
     }
 

@@ -25,6 +25,7 @@ use icarus::Fate::FateSheet;
 use icarus::FateProgressUI::FateProgressUISheet;
 use icarus::FateShop::FateShopSheet;
 use icarus::FittingShopCategoryItem::FittingShopCategoryItemSheet;
+use icarus::GFATE::{GFATERow, GFATESheet};
 use icarus::GatheringItem::GatheringItemSheet;
 use icarus::GatheringItemLevelConvertTable::GatheringItemLevelConvertTableSheet;
 use icarus::GatheringPoint::GatheringPointSheet;
@@ -69,10 +70,11 @@ use physis::equipment::EquipSlotCategory;
 use physis::race::{Gender, Race, Tribe};
 use physis::resource::{Resource, ResourceResolver, SqPackResource, UnpackedResource};
 use physis::savedata::chardat::CustomizeData;
+use physis::sestring::SeString;
 use physis::{Language, TerritoryIntendedUse};
 
 use kawari::common::{
-    FateRule, InstanceContentType, PublicContentType,
+    ActionCategory, FateRule, InstanceContentType, PublicContentType,
     get_aether_current_comp_flg_set_to_screenimage,
 };
 use kawari::common::{LegacyEquipmentModelId, WeaponModelId, timestamp_secs};
@@ -133,6 +135,7 @@ pub struct GameData {
     pub gold_saucer_content_sheet: GoldSaucerContentSheet,
     pub gimmick_accessor_sheet: GimmickAccessorSheet,
     pub trait_sheet: TraitSheet,
+    pub gfate_sheet: GFATESheet,
 
     pub gimmick_rect_lookup: HashMap<u32, u32>,
     pub fate_event_range_lookup: HashMap<u32, u32>,
@@ -591,6 +594,8 @@ impl GameData {
         let trait_sheet =
             TraitSheet::read_from(&mut resource_resolver, config.world.language()).unwrap();
 
+        let gfate_sheet = GFATESheet::read_from(&mut resource_resolver, Language::None).unwrap();
+
         let mut gimmick_rect_lookup = HashMap::new();
         for (id, row) in gimmick_rect_sheet.into_iter().flatten_subrows() {
             gimmick_rect_lookup.insert(row.LayoutID, id);
@@ -642,6 +647,7 @@ impl GameData {
             gold_saucer_content_sheet,
             gimmick_accessor_sheet,
             trait_sheet,
+            gfate_sheet,
         }
     }
 
@@ -678,6 +684,7 @@ impl GameData {
                 for (id, row) in self.item_sheet.into_iter().flatten_subrows() {
                     if row
                         .Name
+                        .to_string() // Item names do not use SeString features
                         .to_lowercase()
                         .contains(&query_item_name.to_lowercase())
                     {
@@ -691,7 +698,7 @@ impl GameData {
         if let Some((matched_row, item_id)) = result {
             let item_info = ItemRow {
                 id: item_id,
-                name: matched_row.Name,
+                name: matched_row.Name.to_string(), // Item names do not use SeString features
                 price_mid: matched_row.PriceMid,
                 price_low: matched_row.PriceLow,
                 equip_category: EquipSlotCategory::from_repr(matched_row.EquipSlotCategory)
@@ -758,7 +765,7 @@ impl GameData {
             WarpLogicSheet::read_from(&mut self.resource, config.world.language()).unwrap();
         let warp_logic_row = warp_logic_sheet.row(warp_logic_id as u32).unwrap();
 
-        warp_logic_row.WarpName
+        warp_logic_row.WarpName.to_string() // This shouldn't use SeString features
     }
 
     pub fn get_aetheryte(
@@ -813,14 +820,14 @@ impl GameData {
 
         let offset = match which {
             TerritoryNameKind::Internal => {
-                return Some(row.Name);
+                return Some(row.Name.to_string()); // This shouldn't use use SeString features
             }
             TerritoryNameKind::Region => row.PlaceNameRegion,
             TerritoryNameKind::Place => row.PlaceName,
         };
 
         let row = self.place_name_sheet.row(offset as u32)?;
-        Some(row.Name)
+        Some(row.Name.to_string()) // This shouldn't use use SeString features
     }
 
     /// Turn an equip slot category id into a slot for the equipped inventory
@@ -911,10 +918,14 @@ impl GameData {
         })
     }
 
-    pub fn get_casttime(&mut self, action_id: u32) -> Option<u16> {
+    /// Returns the cast time in milliseconds.
+    pub fn get_casttime(&mut self, action_id: u32) -> Option<(ActionCategory, u32)> {
         let row = self.action_sheet.row(action_id)?;
 
-        Some(row.Cast100ms)
+        Some((
+            ActionCategory::from_repr(row.ActionCategory)?,
+            row.Cast100ms as u32 * 100,
+        ))
     }
 
     /// Calculates the current weather at the current time
@@ -1182,7 +1193,7 @@ impl GameData {
     pub fn get_custom_talk_name(&mut self, custom_talk_id: u32) -> String {
         let row = self.custom_talk_sheet.row(custom_talk_id).unwrap();
 
-        row.Name
+        row.Name.to_string() // This shouldn't use use SeString features
     }
 
     /// Returns the internal script name for this Opening event.
@@ -1190,7 +1201,7 @@ impl GameData {
         let sheet = OpeningSheet::read_from(&mut self.resource, Language::None).unwrap();
         let row = sheet.row(opening_id).unwrap();
 
-        row.Name
+        row.Name.to_string() // This shouldn't use use SeString features
     }
 
     /// Returns data useful for performing item actions.
@@ -1249,7 +1260,7 @@ impl GameData {
     pub fn get_quest_name(&mut self, quest_id: u32) -> String {
         let row = self.quest_sheet.row(quest_id).unwrap();
 
-        row.Id
+        row.Id.to_string() // This shouldn't use use SeString features
     }
 
     /// Returns the target event of a TopicSelect event.
@@ -1374,7 +1385,7 @@ impl GameData {
             .content_finder_condition_sheet
             .row(content_finder_row_id as u32)?;
 
-        Some(content_finder_row.ShortCode)
+        Some(content_finder_row.ShortCode.to_string()) // This shouldn't use use SeString features
     }
 
     /// Returns the DefaultTalk for a given FateShop and index.
@@ -1482,7 +1493,7 @@ impl GameData {
 
     /// Looks up a line of quest text by its key, e.g. TEXT_MANFST005_00445_PAPALYMO_BATTLETALK_01, which is in the
     /// quest's own text sheet (quest/004/ManFst005_00445.)
-    pub fn get_quest_text(&mut self, key: &str) -> Option<String> {
+    pub fn get_quest_text(&mut self, key: &str) -> Option<SeString> {
         let config = get_config();
 
         // TEXT_<SCRIPT>_<ID>_...: the sheet is quest/<ID / 100>/<SCRIPT>_<ID>.
@@ -1509,15 +1520,14 @@ impl GameData {
                 row.columns
                     .first()
                     .and_then(|c| c.into_string())
-                    .map(|k| k.as_str())
-                    == Some(key)
+                    .is_some_and(|k| k.to_string() == key)
             })
             .and_then(|row| row.columns.get(1)?.into_string().cloned())
     }
 
     /// A quest's battle talk lines (their keys contain "BATTLETALK"), as (key, text) sorted by key, e.g. for its quest
     /// battle's enemies to say. Logs what it found, so the order can be checked against a recording.
-    pub fn get_quest_battle_talk(&mut self, quest_id: u32) -> Vec<(String, String)> {
+    pub fn get_quest_battle_talk(&mut self, quest_id: u32) -> Vec<(String, SeString)> {
         let config = get_config();
         let script = self.get_quest_name(quest_id);
         let Some(id) = script
@@ -1539,19 +1549,20 @@ impl GameData {
         };
 
         let mut all_keys = Vec::new();
-        let mut lines: Vec<(String, String)> = sheet
+        let mut lines: Vec<(String, SeString)> = sheet
             .pages
             .iter()
             .flat_map(|page| page.entries.iter())
             .filter_map(|entry| entry.subrows.first().map(|(_, row)| row))
             .filter_map(|row| {
-                let key = row.columns.first()?.into_string()?.clone();
+                // Keys are plain text.
+                let key = row.columns.first()?.into_string()?.to_string();
                 all_keys.push(key.clone());
                 let text = row.columns.get(1)?.into_string()?.clone();
                 key.contains("BATTLETALK").then_some((key, text))
             })
             .collect();
-        lines.sort();
+        lines.sort_by(|a, b| a.0.cmp(&b.0));
 
         if lines.is_empty() {
             tracing::warn!(
@@ -1580,7 +1591,12 @@ impl GameData {
             .resource
             .read_excel_sheet(&exh, "BNpcName", config.world.language())
             .ok()?;
-        sheet.row(name_id)?.columns.first()?.into_string().cloned()
+        sheet
+            .row(name_id)?
+            .columns
+            .first()?
+            .into_string()
+            .map(|name| name.to_string()) // Names don't use SeString features
     }
 
     /// What the Scenario Guide should show: the main scenario quest that was last completed, the one to do next, and
@@ -1633,7 +1649,7 @@ impl GameData {
                 .filter(|x| *x != 0)
                 .collect();
             previous.sort();
-            (row.Name.clone(), previous)
+            (row.Name.to_string(), previous) // Names don't use SeString features
         };
         let done_variants: HashSet<(String, Vec<u32>)> = quest_ids
             .iter()
@@ -2070,7 +2086,7 @@ impl GameData {
             OmenSheet::read_from(&mut self.resource, Language::None)
                 .ok()
                 .and_then(|sheet| sheet.row(row.Omen as u32))
-                .and_then(|omen| cone_angle_from_omen(&omen.Path))
+                .and_then(|omen| cone_angle_from_omen(&omen.Path.to_string()))
                 .unwrap_or(DEFAULT_CONE_ANGLE)
         } else {
             DEFAULT_CONE_ANGLE
@@ -2135,6 +2151,7 @@ impl GameData {
         for (id, row) in sheet.into_iter().flatten_subrows() {
             if row
                 .Singular
+                .to_string() // This shouldn't use use SeString features
                 .to_lowercase()
                 .contains(&mount_name.to_lowercase())
             {
@@ -2398,6 +2415,11 @@ impl GameData {
     pub fn get_trait_requirements(&mut self, id: u32) -> Option<(u8, u32)> {
         let row = self.trait_sheet.row(id)?;
         Some((row.Level, row.Quest))
+    }
+
+    /// Returns this GATE's information.
+    pub fn get_gate(&mut self, id: u32) -> Option<GFATERow> {
+        self.gfate_sheet.row(id)
     }
 }
 

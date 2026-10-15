@@ -458,7 +458,7 @@ mod tests {
 
     #[test]
     fn test_sessions() {
-        tracing_subscriber::fmt::init();
+        let _ = tracing_subscriber::fmt::try_init();
 
         let mut database = LoginDatabase::new_in_memory();
         assert!(database.add_user("test", "test"));

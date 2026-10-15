@@ -134,7 +134,7 @@ mod tests {
 
     #[test]
     fn test_item_level() {
-        tracing_subscriber::fmt::init();
+        let _ = tracing_subscriber::fmt::try_init();
         let Some(mut game_data) = test_game_data() else {
             return;
         };

@@ -59,7 +59,7 @@ async fn get_headline() -> Json<Headline> {
             id: "".to_string(),
             tag: "".to_string(),
             title: "You are connected to Kawari".to_string(),
-            url: "https://github.com/redstrate/Kawari".to_string(),
+            url: "https://codeberg.org/redstrate/Kawari".to_string(),
         }],
         pinned: vec![],
         topics: vec![],

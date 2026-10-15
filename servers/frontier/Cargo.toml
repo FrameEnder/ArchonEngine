@@ -15,5 +15,4 @@ axum = { workspace = true }
 tower-http = { workspace = true }
 serde = { workspace = true }
 serde-xml-rs = { workspace = true }
-ureq = { workspace = true }
 xml = { workspace = true }
