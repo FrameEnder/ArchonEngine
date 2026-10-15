@@ -27,6 +27,41 @@ struct ForkOpcode {
     found_on: Option<String>,
     current: bool,
     how_to_find: String,
+    /// The opcode the generated enum uses for it.
+    used_opcode: u64,
+    /// Rust for its `exe_scan::Finder`s.
+    finders: Vec<String>,
+}
+
+/// Rust for the `exe_scan::Finder`s in a fork_opcodes.yml entry's `find` list.
+fn fork_finders(entry: &Value, name: &str) -> Vec<String> {
+    let Some(finders) = entry.get("find").and_then(|find| find.as_sequence()) else {
+        return Vec::new();
+    };
+    finders
+        .iter()
+        .map(|finder| {
+            let field = |kind: &Value, field: &str| kind.get(field).cloned();
+            if let Some(immediate) = finder.get("immediate") {
+                let pattern = field(immediate, "pattern")
+                    .and_then(|p| p.as_str().map(str::to_string))
+                    .unwrap_or_else(|| panic!("fork_opcodes.yml: {name}'s immediate finder has no pattern"));
+                let offset = field(immediate, "offset").and_then(|o| o.as_u64()).unwrap_or(0);
+                let width = field(immediate, "width").and_then(|w| w.as_u64()).unwrap_or(2);
+                format!(
+                    "crate::exe_scan::Finder::Immediate {{ pattern: {pattern:?}, offset: {offset}, width: {width} }}"
+                )
+            } else if let Some(handler) = finder.get("handler") {
+                let pattern = field(handler, "pattern")
+                    .and_then(|p| p.as_str().map(str::to_string))
+                    .unwrap_or_else(|| panic!("fork_opcodes.yml: {name}'s handler finder has no pattern"));
+                let offset = field(handler, "offset").and_then(|o| o.as_i64()).unwrap_or(0);
+                format!("crate::exe_scan::Finder::Handler {{ pattern: {pattern:?}, offset: {offset} }}")
+            } else {
+                panic!("fork_opcodes.yml: {name} has a finder that's neither immediate nor handler");
+            }
+        })
+        .collect()
 }
 
 /// The game version Kawari supports (SUPPORTED_GAME_VERSION in constants.yml.)
@@ -122,6 +157,8 @@ fn merge_fork_opcodes(opcodes: &mut Value) -> Vec<ForkOpcode> {
                 found_on,
                 current,
                 how_to_find,
+                used_opcode,
+                finders: fork_finders(entry, name),
             });
         }
     }
@@ -129,7 +166,7 @@ fn merge_fork_opcodes(opcodes: &mut Value) -> Vec<ForkOpcode> {
 }
 
 /// The generated `FORK_OPCODES` list, for the server to say which opcodes still need finding and what to do.
-fn fork_opcodes_code(fork_opcodes: &[ForkOpcode]) -> String {
+fn fork_opcodes_code(fork_opcodes: &[ForkOpcode], opcodes: &Value) -> String {
     let mut code = String::from(
         "/// One of the fork's own opcodes, from `resources/data/fork_opcodes.yml`.
 #[derive(Debug, Clone, Copy)]
@@ -147,6 +184,10 @@ pub struct ForkOpcode {
     pub current: bool,
     /// What to do in game to make the client send (or the server need) it.
     pub how_to_find: &'static str,
+    /// The opcode the generated enum uses for it (a placeholder, if it isn't current.)
+    pub used_opcode: u16,
+    /// How to read it from the game's executable.
+    pub finders: &'static [crate::exe_scan::Finder],
 }
 
 /// The fork's own opcodes.
@@ -155,7 +196,7 @@ pub const FORK_OPCODES: &[ForkOpcode] = &[
     );
     for opcode in fork_opcodes {
         code.push_str(&format!(
-            "ForkOpcode {{ kind: {:?}, name: {:?}, size: {}, opcode: {:?}, found_on: {:?}, current: {}, how_to_find: {:?} }},\n",
+            "ForkOpcode {{ kind: {:?}, name: {:?}, size: {}, opcode: {:?}, found_on: {:?}, current: {}, how_to_find: {:?}, used_opcode: {}, finders: &[{}] }},\n",
             opcode.kind,
             opcode.name,
             opcode.size,
@@ -163,6 +204,8 @@ pub const FORK_OPCODES: &[ForkOpcode] = &[
             opcode.found_on.as_deref(),
             opcode.current,
             opcode.how_to_find,
+            opcode.used_opcode,
+            opcode.finders.join(", "),
         ));
     }
     code.push_str(
@@ -177,6 +220,26 @@ pub fn outstanding_fork_opcodes(kind: &str, size: usize) -> impl Iterator<Item =
 }
 ",
     );
+
+    // Every opcode already in use in each list, so one read from the executable can't take one that's known.
+    code.push_str(
+        "\n/// Whether `opcode` is already some packet's opcode in the `kind` opcode list (e.g. ClientZoneIpcType.)\npub fn is_known_opcode(kind: &str, opcode: u16) -> bool {\nmatch kind {\n",
+    );
+    for (kind, list) in opcodes.as_mapping().unwrap() {
+        let used: Vec<String> = list
+            .as_sequence()
+            .unwrap()
+            .iter()
+            .filter_map(|opcode| opcode.get("opcode")?.as_u64())
+            .map(|opcode| opcode.to_string())
+            .collect();
+        code.push_str(&format!(
+            "{:?} => [{}].contains(&opcode),\n",
+            kind.as_str().unwrap(),
+            used.join(", ")
+        ));
+    }
+    code.push_str("_ => false,\n}\n}\n");
     code
 }
 
@@ -346,7 +409,7 @@ fn main() {
                 .expect("Failed to write opcodes file!");
         }
 
-        output_str.push_str(&fork_opcodes_code(&fork_opcodes));
+        output_str.push_str(&fork_opcodes_code(&fork_opcodes, &json));
 
         std::fs::write("src/opcodes.rs", output_str).expect("Failed to write opcodes file!");
     }

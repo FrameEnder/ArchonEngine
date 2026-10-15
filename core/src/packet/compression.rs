@@ -94,7 +94,7 @@ pub(crate) fn compress<T: ReadWriteIpcSegment>(
     compression_type: &CompressionType,
     segments: &[PacketSegment<T>],
 ) -> (Vec<u8>, usize) {
-    use super::{IPC_HEADER_SIZE, scramble_packet};
+    use super::{IPC_HEADER_SIZE, PACKET_SEGMENT_HEADER_SIZE, remap, scramble_packet};
     use binrw::BinWrite;
 
     let mut segments_buffer = Vec::with_capacity(segments.len());
@@ -134,6 +134,15 @@ pub(crate) fn compress<T: ReadWriteIpcSegment>(
             }
         }
 
+        // An opcode found while running goes out as its real opcode, not its placeholder.
+        if let SegmentData::Ipc(_) = &segment.data {
+            remap::rewrite_opcode(
+                &mut buffer[PACKET_SEGMENT_HEADER_SIZE as usize..],
+                remap::kind_of::<T::OpCode>(),
+                remap::outgoing,
+            );
+        }
+
         // obsfucate if needed
         if let ConnectionState::Zone {
             scrambler_keys: Some(keys),
@@ -141,7 +150,7 @@ pub(crate) fn compress<T: ReadWriteIpcSegment>(
         } = state
             && let SegmentData::Ipc(data) = &segment.data
         {
-            let opcode = data.get_opcode();
+            let opcode = remap::outgoing(remap::kind_of::<T::OpCode>(), data.get_opcode());
             let base_key = keys.get_base_key(opcode);
             let opcode_based_key = keys.get_opcode_based_key(opcode);
 

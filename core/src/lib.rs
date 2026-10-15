@@ -1,6 +1,9 @@
 //! A server replacement for a certain MMO.
 
 /// Common functions, structures used in parsing and also useful for the servers.
+/// Reads opcodes out of the game's executable.
+pub mod exe_scan;
+
 pub mod common;
 
 /// Config management.

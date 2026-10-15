@@ -4,7 +4,7 @@ use binrw::BinResult;
 
 use crate::constants::LOBBY_GAME_VERSION;
 
-use super::{IPC_HEADER_SIZE, ReadWriteIpcSegment, parsing::ConnectionState};
+use super::{IPC_HEADER_SIZE, ReadWriteIpcSegment, parsing::ConnectionState, remap};
 
 pub fn generate_encryption_key(key: &[u8], phrase: &str) -> [u8; 16] {
     let mut base_key = vec![0x78, 0x56, 0x34, 0x12]; // 0x12345678
@@ -24,6 +24,14 @@ pub(crate) fn decrypt<T: ReadWriteIpcSegment>(size: u32, state: &ConnectionState
         reader.read_exact(&mut data)?;
 
         blowfish.decrypt(&mut data);
+
+        let mut cursor = Cursor::new(&data);
+        T::read_options(&mut cursor, endian, (&size,))
+    } else if remap::active() {
+        // An opcode found while running comes in with its real opcode, but is read as its placeholder.
+        let mut data = vec![0; size.saturating_sub(IPC_HEADER_SIZE) as usize];
+        reader.read_exact(&mut data)?;
+        remap::rewrite_opcode(&mut data, remap::kind_of::<T::OpCode>(), remap::incoming);
 
         let mut cursor = Cursor::new(&data);
         T::read_options(&mut cursor, endian, (&size,))
