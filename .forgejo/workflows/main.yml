@@ -8,6 +8,7 @@ env:
   CARGO_TERM_COLOR: always
   # There's no point in building release binaries for PRs, they are slower to build and no one is going to download them
   CARGO_PROFILE: ${{ github.ref == 'refs/heads/master' && '--release' || '' }}
+  PROFILE_NAME: ${{ github.ref == 'refs/heads/master' && 'release' || 'debug' }}
 
 jobs:
   build-webassembly:
@@ -84,14 +85,14 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends build-essential cmake libclang-dev rsync
-    - name: Setup Target (Linux x64)
+    - name: Setup Target (Linux x86_64)
       if: matrix.target == 'x86_64-unknown-linux-gnu'
       run: |
         wget https://github.com/WorkingRobot/OodleUE/releases/download/2026-06-04-1357/clang-x64-release.zip
         unzip clang-x64-release.zip
         mkdir oodle
         cp lib/liboodle-network-shared.so oodle/
-    - name: Setup Target (Linux arm64)
+    - name: Setup Target (Linux aarch64)
       if: matrix.target == 'aarch64-unknown-linux-gnu'
       run: |
         wget https://github.com/WorkingRobot/OodleUE/releases/download/2026-06-04-1357/clang-arm64-release.zip
@@ -99,8 +100,8 @@ jobs:
         mkdir oodle
         cp lib/liboodle-network-shared.so oodle/
         sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross
-    - name: Setup Target (Windows x64)
-      if: matrix.target == 'aarch64-unknown-linux-gnu'
+    - name: Setup Target (Windows x86_64)
+      if: matrix.target == 'x86_64-pc-windows-gnu'
       run: |
         sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
     - name: Build
@@ -125,7 +126,7 @@ jobs:
         mv docs-build docs
     - name: Prepare artifacts
       run: |
-        mv target/${{ matrix.target }}/release/* .
+        mv target/${{ matrix.target }}/${{ env.PROFILE_NAME }}/* .
         echo "${{ github.sha }}" >> version.txt
     - name: Archive artifacts
       uses: actions/upload-artifact@v3
