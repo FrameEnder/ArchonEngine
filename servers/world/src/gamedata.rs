@@ -72,7 +72,7 @@ use kawari::common::{
 };
 use kawari::common::{LegacyEquipmentModelId, WeaponModelId, timestamp_secs};
 use kawari::config::get_config;
-use strum::FromRepr;
+use strum_macros::FromRepr;
 
 /// Convenient methods built on top of Physis to access data relevant to the server
 #[derive(Clone)]

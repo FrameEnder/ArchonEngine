@@ -1,6 +1,6 @@
 use binrw::binrw;
 use bitflags::bitflags;
-use strum::FromRepr;
+use strum_macros::FromRepr;
 
 #[binrw]
 #[derive(Clone, Debug, Default, Eq, PartialEq)]

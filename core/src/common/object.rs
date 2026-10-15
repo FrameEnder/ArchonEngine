@@ -2,7 +2,7 @@
 
 use binrw::binrw;
 use serde::Deserialize;
-use strum::FromRepr;
+use strum_macros::FromRepr;
 
 #[binrw]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Deserialize)]

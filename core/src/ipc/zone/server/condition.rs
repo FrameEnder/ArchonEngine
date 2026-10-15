@@ -1,6 +1,6 @@
 use binrw::binrw;
-use strum::{FromRepr, IntoEnumIterator};
-use strum_macros::{Display, EnumIter, EnumString};
+use strum::IntoEnumIterator;
+use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::common::value_to_flag_byte_index_value;
 
