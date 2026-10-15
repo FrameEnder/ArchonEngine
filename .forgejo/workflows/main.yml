@@ -98,13 +98,6 @@ jobs:
         unzip clang-arm64-release.zip
         mkdir oodle
         cp lib/liboodle-network-shared.so oodle/
-    - name: Download Oodle (Windows X64)
-      if: runner.target == 'x86_64-pc-windows-msvc'
-      run: |
-        wget https://github.com/WorkingRobot/OodleUE/releases/download/2026-06-04-1357/clang-cl-x64-release.zip
-        unzip clang-x64-release.zip
-        mkdir oodle
-        cp ar/oodle-network-shared.lib oodle/
     - name: Build
       env:
         CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
