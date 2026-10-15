@@ -25,5 +25,8 @@ mod send_helpers;
 #[cfg(feature = "server")]
 pub use send_helpers::{send_custom_world_packet, send_keep_alive, send_packet};
 
+/// Opcodes found while the server runs.
+pub mod remap;
+
 mod scrambler;
 pub use scrambler::{ScramblerKeyGenerator, ScramblerKeys, scramble_packet};

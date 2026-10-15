@@ -90,6 +90,7 @@ pub fn npc_behavior(
             && let Some(current_target) = current_target
             && !cast.is_some_and(|cast| cast.until > Instant::now())
             && *state != NpcState::Dead
+            && *state != NpcState::AoeTest
             && spawn.common.health_points > 0
             && spawn.common.name_id != STRIKING_DUMMY_NAME_ID
         {
@@ -192,9 +193,11 @@ pub fn npc_behavior(
             home,
             returning_home,
             cast,
+            parameters,
             ..
         } = actor
             && *state != NpcState::Dead
+            && *state != NpcState::AoeTest
             && spawn.common.health_points > 0
         {
             // NOTE: this is *intentional* as I believe in retail the timing of actions are dependent on when the actor spawned
@@ -433,12 +436,15 @@ pub fn npc_behavior(
                     match &timepoint.data {
                         TimepointData::Action { action_id, .. } => {
                             if spawn.common.target_id.object_id.is_valid() && can_take_action {
-                                let cast_time;
+                                let (category, cast_time);
                                 {
                                     let mut game_data = game_data.lock();
-                                    cast_time = game_data.get_casttime(*action_id).unwrap(); // TODO: take into account the haste stat like the client does
+                                    (category, cast_time) =
+                                        game_data.get_casttime(*action_id).unwrap();
                                 }
-                                let cast_time_seconds = (cast_time as f32 * 100.0) / 1000.0; // TODO: just change how the Duration is interpreted instead of this nonsense
+                                let adjusted_cast_time =
+                                    parameters.get_adjusted_cast_time(category, cast_time);
+                                let cast_time_seconds = (adjusted_cast_time as f32) / 1000.0;
                                 let request = ActionRequest {
                                     action_id: *action_id,
                                     action_type: ActionType::Action,
@@ -486,6 +492,9 @@ pub fn npc_behavior(
                     let mut game_data = game_data.lock();
                     cast_time = game_data
                         .get_casttime(timeline.autoattack_action_id)
+                        .map(|(category, cast_time)| {
+                            parameters.get_adjusted_cast_time(category, cast_time)
+                        })
                         .unwrap_or(0);
                 }
                 let request = ActionRequest {
@@ -495,7 +504,7 @@ pub fn npc_behavior(
                     target: spawn.common.target_id,
                     ..Default::default()
                 };
-                let cast_time_seconds = (cast_time as f32 * 100.0) / 1000.0;
+                let cast_time_seconds = cast_time as f32 / 1000.0;
                 *cast = Some(NpcCast {
                     until: Instant::now() + Duration::from_secs_f32(cast_time_seconds),
                     target_position: target_actor_pos
@@ -611,7 +620,7 @@ pub fn npc_behavior(
                 Duration::from_secs_f32(cast_time),
                 QueuedTaskData::CastAction {
                     request: request.clone(),
-                    interruptible: true, // TODO: not always true?
+                    interruptible: false, // TODO
                 },
             );
         }
@@ -652,7 +661,7 @@ pub fn npc_behavior(
             ..
         } = actor
         {
-            if *state == NpcState::Dead {
+            if *state == NpcState::Dead || *state == NpcState::AoeTest {
                 continue;
             }
 

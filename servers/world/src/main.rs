@@ -433,6 +433,7 @@ async fn client_chat_loop(
                                             }
                                             ClientChatIpcData::Unknown { unk } => {
                                                 tracing::warn!("Unknown chat packet {:?} recieved ({} bytes)", data.header.op_code, unk.len());
+                                                kawari_world::fork_opcodes::hint_unknown_packet("ClientChatIpcType", kawari::packet::PredefinedOpcode::get_opcode(&data.header.op_code), unk.len());
                                             }
                                         }
                                     }
@@ -2769,7 +2770,7 @@ async fn process_packet(
                                     fellowship_name: "Kawari Fellowship Test".to_string(),
                                     recruiter_name: "Kawari Player".to_string(),
                                     master_name: "Kawari Player".to_string(),
-                                    fellowship_description: b"The Fellowship's description.".into(),
+                                    fellowship_description: "The Fellowship's description.".into(),
                                 },
                                 FellowshipSearchInfo::default(),
                                 FellowshipSearchInfo::default(),
@@ -3915,6 +3916,11 @@ async fn process_packet(
                                 data.header.op_code,
                                 unk.len()
                             );
+                            kawari_world::fork_opcodes::hint_unknown_packet(
+                                "ClientZoneIpcType",
+                                kawari::packet::PredefinedOpcode::get_opcode(&data.header.op_code),
+                                unk.len(),
+                            );
                         }
                     }
                 }
@@ -4724,6 +4730,8 @@ async fn main() {
     let game_data = Arc::new(Mutex::new(GameData::new()));
 
     tracing::info!("Server started on {addr}");
+    kawari_world::fork_opcodes::scan_executable(&config.filesystem.game_path());
+    kawari_world::fork_opcodes::log_outstanding();
 
     {
         let mut lua = lua.lock();

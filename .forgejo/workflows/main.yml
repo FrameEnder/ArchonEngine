@@ -10,12 +10,14 @@ env:
 jobs:
   build-webassembly:
     name: "Build (WebAssembly)"
-    runs-on: ubuntu-latest
+    runs-on: docker
     # Skip running on PR events that come from the same repository, it will just duplicate the branch action
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
 
     steps:
     - uses: actions/checkout@v6
+    - name: Setup Rust
+      uses: https://github.com/dtolnay/rust-toolchain@stable
     - name: Add WebAssembly Target
       run: |
         rustup target add wasm32-unknown-unknown
@@ -30,22 +32,13 @@ jobs:
       run: cargo build --package kawari --release --verbose --target=wasm32-unknown-unknown --lib --no-default-features
 
   build:
-    name: "Build"
-    runs-on: ${{ matrix.os }}
+    name: "Build (${{ matrix.os_name }} ${{ matrix.target_name }})"
+    runs-on: docker
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
 
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
-        target: [x86_64-unknown-linux-gnu, x86_64-pc-windows-msvc, aarch64-unknown-linux-gnu]
-        exclude:
-        - os: windows-latest
-          target: x86_64-unknown-linux-gnu
-        - os: windows-latest
-          target: aarch64-unknown-linux-gnu
-        - os: ubuntu-latest
-          target: x86_64-pc-windows-msvc
         include:
         - target: x86_64-unknown-linux-gnu
           target_name: x86_64
@@ -53,56 +46,52 @@ jobs:
         - target: aarch64-unknown-linux-gnu
           target_name: aarch64
           os_name: linux
-        - target: x86_64-pc-windows-msvc
+        - target: x86_64-pc-windows-gnu
           target_name: x86_64
           os_name: windows
 
     steps:
     - uses: actions/checkout@v6
+    - name: Setup Rust
+      uses: https://github.com/dtolnay/rust-toolchain@stable
+      with:
+        components: "clippy rustfmt"
     - uses: actions/cache@v5
       id: cache-deps
       with:
         path: |
           ~/.cargo
           target/
-        key: ${{ matrix.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: cargo-${{ hashFiles('**/Cargo.lock') }}
     - if: steps.cache-deps.outputs.cache-hit != 'true'
       run: |
         cargo install --git https://github.com/rust-lang/mdBook.git mdbook
-    - if: matrix.target == 'aarch64-unknown-linux-gnu'
+    - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross
-    - name: Add Target
+        sudo apt-get install -y --no-install-recommends build-essential gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross cmake libclang-dev gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 rsync
+    - name: Add target
       run: |
         rustup target add ${{ matrix.target }}
-    - uses: robinraju/release-downloader@v1
+    - name: Download Oodle (Linux X64)
       if: matrix.target == 'x86_64-unknown-linux-gnu'
-      with:
-        repository: 'WorkingRobot/OodleUE'
-        fileName: 'clang-x64-release.zip'
-        latest: true
-        extract: true
-    - uses: robinraju/release-downloader@v1
-      if: matrix.target == 'aarch64-unknown-linux-gnu'
-      with:
-        repository: 'WorkingRobot/OodleUE'
-        fileName: 'clang-arm64-release.zip'
-        latest: true
-        extract: true
-    - if: matrix.os == 'ubuntu-latest'
       run: |
+        wget https://github.com/WorkingRobot/OodleUE/releases/download/2026-06-04-1357/clang-x64-release.zip
+        unzip clang-x64-release.zip
         mkdir oodle
         cp lib/liboodle-network-shared.so oodle/
-    - uses: robinraju/release-downloader@v1
-      if: matrix.os == 'windows-latest'
-      with:
-        repository: 'WorkingRobot/OodleUE'
-        fileName: 'clang-cl-x64-release.zip'
-        latest: true
-        extract: true
-    - if: runner.os == 'windows-latest'
+    - name: Download Oodle (Linux ARM64)
+      if: matrix.target == 'aarch64-unknown-linux-gnu'
       run: |
+        wget https://github.com/WorkingRobot/OodleUE/releases/download/2026-06-04-1357/clang-arm64-release.zip
+        unzip clang-arm64-release.zip
+        mkdir oodle
+        cp lib/liboodle-network-shared.so oodle/
+    - name: Download Oodle (Windows X64)
+      if: runner.target == 'x86_64-pc-windows-msvc'
+      run: |
+        wget https://github.com/WorkingRobot/OodleUE/releases/download/2026-06-04-1357/clang-cl-x64-release.zip
+        unzip clang-x64-release.zip
         mkdir oodle
         cp ar/oodle-network-shared.lib oodle/
     - name: Build
@@ -116,7 +105,7 @@ jobs:
       if: matrix.target == 'x86_64-unknown-linux-gnu'
       run: cargo fmt --check
     - name: Run tests
-      if: matrix.target != 'aarch64-unknown-linux-gnu'
+      if: matrix.target == 'x86_64-unknown-linux-gnu'
       run: cargo test --verbose --target ${{ matrix.target }}
       env:
         CI: 1
@@ -130,7 +119,7 @@ jobs:
         mv target/${{ matrix.target }}/release/* .
         echo "${{ github.sha }}" >> version.txt
     - name: Archive artifacts
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v3
       with:
         name: kawari-${{ matrix.os_name }}-${{ matrix.target_name }}
         path: |
@@ -171,13 +160,17 @@ jobs:
 
   deploy:
     name: "Deploy"
-    runs-on: ubuntu-latest
+    runs-on: docker
     needs: build
     if: github.ref == 'refs/heads/master'
 
     steps:
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends rsync
     - name: Download artifacts
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v3
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Set up SSH key

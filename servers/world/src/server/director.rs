@@ -1102,7 +1102,11 @@ pub fn director_tick(
                     .unwrap_or_default();
                 let cast_time = {
                     let mut game_data = game_data.lock();
-                    game_data.get_casttime(*action_id).unwrap_or(0) as f32 / 10.0
+                    game_data
+                        .get_casttime(*action_id)
+                        .map(|(_, cast_time)| cast_time)
+                        .unwrap_or(0) as f32
+                        / 1000.0
                 };
                 let request = ActionRequest {
                     action_id: *action_id,
@@ -1213,7 +1217,7 @@ pub fn director_tick(
                     channel: ChatChannelType::Say,
                     // BNpcName is lower case ("short-tempered thaumaturge"); retail shows "Short-tempered Thaumaturge".
                     sender_name: capitalize_words(&name.unwrap_or_default()),
-                    message: text.into(),
+                    message: text,
                     ..Default::default()
                 }));
                 let mut network = network.lock();
@@ -1706,9 +1710,10 @@ pub fn handle_director_messages(
 /// Handles an incoming director trigger from a client.
 pub fn handle_director_trigger(
     network: Arc<Mutex<NetworkState>>,
+    game_data: Arc<Mutex<GameData>>,
     from_actor_id: ObjectId,
     handler_id: HandlerId,
-    _trigger: &DirectorTrigger,
+    trigger: &DirectorTrigger,
 ) {
     if handler_id.handler_type() == HandlerType::GimmickRect {
         let ipc =
@@ -1722,6 +1727,64 @@ pub fn handle_director_trigger(
         network.send_to_by_actor_id(
             from_actor_id,
             FromServer::PacketSegment(ipc, from_actor_id),
+            DestinationNetwork::ZoneClients,
+        );
+    }
+    if handler_id.handler_type() == HandlerType::GoldSaucer
+        && let DirectorTrigger::Unknown { id, .. } = trigger
+        && *id == 0
+    {
+        let gate_id = 12; // TODO: GATE hardcoded
+        let row;
+        {
+            let mut game_data = game_data.lock();
+            let Some(gate_row) = game_data.get_gate(gate_id) else {
+                return;
+            };
+            row = gate_row;
+        }
+
+        let mut network = network.lock();
+        network.send_to_by_actor_id(
+            from_actor_id,
+            FromServer::ActorControlSelf(ActorControlCategory::DirectorEvent {
+                handler_id,
+                event: DirectorEvent::Unknown {
+                    id: 9,
+                    arg1: gate_id,
+                    arg2: 4, // 4 for AFO, 12 for Cliffhanger?
+                    arg3: 0,
+                    arg4: 0,
+                },
+            }),
+            DestinationNetwork::ZoneClients,
+        );
+        network.send_to_by_actor_id(
+            from_actor_id,
+            FromServer::ActorControlSelf(ActorControlCategory::DirectorEvent {
+                handler_id,
+                event: DirectorEvent::Unknown {
+                    id: 6,
+                    arg1: row.GFATEParams[0].LGBPopRange,
+                    arg2: timestamp_secs() + 1000, // TODO: hardcoded duration
+                    arg3: 0,
+                    arg4: 0,
+                },
+            }),
+            DestinationNetwork::ZoneClients,
+        );
+        network.send_to_by_actor_id(
+            from_actor_id,
+            FromServer::ActorControlSelf(ActorControlCategory::DirectorEvent {
+                handler_id,
+                event: DirectorEvent::Unknown {
+                    id: 11,
+                    arg1: 3,
+                    arg2: 0,
+                    arg3: 0,
+                    arg4: 0,
+                },
+            }),
             DestinationNetwork::ZoneClients,
         );
     }

@@ -98,42 +98,46 @@ pub fn handle_action_messages(
     msg: &ToServer,
 ) -> bool {
     if let ToServer::ActionRequest(from_id, from_actor_id, request) = msg {
-        let cast_time;
+        let (category, cast_time);
         {
             let mut game_data = game_data.lock();
-            cast_time = game_data.get_casttime(request.action_id).unwrap(); // TODO: take into account the haste stat like the client does
+            (category, cast_time) = game_data.get_casttime(request.action_id).unwrap();
         }
-
-        let mut delay_milliseconds = cast_time as u64 * 100;
 
         let mut data = data.lock();
         let Some(instance) = data.find_actor_instance_mut(*from_actor_id) else {
             return true;
         };
 
+        let Some(actor) = instance.find_actor(*from_actor_id) else {
+            return true;
+        };
+
+        let parameters = match actor {
+            NetworkedActor::Player { parameters, .. } => parameters,
+            NetworkedActor::Npc { parameters, .. } => parameters,
+            _ => unreachable!(),
+        };
+        let mut adjusted_cast_time = parameters.get_adjusted_cast_time(category, cast_time);
+
         // Swiftcast makes the next spell instant, and Presence of Mind reduces cast times by 20%.
-        if delay_milliseconds > 0
-            && let Some(actor) = instance.find_actor(*from_actor_id)
+        if adjusted_cast_time > 0
             && let Some(effects) = actor.status_effects()
         {
             if effects.get(EFFECT_SWIFTCAST).is_some() {
-                delay_milliseconds = 0;
+                adjusted_cast_time = 0;
             } else if effects.get(EFFECT_PRESENCE_OF_MIND).is_some() {
-                delay_milliseconds = delay_milliseconds * 80 / 100;
+                adjusted_cast_time = adjusted_cast_time * 80 / 100;
             }
         }
 
-        if delay_milliseconds > 0 {
-            let Some(actor) = instance.find_actor(*from_actor_id) else {
-                return true;
-            };
-
+        if adjusted_cast_time > 0 {
             let actor_cast = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
                 spell_id: request.action_id as u16,
                 action_id: request.action_id,
                 action_type: request.action_type,
                 omen_delay: 0,
-                cast_time: delay_milliseconds as f32 / 1000.0,
+                cast_time: adjusted_cast_time as f32 / 1000.0,
                 target: request.target.object_id,
                 rotation: request.rotation1,
                 interruptible: false,
@@ -152,10 +156,10 @@ pub fn handle_action_messages(
         instance.insert_task(
             *from_id,
             *from_actor_id,
-            Duration::from_millis(delay_milliseconds),
+            Duration::from_millis(adjusted_cast_time as u64),
             QueuedTaskData::CastAction {
                 request: request.clone(),
-                interruptible: delay_milliseconds > 0,
+                interruptible: adjusted_cast_time > 0,
             },
         );
 
@@ -230,7 +234,9 @@ pub fn execute_action(
         let mut game_data = game_data.lock();
         if request.action_type == ActionType::Action {
             action_info = game_data.get_action_info(request.action_id);
-            has_cast_time = game_data.get_casttime(request.action_id).unwrap_or(0) > 0;
+            has_cast_time = game_data
+                .get_casttime(request.action_id)
+                .is_some_and(|(_, cast_time)| cast_time > 0);
         } else {
             action_info = None;
             has_cast_time = false;
@@ -446,7 +452,7 @@ pub fn execute_action(
 
             // Handle combos
             {
-                // TODO: don't send this for auto-attacks. it should be harmless in the mean time
+                // TODO: don't send this for auto-attacks. it should be harmless in the meantime
 
                 let Some(actor) = instance.find_actor_mut(from_actor_id) else {
                     return;
@@ -538,7 +544,7 @@ pub fn execute_action(
                                 request.target.object_id
                             };
                             let Some(actor) = instance.find_actor_mut(healed) else {
-                                return;
+                                continue;
                             };
                             let common_spawn = actor.get_common_spawn_mut();
                             // You can't heal the dead, that's what Raise is for.
@@ -564,7 +570,7 @@ pub fn execute_action(
                         } => {
                             let Some(actor) = instance.find_actor_mut(request.target.object_id)
                             else {
-                                return;
+                                continue;
                             };
                             let common_spawn = actor.get_common_spawn_mut();
                             if common_spawn.name_id != STRIKING_DUMMY_NAME_ID {
@@ -584,7 +590,7 @@ pub fn execute_action(
                         }
                         TargetEffectKind::SummonPet { .. } => {
                             let Some(actor) = instance.find_actor(from_actor_id) else {
-                                return;
+                                continue;
                             };
 
                             let pet_id = 23; // TODO: hardcoded
@@ -646,7 +652,7 @@ pub fn execute_action(
                         }
                         TargetEffectKind::SummonCompanion { .. } => {
                             let Some(actor) = instance.find_actor(from_actor_id) else {
-                                return;
+                                continue;
                             };
 
                             let mut network = network.lock();
@@ -1429,7 +1435,13 @@ fn apply_caster_results(
     }
 }
 
-pub fn cancel_action(network: Arc<Mutex<NetworkState>>, from_id: ClientId, action_id: u32) {
+pub fn cancel_action(
+    network: Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    from_id: ClientId,
+    actor_id: ObjectId,
+    action_id: u32,
+) {
     let msg = FromServer::ActorControlSelf(ActorControlCategory::CancelCast {
         unk1: 538,
         unk2: 1,
@@ -1438,6 +1450,13 @@ pub fn cancel_action(network: Arc<Mutex<NetworkState>>, from_id: ClientId, actio
 
     let mut network = network.lock();
     network.send_to(from_id, msg, DestinationNetwork::ZoneClients);
+
+    // An interrupted NPC can move and act again straight away.
+    if let Some(actor) = instance.find_actor_mut(actor_id)
+        && let NetworkedActor::Npc { cast, .. } = actor
+    {
+        *cast = None;
+    }
 }
 
 /// Handles normal actions, powered by Lua.

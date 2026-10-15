@@ -141,7 +141,7 @@ impl Zone {
         // e.g. ffxiv/fst_f1/fld/f1f3/level/f1f3
         let bg_path = row.Bg;
         if bg_path.is_empty() {
-            tracing::warn!("Invalid zone id {id}, allowing anyway...");
+            tracing::warn!("Bg path is empty for zone id {id}, allowing anyway...");
             return zone;
         }
 

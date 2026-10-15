@@ -17,8 +17,9 @@ These special debug commands start with `!` and are custom to Kawari.
 | `!fatecomplete`| Completes the FATE that you're standing in. |
 | `!festival <id1> <id2> <id3> <id4>` | Sets the festival in the current zone. Multiple festivals can be set together to create interesting effects. |
 | `!directorscene <scene> <flags in hex (optional, 40000)>` | Play a scene of the current content director (such as a quest battle's), the way its victory fanfare (60001) is played. |
+| `!forkopcodes` | List this fork's own opcodes (`resources/data/fork_opcodes.yml`): which are known for the current game version, and how to find the rest. |
 | `!finishevent` | Forcefully finishes the current event, useful if the script has an error and you're stuck talking to something. |
-| `!gate` | Spawns a non-functional debug GATE. |
+| `!gate <id>` | Spawns a non-functional debug GATE. |
 | `!item <name>` | Gives you an item matching by name. |
 | `!inspect` | Prints info about the player. |
 | `!itemlevel <level>` | Temporarily set your own item level. |
@@ -55,3 +56,4 @@ These special debug commands start with `!` and are custom to Kawari.
 | `!treasurehunt` | Spawns a debug treasure hunt at your location. |
 | `!leve <id>` | Begins a debug levequest at your location. |
 | `!complete_duty` | Forcefully completes the current duty and makes the exit visible. |
+| `!aoetest <id>` | Spawns the AoE tester with a given action ID. |

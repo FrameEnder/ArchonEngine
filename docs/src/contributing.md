@@ -1,6 +1,6 @@
 # Contributing
 
-Pull requests for new scripts, features, patch updates, or fixes to documentation are welcome. You can do so through [GitHub](https://github.com/redstrate/Kawari).
+Pull requests for new scripts, features, patch updates, or fixes to documentation are welcome. You can do so through [Codeberg](https://codeberg.org/redstrate/Kawari).
 
 For informal development discussion outside of GitHub, join the [Kawari Dev Chat](https://matrix.to/#/#kawari-welcome:pyra.sh).
 

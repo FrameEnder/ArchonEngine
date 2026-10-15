@@ -55,6 +55,9 @@ pub use item_info::ItemInfo;
 mod event_scene;
 pub use event_scene::{EventScene, SceneFlags};
 
+mod event_notice;
+pub use event_notice::EventNotice;
+
 mod event_start;
 pub use event_start::{EventStart, EventType};
 
@@ -260,6 +263,8 @@ pub enum ServerZoneIpcData {
     EventScene64(#[brw(args { max_params: 64 } )] EventScene),
     EventScene128(#[brw(args { max_params: 128 } )] EventScene),
     EventScene255(#[brw(args { max_params: 255 } )] EventScene),
+    EventNotice2(#[brw(args { max_args: 2 } )] EventNotice),
+    EventNotice4(#[brw(args { max_args: 4 } )] EventNotice),
     EventStart(EventStart),
     UpdateHpMpTp {
         /// The new health point value.
@@ -498,7 +503,7 @@ pub enum ServerZoneIpcData {
     InviteCharacterResult {
         /// The invited character's content id.
         content_id: u64,
-        /// The pre-defined LogMessage to display. 0 seems to indicate no errors, and the client will display a default message such as "You invite <name> to a party."
+        /// The pre-defined LogMessage to display. 0 seems to indicate no errors, and the client will display a default message such as "You invite \[name\] to a party."
         message_id: u16,
         #[brw(pad_before = 2)]
         /// The invited character's home world id.

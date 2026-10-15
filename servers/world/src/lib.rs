@@ -5,6 +5,9 @@ pub mod capture;
 pub use chat_connection::{ChatConnection, ChatConnectionChannels, ChatPlayerData};
 
 mod zone_connection;
+
+/// Help finding the fork's own opcodes again after a game update.
+pub mod fork_opcodes;
 use diesel::backend::Backend;
 use diesel::deserialize::{self, FromSqlRow};
 use diesel::expression::AsExpression;
@@ -140,7 +143,7 @@ define_sql_array!(GlassesIds, u16, 2);
 define_sql_array!(SharedFates, u8, SHARED_FATES_SIZE);
 
 /// Helper for tests to initialize GameData, instead of each test creating its own.
-/// Please call `tracing_subscriber::fmt::init()` so this is printed in the CI log!
+/// Please call `tracing_subscriber::fmt::try_init()` so this is printed in the CI log!
 #[cfg(test)]
 pub fn test_game_data() -> Option<&'static mut GameData> {
     // Be able to skip these on the CI as we don't have game data there (yet)

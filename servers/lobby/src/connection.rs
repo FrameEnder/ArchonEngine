@@ -776,8 +776,7 @@ mod tests {
 
     #[test]
     fn test_validate_client_version_string() {
-        // Uncomment if interested in seeing output from the test!
-        //tracing_subscriber::fmt::init();
+        let _ = tracing_subscriber::fmt::try_init();
 
         // These strings match 7.3h1 version checks, but they don't need to be updated for testing purposes.
         const BASE_STR: &str = "ffxiv_dx11.exe/50154824/60b27b131deebe9b2b7914012618293c85aff247";

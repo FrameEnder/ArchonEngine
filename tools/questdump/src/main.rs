@@ -203,8 +203,8 @@ impl GameData {
             }
             index.push(QuestEntry {
                 row_id,
-                script: row.Id.clone(),
-                name: row.Name.clone(),
+                script: row.Id.to_string(),
+                name: row.Name.to_string(),
                 genre: row.JournalGenre,
                 previous: row
                     .PreviousQuest
@@ -226,7 +226,7 @@ impl GameData {
         if let Ok(sheet) = ENpcResidentSheet::read_from(&mut resolver, language) {
             for (id, row) in sheet.into_iter().flatten_subrows() {
                 if !row.Singular.is_empty() {
-                    npc_names.insert(id, row.Singular.clone());
+                    npc_names.insert(id, row.Singular.to_string());
                 }
             }
         }
@@ -234,7 +234,7 @@ impl GameData {
         if let Ok(sheet) = EObjNameSheet::read_from(&mut resolver, language) {
             for (id, row) in sheet.into_iter().flatten_subrows() {
                 if !row.Singular.is_empty() {
-                    eobj_names.insert(id, row.Singular.clone());
+                    eobj_names.insert(id, row.Singular.to_string());
                 }
             }
         }
@@ -242,7 +242,7 @@ impl GameData {
         if let Ok(sheet) = BNpcNameSheet::read_from(&mut resolver, language) {
             for (id, row) in sheet.into_iter().flatten_subrows() {
                 if !row.Singular.is_empty() {
-                    bnpc_names.insert(id, row.Singular.clone());
+                    bnpc_names.insert(id, row.Singular.to_string());
                 }
             }
         }
@@ -251,7 +251,7 @@ impl GameData {
         if let Ok(sheet) = PlaceNameSheet::read_from(&mut resolver, language) {
             for (id, row) in sheet.into_iter().flatten_subrows() {
                 if !row.Name.is_empty() {
-                    place_names.insert(id, row.Name.clone());
+                    place_names.insert(id, row.Name.to_string());
                 }
             }
         }
@@ -259,7 +259,7 @@ impl GameData {
         if let Ok(sheet) = ClassJobCategorySheet::read_from(&mut resolver, language) {
             for (id, row) in sheet.into_iter().flatten_subrows() {
                 if !row.Name.is_empty() {
-                    class_categories.insert(id, row.Name.clone());
+                    class_categories.insert(id, row.Name.to_string());
                 }
             }
         }
@@ -453,7 +453,7 @@ fn quest_json(data: &GameData, row_id: u32) -> Option<Value> {
         .QuestParams
         .iter()
         .filter(|param| !param.ScriptInstruction.is_empty())
-        .map(|param| named(&param.ScriptInstruction, param.ScriptArg))
+        .map(|param| named(&param.ScriptInstruction.to_string(), param.ScriptArg))
         .collect();
 
     let todos: Vec<Value> = row
@@ -505,8 +505,8 @@ fn quest_json(data: &GameData, row_id: u32) -> Option<Value> {
     Some(json!({
         "quest_id": row_id - QuestSheet::STARTING_ROW,
         "event_id": row_id,
-        "script": row.Id,
-        "name": row.Name,
+        "script": row.Id.to_string(),
+        "name": row.Name.to_string(),
         "level": row.ClassJobLevel[0],
         "journal_genre": row.JournalGenre,
         "previous_quests": row.PreviousQuest.iter().filter(|x| **x != 0).map(|x| x - QuestSheet::STARTING_ROW).collect::<Vec<_>>(),
@@ -515,7 +515,7 @@ fn quest_json(data: &GameData, row_id: u32) -> Option<Value> {
         "class_category": data.class_categories.get(&(row.ClassJobCategory0 as u32)),
         "issuer_start": named("ACTOR", row.IssuerStart),
         "target_end": named("ACTOR", row.TargetEnd),
-        "client_script": quest_script_path(&row.Id),
+        "client_script": quest_script_path(&row.Id.to_string()),
         "params": params,
         "todos": todos,
         "listeners": listeners,

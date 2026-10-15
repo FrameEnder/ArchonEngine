@@ -1,0 +1,73 @@
+# Opcodes this fork knows that upstream's opcodes.yml doesn't.
+#
+# They live here, not in opcodes.yml, so upstream's patch updates merge without touching them. The build merges them
+# into the same generated enums.
+#
+# Opcodes change with every game version, so each entry says which client version its opcode was found on
+# (found_on.) An entry whose found_on isn't SUPPORTED_GAME_VERSION (constants.yml), or that has no opcode, is
+# "outstanding": the build warns about it and gives it a placeholder opcode the game never uses, so it can't be mistaken
+# for some other packet until it's found again.
+#
+# Reading them from the game: the world server reads ffxiv_dx11.exe from the game folder at startup (when its
+# ffxivgame.ver is SUPPORTED_GAME_VERSION) and runs each entry's finders (find):
+#   * immediate: the opcode is written into the code. `pattern` (hex bytes, ?? for any) is searched for, and the opcode
+#     is the `width`-byte number `offset` bytes in. With `with: <name>`, only matches in a function that also writes
+#     that packet's (known) opcode count, to tell apart code that looks the same.
+#   * handler: `pattern` is in the packet's handler in the client, and the opcode is the dispatcher case that leads
+#     there. Packets that share a handler (e.g. one in several sizes) can only be confirmed this way, not found.
+# An outstanding opcode that's read is used straight away, and the log says what to save here. A known one is checked
+# against its finders, so one that stops working is noticed. tools/opcodescan does the same from the command line
+# (cargo run --release -p kawari-opcodescan -- <game folder>), and has commands for exploring the executable.
+#
+# Finding an outstanding one by hand:
+#   * Client packets (Client*IpcType): do what how_to_find says on Kawari. The server warns about the unknown packet,
+#     and when its size matches an outstanding entry it says which one it probably is. Put that opcode here and set
+#     found_on to the current version.
+#   * Server packets (Server*IpcType): Kawari can't see these fail. Record the same thing on retail (Kawari Recorder) on
+#     the same game version, and look the packet up there.
+#   * In game, !forkopcodes lists them all and what to do for each.
+#
+# If upstream adds an opcode with the same name, theirs is used and the build says this entry can go.
+#
+# Fields: name, comment, size (data only, without headers, as in opcodes.yml), opcode, found_on, how_to_find, find.
+# Keep double quotes out of comments.
+
+ClientZoneIpcType:
+- name: EventReturnHandler16
+  comment: A scene finished with up to 16 results, e.g. handing three kinds of items over in a quest's NPC trade (Surveying the Damage.)
+  # 856 on 2026.09.15.
+  opcode: 200
+  size: 72
+  found_on: 2026.10.06.0000.0000
+  how_to_find: In Surveying the Damage, hand Pauline all three items in one trade (//gm quest incomplete 175, //gm quest accept 175, //gm quest sequence 175 1, then search the four spots in the cave.)
+  find:
+  # The client picks the EventReturnHandler by how many results a scene has: up to 2, 4, 8, 16... Its 16 case writes this
+  # opcode and the packet's size with its header (0x58 = 88.) The event yield sender has the same code, so only the
+  # function that also writes EventReturnHandler2's opcode counts.
+  - immediate:
+      pattern: 40 80 FF 10 77 ?? 0F 10 03 C7 44 24 20 ?? ?? ?? ?? 48 8B C8 0F 10 4B 10 48 C7 44 24 28 58 00 00 00
+      offset: 13
+      width: 4
+      with: EventReturnHandler2
+
+ServerZoneIpcType:
+- name: EventNotice2
+  comment: A notice from an event with up to 2 arguments, e.g. a quest's progress pop-up as an enemy is defeated.
+  opcode: 386
+  size: 16
+  found_on: 2026.10.06.0000.0000
+  how_to_find: On retail with the Kawari Recorder, kill an enemy a quest counts (e.g. You Shall Not Trespass) - its pop-up is this packet, sent to the quest's handler with 2 args or fewer.
+  find:
+  # Every size of the notice goes to this one handler, so the finder can only say which opcodes are notices (it confirms
+  # this one is still among them); a recording says which size is which.
+  - handler:
+      pattern: 41 0F B6 D9 49 8B F8 0F B6 F2 8B E9 E8 ?? ?? ?? ?? 4C 8B CF 88 5C 24 20 44 0F B6 C6 8B D5 48 8B C8 E8
+- name: EventNotice4
+  comment: A notice from an event with 3 or 4 arguments.
+  opcode: 210
+  size: 24
+  found_on: 2026.10.06.0000.0000
+  how_to_find: On retail with the Kawari Recorder, a quest notice with 3 arguments (e.g. in Salvaging the Scene) - sent to the quest's handler.
+  find:
+  - handler:
+      pattern: 41 0F B6 D9 49 8B F8 0F B6 F2 8B E9 E8 ?? ?? ?? ?? 4C 8B CF 88 5C 24 20 44 0F B6 C6 8B D5 48 8B C8 E8

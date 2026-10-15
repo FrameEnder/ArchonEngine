@@ -15,7 +15,7 @@ This guide covers how to set up a local development environment.
 Clone the Kawari repository:
 
 ```shell
-git clone https://github.com/redstrate/Kawari.git
+git clone https://codeberg.org/redstrate/Kawari.git
 ```
 
 Place the Oodle library for your platform in a new directory called `oodle` inside of the `Kawari` directory.

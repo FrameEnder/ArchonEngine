@@ -7,7 +7,7 @@ use crate::{
 };
 use icarus::ParamGrow::ParamGrowRow;
 use kawari::{
-    common::{MAXIMUM_RESTED_EXP, ObjectId},
+    common::{ActionCategory, MAXIMUM_RESTED_EXP, ObjectId},
     ipc::zone::{
         ActorControlCategory, PlayerStats, ServerZoneIpcData, ServerZoneIpcSegment, UpdateClassInfo,
     },
@@ -135,6 +135,10 @@ pub struct BaseParameters {
     /// The class's modifier (percent) for the stat its physical attacks use, and for its primary stat.
     pub physical_stat_modifier: u32,
     pub primary_stat_modifier: u32,
+
+    // Needed for cast time calculations
+    pub base_speed: i32,
+    pub level_modifier: i32,
 }
 
 impl BaseParameters {
@@ -257,6 +261,10 @@ impl BaseParameters {
 
         // This is fixed and isn't modified by any items in retail, so it's safe to be set here.
         self.mp = param_grow.MpModifier as u32;
+
+        // Needed for cast time calculations
+        self.base_speed = param_grow.BaseSpeed;
+        self.level_modifier = param_grow.LevelModifier;
 
         if self.retail_formula {
             // On retail, a player's substats start at the level's sub modifier, and Determination at its main one.
@@ -445,6 +453,34 @@ impl BaseParameters {
                 }
             }
         }
+    }
+
+    /// Takes into account the haste and skill/speed stat based on `Client::Game::ActionManager::GetAdjustedCastTime`.
+    /// `cast_time` should be in milliseconds!
+    /// Returns a cast time in milliseconds.
+    pub fn get_adjusted_cast_time(&self, action_category: ActionCategory, cast_time: u32) -> i32 {
+        // It only applies to these kinds of actions...
+        if action_category != ActionCategory::Invalid
+            && action_category != ActionCategory::AutoAttack
+            && action_category != ActionCategory::Spell
+            && action_category != ActionCategory::Weaponskill
+        {
+            return cast_time as i32;
+        }
+
+        let stat_speed_value = match action_category {
+            ActionCategory::Weaponskill => self.skill_speed as i32,
+            ActionCategory::Spell => self.spell_speed as i32,
+            _ => self.base_speed,
+        };
+
+        let ivar12 = ((self.base_speed - stat_speed_value) * 0x82) / (self.level_modifier) + 1000;
+        let mut new_val = 0;
+        if -1 < ivar12 {
+            new_val = ivar12;
+        }
+
+        (self.haste as i32 * ((new_val * cast_time as i32) / 1000)) / 100
     }
 }
 
@@ -917,5 +953,37 @@ mod tests {
             ..conjurer
         };
         assert_eq!(level_6.calc_auto_attack_damage(90), 6);
+    }
+
+    // RDM lv 52 as of 7.56h1
+    #[test]
+    fn test_jolt_cast_time() {
+        let mut stat = BaseParameters::default();
+        stat.level_modifier = 392;
+        stat.base_speed = 344;
+        stat.spell_speed = 385;
+        stat.haste = 100;
+
+        // 1.97 seconds
+        assert_eq!(
+            stat.get_adjusted_cast_time(ActionCategory::Spell, 2000),
+            1974
+        );
+    }
+
+    // THM lv 31 as of 7.56h1
+    #[test]
+    fn test_blizzard_cast_time() {
+        let mut stat = BaseParameters::default();
+        stat.level_modifier = 181;
+        stat.base_speed = 181;
+        stat.spell_speed = 181;
+        stat.haste = 100;
+
+        // 1.97 seconds
+        assert_eq!(
+            stat.get_adjusted_cast_time(ActionCategory::Spell, 2000),
+            2000
+        );
     }
 }

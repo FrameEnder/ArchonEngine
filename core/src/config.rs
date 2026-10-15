@@ -485,7 +485,7 @@ impl WorldConfig {
 }
 
 /// Configuration for the game filesystem.
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize)]
 pub struct FilesystemConfig {
     /// Path to the game directory. For example, "C:\Program Files (x86)\SquareEnix\FINAL FANTASY XIV - A Realm Reborn\game".
     #[serde(default)]
@@ -512,6 +512,18 @@ pub struct FilesystemConfig {
     /// Note that drop-ins and timelines are *not* combined. Web templates do not respect this option.
     #[serde(default)]
     pub additional_resource_paths: Vec<String>,
+}
+
+impl Default for FilesystemConfig {
+    fn default() -> Self {
+        Self {
+            game_path: Default::default(),
+            additional_search_paths: Default::default(),
+            unpack_path: Default::default(),
+            navimesh_path: FilesystemConfig::default_navimesh_path(),
+            additional_resource_paths: Default::default(),
+        }
+    }
 }
 
 impl FilesystemConfig {
