@@ -433,6 +433,7 @@ async fn client_chat_loop(
                                             }
                                             ClientChatIpcData::Unknown { unk } => {
                                                 tracing::warn!("Unknown chat packet {:?} recieved ({} bytes)", data.header.op_code, unk.len());
+                                                kawari_world::fork_opcodes::hint_unknown_packet("ClientChatIpcType", kawari::packet::PredefinedOpcode::get_opcode(&data.header.op_code), unk.len());
                                             }
                                         }
                                     }
@@ -3915,6 +3916,11 @@ async fn process_packet(
                                 data.header.op_code,
                                 unk.len()
                             );
+                            kawari_world::fork_opcodes::hint_unknown_packet(
+                                "ClientZoneIpcType",
+                                kawari::packet::PredefinedOpcode::get_opcode(&data.header.op_code),
+                                unk.len(),
+                            );
                         }
                     }
                 }
@@ -4724,6 +4730,7 @@ async fn main() {
     let game_data = Arc::new(Mutex::new(GameData::new()));
 
     tracing::info!("Server started on {addr}");
+    kawari_world::fork_opcodes::log_outstanding();
 
     {
         let mut lua = lua.lock();

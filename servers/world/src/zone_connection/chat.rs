@@ -244,6 +244,13 @@ impl ZoneConnection {
                 }
                 true
             }
+            "!forkopcodes" => {
+                // Which of the fork's own opcodes are known for this game version, and how to find the rest.
+                for line in crate::fork_opcodes::status_lines() {
+                    self.send_notice(&line).await;
+                }
+                true
+            }
             "!finishevent" => {
                 self.event_finish(events).await;
                 self.send_notice("Current event forcefully finished.").await;

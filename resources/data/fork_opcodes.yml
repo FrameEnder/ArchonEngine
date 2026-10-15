@@ -1,0 +1,30 @@
+# Opcodes this fork knows that upstream's opcodes.yml doesn't.
+#
+# They live here, not in opcodes.yml, so upstream's patch updates merge without touching them. The build merges them
+# into the same generated enums.
+#
+# Opcodes change with every game version, so each entry says which client version its opcode was found on
+# (found_on.) An entry whose found_on isn't SUPPORTED_GAME_VERSION (constants.yml), or that has no opcode, is
+# "outstanding": the build warns about it and gives it a placeholder opcode the game never uses, so it can't be mistaken
+# for some other packet until it's found again.
+#
+# Finding an outstanding one:
+#   * Client packets (Client*IpcType): do what how_to_find says on Kawari. The server warns about the unknown packet,
+#     and when its size matches an outstanding entry it says which one it probably is. Put that opcode here and set
+#     found_on to the current version.
+#   * Server packets (Server*IpcType): Kawari can't see these fail. Record the same thing on retail (Kawari Recorder) on
+#     the same game version, and look the packet up there.
+#   * In game, !forkopcodes lists them all and what to do for each.
+#
+# If upstream adds an opcode with the same name, theirs is used and the build says this entry can go.
+#
+# Fields: name, comment, size (data only, without headers, as in opcodes.yml), opcode, found_on, how_to_find.
+# Keep double quotes out of comments.
+
+ClientZoneIpcType:
+- name: EventReturnHandler16
+  comment: A scene finished with up to 16 results, e.g. handing three kinds of items over in a quest's NPC trade (Surveying the Damage.)
+  opcode: 856
+  size: 72
+  found_on: 2026.09.15.0000.0000
+  how_to_find: In Surveying the Damage, hand Pauline all three items in one trade (//gm quest incomplete 175, //gm quest accept 175, //gm quest sequence 175 1, then search the four spots in the cave.)

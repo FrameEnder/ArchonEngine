@@ -872,10 +872,6 @@ ClientZoneIpcType:
   comment: Unknown purpose.
   opcode: 486
   size: 40
-- name: EventReturnHandler16
-  comment: A scene finished with up to 16 results, e.g. handing three kinds of items over in a quest's NPC trade (Surveying the Damage.) NOTE - 856 was found on 2026.09.15 and still needs finding for 7.57.
-  opcode: 856
-  size: 72
 - name: Config
   comment: Unknown purpose.
   opcode: 398

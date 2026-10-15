@@ -18,6 +18,168 @@ fn format_value(value: &Value) -> String {
     }
 }
 
+/// One of the fork's own opcodes (see `resources/data/fork_opcodes.yml`.)
+struct ForkOpcode {
+    kind: String,
+    name: String,
+    size: u64,
+    opcode: Option<u64>,
+    found_on: Option<String>,
+    current: bool,
+    how_to_find: String,
+}
+
+/// The game version Kawari supports (SUPPORTED_GAME_VERSION in constants.yml.)
+fn supported_game_version() -> String {
+    let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    d.push("../resources/data/constants.yml");
+    let yml: Value = serde_yaml_ng::from_str(&std::fs::read_to_string(d).unwrap()).unwrap();
+    yml.get("SUPPORTED_GAME_VERSION")
+        .and_then(|version| version.as_str())
+        .expect("constants.yml has no SUPPORTED_GAME_VERSION")
+        .to_string()
+}
+
+/// Adds the fork's own opcodes (`resources/data/fork_opcodes.yml`) to upstream's. Any not found for the supported game
+/// version get a placeholder opcode the game never uses, and a build warning.
+fn merge_fork_opcodes(opcodes: &mut Value) -> Vec<ForkOpcode> {
+    let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    d.push("../resources/data/fork_opcodes.yml");
+    println!("cargo::rerun-if-changed={}", d.to_str().unwrap());
+    let Ok(buffer) = std::fs::read_to_string(&d) else {
+        return Vec::new();
+    };
+    let fork: Value = serde_yaml_ng::from_str(&buffer).unwrap();
+    let Some(fork) = fork.as_mapping() else {
+        return Vec::new();
+    };
+    let version = supported_game_version();
+
+    let mut merged = Vec::new();
+    for (kind, entries) in fork {
+        let kind = kind.as_str().unwrap();
+        let Some(list) = opcodes.get_mut(kind).and_then(|list| list.as_sequence_mut()) else {
+            panic!("fork_opcodes.yml: {kind} isn't one of the opcode lists in opcodes.yml!");
+        };
+        let mut used: Vec<u64> = list
+            .iter()
+            .filter_map(|opcode| opcode.get("opcode")?.as_u64())
+            .collect();
+        let names: Vec<String> = list
+            .iter()
+            .filter_map(|opcode| Some(opcode.get("name")?.as_str()?.to_string()))
+            .collect();
+        let mut next_placeholder = u16::MAX as u64;
+
+        for entry in entries.as_sequence().unwrap() {
+            let text = |field: &str| entry.get(field).and_then(|value| value.as_str());
+            let name = text("name").expect("fork_opcodes.yml: an entry has no name");
+            let size = entry
+                .get("size")
+                .and_then(|size| size.as_u64())
+                .unwrap_or_else(|| panic!("fork_opcodes.yml: {name} has no size"));
+            let opcode = entry.get("opcode").and_then(|opcode| opcode.as_u64());
+            let found_on = text("found_on").map(|found_on| found_on.to_string());
+            let how_to_find = text("how_to_find").unwrap_or_default().to_string();
+            let mut comment = text("comment").unwrap_or_default().to_string();
+
+            if names.iter().any(|known| known == name) {
+                println!(
+                    "cargo::warning=Upstream's opcodes.yml now has {kind}::{name}, so its entry in fork_opcodes.yml is ignored and can be removed."
+                );
+                continue;
+            }
+
+            let current = opcode.is_some() && found_on.as_deref() == Some(version.as_str());
+            let used_opcode = if current {
+                opcode.unwrap()
+            } else {
+                println!(
+                    "cargo::warning={kind}::{name} needs finding for {version} (last found: {} on {}). How: {how_to_find}",
+                    opcode.map(|opcode| opcode.to_string()).unwrap_or("never".to_string()),
+                    found_on.as_deref().unwrap_or("no version"),
+                );
+                comment.push_str(&format!(" OUTSTANDING: needs finding for {version}."));
+                while used.contains(&next_placeholder) {
+                    next_placeholder -= 1;
+                }
+                next_placeholder
+            };
+            used.push(used_opcode);
+
+            let mut mapping = serde_yaml_ng::Mapping::new();
+            mapping.insert("name".into(), name.into());
+            mapping.insert("comment".into(), comment.trim().into());
+            mapping.insert("opcode".into(), used_opcode.into());
+            mapping.insert("size".into(), size.into());
+            list.push(Value::Mapping(mapping));
+
+            merged.push(ForkOpcode {
+                kind: kind.to_string(),
+                name: name.to_string(),
+                size,
+                opcode,
+                found_on,
+                current,
+                how_to_find,
+            });
+        }
+    }
+    merged
+}
+
+/// The generated `FORK_OPCODES` list, for the server to say which opcodes still need finding and what to do.
+fn fork_opcodes_code(fork_opcodes: &[ForkOpcode]) -> String {
+    let mut code = String::from(
+        "/// One of the fork's own opcodes, from `resources/data/fork_opcodes.yml`.
+#[derive(Debug, Clone, Copy)]
+pub struct ForkOpcode {
+    /// The opcode list it's in, e.g. ClientZoneIpcType.
+    pub kind: &'static str,
+    pub name: &'static str,
+    /// The size of its data, without headers.
+    pub size: u32,
+    /// The opcode as it was last found, if ever.
+    pub opcode: Option<u16>,
+    /// The game version it was last found on.
+    pub found_on: Option<&'static str>,
+    /// Whether it's known for the supported game version. If not, a placeholder opcode stands in for it.
+    pub current: bool,
+    /// What to do in game to make the client send (or the server need) it.
+    pub how_to_find: &'static str,
+}
+
+/// The fork's own opcodes.
+pub const FORK_OPCODES: &[ForkOpcode] = &[
+",
+    );
+    for opcode in fork_opcodes {
+        code.push_str(&format!(
+            "ForkOpcode {{ kind: {:?}, name: {:?}, size: {}, opcode: {:?}, found_on: {:?}, current: {}, how_to_find: {:?} }},\n",
+            opcode.kind,
+            opcode.name,
+            opcode.size,
+            opcode.opcode.map(|opcode| opcode as u16),
+            opcode.found_on.as_deref(),
+            opcode.current,
+            opcode.how_to_find,
+        ));
+    }
+    code.push_str(
+        "];
+
+/// The fork opcodes still to be found for this game version that a packet in `kind` (e.g. ClientZoneIpcType) with
+/// `size` bytes of data could be.
+pub fn outstanding_fork_opcodes(kind: &str, size: usize) -> impl Iterator<Item = &'static ForkOpcode> + '_ {
+    FORK_OPCODES
+        .iter()
+        .filter(move |opcode| !opcode.current && opcode.kind == kind && opcode.size as usize == size)
+}
+",
+    );
+    code
+}
+
 fn main() {
     // Add link search directory for Oodle
     println!(
@@ -36,7 +198,9 @@ fn main() {
             "//!This file is automatically generated from `resources/data/opcodes.yml`! Do not edit this manually or commit to the repository.\nuse binrw::binrw;\nuse crate::packet::PredefinedOpcode;\n".to_string();
 
         let opcodes_buffer = std::fs::read_to_string(d).unwrap();
-        let json: Value = serde_yaml_ng::from_str(&opcodes_buffer).unwrap();
+        let mut json: Value = serde_yaml_ng::from_str(&opcodes_buffer).unwrap();
+        // Our fork's own opcodes (fork_opcodes.yml) join upstream's.
+        let fork_opcodes = merge_fork_opcodes(&mut json);
         for element in json.as_mapping().unwrap() {
             let key = element.0.as_str().unwrap_or_default();
             let opcodes = element.1.as_sequence().unwrap();
@@ -181,6 +345,8 @@ fn main() {
             std::fs::write(format!("src/doc_{}.md", key.to_lowercase()), output_md)
                 .expect("Failed to write opcodes file!");
         }
+
+        output_str.push_str(&fork_opcodes_code(&fork_opcodes));
 
         std::fs::write("src/opcodes.rs", output_str).expect("Failed to write opcodes file!");
     }

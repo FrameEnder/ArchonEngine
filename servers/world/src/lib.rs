@@ -5,6 +5,9 @@ pub mod capture;
 pub use chat_connection::{ChatConnection, ChatConnectionChannels, ChatPlayerData};
 
 mod zone_connection;
+
+/// Help finding the fork's own opcodes again after a game update.
+pub mod fork_opcodes;
 use diesel::backend::Backend;
 use diesel::deserialize::{self, FromSqlRow};
 use diesel::expression::AsExpression;
