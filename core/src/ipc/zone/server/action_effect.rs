@@ -1,6 +1,6 @@
 use binrw::binrw;
 use bitflags::bitflags;
-use serde::{Deserialize, Serialize};
+use serde_derive::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter, FromRepr};
 
 use crate::{

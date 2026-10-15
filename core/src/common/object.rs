@@ -1,7 +1,7 @@
 //! All things object ID-related.
 
 use binrw::binrw;
-use serde::Deserialize;
+use serde_derive::Deserialize;
 use strum_macros::FromRepr;
 
 #[binrw]

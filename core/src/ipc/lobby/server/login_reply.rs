@@ -1,5 +1,5 @@
 use binrw::binrw;
-use serde::{Deserialize, Serialize};
+use serde_derive::{Deserialize, Serialize};
 
 use crate::common::{read_string, write_string};
 

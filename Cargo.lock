@@ -728,6 +728,7 @@ dependencies = [
  "mlua",
  "physis",
  "serde",
+ "serde_derive",
  "serde_json",
  "serde_yaml_ng",
  "strum",

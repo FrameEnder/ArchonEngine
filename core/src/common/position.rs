@@ -1,6 +1,6 @@
 use binrw::binrw;
 use glam::Vec3A;
-use serde::{Deserialize, Serialize};
+use serde_derive::{Deserialize, Serialize};
 
 /// Represents a point in space.
 ///

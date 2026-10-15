@@ -1,6 +1,6 @@
 #[cfg(test)]
 use binrw::BinWrite;
-use serde::{Deserialize, Serialize};
+use serde_derive::{Deserialize, Serialize};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 mod position;

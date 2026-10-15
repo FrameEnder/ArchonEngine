@@ -5,7 +5,7 @@ use std::{
 };
 
 use physis::{Language, Version, existing_dirs::find_existing_game_dirs};
-use serde::{Deserialize, Serialize};
+use serde_derive::{Deserialize, Serialize};
 
 use crate::packet::CompressionType;
 

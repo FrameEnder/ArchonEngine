@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde_derive::{Deserialize, Serialize};
 
 /// A JSON file that appends an existing (and usually empty) LGB.
 ///

@@ -5,7 +5,7 @@ use std::{collections::HashMap, io::Cursor, time::Duration};
 use binrw::{BinReaderExt, BinWrite, binrw};
 use bitflags::bitflags;
 use physis::TerritoryIntendedUse;
-use serde::{Deserialize, Serialize};
+use serde_derive::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter, FromRepr};
 
 use crate::{
