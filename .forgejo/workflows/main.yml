@@ -26,11 +26,14 @@ jobs:
       id: cache-deps
       with:
         path: |
-          ~/.cargo
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
           target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: wasm-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Build
-      run: cargo build --package kawari ${{ env.CARGO_PROFILE }}  --target=wasm32-unknown-unknown --lib --no-default-features
+      run: cargo build --package kawari ${{ env.CARGO_PROFILE }} --target=wasm32-unknown-unknown --lib --no-default-features
 
   build:
     name: "Build (${{ matrix.os_name }} ${{ matrix.target_name }})"
@@ -38,7 +41,6 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
 
     strategy:
-      fail-fast: false
       matrix:
         include:
         - target: x86_64-unknown-linux-gnu
@@ -59,15 +61,25 @@ jobs:
         components: "clippy rustfmt"
         targets: "${{ matrix.target }}"
     - uses: actions/cache@v5
+      id: cache-mdbook
+      with:
+        path: |
+          ~/.cargo/bin/mdbook
+        key: mdbook
+    - if: steps.cache-mdbook.outputs.cache-hit != 'true'
+      run: |
+        cargo install --git https://github.com/rust-lang/mdBook.git mdbook
+    - uses: actions/cache@v5
       id: cache-deps
       with:
         path: |
-          ~/.cargo
+          ~/.cargo/bin/
+          !~/.cargo/bin/mdbook
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
           target/
-        key: cargo-${{ hashFiles('**/Cargo.lock') }}
-    - if: steps.cache-deps.outputs.cache-hit != 'true'
-      run: |
-        cargo install --git https://github.com/rust-lang/mdBook.git mdbook
+        key: ${{ matrix.os_name }}-${{ matrix.target_name }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Install dependencies
       run: |
         sudo apt-get update
