@@ -5,12 +5,9 @@ use std::path::Path;
 use parking_lot::Mutex;
 
 use kawari::constants::SUPPORTED_GAME_VERSION;
-use kawari::exe_scan::{Exe, Finder, parse_pattern};
-use kawari::opcodes::{FORK_OPCODES, ForkOpcode, is_known_opcode, outstanding_fork_opcodes};
+use kawari::exe_scan::{Exe, check_opcode, find_opcode};
+use kawari::opcodes::{FORK_OPCODES, ForkOpcode, outstanding_fork_opcodes};
 use kawari::packet::remap;
-
-/// How deep to follow calls back from a handler to the switch over opcodes.
-const HANDLER_SEARCH_DEPTH: usize = 4;
 
 /// Opcodes read from the executable this run: (name, opcode).
 static FOUND: Mutex<Vec<(&'static str, u16)>> = Mutex::new(Vec::new());
@@ -63,26 +60,18 @@ pub fn scan_executable(game_path: &str) {
     };
 
     for opcode in FORK_OPCODES.iter().filter(|opcode| !opcode.finders.is_empty()) {
-        let result = find_opcode(&exe, opcode);
-        if opcode.current {
-            match result {
-                Ok(read) if Some(read) == opcode.opcode => {
-                    tracing::info!("{}: the game agrees it's {read}.", opcode.name)
-                }
-                Ok(read) => tracing::warn!(
-                    "{}: fork_opcodes.yml says {}, but the game reads as {read}. Its finder may need updating.",
-                    opcode.name,
-                    opcode.opcode.unwrap_or_default()
-                ),
+        if let (true, Some(known)) = (opcode.current, opcode.opcode) {
+            match check_opcode(&exe, opcode, known) {
+                Ok(()) => tracing::info!("{}: the game agrees it's {known}.", opcode.name),
                 Err(err) => tracing::warn!(
-                    "{}: its finder doesn't work on this version anymore ({err}). It's still known, but should be updated.",
+                    "{}: fork_opcodes.yml says {known}, but its finder disagrees ({err}). It's still used, but the finder should be updated.",
                     opcode.name
                 ),
             }
             continue;
         }
 
-        match result {
+        match find_opcode(&exe, opcode) {
             Ok(read) => {
                 remap::set_real_opcode(opcode.kind, opcode.used_opcode, read);
                 FOUND.lock().push((opcode.name, read));
@@ -97,81 +86,6 @@ pub fn scan_executable(game_path: &str) {
                 opcode.kind,
                 opcode.name
             ),
-        }
-    }
-}
-
-/// Tries `opcode`'s finders in order.
-pub fn find_opcode(exe: &Exe, opcode: &ForkOpcode) -> Result<u16, String> {
-    let mut errors = Vec::new();
-    for finder in opcode.finders {
-        match run_finder(exe, finder) {
-            Ok(read) if is_known_opcode(opcode.kind, read) && Some(read) != opcode.opcode => {
-                errors.push(format!("it read {read}, but that's already another packet's"))
-            }
-            Ok(read) => return Ok(read),
-            Err(err) => errors.push(err),
-        }
-    }
-    if errors.is_empty() {
-        errors.push("it has no finders".to_string());
-    }
-    Err(errors.join("; "))
-}
-
-/// Reads an opcode with one finder.
-pub fn run_finder(exe: &Exe, finder: &Finder) -> Result<u16, String> {
-    match *finder {
-        Finder::Immediate {
-            pattern,
-            offset,
-            width,
-        } => {
-            let parsed = parse_pattern(pattern).ok_or(format!("bad pattern {pattern:?}"))?;
-            let matches = exe.find(&parsed);
-            if matches.is_empty() {
-                return Err(format!("{pattern:?} isn't in the game anymore"));
-            }
-            let mut values: Vec<u32> = matches
-                .iter()
-                .filter_map(|at| match width {
-                    2 => exe.u16_at(at + offset).map(u32::from),
-                    _ => exe.i32_at(at + offset).map(|value| value as u32),
-                })
-                .collect();
-            values.sort();
-            values.dedup();
-            match values.as_slice() {
-                [value] => u16::try_from(*value).map_err(|_| format!("{value} isn't an opcode")),
-                _ => Err(format!("{pattern:?} matches in places that disagree: {values:?}")),
-            }
-        }
-        Finder::Handler { pattern, offset } => {
-            let parsed = parse_pattern(pattern).ok_or(format!("bad pattern {pattern:?}"))?;
-            let matches = exe.find(&parsed);
-            let [at] = matches.as_slice() else {
-                return Err(format!(
-                    "{pattern:?} should match once, but matches {} times",
-                    matches.len()
-                ));
-            };
-            let handler = exe.function_start((*at as isize + offset) as usize);
-            let cases = exe.opcode_cases(handler, HANDLER_SEARCH_DEPTH);
-            // The main dispatcher is the switch with the most cases.
-            let Some(biggest) = cases.iter().map(|case| case.switch_cases).max() else {
-                return Err("no switch over opcodes leads to its handler".to_string());
-            };
-            let mut opcodes: Vec<i64> = cases
-                .iter()
-                .filter(|case| case.switch_cases == biggest)
-                .flat_map(|case| case.opcodes.iter().copied())
-                .collect();
-            opcodes.sort();
-            opcodes.dedup();
-            match opcodes.as_slice() {
-                [opcode] => u16::try_from(*opcode).map_err(|_| format!("{opcode} isn't an opcode")),
-                _ => Err(format!("its handler is reached from several opcodes: {opcodes:?}")),
-            }
         }
     }
 }

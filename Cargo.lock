@@ -828,6 +828,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "kawari-opcodescan"
+version = "7.57.0"
+dependencies = [
+ "kawari",
+]
+
+[[package]]
 name = "kawari-patch"
 version = "7.57.0"
 dependencies = [

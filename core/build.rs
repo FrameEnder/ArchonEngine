@@ -34,7 +34,7 @@ struct ForkOpcode {
 }
 
 /// Rust for the `exe_scan::Finder`s in a fork_opcodes.yml entry's `find` list.
-fn fork_finders(entry: &Value, name: &str) -> Vec<String> {
+fn fork_finders(entry: &Value, name: &str, known: &[Value]) -> Vec<String> {
     let Some(finders) = entry.get("find").and_then(|find| find.as_sequence()) else {
         return Vec::new();
     };
@@ -48,8 +48,16 @@ fn fork_finders(entry: &Value, name: &str) -> Vec<String> {
                     .unwrap_or_else(|| panic!("fork_opcodes.yml: {name}'s immediate finder has no pattern"));
                 let offset = field(immediate, "offset").and_then(|o| o.as_u64()).unwrap_or(0);
                 let width = field(immediate, "width").and_then(|w| w.as_u64()).unwrap_or(2);
+                // `with` names a packet in the same list; its current opcode is what to look for.
+                let with_opcode = field(immediate, "with").and_then(|w| w.as_str().map(str::to_string)).map(|with| {
+                    known
+                        .iter()
+                        .find(|opcode| opcode.get("name").and_then(|n| n.as_str()) == Some(with.as_str()))
+                        .and_then(|opcode| opcode.get("opcode")?.as_u64())
+                        .unwrap_or_else(|| panic!("fork_opcodes.yml: {name}'s finder needs {with}, which isn't a known opcode in its list"))
+                });
                 format!(
-                    "crate::exe_scan::Finder::Immediate {{ pattern: {pattern:?}, offset: {offset}, width: {width} }}"
+                    "crate::exe_scan::Finder::Immediate {{ pattern: {pattern:?}, offset: {offset}, width: {width}, with_opcode: {with_opcode:?} }}"
                 )
             } else if let Some(handler) = finder.get("handler") {
                 let pattern = field(handler, "pattern")
@@ -104,6 +112,8 @@ fn merge_fork_opcodes(opcodes: &mut Value) -> Vec<ForkOpcode> {
             .iter()
             .filter_map(|opcode| Some(opcode.get("name")?.as_str()?.to_string()))
             .collect();
+        // Upstream's entries, which a finder can refer to (`with`.)
+        let known_entries: Vec<Value> = list.clone();
         let mut next_placeholder = u16::MAX as u64;
 
         for entry in entries.as_sequence().unwrap() {
@@ -158,7 +168,7 @@ fn merge_fork_opcodes(opcodes: &mut Value) -> Vec<ForkOpcode> {
                 current,
                 how_to_find,
                 used_opcode,
-                finders: fork_finders(entry, name),
+                finders: fork_finders(entry, name, &known_entries),
             });
         }
     }
@@ -221,25 +231,31 @@ pub fn outstanding_fork_opcodes(kind: &str, size: usize) -> impl Iterator<Item =
 ",
     );
 
-    // Every opcode already in use in each list, so one read from the executable can't take one that's known.
+    // Every opcode in use in each list (placeholders included), so one read from the executable can't take one that's
+    // known, and finders can be checked against upstream's.
     code.push_str(
-        "\n/// Whether `opcode` is already some packet's opcode in the `kind` opcode list (e.g. ClientZoneIpcType.)\npub fn is_known_opcode(kind: &str, opcode: u16) -> bool {\nmatch kind {\n",
+        "\n/// Every opcode in use: (list, name, opcode.) Outstanding fork opcodes have their placeholder.\npub const KNOWN_OPCODES: &[(&str, &str, u16)] = &[\n",
     );
     for (kind, list) in opcodes.as_mapping().unwrap() {
-        let used: Vec<String> = list
-            .as_sequence()
-            .unwrap()
-            .iter()
-            .filter_map(|opcode| opcode.get("opcode")?.as_u64())
-            .map(|opcode| opcode.to_string())
-            .collect();
-        code.push_str(&format!(
-            "{:?} => [{}].contains(&opcode),\n",
-            kind.as_str().unwrap(),
-            used.join(", ")
-        ));
+        for opcode in list.as_sequence().unwrap() {
+            let (Some(name), Some(number)) = (
+                opcode.get("name").and_then(|name| name.as_str()),
+                opcode.get("opcode").and_then(|number| number.as_u64()),
+            ) else {
+                continue;
+            };
+            code.push_str(&format!("({:?}, {name:?}, {number}),\n", kind.as_str().unwrap()));
+        }
     }
-    code.push_str("_ => false,\n}\n}\n");
+    code.push_str(
+        "];
+
+/// Whether `opcode` is already some packet's opcode in the `kind` opcode list (e.g. ClientZoneIpcType.)
+pub fn is_known_opcode(kind: &str, opcode: u16) -> bool {
+    KNOWN_OPCODES.iter().any(|(k, _, number)| *k == kind && *number == opcode)
+}
+",
+    );
     code
 }
 

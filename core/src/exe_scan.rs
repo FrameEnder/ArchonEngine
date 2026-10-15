@@ -4,7 +4,8 @@
 //! Nothing is run: the executable's code is searched for byte patterns, and a switch over opcodes is read the way the
 //! Kawari Probe reads it in the running game (following calls back from a packet's handler to the case that calls it).
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::sync::OnceLock;
 use std::path::Path;
 
 /// The game's executable, laid out as it is in memory, so addresses (RVAs) can be used directly.
@@ -12,17 +13,21 @@ pub struct Exe {
     image: Vec<u8>,
     text_start: usize,
     text_end: usize,
+    /// Every call or jump in the code, by where it goes (built the first time it's needed.)
+    calls: OnceLock<HashMap<usize, Vec<usize>>>,
 }
 
 /// How to find an opcode in the executable (`find` in fork_opcodes.yml.)
 #[derive(Debug, Clone, Copy)]
 pub enum Finder {
     /// The opcode is written into the code itself (e.g. a client packet being built): it's the `width`-byte number
-    /// `offset` bytes into every match of `pattern`, and they must all agree.
+    /// `offset` bytes into every match of `pattern`, and they must all agree. With `with_opcode`, only matches in a
+    /// function that also writes that (known) opcode count, which tells apart code that looks the same.
     Immediate {
         pattern: &'static str,
         offset: usize,
         width: u8,
+        with_opcode: Option<u16>,
     },
     /// `pattern` (plus `offset`) is somewhere in the packet's handler: the opcode is the switch case that leads there
     /// (e.g. a server packet the client handles.) The pattern must match once.
@@ -143,6 +148,7 @@ impl Exe {
             text_end: text_end.min(image.len()),
             image,
             text_start,
+            calls: OnceLock::new(),
         })
     }
 
@@ -156,7 +162,13 @@ impl Exe {
             image,
             text_start,
             text_end,
+            calls: OnceLock::new(),
         }
+    }
+
+    /// Where the code is: (start, end) RVAs of .text.
+    pub fn text(&self) -> (usize, usize) {
+        (self.text_start, self.text_end)
     }
 
     pub fn image(&self) -> &[u8] {
@@ -212,17 +224,22 @@ impl Exe {
 
     /// Every call or jump to `target`.
     pub fn calls_to(&self, target: usize) -> Vec<usize> {
-        let mut sites = Vec::new();
-        for i in self.text_start..self.text_end.saturating_sub(5) {
-            let op = self.image[i];
-            if (op == 0xE8 || op == 0xE9)
-                && let Some(offset) = self.i32_at(i + 1)
-                && i as i64 + 5 + offset as i64 == target as i64
-            {
-                sites.push(i);
+        let calls = self.calls.get_or_init(|| {
+            let mut calls: HashMap<usize, Vec<usize>> = HashMap::new();
+            for i in self.text_start..self.text_end.saturating_sub(5) {
+                let op = self.image[i];
+                if (op == 0xE8 || op == 0xE9)
+                    && let Some(offset) = self.i32_at(i + 1)
+                {
+                    let to = i as i64 + 5 + offset as i64;
+                    if self.in_text(to) {
+                        calls.entry(to as usize).or_default().push(i);
+                    }
+                }
             }
-        }
-        sites
+            calls
+        });
+        calls.get(&target).cloned().unwrap_or_default()
     }
 
     /// The start of the function containing `rva`: MSVC pads functions with int3 and aligns them to 16 bytes.
@@ -235,6 +252,14 @@ impl Exe {
             j -= 1;
         }
         self.text_start
+    }
+
+    /// Whether the function containing `rva` has `value` in it as a 32-bit number (e.g. an opcode it writes.)
+    pub fn function_has_u32(&self, rva: usize, value: u32) -> bool {
+        let start = self.function_start(rva);
+        let end = self.function_end(start);
+        let needle = value.to_le_bytes();
+        self.image[start..end].windows(4).any(|window| window == needle)
     }
 
     fn function_end(&self, start: usize) -> usize {
@@ -415,6 +440,23 @@ impl Exe {
         result
     }
 
+    /// The function a switch case calls first, e.g. a packet's handler from its case in the dispatcher.
+    pub fn first_call_in_case(&self, case: usize) -> Option<usize> {
+        let mut at = case;
+        while at < case + 96 && at + 5 <= self.text_end {
+            match self.byte(at) {
+                0xE8 => {
+                    let to = at as i64 + 5 + self.i32_at(at + 1)? as i64;
+                    return self.in_text(to).then_some(to as usize);
+                }
+                // The case ends: ret, or a jump on.
+                0xC3 | 0xE9 | 0xEB => return None,
+                _ => at += 1,
+            }
+        }
+        None
+    }
+
     /// Follows calls back from the function at `handler` (up to `depth` levels) to the switch cases that lead to it.
     pub fn opcode_cases(&self, handler: usize, depth: usize) -> Vec<OpcodeCase> {
         let mut cases = Vec::new();
@@ -448,6 +490,111 @@ impl Exe {
             level = next;
         }
         cases
+    }
+}
+
+/// How deep to follow calls back from a handler to the switch over opcodes.
+const HANDLER_SEARCH_DEPTH: usize = 4;
+
+/// Tries `opcode`'s finders in order. Only a finder that reads exactly one opcode finds it.
+pub fn find_opcode(exe: &Exe, opcode: &crate::opcodes::ForkOpcode) -> Result<u16, String> {
+    let mut errors = Vec::new();
+    for finder in opcode.finders {
+        match finder_candidates(exe, finder) {
+            Ok(candidates) => match candidates.as_slice() {
+                [read] if crate::opcodes::is_known_opcode(opcode.kind, *read) && Some(*read) != opcode.opcode => {
+                    errors.push(format!("it read {read}, but that's already another packet's"))
+                }
+                [read] => return Ok(*read),
+                _ => errors.push(format!(
+                    "it's one of {candidates:?} (they share their code), so a recording has to say which"
+                )),
+            },
+            Err(err) => errors.push(err),
+        }
+    }
+    if errors.is_empty() {
+        errors.push("it has no finders".to_string());
+    }
+    Err(errors.join("; "))
+}
+
+/// Checks a known opcode against its finders: Ok if a finder's candidates include it.
+pub fn check_opcode(exe: &Exe, opcode: &crate::opcodes::ForkOpcode, known: u16) -> Result<(), String> {
+    let mut errors = Vec::new();
+    for finder in opcode.finders {
+        match finder_candidates(exe, finder) {
+            Ok(candidates) if candidates.contains(&known) => return Ok(()),
+            Ok(candidates) => errors.push(format!("it reads {candidates:?}")),
+            Err(err) => errors.push(err),
+        }
+    }
+    Err(errors.join("; "))
+}
+
+/// The opcodes a finder reads (more than one when packets share their code, e.g. one handler for several sizes.)
+pub fn finder_candidates(exe: &Exe, finder: &Finder) -> Result<Vec<u16>, String> {
+    let to_u16 = |values: Vec<i64>| -> Result<Vec<u16>, String> {
+        values
+            .into_iter()
+            .map(|value| u16::try_from(value).map_err(|_| format!("{value} isn't an opcode")))
+            .collect()
+    };
+    match *finder {
+        Finder::Immediate {
+            pattern,
+            offset,
+            width,
+            with_opcode,
+        } => {
+            let parsed = parse_pattern(pattern).ok_or(format!("bad pattern {pattern:?}"))?;
+            let mut matches = exe.find(&parsed);
+            if matches.is_empty() {
+                return Err(format!("{pattern:?} isn't in the game anymore"));
+            }
+            if let Some(with_opcode) = with_opcode {
+                matches.retain(|at| exe.function_has_u32(*at, with_opcode as u32));
+                if matches.is_empty() {
+                    return Err(format!(
+                        "{pattern:?} is in the game, but not alongside opcode {with_opcode}"
+                    ));
+                }
+            }
+            let mut values: Vec<i64> = matches
+                .iter()
+                .filter_map(|at| match width {
+                    2 => exe.u16_at(at + offset).map(i64::from),
+                    _ => exe.i32_at(at + offset).map(i64::from),
+                })
+                .collect();
+            values.sort();
+            values.dedup();
+            to_u16(values)
+        }
+        Finder::Handler { pattern, offset } => {
+            let parsed = parse_pattern(pattern).ok_or(format!("bad pattern {pattern:?}"))?;
+            let matches = exe.find(&parsed);
+            let [at] = matches.as_slice() else {
+                return Err(format!(
+                    "{pattern:?} should match once, but matches {} times",
+                    matches.len()
+                ));
+            };
+            let handler = exe.function_start((*at as isize + offset) as usize);
+            let cases = exe.opcode_cases(handler, HANDLER_SEARCH_DEPTH);
+            // The main dispatcher is the switch with the most cases.
+            let Some(biggest) = cases.iter().map(|case| case.switch_cases).max() else {
+                return Err("no switch over opcodes leads to its handler".to_string());
+            };
+            let mut opcodes: Vec<i64> = cases
+                .iter()
+                .filter(|case| case.switch_cases == biggest)
+                .flat_map(|case| case.opcodes.iter().copied())
+                .collect();
+            opcodes.sort();
+            opcodes.dedup();
+            to_u16(opcodes)
+        }
     }
 }
 

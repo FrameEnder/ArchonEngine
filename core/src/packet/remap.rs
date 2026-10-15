@@ -107,8 +107,7 @@ mod tests {
         assert_eq!(&ipc[2..4], &856u16.to_le_bytes());
     }
 
-    /// A client packet that arrives with its real opcode is read as the packet whose placeholder it stands for, and
-    /// goes back out with the real opcode.
+    /// A client packet that arrives with an opcode read from the game is read as the packet it stands for.
     #[test]
     fn packets_use_the_real_opcode() {
         use crate::ipc::zone::{ClientZoneIpcData, ClientZoneIpcSegment};
@@ -116,13 +115,13 @@ mod tests {
         use crate::packet::{ConnectionState, PacketSegment, SegmentData, SegmentType};
         use binrw::{BinRead, BinWrite};
 
-        let Some(fork) = FORK_OPCODES
+        // Pretend EventReturnHandler16 was read from the game as an opcode nothing else uses.
+        let fork = FORK_OPCODES
             .iter()
-            .find(|opcode| opcode.name == "EventReturnHandler16" && !opcode.current)
-        else {
-            return; // Only meaningful while it's a placeholder.
-        };
-        let real = 856;
+            .find(|opcode| opcode.name == "EventReturnHandler16")
+            .unwrap();
+        let real = 4321;
+        assert!(!crate::opcodes::is_known_opcode("ClientZoneIpcType", real));
         set_real_opcode("ClientZoneIpcType", fork.used_opcode, real);
 
         let state = ConnectionState::None;

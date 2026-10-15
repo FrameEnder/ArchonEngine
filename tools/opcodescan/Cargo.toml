@@ -1,0 +1,10 @@
+[package]
+name = "kawari-opcodescan"
+edition.workspace = true
+version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+kawari = { path = "../../core" }
