@@ -52,3 +52,4 @@ These special debug commands start with `!` and are custom to Kawari.
 | `!treasurehunt` | Spawns a debug treasure hunt at your location. |
 | `!leve <id>` | Begins a debug levequest at your location. |
 | `!complete_duty` | Forcefully completes the current duty and makes the exit visible. |
+| `!aoetest <id>` | Spawns the AoE tester with a given action ID. |

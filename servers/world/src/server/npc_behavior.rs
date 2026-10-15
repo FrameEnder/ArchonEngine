@@ -57,6 +57,7 @@ pub fn npc_behavior(
         } = actor
             && let Some(current_target) = current_target
             && *state != NpcState::Dead
+            && *state != NpcState::AoeTest
             && !*casting
             && spawn.common.health_points > 0
         {
@@ -159,6 +160,7 @@ pub fn npc_behavior(
             ..
         } = actor
             && *state != NpcState::Dead
+            && *state != NpcState::AoeTest
             && !*casting
             && spawn.common.health_points > 0
         {
@@ -470,7 +472,7 @@ pub fn npc_behavior(
             ..
         } = actor
         {
-            if *state == NpcState::Dead {
+            if *state == NpcState::Dead || *state == NpcState::AoeTest {
                 continue;
             }
 

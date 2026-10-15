@@ -40,6 +40,8 @@ pub enum NpcState {
         /// The index of the control point we're going to.
         index: usize,
     },
+    /// This NPC is in AoE test mode.
+    AoeTest,
 }
 
 impl NpcState {
@@ -505,19 +507,14 @@ pub fn spawn_custom_bnpc(
     from_actor_id: ObjectId,
     base_id: u32,
     name_id: u32,
-) {
+) -> Option<ObjectId> {
     let actor_id = Instance::generate_actor_id();
     {
-        let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-            return;
-        };
-
-        let Some(actor) = instance.find_actor(from_actor_id) else {
-            return;
-        };
+        let instance = data.find_actor_instance_mut(from_actor_id)?;
+        let actor = instance.find_actor(from_actor_id)?;
 
         let NetworkedActor::Player { spawn, .. } = actor else {
-            return;
+            return None;
         };
 
         let base_npc =
@@ -533,6 +530,8 @@ pub fn spawn_custom_bnpc(
         let config = get_config();
         instance.insert_npc(actor_id, npc_spawn.clone(), &config, game_data);
     }
+
+    Some(actor_id)
 }
 
 /// Creates the NPC spawn data based off of game data and whatever parameters you require.

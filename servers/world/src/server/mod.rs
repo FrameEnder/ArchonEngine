@@ -533,6 +533,7 @@ fn server_logic_tick(
 
                     a_distance.total_cmp(&b_distance)
                 });
+                let mut aoe_actors_to_evaluate = Vec::new();
                 for (other_id, other_actor) in actors_by_distance {
                     // We're always in our own view
                     if *id == *other_id {
@@ -594,6 +595,53 @@ fn server_logic_tick(
                         // Do nothing
                     } else {
                         unreachable!();
+                    }
+
+                    if still_in
+                        && let NetworkedActor::Npc { state, .. } = other_actor
+                        && *state == NpcState::AoeTest
+                    {
+                        aoe_actors_to_evaluate.push(*other_id);
+                    }
+                }
+
+                // Process AoEs (currently only test actors) and a cone at that
+                for aoe_actor_id in &aoe_actors_to_evaluate {
+                    let Some(aoe_actor) = instance.find_actor(*aoe_actor_id) else {
+                        continue;
+                    };
+
+                    let our_position = actor.position().0;
+                    let their_position = aoe_actor.position().0;
+                    let their_rotation = aoe_actor.rotation();
+
+                    let max_cone_distance = 12.0;
+                    let max_cone_angle = 60.0;
+
+                    let mut pass =
+                        Vec3A::distance(our_position, their_position) < max_cone_distance;
+
+                    let direction_to_target = their_position - our_position;
+                    let forward = Vec3A::new(0.0, 0.0, -1.0).rotate_y(their_rotation);
+                    let cone_angle =
+                        Vec3A::angle_between(forward, direction_to_target).to_degrees();
+                    if pass && cone_angle > max_cone_angle {
+                        pass = false;
+                    }
+
+                    let lockon_id = if pass {
+                        136 // green checkmark
+                    } else {
+                        137 // red cross
+                    };
+
+                    let msg = FromServer::ActorControlSelf(ActorControlCategory::ShowLockonVfx {
+                        id: lockon_id,
+                        target: handle.actor_id,
+                    });
+                    if handle.send(msg).is_err() {
+                        // TODO: remove as needed
+                        //self.to_remove.push(id);
                     }
                 }
             }

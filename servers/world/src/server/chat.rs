@@ -588,6 +588,73 @@ fn process_debug_commands(
 
             true
         }
+        "!aoetest" => {
+            let parts: Vec<&str> = chat_message.split(' ').collect();
+            let action_id: u16 = parts[1].parse().unwrap();
+
+            let mut data = data.lock();
+
+            let mut tester_actor_id;
+            let tester_name_id = 14722; // foretold phenomenon
+            if let Some(instance) = data.find_actor_instance(from_actor_id) {
+                tester_actor_id = instance
+                    .actors
+                    .iter()
+                    .find(|x| x.1.get_common_spawn().name_id == tester_name_id)
+                    .map(|x| *x.0);
+            } else {
+                return true;
+            }
+
+            if tester_actor_id.is_none() {
+                // Spawn a tester if needed
+                let mut game_data = game_data.lock();
+                tester_actor_id = spawn_custom_bnpc(
+                    &mut data,
+                    &mut game_data,
+                    from_actor_id,
+                    11744,
+                    tester_name_id,
+                );
+            }
+
+            let ipc;
+            if let Some(instance) = data.find_actor_instance_mut(from_actor_id) {
+                let Some(actor) = instance.find_actor_mut(tester_actor_id.unwrap()) else {
+                    return true;
+                };
+
+                if let NetworkedActor::Npc { state, .. } = actor {
+                    *state = NpcState::AoeTest;
+                }
+
+                // TODO: this can get sent before the actor even spawns... whoops
+                ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
+                    spell_id: action_id,
+                    action_type: ActionType::Action,
+                    omen_delay: 0,
+                    action_id: action_id as u32,
+                    cast_time: 60.0,
+                    target: tester_actor_id.unwrap(),
+                    rotation: actor.rotation(),
+                    interruptible: false,
+                    ballista_entity_id: ObjectId::default(),
+                    position: actor.position(),
+                });
+            } else {
+                return true;
+            }
+
+            let mut network = network.lock();
+            network.send_in_range(
+                tester_actor_id.unwrap(),
+                &data,
+                FromServer::PacketSegment(ipc, tester_actor_id.unwrap()),
+                DestinationNetwork::ZoneClients,
+            );
+
+            true
+        }
         _ => false,
     }
 }
