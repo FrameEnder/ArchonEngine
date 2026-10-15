@@ -33,6 +33,13 @@ use kawari::ipc::zone::{
 };
 
 use kawari::common::{CharacterMode, NETWORK_TIMEOUT, RECEIVE_BUFFER_SIZE};
+
+/// How often a player's progress is saved while they play, besides when they log out.
+const AUTOSAVE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(30);
+
+/// How long a zone connection can go without hearing from the client before it's treated as dropped (and the player
+/// is logged out and saved.)
+const DEAD_CONNECTION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60);
 use kawari::constants::{
     AETHER_CURRENT_COMP_FLG_SET_BITMASK_SIZE, CLASSJOB_ARRAY_SIZE,
     DISCOVERY_MAPS_WITH_UP_TO_16_REGIONS_BITMASK_SIZE,
@@ -4680,6 +4687,9 @@ async fn client_loop(
     // Of course, Rust's mutability rules disallow that.
     let mut events: Vec<(Box<dyn EventHandler>, Event)> = Vec::new();
 
+    let mut autosave = tokio::time::interval(AUTOSAVE_INTERVAL);
+    autosave.tick().await; // the first tick is immediate, there's nothing new to save yet
+
     loop {
         tokio::select! {
             biased; // client data should always be prioritized
@@ -4697,6 +4707,18 @@ async fn client_loop(
                 }
             }
             msg = internal_recv.recv() => process_server_msg(&mut connection, &mut lua_player, &mut events, client_handle.clone(), msg).await,
+            _ = autosave.tick() => {
+                if connection.player_data.character.actor_id.is_valid() && !connection.gracefully_logged_out {
+                    connection.autosave();
+                }
+            }
+            // A connection that dropped without closing (the network went away, the PC lost power) never reads 0 bytes,
+            // so it would wait here forever without logging the player out and saving them. The client talks to us
+            // every few seconds while it's connected, even on loading screens.
+            _ = tokio::time::sleep_until((connection.last_keep_alive + DEAD_CONNECTION_TIMEOUT).into()) => {
+                tracing::info!("Dropping zone connection from {:?} because it went silent", client_handle.id);
+                break;
+            }
         }
     }
 

@@ -294,6 +294,24 @@ impl ZoneConnection {
         .await;
     }
 
+    /// Writes the player's progress back to the database while they're still playing, so a dropped connection or a
+    /// server that goes down only loses the last little while. Saved like logging out would, except they stay online
+    /// and their playtime is only added up at logout.
+    pub fn autosave(&mut self) {
+        let mut data = self.player_data.clone();
+
+        // In an instance, save where they entered it from, as logging out does, so they don't come back to an
+        // instance that's gone.
+        if self.conditions.has_condition(Condition::BoundByDuty) {
+            data.volatile.zone_id = self.old_zone_id as i32;
+            data.volatile.position = self.old_position;
+            data.volatile.rotation = self.old_rotation as f64;
+        }
+
+        let mut database = self.database.lock();
+        database.commit_player_data(&data);
+    }
+
     pub async fn begin_log_out(&mut self) {
         // Mark the player as offline in the db.
         self.player_data.volatile.is_online = false;
