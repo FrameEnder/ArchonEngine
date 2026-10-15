@@ -20,8 +20,8 @@ use kawari::{
         ORNAMENT_BITMASK_SIZE, TRIPLE_TRIAD_CARDS_BITMASK_SIZE,
     },
     ipc::zone::{
-        ActorControlCategory, ClientTriggerCommand, DutyFinderSetting, ItemInfo, ServerZoneIpcData,
-        ServerZoneIpcSegment,
+        ActorControlCategory, ClientTriggerCommand, DutyFinderSetting, EventNotice, ItemInfo,
+        ServerZoneIpcData, ServerZoneIpcSegment,
     },
 };
 
@@ -176,6 +176,24 @@ impl ZoneConnection {
                     }
                     if *on {
                         self.check_teleport_unlock(true).await;
+                    }
+                }
+                LuaTask::EventNotice {
+                    handler_id,
+                    notice_id,
+                    args,
+                } => {
+                    let notice = EventNotice {
+                        handler_id: HandlerId(*handler_id),
+                        notice_id: *notice_id,
+                        args: args.clone(),
+                    };
+                    match notice.package() {
+                        Some(ipc) => self.send_ipc_self(ipc).await,
+                        None => tracing::warn!(
+                            "An event notice can have at most 4 numbers, not {}: {notice:?}",
+                            args.len()
+                        ),
                     }
                 }
                 LuaTask::SetLevel { level } => {

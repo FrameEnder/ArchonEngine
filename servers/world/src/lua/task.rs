@@ -43,6 +43,12 @@ pub enum LuaTask {
     SetLevel {
         level: u16,
     },
+    /// A notice from an event, e.g. a quest's progress pop-up.
+    EventNotice {
+        handler_id: u32,
+        notice_id: u8,
+        args: Vec<u32>,
+    },
     ChangeWeather {
         id: u8,
     },

@@ -179,6 +179,14 @@ impl LuaPlayer {
         self.queued_tasks.push(LuaTask::SetLevel { level });
     }
 
+    fn event_notice(&mut self, handler_id: u32, notice_id: u8, args: Vec<u32>) {
+        self.queued_tasks.push(LuaTask::EventNotice {
+            handler_id,
+            notice_id,
+            args,
+        });
+    }
+
     fn change_weather(&mut self, id: u8) {
         self.queued_tasks.push(LuaTask::ChangeWeather { id });
     }
@@ -740,6 +748,14 @@ impl UserData for LuaPlayer {
             this.set_level(level);
             Ok(())
         });
+        // A notice from an event (e.g. a quest's progress pop-up): handler (EVENT_ID), which notice, and up to 4 numbers.
+        methods.add_method_mut(
+            "event_notice",
+            |_, this, (handler_id, notice_id, args): (u32, u8, Option<Vec<u32>>)| {
+                this.event_notice(handler_id, notice_id, args.unwrap_or_default());
+                Ok(())
+            },
+        );
         methods.add_method_mut("change_weather", |_, this, id: u8| {
             this.change_weather(id);
             Ok(())
