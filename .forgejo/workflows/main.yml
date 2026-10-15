@@ -6,6 +6,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  # There's no point in building release binaries for PRs, they are slower to build and no one is going to download them
+  CARGO_PROFILE: ${{ github.ref == 'refs/heads/master' && '--release' || '' }}
 
 jobs:
   build-webassembly:
@@ -29,7 +31,7 @@ jobs:
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Build
-      run: cargo build --package kawari --release --target=wasm32-unknown-unknown --lib --no-default-features
+      run: cargo build --package kawari ${{ env.CARGO_PROFILE }}  --target=wasm32-unknown-unknown --lib --no-default-features
 
   build:
     name: "Build (${{ matrix.os_name }} ${{ matrix.target_name }})"
@@ -97,7 +99,7 @@ jobs:
     - name: Build
       env:
         CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-      run: cargo build --release --features oodle --target ${{ matrix.target }}
+      run: cargo build ${{ env.CARGO_PROFILE }} --features oodle --target ${{ matrix.target }}
     - name: Run Clippy
       if: matrix.target == 'x86_64-unknown-linux-gnu'
       run: cargo clippy --features oodle -- -Dwarnings --target ${{ matrix.target }}
@@ -106,7 +108,7 @@ jobs:
       run: cargo fmt --check
     - name: Run tests
       if: matrix.target == 'x86_64-unknown-linux-gnu'
-      run: cargo test --target ${{ matrix.target }}
+      run: cargo test ${{ env.CARGO_PROFILE }} --target ${{ matrix.target }}
       env:
         CI: 1
     - name: Build documentation
@@ -155,7 +157,7 @@ jobs:
     - name: Upload API documentation
       if: matrix.target == 'x86_64-unknown-linux-gnu' && github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
       run: |
-        cargo doc --release --no-deps --lib
+        cargo doc ${{ env.CARGO_PROFILE }} --no-deps --lib
         rsync -e "ssh -p 38901 -o StrictHostKeyChecking=no" --recursive target/doc/ deploy@ryne.moe:/srv/http/kawari-api-docs
 
   deploy:
