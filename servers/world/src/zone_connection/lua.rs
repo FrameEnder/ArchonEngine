@@ -174,6 +174,9 @@ impl ZoneConnection {
                         })
                         .await;
                     }
+                    if *on {
+                        self.check_teleport_unlock(true).await;
+                    }
                 }
                 LuaTask::SetLevel { level } => {
                     self.set_current_level(*level);

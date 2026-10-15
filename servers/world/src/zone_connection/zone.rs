@@ -418,6 +418,32 @@ impl ZoneConnection {
         self.initial_login = false;
     }
 
+    /// On retail, the Teleport general action unlocks once you've attuned to a second Aetheryte (shards don't count.)
+    /// Unlocks it then; `notify` tells the client straight away (otherwise it's in PlayerSetup, at login.)
+    pub async fn check_teleport_unlock(&mut self, notify: bool) {
+        let (link, attuned) = {
+            let mut game_data = self.game_data.lock();
+            let Some(link) = game_data.get_teleport_unlock_link() else {
+                return;
+            };
+            let unlocked = &self.player_data.aetheryte.unlocked;
+            (link, game_data.count_main_aetherytes(|id| unlocked.contains(id)))
+        };
+        if attuned < 2 || self.player_data.unlock.unlocks.contains(link) {
+            return;
+        }
+
+        tracing::info!("Unlocking Teleport (unlock link {link}): {attuned} aetherytes attuned.");
+        self.player_data.unlock.unlocks.set(link);
+        if notify {
+            self.actor_control_self(ActorControlCategory::ToggleUnlock {
+                id: link,
+                unlocked: true,
+            })
+            .await;
+        }
+    }
+
     pub async fn warp(&mut self, warp_id: u32) {
         self.teleport_reason = TeleportReason::NotSpecified;
         self.handle

@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use icarus::Action::ActionSheet;
 use icarus::AetherCurrentCompFlgSet::AetherCurrentCompFlgSetSheet;
 use icarus::Aetheryte::AetheryteSheet;
+use icarus::GeneralAction::GeneralActionSheet;
 use icarus::AetheryteSystemDefine::AetheryteSystemDefineSheet;
 use icarus::BNpcBase::BNpcBaseSheet;
 use icarus::BNpcCustomize::BNpcCustomizeSheet;
@@ -221,6 +222,9 @@ pub struct Recipe {
     pub id: u32,
     pub item_id: i32,
 }
+
+/// The Teleport action (Action sheet), whose general action has to be unlocked before Teleport can be used.
+const TELEPORT_ACTION_ID: u16 = 5;
 
 /// Cost type used by the Action sheet for MP.
 pub const ACTION_COST_TYPE_MP: u8 = 3;
@@ -803,6 +807,32 @@ impl GameData {
 
             Some((pop_range_id, zone_id))
         }
+    }
+
+    /// The unlock link that lets a player use the Teleport general action (its UnlockLink in GeneralAction), if it has
+    /// one. Teleport is the general action whose action is TELEPORT_ACTION_ID.
+    pub fn get_teleport_unlock_link(&mut self) -> Option<u32> {
+        let config = get_config();
+        let sheet = GeneralActionSheet::read_from(&mut self.resource, config.world.language()).ok()?;
+        sheet
+            .into_iter()
+            .flatten_subrows()
+            .find(|(_, row)| row.Action == TELEPORT_ACTION_ID)
+            .map(|(_, row)| row.UnlockLink as u32)
+            .filter(|link| *link != 0)
+    }
+
+    /// How many big Aetherytes (not shards) `has_aetheryte` says the player has.
+    pub fn count_main_aetherytes(&mut self, has_aetheryte: impl Fn(u32) -> bool) -> usize {
+        let config = get_config();
+        let Ok(sheet) = AetheryteSheet::read_from(&mut self.resource, config.world.language()) else {
+            return 0;
+        };
+        sheet
+            .into_iter()
+            .flatten_subrows()
+            .filter(|(id, row)| row.IsAetheryte && has_aetheryte(*id))
+            .count()
     }
 
     /// Checks if it's a big Aetheryte (true) or just a shard (false.)

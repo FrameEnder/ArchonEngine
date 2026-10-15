@@ -636,6 +636,9 @@ async fn process_packet(
                                 database.commit_volatile(&connection.player_data);
                             }
 
+                            // Characters who attuned to a second aetheryte before this was handled get Teleport now.
+                            connection.check_teleport_unlock(false).await;
+
                             // Stats
                             connection.send_stats().await;
 
