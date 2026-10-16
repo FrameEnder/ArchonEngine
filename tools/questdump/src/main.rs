@@ -15,12 +15,12 @@ use std::{
 use icarus::{
     BNpcName::BNpcNameSheet, ClassJobCategory::ClassJobCategorySheet,
     ENpcResident::ENpcResidentSheet, EObjName::EObjNameSheet, ExVersion::ExVersionSheet,
-    JournalCategory::JournalCategorySheet, JournalGenre::JournalGenreSheet,
-    JournalSection::JournalSectionSheet, PlaceName::PlaceNameSheet, Quest::QuestSheet,
-    ScenarioTree::ScenarioTreeSheet,
+    Item::ItemSheet, ItemUICategory::ItemUICategorySheet, JournalCategory::JournalCategorySheet,
+    JournalGenre::JournalGenreSheet, JournalSection::JournalSectionSheet,
+    PlaceName::PlaceNameSheet, Quest::QuestSheet, ScenarioTree::ScenarioTreeSheet,
 };
-use physis::Language;
 use kawari::config::get_config;
+use physis::Language;
 use physis::Platform;
 use physis::resource::{ResourceResolver, SqPackResource, UnpackedResource};
 use physis::sqpack::{Hash, SqPackIndex};
@@ -34,6 +34,7 @@ USAGE:
     kawari-questdump chain <QUEST> <COUNT> [--out DIR] [--listing]
     kawari-questdump extract <GAME PATH>... [--out DIR]
     kawari-questdump index [--out DIR]
+    kawari-questdump items [--out DIR]
     kawari-questdump disasm <FILE.luab> [--listing]
 
 QUEST can be a quest ID (3854 or 69390), a script ID (XxaFst034_03854) or the quest's name in quotes.
@@ -46,6 +47,8 @@ COMMANDS:
     index     Write quest-index.json: every quest's name, level, prerequisites, issuer, area, expansion, journal
               section and whether it's main scenario, for tools that need the whole quest graph (Kawari Web
               uses it to search, to unlock prerequisites and for its quest progress page.)
+    items     Write item-index.json: every named item's ID, name, description, UI category, icon, stack size and
+              whether it's unique/untradable (Kawari Web's shop links its listings to items with it.)
     disasm    Print a readable listing of a compiled script you already have.
 
 OPTIONS:
@@ -167,7 +170,9 @@ impl Journal {
                     journal.main_scenario.insert(id);
                 }
             }
-            Err(err) => eprintln!("Couldn't read the ScenarioTree sheet, so no quest is marked main scenario: {err:?}"),
+            Err(err) => eprintln!(
+                "Couldn't read the ScenarioTree sheet, so no quest is marked main scenario: {err:?}"
+            ),
         }
         journal
     }
@@ -711,6 +716,37 @@ fn dump_quests(data: &mut GameData, row_ids: &[u32], options: &Options) -> Resul
     Ok(())
 }
 
+/// Every item with a name, in the server's language.
+fn item_index(resolver: &mut ResourceResolver) -> Result<Vec<Value>, String> {
+    let language = get_config().world.language();
+    let mut categories = HashMap::new();
+    if let Ok(sheet) = ItemUICategorySheet::read_from(resolver, language) {
+        for (id, row) in sheet.into_iter().flatten_subrows() {
+            categories.insert(id, row.Name.to_string());
+        }
+    }
+    let sheet = ItemSheet::read_from(resolver, language)
+        .map_err(|err| format!("couldn't read the Item sheet: {err:?}"))?;
+    let mut items = Vec::new();
+    for (id, row) in sheet.into_iter().flatten_subrows() {
+        let name = row.Name.to_string();
+        if name.is_empty() {
+            continue;
+        }
+        items.push(json!({
+            "id": id,
+            "name": name,
+            "description": row.Description.to_string(),
+            "category": categories.get(&(row.ItemUICategory as u32)).cloned().unwrap_or_default(),
+            "icon": row.Icon,
+            "stack_size": row.StackSize,
+            "unique": row.IsUnique,
+            "untradable": row.IsUntradable,
+        }));
+    }
+    Ok(items)
+}
+
 fn run(args: &[String]) -> Result<(), String> {
     let Some(command) = args.first() else {
         return Err(USAGE.to_string());
@@ -785,6 +821,18 @@ fn run(args: &[String]) -> Result<(), String> {
             if found == 0 {
                 return Err("none of those files exist".to_string());
             }
+            Ok(())
+        }
+        "items" => {
+            let mut data = GameData::open(options.game.as_deref())?;
+            std::fs::create_dir_all(&options.out)
+                .map_err(|err| format!("couldn't create {}: {err}", options.out.display()))?;
+            let destination = options.out.join("item-index.json");
+            let items = item_index(&mut data.resolver)?;
+            let count = items.len();
+            std::fs::write(&destination, serde_json::to_string(&items).unwrap())
+                .map_err(|err| format!("couldn't write {}: {err}", destination.display()))?;
+            println!("Wrote {count} items to {}", destination.display());
             Ok(())
         }
         "index" => {

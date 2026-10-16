@@ -186,6 +186,7 @@ async fn initial_setup(
                     party_id: 0,
                     rejoining_party: false,
                     login_time: None,
+                    playtime_at_login: 0,
                     glamour_information: None,
                     event_handler_id: None,
                     recipe: None,
@@ -635,6 +636,10 @@ async fn process_packet(
 
                             // Store when we logged in, for various purposes.
                             connection.login_time = Some(SystemTime::now());
+                            connection.playtime_at_login = connection
+                                .database
+                                .lock()
+                                .find_playtime(connection.player_data.character.content_id as u64);
 
                             // Mark the player as online for total player counts, player searches, etc.
                             {

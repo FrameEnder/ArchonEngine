@@ -147,6 +147,9 @@ pub struct ZoneConnection {
     pub rejoining_party: bool,
     /// The player's currently active quests.
     pub login_time: Option<SystemTime>,
+    /// The character's total playtime (minutes) when they logged in. The database copy moves on with every autosave,
+    /// so the current total is this plus the session so far, never the database's plus the session.
+    pub playtime_at_login: i64,
     pub glamour_information: Option<ClientTriggerCommand>,
 
     pub last_keep_alive: Instant,
@@ -294,11 +297,33 @@ impl ZoneConnection {
         .await;
     }
 
+    /// The character's total playtime in minutes, including this session so far.
+    pub fn playtime_minutes(&self) -> i64 {
+        let session = match self
+            .login_time
+            .map(|login_time| SystemTime::now().duration_since(login_time))
+        {
+            Some(Ok(session_length)) => (session_length.as_secs() / 60) as i64,
+            Some(Err(e)) => {
+                tracing::error!(
+                    "Unable to determine the current session's playtime, due to an error: {e}"
+                );
+                0
+            }
+            None => 0,
+        };
+        self.playtime_at_login + session
+    }
+
     /// Writes the player's progress back to the database while they're still playing, so a dropped connection or a
-    /// server that goes down only loses the last little while. Saved like logging out would, except they stay online
-    /// and their playtime is only added up at logout.
+    /// server that goes down only loses the last little while. Saved like logging out would (playtime included),
+    /// except they stay online.
     pub fn autosave(&mut self) {
         let mut data = self.player_data.clone();
+        // Playtime is saved as it goes too, so anything counting it (Kawari Web's play coins) keeps up.
+        if self.login_time.is_some() {
+            data.character.time_played_minutes = self.playtime_minutes();
+        }
 
         // In an instance, save where they entered it from, as logging out does, so they don't come back to an
         // instance that's gone.
@@ -324,24 +349,8 @@ impl ZoneConnection {
         }
 
         // Update playtime
-        {
-            // By default, just write back the original playtime if something goes wrong.
-            let mut database = self.database.lock();
-            let mut time_played_minutes =
-                database.find_playtime(self.player_data.character.content_id as u64);
-            if let Some(login_time) = self.login_time {
-                match SystemTime::now().duration_since(login_time) {
-                    Ok(session_length) => {
-                        time_played_minutes += (session_length.as_secs() / 60) as i64;
-                    }
-                    Err(e) => {
-                        tracing::error!(
-                            "Unable to update the session's playtime, due to the following error: {e}",
-                        );
-                    }
-                }
-            }
-            self.player_data.character.time_played_minutes = time_played_minutes;
+        if self.login_time.is_some() {
+            self.player_data.character.time_played_minutes = self.playtime_minutes();
         }
 
         // Write the player back to the database
@@ -422,12 +431,8 @@ impl ZoneConnection {
 
     pub async fn send_playtime(&mut self) {
         if let Some(login_time) = self.login_time {
-            let time_played_minutes;
-            {
-                let mut database = self.database.lock();
-                time_played_minutes =
-                    database.find_playtime(self.player_data.character.content_id as u64);
-            }
+            // Not the database's total: autosaves keep that up to date with this session already.
+            let time_played_minutes = self.playtime_at_login;
 
             // In case something goes wrong with calculating the current session's playtime, we'll send the old total by default.
             let mut total_play_time = time_played_minutes;

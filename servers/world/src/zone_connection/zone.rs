@@ -427,7 +427,10 @@ impl ZoneConnection {
                 return;
             };
             let unlocked = &self.player_data.aetheryte.unlocked;
-            (link, game_data.count_main_aetherytes(|id| unlocked.contains(id)))
+            (
+                link,
+                game_data.count_main_aetherytes(|id| unlocked.contains(id)),
+            )
         };
         if attuned < 2 || self.player_data.unlock.unlocks.contains(link) {
             return;
