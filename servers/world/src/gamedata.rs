@@ -156,6 +156,10 @@ pub struct GameData {
     pub fate_event_range_lookup: HashMap<u32, u32>,
     /// Read the first time they're needed, see `achievement_rules`.
     achievement_rules: Option<Vec<AchievementRule>>,
+    /// Each map's DiscoveryIndex, DiscoveryArrayByte and DiscoveryFlag, read the first time they're needed: the
+    /// achievement check asks for hundreds at once, and reading the Map sheet each time took long enough (seconds)
+    /// to desync the client's connection.
+    map_discovery: Option<HashMap<u32, (i16, bool, u32)>>,
 }
 
 impl Default for GameData {
@@ -663,6 +667,7 @@ impl GameData {
             gimmick_rect_lookup,
             fate_event_range_lookup,
             achievement_rules: None,
+            map_discovery: None,
             dawn_content_sheet,
             fate_progress_ui_sheet,
             gold_saucer_content_sheet,
@@ -1539,16 +1544,41 @@ impl GameData {
     /// Where a map's discovered parts are kept: its index into the discovery bitmasks, and whether it's one of the
     /// maps with up to 16 parts (two bytes each) rather than 32 (four bytes each.)
     pub fn get_map_discovery_index(&mut self, map_id: u32) -> Option<(i16, bool)> {
-        let sheet = MapSheet::read_from(&mut self.resource, Language::None).ok()?;
-        let row = sheet.row(map_id)?;
-        Some((row.DiscoveryIndex, row.DiscoveryArrayByte))
+        let (index, two_bytes, _) = self.map_discovery(map_id)?;
+        Some((index, two_bytes))
     }
 
     /// Every part of a map there is to discover, as the bits its discovered parts are kept in (Map's DiscoveryFlag:
     /// the Central Shroud's is 16382, parts 1 to 13.)
     pub fn get_map_discovery_flag(&mut self, map_id: u32) -> Option<u32> {
-        let sheet = MapSheet::read_from(&mut self.resource, Language::None).ok()?;
-        Some(sheet.row(map_id)?.DiscoveryFlag)
+        Some(self.map_discovery(map_id)?.2)
+    }
+
+    fn map_discovery(&mut self, map_id: u32) -> Option<(i16, bool, u32)> {
+        if self.map_discovery.is_none() {
+            let maps = match MapSheet::read_from(&mut self.resource, Language::None) {
+                Ok(sheet) => sheet
+                    .into_iter()
+                    .flatten_subrows()
+                    .map(|(id, row)| {
+                        (
+                            id,
+                            (
+                                row.DiscoveryIndex,
+                                row.DiscoveryArrayByte,
+                                row.DiscoveryFlag,
+                            ),
+                        )
+                    })
+                    .collect(),
+                Err(err) => {
+                    tracing::warn!("Couldn't read the Map sheet: {err:?}");
+                    HashMap::new()
+                }
+            };
+            self.map_discovery = Some(maps);
+        }
+        self.map_discovery.as_ref()?.get(&map_id).copied()
     }
 
     /// The style a pair of glasses (Glasses sheet row) unlocks, which is what the unlock bitmask counts.

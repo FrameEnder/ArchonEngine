@@ -215,6 +215,9 @@ impl ZoneConnection {
     /// nothing more completes.
     /// Returns how many it completed.
     pub async fn check_achievements(&mut self, announce: bool) -> usize {
+        // It runs while the client's packets wait, so it has to be quick: taking seconds desyncs the connection
+        // (2026-10-16, when it read the Map sheet for every Mapping the Realm achievement.)
+        let started = std::time::Instant::now();
         let rules: Vec<AchievementRule> = self
             .game_data
             .lock()
@@ -251,6 +254,9 @@ impl ZoneConnection {
             if !completed_any {
                 break;
             }
+        }
+        if started.elapsed() > std::time::Duration::from_millis(50) {
+            tracing::warn!("Checking achievements took {:?}", started.elapsed());
         }
         completed
     }

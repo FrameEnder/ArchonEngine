@@ -56,6 +56,12 @@ add one when something is found.
   the client won't start a teleport in combat, so this shouldn't come up again; if it does without enemies, it's a
   different cause.
 
+## Connections
+
+* Anything that keeps a player's connection busy for a second or so (a slow sheet read in a loop, say) desyncs the
+  client's Oodle stream: every later packet from it fails to parse and the player is stuck (frozen, endless loading)
+  until they reconnect. Why a delay breaks the stream, rather than only slowing it, isn't known.
+
 ## Items
 
 * Items that teach **folklore** (4107) or **secret recipe books** (2136) aren't handled (the server doesn't keep those

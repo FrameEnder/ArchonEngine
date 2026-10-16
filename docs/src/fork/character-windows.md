@@ -55,6 +55,13 @@ per character by Key. There are 1128 Keys, which the sheet only describes in wor
 region from 63…). The server counts **Key 11** (an enemy the player fought was defeated, as quests count kills).
 Counters start at zero when the fork started counting them, where retail's count from the character's creation.
 
+**It has to be quick.** The check runs on the player's connection while their packets wait. In `de2d795` it read the
+Map sheet for every Mapping the Realm achievement (202, twice each, every pass), which took seconds after finishing a
+quest or discovering a map part; the client's packets then stopped parsing ("desynced with the client's Oodle
+state" in the log) and the player was left frozen, or revived into an endless loading screen (2026-10-16 bundles).
+The Map sheet's discovery columns are now read once (`GameData::map_discovery`), and the server warns when a check
+takes over 50 ms.
+
 Everything else (the other counters, hunting log, dungeons, PvP, beast tribes, Grand Company…) isn't tracked; those
 can be given by hand with `!achievement <id>`. `!achievement clear <id>` takes one away, `!achievement check` runs the check (for
 characters that met requirements before this existed). The sheet is read once, the first time it's needed.
