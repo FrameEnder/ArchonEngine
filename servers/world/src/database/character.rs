@@ -825,8 +825,12 @@ impl WorldDatabase {
             favored_class: classjob.current_class as u8,
             unk7: 1,
             grand_company: grand_company.active_company,
-            grand_company_rank: grand_company.company_ranks.0
-                [grand_company.active_company as usize - 1],
+            // No Grand Company (0) has no rank; indexing with 0 - 1 panicked the server when the Portraits window
+            // asked for the plate.
+            grand_company_rank: (grand_company.active_company as usize)
+                .checked_sub(1)
+                .and_then(|index| grand_company.company_ranks.0.get(index).copied())
+                .unwrap_or(0),
             version: 4,
             expression: 22,
             camera_zoom: 94,

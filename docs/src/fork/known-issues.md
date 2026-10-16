@@ -52,9 +52,8 @@ add one when something is found.
 
 ## Character windows
 
-* **Portraits**: opening the window (Character → Portraits) crashes the client. The server now saves and returns the
-  adventurer plate's portrait, but a character without one gets the same zeroes as before; finding the cause needs
-  the crash's address (Dalamud's crash window, `ffxiv_dx11.exe+0x…`).
+* **Portraits**: the adventurer plate the window shows is still upstream's placeholder (fixed expression, lighting,
+  favoured class level 100…), not the character's own.
 * **Achievements**: only Types 2, 3, 6 and 9 are completed automatically, and what those Types mean is the community's
   reading of the sheet, not checked on retail. Nearly completed lists are always empty. Whether retail also sends
   LogMessage 952 ("… earned the achievement …") on completion, or the client prints it, isn't known.

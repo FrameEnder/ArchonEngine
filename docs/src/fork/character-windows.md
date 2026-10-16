@@ -66,12 +66,12 @@ local UI save data, not on the server.
 **What the server does now.** Saves the 52 bytes it's sent in `volatile.portrait` (same migration) and sends them back
 for 3200; a character who never set one gets zeroes, as before.
 
-**The crash isn't explained yet.** Opening the window (Character → Portraits) crashes the client (Bob, 2026-10-16).
-A zeroed reply says "no portrait", which is what the client asks the server for when it has none, so it isn't
-obviously the cause. The window's addon is set up at `0x14658B0` (it names "BannerList"); the CharaCard getters
-that hand out the adventurer plate's portrait are at `0xBC5540` (copies it, marking it present whenever the server
-has answered) and `0xBC5970` (whether there is one). Without the faulting address (Dalamud's crash window or log,
-`ffxiv_dx11.exe+0x…`) there are too many places to look.
+**The "crash" was the server.** Opening the window (Character → Portraits) disconnected the client with error 90002
+("Connection with the server was lost"), because the world server panicked: the window asks for the player's own
+adventurer plate (RequestAdventurerPlate), and upstream's `lookup_adventurer_plate` (`database/character.rs`) read
+the Grand Company rank as `company_ranks[active_company - 1]`, which underflows for a character in no Grand Company
+(0). It now sends rank 0 then, as the other two rank lookups already did. (For reference, the window's addon is set
+up at `0x14658B0`, naming "BannerList"; CharaCard's portrait getters are at `0xBC5540` and `0xBC5970`.)
 
 ## Recommendations
 
