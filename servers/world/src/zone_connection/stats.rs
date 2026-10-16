@@ -2,10 +2,10 @@
 
 use crate::{
     GameData, ToServer, ZoneConnection,
-    gamedata::{Attributes, Modifiers},
+    gamedata::Modifiers,
     inventory::{EquippedStorage, Storage},
 };
-use icarus::ParamGrow::ParamGrowRow;
+use icarus::{ParamGrow::ParamGrowRow, Tribe::TribeRow};
 use kawari::{
     common::{ActionCategory, MAXIMUM_RESTED_EXP, ObjectId},
     ipc::zone::{
@@ -181,29 +181,29 @@ impl BaseParameters {
     pub fn perform_calculations(
         &mut self,
         primary_stat: u8,
-        attributes: &Attributes,
+        tribe_row: &TribeRow,
         param_grow: &ParamGrowRow,
         modifiers: &Modifiers,
     ) {
         // Akh Morning data can't be extrapolated from game sheets, and it's missing a significant amount of entries from 50-70, so let's try making a decent approximation with the BaseSpeed, HpModifier and LevelModifier columns.
         self.strength = modifiers
             .apply_to(1, param_grow.BaseSpeed as u32)
-            .saturating_add_signed(attributes.strength as i32);
+            .saturating_add_signed(tribe_row.STR as i32);
         self.dexterity = modifiers
             .apply_to(2, param_grow.BaseSpeed as u32)
-            .saturating_add_signed(attributes.dexterity as i32);
+            .saturating_add_signed(tribe_row.DEX as i32);
         self.vitality = modifiers
             .apply_to(3, param_grow.BaseSpeed as u32)
-            .saturating_add_signed(attributes.vitality as i32);
+            .saturating_add_signed(tribe_row.VIT as i32);
         self.intelligence = modifiers
             .apply_to(4, param_grow.BaseSpeed as u32)
-            .saturating_add_signed(attributes.intelligence as i32);
+            .saturating_add_signed(tribe_row.INT as i32);
         self.mind = modifiers
             .apply_to(5, param_grow.BaseSpeed as u32)
-            .saturating_add_signed(attributes.mind as i32);
+            .saturating_add_signed(tribe_row.MND as i32);
         self.piety = modifiers
             .apply_to(6, param_grow.BaseSpeed as u32)
-            .saturating_add_signed(attributes.piety as i32);
+            .saturating_add_signed(tribe_row.PIE as i32);
 
         self.spell_speed = param_grow.BaseSpeed as u32;
         self.tenacity = param_grow.BaseSpeed as u32;
@@ -408,9 +408,9 @@ impl ZoneConnection {
             .get_class_job_modifiers(self.player_data.classjob.current_class as u32)
             .expect("Failed to read param grow");
 
-        let attributes = game_data
-            .get_racial_base_attributes(self.player_data.customize.chara_make.customize.tribe as u8)
-            .expect("Failed to read racial attributes");
+        let tribe_row = game_data
+            .get_tribe(self.player_data.customize.chara_make.customize.tribe as u8)
+            .expect("Failed to read tribe");
 
         let level = self
             .synced_level
@@ -442,7 +442,7 @@ impl ZoneConnection {
             .unwrap_or(1);
 
         let mut base_parameters = BaseParameters::default();
-        base_parameters.perform_calculations(primary_stat, &attributes, &param_grow, &modifiers);
+        base_parameters.perform_calculations(primary_stat, &tribe_row, &param_grow, &modifiers);
         base_parameters.calculate_stat_across_all_items(
             &self.player_data.inventory.equipped,
             if item_level_sync.is_some() {
@@ -464,9 +464,9 @@ impl ZoneConnection {
             .get_class_job_modifiers(self.player_data.classjob.current_class as u32)
             .expect("Failed to read param grow");
 
-        let attributes = game_data
-            .get_racial_base_attributes(self.player_data.customize.chara_make.customize.tribe as u8)
-            .expect("Failed to read racial attributes");
+        let tribe_row = game_data
+            .get_tribe(self.player_data.customize.chara_make.customize.tribe as u8)
+            .expect("Failed to read tribe");
 
         let level = self.current_level(&game_data);
 
@@ -479,7 +479,7 @@ impl ZoneConnection {
             .unwrap_or(1);
 
         let mut base_parameters = BaseParameters::default();
-        base_parameters.perform_calculations(primary_stat, &attributes, &param_grow, &modifiers);
+        base_parameters.perform_calculations(primary_stat, &tribe_row, &param_grow, &modifiers);
         base_parameters.calculate_stat_across_all_items(&self.player_data.inventory.equipped, None);
         base_parameters.calculate_potencies(&param_grow, Some(&modifiers));
 

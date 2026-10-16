@@ -5,9 +5,9 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 use kawari::{
     common::{
         ContentDirectorEvent, DirectorEvent, DirectorTrigger, DutyOption, EOBJ_EXIT, EOBJ_SHORTCUT,
-        EventState, GimmickRectEvent, HandlerId, HandlerType, InstanceContentDirectorEvent,
-        LeveDirectorEvent, LogMessageType, ObjectId, ObjectTypeId, ObjectTypeKind, Position,
-        PublicContentType, timestamp_secs,
+        EventState, GimmickAccessorType, GimmickRectEvent, HandlerId, HandlerType,
+        InstanceContentDirectorEvent, LeveDirectorEvent, LogMessageType, ObjectId, ObjectTypeId,
+        ObjectTypeKind, Position, PublicContentType, timestamp_secs,
     },
     config::get_config,
     ipc::zone::{
@@ -21,7 +21,6 @@ use physis::TerritoryIntendedUse;
 
 use crate::{
     ClientId, FromServer, GameData, ToServer,
-    gamedata::GimmickAccessorType,
     lua::KawariLua,
     server::{
         WorldServer,

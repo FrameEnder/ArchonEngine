@@ -1527,6 +1527,91 @@ pub fn in_housing_area(intended_use: TerritoryIntendedUse) -> bool {
     )
 }
 
+/// List of known GimmickAccessor types.
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, FromRepr)]
+pub enum GimmickAccessorType {
+    /// Used for things like Tiny Keys in ARR dungeons. Doesn't use any parameters.
+    Interactable = 1,
+    /// Opens a prompt with text from Param0, and optionally something in Param1 like a pop range.
+    InfalliblePrompt = 2,
+    /// Opens a prompt with text from Param0, and Param1 contains the log message if the check fails. One example is not having the correct key for a door.
+    FalliblePrompt = 3,
+    /// Used by things like the Inconspicuous Switch and Unnatural Ripples in Sastasha. Param0 is a LogMessage meant to be used for failure/inactivity/etc.
+    Message = 4,
+    /// Used for generic shortcuts (like the one for teleporting to bossrooms) as well as ones that go to specific locations. Poprange is in Param1, an optional LogMessage is in Param2 and an unknown parameter in Param3.
+    Shortcut = 5,
+    /// Used for exits. An optional PopRange is in Param1, and an unknown parameter in Param2.
+    DutyExit = 6,
+    /// Used by the Warden in The Sunken Temple of Qarn.
+    Unknown7 = 7,
+    /// Used by the stone pedestal in The Sunken Temple of Qarn.
+    Unknown8 = 8,
+    /// Used by the rusty winch in The Sil'dihn Subterrane and more.
+    Unknown9 = 9,
+    /// Guessing this is used when exiting deep dungeons, based on the text.
+    DeepDungeonExit = 10,
+    /// Makes the player follow a client path, such as the Balloons in the Strayborough Deadwalk. Param0 is unknown, Param1 is the ClientPath and Param2 is a PopRange.
+    GimmickPath = 11,
+    /// Some kind of teleportation. Used by the teleportation sigil in Occult Crescent: South Horn. Param0 is unknown, Param1 is a PopRange.
+    Unknown12 = 12,
+    /// Used for hangar terminals in Rival Wings.
+    HangarTerminal = 13,
+    /// Used by the exit in Leap of Faith.
+    LeapOfFaithExit = 14,
+    /// Used in PublicContent like Occult Crescent, uses all parameters.
+    Unknown16 = 16,
+    /// Only displays text, used for flavor. Param0 is an index into GimmickTalk.
+    Talk = 17,
+    /// Doesn't appear to be used.
+    Unknown18 = 18,
+    /// Only used by the fallen ring in Zadnor. Param0 is unknown.
+    Unknown19 = 19,
+    Unknown20 = 20,
+    Unknown21 = 21,
+    Unknown22 = 22,
+    Unknown23 = 23,
+    Unknown24 = 24,
+    Unknown25 = 25,
+}
+
+/// List of known trigger kinds used by GimmickRect.
+#[repr(u8)]
+#[derive(Debug, Copy, Clone, FromRepr, PartialEq)]
+pub enum GimmickRectTriggerType {
+    Unknown0 = 0,
+    /// Seen in Sastasha for triggering the final boss' cutscene.
+    Cutscene = 1,
+    Unknown3 = 3,
+    Unknown4 = 4,
+    Unknown5 = 5,
+    /// Seen in Sycrus Tower, used to fake going into a separate zone.
+    FakeExit = 6,
+    Unknown7 = 7,
+    /// Seen in the Gold Saucer for its jumping pads.
+    Jump = 8,
+    Unknown9 = 9,
+    Unknown10 = 10,
+    Unknown11 = 11,
+    Unknown12 = 12,
+    /// 90% sure this is used for Duty Support/Trust NPCs talking. You can see this in the entrance of Sastasha,
+    /// where it has an EventRange placed which suspiciously lines up with when the NPCs yell.
+    FaithTalk = 13,
+    Unknown14 = 14,
+    Unknown15 = 15,
+    Unknown16 = 16,
+    Unknown17 = 17,
+    /// Obviously not only used for this, but seen in The Merchants Tale.
+    VVDRouteTrigger = 18,
+    Unknown19 = 19,
+    Unknown20 = 20,
+    Unknown21 = 21,
+    Unknown22 = 22,
+    Unknown23 = 23,
+    Unknown24 = 24,
+    Unknown25 = 25,
+}
+
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;

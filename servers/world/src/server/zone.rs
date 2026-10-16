@@ -14,7 +14,6 @@ use physis::{
 
 use crate::{
     ClientId, FromServer, GameData, StatusEffects, TerritoryNameKind, ToServer,
-    gamedata::GimmickRectTrigger,
     lua::{KawariLua, LuaZone},
     server::{
         NetworkedActor, WorldServer,
@@ -29,8 +28,8 @@ use kawari::{
     common::{
         CharacterMode, DistanceRange, DropIn, DropInLayer, DropInObjectData, ENTRANCE_CIRCLE_IDS,
         EOBJ_EXIT, EOBJ_HOUSING_ENTRANCE, EOBJ_SHORTCUT, EOBJ_SHORTCUT_EXPLORER_MODE, EventState,
-        HandlerType, ObjectId, Position, WARP_DELAY, WarpType, euler_to_direction,
-        internal_housing_row,
+        GimmickRectTriggerType, HandlerType, ObjectId, Position, WARP_DELAY, WarpType,
+        euler_to_direction, internal_housing_row,
     },
     config::get_config,
     ipc::zone::{
@@ -303,9 +302,11 @@ impl Zone {
                                     let sgb_animation_id = gimmick_rect_info.Params[2];
 
                                     // 8 seems to indicate a jumping pad
-                                    if GimmickRectTrigger::from_repr(gimmick_rect_info.TriggerIn)
-                                        .unwrap()
-                                        == GimmickRectTrigger::Jump
+                                    if GimmickRectTriggerType::from_repr(
+                                        gimmick_rect_info.TriggerIn,
+                                    )
+                                    .unwrap()
+                                        == GimmickRectTriggerType::Jump
                                     {
                                         let (_, _, translation) =
                                             Affine3A::from(target_pop_range.0.transform)
@@ -342,21 +343,21 @@ impl Zone {
                                 game_data.lookup_gimmick_rect(object.instance_id)
                         {
                             let mut map_gimmick = None;
-                            match GimmickRectTrigger::from_repr(gimmick_rect_info.TriggerIn)
+                            match GimmickRectTriggerType::from_repr(gimmick_rect_info.TriggerIn)
                                 .unwrap()
                             {
-                                GimmickRectTrigger::Cutscene
-                                | GimmickRectTrigger::VVDRouteTrigger => {
+                                GimmickRectTriggerType::Cutscene
+                                | GimmickRectTriggerType::VVDRouteTrigger => {
                                     // FIXME: We should make this less "generic".
                                     map_gimmick = Some(MapGimmick::Generic {});
                                 }
-                                GimmickRectTrigger::FakeExit => {
+                                GimmickRectTriggerType::FakeExit => {
                                     // Seen for same-zone "exit ranges" like the one in the beginning of Sycrus Tower
                                     map_gimmick = Some(MapGimmick::FakeExit {
                                         exit_pop_range_id: gimmick_rect_info.Params[0],
                                     });
                                 }
-                                GimmickRectTrigger::FaithTalk => {
+                                GimmickRectTriggerType::FaithTalk => {
                                     // TODO: not sure what the param for this one means. It obviously plugs into NpcYell somehow
                                 }
                                 _ => tracing::warn!(
