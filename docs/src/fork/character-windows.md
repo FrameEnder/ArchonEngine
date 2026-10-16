@@ -75,9 +75,20 @@ up at `0x14658B0`, naming "BannerList"; CharaCard's portrait getters are at `0xB
 
 ## Recommendations
 
-The Recommendations window (AgentRecommendList) is worked out by the **client**: it reads the RecommendContents sheet
-against its own level and quest state, and refreshes when either changes; no server packet feeds it (the only thing
-the client keeps for it is a "refresh needed" counter in UIState, which it raises itself after quests, level-ups and
-similar). It becomes available with Spirithold Broken (129), whose client script prints its unlock message
-(`LOGMESSAGE_RECOMMEND_LIST_UNLOCK`, LogMessage 3701) after the reward. So on Kawari it should list whatever the
-client's quest and level state says; what's wrong with it there needs Bob's description.
+The list itself is worked out by the **client** (AgentRecommendList reads RecommendContents against its own level
+and quest state); no server packet feeds it. But the window has to be **unlocked**: AgentRecommendList's
+IsActivatable (`0xC9F340`) checks **unlock link 9** (UIState IsUnlockLinkUnlocked) and that main command 31 is
+enabled. Unlock link 9 is Spirithold Broken's `REWARD0` quest parameter, which the server grants when the quest is
+finished (see [Quests](quests.md#quest-rewards-and-exp)); until the fork did that, the main menu's entry was greyed
+and the window answered "That command is unavailable at this time" (LogMessage 488).
+
+## How the client decides a main menu command is available
+
+UIModule's ExecuteMainCommand (vf206, `0x78BEE0`) prints LogMessage 488 whenever IsMainCommandUnlocked (vf207,
+`0x78C5B0`) says no. For commands above 26 that looks the command up in a table at `0x28A8270` (16-byte entries:
+main command, addon, agent ID, condition flags), asks the agent's IsActivatable (vf8), then refuses it under some
+conditions when the flags say so. Entries: 31 Recommendations → agent 109 (flags 1), 92 Portraits → 407 (flags 1),
+93 Adventurer Plate → 413 (flags 0). **AgentCharaCard's IsActivatable (`0xDC1220`) is only "not condition 56"**
+(BoundByDuty56, Kawari's wire bit 28: the networked conditions are numbered in Condition sheet order, `IsNetworked`
+rows only, so wire bit n is the n-th of those), so the Adventurer Plate is refused exactly when the client thinks it's
+bound by duty.

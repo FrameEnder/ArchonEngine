@@ -236,3 +236,10 @@ count; between untouched variants the starting class's is preferred. ScenarioTre
 chosen optional item. Quest EXP is `ExpFactor × ScaledQuestXP × QuestExpModifier / 100` at the player's level (matches
 retail: Eggs over Queasy 2240 at level 7, Surveying the Damage 2720 at level 8). Rested EXP does not apply to quest
 rewards. Kill EXP is in [Combat](combat.md).
+
+**Unlock links.** A quest's `REWARD…` parameters are unlock links it grants when finished (`get_quest_unlock_links`,
+`grant_quest_unlocks`): Spirithold Broken's `REWARD0 = 9` is the Recommendations window and `REWARD_LEVE = 5`
+levequests, Close to Home's `REWARD_DESION = 1` is Return (Sapphire's ManWil002 grants Return for its `Reward0 = 1`
+too). `REWARD_GIL…`/`REWARD_EXP…` are amounts and are skipped. The server sets them at `finish_quest` (with actor
+control ToggleUnlock) and, at login, for every quest already finished (`check_quest_unlocks`). Scripts can still
+unlock something mid-quest with `player:unlock(id)`, as Close to Home does for Return when attuning.

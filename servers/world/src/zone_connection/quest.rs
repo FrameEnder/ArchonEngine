@@ -1,5 +1,6 @@
 //! Quests!
 
+use icarus::Quest::QuestSheet;
 use mlua::Function;
 
 use crate::{
@@ -15,8 +16,8 @@ use kawari::{
     config::get_config,
     constants::COMPLETED_QUEST_BITMASK_SIZE,
     ipc::zone::{
-        ActiveQuest, QuestActiveList, QuestTracker, ServerZoneIpcData, ServerZoneIpcSegment,
-        TrackedQuest,
+        ActiveQuest, ActorControlCategory, QuestActiveList, QuestTracker, ServerZoneIpcData,
+        ServerZoneIpcSegment, TrackedQuest,
     },
 };
 
@@ -256,6 +257,7 @@ impl ZoneConnection {
         self.send_active_quests().await;
 
         self.player_data.quest.completed.set(adjusted_id);
+        self.grant_quest_unlocks(id, true).await;
 
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::FinishQuest {
             quest_id: adjusted_id as u16,
@@ -267,6 +269,37 @@ impl ZoneConnection {
         self.send_quest_tracker().await;
 
         self.check_achievements(true).await;
+    }
+
+    /// Unlocks what finishing quest `id` (its full row ID) grants (`GameData::get_quest_unlock_links`). `notify`
+    /// tells the client straight away; otherwise it's in PlayerSetup, at login.
+    pub async fn grant_quest_unlocks(&mut self, id: u32, notify: bool) {
+        let links = self.game_data.lock().get_quest_unlock_links(id);
+        for link in links {
+            if self.player_data.unlock.unlocks.contains(link) {
+                continue;
+            }
+            tracing::info!("Quest {id} unlocks unlock link {link}");
+            self.player_data.unlock.unlocks.set(link);
+            if notify {
+                self.actor_control_self(ActorControlCategory::ToggleUnlock {
+                    id: link,
+                    unlocked: true,
+                })
+                .await;
+            }
+        }
+    }
+
+    /// Characters who finished quests before quest unlocks were handled get them at login.
+    pub async fn check_quest_unlocks(&mut self) {
+        let completed: Vec<u32> = (0..COMPLETED_QUEST_BITMASK_SIZE as u32 * 8)
+            .filter(|quest| self.player_data.quest.completed.contains(*quest))
+            .collect();
+        for quest in completed {
+            self.grant_quest_unlocks(quest + QuestSheet::STARTING_ROW, false)
+                .await;
+        }
     }
 
     pub async fn finish_all_quests(&mut self) {

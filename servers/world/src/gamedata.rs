@@ -1955,6 +1955,27 @@ impl GameData {
         translated_variables
     }
 
+    /// The unlock links finishing this quest grants: its `REWARD…` parameters (e.g. Spirithold Broken's REWARD0 = 9,
+    /// the Recommendations window, and REWARD_LEVE = 5; Close to Home's REWARD_DESION = 1, Return), except the ones
+    /// that are amounts (REWARD_GIL…, REWARD_EXP…). The client checks these with IsUnlockLinkUnlocked, e.g.
+    /// AgentRecommendList's IsActivatable checks 9.
+    pub fn get_quest_unlock_links(&mut self, quest_id: u32) -> Vec<u32> {
+        let Some(row) = self.quest_sheet.row(quest_id) else {
+            return Vec::new();
+        };
+        row.QuestParams
+            .iter()
+            .filter(|variable| {
+                let name = variable.ScriptInstruction.to_string();
+                name.starts_with("REWARD")
+                    && !name.starts_with("REWARD_GIL")
+                    && !name.starts_with("REWARD_EXP")
+            })
+            .map(|variable| variable.ScriptArg)
+            .filter(|link| *link != 0)
+            .collect()
+    }
+
     /// Returns a list of variable name and value pairs for this CustomTalk.
     pub fn get_custom_talk_variables(&mut self, custom_talk_id: u32) -> Vec<(String, u32)> {
         let row = self.custom_talk_sheet.row(custom_talk_id).unwrap();

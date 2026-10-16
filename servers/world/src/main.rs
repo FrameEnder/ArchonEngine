@@ -651,6 +651,8 @@ async fn process_packet(
 
                             // Characters who attuned to a second aetheryte before this was handled get Teleport now.
                             connection.check_teleport_unlock(false).await;
+                            // Likewise what their finished quests unlock (e.g. Recommendations).
+                            connection.check_quest_unlocks().await;
 
                             // Stats
                             connection.send_stats().await;

@@ -57,7 +57,10 @@ add one when something is found.
 * **Achievements**: only Types 2, 3, 6 and 9 are completed automatically, and what those Types mean is the community's
   reading of the sheet, not checked on retail. Nearly completed lists are always empty. Whether retail also sends
   LogMessage 952 ("… earned the achievement …") on completion, or the client prints it, isn't known.
-* **Recommendations** are worked out by the client; what's wrong on Kawari isn't known yet.
+* **Adventurer Plate** answers "That command is unavailable at this time" on Bob's character in the Central Shroud;
+  the client only refuses it while condition 56 (bound by duty) is set, so something left that on. Not found yet
+  (Dalamud's Data → Condition window shows the client's conditions). Once it opens, the plate's contents are still
+  upstream's placeholder.
 
 * `!` debug commands are only recognised in zone chat (Say/Shout/Yell); in Party, Tell, Linkshell, Free Company or
   Novice Network chat they're posted as ordinary messages (upstream's behaviour).

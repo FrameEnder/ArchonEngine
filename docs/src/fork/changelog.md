@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-16 | — | Debug commands only work in zone chat (tools, known issues).
+| 2026-10-16 | — | Quest unlock links (quests); how the client gates main menu commands, Recommendations and the Adventurer Plate (character windows, known issues).
+| 2026-10-16 | `177bebd` | Debug commands only work in zone chat (tools, known issues).
 | 2026-10-16 | `6d54f81` | Portraits: the window's disconnect was a server panic (Grand Company rank).
 | 2026-10-16 | `048fde1` | Combat: recorded amounts and reading NPC-on-NPC damage from a duty capture; the two quest battles' targeting and healers; known issues.
 | 2026-10-16 | `4416558` | Achievements, Portraits and Recommendations page; quest battles 12 and 14, the battle talk window; quests table (7 more); opcodes, saving, tools, known issues. |
@@ -46,7 +47,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | `!achievement check` says how many achievements it completed (it was silent when there were none). |
+| — | Quests grant their unlock links (`REWARD…` parameters) when finished, and at login for quests already finished: Spirithold Broken's unlocks the Recommendations window (unlock link 9). |
+| `177bebd` | `!achievement check` says how many achievements it completed (it was silent when there were none). |
 | `6d54f81` | Fix the server panic (and the client's 90002 disconnect) when opening the Portraits window as a character in no Grand Company: the adventurer plate read the rank at index `0 - 1`. |
 | `048fde1` | Quest battles as on retail: timelines' `recorded_amounts` (what each NPC's action did on retail to players and to other NPCs, damage and heals, read from the duty capture's ActionEffect packets), retail's targeting (hedge knights on Kuplu Kopo; Quzal, the Ixali and the guards on each other) and healers (Cure thresholds fitted to the recording) in Leia's Legacy and To Guard a Guardian; skill rates from the recorded use counts; scripts for the 24 actions those NPCs use that had none (enemy auto-attack 873 among them, so the bows, Galfrid and the hedge knights attack at all). |
 | `4416558` | The rest of Gridania's story: Leia's Legacy (161), Dread Is in the Air (446), To Guard a Guardian (447), Festive Endeavors (448), Renewing the Covenant (449), The Gridanian Envoy (507) and Call of the Sea (674), with replay fixtures. Quest battles 14 (Leia's Legacy) and 12 (To Guard a Guardian) from the 2026-10-16 recording: drop-in layers `QB_SubFst055_001` and `QB_ManFst007_001`, 23 timelines. Directors: the battle talk window (`battle_talk`, DirectorPopupMessage, whose kind is now one byte), a finish scene per battle (`complete_quest_battle`'s third argument), `play_scene` with `onSceneFinished`, `despawn_bnpc`; `onActorDeath` is skipped for directors and FATEs that don't define it. Achievements: the window's list (server opcode 991), progress, near-completion replies, completion with the pop-up for quest/level/achievement Types, `!achievement`. Portraits: the adventurer plate's portrait is saved (client opcode 107) and sent back. Migration `update-2026-10-16_achievements_portrait`. |
