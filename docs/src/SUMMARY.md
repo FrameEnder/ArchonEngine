@@ -48,6 +48,7 @@
   - [Travel](fork/travel.md)
   - [Fork Opcodes](fork/opcodes.md)
   - [Tools and Debug Commands](fork/tools.md)
+  - [questkit and CI](fork/questkit.md)
   - [Kawari Web](fork/kawari-web.md)
   - [Recorder and Diagnostics](fork/recorder-and-diagnostics.md)
   - [Research Notes](fork/research.md)

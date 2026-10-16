@@ -114,6 +114,8 @@ function sceneFinished(scene, results, player)
         return
     elseif scene == SCENE_ENTER_BATTLE then
         if results[1] == 1 then
+            -- Retail's variables are all 0 once the battle is won (UI8AL only remembers the examined blade here.)
+            setVar(player, 0, false, 0)
             player:finish_event()
             player:join_quest_battle(QUESTBATTLE0, TERRITORYTYPE0)
             return

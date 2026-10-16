@@ -11,6 +11,8 @@ add one when something is found.
 * Limsa Lominsa and Ul'dah have only upstream's openings.
 * A quest script without `onEnterTerritory` leaves an enter-territory event unfinished (the client waits). The fix (`02e22b5`) was rolled back with the first quest engine and not redone.
 * Quest sequence/variable changes aren't logged or noted in packet captures any more (also lost in the rollback); use the captures' `UpdateQuest` packets or `//gm quest inspect`.
+* `questkit replay` checks variables, notices, sequences and that events finish, not scene numbers: a scene the
+  scaffolder guessed (marked TODO) needs the listing or a test in game.
 * The quest battle prompt is always allowed (`ServerRequestReply` result 0); retail presumably checks something.
 
 ## Quest battles and directors
@@ -18,6 +20,12 @@ add one when something is found.
 * **Battle talk** (the pop-up window) packet isn't known for this client; lines are said in `/say` instead.
 * Chasing Shadows' enemies only auto-attack (no skills yet).
 * Retail sends the player out of a lost battle; the delays are copied from recordings, not from known rules.
+
+## Server log
+
+* Directors and FATEs whose scripts have no `onActorDeath` log `Syntax error during onActorDeath: FromLuaConversionError
+  { from: "nil", to: "function" }` whenever something in their area dies (seen in every bundle since 2026-10-14). The
+  server should skip the callback when a script doesn't define it.
 
 ## Combat
 

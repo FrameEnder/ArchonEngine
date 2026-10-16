@@ -47,11 +47,14 @@ patch updates are merged from).
 2. **Read what the client expects.** `kawari-questdump` pulls the Quest sheet and the client's own compiled quest
    script for a quest, so scene numbers and variables come from the game. See [Tools](tools.md).
 3. **Implement**, as small and focused a change as possible, in the existing patterns.
-4. **Verify offline** where possible: quest scripts are run in a Lua simulation (lupa) against the recording's
-   variables and notices; Rust changes get `cargo build`/`cargo test` and `rustfmt --check` on the changed files only
-   (running `cargo fmt` on the workspace reformats upstream files and must not be committed).
-5. **Bob tests in game**, and sends a diagnostics bundle from Kawari Web when something is off. The bundle has the
-   server log, packet captures, the saved quest state and Kawari Probe snapshots of what the client believed.
+4. **Verify offline**: `questkit replay` runs every quest script against its retail fixture (the recording's
+   variables and notices, step by step); Rust changes get `cargo build`/`cargo test` and `rustfmt --check` on the
+   changed files only (running `cargo fmt` on the workspace reformats upstream files and must not be committed). CI
+   runs these on GitHub. See [questkit and CI](questkit.md).
+5. **Bob tests in game**, ideally with Quest Lab's *Test this quest*, and sends a diagnostics bundle from Kawari Web
+   when something is off. The bundle has the server log, packet captures, the saved quest state and Kawari Probe
+   snapshots of what the client believed; `questkit triage` gives the first read of it and `questkit compare` checks
+   the capture against retail.
 6. **Merge to master** only with Bob's OK.
 
 ## Rules that always apply
@@ -86,6 +89,8 @@ The fork's `CLAUDE.md` (repository root) repeats this rule for anyone working on
 * [Travel](travel.md): aetherytes, attunement, Teleport, map discovery, the Gridania opening.
 * [Opcodes](opcodes.md): `fork_opcodes.yml`, reading opcodes from the executable, the event packets.
 * [Tools and debug commands](tools.md): `kawari-questdump`, `kawari-opcodescan`, debug and GM commands, packet capture.
+* [questkit and CI](questkit.md): bundle triage, quest replay tests, the quest scaffolder, capture/retail comparison,
+  and the GitHub Actions checks.
 * [Kawari Web](kawari-web.md): what each part does, the Shop's mechanics, Quest Lab, progress, Diagnostics.
 * [Recorder and diagnostics](recorder-and-diagnostics.md): the Dalamud plugins and the bundle format.
 * [Research notes](research.md): content not implemented yet (Palace of the Dead, Blunderville).

@@ -1,0 +1,63 @@
+{
+  "quest": 445,
+  "script": "ManFst005_00445",
+  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387",
+  "params": {
+    "ACTOR0": 1000421,
+    "EOBJECT0": 2000953,
+    "EVENT_ACTION_PROCESS_SHOR": 15,
+    "TERRITORYTYPE1": 148,
+    "EOBJECT1": 2001194,
+    "ITEM0": 2000229,
+    "TERRITORYTYPE0": 233,
+    "QUESTBATTLE0": 11,
+    "SEQ_0_ACTOR0_LQ": 90,
+    "HOW_TO_QIB": 79,
+    "CUT_SCENE_02": 55,
+    "CUT_SCENE_03": 56,
+    "CUT_SCENE_04": 57
+  },
+  "steps": [
+    {
+      "talk": 1000421,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000"
+      }
+    },
+    {
+      "talk": 2000953,
+      "what": "EOBJECT0: into the quest battle"
+    },
+    {
+      "battle_won": 2,
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000"
+      }
+    },
+    {
+      "enter_territory": 148,
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000"
+      }
+    },
+    {
+      "talk": 2001194,
+      "what": "EOBJECT1",
+      "expect": {
+        "sequence": 255,
+        "vars": "001000000000"
+      }
+    },
+    {
+      "talk": 1000421,
+      "what": "ACTOR0",
+      "expect": {
+        "completed": true
+      }
+    }
+  ]
+}

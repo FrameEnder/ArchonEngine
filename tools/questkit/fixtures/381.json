@@ -1,0 +1,59 @@
+{
+  "quest": 381,
+  "script": "SubFst060_00381",
+  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387",
+  "params": {
+    "ACTOR0": 1000741,
+    "SEQ_0_ACTOR0": 0,
+    "EOBJECT0": 2001006,
+    "SEQ_1_EOBJECT0": 1,
+    "SEQ_1_EOBJECT0_EVENTACTIONOK": 100,
+    "SEQ_1_EOBJECT0_EVENTACTIONNO": 99,
+    "EVENT_ACTION_SEARCH": 1,
+    "ENEMY0": 3838969,
+    "ENEMY1": 3838970,
+    "ACTOR1": 1000491,
+    "SEQ_2_ACTOR1": 2,
+    "QST_ACCEPT_CHECK": 65692
+  },
+  "steps": [
+    {
+      "talk": 1000741,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 2001006,
+      "what": "EOBJECT0: searching the egg brings out the vultures",
+      "spawns": [3838969, 3838970]
+    },
+    {
+      "kill": [12, 3838970],
+      "expect": {
+        "sequence": 1,
+        "vars": "010000000000",
+        "notices": []
+      }
+    },
+    {
+      "kill": [12, 3838970],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [[0, []]]
+      }
+    },
+    {
+      "talk": 1000491,
+      "what": "ACTOR1",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

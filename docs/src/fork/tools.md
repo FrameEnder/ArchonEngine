@@ -1,5 +1,8 @@
 # Tools and debug commands
 
+The Python toolkit for quests and bundles (triage, replay, scaffold, compare) and the CI are on their own page:
+[questkit and CI](questkit.md).
+
 ## kawari-questdump (`tools/questdump`)
 
 Reads quest data and client scripts from the server's own game install. Output goes to `quest-dumps/` (`--out` to

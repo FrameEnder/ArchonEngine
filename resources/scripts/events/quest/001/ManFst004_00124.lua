@@ -2,14 +2,15 @@
 -- NOTE: The Lancer (ManFst002_00085) and Archer (ManFst003_00123) versions are the same quest with a different guild,
 -- but only this one is implemented so far.
 --
--- Checked against the client's quest script (kawari-questdump):
+-- Checked against the client's quest script (kawari-questdump) and a live recording of the quest (questkit replay):
 -- Sequence 0:   ACTOR0 offers the quest (scene 0), then explains it (scene 50.) Accepting moves you from the opening's
 --               New Gridania into the real one (TERRITORYTYPE0), and gives you ITEM0 to deliver.
 -- Sequence 1:   three objectives, in any order:
 --                 * attune to the aetheryte (ACTOR1, scenes 51 then 1)     -> UI8AL = 1
 --                 * visit the Conjurers' Guild (ACTOR2, scene 2)            -> UI8BH = 1
 --                 * hand ITEM0 to ACTOR3 (trade scene 3, then scene 100)  -> UI8BL = 1
---               ITEM0 is held in UI8CH during this sequence.
+--               ITEM0 is held in UI8CH during this sequence. UI8AH counts the objectives done, and attuning also sets
+--               BitFlag8 1 (UI8F 0x80), as the recording shows.
 -- Sequence 255: report to ACTOR4 (scene 5) to finish.
 
 SCENE_OFFER = 0
@@ -76,6 +77,11 @@ function onTalk(target, player)
     end
 end
 
+-- UI8AH counts the objectives done, as retail does (seen in a recording: 1 after attuning, 2 after the delivery.)
+function objectiveDone(player)
+    setVar(player, 0, true, getVar(player, 0, true) + 1)
+end
+
 -- Moves to turn-in once all three objectives are done. Each sequence has its own variables, so they're cleared.
 function checkCompletion(player)
     if getVar(player, 0, false) == 1 and getVar(player, 1, true) == 1 and getVar(player, 1, false) == 1 then
@@ -111,9 +117,13 @@ function sceneFinished(scene, results, player)
         return
     elseif scene == SCENE_AETHERYTE then
         setVar(player, 0, false, 1) -- UI8AL
+        objectiveDone(player)
+        -- BitFlag8 1, as retail sets it when attuning (the recording shows UI8F 0x80 from here on.)
+        player:set_quest_var(EVENT_ID, 5, player:get_quest_var(EVENT_ID, 5) | 0x80)
         checkCompletion(player)
     elseif scene == SCENE_GUILD then
         setVar(player, 1, true, 1) -- UI8BH
+        objectiveDone(player)
         checkCompletion(player)
     elseif scene == SCENE_TRADE then
         -- 1 means ITEM0 was handed over.
@@ -124,6 +134,7 @@ function sceneFinished(scene, results, player)
     elseif scene == SCENE_TRADE_OK then
         setVar(player, 2, true, 0) -- UI8CH = 0: ITEM0 is gone
         setVar(player, 1, false, 1) -- UI8BL
+        objectiveDone(player)
         checkCompletion(player)
     elseif scene == SCENE_FINISH then
         if results[1] == 1 then

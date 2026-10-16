@@ -1,0 +1,133 @@
+{
+  "quest": 129,
+  "script": "SubFst035_00129",
+  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387",
+  "params": {
+    "ACTOR0": 1000421,
+    "ACTOR1": 1000465,
+    "ACTOR2": 1000512,
+    "EVENT_ACTION_": 26,
+    "ACTOR3": 1000513,
+    "ACTOR4": 1000514,
+    "ACTOR5": 1000515,
+    "ACTOR6": 1000516,
+    "ACTOR7": 1000740,
+    "EOBJECT0": 2001232,
+    "EVENT_ACTION_SEARCH": 1,
+    "TERRITORYTYPE1": 148,
+    "ACTOR8": 1000100,
+    "REWARD0": 9,
+    "TERRITORYTYPE0": 225,
+    "QUESTBATTLE0": 15,
+    "SEQ_0_ACTOR0_LQ": 50,
+    "LOC_ACTOR0": 1003064,
+    "UNLOCK_CHECK_INN_REWARD": 2,
+    "UNLOCK_IMAGE_INN": 18,
+    "UNLOCK_IMAGE_GEAR_SET": 29,
+    "REWARD_LEVE": 5,
+    "UNLOCK_IMAGE_LEVE": 20,
+    "EOBJECT6": 2654267,
+    "EOBJECT7": 2654268,
+    "EOBJECT8": 2654272,
+    "MOTION3": 708,
+    "ACTOR9": 1000102,
+    "ACTOR10": 1000101,
+    "EOBJECT9": 1140501,
+    "EOBJECT10": 1140471,
+    "LOGMESSAGE_RECOMMEND_LIST_UNLOCK": 3701,
+    "CUT_SCENE_02": 70,
+    "CUT_SCENE_03": 71,
+    "CUT_SCENE_04": 72
+  },
+  "steps": [
+    {
+      "talk": 1000421,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000"
+      }
+    },
+    {
+      "talk": 1000465,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000"
+      }
+    },
+    {
+      "talk": 1000512,
+      "what": "ACTOR2",
+      "expect": {
+        "sequence": 2,
+        "vars": "010000000080"
+      }
+    },
+    {
+      "talk": 1000513,
+      "what": "ACTOR3",
+      "expect": {
+        "sequence": 2,
+        "vars": "0200000000c0"
+      }
+    },
+    {
+      "talk": 1000514,
+      "what": "ACTOR4",
+      "expect": {
+        "sequence": 2,
+        "vars": "0300000000e0"
+      }
+    },
+    {
+      "talk": 1000515,
+      "what": "ACTOR5",
+      "expect": {
+        "sequence": 2,
+        "vars": "0400000000f0"
+      }
+    },
+    {
+      "talk": 1000516,
+      "what": "ACTOR6",
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000"
+      }
+    },
+    {
+      "talk": 1000740,
+      "what": "ACTOR7 (the Hearer): into the quest battle"
+    },
+    {
+      "battle_won": 4,
+      "expect": {
+        "sequence": 4,
+        "vars": "000000000000"
+      }
+    },
+    {
+      "enter_territory": 148,
+      "expect": {
+        "sequence": 5,
+        "vars": "000000000000"
+      }
+    },
+    {
+      "talk": 1000465,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000"
+      }
+    },
+    {
+      "talk": 1000100,
+      "what": "ACTOR8",
+      "expect": {
+        "completed": true
+      }
+    }
+  ]
+}

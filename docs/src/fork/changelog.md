@@ -7,12 +7,14 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-16 | — | This documentation section (`docs/src/fork/`), `CLAUDE.md`, and an updated `FORK_ROADMAP.md`. |
+| 2026-10-16 | — | questkit and CI pages; quests, overview, Kawari Web, diagnostics and known issues updated for them. |
+| 2026-10-16 | `805fdbe` | This documentation section (`docs/src/fork/`), `CLAUDE.md`, and an updated `FORK_ROADMAP.md`. |
 
 ## Kawari Web (`FrameEnder/Kawari-Web`)
 
 | Date | Commit | Change |
 |---|---|---|
+| 2026-10-16 | `ad44611` | 2.13.0: Quest Lab's *Test this quest* (setup, capture on, a bundle tagged with the quest). |
 | 2026-10-16 | `67b2f69` | README and CLAUDE.md point to this documentation. |
 | 2026-10-16 | `c49ff92` | 2.12.0: the Shop (829 listings, gil and play coins, moogle mail delivery, admin editing). |
 | 2026-10-15 | `5b8d9c4` | 2.11.0: quest progress tracker. |
@@ -40,6 +42,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
+| — | questkit (`tools/questkit`): bundle triage, quest replay tests with fixtures for all 16 scripted quests, the quest scaffolder, capture/retail comparison and a Lua syntax check; GitHub Actions checks (`.github/workflows/fork.yml`, `tools/ci/check-changes.sh`). Fixes the replay found: Close to Home counts its objectives in UI8AH and sets BitFlag8 1 when attuning, Chasing Shadows clears UI8AL as the battle starts, as retail does. Fixes upstream's `FesHlwTransform_00946.lua`, which didn't compile. |
+| `805fdbe` | Document the fork: every feature and mechanic, in docs/src/fork |
 | `a0aec12` | Save playtime with autosave; kawari-questdump items for Kawari Web's shop |
 
 ### 2026-10-15

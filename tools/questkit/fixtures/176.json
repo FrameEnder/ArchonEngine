@@ -1,0 +1,32 @@
+{
+  "quest": 176,
+  "script": "SubFst027_00176",
+  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387",
+  "params": {
+    "ACTOR0": 1000100,
+    "SEQ_0_ACTOR0": 0,
+    "ACTOR1": 1000470,
+    "SEQ_1_ACTOR1": 1,
+    "LOC_FACE1": 605,
+    "LOC_FACE2": 604
+  },
+  "steps": [
+    {
+      "talk": 1000100,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1000470,
+      "what": "ACTOR1",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

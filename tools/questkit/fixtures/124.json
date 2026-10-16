@@ -1,0 +1,83 @@
+{
+  "quest": 124,
+  "script": "ManFst004_00124",
+  "source": "Kawari Recorder export from retail 2026.09.15, a fresh Conjurer",
+  "params": {
+    "ACTOR0": 1001140,
+    "SEQ_0_ACTOR0": 0,
+    "ITEM0": 2000120,
+    "ACTOR1": 2,
+    "SEQ_1_ACTOR1": 1,
+    "ACTOR2": 1000323,
+    "SEQ_1_ACTOR2": 2,
+    "ACTOR3": 1000768,
+    "SEQ_1_ACTOR3": 3,
+    "SEQ_1_ACTOR3_NPCTRADEOK": 100,
+    "SEQ_1_ACTOR3_NPCTRADENO": 99,
+    "SEQ_1_ACTOR0": 4,
+    "ACTOR4": 1000100,
+    "SEQ_2_ACTOR4": 5,
+    "TERRITORYTYPE0": 132,
+    "POPRANGE0": 2280858,
+    "LOC_MARKER_01": 2153091,
+    "LOC_MARKER_02": 2153104,
+    "LOC_MARKER_03": 2153111,
+    "LOC_MARKER_04": 2154539,
+    "LOC_MARKER_05": 2154540,
+    "LOC_MARKER_06": 2154541,
+    "LOC_MARKER_07": 2210446,
+    "LOC_MARKER_08": 2210454,
+    "LOC_MARKER_09": 2210461,
+    "SEQ_0_ACTOR0_LQ": 50,
+    "UNLOCK_DESION": 14,
+    "REWARD_DESION": 1,
+    "HOW_TO_MAP_AND_NAVI": 4,
+    "HOW_TO_DESION": 13,
+    "ACTOR20": 1000159,
+    "SEQ_1_ACTOR1_WAIT": 51,
+    "LOC_ACTOR0": 1003159,
+    "BIND_ACTOR0": 6229224,
+    "LOC_MOTION0": 799
+  },
+  "steps": [
+    {
+      "talk": 1001140,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000010000000"
+      }
+    },
+    {
+      "talk": 2,
+      "what": "ACTOR1 (the aetheryte)",
+      "expect": {
+        "sequence": 1,
+        "vars": "110010000080"
+      }
+    },
+    {
+      "talk": 1000768,
+      "what": "ACTOR3",
+      "expect": {
+        "sequence": 1,
+        "vars": "210100000080"
+      }
+    },
+    {
+      "talk": 1000323,
+      "what": "ACTOR2",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000"
+      }
+    },
+    {
+      "talk": 1000100,
+      "what": "ACTOR4",
+      "expect": {
+        "completed": true
+      }
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 -- Unknown object/NPC
 
 -- Scenes
-SCENE_00000 -- Show menu, depends on quest completion
+SCENE_00000 = 00000 -- Show menu, depends on quest completion
 
 -- How long Transfiguration lasts, as seen in retail
 EFFECT_DURATION = 1800.0

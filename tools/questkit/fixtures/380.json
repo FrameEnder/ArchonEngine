@@ -1,0 +1,61 @@
+{
+  "quest": 380,
+  "script": "SubFst059_00380",
+  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387",
+  "params": {
+    "ACTOR0": 1000748,
+    "SEQ_0_ACTOR0": 0,
+    "ITEM0": 2000186,
+    "ACTOR1": 1001280,
+    "SEQ_1_ACTOR1": 1,
+    "SEQ_1_ACTOR1_NPCTRADEOK": 100,
+    "SEQ_1_ACTOR1_NPCTRADENO": 99,
+    "ITEM1": 2000187,
+    "ACTOR2": 1000483,
+    "SEQ_2_ACTOR2": 2,
+    "SEQ_2_ACTOR2_NPCTRADEOK": 98,
+    "SEQ_2_ACTOR2_NPCTRADENO": 97,
+    "ITEM2": 2000188,
+    "ACTOR3": 1000741,
+    "SEQ_3_ACTOR3": 3,
+    "SEQ_3_ACTOR3_NPCTRADEOK": 96,
+    "SEQ_3_ACTOR3_NPCTRADENO": 95
+  },
+  "steps": [
+    {
+      "talk": 1000748,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "001000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1001280,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 2,
+        "vars": "000100000000",
+        "notices": [[0, [26151]]]
+      }
+    },
+    {
+      "talk": 1000483,
+      "what": "ACTOR2",
+      "expect": {
+        "sequence": 255,
+        "vars": "000010000000",
+        "notices": [[1, [26151]]]
+      }
+    },
+    {
+      "talk": 1000741,
+      "what": "ACTOR3",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

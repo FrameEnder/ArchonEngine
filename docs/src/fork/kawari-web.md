@@ -1,6 +1,6 @@
 # Kawari Web
 
-Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.12.0**) runs beside the server in its own container. Its
+Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.13.0**) runs beside the server in its own container. Its
 README is the user guide (setup, pages, service, forges, builds); this page is about **how its features work** and
 how they depend on the fork. Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates).
 
@@ -75,6 +75,24 @@ doesn't have, scenes the client script doesn't contain, `-- NOTE: unverified` ma
 commands; **Set up a character** (logged out, snapshot first: completes prerequisites, taking one branch of "any one
 of" — the quest's own city — raises the class to the quest level, leaves the quest ready, at a sequence, completed or
 never started); a zip bundle of dumps, scripts and `Global.lua` with a manifest. Dumps stay private.
+
+### Test this quest (2.13.0)
+
+`kawari_web/questtest.py`, the *Test this quest* card on each quest's page:
+
+* **Start the test**: runs the same character setup as *Set up a character* (`prepare_character`, logged out,
+  snapshot first; ready to accept or in progress at a sequence), turns packet capture on through `set_capture` if it
+  was off (config.yaml `world.packet_capture` and the capture folder; the server only reads it at startup, so it can
+  restart the server), and saves the session in the web app's settings (`diag_quest_test`: quest, name, character,
+  content_id, where it started, start time, whether capture was already on).
+* While it runs, the quest page shows it with a note box, and Diagnostics shows a banner. Only one test at a time.
+* **Finish the test and send it**: `build_bundle(..., quest_test=...)` with a window covering the test (+2 minutes),
+  the chosen character, the note prefixed `Quest test <id> <name>`, and `quest_test` in `meta.json` and the README.
+  Committed to kawari-diagnostics like any bundle. Optionally turns capture back off (only if the test turned it on).
+* **Cancel without sending** drops the session.
+
+`questkit triage` reads `quest_test` and filters its timeline to that quest; `questkit compare` checks the bundle's
+capture against a retail recording.
 
 ## Quest progress (Dashboard → Progress)
 

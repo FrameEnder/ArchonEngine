@@ -1,0 +1,72 @@
+{
+  "quest": 3855,
+  "script": "XxaFst031_03855",
+  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387",
+  "params": {
+    "ACTOR0": 1000685,
+    "EOBJECT0": 2000010,
+    "EVENTACTION0": 15,
+    "ITEM0": 2003026,
+    "ENEMY0": 142,
+    "ACTOR1": 1000408,
+    "QST_ACCEPT_CHECK_01": 65734,
+    "QST_ACCEPT_CHECK_02": 65661
+  },
+  "steps": [
+    {
+      "talk": 1000685,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000"
+      }
+    },
+    {
+      "kill": [142, 0],
+      "what": "ENEMY0",
+      "expect": {
+        "sequence": 1,
+        "vars": "001000000000"
+      }
+    },
+    {
+      "kill": [142, 0],
+      "what": "ENEMY0",
+      "expect": {
+        "sequence": 1,
+        "vars": "002000000000"
+      }
+    },
+    {
+      "kill": [142, 0],
+      "what": "ENEMY0",
+      "expect": {
+        "sequence": 1,
+        "vars": "103000000000"
+      }
+    },
+    {
+      "talk": 2000010,
+      "what": "EOBJECT0",
+      "expect": {
+        "sequence": 2,
+        "vars": "001000000000"
+      }
+    },
+    {
+      "talk": 1000685,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 255,
+        "vars": "001000000000"
+      }
+    },
+    {
+      "talk": 1000408,
+      "what": "ACTOR1",
+      "expect": {
+        "completed": true
+      }
+    }
+  ]
+}

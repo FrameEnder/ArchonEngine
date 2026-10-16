@@ -1,0 +1,87 @@
+# The fork's checks (upstream's own CI is .forgejo/workflows/main.yml, for Codeberg).
+#
+# Every push and pull request runs the quick checks (about a minute each): questkit's tests, every Lua script
+# compiling, every scripted quest replayed against its retail fixture, the changed files' formatting and changelog
+# entry, and the documentation building. The full Rust build and tests take much longer, and the repository is private
+# (Actions minutes are limited), so they run on pull requests, on pushes to master, and by hand (Actions -> Fork checks
+# -> Run workflow).
+#
+# See docs/src/fork/questkit.md.
+name: Fork checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: fork-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  quests:
+    name: Quest replays and scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install lupa (Lua 5.4 for Python)
+        run: pip install lupa
+      - name: questkit's own tests
+        run: python -m unittest discover tools/questkit/tests -v
+      - name: Every Lua script compiles
+        run: python tools/questkit lua-syntax
+      - name: Every scripted quest does what retail did
+        run: python tools/questkit replay -v
+
+  changes:
+    name: Formatting and changelog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Check the changed files
+        run: tools/ci/check-changes.sh "$BASE" "$HEAD"
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+  docs:
+    name: Documentation builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: mdbook@0.5.4
+      - name: Build the book
+        run: mdbook build docs
+
+  rust:
+    name: Build and test
+    if: github.event_name != 'push' || github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake libclang-dev
+      - name: Build
+        run: cargo build --workspace --locked
+      - name: Test
+        # test_item_level needs a real game install.
+        run: cargo test --workspace --locked -- --skip test_item_level
+        env:
+          CI: 1

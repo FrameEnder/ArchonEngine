@@ -1,0 +1,63 @@
+{
+  "quest": 387,
+  "script": "SubFst073_00387",
+  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387",
+  "params": {
+    "ACTOR0": 1000503,
+    "EOBJECT0": 2001016,
+    "EVENT_ACTION_SEARCH": 1,
+    "EOBJECT1": 2001018,
+    "ITEM0": 2000237,
+    "EOBJECT2": 2001017,
+    "EOBJECT3": 2001086,
+    "EOBJECT4": 2001087,
+    "EOBJECT5": 2001088,
+    "EOBJECT6": 2001845,
+    "EVENTRANGE0": 3842570,
+    "ENEMY0": 3842567,
+    "ACTOR1": 1000470,
+    "QST_ACCEPT_CHECK": 65695
+  },
+  "steps": [
+    {
+      "talk": 1000503,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "range": 3842570,
+      "what": "EVENTRANGE0: the ambush",
+      "spawns": [3842567]
+    },
+    {
+      "talk": 2001016,
+      "what": "EOBJECT0",
+      "expect": {
+        "sequence": 1,
+        "vars": "011000000080",
+        "notices": [[0, [1, 2, 21003]]]
+      }
+    },
+    {
+      "talk": 2001018,
+      "what": "EOBJECT1",
+      "expect": {
+        "sequence": 255,
+        "vars": "002000000000",
+        "notices": [[0, [2, 2, 21003]]]
+      }
+    },
+    {
+      "talk": 1000470,
+      "what": "ACTOR1",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

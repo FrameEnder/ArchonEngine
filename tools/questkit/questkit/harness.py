@@ -1,0 +1,331 @@
+"""Runs a fork quest script outside the server, the way the world server runs it, to test it against what retail does.
+
+What it copies from the server (servers/world/src/events/lua.rs, lua/player.rs, zone_connection/quest.rs):
+* every event gets a new Lua state: the scene flags, Global.lua, the Quest sheet's parameters, the script, then
+  EVENT_ID and BASE_ID;
+* the script works on a copy of the player's quests: sequence and variable changes show up in the copy straight
+  away, but accepting a quest doesn't until the event's tasks have run;
+* the tasks a callback queued (scenes, sequence and variable changes, notices...) run in order once it returns, and
+  accepting a quest starts it at sequence 255 until the script sets one;
+* the client's side is played automatically: every scene returns [1, 0] (accepted / handed over / the first
+  reward) unless the step gives other results, and an event action's progress bar always completes.
+
+Needs lupa (pip install lupa) for Lua 5.4, which the server uses too.
+"""
+
+from __future__ import annotations
+
+import copy
+from pathlib import Path
+from dataclasses import dataclass, field
+
+from . import repo
+
+try:
+    from lupa.lua54 import LuaRuntime
+except ImportError:  # pragma: no cover - reported by the commands that need it
+    LuaRuntime = None
+
+DEFAULT_RESULTS = [1, 0]
+MAX_CALLBACKS = 64
+
+
+class HarnessError(Exception):
+    pass
+
+
+@dataclass
+class Quest:
+    """A quest as the server keeps it."""
+
+    sequence: int
+    variables: list[int] = field(default_factory=lambda: [0] * 6)
+
+    def hex(self) -> str:
+        return bytes(self.variables).hex()
+
+
+@dataclass
+class World:
+    """Everything the harness keeps between events for one player."""
+
+    quests: dict[int, Quest] = field(default_factory=dict)
+    completed: set[int] = field(default_factory=set)
+    spawned: list[int] = field(default_factory=list)
+    aetherytes: set[int] = field(default_factory=set)
+    battle: tuple | None = None  # (quest battle, territory) while one is joined
+    log: list[str] = field(default_factory=list)
+
+
+class Task:
+    def __init__(self, kind: str, *args):
+        self.kind = kind
+        self.args = args
+
+    def __repr__(self):
+        return f"{self.kind}{self.args}"
+
+
+def _values(table) -> list:
+    if table is None:
+        return []
+    try:
+        return [table[i] for i in range(1, len(table) + 1)]
+    except TypeError:
+        return list(table.values())
+
+
+class FakePlayer:
+    """What a script's `player` is: reads come from the copy, writes become tasks."""
+
+    def __init__(self, harness: "Harness"):
+        self._h = harness
+        self.position = harness.lua.table_from({"x": 0.0, "y": 0.0, "z": 0.0})
+        self.rotation = 0.0
+
+    # Reads, from the copy -----------------------------------------------------------------------------------------
+    def get_quest_sequence(self, quest):
+        q = self._h.copy.quests.get(self._h.quest_number(quest))
+        return None if q is None else q.sequence
+
+    def get_quest_var(self, quest, index):
+        q = self._h.copy.quests.get(self._h.quest_number(quest))
+        if q is None or not 0 <= index < 6:
+            return 0
+        return q.variables[index]
+
+    def has_quest(self, quest):
+        number = self._h.quest_number(quest)
+        return number in self._h.copy.quests or number in self._h.copy.completed
+
+    def has_aetheryte(self, aetheryte):
+        return aetheryte in self._h.copy.aetherytes
+
+    # Writes, as tasks ---------------------------------------------------------------------------------------------
+    def set_quest_var(self, quest, index, value):
+        if not 0 <= value <= 255:
+            raise HarnessError(f"set_quest_var({index}, {value}): a variable is one byte")
+        q = self._h.copy.quests.get(self._h.quest_number(quest))
+        if q is not None and 0 <= index < 6:
+            q.variables[index] = value
+        self._h.tasks.append(Task("var", self._h.quest_number(quest), index, value))
+
+    def quest_sequence(self, quest, sequence):
+        q = self._h.copy.quests.get(self._h.quest_number(quest))
+        if q is not None:
+            q.sequence = sequence
+        self._h.tasks.append(Task("sequence", self._h.quest_number(quest), sequence))
+
+    def accept_quest(self, quest, sequence=None):
+        self._h.tasks.append(Task("accept", self._h.quest_number(quest)))
+
+    def finish_quest(self, quest, item=None):
+        self._h.tasks.append(Task("finish", self._h.quest_number(quest), item or 0))
+
+    def cancel_quest(self, quest):
+        self._h.tasks.append(Task("cancel", self._h.quest_number(quest)))
+
+    def play_scene(self, scene, flags=0, params=None):
+        self._h.tasks.append(Task("scene", int(scene), int(flags), _values(params)))
+
+    def finish_event(self):
+        self._h.tasks.append(Task("finish_event"))
+
+    def event_action(self, action):
+        self._h.tasks.append(Task("event_action", action))
+
+    def event_notice(self, handler, notice, args=None):
+        values = _values(args)
+        if len(values) > 4:
+            raise HarnessError(f"event_notice with {len(values)} arguments: the server refuses more than 4")
+        self._h.tasks.append(Task("notice", int(notice), [int(v) for v in values]))
+
+    def spawn_quest_bnpc(self, layout):
+        self._h.tasks.append(Task("spawn", layout))
+
+    def join_quest_battle(self, battle, territory):
+        self._h.tasks.append(Task("join_battle", battle, territory))
+
+    def unlock_aetheryte(self, on, aetheryte):
+        self._h.tasks.append(Task("aetheryte", aetheryte))
+
+    def __getattr__(self, name):
+        if name.startswith("_"):
+            raise AttributeError(name)
+
+        # Anything else the server offers: recorded, does nothing here.
+        def call(*args):
+            if args and args[0] is self:
+                args = args[1:]
+            self._h.tasks.append(Task("call", name, *[_values(a) if hasattr(a, "values") else a for a in args]))
+            return None
+
+        return call
+
+
+class Harness:
+    """One player and one quest script."""
+
+    def __init__(self, script_path, quest: int, params: dict[str, int], world: World | None = None):
+        if LuaRuntime is None:
+            raise HarnessError("questkit's replay needs lupa: pip install lupa")
+        self.script_path = script_path
+        self.quest = quest
+        self.params = params
+        self.world = world or World()
+        self._flags = repo.scene_flags()
+        self._global = (repo.SCRIPTS / "Global.lua").read_text()
+        self._source = Path(script_path).read_text()
+        self.lua = None
+        self.copy = World()
+        self.tasks: list[Task] = []
+
+    def quest_number(self, value) -> int:
+        value = int(value)
+        return value - repo.QUEST_HANDLER_BASE if value >= repo.QUEST_HANDLER_BASE else value
+
+    # One event ------------------------------------------------------------------------------------------------------
+    def _new_state(self, base_id: int | None):
+        lua = LuaRuntime(unpack_returned_tuples=True)
+        globals_ = lua.globals()
+        for name, value in self._flags.items():
+            globals_[name] = value
+        lua.execute(self._global)
+        for name, value in self.params.items():
+            globals_[name] = value
+        lua.execute(self._source)
+        globals_.EVENT_ID = repo.QUEST_HANDLER_BASE + self.quest
+        if base_id is not None:
+            globals_.BASE_ID = base_id
+        self.lua = lua
+        self.player = FakePlayer(self)
+        return globals_
+
+    def _call(self, name: str, *args) -> list[Task]:
+        """Calls one of the script's callbacks with a fresh copy of the player, then runs what it queued."""
+        function = self.lua.globals()[name]
+        if function is None:
+            raise HarnessError(f"the script has no {name}")
+        self.copy = copy.deepcopy(self.world)
+        self.tasks = []
+        function(*args)
+        tasks = self.tasks
+        self._apply(tasks)
+        return tasks
+
+    def _apply(self, tasks: list[Task]):
+        world = self.world
+        for task in tasks:
+            kind = task.kind
+            if kind == "accept":
+                world.quests[task.args[0]] = Quest(0xFF)
+                world.log.append(f"accept {task.args[0]}")
+            elif kind == "sequence":
+                quest = world.quests.get(task.args[0])
+                if quest is None:
+                    raise HarnessError(f"quest_sequence({task.args[1]}) on a quest that isn't active")
+                quest.sequence = task.args[1]
+            elif kind == "var":
+                quest = world.quests.get(task.args[0])
+                if quest is None:
+                    raise HarnessError(f"set_quest_var on a quest that isn't active")
+                quest.variables[task.args[1]] = task.args[2]
+            elif kind == "finish":
+                world.quests.pop(task.args[0], None)
+                world.completed.add(task.args[0])
+                world.log.append(f"finish {task.args[0]} item {task.args[1]}")
+            elif kind == "cancel":
+                world.quests.pop(task.args[0], None)
+            elif kind == "spawn":
+                world.spawned.append(task.args[0])
+            elif kind == "aetheryte":
+                world.aetherytes.add(task.args[0])
+            elif kind == "join_battle":
+                world.battle = (task.args[0], task.args[1])
+
+    def _drive(self, first: list[Task], results: dict, trace: list) -> dict:
+        """Plays the client's side of an event until the script finishes it."""
+        outcome = {"notices": [], "scenes": [], "finished": False, "calls": [], "spawned": []}
+        pending = list(first)
+        callbacks = 0
+        while True:
+            scene = None
+            action = False
+            for task in pending:
+                trace.append(repr(task))
+                if task.kind == "notice":
+                    outcome["notices"].append([task.args[0], task.args[1]])
+                elif task.kind == "scene":
+                    scene = task.args[0]
+                    outcome["scenes"].append(scene)
+                elif task.kind == "event_action":
+                    action = True
+                elif task.kind == "finish_event":
+                    outcome["finished"] = True
+                elif task.kind == "spawn":
+                    outcome["spawned"].append(task.args[0])
+                elif task.kind in ("call", "join_battle"):
+                    outcome["calls"].append(task.kind if task.kind != "call" else task.args[0])
+            if outcome["finished"] and (scene is not None or action):
+                raise HarnessError("the script played something after finishing the event")
+            callbacks += 1
+            if callbacks > MAX_CALLBACKS:
+                raise HarnessError("the event never ends (more than 64 callbacks)")
+            if scene is not None:
+                values = results.get(str(scene), results.get(scene, DEFAULT_RESULTS))
+                table = self.lua.table(*values)
+                if self.lua.globals().onReturn is not None:
+                    pending = self._call("onReturn", scene, table, self.player)
+                else:
+                    pending = self._call("onYield", scene, 0, table, self.player)
+                continue
+            if action:
+                pending = self._call("onEventActionCast", self.player)
+                continue
+            return outcome
+
+    # Steps ------------------------------------------------------------------------------------------------------------
+    def talk(self, base_id: int, results: dict | None = None, trace: list | None = None) -> dict:
+        self._new_state(base_id)
+        trace = trace if trace is not None else []
+        first = self._call("onTalk", None, self.player)
+        return self._drive(first, results or {}, trace)
+
+    def enter_range(self, arg: int, results: dict | None = None, trace: list | None = None) -> dict:
+        self._new_state(None)
+        trace = trace if trace is not None else []
+        first = self._call("onEnterTrigger", self.player, arg)
+        return self._drive(first, results or {}, trace)
+
+    def enter_territory(self, results: dict | None = None, trace: list | None = None) -> dict:
+        self._new_state(None)
+        trace = trace if trace is not None else []
+        first = self._call("onEnterTerritory", self.player)
+        return self._drive(first, results or {}, trace)
+
+    def kill(self, base_id: int, layout_id: int, trace: list | None = None) -> dict:
+        self._new_state(None)
+        trace = trace if trace is not None else []
+        if self.lua.globals().onBNpcKill is None:
+            return {"notices": [], "scenes": [], "finished": True, "calls": [], "spawned": [], "no_handler": True}
+        first = self._call("onBNpcKill", base_id, layout_id, self.player)
+        outcome = self._drive(first, {}, trace)
+        outcome["finished"] = True  # kills aren't events
+        return outcome
+
+    def battle_won(self, sequence: int) -> dict:
+        """What a quest battle's director does when it's won: the quest moves to its sequence."""
+        if self.world.battle is None:
+            raise HarnessError("battle_won without joining a quest battle first")
+        quest = self.world.quests.get(self.quest)
+        if quest is None:
+            raise HarnessError("battle_won for a quest that isn't active")
+        quest.sequence = sequence
+        self.world.battle = None
+        return {"notices": [], "scenes": [], "finished": True, "calls": [], "spawned": []}
+
+    def state(self) -> dict:
+        quest = self.world.quests.get(self.quest)
+        if quest is None:
+            return {"completed": self.quest in self.world.completed}
+        return {"sequence": quest.sequence, "vars": quest.hex()}

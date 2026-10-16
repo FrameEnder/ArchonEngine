@@ -1,0 +1,85 @@
+{
+  "quest": 377,
+  "script": "SubFst056_00377",
+  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387",
+  "params": {
+    "ACTOR0": 1000435,
+    "SEQ_0_ACTOR0": 0,
+    "EOBJECT0": 2000748,
+    "SEQ_1_EOBJECT0": 1,
+    "SEQ_1_EOBJECT0_EVENTACTIONOK": 100,
+    "SEQ_1_EOBJECT0_EVENTACTIONNO": 99,
+    "EVENT_ACTION_SEARCH": 1,
+    "EOBJECT1": 2000749,
+    "SEQ_1_EOBJECT1": 2,
+    "SEQ_1_EOBJECT1_EVENTACTIONOK": 98,
+    "SEQ_1_EOBJECT1_EVENTACTIONNO": 97,
+    "EOBJECT2": 2000750,
+    "SEQ_1_EOBJECT2": 3,
+    "SEQ_1_EOBJECT2_EVENTACTIONOK": 96,
+    "SEQ_1_EOBJECT2_EVENTACTIONNO": 95,
+    "EOBJECT3": 2000751,
+    "SEQ_1_EOBJECT3": 4,
+    "SEQ_1_EOBJECT3_EVENTACTIONOK": 94,
+    "SEQ_1_EOBJECT3_EVENTACTIONNO": 93,
+    "ACTOR1": 1000436,
+    "SEQ_2_ACTOR1": 5,
+    "SEQ_2_ACTOR1_NPCTRADEOK": 92,
+    "SEQ_2_ACTOR1_NPCTRADENO": 91
+  },
+  "steps": [
+    {
+      "talk": 1000435,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 2000750,
+      "what": "EOBJECT2",
+      "expect": {
+        "sequence": 1,
+        "vars": "010000000020",
+        "notices": [[0, [1, 4]]]
+      }
+    },
+    {
+      "talk": 2000749,
+      "what": "EOBJECT1",
+      "expect": {
+        "sequence": 1,
+        "vars": "020000000060",
+        "notices": [[0, [2, 4]]]
+      }
+    },
+    {
+      "talk": 2000751,
+      "what": "EOBJECT3",
+      "expect": {
+        "sequence": 1,
+        "vars": "030000000070",
+        "notices": [[0, [3, 4]]]
+      }
+    },
+    {
+      "talk": 2000748,
+      "what": "EOBJECT0",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [[0, [4, 4]]]
+      }
+    },
+    {
+      "talk": 1000436,
+      "what": "ACTOR1",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

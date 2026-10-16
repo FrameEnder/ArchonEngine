@@ -1,0 +1,201 @@
+"""Command line for questkit."""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+
+def _triage(args) -> int:
+    from .bundle import Bundle
+    from .triage import triage
+
+    bundle = Bundle.resolve(args.bundle)
+    text = triage(bundle, timeline_items=args.timeline)
+    if args.write:
+        out = bundle.path / "TRIAGE.md"
+        out.write_text(text)
+        print(f"Wrote {out}")
+    else:
+        sys.stdout.write(text)
+    return 0
+
+
+def _fixture(args) -> int:
+    from . import fixtures
+    from .recording import Recordings
+
+    recordings = Recordings.open(args.recording)
+    quests = recordings.quest_ids if args.quests == ["all"] else [int(q) for q in args.quests]
+    status = 0
+    for quest in quests:
+        dump = fixtures.load_dump(Path(args.dumps), quest)
+        if dump is None:
+            print(f"{quest}: no dump in {args.dumps} (kawari-questdump dump {quest})")
+            status = 1
+            continue
+        fixture = fixtures.build(quest, recordings, dump, source=args.source or "")
+        path = fixtures.fixture_path(quest)
+        if path.exists() and not args.force:
+            print(f"{quest}: {path} exists, --force to replace it")
+            continue
+        fixtures.save(fixture, path)
+        todo = sum(1 for step in fixture["steps"] if "todo" in step)
+        print(f"{quest}: wrote {path} ({len(fixture['steps'])} steps{f', {todo} to fill in' if todo else ''})")
+    return status
+
+
+def _replay(args) -> int:
+    from .replay import format_results, run_all
+
+    quests = [int(q) for q in args.quests] if args.quests else None
+    results = run_all(quests)
+    print(format_results(results, verbose=args.verbose))
+    return 0 if results and all(r.ok for r in results) else 1
+
+
+def _compare(args) -> int:
+    from . import capture
+    from .bundle import Bundle
+    from .compare import compare
+    from .recording import Recordings
+
+    files = []
+    for source in args.capture:
+        path = Path(source)
+        if path.is_dir():
+            bundle = Bundle.resolve(path)
+            files.extend(bundle.capture_files())
+        else:
+            files.append(path)
+    if not files:
+        print("No packet captures found.")
+        return 1
+    packets = capture.load_many(files)
+    recordings = Recordings.open(args.recording)
+    quests = [int(q) for q in args.quests] if args.quests else None
+    same, text = compare(packets, recordings, quests, args.actor)
+    sys.stdout.write(text)
+    return 0 if same else 1
+
+
+def _scaffold(args) -> int:
+    from . import fixtures, scaffold
+    from .recording import Recordings
+    from .replay import format_results, run
+
+    dumps = Path(args.dumps)
+    dump = fixtures.load_dump(dumps, args.quest)
+    if dump is None:
+        print(f"No dump of quest {args.quest} in {dumps}: kawari-questdump dump {args.quest}")
+        return 1
+    if args.fixture:
+        fixture = fixtures.load(Path(args.fixture))
+    elif args.recording:
+        fixture = fixtures.build(args.quest, Recordings.open(args.recording), dump, source=args.source or "")
+    elif fixtures.fixture_path(args.quest).exists():
+        fixture = fixtures.load(fixtures.fixture_path(args.quest))
+    else:
+        print("Give a --recording (or a --fixture) to scaffold from.")
+        return 1
+    todo = [s for s in fixture["steps"] if "todo" in s]
+    if todo:
+        path = fixtures.save(fixture, Path(args.out_fixture) if args.out_fixture else None)
+        print(f"The recording doesn't say what {len(todo)} step(s) were; fill them in in {path} and run again "
+              f"with --fixture {path}.")
+        return 1
+    text, draft = scaffold.scaffold(args.quest, dumps, fixture)
+    out = Path(args.out) if args.out else scaffold.default_path(dump)
+    if out.exists() and not args.force:
+        print(f"{out} exists; --force to replace it, or --out somewhere else.")
+        return 1
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(text)
+    print(f"Wrote {out}")
+    fixture_out = Path(args.out_fixture) if args.out_fixture else fixtures.fixture_path(args.quest)
+    if not fixture_out.exists() or args.force:
+        fixtures.save(fixture, fixture_out)
+        print(f"Wrote {fixture_out}")
+    guessed = [s for s in draft.steps if s.scene_guessed]
+    if guessed:
+        print(f"{len(guessed)} scene(s) guessed (TODO in the script): steps "
+              + ", ".join(str(s.index + 1) for s in guessed))
+    result = run(fixture, out)
+    print(format_results([result], verbose=args.verbose))
+    return 0 if result.ok else 1
+
+
+def _lua_syntax(args) -> int:
+    """Compiles every Lua script (without running it) with Lua 5.4, the version the server embeds."""
+    from . import repo
+    from .harness import LuaRuntime
+
+    if LuaRuntime is None:
+        print("Needs lupa: pip install lupa")
+        return 1
+    lua = LuaRuntime()
+    compile_source = lua.eval("function(source, name) local f, err = load(source, name, 't'); return err end")
+    root = Path(args.path) if args.path else repo.SCRIPTS
+    failures = 0
+    count = 0
+    for path in sorted(root.rglob("*.lua")):
+        count += 1
+        error = compile_source(path.read_text(errors="replace"), "@" + str(path.relative_to(repo.ROOT)))
+        if error:
+            failures += 1
+            print(error)
+    print(f"{count - failures} of {count} Lua scripts compile")
+    return 1 if failures else 0
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(prog="questkit", description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+
+    p = commands.add_parser("triage", help="summarize a diagnostics bundle")
+    p.add_argument("bundle", help="a bundle folder, or a kawari-diagnostics checkout (uses latest.txt)")
+    p.add_argument("--timeline", type=int, default=60, help="how many quest/event packets to list per player")
+    p.add_argument("--write", action="store_true", help="write TRIAGE.md into the bundle instead of printing")
+    p.set_defaults(run=_triage)
+
+    p = commands.add_parser("fixture", help="make replay fixtures from a Kawari Recorder export and quest dumps")
+    p.add_argument("quests", nargs="+", help="quest numbers, or all")
+    p.add_argument("--recording", action="append", required=True,
+                   help="a Recorder export (zip or unpacked folder); repeat for several")
+    p.add_argument("--dumps", required=True, help="kawari-questdump's output folder (quest-dumps)")
+    p.add_argument("--source", help="where the recording came from, kept in the fixture")
+    p.add_argument("--force", action="store_true", help="replace existing fixtures")
+    p.set_defaults(run=_fixture)
+
+    p = commands.add_parser("replay", help="run the quest scripts against their fixtures (what retail did)")
+    p.add_argument("quests", nargs="*", help="only these quests")
+    p.add_argument("-v", "--verbose", action="store_true", help="show every step")
+    p.set_defaults(run=_replay)
+
+    p = commands.add_parser("compare", help="compare a quest in a Kawari capture with the same quest on retail")
+    p.add_argument("--capture", action="append", required=True,
+                   help="a capture (.jsonl or .jsonl.gz), a bundle folder or a kawari-diagnostics checkout; repeatable")
+    p.add_argument("--recording", action="append", required=True, help="a Recorder export (zip or folder); repeatable")
+    p.add_argument("--actor", type=int, help="only this player (actor ID) in the capture")
+    p.add_argument("quests", nargs="*", help="only these quests (default: every quest in both)")
+    p.set_defaults(run=_compare)
+
+    p = commands.add_parser("scaffold", help="draft a quest script from its dump and what retail did")
+    p.add_argument("quest", type=int)
+    p.add_argument("--dumps", required=True, help="kawari-questdump's output folder (quest-dumps)")
+    p.add_argument("--recording", action="append", help="a Recorder export (zip or folder); repeatable")
+    p.add_argument("--fixture", help="scaffold from this fixture instead of a recording")
+    p.add_argument("--source", help="where the recording came from, kept in the fixture")
+    p.add_argument("--out", help="where to write the script (default: its place in resources/scripts)")
+    p.add_argument("--out-fixture", help="where to write the fixture (default: tools/questkit/fixtures)")
+    p.add_argument("--force", action="store_true", help="replace an existing script/fixture")
+    p.add_argument("-v", "--verbose", action="store_true", help="show every step of the check")
+    p.set_defaults(run=_scaffold)
+
+    p = commands.add_parser("lua-syntax", help="check that every Lua script compiles (Lua 5.4, like the server)")
+    p.add_argument("path", nargs="?", help="a folder of scripts (default: resources/scripts)")
+    p.set_defaults(run=_lua_syntax)
+
+    args = parser.parse_args(argv)
+    return args.run(args)

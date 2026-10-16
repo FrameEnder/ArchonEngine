@@ -53,8 +53,12 @@ newest.
 | `captures/*.jsonl.gz` | Packet captures (gunzip; see [Tools](tools.md#packet-capture)) | Timings, exact bytes sent |
 | `config.json` | Server config, secrets removed | |
 
-Reading order: `latest.txt` → the bundle's `README.md` and `meta.json` → compare server and client quest state →
-the capture around the time of the note → the log.
+Reading order: `python3 tools/questkit triage <kawari-diagnostics>` first (it does the next steps in one report);
+by hand: `latest.txt` → the bundle's `README.md` and `meta.json` → compare server and client quest state → the
+capture around the time of the note → the log. A bundle sent by Quest Lab's *Test this quest* has `quest_test` in
+`meta.json` (quest, name, character, content_id, where it started, when), and its note starts with "Quest test".
+
+`questkit compare --capture <bundle> --recording <export>` checks the bundle's captures against a retail recording.
 
 ## Research notes (`notes/`)
 

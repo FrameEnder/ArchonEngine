@@ -177,24 +177,28 @@ name, e.g. `SubFst073_00387`).
 2. **Dump** it: `kawari-questdump <id>` (or Kawari Web → Quest Lab). Read `listing.txt`: which scenes exist, what each
    `OnScene`/`OnYield` returns, which variables tick which todo, `GetEventItems` for key items, `QST_ACCEPT_CHECK`.
 3. **Compare** with Sapphire's script (`/home/claude/sapphire` when available) for scene meaning and battle data.
-4. **Write** the script in the pattern above. New enemies → drop-in layer; new solo duty → quest battle script.
-5. **Simulate**: run the script under lupa with a fake `player` that records `quest_sequence`, `set_quest_var` and
-   `event_notice`, play the recorded order of talks/kills/searches, and compare the variable bytes and notices step by
-   step with the recording.
-6. **Test in game**: `//gm quest accept|sequence|incomplete …` or Quest Lab's "Set up a character". If something is
-   off, send a diagnostics bundle.
+4. **Scaffold** it: `python3 tools/questkit scaffold <id> --dumps quest-dumps --recording <export>` writes a draft in
+   the pattern above and its replay fixture, and replays it. Fix the scenes marked TODO against the listing (and
+   Sapphire), and anything retail does that didn't change the quest (spawns: add `spawns` to the fixture step). New
+   enemies → drop-in layer; new solo duty → quest battle script.
+5. **Replay**: `python3 tools/questkit replay <id> -v` until every step matches retail's variables and notices. The
+   fixture is committed with the script, and CI replays it on every push from then on.
+6. **Test in game**: Kawari Web → Quest Lab → *Test this quest* sets the character up, turns capture on, and sends a
+   bundle tagged with the quest when you finish; `questkit triage` and `questkit compare` read it. (Or by hand:
+   `//gm quest accept|sequence|incomplete …`.)
 7. **Document**: add it to the table below and the [Changelog](changelog.md).
 
 ## Scripted quests
 
 All Gridania, from Close to Home onwards. "Recording" means it matched a retail recording's variables and notices.
+Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `questkit replay`.
 
 | ID | Quest | Script | Checked against | What it involves |
 |---|---|---|---|---|
-| 124 | Close to Home (Conjurer) | `001/ManFst004_00124` | client script, probe snapshots | Moves the player from the opening's New Gridania (183) into the real one (132); three objectives in any order: attune (also teaches Return), visit the guild, deliver ITEM0 (held in UI8CH). Lancer/Archer variants not done. |
+| 124 | Close to Home (Conjurer) | `001/ManFst004_00124` | client script, recording | Moves the player from the opening's New Gridania (183) into the real one (132); three objectives in any order: attune (also teaches Return, sets BitFlag8 1), visit the guild, deliver ITEM0 (held in UI8CH); UI8AH counts the objectives done. Lancer/Archer variants not done. |
 | 28 | To the Bannock | `000/SubFst005_00028` | client script | Offer, report at the Bannock, chosen reward. |
 | 201 | Passing Muster | `002/SubFst045_00201` | client script | The client checks item level 5 gear itself and returns 0 if not. |
-| 445 | Chasing Shadows | `004/ManFst005_00445` | client script | Examine the blade (scene 2, Process event action), quest battle 11, aftermath on re-entering, second blade gives ITEM0 (UI8BH), trade. |
+| 445 | Chasing Shadows | `004/ManFst005_00445` | client script, recording (replay) | Examine the blade (scene 2, Process event action; UI8AL remembers it until the battle starts), quest battle 11, aftermath on re-entering, second blade gives ITEM0 (UI8BH), trade. |
 | 3854 | Eggs over Queasy | `038/XxaFst034_03854` | client script | Three chigoe kills each give an egg (UI8BH), trade. |
 | 175 | Surveying the Damage | `001/SubFst038_00175` | client script, recording | Four searches → three todos, BitFlag8s 1–4, item counts move at 255; the three-item trade returns 12 results (EventReturnHandler16). |
 | 3855 | A Soldier's Breakfast | `038/XxaFst031_03855` | client script, recording | Anole egg (Interacting bar) + three anole kills in any order, egg moves to UI8BH at sequence 2, trade. |
