@@ -47,6 +47,7 @@
   - [Saving and Connections](fork/saving.md)
   - [Travel](fork/travel.md)
   - [Achievements, Portraits and Recommendations](fork/character-windows.md)
+  - [Items That Teach Things](fork/items.md)
   - [Fork Opcodes](fork/opcodes.md)
   - [Tools and Debug Commands](fork/tools.md)
   - [questkit and CI](fork/questkit.md)

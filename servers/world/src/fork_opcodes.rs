@@ -1,8 +1,8 @@
 //! Finding the fork's own opcodes (`resources/data/fork_opcodes.yml`) again after a game update: by reading them out
 //! of the game's executable when the server starts, or with help from the server when the game sends one.
 
-use std::path::Path;
 use parking_lot::Mutex;
+use std::path::Path;
 
 use kawari::constants::SUPPORTED_GAME_VERSION;
 use kawari::exe_scan::{Exe, check_opcode, find_opcode};
@@ -59,7 +59,10 @@ pub fn scan_executable(game_path: &str) {
         }
     };
 
-    for opcode in FORK_OPCODES.iter().filter(|opcode| !opcode.finders.is_empty()) {
+    for opcode in FORK_OPCODES
+        .iter()
+        .filter(|opcode| !opcode.finders.is_empty())
+    {
         if let (true, Some(known)) = (opcode.current, opcode.opcode) {
             match check_opcode(&exe, opcode, known) {
                 Ok(()) => tracing::info!("{}: the game agrees it's {known}.", opcode.name),
@@ -113,7 +116,9 @@ pub fn log_outstanding() {
 /// When an unknown packet arrives, says which outstanding fork opcode it could be, going by its size.
 /// `kind` is the opcode list, e.g. ClientZoneIpcType, and `size` the size of its data.
 pub fn hint_unknown_packet(kind: &str, opcode: u16, size: usize) {
-    for candidate in outstanding_fork_opcodes(kind, size).filter(|candidate| found(candidate).is_none()) {
+    for candidate in
+        outstanding_fork_opcodes(kind, size).filter(|candidate| found(candidate).is_none())
+    {
         tracing::warn!(
             "Unknown packet {opcode} is the size of {} ({size} bytes), which needs finding for {SUPPORTED_GAME_VERSION}. If you just did this: {} -- then it's probably that. Put `opcode: {opcode}` and `found_on: {SUPPORTED_GAME_VERSION}` in its entry in resources/data/fork_opcodes.yml.",
             candidate.name,

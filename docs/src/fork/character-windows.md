@@ -34,19 +34,29 @@ ReceiveNearCompletionAchievements with no bitmap.
 u16, newest first), migration `update-2026-10-16_achievements_portrait`, sizes `ACHIEVEMENT_BITMASK_SIZE` and
 `ACHIEVEMENT_HISTORY_SIZE` in `constants.yml`.
 
-**Completing them.** After finishing a quest and after levelling up, the server completes (with the pop-up) every
-achievement whose requirements are met, for the Achievement sheet Types it understands. What each Type means comes
-from the community's sheet definitions (SaintCoinach), not from the client:
+**Completing them.** After finishing a quest, levelling up, discovering a map part, attuning a zone's aether
+currents and defeating an enemy, the server completes (with the pop-up) every achievement whose requirements are
+met, for the Achievement sheet Types it understands. What each Type means comes from the community's sheet
+definitions (SaintCoinach) and what the sheet's Key and Data hold for that Type's achievements, not from the client:
 
-| Type | Needs | Progress shown |
-|---|---|---|
-| 2 | Every achievement listed in Data | done / listed |
-| 3 | The class or job in Data[0] at level Data[1] | level / wanted |
-| 6 | Every quest listed in Data | done / listed |
-| 9 | Any quest listed in Data | 0 or 1 of 1 |
+| Type | Achievements | Needs | Progress shown |
+|---|---|---|---|
+| 1 | 2149 | Counter Key reaching Data[0] (only the counters below) | count / wanted |
+| 2 | 67 | Every achievement listed in Data | done / listed |
+| 3 | 267 | The class or job in Data[0] at level Data[1] | level / wanted |
+| 6 | 382 | Every quest listed in Data | done / listed |
+| 8 | 202 | Every part of map Key discovered ("Mapping the Realm"): the discovered parts against Map's DiscoveryFlag (the Central Shroud is map 4, flag 16382, parts 1–13) | parts / all |
+| 9 | 10 | Any quest listed in Data | 0 or 1 of 1 |
+| 20 | 30 | Every aether current of AetherCurrentCompFlgSet Key ("Freebird") | 0 or 1 of 1 |
 
-Everything else (kill, craft, gathering counters, dungeons, Grand Company ranks…) isn't tracked; those can be given by
-hand with `!achievement <id>`. `!achievement clear <id>` takes one away, `!achievement check` runs the check (for
+**Counters** (Type 1, `unlock.achievement_counters`, migration `update-2026-10-16-3_achievement_counters`) are kept
+per character by Key. There are 1128 Keys, which the sheet only describes in words ("Defeat 100 enemies" is Key 11,
+"gil from defeating enemies" 12, levequests 13–22, synthesis by craft and level 23–62, gathering by job, level and
+region from 63…). The server counts **Key 11** (an enemy the player fought was defeated, as quests count kills).
+Counters start at zero when the fork started counting them, where retail's count from the character's creation.
+
+Everything else (the other counters, hunting log, dungeons, PvP, beast tribes, Grand Company…) isn't tracked; those
+can be given by hand with `!achievement <id>`. `!achievement clear <id>` takes one away, `!achievement check` runs the check (for
 characters that met requirements before this existed). The sheet is read once, the first time it's needed.
 
 ## Portraits

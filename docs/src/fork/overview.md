@@ -90,6 +90,7 @@ The fork's `CLAUDE.md` (repository root) repeats this rule for anyone working on
 * [Travel](travel.md): aetherytes, attunement, Teleport, map discovery, the Gridania opening.
 * [Achievements, portraits and recommendations](character-windows.md): what the client asks for, what the server
   saves and sends.
+* [Items that teach things](items.md): mounts, emotes, hairstyles, minions… by ItemAction type.
 * [Opcodes](opcodes.md): `fork_opcodes.yml`, reading opcodes from the executable, the event packets.
 * [Tools and debug commands](tools.md): `kawari-questdump`, `kawari-opcodescan`, debug and GM commands, packet capture.
 * [questkit and CI](questkit.md): bundle triage, quest replay tests, the quest scaffolder, capture/retail comparison,

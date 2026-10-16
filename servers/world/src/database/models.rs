@@ -20,8 +20,9 @@ use kawari::{
 };
 
 use crate::{
-    ActiveQuests, Bitmask, BuddyLevels, CharaMake, ClassExperience, ClassLevels,
-    FavoriteAetherytes, GlassesIds, GrandCompanyRanks, PartyMembers, QuestBitmask, SharedFates,
+    AchievementCounters, ActiveQuests, Bitmask, BuddyLevels, CharaMake, ClassExperience,
+    ClassLevels, FavoriteAetherytes, GlassesIds, GrandCompanyRanks, PartyMembers, QuestBitmask,
+    SharedFates,
 };
 
 #[derive(Insertable, Identifiable, Queryable, Selectable, AsChangeset, Debug, Default, Clone)]
@@ -301,6 +302,8 @@ pub struct Unlock {
     pub achievements: Bitmask<ACHIEVEMENT_BITMASK_SIZE>,
     /// The last five achievements completed, newest first, as little-endian u16s.
     pub achievement_history: Bitmask<ACHIEVEMENT_HISTORY_SIZE>,
+    /// The counters "do this N times" achievements count, by their Key (see `zone_connection/achievement.rs`.)
+    pub achievement_counters: AchievementCounters,
 }
 
 #[derive(

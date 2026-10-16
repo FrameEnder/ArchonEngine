@@ -2,27 +2,43 @@
 //! `unlock.achievement_history`), sent when the client asks (the Achievements window), and completed when the
 //! character meets what the Achievement sheet asks for.
 //!
-//! What each Achievement sheet Type asks for, as the community's sheet definitions (SaintCoinach) describe it. Only
-//! these are checked; the rest (counters for kills, crafts and so on) can only be given with `//gm achievement`:
+//! What each Achievement sheet Type asks for, as the community's sheet definitions (SaintCoinach) describe it, and the
+//! Key and Data of the achievements of each Type show. Only these are checked; the rest can only be given with
+//! `!achievement`:
+//! * 1: a counter (Key) reaching Data[0], for the counters in `COUNTED` (the rest aren't counted yet)
 //! * 2: every achievement in Data
 //! * 3: the class or job Data[0] at level Data[1] or above
 //! * 6: every quest in Data
+//! * 8: every part of map Key discovered (Map's DiscoveryFlag), "Mapping the Realm"
 //! * 9: any quest in Data
+//! * 20: every aether current in a zone (AetherCurrentCompFlgSet Key), "Freebird"
 
 use kawari::{
     constants::{ACHIEVEMENT_BITMASK_SIZE, ACHIEVEMENT_HISTORY_SIZE},
     ipc::zone::{ActorControlCategory, ServerZoneIpcData, ServerZoneIpcSegment},
 };
 
-use crate::{ZoneConnection, common::adjust_quest_id, gamedata::AchievementRule};
+use crate::{
+    AchievementCounter, ZoneConnection, common::adjust_quest_id, gamedata::AchievementRule,
+};
 
 /// The highest achievement the client's bitmap has room for (it ignores higher ones.)
 const MAX_ACHIEVEMENT_ID: u32 = ACHIEVEMENT_BITMASK_SIZE as u32 * 8 - 1;
 
+const KIND_COUNTER: u8 = 1;
 const KIND_ACHIEVEMENTS: u8 = 2;
 const KIND_CLASS_LEVEL: u8 = 3;
 const KIND_ALL_QUESTS: u8 = 6;
+const KIND_MAP: u8 = 8;
 const KIND_ANY_QUEST: u8 = 9;
+const KIND_AETHER_CURRENTS: u8 = 20;
+
+/// "Defeat N enemies" (To Crush Your Enemies): an enemy the player had enmity with died, as quests count kills.
+pub const COUNTER_ENEMIES_DEFEATED: u32 = 11;
+
+/// The Type 1 counters the server counts. Retail's have counted since the character was made; these count from when
+/// the fork started counting them.
+const COUNTED: &[u32] = &[COUNTER_ENEMIES_DEFEATED];
 
 impl ZoneConnection {
     pub fn has_achievement(&self, id: u32) -> bool {
@@ -86,11 +102,55 @@ impl ZoneConnection {
             history.iter().flat_map(|id| id.to_le_bytes()).collect();
     }
 
+    /// A counter's value (see `COUNTED`.)
+    fn achievement_counter(&self, key: u32) -> u32 {
+        let counters = &self.player_data.unlock.achievement_counters.0;
+        counters
+            .iter()
+            .find(|counter| counter.key == key)
+            .map(|counter| counter.value)
+            .unwrap_or(0)
+    }
+
+    /// Adds to one of the counters "do this N times" achievements count, and completes any that now reach theirs.
+    pub async fn add_to_achievement_counter(&mut self, key: u32, amount: u32) {
+        let counters = &mut self.player_data.unlock.achievement_counters.0;
+        match counters.iter_mut().find(|counter| counter.key == key) {
+            Some(counter) => counter.value = counter.value.saturating_add(amount),
+            None => counters.push(AchievementCounter { key, value: amount }),
+        }
+        self.check_achievements(true).await;
+    }
+
     /// How far along an achievement is, as (current, max), for the kinds that are checked; 1 of 1 for one that's
     /// complete and 0 of 0 for the rest, which the client shows without a count.
     fn achievement_progress(&self, rule: &AchievementRule) -> (u32, u32) {
         let listed = rule.data.iter().filter(|x| **x > 0).map(|x| *x as u32);
         match rule.kind {
+            KIND_COUNTER if COUNTED.contains(&(rule.key.max(0) as u32)) => {
+                let wanted = rule.data[0].max(0) as u32;
+                (
+                    self.achievement_counter(rule.key as u32).min(wanted),
+                    wanted,
+                )
+            }
+            KIND_MAP => {
+                let all = self
+                    .game_data
+                    .lock()
+                    .get_map_discovery_flag(rule.key.max(0) as u32)
+                    .unwrap_or(0);
+                let found = self.discovered_map_parts(rule.key.max(0) as u32) & all;
+                (found.count_ones(), all.count_ones())
+            }
+            KIND_AETHER_CURRENTS => {
+                let flags = &self.player_data.aether_current.comp_flg_set;
+                let index = rule.key.max(1) as u32 - 1;
+                let done = rule.key > 0
+                    && (index as usize / 8) < flags.data.len()
+                    && flags.contains(index);
+                (done as u32, 1)
+            }
             KIND_ACHIEVEMENTS => {
                 let ids: Vec<u32> = listed.collect();
                 let done = ids.iter().filter(|id| self.has_achievement(**id)).count();
@@ -163,8 +223,13 @@ impl ZoneConnection {
             .filter(|rule| {
                 matches!(
                     rule.kind,
-                    KIND_ACHIEVEMENTS | KIND_CLASS_LEVEL | KIND_ALL_QUESTS | KIND_ANY_QUEST
-                )
+                    KIND_ACHIEVEMENTS
+                        | KIND_CLASS_LEVEL
+                        | KIND_ALL_QUESTS
+                        | KIND_ANY_QUEST
+                        | KIND_MAP
+                        | KIND_AETHER_CURRENTS
+                ) || (rule.kind == KIND_COUNTER && COUNTED.contains(&(rule.key.max(0) as u32)))
             })
             .cloned()
             .collect();

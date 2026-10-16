@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-16 | — | Combat: leashing on the target's distance, the InCombat condition; the Adventurer Plate (character windows, opcodes, saving); known issues (teleport animation, the plate).
+| 2026-10-16 | — | Items That Teach Things (new page); achievements (Types 8, 20, counters); saving; known issues.
+| 2026-10-16 | `53316cd` | Combat: leashing on the target's distance, the InCombat condition; the Adventurer Plate (character windows, opcodes, saving); known issues (teleport animation, the plate).
 | 2026-10-16 | `feef465` | Quest unlock links (quests); how the client gates main menu commands, Recommendations and the Adventurer Plate (character windows, known issues).
 | 2026-10-16 | `177bebd` | Debug commands only work in zone chat (tools, known issues).
 | 2026-10-16 | `6d54f81` | Portraits: the window's disconnect was a server panic (Grand Company rank).
@@ -48,7 +49,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | The adventurer plate migration is `update-2026-10-16-2_adventurer_plate`: as `update-2026-10-16_adventurer_plate` it had the same version as the achievements one (Diesel's version is the part before `_`), so it wouldn't have run on a database that already had that one, and a new database skipped the achievements migration. |
+| — | Items that teach things work: mounts, unlock links (emotes, hairstyles…), barding, Triple Triad cards, fashion accessories and facewear are learned, as well as minions and orchestrion rolls (which no longer un-learn on a second use), and the item is used up. Achievements: Mapping the Realm (Type 8, the whole map discovered), Freebird (Type 20) and "Defeat N enemies" (counter 11), with counters saved (migration `update-2026-10-16-3_achievement_counters`); checked on discovering a map part, attuning aether currents and defeating an enemy. |
+| `53316cd` | The adventurer plate migration is `update-2026-10-16-2_adventurer_plate`: as `update-2026-10-16_adventurer_plate` it had the same version as the achievements one (Diesel's version is the part before `_`), so it wouldn't have run on a database that already had that one, and a new database skipped the achievements migration. |
 | `70fa284` | Adventurer plates are saved: the client's UpdateAdventurerPlate (opcode 795) is stored and sent back in AdventurerPlate (CharaCardData, migration `update-2026-10-16-2_adventurer_plate`); the plate shows the class/job's real level, and upstream's misplaced glasses/base plate are fixed. Enemies give up once the player they're after is more than 40 yalms from their spawn (enemies with no navmesh path never moved, so never leashed, and kept players in combat: no regeneration, 2026-10-16 bundle). The server sets the player's InCombat condition while enemies are after them, as retail does, so the client refuses Teleport and Return in combat. |
 | `feef465` | Quests grant their unlock links (`REWARD…` parameters) when finished, and at login for quests already finished: Spirithold Broken's unlocks the Recommendations window (unlock link 9). |
 | `177bebd` | `!achievement check` says how many achievements it completed (it was silent when there were none). |

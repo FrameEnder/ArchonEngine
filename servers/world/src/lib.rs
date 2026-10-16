@@ -141,6 +141,14 @@ define_sql_array!(GrandCompanyRanks, u8, 3);
 define_sql_array!(BuddyLevels, u8, 3);
 define_sql_array!(GlassesIds, u16, 2);
 define_sql_array!(SharedFates, u8, SHARED_FATES_SIZE);
+define_sql_array!(AchievementCounters, AchievementCounter);
+
+/// One of the counters "do this N times" achievements count (Achievement Type 1: its Key), and how far it's got.
+#[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
+pub struct AchievementCounter {
+    pub key: u32,
+    pub value: u32,
+}
 
 /// Helper for tests to initialize GameData, instead of each test creating its own.
 /// Please call `tracing_subscriber::fmt::try_init()` so this is printed in the CI log!

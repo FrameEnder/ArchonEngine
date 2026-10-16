@@ -440,6 +440,10 @@ impl ZoneConnection {
         roll_drops(lua_player, name_id, level);
 
         self.process_lua_player(lua_player, events).await;
+
+        // "To Crush Your Enemies" counts it.
+        self.add_to_achievement_counter(super::achievement::COUNTER_ENEMIES_DEFEATED, 1)
+            .await;
         lua_player.player_data = self.player_data.clone();
     }
 

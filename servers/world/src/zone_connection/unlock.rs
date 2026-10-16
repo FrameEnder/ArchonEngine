@@ -1,6 +1,6 @@
 //! Utility functions for managing unlock data and bitmasks.
 
-use crate::ZoneConnection;
+use crate::{ZoneConnection, bitmask::Bitmask};
 use icarus::{Adventure::AdventureSheet, AetherCurrent::AetherCurrentSheet};
 use kawari::{common::value_to_flag_byte_index_value, ipc::zone::ActorControlCategory};
 
@@ -253,6 +253,9 @@ impl ZoneConnection {
             remove_aether_current: !should_unlock,
         })
         .await;
+
+        // A zone's aether currents all attuned completes its "Freebird" achievement.
+        self.check_achievements(true).await;
     }
 
     // Difference between this an toggle_orchestrion, is that this one doesn't send an ActorControlSelf
@@ -268,6 +271,77 @@ impl ZoneConnection {
                 .unlock
                 .orchestrion_rolls
                 .clear(orchestrion_id);
+        }
+    }
+
+    /// Learns what an item teaches and uses one up, as using it does on retail. `kind` comes from `items/Items.lua`,
+    /// which names the ItemAction types the client's own check (UIState::IsItemActionUnlocked, `0x868890`) knows:
+    /// "minion" (853, Data[0]), "buddy_equip" (1013), "mount" (1322), "unlock" (2633 and 43141: an unlock link, which
+    /// is what emotes, hairstyles and many other items teach), "triple_triad_card" (3357, the item's AdditionalData),
+    /// "ornament" (20086), "orchestrion" (25183) and "glasses" (37312, a Glasses row). Already known: nothing happens
+    /// and the item is kept (the client normally won't let it be used then.)
+    pub async fn learn_from_item(&mut self, kind: &str, id: u32, item_id: u32) {
+        fn has<const N: usize>(mask: &Bitmask<N>, id: u32) -> bool {
+            (id as usize / 8) < mask.data.len() && mask.contains(id)
+        }
+
+        let unlock = &self.player_data.unlock;
+        let known = match kind {
+            "minion" => has(&unlock.minions, id),
+            "mount" => {
+                let order = self.game_data.lock().find_mount_order(id).unwrap_or(-1);
+                order < 0 || has(&unlock.mounts, order as u32)
+            }
+            "unlock" => has(&unlock.unlocks, id),
+            "buddy_equip" => has(&self.player_data.companion.unlocked_equip, id),
+            "triple_triad_card" => has(&unlock.triple_triad_cards, id),
+            "ornament" => has(&unlock.ornaments, id),
+            "orchestrion" => has(&unlock.orchestrion_rolls, id),
+            "glasses" => match self.game_data.lock().get_glasses_style(id) {
+                Some(style) => has(&unlock.glasses_styles, style),
+                None => true,
+            },
+            _ => {
+                tracing::warn!("Item {item_id} teaches something unknown ({kind} {id})");
+                return;
+            }
+        };
+        if known {
+            tracing::info!("Item {item_id}: already knows {kind} {id}");
+            return;
+        }
+
+        tracing::info!("Item {item_id} teaches {kind} {id}");
+        match kind {
+            "minion" => self.toggle_minion(id).await,
+            "mount" => {
+                let order = self.game_data.lock().find_mount_order(id).unwrap_or(0);
+                self.player_data.unlock.mounts.set(order as u32);
+                self.actor_control_self(ActorControlCategory::ToggleMountUnlock {
+                    order: order as u32,
+                    id,
+                    unlocked: true,
+                })
+                .await;
+            }
+            "unlock" => {
+                self.player_data.unlock.unlocks.set(id);
+                self.actor_control_self(ActorControlCategory::ToggleUnlock { id, unlocked: true })
+                    .await;
+            }
+            "buddy_equip" => self.unlock_buddy_equip(id).await,
+            "triple_triad_card" => self.toggle_triple_triad_card(id).await,
+            "ornament" => self.toggle_ornament(id).await,
+            "orchestrion" => self.toggle_orchestrion(id).await,
+            "glasses" => {
+                let style = self.game_data.lock().get_glasses_style(id).unwrap_or(0);
+                self.toggle_glasses_style(style).await;
+            }
+            _ => {}
+        }
+
+        if self.player_data.inventory.use_up_one(item_id) {
+            self.send_inventory().await;
         }
     }
 }

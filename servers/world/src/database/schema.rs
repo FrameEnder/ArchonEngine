@@ -154,6 +154,7 @@ diesel::table! {
         map_discovery -> Text,
         achievements -> Text,
         achievement_history -> Text,
+        achievement_counters -> Text,
     }
 }
 

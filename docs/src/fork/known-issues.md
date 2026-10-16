@@ -56,14 +56,24 @@ add one when something is found.
   the client won't start a teleport in combat, so this shouldn't come up again; if it does without enemies, it's a
   different cause.
 
+## Items
+
+* Items that teach **folklore** (4107) or **secret recipe books** (2136) aren't handled (the server doesn't keep those
+  unlocks yet); they say "Unhandled item type".
+* Learning something from an item has no log message of its own on Kawari; whether retail sends one (or the client
+  prints it from the actor control) isn't known.
+
 ## Character windows
 
 * **Adventurer Plate**: a character who has never saved theirs gets upstream's starting design (expression, lighting,
   pose, borders, a made-up profile: active hours, play styles, preferred job 38) around their own look and gear;
   retail's starting plate hasn't been recorded. Once saved, it's the client's own. What the first number of
   UpdateAdventurerPlate (1) and the server's AdventurerPlate unk fields mean isn't known.
-* **Achievements**: only Types 2, 3, 6 and 9 are completed automatically, and what those Types mean is the community's
-  reading of the sheet, not checked on retail. Nearly completed lists are always empty. Whether retail also sends
+* **Achievements**: only Types 2, 3, 6, 8, 9 and 20 and counter 11 are completed automatically (of 33 Types and 1128
+  counters), and what those Types mean is the community's reading of the sheet, not checked on retail. Mapping the
+  Realm needs every part of the map discovered, and Kawari reveals map parts one at a time as the player walks into
+  them (retail sometimes reveals a whole map at once, see `server/zone.rs`), so it depends on that working for every
+  part of a zone. Nearly completed lists are always empty. Whether retail also sends
   LogMessage 952 ("… earned the achievement …") on completion, or the client prints it, isn't known.
 
 * `!` debug commands are only recognised in zone chat (Say/Shout/Yell); in Party, Tell, Linkshell, Free Company or

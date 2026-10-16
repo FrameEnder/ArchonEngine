@@ -860,6 +860,14 @@ impl UserData for LuaPlayer {
             this.queued_tasks.push(LuaTask::CheckAchievements);
             Ok(())
         });
+        methods.add_method_mut(
+            "learn_from_item",
+            |_, this, (kind, id, item_id): (String, u32, u32)| {
+                this.queued_tasks
+                    .push(LuaTask::LearnFromItem { kind, id, item_id });
+                Ok(())
+            },
+        );
         methods.add_method_mut("toggle_ornament_all", |_, this, _: ()| {
             this.toggle_ornament_all();
             Ok(())

@@ -458,10 +458,13 @@ impl ZoneConnection {
                 LuaTask::CheckAchievements => {
                     let completed = self.check_achievements(true).await;
                     self.send_notice(&format!(
-                        "[achievement] {completed} achievement(s) completed. (Only quest, level and achievement \
-                         requirements are checked.)"
+                        "[achievement] {completed} achievement(s) completed. (Only some kinds of requirements are \
+                         checked, see the fork's documentation.)"
                     ))
                     .await;
+                }
+                LuaTask::LearnFromItem { kind, id, item_id } => {
+                    self.learn_from_item(kind, *id, *item_id).await;
                 }
                 LuaTask::ToggleOrnamentAll => {
                     let max_ornament_id = ORNAMENT_BITMASK_SIZE as u32 * 8;

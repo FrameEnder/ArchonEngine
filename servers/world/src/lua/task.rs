@@ -120,6 +120,13 @@ pub enum LuaTask {
     },
     /// Complete every achievement the character meets the requirements of.
     CheckAchievements,
+    /// Learn what an item teaches (a mount, an emote or hairstyle by unlock link, a minion…) and use the item up, as
+    /// using one does on retail. `kind` is one of `ItemUnlock`'s names (`items/Items.lua` passes them).
+    LearnFromItem {
+        kind: String,
+        id: u32,
+        item_id: u32,
+    },
     UnlockBuddyEquip {
         id: u32,
     },

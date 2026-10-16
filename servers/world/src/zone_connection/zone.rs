@@ -505,21 +505,41 @@ impl ZoneConnection {
         self.send_ipc_self(ipc).await;
     }
 
+    /// Where a map's discovered parts are kept in the discovery bitmask: the byte they start at, and how many parts
+    /// there's room for.
+    fn map_discovery_slot(&self, map_id: u32) -> Option<(usize, u32)> {
+        let (index, two_bytes) = self.game_data.lock().get_map_discovery_index(map_id)?;
+        if index < 0 {
+            return None;
+        }
+        Some(if two_bytes {
+            (index as usize * 2, 16)
+        } else {
+            (
+                DISCOVERY_MAPS_WITH_UP_TO_16_REGIONS_BITMASK_SIZE * 2 + index as usize * 4,
+                32,
+            )
+        })
+    }
+
+    /// The parts of a map discovered so far, as bits (part n is bit n, like Map's DiscoveryFlag.)
+    pub fn discovered_map_parts(&self, map_id: u32) -> u32 {
+        let Some((offset, width)) = self.map_discovery_slot(map_id) else {
+            return 0;
+        };
+        let discovered = &self.player_data.unlock.map_discovery.data;
+        (0..width / 8)
+            .map(|byte| discovered.get(offset + byte as usize).copied().unwrap_or(0) as u32)
+            .enumerate()
+            .fold(0, |parts, (byte, bits)| parts | (bits << (byte * 8)))
+    }
+
     pub async fn discover_location(&mut self, map_id: u32, map_part_id: u32) {
         // Remember it, so the map stays discovered after logging out (sent back in PlayerSetup.)
-        let discovery = self.game_data.lock().get_map_discovery_index(map_id);
-        match discovery {
-            Some((index, two_bytes)) if index >= 0 => {
+        match self.map_discovery_slot(map_id) {
+            Some((offset, width)) => {
                 let discovered = &mut self.player_data.unlock.map_discovery.data;
                 discovered.resize(MAP_DISCOVERY_BITMASK_SIZE, 0);
-                let (offset, width) = if two_bytes {
-                    (index as usize * 2, 16)
-                } else {
-                    (
-                        DISCOVERY_MAPS_WITH_UP_TO_16_REGIONS_BITMASK_SIZE * 2 + index as usize * 4,
-                        32,
-                    )
-                };
                 if map_part_id < width && offset + (map_part_id as usize / 8) < discovered.len() {
                     discovered[offset + map_part_id as usize / 8] |= 1 << (map_part_id % 8);
                 } else {
@@ -536,6 +556,9 @@ impl ZoneConnection {
             map_part_id,
         });
         self.send_ipc_self(ipc).await;
+
+        // The whole map discovered completes its "Mapping the Realm" achievement.
+        self.check_achievements(true).await;
     }
 
     pub async fn join_content(&mut self, id: u16, settings: DutyFinderSetting) {

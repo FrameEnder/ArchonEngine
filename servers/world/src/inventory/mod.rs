@@ -376,6 +376,24 @@ impl Inventory {
         self.add_in_next_free_slot(item).is_some()
     }
 
+    /// Uses up one of an item from the bags (the first stack found), e.g. one that's been used. Returns false if they
+    /// have none.
+    pub fn use_up_one(&mut self, item_id: u32) -> bool {
+        for page in &mut self.pages {
+            for index in 0..page.max_slots() as u16 {
+                let slot = page.get_slot_mut(index);
+                if slot.item_id == item_id && slot.quantity > 0 {
+                    slot.quantity -= 1;
+                    if slot.quantity == 0 {
+                        *slot = Item::default();
+                    }
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
     pub fn add_in_next_free_slot(&mut self, item: Item) -> Option<ItemInfo> {
         if item.stack_size > 1 {
             for page in &mut self.pages {

@@ -50,6 +50,8 @@ folders count as one (add `-2`, `-3`… for more on the same day). `database::mi
 * **Map discovery**: each map part the client discovers is set in the character's discovery bitmask (Map sheet
   `DiscoveryIndex`/`DiscoveryArrayByte` say where), saved in `unlock.map_discovery` (migration
   `update-2026-10-14_map_discovery`, size `MAP_DISCOVERY_BITMASK_SIZE` in `constants.yml`) and sent in PlayerSetup.
+* **Achievement counters** (`unlock.achievement_counters`, migration `update-2026-10-16-3_achievement_counters`); see
+  [Achievements](character-windows.md).
 * The **adventurer plate** as the client saved it (`volatile.adventurer_plate`, migration
   `update-2026-10-16-2_adventurer_plate`); see [Adventurer Plate](character-windows.md#adventurer-plate).
 * **Achievements** (`unlock.achievements`, `unlock.achievement_history`) and the **adventurer plate's portrait**

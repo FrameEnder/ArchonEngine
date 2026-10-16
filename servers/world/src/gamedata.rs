@@ -35,6 +35,7 @@ use icarus::GeneralAction::GeneralActionSheet;
 use icarus::GilShopItem::GilShopItemSheet;
 use icarus::GimmickAccessor::GimmickAccessorSheet;
 use icarus::GimmickRect::{GimmickRectRow, GimmickRectSheet};
+use icarus::Glasses::GlassesSheet;
 use icarus::GoldSaucerContent::GoldSaucerContentSheet;
 use icarus::HalloweenNpcSelect::HalloweenNpcSelectSheet;
 use icarus::HousingAethernet::HousingAethernetSheet;
@@ -1541,6 +1542,19 @@ impl GameData {
         let sheet = MapSheet::read_from(&mut self.resource, Language::None).ok()?;
         let row = sheet.row(map_id)?;
         Some((row.DiscoveryIndex, row.DiscoveryArrayByte))
+    }
+
+    /// Every part of a map there is to discover, as the bits its discovered parts are kept in (Map's DiscoveryFlag:
+    /// the Central Shroud's is 16382, parts 1 to 13.)
+    pub fn get_map_discovery_flag(&mut self, map_id: u32) -> Option<u32> {
+        let sheet = MapSheet::read_from(&mut self.resource, Language::None).ok()?;
+        Some(sheet.row(map_id)?.DiscoveryFlag)
+    }
+
+    /// The style a pair of glasses (Glasses sheet row) unlocks, which is what the unlock bitmask counts.
+    pub fn get_glasses_style(&mut self, glasses_id: u32) -> Option<u32> {
+        let sheet = GlassesSheet::read_from(&mut self.resource, Language::None).ok()?;
+        u32::try_from(sheet.row(glasses_id)?.Style).ok()
     }
 
     pub fn get_territory_info_map_data(&mut self, zone_id: u16) -> Option<u16> {
