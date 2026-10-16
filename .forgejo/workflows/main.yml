@@ -32,7 +32,7 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           target/
-        key: wasm-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: wasm-${{ env.PROFILE_NAME }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Build
       run: cargo build --package kawari ${{ env.CARGO_PROFILE }} --target=wasm32-unknown-unknown --lib --no-default-features
 
@@ -80,7 +80,7 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           target/
-        key: ${{ matrix.os_name }}-${{ matrix.target_name }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ matrix.os_name }}-${{ matrix.target_name }}-${{ env.PROFILE_NAME }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Install dependencies
       run: |
         sudo apt-get update
