@@ -1,0 +1,70 @@
+# Tools and debug commands
+
+## kawari-questdump (`tools/questdump`)
+
+Reads quest data and client scripts from the server's own game install. Output goes to `quest-dumps/` (`--out` to
+change; gitignored, it's Square Enix's data). Finds the game like the server does (`config.yaml` in the current
+folder), or `--game <game folder>`. Full guide: [Quest Dumps](../scripting/questdump.md).
+
+| Command | Writes | Used for |
+|---|---|---|
+| `dump <id/script/name>…` | `quest.json` (Quest sheet row: variables with names, todos, listeners, rewards, `previous_join`, place, class category), the `.luab`, a listing (`--listing` for every instruction) | Writing and checking quest scripts |
+| `chain <id> <n>` | The next `n` quests in the same journal genre | Dumping a stretch of the MSQ |
+| `extract <path or file name>…` | Any game file. A bare name (e.g. `ManFst005Btl.luab`) is found in every game_script index by its name hash; missing paths are skipped so several guesses can be tried | Quest battle scripts, openings |
+| `disasm <file.luab>` | A listing from the built-in Lua 5.1 disassembler | Scripts you already have |
+| `index` | `quest-index.json` (format 2): every quest's name, level, genre, issuer, area, class restriction, prerequisites and how they combine, `main_scenario` (in ScenarioTree), `expansion_name`, journal `genre_name`/`category_name`/`section_name` | Kawari Web's quest search, prerequisite completion and Progress page |
+| `items` | `item-index.json`: every named item's `id`, `name`, `description`, `category` (ItemUICategory), `icon`, `stack_size`, `unique`, `untradable`, in the server's language | Kawari Web's Shop item linking |
+
+Kawari Web runs it in a throwaway container from the active server image (Quest Lab, Progress, Shop → Manage).
+
+## kawari-opcodescan (`tools/opcodescan`)
+
+`cargo run --release -p kawari-opcodescan -- <game folder or ffxiv_dx11.exe> [command]`. Runs the same finders as
+the server's startup scan (see [Opcodes](opcodes.md)), and explores the executable:
+
+| Command | Does |
+|---|---|
+| *(none)* | Runs every `fork_opcodes.yml` finder and prints what each reads |
+| `switches [min cases]` | Lists switches with at least that many cases (default 200), e.g. packet dispatchers |
+| `case <switch RVA> <opcode>` | Where a switch sends an opcode |
+| `handler <function RVA>` | Follows calls back from a function to the switch cases that lead to it |
+| `check-handlers <switch RVA> <ServerZoneIpcType…>` | Round-trips the handler method over every known opcode (7.57 server packets: 139 exact, 41 sharing a handler, 1 mismatch) |
+
+Keep the executable outside the repository.
+
+## Packet capture
+
+`packet_capture: true` in the world config (`world.packet_capture`, directory `packet_capture_dir`, default
+`captures/`) writes every packet segment of each zone connection to `zone-<unix time>-<connection>.jsonl`, one JSON
+object per line (`servers/world/src/capture.rs`):
+
+| Field | Meaning |
+|---|---|
+| `t` | Unix time in ms |
+| `dir` | `out` (server → client), `in` (client → server), or `note` (free text in `text`; supported by the capture, but nothing writes notes since the quest rollback) |
+| `name`, `kind`, `size` | Kawari's name for the packet, segment kind, data size |
+| `hex` | The IPC segment as sent, **including its 16-byte IPC header** |
+| `decoded` | Kawari's reading of it (truncated if huge) |
+
+Off by default; files grow fast. Kawari Web's Diagnostics page toggles it and ships captures in bundles.
+
+## Debug commands (fork additions)
+
+Typed in game chat; the full list is in [Debug Commands](../debug_commands.md).
+
+| Command | Use |
+|---|---|
+| `!rawpacket <opcode> <hex>` | Send any IPC packet. How the QuestWork layout was mapped (marker bytes). |
+| `!rawsweep <from> <to> <hex>` | Send the same data with every *unknown* opcode in a range, to find one the client reacts to. |
+| `!directorscene <scene> [flags hex]` | Play a scene of the current director (found the 60001 victory fanfare). |
+| `!forkopcodes` | List the fork's opcodes, which are known for this game version, and how to find the rest. |
+
+GM commands for quests (`//gm quest accept|cancel|incomplete|complete|sequence|inspect <id> …`) are in
+[GM Commands](../gm_commands.md).
+
+## Server log hints
+
+* "Variables available in event …": the Quest sheet parameters a script got.
+* Unknown client packets whose size matches an outstanding fork opcode name the likely packet and what to save.
+* At startup: outstanding fork opcodes, and what the executable scan found.
+* Removals of zone clients, with the reason.

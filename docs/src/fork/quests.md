@@ -1,0 +1,227 @@
+# Quests
+
+How quests work in the fork: what the server keeps, what the client expects, the Lua API, the script pattern every
+fork quest follows, how a quest is verified, and every quest scripted so far.
+
+## What the server keeps for a quest
+
+**In memory and in world.db** (`quest` table, one row per character):
+
+| Column | Contents |
+|---|---|
+| `active` | JSON list of the active quests: id, sequence, flags, the six variable bytes (UI8A–F), the class/job it was accepted as. Up to 30. |
+| `completed` | Kawari's completed-quest bitmask (most significant bit first). |
+
+Quest progress is saved by the 30-second autosave and on logout (see [Saving](saving.md)).
+
+**What the client gets** (`QuestActiveList`, `core/src/ipc/zone/server/quest_active_list.rs`): 30 entries of 16 bytes,
+laid out like the client's `QuestWork` (mapped with marker bytes sent through `!rawpacket` on 2026-10-13):
+
+| Byte | Field |
+|---|---|
+| 0–1 | quest number (u16, e.g. 387; the Quest sheet row and handler ID are 65536 + this) |
+| 2 | sequence (0 = not started, 255 = the last step, "report back") |
+| 3 | flags |
+| 4 | accepting class/job |
+| 5–9 | ignored by the client |
+| 10–15 | UI8A … UI8F, the six variable bytes |
+
+Single quest updates (`UpdateQuest`) go to the quest's own journal slot. A padding mistake here once made the client
+read every variable one byte off (fixed in `4ed1233`, then `3f2d23e`): objectives never ticked and key items never
+showed, so when objectives look wrong, compare a Kawari Probe snapshot's `raw_hex` with the server's state first.
+
+### Quest variables
+
+Each quest has six bytes, UI8A..UI8F (`get_quest_var(quest, 0..5)`). The client's scripts address them as:
+
+* `UI8AH` / `UI8AL`: the **high** and **low nibble** of byte 0 (so two counters 0–15 in one byte);
+* `UI8A`: the whole byte;
+* **BitFlag8** n: a bit of **UI8F**, flag 1 being the top bit: `0x80 >> (n - 1)`. Used to mark "this object is done"
+  so the client stops offering it.
+
+What each variable means is **per quest**, and only the client's script says: it reads them to decide which todos are
+ticked, which objects are interactable, and which **key items** the player holds. Key items are not inventory: the
+client lists them itself from the variables (its `GetEventItems`), e.g. "ITEM0 count in UI8BH". So giving a key item
+means setting the right nibble, and handing it over means clearing it. Quests often **move** item counts to different
+nibbles at sequence 255 (Surveying the Damage, A Soldier's Breakfast); copy what the recording shows exactly.
+
+### Where a quest's names come from
+
+When a quest script loads, the server injects the Quest sheet's Lua parameters as globals
+(`servers/world/src/events/lua.rs`, `inject_lua_parameters`): `ACTOR0`, `EOBJECT1`, `ENEMY0` (a BNpcBase ID, or a
+layout ID for quest-spawned enemies), `ITEM0`, `EVENTRANGE0`, `QUESTBATTLE0`, `TERRITORYTYPE0`, `EVENT_ACTION_SEARCH`,
+`QST_ACCEPT_CHECK` and so on, plus `EVENT_ID` (the quest's handler ID) and `BASE_ID` (the NPC/object being talked
+to). The log lists them ("Variables available in event …"). A name the sheet doesn't have is silently `nil` in Lua;
+Kawari Web's Quest Lab script check flags those.
+
+## The Lua API for quests
+
+Player methods (`servers/world/src/lua/player.rs`), the ones quests use:
+
+| Method | Does |
+|---|---|
+| `play_scene(scene, flags, {params})` | Plays a scene of the current event. Flags from `event_scene.rs`: `HIDE_HOTBAR`, `NO_DEFAULT_CAMERA`, `HIDE_UI`, … (Global.lua has the names; `INITIAL_CUTSCENE_FLAGS` is the full cutscene set). |
+| `finish_event()` | Ends the event. Every path through a script must end with one, or the client waits forever. |
+| `accept_quest(id)` | Adds the quest (sequence 0). Scripts then call `quest_sequence(id, 1)` or whatever the recording shows. |
+| `get_quest_sequence(id)` | The sequence, or `nil` if the quest isn't active. |
+| `quest_sequence(id, seq)` | Sets the sequence and sends the update. |
+| `get_quest_var(id, byte)` / `set_quest_var(id, byte, value)` | Reads/writes one variable byte (0–5) and sends the quest update. Changes aren't logged; a packet capture's `UpdateQuest` packets show them. |
+| `finish_quest(id, chosen_item)` | Completes it: gil, EXP, the fixed items and crystals, the optional item the player picked (`results[2]` of the reward scene). |
+| `cancel_quest(id)`, `incomplete_quest(id)`, `has_quest(id)` | As named. |
+| `event_notice(id, notice, {args})` | Sends an EventNotice (see below). |
+| `event_action(id)` | Starts an event action (the progress bar: Searching, Aiding, Interacting…); the script gets `onEventActionCast(player)` when it completes. |
+| `spawn_quest_bnpc(layout_id)` | Brings out a battle NPC from the zone's drop-ins for this quest. |
+| `join_quest_battle(id, zone)` | Enters a quest battle (see [Quest battles](quest-battles.md)). |
+
+Callbacks a quest script can define:
+
+| Callback | When |
+|---|---|
+| `onTalk(target, player)` | The player talks to/examines `BASE_ID`. |
+| `onYield(scene, id, results, player)` / `onReturn(scene, results, player)` | A scene finished. The client can report a scene through **both**, so scripts guard with `current_scene` (below). `results` is the scene's return values. Scenes with more than 8 results arrive as EventReturnHandler16 (opcode 200 on 7.57). |
+| `onEventActionCast(player)` | An `event_action` progress bar completed. Not called if it was interrupted. |
+| `onEnterTrigger(player, arg)` | The player walked into one of the quest's event ranges (e.g. `EVENTRANGE0`). |
+| `onEnterTerritory(player)` | Entering a zone where the quest has something to do (e.g. post-battle cutscenes). A script the client starts this for must define it and finish the event; otherwise the error is logged and the client keeps waiting (a fix for that, `02e22b5`, went with the rollback). |
+| `onBNpcKill(base_id, layout_id, player)` | A battle NPC the player (or their party in the same instance) had enmity with died. `base_id` is the **BNpcBase** ID, which is what `ENEMY*` parameters are (an anole is base 142, name 120). |
+
+### Notices (the progress pop-up)
+
+`player:event_notice(EVENT_ID, n, {args})`. From retail recordings, **notice n means todo n was completed or
+advanced**, and its arguments are either:
+
+* `[count, needed]` (e.g. `[2, 4]`: "2/4"), optionally followed by an icon (`[count, needed, icon]`), or
+* a single key item icon (`[25919]`), or nothing.
+
+0–2 arguments are sent as **EventNotice2** (opcode 386 on 7.57), 3–4 as **EventNotice4** (210); more than 4 is refused
+with a warning. Retail sends them at specific moments (some quests only on the last kill, some on every step), so take
+them from the recording, not from guesswork. The table of what each quest sends is in each script's header.
+
+### NPC trades
+
+A trade scene opens the hand-over window. It returns `[1, …]` when the items were handed over and nothing when the
+window was closed. On `1`, play the "trade OK" scene, which returns `[1, chosen_item]` with the reward; then
+`finish_quest`. Never advance on a closed window.
+
+### Searching objects (event actions)
+
+`player:event_action(EVENT_ACTION_SEARCH)` shows the 'Searching' bar (the EventAction row comes from the Quest sheet's
+parameters). When it completes the server ends the bar and calls `onEventActionCast`; the script then plays the
+object's scene. The empty scene after a search is played with flags `0` (`SEARCH_SCENE_FLAGS`), as Sapphire does,
+so the hotbar doesn't flicker. Enemy damage interrupts the bar (see [Timing](timing.md)): the event ends and the player
+tries again.
+
+### Quest-spawned enemies
+
+`player:spawn_quest_bnpc(layout_id)` (`ToServer::SpawnQuestBattleNpc`, handled in `server/mod.rs`):
+
+1. looks up the layout ID in the zone's battle NPCs (from `resources/dropins/<zone>.json` layers such as
+   `QB_SubFst060_001`);
+2. does nothing if that NPC is already out (one of each at a time);
+3. inserts it, records it in `instance.quest_spawned_npcs` so it **doesn't respawn** when defeated;
+4. gives it enmity on the player, so it attacks at once.
+
+New spawns need a drop-in layer with the retail position, level and HP (from a Kawari Recorder recording).
+When editing a drop-in JSON, splice the new layer into the text: rewriting it through a JSON library changes how every
+float is written.
+
+## The script pattern
+
+Every fork quest script follows the same shape (see `SubFst073_00387.lua`):
+
+```lua
+-- Quest: <name> (<city>)
+--
+-- Checked against the client's quest script (kawari-questdump), Sapphire's script and a live recording of the quest:
+-- Sequence 0:   ... one paragraph per sequence: who, which scene, what the variables do, which notice is sent ...
+-- Sequence 255: ...
+
+SCENE_OFFER = 0            -- named scene constants
+NOTICE_PROGRESS = 0        -- notice numbers and icons, with where they come from
+
+function getVar(player, byte, high) ... end    -- nibble helpers (H = high, L = low)
+function setVar(player, byte, high, nibble) ... end
+function hasFlag(player, flag) ... end         -- BitFlag8 in UI8F
+
+current_scene = nil        -- only the scene we last played may finish
+function play(player, scene, flags) current_scene = scene; player:play_scene(scene, flags, {}) end
+
+function onTalk(target, player)
+    local sequence = player:get_quest_sequence(EVENT_ID)
+    if sequence == nil and BASE_ID == ACTOR0 then play(player, SCENE_OFFER, HIDE_HOTBAR)
+    elseif ... 
+    else player:finish_event() end
+end
+
+function sceneFinished(scene, results, player)
+    if scene ~= current_scene then return end
+    current_scene = nil
+    ... advance on the results ...
+    player:finish_event()      -- unless another scene was just played (then `return`)
+end
+
+function onYield(scene, id, results, player) sceneFinished(scene, results, player) end
+function onReturn(scene, results, player) sceneFinished(scene, results, player) end
+```
+
+Rules: the header's "Checked against…" line says what it was verified with (Kawari Web's progress page counts a quest
+as *verified* when it mentions a recording); scene numbers come from the client's script (Sapphire's when the client's
+doesn't name them); variables and notices come from the recording; everything else (names, text) from game data.
+The script goes in `resources/scripts/events/quest/<id / 100, 3 digits>/<ScriptId>.lua` (the Quest sheet's script
+name, e.g. `SubFst073_00387`).
+
+## Adding a quest, step by step
+
+1. **Recording.** Bob plays it on retail with the Kawari Recorder (Quests and Quest packets tabs) and exports. The
+   export has every sequence/variable change with what was targeted, the notices with their arguments, and NPC and
+   object positions.
+2. **Dump** it: `kawari-questdump <id>` (or Kawari Web → Quest Lab). Read `listing.txt`: which scenes exist, what each
+   `OnScene`/`OnYield` returns, which variables tick which todo, `GetEventItems` for key items, `QST_ACCEPT_CHECK`.
+3. **Compare** with Sapphire's script (`/home/claude/sapphire` when available) for scene meaning and battle data.
+4. **Write** the script in the pattern above. New enemies → drop-in layer; new solo duty → quest battle script.
+5. **Simulate**: run the script under lupa with a fake `player` that records `quest_sequence`, `set_quest_var` and
+   `event_notice`, play the recorded order of talks/kills/searches, and compare the variable bytes and notices step by
+   step with the recording.
+6. **Test in game**: `//gm quest accept|sequence|incomplete …` or Quest Lab's "Set up a character". If something is
+   off, send a diagnostics bundle.
+7. **Document**: add it to the table below and the [Changelog](changelog.md).
+
+## Scripted quests
+
+All Gridania, from Close to Home onwards. "Recording" means it matched a retail recording's variables and notices.
+
+| ID | Quest | Script | Checked against | What it involves |
+|---|---|---|---|---|
+| 124 | Close to Home (Conjurer) | `001/ManFst004_00124` | client script, probe snapshots | Moves the player from the opening's New Gridania (183) into the real one (132); three objectives in any order: attune (also teaches Return), visit the guild, deliver ITEM0 (held in UI8CH). Lancer/Archer variants not done. |
+| 28 | To the Bannock | `000/SubFst005_00028` | client script | Offer, report at the Bannock, chosen reward. |
+| 201 | Passing Muster | `002/SubFst045_00201` | client script | The client checks item level 5 gear itself and returns 0 if not. |
+| 445 | Chasing Shadows | `004/ManFst005_00445` | client script | Examine the blade (scene 2, Process event action), quest battle 11, aftermath on re-entering, second blade gives ITEM0 (UI8BH), trade. |
+| 3854 | Eggs over Queasy | `038/XxaFst034_03854` | client script | Three chigoe kills each give an egg (UI8BH), trade. |
+| 175 | Surveying the Damage | `001/SubFst038_00175` | client script, recording | Four searches → three todos, BitFlag8s 1–4, item counts move at 255; the three-item trade returns 12 results (EventReturnHandler16). |
+| 3855 | A Soldier's Breakfast | `038/XxaFst031_03855` | client script, recording | Anole egg (Interacting bar) + three anole kills in any order, egg moves to UI8BH at sequence 2, trade. |
+| 129 | Spirithold Broken | `001/SubFst035_00129` | client script, Sapphire, recording | Aid five (Aiding bar, BitFlag8 1–5), the Hearer or EOBJECT0 offers quest battle 15, post-battle cutscene, reward. |
+| 176 | On to Bentbranch | `001/SubFst027_00176` | client script, recording | Accepting goes straight to sequence 255. |
+| 376 | You Shall Not Trespass | `003/SubFst049_00376` | client script, recording | Notice 0 on reaching Roseline; four qiqirn kills, notice 1 `[count, 4]` each. |
+| 377 | Don't Look Down | `003/SubFst056_00377` | client script, Sapphire, recording | Four trumpets searched, BitFlag8 1–4, notice 0 `[count, 4]`. |
+| 379 | In the Grim Darkness of the Forest | `003/SubFst058_00379` | client script, Sapphire, recording | Notice 0 at Roseline; the bag's key item (UI8BH) with notice 1 `[25919]`; trade (scene 5 → 94). The campfire can be searched in every sequence but does nothing. |
+| 380 | Threat Level Elevated | `003/SubFst059_00380` | client script, Sapphire, recording | A letter traded along three NPCs; key items in UI8BH/BL/CH; notices 0 and 1 with `[26151]`. |
+| 381 | Migrant Marauders | `003/SubFst060_00381` | client script, Sapphire, recording | Searching the egg spawns vultures 3838969/3838970; notice 0 only on the second kill; the egg can be searched again. |
+| 384 | A Hearer Is Often Late | `003/SubFst068_00384` | client script, Sapphire, recording | Notice 0 at Leonnie. |
+| 387 | Salvaging the Scene | `003/SubFst073_00387` | client script, Sapphire, recording | Two cargoes (BitFlag8 1–2), notice 0 `[count, 2, 21003]`; walking into EVENTRANGE0 spawns the lumber toad 3842567 (scene 22); trade 23 → 24. |
+
+Upstream's own scripts cover the three city openings and the Close to Home offers. The next MSQ quests after
+Salvaging the Scene wait for a new retail recording.
+
+## Scenario Guide
+
+The Scenario Guide (the MSQ marker) is sent at login and whenever quests change (`send_scenario_guide`,
+`zone_connection/quest.rs`): the accepted main scenario quest, or else the next one that follows from what's completed
+(ScenarioTree sheet, with Sapphire's class and Grand Company checks), the last one completed, and where its issuer
+stands. When a step has variants (Close to Home per starting class), once one is done or accepted the others no longer
+count; between untouched variants the starting class's is preferred. ScenarioTree is read in whatever language it has.
+
+## Quest rewards and EXP
+
+`finish_quest` gives the Quest sheet's gil, EXP, fixed items and crystals (crystals go to the crystal bag) and the
+chosen optional item. Quest EXP is `ExpFactor × ScaledQuestXP × QuestExpModifier / 100` at the player's level (matches
+retail: Eggs over Queasy 2240 at level 7, Surveying the Damage 2720 at level 8). Rested EXP does not apply to quest
+rewards. Kill EXP is in [Combat](combat.md).
