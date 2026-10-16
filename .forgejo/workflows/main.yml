@@ -110,7 +110,7 @@ jobs:
       run: cargo build ${{ env.CARGO_PROFILE }} --target ${{ matrix.target }} --features oodle
     - name: Run Clippy
       if: matrix.target == 'x86_64-unknown-linux-gnu'
-      run: cargo clippy --features oodle -- -Dwarnings --target ${{ matrix.target }} --features oodle
+      run: cargo clippy --features oodle -- -Dwarnings --target ${{ matrix.target }}
     - name: Run Cargo fmt
       if: matrix.target == 'x86_64-unknown-linux-gnu'
       run: cargo fmt --check
