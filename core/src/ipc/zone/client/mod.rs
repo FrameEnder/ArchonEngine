@@ -166,6 +166,15 @@ pub enum ClientZoneIpcData {
         #[brw(pad_after = 4)]
         portrait: [u8; 52],
     },
+    /// The client saves its adventurer plate (the Adventurer Plate window): what the plate shows, as the server sends
+    /// it back in `ServerZoneIpcData::AdventurerPlate`. Sent by CharaCard (`0xC4AB2E` writes the opcode, 216 bytes
+    /// with the header); the first number was 1 when Bob saved his.
+    UpdateAdventurerPlate {
+        unk: u32,
+        chara_card: crate::ipc::zone::CharaCardData,
+        #[brw(pad_after = 4)]
+        timestamp: u32,
+    },
     Config(Config),
     UnkCall2 {
         unk1: [u8; 8],

@@ -210,11 +210,24 @@ pub fn npc_behavior(
                 continue;
             }
 
-            // Chased too far from home: give up, go back and heal up, paying no attention to anyone on the way.
+            // Chased too far from home: give up, go back and heal up, paying no attention to anyone on the way. That's
+            // also when the one it's after is that far from its home: an enemy that can't find a path (no navmesh
+            // route, so it never moves) would otherwise keep them in combat forever, wherever they went in the zone.
             let from_home = Vec3A::distance(spawn.common.position.0, *home);
+            let target_from_home = match current_target {
+                Some(NpcTarget::Actor(target)) => enemies
+                    .iter()
+                    .find(|(id, _, _)| id == target)
+                    .map(|(_, position, _)| Vec3A::distance(position.0, *home)),
+                _ => None,
+            };
             let is_wild_enemy = !spawn.common.owner_id.is_valid()
                 && spawn.common.object_kind == ObjectKind::BattleNpc(BattleNpcSubKind::Enemy);
-            if is_wild_enemy && *state == NpcState::Hate && from_home > LEASH_DISTANCE {
+            if is_wild_enemy
+                && *state == NpcState::Hate
+                && (from_home > LEASH_DISTANCE
+                    || target_from_home.is_some_and(|distance| distance > LEASH_DISTANCE))
+            {
                 enmity.clear();
                 dropped_targets.push(*id);
                 *state = NpcState::natural_state_of(spawn);

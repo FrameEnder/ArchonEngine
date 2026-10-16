@@ -5,6 +5,9 @@ use physis::savedata::chardat::CustomizeData;
 use super::OnlineStatusMask;
 pub use super::social_list::{SocialList, SocialListUIFlags, SocialListUILanguages};
 
+mod chara_card;
+pub use chara_card::CharaCardData;
+
 mod chara_info;
 use chara_info::CharaInfoFromContentIdsData;
 
@@ -1416,56 +1419,8 @@ pub enum ServerZoneIpcData {
         unk7: u8,
         grand_company: GrandCompany,
         grand_company_rank: u8,
-        version: u8,
-        expression: u8,
-        camera_zoom: u8,
-        directional_lighting_color_red: u8,
-        directional_lighting_color_green: u8,
-        directional_lighting_color_blue: u8,
-        directional_lighting_color_brightness: u8,
-        ambient_lighting_color_red: u8,
-        ambient_lighting_color_green: u8,
-        ambient_lighting_color_blue: u8,
-        ambient_lighting_color_brightness: u8,
-        class_job_id: u8,
-        customize: CustomizeData,
-        stain_ids1: [u8; 12],
-        gear_visibility_flag: u8,
-        top_border: u8,
-        bottom_border: u8,
-        preferred_class_job_id: u8,
-        active_hours_weekdays: [u8; 3],
-        active_hours_weekends: [u8; 3],
-        play_styles: [u8; 6],
-        flags: u8,
-        unk13: u8,
-        privacy_flags: u8,
-        stain_ids2: [u8; 12],
-        unk14: u8,
-        banner_timeline: u16,
-        animation_progress: u16,
-        head_direction_y: u16,
-        head_direction_x: u16,
-        eye_direction_y: u16,
-        eye_direction_x: u16,
-        camera_position_x: u16,
-        camera_position_y: u16,
-        camera_position_z: u16,
-        camera_target_x: u16,
-        camera_target_y: u16,
-        camera_target_z: u16,
-        image_rotation: u16,
-        directional_lighting_vertical: u16,
-        directional_lighting_horizontal: u16,
-        banner_decoration: u16,
-        banner_bg: u16,
-        banner_frame: u16,
-        title: u16,
-        decorations: [u16; 5],
-        glasses_ids: [u16; 2],
-        unk16: u16,
-        unk18: u32,
-        item_ids: [u32; 12],
+        /// What the plate shows (CharaCardData), as the client last saved it.
+        chara_card: CharaCardData,
         timestamp: u32,
         #[brw(pad_after = 132)] // empty? maybe?
         #[brw(pad_size_to = 60)]

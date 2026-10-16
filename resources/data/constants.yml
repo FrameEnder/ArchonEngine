@@ -5,6 +5,8 @@ ACHIEVEMENT_HISTORY_SIZE: 10
 ACTIVE_HELP_BITMASK_SIZE: 38
 # The adventurer plate's portrait as the client sends and receives it (BannerData in FFXIVClientStructs.)
 ADVENTURER_PLATE_PORTRAIT_SIZE: 52
+# What an adventurer plate shows, as the client saves it (CharaCardData in FFXIVClientStructs.)
+ADVENTURER_PLATE_SIZE: 188
 ADVENTURE_BITMASK_SIZE: 43
 AETHERYTE_UNLOCK_BITMASK_SIZE: 30
 AETHER_CURRENT_BITMASK_SIZE: 56

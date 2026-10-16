@@ -2567,6 +2567,14 @@ async fn process_packet(
                             // Saved with the character and sent back whenever the client asks for it.
                             connection.player_data.volatile.portrait.data = portrait.to_vec();
                         }
+                        ClientZoneIpcData::UpdateAdventurerPlate { chara_card, .. } => {
+                            // Saved straight away: the client asks for the plate again right after saving it, and
+                            // other players' requests read it from the database.
+                            connection.player_data.volatile.adventurer_plate.data =
+                                chara_card.to_bytes();
+                            let mut database = connection.database.lock();
+                            database.commit_volatile(&connection.player_data);
+                        }
                         ClientZoneIpcData::EquipGearset {
                             gearset_index,
                             containers,
@@ -3008,7 +3016,8 @@ async fn process_packet(
                             let ipc;
                             {
                                 let mut database = connection.database.lock();
-                                ipc = database.lookup_adventurer_plate(*actor_id);
+                                let mut game_data = connection.game_data.lock();
+                                ipc = database.lookup_adventurer_plate(&mut game_data, *actor_id);
                             }
                             connection.send_ipc_self(ipc).await;
                         }
@@ -4091,6 +4100,12 @@ async fn process_server_msg(
             FromServer::Conditions(conditions) => {
                 connection.conditions = conditions;
                 connection.send_conditions().await;
+            }
+            FromServer::ToggleCondition(condition, set) => {
+                if connection.conditions.has_condition(condition) != set {
+                    connection.conditions.toggle_condition(condition, set);
+                    connection.send_conditions().await;
+                }
             }
             FromServer::ChangeZone(
                 zone_id,

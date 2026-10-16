@@ -27,11 +27,11 @@ use kawari::{
         },
         zone::{
             ActionRequest, ActorControlCategory, CWLSLeaveReason, CWLSPermissionRank,
-            ClientTrigger, Conditions, Config, CrossworldLinkshellInvite, DutyFinderSetting,
-            InviteReply, InviteType, OnlineStatus, PartyMemberEntry, PartyMemberPositions,
-            PartyUpdateStatus, ReadyCheckReply, ServerZoneIpcSegment, SpawnNpc, SpawnObject,
-            SpawnPlayer, SpawnTreasure, StrategyBoard, StrategyBoardUpdate, WaymarkPlacementMode,
-            WaymarkPosition, WaymarkPreset, ZoneDiceRollResult,
+            ClientTrigger, Condition, Conditions, Config, CrossworldLinkshellInvite,
+            DutyFinderSetting, InviteReply, InviteType, OnlineStatus, PartyMemberEntry,
+            PartyMemberPositions, PartyUpdateStatus, ReadyCheckReply, ServerZoneIpcSegment,
+            SpawnNpc, SpawnObject, SpawnPlayer, SpawnTreasure, StrategyBoard, StrategyBoardUpdate,
+            WaymarkPlacementMode, WaymarkPosition, WaymarkPreset, ZoneDiceRollResult,
         },
     },
 };
@@ -131,6 +131,8 @@ pub enum FromServer {
     LoseEffect(u16, u16, ObjectId),
     // TODO: temporary
     Conditions(Conditions),
+    /// Sets or clears one condition, leaving the others as the connection has them.
+    ToggleCondition(Condition, bool),
     /// To inform the connection of the zone they're loading into.
     ChangeZone(u16, u16, u16, Position, f32, LuaZone, Option<HandlerId>),
     /// We need to inform the recipent about the direct message they're receiving.

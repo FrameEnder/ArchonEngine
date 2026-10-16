@@ -75,6 +75,7 @@ diesel::table! {
         mode_arg -> Integer,
         current_mount -> Integer,
         portrait -> Text,
+        adventurer_plate -> Text,
     }
 }
 

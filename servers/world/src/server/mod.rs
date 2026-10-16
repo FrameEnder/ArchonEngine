@@ -602,6 +602,14 @@ fn server_logic_tick(
                     actors_now_outside_instance_entrances.push(*id);
                 }
 
+                // Retail's InCombat condition, while any enemy is after them: the client won't Teleport, Return, mount
+                // or start talking to NPCs while it's set, and it's what the HP/MP regeneration below waits on.
+                let in_combat = haters.get(id).is_some_and(|haters| !haters.is_empty());
+                if in_combat != conditions.has_condition(Condition::InCombat) {
+                    let _ =
+                        handle.send(FromServer::ToggleCondition(Condition::InCombat, in_combat));
+                }
+
                 let is_in_duel_area = overlapping_ranges.iter().filter(|x| x.duel).count() > 0;
                 let has_duel_condition = conditions.has_condition(Condition::InDuelingArea);
 

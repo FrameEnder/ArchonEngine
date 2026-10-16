@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-16 | — | Quest unlock links (quests); how the client gates main menu commands, Recommendations and the Adventurer Plate (character windows, known issues).
+| 2026-10-16 | — | Combat: leashing on the target's distance, the InCombat condition; the Adventurer Plate (character windows, opcodes, saving); known issues (teleport animation, the plate).
+| 2026-10-16 | `feef465` | Quest unlock links (quests); how the client gates main menu commands, Recommendations and the Adventurer Plate (character windows, known issues).
 | 2026-10-16 | `177bebd` | Debug commands only work in zone chat (tools, known issues).
 | 2026-10-16 | `6d54f81` | Portraits: the window's disconnect was a server panic (Grand Company rank).
 | 2026-10-16 | `048fde1` | Combat: recorded amounts and reading NPC-on-NPC damage from a duty capture; the two quest battles' targeting and healers; known issues.
@@ -47,7 +48,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Quests grant their unlock links (`REWARD…` parameters) when finished, and at login for quests already finished: Spirithold Broken's unlocks the Recommendations window (unlock link 9). |
+| — | Adventurer plates are saved: the client's UpdateAdventurerPlate (opcode 795) is stored and sent back in AdventurerPlate (CharaCardData, migration `update-2026-10-16_adventurer_plate`); the plate shows the class/job's real level, and upstream's misplaced glasses/base plate are fixed. Enemies give up once the player they're after is more than 40 yalms from their spawn (enemies with no navmesh path never moved, so never leashed, and kept players in combat: no regeneration, 2026-10-16 bundle). The server sets the player's InCombat condition while enemies are after them, as retail does, so the client refuses Teleport and Return in combat. |
+| `feef465` | Quests grant their unlock links (`REWARD…` parameters) when finished, and at login for quests already finished: Spirithold Broken's unlocks the Recommendations window (unlock link 9). |
 | `177bebd` | `!achievement check` says how many achievements it completed (it was silent when there were none). |
 | `6d54f81` | Fix the server panic (and the client's 90002 disconnect) when opening the Portraits window as a character in no Grand Company: the adventurer plate read the rank at index `0 - 1`. |
 | `048fde1` | Quest battles as on retail: timelines' `recorded_amounts` (what each NPC's action did on retail to players and to other NPCs, damage and heals, read from the duty capture's ActionEffect packets), retail's targeting (hedge knights on Kuplu Kopo; Quzal, the Ixali and the guards on each other) and healers (Cure thresholds fitted to the recording) in Leia's Legacy and To Guard a Guardian; skill rates from the recorded use counts; scripts for the 24 actions those NPCs use that had none (enemy auto-attack 873 among them, so the bows, Galfrid and the hedge knights attack at all). |

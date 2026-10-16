@@ -50,17 +50,21 @@ add one when something is found.
 * Most jobs besides White Mage and Dancer have only their starter skills. Cooldowns aren't sent
   (`server/action.rs` TODO), so the client doesn't show recasts from the server.
 
+* **Teleport animation stayed on** after a same-zone teleport (Bentbranch, 2026-10-16 bundle): the warp itself was
+  on time (PrepareZoning straight after the cast, ActorSetPos 2 s later, ZoneIn with 110 after FinishZoning), but two
+  enemies that couldn't path to the player still had them on their enmity list throughout. With InCombat now set,
+  the client won't start a teleport in combat, so this shouldn't come up again; if it does without enemies, it's a
+  different cause.
+
 ## Character windows
 
-* **Portraits**: the adventurer plate the window shows is still upstream's placeholder (fixed expression, lighting,
-  favoured class level 100…), not the character's own.
+* **Adventurer Plate**: a character who has never saved theirs gets upstream's starting design (expression, lighting,
+  pose, borders, a made-up profile: active hours, play styles, preferred job 38) around their own look and gear;
+  retail's starting plate hasn't been recorded. Once saved, it's the client's own. What the first number of
+  UpdateAdventurerPlate (1) and the server's AdventurerPlate unk fields mean isn't known.
 * **Achievements**: only Types 2, 3, 6 and 9 are completed automatically, and what those Types mean is the community's
   reading of the sheet, not checked on retail. Nearly completed lists are always empty. Whether retail also sends
   LogMessage 952 ("… earned the achievement …") on completion, or the client prints it, isn't known.
-* **Adventurer Plate** answers "That command is unavailable at this time" on Bob's character in the Central Shroud;
-  the client only refuses it while condition 56 (bound by duty) is set, so something left that on. Not found yet
-  (Dalamud's Data → Condition window shows the client's conditions). Once it opens, the plate's contents are still
-  upstream's placeholder.
 
 * `!` debug commands are only recognised in zone chat (Say/Shout/Yell); in Party, Tell, Linkshell, Free Company or
   Novice Network chat they're posted as ordinary messages (upstream's behaviour).

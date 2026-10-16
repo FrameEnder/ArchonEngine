@@ -34,6 +34,7 @@ upstream's [Opcodes](../opcodes.md) page.
 | EventNotice2 | server → client | 386 | 16 | A quest/event notice with 0–2 arguments: the progress pop-up. |
 | EventNotice4 | server → client | 210 | 24 | The same with 3–4 arguments. |
 | SetAdventurerPlatePortrait | client → server | 107 | 56 | The client sets its adventurer plate's portrait. Found by the sender writing the opcode and the 72-byte size. |
+| UpdateAdventurerPlate | client → server | 795 | 200 | The client saves its adventurer plate (CharaCardData). Found in the 2026-10-16 bundle; the finder is the sender writing the opcode, then the 216-byte size. See [Adventurer Plate](character-windows.md#adventurer-plate). |
 | Achievements | server → client | 991 | 552 | The completed achievements and the last five, the reply to client trigger 1001. Found by its handler (HandleAchievementsPacket). See [Achievements](character-windows.md). |
 
 The client picks the event return packet by result count (2, 4, 8, 16…); EventReturnHandler16's finder looks for its

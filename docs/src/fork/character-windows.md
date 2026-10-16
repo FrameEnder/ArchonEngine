@@ -73,6 +73,26 @@ the Grand Company rank as `company_ranks[active_company - 1]`, which underflows 
 (0). It now sends rank 0 then, as the other two rank lookups already did. (For reference, the window's addon is set
 up at `0x14658B0`, naming "BannerList"; CharaCard's portrait getters are at `0xBC5540` and `0xBC5970`.)
 
+## Adventurer Plate
+
+**What the client does.** Opening a plate (your own, or another player's) sends **RequestAdventurerPlate** with the
+actor; the reply is **AdventurerPlate** (server, 480 bytes; FFXIVClientStructs' CharaCardPacket): FC crest and account
+(unknown, zeroes), content ID, actor, a state number (2), world, the class/job's level and the class/job, sex (1),
+Grand Company and rank, then **CharaCardData** (188 bytes, `core/src/ipc/zone/server/chara_card.rs`), a timestamp,
+the search comment and the name. CharaCardData is the plate: version (4), the portrait's expression, zoom and
+lighting, class/job, the character's customize data, dyes, gear visibility, borders, preferred job, active hours,
+play styles, privacy flags, the pose and camera (u16s), decoration, background, frame, title, **base plate**,
+five decorations, glasses, and the twelve gear item IDs. Saving the plate in the window sends
+**UpdateAdventurerPlate** (client opcode **795**, 200 bytes, a fork opcode): a u32 (1), the same 188-byte
+CharaCardData, a timestamp and padding; the client then asks for the plate again.
+
+**What the server does.** Saves the 188 bytes in `volatile.adventurer_plate` (migration
+`update-2026-10-16_adventurer_plate`, committed straight away so the re-request and other players see it) and sends
+them back as they were. A character who never saved one gets upstream's starting design around their look and gear.
+The level is now the class/job's own (upstream sent 100). Upstream's field list had no base plate, so its glasses
+were two bytes off; the starting design now puts base plate 78 and decorations 18, 8, 28, 339 where the client's own
+save has them.
+
 ## Recommendations
 
 The list itself is worked out by the **client** (AgentRecommendList reads RecommendContents against its own level
@@ -88,7 +108,8 @@ UIModule's ExecuteMainCommand (vf206, `0x78BEE0`) prints LogMessage 488 whenever
 `0x78C5B0`) says no. For commands above 26 that looks the command up in a table at `0x28A8270` (16-byte entries:
 main command, addon, agent ID, condition flags), asks the agent's IsActivatable (vf8), then refuses it under some
 conditions when the flags say so. Entries: 31 Recommendations → agent 109 (flags 1), 92 Portraits → 407 (flags 1),
-93 Adventurer Plate → 413 (flags 0). **AgentCharaCard's IsActivatable (`0xDC1220`) is only "not condition 56"**
+93 Adventurer Plate → 413 (flags 0). AgentCharaCard's IsActivatable (`0xDC1220`) is only "not condition 56"
 (BoundByDuty56, Kawari's wire bit 28: the networked conditions are numbered in Condition sheet order, `IsNetworked`
-rows only, so wire bit n is the n-th of those), so the Adventurer Plate is refused exactly when the client thinks it's
-bound by duty.
+rows only, so wire bit n is the n-th of those), so the Adventurer Plate is only refused while bound by duty. (The
+"unavailable" messages in Bob's 2026-10-16 screenshot were the Recommendations window's: the bundle shows the
+plate opening and being saved at the same time.)

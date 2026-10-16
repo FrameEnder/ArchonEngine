@@ -46,6 +46,8 @@ the client removed. Removals are logged.
 * **Map discovery**: each map part the client discovers is set in the character's discovery bitmask (Map sheet
   `DiscoveryIndex`/`DiscoveryArrayByte` say where), saved in `unlock.map_discovery` (migration
   `update-2026-10-14_map_discovery`, size `MAP_DISCOVERY_BITMASK_SIZE` in `constants.yml`) and sent in PlayerSetup.
+* The **adventurer plate** as the client saved it (`volatile.adventurer_plate`, migration
+  `update-2026-10-16_adventurer_plate`); see [Adventurer Plate](character-windows.md#adventurer-plate).
 * **Achievements** (`unlock.achievements`, `unlock.achievement_history`) and the **adventurer plate's portrait**
   (`volatile.portrait`), migration `update-2026-10-16_achievements_portrait`; see
   [Achievements, Portraits and Recommendations](character-windows.md).
