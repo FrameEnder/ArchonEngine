@@ -87,7 +87,7 @@ five decorations, glasses, and the twelve gear item IDs. Saving the plate in the
 CharaCardData, a timestamp and padding; the client then asks for the plate again.
 
 **What the server does.** Saves the 188 bytes in `volatile.adventurer_plate` (migration
-`update-2026-10-16_adventurer_plate`, committed straight away so the re-request and other players see it) and sends
+`update-2026-10-16-2_adventurer_plate`, committed straight away so the re-request and other players see it) and sends
 them back as they were. A character who never saved one gets upstream's starting design around their look and gear.
 The level is now the class/job's own (upstream sent 100). Upstream's field list had no base plate, so its glasses
 were two bytes off; the starting design now puts base plate 78 and decorations 18, 8, 28, 339 where the client's own

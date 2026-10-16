@@ -43,11 +43,15 @@ the client removed. Removals are logged.
 
 ## Other things saved by the fork
 
+New columns come as migrations in `servers/world/migrations/`. **Each needs its own version**: Diesel takes the part
+of the folder name before the first `_` as the version and runs each version once, so two `update-2026-10-16_…`
+folders count as one (add `-2`, `-3`… for more on the same day). `database::migration_tests` catches it.
+
 * **Map discovery**: each map part the client discovers is set in the character's discovery bitmask (Map sheet
   `DiscoveryIndex`/`DiscoveryArrayByte` say where), saved in `unlock.map_discovery` (migration
   `update-2026-10-14_map_discovery`, size `MAP_DISCOVERY_BITMASK_SIZE` in `constants.yml`) and sent in PlayerSetup.
 * The **adventurer plate** as the client saved it (`volatile.adventurer_plate`, migration
-  `update-2026-10-16_adventurer_plate`); see [Adventurer Plate](character-windows.md#adventurer-plate).
+  `update-2026-10-16-2_adventurer_plate`); see [Adventurer Plate](character-windows.md#adventurer-plate).
 * **Achievements** (`unlock.achievements`, `unlock.achievement_history`) and the **adventurer plate's portrait**
   (`volatile.portrait`), migration `update-2026-10-16_achievements_portrait`; see
   [Achievements, Portraits and Recommendations](character-windows.md).
