@@ -386,7 +386,40 @@ pub fn execute_action(
             }
         }
 
-        if npc_hitting_player && let Some(effects_builder) = &mut effects_builder {
+        // What retail's recording says this NPC's action does to this kind of target (Timeline::recorded_amounts):
+        // allies and enemies in quest battles hurt and heal each other, and the player, as much as they did there.
+        let target_is_player = matches!(
+            instance.find_actor(request.target.object_id),
+            Some(NetworkedActor::Player { .. })
+        );
+        let recorded = match actor {
+            NetworkedActor::Npc { timeline, .. } => {
+                timeline.recorded_amount(request.action_id, target_is_player)
+            }
+            _ => None,
+        };
+
+        if let Some(recorded) = recorded
+            && let Some(effects_builder) = &mut effects_builder
+        {
+            let damage: u32 = effects_builder
+                .effects
+                .iter()
+                .filter_map(|effect| match effect.0 {
+                    TargetEffectKind::Damage { amount, .. } => Some(amount as u32),
+                    _ => None,
+                })
+                .sum();
+            if damage > 0 {
+                let scale = recorded / damage as f32;
+                roll_npc_hit(&mut effects_builder.effects, scale);
+                for (_, effects) in &mut area_bystanders {
+                    roll_npc_hit(effects, scale);
+                }
+            } else {
+                scale_npc_heal(&mut effects_builder.effects, recorded);
+            }
+        } else if npc_hitting_player && let Some(effects_builder) = &mut effects_builder {
             let scale = npc_damage_scale(actor, common_spawn.level);
             roll_npc_hit(&mut effects_builder.effects, scale);
             for (_, effects) in &mut area_bystanders {
@@ -1780,6 +1813,19 @@ mod area_tests {
             Vec3A::new(18.0, 0.0, 0.0),
             3.0
         ));
+    }
+}
+
+/// Brings an NPC's heal (not one on itself from a drain) to `recorded`, the average retail's recording shows for it,
+/// varied a little like its hits.
+fn scale_npc_heal(effects: &mut [TargetEffect], recorded: f32) {
+    for effect in effects.iter_mut() {
+        if let TargetEffectKind::Heal { unk1, amount } = &mut effect.0
+            && unk1[4] & EFFECT_ON_SOURCE == 0
+        {
+            let variance = 1.0 + (fastrand::f32() * 2.0 - 1.0) * NPC_DAMAGE_VARIANCE;
+            *amount = (recorded * variance).round().clamp(1.0, u16::MAX as f32) as u16;
+        }
     }
 }
 

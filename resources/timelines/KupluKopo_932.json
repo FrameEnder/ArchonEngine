@@ -3,10 +3,22 @@
     "autoattack_action_id": 0,
     "timeline_always_plays": false,
     "attack_range": 10.0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 20.7
+        },
+        "120": {
+            "players": 95.0,
+            "npcs": 95.0
+        },
+        "121": {
+            "npcs": 9.0
+        }
+    },
     "timepoints": [
         { "time": 0, "data": { "type": "action", "action_id": 119 } },
-        { "time": 4, "data": { "type": "action", "action_id": 119 } },
-        { "time": 8, "data": { "type": "action", "action_id": 121 } },
-        { "time": 12, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
+        { "time": 10, "data": { "type": "action", "action_id": 119 } },
+        { "time": 20, "data": { "type": "action", "action_id": 121 } },
+        { "time": 30, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
     ]
 }

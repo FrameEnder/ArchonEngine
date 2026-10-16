@@ -49,6 +49,33 @@ BACKGROUND_EXTRA = { { 3854721, 3854583 }, { 3854586, 3854588 }, { 3854720, 3854
 ALLIES_FIRST_HALF = { BNPC_GALFRID, BNPC_MIRAUDONT, BNPC_BOW, BNPC_LANCE }
 ALLIES_SECOND_HALF = { BNPC_YDA, BNPC_PAPALYMO }
 
+-- Who goes after whom, as the recording shows (who took whose hits): Quzal after Galfrid, the lostwings after
+-- Miraudont, the slowbeaks after the two guards, the sincallers after Galfrid and Miraudont; the blanga, the gargoyle
+-- and the masked mage after the player. Anyone not listed goes after the player. Hitting them pulls them over, as
+-- enmity does. How hard each hits and heals is in their timelines' recorded_amounts.
+LOSTWINGS = { [4089296] = true, [4089297] = true, [4089298] = true, [3803269] = true, [4089325] = true }
+SLOWBEAKS = { [4089292] = true, [4089293] = true, [4089294] = true, [3803267] = true, [3803268] = true }
+ENEMY_TARGETS = {
+    [BNPC_QUZAL] = BNPC_GALFRID,
+    [4089296] = BNPC_MIRAUDONT, [4089297] = BNPC_MIRAUDONT, [4089298] = BNPC_MIRAUDONT,
+    [3803269] = BNPC_MIRAUDONT, [4089325] = BNPC_MIRAUDONT,
+    [4089292] = BNPC_BOW, [4089293] = BNPC_LANCE, [4089294] = BNPC_BOW, [3803267] = BNPC_LANCE, [3803268] = BNPC_BOW,
+    [3803263] = BNPC_GALFRID, [3803264] = BNPC_MIRAUDONT,
+}
+
+-- Who casts Cure on whom, below what health (in percent), at most this often (in updates), from the recording: the
+-- bow, Miraudont and Galfrid keep the two guards (and themselves) up, the sincallers heal Quzal, and Papalymo the
+-- player in the second half.
+PLAYER = "player"
+HEALERS = {
+    { healer = BNPC_BOW, targets = { BNPC_BOW, BNPC_LANCE }, below = 60, every = 10 },
+    { healer = BNPC_MIRAUDONT, targets = { BNPC_BOW, BNPC_LANCE, BNPC_MIRAUDONT }, below = 50, every = 12 },
+    { healer = BNPC_GALFRID, targets = { BNPC_BOW, BNPC_LANCE, BNPC_GALFRID, BNPC_MIRAUDONT }, below = 45, every = 20 },
+    { healer = 3803263, targets = { BNPC_QUZAL }, below = 60, every = 10 },
+    { healer = 3803264, targets = { BNPC_QUZAL }, below = 60, every = 10 },
+    { healer = BNPC_PAPALYMO, targets = { PLAYER }, below = 50, every = 8 },
+}
+
 -- Who's talking, by BNpcName, and their portrait in the battle talk window.
 SPEAKER_GALFRID = { layout = BNPC_GALFRID, name = 948, icon = 0x11e1a }
 SPEAKER_MIRAUDONT = { layout = BNPC_MIRAUDONT, name = 517, icon = 0x11e1b }
@@ -68,10 +95,7 @@ SEQUENCE_FAILED = 0xFE
 FAIL_DELAY_UPDATES = 12
 
 ACTION_VOID_CALL = 867
--- Papalymo heals the player with Cure when they drop below this much health (in percent), at most every few seconds.
 ACTION_CURE = 120
-HEAL_BELOW_HEALTH = 50
-HEAL_COOLDOWN_UPDATES = 8
 
 STARTING_ENMITY = 300
 ALLY_ENMITY = 10000
@@ -148,7 +172,6 @@ local phase_done = {}
 local half = 1
 local over = false
 local fail_in = nil
-local heal_cooldown = 0
 local ally_priority = 0
 
 function queue(steps)
@@ -172,9 +195,33 @@ function spawnEnemies(director, ids)
         spawned[id] = true
         table.insert(arrived, id)
         director:spawn_bnpc(id)
-        director:set_hate(id, nil, STARTING_ENMITY) -- the player
+        director:set_hate(id, ENEMY_TARGETS[id], STARTING_ENMITY) -- nil is the player
     end
     alliesAttack(director)
+end
+
+-- Each healer Cures whoever of theirs is lowest, if they're below its threshold.
+function runHeals(director, health, player_health)
+    for _, h in ipairs(HEALERS) do
+        h.wait = (h.wait or 0) - 1
+        if h.wait <= 0 and health[h.healer] ~= nil then
+            local best, best_health = nil, h.below
+            for _, target in ipairs(h.targets) do
+                local current = target == PLAYER and player_health or health[target]
+                if current ~= nil and current > 0 and current < best_health then
+                    best, best_health = target, current
+                end
+            end
+            if best ~= nil then
+                if best == PLAYER then
+                    director:use_action(h.healer, ACTION_CURE)
+                else
+                    director:use_action(h.healer, ACTION_CURE, best)
+                end
+                h.wait = h.every
+            end
+        end
+    end
 end
 
 function spawnAllies(director, ids)
@@ -213,16 +260,20 @@ function runPending(director)
     pending = still_pending
 end
 
--- Every ally goes for the oldest enemy still standing; Galfrid and Yda take the boss (Quzal, then the mage) while
--- it's there.
-function alliesAttack(director)
-    local oldest = nil
+-- The oldest enemy still standing, of a kind if asked.
+function oldest(kind)
     for _, id in ipairs(arrived) do
-        if remaining[id] then
-            oldest = id
-            break
+        if remaining[id] and (kind == nil or kind[id]) then
+            return id
         end
     end
+    return nil
+end
+
+-- As on retail: Galfrid, Yda and Papalymo take the boss (Quzal, then the mage) while it's there; Miraudont the
+-- lostwings and the guards the slowbeaks that are after them; then whoever's oldest.
+function alliesAttack(director)
+    local any = oldest(nil)
     local boss = nil
     for _, id in ipairs({ BNPC_QUZAL, BNPC_MAGE }) do
         if remaining[id] then
@@ -231,9 +282,13 @@ function alliesAttack(director)
     end
     ally_priority = ally_priority + ALLY_ENMITY
     for id, _ in pairs(allies) do
-        local target = oldest
-        if boss ~= nil and (id == BNPC_GALFRID or id == BNPC_YDA) then
+        local target = any
+        if boss ~= nil and (id == BNPC_GALFRID or id == BNPC_YDA or id == BNPC_PAPALYMO) then
             target = boss
+        elseif id == BNPC_MIRAUDONT then
+            target = oldest(LOSTWINGS) or any
+        elseif id == BNPC_BOW or id == BNPC_LANCE then
+            target = oldest(SLOWBEAKS) or any
         end
         if target ~= nil then
             director:set_hate(id, target, ally_priority)
@@ -290,13 +345,7 @@ function onUpdate(director, health, player_health)
 
     runPending(director)
 
-    if heal_cooldown > 0 then
-        heal_cooldown = heal_cooldown - 1
-    elseif player_health ~= nil and player_health > 0 and player_health < HEAL_BELOW_HEALTH
-        and health[BNPC_PAPALYMO] ~= nil then
-        director:use_action(BNPC_PAPALYMO, ACTION_CURE) -- on the player
-        heal_cooldown = HEAL_COOLDOWN_UPDATES
-    end
+    runHeals(director, health, player_health)
 
     if half == 1 then
         runPhases("quzal", QUZAL_PHASES, health[BNPC_QUZAL])

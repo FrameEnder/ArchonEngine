@@ -22,13 +22,18 @@ add one when something is found.
 * **Battle talk**: Leia's Legacy and To Guard a Guardian use the window (DirectorPopupMessage) with retail's text IDs;
   Chasing Shadows and Spirithold Broken still say their lines in `/say` until their text IDs are recorded.
 * Chasing Shadows' enemies only auto-attack (no skills yet).
-* NPCs fighting each other use their stat-based damage (no retail recording of it), so allies with retail's low health
-  could die: in Leia's Legacy and To Guard a Guardian every enemy goes for the player instead of the allies as on
-  retail.
+* NPCs fighting each other without `recorded_amounts` use their stat-based damage (unscaled); only Leia's Legacy and
+  To Guard a Guardian have recorded amounts so far.
+* An NPC's area attack aimed at another NPC only hits that NPC (the player standing in it isn't caught); on retail the
+  lostwings' Power Wave sometimes caught the player too.
+* The 24 action scripts added for these battles' NPCs (Heartstopper, Quick Nock, Fire II…) have their damage from the
+  recording for those NPCs; their potency for a player who uses the same action isn't verified, and none of them give
+  their statuses (Windbite, Venomous Bite, Terror Eye…).
+* When allies heal (thresholds and how often) is fitted to the recording, not known rules.
 * To Guard a Guardian: which six Ixali come first is a guess from where they stand; after the cutscene retail moves the
   player through a zone change (PrepareZoning to the same territory), Kawari leaves them in place.
-* The new quest battles' timelines (skills and how often) are rough loops from the recording's counts; only Janremi,
-  the blanga and the lesser gargoyle have recorded damage to players.
+* The new quest battles' timelines (which skills, how often) are loops fitted to how many times the recording saw
+  each skill used.
 * Retail sends the player out of a lost battle; the delays are copied from recordings, not from known rules.
 
 ## Combat
@@ -47,8 +52,9 @@ add one when something is found.
 
 ## Character windows
 
-* **Portraits** still need the crash described (what, when, the client's crash log); the server now saves and returns
-  the adventurer plate's portrait, but a character without one gets the same zeroes as before.
+* **Portraits**: opening the window (Character → Portraits) crashes the client. The server now saves and returns the
+  adventurer plate's portrait, but a character without one gets the same zeroes as before; finding the cause needs
+  the crash's address (Dalamud's crash window, `ffxiv_dx11.exe+0x…`).
 * **Achievements**: only Types 2, 3, 6 and 9 are completed automatically, and what those Types mean is the community's
   reading of the sheet, not checked on retail. Nearly completed lists are always empty. Whether retail also sends
   LogMessage 952 ("… earned the achievement …") on completion, or the client prints it, isn't known.

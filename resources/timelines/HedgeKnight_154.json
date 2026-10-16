@@ -3,8 +3,16 @@
     "autoattack_action_id": 0,
     "timeline_always_plays": false,
     "attack_range": 10.0,
+    "recorded_amounts": {
+        "120": {
+            "npcs": 87.0
+        },
+        "121": {
+            "npcs": 6.0
+        }
+    },
     "timepoints": [
-        { "time": 0, "data": { "type": "action", "action_id": 121 } },
-        { "time": 9, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
+        { "time": 30, "data": { "type": "action", "action_id": 121 } },
+        { "time": 60, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
     ]
 }

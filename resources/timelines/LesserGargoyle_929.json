@@ -2,11 +2,19 @@
     "hitbox_radius": 2.3,
     "autoattack_action_id": 870,
     "timeline_always_plays": false,
-    "timepoints": [
-        { "time": 8, "data": { "type": "action", "action_id": 619 } },
-        { "time": 16, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
-    ],
     "damage_to_players": {
         "16": 6.2
-    }
+    },
+    "recorded_amounts": {
+        "619": {
+            "players": 6.0
+        },
+        "870": {
+            "players": 6.4
+        }
+    },
+    "timepoints": [
+        { "time": 30, "data": { "type": "action", "action_id": 619 } },
+        { "time": 120, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
+    ]
 }

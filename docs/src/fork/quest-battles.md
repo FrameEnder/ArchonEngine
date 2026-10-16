@@ -104,15 +104,18 @@ player is sent out.
 
 * Layer `QB_SubFst055_001`: Janremi (2319770, level 15, 1212 HP), two hedge knights with swords (2319771, 2319773,
   level 14, 190 HP) and one who casts (2319772, level 15, 127 HP); Kuplu Kopo (4097283, level 15, 1116 HP) fights
-  beside you, goes after whoever's left in order and casts Cure on you below 50 %. All from the recording (positions,
-  levels, HP, the start position).
+  beside you. All from the recording (positions, levels, HP, the start position).
 * Sequence 1 before the opening cutscene, 2 when the fight starts; Janremi's lines and sequences 3, 4, 5 at 70 %, 40 %
   and 25 % (Kuplu answers 10 s and 3 s later); below 25 % Janremi uses Heartstopper every 6 s. All down: sequence 6,
   finish scene 6, the quest moves to sequence 4.
-* On retail the hedge knights fought Kuplu; here every enemy goes for the player, since NPCs fighting each other use
-  the unscaled stat damage and Kuplu (1116 HP) wouldn't last.
-* Timelines: `JanremiBlackheart_152` (auto-attack 871, True Thrust, 17.2 damage at level 15 as recorded),
-  `HedgeKnight_153`/`_154`, `KupluKopo_932`.
+* As on retail: Janremi goes after the player, the three hedge knights after Kuplu, Kuplu after the casting knight
+  first, then the others. Kuplu Cures the player below 50 % and himself below 50 %; the casting knight Cures the
+  others below 75 %.
+* Every hit and heal is the recording's (`recorded_amounts`): the knights' auto-attack on Kuplu 15.4, the caster's
+  Aero 6 and Cure 87, Kuplu's Stone 20.7 and Cure 95, Janremi on the player 17.5 (auto), 29 (True Thrust), 81
+  (Heartstopper). On retail Kuplu went from 1116 to about 450 HP before healing himself.
+* Timelines: `JanremiBlackheart_152`, `HedgeKnight_153`/`_154`, `KupluKopo_932`; skill rates fitted to the recorded
+  use counts.
 
 ### Quest battle 12 — To Guard a Guardian (`content/questbattle/12.lua`)
 
@@ -125,6 +128,14 @@ player is sent out.
   7) a lesser gargoyle and the masked mage; sequence 8 22 s later; the gargoyle at 25 % brings Yda and Papalymo
   (sequence 9, 10 s later 10); the mage at 40 % says one more line. The mage down: sequence 11, finish scene 11, the
   quest moves to sequence 3.
+* As on retail: Quzal goes after Galfrid, the lostwings after Miraudont, the slowbeaks after the two guards, the
+  sincallers after Galfrid and Miraudont (and Cure Quzal below 60 %); the blanga, the gargoyle and the mage after the
+  player. Galfrid, Yda and Papalymo take the boss; Miraudont the lostwings; the guards the slowbeaks. The bow (below
+  60 %), Miraudont (50 %) and Galfrid (45 %) Cure the guards and themselves, as the recording shows them doing
+  (Cures of 60, 98 and 201); Papalymo Cures the player (660).
+* Every hit and heal between them is the recording's (`recorded_amounts`, 23 timelines): e.g. Galfrid's auto-attack
+  76 and Quick Nock 94 on Quzal, the slowbeaks' 24 / True Thrust 42 on the guards (who dropped to about 10 % on
+  retail before being healed back), Yda's 180 and Papalymo's Blizzard 770 on the mage.
 * Retail sends the player through a zone change (PrepareZoning to the same territory) after the cutscene; Kawari
   leaves them where they stood.
 * Every battle talk line is retail's text ID, speaker and portrait, at the recorded times (the header of the script

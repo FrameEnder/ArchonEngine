@@ -66,9 +66,12 @@ local UI save data, not on the server.
 **What the server does now.** Saves the 52 bytes it's sent in `volatile.portrait` (same migration) and sends them back
 for 3200; a character who never set one gets zeroes, as before.
 
-**The crash isn't explained yet.** A zeroed reply says "no portrait", which is what the client asks the server for
-when it has none, so it isn't obviously the cause. What crashes, and when (opening the window, editing a portrait,
-saving it), needs Bob's description or the client's crash log (Dalamud's crash handler names the faulting address).
+**The crash isn't explained yet.** Opening the window (Character → Portraits) crashes the client (Bob, 2026-10-16).
+A zeroed reply says "no portrait", which is what the client asks the server for when it has none, so it isn't
+obviously the cause. The window's addon is set up at `0x14658B0` (it names "BannerList"); the CharaCard getters
+that hand out the adventurer plate's portrait are at `0xBC5540` (copies it, marking it present whenever the server
+has answered) and `0xBC5970` (whether there is one). Without the faulting address (Dalamud's crash window or log,
+`ffxiv_dx11.exe+0x…`) there are too many places to look.
 
 ## Recommendations
 

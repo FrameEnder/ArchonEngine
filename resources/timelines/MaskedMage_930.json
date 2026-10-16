@@ -3,13 +3,30 @@
     "autoattack_action_id": 0,
     "timeline_always_plays": false,
     "attack_range": 10.0,
+    "recorded_amounts": {
+        "141": {
+            "players": 60.2,
+            "npcs": 65.0
+        },
+        "142": {
+            "players": 49.8
+        },
+        "146": {
+            "players": 14.5
+        },
+        "147": {
+            "players": 22.5
+        }
+    },
     "timepoints": [
         { "time": 0, "data": { "type": "action", "action_id": 141 } },
-        { "time": 3, "data": { "type": "action", "action_id": 142 } },
-        { "time": 6, "data": { "type": "action", "action_id": 141 } },
-        { "time": 9, "data": { "type": "action", "action_id": 147 } },
-        { "time": 13, "data": { "type": "action", "action_id": 142 } },
-        { "time": 16, "data": { "type": "action", "action_id": 146 } },
-        { "time": 19, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
+        { "time": 10, "data": { "type": "action", "action_id": 142 } },
+        { "time": 20, "data": { "type": "action", "action_id": 141 } },
+        { "time": 30, "data": { "type": "action", "action_id": 142 } },
+        { "time": 40, "data": { "type": "action", "action_id": 147 } },
+        { "time": 50, "data": { "type": "action", "action_id": 141 } },
+        { "time": 60, "data": { "type": "action", "action_id": 142 } },
+        { "time": 70, "data": { "type": "action", "action_id": 146 } },
+        { "time": 80, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
     ]
 }

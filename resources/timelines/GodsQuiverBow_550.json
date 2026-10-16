@@ -2,8 +2,31 @@
     "hitbox_radius": 0.5,
     "autoattack_action_id": 873,
     "timeline_always_plays": false,
+    "recorded_amounts": {
+        "97": {
+            "npcs": 16.0
+        },
+        "100": {
+            "npcs": 9.0
+        },
+        "103": {
+            "npcs": 19.0
+        },
+        "120": {
+            "npcs": 60.5
+        },
+        "873": {
+            "npcs": 12.0
+        },
+        "18190": {
+            "npcs": 15.3
+        }
+    },
     "timepoints": [
         { "time": 0, "data": { "type": "action", "action_id": 97 } },
-        { "time": 8, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
+        { "time": 20, "data": { "type": "action", "action_id": 100 } },
+        { "time": 40, "data": { "type": "action", "action_id": 18190 } },
+        { "time": 50, "data": { "type": "action", "action_id": 103 } },
+        { "time": 60, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
     ]
 }

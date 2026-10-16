@@ -36,13 +36,31 @@ Enemies still compute damage like players do (stat × potency), which is far too
   their potency / 100. Other levels scale with the per-level HP table. Filled in for the Central Shroud monsters.
 * Otherwise it deals 12 % (`NPC_DAMAGE_TO_PLAYERS_PERCENT`). Retail's enemy formula isn't published.
 * Every hit on a player varies ±5 %, crits 5 % of the time for 1.5×, misses 8 %, is parried 5 % for 80 % damage.
-* NPCs hitting other NPCs (quest battle allies) are not scaled.
+* **Recorded amounts** come first: a timeline's `recorded_amounts` (`{"<action>": {"players": avg, "npcs": avg}}`)
+  says what that NPC's action did on retail to a player and to another NPC. The hit is scaled to it (then varied,
+  missed, parried or critical as above), and a heal (Cure) is set to it ±5 %. Used for quest battle allies and
+  enemies (Leia's Legacy, To Guard a Guardian), so they wear each other down, and heal, as fast as on retail.
+* NPCs hitting other NPCs without a recorded amount are not scaled.
 * Drains (`heal_self` effect, e.g. Blood Drain) heal the attacker by what they took; the attacker's HP is sent after.
 
 Timeline fields the fork uses: `hitbox_radius` (reach includes it), `autoattack_action_id` (870/871/872 per kind),
-`attack_range` (default 5 yalms; Papalymo 10), `damage_to_players` (`{"level": damage}`), and `timepoints` (the
+`attack_range` (default 5 yalms; Papalymo 10), `damage_to_players` (`{"level": damage}`), `recorded_amounts` (above),
+and `timepoints` (the
 skills an enemy uses in turn). A trailing no-op timepoint keeps the real ones evenly spaced because the loop hits its
 last point half as often. Sprites, roselets and floating eyes cast their spell instead of auto-attacking.
+
+### Reading NPC-on-NPC damage from a recording
+
+The Recorder's Monsters tab only keeps hits on the player, but its duty capture (`content_packets.json`) keeps every
+ActionEffect1 (189) inside a duty, so who hit whom for how much can be read from it. Two fields are obfuscated per
+session: the **action ID** has a key added (25 and 183 in the two 2026-10-16 runs: find it as the offset that turns
+the most actions into enemy auto-attacks, 870–873), and each effect's **amount** (u16 at byte 6 of the 8-byte effect)
+is **XORed** with a key, which is what the empty effect slots hold (`0xF8C5`, `0x843B`). Checked against the
+Recorder's own damage-to-player numbers. The layout from the IPC data: animation target (8), action ID (8), global
+sequence (12), …, effects from byte 42 (8 × 8: kind, then the amount at +6), target ID at byte 112. Targets are
+told apart by their maximum HP (EffectResultBasic, 549: target at byte 8, HP at 12); attackers by which action they
+use (e.g. 873 on Kuplu Kopo can only be the hedge knights), and one action two NPCs share splits into two clear
+clusters (Galfrid's auto-attack on Quzal ~76, the bow's ~12).
 
 ## Enemy health
 

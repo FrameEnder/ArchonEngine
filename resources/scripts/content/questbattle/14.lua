@@ -18,8 +18,14 @@ START_ROTATION = -0.36
 
 BNPC_JANREMI = 2319770
 BNPC_KUPLU = 4097283
--- The hedge knights: two with swords, and one who casts.
-ENEMIES = { BNPC_JANREMI, 2319771, 2319773, 2319772 }
+-- The hedge knights: two with swords, and one who casts (and heals the others.)
+BNPC_KNIGHT_CASTER = 2319772
+ENEMIES = { BNPC_JANREMI, 2319771, 2319773, BNPC_KNIGHT_CASTER }
+-- Who goes after whom, as on retail: Janremi after the player, the hedge knights after Kuplu Kopo. Kuplu takes the
+-- caster first, then the swords, then Janremi. (How hard each hits the other, and heals, is in their timelines'
+-- recorded_amounts, from the same recording, so Kuplu holds out as long as he did there.)
+ENEMY_TARGETS = { [BNPC_JANREMI] = nil, [2319771] = BNPC_KUPLU, [2319773] = BNPC_KUPLU, [BNPC_KNIGHT_CASTER] = BNPC_KUPLU }
+KUPLU_ORDER = { BNPC_KNIGHT_CASTER, 2319771, 2319773, BNPC_JANREMI }
 
 -- Who's talking, by BNpcName, and their portrait in the battle talk window.
 SPEAKER_JANREMI = { layout = BNPC_JANREMI, name = 185, icon = 0x11e1f }
@@ -39,10 +45,15 @@ FAIL_DELAY_UPDATES = 12
 ACTION_HEARTSTOPPER = 866
 HEARTSTOPPER_EVERY = 12
 
--- Kuplu Kopo heals the player with Cure when they drop below this much health (in percent), at most every few seconds.
+-- Who casts Cure on whom, below what health (in percent), at most this often (in updates.) On retail Kuplu Kopo healed
+-- the player and himself (once he was down to about 40 %), and the casting hedge knight the other knights (down to
+-- about 75 %.)
 ACTION_CURE = 120
-HEAL_BELOW_HEALTH = 50
-HEAL_COOLDOWN_UPDATES = 8
+PLAYER = "player"
+HEALERS = {
+    { healer = BNPC_KUPLU, targets = { PLAYER, BNPC_KUPLU }, below = 50, every = 8 },
+    { healer = BNPC_KNIGHT_CASTER, targets = { 2319771, 2319773, BNPC_KNIGHT_CASTER, BNPC_JANREMI }, below = 75, every = 10 },
+}
 
 -- How much the enemies hate the player to begin with; damage adds to this.
 STARTING_ENMITY = 300
@@ -68,7 +79,6 @@ local next_phase = 1
 local pending = {}
 local over = false
 local fail_in = nil
-local heal_cooldown = 0
 local heartstopper_in = nil
 local ally_priority = 0
 
@@ -112,9 +122,33 @@ function runPending(director)
     pending = still_pending
 end
 
+-- Each healer Cures whoever of theirs is lowest, if they're below its threshold.
+function runHeals(director, health, player_health)
+    for _, h in ipairs(HEALERS) do
+        h.wait = (h.wait or 0) - 1
+        if h.wait <= 0 and health[h.healer] ~= nil then
+            local best, best_health = nil, h.below
+            for _, target in ipairs(h.targets) do
+                local current = target == PLAYER and player_health or health[target]
+                if current ~= nil and current > 0 and current < best_health then
+                    best, best_health = target, current
+                end
+            end
+            if best ~= nil then
+                if best == PLAYER then
+                    director:use_action(h.healer, ACTION_CURE)
+                else
+                    director:use_action(h.healer, ACTION_CURE, best)
+                end
+                h.wait = h.every
+            end
+        end
+    end
+end
+
 -- Kuplu Kopo goes after whoever's left, in order.
 function allyAttacks(director)
-    for _, id in ipairs(ENEMIES) do
+    for _, id in ipairs(KUPLU_ORDER) do
         if remaining[id] then
             ally_priority = ally_priority + ALLY_ENMITY
             director:set_hate(BNPC_KUPLU, id, ally_priority)
@@ -132,7 +166,7 @@ function onCommence(director)
     for _, id in ipairs(ENEMIES) do
         remaining[id] = true
         director:spawn_bnpc(id)
-        director:set_hate(id, nil, STARTING_ENMITY) -- the player
+        director:set_hate(id, ENEMY_TARGETS[id], STARTING_ENMITY) -- nil is the player
     end
     allyAttacks(director)
     queue(START_STEPS)
@@ -155,13 +189,7 @@ function onUpdate(director, health, player_health)
 
     runPending(director)
 
-    if heal_cooldown > 0 then
-        heal_cooldown = heal_cooldown - 1
-    elseif player_health ~= nil and player_health > 0 and player_health < HEAL_BELOW_HEALTH
-        and health[BNPC_KUPLU] ~= nil then
-        director:use_action(BNPC_KUPLU, ACTION_CURE) -- on the player
-        heal_cooldown = HEAL_COOLDOWN_UPDATES
-    end
+    runHeals(director, health, player_health)
 
     local janremi_health = health[BNPC_JANREMI]
     if janremi_health == nil then

@@ -24,13 +24,41 @@ pub struct Timeline {
     /// ordinary enemies' health grows. Without any, NPC damage is worked out from its stats instead.
     #[serde(default)]
     pub damage_to_players: BTreeMap<u8, f32>,
+    /// What this NPC's actions did on retail, by action ID: the average damage (or healing, for a heal) to a player
+    /// and to another NPC, as Kawari Recorder's recording of a duty shows it. When there's one for the action and the
+    /// kind of target, the hit is scaled to it (then varied, missed, parried or critical like any NPC hit), whatever
+    /// the action's script and the NPC's stats would give. This is how allies and enemies in quest battles hurt (and
+    /// heal) each other the way they do on retail.
+    #[serde(default)]
+    pub recorded_amounts: BTreeMap<u32, RecordedAmount>,
     /// This NPC's hitbox radius in yalms (as Kawari Recorder reads it on retail.) Its area attacks reach this much
     /// further, since they're measured from the edge of its hitbox.
     #[serde(default)]
     pub hitbox_radius: f32,
 }
 
+/// See `Timeline::recorded_amounts`.
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone, Default)]
+pub struct RecordedAmount {
+    /// The average amount against players.
+    #[serde(default)]
+    pub players: Option<f32>,
+    /// The average amount against other NPCs.
+    #[serde(default)]
+    pub npcs: Option<f32>,
+}
+
 impl Timeline {
+    /// What retail's recording says this NPC's `action_id` does to a player (`to_player`) or another NPC, if known.
+    pub fn recorded_amount(&self, action_id: u32, to_player: bool) -> Option<f32> {
+        let recorded = self.recorded_amounts.get(&action_id)?;
+        if to_player {
+            recorded.players
+        } else {
+            recorded.npcs
+        }
+    }
+
     /// The average auto-attack damage this NPC does to players at `level`, if it's known.
     ///
     /// `health_at` is ordinary enemies' health by level, used to scale from the nearest recorded level.
@@ -115,6 +143,7 @@ mod tests {
                 on_death: Vec::default(),
                 attack_range: crate::common::MINIMUM_PATHFINDING_DISTANCE,
                 damage_to_players: BTreeMap::default(),
+                recorded_amounts: BTreeMap::default(),
                 hitbox_radius: 0.0,
                 timepoints: vec![Timepoint {
                     time: 20,
@@ -122,6 +151,19 @@ mod tests {
                 }]
             }
         );
+    }
+
+    #[test]
+    fn recorded_amounts_by_target() {
+        let timeline: Timeline = serde_json::from_str(
+            r#"{"autoattack_action_id": 873, "timeline_always_plays": false, "timepoints": [],
+                "recorded_amounts": {"873": {"npcs": 15.4}, "120": {"players": 95.0, "npcs": 87.0}}}"#,
+        )
+        .unwrap();
+        assert_eq!(timeline.recorded_amount(873, false), Some(15.4));
+        assert_eq!(timeline.recorded_amount(873, true), None);
+        assert_eq!(timeline.recorded_amount(120, true), Some(95.0));
+        assert_eq!(timeline.recorded_amount(7, false), None);
     }
 
     #[test]
