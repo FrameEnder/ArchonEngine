@@ -55,10 +55,12 @@ mod tests {
     #[test]
     fn matches_retail() {
         let bytes = [
-            0x78, 0x01, 0x01, 0x00, 0x01, 0x02, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00,
+            0x78, 0x01, 0x01, 0x00, 0x01, 0x02, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x04, 0x00,
+            0x00, 0x00,
         ];
         let notice =
-            EventNotice::read_le_args(&mut Cursor::new(&bytes), binrw::args! { max_args: 2 }).unwrap();
+            EventNotice::read_le_args(&mut Cursor::new(&bytes), binrw::args! { max_args: 2 })
+                .unwrap();
         assert_eq!(notice.handler_id.0, 0x10178);
         assert_eq!(notice.notice_id, 1);
         assert_eq!(notice.args, vec![3, 4]);

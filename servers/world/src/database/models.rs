@@ -2,7 +2,8 @@ use diesel::prelude::*;
 use kawari::{
     common::{CharacterMode, ClientLanguage, EquipDisplayFlag, ObjectId, Position},
     constants::{
-        ACTIVE_HELP_BITMASK_SIZE, ADVENTURE_BITMASK_SIZE, AETHER_CURRENT_BITMASK_SIZE,
+        ACHIEVEMENT_BITMASK_SIZE, ACHIEVEMENT_HISTORY_SIZE, ACTIVE_HELP_BITMASK_SIZE,
+        ADVENTURE_BITMASK_SIZE, ADVENTURER_PLATE_PORTRAIT_SIZE, AETHER_CURRENT_BITMASK_SIZE,
         AETHER_CURRENT_COMP_FLG_SET_BITMASK_SIZE, AETHERYTE_UNLOCK_BITMASK_SIZE,
         BUDDY_EQUIP_BITMASK_SIZE, CAUGHT_FISH_BITMASK_SIZE, CAUGHT_SPEARFISH_BITMASK_SIZE,
         CHOCOBO_TAXI_STANDS_BITMASK_SIZE, COMPLETED_LEGACY_QUEST_BITMASK_SIZE,
@@ -159,6 +160,8 @@ pub struct Volatile {
     pub mode: CharacterMode,
     pub mode_arg: i32,
     pub current_mount: i32,
+    /// The adventurer plate's portrait, as the client sent it (empty if it never did.)
+    pub portrait: Bitmask<ADVENTURER_PLATE_PORTRAIT_SIZE>,
 }
 
 #[derive(
@@ -292,6 +295,10 @@ pub struct Unlock {
     pub titles: Bitmask<TITLE_UNLOCK_BITMASK_SIZE>,
     /// Which parts of which maps have been discovered, see `MAP_DISCOVERY_BITMASK_SIZE`.
     pub map_discovery: Bitmask<MAP_DISCOVERY_BITMASK_SIZE>,
+    /// Completed achievements (Achievement sheet rows), see `ACHIEVEMENT_BITMASK_SIZE`.
+    pub achievements: Bitmask<ACHIEVEMENT_BITMASK_SIZE>,
+    /// The last five achievements completed, newest first, as little-endian u16s.
+    pub achievement_history: Bitmask<ACHIEVEMENT_HISTORY_SIZE>,
 }
 
 #[derive(

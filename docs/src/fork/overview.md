@@ -82,11 +82,14 @@ The fork's `CLAUDE.md` (repository root) repeats this rule for anyone working on
 ## Pages
 
 * [Quests](quests.md): the quest engine, Lua API, script pattern, verification, every scripted quest.
-* [Quest battles and directors](quest-battles.md): solo duties, director scripting, Chasing Shadows, Spirithold Broken.
+* [Quest battles and directors](quest-battles.md): solo duties, director scripting, the battle talk window, Chasing
+  Shadows, Spirithold Broken, Leia's Legacy, To Guard a Guardian.
 * [Combat and NPCs](combat.md): damage formulas, enemy AI, enmity, aggro, leashing, EXP, drops, the White Mage kit.
 * [Timing, casting and tasks](timing.md): the server's ticks, cast resolution, slidecasting, event actions.
 * [Saving and connections](saving.md): autosave, dead connections, playtime, zone changes.
 * [Travel](travel.md): aetherytes, attunement, Teleport, map discovery, the Gridania opening.
+* [Achievements, portraits and recommendations](character-windows.md): what the client asks for, what the server
+  saves and sends.
 * [Opcodes](opcodes.md): `fork_opcodes.yml`, reading opcodes from the executable, the event packets.
 * [Tools and debug commands](tools.md): `kawari-questdump`, `kawari-opcodescan`, debug and GM commands, packet capture.
 * [questkit and CI](questkit.md): bundle triage, quest replay tests, the quest scaffolder, capture/retail comparison,

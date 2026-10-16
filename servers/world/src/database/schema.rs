@@ -74,6 +74,7 @@ diesel::table! {
         mode -> Integer,
         mode_arg -> Integer,
         current_mount -> Integer,
+        portrait -> Text,
     }
 }
 
@@ -150,6 +151,8 @@ diesel::table! {
         chocobo_taxi_stands -> Text,
         titles -> Text,
         map_discovery -> Text,
+        achievements -> Text,
+        achievement_history -> Text,
     }
 }
 

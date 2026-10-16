@@ -26,7 +26,7 @@ use parking_lot::Mutex;
 use physis::TerritoryIntendedUse;
 
 use crate::{
-    ClientId, FromServer, GameData, ToServer,
+    ClientId, FromServer, GameData, QUEST_BATTLE_SCENE_FINISH, ToServer,
     gamedata::GimmickAccessorType,
     lua::KawariLua,
     server::{
@@ -72,6 +72,10 @@ pub enum LuaDirectorTask {
     SpawnBattleNpc {
         id: u32,
     },
+    /// Remove a BNpc (by layout ID) without it dying, e.g. the background fighters before a quest battle's cutscene.
+    DespawnBattleNpc {
+        layout_id: u32,
+    },
     GainEffect {
         actor_id: ObjectId,
         id: u16,
@@ -114,6 +118,14 @@ pub enum LuaDirectorTask {
     CompleteQuestBattle {
         sequence: u8,
         stay: bool,
+        /// The scene played before they're sent back, see `QUEST_BATTLE_SCENE_FINISH`.
+        finish_scene: u16,
+    },
+    /// Play one of the director's scenes for every player (e.g. a cutscene halfway through a quest battle), with
+    /// these scene flags. The script's `onSceneFinished(director, scene)` is called when a player finishes it.
+    PlayScene {
+        scene: u16,
+        flags: u32,
     },
     /// Send the players of a won quest battle back (see `CompleteQuestBattle`'s `stay`.)
     LeaveQuestBattle,
@@ -137,6 +149,17 @@ pub enum LuaDirectorTask {
         layout_id: u32,
         name_id: Option<u32>,
         number: usize,
+    },
+    /// Shows the battle talk window (DirectorPopupMessage), as retail does in quest battles: `text_id` is the
+    /// content's text (InstanceContentTextData; one outside the content's range crashes the client, so use recorded
+    /// IDs), `name_id` the speaker's BNpcName and `icon` the portrait. It comes from the BNpc at `layout_id` if
+    /// it's there.
+    BattleTalk {
+        layout_id: u32,
+        name_id: u32,
+        text_id: u32,
+        icon: u32,
+        duration_ms: u32,
     },
     /// Has an NPC yell a line from the NpcYell sheet: a speech bubble over them, and the line in chat.
     Yell {
@@ -220,6 +243,11 @@ impl UserData for LuaDirector {
             this.tasks.push(LuaDirectorTask::SpawnBattleNpc { id });
             Ok(())
         });
+        methods.add_method_mut("despawn_bnpc", |_, this, layout_id: u32| {
+            this.tasks
+                .push(LuaDirectorTask::DespawnBattleNpc { layout_id });
+            Ok(())
+        });
         methods.add_method_mut(
             "gain_effect",
             |_, this, (actor_id, id, param, duration): (u32, u16, u16, f32)| {
@@ -280,14 +308,19 @@ impl UserData for LuaDirector {
         });
         methods.add_method_mut(
             "complete_quest_battle",
-            |_, this, (sequence, stay): (u8, Option<bool>)| {
+            |_, this, (sequence, stay, finish_scene): (u8, Option<bool>, Option<u16>)| {
                 this.tasks.push(LuaDirectorTask::CompleteQuestBattle {
                     sequence,
                     stay: stay.unwrap_or(false),
+                    finish_scene: finish_scene.unwrap_or(QUEST_BATTLE_SCENE_FINISH),
                 });
                 Ok(())
             },
         );
+        methods.add_method_mut("play_scene", |_, this, (scene, flags): (u16, u32)| {
+            this.tasks.push(LuaDirectorTask::PlayScene { scene, flags });
+            Ok(())
+        });
         methods.add_method_mut("leave_quest_battle", |_, this, _: ()| {
             this.tasks.push(LuaDirectorTask::LeaveQuestBattle);
             Ok(())
@@ -314,6 +347,28 @@ impl UserData for LuaDirector {
                     layout_id,
                     name_id,
                     number,
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "battle_talk",
+            |_,
+             this,
+             (layout_id, name_id, text_id, icon, duration_ms): (
+                u32,
+                u32,
+                u32,
+                u32,
+                Option<u32>,
+            )| {
+                this.tasks.push(LuaDirectorTask::BattleTalk {
+                    layout_id,
+                    name_id,
+                    text_id,
+                    icon,
+                    // Retail shows every line for 4 seconds.
+                    duration_ms: duration_ms.unwrap_or(4000),
                 });
                 Ok(())
             },
@@ -455,6 +510,24 @@ impl DirectorData {
         }
     }
 
+    /// Called when a player finishes one of the director's scenes, for scripts that define `onSceneFinished`.
+    pub fn scene_finished(&mut self, scene: u16) {
+        let Ok(func) = self.lua.0.globals().get::<Function>("onSceneFinished") else {
+            return;
+        };
+
+        let mut lua_director = self.create_lua_director();
+        let err = self.lua.0.scope(|scope| {
+            let data = scope.create_userdata_ref_mut(&mut lua_director)?;
+            func.call::<()>((data, scene))?;
+            Ok(())
+        });
+        self.apply_lua_director(lua_director);
+        if let Err(err) = err {
+            tracing::warn!("Syntax error during onSceneFinished: {err:?}");
+        }
+    }
+
     pub fn gimmick_accessor(&mut self, actor_id: ObjectId, id: u32, params: &[i32]) {
         let mut run_script = || {
             let mut lua_director = self.create_lua_director();
@@ -533,6 +606,17 @@ impl DirectorData {
     pub fn on_actor_death(&mut self, bnpc_id: u32, position: Position) {
         if let Some(boss) = self.bosses.get(&bnpc_id) {
             self.unseal_boss_wall(boss.wall_id, boss.line_id, boss.place_name);
+        }
+
+        // Most directors (and FATEs) don't care who dies.
+        if self
+            .lua
+            .0
+            .globals()
+            .get::<Function>("onActorDeath")
+            .is_err()
+        {
+            return;
         }
 
         let mut run_script = || {
@@ -942,6 +1026,11 @@ pub fn director_tick(
                     tracing::warn!("Failed to find bnpc {id} for SpawnBattleNpc, it won't spawn!");
                 }
             }
+            LuaDirectorTask::DespawnBattleNpc { layout_id } => {
+                if let Some((actor_id, _)) = instance.find_npc(*layout_id) {
+                    network.lock().remove_actor(instance, actor_id);
+                }
+            }
             LuaDirectorTask::GainEffect {
                 actor_id,
                 id,
@@ -1057,13 +1146,32 @@ pub fn director_tick(
                 //     DestinationNetwork::ZoneClients,
                 // );
             }
-            LuaDirectorTask::CompleteQuestBattle { sequence, stay } => {
+            LuaDirectorTask::CompleteQuestBattle {
+                sequence,
+                stay,
+                finish_scene,
+            } => {
                 let quest_id = instance.directors.first().unwrap().quest_battle_quest_id;
                 let mut network = network.lock();
                 network.send_to_instance(
                     ObjectId::default(),
                     instance,
-                    FromServer::QuestBattleComplete(director_id, quest_id, *sequence, *stay),
+                    FromServer::QuestBattleComplete(
+                        director_id,
+                        quest_id,
+                        *sequence,
+                        *stay,
+                        *finish_scene,
+                    ),
+                    DestinationNetwork::ZoneClients,
+                );
+            }
+            LuaDirectorTask::PlayScene { scene, flags } => {
+                let mut network = network.lock();
+                network.send_to_instance(
+                    ObjectId::default(),
+                    instance,
+                    FromServer::PlayDirectorScene(director_id, *scene, *flags),
                     DestinationNetwork::ZoneClients,
                 );
             }
@@ -1220,6 +1328,41 @@ pub fn director_tick(
                     message: text,
                     ..Default::default()
                 }));
+                let mut network = network.lock();
+                network.send_to_instance(
+                    ObjectId::default(),
+                    instance,
+                    FromServer::PacketSegment(ipc, actor_id),
+                    DestinationNetwork::ZoneClients,
+                );
+            }
+            LuaDirectorTask::BattleTalk {
+                layout_id,
+                name_id,
+                text_id,
+                icon,
+                duration_ms,
+            } => {
+                let actor_id = instance
+                    .find_npc(*layout_id)
+                    .map(|(actor_id, _)| actor_id)
+                    .unwrap_or_default();
+                let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::DirectorPopupMessage {
+                    actor_id: ObjectTypeId {
+                        object_id: actor_id,
+                        object_type: ObjectTypeKind::None,
+                    },
+                    handler_id: director_id,
+                    npc_name: *name_id,
+                    text_data_id: *text_id,
+                    duration_msecs: *duration_ms,
+                    icon: *icon,
+                    kind: 2,
+                    style: 0,
+                    params_count: 0,
+                    param1: 0,
+                    param2: 0,
+                });
                 let mut network = network.lock();
                 network.send_to_instance(
                     ObjectId::default(),
@@ -1611,6 +1754,17 @@ pub fn handle_director_messages(
                         DestinationNetwork::ZoneClients,
                     );
                 }
+            }
+
+            true
+        }
+        ToServer::DirectorSceneFinished(from_actor_id, scene) => {
+            let mut data = data.lock();
+            let Some(instance) = data.find_actor_instance_mut(*from_actor_id) else {
+                return true;
+            };
+            if let Some(director) = instance.directors.first_mut() {
+                director.scene_finished(*scene);
             }
 
             true

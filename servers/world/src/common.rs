@@ -202,8 +202,8 @@ pub enum FromServer {
         level: u8,
     },
     /// The quest battle was won: its director, and the quest and sequence it advances.
-    /// Whether the players stay afterwards (until `LeaveQuestBattle`) is the last field.
-    QuestBattleComplete(HandlerId, u32, u8, bool),
+    /// Whether the players stay afterwards (until `LeaveQuestBattle`), and the scene played before they leave.
+    QuestBattleComplete(HandlerId, u32, u8, bool, u16),
     /// Send the player back from the won quest battle they stayed in.
     LeaveQuestBattle(HandlerId),
     /// The quest battle was lost, send them back to where they entered it.
@@ -246,6 +246,8 @@ pub enum FromServer {
     NewLetterArrived,
     /// Plays a cutscene from the instance director.
     PlayDirectorCutscene(u32, HandlerId),
+    /// Plays one of the director's scenes, with these scene flags.
+    PlayDirectorScene(HandlerId, u16, u32),
     /// Inform the client that another player has placed a piece of furniture.
     FurniturePlaced(ContainerType, u16, u16, u8, Position, bool, f32, u8),
     /// Inform the client that another player has moved or rotated a piece of furniture.
@@ -535,6 +537,8 @@ pub enum ToServer {
     EnterTerritoryEvent(ObjectId),
     /// This player is now ready for the instanced content to begin.
     ReadyToCommence(ObjectId),
+    /// This player finished a scene the director played (`FromServer::PlayDirectorScene`.)
+    DirectorSceneFinished(ObjectId, u16),
     /// The client uses the /dice command to send a dice roll to one of their ChatChannels.
     ChatDiceRoll(ObjectId, ChatDiceRollResult),
     /// The client uses the /random command to send a dice roll to nearby players in the vicinity.

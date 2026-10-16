@@ -265,6 +265,8 @@ impl ZoneConnection {
         self.send_ipc_self(ipc).await;
 
         self.send_quest_tracker().await;
+
+        self.check_achievements(true).await;
     }
 
     pub async fn finish_all_quests(&mut self) {

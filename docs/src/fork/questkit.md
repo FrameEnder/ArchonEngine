@@ -87,8 +87,9 @@ something after finishing, sends a notice with more than 4 arguments, or ends in
 notices than retail. **It doesn't check scene numbers** (the client decides what a scene shows), so those still need
 the listing or a test in game.
 
-All 16 scripted quests have fixtures and match (Close to Home and Chasing Shadows only after the fixes the replay
-found, see the [Changelog](changelog.md)).
+All 23 scripted quests have fixtures and match (Close to Home and Chasing Shadows only after the fixes the replay
+found, see the [Changelog](changelog.md)). The fixtures for quests with a quest battle use a `battle_won` step for it;
+the battle itself isn't replayed (its director script was simulated with lupa separately).
 
 ### Making fixtures
 

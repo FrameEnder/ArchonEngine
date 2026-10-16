@@ -448,6 +448,16 @@ impl ZoneConnection {
                 LuaTask::ToggleOrnament { id } => {
                     self.toggle_ornament(*id).await;
                 }
+                LuaTask::SetAchievement { id, clear } => {
+                    if *clear {
+                        self.clear_achievement(*id);
+                    } else {
+                        self.complete_achievement(*id, true).await;
+                    }
+                }
+                LuaTask::CheckAchievements => {
+                    self.check_achievements(true).await;
+                }
                 LuaTask::ToggleOrnamentAll => {
                     let max_ornament_id = ORNAMENT_BITMASK_SIZE as u32 * 8;
 

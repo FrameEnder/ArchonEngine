@@ -1,0 +1,148 @@
+{
+  "quest": 507,
+  "script": "ManFst200_00507",
+  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-16), Gridania after quest 387 up to Call of the Sea",
+  "params": {
+    "ACTOR0": 1003027,
+    "ACTOR1": 1000460,
+    "ACTOR2": 1000100,
+    "ACTOR3": 1000106,
+    "ACTOR4": 1002693,
+    "ACTOR5": 1002703,
+    "ACTOR6": 1001029,
+    "ACTOR7": 1002695,
+    "ACTOR8": 1004336,
+    "ACTOR9": 1004434,
+    "ACTOR10": 1001821,
+    "EOBJECT0": 2001674,
+    "EOBJECT1": 2001666,
+    "EOBJECT2": 2001677,
+    "EOBJECT3": 2001669,
+    "EOBJECT4": 2001687,
+    "EVENT_ACTION_WAITING_SHOR": 11,
+    "ITEM0": 2000456,
+    "ITEM1": 2000457,
+    "NCUT_EVENT001": 64,
+    "NCUT_EVENT002": 65,
+    "NCUT_EVENT003": 66,
+    "NCUT_EVENT004": 154,
+    "NCUT_EVENT005": 67,
+    "NCUT_EVENT006": 74,
+    "NCUT_EVENT007": 155,
+    "NCUT_EVENT008": 75,
+    "NCUT_EVENT009": 158,
+    "NCUT_EVENT010": 230,
+    "NCUT_EVENT011": 229,
+    "NCUT_EVENT012": 228,
+    "NCUT_EVENT013": 227,
+    "NCUT_EVENT014": 231,
+    "NCUT_EVENT015": 229,
+    "POPRANGE0": 3877982,
+    "POPRANGE1": 4103392,
+    "POPRANGE2": 4102790,
+    "POPRANGE3": 4103399,
+    "POPRANGE4": 4103402,
+    "POPRANGE5": 4102780,
+    "POPRANGE6": 4103339,
+    "TERRITORYTYPE0": 205,
+    "TERRITORYTYPE1": 132,
+    "TERRITORYTYPE2": 128,
+    "TERRITORYTYPE3": 130,
+    "UNLOCK_IMAGE_AIRSHIP": 68
+  },
+  "steps": [
+    {
+      "talk": 1000460,
+      "what": "ACTOR1: into the Lotus Stand"
+    },
+    {
+      "talk": 1003027,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "001100000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1000100,
+      "what": "ACTOR2",
+      "expect": {
+        "sequence": 2,
+        "vars": "001100000000",
+        "notices": [[0, []]]
+      }
+    },
+    {
+      "talk": 1000106,
+      "what": "ACTOR3",
+      "expect": {
+        "sequence": 3,
+        "vars": "001100000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 2001666,
+      "what": "EOBJECT1",
+      "expect": {
+        "sequence": 4,
+        "vars": "001100000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1002693,
+      "what": "ACTOR4",
+      "expect": {
+        "sequence": 5,
+        "vars": "001100000000",
+        "notices": [[3, []]]
+      }
+    },
+    {
+      "talk": 1001029,
+      "what": "ACTOR6",
+      "expect": {
+        "sequence": 6,
+        "vars": "001000000000",
+        "notices": [[4, []]]
+      }
+    },
+    {
+      "talk": 1002695,
+      "what": "ACTOR7",
+      "expect": {
+        "sequence": 7,
+        "vars": "001000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 2001669,
+      "what": "EOBJECT3",
+      "expect": {
+        "sequence": 8,
+        "vars": "001000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1004336,
+      "what": "ACTOR8",
+      "expect": {
+        "sequence": 255,
+        "vars": "001000000000",
+        "notices": [[7, []]]
+      }
+    },
+    {
+      "talk": 1001821,
+      "what": "ACTOR10",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

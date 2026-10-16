@@ -1,4 +1,10 @@
+# The completed achievements bitmap (Achievement Excel sheet rows, lowest bit first), as the client keeps it.
+ACHIEVEMENT_BITMASK_SIZE: 510
+# The last five achievements completed, as five u16s.
+ACHIEVEMENT_HISTORY_SIZE: 10
 ACTIVE_HELP_BITMASK_SIZE: 38
+# The adventurer plate's portrait as the client sends and receives it (BannerData in FFXIVClientStructs.)
+ADVENTURER_PLATE_PORTRAIT_SIZE: 52
 ADVENTURE_BITMASK_SIZE: 43
 AETHERYTE_UNLOCK_BITMASK_SIZE: 30
 AETHER_CURRENT_BITMASK_SIZE: 56

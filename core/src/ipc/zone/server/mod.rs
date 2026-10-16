@@ -102,7 +102,8 @@ use crate::common::{
     read_quantized_rotation, write_packed_position, write_quantized_rotation,
 };
 use crate::constants::{
-    AVAILABLE_CLASSJOBS, COMPLETED_LEGACY_QUEST_BITMASK_SIZE, COMPLETED_LEVEQUEST_BITMASK_SIZE,
+    ACHIEVEMENT_BITMASK_SIZE, ADVENTURER_PLATE_PORTRAIT_SIZE, AVAILABLE_CLASSJOBS,
+    COMPLETED_LEGACY_QUEST_BITMASK_SIZE, COMPLETED_LEVEQUEST_BITMASK_SIZE,
     COMPLETED_QUEST_BITMASK_SIZE, COMPLETED_RECIPES_BITMASK_SIZE,
     GATHERED_GATHERING_ITEMS_BITMASK_SIZE, TITLE_UNLOCK_BITMASK_SIZE,
     UNLOCKED_MAP_MARKERS_BITMASK_SIZE,
@@ -659,8 +660,28 @@ pub enum ServerZoneIpcData {
     },
     TrustInformation(TrustInformation),
     DutySupportInformation(DutySupportInformation),
+    /// The adventurer plate's portrait (the reply to `ClientTriggerCommand::OpenPortraitsWindow`), as the client
+    /// sent it in `ClientZoneIpcData::SetAdventurerPlatePortrait`. The client copies it into CharaCard's
+    /// CurrentBannerData (FFXIVClientStructs' BannerData): first byte set when there is one, then the expression,
+    /// lighting, pose, camera, background, frame and decoration.
     PortraitsInformation {
-        unk: [u8; 56],
+        #[br(count = ADVENTURER_PLATE_PORTRAIT_SIZE)]
+        #[brw(pad_size_to = ADVENTURER_PLATE_PORTRAIT_SIZE)]
+        #[brw(pad_after = 4)]
+        portrait: Vec<u8>,
+    },
+    /// The completed achievements, the reply to `ClientTriggerCommand::RequestAchievements` (FFXIVClientStructs'
+    /// AchievementsPacket; the client's handler copies it into its Achievement state and marks it loaded.)
+    Achievements {
+        /// Achievement Excel sheet rows, lowest bit first.
+        #[br(count = ACHIEVEMENT_BITMASK_SIZE)]
+        #[brw(pad_size_to = ACHIEVEMENT_BITMASK_SIZE)]
+        completed: Vec<u8>,
+        /// The last five completed, newest first.
+        history: [u16; 5],
+        /// Copied by the client next to its near-completion data; unknown.
+        #[brw(pad_after = 6)]
+        unk: [u8; 26],
     },
     InitializeObfuscation {
         unk_before: [u8; 6],
@@ -816,8 +837,10 @@ pub enum ServerZoneIpcData {
         duration_msecs: u32,
         /// The icon/image that shows on the top left
         icon: u32,
-        /// What kind of object the speaker (npc_name) is. Used when resolving npc_name.
-        kind: ObjectKind,
+        /// What kind of object the speaker (npc_name) is, as `ObjectKind`'s first byte (2 for a BattleNpc, as retail
+        /// sends it in quest battles.) Used when resolving npc_name. A single byte: `ObjectKind::BattleNpc` would
+        /// also write its sub kind and make the packet a byte too long.
+        kind: u8,
         /// The appearance of the text box.
         style: u8,
         /// Amount of parameters to be read. Max value is 2.
@@ -1521,5 +1544,25 @@ mod tests {
     #[test]
     fn server_zone_ipc_sizes() {
         test_opcodes::<ServerZoneIpcSegment>();
+    }
+
+    /// Where the client's handler (HandleAchievementsPacket) reads each part.
+    #[test]
+    fn achievements_layout() {
+        use binrw::BinWrite;
+
+        let mut completed = vec![0; ACHIEVEMENT_BITMASK_SIZE];
+        completed[0] = 0b10;
+        let data = ServerZoneIpcData::Achievements {
+            completed,
+            history: [1, 2, 3, 4, 5],
+            unk: [0; 26],
+        };
+        let mut cursor = std::io::Cursor::new(Vec::new());
+        data.write_le(&mut cursor).unwrap();
+        let bytes = cursor.into_inner();
+        assert_eq!(bytes.len(), 552);
+        assert_eq!(bytes[0], 0b10);
+        assert_eq!(&bytes[0x1FE..0x202], &[1, 0, 2, 0]);
     }
 }

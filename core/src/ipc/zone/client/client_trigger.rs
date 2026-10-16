@@ -350,6 +350,21 @@ pub enum ClientTriggerCommand {
         unk1: u32,
     },
 
+    /// The client asks how far along an achievement is (Achievement::RequestAchievementProgress in
+    /// FFXIVClientStructs.) Answered with `ActorControlCategory::AchievementProgressInfo`.
+    #[brw(magic = 1000u32)]
+    RequestAchievementProgress { id: u32 },
+
+    /// The client asks for its completed achievements, e.g. when the Achievements window opens
+    /// (Achievement::RequestCompletedAchievements.) Answered with `ServerZoneIpcData::Achievements`.
+    #[brw(magic = 1001u32)]
+    RequestAchievements,
+
+    /// The client asks for its nearly completed achievements: bit 0 for the list shown at login, bit 1 for the
+    /// Achievements window's Near Completion page (Achievement::RequestNearCompletionAchievementSlot.)
+    #[brw(magic = 1002u32)]
+    RequestNearCompletionAchievements { slots: u32 },
+
     /// When a player opens the Shared FATE window.
     #[brw(magic = 1009u32)]
     OpenSharedFATEWindow {
@@ -542,7 +557,8 @@ pub enum ClientTriggerCommand {
         unk4: u32,
     },
 
-    /// The client opens the Portrait window.
+    /// The client asks for its adventurer plate's portrait, e.g. when the Portraits window opens and it doesn't have it
+    /// yet. Answered with `ServerZoneIpcData::PortraitsInformation`.
     #[brw(magic = 3200u32)]
     OpenPortraitsWindow,
 

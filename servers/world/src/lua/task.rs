@@ -113,6 +113,13 @@ pub enum LuaTask {
         id: u32,
     },
     ToggleOrnamentAll,
+    /// Complete an achievement (announced), or take it away with `clear`.
+    SetAchievement {
+        id: u32,
+        clear: bool,
+    },
+    /// Complete every achievement the character meets the requirements of.
+    CheckAchievements,
     UnlockBuddyEquip {
         id: u32,
     },

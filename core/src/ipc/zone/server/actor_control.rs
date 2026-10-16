@@ -712,7 +712,19 @@ pub enum ActorControlCategory {
         log_message: u32, // Index to LogMessage sheet
     },
 
-    /// Calls into some Achievement method, unsure what this does yet.
+    /// How far along an achievement is, the reply to `ClientTriggerCommand::RequestAchievementProgress` (the client
+    /// calls Achievement::ReceiveAchievementProgress.)
+    #[brw(magic = 514u32)]
+    AchievementProgressInfo { id: u32, current: u32, max: u32 },
+
+    /// An achievement was just completed: the client marks it complete, adds it to its recent history and shows the
+    /// "Achievement unlocked" pop-up.
+    #[brw(magic = 515u32)]
+    AchievementCompleted { id: u32 },
+
+    /// Calls into some Achievement method, unsure what this does yet. (The client empties the nearly completed list
+    /// whose index is `unk1`, 0 for the login notice and 1 for the Achievements window's; the fork sends it as the
+    /// reply to `ClientTriggerCommand::RequestNearCompletionAchievements`.)
     #[brw(magic = 538u32)]
     UnkAchievementRelated {
         unk1: u32,
@@ -730,6 +742,7 @@ pub enum ActorControlCategory {
         unk4: u32,
     },
 
+    /// The client marks `id` complete if `unk1` is 1, and takes `unk2` and `unk3` as its progress (current, max).
     #[brw(magic = 600u32)]
     AchievementProgress {
         id: u32,

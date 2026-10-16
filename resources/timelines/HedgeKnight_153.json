@@ -1,0 +1,6 @@
+{
+    "hitbox_radius": 0.45,
+    "autoattack_action_id": 873,
+    "timeline_always_plays": false,
+    "timepoints": []
+}

@@ -2,10 +2,10 @@ use crate::common::adjust_quest_id;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
+use icarus::Achievement::AchievementSheet;
 use icarus::Action::ActionSheet;
 use icarus::AetherCurrentCompFlgSet::AetherCurrentCompFlgSetSheet;
 use icarus::Aetheryte::AetheryteSheet;
-use icarus::GeneralAction::GeneralActionSheet;
 use icarus::AetheryteSystemDefine::AetheryteSystemDefineSheet;
 use icarus::BNpcBase::BNpcBaseSheet;
 use icarus::BNpcCustomize::BNpcCustomizeSheet;
@@ -31,6 +31,7 @@ use icarus::GatheringItem::GatheringItemSheet;
 use icarus::GatheringItemLevelConvertTable::GatheringItemLevelConvertTableSheet;
 use icarus::GatheringPoint::GatheringPointSheet;
 use icarus::GatheringPointBase::GatheringPointBaseSheet;
+use icarus::GeneralAction::GeneralActionSheet;
 use icarus::GilShopItem::GilShopItemSheet;
 use icarus::GimmickAccessor::GimmickAccessorSheet;
 use icarus::GimmickRect::{GimmickRectRow, GimmickRectSheet};
@@ -81,6 +82,18 @@ use kawari::common::{
 use kawari::common::{LegacyEquipmentModelId, WeaponModelId, timestamp_secs};
 use kawari::config::get_config;
 use strum::FromRepr;
+
+/// What an achievement asks for, see `GameData::achievement_rules`.
+#[derive(Debug, Clone, Default)]
+pub struct AchievementRule {
+    /// Its row in the Achievement sheet.
+    pub id: u32,
+    /// The Achievement sheet's Type, which says what `data` means (see `zone_connection/achievement.rs`.)
+    pub kind: u8,
+    /// The Achievement sheet's Key (e.g. a counter for counting achievements.)
+    pub key: i32,
+    pub data: [i32; 8],
+}
 
 /// A QuestBattle, see `GameData::get_quest_battle`.
 #[derive(Debug, Default)]
@@ -140,6 +153,8 @@ pub struct GameData {
 
     pub gimmick_rect_lookup: HashMap<u32, u32>,
     pub fate_event_range_lookup: HashMap<u32, u32>,
+    /// Read the first time they're needed, see `achievement_rules`.
+    achievement_rules: Option<Vec<AchievementRule>>,
 }
 
 impl Default for GameData {
@@ -646,6 +661,7 @@ impl GameData {
             fate_sheet,
             gimmick_rect_lookup,
             fate_event_range_lookup,
+            achievement_rules: None,
             dawn_content_sheet,
             fate_progress_ui_sheet,
             gold_saucer_content_sheet,
@@ -813,7 +829,8 @@ impl GameData {
     /// one. Teleport is the general action whose action is TELEPORT_ACTION_ID.
     pub fn get_teleport_unlock_link(&mut self) -> Option<u32> {
         let config = get_config();
-        let sheet = GeneralActionSheet::read_from(&mut self.resource, config.world.language()).ok()?;
+        let sheet =
+            GeneralActionSheet::read_from(&mut self.resource, config.world.language()).ok()?;
         sheet
             .into_iter()
             .flatten_subrows()
@@ -825,7 +842,8 @@ impl GameData {
     /// How many big Aetherytes (not shards) `has_aetheryte` says the player has.
     pub fn count_main_aetherytes(&mut self, has_aetheryte: impl Fn(u32) -> bool) -> usize {
         let config = get_config();
-        let Ok(sheet) = AetheryteSheet::read_from(&mut self.resource, config.world.language()) else {
+        let Ok(sheet) = AetheryteSheet::read_from(&mut self.resource, config.world.language())
+        else {
             return 0;
         };
         sheet
@@ -1362,6 +1380,33 @@ impl GameData {
             .and_then(|sheet| sheet.row(id))
             .map(|row| row.CastTime)
             .unwrap_or(2)
+    }
+
+    /// Every achievement with a type, read from the Achievement sheet the first time.
+    pub fn achievement_rules(&mut self) -> &[AchievementRule] {
+        if self.achievement_rules.is_none() {
+            let language = get_config().world.language();
+            let rules = match AchievementSheet::read_from(&mut self.resource, language) {
+                Ok(sheet) => sheet
+                    .into_iter()
+                    .filter_map(|(id, rows)| {
+                        let (_, row) = rows.into_iter().next()?;
+                        (row.Type != 0).then_some(AchievementRule {
+                            id,
+                            kind: row.Type,
+                            key: row.Key,
+                            data: row.Data,
+                        })
+                    })
+                    .collect(),
+                Err(err) => {
+                    tracing::warn!("Couldn't read the Achievement sheet: {err:?}");
+                    Vec::new()
+                }
+            };
+            self.achievement_rules = Some(rules);
+        }
+        self.achievement_rules.as_deref().unwrap_or_default()
     }
 
     /// Returns the quest this QuestBattle belongs to, its time limit and its variables.

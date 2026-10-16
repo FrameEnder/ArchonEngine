@@ -49,7 +49,19 @@ ClientZoneIpcType:
       offset: 13
       width: 4
       with: EventReturnHandler2
-
+- name: SetAdventurerPlatePortrait
+  comment: The client sets its adventurer plate's portrait (Portraits window), sent back in PortraitsInformation.
+  opcode: 107
+  size: 56
+  found_on: 2026.10.06.0000.0000
+  how_to_find: Open the Portraits window, pick a portrait and set it as the adventurer plate's. The server warns about an unknown packet of this size.
+  find:
+  # The function that sends it writes this opcode and the packet's size with its header (0x48 = 72) before copying the
+  # portrait.
+  - immediate:
+      pattern: C7 44 24 58 ?? ?? ?? ?? 48 C7 44 24 60 48 00 00 00 0F 11 01
+      offset: 4
+      width: 4
 ServerZoneIpcType:
 - name: EventNotice2
   comment: A notice from an event with up to 2 arguments, e.g. a quest's progress pop-up as an enemy is defeated.
@@ -71,3 +83,13 @@ ServerZoneIpcType:
   find:
   - handler:
       pattern: 41 0F B6 D9 49 8B F8 0F B6 F2 8B E9 E8 ?? ?? ?? ?? 4C 8B CF 88 5C 24 20 44 0F B6 C6 8B D5 48 8B C8 E8
+- name: Achievements
+  comment: The completed achievements and the last five, the reply to the client asking for them (client trigger 1001).
+  opcode: 991
+  size: 552
+  found_on: 2026.10.06.0000.0000
+  how_to_find: On retail with the Kawari Recorder, open the Achievements window - the reply is this packet.
+  find:
+  # HandleAchievementsPacket in FFXIVClientStructs.
+  - handler:
+      pattern: 4C 8D 89 ?? ?? ?? ?? 48 8B D1

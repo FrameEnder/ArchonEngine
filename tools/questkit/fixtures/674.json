@@ -1,0 +1,28 @@
+{
+  "quest": 674,
+  "script": "SubWil141_00674",
+  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-16), Gridania after quest 387 up to Call of the Sea",
+  "params": {
+    "ACTOR0": 1001821,
+    "ACTOR1": 1000972
+  },
+  "steps": [
+    {
+      "talk": 1001821,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1000972,
+      "what": "ACTOR1",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

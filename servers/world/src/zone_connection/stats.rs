@@ -842,6 +842,10 @@ impl ZoneConnection {
 
         self.send_stats().await;
         self.update_class_info().await;
+
+        if level_up > 0 {
+            self.check_achievements(true).await;
+        }
     }
 
     /// The number of seconds to add to the rested EXP bonus.

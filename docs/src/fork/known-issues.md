@@ -7,7 +7,9 @@ add one when something is found.
 
 * **Close to Home** is only scripted for Conjurers (`ManFst004_00124`); the Lancer (`ManFst002_00085`) and Archer
   (`ManFst003_00123`) versions still stop after accepting.
-* Story quests stop after **Salvaging the Scene** (387). The next ones need a new retail recording.
+* **The Gridanian Envoy** (507) and **Call of the Sea** (674) were written from Sapphire and the recording without the
+  client's script: dump them in the Quest Lab to check the scene numbers. Envoy's arrival positions are Sapphire's.
+* Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
 * Limsa Lominsa and Ul'dah have only upstream's openings.
 * A quest script without `onEnterTerritory` leaves an enter-territory event unfinished (the client waits). The fix (`02e22b5`) was rolled back with the first quest engine and not redone.
 * Quest sequence/variable changes aren't logged or noted in packet captures any more (also lost in the rollback); use the captures' `UpdateQuest` packets or `//gm quest inspect`.
@@ -17,15 +19,17 @@ add one when something is found.
 
 ## Quest battles and directors
 
-* **Battle talk** (the pop-up window) packet isn't known for this client; lines are said in `/say` instead.
+* **Battle talk**: Leia's Legacy and To Guard a Guardian use the window (DirectorPopupMessage) with retail's text IDs;
+  Chasing Shadows and Spirithold Broken still say their lines in `/say` until their text IDs are recorded.
 * Chasing Shadows' enemies only auto-attack (no skills yet).
+* NPCs fighting each other use their stat-based damage (no retail recording of it), so allies with retail's low health
+  could die: in Leia's Legacy and To Guard a Guardian every enemy goes for the player instead of the allies as on
+  retail.
+* To Guard a Guardian: which six Ixali come first is a guess from where they stand; after the cutscene retail moves the
+  player through a zone change (PrepareZoning to the same territory), Kawari leaves them in place.
+* The new quest battles' timelines (skills and how often) are rough loops from the recording's counts; only Janremi,
+  the blanga and the lesser gargoyle have recorded damage to players.
 * Retail sends the player out of a lost battle; the delays are copied from recordings, not from known rules.
-
-## Server log
-
-* Directors and FATEs whose scripts have no `onActorDeath` log `Syntax error during onActorDeath: FromLuaConversionError
-  { from: "nil", to: "function" }` whenever something in their area dies (seen in every bundle since 2026-10-14). The
-  server should skip the callback when a script doesn't define it.
 
 ## Combat
 
@@ -40,6 +44,15 @@ add one when something is found.
 * Player **HP** still uses upstream's approximate formula (low for levels 1–50).
 * Most jobs besides White Mage and Dancer have only their starter skills. Cooldowns aren't sent
   (`server/action.rs` TODO), so the client doesn't show recasts from the server.
+
+## Character windows
+
+* **Portraits** still need the crash described (what, when, the client's crash log); the server now saves and returns
+  the adventurer plate's portrait, but a character without one gets the same zeroes as before.
+* **Achievements**: only Types 2, 3, 6 and 9 are completed automatically, and what those Types mean is the community's
+  reading of the sheet, not checked on retail. Nearly completed lists are always empty. Whether retail also sends
+  LogMessage 952 ("… earned the achievement …") on completion, or the client prints it, isn't known.
+* **Recommendations** are worked out by the client; what's wrong on Kawari isn't known yet.
 
 ## Systems (upstream gaps the fork hasn't touched)
 

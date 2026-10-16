@@ -846,6 +846,20 @@ impl UserData for LuaPlayer {
             this.toggle_ornament(id);
             Ok(())
         });
+        methods.add_method_mut("complete_achievement", |_, this, id: u32| {
+            this.queued_tasks
+                .push(LuaTask::SetAchievement { id, clear: false });
+            Ok(())
+        });
+        methods.add_method_mut("clear_achievement", |_, this, id: u32| {
+            this.queued_tasks
+                .push(LuaTask::SetAchievement { id, clear: true });
+            Ok(())
+        });
+        methods.add_method_mut("check_achievements", |_, this, _: ()| {
+            this.queued_tasks.push(LuaTask::CheckAchievements);
+            Ok(())
+        });
         methods.add_method_mut("toggle_ornament_all", |_, this, _: ()| {
             this.toggle_ornament_all();
             Ok(())

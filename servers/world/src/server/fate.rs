@@ -172,6 +172,17 @@ impl FateData {
     }
 
     pub fn on_actor_death(&mut self) {
+        // Not every FATE script cares who dies.
+        if self
+            .lua
+            .0
+            .globals()
+            .get::<Function>("onActorDeath")
+            .is_err()
+        {
+            return;
+        }
+
         let mut run_script = || {
             let mut lua_fate = self.create_lua_fate();
             let err = self.lua.0.scope(|scope| {

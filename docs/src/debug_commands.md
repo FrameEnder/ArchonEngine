@@ -5,6 +5,7 @@ These special debug commands start with `!` and are custom to Kawari.
 | Usage | Details|
 | --- | --- |
 | `!acs <category> <param1 (optional)> <param2 (optional)> <param3 (optional)> <param4 (optional)>` | Send an ActorControlSelf to the player. |
+| `!achievement <id>`, `!achievement clear <id>`, `!achievement check` | Completes an achievement (with the pop-up), takes one away, or completes every one whose requirements are met. |
 | `!ai_disable` | Disables AI for enemies in the current area. |
 | `!condition <name>` | Forcefully sets a condition, see `condition.rs` for what is supported. |
 | `!cf <id>` | Joins the Content Finder ID specified as if you'd queued. |

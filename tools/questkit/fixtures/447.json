@@ -1,0 +1,92 @@
+{
+  "quest": 447,
+  "script": "ManFst007_00447",
+  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-16), Gridania after quest 387 up to Call of the Sea",
+  "params": {
+    "ACTOR0": 1000100,
+    "ITEM0": 2000249,
+    "ACTOR1": 1003061,
+    "ACTOR2": 1000423,
+    "EVENTRANGE0": 3854369,
+    "ACTOR3": 1000456,
+    "ACTOR4": 1000457,
+    "ACTOR5": 1000458,
+    "ACTOR6": 1000463,
+    "ACTOR7": 1000464,
+    "ACTOR8": 1000719,
+    "ACTOR9": 1000720,
+    "ACTOR10": 1000721,
+    "ACTOR11": 1000722,
+    "ACTOR12": 1000723,
+    "ACTOR13": 1000724,
+    "EOBJECT0": 2001836,
+    "EVENT_ACTION_SEARCH": 1,
+    "TERRITORYTYPE2": 148,
+    "TERRITORYTYPE0": 204,
+    "POPRANGE0": 3884000,
+    "TERRITORYTYPE1": 226,
+    "QUESTBATTLE0": 12,
+    "SEQ_0_ACTOR0_LQ": 90,
+    "LOC_ACTOR0": 1003071,
+    "LOC_FACE1": 617,
+    "LOC_FACE2": 604,
+    "LOC_ACTION1": 961,
+    "LOC_LIP1": 632,
+    "NCUT_01": 30,
+    "NCUT_02": 61,
+    "CUT_SCENE_03": 60,
+    "LOC_FACE_REPLACE0": 13997
+  },
+  "steps": [
+    {
+      "talk": 1000100,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "001000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1000423,
+      "what": "ACTOR2: into the Seat of the First Bow"
+    },
+    {
+      "talk": 1003061,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [[0, [1, 1]]]
+      }
+    },
+    {
+      "talk": 1000456,
+      "what": "ACTOR3: into the quest battle"
+    },
+    {
+      "battle_won": 3,
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "enter_territory": 148,
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1003061,
+      "what": "ACTOR1",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

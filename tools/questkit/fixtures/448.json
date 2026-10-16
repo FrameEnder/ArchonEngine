@@ -1,0 +1,51 @@
+{
+  "quest": 448,
+  "script": "ManFst008_00448",
+  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-16), Gridania after quest 387 up to Call of the Sea",
+  "params": {
+    "ACTOR0": 1003061,
+    "ACTOR1": 1000423,
+    "ACTOR2": 1000100,
+    "ACTOR3": 1000153,
+    "ITEM0": 2000250,
+    "TERRITORYTYPE0": 204,
+    "POPRANGE0": 3884000
+  },
+  "steps": [
+    {
+      "talk": 1003061,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1000100,
+      "what": "ACTOR2",
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [[0, []]]
+      }
+    },
+    {
+      "talk": 1000153,
+      "what": "ACTOR3",
+      "expect": {
+        "sequence": 255,
+        "vars": "001000000000",
+        "notices": [[1, [21002]]]
+      }
+    },
+    {
+      "talk": 1000100,
+      "what": "ACTOR2",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

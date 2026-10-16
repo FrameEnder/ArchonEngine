@@ -190,7 +190,7 @@ name, e.g. `SubFst073_00387`).
 
 ## Scripted quests
 
-All Gridania, from Close to Home onwards. "Recording" means it matched a retail recording's variables and notices.
+Gridania's story from Close to Home on, its side quests, and the first quest after it. "Recording" means it matched a retail recording's variables and notices.
 Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `questkit replay`.
 
 | ID | Quest | Script | Checked against | What it involves |
@@ -211,9 +211,16 @@ Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `
 | 381 | Migrant Marauders | `003/SubFst060_00381` | client script, Sapphire, recording | Searching the egg spawns vultures 3838969/3838970; notice 0 only on the second kill; the egg can be searched again. |
 | 384 | A Hearer Is Often Late | `003/SubFst068_00384` | client script, Sapphire, recording | Notice 0 at Leonnie. |
 | 387 | Salvaging the Scene | `003/SubFst073_00387` | client script, Sapphire, recording | Two cargoes (BitFlag8 1–2), notice 0 `[count, 2, 21003]`; walking into EVENTRANGE0 spawns the lumber toad 3842567 (scene 22); trade 23 → 24. |
+| 161 | Leia's Legacy | `001/SubFst055_00161` | client script, Sapphire, recording | Ask three witnesses in any order (UI8AL counts, BitFlag8 1–3, notice 0 `[count, 3]`), report (cutscene 4, notice 1), quest battle 14, the egg as a key item (UI8BH, notice 3 `[25252]`), trade 15 → 16. |
+| 446 | Dread Is in the Air | `004/ManFst006_00446` | client script, Sapphire, recording | Accepting goes straight to 255 with the letter (UI8BH); trade 1 → 100 (99 when the window is closed). |
+| 447 | To Guard a Guardian | `004/ManFst007_00447` | client script, Sapphire, recording | Message (UI8BH) for Lewin through the Seat of the First Bow's door (scene 5, POPRANGE0); trade 2 → 3, notice 0 `[1, 1]`; quest battle 12 from the instructor (scene 7) or EVENTRANGE0 (scene 6); the aftermath on re-entering (scene 20). |
+| 448 | Festive Endeavors | `004/ManFst008_00448` | client script, Sapphire, recording | Miounne (notice 0), Beatin gives the mask (UI8BH, notice 1 `[21002]`), trade 5 → 6. |
+| 449 | Renewing the Covenant | `004/ManFst009_00449` | client script, Sapphire, recording | Estaine checks the player is wearing RITEM0 (scene 3 → 4, or 5 without it); Lotus Stand door (scene 8, POPRANGE1). |
+| 507 | The Gridanian Envoy | `005/ManFst200_00507` | Sapphire, recording | Two letters (UI8BH/BL); airships to Limsa Lominsa and Ul'dah (gangplank event action, flights, `change_territory`), notices 0, 3, 4, 7; positions are Sapphire's. Scenes not yet checked against the client's script (needs a dump). |
+| 674 | Call of the Sea | `006/SubWil141_00674` | Sapphire, recording | Accepting goes straight to 255; Baderon gives the reward. Scenes not yet checked against the client's script. |
 
-Upstream's own scripts cover the three city openings and the Close to Home offers. The next MSQ quests after
-Salvaging the Scene wait for a new retail recording.
+Upstream's own scripts cover the three city openings and the Close to Home offers. Gridania's story from Close to
+Home to The Gridanian Envoy is complete; Call of the Sea starts the next part (Limsa Lominsa).
 
 ## Scenario Guide
 

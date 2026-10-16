@@ -1,7 +1,7 @@
 # Quest battles and directors
 
-Quest battles are the solo duties inside story quests (Chasing Shadows, Spirithold Broken). The fork added them on top
-of upstream's content directors.
+Quest battles are the solo duties inside story quests (Chasing Shadows, Spirithold Broken, Leia's Legacy, To Guard a
+Guardian). The fork added them on top of upstream's content directors.
 
 ## Entering one
 
@@ -37,8 +37,9 @@ Callbacks:
 | `onSetup(director)` | The instance was created. |
 | `onCommence(director)` | The player is in: spawn NPCs, set the first sequence, start the chatter. |
 | `onUpdate(director, health, player_health)` | Every logic tick (500 ms). `health` maps each living NPC's layout ID to its health %, `player_health` the player's. Waves, thresholds and timed steps live here. |
-| `onActorDeath(director, layout_id, position)` | An NPC died. |
+| `onActorDeath(director, layout_id, position)` | An NPC died. Optional (the server skips it when a script, or a FATE's, doesn't define it). |
 | `onPlayerDeath(director)` | The player fell. |
+| `onSceneFinished(director, scene)` | A player finished one of the director's own scenes (`play_scene`), e.g. a cutscene halfway through. Optional. |
 
 Director methods (`servers/world/src/server/director.rs`), the ones the fork added:
 
@@ -46,17 +47,30 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 |---|---|
 | `spawn_bnpc(layout_id)` | (upstream) Spawns a drop-in NPC. |
 | `set_sequence(n)` | Sets the director's sequence and sends DirectorVars (its first byte is the sequence). The client's own battle script reacts to it (e.g. `OnSequence001` sets the duty objective). `0xFE` = lost, shows "Duty Failed". |
-| `complete_quest_battle(quest_sequence, stay)` | Wins: the quest moves to `quest_sequence`, "Duty Complete" and the victory fanfare play. With `stay = true` the players remain (for closing lines) until `leave_quest_battle()`. |
+| `complete_quest_battle(quest_sequence, stay, finish_scene)` | Wins: the quest moves to `quest_sequence`, "Duty Complete" and the victory fanfare (60001) play, then `finish_scene` (default 6, `QUEST_BATTLE_SCENE_FINISH`; retail plays 6 in Leia's Legacy and 11 in To Guard a Guardian) and the players go back. With `stay = true` the players remain (for closing lines) until `leave_quest_battle()`. |
 | `leave_quest_battle()` | Sends the players back where they entered. |
 | `fail_quest_battle()` | Loses: players go back where they entered, the quest stays on the same step to retry. Retail sets sequence `0xFE` first and sends them out about 6 s later. |
 | `set_hate(npc, target, amount)` | Gives NPC `npc` enmity on `target` (another NPC's layout ID, or the player when `nil`). Used to make allies and enemies fight each other. |
 | `use_action(npc, action, target)` | Makes an NPC use an action (with its cast bar and area aimed where the target stands). |
+| `battle_talk(npc, name_id, text_id, icon, duration_ms)` | The **battle talk window** (DirectorPopupMessage, opcode 162 on 7.57), as retail shows it: `text_id` is the content's text by ID (retail's IDs from a recording; one outside the content's range crashes the client), `name_id` the speaker's BNpcName, `icon` the portrait, 4000 ms unless given. It comes from `npc` if it's there. |
+| `play_scene(scene, flags)` | Plays one of the director's scenes for every player (event type GameProgress), e.g. To Guard a Guardian's cutscene, scene 6 with flags `0xF8402EFB`. The script hears `onSceneFinished` when it's over. |
+| `despawn_bnpc(layout_id)` | Removes an NPC without it dying (no `onActorDeath`). |
 | `say(npc, key)` | NPC says a line from the quest's text sheet by key, in `/say` under its BNpcName. |
 | `say_battle_talk(npc, number, name_id)` | Says the quest's n-th `*BATTLETALK*` line (key order) under BNpcName `name_id` (0 shows `???`), even if the speaker isn't present. The log names the key it used. |
 | `yell(npc, npc_yell_id)` | NpcYell row (e.g. 118 "Curses! Not now!", 122/123 the golem's rumbles). |
 
-The battle talk window isn't known for this client (every candidate packet did nothing), so battle talk is said in
-chat for now (see [Known issues](known-issues.md)).
+**The battle talk window** is DirectorPopupMessage (162), found in the 2026-10-16 recording of Leia's Legacy and To Guard a
+Guardian. Layout (40 bytes): speaker actor (ObjectTypeId, 8 bytes), director handler, BNpcName, text ID, duration ms
+(4000), icon, then one byte each for the speaker's object kind (2, a BattleNpc), style (0) and parameter count (0), a
+pad byte and two u32 parameters. Upstream's struct had the kind as `ObjectKind`, which writes a second byte for a
+BattleNpc and makes the packet 41 bytes; it's a plain `u8` now. The text IDs are the content's own (101–106 in Leia's
+Legacy, 161–181 in To Guard a Guardian), so they're copied from the recording. Chasing Shadows and Spirithold Broken
+still use `say`/`say_battle_talk` (in chat), until their text IDs are recorded.
+
+The retail flow around a quest battle, from the same recording: EventStart (type 0x0f) and the opening scene 1;
+when it ends, EventStart 0x0d with scene 60000 and the fight starts (Kawari's `onCommence`); on winning scene 60001,
+then the finish scene, UpdateQuest, and DirectorVars with sequence `0xFE` and the byte after it `0x80`, then the
+player is sent out.
 
 `!directorscene <scene> [flags]` plays any scene of the current director, which is how the victory fanfare scene
 (60001, from the client's generic director script) was found.
@@ -85,6 +99,36 @@ chat for now (see [Known issues](known-issues.md)).
   two more lines, and out at about 143 s (`complete_quest_battle(4, true)`, then `leave_quest_battle()`). Health
   thresholds for lines and skills are Sapphire's (65 %, 60 %, 30 %, 15 %).
 * Winning moves the quest to sequence 4; re-entering the Central Shroud plays the aftermath (scene 23).
+
+### Quest battle 14 — Leia's Legacy (`content/questbattle/14.lua`)
+
+* Layer `QB_SubFst055_001`: Janremi (2319770, level 15, 1212 HP), two hedge knights with swords (2319771, 2319773,
+  level 14, 190 HP) and one who casts (2319772, level 15, 127 HP); Kuplu Kopo (4097283, level 15, 1116 HP) fights
+  beside you, goes after whoever's left in order and casts Cure on you below 50 %. All from the recording (positions,
+  levels, HP, the start position).
+* Sequence 1 before the opening cutscene, 2 when the fight starts; Janremi's lines and sequences 3, 4, 5 at 70 %, 40 %
+  and 25 % (Kuplu answers 10 s and 3 s later); below 25 % Janremi uses Heartstopper every 6 s. All down: sequence 6,
+  finish scene 6, the quest moves to sequence 4.
+* On retail the hedge knights fought Kuplu; here every enemy goes for the player, since NPCs fighting each other use
+  the unscaled stat damage and Kuplu (1116 HP) wouldn't last.
+* Timelines: `JanremiBlackheart_152` (auto-attack 871, True Thrust, 17.2 damage at level 15 as recorded),
+  `HedgeKnight_153`/`_154`, `KupluKopo_932`.
+
+### Quest battle 12 — To Guard a Guardian (`content/questbattle/12.lua`)
+
+* Layer `QB_ManFst007_001` (35 NPCs). First half: Galfrid (4089300), Miraudont (4089305) and two guards (3854581,
+  3854582) with you against Quzal Huatotl (4089289, level 20, 5782 HP) and six Ixali; guards and Ixali with far too
+  much health (191400 / 79750) fighting each other in the background. The first six down bring six more (sequence 3);
+  Quzal at 33 % (sequence 4, Void Call) and 25 % (sequence 5, a blanga). Which Ixali come first is a guess from where
+  they stand.
+* Everyone down: sequence 6, everyone else is removed and the director's cutscene plays (scene 6). After it (sequence
+  7) a lesser gargoyle and the masked mage; sequence 8 22 s later; the gargoyle at 25 % brings Yda and Papalymo
+  (sequence 9, 10 s later 10); the mage at 40 % says one more line. The mage down: sequence 11, finish scene 11, the
+  quest moves to sequence 3.
+* Retail sends the player through a zone change (PrepareZoning to the same territory) after the cutscene; Kawari
+  leaves them where they stood.
+* Every battle talk line is retail's text ID, speaker and portrait, at the recorded times (the header of the script
+  has the table).
 
 ## Adding a quest battle
 

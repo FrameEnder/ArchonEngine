@@ -160,6 +160,12 @@ pub enum ClientZoneIpcData {
     EventReturnHandler2(EventReturnHandler<2>),
     EventReturnHandler8(EventReturnHandler<8>),
     EventReturnHandler16(EventReturnHandler<16>),
+    /// The client sets its adventurer plate's portrait (the Portraits window), as BannerData in FFXIVClientStructs. The
+    /// server sends it back in `ServerZoneIpcData::PortraitsInformation`.
+    SetAdventurerPlatePortrait {
+        #[brw(pad_after = 4)]
+        portrait: [u8; 52],
+    },
     Config(Config),
     UnkCall2 {
         unk1: [u8; 8],

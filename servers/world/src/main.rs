@@ -211,6 +211,7 @@ async fn initial_setup(
                     content_handler_id: None,
                     event_action_id: 0,
                     quest_battle_stay: false,
+                    quest_battle_finish_scene: None,
                     can_share_teleport: false,
                     exp_chain: (0, None),
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
@@ -1227,10 +1228,42 @@ async fn process_packet(
                                     connection.send_ipc_self(ipc).await;
                                 }
                                 ClientTriggerCommand::OpenPortraitsWindow => {
+                                    // The adventurer plate's portrait as the client last set it (all zeroes if never.)
                                     let ipc = ServerZoneIpcSegment::new(
-                                        ServerZoneIpcData::PortraitsInformation { unk: [0; 56] },
+                                        ServerZoneIpcData::PortraitsInformation {
+                                            portrait: connection
+                                                .player_data
+                                                .volatile
+                                                .portrait
+                                                .data_truncated(),
+                                        },
                                     );
                                     connection.send_ipc_self(ipc).await;
+                                }
+                                ClientTriggerCommand::RequestAchievements => {
+                                    connection.send_achievements().await;
+                                }
+                                ClientTriggerCommand::RequestAchievementProgress { id } => {
+                                    connection.send_achievement_progress(id).await;
+                                }
+                                ClientTriggerCommand::RequestNearCompletionAchievements {
+                                    slots,
+                                } => {
+                                    // Nearly completed ones aren't worked out yet, so each list comes back empty.
+                                    for slot in 0..2 {
+                                        if slots & (1 << slot) != 0 {
+                                            connection
+                                                .actor_control_self(
+                                                    ActorControlCategory::UnkAchievementRelated {
+                                                        unk1: slot,
+                                                        unk2: 0,
+                                                        unk3: 0,
+                                                        unk4: 0,
+                                                    },
+                                                )
+                                                .await;
+                                        }
+                                    }
                                 }
                                 ClientTriggerCommand::SetTitle { title_id } => {
                                     connection.player_data.volatile.title = title_id as i32;
@@ -2527,6 +2560,10 @@ async fn process_packet(
                             connection.send_ipc_self(ipc).await;
 
                             connection.queued_content = None;
+                        }
+                        ClientZoneIpcData::SetAdventurerPlatePortrait { portrait } => {
+                            // Saved with the character and sent back whenever the client asks for it.
+                            connection.player_data.volatile.portrait.data = portrait.to_vec();
                         }
                         ClientZoneIpcData::EquipGearset {
                             gearset_index,
@@ -4317,10 +4354,11 @@ async fn process_server_msg(
                     );
                 }
             }
-            FromServer::QuestBattleComplete(handler_id, quest_id, sequence, stay) => {
+            FromServer::QuestBattleComplete(handler_id, quest_id, sequence, stay, finish_scene) => {
                 // The quest moves on straight away, the scenes are just the victory fanfare.
                 connection.set_quest_sequence(quest_id, sequence).await;
                 connection.quest_battle_stay = stay;
+                connection.quest_battle_finish_scene = Some(finish_scene);
 
                 connection
                     .start_event(
@@ -4346,6 +4384,9 @@ async fn process_server_msg(
             FromServer::LeaveQuestBattle(handler_id) => {
                 // The last scene, after which they're sent back (see ContentEventHandler.)
                 connection.quest_battle_stay = false;
+                let finish_scene = *connection
+                    .quest_battle_finish_scene
+                    .get_or_insert(QUEST_BATTLE_SCENE_FINISH);
                 connection
                     .start_event(
                         ObjectTypeId {
@@ -4361,7 +4402,7 @@ async fn process_server_msg(
                     .await;
                 if events.last_mut().is_some() {
                     lua_player.play_scene(
-                        QUEST_BATTLE_SCENE_FINISH,
+                        finish_scene,
                         SceneFlags::HIDE_HOTBAR | SceneFlags::NO_DEFAULT_CAMERA,
                         Vec::new(),
                     );
@@ -4516,6 +4557,26 @@ async fn process_server_msg(
             }
             FromServer::NewLetterArrived => {
                 connection.send_mailbox_status().await;
+            }
+            FromServer::PlayDirectorScene(content_handler_id, scene, flags) => {
+                // A scene of the director's own, e.g. a quest battle's cutscene halfway through (see
+                // ContentEventHandler, which tells the director when it's over.)
+                connection
+                    .start_event(
+                        ObjectTypeId {
+                            object_id: connection.player_data.character.actor_id,
+                            object_type: ObjectTypeKind::None,
+                        },
+                        content_handler_id,
+                        EventType::GameProgress,
+                        1,
+                        events,
+                        lua_player,
+                    )
+                    .await;
+                if events.last_mut().is_some() {
+                    lua_player.play_scene(scene, SceneFlags::from_bits_retain(flags), Vec::new());
+                }
             }
             FromServer::PlayDirectorCutscene(cutscene_id, content_handler_id) => {
                 connection

@@ -1,0 +1,51 @@
+{
+  "quest": 449,
+  "script": "ManFst009_00449",
+  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-16), Gridania after quest 387 up to Call of the Sea",
+  "params": {
+    "ACTOR0": 1000100,
+    "ACTOR1": 1000286,
+    "RITEM0": 2651,
+    "ACTOR2": 1000153,
+    "ACTOR3": 1003027,
+    "ACTOR4": 1000460,
+    "POPRANGE0": 4106221,
+    "TERRITORYTYPE0": 205,
+    "POPRANGE1": 3877982,
+    "CUT_SCENE_01": 62,
+    "CUT_SCENE_02": 63,
+    "CUT_SCENE_03": 68
+  },
+  "steps": [
+    {
+      "talk": 1000100,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1000286,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1000460,
+      "what": "ACTOR4: into the Lotus Stand"
+    },
+    {
+      "talk": 1003027,
+      "what": "ACTOR3",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

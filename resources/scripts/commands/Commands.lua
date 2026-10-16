@@ -87,6 +87,7 @@ registerGMCommand(GM_REWARD,             GM_DIR.."Reward.lua")
 -- Debug commands
 -- Please keep these in alphabetical order!
 
+registerCommand("achievement",                      DBG_DIR.."Achievement.lua")
 registerCommand("cf",                               DBG_DIR.."JoinContent.lua")
 registerCommand("classjob",                         DBG_DIR.."ClassJob.lua")
 registerCommand("festival",                         DBG_DIR.."Festival.lua")
