@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-16 | — | Achievements must be quick (character windows); connections desync when busy (known issues).
+| 2026-10-16 | — | Quest battles: `warp_players`, To Guard a Guardian's second half, targeting and healing; known issues.
+| 2026-10-16 | `6a4203e` | Achievements must be quick (character windows); connections desync when busy (known issues).
 | 2026-10-16 | `de2d795` | Items That Teach Things (new page); achievements (Types 8, 20, counters); saving; known issues.
 | 2026-10-16 | `53316cd` | Combat: leashing on the target's distance, the InCombat condition; the Adventurer Plate (character windows, opcodes, saving); known issues (teleport animation, the plate).
 | 2026-10-16 | `feef465` | Quest unlock links (quests); how the client gates main menu commands, Recommendations and the Adventurer Plate (character windows, known issues).
@@ -50,7 +51,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Fix players freezing (or reviving into endless loading) after finishing a quest or discovering a map part: the achievement check read the Map sheet for every Mapping the Realm achievement, taking long enough to desync the client's connection (2026-10-16 bundles). The Map sheet's discovery columns are read once now; a check over 50 ms is logged. |
+| — | To Guard a Guardian: the cutscene now ends with retail's loading screen into the second half (director `warp_players`: PrepareZoning to the same territory, then ActorSetPos), which the client waited for; Miraudont and the guards clear the adds before turning on Quzal; healing follows the Recorder's count of each NPC's Cures (the guards healed by the bow, Miraudont and Galfrid, Quzal by the sincallers, the player once by Papalymo), where before everyone also healed themselves and Miraudont was given the player's own Cures. |
+| `6a4203e` | Fix players freezing (or reviving into endless loading) after finishing a quest or discovering a map part: the achievement check read the Map sheet for every Mapping the Realm achievement, taking long enough to desync the client's connection (2026-10-16 bundles). The Map sheet's discovery columns are read once now; a check over 50 ms is logged. |
 | `de2d795` | Items that teach things work: mounts, unlock links (emotes, hairstyles…), barding, Triple Triad cards, fashion accessories and facewear are learned, as well as minions and orchestrion rolls (which no longer un-learn on a second use), and the item is used up. Achievements: Mapping the Realm (Type 8, the whole map discovered), Freebird (Type 20) and "Defeat N enemies" (counter 11), with counters saved (migration `update-2026-10-16-3_achievement_counters`); checked on discovering a map part, attuning aether currents and defeating an enemy. |
 | `53316cd` | The adventurer plate migration is `update-2026-10-16-2_adventurer_plate`: as `update-2026-10-16_adventurer_plate` it had the same version as the achievements one (Diesel's version is the part before `_`), so it wouldn't have run on a database that already had that one, and a new database skipped the achievements migration. |
 | `70fa284` | Adventurer plates are saved: the client's UpdateAdventurerPlate (opcode 795) is stored and sent back in AdventurerPlate (CharaCardData, migration `update-2026-10-16-2_adventurer_plate`); the plate shows the class/job's real level, and upstream's misplaced glasses/base plate are fixed. Enemies give up once the player they're after is more than 40 yalms from their spawn (enemies with no navmesh path never moved, so never leashed, and kept players in combat: no regeneration, 2026-10-16 bundle). The server sets the player's InCombat condition while enemies are after them, as retail does, so the client refuses Teleport and Return in combat. |

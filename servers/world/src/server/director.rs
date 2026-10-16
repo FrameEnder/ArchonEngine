@@ -11,14 +11,14 @@ use kawari::{
         ContentDirectorEvent, DirectorEvent, DirectorTrigger, DutyOption, EOBJ_EXIT, EOBJ_SHORTCUT,
         EventState, GimmickRectEvent, HandlerId, HandlerType, InstanceContentDirectorEvent,
         LeveDirectorEvent, LogMessageType, ObjectId, ObjectTypeId, ObjectTypeKind, Position,
-        PublicContentType, timestamp_secs,
+        PublicContentType, WARP_DELAY, WarpType, timestamp_secs,
     },
     config::get_config,
     ipc::chat::ChatChannelType,
     ipc::zone::{
-        ActionRequest, ActionType, ActorControlCategory, ActorControlSelf, ChatMessage,
-        DutyFinderSetting, EventLogMessage, MapEffects, ServerZoneIpcData, ServerZoneIpcSegment,
-        WalkInEvent,
+        ActionRequest, ActionType, ActorControlCategory, ActorControlSelf, ActorSetPos,
+        ChatMessage, DutyFinderSetting, EventLogMessage, MapEffects, PrepareZoning,
+        ServerZoneIpcData, ServerZoneIpcSegment, WalkInEvent,
     },
 };
 use mlua::{Function, LuaSerdeExt, UserData, UserDataMethods, Value};
@@ -129,6 +129,13 @@ pub enum LuaDirectorTask {
     },
     /// Send the players of a won quest battle back (see `CompleteQuestBattle`'s `stay`.)
     LeaveQuestBattle,
+    /// Move every player to a position in the same instance through a loading screen, as retail does after To Guard
+    /// a Guardian's cutscene (PrepareZoning to the same territory, then ActorSetPos; the client then finishes zoning
+    /// and gets ZoneIn). A cutscene that ends this way leaves the client waiting for it.
+    WarpPlayers {
+        position: Position,
+        rotation: f32,
+    },
     /// Lose a quest battle, which sends the players back to where they entered it.
     FailQuestBattle,
     /// Make a BNpc use an action on another BNpc (by layout ID), or on the player if there's no target.
@@ -321,6 +328,16 @@ impl UserData for LuaDirector {
             this.tasks.push(LuaDirectorTask::PlayScene { scene, flags });
             Ok(())
         });
+        methods.add_method_mut(
+            "warp_players",
+            |_, this, (x, y, z, rotation): (f32, f32, f32, f32)| {
+                this.tasks.push(LuaDirectorTask::WarpPlayers {
+                    position: Position(glam::Vec3A::new(x, y, z)),
+                    rotation,
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut("leave_quest_battle", |_, this, _: ()| {
             this.tasks.push(LuaDirectorTask::LeaveQuestBattle);
             Ok(())
@@ -1174,6 +1191,54 @@ pub fn director_tick(
                     FromServer::PlayDirectorScene(director_id, *scene, *flags),
                     DestinationNetwork::ZoneClients,
                 );
+            }
+            LuaDirectorTask::WarpPlayers { position, rotation } => {
+                let players: Vec<ObjectId> = instance
+                    .actors
+                    .iter()
+                    .filter(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+                    .map(|(id, _)| *id)
+                    .collect();
+                let mut network = network.lock();
+                for actor_id in players {
+                    // As retail sent it: a normal warp, the character hidden, the usual fade.
+                    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::PrepareZoning(
+                        PrepareZoning {
+                            territory_type_id: instance.zone.id,
+                            warp_type: WarpType::Normal,
+                            hide_character: 1,
+                            fade_out_delay: 1,
+                            ..Default::default()
+                        },
+                    ));
+                    network.send_to_by_actor_id(
+                        actor_id,
+                        FromServer::PacketSegment(ipc, actor_id),
+                        DestinationNetwork::ZoneClients,
+                    );
+                    let Some(client_id) = network
+                        .clients
+                        .iter()
+                        .find(|(_, (handle, _))| handle.actor_id == actor_id)
+                        .map(|(id, _)| *id)
+                    else {
+                        continue;
+                    };
+                    let segment =
+                        ServerZoneIpcSegment::new(ServerZoneIpcData::ActorSetPos(ActorSetPos {
+                            position: *position,
+                            rotation: *rotation,
+                            warp_type: WarpType::Normal,
+                            arg: 2,
+                            ..Default::default()
+                        }));
+                    instance.insert_task(
+                        client_id,
+                        actor_id,
+                        WARP_DELAY,
+                        QueuedTaskData::PacketSegment { segment },
+                    );
+                }
             }
             LuaDirectorTask::LeaveQuestBattle => {
                 let mut network = network.lock();

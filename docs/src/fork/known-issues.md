@@ -30,8 +30,8 @@ add one when something is found.
   recording for those NPCs; their potency for a player who uses the same action isn't verified, and none of them give
   their statuses (Windbite, Venomous Bite, Terror Eye…).
 * When allies heal (thresholds and how often) is fitted to the recording, not known rules.
-* To Guard a Guardian: which six Ixali come first is a guess from where they stand; after the cutscene retail moves the
-  player through a zone change (PrepareZoning to the same territory), Kawari leaves them in place.
+* To Guard a Guardian: which six Ixali come first is a guess from where they stand. Dying sends you back out to the
+  instructor (as any lost quest battle does); whether retail offers a retry first isn't recorded.
 * The new quest battles' timelines (which skills, how often) are loops fitted to how many times the recording saw
   each skill used.
 * Retail sends the player out of a lost battle; the delays are copied from recordings, not from known rules.

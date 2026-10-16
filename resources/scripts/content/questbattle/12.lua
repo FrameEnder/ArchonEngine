@@ -67,13 +67,18 @@ ENEMY_TARGETS = {
 -- bow, Miraudont and Galfrid keep the two guards (and themselves) up, the sincallers heal Quzal, and Papalymo the
 -- player in the second half.
 PLAYER = "player"
+-- On retail (the Recorder's count of each one's Cures, and who they landed on): the bow 9 and Miraudont 9 (about 60
+-- each) and Galfrid 3 (about 200) all on the two guards, never on themselves or the player; the sincallers 12 (about
+-- 88), mostly on Quzal; Papalymo once, a big one on the player (660). (The ~100 Cures on the guards and the player in
+-- that recording were the player's own.) The thresholds and how often are fitted to those counts.
+GUARDS = { BNPC_BOW, BNPC_LANCE }
 HEALERS = {
-    { healer = BNPC_BOW, targets = { BNPC_BOW, BNPC_LANCE }, below = 60, every = 10 },
-    { healer = BNPC_MIRAUDONT, targets = { BNPC_BOW, BNPC_LANCE, BNPC_MIRAUDONT }, below = 50, every = 12 },
-    { healer = BNPC_GALFRID, targets = { BNPC_BOW, BNPC_LANCE, BNPC_GALFRID, BNPC_MIRAUDONT }, below = 45, every = 20 },
-    { healer = 3803263, targets = { BNPC_QUZAL }, below = 60, every = 10 },
-    { healer = 3803264, targets = { BNPC_QUZAL }, below = 60, every = 10 },
-    { healer = BNPC_PAPALYMO, targets = { PLAYER }, below = 50, every = 8 },
+    { healer = BNPC_BOW, targets = GUARDS, below = 50, every = 12 },
+    { healer = BNPC_MIRAUDONT, targets = GUARDS, below = 50, every = 12 },
+    { healer = BNPC_GALFRID, targets = GUARDS, below = 30, every = 40 },
+    { healer = 3803263, targets = { BNPC_QUZAL }, below = 50, every = 12 },
+    { healer = 3803264, targets = { BNPC_QUZAL }, below = 50, every = 12 },
+    { healer = BNPC_PAPALYMO, targets = { PLAYER }, below = 40, every = 60 },
 }
 
 -- Who's talking, by BNpcName, and their portrait in the battle talk window.
@@ -90,6 +95,9 @@ FINISH_SCENE = 11
 -- The cutscene halfway through, and its scene flags as retail sent them.
 CUTSCENE_SCENE = 6
 CUTSCENE_FLAGS = 0xF8402EFB
+-- Where the cutscene leaves you, as retail's ActorSetPos put it.
+AFTER_CUTSCENE_POSITION = { x = -299.54, y = 20.99, z = 161.21 }
+AFTER_CUTSCENE_ROTATION = -0.64
 SEQUENCE_START = 1
 SEQUENCE_FAILED = 0xFE
 FAIL_DELAY_UPDATES = 12
@@ -273,13 +281,21 @@ end
 -- As on retail: Galfrid, Yda and Papalymo take the boss (Quzal, then the mage) while it's there; Miraudont the
 -- lostwings and the guards the slowbeaks that are after them; then whoever's oldest.
 function alliesAttack(director)
-    local any = oldest(nil)
     local boss = nil
     for _, id in ipairs({ BNPC_QUZAL, BNPC_MAGE }) do
         if remaining[id] then
             boss = id
         end
     end
+    -- Everyone but the boss-takers clears the adds first (on retail Miraudont and the guards fought the Ixali, and
+    -- only turned on Quzal once they were gone); the boss is what's left.
+    local adds = {}
+    for _, id in ipairs(arrived) do
+        if id ~= BNPC_QUZAL and id ~= BNPC_MAGE then
+            adds[id] = true
+        end
+    end
+    local any = oldest(adds) or boss
     ally_priority = ally_priority + ALLY_ENMITY
     for id, _ in pairs(allies) do
         local target = any
@@ -420,6 +436,10 @@ function onSceneFinished(director, scene)
         return
     end
     half = 2
+    -- Retail ends the cutscene with a loading screen into where the second half starts (PrepareZoning to the same
+    -- territory, then ActorSetPos, from the recording); the client waits for it.
+    director:warp_players(AFTER_CUTSCENE_POSITION.x, AFTER_CUTSCENE_POSITION.y, AFTER_CUTSCENE_POSITION.z,
+        AFTER_CUTSCENE_ROTATION)
     queue(AFTER_CUTSCENE_STEPS)
 end
 

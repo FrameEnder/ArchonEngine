@@ -55,6 +55,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `battle_talk(npc, name_id, text_id, icon, duration_ms)` | The **battle talk window** (DirectorPopupMessage, opcode 162 on 7.57), as retail shows it: `text_id` is the content's text by ID (retail's IDs from a recording; one outside the content's range crashes the client), `name_id` the speaker's BNpcName, `icon` the portrait, 4000 ms unless given. It comes from `npc` if it's there. |
 | `play_scene(scene, flags)` | Plays one of the director's scenes for every player (event type GameProgress), e.g. To Guard a Guardian's cutscene, scene 6 with flags `0xF8402EFB`. The script hears `onSceneFinished` when it's over. |
 | `despawn_bnpc(layout_id)` | Removes an NPC without it dying (no `onActorDeath`). |
+| `warp_players(x, y, z, rotation)` | Moves every player in the instance through a loading screen to a position in it (PrepareZoning to the same territory, then ActorSetPos). |
 | `say(npc, key)` | NPC says a line from the quest's text sheet by key, in `/say` under its BNpcName. |
 | `say_battle_talk(npc, number, name_id)` | Says the quest's n-th `*BATTLETALK*` line (key order) under BNpcName `name_id` (0 shows `???`), even if the speaker isn't present. The log names the key it used. |
 | `yell(npc, npc_yell_id)` | NpcYell row (e.g. 118 "Curses! Not now!", 122/123 the golem's rumbles). |
@@ -129,15 +130,21 @@ player is sent out.
   (sequence 9, 10 s later 10); the mage at 40 % says one more line. The mage down: sequence 11, finish scene 11, the
   quest moves to sequence 3.
 * As on retail: Quzal goes after Galfrid, the lostwings after Miraudont, the slowbeaks after the two guards, the
-  sincallers after Galfrid and Miraudont (and Cure Quzal below 60 %); the blanga, the gargoyle and the mage after the
-  player. Galfrid, Yda and Papalymo take the boss; Miraudont the lostwings; the guards the slowbeaks. The bow (below
-  60 %), Miraudont (50 %) and Galfrid (45 %) Cure the guards and themselves, as the recording shows them doing
-  (Cures of 60, 98 and 201); Papalymo Cures the player (660).
+  sincallers after Galfrid and Miraudont; the blanga, the gargoyle and the mage after the player. Galfrid, Yda and
+  Papalymo take the boss; Miraudont and the guards clear the adds first (oldest first) and only then turn on Quzal.
+* Healing, by the Recorder's count of each one's Cures: the bow (9) and Miraudont (9) Cure the two guards for about 60
+  and Galfrid (3) for about 200, never themselves or the player; the sincallers (12, about 88) heal Quzal; Papalymo
+  heals the player once, big (660). The ~100 Cures on the guards and on the player in the recording were the player's
+  own (Bob is a conjurer); an earlier version gave them to Miraudont and let everyone heal themselves, so allies and
+  Quzal were healed about three times as often as on retail (111 NPC Cures in one run against 35).
 * Every hit and heal between them is the recording's (`recorded_amounts`, 23 timelines): e.g. Galfrid's auto-attack
   76 and Quick Nock 94 on Quzal, the slowbeaks' 24 / True Thrust 42 on the guards (who dropped to about 10 % on
   retail before being healed back), Yda's 180 and Papalymo's Blizzard 770 on the mage.
-* Retail sends the player through a zone change (PrepareZoning to the same territory) after the cutscene; Kawari
-  leaves them where they stood.
+* **After the cutscene** retail sends the player through a loading screen into the second half: PrepareZoning to the
+  same territory (warp type 1, character hidden), ActorSetPos 1.5 s later (-299.54, 20.99, 161.21, facing -0.64),
+  then ZoneIn when the client has finished zoning. The cutscene's flags leave the client waiting for it, so without
+  it the second half played behind an endless loading screen (2026-10-16 bundle). The director's `warp_players(x, y,
+  z, rotation)` does it now.
 * Every battle talk line is retail's text ID, speaker and portrait, at the recorded times (the header of the script
   has the table).
 
