@@ -59,6 +59,9 @@ add one when something is found.
   LogMessage 952 ("… earned the achievement …") on completion, or the client prints it, isn't known.
 * **Recommendations** are worked out by the client; what's wrong on Kawari isn't known yet.
 
+* `!` debug commands are only recognised in zone chat (Say/Shout/Yell); in Party, Tell, Linkshell, Free Company or
+  Novice Network chat they're posted as ordinary messages (upstream's behaviour).
+
 ## Systems (upstream gaps the fork hasn't touched)
 
 Crafting is a stub; gathering uses placeholder EXP; duty completion isn't saved per player; housing doesn't persist

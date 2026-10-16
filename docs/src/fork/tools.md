@@ -53,6 +53,10 @@ Off by default; files grow fast. Kawari Web's Diagnostics page toggles it and sh
 
 ## Debug commands (fork additions)
 
+**`!` commands only work in zone chat** (Say, Shout, Yell, the default channel). Typed in Party, a Tell, a Linkshell,
+the Free Company or the Novice Network, the message goes through the chat server, which doesn't look for commands, so
+it's simply posted. When a command runs, the server log shows `Args passed to Lua command <name>`.
+
 Typed in game chat; the full list is in [Debug Commands](../debug_commands.md).
 
 | Command | Use |
@@ -61,7 +65,7 @@ Typed in game chat; the full list is in [Debug Commands](../debug_commands.md).
 | `!rawsweep <from> <to> <hex>` | Send the same data with every *unknown* opcode in a range, to find one the client reacts to. |
 | `!directorscene <scene> [flags hex]` | Play a scene of the current director (found the 60001 victory fanfare). |
 | `!forkopcodes` | List the fork's opcodes, which are known for this game version, and how to find the rest. |
-| `!achievement <id>` / `clear <id>` / `check` | Complete an achievement (with the pop-up), take one away, or complete every one whose requirements are met. |
+| `!achievement <id>` / `clear <id>` / `check` | Complete an achievement (with the pop-up), take one away, or complete every one whose requirements are met (`check` says how many it completed). |
 
 GM commands for quests (`//gm quest accept|cancel|incomplete|complete|sequence|inspect <id> …`) are in
 [GM Commands](../gm_commands.md).

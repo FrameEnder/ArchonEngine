@@ -153,7 +153,8 @@ impl ZoneConnection {
     /// Completes every achievement the character now meets the requirements of (see the top of this file), e.g.
     /// after finishing a quest or levelling up. Achievements made of other achievements are checked again until
     /// nothing more completes.
-    pub async fn check_achievements(&mut self, announce: bool) {
+    /// Returns how many it completed.
+    pub async fn check_achievements(&mut self, announce: bool) -> usize {
         let rules: Vec<AchievementRule> = self
             .game_data
             .lock()
@@ -168,6 +169,7 @@ impl ZoneConnection {
             .cloned()
             .collect();
 
+        let mut completed = 0;
         loop {
             let mut completed_any = false;
             for rule in &rules {
@@ -178,11 +180,13 @@ impl ZoneConnection {
                 if max > 0 && current >= max {
                     self.complete_achievement(rule.id, announce).await;
                     completed_any = true;
+                    completed += 1;
                 }
             }
             if !completed_any {
                 break;
             }
         }
+        completed
     }
 }
