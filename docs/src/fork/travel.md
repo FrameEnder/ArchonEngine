@@ -27,9 +27,25 @@ Teleport's action script queues the warp as a Lua task when the cast ends. Those
 the connection (see [Timing](timing.md#tasks-from-lua)); before, the warp went out at the client's next packet, up to
 ~10 s later, leaving the player hovering in the teleport animation.
 
+## Leaving a zone with FATEs
+
+Retail takes the zone's FATEs down before the player loads the next map (Bob's Chronofoil captures, leaving the
+Central Shroud): right after PrepareZoning, actor control **2352** (`UnkFate2`) with each FATE start NPC's actor ID,
+then **2357** for every FATE the zone has (about 45 IDs, running or not; the fork calls it `RemoveFateContext`), then
+TerminateDirector for the FATE director (handler `0x801AFFFF`). Entering, it sends InitDirector for that director right
+after ZoneInit and CreateFateContext for each FATE during the loading screen, and FateInit and the targetable status
+once the player has loaded in.
+
+Kawari only sent the TerminateDirector, so the client kept its FATE contexts with no director and crashed in its FATE
+update on the next frame (2026-10-17, teleporting from the Central Shroud to Gridania: an access violation writing
+0x430 into a null FateDirector, in FateContext code under `FateManager` and `EventFramework::Update`, named from
+FFXIVClientStructs' `ida/data.yml` for this patch). `remove_actor_from_instance` now sends 2352 and 2357 first, in
+retail's order.
+
 ## Map discovery
 
-Discovered map parts are saved and sent back at login, so maps stay revealed (see [Saving](saving.md)).
+Discovered map parts are saved, sent back at login, and A Realm Reborn's field zones are revealed whole on the first
+visit (see [Achievements](character-windows.md) and [Saving](saving.md)).
 
 ## The Gridania opening area
 

@@ -623,6 +623,37 @@ pub fn remove_actor_from_instance(
     if let Some(current_instance) = data.find_actor_instance_mut(actor_id) {
         network.remove_actor(current_instance, actor_id);
 
+        // Take down the zone's FATEs first, as retail does: 2352 for each FATE's start NPC, then every FATE's context
+        // (RemoveFateContext, for all the zone's FATEs, running or not), then the FATE director below. Without the
+        // contexts going first, the client crashed in its FATE update after teleporting away (2026-10-17).
+        for fate in &current_instance.fates {
+            if let Some((npc, _)) = fate.motivation_npc {
+                network.send_to_by_actor_id(
+                    actor_id,
+                    FromServer::ActorControlSelf(ActorControlCategory::UnkFate2 {
+                        unk1: npc.0,
+                        unk2: 0,
+                        unk3: 0,
+                        unk4: 0,
+                    }),
+                    DestinationNetwork::ZoneClients,
+                );
+            }
+        }
+        let mut fate_ids: Vec<u32> = current_instance.candiate_fates.clone();
+        for fate in &current_instance.fates {
+            if !fate_ids.contains(&fate.fate_id) {
+                fate_ids.push(fate.fate_id);
+            }
+        }
+        for fate_id in fate_ids {
+            network.send_to_by_actor_id(
+                actor_id,
+                FromServer::ActorControlSelf(ActorControlCategory::RemoveFateContext { fate_id }),
+                DestinationNetwork::ZoneClients,
+            );
+        }
+
         // Terminate any directors
         for director in &current_instance.directors {
             network.send_to_by_actor_id(

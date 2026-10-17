@@ -1085,6 +1085,16 @@ pub enum ActorControlCategory {
         is_bonus: u32,
     },
 
+    /// Removes a FATE's context from the client. Retail sends it for every FATE of the zone when the player leaves it,
+    /// right after PrepareZoning and before terminating the FATE director (Bob's Chronofoil captures, 2026-10-14).
+    /// Terminating the director alone left the client's contexts pointing at nothing, and it crashed updating them on
+    /// the next map (2026-10-17 crash report). The name is the fork's, from what it does.
+    #[brw(magic = 2357u32)]
+    RemoveFateContext {
+        /// Index into the FATE Excel sheet.
+        fate_id: u32,
+    },
+
     /// Associates an NPC with a preparing FATE. You need to talk to this NPC to begin, and also to return items to (if applicable?)
     #[brw(magic = 2359u32)]
     SetupMotivationNpc {

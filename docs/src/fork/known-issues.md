@@ -106,6 +106,12 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
 * 162 costume sets in the Shop have no contents yet and can't be bought until an admin adds them.
 * Store items arrive as items; what they do when used depends on server support.
 
+## FATEs
+
+* Entering a zone, Kawari sends FateInit before CreateFateContext; retail creates the contexts first (during the
+  loading screen) and sends FateInit after the player has loaded in. Not known to break anything.
+* What 2352 (`UnkFate2`, sent with the FATE start NPC's actor ID on leaving) does isn't known.
+
 ## Combat (found 2026-10-17)
 
 * Enemy area attacks now count a player half a yalm past their edge as caught (was a whole yalm); retail's exact margin
