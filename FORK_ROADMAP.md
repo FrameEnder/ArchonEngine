@@ -54,7 +54,7 @@ Size and packet counts are from the fork point; the content rows are current.
 
 ### Tier 3 — Needs retail packet captures (Chronofoil)
 
-- Market board (handler returns a placeholder)
+- Market board: done from Bob's captures (every tradable item listed, buying; see docs/src/fork/marketboard.md). Selling isn't.
 - Trade (stub to prevent softlocks)
 - Blacklist, Fellowships (return empty lists)
 - Retainers

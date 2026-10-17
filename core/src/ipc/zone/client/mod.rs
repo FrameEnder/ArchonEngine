@@ -160,6 +160,19 @@ pub enum ClientZoneIpcData {
     EventReturnHandler2(EventReturnHandler<2>),
     EventReturnHandler8(EventReturnHandler<8>),
     EventReturnHandler16(EventReturnHandler<16>),
+    /// Buying a marketboard listing: what the listing said when the player chose it (Bob's Chronofoil captures of
+    /// 2026-09-15; the server answers with `ServerZoneIpcData::MarketBoardPurchase`.)
+    MarketBoardPurchaseHandler {
+        retainer_id: u64,
+        listing_id: u64,
+        /// Index into the Item Excel sheet.
+        item_id: u32,
+        quantity: u32,
+        price_per_unit: u32,
+        total_tax: u32,
+        /// Unknown: `03 00 00 04 01 00 00 00` and `00 00 00 01 00 00 00 00` on retail.
+        unk: [u8; 8],
+    },
     /// The client sets its adventurer plate's portrait (the Portraits window), as BannerData in FFXIVClientStructs. The
     /// server sends it back in `ServerZoneIpcData::PortraitsInformation`.
     SetAdventurerPlatePortrait {
@@ -451,11 +464,19 @@ pub enum ClientZoneIpcData {
         #[brw(pad_before = 1, pad_after = 6)] // Seems to be empty/zeroes
         response: u8,
     },
+    /// A page of a marketboard search: the items of one ItemSearchCategory.
     RequestMarketBoardItems {
-        #[brw(pad_before = 4)] // empty
-        sequence: u16, // probably
-        #[br(count = 130)]
-        #[brw(pad_size_to = 130)]
+        /// Where the page starts (0, 20, 40...)
+        start_index: u32,
+        /// Counts up with each search; every page of one search has the same.
+        request_id: u8,
+        /// 0x0A for a search's first page, 0x0B for the ones after.
+        kind: u8,
+        /// Index into the ItemSearchCategory Excel sheet.
+        category: u16,
+        /// Search text and leftovers of earlier replies (the client doesn't clear it.)
+        #[br(count = 128)]
+        #[brw(pad_size_to = 128)]
         unk: Vec<u8>,
     },
     CreateLocalLinkshellRequest {
@@ -676,9 +697,12 @@ pub enum ClientZoneIpcData {
         item_id: u32,
         unk2: u32,
     },
+    /// A page of an item's listings, after `UnkMarketBoardRequest1` opened it.
     UnkMarketBoardRequest2 {
-        unk1: u32,
-        #[brw(pad_after = 3)] // unused
+        /// Where the page starts (0, 10, 20...), the previous page's `next_index`.
+        start_index: u8,
+        /// Counts up with each item opened.
+        #[brw(pad_after = 6)] // leftovers, not cleared by the client
         request_id: u8,
     },
     PerformanceNote {

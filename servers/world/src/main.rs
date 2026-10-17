@@ -21,9 +21,8 @@ use kawari::ipc::zone::{
     ActorControlCategory, CWLSLeaveReason, ClientTriggerTarget, Conditions,
     ContentFinderUserAction, CrossRealmListing, CrossRealmListings, DutyFinderSetting,
     DutySupportInformation, EventLogMessage, EventType, FurnitureTranslatedForObserver, ItemInfo,
-    LinkshellInviteResponse, MarketBoardHistory, MarketBoardHistoryEntry, MarketBoardItem,
-    OnlineStatus, OnlineStatusMask, PlayerSetup, SceneFlags, SearchInfo, SocialListRequestType,
-    TrustContent, TrustInformation,
+    LinkshellInviteResponse, OnlineStatus, OnlineStatusMask, PlayerSetup, SceneFlags, SearchInfo,
+    SocialListRequestType, TrustContent, TrustInformation,
 };
 
 use kawari::ipc::zone::{
@@ -3247,99 +3246,16 @@ async fn process_packet(
                                 ))
                                 .await;
                         }
-                        ClientZoneIpcData::RequestMarketBoardItems { sequence, .. } => {
-                            // TODO: placeholder, of course
-                            let ipc =
-                                ServerZoneIpcSegment::new(ServerZoneIpcData::MarketBoardItems {
-                                    sequence: *sequence,
-                                    items: vec![
-                                        MarketBoardItem {
-                                            item_id: 1659,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1649,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1621,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 31542,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1657,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1642,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1613,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1650,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1648,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1643,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1616,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1639,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1635,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1606,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1637,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1633,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1627,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1625,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1622,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 1614,
-                                            count: 1,
-                                        },
-                                        MarketBoardItem {
-                                            item_id: 92,
-                                            count: 1,
-                                        },
-                                    ],
-                                });
-                            connection.send_ipc_self(ipc).await;
+                        ClientZoneIpcData::RequestMarketBoardItems {
+                            start_index,
+                            request_id,
+                            kind,
+                            category,
+                            ..
+                        } => {
+                            connection
+                                .marketboard_search(*start_index, *request_id, *kind, *category)
+                                .await;
                         }
                         ClientZoneIpcData::SetFriendGroupIcon(icon_info) => {
                             connection.set_friend_group_icon(icon_info).await;
@@ -3912,48 +3828,29 @@ async fn process_packet(
                             connection.send_ipc_self(ipc).await;
                         }
                         ClientZoneIpcData::UnkMarketBoardRequest1 { item_id, .. } => {
-                            connection.marketboard_request_item_id = *item_id;
-
-                            // Send hits information
-                            let ipc =
-                                ServerZoneIpcSegment::new(ServerZoneIpcData::MarketBoardHits {
-                                    unk1: 0,
-                                    hits: 1,
-                                });
-                            connection.send_ipc_self(ipc).await;
-
-                            // Send dummy information so the list is populated and Dalamud self-tests work
-                            let ipc = ServerZoneIpcSegment::new(
-                                ServerZoneIpcData::MarketBoardHistory(MarketBoardHistory {
-                                    item_id: *item_id as u16,
-                                    entries: vec![
-                                        MarketBoardHistoryEntry {
-                                            unk1: 0,
-                                            price: 1,
-                                            timestamp: 0,
-                                            quantity: 1,
-                                            unk3: 0,
-                                            name: "Test Retainer".to_string()
-                                        };
-                                        20
-                                    ],
-                                }),
-                            );
-                            connection.send_ipc_self(ipc).await;
+                            connection.marketboard_open(*item_id).await;
                         }
-                        ClientZoneIpcData::UnkMarketBoardRequest2 { unk1, request_id } => {
-                            tracing::info!("{unk1} {request_id}");
-                            let ipc = ServerZoneIpcSegment::new(
-                                ServerZoneIpcData::MarketBoardOfferings {
-                                    unk1: [0; 44],
-                                    item_id: connection.marketboard_request_item_id,
-                                    unk2: Vec::default(),
-                                    request_id: *request_id,
-                                    unk3: 0,
-                                    unk4: 0,
-                                },
-                            );
-                            connection.send_ipc_self(ipc).await;
+                        ClientZoneIpcData::UnkMarketBoardRequest2 {
+                            start_index,
+                            request_id,
+                        } => {
+                            connection.marketboard_page(*start_index, *request_id).await;
+                        }
+                        ClientZoneIpcData::MarketBoardPurchaseHandler {
+                            listing_id,
+                            item_id,
+                            quantity,
+                            price_per_unit,
+                            ..
+                        } => {
+                            connection
+                                .marketboard_purchase(
+                                    *listing_id,
+                                    *item_id,
+                                    *quantity,
+                                    *price_per_unit,
+                                )
+                                .await;
                         }
                         ClientZoneIpcData::PerformanceNote { .. } => {
                             // TODO: what to do with these?

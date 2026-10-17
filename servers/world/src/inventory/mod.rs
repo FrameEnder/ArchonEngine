@@ -398,7 +398,9 @@ impl Inventory {
         if item.stack_size > 1 {
             for page in &mut self.pages {
                 for (slot_index, slot) in page.slots.iter_mut().enumerate() {
+                    // HQ and NQ (item_flags) don't share a stack.
                     if slot.item_id == item.item_id
+                        && slot.item_flags == item.item_flags
                         && slot.quantity + item.quantity <= item.stack_size as i32
                     {
                         slot.quantity += item.quantity;

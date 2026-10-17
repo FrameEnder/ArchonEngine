@@ -48,6 +48,7 @@ mod item;
 mod linkshell;
 mod lua;
 mod mail;
+mod marketboard;
 mod party;
 mod quest;
 mod social;

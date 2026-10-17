@@ -17,6 +17,19 @@ add one when something is found.
   scaffolder guessed (marked TODO) needs the listing or a test in game.
 * The quest battle prompt is always allowed (`ServerRequestReply` result 0); retail presumably checks something.
 
+## Marketboard
+
+* The purchase opcodes (MarketBoardPurchaseHandler 258, MarketBoardPurchase 610) are FFXIVOpcodes', not yet seen
+  working on Kawari; the first purchase tells. They have no finders for the startup scan.
+* Only Gridania's marketboard object has a script (`CmnDefMarketBoardGridania_00039`); whether the other cities'
+  boards are other CustomTalk scripts hasn't been checked.
+* Searching by name isn't handled by the server: the captures had none, and the client seems to do it from its own
+  item list, then open the item the usual way. Untested.
+* Retail's order of a category's items isn't known (it isn't item level or ID); Kawari sends them by ID.
+* A purchase doesn't send retail's inventory transaction for the gil, only the gil and item slots (as the NPC shops
+  do); the upper 16 bits of a search result's count (1, 2 or 5 on retail) aren't known.
+* Selling isn't there: players can't list their own items.
+
 ## Quest battles and directors
 
 * **Battle talk**: every quest battle uses the window (DirectorPopupMessage) with retail's text IDs, except Papalymo's

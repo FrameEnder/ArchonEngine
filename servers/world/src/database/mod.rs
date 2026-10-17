@@ -2,6 +2,7 @@ mod character;
 mod friends;
 mod linkshell;
 mod mail;
+mod marketboard;
 
 mod models;
 pub use models::{

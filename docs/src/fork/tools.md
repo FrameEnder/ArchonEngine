@@ -16,7 +16,7 @@ folder), or `--game <game folder>`. Full guide: [Quest Dumps](../scripting/quest
 | `extract <path or file name>…` | Any game file. A bare name (e.g. `ManFst005Btl.luab`) is found in every game_script index by its name hash; missing paths are skipped so several guesses can be tried | Quest battle scripts, openings |
 | `disasm <file.luab>` | A listing from the built-in Lua 5.1 disassembler | Scripts you already have |
 | `index` | `quest-index.json` (format 2): every quest's name, level, genre, issuer, area, class restriction, prerequisites and how they combine, `main_scenario` (in ScenarioTree), `expansion_name`, journal `genre_name`/`category_name`/`section_name` | Kawari Web's quest search, prerequisite completion and Progress page |
-| `items` | `item-index.json`: every named item's `id`, `name`, `description`, `category` (ItemUICategory), `icon`, `stack_size`, `unique`, `untradable`, in the server's language | Kawari Web's Shop item linking |
+| `items` | `item-index.json`: every named item's `id`, `name`, `description`, `category` (ItemUICategory), `icon`, `stack_size`, `unique`, `untradable`, `search_category`, `rarity`, `level_equip`, `level_item`, `can_be_hq`, in the server's language; and `marketboard-categories.json` (every ItemSearchCategory with a tab: `id`, `name`, `tab`, `order`, `icon`, `class_job`) | Kawari Web's Shop item linking and Marketboard page |
 
 Kawari Web runs it in a throwaway container from the active server image (Quest Lab, Progress, Shop → Manage).
 

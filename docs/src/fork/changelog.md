@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-17 | — | `player.scene_error_code`, event actions answered at once, The Gridanian Envoy's gangplanks (quests); fixture results with an error code (questkit).
+| 2026-10-17 | — | Marketboard (new page): what's listed, prices, listings, buying, the packets from Bob's captures; fork opcodes; Kawari Web's Marketboard page; questdump's item list (tools); known issues.
+| 2026-10-17 | `7f95a59` | `player.scene_error_code`, event actions answered at once, The Gridanian Envoy's gangplanks (quests); fixture results with an error code (questkit).
 | 2026-10-17 | `f4ffd30` | Cutscenes that end somewhere else (quests); Renewing the Covenant's ceremony (quests table).
 | 2026-10-17 | `19ab1bb` | The early Gridania quests' notices checked against Bob's Chronofoil capture, notices numbered by todo (quests); Chasing Shadows' and Spirithold Broken's battle talk, bubbles and closing scenes, `complete_quest_battle`'s flags, NpcYell's fields (quest battles); battle talk known issue replaced by the heal line's.
 | 2026-10-17 | `48e9522` | Regeneration (combat); in-combat HP regeneration (known issues).
@@ -42,6 +43,7 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
+| 2026-10-17 | `4c80b86` | 2.15.0: Dashboard → Marketboard: every tab's rates, categories' changes, items' own prices and the listing settings, laid out like the board, written to `world.db`. |
 | 2026-10-16 | `7133931` | 2.14.0: battles from Kawari Recorder (`POST /api/diag/battle`), kept and filed in the diagnostics repository's `battles/`; the Diagnostics page's Battles card; bundles name the battles from their window. |
 | 2026-10-16 | `ad44611` | 2.13.0: Quest Lab's *Test this quest* (setup, capture on, a bundle tagged with the quest). |
 | 2026-10-16 | `67b2f69` | README and CLAUDE.md point to this documentation. |
@@ -75,7 +77,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Scripts' replies to server-side triggers go out at once: what a script queued from a server message (an event action's progress bar ending, a kill, a won quest battle) waited for the client's next packet, so objects answered several seconds after their bar. The Gridanian Envoy: boarding works (the gangplank's yes/no answers through its error code, 50 for No, and its "Yes" returns results `[0, 0]`, which the script took for No), with retail's check scene before the bar and its scene flags. Scripts can read `player.scene_error_code`; questkit fixtures can give a scene's error code, and 507's gangplank steps answer as retail did. |
+| — | The marketboard: every item with an ItemSearchCategory is listed, 50 listings each (10 HQ for items that can be, random stacks up to 99 or the stack size), priced from rates per tab (weapons and armor 100 a level, items 3, housing 50, plus a rarity bonus; HQ doubles the bonus), per search category or per item, which Kawari Web edits in `world.db` (migration `update-2026-10-17_marketboard`). Search, item history (real sales, then made-up ones) and buying (gil plus 5% tax; a bought listing is replaced). The packets were rewritten from Bob's Chronofoil captures (all 350 retail packets round-trip); two fork opcodes for buying (FFXIVOpcodes' 258 and 610). HQ and NQ no longer share an inventory stack. `kawari-questdump items` writes the marketboard's item fields and `marketboard-categories.json`. Tests in `marketboard.rs` and `database/marketboard.rs`. |
+| `7f95a59` | Scripts' replies to server-side triggers go out at once: what a script queued from a server message (an event action's progress bar ending, a kill, a won quest battle) waited for the client's next packet, so objects answered several seconds after their bar. The Gridanian Envoy: boarding works (the gangplank's yes/no answers through its error code, 50 for No, and its "Yes" returns results `[0, 0]`, which the script took for No), with retail's check scene before the bar and its scene flags. Scripts can read `player.scene_error_code`; questkit fixtures can give a scene's error code, and 507's gangplank steps answer as retail did. |
 | `f4ffd30` | Renewing the Covenant: the ceremony cutscene moves you to the Roost (POPRANGE0, territory 179) as retail does; it only finished the event, which left the screen black (the cutscene fades out and the client waits for the zone change), skipped or not. |
 | `19ab1bb` | Quest progress pop-ups (notices) for Close to Home, Spirithold Broken, Surveying the Damage, Chasing Shadows, Eggs over Queasy and A Soldier's Breakfast, which sent none: retail's notices from Bob's Chronofoil capture of 2026-10-14 were added to their fixtures, and all 23 fixtures replay like retail. Chasing Shadows and Spirithold Broken show their battle talk in the battle talk window with retail's text IDs instead of `/say`; Yda's speech bubble (NpcYell 117) after Papalymo's; Spirithold Broken closes with retail's scene 9 as a cutscene (`complete_quest_battle` takes the closing scene's flags) instead of two chat lines and scene 6. |
 | `48e9522` | Players regenerate MP in combat as on retail (200 a tick plus Piety's bonus; 600 out of combat), on a 3 s tick instead of every 500 ms: casters ran out of MP mid-fight and stayed out. |

@@ -276,3 +276,48 @@ diesel::allow_tables_to_appear_in_same_query!(
     grand_company,
     buddy,
 );
+
+// The marketboard (migration update-2026-10-17_marketboard; Kawari Web edits the first three.)
+diesel::table! {
+    marketboard_rate (scope) {
+        scope -> Text,
+        per_level -> Nullable<Integer>,
+        level_source -> Nullable<Text>,
+        rarity_white -> Nullable<Integer>,
+        rarity_pink -> Nullable<Integer>,
+        rarity_green -> Nullable<Integer>,
+        rarity_blue -> Nullable<Integer>,
+        rarity_purple -> Nullable<Integer>,
+        hq_multiplier -> Nullable<Integer>,
+    }
+}
+
+diesel::table! {
+    marketboard_item (item_id) {
+        item_id -> Integer,
+        nq_price -> Nullable<Integer>,
+        hq_price -> Nullable<Integer>,
+    }
+}
+
+diesel::table! {
+    marketboard_setting (key) {
+        key -> Text,
+        value -> Integer,
+    }
+}
+
+diesel::table! {
+    marketboard_sale (id) {
+        id -> Integer,
+        item_id -> Integer,
+        listing_id -> BigInt,
+        hq -> Integer,
+        quantity -> Integer,
+        price_per_unit -> Integer,
+        tax -> Integer,
+        buyer_content_id -> BigInt,
+        buyer_name -> Text,
+        sold_at -> BigInt,
+    }
+}

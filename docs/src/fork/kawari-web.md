@@ -1,6 +1,6 @@
 # Kawari Web
 
-Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.13.0**) runs beside the server in its own container. Its
+Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.15.0**) runs beside the server in its own container. Its
 README is the user guide (setup, pages, service, forges, builds); this page is about **how its features work** and
 how they depend on the fork. Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates).
 
@@ -9,10 +9,10 @@ how they depend on the fork. Code: `kawari_core/` (logic, no Flask) and `kawari_
 | Data | Read/write | Used by |
 |---|---|---|
 | `login.db` | read/write | accounts (one account for the site and the game launcher), password changes |
-| `world.db` | read; writes only for logged-out characters (and `mail`) | profiles, Progress, Quest Lab character setup, Shop gil and delivery |
+| `world.db` | read; writes only for logged-out characters (and `mail`, and the `marketboard_*` settings) | profiles, Progress, Quest Lab character setup, Shop gil and delivery, Marketboard prices |
 | `config.yaml` | read/write | Dashboard config editor, Diagnostics toggling `world.packet_capture` |
 | The active server image | runs throwaway containers | `kawari-questdump` (Quest Lab, Progress index, Shop item list) |
-| `<data>/quest-dumps/` | written by questdump | `quest-index.json`, `item-index.json`, per-quest dumps |
+| `<data>/quest-dumps/` | written by questdump | `quest-index.json`, `item-index.json`, `marketboard-categories.json`, per-quest dumps |
 | `<data>/captures/` | read | Diagnostics bundles |
 | The web app's own SQLite db | read/write | feed, notifications, settings, shop tables |
 
@@ -23,7 +23,7 @@ over the database, so direct edits only happen while the character is logged out
 
 Home, How to Connect, Feed and profiles (character tile boards, private by default), Notifications, Settings,
 **Shop**, and the admin **Dashboard**: server control, config editor, database health/migrations, backups, accounts,
-Auracite import/export, branding, Quest Lab, Progress, Diagnostics, Updates (which fork/forge/commit the server is
+Auracite import/export, branding, Quest Lab, Progress, Marketboard, Diagnostics, Updates (which fork/forge/commit the server is
 built from), container logs.
 
 ## Shop (2.12.0)
@@ -100,6 +100,24 @@ Every quest from A Realm Reborn to Dawntrail from the quest index (format 2), Ma
 side quests by journal section. **Implemented** = the active build has
 `resources/scripts/events/quest/<id/100>/<script>.lua`; **verified** = its header says it was checked against a retail
 recording. Totals per expansion and a filterable list linking to Quest Lab.
+
+## Marketboard (Dashboard → Marketboard)
+
+2.15.0. Sets the prices of the server's marketboard ([Marketboard](marketboard.md)): `kawari_core/marketboard.py`
+(prices, the tables) and `kawari_web/marketboard.py` (the pages).
+
+* **Laid out like the board**: the four tabs from ItemSearchCategory.Category, each tab's categories (by the sheet's
+  Order), each category's items, 100 to a page. The item list is `item-index.json`, which since this version also has
+  each item's search category, rarity, equip and item level and whether it can be HQ, and
+  `marketboard-categories.json` (ID, name, tab, order); both written by `kawari-questdump items`. An item list from
+  before (no `search_category`) asks to be read again.
+* **Edits** go straight to `world.db`: a tab's rates (every value, blank = built-in), a category's (blank = the tab's;
+  all blank or *Use the tab's rates* deletes its row), items' own NQ/HQ prices (a form per page; blank removes them),
+  and the listing settings. These tables are only read by the server, so writing them while it runs is safe.
+* **Shows** each item's level (by the rates' level source), rarity, computed NQ/HQ prices (greyed in the boxes),
+  its own prices, and how many have sold; a name search across every category; the latest sales.
+* The prices are computed with the same formula as the server (`price`); checked against the server's test examples.
+  Without the tables (a server from before the marketboard) the page says to update and start the server once.
 
 ## Diagnostics (Dashboard → Diagnostics)
 

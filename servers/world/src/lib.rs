@@ -19,6 +19,9 @@ use serde::{Deserialize, Serialize};
 pub use zone_connection::{ObsfucationData, PlayerData, TeleportReason, ZoneConnection};
 
 mod database;
+
+/// The marketboard's items, prices, listings and history.
+pub mod marketboard;
 pub use database::{Content, Unlock, WorldDatabase};
 
 pub mod lua;

@@ -74,7 +74,21 @@ ClientZoneIpcType:
       pattern: C7 84 24 E0 00 00 00 ?? ?? ?? ?? 0F 10 00 48 8D 8C 24 04 01 00 00
       offset: 7
       width: 4
+- name: MarketBoardPurchaseHandler
+  comment: Buying a marketboard listing - its retainer and listing IDs, item, quantity, price and tax as the client saw them.
+  # 765 on 2026.09.15 (Bob's Chronofoil captures); 258 on 2026.10.06 is FFXIVOpcodes' (7.57), not yet seen on Kawari.
+  opcode: 258
+  size: 40
+  found_on: 2026.10.06.0000.0000
+  how_to_find: Buy anything on the marketboard. If nothing happens, the server warns about an unknown 40-byte packet - that's this one.
 ServerZoneIpcType:
+- name: MarketBoardPurchase
+  comment: A marketboard purchase went through - the item and how many, after the gil and inventory updates.
+  # 665 on 2026.09.15 (Bob's Chronofoil captures); 610 on 2026.10.06 is FFXIVOpcodes' (7.57), not yet seen working.
+  opcode: 610
+  size: 16
+  found_on: 2026.10.06.0000.0000
+  how_to_find: On retail with the Kawari Recorder or Chronofoil, buy something on the marketboard - the 16-byte packet after the inventory updates (item ID, then quantity.)
 - name: EventNotice2
   comment: A notice from an event with up to 2 arguments, e.g. a quest's progress pop-up as an enemy is defeated.
   opcode: 386

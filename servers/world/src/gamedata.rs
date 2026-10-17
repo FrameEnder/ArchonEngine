@@ -45,6 +45,7 @@ use icarus::InstanceContent::InstanceContentSheet;
 use icarus::Item::ItemSheet;
 use icarus::ItemAction::ItemActionSheet;
 use icarus::ItemLevel::ItemLevelSheet;
+use icarus::ItemSearchCategory::ItemSearchCategorySheet;
 use icarus::Level::LevelSheet;
 use icarus::Map::MapSheet;
 use icarus::Mount::MountSheet;
@@ -160,6 +161,16 @@ pub struct GameData {
     /// achievement check asks for hundreds at once, and reading the Map sheet each time took long enough (seconds)
     /// to desync the client's connection.
     map_discovery: Option<HashMap<u32, (i16, bool, u32)>>,
+    /// The marketboard's items, read the first time it's used (see `marketboard`.)
+    marketboard: Option<std::sync::Arc<MarketIndex>>,
+}
+
+/// The items on the marketboard: every item with an ItemSearchCategory, by ID and by category.
+#[derive(Debug, Default)]
+pub struct MarketIndex {
+    pub items: HashMap<u32, crate::marketboard::MarketItem>,
+    /// Each ItemSearchCategory's items, by item ID (retail's order isn't known.)
+    pub by_category: HashMap<u16, Vec<u32>>,
 }
 
 impl Default for GameData {
@@ -668,6 +679,7 @@ impl GameData {
             fate_event_range_lookup,
             achievement_rules: None,
             map_discovery: None,
+            marketboard: None,
             dawn_content_sheet,
             fate_progress_ui_sheet,
             gold_saucer_content_sheet,
@@ -1609,6 +1621,60 @@ impl GameData {
             self.map_discovery = Some(maps);
         }
         self.map_discovery.as_ref()?.get(&map_id).copied()
+    }
+
+    /// The marketboard's items. Read from the Item and ItemSearchCategory sheets the first time.
+    pub fn marketboard(&mut self) -> std::sync::Arc<MarketIndex> {
+        if let Some(index) = &self.marketboard {
+            return index.clone();
+        }
+        let tabs: HashMap<u32, u8> =
+            match ItemSearchCategorySheet::read_from(&mut self.resource, Language::None) {
+                Ok(sheet) => sheet
+                    .into_iter()
+                    .flatten_subrows()
+                    .map(|(id, row)| (id, row.Category))
+                    .collect(),
+                Err(err) => {
+                    tracing::warn!("Couldn't read the ItemSearchCategory sheet: {err:?}");
+                    HashMap::new()
+                }
+            };
+        let mut index = MarketIndex::default();
+        for (id, row) in self.item_sheet.into_iter().flatten_subrows() {
+            let category = row.ItemSearchCategory as u16;
+            let Some(&tab) = tabs.get(&(category as u32)) else {
+                continue;
+            };
+            if category == 0 || tab == 0 || row.IsUntradable {
+                continue;
+            }
+            index.items.insert(
+                id,
+                crate::marketboard::MarketItem {
+                    id,
+                    category,
+                    tab,
+                    rarity: row.Rarity,
+                    level_equip: row.LevelEquip,
+                    level_item: row.LevelItem,
+                    can_be_hq: row.CanBeHq,
+                    stack_size: row.StackSize,
+                },
+            );
+            index.by_category.entry(category).or_default().push(id);
+        }
+        for items in index.by_category.values_mut() {
+            items.sort_unstable();
+        }
+        tracing::info!(
+            "Marketboard: {} items in {} categories",
+            index.items.len(),
+            index.by_category.len()
+        );
+        let index = std::sync::Arc::new(index);
+        self.marketboard = Some(index.clone());
+        index
     }
 
     /// The style a pair of glasses (Glasses sheet row) unlocks, which is what the unlock bitmask counts.

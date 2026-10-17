@@ -161,7 +161,11 @@ mod map_effects;
 pub use map_effects::MapEffects;
 
 mod marketboard;
-pub use marketboard::{MarketBoardHistory, MarketBoardHistoryEntry, MarketBoardItem};
+pub use marketboard::{
+    MARKETBOARD_HISTORY_ENTRIES, MARKETBOARD_ITEMS_PER_PAGE, MARKETBOARD_LISTINGS_PER_PAGE,
+    MarketBoardHistory, MarketBoardHistoryEntry, MarketBoardItem, MarketBoardListing,
+    MarketBoardPurchase,
+};
 
 mod linkshell;
 pub use linkshell::*;
@@ -673,6 +677,9 @@ pub enum ServerZoneIpcData {
         #[brw(pad_after = 4)]
         portrait: Vec<u8>,
     },
+    /// A marketboard purchase went through: the reply to `ClientZoneIpcData::MarketBoardPurchaseHandler`, after the gil
+    /// and the item's inventory updates.
+    MarketBoardPurchase(MarketBoardPurchase),
     /// The completed achievements, the reply to `ClientTriggerCommand::RequestAchievements` (FFXIVClientStructs'
     /// AchievementsPacket; the client's handler copies it into its Achievement state and marks it loaded.)
     Achievements {
@@ -916,14 +923,21 @@ pub enum ServerZoneIpcData {
         #[brw(pad_after = 7)] // empty
         opponent_name: String,
     },
+    /// A page of a marketboard search (the reply to `RequestMarketBoardItems`.)
     MarketBoardItems {
-        /// The items contained in this search result.
-        #[br(count = 21)]
-        #[brw(pad_size_to = 21 * MarketBoardItem::SIZE)]
+        /// The items on this page, up to `MARKETBOARD_ITEMS_PER_PAGE`.
+        #[br(count = MARKETBOARD_ITEMS_PER_PAGE)]
+        #[brw(pad_size_to = MARKETBOARD_ITEMS_PER_PAGE * MarketBoardItem::SIZE)]
         items: Vec<MarketBoardItem>,
-        /// Sequence number for this search result.
-        #[brw(pad_before = 4, pad_after = 2)] // empty
-        sequence: u16,
+        /// Where the next page starts, 0 if this is the last.
+        next_index: u32,
+        /// 0, or 0x70000001 with no items (retail answered a search like that twice in a row, then normally.)
+        error: u32,
+        /// The request's, sent back.
+        start_index: u32,
+        request_id: u8,
+        #[brw(pad_after = 2)] // empty
+        kind: u8,
     },
     EffectResultBasic {
         /// How many actors are covered by this packet.
@@ -1455,20 +1469,23 @@ pub enum ServerZoneIpcData {
         unk1: u8,
     },
     MarketBoardHistory(MarketBoardHistory),
+    /// A page of an item's listings (the reply to `UnkMarketBoardRequest2`.)
     MarketBoardOfferings {
-        unk1: [u8; 44],
-        item_id: u32,
-        #[br(count = 1392)]
-        #[brw(pad_size_to = 1392)]
-        unk2: Vec<u8>,
-        unk3: u8, // TODO: bool,
-        unk4: u8, // TODO: bool
+        /// Up to `MARKETBOARD_LISTINGS_PER_PAGE`.
+        #[br(count = MARKETBOARD_LISTINGS_PER_PAGE)]
+        #[brw(pad_size_to = MARKETBOARD_LISTINGS_PER_PAGE * MarketBoardListing::SIZE)]
+        listings: Vec<MarketBoardListing>,
+        /// Where the next page starts, 0 if this is the last.
+        next_index: u8,
+        /// The request's, sent back.
+        start_index: u8,
         #[brw(pad_after = 5)] // not used, padding
         request_id: u8,
     },
+    /// Sent when an item is opened (`UnkMarketBoardRequest1`), before its history.
     MarketBoardHits {
         unk1: u32,
-        /// Sets the "N hits" label in the "Search Results" window for the marketboard.
+        /// How many listings the item has (retail shows at most 100.)
         hits: u32,
     },
     ZoneDiceRollResult(ZoneDiceRollResult),

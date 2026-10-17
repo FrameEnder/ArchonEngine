@@ -15,7 +15,8 @@ use std::{
 use icarus::{
     BNpcName::BNpcNameSheet, ClassJobCategory::ClassJobCategorySheet,
     ENpcResident::ENpcResidentSheet, EObjName::EObjNameSheet, ExVersion::ExVersionSheet,
-    Item::ItemSheet, ItemUICategory::ItemUICategorySheet, JournalCategory::JournalCategorySheet,
+    Item::ItemSheet, ItemSearchCategory::ItemSearchCategorySheet,
+    ItemUICategory::ItemUICategorySheet, JournalCategory::JournalCategorySheet,
     JournalGenre::JournalGenreSheet, JournalSection::JournalSectionSheet,
     PlaceName::PlaceNameSheet, Quest::QuestSheet, ScenarioTree::ScenarioTreeSheet,
 };
@@ -47,8 +48,10 @@ COMMANDS:
     index     Write quest-index.json: every quest's name, level, prerequisites, issuer, area, expansion, journal
               section and whether it's main scenario, for tools that need the whole quest graph (Kawari Web
               uses it to search, to unlock prerequisites and for its quest progress page.)
-    items     Write item-index.json: every named item's ID, name, description, UI category, icon, stack size and
-              whether it's unique/untradable (Kawari Web's shop links its listings to items with it.)
+    items     Write item-index.json: every named item's ID, name, description, UI category, icon, stack size,
+              whether it's unique/untradable, and what the marketboard needs (search category, rarity, levels,
+              whether it can be HQ); and marketboard-categories.json, the marketboard's search categories (Kawari
+              Web's shop links its listings to items with these, and its Marketboard page lays items out by them.)
     disasm    Print a readable listing of a compiled script you already have.
 
 OPTIONS:
@@ -742,9 +745,36 @@ fn item_index(resolver: &mut ResourceResolver) -> Result<Vec<Value>, String> {
             "stack_size": row.StackSize,
             "unique": row.IsUnique,
             "untradable": row.IsUntradable,
+            "search_category": row.ItemSearchCategory,
+            "rarity": row.Rarity,
+            "level_equip": row.LevelEquip,
+            "level_item": row.LevelItem,
+            "can_be_hq": row.CanBeHq,
         }));
     }
     Ok(items)
+}
+
+/// The marketboard's search categories: ID, name, tab (Category: 1 weapons, 2 armor, 3 items, 4 housing), order in
+/// the tab, icon and class/job.
+fn marketboard_categories(resolver: &mut ResourceResolver) -> Result<Vec<Value>, String> {
+    let sheet = ItemSearchCategorySheet::read_from(resolver, get_config().world.language())
+        .map_err(|err| format!("couldn't read the ItemSearchCategory sheet: {err:?}"))?;
+    let mut categories = Vec::new();
+    for (id, row) in sheet.into_iter().flatten_subrows() {
+        if row.Category == 0 {
+            continue;
+        }
+        categories.push(json!({
+            "id": id,
+            "name": row.Name.to_string(),
+            "tab": row.Category,
+            "order": row.Order,
+            "icon": row.Icon,
+            "class_job": row.ClassJob,
+        }));
+    }
+    Ok(categories)
 }
 
 fn run(args: &[String]) -> Result<(), String> {
@@ -833,6 +863,15 @@ fn run(args: &[String]) -> Result<(), String> {
             std::fs::write(&destination, serde_json::to_string(&items).unwrap())
                 .map_err(|err| format!("couldn't write {}: {err}", destination.display()))?;
             println!("Wrote {count} items to {}", destination.display());
+            let destination = options.out.join("marketboard-categories.json");
+            let categories = marketboard_categories(&mut data.resolver)?;
+            std::fs::write(&destination, serde_json::to_string(&categories).unwrap())
+                .map_err(|err| format!("couldn't write {}: {err}", destination.display()))?;
+            println!(
+                "Wrote {} marketboard categories to {}",
+                categories.len(),
+                destination.display()
+            );
             Ok(())
         }
         "index" => {
