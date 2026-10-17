@@ -18,9 +18,13 @@ what everyone did. This lays out what the recording shows so that inference is c
 from __future__ import annotations
 
 import bisect
+import gzip
+import json
 import math
+import zipfile
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
+from pathlib import Path
 
 EFFECT_MISS = 1
 EFFECT_DAMAGE = 3
@@ -264,6 +268,11 @@ def report(run: dict, npc_filter: str | None = None) -> str:
     w = lines.append
     w(f"# {run.get('Zone', '')} {run.get('Content', '')}".rstrip())
     w("")
+    if run.get("_source") or run.get("_label"):
+        w(" · ".join(x for x in (f"`{run.get('_source', '')}`" if run.get("_source") else "",
+                                 f"label: {run['_label']}" if run.get("_label") else "",
+                                 str(run.get("Start", ""))) if x))
+        w("")
     w(f"Territory {run.get('TerritoryId')} · content finder {run.get('ContentFinderCondition')} · "
       f"{b.length:.0f} s · {len(b.actors)} actors · {len(b.samples)} samples · {len(b.actions)} actions · "
       f"{len(b.controls)} actor controls · {len(b.layers)} layout layers" + (" · TRUNCATED" if run.get("Truncated") else ""))
@@ -430,3 +439,166 @@ def report(run: dict, npc_filter: str | None = None) -> str:
 def runs_in(recording) -> list[dict]:
     book = recording.json("battles.json") or {}
     return book.get("Runs") or []
+
+
+# ---- Finding battles: Recorder 2.5 saves each one to its own battles/<start>-<territory>-<what>.json.gz ----
+
+def _add_runs(out: list[dict], data: dict, source: str, labels: dict[str, str]):
+    """A battle file (one run) or a 2.4 battles.json (Runs: [...])."""
+    if "Runs" in data:
+        for n, run in enumerate(data.get("Runs") or []):
+            run.setdefault("_source", f"{source}#{n}")
+            out.append(run)
+    elif "Actors" in data:
+        name = source.rsplit("/", 1)[-1]
+        data["_source"] = source
+        label = labels.get(name) or data.get("Label") or ""
+        if label:
+            data["_label"] = label
+        out.append(data)
+
+
+def _labels(index: dict | None) -> dict[str, str]:
+    return {b.get("File", ""): b.get("Label", "") for b in (index or {}).get("Battles") or []}
+
+
+def load_runs(paths) -> list[dict]:
+    """Every battle in these: Recorder exports (zip), the Recorder's battles folder (or an unpacked export), single
+    battle files (.json.gz) and 2.4's battles.json. Oldest first."""
+    runs: list[dict] = []
+    for path in paths:
+        path = Path(path)
+        if path.is_dir():
+            folders = [path, path / "battles"]
+            labels: dict[str, str] = {}
+            for folder in folders:
+                index = folder / "index.json"
+                if index.exists():
+                    labels.update(_labels(json.loads(index.read_text())))
+            for folder in folders:
+                if not folder.is_dir():
+                    continue
+                for file in sorted(folder.glob("*.json.gz")):
+                    _add_runs(runs, json.loads(gzip.decompress(file.read_bytes())), str(file), labels)
+                legacy = folder / "battles.json"
+                if legacy.exists():
+                    _add_runs(runs, json.loads(legacy.read_text()), str(legacy), labels)
+        elif path.suffix == ".zip":
+            with zipfile.ZipFile(path) as archive:
+                names = archive.namelist()
+                labels = {}
+                for name in names:
+                    if name.endswith("index.json") and "battles" in name:
+                        labels.update(_labels(json.loads(archive.read(name))))
+                for name in sorted(names):
+                    if name.endswith(".json.gz"):
+                        _add_runs(runs, json.loads(gzip.decompress(archive.read(name))), f"{path}:{name}", labels)
+                    elif name.rsplit("/", 1)[-1] == "battles.json":
+                        _add_runs(runs, json.loads(archive.read(name)), f"{path}:{name}", labels)
+        elif path.name.endswith(".gz"):
+            _add_runs(runs, json.loads(gzip.decompress(path.read_bytes())), str(path), {})
+        else:
+            _add_runs(runs, json.loads(path.read_text()), str(path), {})
+    runs.sort(key=lambda run: str(run.get("Start", "")))
+    return runs
+
+
+# ---- The same battle recorded several times ----
+
+def npc_key(actor: dict):
+    """The same NPC across runs: its layout ID, or its BNpcBase and name when it has none."""
+    return actor.get("LayoutId") or (actor.get("BaseId"), actor.get("Name"))
+
+
+def npc_summary(b: Battle, i: int) -> dict:
+    """What one NPC did in one run, in numbers that add up across runs."""
+    reasons = Counter()
+    switches = 0
+    previous = 0
+    for s, _e, t in b.target_segments(i):
+        if t and t != previous:
+            switches += 1
+            reasons.update(b.switch_reasons(i, s, previous, t))
+        previous = t
+    actions = defaultdict(list)
+    heal_percents = []
+    heals = 0
+    most_hurt = 0
+    for x in b.actions:
+        if x["Source"] != i:
+            continue
+        actions[x["Action"]].append(x["S"])
+        for h in x["Targets"]:
+            if any(e[0] == EFFECT_HEAL for e in h["Effects"]):
+                heals += 1
+                if h.get("MaxHp"):
+                    heal_percents.append(100 * h["Hp"] / h["MaxHp"])
+                allies = [a for a in b.actors if b.is_fighter(a) and not b.hostile(i, a) and b.alive(a, x["S"])]
+                hps = {a: b.hp_percent(a, x["S"] - 0.3) for a in allies}
+                hps = {a: v for a, v in hps.items() if v is not None}
+                if hps and min(hps, key=hps.get) == h["Id"]:
+                    most_hurt += 1
+    return {"switches": switches, "reasons": reasons, "actions": dict(actions), "heals": heals,
+            "heal_percents": heal_percents, "most_hurt": most_hurt}
+
+
+def across(runs: list[dict]) -> str:
+    """For battles recorded more than once: each NPC's evidence added up over every run, so a rule that holds in all
+    of them stands out from one that held once."""
+    groups = defaultdict(list)
+    for run in runs:
+        groups[(run.get("TerritoryId"), run.get("ContentFinderCondition"))].append(run)
+    lines: list[str] = []
+    w = lines.append
+    for (_territory, _cfc), group in groups.items():
+        if len(group) < 2:
+            continue
+        first = group[0]
+        w(f"# Across {len(group)} runs: {first.get('Zone', '')} {first.get('Content', '')}".rstrip())
+        w("")
+        for run in group:
+            label = f" ({run['_label']})" if run.get("_label") else ""
+            w(f"* {run.get('Start', '')} `{run.get('_source', '')}`{label}")
+        w("")
+        totals: dict = {}
+        for run in group:
+            b = Battle(run)
+            for i, actor in b.actors.items():
+                if actor.get("Kind") != "battle npc" or not actor.get("MaxHp"):
+                    continue
+                key = npc_key(actor)
+                t = totals.setdefault(key, {"name": b.name(i), "runs": 0, "idle": 0, "switches": 0,
+                                            "reasons": Counter(), "uses": Counter(), "gaps": defaultdict(list),
+                                            "heals": 0, "most_hurt": 0, "heal_percents": [], "deaths": []})
+                summary = npc_summary(b, i)
+                t["runs"] += 1
+                t["idle"] += 0 if summary["actions"] else 1
+                t["switches"] += summary["switches"]
+                t["reasons"].update(summary["reasons"])
+                for action, times in summary["actions"].items():
+                    t["uses"][action] += len(times)
+                    t["gaps"][action] += [round(y - x, 1) for x, y in zip(times, times[1:])]
+                t["heals"] += summary["heals"]
+                t["most_hurt"] += summary["most_hurt"]
+                t["heal_percents"] += summary["heal_percents"]
+                if actor.get("Died") is not None:
+                    t["deaths"].append(actor["Died"])
+        for key, t in sorted(totals.items(), key=lambda kv: str(kv[1]["name"])):
+            w(f"## {t['name']}")
+            w("")
+            w(f"* In {t['runs']}/{len(group)} runs" + (f"; never acted in {t['idle']}" if t["idle"] else "")
+              + (f"; died at {', '.join(f'{d:.0f}' for d in t['deaths'])} s" if t["deaths"] else ""))
+            if t["switches"]:
+                w(f"* {t['switches']} target choices in all; explanations that fit:")
+                for reason, count in t["reasons"].most_common():
+                    w(f"  * {reason}: {count}/{t['switches']}")
+            for action, count in t["uses"].most_common():
+                gaps = t["gaps"][action]
+                every = f", every {_median(gaps)} s (min {min(gaps)}, max {max(gaps)})" if gaps else ""
+                w(f"* action {action}: {count / t['runs']:.1f} a run{every}")
+            if t["heals"]:
+                percents = t["heal_percents"]
+                at = f" at {min(percents):.0f}–{max(percents):.0f}% HP (median {_median(percents):.0f}%)" if percents else ""
+                w(f"* {t['heals']} heals{at}; the most hurt of its side {t['most_hurt']}/{t['heals']} times")
+            w("")
+    return "\n".join(lines)

@@ -150,26 +150,33 @@ def _lua_syntax(args) -> int:
 
 
 def _battle(args) -> int:
-    import json
-
     from . import battle
-    from .recording import Recording
 
-    path = Path(args.recording)
-    if path.suffix == ".json":
-        runs = (json.loads(path.read_text()) or {}).get("Runs") or []
-    else:
-        runs = battle.runs_in(Recording.open(path))
+    runs = battle.load_runs(args.recording)
+    if args.where:
+        needle = args.where.lower()
+        runs = [r for r in runs if needle in f"{r.get('Zone', '')} {r.get('Content', '')} {r.get('TerritoryId', '')}".lower()]
     if not runs:
-        print(f"{path}: no battles (Recorder 2.4 or later records them, inside duties and quest battles)")
+        print("No battles found (Recorder 2.4 or later records them, inside duties and quest battles)")
         return 1
     if args.list:
         for n, run in enumerate(runs):
-            print(f"{n}: {run.get('Start', '')} {run.get('Zone', '')} {run.get('Content', '')} "
-                  f"({len(run.get('Actors') or {})} actors, {len(run.get('Actions') or [])} actions)")
+            label = f" [{run['_label']}]" if run.get("_label") else ""
+            print(f"{n}: {run.get('Start', '')} {run.get('Zone', '')} {run.get('Content', '')}{label} "
+                  f"({len(run.get('Actors') or {})} actors, {len(run.get('Actions') or [])} actions) {run.get('_source', '')}")
         return 0
-    chosen = runs if args.which == "all" else [runs[int(args.which)]]
-    text = "\n\n".join(battle.report(run, npc_filter=args.npc) for run in chosen)
+    if args.which == "all":
+        chosen = runs
+    else:
+        chosen = [runs[int(n)] for n in args.which.split(",")]
+    parts = []
+    if len(chosen) > 1:
+        summary = battle.across(chosen)
+        if summary:
+            parts.append(summary)
+    if not args.summary_only or not parts:
+        parts += [battle.report(run, npc_filter=args.npc) for run in chosen]
+    text = "\n\n".join(parts)
     if args.out:
         Path(args.out).write_text(text + "\n")
         print(f"Wrote {args.out}")
@@ -222,10 +229,15 @@ def main(argv=None) -> int:
     p.add_argument("-v", "--verbose", action="store_true", help="show every step of the check")
     p.set_defaults(run=_scaffold)
 
-    p = commands.add_parser("battle", help="what a recorded duty or quest battle shows: waves, targeting, heals")
-    p.add_argument("recording", help="a Recorder export (zip or folder), or its battles.json")
-    p.add_argument("--run", dest="which", default="-1", help="which battle (index from --list, default the last; 'all' for every one)")
-    p.add_argument("--list", action="store_true", help="list the battles in the recording")
+    p = commands.add_parser("battle", help="what recorded duties or quest battles show: waves, targeting, heals")
+    p.add_argument("recording", nargs="+",
+                   help="Recorder exports (zip), the Recorder's battles folder, battle files (.json.gz) or a battles.json")
+    p.add_argument("--list", action="store_true", help="list the battles found")
+    p.add_argument("--where", help="only battles whose zone, content or territory contains this")
+    p.add_argument("--run", dest="which", default="-1",
+                   help="which battles: indexes from --list (e.g. 3 or 2,5,7), default the last; 'all' for every one")
+    p.add_argument("--summary-only", action="store_true",
+                   help="with several runs of the same battle, only the totals across them")
     p.add_argument("--npc", help="only NPCs whose name or layout ID contains this")
     p.add_argument("--out", help="write the report to this file")
     p.set_defaults(run=_battle)

@@ -17,7 +17,7 @@ pip install lupa        # Lua 5.4 for Python; replay, scaffold and lua-syntax ne
 | `scaffold <quest> --dumps … --recording …` | Drafts a quest script (and its fixture) from the dump and the recording |
 | `compare --capture … --recording … [quests]` | What Kawari sent for a quest against what retail did |
 | `lua-syntax [folder]` | Checks every Lua script compiles (Lua 5.4, like the server) |
-| `battle <export or battles.json> [--list] [--run N\|all] [--npc …] [--out file]` | What a recorded duty or quest battle shows: cast, waves, targeting rules, heals, who never acted |
+| `battle <exports, battles folder or files…> [--list] [--where …] [--run N,M\|all] [--summary-only] [--npc …] [--out file]` | What recorded duties and quest battles show: cast, waves, targeting rules, heals, who never acted; totals across runs of the same battle |
 
 Code: `questkit/recording.py` (Recorder exports), `capture.py` (Kawari's packet captures), `bundle.py` (diagnostics
 bundles), `harness.py` (running a quest script like the server), `fixtures.py`, `replay.py`, `scaffold.py`,
@@ -150,8 +150,17 @@ being searched in another order.
 
 ## battle
 
-Reads the Recorder's Battles tab (`battles.json`, Recorder 2.4+) and writes a Markdown report per battle
-(`questkit/battle.py`):
+Reads the Recorder's battles and writes a Markdown report per battle (`questkit/battle.py`). It takes any mix of
+Recorder exports (zip), the Recorder's `battles` folder itself (or an unpacked export), single battle files
+(`.json.gz`) and 2.4's `battles.json`; labels come from `index.json`. `--list` shows what it found, `--where` filters
+by zone, content or territory, `--run 2,5,7` or `--run all` picks several.
+
+**Across runs**: given several runs of the same battle (same territory and content), it first adds up each NPC's
+evidence over all of them (matched by layout ID): in how many runs it appeared and never acted, when it died, every
+target choice's explanations summed, each action per run and its interval, heals and how hurt their targets were. A
+rule that held in every run stands out from one that held once. `--summary-only` gives just that.
+
+For each battle:
 
 * **Who's in it**: each fighter's battalion (same number, same side), level, max HP, when it appeared and died, its
   layout layer and instance name, and its layout settings (`NormalAI`, `MoveAi`, `ServerPathId`, link group...).

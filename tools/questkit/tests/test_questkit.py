@@ -5,6 +5,7 @@ import json
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -361,6 +362,57 @@ class BattleReportTest(unittest.TestCase):
         self.assertIn("## Never acted", text)
         self.assertIn("Statue [300]", text.split("## Never acted")[1])
         self.assertIn("NormalAI 42", text)
+
+
+class BattleFilesTest(unittest.TestCase):
+    """Recorder 2.5 saves each battle to battles/<start>-<territory>-<what>.json.gz, with labels in index.json."""
+
+    def _write(self, folder: Path):
+        folder.mkdir(parents=True, exist_ok=True)
+        first, second = _battle_run(), _battle_run()
+        first["Start"], second["Start"] = "2026-10-17T01:00:00Z", "2026-10-17T02:00:00Z"
+        # In the second run the guard goes for the boss instead of the newest add.
+        second["Samples"] = [x if not (x["Id"] == 2 and x["S"] == 11.0) else {"S": 11.0, "Id": 2, "T": 11}
+                             for x in second["Samples"]]
+        names = ["20261017-010000-1-test-battle.json.gz", "20261017-020000-1-test-battle.json.gz"]
+        for name, run in zip(names, (first, second)):
+            (folder / name).write_bytes(gzip.compress(json.dumps(run).encode()))
+        (folder / "index.json").write_text(json.dumps({"Battles": [{"File": names[1], "Label": "boss first"}]}))
+        return names
+
+    def test_folder_zip_and_labels(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "battles"
+            names = self._write(folder)
+            runs = battle.load_runs([folder])
+            self.assertEqual(len(runs), 2)
+            self.assertEqual(runs[1]["_label"], "boss first")
+            # An unpacked export (battles/ inside) and a zip of it read the same.
+            self.assertEqual(len(battle.load_runs([Path(tmp)])), 2)
+            archive = Path(tmp) / "export.zip"
+            with zipfile.ZipFile(archive, "w") as z:
+                for name in names + ["index.json"]:
+                    z.write(folder / name, f"battles/{name}")
+            runs = battle.load_runs([archive])
+            self.assertEqual([r.get("_label", "") for r in runs], ["", "boss first"])
+            # A single file, and 2.4's battles.json.
+            self.assertEqual(len(battle.load_runs([folder / names[0]])), 1)
+            legacy = Path(tmp) / "battles.json"
+            legacy.write_text(json.dumps({"Runs": [_battle_run(), _battle_run()]}))
+            self.assertEqual(len(battle.load_runs([legacy])), 2)
+
+    def test_across_runs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            self._write(folder)
+            text = battle.across(battle.load_runs([folder]))
+            self.assertIn("# Across 2 runs: Test Zone Test Battle", text)
+            guard = text.split("## Guard [100]")[1].split("## ")[0]
+            self.assertIn("newest enemy: 1/", guard)
+            self.assertIn("In 2/2 runs", guard)
+            statue = text.split("## Statue [300]")[1].split("## ")[0]
+            self.assertIn("never acted in 2", statue)
+            self.assertIn("(boss first)", text)
 
 
 if __name__ == "__main__":

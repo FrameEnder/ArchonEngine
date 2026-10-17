@@ -5,7 +5,7 @@ Bob's server** (what does happen). Both live in the private `FrameEnder/kawari-d
 the Dalamud plugins' source. GitHub Actions builds each plugin on every change (Actions → the plugin's workflow → the
 run → Artifacts).
 
-## Kawari Recorder (retail, `recorder/`, version 2.4)
+## Kawari Recorder (retail, `recorder/`, version 2.5)
 
 A Dalamud plugin used on the **live game**. It replaced Kawari Bestiary (and imports its data on first run). `/krec`
 opens it; **Export (zip)** or `/krec export` writes `kawari-recorder-<date>.zip`; `/krec pause|resume`; `/krec mark
@@ -22,9 +22,19 @@ opens it; **Export (zip)** or `/krec export` writes `kawari-recorder-<date>.zip`
 | Statuses | Durations, params, source, actual length | Status scripts |
 | World | Event NPCs/objects (layout ID, position, quest markers), weather by Eorzea hour, aggro range, leash distance, wander, speeds, respawns | Aggro/leash tuning (still global constants), spawns |
 | FATEs | Level, place, radius, time limit, progress, rewards | FATEs (future) |
-| Battles (2.4) | Inside duties and quest battles (`battles.json`, the last 4): everyone present (layout ID, BNpcBase/Name, battalion, level, max HP); every 250 ms what changed about each of them (position, rotation, HP, MP, **who they're targeting**, what they're casting and at whom, statuses with their source, in combat, weapon drawn, dead, targetable); every action with its results already decoded (source, target, amounts, the target's HP at the time); every ActorControl; casts, map effects and cutscenes (EventPlay) from the game's handlers; the director's sequence, variables and battle talk; marks; and the client's **layout layers** the NPCs came from, every object in them with all its settings | Quest battles and duties: `questkit battle` turns it into waves, targeting rules, heal triggers |
+| Battles (2.4) | Inside duties and quest battles, **each battle in a file of its own**, kept until deleted (2.5; see below): everyone present (layout ID, BNpcBase/Name, battalion, level, max HP); every 250 ms what changed about each of them (position, rotation, HP, MP, **who they're targeting**, what they're casting and at whom, statuses with their source, in combat, weapon drawn, dead, targetable); every action with its results already decoded (source, target, amounts, the target's HP at the time); every ActorControl; casts, map effects and cutscenes (EventPlay) from the game's handlers; the director's sequence, variables and battle talk; marks; and the client's **layout layers** the NPCs came from, every object in them with all its settings | Quest battles and duties: `questkit battle` turns it into waves, targeting rules, heal triggers |
 | Quest packets | Server packets addressed to a quest or director: opcode, payload (up to 1 KB inside duties since 2.3; 48 bytes before), quest steps, game version | Notices, EventNotice opcodes, director packets |
 | Duty packets | Every server packet inside duties, raw (`content_packets.json`). Since 2.4 with the actor each is about, the packets from zoning in, and NPC/object spawns | Content logic not addressed to a director |
+
+### Saved battles (2.5)
+
+Every duty or quest battle is saved to `battles/<start>-<territory>-<content>.json.gz` in the plugin's folder
+(gzipped JSON, one battle each; a 10-minute fight is a few hundred KB), written every 30 s while it runs and once more
+when it ends. Nothing is thrown away: the folder keeps every battle until it's deleted from the Battles tab (Ctrl+click)
+or the Overview's Clear. `battles/index.json` lists them with a **label** of your own ("stood still", "boss first"),
+editable in the tab. **Export (zip)** takes the battles not exported before (or all of them, with the tab's checkbox)
+plus the index; a battle's own **Export** button copies just its file to the export folder. Files dropped into the
+folder by hand are picked up. 2.4's `battles.json` (the last 4 battles in one file) is split into files on first load.
 
 ### What a recording can and can't tell
 
