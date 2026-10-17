@@ -8,7 +8,10 @@ use diesel::{
 };
 use icarus::{ClassJob::ClassJobSheet, Race::RaceSheet};
 use kawari::{
-    common::{ContainerType, ItemOperationKind, LegacyEquipmentModelId, WeaponModelId},
+    common::{
+        ContainerType, ItemOperationKind, LegacyEquipmentModelId, TerritoryIntendedUse,
+        WeaponModelId,
+    },
     config::get_config,
     ipc::zone::ItemInfo,
 };
@@ -41,8 +44,6 @@ mod crystals;
 pub use crystals::{CrystalKind, CrystalsStorage};
 
 use crate::{GameData, ItemInfoQuery};
-
-use physis::TerritoryIntendedUse;
 
 const MAX_NORMAL_STORAGE: usize = 35;
 pub const MAX_LARGE_STORAGE: usize = 50;

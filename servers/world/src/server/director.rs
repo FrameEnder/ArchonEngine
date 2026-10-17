@@ -7,7 +7,7 @@ use kawari::{
         ContentDirectorEvent, DirectorEvent, DirectorTrigger, DutyOption, EOBJ_EXIT, EOBJ_SHORTCUT,
         EventState, GimmickAccessorType, GimmickRectEvent, HandlerId, HandlerType,
         InstanceContentDirectorEvent, LeveDirectorEvent, LogMessageType, ObjectId, ObjectTypeId,
-        ObjectTypeKind, Position, PublicContentType, timestamp_secs,
+        ObjectTypeKind, Position, PublicContentType, TerritoryIntendedUse, timestamp_secs,
     },
     config::get_config,
     ipc::zone::{
@@ -17,7 +17,6 @@ use kawari::{
 };
 use mlua::{Function, LuaSerdeExt, UserData, UserDataMethods, Value};
 use parking_lot::Mutex;
-use physis::TerritoryIntendedUse;
 
 use crate::{
     ClientId, FromServer, GameData, ToServer,

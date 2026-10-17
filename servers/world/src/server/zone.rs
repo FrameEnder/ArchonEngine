@@ -3,7 +3,6 @@ use std::{collections::HashMap, sync::Arc};
 use glam::{Affine3A, EulerRot, Vec3A};
 use parking_lot::Mutex;
 use physis::{
-    TerritoryIntendedUse,
     layer::{
         ExitRangeInstanceObject, InstanceObject, LayerEntryData, PopRangeInstanceObject,
         ServerPathInstanceObject, TriggerBoxShape,
@@ -28,8 +27,8 @@ use kawari::{
     common::{
         CharacterMode, DistanceRange, DropIn, DropInLayer, DropInObjectData, ENTRANCE_CIRCLE_IDS,
         EOBJ_EXIT, EOBJ_HOUSING_ENTRANCE, EOBJ_SHORTCUT, EOBJ_SHORTCUT_EXPLORER_MODE, EventState,
-        GimmickRectTriggerType, HandlerType, ObjectId, Position, WARP_DELAY, WarpType,
-        euler_to_direction, internal_housing_row,
+        GimmickRectTriggerType, HandlerType, ObjectId, Position, TerritoryIntendedUse, WARP_DELAY,
+        WarpType, euler_to_direction, internal_housing_row,
     },
     config::get_config,
     ipc::zone::{

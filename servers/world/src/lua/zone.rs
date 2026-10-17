@@ -3,11 +3,10 @@ use std::collections::HashMap;
 use mlua::{LuaSerdeExt, UserData, UserDataFields};
 
 use kawari::{
-    common::{ObjectId, Position},
+    common::{ObjectId, Position, TerritoryIntendedUse},
     ipc::zone::ServerZoneIpcSegment,
     packet::PacketSegment,
 };
-use physis::TerritoryIntendedUse;
 
 use super::QueueSegments;
 

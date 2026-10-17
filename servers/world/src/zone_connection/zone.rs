@@ -6,8 +6,8 @@ use crate::{
 };
 use kawari::{
     common::{
-        FestivalId, HandlerId, HouseId, HouseUnit, HousingFlag, LandData, Position, WarpType,
-        timestamp_secs,
+        FestivalId, HandlerId, HouseId, HouseUnit, HousingFlag, LandData, Position,
+        TerritoryIntendedUse, WarpType, timestamp_secs,
     },
     constants::OBFUSCATION_ENABLED_MODE,
     ipc::zone::{
@@ -17,7 +17,6 @@ use kawari::{
     },
     packet::{ConnectionState, PacketSegment, ScramblerKeyGenerator, SegmentData, SegmentType},
 };
-use physis::TerritoryIntendedUse;
 
 impl ZoneConnection {
     /// Request the global server state to change our zone.

@@ -61,15 +61,15 @@ use icarus::WarpLogic::WarpLogicSheet;
 use icarus::WeatherRate::WeatherRateSheet;
 use icarus::{Tribe::TribeSheet, Warp::WarpSheet};
 use kawari::ipc::zone::{CommonSpawn, DamageElement, PlotSize};
+use physis::Language;
 use physis::equipment::EquipSlotCategory;
 use physis::race::{Gender, Race, Tribe};
 use physis::resource::{Resource, ResourceResolver, SqPackResource, UnpackedResource};
 use physis::savedata::chardat::CustomizeData;
-use physis::{Language, TerritoryIntendedUse};
 
 use kawari::common::{
     ActionCategory, FateRule, GimmickAccessorType, InstanceContentType, PublicContentType,
-    get_aether_current_comp_flg_set_to_screenimage,
+    TerritoryIntendedUse, get_aether_current_comp_flg_set_to_screenimage,
 };
 use kawari::common::{LegacyEquipmentModelId, WeaponModelId, timestamp_secs};
 use kawari::config::get_config;
