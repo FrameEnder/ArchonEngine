@@ -155,8 +155,11 @@ player is sent out.
 
 ## Adding a quest battle
 
-1. Record it on retail (Duties tab: director sequence/variable changes, NPC chat, windows, timings; Monsters tab for
-   the enemies' HP and skills).
+1. Record it on retail with Recorder 2.4 or later, ideally two or three times played differently, marking moments
+   with `/krec mark`. Then `python3 tools/questkit battle <export.zip>`: who's in it (with their layout layer, instance
+   name and AI settings), the waves and what preceded each, every NPC's targets with which explanations fit each change
+   (counted), its actions and intervals, heals with how hurt the target was, and who never acted. The Duties tab has
+   the director's sequence/variable changes; the Monsters tab the enemies' HP and skills.
 2. Dump the battle's client script: `kawari-questdump extract <Name>Btl.luab` finds it by name in any game_script
    folder.
 3. Add the NPCs to the territory drop-in as a `QB_…` layer.

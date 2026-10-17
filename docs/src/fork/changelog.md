@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-16 | — | Combat: partial paths, no leashing in content; To Guard a Guardian's background fights; known issues.
+| 2026-10-16 | — | Recorder 2.4 and what a recording can and can't tell (recorder and diagnostics); `questkit battle` (questkit, quest battles).
+| 2026-10-16 | `9ef685a` | Combat: partial paths, no leashing in content; To Guard a Guardian's background fights; known issues.
 | 2026-10-16 | `fe36e6c` | Quest battles: `warp_players`, To Guard a Guardian's second half, targeting and healing; known issues.
 | 2026-10-16 | `6a4203e` | Achievements must be quick (character windows); connections desync when busy (known issues).
 | 2026-10-16 | `de2d795` | Items That Teach Things (new page); achievements (Types 8, 20, counters); saving; known issues.
@@ -34,6 +35,7 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
+| 2026-10-16 | `ccedc94`–`efafdf2` | Recorder 2.4: the Battles tab (everyone's position, HP, target, casts and statuses every 250 ms, decoded actions, actor controls, casts, map effects, cutscenes, director events, marks, and the layout layers the NPCs came from with their AI settings); duty packets get their actor, the packets from zoning in and NPC/object spawns (up to 2.3 every packet read actor 0 and spawns weren't kept); `/krec mark`. |
 | 2026-10-16 | `2ef6163` | CLAUDE.md: capture notes aren't written now; findings go in the fork's docs. |
 | 2026-10-15 | `df8cec1`, `37d0eb7` | Palace of the Dead notes (recordings and published rules). |
 | 2026-10-15 | `1c652c9` | Recorder 2.3: duty packets keep up to 1 KB. |
@@ -52,7 +54,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | To Guard a Guardian could never end: after Quzal fell, the last two Ixali were on a background guard 9 yalms past where the navmesh stops, and every ally stood at the edge (2026-10-16 bundle). NPCs given a partial path now walk straight on to their target (up to 15 yalms out in the world, any distance in content; Detour's success-but-partial status is no longer logged as an error), and enemies in content don't leash (those lostwings had leashed chasing Miraudont the long way round, then picked up the guard). The background fights are the layer's five groups (each sincaller on a guard, the melee Ixali in pairs), as the Recorder shows, so no Ixal or guard stands idle. |
+| — | `questkit battle`: a report on a recorded duty or quest battle (Recorder 2.4's `battles.json`): who's in it with their layout layer and AI settings, waves and what preceded them, each NPC's targets with the explanations that fit every change (counted), actions, intervals and heals, and who never acted. Tested on made-up data. |
+| `9ef685a` | To Guard a Guardian could never end: after Quzal fell, the last two Ixali were on a background guard 9 yalms past where the navmesh stops, and every ally stood at the edge (2026-10-16 bundle). NPCs given a partial path now walk straight on to their target (up to 15 yalms out in the world, any distance in content; Detour's success-but-partial status is no longer logged as an error), and enemies in content don't leash (those lostwings had leashed chasing Miraudont the long way round, then picked up the guard). The background fights are the layer's five groups (each sincaller on a guard, the melee Ixali in pairs), as the Recorder shows, so no Ixal or guard stands idle. |
 | `fe36e6c` | To Guard a Guardian: the cutscene now ends with retail's loading screen into the second half (director `warp_players`: PrepareZoning to the same territory, then ActorSetPos), which the client waited for; Miraudont and the guards clear the adds before turning on Quzal; healing follows the Recorder's count of each NPC's Cures (the guards healed by the bow, Miraudont and Galfrid, Quzal by the sincallers, the player once by Papalymo), where before everyone also healed themselves and Miraudont was given the player's own Cures. |
 | `6a4203e` | Fix players freezing (or reviving into endless loading) after finishing a quest or discovering a map part: the achievement check read the Map sheet for every Mapping the Realm achievement, taking long enough to desync the client's connection (2026-10-16 bundles). The Map sheet's discovery columns are read once now; a check over 50 ms is logged. |
 | `de2d795` | Items that teach things work: mounts, unlock links (emotes, hairstyles…), barding, Triple Triad cards, fashion accessories and facewear are learned, as well as minions and orchestrion rolls (which no longer un-learn on a second use), and the item is used up. Achievements: Mapping the Realm (Type 8, the whole map discovered), Freebird (Type 20) and "Defeat N enemies" (counter 11), with counters saved (migration `update-2026-10-16-3_achievement_counters`); checked on discovering a map part, attuning aether currents and defeating an enemy. |

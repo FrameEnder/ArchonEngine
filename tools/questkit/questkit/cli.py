@@ -149,6 +149,35 @@ def _lua_syntax(args) -> int:
     return 1 if failures else 0
 
 
+def _battle(args) -> int:
+    import json
+
+    from . import battle
+    from .recording import Recording
+
+    path = Path(args.recording)
+    if path.suffix == ".json":
+        runs = (json.loads(path.read_text()) or {}).get("Runs") or []
+    else:
+        runs = battle.runs_in(Recording.open(path))
+    if not runs:
+        print(f"{path}: no battles (Recorder 2.4 or later records them, inside duties and quest battles)")
+        return 1
+    if args.list:
+        for n, run in enumerate(runs):
+            print(f"{n}: {run.get('Start', '')} {run.get('Zone', '')} {run.get('Content', '')} "
+                  f"({len(run.get('Actors') or {})} actors, {len(run.get('Actions') or [])} actions)")
+        return 0
+    chosen = runs if args.which == "all" else [runs[int(args.which)]]
+    text = "\n\n".join(battle.report(run, npc_filter=args.npc) for run in chosen)
+    if args.out:
+        Path(args.out).write_text(text + "\n")
+        print(f"Wrote {args.out}")
+    else:
+        print(text)
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="questkit", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -192,6 +221,14 @@ def main(argv=None) -> int:
     p.add_argument("--force", action="store_true", help="replace an existing script/fixture")
     p.add_argument("-v", "--verbose", action="store_true", help="show every step of the check")
     p.set_defaults(run=_scaffold)
+
+    p = commands.add_parser("battle", help="what a recorded duty or quest battle shows: waves, targeting, heals")
+    p.add_argument("recording", help="a Recorder export (zip or folder), or its battles.json")
+    p.add_argument("--run", dest="which", default="-1", help="which battle (index from --list, default the last; 'all' for every one)")
+    p.add_argument("--list", action="store_true", help="list the battles in the recording")
+    p.add_argument("--npc", help="only NPCs whose name or layout ID contains this")
+    p.add_argument("--out", help="write the report to this file")
+    p.set_defaults(run=_battle)
 
     p = commands.add_parser("lua-syntax", help="check that every Lua script compiles (Lua 5.4, like the server)")
     p.add_argument("path", nargs="?", help="a folder of scripts (default: resources/scripts)")

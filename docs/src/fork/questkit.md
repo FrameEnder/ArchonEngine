@@ -17,6 +17,7 @@ pip install lupa        # Lua 5.4 for Python; replay, scaffold and lua-syntax ne
 | `scaffold <quest> --dumps … --recording …` | Drafts a quest script (and its fixture) from the dump and the recording |
 | `compare --capture … --recording … [quests]` | What Kawari sent for a quest against what retail did |
 | `lua-syntax [folder]` | Checks every Lua script compiles (Lua 5.4, like the server) |
+| `battle <export or battles.json> [--list] [--run N\|all] [--npc …] [--out file]` | What a recorded duty or quest battle shows: cast, waves, targeting rules, heals, who never acted |
 
 Code: `questkit/recording.py` (Recorder exports), `capture.py` (Kawari's packet captures), `bundle.py` (diagnostics
 bundles), `harness.py` (running a quest script like the server), `fixtures.py`, `replay.py`, `scaffold.py`,
@@ -146,6 +147,27 @@ differs.
 
 On Bob's teleport bundle against the retail recording: 381, 384 and 387 match, 377 matches apart from the trumpets
 being searched in another order.
+
+## battle
+
+Reads the Recorder's Battles tab (`battles.json`, Recorder 2.4+) and writes a Markdown report per battle
+(`questkit/battle.py`):
+
+* **Who's in it**: each fighter's battalion (same number, same side), level, max HP, when it appeared and died, its
+  layout layer and instance name, and its layout settings (`NormalAI`, `MoveAi`, `ServerPathId`, link group...).
+* **Timeline**: NPCs appearing within 2 s of each other as one wave, with who had just died and the hurt NPCs' HP
+  then (the most hurt first: a wave brought by an HP threshold shows the boss low), deaths, sequence and variable
+  changes, battle talk, cutscenes, map effects and marks.
+* **Each NPC**: its targets over time and, for every change of target, which explanations fit, counted over all of
+  them: the old target died or left; the new one had just appeared; it's the newest / oldest / nearest / most hurt
+  enemy; the player, or an NPC over the player; it had just hit this NPC, or one of its allies; it was after one of
+  its allies. A rule that holds 6 times out of 6 is a rule; 3 out of 6 is a coincidence. Then each action: how many,
+  how often (median and range), on whom, damage or heal amounts, and for heals how hurt the target was and whether it
+  was the most hurt of its side.
+* **Never acted**: battle NPCs that never used an action (scenery, or a script Kawari is missing).
+
+Tried on Bob's Kawari capture of To Guard a Guardian (converted to the same shape): its "never acted" list started
+with the three background NPCs that stood idle there (3854723, 3854588, 3854715).
 
 ## lua-syntax
 

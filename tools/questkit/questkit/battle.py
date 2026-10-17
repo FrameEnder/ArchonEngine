@@ -1,0 +1,432 @@
+"""Reading a Kawari Recorder battle (battles.json, Recorder 2.4+) and turning it into rules with their evidence.
+
+The scripts behind a duty's director and its NPCs stay on Square Enix's servers, so a battle's logic is inferred from
+what everyone did. This lays out what the recording shows so that inference is checked, not guessed:
+
+* who is in it, which side they're on (battalion), and the client's layout data for them (layer, instance name,
+  NormalAI, MoveAi, ServerPathId, link group, pop settings);
+* the timeline: spawns grouped into waves (with what had just happened: deaths, everyone's HP), deaths, the
+  director's sequence and variables, battle talk, cutscenes, map effects and your marks;
+* for each NPC, who it targeted and when, and for every change of target which explanations fit (the old target
+  died, the new one just spawned, it's the newest/oldest/nearest/weakest enemy, it had just hit them...), counted
+  over every change, so a rule like "goes for the newest add" comes with how often it held;
+* what each NPC used, how often and on whom, and for heals how hurt the target was (and whether it was the most hurt
+  ally at the time);
+* who never did anything (stood still, never acted), which is how a missing script shows up.
+"""
+
+from __future__ import annotations
+
+import bisect
+import math
+from collections import Counter, defaultdict
+from dataclasses import dataclass, field
+
+EFFECT_MISS = 1
+EFFECT_DAMAGE = 3
+EFFECT_HEAL = 4
+DAMAGE_EFFECTS = (3, 5, 6)
+
+# How close in time one thing has to be to another to count as its cause.
+DEATH_WINDOW = 1.5
+SPAWN_WINDOW = 3.0
+HIT_WINDOW = 6.0
+WAVE_GAP = 2.0
+
+
+@dataclass
+class Track:
+    """One field of one actor over time, from the samples (only changes are recorded)."""
+
+    times: list[float] = field(default_factory=list)
+    values: list = field(default_factory=list)
+
+    def add(self, t: float, value):
+        self.times.append(t)
+        self.values.append(value)
+
+    def at(self, t: float, default=None):
+        i = bisect.bisect_right(self.times, t) - 1
+        return self.values[i] if i >= 0 else default
+
+
+class Battle:
+    def __init__(self, run: dict):
+        self.run = run
+        self.actors: dict[int, dict] = {int(k): v for k, v in (run.get("Actors") or {}).items()}
+        self.samples = run.get("Samples") or []
+        self.actions = run.get("Actions") or []
+        self.events = run.get("Events") or []
+        self.controls = run.get("Controls") or []
+        self.layers = run.get("Layers") or []
+        self.you = next((i for i, a in self.actors.items() if a.get("Kind") == "you"), None)
+
+        self.hp: dict[int, Track] = defaultdict(Track)
+        self.pos: dict[int, Track] = defaultdict(Track)
+        self.target: dict[int, Track] = defaultdict(Track)
+        self.dead: dict[int, Track] = defaultdict(Track)
+        for s in self.samples:
+            i, t = s["Id"], s["S"]
+            if "Hp" in s:
+                self.hp[i].add(t, s["Hp"])
+            if "P" in s:
+                self.pos[i].add(t, s["P"])
+            if "T" in s:
+                self.target[i].add(t, s["T"])
+            if "Dead" in s:
+                self.dead[i].add(t, s["Dead"])
+
+        self.layout: dict[int, tuple[dict, dict]] = {}
+        for layer in self.layers:
+            for obj in layer.get("Objects") or []:
+                self.layout.setdefault(obj.get("Id"), (layer, obj))
+
+        self.length = max(
+            [s["S"] for s in self.samples] + [a["S"] for a in self.actions] + [e["S"] for e in self.events] + [0]
+        )
+
+    # ---- who's who ----
+
+    def name(self, i: int | None) -> str:
+        if not i:
+            return "no one"
+        a = self.actors.get(i)
+        if a is None:
+            return f"#{i:X}"
+        if a.get("Kind") == "you":
+            return "you"
+        if a.get("Kind") == "player":
+            return f"player #{i:X}"
+        label = a.get("Name") or f"base {a.get('BaseId')}"
+        return f"{label} [{a['LayoutId']}]" if a.get("LayoutId") else label
+
+    def is_fighter(self, i: int) -> bool:
+        a = self.actors.get(i, {})
+        return a.get("Kind") in ("you", "player", "battle npc") and a.get("MaxHp", 0) > 0
+
+    def side(self, i: int):
+        return self.actors.get(i, {}).get("Battalion")
+
+    def hostile(self, a: int, b: int) -> bool:
+        """Different battalions fight each other (the Battalion sheet has the exceptions; this is the usual case)."""
+        return self.is_fighter(a) and self.is_fighter(b) and self.side(a) != self.side(b)
+
+    def alive(self, i: int, t: float) -> bool:
+        a = self.actors.get(i)
+        if a is None or a.get("Seen", 0) > t or a.get("LastSeen", 0) < t - 0.5:
+            return False
+        if self.dead[i].at(t, False):
+            return False
+        return (self.hp[i].at(t, 1) or 0) > 0
+
+    def hp_percent(self, i: int, t: float) -> float | None:
+        a = self.actors.get(i, {})
+        hp = self.hp[i].at(t)
+        if hp is None or not a.get("MaxHp"):
+            return None
+        return 100.0 * hp / a["MaxHp"]
+
+    def distance(self, a: int, b: int, t: float) -> float | None:
+        pa, pb = self.pos[a].at(t), self.pos[b].at(t)
+        if pa is None or pb is None:
+            return None
+        return math.dist(pa, pb)
+
+    def layout_info(self, layout_id: int) -> dict:
+        """The client's layout settings for a layout ID: its layer, its instance name and the AI-related fields."""
+        found = self.layout.get(layout_id)
+        if not found:
+            return {}
+        layer, obj = found
+        info = {"layer": layer.get("Name", ""), "instance": obj.get("Name", "")}
+        data = obj.get("Data") or {}
+        for key in ("NormalAI", "MoveAi", "ServerPathId", "LinkGroup", "LinkFamily", "LinkRange", "ActiveType",
+                    "PopEvent", "Nonpop", "BoundInstanceID", "SenseRangeRate", "WanderingRange", "Route",
+                    "EventGroup", "PopInterval", "TerritoryRange"):
+            value = _find(data, key)
+            if value not in (None, 0, 0.0, ""):
+                info[key] = value
+        return info
+
+    # ---- what happened ----
+
+    def spawn_times(self) -> dict[int, float]:
+        return {i: a.get("Seen", 0.0) for i, a in self.actors.items()}
+
+    def deaths(self) -> list[tuple[float, int]]:
+        out = []
+        for i, a in self.actors.items():
+            if a.get("Died") is not None:
+                out.append((a["Died"], i))
+        return sorted(out)
+
+    def waves(self) -> list[tuple[float, list[int]]]:
+        """Battle NPCs that appeared together (within WAVE_GAP of each other), after the start."""
+        spawns = sorted((a.get("Seen", 0.0), i) for i, a in self.actors.items()
+                        if a.get("Kind") == "battle npc" and a.get("MaxHp", 0) > 0)
+        waves: list[tuple[float, list[int]]] = []
+        last = None
+        for t, i in spawns:
+            if waves and last is not None and t - last <= WAVE_GAP:
+                waves[-1][1].append(i)
+            else:
+                waves.append((t, [i]))
+            last = t
+        return waves
+
+    def target_segments(self, i: int) -> list[tuple[float, float, int]]:
+        track = self.target[i]
+        end = self.actors.get(i, {}).get("LastSeen", self.length)
+        out = []
+        for k, (t, target) in enumerate(zip(track.times, track.values)):
+            until = track.times[k + 1] if k + 1 < len(track.times) else end
+            out.append((t, until, target))
+        return out
+
+    def hits_on(self, victim: int, by: int, before: float, window: float) -> bool:
+        for a in self.actions:
+            if before - window <= a["S"] <= before and a["Source"] == by:
+                if any(h["Id"] == victim for h in a["Targets"]):
+                    return True
+        return False
+
+    def switch_reasons(self, i: int, t: float, old: int, new: int) -> list[str]:
+        """Which explanations fit NPC i changing its target from old to new at time t."""
+        reasons = []
+        if old and not self.alive(old, t + 0.1):
+            reasons.append("old target dead or gone")
+        elif old and any(abs(d - t) <= DEATH_WINDOW and who == old for d, who in self.deaths()):
+            reasons.append("old target dead or gone")
+        if not old:
+            reasons.append("had no target")
+        spawned = self.actors.get(new, {}).get("Seen", -99)
+        if 0 <= t - spawned <= SPAWN_WINDOW:
+            reasons.append("new one had just appeared")
+
+        candidates = [c for c in self.actors if c != i and self.hostile(i, c) and self.alive(c, t)]
+        if new in candidates and len(candidates) > 1:
+            by_spawn = sorted(candidates, key=lambda c: self.actors[c].get("Seen", 0))
+            if by_spawn[-1] == new:
+                reasons.append("newest enemy")
+            if by_spawn[0] == new:
+                reasons.append("oldest enemy")
+            distances = {c: self.distance(i, c, t) for c in candidates}
+            known = {c: d for c, d in distances.items() if d is not None}
+            if known and min(known, key=known.get) == new:
+                reasons.append("nearest enemy")
+            hps = {c: self.hp_percent(c, t) for c in candidates}
+            hps = {c: h for c, h in hps.items() if h is not None}
+            if hps and min(hps, key=hps.get) == new:
+                reasons.append("most hurt enemy")
+            if new == self.you:
+                reasons.append("the player")
+            elif self.actors.get(new, {}).get("Kind") == "battle npc" and self.you in candidates:
+                reasons.append("an NPC over the player")
+        if self.hits_on(i, new, t, HIT_WINDOW):
+            reasons.append("new one had just hit it")
+        for ally in self.actors:
+            if ally != i and not self.hostile(i, ally) and self.hits_on(ally, new, t, HIT_WINDOW):
+                reasons.append(f"new one had just hit {self.name(ally)}")
+                break
+        new_target = self.target[new].at(t)
+        if new_target and not self.hostile(i, new_target) and new_target != i:
+            reasons.append(f"new one was after {self.name(new_target)}")
+        return reasons
+
+
+def _find(data, key):
+    """A field anywhere in a flattened layout object (fields of its parents are nested under ParentData)."""
+    if isinstance(data, dict):
+        if key in data:
+            return data[key]
+        for value in data.values():
+            found = _find(value, key)
+            if found is not None:
+                return found
+    return None
+
+
+def _fmt(t: float) -> str:
+    return f"{t:7.1f}s"
+
+
+def _median(values):
+    values = sorted(values)
+    if not values:
+        return None
+    mid = len(values) // 2
+    return values[mid] if len(values) % 2 else (values[mid - 1] + values[mid]) / 2
+
+
+def report(run: dict, npc_filter: str | None = None) -> str:
+    b = Battle(run)
+    lines: list[str] = []
+    w = lines.append
+    w(f"# {run.get('Zone', '')} {run.get('Content', '')}".rstrip())
+    w("")
+    w(f"Territory {run.get('TerritoryId')} · content finder {run.get('ContentFinderCondition')} · "
+      f"{b.length:.0f} s · {len(b.actors)} actors · {len(b.samples)} samples · {len(b.actions)} actions · "
+      f"{len(b.controls)} actor controls · {len(b.layers)} layout layers" + (" · TRUNCATED" if run.get("Truncated") else ""))
+    w("")
+
+    fighters = sorted((i for i in b.actors if b.is_fighter(i)), key=lambda i: (b.actors[i].get("Seen", 0), i))
+
+    # ---- cast ----
+    w("## Who's in it")
+    w("")
+    w("Sides are battalions: the same number fights on the same side.")
+    w("")
+    w("| Who | Battalion | Level | Max HP | Appears | Dies | Layer · instance | Layout settings |")
+    w("|---|---|---|---|---|---|---|---|")
+    for i in fighters:
+        a = b.actors[i]
+        info = b.layout_info(a.get("LayoutId", 0))
+        where = " · ".join(x for x in (info.pop("layer", ""), info.pop("instance", "")) if x)
+        settings = ", ".join(f"{k} {v}" for k, v in info.items())
+        died = f"{a['Died']:.1f}" if a.get("Died") is not None else ""
+        w(f"| {b.name(i)} | {a.get('Battalion')} | {a.get('Level')} | {a.get('MaxHp')} | {a.get('Seen', 0):.1f} | "
+          f"{died} | {where} | {settings} |")
+    w("")
+
+    # ---- timeline ----
+    w("## Timeline")
+    w("")
+    deaths = b.deaths()
+    timeline: list[tuple[float, str]] = []
+    for t, wave in b.waves():
+        before = [who for d, who in deaths if 0 <= t - d <= SPAWN_WINDOW]
+        context = []
+        if before:
+            context.append("just after " + ", ".join(b.name(x) for x in before) + " died")
+        hurt = []
+        for x in fighters:
+            if x not in wave and b.alive(x, t - 0.01) and b.actors[x].get("Kind") == "battle npc":
+                hp = b.hp_percent(x, t - 0.01)
+                if hp is not None and hp < 97.5:
+                    hurt.append((hp, x))
+        if hurt:
+            # The most hurt first: an HP threshold that brings a wave is usually the boss's, and the boss is low.
+            hurt.sort()
+            context.append("HP then: " + ", ".join(f"{b.name(x)} {hp:.0f}%" for hp, x in hurt[:8])
+                           + (f" (+{len(hurt) - 8} more)" if len(hurt) > 8 else ""))
+        timeline.append((t, f"**{len(wave)} appear**: " + ", ".join(b.name(x) for x in wave)
+                         + (f" ({'; '.join(context)})" if context else "")))
+    for t, who in deaths:
+        timeline.append((t, f"{b.name(who)} dies"))
+    interesting = {"sequence", "variables", "battle talk", "scene", "map effect", "mark", "objective", "todos",
+                   "director", "npc chat", "system"}
+    for e in b.events:
+        if e["Kind"] in interesting:
+            text = e["Text"]
+            if e["Kind"] == "scene" and e.get("Id"):
+                text += f" (by {b.name(e['Id'])})"
+            timeline.append((e["S"], f"{e['Kind']}: {text}"))
+    for t, text in sorted(timeline, key=lambda x: x[0]):
+        w(f"* {_fmt(t)} {text}")
+    w("")
+
+    # ---- each NPC ----
+    w("## Each NPC")
+    w("")
+    for i in fighters:
+        a = b.actors[i]
+        if a.get("Kind") != "battle npc":
+            continue
+        if npc_filter and npc_filter.lower() not in b.name(i).lower():
+            continue
+        w(f"### {b.name(i)}")
+        w("")
+        mine = [x for x in b.actions if x["Source"] == i]
+        spawn = a.get("Position") or (b.pos[i].values[0] if b.pos[i].values else None)
+        roam = 0.0
+        if spawn:
+            roam = max((math.dist(spawn, p) for p in b.pos[i].values), default=0.0)
+        if not mine:
+            w(f"* **Never acted** (moved at most {roam:.1f} yalms from where it appeared).")
+        else:
+            w(f"* {len(mine)} actions; moved at most {roam:.1f} yalms from where it appeared.")
+
+        segments = b.target_segments(i)
+        if any(t for _s, _e, t in segments):
+            w("* Targets: " + "; ".join(f"{s:.1f}–{e:.1f}s {b.name(t)}" for s, e, t in segments if t or len(segments) > 1))
+        reasons = Counter()
+        switches = 0
+        previous = 0
+        for s, _e, t in segments:
+            if t and t != previous:
+                switches += 1
+                for reason in b.switch_reasons(i, s, previous, t):
+                    reasons[reason] += 1
+            previous = t
+        if switches:
+            w(f"* Of its {switches} target choices, the explanations that fit (how many times):")
+            for reason, count in reasons.most_common():
+                w(f"  * {reason}: {count}/{switches}")
+
+        by_action = defaultdict(list)
+        for x in mine:
+            by_action[x["Action"]].append(x)
+        for action, uses in sorted(by_action.items(), key=lambda kv: -len(kv[1])):
+            times = [u["S"] for u in uses]
+            gaps = [round(b2 - a2, 1) for a2, b2 in zip(times, times[1:])]
+            on = Counter()
+            amounts = defaultdict(list)
+            heals = []
+            for u in uses:
+                for h in u["Targets"]:
+                    who = "itself" if h["Id"] == i else ("you" if h["Id"] == b.you else
+                                                       ("an enemy" if b.hostile(i, h["Id"]) else "an ally"))
+                    on[who] += 1
+                    for effect in h["Effects"]:
+                        kind, value = effect[0], effect[1]
+                        if kind in DAMAGE_EFFECTS:
+                            amounts["damage"].append(value)
+                        elif kind == EFFECT_HEAL:
+                            amounts["heal"].append(value)
+                            heals.append((u["S"], h))
+                        elif kind == EFFECT_MISS:
+                            amounts["miss"].append(0)
+            parts = [f"action {action} ×{len(uses)}"]
+            if gaps:
+                parts.append(f"every {_median(gaps)} s (min {min(gaps)}, max {max(gaps)})")
+            parts.append("on " + ", ".join(f"{k} {v}" for k, v in on.most_common()))
+            for kind, values in amounts.items():
+                if kind == "miss":
+                    parts.append(f"{len(values)} misses")
+                else:
+                    parts.append(f"{kind} {min(values)}–{max(values)} (median {_median(values)})")
+            w("* " + " · ".join(parts))
+            if heals:
+                percents = []
+                most_hurt = 0
+                for t, h in heals:
+                    if h.get("MaxHp"):
+                        percents.append(100 * h["Hp"] / h["MaxHp"])
+                    allies = [x for x in b.actors if b.is_fighter(x) and not b.hostile(i, x) and b.alive(x, t)]
+                    hps = {x: b.hp_percent(x, t - 0.3) for x in allies}
+                    hps = {x: v for x, v in hps.items() if v is not None}
+                    if hps and min(hps, key=hps.get) == h["Id"]:
+                        most_hurt += 1
+                if percents:
+                    w(f"  * healed targets were at {min(percents):.0f}–{max(percents):.0f}% HP "
+                      f"(median {_median(percents):.0f}%); the most hurt of its side {most_hurt}/{len(heals)} times")
+                who_healed = Counter(b.name(h["Id"]) for _t, h in heals)
+                w("  * healed: " + ", ".join(f"{k} {v}" for k, v in who_healed.most_common()))
+        w("")
+
+    idle = [i for i in fighters if b.actors[i].get("Kind") == "battle npc" and not any(x["Source"] == i for x in b.actions)]
+    if idle:
+        w("## Never acted")
+        w("")
+        w("Battle NPCs that never used an action. Scenery, or something Kawari has to script that the recording "
+          "can't show (check their layer and layout settings).")
+        w("")
+        for i in idle:
+            w(f"* {b.name(i)}")
+        w("")
+    return "\n".join(lines)
+
+
+def runs_in(recording) -> list[dict]:
+    book = recording.json("battles.json") or {}
+    return book.get("Runs") or []

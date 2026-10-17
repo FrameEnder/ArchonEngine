@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from questkit import capture, compare, fixtures, recording, replay, scaffold, triage  # noqa: E402
+from questkit import battle, capture, compare, fixtures, recording, replay, scaffold, triage  # noqa: E402
 from questkit.bundle import Bundle  # noqa: E402
 
 QUEST = 9999
@@ -280,6 +280,87 @@ class CaptureTools(unittest.TestCase):
     def test_quest_states(self):
         states = [s for s in capture.quest_states(self.bundle.packets()) if s.kind == "update"]
         self.assertEqual(states[-1].variables.hex(), "010000000040")
+
+
+def _battle_run():
+    """A made-up quest battle: you and a guard (battalion 0) against a boss; two adds join at 10 s; the guard turns
+    on the newest add, then the next once it dies; a healer heals the hurt guard; a statue never acts."""
+    you, guard, healer, boss, add1, add2, statue = 1, 2, 3, 10, 11, 12, 13
+    def actor(kind, name, layout, battalion, seen, hp=1000, died=None, pos=(0, 0, 0)):
+        a = {"Kind": kind, "Name": name, "LayoutId": layout, "Battalion": battalion, "Level": 20, "MaxHp": hp,
+             "Seen": seen, "LastSeen": 60.0, "Position": list(pos)}
+        if died is not None:
+            a["Died"] = died
+        return a
+    actors = {
+        you: actor("you", "", 0, 0, 0.0),
+        guard: actor("battle npc", "Guard", 100, 0, 0.0),
+        healer: actor("battle npc", "Healer", 101, 0, 0.0),
+        boss: actor("battle npc", "Boss", 200, 4, 0.0, pos=(10, 0, 0)),
+        add1: actor("battle npc", "Add", 201, 4, 10.0, hp=300, died=20.0, pos=(5, 0, 0)),
+        add2: actor("battle npc", "Add", 202, 4, 10.5, hp=300, pos=(20, 0, 0)),
+        statue: actor("battle npc", "Statue", 300, 4, 0.0, pos=(50, 0, 0)),
+    }
+    samples = [{"S": 0.0, "Id": i, "Hp": a["MaxHp"], "P": a["Position"], "T": 0} for i, a in actors.items()]
+    samples += [
+        {"S": 1.0, "Id": guard, "T": boss},
+        {"S": 11.0, "Id": guard, "T": add2},       # the newest add (add2 appeared at 10.5)
+        {"S": 15.0, "Id": guard, "Hp": 400},
+        {"S": 19.0, "Id": add1, "Hp": 0},
+        {"S": 20.0, "Id": add1, "Dead": True},
+        {"S": 30.0, "Id": add2, "Hp": 0, "Dead": True},
+        {"S": 30.5, "Id": guard, "T": add1},       # add1 is already dead here: picked anyway (tests the "dead" path)
+        {"S": 31.0, "Id": guard, "T": boss},
+    ]
+    actions = [
+        {"S": 16.0, "Source": healer, "Action": 120, "Type": 1, "SourceHp": 1000,
+         "Targets": [{"Id": guard, "Hp": 400, "MaxHp": 1000, "Effects": [[4, 300, 0, 0, 0, 0, 0]]}]},
+        {"S": 12.0, "Source": guard, "Action": 7, "Type": 1, "SourceHp": 400,
+         "Targets": [{"Id": add2, "Hp": 300, "MaxHp": 300, "Effects": [[3, 50, 0, 0, 0, 0, 0]]}]},
+        {"S": 15.0, "Source": guard, "Action": 7, "Type": 1, "SourceHp": 400,
+         "Targets": [{"Id": add2, "Hp": 250, "MaxHp": 300, "Effects": [[3, 50, 0, 0, 0, 0, 0]]}]},
+    ]
+    events = [{"S": 9.5, "Kind": "sequence", "Id": 0, "Text": "0x80030001 sequence 2"},
+              {"S": 25.0, "Kind": "mark", "Id": 0, "Text": "guard stuck"}]
+    layers = [{"File": "planmap.lgb", "LayerId": 7, "Name": "QB_TEST_001", "Objects": [
+        {"Type": "BattleNPC", "Id": 201, "Name": "INIT_POP_2ND_01", "Transform": {},
+         "Data": {"ParentData": {"MoveAi": 3}, "NormalAI": 42, "ServerPathId": 0}}]}]
+    return {"Zone": "Test Zone", "Content": "Test Battle", "TerritoryId": 1, "ContentFinderCondition": 2,
+            "Actors": {str(k): v for k, v in actors.items()}, "Samples": samples, "Actions": actions,
+            "Events": events, "Controls": [], "Layers": layers}
+
+
+class BattleReportTest(unittest.TestCase):
+    def setUp(self):
+        self.run = _battle_run()
+        self.battle = battle.Battle(self.run)
+
+    def test_waves_and_layout(self):
+        waves = self.battle.waves()
+        self.assertEqual([sorted(w) for _t, w in waves], [[2, 3, 10, 13], [11, 12]])
+        info = self.battle.layout_info(201)
+        self.assertEqual(info["layer"], "QB_TEST_001")
+        self.assertEqual(info["NormalAI"], 42)
+        self.assertEqual(info["MoveAi"], 3)
+
+    def test_switch_reasons(self):
+        reasons = self.battle.switch_reasons(2, 11.0, 10, 12)
+        self.assertIn("newest enemy", reasons)
+        self.assertIn("new one had just appeared", reasons)
+        self.assertNotIn("old target dead or gone", reasons)
+        reasons = self.battle.switch_reasons(2, 31.0, 11, 10)
+        self.assertIn("old target dead or gone", reasons)
+
+    def test_report(self):
+        text = battle.report(self.run)
+        self.assertIn("**2 appear**", text)
+        self.assertIn("mark: guard stuck", text)
+        self.assertIn("newest enemy: 1/", text)
+        self.assertIn("healed targets were at 40–40% HP", text)
+        self.assertIn("the most hurt of its side 1/1 times", text)
+        self.assertIn("## Never acted", text)
+        self.assertIn("Statue [300]", text.split("## Never acted")[1])
+        self.assertIn("NormalAI 42", text)
 
 
 if __name__ == "__main__":

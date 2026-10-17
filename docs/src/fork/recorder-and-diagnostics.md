@@ -5,11 +5,11 @@ Bob's server** (what does happen). Both live in the private `FrameEnder/kawari-d
 the Dalamud plugins' source. GitHub Actions builds each plugin on every change (Actions → the plugin's workflow → the
 run → Artifacts).
 
-## Kawari Recorder (retail, `recorder/`, version 2.3)
+## Kawari Recorder (retail, `recorder/`, version 2.4)
 
 A Dalamud plugin used on the **live game**. It replaced Kawari Bestiary (and imports its data on first run). `/krec`
-opens it; **Export (zip)** or `/krec export` writes `kawari-recorder-<date>.zip`; `/krec pause|resume`. Nothing is sent
-anywhere; it saves every 30 s.
+opens it; **Export (zip)** or `/krec export` writes `kawari-recorder-<date>.zip`; `/krec pause|resume`; `/krec mark
+<note>` notes a moment inside a duty (put it on a macro). Nothing is sent anywhere; it saves every 30 s.
 
 | Tab | Records | Used for |
 |---|---|---|
@@ -22,7 +22,33 @@ anywhere; it saves every 30 s.
 | Statuses | Durations, params, source, actual length | Status scripts |
 | World | Event NPCs/objects (layout ID, position, quest markers), weather by Eorzea hour, aggro range, leash distance, wander, speeds, respawns | Aggro/leash tuning (still global constants), spawns |
 | FATEs | Level, place, radius, time limit, progress, rewards | FATEs (future) |
+| Battles (2.4) | Inside duties and quest battles (`battles.json`, the last 4): everyone present (layout ID, BNpcBase/Name, battalion, level, max HP); every 250 ms what changed about each of them (position, rotation, HP, MP, **who they're targeting**, what they're casting and at whom, statuses with their source, in combat, weapon drawn, dead, targetable); every action with its results already decoded (source, target, amounts, the target's HP at the time); every ActorControl; casts, map effects and cutscenes (EventPlay) from the game's handlers; the director's sequence, variables and battle talk; marks; and the client's **layout layers** the NPCs came from, every object in them with all its settings | Quest battles and duties: `questkit battle` turns it into waves, targeting rules, heal triggers |
 | Quest packets | Server packets addressed to a quest or director: opcode, payload (up to 1 KB inside duties since 2.3; 48 bytes before), quest steps, game version | Notices, EventNotice opcodes, director packets |
+| Duty packets | Every server packet inside duties, raw (`content_packets.json`). Since 2.4 with the actor each is about, the packets from zoning in, and NPC/object spawns | Content logic not addressed to a director |
+
+### What a recording can and can't tell
+
+The scripts that run a duty's director and its NPCs (when waves come, HP thresholds, targeting, who heals whom) are on
+Square Enix's servers and never reach the client, so no plugin can read them; they're inferred from what everyone did.
+What the client does have, and the Battles tab now keeps:
+
+* **The layout** (`bg/<zone>/level/planmap.lgb` and friends): every NPC's layer and instance name (groups such as
+  `INIT_NOTAR_POP_<n>ST_..` in To Guard a Guardian), and the settings the server's scripts read: `NormalAI`, `MoveAi`,
+  `ServerPathId` (patrol routes, the ServerPath objects in the same layer), `LinkGroup`/`LinkFamily`/`LinkRange`,
+  `ActiveType`, `PopEvent`, `Nonpop`, `BoundInstanceID`, `SenseRangeRate`. Read with Lumina, by reflection, so a newer
+  Lumina with more fields records more.
+* **Who targets whom, every moment** (each character's target, from the client's object table), which makes a rule like
+  "the guards clear the adds before the boss" something the recording shows rather than a guess.
+* **The client's battle script** (`<Name>Btl.luab`, via `kawari-questdump extract`): scenes, battle talk, and the
+  director variables it reacts to.
+
+Inference gets firmer with more runs: record a battle two or three times played differently (stand still once, go
+straight for the boss once, let an ally die once); what changes with how you play is a reaction, what doesn't is
+scripted. Mark the moments you notice (`/krec mark he summoned an add`).
+
+Up to 2.3 the duty packets had no actor (every packet read actor 0 and size 0: the module read the actor from memory
+before the packet, which isn't its segment header) and no spawns (NPC spawns don't pass through the dispatcher hook),
+so which NPC did what had to be worked out from HP totals and hit counts (the 2026-10-16 To Guard a Guardian recording).
 
 ## Kawari Probe (on Kawari, `probe/`)
 
