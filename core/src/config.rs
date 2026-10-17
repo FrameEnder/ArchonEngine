@@ -4,7 +4,7 @@ use std::{
     str::FromStr,
 };
 
-use physis::{Language, Version, existing_dirs::find_existing_game_dirs};
+use physis::{Language, existing_dirs::find_existing_game_dirs};
 use serde_derive::{Deserialize, Serialize};
 
 use crate::packet::CompressionType;
@@ -551,15 +551,7 @@ impl FilesystemConfig {
             return self.game_path.clone();
         }
 
-        let mut game_dirs = find_existing_game_dirs();
-        // Naively sort by the latest version (realistically you're only to have one game install)
-        // TODO: This might make sense for the Physis API anyway
-        game_dirs.sort_by(|a, b| {
-            let a_version = Version(&a.version);
-            let b_version = Version(&b.version);
-
-            a_version.cmp(&b_version)
-        });
+        let game_dirs = find_existing_game_dirs();
         if let Some(game_dir) = game_dirs.last() {
             let mut path = PathBuf::from(&game_dir.path);
             path.push("game");
