@@ -103,6 +103,21 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
 * 162 costume sets in the Shop have no contents yet and can't be bought until an admin adds them.
 * Store items arrive as items; what they do when used depends on server support.
 
+## Packet sizes (from retail captures)
+
+Packets whose size on retail isn't what `opcodes.yml` says, from Bob's Chronofoil captures (every version since June
+2026; checked 2026-10-17). Kawari serializes each packet from its struct, so the effect depends on the packet:
+
+* **EventScene255**: 1048 bytes on retail (2026.06.18, 09.15, 10.06), 1052 in `opcodes.yml`. Kawari sends it for
+  scenes with 129–255 arguments (`event_scene.rs`): check the struct.
+* **TitleList**: 120 bytes on retail (06.18–09.15), 112 in `opcodes.yml`. Kawari sends a 112-byte unlock bitmask
+  (`TITLE_UNLOCK_BITMASK_SIZE`), so titles in retail's last 8 bytes probably can't show as unlocked.
+* **DeepDungeonParty**: 24 bytes on retail (10.06, the Palace of the Dead), 20 in `opcodes.yml`; for the
+  `Deep-Dungeon` branch.
+* **StatusEffectListDouble**: 744 bytes on retail (about 22,000 packets over three versions), 720 in `opcodes.yml`.
+  Kawari doesn't send it.
+* **CrossRealmListingsRequest2** (client): 64 bytes on retail, 40 in `opcodes.yml`.
+
 ## Build and tests
 
 * `inventory::equipped::tests::test_item_level` needs a real game install, so `cargo test --workspace` fails without

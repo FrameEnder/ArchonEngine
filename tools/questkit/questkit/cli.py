@@ -185,6 +185,43 @@ def _battle(args) -> int:
     return 0
 
 
+def _chronofoil(args) -> int:
+    from . import chronofoil
+
+    if args.save_opcodes:
+        version = chronofoil.save_current_opcodes()
+        print(f"Saved Kawari's opcodes for {version} to {chronofoil.OPCODES_FILE}")
+        if not args.captures:
+            return 0
+    if not args.captures:
+        print("Give a Chronofoil folder, captures (.cfcap/.ccfcap) or unfinished capture folders")
+        return 1
+    captures = chronofoil.find_captures(args.captures)
+    if not captures:
+        print("No Chronofoil captures found")
+        return 1
+    tables = chronofoil.load_opcodes()
+    if args.export:
+        number, _, visit = args.export.partition(".")
+        capture = captures[int(number)]
+        summary = chronofoil.summarize(capture, tables)
+        chosen = summary.visits[int(visit)]
+        out = args.out or f"chronofoil-{capture.id[:8]}-{visit}.jsonl.gz"
+        written = chronofoil.export(capture, tables, chosen, out)
+        print(f"Wrote {written} packets to {out}")
+        return 0
+    numbers = list(range(len(captures))) if args.which == "all" else [int(n) for n in args.which.split(",")]
+    summaries = [chronofoil.summarize(captures[n], tables) for n in numbers]
+    text = chronofoil.index_report(summaries, chronofoil.load_names(args.names), duties_only=args.duties,
+                                   min_minutes=args.min_minutes, numbers=numbers)
+    if args.out:
+        Path(args.out).write_text(text)
+        print(f"Wrote {args.out}")
+    else:
+        print(text)
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="questkit", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -241,6 +278,21 @@ def main(argv=None) -> int:
     p.add_argument("--npc", help="only NPCs whose name or layout ID contains this")
     p.add_argument("--out", help="write the report to this file")
     p.set_defaults(run=_battle)
+
+    p = commands.add_parser("chronofoil", help="what's in Chronofoil captures (retail sessions): zones, duties, fights")
+    p.add_argument("captures", nargs="*",
+                   help="a Chronofoil folder, captures (.cfcap, .ccfcap) or unfinished capture folders")
+    p.add_argument("--duties", action="store_true", help="only duties (content finder conditions)")
+    p.add_argument("--min-minutes", type=float, default=0, help="leave out visits shorter than this")
+    p.add_argument("--capture", dest="which", default="all",
+                   help="which captures, by their number in the index (e.g. 3 or 2,5); default all")
+    p.add_argument("--names", help="a JSON file of territory and duty names from the game data (never committed)")
+    p.add_argument("--export", metavar="N.V",
+                   help="write visit V of capture N (numbers from the index) as a Kawari packet capture")
+    p.add_argument("--out", help="where to write the index or the export")
+    p.add_argument("--save-opcodes", action="store_true",
+                   help="save Kawari's current opcodes for its game version (before merging a new patch)")
+    p.set_defaults(run=_chronofoil)
 
     p = commands.add_parser("lua-syntax", help="check that every Lua script compiles (Lua 5.4, like the server)")
     p.add_argument("path", nargs="?", help="a folder of scripts (default: resources/scripts)")

@@ -25,11 +25,11 @@ with a comment naming the source (see `CLAUDE.md`).
 
 | Question | First look at | Then |
 |---|---|---|
-| How does this fight go: phases, waves, who does what | A recording | Cactbot's timeline for the content, a Chronofoil capture |
+| How does this fight go: phases, waves, who does what | A recording | Bob's Chronofoil captures (`questkit chronofoil --duties`), Cactbot's timeline for the content |
 | Which actions an enemy has | A recording | The Fandom enemy actions page (by name), Cactbot's triggers |
 | An action's shape, size, cast time, telegraph | The Action sheet (`CastType`, `EffectRange`, `XAxisModifier`, `Cast100ms`, `Omen`) | The Fandom page, which lists the same columns by action |
 | An enemy's level, HP and where it stands | A recording | Teamcraft's `monsters.json`, Sapphire's BNpc data |
-| A packet's layout or opcode | A recording, then `kawari-opcodescan` | OverlayPlugin's packet structs, Machina, FFXIVOpcodes, Kawari upstream |
+| A packet's layout or opcode | A recording, then `kawari-opcodescan` | Bob's Chronofoil captures (sizes, every version since June), OverlayPlugin's packet structs, Machina, FFXIVOpcodes, Kawari upstream |
 | What a sheet column means | EXDSchema | XIVAPI's documentation |
 | A client structure (for the Recorder or Probe) | FFXIVClientStructs | |
 
@@ -45,9 +45,25 @@ archive can be downloaded hasn't been checked. redstrate's
 the packet definitions Kawari uses.
 
 * **Answers**: everything a recording does, for content Bob hasn't run, and how a fight went on an older patch.
-* **Limits**: captures carry other players' characters and game text, so they stay out of every repository (the
-  diagnostics one included); only numbers come out of them. A capture from another patch needs that patch's opcodes.
-  Recording with Chronofoil next to Kawari Recorder would also give a raw copy of a run.
+* **Limits**: captures carry other players' characters and game text, so they stay out of every repository's history
+  (the diagnostics one included); only numbers come out of them. A capture from another patch needs that patch's
+  opcodes. Recording with Chronofoil next to Kawari Recorder also gives a raw copy of a run.
+
+**Bob's own captures.** Bob has run Chronofoil since June 2026. His captures are attached to release `1` of
+`kawari-diagnostics` (`chronofoil.zip`, never committed): 42 sessions from 2026-06-24 to 2026-10-16 over game versions
+2026.06.18, 09.01, 09.15 and 10.06, most of the June–September ones also as censored copies, three unfinished.
+`questkit chronofoil` ([questkit](questkit.md#chronofoil)) indexes and exports them. What's in them (2026-10-17):
+
+* A Realm Reborn: Haukke Manor, Castrum Meridianum, The Navel, the Binding Coil (turns 3 and 5), the Second Coil
+  (turn 4), the Final Coil (turns 1–4), Syrcus Tower, Akh Afah and The Striking Tree (Extreme), and the four quest
+  battles of 2026-10-14 and 16 (duties 296–299, the same runs as the Recorder exports of those days);
+* Heavensward's Alexander (all eight Father, Son and Creator turns); Shadowbringers dungeons, trials and Eden;
+* The Palace of the Dead (floors 1–10, twice, 2026-10-15) and Blunderville (six matches) for the
+  [research notes](research.md).
+
+Where Chronofoil keeps them under XIVLauncher.Core: `~/.xlcore/wineprefix/drive_c/users/<user>/AppData/Local/chronofoil/`
+(the plugin's `StorageDirectory`, set in `~/.xlcore/pluginConfigs/Chronofoil.json`). `<id>.cfcap` is a finished capture,
+`<id>.ccfcap` a censored copy (`cfcli cf censor --capture <file>`), a `<id>/` folder an unfinished one.
 
 ### Cactbot
 

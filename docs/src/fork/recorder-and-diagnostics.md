@@ -126,6 +126,14 @@ capture around the time of the note → the log. A bundle sent by Quest Lab's *T
 
 `questkit compare --capture <bundle> --recording <export>` checks the bundle's captures against a retail recording.
 
+## Chronofoil captures (release `1`)
+
+Bob's Chronofoil captures (retail sessions since June 2026) are attached to the repository's release `1`
+(`chronofoil.zip`), not committed: they're large, hold other players' characters, and git would keep them for good.
+Read them with `questkit chronofoil` ([questkit](questkit.md#chronofoil), [Outside sources](sources.md#chronofoil)).
+New captures go in a new release the same way (`gh release create <tag> <files> --repo FrameEnder/kawari-diagnostics`);
+censor them first when they might ever be shared beyond this repository.
+
 ## Research notes (`notes/`)
 
 Analyses of recordings for content not implemented yet; see [Research notes](research.md).

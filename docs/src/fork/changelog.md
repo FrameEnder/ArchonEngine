@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-17 | — | Outside Sources (new page): what to check when a recording leaves something unclear, the order of trust, Cactbot's ARR coverage; OverlayPlugin confirms the battle talk window's layout (quest battles).
+| 2026-10-17 | — | Bob's Chronofoil captures and what's in them (outside sources, recorder and diagnostics); `questkit chronofoil` (questkit); packet sizes that differ on retail (known issues).
+| 2026-10-17 | `b435ef4` | Outside Sources (new page): what to check when a recording leaves something unclear, the order of trust, Cactbot's ARR coverage; OverlayPlugin confirms the battle talk window's layout (quest battles).
 | 2026-10-17 | `82f65de` | Placement, battle roles vs class roles (quest battles, combat, questkit).
 | 2026-10-17 | `21d1075` | Roles (quest battles, questkit).
 | 2026-10-17 | `c603df3` | The battle framework, `set_attack_range`, `keep_near` and `onUpdate`'s `info` (quest battles); staying near someone (combat); the outline and telegraphs (questkit); known issues.
@@ -65,7 +66,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Chasing Shadows' comment on battle talk brought up to date (the window is known; its text IDs aren't recorded yet). |
+| — | `questkit chronofoil`: reads Chronofoil captures (finished and unfinished), indexes each session's zones and duties with what happened there, and exports a visit as a Kawari packet capture; opcode tables for game versions 2026.06.18, 09.01 and 09.15 (`tools/questkit/questkit/data/chronofoil_opcodes.json`, derived in `chronofoil_opcodes.py`), checked against every packet's size in Bob's captures. CI installs zstandard. |
+| `b435ef4` | Chasing Shadows' comment on battle talk brought up to date (the window is known; its text IDs aren't recorded yet). |
 | `82f65de` | Placement: `keep_near` takes several anchors (Papalymo near Yda and you), `stand_behind` puts an NPC behind the enemy the tank is fighting (`server/placement.rs`); supports default to it. Roles: a battle role (`role`) apart from the class's (`class_role`): in Chasing Shadows Yda, a DPS, plays the tank, and Papalymo is a DPS with some support. questkit only calls an NPC a support when healing is a large part of what it does. |
 | `21d1075` | Roles in the battle framework: tank (leads, pulls enemies off the others: supports first, then DPS, then the player), DPS (highest health first, two or more split the toughest enemies, can heal themselves), support (backline, near the tank, buffs DPS then tank, heals the tank first); enemies take roles too. `onUpdate`'s `info` gains each actor's target. `questkit battle`'s outline gives each ally's role, by class and by what it did. |
 | `c603df3` | The battle framework (`content/lib/Battle.lua`, loaded before every quest battle's script): allies' roles (focus groups, order, range, staying near someone, heals), enemies' groups and first targets, context changes, timed steps and health/cleared phases. Chasing Shadows and To Guard a Guardian run on it (simulated: the same director calls and targets as before; Papalymo now casts from 10 yalms and stays within 15 of you). The director gets `set_attack_range` and `keep_near` (NPCs head back to their anchor), and `onUpdate` a fourth argument with everyone's HP, max HP and position. `questkit battle` drafts the director's outline per phase (focus, order, range, staying near, heals) and lists enemy telegraphs. |

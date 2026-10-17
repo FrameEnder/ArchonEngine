@@ -206,6 +206,30 @@ out.
 Tried on Bob's Kawari capture of To Guard a Guardian (converted to the same shape): its "never acted" list started
 with the three background NPCs that stood idle there (3854723, 3854588, 3854715).
 
+## chronofoil
+
+`questkit chronofoil <Chronofoil folder or captures>` indexes retail sessions recorded with Chronofoil (see
+[Outside sources](sources.md#chronofoil)): one entry per capture (start, length, game version, censored or not), then
+every zone and duty in it from one ZoneInit to the next, with what happened there (NPCs spawned, casts, action effects,
+DirectorVars, battle talk, NPC yells). `--duties` keeps only duties, `--min-minutes` drops short visits, `--capture 3,5`
+picks captures, and `--names` takes a JSON of territory and duty names from the game data (never committed).
+`--export N.V --out file.jsonl.gz` writes visit V of capture N as a Kawari packet capture (the format `capture.py`
+reads, chat left out), so `compare` and the rest can use it.
+
+* **Reading captures** (`chronofoil.py`): finished captures are a zip of `VersionInfo`, `CaptureInfo` (protobuf) and
+  `Data` (zstd-compressed, delimited protobuf frames holding the game's frames, already decompressed); unfinished ones
+  are a folder of the same files, `Data` not compressed. Finished captures need zstd: `pip install zstandard`, or
+  Python 3.14. One copy per capture ID is read (the censored one if both are there).
+* **Opcodes by game version** (`data/chronofoil_opcodes.json`, made by `chronofoil_opcodes.py`): Kawari's own table for
+  the version it supports, plus saved tables for older ones. 2026.06.10 and 2026.09.15 are Kawari's opcodes.yml as it
+  was then; 2026.06.18 and 2026.09.01 are a hotfix away from those, shifted with FFXIVOpcodes' history (it has about a
+  third of Kawari's packets, by its own names, for every patch), then filled in by unique sizes and by hand
+  (DirectorVars, the only 24-byte packet starting with a director ID). Every table was checked against the size of
+  every packet in Bob's captures of that version; the index warns when packets aren't the size their table says.
+  **Before merging upstream's next patch update, run `questkit chronofoil --save-opcodes`**, so captures from the
+  outgoing version stay readable.
+* About 0.5 s per hour of play: the whole of Bob's four months (42 sessions) index in 25 s.
+
 ## lua-syntax
 
 Compiles every script with Lua 5.4's `load` (nothing runs). It found upstream's `FesHlwTransform_00946.lua`
@@ -215,7 +239,7 @@ Compiles every script with Lua 5.4's `load` (nothing runs). It found upstream's 
 
 | Job | Runs on | Does |
 |---|---|---|
-| Quest replays and scripts | every push and PR | questkit's tests, `lua-syntax`, `replay -v` |
+| Quest replays and scripts | every push and PR | questkit's tests (with lupa and zstandard), `lua-syntax`, `replay -v` |
 | Formatting and changelog | every push and PR | `tools/ci/check-changes.sh`: `rustfmt --check --edition 2024` on the changed `.rs` files only, and a changelog entry for any change outside `docs/` (skip with `[no-docs]` in a commit message, e.g. upstream merges) |
 | Documentation builds | every push and PR | `mdbook build docs` (mdBook 0.5.4) |
 | Build and test | PRs, pushes to master, by hand | `cargo build --workspace --locked`, `cargo test --workspace --locked -- --skip test_item_level` |

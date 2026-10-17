@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from questkit import battle, capture, compare, fixtures, recording, replay, scaffold, triage  # noqa: E402
+from questkit import battle, capture, chronofoil, compare, fixtures, recording, replay, scaffold, triage  # noqa: E402
 from questkit.bundle import Bundle  # noqa: E402
 
 QUEST = 9999
@@ -677,6 +677,127 @@ class BattleFrameworkTest(unittest.TestCase):
         self.update(health, info, 5)
         heals = [args for name, args in self.calls if name == "use_action" and args[1] == 120]
         self.assertEqual(heals[0][2], self.DPS1)
+
+
+# --- Chronofoil captures, built by hand (protobuf as Chronofoil writes it) ---
+
+def _pb_varint(value: int) -> bytes:
+    out = bytearray()
+    while True:
+        byte = value & 0x7F
+        value >>= 7
+        out.append(byte | (0x80 if value else 0))
+        if not value:
+            return bytes(out)
+
+
+def _pb(fields) -> bytes:
+    out = b""
+    for number, value in fields:
+        if isinstance(value, int):
+            out += _pb_varint(number << 3) + _pb_varint(value)
+        else:
+            out += _pb_varint(number << 3 | 2) + _pb_varint(len(value)) + value
+    return out
+
+
+def _delimited(message: bytes) -> bytes:
+    return _pb_varint(len(message)) + message
+
+
+def _frame(time_ms: int, direction: int, packets) -> bytes:
+    """A game frame: 40-byte header, then IPC packets (opcode, source actor, data)."""
+    import struct
+
+    body = b""
+    for opcode, src, data in packets:
+        ipc = struct.pack("<HHHHII", 0x14, opcode, 0, 0, time_ms // 1000, 0) + data
+        body += struct.pack("<IIIHH", 16 + len(ipc), src, 0, 3, 0) + ipc
+    header = bytes(16) + struct.pack("<QIHHBBHI", time_ms, 40 + len(body), 1, len(packets), 1, 0, 0, 0)
+    frame = header + body
+    return _delimited(_pb([(1, _pb([(1, 1), (2, direction)])), (2, frame)]))
+
+
+def _zone_init(territory: int, content: int) -> bytes:
+    import struct
+
+    return struct.pack("<HHHHIIBBH", 1, territory, 0, content, 0, 0, 0, 0, 2 if content else 0) + bytes(136 - 20)
+
+
+def _capture_parts(capture_id: str, version: str):
+    version_info = _delimited(_pb([(1, 1), (6, version.encode()), (7, b"Chronofoil"), (8, b"1.0.4.17")]))
+    capture_info = _delimited(_pb([(1, capture_id.encode()), (2, _pb([(1, 1_760_000_000)])),
+                                   (3, _pb([(1, 1_760_000_600)])), (4, 0)]))
+    t = 1_760_000_000_000
+    data = (_frame(t, 1, [(716, 0, _zone_init(132, 0))])
+            + _frame(t + 1000, 1, [(769, 7, bytes(32)), (716, 0, _zone_init(1043, 15))])
+            + _frame(t + 2000, 1, [(225, 0x8003_0001 & 0xFFFF, (0x8003_0001).to_bytes(4, "little") + bytes(20))])
+            + _frame(t + 3000, 2, [(5, 1, bytes(8))]))
+    return version_info, capture_info, data
+
+
+class ChronofoilTest(unittest.TestCase):
+    VERSION = "2026.10.06.0000.0000"
+    TABLES = {VERSION: {"ServerZoneIpcType": {716: ("ZoneInit", 136, "test"), 769: ("ActorCast", 32, "test"),
+                                              225: ("DirectorVars", 24, "test")}}}
+
+    def test_unfinished_capture_folder(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "abcd"
+            folder.mkdir()
+            version_info, capture_info, data = _capture_parts("abcd", self.VERSION)
+            (folder / "VersionInfo").write_bytes(version_info)
+            (folder / "CaptureInfo").write_bytes(capture_info)
+            (folder / "Data").write_bytes(data + b"\x05\x01")  # a frame cut short, as when the game closes
+            captures = chronofoil.find_captures([tmp])
+            self.assertEqual(len(captures), 1)
+            capture = captures[0]
+            self.assertEqual((capture.id, capture.game_version, capture.finished), ("abcd", self.VERSION, False))
+            self.assertEqual(capture.duration, 600)
+            segments = list(capture.segments())
+            self.assertEqual([s.opcode for s in segments], [716, 769, 716, 225, 5])
+            self.assertEqual(segments[-1].dir, "in")
+            summary = chronofoil.summarize(capture, self.TABLES)
+            self.assertEqual([(v.territory, v.content, v.instanced) for v in summary.visits],
+                             [(132, 0, False), (1043, 15, True)])
+            self.assertEqual(summary.visits[0].counts["ActorCast"], 1)
+            self.assertEqual(summary.visits[1].directors, {0x8003_0001})
+            report = chronofoil.index_report([summary], {"territory": {1043: "Somewhere"}, "content": {}},
+                                             duties_only=True)
+            self.assertIn("territory 1043 Somewhere duty 15", report)
+            self.assertNotIn("territory 132", report)
+            out = Path(tmp) / "visit.jsonl"
+            self.assertEqual(chronofoil.export(capture, self.TABLES, summary.visits[1], out), 3)
+            packets = capture_module_load(out)
+            self.assertEqual([p.name for p in packets], ["ZoneInit", "DirectorVars", "Unknown5"])
+
+    def test_finished_capture_needs_zstd(self):
+        try:
+            import zstandard
+        except ImportError:
+            self.skipTest("zstandard not installed")
+        with tempfile.TemporaryDirectory() as tmp:
+            version_info, capture_info, data = _capture_parts("efgh", self.VERSION)
+            path = Path(tmp) / "efgh.cfcap"
+            with zipfile.ZipFile(path, "w") as archive:
+                archive.writestr("VersionInfo", version_info)
+                archive.writestr("CaptureInfo", capture_info)
+                archive.writestr("Data", zstandard.ZstdCompressor().compress(data))
+            capture, = chronofoil.find_captures([path])
+            self.assertTrue(capture.finished)
+            self.assertEqual(len(chronofoil.summarize(capture, self.TABLES).visits), 2)
+
+    def test_saved_tables_cover_every_version(self):
+        tables = chronofoil.load_opcodes()
+        for version in ("2026.06.18.0000.0000", "2026.09.01.0000.0000", "2026.09.15.0000.0000",
+                        "2026.10.06.0000.0000"):
+            names = {name for entries in tables[version].values() for name, _, _ in entries.values()}
+            for needed in ("ZoneInit", "ActorCast", "ActionEffect1", "SpawnNpc", "DirectorVars"):
+                self.assertIn(needed, names, f"{needed} in {version}")
+
+
+def capture_module_load(path):
+    return capture.load(path)
 
 
 if __name__ == "__main__":

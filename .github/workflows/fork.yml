@@ -31,7 +31,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install lupa (Lua 5.4 for Python)
-        run: pip install lupa
+        run: pip install lupa zstandard
       - name: questkit's own tests
         run: python -m unittest discover tools/questkit/tests -v
       - name: Every Lua script compiles
