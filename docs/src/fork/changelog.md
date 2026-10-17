@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-17 | — | Marketboard: the search's category byte and flag, MarketBoardOpened, ItemSearchCategory per language (marketboard, fork opcodes, known issues).
+| 2026-10-17 | — | `master` fast-forwarded to `Latest-Quest` (changelog).
+| 2026-10-17 | `ee5e162` | Marketboard: the search's category byte and flag, MarketBoardOpened, ItemSearchCategory per language (marketboard, fork opcodes, known issues).
 | 2026-10-17 | `86bcfa2` | Marketboard (new page): what's listed, prices, listings, buying, the packets from Bob's captures; fork opcodes; Kawari Web's Marketboard page; questdump's item list (tools); known issues.
 | 2026-10-17 | `7f95a59` | `player.scene_error_code`, event actions answered at once, The Gridanian Envoy's gangplanks (quests); fixture results with an error code (questkit).
 | 2026-10-17 | `f4ffd30` | Cutscenes that end somewhere else (quests); Renewing the Covenant's ceremony (quests table).
@@ -72,7 +73,7 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 ## Kawari (fork)
 
-Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` is at `955b0ce`.
+Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`).
 
 ### 2026-10-17
 
