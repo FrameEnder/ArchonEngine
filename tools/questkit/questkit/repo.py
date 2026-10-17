@@ -15,6 +15,7 @@ SCRIPTS = ROOT / "resources" / "scripts"
 QUEST_SCRIPTS = SCRIPTS / "events" / "quest"
 FORK_OPCODES = ROOT / "resources" / "data" / "fork_opcodes.yml"
 SCENE_FLAGS_RS = ROOT / "core" / "src" / "ipc" / "zone" / "server" / "event_scene.rs"
+ACTOR_CONTROL_RS = ROOT / "core" / "src" / "ipc" / "zone" / "server" / "actor_control.rs"
 FIXTURES = ROOT / "tools" / "questkit" / "fixtures"
 
 # Quest handler IDs are the quest number plus this (the Quest sheet's starting row.)
@@ -71,3 +72,28 @@ def notice_opcodes(game_version: str | None) -> set[int]:
             if game_version is None or entry.get("found_on") == game_version:
                 found.add(entry["opcode"])
     return found
+
+
+def actor_control_names() -> dict[int, str]:
+    """ActorControl categories by number, from Kawari's ActorControlCategory (each variant's brw magic)."""
+    try:
+        text = ACTOR_CONTROL_RS.read_text()
+    except OSError:
+        return {}
+    start = text.find("pub enum ActorControlCategory")
+    if start < 0:
+        return {}
+    names: dict[int, str] = {}
+    magic = None
+    for line in text[start:].splitlines()[1:]:
+        if line.startswith("}"):
+            break
+        m = re.match(r"\s*#\[brw\(magic = (\d+)u32\)\]", line)
+        if m:
+            magic = int(m.group(1))
+            continue
+        m = re.match(r"\s{4}([A-Z][A-Za-z0-9]*)\b", line)
+        if m and magic is not None:
+            names.setdefault(magic, m.group(1))
+            magic = None
+    return names

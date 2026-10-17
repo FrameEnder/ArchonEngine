@@ -5,7 +5,7 @@ Bob's server** (what does happen). Both live in the private `FrameEnder/kawari-d
 the Dalamud plugins' source. GitHub Actions builds each plugin on every change (Actions → the plugin's workflow → the
 run → Artifacts).
 
-## Kawari Recorder (retail, `recorder/`, version 2.5)
+## Kawari Recorder (retail, `recorder/`, version 2.6)
 
 A Dalamud plugin used on the **live game**. It replaced Kawari Bestiary (and imports its data on first run). `/krec`
 opens it; **Export (zip)** or `/krec export` writes `kawari-recorder-<date>.zip`; `/krec pause|resume`; `/krec mark
@@ -35,6 +35,35 @@ or the Overview's Clear. `battles/index.json` lists them with a **label** of you
 editable in the tab. **Export (zip)** takes the battles not exported before (or all of them, with the tab's checkbox)
 plus the index; a battle's own **Export** button copies just its file to the export folder. Files dropped into the
 folder by hand are picked up. 2.4's `battles.json` (the last 4 battles in one file) is split into files on first load.
+
+### What each battle file holds (2.6)
+
+On top of everyone's samples, actions, actor controls, events and layout layers (2.4):
+
+| Field | What | For |
+|---|---|---|
+| `Hooks` | Each of the Recorder's hooks: working and how much it had seen, or `FAILED: <why>` | Knowing what a recording can't have. The Battles tab shows the same live ("Hooks: all 10 working"); a hook whose signature a patch broke shows there, not only in the Dalamud log |
+| `Setup` | Your job, level, level sync, item level (approximate, the character window's way), gear (item, item level, HQ), statuses at the start (the Echo), party (job and level, no names), the Duty Finder settings (unrestricted, minimum item level, level sync, explorer mode) | Comparing numbers between runs |
+| `Packets` | Every server packet during the battle, raw (as the Duty packets tab keeps them), from zoning in | One file has everything, even after the Duty packets tab has rolled over |
+| `Enmity` | Your enmity list when it changes (at most once a second): your enmity % with each enemy and the enemies on you in order | How aggro builds and moves |
+| Samples' `Tethers` | Tethers from each character: Channeling row and target | Tether mechanics |
+| Samples' `Visible`, `Targetable`, `State` on event objects | Barriers, crystals, doors appearing, becoming targetable, changing state (also as `object` events) | Arena gimmicks the director drives |
+| Samples' `P` | Positions every frame, written each half yalm (or a tenth of a second after a smaller move); `fast move` events for knockbacks and jumps | Exact paths: walking or running, stuck pathing, knockbacks |
+| `cast` events | Each cast's target, time, where it's aimed (the packet's position and rotation) and omen delay | AoE placement |
+| `ActionInfo` | The client's Action sheet for every action seen: name, cast type, ranges, X-axis modifier, omen, cast and recast | Shapes and sizes of AoEs; names in the report |
+| `auto mark` events | You or a party member dying or getting back up, a wipe, bosses (three times your max HP or more) going below 75/50/25/10 % | Signposts without typing |
+| `Field` | Set for fights out in the world (the tab's *Also record fights out in the world*: from entering combat until 15 s after) | Open-world aggro, leash and AI per enemy |
+
+The Battles tab also has **Compare** (a battle against the previous run of the same one: each NPC's death time,
+action count and whom it went after, in order) and **Send** / *Send each battle when it ends* (to Kawari Web, below).
+
+### Sending battles to Kawari Web (2.6, Kawari Web 2.14)
+
+In the Battles tab under *Send to Kawari Web*: the site's address and the account's character-sync token (as Kawari
+Probe's), then *Test*. Each battle goes to `POST /api/diag/battle` as its `.json.gz`; Kawari Web keeps it in
+`<web>/diag/battles` and files it in kawari-diagnostics under **`battles/`** at once, with `battles/index.json`
+(every battle with its label, job, counts and failed hooks) and `battles/latest.txt`. So retail battles reach the
+diagnostics repository without an export: `python3 tools/questkit battle ../kawari-diagnostics/battles --list`.
 
 ### What a recording can and can't tell
 

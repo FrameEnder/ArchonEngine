@@ -175,6 +175,13 @@ For each battle:
   was the most hurt of its side.
 * **Never acted**: battle NPCs that never used an action (scenery, or a script Kawari is missing).
 
+From Recorder 2.6 files, also: a warning naming any hook that wasn't working (what the recording can't have); **your
+setup** (job, level, sync, item level, Duty Finder settings, party, statuses at the start); action names from the
+recording's `ActionInfo`; tethers, event objects changing, fast moves (knockbacks) and auto marks in the timeline;
+**your enmity** (who topped the list of enemies on you, when it changed); and **actor controls** counted by category,
+named from Kawari's `ActorControlCategory` (`repo.actor_control_names()`), so a category Kawari doesn't know stands
+out.
+
 Tried on Bob's Kawari capture of To Guard a Guardian (converted to the same shape): its "never acted" list started
 with the three background NPCs that stood idle there (3854723, 3854588, 3854715).
 

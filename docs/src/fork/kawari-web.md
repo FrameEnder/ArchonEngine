@@ -105,6 +105,12 @@ recording. Totals per expansion and a filterable list linking to Quest Lab.
 
 Commits one bundle to the private `kawari-diagnostics` repository (fine-grained token, Contents read/write): recent
 server log, packet captures (toggle here), chosen characters' saved quest state and position, Kawari Probe snapshots
-(`POST /api/diag/snapshot` with the character-sync token), build and redacted config. Can also point
+(`POST /api/diag/snapshot` with the character-sync token), build and redacted config.
+**Battles** (2.14.0): Kawari Recorder posts each retail battle to `POST /api/diag/battle?file=<name>&label=<label>`
+(the same token; the body is the battle's `.json.gz`, read by the route itself up to 64 MB since the app limits
+requests to 8 MB). It's kept in `<web>/diag/battles` (with `index.json`) and filed in the diagnostics repository's
+`battles/` in a background thread; the page's Battles card lists them with *File now* for a failed or early one, and a
+bundle's README names the battles received in its window. `/api/diag/ping` answers `accepts: diag-snapshot/1
+diag-battle/1`. Can also point
 `filesystem.navimesh_path` at `<data>/navimesh` so navmeshes survive rebuilds. Bundle format:
 [Recorder and diagnostics](recorder-and-diagnostics.md).

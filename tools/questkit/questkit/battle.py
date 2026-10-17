@@ -64,6 +64,8 @@ class Battle:
         self.controls = run.get("Controls") or []
         self.layers = run.get("Layers") or []
         self.you = next((i for i, a in self.actors.items() if a.get("Kind") == "you"), None)
+        self.action_info = {int(k): v for k, v in (run.get("ActionInfo") or {}).items()}
+        self.tethers: dict[int, Track] = defaultdict(Track)
 
         self.hp: dict[int, Track] = defaultdict(Track)
         self.pos: dict[int, Track] = defaultdict(Track)
@@ -79,6 +81,8 @@ class Battle:
                 self.target[i].add(t, s["T"])
             if "Dead" in s:
                 self.dead[i].add(t, s["Dead"])
+            if "Tethers" in s:
+                self.tethers[i].add(t, s["Tethers"])
 
         self.layout: dict[int, tuple[dict, dict]] = {}
         for layer in self.layers:
@@ -151,6 +155,10 @@ class Battle:
             if value not in (None, 0, 0.0, ""):
                 info[key] = value
         return info
+
+    def action_name(self, action: int) -> str:
+        info = self.action_info.get(action) or {}
+        return f"{action} ({info['Name']})" if info.get("Name") else str(action)
 
     # ---- what happened ----
 
@@ -280,6 +288,31 @@ def report(run: dict, npc_filter: str | None = None) -> str:
 
     fighters = sorted((i for i in b.actors if b.is_fighter(i)), key=lambda i: (b.actors[i].get("Seen", 0), i))
 
+    failed = {k: v for k, v in (run.get("Hooks") or {}).items() if str(v).startswith("FAILED")}
+    if failed:
+        w("**Missing from this recording** (the Recorder's hooks that weren't working): "
+          + "; ".join(f"{k}: {v}" for k, v in failed.items()))
+        w("")
+    setup = run.get("Setup")
+    if setup:
+        w("## Your setup")
+        w("")
+        sync = f", synced to {setup.get('SyncedLevel')}" if setup.get("LevelSynced") else ""
+        w(f"* {setup.get('JobName')} level {setup.get('Level')}{sync}, item level about {setup.get('ItemLevel')}, "
+          f"HP {setup.get('Hp')}/{setup.get('MaxHp')}")
+        settings = [name for key, name in (("Unrestricted", "unrestricted party"), ("MinimumItemLevel", "minimum item level"),
+                                           ("LevelSync", "level sync"), ("ExplorerMode", "explorer mode")) if setup.get(key)]
+        if settings:
+            w("* Duty Finder settings: " + ", ".join(settings))
+        party = setup.get("Party") or []
+        if len(party) > 1:
+            w("* Party: " + ", ".join(f"job {j} level {lv}{' (you)' if me else ''}" for j, lv, me in party))
+        statuses = setup.get("Statuses") or []
+        if statuses:
+            w("* Statuses at the start: " + ", ".join(str(x[0]) + (f" ({x[1]})" if x[1] else "") for x in statuses)
+              + " (status IDs: the Echo is 42, 239 or 3240 depending on the content)")
+        w("")
+
     # ---- cast ----
     w("## Who's in it")
     w("")
@@ -322,17 +355,55 @@ def report(run: dict, npc_filter: str | None = None) -> str:
                          + (f" ({'; '.join(context)})" if context else "")))
     for t, who in deaths:
         timeline.append((t, f"{b.name(who)} dies"))
-    interesting = {"sequence", "variables", "battle talk", "scene", "map effect", "mark", "objective", "todos",
-                   "director", "npc chat", "system"}
+    interesting = {"sequence", "variables", "battle talk", "scene", "map effect", "mark", "auto mark", "objective",
+                   "todos", "director", "npc chat", "system", "object", "fast move", "end"}
     for e in b.events:
         if e["Kind"] in interesting:
             text = e["Text"]
-            if e["Kind"] == "scene" and e.get("Id"):
-                text += f" (by {b.name(e['Id'])})"
+            if e["Kind"] in ("scene", "object", "fast move", "auto mark") and e.get("Id"):
+                text += f" ({b.name(e['Id'])})"
             timeline.append((e["S"], f"{e['Kind']}: {text}"))
+    for i, track in b.tethers.items():
+        previous = []
+        for t, value in zip(track.times, track.values):
+            if value != previous:
+                if value:
+                    timeline.append((t, f"tether: {b.name(i)} → " + ", ".join(
+                        f"{b.name(target)} (Channeling {kind})" for kind, target in value)))
+                elif previous:
+                    timeline.append((t, f"tether gone: {b.name(i)}"))
+            previous = value
     for t, text in sorted(timeline, key=lambda x: x[0]):
         w(f"* {_fmt(t)} {text}")
     w("")
+
+    enmity = run.get("Enmity") or []
+    if enmity:
+        w("## Your enmity")
+        w("")
+        w("Who was at the top of the enemy list (the enemies after you, first one first), when that changed:")
+        w("")
+        top = None
+        for sample in enmity:
+            haters = [h[0] for h in sample.get("Haters") or []]
+            first = haters[0] if haters else None
+            if first != top:
+                w(f"* {_fmt(sample['S'])} " + (", ".join(b.name(h) for h in haters[:5]) if haters else "no one on you"))
+                top = first
+        w("")
+
+    controls = run.get("Controls") or []
+    if controls:
+        from .repo import actor_control_names
+        names = actor_control_names()
+        counts = Counter((c["Category"]) for c in controls)
+        w("## Actor controls")
+        w("")
+        w("Every ActorControl the server sent, by category (names from Kawari's ActorControlCategory):")
+        w("")
+        for category, count in counts.most_common():
+            w(f"* {category} {names.get(category, '(unknown to Kawari)')}: {count}")
+        w("")
 
     # ---- each NPC ----
     w("## Each NPC")
@@ -395,7 +466,7 @@ def report(run: dict, npc_filter: str | None = None) -> str:
                             heals.append((u["S"], h))
                         elif kind == EFFECT_MISS:
                             amounts["miss"].append(0)
-            parts = [f"action {action} ×{len(uses)}"]
+            parts = [f"action {b.action_name(action)} ×{len(uses)}"]
             if gaps:
                 parts.append(f"every {_median(gaps)} s (min {min(gaps)}, max {max(gaps)})")
             parts.append("on " + ", ".join(f"{k} {v}" for k, v in on.most_common()))

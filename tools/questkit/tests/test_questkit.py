@@ -415,5 +415,33 @@ class BattleFilesTest(unittest.TestCase):
             self.assertIn("(boss first)", text)
 
 
+class BattleRecorder26Test(unittest.TestCase):
+    """What Recorder 2.6 adds: setup, hook health, action names, enmity, tethers, event objects, actor controls."""
+
+    def test_new_sections(self):
+        run = _battle_run()
+        run["Setup"] = {"JobName": "CNJ", "Level": 16, "SyncedLevel": 0, "LevelSynced": False, "ItemLevel": 18,
+                        "Hp": 900, "MaxHp": 900, "Statuses": [[42, 0, 0]], "Party": [[6, 16, 1]], "ExplorerMode": False}
+        run["Hooks"] = {"Casts": "ok, seen 4", "Map effects": "FAILED: its signature wasn't found in the game"}
+        run["ActionInfo"] = {"120": {"Name": "Cure", "CastType": 1}}
+        run["Enmity"] = [{"S": 1.0, "Yours": [], "Haters": [[10, 100]]}, {"S": 12.0, "Yours": [], "Haters": [[12, 100], [10, 80]]}]
+        run["Samples"] = run["Samples"] + [{"S": 5.0, "Id": 10, "Tethers": [[17, 2]]}, {"S": 8.0, "Id": 10, "Tethers": []}]
+        run["Events"] = run["Events"] + [{"S": 21.0, "Kind": "auto mark", "Id": 10, "Text": "Boss below 50%"},
+                                         {"S": 22.0, "Kind": "object", "Id": 0, "Text": "Barrier shown, not targetable, state 1"}]
+        run["Controls"] = [{"S": 1.0, "Id": 10, "Category": 0, "Args": [1, 1, 0, 0, 0, 0, 0, 0], "Target": 0}]
+        text = battle.report(run)
+        self.assertIn("Missing from this recording", text)
+        self.assertIn("Map effects", text)
+        self.assertIn("CNJ level 16", text)
+        self.assertIn("action 120 (Cure)", text)
+        self.assertIn("tether: Boss [200] → Guard [100] (Channeling 17)", text)
+        self.assertIn("tether gone: Boss [200]", text)
+        self.assertIn("auto mark: Boss below 50%", text)
+        self.assertIn("object: Barrier shown", text)
+        self.assertIn("## Your enmity", text)
+        self.assertIn("Add [202], Boss [200]", text)
+        self.assertIn("0 ToggleWeapon: 1", text)
+
+
 if __name__ == "__main__":
     unittest.main()
