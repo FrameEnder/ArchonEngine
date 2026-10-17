@@ -21,6 +21,7 @@ use parking_lot::Mutex;
 use crate::{
     ClientId, FromServer, GameData,
     gamedata::AreaShape,
+    navmesh::MAX_OFF_MESH_GAP,
     server::{
         actor::{
             NetworkedActor, NpcCast, NpcState, NpcTarget, set_shared_group_timeline_state,
@@ -73,6 +74,14 @@ pub fn npc_behavior(
         .map(|(id, actor)| (*id, actor.get_common_spawn().level))
         .collect();
     let mut healed = Vec::new();
+    let in_content = instance.content_id != 0 || instance.content_finder_condition_id != 0;
+    // In content an NPC that can't path to its target walks the rest of the way straight, however far: our navmesh has
+    // holes the arenas don't, and an ally or add stuck at one stalls the whole battle (2026-10-16 bundle).
+    let max_off_mesh_gap = if in_content {
+        f32::INFINITY
+    } else {
+        MAX_OFF_MESH_GAP
+    };
 
     // const pass
     for (id, actor) in &instance.actors {
@@ -221,7 +230,10 @@ pub fn npc_behavior(
                     .map(|(_, position, _)| Vec3A::distance(position.0, *home)),
                 _ => None,
             };
-            let is_wild_enemy = !spawn.common.owner_id.is_valid()
+            // Only out in the world: enemies in content (a quest battle, a duty) fight to the end, as on retail, and the
+            // ones there chasing across the arena used to give up and run home at full health mid-fight.
+            let is_wild_enemy = !in_content
+                && !spawn.common.owner_id.is_valid()
                 && spawn.common.object_kind == ObjectKind::BattleNpc(BattleNpcSubKind::Enemy);
             if is_wild_enemy
                 && *state == NpcState::Hate
@@ -406,7 +418,7 @@ pub fn npc_behavior(
                     if needs_repath {
                         let path: VecDeque<Vec3A> = instance
                             .navmesh
-                            .calculate_path(current_pos, target_pos)
+                            .calculate_path(current_pos, target_pos, max_off_mesh_gap)
                             .into();
 
                         *current_path = path.clone();

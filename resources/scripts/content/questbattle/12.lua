@@ -40,12 +40,17 @@ BNPC_PAPALYMO = 4018839
 
 FIRST_IXALI = { 4089292, 4089293, 4089294, 4089296, 4089297, 4089298 }
 SECOND_IXALI = { 3803267, 3803268, 3803269, 4089325, 3803263, 3803264 }
--- Guards and Ixali fighting each other in the background, as pairs. Both have far too much health to win.
+-- Guards and Ixali fighting each other in the background: five fights, each a guard and the one or two Ixali standing
+-- next to them. The groups are the layer's own (its NPCs are named INIT_NOTAR_P_POP_<n>ST_.. for the guard and
+-- INIT_NOTAR_POP_<n>ST_.. for that fight's Ixali, as Sapphire's script has them), and retail placed each Ixal 2-9
+-- yalms from its guard. Both sides have far too much health to win.
 BACKGROUND = {
-    { 3854583, 3854584 }, { 3854673, 3854723 }, { 3854588, 3854715 }, { 3854674, 3854724 }, { 3854675, 3854719 },
+    { guard = 3854583, ixali = { 3854586 } },
+    { guard = 3854588, ixali = { 3854584, 3854721 } },
+    { guard = 3854673, ixali = { 3854720 } },
+    { guard = 3854674, ixali = { 3854719, 3854724 } },
+    { guard = 3854675, ixali = { 3854715, 3854723 } },
 }
--- Background Ixali with nobody of their own; they join in on a guard.
-BACKGROUND_EXTRA = { { 3854721, 3854583 }, { 3854586, 3854588 }, { 3854720, 3854673 } }
 ALLIES_FIRST_HALF = { BNPC_GALFRID, BNPC_MIRAUDONT, BNPC_BOW, BNPC_LANCE }
 ALLIES_SECOND_HALF = { BNPC_YDA, BNPC_PAPALYMO }
 
@@ -329,15 +334,13 @@ function onSetup(director)
 end
 
 function onCommence(director)
-    for _, pair in ipairs(BACKGROUND) do
-        director:spawn_bnpc(pair[1])
-        director:spawn_bnpc(pair[2])
-        director:set_hate(pair[1], pair[2], BACKGROUND_ENMITY)
-        director:set_hate(pair[2], pair[1], BACKGROUND_ENMITY)
-    end
-    for _, pair in ipairs(BACKGROUND_EXTRA) do
-        director:spawn_bnpc(pair[1])
-        director:set_hate(pair[1], pair[2], BACKGROUND_ENMITY)
+    for _, fight in ipairs(BACKGROUND) do
+        director:spawn_bnpc(fight.guard)
+        for _, ixal in ipairs(fight.ixali) do
+            director:spawn_bnpc(ixal)
+            director:set_hate(ixal, fight.guard, BACKGROUND_ENMITY)
+        end
+        director:set_hate(fight.guard, fight.ixali[1], BACKGROUND_ENMITY)
     end
     spawnAllies(director, ALLIES_FIRST_HALF)
     spawnEnemies(director, { BNPC_QUZAL })
@@ -373,12 +376,11 @@ end
 
 -- Everyone from the first half leaves for the cutscene.
 function clearFirstHalf(director)
-    for _, pair in ipairs(BACKGROUND) do
-        director:despawn_bnpc(pair[1])
-        director:despawn_bnpc(pair[2])
-    end
-    for _, pair in ipairs(BACKGROUND_EXTRA) do
-        director:despawn_bnpc(pair[1])
+    for _, fight in ipairs(BACKGROUND) do
+        director:despawn_bnpc(fight.guard)
+        for _, ixal in ipairs(fight.ixali) do
+            director:despawn_bnpc(ixal)
+        end
     end
     for _, id in ipairs(ALLIES_FIRST_HALF) do
         director:despawn_bnpc(id)

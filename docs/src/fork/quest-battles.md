@@ -122,7 +122,12 @@ player is sent out.
 
 * Layer `QB_ManFst007_001` (35 NPCs). First half: Galfrid (4089300), Miraudont (4089305) and two guards (3854581,
   3854582) with you against Quzal Huatotl (4089289, level 20, 5782 HP) and six Ixali; guards and Ixali with far too
-  much health (191400 / 79750) fighting each other in the background. The first six down bring six more (sequence 3);
+  much health (191400 / 79750) fighting each other in the background: five fights, as the layer groups them
+  (`INIT_NOTAR_P_POP_<n>ST_..` for the guard, `INIT_NOTAR_POP_<n>ST_..` for its Ixali). The two sincallers fight a guard
+  each, the six melee Ixali the other three guards in pairs. The Recorder bears it out: each of three guards took 112
+  hits on retail (two Ixali), each of the other two 26 (one sincaller casting), and every guard and Ixal kept fighting
+  the whole time. Pairing them by hand had left an Ixal 47 yalms from its guard, with two Ixali and a guard standing
+  idle. The first six down bring six more (sequence 3);
   Quzal at 33 % (sequence 4, Void Call) and 25 % (sequence 5, a blanga). Which Ixali come first is a guess from where
   they stand.
 * Everyone down: sequence 6, everyone else is removed and the director's cutscene plays (scene 6). After it (sequence

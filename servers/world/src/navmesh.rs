@@ -3,8 +3,9 @@ use std::{io::Cursor, ptr::null_mut};
 use binrw::{BinRead, BinWrite, binrw};
 use glam::Vec3A;
 use recastnavigation_sys::{
-    DT_SUCCESS, dtAllocNavMesh, dtAllocNavMeshQuery, dtNavMesh, dtNavMesh_addTile, dtNavMesh_init,
-    dtNavMeshParams, dtNavMeshQuery, dtNavMeshQuery_findNearestPoly, dtNavMeshQuery_findPath,
+    DT_FAILURE, DT_PARTIAL_RESULT, DT_SUCCESS, dtAllocNavMesh, dtAllocNavMeshQuery, dtNavMesh,
+    dtNavMesh_addTile, dtNavMesh_init, dtNavMeshParams, dtNavMeshQuery,
+    dtNavMeshQuery_findNearestPoly, dtNavMeshQuery_findPath,
     dtNavMeshQuery_findRandomPointAroundCircle, dtNavMeshQuery_findStraightPath,
     dtNavMeshQuery_init, dtPolyRef, dtQueryFilter, dtQueryFilter_dtQueryFilter,
 };
@@ -56,6 +57,13 @@ pub struct Navmesh {
 // To send the pointers between threads.
 unsafe impl Send for Navmesh {}
 unsafe impl Sync for Navmesh {}
+
+/// How far (in yalms) past the end of the navmesh an NPC walks straight on to reach someone it can't path to.
+/// Detour gives a partial path (to the closest point it can reach) when the destination's polygon isn't connected to
+/// the start's, e.g. a few yalms of missing mesh between two rocks. Without this the NPC stood at the edge for good,
+/// out of range, re-pathing every tick (To Guard a Guardian, 2026-10-16 bundle: the allies stuck 9 yalms from the
+/// Ixali they were after). Content passes no limit (see `calculate_path`).
+pub const MAX_OFF_MESH_GAP: f32 = 15.0;
 
 unsafe extern "C" fn frand() -> f32 {
     fastrand::f32()
@@ -130,8 +138,9 @@ impl Navmesh {
         }
     }
 
-    /// Calculates a path from `start_pos` to `end_pos`.
-    pub fn calculate_path(&self, start_pos: Vec3A, end_pos: Vec3A) -> Vec<Vec3A> {
+    /// Calculates a path from `start_pos` to `end_pos`. When the navmesh doesn't reach `end_pos`, the path walks as far
+    /// as it does and then straight on, if that last stretch is at most `max_gap` yalms.
+    pub fn calculate_path(&self, start_pos: Vec3A, end_pos: Vec3A, max_gap: f32) -> Vec<Vec3A> {
         unsafe {
             let mut filter = dtQueryFilter {
                 m_areaCost: [1.0; 64],
@@ -158,9 +167,9 @@ impl Navmesh {
                 &mut path_count,
                 128,
             );
-            if status != DT_SUCCESS {
+            if status & DT_FAILURE != 0 {
                 tracing::warn!(
-                    "Error in dtNavMeshQuery_findPath: {status} start poly: {start_poly} end poly: {end_poly}"
+                    "Error in dtNavMeshQuery_findPath: {status:#x} start poly: {start_poly} end poly: {end_poly}"
                 );
             }
 
@@ -185,6 +194,14 @@ impl Navmesh {
             let mut path = Vec::new();
             for pos in straight_path[..straight_path_count as usize * 3].chunks(3) {
                 path.push(Vec3A::from_slice(pos));
+            }
+
+            // The destination isn't reachable on the navmesh: walk the part that is, then straight on if it's close.
+            if status & DT_PARTIAL_RESULT != 0 {
+                let edge = path.last().copied().unwrap_or(start_pos);
+                if Vec3A::distance(edge, end_pos) <= max_gap {
+                    path.push(end_pos);
+                }
             }
 
             path
