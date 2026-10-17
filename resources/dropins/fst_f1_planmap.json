@@ -17384,6 +17384,7 @@
                 {
                     "data": {
                         "base_id": 552,
+                        "display_flags": 520,
                         "gimmick_id": 0,
                         "hostile": false,
                         "hp": 191400,
@@ -17406,6 +17407,7 @@
                 {
                     "data": {
                         "base_id": 554,
+                        "display_flags": 520,
                         "gimmick_id": 0,
                         "hostile": true,
                         "hp": 79750,
@@ -17428,6 +17430,7 @@
                 {
                     "data": {
                         "base_id": 557,
+                        "display_flags": 520,
                         "gimmick_id": 0,
                         "hostile": true,
                         "hp": 79750,
@@ -17450,6 +17453,7 @@
                 {
                     "data": {
                         "base_id": 553,
+                        "display_flags": 520,
                         "gimmick_id": 0,
                         "hostile": false,
                         "hp": 191400,
@@ -17472,6 +17476,7 @@
                 {
                     "data": {
                         "base_id": 552,
+                        "display_flags": 520,
                         "gimmick_id": 0,
                         "hostile": false,
                         "hp": 191400,
@@ -17494,6 +17499,7 @@
                 {
                     "data": {
                         "base_id": 553,
+                        "display_flags": 520,
                         "gimmick_id": 0,
                         "hostile": false,
                         "hp": 191400,
@@ -17516,6 +17522,7 @@
                 {
                     "data": {
                         "base_id": 553,
+                        "display_flags": 520,
                         "gimmick_id": 0,
                         "hostile": false,
                         "hp": 191400,
@@ -17538,6 +17545,7 @@
                 {
                     "data": {
                         "base_id": 555,
+                        "display_flags": 520,
                         "gimmick_id": 0,
                         "hostile": true,
                         "hp": 79750,
@@ -17560,6 +17568,7 @@
                 {
                     "data": {
                         "base_id": 556,
+                        "display_flags": 520,
                         "gimmick_id": 0,
                         "hostile": true,
                         "hp": 79750,
@@ -17582,6 +17591,7 @@
                 {
                     "data": {
                         "base_id": 557,
+                        "display_flags": 520,
                         "gimmick_id": 0,
                         "hostile": true,
                         "hp": 79750,
@@ -17604,6 +17614,7 @@
                 {
                     "data": {
                         "base_id": 556,
+                        "display_flags": 520,
                         "gimmick_id": 0,
                         "hostile": true,
                         "hp": 79750,
@@ -17626,6 +17637,7 @@
                 {
                     "data": {
                         "base_id": 554,
+                        "display_flags": 520,
                         "gimmick_id": 0,
                         "hostile": true,
                         "hp": 79750,
@@ -17648,6 +17660,7 @@
                 {
                     "data": {
                         "base_id": 555,
+                        "display_flags": 520,
                         "gimmick_id": 0,
                         "hostile": true,
                         "hp": 79750,

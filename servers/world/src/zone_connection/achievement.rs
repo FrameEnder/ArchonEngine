@@ -10,7 +10,8 @@
 //! * 2: every achievement in Key and Data
 //! * 3: the class or job Key at level Data[0] or above
 //! * 6: every quest in Key and Data
-//! * 8: map Key unlocked, "Mapping the Realm": retail completes it with the first part discovered on entering the zone
+//! * 8: every part of map Key discovered, "Mapping the Realm" (A Realm Reborn's field zones are revealed whole on the
+//!   first visit, `WHOLE_MAP_DISCOVERY`, which completes theirs)
 //! * 9: any quest in Key and Data
 //! * 20: every aether current in a zone (AetherCurrentCompFlgSet Key), "Freebird"
 
@@ -165,10 +166,10 @@ impl ZoneConnection {
                     .lock()
                     .get_map_discovery_flag(rule.key.max(0) as u32)
                     .unwrap_or(0);
-                // Retail completed Mapping the Realm: Central Shroud on entering it for the first time, with its first
-                // part discovered (2026-10-14 capture), not once every part was.
+                // Every part ("Discover every location"). A Realm Reborn's field zones are revealed whole on the first
+                // visit (WHOLE_MAP_DISCOVERY), so theirs ("Visit ... and unlock the area map") complete then.
                 let found = self.discovered_map_parts(rule.key.max(0) as u32) & all;
-                ((all != 0 && found != 0) as u32, 1)
+                (found.count_ones(), all.count_ones())
             }
             KIND_AETHER_CURRENTS => {
                 let flags = &self.player_data.aether_current.comp_flg_set;

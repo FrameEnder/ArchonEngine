@@ -49,19 +49,31 @@ Types 2 and 9 missed their first ID.
 | 2 | 67 | Every achievement in Key and Data | done / listed |
 | 3 | 267 | The class or job Key at level Data[0] | level / wanted |
 | 6 | 382 | Every quest in Key and Data | done / listed |
-| 8 | 202 | Map Key unlocked ("Mapping the Realm", "Visit ... and unlock the area map"): any of its parts discovered (Map's DiscoveryFlag; the Central Shroud is map 4) | 0 or 1 of 1 |
+| 8 | 202 | Every part of map Key discovered ("Mapping the Realm"): Map's DiscoveryFlag, of every map that shares its discovery slot (DiscoveryIndex); A Realm Reborn's field zones are revealed whole on the first visit (below) | parts / all |
 | 9 | 10 | Any quest in Key and Data | 0 or 1 of 1 |
 | 20 | 30 | Every aether current of AetherCurrentCompFlgSet Key ("Freebird") | 0 or 1 of 1 |
 
 **When retail completes them** (Bob's sessions of 2026-10-14 and 16, `questkit chronofoil`):
 
 * Mapping the Realm: Central Shroud (657, Type 8): on entering the Central Shroud for the first time from Gridania. The
-  client sends NewDiscovery as it arrives; the server answers with the achievement, LocationDiscovered and the
-  discovery EXP. (Kawari had waited for all 13 parts.)
+  client sends NewDiscovery as it arrives; the server answers with the achievement, LocationDiscovered with **part
+  164**, which reveals the whole map, and the discovery EXP. Retail does that for **A Realm Reborn's field zones**
+  (TerritoryType ExVersion 0, TerritoryIntendedUse Overworld): exactly those 17 zones' Mapping the Realm achievements
+  say "Visit ... and unlock the area map", all 185 others "Discover every location" (XIVAPI). Kawari now sends 164
+  for those zones (`WHOLE_MAP_DISCOVERY`, `GameData::reveals_whole_map`) and saves every part, which completes the
+  achievement; elsewhere maps are revealed part by part as before.
 * I Got the Magic Stick I (45, Type 3): turning in a quest that took conjurer to 10, right after LevelUpMessage.
 * Storyteller I (789, Type 1, Key 214): turning in the tenth quest. Key 214 is unique quests completed; Kawari counts
   it from the completed quests, so it's right for existing characters too.
 * Gone from Gridania (311, Type 6): turning in The Gridanian Envoy in Ul'dah.
+* **Discover every location** (Bob's sessions, 2026-06 to 09: Mt. Gulg, Amaurot, The Grand Cosmos, eight Alexander
+  floors): each with the last part discovered. Some duties' maps share a discovery slot and are done together: The
+  Cuff of the Father is map 238 (parts 1-2) and map 255 (parts 3-4), both DiscoveryIndex 58, and Gordias II (Key 238)
+  came with part 4; Midas II (Key 287) needs map 288's parts too. Comparing against Key's own DiscoveryFlag would have
+  completed Midas II after one discovery.
+* The 31 unlocks in Bob's June–September sessions, by Type: 11 Mapping the Realm, 8 quests (Type 6), 2 Freebird, 1 made of others (Frequent Flyer
+  III, with the last Freebird it needs) are all completed as retail did now; 8 counters (Triple Triad cards,
+  orchestrion rolls, Wondrous Tails, five duty clears) and 1 Type 21 (minions) aren't tracked.
 * Each 515 `AchievementCompleted` is followed by an **ActorControl 518** (not Self) with the same ID, from the player.
   Kawari doesn't know 518 (presumably what others nearby see); it isn't sent yet. On every zone-in retail also sends 600
   `AchievementProgress` for the achievements being tracked, then 538.

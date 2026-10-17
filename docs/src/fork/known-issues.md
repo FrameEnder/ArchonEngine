@@ -119,6 +119,10 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
   SetEventState 0, SetBattle 1 and SetTarget. Kawari now spawns it not hostile and lets the first hit start it, but
   sends none of those: check in game that it can be attacked and its nameplate turns hostile.
 * **Void Call** (Quzal): scripted at 27 %; one run can't tell whether retail goes by health or by time after sequence 4.
+* **Display flags 0x008 and 0x200**: To Guard a Guardian's scenery NPCs have them (no health bar, not targetable on
+  retail); which bit does which isn't known (Kawari calls 0x008 `UNK2`, 0x200 has no name). They're copied as a pair.
+* **The gargoyle's wait** in To Guard a Guardian is 5 s after it appears, retail's time; Kawari has no "player has
+  loaded in" trigger for scripts, so a slow load could let it set off early.
 
 ## Packet sizes (from retail captures)
 

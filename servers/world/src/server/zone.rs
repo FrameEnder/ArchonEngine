@@ -709,6 +709,7 @@ impl Zone {
                     max_links,
                     link_family,
                     link_range,
+                    display_flags,
                 } = object.data
                 {
                     let base_npc = create_npc_common_spawn(game_data, base_id, name_id, hp, level);
@@ -726,6 +727,9 @@ impl Zone {
                             position: object.position,
                             rotation: object.rotation,
                             layout_id: object.layout_id,
+                            display_flags: display_flags
+                                .map(DisplayFlag)
+                                .unwrap_or(base_npc.common.display_flags),
                             ..base_npc.common
                         },
                         ..base_npc
@@ -1460,7 +1464,8 @@ pub fn handle_zone_messages(
                             && let Some(discovery_id) = range.discovery_id
                         {
                             // TODO: Check if the player is actually in this range?
-                            // TODO: This is the "old" style of map discovery where every chunk is revealed one by one as the player runs into them. It's currently unclear how retail reveals the entire map at once. As an example, for North Shroud, retail sends map_part_id 164, which reveals its entire map. When we enter North Shroud from Old Gridania, Kawari currently sends 1.
+                            // Most maps are revealed part by part as the player runs into them; A Realm Reborn's
+                            // field zones all at once, with the part retail sends for that (see WHOLE_MAP_DISCOVERY.)
                             let mut game_data = game_data.lock();
                             let Some(map_id) = game_data.get_territory_info_map_data(*zone_id)
                             else {
@@ -1470,8 +1475,12 @@ pub fn handle_zone_messages(
                                 return true;
                             };
 
-                            let msg =
-                                FromServer::LocationDiscovered(map_id.into(), discovery_id.into());
+                            let part = if game_data.reveals_whole_map(*zone_id) {
+                                crate::common::WHOLE_MAP_DISCOVERY
+                            } else {
+                                discovery_id.into()
+                            };
+                            let msg = FromServer::LocationDiscovered(map_id.into(), part);
                             network.send_to(*from_id, msg, DestinationNetwork::ZoneClients);
                             return true;
                         }

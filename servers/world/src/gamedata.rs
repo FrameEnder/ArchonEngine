@@ -1564,9 +1564,24 @@ impl GameData {
     }
 
     /// Every part of a map there is to discover, as the bits its discovered parts are kept in (Map's DiscoveryFlag:
-    /// the Central Shroud's is 16382, parts 1 to 13.)
+    /// the Central Shroud's is 16382, parts 1 to 13.) Maps that share a discovery slot (DiscoveryIndex), like the
+    /// floors of Alexander - The Cuff of the Father (map 238: parts 1-2, map 255: parts 3-4), are discovered together:
+    /// retail completed its Mapping the Realm (Key 238) with part 4 (Chronofoil capture, 2026-09-23), so this is
+    /// every part of every map in the slot.
     pub fn get_map_discovery_flag(&mut self, map_id: u32) -> Option<u32> {
-        Some(self.map_discovery(map_id)?.2)
+        let (index, two_bytes, _) = self.map_discovery(map_id)?;
+        if index < 0 {
+            return Some(self.map_discovery(map_id)?.2);
+        }
+        Some(
+            self.map_discovery
+                .as_ref()?
+                .values()
+                .filter(|(other, other_two_bytes, _)| {
+                    *other == index && *other_two_bytes == two_bytes
+                })
+                .fold(0, |all, (_, _, flag)| all | flag),
+        )
     }
 
     fn map_discovery(&mut self, map_id: u32) -> Option<(i16, bool, u32)> {
@@ -2357,6 +2372,18 @@ impl GameData {
         let row = sheet.row(npc_yell_id)?;
 
         Some(row.Name)
+    }
+
+    /// Whether discovering this zone's map reveals all of it at once: on retail, A Realm Reborn's field zones
+    /// (ExVersion 0, TerritoryIntendedUse Overworld). Exactly these 17 zones' "Mapping the Realm" achievements say
+    /// "Visit ... and unlock the area map"; every other one says "Discover every location" (XIVAPI, 2026-10-17).
+    pub fn reveals_whole_map(&mut self, zone_id: u16) -> bool {
+        self.territory_type_sheet
+            .row(zone_id.into())
+            .is_some_and(|row| {
+                row.ExVersion == 0
+                    && row.TerritoryIntendedUse == TerritoryIntendedUse::Overworld as u8
+            })
     }
 
     /// Returns the TerritoryIntendedUse for a given zone.

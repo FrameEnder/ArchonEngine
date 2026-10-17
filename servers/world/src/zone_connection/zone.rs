@@ -536,12 +536,28 @@ impl ZoneConnection {
 
     pub async fn discover_location(&mut self, map_id: u32, map_part_id: u32) {
         // Remember it, so the map stays discovered after logging out (sent back in PlayerSetup.)
+        // The whole map at once (A Realm Reborn's field zones) is every part in Map's DiscoveryFlag.
+        let parts = if map_part_id == crate::common::WHOLE_MAP_DISCOVERY {
+            self.game_data
+                .lock()
+                .get_map_discovery_flag(map_id)
+                .unwrap_or(0)
+        } else if map_part_id < 32 {
+            1 << map_part_id
+        } else {
+            0
+        };
         match self.map_discovery_slot(map_id) {
             Some((offset, width)) => {
                 let discovered = &mut self.player_data.unlock.map_discovery.data;
                 discovered.resize(MAP_DISCOVERY_BITMASK_SIZE, 0);
-                if map_part_id < width && offset + (map_part_id as usize / 8) < discovered.len() {
-                    discovered[offset + map_part_id as usize / 8] |= 1 << (map_part_id % 8);
+                if parts != 0
+                    && (width == 32 || parts >> width == 0)
+                    && offset + (width as usize / 8) <= discovered.len()
+                {
+                    for byte in 0..width as usize / 8 {
+                        discovered[offset + byte] |= (parts >> (byte * 8)) as u8;
+                    }
                 } else {
                     tracing::warn!(
                         "Map {map_id} part {map_part_id} doesn't fit its discovery bitmask, it won't be remembered"

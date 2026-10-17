@@ -90,6 +90,12 @@ pub struct MessageInfo {
     pub message: SeString,
 }
 
+/// The "part" retail sends in LocationDiscovered to reveal a whole map at once: on entering one of A Realm Reborn's
+/// field zones for the first time (Bob's Chronofoil capture, 2026-10-14: Central Shroud, map 4, part 164; North Shroud
+/// too). Every part of the map counts as discovered, which completes its "Mapping the Realm" achievement ("Visit ... and
+/// unlock the area map").
+pub const WHOLE_MAP_DISCOVERY: u32 = 164;
+
 #[derive(Clone, Debug)]
 pub enum FromServer {
     /// A chat message.
@@ -167,7 +173,8 @@ pub enum FromServer {
     NewStatusEffects(StatusEffects),
     /// An event object was spawned.
     SpawnObject(SpawnObject),
-    /// Inform the client about the location they discovered, so their map can be revealed.
+    /// Inform the client about the location they discovered, so their map can be revealed: map, part (or
+    /// `WHOLE_MAP_DISCOVERY`.)
     LocationDiscovered(u32, u32),
     /// Inform the client that a member of their party has shared a strategy board.
     StrategyBoardShared(u64, StrategyBoard),

@@ -196,8 +196,16 @@ player is sent out.
 * As on retail: Quzal goes after Galfrid, the lostwings after Miraudont, the slowbeaks after the two guards (3803267
   the bow, 3803268 the lance), both sincallers after Galfrid at first; the blanga and the gargoyle after the player.
   The masked mage stands by, spawned not hostile, until someone hits it (34 s after it appeared, on retail), then
-  goes after them, and turns on Yda when she arrives. Galfrid and Yda take the boss; Miraudont and the guards clear the
-  adds first and only then turn on Quzal; Papalymo takes the gargoyle first and then the mage.
+  goes after them, and turns on Yda when she arrives; Bob remembers it also coming once the gargoyle is down, so that
+  starts it too. The gargoyle stands by the mage at the tree until the player has loaded in after the cutscene (it set
+  off half a second after ZoneIn, 4.8 s after appearing), then comes straight for them. Galfrid and Yda take the boss;
+  Miraudont and the guards clear the adds first and only then turn on Quzal; Papalymo takes the gargoyle first and then
+  the mage.
+* The sincallers stay back by the tree behind Quzal, unlike a player healer: from where they appear (18 yalms behind
+  him) they settle about 15 yalms behind him and cast from 12-26 yalms (`range` 18, `keep_near` Quzal within 16).
+* The background guards and Ixali are scenery: retail spawns them with display flags 0x208 (no health bar, can't be
+  targeted) where the fighters have 0x001, and without CharacterData flag 0x1. The drop-in's battle NPCs take a
+  `display_flags` now, and those 13 have retail's.
 * **Checked against Bob's Chronofoil capture of the same run** (2026-10-16, `questkit chronofoil --battle 41.6`, see
   [questkit](questkit.md#chronofoil)). The raw packets say what the Recorder couldn't: which layout IDs arrived when
   (SpawnNpc), every NPC's target as it changed (retail sends ActorControlTarget SetTarget for NPCs too), the enemy

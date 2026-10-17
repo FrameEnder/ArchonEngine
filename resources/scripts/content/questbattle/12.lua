@@ -150,10 +150,16 @@ QUZAL_PHASES = {
         },
     },
 }
+-- capture: the gargoyle stands by the mage, at the tree, until the player has loaded in (it set off half a second
+-- after ZoneIn, 4.8 s after it appeared), then comes straight for them.
+GARGOYLE_WAITS_UPDATES = 10
 AFTER_CUTSCENE_STEPS = {
     { 0, "sequence", 7 },
     { 0, "spawn", { BNPC_GARGOYLE, BNPC_MAGE } },
-    { 10, "talk", SPEAKER_MAGE, 173 },
+    { GARGOYLE_WAITS_UPDATES, "talk", SPEAKER_MAGE, 173 },
+    { 0, "call", function(director)
+        director:set_hate(BNPC_GARGOYLE, nil, Battle.STARTING_ENMITY)
+    end },
     { 34, "sequence", 8 },
     { 10, "talk", SPEAKER_MAGE, 174 },
 }
@@ -196,16 +202,25 @@ BATTLE:ally(BNPC_BOW, { focus = { "slowbeaks", "adds", "boss" } })
 BATTLE:ally(BNPC_LANCE, { focus = { "slowbeaks", "adds", "boss" } })
 BATTLE:enemy(BNPC_QUZAL, { group = "boss", attacks = ENEMY_TARGETS[BNPC_QUZAL] })
 -- capture: the mage stands by until it's hit (it engaged a second after the player's first spell, 34 s in), then
--- turns on Yda when she arrives (her hits outweigh yours.)
+-- turns on Yda when she arrives (her hits outweigh yours.) Bob remembers it also coming once the gargoyle is down
+-- (that run hit it first); the gargoyle waits too (AFTER_CUTSCENE_STEPS.)
 BATTLE:enemy(BNPC_MAGE, { group = "boss", passive = true })
-for _, id in ipairs({ BNPC_BLANGA, BNPC_GARGOYLE }) do
-    BATTLE:enemy(id, { group = "adds" })
-end
+BATTLE:enemy(BNPC_GARGOYLE, { group = "adds", passive = true })
+BATTLE:enemy(BNPC_BLANGA, { group = "adds" })
 for _, wave in ipairs({ FIRST_IXALI, SECOND_IXALI }) do
     for _, id in ipairs(wave) do
         local group = LOSTWINGS[id] and { "lostwings", "adds" } or SLOWBEAKS[id] and { "slowbeaks", "adds" } or "adds"
         BATTLE:enemy(id, { group = group, attacks = ENEMY_TARGETS[id] })
     end
+end
+-- capture: the sincallers don't stand like a player healer. They stay back by the tree behind Quzal: from where they
+-- appear (18 yalms behind him) they settle about 15 yalms behind him and cast from 12-26 yalms.
+SINCALLERS = { 3803263, 3803264 }
+SINCALLER_RANGE = 18
+SINCALLER_NEAR_QUZAL = 16
+for _, id in ipairs(SINCALLERS) do
+    BATTLE.roles[id].range = SINCALLER_RANGE
+    BATTLE.roles[id].keep_near = { anchors = { BNPC_QUZAL }, within = SINCALLER_NEAR_QUZAL }
 end
 -- The heals, on whichever of their targets is lowest (HEALERS has the evidence.)
 for _, h in ipairs(HEALERS) do
@@ -226,6 +241,12 @@ for _, phases in ipairs({ { BNPC_QUZAL, QUZAL_PHASES }, { BNPC_GARGOYLE, GARGOYL
         end)
     end
 end
+-- The gargoyle down brings the mage if nobody has hit it yet.
+BATTLE:onCleared({ BNPC_GARGOYLE }, function(director)
+    if BATTLE.alive[BNPC_MAGE] then
+        director:set_hate(BNPC_MAGE, nil, Battle.STARTING_ENMITY)
+    end
+end)
 -- The first six Ixali down bring six more.
 BATTLE:onCleared(FIRST_IXALI, function()
     BATTLE:steps(SECOND_WAVE_STEPS)

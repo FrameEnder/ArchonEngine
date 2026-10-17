@@ -63,6 +63,10 @@ pub enum DropInObjectData {
         link_family: u8,
         /// How far the link family can be apart.
         link_range: u8,
+        /// If set, the spawn's display flags (`DisplayFlag`), as retail sent them. Scenery NPCs, e.g. To Guard a
+        /// Guardian's guards and Ixali fighting in the background, have 0x208: no health bar, can't be targeted.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        display_flags: Option<u32>,
     },
     /// Represents a battle or event NPC.
     #[serde(rename = "event_npc")]
