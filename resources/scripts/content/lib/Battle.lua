@@ -36,19 +36,34 @@ Battle.PLAYER = "player"
 -- too, even unique ones with no class.) An NPC given `role = "tank"`, "dps" or "support" starts from these; anything
 -- else in its table overrides them.
 --
+-- `role` is the part it plays in this fight; `class_role` the one its class has, when they differ. In Chasing Shadows
+-- Yda's class is a DPS (a pugilist) but she plays the tank, taking the toughest enemy on; Papalymo's is a DPS (a
+-- thaumaturge) and he plays a ranged sub-DPS with some support (he heals), staying near Yda and the player.
+--
 -- * Tank: leads the charge (the others hold back a moment), keeps the enemies on itself and off everyone else
 --   (`protect`: every `provoke_every` seconds it pulls an enemy that's hitting someone else onto itself, a support
 --   before a DPS before the player), with its big health pool. Up close.
--- * DPS: goes for the enemies with the most health; two (or more) DPS split them (`split`: the first takes the
+-- * DPS: the most versatile role (a DPS can carry heals and buffs too, as Papalymo's Cure, and still be a DPS):
+--   goes for the enemies with the most health; two (or more) DPS split them (`split`: the first takes the
 --   toughest, the second the next...), then clean up the adds. Can heal itself (a heal on "self".) Up close unless
 --   it's a ranged class (give it a `range`.)
--- * Support: the backline: casts from range, stays near the tank (or the player when there's none), buffs the DPS
---   first and then the tank (`buffs`), heals the tank first and then whoever else is in trouble (heals on "party":
---   the tank below `tank_below`, the others below `below`.)
+-- * Support: the backline: casts from range, stays near the tank and the player but not straight behind the tank
+--   (`stand_behind`: behind the enemy the tank is fighting, out of its cones and cleaves, since a support has the
+--   least health), buffs the DPS first and then the tank (`buffs`), heals the tank first and then whoever else is in
+--   trouble (heals on "party": the tank below `tank_below`, the others below `below`.)
+--
+-- keep_near = { anchors = { ... }, within = yalms }: anchors are layout IDs, Battle.PLAYER, or a role ("tank": its
+-- first living one); it stays within that of every one of them.
 Battle.ROLES = {
     tank = { focus = { "boss", "adds" }, order = "highest_hp", range = 3, protect = true, provoke_every = 10 },
     dps = { focus = { "boss", "adds" }, order = "highest_hp", split = true },
-    support = { focus = { "adds", "boss" }, order = "oldest", range = 15, keep_near = { role = "tank", within = 15 } },
+    support = {
+        focus = { "adds", "boss" },
+        order = "oldest",
+        range = 15,
+        keep_near = { anchors = { "tank", "player" }, within = 20 },
+        stand_behind = { role = "tank", beyond = 6 },
+    },
 }
 -- How long the others hold back after a tank charges in (in updates.)
 Battle.FOLLOW_DELAY = 4
@@ -152,12 +167,29 @@ function Battle:applyPlacement(director, layout)
         director:set_attack_range(layout, role.range)
     end
     if role.keep_near ~= nil then
-        local anchor = role.keep_near.anchor
-        -- Near a role (a support near the tank): its first living one, else the player.
-        if anchor == nil and role.keep_near.role ~= nil then
-            anchor = self:withRole(role.side, role.keep_near.role)[1]
+        local near = role.keep_near
+        local anchors = {}
+        -- anchors: layout IDs, the player, or roles (a support near the tank: its first living one.)
+        for _, anchor in ipairs(near.anchors or { near.anchor or (near.role or Battle.PLAYER) }) do
+            if anchor == Battle.PLAYER or type(anchor) == "number" then
+                table.insert(anchors, anchor)
+            else
+                local first = self:withRole(role.side, anchor)[1]
+                if first ~= nil and first ~= layout then
+                    table.insert(anchors, first)
+                end
+            end
         end
-        director:keep_near(layout, anchor, role.keep_near.within)
+        if #anchors == 0 then
+            anchors = { Battle.PLAYER }
+        end
+        director:keep_near(layout, anchors, near.within)
+    end
+    if role.stand_behind ~= nil then
+        local tank = role.stand_behind.tank or self:withRole(role.side, role.stand_behind.role or "tank")[1]
+        if tank ~= nil and tank ~= layout then
+            director:stand_behind(layout, tank, role.stand_behind.beyond or 6)
+        end
     end
 end
 
@@ -178,10 +210,26 @@ function Battle:spawn(director, layouts)
         end
         self:applyPlacement(director, layout)
     end
-    -- A support placed before its tank arrived now stays near it.
-    for other, other_role in pairs(self.roles) do
-        if self.alive[other] and other_role.keep_near ~= nil and other_role.keep_near.role ~= nil then
-            self:applyPlacement(director, other)
+    -- Anyone placed by a role (near the tank, behind its target) is placed again when an ally arrives (it may be
+    -- the tank.)
+    local ally_arrived = false
+    for _, layout in ipairs(layouts) do
+        if self.roles[layout].side == "ally" then
+            ally_arrived = true
+        end
+    end
+    for other, other_role in pairs(ally_arrived and self.roles or {}) do
+        if self.alive[other] and (other_role.stand_behind ~= nil
+                or (other_role.keep_near ~= nil and (other_role.keep_near.role ~= nil or other_role.keep_near.anchors ~= nil))) then
+            local placed_now = false
+            for _, layout in ipairs(layouts) do
+                if layout == other then
+                    placed_now = true
+                end
+            end
+            if not placed_now then
+                self:applyPlacement(director, other)
+            end
         end
     end
     self:retarget(director)

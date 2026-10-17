@@ -106,14 +106,19 @@ pub fn npc_behavior(
         })
         .map(|(id, actor)| (*id, actor.get_common_spawn().position.0))
         .collect();
-    // Where an NPC that's strayed too far from its anchor has to head back to, if it has.
-    let back_to = |keep_near: &Option<(ObjectId, f32)>, at: Vec3A| -> Option<Vec3A> {
-        let (anchor, yalms) = (*keep_near)?;
-        positions
-            .get(&anchor)
-            .copied()
-            .filter(|anchor_pos| Vec3A::distance(at, *anchor_pos) > yalms)
-    };
+    // Who everyone is targeting, for NPCs placed behind the tank's target.
+    let targets: HashMap<ObjectId, ObjectId> = instance
+        .actors
+        .iter()
+        .filter(|(_, actor)| {
+            matches!(
+                actor,
+                NetworkedActor::Player { .. } | NetworkedActor::Npc { .. }
+            )
+        })
+        .map(|(id, actor)| (*id, actor.get_common_spawn().target_id.object_id))
+        .filter(|(_, target)| target.is_valid())
+        .collect();
     let mut healed = Vec::new();
     let in_content = instance.content_id != 0 || instance.content_finder_condition_id != 0;
     // In content an NPC that can't path to its target walks the rest of the way straight, however far: our navmesh has
@@ -135,7 +140,7 @@ pub fn npc_behavior(
             state,
             timeline,
             cast,
-            keep_near,
+            placement,
             ..
         } = actor
             && let Some(current_target) = current_target
@@ -176,7 +181,21 @@ pub fn npc_behavior(
             };
 
             // If we are in distance, rotate towards target (unless it has to get back near someone first.)
-            let strayed = back_to(keep_near, spawn.common.position.0).is_some();
+            // Somewhere to be first (near its anchors, behind the tank's target): keep walking there.
+            let own_target = match current_target {
+                NpcTarget::Actor(actor) => positions.get(actor).copied(),
+                NpcTarget::Position(_) => None,
+            };
+            let strayed = !placement.is_empty()
+                && placement
+                    .goal(
+                        spawn.common.position.0,
+                        &positions,
+                        &targets,
+                        own_target,
+                        timeline.attack_range,
+                    )
+                    .is_some();
             let (position, rotation) =
                 if distance <= min_distance && !(strayed && !current_path.is_empty()) {
                     (
@@ -248,7 +267,7 @@ pub fn npc_behavior(
             cast,
             parameters,
             rotation_state,
-            keep_near,
+            placement,
             ..
         } = actor
             && *state != NpcState::Dead
@@ -452,8 +471,18 @@ pub fn npc_behavior(
 
                 if !reset_target && let Some(target_pos) = target_pos {
                     let distance = Vec3A::distance(spawn.common.position.0, target_pos);
-                    // Told to stay near someone and too far from them: head back there first.
-                    let strayed_to = back_to(keep_near, spawn.common.position.0);
+                    // Somewhere it should be first (near its anchors, behind the tank's target): go there.
+                    let strayed_to = if placement.is_empty() {
+                        None
+                    } else {
+                        placement.goal(
+                            spawn.common.position.0,
+                            &positions,
+                            &targets,
+                            Some(target_pos),
+                            timeline.attack_range,
+                        )
+                    };
                     let needs_repath = match current_target {
                         NpcTarget::Actor(_) => {
                             current_path.is_empty()

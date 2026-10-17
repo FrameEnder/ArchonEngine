@@ -75,6 +75,7 @@ use periodic::periodic_tick;
 pub use rotation::{ActionMechanics, GCD_GROUP};
 mod fate;
 mod npc_behavior;
+mod placement;
 mod rotation;
 mod social;
 mod spawn_allocator;

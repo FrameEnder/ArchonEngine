@@ -351,7 +351,7 @@ impl Instance {
                 returning_home: false,
                 cast: None,
                 rotation_state: Default::default(),
-                keep_near: None,
+                placement: Default::default(),
             },
         );
     }

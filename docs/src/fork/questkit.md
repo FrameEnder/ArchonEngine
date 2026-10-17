@@ -184,8 +184,9 @@ kit had at its level that it never used. Then a ready **`rotation` block** for i
 
 **The director's outline (draft)**: the fight cut where the director's sequence changes, and for each ally in each
 phase what it was there to do, read from what it did: its **role** (its class's, from the class kit's ClassJob `Role`,
-and the one it played: healing others is a support's job, taking half or more of its side's hits a tank's; when the
-two differ, e.g. a thaumaturge standing in as support, it says so), its focus (on the boss or the adds, by how much of its time
+and the one it played: taking half or more of its side's hits is the tank's part (a DPS taking the toughest enemy on
+plays it too); healing at least half as often as it attacks is a support's; a DPS that heals now and then is still a
+DPS, "with some support"; when class and part differ it says so), its focus (on the boss or the adds, by how much of its time
 while there were both; the boss being the standing enemy with the most max HP), its order within that group (which
 of oldest, newest, nearest, most hurt or healthiest fits its target changes, judged among the enemies it was choosing
 from), its range (median distance to its target when it acted, melee or to the nearest 5 yalms), how near it stayed to

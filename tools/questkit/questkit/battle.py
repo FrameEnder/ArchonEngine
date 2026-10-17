@@ -421,8 +421,9 @@ def class_role(b: "Battle", i: int) -> tuple[str | None, str]:
 
 
 def acting_role(b: "Battle", i: int, start: float, end: float) -> tuple[str | None, list[str]]:
-    """The role an NPC played in a stretch of the fight, from what it did: healing others is a support's job; taking
-    most of the enemies' hits (and pulling them off others) is a tank's; otherwise it dealt damage."""
+    """The role an NPC played in a stretch of the fight, from what it did: taking most of the enemies' hits is a
+    tank's part (a DPS taking the toughest enemy on plays it too); healing as much as it attacks is a support's; a DPS
+    that heals now and then (Papalymo's Cure) is still a DPS, the most versatile role."""
     facts = []
     heals_others = sum(1 for x in b.actions if x["Source"] == i and start <= x["S"] < end
                        for h in x["Targets"] if h["Id"] != i and not b.hostile(i, h["Id"])
@@ -436,14 +437,18 @@ def acting_role(b: "Battle", i: int, start: float, end: float) -> tuple[str | No
     side = [a for a in b.actors if b.is_fighter(a) and not b.hostile(i, a)]
     taken = hits_taken[i]
     total = sum(hits_taken[a] for a in side)
+    attacks = sum(1 for x in b.actions if x["Source"] == i and start <= x["S"] < end
+                  for h in x["Targets"] if b.hostile(i, h["Id"]) and any(e[0] in DAMAGE_EFFECTS for e in h["Effects"]))
     if heals_others >= 2:
-        facts.append(f"it healed others {heals_others} times")
+        facts.append(f"it healed others {heals_others} times (and attacked {attacks} times)")
     if total >= 10:
         facts.append(f"it took {taken / total:.0%} of the hits on its side")
-    if heals_others >= 2:
-        return "support", facts
     if total >= 10 and taken / total >= 0.5 and len(side) > 2:
         return "tank", facts
+    if heals_others >= 2 and heals_others * 2 >= attacks:
+        return "support", facts
+    if heals_others >= 2:
+        facts.append("a DPS with some support (it heals, but mostly attacks)")
     return "dps", facts
 
 

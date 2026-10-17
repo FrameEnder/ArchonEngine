@@ -182,11 +182,19 @@ pub enum LuaDirectorTask {
         layout_id: u32,
         yalms: f32,
     },
-    /// Keep a BNpc within `yalms` of another BNpc (by layout ID), or of the player if there's no anchor: it heads back
-    /// towards them when it's further, whatever it's fighting (a healer staying near everyone.) `None` stops it.
+    /// Keep a BNpc within `yalms` of every one of its anchors (BNpcs by layout ID; `None` is the player): it heads back
+    /// to the middle of them when it's further from any, whatever it's fighting (a support near the tank and the
+    /// player.) No anchors or no distance stops it.
     KeepNear {
         layout_id: u32,
-        anchor: Option<u32>,
+        anchors: Vec<Option<u32>>,
+        yalms: Option<f32>,
+    },
+    /// Have a BNpc stand behind the enemy another BNpc (the tank) is fighting, `yalms` beyond it: out of its frontal
+    /// cones and cleaves, where a support belongs. `None` stops it.
+    StandBehind {
+        layout_id: u32,
+        tank: u32,
         yalms: Option<f32>,
     },
     /// Make a BNpc hate another BNpc (by layout ID), or the player if there's no target, by this much enmity.
@@ -449,10 +457,39 @@ impl UserData for LuaDirector {
         );
         methods.add_method_mut(
             "keep_near",
-            |_, this, (layout_id, anchor, yalms): (u32, Option<u32>, Option<f32>)| {
+            |_, this, (layout_id, anchors, yalms): (u32, mlua::Value, Option<f32>)| {
+                // One anchor (a layout ID, or nil / "player" for the player) or a list of them.
+                let one = |value: &mlua::Value| match value {
+                    mlua::Value::Integer(layout) => Some(Some(*layout as u32)),
+                    mlua::Value::Number(layout) => Some(Some(*layout as u32)),
+                    mlua::Value::Nil => Some(None),
+                    mlua::Value::String(text) if text.to_str().is_ok_and(|t| t == "player") => {
+                        Some(None)
+                    }
+                    _ => None,
+                };
+                let anchors = match &anchors {
+                    mlua::Value::Table(list) => list
+                        .sequence_values::<mlua::Value>()
+                        .filter_map(|value| value.ok())
+                        .filter_map(|value| one(&value))
+                        .collect(),
+                    value => one(value).into_iter().collect(),
+                };
                 this.tasks.push(LuaDirectorTask::KeepNear {
                     layout_id,
-                    anchor,
+                    anchors,
+                    yalms,
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "stand_behind",
+            |_, this, (layout_id, tank, yalms): (u32, u32, Option<f32>)| {
+                this.tasks.push(LuaDirectorTask::StandBehind {
+                    layout_id,
+                    tank,
                     yalms,
                 });
                 Ok(())
@@ -1611,28 +1648,51 @@ pub fn director_tick(
             }
             LuaDirectorTask::KeepNear {
                 layout_id,
-                anchor,
+                anchors,
                 yalms,
             } => {
-                let anchor_id = match anchor {
-                    Some(anchor) => instance.find_npc(*anchor).map(|(id, _)| id),
-                    None => instance
-                        .actors
-                        .iter()
-                        .find(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
-                        .map(|(id, _)| *id),
-                };
+                let player = instance
+                    .actors
+                    .iter()
+                    .find(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+                    .map(|(id, _)| *id);
+                let anchor_ids: Vec<ObjectId> = anchors
+                    .iter()
+                    .filter_map(|anchor| match anchor {
+                        Some(anchor) => instance.find_npc(*anchor).map(|(id, _)| id),
+                        None => player,
+                    })
+                    .collect();
                 let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
                     tracing::warn!("Failed to find bnpc {layout_id} for KeepNear!");
                     continue;
                 };
-                if let Some(NetworkedActor::Npc { keep_near, .. }) =
+                if let Some(NetworkedActor::Npc { placement, .. }) =
                     instance.find_actor_mut(actor_id)
                 {
-                    *keep_near = match (anchor_id, yalms) {
-                        (Some(anchor_id), Some(yalms)) => Some((anchor_id, *yalms)),
-                        _ => None,
-                    };
+                    match yalms {
+                        Some(yalms) if !anchor_ids.is_empty() => {
+                            placement.anchors = anchor_ids;
+                            placement.within = *yalms;
+                        }
+                        _ => placement.anchors.clear(),
+                    }
+                }
+            }
+            LuaDirectorTask::StandBehind {
+                layout_id,
+                tank,
+                yalms,
+            } => {
+                let tank_id = instance.find_npc(*tank).map(|(id, _)| id);
+                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                    tracing::warn!("Failed to find bnpc {layout_id} for StandBehind!");
+                    continue;
+                };
+                if let Some(NetworkedActor::Npc { placement, .. }) =
+                    instance.find_actor_mut(actor_id)
+                {
+                    placement.behind = tank_id.zip(*yalms);
                 }
             }
             LuaDirectorTask::SetHate {

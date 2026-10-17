@@ -583,8 +583,10 @@ class OutlineTest(unittest.TestCase):
         self.assertEqual(papa["role"].get("order"), "oldest")
         self.assertGreaterEqual(papa["role"].get("range"), 8)
         self.assertIn("keep_near", papa["role"])
-        # Papalymo heals: he's playing the support (two heals in the whole fight.)
-        self.assertEqual(battle.ally_outline(b, 3, 0, 120)["role"]["role"], "support")
+        # Papalymo heals now and then but mostly attacks: still a DPS, with some support.
+        outlined = battle.ally_outline(b, 3, 0, 120)
+        self.assertEqual(outlined["role"]["role"], "dps")
+        self.assertIn("a DPS with some support (it heals, but mostly attacks)", outlined["facts"])
         self.assertEqual(yda.get("role"), "dps")
         heals = battle.ally_outline(b, 3, 0, 120)["role"]["heals"]
         self.assertEqual(heals[0]["targets"], ["player"])
@@ -611,18 +613,15 @@ class BattleFrameworkTest(unittest.TestCase):
         self.lua = LuaRuntime(unpack_returned_tuples=True)
         self.lua.execute((repo.SCRIPTS / "content" / "lib" / "Battle.lua").read_text())
         self.calls = []
-        test = self
 
-        class Director:
-            def __getattr__(self, name):
-                if name.startswith("_"):
-                    raise AttributeError(name)  # or lupa takes it for a mapping
-
-                def call(*args):
-                    args = [a for a in args if not isinstance(a, Director)]
-                    test.calls.append((name, list(args)))
-                return call
-        self.director = Director()
+        def log(name, *args):
+            self.calls.append((name, [dict(a.items()) if hasattr(a, "items") else a for a in args]))
+        self.lua.globals().LOG = log
+        # The director lives in Lua and logs through one long-lived Python function (lupa mixes up short-lived
+        # Python objects passed back and forth.)
+        self.director = self.lua.eval("""setmetatable({}, { __index = function(_, name)
+            return function(_, ...) LOG(name, ...) end
+        end })""")
         self.lua.execute("""
             B = Battle.new()
             B:ally(101, { role = "tank" })
@@ -659,7 +658,9 @@ class BattleFrameworkTest(unittest.TestCase):
         self.assertEqual(self.hates(self.DPS1)[-1], self.BOSS)
         self.assertEqual(self.hates(self.DPS2)[-1], self.ADD2)
         # The support takes the adds and stays near the tank.
-        self.assertIn(("keep_near", [self.SUPPORT, self.TANK, 15]), self.calls)
+        # ... near the tank and the player, and behind the enemy the tank is fighting (out of its cones.)
+        self.assertIn(("keep_near", [self.SUPPORT, {1: self.TANK, 2: "player"}, 20]), self.calls)
+        self.assertIn(("stand_behind", [self.SUPPORT, self.TANK, 6]), self.calls)
         # The tank pulls the boss off the support it was hitting.
         self.assertIn([self.BOSS, self.TANK], [args[:2] for name, args in self.calls if name == "set_hate"])
         # Buffs go to a DPS first.

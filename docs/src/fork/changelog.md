@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-17 | — | Roles (quest battles, questkit).
+| 2026-10-17 | — | Placement, battle roles vs class roles (quest battles, combat, questkit).
+| 2026-10-17 | `21d1075` | Roles (quest battles, questkit).
 | 2026-10-17 | `c603df3` | The battle framework, `set_attack_range`, `keep_near` and `onUpdate`'s `info` (quest battles); staying near someone (combat); the outline and telegraphs (questkit); known issues.
 | 2026-10-16 | `dbedea9` | Class rotations (combat); Recorder 2.7's class kits (recorder and diagnostics); the class profile (questkit); adding a quest battle; known issues.
 | 2026-10-16 | `29ecfc9` | Recorder 2.6's battle files and sending to Kawari Web (recorder and diagnostics, Kawari Web); the report's new sections (questkit).
@@ -63,7 +64,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Roles in the battle framework: tank (leads, pulls enemies off the others: supports first, then DPS, then the player), DPS (highest health first, two or more split the toughest enemies, can heal themselves), support (backline, near the tank, buffs DPS then tank, heals the tank first); enemies take roles too. `onUpdate`'s `info` gains each actor's target. `questkit battle`'s outline gives each ally's role, by class and by what it did. |
+| — | Placement: `keep_near` takes several anchors (Papalymo near Yda and you), `stand_behind` puts an NPC behind the enemy the tank is fighting (`server/placement.rs`); supports default to it. Roles: a battle role (`role`) apart from the class's (`class_role`): in Chasing Shadows Yda, a DPS, plays the tank, and Papalymo is a DPS with some support. questkit only calls an NPC a support when healing is a large part of what it does. |
+| `21d1075` | Roles in the battle framework: tank (leads, pulls enemies off the others: supports first, then DPS, then the player), DPS (highest health first, two or more split the toughest enemies, can heal themselves), support (backline, near the tank, buffs DPS then tank, heals the tank first); enemies take roles too. `onUpdate`'s `info` gains each actor's target. `questkit battle`'s outline gives each ally's role, by class and by what it did. |
 | `c603df3` | The battle framework (`content/lib/Battle.lua`, loaded before every quest battle's script): allies' roles (focus groups, order, range, staying near someone, heals), enemies' groups and first targets, context changes, timed steps and health/cleared phases. Chasing Shadows and To Guard a Guardian run on it (simulated: the same director calls and targets as before; Papalymo now casts from 10 yalms and stays within 15 of you). The director gets `set_attack_range` and `keep_near` (NPCs head back to their anchor), and `onUpdate` a fourth argument with everyone's HP, max HP and position. `questkit battle` drafts the director's outline per phase (focus, order, range, staying near, heals) and lists enemy telegraphs. |
 
 ### 2026-10-16

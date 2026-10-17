@@ -17,10 +17,11 @@ BNPC_PAPALYMO = 3802272
 -- (oldest first), stays near you, and heals you when you're low. Neither knows your class, so that's their job
 -- whatever you play. The boss and the "B" enemies go after them, the "A" enemies after you.
 BATTLE = Battle.new()
--- Roles: Yda is a DPS (a pugilist, up close). Papalymo's class is a DPS too (a thaumaturge), but with no tank and no
--- healer here he stands in as the support: from range, near you, healing you.
-BATTLE:ally(BNPC_IDA, { role = "dps", focus = { "boss", "adds" }, order = "highest_hp" })
--- 10 yalms is his timeline's casting distance; how near he keeps to you is a guess until a recording shows it.
+-- Roles: both are DPS by class. Yda (a pugilist) plays the tank: she takes the toughest enemy, the boss, on up close
+-- (with no tank's tools, she doesn't pull enemies off others.) Papalymo (a thaumaturge) plays a ranged sub-DPS with
+-- some support: the adds from range, staying near Yda and you, healing you when you're low.
+BATTLE:ally(BNPC_IDA, { role = "tank", class_role = "dps", protect = false, focus = { "boss", "adds" }, order = "highest_hp" })
+-- 10 yalms is his timeline's casting distance; how near he keeps to Yda and you is a guess until a recording shows it.
 PAPALYMO_RANGE = 10
 PAPALYMO_STAYS_WITHIN = 15
 INITIAL_ENEMIES = { a = {}, b = { 4094218, 4094220 } }
@@ -83,13 +84,16 @@ local next_wave = 1
 local last_wave = nil
 local heal_line_cooldown = 0
 
--- Papalymo's role, with his heal (and its line, at most every so often.)
+-- Papalymo's role, with his heal (and its line, at most every so often.) He's described after Yda's so the tank is
+-- known when he's placed.
 BATTLE:ally(BNPC_PAPALYMO, {
-    role = "support",
+    role = "dps",
+    class_role = "dps",
+    split = false,
     focus = { "adds", "boss" },
     order = "oldest",
     range = PAPALYMO_RANGE,
-    keep_near = { within = PAPALYMO_STAYS_WITHIN },
+    keep_near = { anchors = { BNPC_IDA, Battle.PLAYER }, within = PAPALYMO_STAYS_WITHIN },
     heals = { {
         action = ACTION_CURE,
         targets = { Battle.PLAYER },

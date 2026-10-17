@@ -12,6 +12,7 @@ use crate::{
         job_gauge::JobGauge,
         network::{DestinationNetwork, NetworkState},
         party::get_party_id_from_actor_id,
+        placement::Placement,
         rotation::RotationState,
     },
     zone_connection::{BaseParameters, TeleportQuery},
@@ -142,8 +143,9 @@ pub enum NetworkedActor {
         cast: Option<NpcCast>,
         /// Where it is in its class rotation (`Timeline::rotation`), if it has one.
         rotation_state: RotationState,
-        /// Stay within this many yalms of this actor, whatever it's fighting (the director's `keep_near`.)
-        keep_near: Option<(ObjectId, f32)>,
+        /// Where it should stand beyond reaching its target: near its anchors, behind the tank's target (the
+        /// director's `keep_near` and `stand_behind`.)
+        placement: Placement,
     },
     Object {
         object: SpawnObject,

@@ -57,7 +57,8 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `despawn_bnpc(layout_id)` | Removes an NPC without it dying (no `onActorDeath`). |
 | `warp_players(x, y, z, rotation)` | Moves every player in the instance through a loading screen to a position in it (PrepareZoning to the same territory, then ActorSetPos). |
 | `set_attack_range(npc, yalms)` | How close the NPC gets to its target before attacking: melee (3) or a caster's distance. |
-| `keep_near(npc, anchor, yalms)` | Keeps the NPC within `yalms` of `anchor` (an NPC's layout ID, or the player when `nil`): it heads back towards them when it's further, whatever it's fighting, as a support healer stays near everyone. `yalms` `nil` stops it. |
+| `keep_near(npc, anchors, yalms)` | Keeps the NPC within `yalms` of every anchor (one, or a list: NPC layout IDs, `"player"` or `nil` for the player): it heads back to the middle of them when it's further from any, whatever it's fighting (Papalymo near Yda and you). `yalms` `nil` stops it. |
+| `stand_behind(npc, tank, yalms)` | Has the NPC stand `yalms` behind the enemy `tank` (a layout ID) is fighting, out of its frontal cones and cleaves, as long as that keeps it near its anchors and its own target in reach. `yalms` `nil` stops it. |
 | `say(npc, key)` | NPC says a line from the quest's text sheet by key, in `/say` under its BNpcName. |
 | `say_battle_talk(npc, number, name_id)` | Says the quest's n-th `*BATTLETALK*` line (key order) under BNpcName `name_id` (0 shows `???`), even if the speaker isn't present. The log names the key it used. |
 | `yell(npc, npc_yell_id)` | NpcYell row (e.g. 118 "Curses! Not now!", 122/123 the golem's rumbles). |
@@ -94,16 +95,19 @@ BATTLE:onHealth(BNPC_BOSS, 75, function(director) BATTLE:spawn(director, WAVE_1)
 
 **Roles.** Every class belongs to one of three roles (the ClassJob sheet's `Role`: 1 tank, 2 melee and 3 ranged DPS,
 4 healer), and the role says most of what an NPC is there to do; enemies follow it too, even unique ones with no class.
-`role = "tank"`, `"dps"` or `"support"` starts an NPC from `Battle.ROLES`, and anything else in its table overrides it:
+`role = "tank"`, `"dps"` or `"support"` starts an NPC from `Battle.ROLES`, and anything else in its table overrides it.
+`role` is the part it plays in this fight; `class_role` the one its class has, when they differ:
 
 | Role | Default |
 |---|---|
 | Tank | Leads the charge: the others hold back `FOLLOW_DELAY` (2 s) when a tank is there. Keeps the enemies off everyone else (`protect`): every `provoke_every` (10) seconds it pulls onto itself an enemy that's hitting someone else, one on a support before one on a DPS before one on the player (`PROTECT_ORDER`), with more enmity each time (`TANK_ENMITY`). Up close, the toughest enemy first. |
-| DPS | The enemies with the most health (`highest_hp`). Two or more DPS **split** them: the first takes the toughest, the second the next, across their focus groups (the boss, then the adds by health), so between them they cover the high-HP enemies and clean up the adds. Can heal itself (a heal on `"self"`). Up close unless given a `range`. |
-| Support | The backline: from 15 yalms, staying within 15 of the tank (or the player when there's none). `buffs` (`{ action, every }`) go on the DPS first, then the tank, in turn. Heals on `"party"` look after the tank first (below `tank_below`, 70 %: it takes the hits) and then whoever else is lowest below `below` (50 %). For enemies, `"party"` puts their boss first. |
+| DPS | The most versatile role: a DPS can carry heals and buffs and still be a DPS. The enemies with the most health (`highest_hp`). Two or more DPS **split** them: the first takes the toughest, the second the next, across their focus groups (the boss, then the adds by health), so between them they cover the high-HP enemies and clean up the adds. Can heal itself (a heal on `"self"`). Up close unless given a `range`. |
+| Support | The backline: from 15 yalms, within 20 of the tank and the player, and **not straight behind the tank**: with the least health it has to keep out of cones and area attacks, so it stands behind the enemy the tank is fighting (`stand_behind`, 6 yalms beyond it), unless that takes it too far from the others or out of reach of its own target. `buffs` (`{ action, every }`) go on the DPS first, then the tank, in turn. Heals on `"party"` look after the tank first (below `tank_below`, 70 %: it takes the hits) and then whoever else is lowest below `below` (50 %). For enemies, `"party"` puts their boss first. |
 
-The tank's pull uses who each enemy is targeting (`info[layout].target`). In Chasing Shadows Yda is a DPS and Papalymo,
-a DPS class, stands in as the support (there's no tank or healer, and neither knows your class).
+The tank's pull uses who each enemy is targeting (`info[layout].target`). In Chasing Shadows both are DPS by class: Yda
+(a pugilist) plays the **tank**, taking the toughest enemy (the boss) on up close, without a tank's pull
+(`protect = false`); Papalymo (a thaumaturge) plays a ranged **DPS** with some support (his Cure on you), taking the adds
+and staying within 15 yalms of both Yda and you. That's why the pair is put together as it is.
 
 Allies are re-pointed whenever an enemy arrives or falls, roles change, and every 2 s (for highest-HP and nearest);
 only an ally whose target changed gets new enmity, each time more than the last (`ALLY_ENMITY`), so it switches and
@@ -131,8 +135,9 @@ player is sent out.
 
 ### Quest battle 11 — Chasing Shadows (`content/questbattle/11.lua`)
 
-* On the battle framework. Yda: the boss, then what's left, highest HP first. Papalymo: the adds (oldest first) from
-  10 yalms, staying within 15 yalms of you (a guess until a recording shows it), Cure on you below 50 %.
+* On the battle framework. Yda (DPS by class) plays the tank: the boss, then what's left, highest HP first; she goes in
+  first and Papalymo follows 2 s later. Papalymo (DPS, with some support): the adds (oldest first) from 10 yalms,
+  staying within 15 yalms of Yda and you (a guess until a recording shows it), Cure on you below 50 %.
 * Yda (3802271) and Papalymo (3802272) fight beside you. Yda goes for the boss and stays on it; Papalymo takes the adds
   (oldest first) and casts at 10 yalms. Adds start with some enmity on their ally (`STARTING_ENMITY = 300`) that the
   player can pull away; each new ally order outweighs the last (`ALLY_ENMITY = 10000`).
