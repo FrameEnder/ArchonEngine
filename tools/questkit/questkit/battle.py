@@ -406,6 +406,47 @@ ORDERS = {"oldest enemy": "oldest", "newest enemy": "newest", "nearest enemy": "
           "most hurt enemy": "lowest_hp", "healthiest enemy": "highest_hp"}
 
 
+# ClassJob's Role column: what each class is for.
+CLASS_ROLES = {1: "tank", 2: "dps", 3: "dps", 4: "support"}
+
+
+def class_role(b: "Battle", i: int) -> tuple[str | None, str]:
+    """The role an NPC's class has (from its class kit's ClassJob row), and a word on how sure that is."""
+    profile = class_profile(b, i)
+    if not profile or not profile["class_job"]:
+        return None, ""
+    kit = (b.run.get("ClassKits") or {}).get(str(profile["class_job"])) or {}
+    role = CLASS_ROLES.get(_num((kit.get("Details") or {}).get("Role")))
+    return role, f"{profile['class']}'s role" if role else ""
+
+
+def acting_role(b: "Battle", i: int, start: float, end: float) -> tuple[str | None, list[str]]:
+    """The role an NPC played in a stretch of the fight, from what it did: healing others is a support's job; taking
+    most of the enemies' hits (and pulling them off others) is a tank's; otherwise it dealt damage."""
+    facts = []
+    heals_others = sum(1 for x in b.actions if x["Source"] == i and start <= x["S"] < end
+                       for h in x["Targets"] if h["Id"] != i and not b.hostile(i, h["Id"])
+                       and any(e[0] == EFFECT_HEAL for e in h["Effects"]))
+    hits_taken = Counter()
+    for x in b.actions:
+        if start <= x["S"] < end and b.actors.get(x["Source"], {}).get("Kind") == "battle npc":
+            for h in x["Targets"]:
+                if b.hostile(x["Source"], h["Id"]) and any(e[0] in DAMAGE_EFFECTS for e in h["Effects"]):
+                    hits_taken[h["Id"]] += 1
+    side = [a for a in b.actors if b.is_fighter(a) and not b.hostile(i, a)]
+    taken = hits_taken[i]
+    total = sum(hits_taken[a] for a in side)
+    if heals_others >= 2:
+        facts.append(f"it healed others {heals_others} times")
+    if total >= 10:
+        facts.append(f"it took {taken / total:.0%} of the hits on its side")
+    if heals_others >= 2:
+        return "support", facts
+    if total >= 10 and taken / total >= 0.5 and len(side) > 2:
+        return "tank", facts
+    return "dps", facts
+
+
 def phases(b: "Battle") -> list[tuple[float, float, str]]:
     """The fight cut where the director's sequence changes: (start, end, name) each."""
     cuts = [(0.0, "start")]
@@ -435,6 +476,15 @@ def ally_outline(b: "Battle", ally: int, start: float, end: float) -> dict:
     """What one ally did in one phase, as a Battle.lua role with its evidence."""
     a = b.actors[ally]
     role, facts = {}, []
+    by_class, why = class_role(b, ally)
+    acting, acting_facts = acting_role(b, ally, start, end)
+    facts += acting_facts
+    if by_class and acting and by_class != acting:
+        facts.append(f"its class is a {by_class} ({why}) but it acted as a {acting} here")
+    elif by_class:
+        facts.append(f"a {by_class} ({why})")
+    if acting or by_class:
+        role["role"] = acting or by_class
     # Focus: on the boss, or on the adds, while there were both?
     on_boss = on_adds = 0
     t = start

@@ -583,6 +583,9 @@ class OutlineTest(unittest.TestCase):
         self.assertEqual(papa["role"].get("order"), "oldest")
         self.assertGreaterEqual(papa["role"].get("range"), 8)
         self.assertIn("keep_near", papa["role"])
+        # Papalymo heals: he's playing the support (two heals in the whole fight.)
+        self.assertEqual(battle.ally_outline(b, 3, 0, 120)["role"]["role"], "support")
+        self.assertEqual(yda.get("role"), "dps")
         heals = battle.ally_outline(b, 3, 0, 120)["role"]["heals"]
         self.assertEqual(heals[0]["targets"], ["player"])
         self.assertEqual(heals[0]["action"], 120)
@@ -592,6 +595,87 @@ class OutlineTest(unittest.TestCase):
         self.assertIn("## The director's outline (draft)", text)
         self.assertIn("BATTLE:ally(3802271", text)
         self.assertIn('"change", "sequence 3"', text)
+
+
+class BattleFrameworkTest(unittest.TestCase):
+    """content/lib/Battle.lua's roles, run in Lua: a tank, two DPS and a support against a boss and two adds."""
+
+    TANK, DPS1, DPS2, SUPPORT, BOSS, ADD1, ADD2 = 101, 102, 103, 104, 201, 202, 203
+
+    def setUp(self):
+        try:
+            from lupa import LuaRuntime
+        except ImportError:
+            self.skipTest("lupa isn't installed")
+        from questkit import repo
+        self.lua = LuaRuntime(unpack_returned_tuples=True)
+        self.lua.execute((repo.SCRIPTS / "content" / "lib" / "Battle.lua").read_text())
+        self.calls = []
+        test = self
+
+        class Director:
+            def __getattr__(self, name):
+                if name.startswith("_"):
+                    raise AttributeError(name)  # or lupa takes it for a mapping
+
+                def call(*args):
+                    args = [a for a in args if not isinstance(a, Director)]
+                    test.calls.append((name, list(args)))
+                return call
+        self.director = Director()
+        self.lua.execute("""
+            B = Battle.new()
+            B:ally(101, { role = "tank" })
+            B:ally(102, { role = "dps" })
+            B:ally(103, { role = "dps", range = 15 })
+            B:ally(104, { role = "support", heals = { { action = 120, targets = "party", below = 50, tank_below = 70, every = 2 } },
+                buffs = { { action = 7, every = 30 } } })
+            B:enemy(201, { group = "boss", attacks = 104 })
+            B:enemy(202, { group = "adds" })
+            B:enemy(203, { group = "adds" })
+        """)
+        self.battle = self.lua.globals().B
+
+    def update(self, health, info, n=1):
+        for _ in range(n):
+            self.battle.update(self.battle, self.director, self.lua.table_from(health), 100,
+                               self.lua.table_from({k: self.lua.table_from(v) for k, v in info.items()}))
+
+    def hates(self, who):
+        return [args[1] for name, args in self.calls if name == "set_hate" and args[0] == who]
+
+    def test_roles(self):
+        b, d = self.battle, self.director
+        b.spawn(b, d, self.lua.table_from([self.TANK, self.DPS1, self.DPS2, self.SUPPORT]))
+        b.spawn(b, d, self.lua.table_from([self.BOSS, self.ADD1, self.ADD2]))
+        # The tank charges in at once; the others hold back.
+        self.assertEqual(self.hates(self.TANK), [self.BOSS])
+        self.assertEqual(self.hates(self.DPS1), [])
+        health = {self.TANK: 100, self.DPS1: 100, self.DPS2: 100, self.SUPPORT: 100, self.BOSS: 100, self.ADD1: 100, self.ADD2: 100}
+        info = {self.BOSS: {"hp": 5000, "target": self.SUPPORT}, self.ADD1: {"hp": 900}, self.ADD2: {"hp": 1200},
+                self.TANK: {"hp": 3000}}
+        self.update(health, info, 5)
+        # Then the DPS split the toughest between them: the boss, then the add with more health.
+        self.assertEqual(self.hates(self.DPS1)[-1], self.BOSS)
+        self.assertEqual(self.hates(self.DPS2)[-1], self.ADD2)
+        # The support takes the adds and stays near the tank.
+        self.assertIn(("keep_near", [self.SUPPORT, self.TANK, 15]), self.calls)
+        # The tank pulls the boss off the support it was hitting.
+        self.assertIn([self.BOSS, self.TANK], [args[:2] for name, args in self.calls if name == "set_hate"])
+        # Buffs go to a DPS first.
+        buffs = [args for name, args in self.calls if name == "use_action" and args[1] == 7]
+        self.assertIn(buffs[0][2], (self.DPS1, self.DPS2))
+        # Heals: the tank at 65% before a DPS at 40% (the tank's threshold is higher: it takes the hits.)
+        self.calls.clear()
+        health.update({self.TANK: 65, self.DPS1: 40})
+        self.update(health, info, 1)
+        heals = [args for name, args in self.calls if name == "use_action" and args[1] == 120]
+        self.assertEqual(heals[0][2], self.TANK)
+        self.calls.clear()
+        health.update({self.TANK: 90})
+        self.update(health, info, 5)
+        heals = [args for name, args in self.calls if name == "use_action" and args[1] == 120]
+        self.assertEqual(heals[0][2], self.DPS1)
 
 
 if __name__ == "__main__":

@@ -31,6 +31,32 @@ Battle.RETARGET_EVERY = 4
 -- The player, wherever a target list takes NPC layout IDs.
 Battle.PLAYER = "player"
 
+-- ---- Roles ----
+-- Every class belongs to one of three roles, and the role says most of what an NPC is there to do (enemies follow it
+-- too, even unique ones with no class.) An NPC given `role = "tank"`, "dps" or "support" starts from these; anything
+-- else in its table overrides them.
+--
+-- * Tank: leads the charge (the others hold back a moment), keeps the enemies on itself and off everyone else
+--   (`protect`: every `provoke_every` seconds it pulls an enemy that's hitting someone else onto itself, a support
+--   before a DPS before the player), with its big health pool. Up close.
+-- * DPS: goes for the enemies with the most health; two (or more) DPS split them (`split`: the first takes the
+--   toughest, the second the next...), then clean up the adds. Can heal itself (a heal on "self".) Up close unless
+--   it's a ranged class (give it a `range`.)
+-- * Support: the backline: casts from range, stays near the tank (or the player when there's none), buffs the DPS
+--   first and then the tank (`buffs`), heals the tank first and then whoever else is in trouble (heals on "party":
+--   the tank below `tank_below`, the others below `below`.)
+Battle.ROLES = {
+    tank = { focus = { "boss", "adds" }, order = "highest_hp", range = 3, protect = true, provoke_every = 10 },
+    dps = { focus = { "boss", "adds" }, order = "highest_hp", split = true },
+    support = { focus = { "adds", "boss" }, order = "oldest", range = 15, keep_near = { role = "tank", within = 15 } },
+}
+-- How long the others hold back after a tank charges in (in updates.)
+Battle.FOLLOW_DELAY = 4
+-- How much enmity a tank's pull gives it on the enemy it pulls (more each time, so it holds.)
+Battle.TANK_ENMITY = 50000
+-- Whom a tank protects first, then next...
+Battle.PROTECT_ORDER = { support = 1, dps = 2, player = 3 }
+
 function Battle.new()
     local self = setmetatable({}, Battle)
     self.roles = {}      -- layout ID -> its role (side, group, focus, order, range, keep_near, heals, attacks)
@@ -46,6 +72,8 @@ function Battle.new()
     self.player_health = nil
     self.updates = 0
     self.context = "start"
+    self.hold = {}       -- ally layout ID -> the update it may start fighting (others wait for the tank)
+    self.tank_priority = 0
     return self
 end
 
@@ -62,13 +90,27 @@ end
 -- one of a group: "oldest", "newest", "highest_hp", "lowest_hp", "nearest"), range (how close it gets, in yalms),
 -- keep_near ({ anchor = layout ID or nil for the player, within = yalms }), heals (see Battle:heal.)
 function Battle:ally(layout, role)
-    self.roles[layout] = merge({ side = "ally", focus = { "any" }, order = "oldest" }, role)
+    local preset = role and role.role and Battle.ROLES[role.role] or {}
+    self.roles[layout] = merge(merge({ side = "ally", focus = { "any" }, order = "oldest" }, preset), role)
 end
 
 -- An NPC on the other side. role: group (e.g. "boss", "adds"; several groups can be given as a list), attacks (who
 -- it goes after first: an ally's layout ID, or nil for the player), enmity (how much), heals, range.
+-- `role` (tank, dps, support) matters for enemies too: whom their supports heal first, whom a tank protects.
 function Battle:enemy(layout, role)
     self.roles[layout] = merge({ side = "enemy", group = "adds" }, role)
+end
+
+-- The living NPCs of a side with a role, in the order they were described (stable.)
+function Battle:withRole(side, role_name)
+    local list = {}
+    for layout, role in pairs(self.roles) do
+        if role.side == side and role.role == role_name and self.alive[layout] then
+            table.insert(list, layout)
+        end
+    end
+    table.sort(list)
+    return list
 end
 
 -- Changes roles from now on, e.g. when the boss is gone or new allies join: changes = { [layout] = { focus = ... } }.
@@ -110,7 +152,12 @@ function Battle:applyPlacement(director, layout)
         director:set_attack_range(layout, role.range)
     end
     if role.keep_near ~= nil then
-        director:keep_near(layout, role.keep_near.anchor, role.keep_near.within)
+        local anchor = role.keep_near.anchor
+        -- Near a role (a support near the tank): its first living one, else the player.
+        if anchor == nil and role.keep_near.role ~= nil then
+            anchor = self:withRole(role.side, role.keep_near.role)[1]
+        end
+        director:keep_near(layout, anchor, role.keep_near.within)
     end
 end
 
@@ -125,8 +172,17 @@ function Battle:spawn(director, layouts)
             table.insert(self.arrived, layout)
             self.arrival[layout] = #self.arrived
             director:set_hate(layout, role.attacks, role.enmity or Battle.STARTING_ENMITY) -- nil is the player
+        elseif role.role ~= "tank" and #self:withRole("ally", "tank") > 0 then
+            -- The tank goes in first; everyone else follows a moment later.
+            self.hold[layout] = self.updates + Battle.FOLLOW_DELAY
         end
         self:applyPlacement(director, layout)
+    end
+    -- A support placed before its tank arrived now stays near it.
+    for other, other_role in pairs(self.roles) do
+        if self.alive[other] and other_role.keep_near ~= nil and other_role.keep_near.role ~= nil then
+            self:applyPlacement(director, other)
+        end
     end
     self:retarget(director)
 end
@@ -198,9 +254,51 @@ function Battle:pick(ally, candidates, order)
     return best
 end
 
--- What an ally should be fighting now: the first of its focus groups with anyone left, by its order.
+-- Every candidate across an ally's focus groups, each group in its order (for DPS splitting the enemies.)
+function Battle:pool(ally, role)
+    local pool, seen = {}, {}
+    for _, group in ipairs(role.focus or { "any" }) do
+        local candidates = self:living(group)
+        while #candidates > 0 do
+            local best = self:pick(ally, candidates, role.order)
+            for i, layout in ipairs(candidates) do
+                if layout == best then
+                    table.remove(candidates, i)
+                    break
+                end
+            end
+            if not seen[best] then
+                seen[best] = true
+                table.insert(pool, best)
+            end
+        end
+    end
+    return pool
+end
+
+-- What an ally should be fighting now: the first of its focus groups with anyone left, by its order. DPS that split
+-- take the toughest, the next toughest... between them, by their place among the DPS that split.
 function Battle:targetFor(ally)
     local role = self.roles[ally]
+    if role.split then
+        local splitters = {}
+        for layout, other in pairs(self.roles) do
+            if other.side == role.side and other.split and self.alive[layout] then
+                table.insert(splitters, layout)
+            end
+        end
+        table.sort(splitters)
+        if #splitters > 1 then
+            local rank = 1
+            for i, layout in ipairs(splitters) do
+                if layout == ally then
+                    rank = i
+                end
+            end
+            local pool = self:pool(ally, role)
+            return pool[rank] or pool[1]
+        end
+    end
     for _, group in ipairs(role.focus or { "any" }) do
         local candidates = self:living(group)
         if #candidates > 0 then
@@ -213,7 +311,7 @@ end
 -- Points every ally at its target, changing only those whose target changed (so enmity doesn't pile up.)
 function Battle:retarget(director)
     for layout, role in pairs(self.roles) do
-        if role.side == "ally" and self.alive[layout] then
+        if role.side == "ally" and self.alive[layout] and (self.hold[layout] or 0) <= self.updates then
             local target = self:targetFor(layout)
             if target ~= nil and target ~= self.targets[layout] then
                 self.priority = self.priority + Battle.ALLY_ENMITY
@@ -236,16 +334,39 @@ function Battle:runHeals(director)
                 heal.wait = (heal.wait or 0) - 1
                 if heal.wait <= 0 then
                     local targets = heal.targets
-                    if targets == "allies" then
-                        targets = { Battle.PLAYER }
+                    local first = {}
+                    if targets == "allies" or targets == "party" then
+                        targets = role.side == "ally" and { Battle.PLAYER } or {}
                         for other, other_role in pairs(self.roles) do
                             if other_role.side == role.side and self.alive[other] then
-                                table.insert(targets, other)
+                                -- "party": the tank first (or, for enemies, their boss), the rest after.
+                                if heal.targets == "party" and (other_role.role == "tank"
+                                        or (role.side == "enemy" and inGroup(other_role, "boss"))) then
+                                    table.insert(first, other)
+                                else
+                                    table.insert(targets, other)
+                                end
                             end
                         end
                     end
-                    local best, best_health = nil, heal.below
-                    for _, target in ipairs(targets) do
+                    local best, best_health = nil, nil
+                    -- The tank first, below its own threshold (higher: it takes the hits.)
+                    if #first > 0 then
+                        best_health = heal.tank_below or 70
+                        for _, target in ipairs(first) do
+                            local current = self.health[target]
+                            if current ~= nil and current > 0 and current < best_health then
+                                best, best_health = target, current
+                            end
+                        end
+                    end
+                    if best == nil then
+                        best_health = heal.below or 50
+                    end
+                    for _, target in ipairs(best == nil and targets or {}) do
+                        if target == "self" then
+                            target = layout
+                        end
                         local current
                         if target == Battle.PLAYER then
                             current = self.player_health
@@ -267,6 +388,63 @@ function Battle:runHeals(director)
                             heal.say(director)
                         end
                     end
+                end
+            end
+        end
+    end
+end
+
+-- ---- Tanks and supports ----
+
+-- A tank pulls an enemy that's hitting someone else onto itself, every so often: one hitting a support first, then a
+-- DPS, then the player.
+function Battle:runTanks(director)
+    for _, tank in ipairs(self:withRole("ally", "tank")) do
+        local role = self.roles[tank]
+        if role.protect then
+            role.provoke_wait = (role.provoke_wait or 0) - 1
+            if role.provoke_wait <= 0 then
+                local best, best_rank = nil, nil
+                for _, enemy in ipairs(self:living("any")) do
+                    local info = self.info[enemy]
+                    local target = info and info.target
+                    local rank = nil
+                    if target == Battle.PLAYER then
+                        rank = Battle.PROTECT_ORDER.player
+                    elseif target ~= nil and target ~= tank and self.roles[target] ~= nil
+                        and self.roles[target].side == "ally" then
+                        rank = Battle.PROTECT_ORDER[self.roles[target].role or "dps"] or Battle.PROTECT_ORDER.dps
+                    end
+                    if rank ~= nil and (best_rank == nil or rank < best_rank) then
+                        best, best_rank = enemy, rank
+                    end
+                end
+                if best ~= nil then
+                    self.tank_priority = self.tank_priority + Battle.TANK_ENMITY
+                    director:set_hate(best, tank, self.tank_priority)
+                    role.provoke_wait = math.floor((role.provoke_every or 10) * 2)
+                end
+            end
+        end
+    end
+end
+
+-- A support's buffs ({ action, every (s) } each): on the DPS first, then the tank, one after another.
+function Battle:runBuffs(director)
+    for layout, role in pairs(self.roles) do
+        if role.buffs ~= nil and self.alive[layout] then
+            local order = {}
+            for _, name in ipairs({ "dps", "tank" }) do
+                for _, other in ipairs(self:withRole(role.side, name)) do
+                    table.insert(order, other)
+                end
+            end
+            for _, buff in ipairs(role.buffs) do
+                buff.wait = (buff.wait or 0) - 1
+                if buff.wait <= 0 and #order > 0 then
+                    buff.next = (buff.next or 0) % #order + 1
+                    director:use_action(layout, buff.action, order[buff.next])
+                    buff.wait = math.floor((buff.every or 30) * 2 / #order)
                 end
             end
         end
@@ -391,6 +569,8 @@ function Battle:update(director, health, player_health, info)
     self.info = info or {}
     self:runPending(director)
     self:runHeals(director)
+    self:runTanks(director)
+    self:runBuffs(director)
     self:checkTriggers(director)
     if self.updates % Battle.RETARGET_EVERY == 0 then
         self:retarget(director)

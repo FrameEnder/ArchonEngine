@@ -92,6 +92,19 @@ BATTLE:onHealth(BNPC_BOSS, 75, function(director) BATTLE:spawn(director, WAVE_1)
 | `steps(list)` | Timed steps, one after another: `{ updates after the one before, kind, … }` with kinds `sequence`, `talk`, `say`, `yell`, `spawn`, `remove`, `action`, `change`, `call`. A step runs the update after its count is up. |
 | `onHealth(layout, percent, fn)`, `onCleared(group or list, fn)` | Phases: once an NPC's health reaches a mark (or it falls before it), once a group (or a list) that arrived has all fallen. |
 
+**Roles.** Every class belongs to one of three roles (the ClassJob sheet's `Role`: 1 tank, 2 melee and 3 ranged DPS,
+4 healer), and the role says most of what an NPC is there to do; enemies follow it too, even unique ones with no class.
+`role = "tank"`, `"dps"` or `"support"` starts an NPC from `Battle.ROLES`, and anything else in its table overrides it:
+
+| Role | Default |
+|---|---|
+| Tank | Leads the charge: the others hold back `FOLLOW_DELAY` (2 s) when a tank is there. Keeps the enemies off everyone else (`protect`): every `provoke_every` (10) seconds it pulls onto itself an enemy that's hitting someone else, one on a support before one on a DPS before one on the player (`PROTECT_ORDER`), with more enmity each time (`TANK_ENMITY`). Up close, the toughest enemy first. |
+| DPS | The enemies with the most health (`highest_hp`). Two or more DPS **split** them: the first takes the toughest, the second the next, across their focus groups (the boss, then the adds by health), so between them they cover the high-HP enemies and clean up the adds. Can heal itself (a heal on `"self"`). Up close unless given a `range`. |
+| Support | The backline: from 15 yalms, staying within 15 of the tank (or the player when there's none). `buffs` (`{ action, every }`) go on the DPS first, then the tank, in turn. Heals on `"party"` look after the tank first (below `tank_below`, 70 %: it takes the hits) and then whoever else is lowest below `below` (50 %). For enemies, `"party"` puts their boss first. |
+
+The tank's pull uses who each enemy is targeting (`info[layout].target`). In Chasing Shadows Yda is a DPS and Papalymo,
+a DPS class, stands in as the support (there's no tank or healer, and neither knows your class).
+
 Allies are re-pointed whenever an enemy arrives or falls, roles change, and every 2 s (for highest-HP and nearest);
 only an ally whose target changed gets new enmity, each time more than the last (`ALLY_ENMITY`), so it switches and
 stays. Chasing Shadows and To Guard a Guardian run on it; simulated against their previous scripts (lupa), every

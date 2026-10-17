@@ -207,6 +207,9 @@ pub struct ActorInfo {
     pub hp: u32,
     pub max_hp: u32,
     pub position: glam::Vec3A,
+    /// Who it's targeting: an NPC's layout ID, or the player.
+    pub target_layout: Option<u32>,
+    pub target_is_player: bool,
 }
 
 // TODO: Maybe collapse into DirectorData?
@@ -521,7 +524,8 @@ impl DirectorData {
     }
 
     /// Called every server tick for scripts that define `onUpdate`, with the health (in percent) of every living NPC
-    /// by its layout ID, the player's, and (fourth) everyone's details: `info[layout] = { hp, max_hp, x, y, z }`, and
+    /// by its layout ID, the player's, and (fourth) everyone's details: `info[layout] = { hp, max_hp, x, y, z, target }`
+    /// (`target`: the layout ID it's after, or "player"), and
     /// `info.player` the same for the player, for scripts that need real numbers or distances (content/lib/Battle.lua.)
     pub fn update(
         &mut self,
@@ -548,6 +552,11 @@ impl DirectorData {
                 entry.set("x", actor.position.x)?;
                 entry.set("y", actor.position.y)?;
                 entry.set("z", actor.position.z)?;
+                if let Some(target) = actor.target_layout {
+                    entry.set("target", target)?;
+                } else if actor.target_is_player {
+                    entry.set("target", "player")?;
+                }
                 match key.parse::<u32>() {
                     Ok(layout_id) => details.set(layout_id, entry)?,
                     Err(_) => details.set(key.as_str(), entry)?,
@@ -901,7 +910,21 @@ fn update_director(instance: &mut Instance) {
         }
         _ => None,
     });
-    // Everyone's real numbers and position: living NPCs by layout ID, and "player".
+    // Everyone's real numbers, position and target: living NPCs by layout ID, and "player".
+    let layout_of: HashMap<ObjectId, u32> = instance
+        .actors
+        .iter()
+        .filter_map(|(id, actor)| match actor {
+            NetworkedActor::Npc { spawn, .. } => Some((*id, spawn.common.layout_id)),
+            _ => None,
+        })
+        .collect();
+    let players: Vec<ObjectId> = instance
+        .actors
+        .iter()
+        .filter(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+        .map(|(id, _)| *id)
+        .collect();
     let mut info = HashMap::new();
     for actor in instance.actors.values() {
         let key = match actor {
@@ -912,10 +935,13 @@ fn update_director(instance: &mut Instance) {
             _ => continue,
         };
         let common = actor.get_common_spawn();
+        let target = common.target_id.object_id;
         info.entry(key).or_insert(ActorInfo {
             hp: common.health_points,
             max_hp: common.max_health_points,
             position: common.position.0,
+            target_layout: layout_of.get(&target).copied(),
+            target_is_player: players.contains(&target),
         });
     }
     if let Some(director) = instance.directors.first_mut() {
