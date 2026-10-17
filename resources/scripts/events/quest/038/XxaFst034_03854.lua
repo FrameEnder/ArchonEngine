@@ -3,7 +3,7 @@
 -- Checked against the client's quest script (kawari-questdump):
 -- Sequence 0:   ACTOR0 offers the quest (scene 0, returns 1 when accepted), then explains it (scene 1.)
 -- Sequence 1:   defeat ENEMY0 to collect three of ITEM0. The client counts ITEM0 in UI8BH, both for the journal's
---               todo (it's done at 3) and for the items you hold.
+--               todo (it's done at 3) and for the items you hold. Each egg sends notice 0 [count, 3, icon].
 -- Sequence 255: hand the ITEM0s to ACTOR1 (trade scene 2, returns 1 when handed over), then the reward (scene 3.)
 
 SCENE_OFFER = 0
@@ -12,6 +12,10 @@ SCENE_TRADE = 2
 SCENE_FINISH = 3
 
 ITEMS_NEEDED = 3
+
+-- Retail's notice for each egg, with ITEM0's icon (Bob's Chronofoil capture of 2026-10-14.)
+NOTICE_EGGS = 0
+ITEM0_ICON = 22623
 
 -- Quest variables: UI8A..F are bytes 0..5, H is the high nibble and L the low one.
 function getVar(player, byte, high)
@@ -60,6 +64,7 @@ function onBNpcKill(base_id, layout_id, player)
 
     local collected = getVar(player, 1, true) + 1 -- UI8BH
     setVar(player, 1, true, collected)
+    player:event_notice(EVENT_ID, NOTICE_EGGS, { collected, ITEMS_NEEDED, ITEM0_ICON })
     if collected >= ITEMS_NEEDED then
         player:quest_sequence(EVENT_ID, 255)
     end

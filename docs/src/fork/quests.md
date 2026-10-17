@@ -94,7 +94,14 @@ advanced**, and its arguments are either:
 
 0–2 arguments are sent as **EventNotice2** (opcode 386 on 7.57), 3–4 as **EventNotice4** (210); more than 4 is refused
 with a warning. Retail sends them at specific moments (some quests only on the last kill, some on every step), so take
-them from the recording, not from guesswork. The table of what each quest sends is in each script's header.
+them from the recording, not from guesswork. The number is the todo's, not the order things were done in: Close to
+Home's three objectives send 0, 1 and 2 whichever is done first, the last one included. Some todos send none
+(Spirithold Broken's battle and aftermath, Chasing Shadows' everything but the item).
+
+Bob's Chronofoil captures have every notice of his sessions (`UpdateQuest`: index, 3 bytes, quest u16, sequence,
+flags, accepting class, 5 bytes, then the 6 variables at offset 14). The early Gridania quests' fixtures took theirs
+from the capture of 2026-10-14: each notice goes with the first quest change at most 0.5 s before it, matched to the
+fixture's steps by state. The table of what each quest sends is in each script's header.
 
 ### NPC trades
 
@@ -195,14 +202,14 @@ Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `
 
 | ID | Quest | Script | Checked against | What it involves |
 |---|---|---|---|---|
-| 124 | Close to Home (Conjurer) | `001/ManFst004_00124` | client script, recording | Moves the player from the opening's New Gridania (183) into the real one (132); three objectives in any order: attune (also teaches Return, sets BitFlag8 1), visit the guild, deliver ITEM0 (held in UI8CH); UI8AH counts the objectives done. Lancer/Archer variants not done. |
-| 28 | To the Bannock | `000/SubFst005_00028` | client script | Offer, report at the Bannock, chosen reward. |
-| 201 | Passing Muster | `002/SubFst045_00201` | client script | The client checks item level 5 gear itself and returns 0 if not. |
-| 445 | Chasing Shadows | `004/ManFst005_00445` | client script, recording (replay) | Examine the blade (scene 2, Process event action; UI8AL remembers it until the battle starts), quest battle 11, aftermath on re-entering, second blade gives ITEM0 (UI8BH), trade. |
-| 3854 | Eggs over Queasy | `038/XxaFst034_03854` | client script | Three chigoe kills each give an egg (UI8BH), trade. |
-| 175 | Surveying the Damage | `001/SubFst038_00175` | client script, recording | Four searches → three todos, BitFlag8s 1–4, item counts move at 255; the three-item trade returns 12 results (EventReturnHandler16). |
-| 3855 | A Soldier's Breakfast | `038/XxaFst031_03855` | client script, recording | Anole egg (Interacting bar) + three anole kills in any order, egg moves to UI8BH at sequence 2, trade. |
-| 129 | Spirithold Broken | `001/SubFst035_00129` | client script, Sapphire, recording | Aid five (Aiding bar, BitFlag8 1–5), the Hearer or EOBJECT0 offers quest battle 15, post-battle cutscene, reward. |
+| 124 | Close to Home (Conjurer) | `001/ManFst004_00124` | client script, recording, Chronofoil capture (notices) | Moves the player from the opening's New Gridania (183) into the real one (132); three objectives in any order: attune (also teaches Return, sets BitFlag8 1), visit the guild, deliver ITEM0 (held in UI8CH); UI8AH counts the objectives done; notice 0, 1 or 2 for each (by objective). Lancer/Archer variants not done. |
+| 28 | To the Bannock | `000/SubFst005_00028` | client script, Chronofoil capture | Offer, report at the Bannock, chosen reward. |
+| 201 | Passing Muster | `002/SubFst045_00201` | client script, Chronofoil capture | The client checks item level 5 gear itself and returns 0 if not. |
+| 445 | Chasing Shadows | `004/ManFst005_00445` | client script, recording (replay), Chronofoil capture (notices, quest battle) | Examine the blade (scene 2, Process event action; UI8AL remembers it until the battle starts), quest battle 11, aftermath on re-entering, second blade gives ITEM0 (UI8BH, notice 2 `[30426]`, the only notice), trade. |
+| 3854 | Eggs over Queasy | `038/XxaFst034_03854` | client script, Chronofoil capture | Three chigoe kills each give an egg (UI8BH, notice 0 `[count, 3, 22623]`), trade. |
+| 175 | Surveying the Damage | `001/SubFst038_00175` | client script, recording, Chronofoil capture (notices) | Four searches → three todos, BitFlag8s 1–4, notices 0 `[26151]`, 1 `[count, 2, 21002]`, 2 `[26103]`, item counts move at 255; the three-item trade returns 12 results (EventReturnHandler16). |
+| 3855 | A Soldier's Breakfast | `038/XxaFst031_03855` | client script, recording, Chronofoil capture (notices) | Anole egg (Interacting bar) + three anole kills in any order (notices 0 `[25251]` and 1 `[count, 3]`), notice 2 on reporting, egg moves to UI8BH at sequence 2, trade. |
+| 129 | Spirithold Broken | `001/SubFst035_00129` | client script, Sapphire, recording, Chronofoil capture (notices, quest battle) | Notice 0 at Spirithold; aid five (Aiding bar, BitFlag8 1–5, notice 1 `[count, 5]`), the Hearer or EOBJECT0 offers quest battle 15, post-battle cutscene, notice 4 on reporting back, reward. |
 | 176 | On to Bentbranch | `001/SubFst027_00176` | client script, recording | Accepting goes straight to sequence 255. |
 | 376 | You Shall Not Trespass | `003/SubFst049_00376` | client script, recording | Notice 0 on reaching Roseline; four qiqirn kills, notice 1 `[count, 4]` each. |
 | 377 | Don't Look Down | `003/SubFst056_00377` | client script, Sapphire, recording | Four trumpets searched, BitFlag8 1–4, notice 0 `[count, 4]`. |

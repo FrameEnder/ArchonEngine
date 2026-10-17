@@ -1,7 +1,7 @@
 {
   "quest": 3855,
   "script": "XxaFst031_03855",
-  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387",
+  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387; notices from Bob's Chronofoil capture of retail 2026.10.06",
   "params": {
     "ACTOR0": 1000685,
     "EOBJECT0": 2000010,
@@ -18,7 +18,8 @@
       "what": "ACTOR0",
       "expect": {
         "sequence": 1,
-        "vars": "000000000000"
+        "vars": "000000000000",
+        "notices": []
       }
     },
     {
@@ -26,7 +27,8 @@
       "what": "ENEMY0",
       "expect": {
         "sequence": 1,
-        "vars": "001000000000"
+        "vars": "001000000000",
+        "notices": [[1, [1, 3]]]
       }
     },
     {
@@ -34,7 +36,8 @@
       "what": "ENEMY0",
       "expect": {
         "sequence": 1,
-        "vars": "002000000000"
+        "vars": "002000000000",
+        "notices": [[1, [2, 3]]]
       }
     },
     {
@@ -42,7 +45,8 @@
       "what": "ENEMY0",
       "expect": {
         "sequence": 1,
-        "vars": "103000000000"
+        "vars": "103000000000",
+        "notices": [[1, [3, 3]]]
       }
     },
     {
@@ -50,7 +54,8 @@
       "what": "EOBJECT0",
       "expect": {
         "sequence": 2,
-        "vars": "001000000000"
+        "vars": "001000000000",
+        "notices": [[0, [25251]]]
       }
     },
     {
@@ -58,14 +63,16 @@
       "what": "ACTOR0",
       "expect": {
         "sequence": 255,
-        "vars": "001000000000"
+        "vars": "001000000000",
+        "notices": [[2, []]]
       }
     },
     {
       "talk": 1000408,
       "what": "ACTOR1",
       "expect": {
-        "completed": true
+        "completed": true,
+        "notices": []
       }
     }
   ]

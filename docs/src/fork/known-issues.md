@@ -19,8 +19,13 @@ add one when something is found.
 
 ## Quest battles and directors
 
-* **Battle talk**: Leia's Legacy and To Guard a Guardian use the window (DirectorPopupMessage) with retail's text IDs;
-  Chasing Shadows and Spirithold Broken still say their lines in `/say` until their text IDs are recorded.
+* **Battle talk**: every quest battle uses the window (DirectorPopupMessage) with retail's text IDs, except Papalymo's
+  line when he heals you in Chasing Shadows, still said in `/say`: retail's text ID for it hasn't been seen (he didn't
+  heal in the capture). Its neighbours suggest 129, unconfirmed.
+* After winning a quest battle, Kawari moves the quest on as "Duty Complete" plays; retail sends the UpdateQuest after
+  the closing scene (seen in all four battles of Bob's Chronofoil captures). The client doesn't seem to mind.
+* Open-world monsters' speech bubbles aren't sent (retail: an idle level 6 monster in the Central Shroud, and one
+  fighting other NPCs, each with a value in NpcYell's `param1`, 88 and 37, whose meaning isn't known).
 * Chasing Shadows' enemies only auto-attack (no skills yet).
 * NPCs fighting each other without `recorded_amounts` use their stat-based damage (unscaled); only Leia's Legacy and
   To Guard a Guardian have recorded amounts so far.

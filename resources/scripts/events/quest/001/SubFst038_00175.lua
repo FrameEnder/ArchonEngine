@@ -10,6 +10,8 @@
 --               again, and UI8AH counts the todos completed. Once all three are done, retail moves straight to
 --               sequence 255 and keeps only the item counts, where the client looks for them then: ITEM0 in
 --               UI8BH, ITEM1 in UI8BL, ITEM2 in UI8CH.
+--               Each search sends its todo's notice: 0 with the records' icon, 1 [count, 2, icon] for the
+--               instruments, 2 with the rope's icon.
 -- Sequence 255: hand the items to ACTOR1 (trade scene 5, returns 1 when handed over), then the reward (scene 92.)
 
 SCENE_OFFER = 0
@@ -25,6 +27,14 @@ OBJECTS = {
 }
 
 INSTRUMENTS_NEEDED = 2
+
+-- The notices, with the icons retail sends (Bob's Chronofoil capture of 2026-10-14.)
+NOTICE_RECORDS = 0
+NOTICE_INSTRUMENTS = 1
+NOTICE_ROPE = 2
+RECORDS_ICON = 26151
+INSTRUMENTS_ICON = 21002
+ROPE_ICON = 26103
 
 -- Quest variables: UI8A..F are bytes 0..5, H is the high nibble and L the low one.
 function getVar(player, byte, high)
@@ -101,11 +111,13 @@ function searched(player, scene)
         setVar(player, 2, true, 1) -- UI8CH: ITEM0
         setFlag(player, 1)
         todoDone(player)
+        player:event_notice(EVENT_ID, NOTICE_RECORDS, { RECORDS_ICON })
     elseif scene == 2 or scene == 3 then
         local instruments = getVar(player, 1, true) + 1 -- UI8BH
         setVar(player, 1, true, instruments)
         setVar(player, 2, false, getVar(player, 2, false) + 1) -- UI8CL: ITEM1
         setFlag(player, scene) -- flag 2 or 3
+        player:event_notice(EVENT_ID, NOTICE_INSTRUMENTS, { instruments, INSTRUMENTS_NEEDED, INSTRUMENTS_ICON })
         if instruments >= INSTRUMENTS_NEEDED then
             todoDone(player)
         end
@@ -114,6 +126,7 @@ function searched(player, scene)
         setVar(player, 3, true, 1) -- UI8DH: ITEM2
         setFlag(player, 4)
         todoDone(player)
+        player:event_notice(EVENT_ID, NOTICE_ROPE, { ROPE_ICON })
     end
 
     if getVar(player, 0, false) >= 1 and getVar(player, 1, true) >= INSTRUMENTS_NEEDED and getVar(player, 1, false) >= 1 then

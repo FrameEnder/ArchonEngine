@@ -54,24 +54,28 @@ ACTION_CURE = 120
 HEAL_BELOW_HEALTH = 50
 HEAL_COOLDOWN_UPDATES = 8
 
--- Ida and Papalymo's battle chatter, by key in the quest's text sheet. The server looks the lines up in the game data.
--- (On retail these are the battle talk window, DirectorPopupMessage; until their text IDs are recorded, they're said in
--- /say.) When and in what order
--- is from Kawari Recorder's recording of retail: the first lines 4.5 seconds after the fight gets going, the first
--- wave's 10 seconds after it arrives, each pair 5 seconds apart.
-TEXT_PREFIX = "TEXT_MANFST005_00445_"
-LINES_START = { { BNPC_PAPALYMO, "PAPALYMO_BATTLETALK_01" }, { BNPC_IDA, "YDA_BATTLETALK_01" } }
+-- Ida and Papalymo's battle chatter, in the battle talk window (DirectorPopupMessage): who says it (their BNpcName and
+-- portrait in this battle) and the content's text ID, from Bob's Chronofoil capture of retail (2026-10-14). When and in
+-- what order is from Kawari Recorder's recording of retail, and the capture agrees: the first lines 4.5 seconds after
+-- the fight gets going, the first wave's 10 seconds after it arrives, each pair 5 seconds apart.
+SPEAKER_PAPALYMO = { layout = BNPC_PAPALYMO, name = 1376, icon = 0x11dcc }
+SPEAKER_IDA = { layout = BNPC_IDA, name = 1375, icon = 0x11dc4 }
+LINES_START = { { SPEAKER_PAPALYMO, 126 }, { SPEAKER_IDA, 130 } }
 LINES_START_DELAY = 9
 LINES_WAVE = {
-    [1] = { { BNPC_IDA, "YDA_BATTLETALK_02" }, { BNPC_PAPALYMO, "PAPALYMO_BATTLETALK_02" } },
+    [1] = { { SPEAKER_IDA, 131 }, { SPEAKER_PAPALYMO, 127 } },
 }
 LINES_WAVE_DELAY = 19
--- When the last wave arrives, Papalymo yells "Curses! Not now!" (NpcYell 118, a speech bubble) about 6.5 seconds later.
-YELL_LAST_WAVE = 118
+-- About 7 seconds after the last wave arrives, Papalymo yells "Curses! Not now!" (NpcYell 118, a speech bubble), and
+-- Yda yells NpcYell 117 1.5 seconds later (the capture.)
+YELLS_LAST_WAVE = { { BNPC_PAPALYMO, 118 }, { BNPC_IDA, 117 } }
 YELL_LAST_WAVE_DELAY = 13
+YELL_GAP_UPDATES = 3
 -- Once the last wave's enemies are defeated, Papalymo says this.
-LINE_LAST_WAVE_CLEARED = { { BNPC_PAPALYMO, "PAPALYMO_BATTLETALK_03" } }
--- Said when Papalymo heals the player, at most this often (in updates.)
+LINE_LAST_WAVE_CLEARED = { { SPEAKER_PAPALYMO, 128 } }
+-- Said in /say when Papalymo heals the player, at most this often (in updates): the quest's text by key, as retail's
+-- text ID for it hasn't been seen (no heal in the capture.)
+TEXT_PREFIX = "TEXT_MANFST005_00445_"
 LINE_HEAL = "PAPALYMO_BATTLETALK_04"
 HEAL_LINE_COOLDOWN_UPDATES = 40
 -- How many updates apart lines said together are.
@@ -125,16 +129,21 @@ function enemies(wave)
     return ids
 end
 
--- Lines said one after another (LINE_GAP_UPDATES apart), the first after `delay` updates.
+-- Battle talk lines ({ speaker, text ID }) one after another (LINE_GAP_UPDATES apart), the first after `delay` updates.
 function lines(list, delay)
     local steps = {}
     for n, line in ipairs(list) do
         local gap = n == 1 and (delay or 0) or LINE_GAP_UPDATES
-        if type(line[2]) == "number" then
-            table.insert(steps, { gap, "yell", line[1], line[2] })
-        else
-            table.insert(steps, { gap, "say", line[1], TEXT_PREFIX .. line[2] })
-        end
+        table.insert(steps, { gap, "talk", line[1], line[2] })
+    end
+    return steps
+end
+
+-- Speech bubbles ({ layout, NpcYell }) one after another (YELL_GAP_UPDATES apart), the first after `delay` updates.
+function yells(list, delay)
+    local steps = {}
+    for n, yell in ipairs(list) do
+        table.insert(steps, { n == 1 and delay or YELL_GAP_UPDATES, "yell", yell[1], yell[2] })
     end
     return steps
 end
@@ -151,7 +160,7 @@ for n, wave in ipairs(WAVES) do
             BATTLE:steps(lines(LINES_WAVE[n], LINES_WAVE_DELAY))
         end
         if WAVES[n + 1] == nil then
-            BATTLE:steps(lines({ { BNPC_PAPALYMO, YELL_LAST_WAVE } }, YELL_LAST_WAVE_DELAY))
+            BATTLE:steps(yells(YELLS_LAST_WAVE, YELL_LAST_WAVE_DELAY))
             last_wave = enemies(wave)
             BATTLE:onCleared(last_wave, function()
                 BATTLE:steps(lines(LINE_LAST_WAVE_CLEARED))

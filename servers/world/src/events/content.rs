@@ -9,8 +9,13 @@ use crate::{Event, EventHandler, ToServer, ZoneConnection, lua::LuaPlayer};
 /// The "duty complete" fanfare when winning a quest battle.
 pub const QUEST_BATTLE_SCENE_COMPLETE: u16 = 60001;
 /// Played after `QUEST_BATTLE_SCENE_COMPLETE`, before the player is sent back, unless the director picks another
-/// (`complete_quest_battle`'s third argument; retail plays 6 in Leia's Legacy and 11 in To Guard a Guardian.)
+/// (`complete_quest_battle`'s third argument; retail plays 6 in Leia's Legacy and 11 in To Guard a Guardian, 9 in
+/// Spirithold Broken.)
 pub const QUEST_BATTLE_SCENE_FINISH: u16 = 6;
+/// The flags `QUEST_BATTLE_SCENE_FINISH` (or the director's pick) is played with, unless the director gives others:
+/// HIDE_HOTBAR | NO_DEFAULT_CAMERA, as retail plays the last scene of Chasing Shadows, To Guard a Guardian and Leia's
+/// Legacy. Spirithold Broken's is a cutscene (0xF8402EFB). From Bob's Chronofoil captures, 2026-10-14 and 16.
+pub const QUEST_BATTLE_SCENE_FINISH_FLAGS: u32 = 0x2001;
 
 /// For content director events.
 /// This is mostly a dummy struct, most of the logic exists in the global server state.
@@ -61,7 +66,7 @@ impl EventHandler for ContentEventHandler {
                     connection
                         .quest_battle_finish_scene
                         .unwrap_or(QUEST_BATTLE_SCENE_FINISH),
-                    SceneFlags::HIDE_HOTBAR | SceneFlags::NO_DEFAULT_CAMERA,
+                    SceneFlags::from_bits_retain(connection.quest_battle_finish_flags),
                     Vec::new(),
                 );
                 return;

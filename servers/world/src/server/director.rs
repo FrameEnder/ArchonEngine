@@ -26,7 +26,8 @@ use parking_lot::Mutex;
 use physis::TerritoryIntendedUse;
 
 use crate::{
-    ClientId, FromServer, GameData, QUEST_BATTLE_SCENE_FINISH, ToServer,
+    ClientId, FromServer, GameData, QUEST_BATTLE_SCENE_FINISH, QUEST_BATTLE_SCENE_FINISH_FLAGS,
+    ToServer,
     gamedata::GimmickAccessorType,
     lua::KawariLua,
     server::{
@@ -120,6 +121,8 @@ pub enum LuaDirectorTask {
         stay: bool,
         /// The scene played before they're sent back, see `QUEST_BATTLE_SCENE_FINISH`.
         finish_scene: u16,
+        /// Its scene flags, see `QUEST_BATTLE_SCENE_FINISH_FLAGS`.
+        finish_flags: u32,
     },
     /// Play one of the director's scenes for every player (e.g. a cutscene halfway through a quest battle), with
     /// these scene flags. The script's `onSceneFinished(director, scene)` is called when a player finishes it.
@@ -346,11 +349,19 @@ impl UserData for LuaDirector {
         });
         methods.add_method_mut(
             "complete_quest_battle",
-            |_, this, (sequence, stay, finish_scene): (u8, Option<bool>, Option<u16>)| {
+            |_,
+             this,
+             (sequence, stay, finish_scene, finish_flags): (
+                u8,
+                Option<bool>,
+                Option<u16>,
+                Option<u32>,
+            )| {
                 this.tasks.push(LuaDirectorTask::CompleteQuestBattle {
                     sequence,
                     stay: stay.unwrap_or(false),
                     finish_scene: finish_scene.unwrap_or(QUEST_BATTLE_SCENE_FINISH),
+                    finish_flags: finish_flags.unwrap_or(QUEST_BATTLE_SCENE_FINISH_FLAGS),
                 });
                 Ok(())
             },
@@ -1305,6 +1316,7 @@ pub fn director_tick(
                 sequence,
                 stay,
                 finish_scene,
+                finish_flags,
             } => {
                 let quest_id = instance.directors.first().unwrap().quest_battle_quest_id;
                 let mut network = network.lock();
@@ -1317,6 +1329,7 @@ pub fn director_tick(
                         *sequence,
                         *stay,
                         *finish_scene,
+                        *finish_flags,
                     ),
                     DestinationNetwork::ZoneClients,
                 );

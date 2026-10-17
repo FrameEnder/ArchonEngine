@@ -47,7 +47,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 |---|---|
 | `spawn_bnpc(layout_id)` | (upstream) Spawns a drop-in NPC. |
 | `set_sequence(n)` | Sets the director's sequence and sends DirectorVars (its first byte is the sequence). The client's own battle script reacts to it (e.g. `OnSequence001` sets the duty objective). `0xFE` = lost, shows "Duty Failed". |
-| `complete_quest_battle(quest_sequence, stay, finish_scene)` | Wins: the quest moves to `quest_sequence`, "Duty Complete" and the victory fanfare (60001) play, then `finish_scene` (default 6, `QUEST_BATTLE_SCENE_FINISH`; retail plays 6 in Leia's Legacy and 11 in To Guard a Guardian) and the players go back. With `stay = true` the players remain (for closing lines) until `leave_quest_battle()`. |
+| `complete_quest_battle(quest_sequence, stay, finish_scene)` | Wins: the quest moves to `quest_sequence`, "Duty Complete" and the victory fanfare (60001) play, then `finish_scene` (default 6, `QUEST_BATTLE_SCENE_FINISH`; retail plays 6 in Chasing Shadows and Leia's Legacy, 11 in To Guard a Guardian, 9 in Spirithold Broken) with `finish_flags` (default 0x2001, HIDE_HOTBAR and NO_DEFAULT_CAMERA, as retail plays all of them but Spirithold Broken's, a cutscene with 0xF8402EFB), and the players go back when it ends. With `stay = true` the players remain (for closing lines) until `leave_quest_battle()`. |
 | `leave_quest_battle()` | Sends the players back where they entered. |
 | `fail_quest_battle()` | Loses: players go back where they entered, the quest stays on the same step to retry. Retail sets sequence `0xFE` first and sends them out about 6 s later. |
 | `set_hate(npc, target, amount)` | Gives NPC `npc` enmity on `target` (another NPC's layout ID, or the player when `nil`). Used to make allies and enemies fight each other. |
@@ -61,7 +61,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `stand_behind(npc, tank, yalms)` | Has the NPC stand `yalms` behind the enemy `tank` (a layout ID) is fighting, out of its frontal cones and cleaves, as long as that keeps it near its anchors and its own target in reach. `yalms` `nil` stops it. |
 | `say(npc, key)` | NPC says a line from the quest's text sheet by key, in `/say` under its BNpcName. |
 | `say_battle_talk(npc, number, name_id)` | Says the quest's n-th `*BATTLETALK*` line (key order) under BNpcName `name_id` (0 shows `???`), even if the speaker isn't present. The log names the key it used. |
-| `yell(npc, npc_yell_id)` | NpcYell row (e.g. 118 "Curses! Not now!", 122/123 the golem's rumbles). |
+| `yell(npc, npc_yell_id)` | A speech bubble over the NPC: NpcYell row (e.g. 117/118 Yda's and Papalymo's in Chasing Shadows, 122/123 the golem's rumbles). The packet (NpcYell) is the actor, 4 bytes, the speaker's BNpcName (for a battle NPC; upstream's comment says ENpcResident), the NpcYell row, then four u32 parameters, 0 in every quest battle bubble on retail. |
 
 ## The battle framework (`content/lib/Battle.lua`)
 
@@ -121,8 +121,9 @@ Guardian. Layout (40 bytes): speaker actor (ObjectTypeId, 8 bytes), director han
 pad byte and two u32 parameters. Upstream's struct had the kind as `ObjectKind`, which writes a second byte for a
 BattleNpc and makes the packet 41 bytes; it's a plain `u8` now. OverlayPlugin reads the same packet (its BattleTalk2:
 opcode 162, 40 bytes, the same fields; see [Outside sources](sources.md#overlayplugin)). The text IDs are the content's own (101–106 in Leia's
-Legacy, 161–181 in To Guard a Guardian), so they're copied from the recording. Chasing Shadows and Spirithold Broken
-still use `say`/`say_battle_talk` (in chat), until their text IDs are recorded.
+Legacy, 161–181 in To Guard a Guardian, 126–131 in Chasing Shadows, 152–154 in Spirithold Broken), so they're copied
+from a recording or capture. A speaker who isn't in the battle (Spirithold Broken's masked mage) is sent with no actor
+and no portrait, only the BNpcName.
 
 The retail flow around a quest battle, from the same recording: EventStart (type 0x0f) and the opening scene 1;
 when it ends, EventStart 0x0d with scene 60000 and the fight starts (Kawari's `onCommence`); on winning scene 60001,
@@ -145,8 +146,11 @@ player is sent out.
 * Waves arrive as the boss drops to 75 %, 50 % and 25 % (Sapphire's layout IDs).
 * Yda: Pugilist rotation (Bootshine, True Strike, Snap Punch, 3 s apart). Papalymo: Thunder (refreshed as it runs out),
   Fire and Blizzard, and **Cure on the player below 50 %** at most every 4 s, with a line at most every 20 s.
-* Director sequence as recorded on retail: 1 at the start, 2 at 8.5 s, 3–5 with each wave, 6 on winning. Papalymo
-  yells NpcYell 118 as the last wave arrives, "Well done!" once it's cleared.
+* Director sequence as recorded on retail: 1 at the start, 2 at 8.5 s, 3–5 with each wave, 6 on winning.
+* Battle talk with retail's text IDs (Bob's Chronofoil capture, 2026-10-14): Papalymo 126 and Yda 130 4.5 s after the
+  fight starts, Yda 131 and Papalymo 127 10 s after the first wave, each pair 5 s apart, Papalymo 128 once the last
+  wave is cleared; Papalymo's BNpcName here is 1376 (portrait 0x11DCC), Yda's 1375 (0x11DC4). Speech bubbles about
+  7 s after the last wave: Papalymo's NpcYell 118, then Yda's 117 1.5 s later. Closing scene 6 (0x2001).
 * Losing: sequence `0xFE`, out after 6 s. Winning moves the quest to sequence 2.
 * Not yet: the enemies' own skills (auto-attacks only).
 
@@ -155,9 +159,12 @@ player is sent out.
 * The clay golem (layout 3869528, level 10, 844 HP) with auto-attacks, **True Grit** (120° cone, Blind) and
   **Plaincracker** (circle around it).
 * Timed from a retail recording (seconds from entering): sequence 1 at 0.5 s, rumble and sequence 2 at 10.6 s, the
-  masked mage's lines and sequences 3–8 through the fight, "Duty Complete" the moment the golem falls (sequence 9),
-  two more lines, and out at about 143 s (`complete_quest_battle(4, true)`, then `leave_quest_battle()`). Health
-  thresholds for lines and skills are Sapphire's (65 %, 60 %, 30 %, 15 %).
+  masked mage's lines (battle talk 152, 153 and 154, BNpcName 750, no speaker actor or portrait) and sequences 3–8
+  through the fight, "Duty Complete" the moment the golem falls (sequence 9), then the battle's scene 9, a cutscene
+  (0xF8402EFB) with two more lines the client plays itself, and out when it ends, at about 143 s
+  (`complete_quest_battle(4, false, 9, 0xF8402EFB)`). The text IDs and the closing scene are from Bob's Chronofoil
+  capture (2026-10-14), whose timings agree with the recording. Health thresholds for lines and skills are
+  Sapphire's (65 %, 60 %, 30 %, 15 %).
 * Winning moves the quest to sequence 4; re-entering the Central Shroud plays the aftermath (scene 23).
 
 ### Quest battle 14 — Leia's Legacy (`content/questbattle/14.lua`)

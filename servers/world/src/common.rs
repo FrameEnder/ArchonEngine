@@ -211,8 +211,9 @@ pub enum FromServer {
         level: u8,
     },
     /// The quest battle was won: its director, and the quest and sequence it advances.
-    /// Whether the players stay afterwards (until `LeaveQuestBattle`), and the scene played before they leave.
-    QuestBattleComplete(HandlerId, u32, u8, bool, u16),
+    /// Whether the players stay afterwards (until `LeaveQuestBattle`), and the scene played before they leave, with its
+    /// scene flags.
+    QuestBattleComplete(HandlerId, u32, u8, bool, u16, u32),
     /// Send the player back from the won quest battle they stayed in.
     LeaveQuestBattle(HandlerId),
     /// The quest battle was lost, send them back to where they entered it.

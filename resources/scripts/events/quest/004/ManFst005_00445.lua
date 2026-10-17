@@ -7,7 +7,8 @@
 --               QUESTBATTLE0 takes place in TERRITORYTYPE0, and winning it moves the quest to sequence 2.
 -- Sequence 2:   coming back into the Central Shroud plays the aftermath cutscenes (scene 5.)
 -- Sequence 3:   examine the second magicked blade, EOBJECT1 (EVENT_ACTION_PROCESS_SHOR), which gives you ITEM0.
---               ITEM0 is held in UI8BH from here on.
+--               ITEM0 is held in UI8BH from here on, and notice 2 shows its icon (the only notice retail sends in
+--               this quest.)
 -- Sequence 255: hand ITEM0 to ACTOR0 (trade scene 9, returns 1 when handed over), then the reward (scene 10.)
 
 SCENE_OFFER = 0
@@ -17,6 +18,10 @@ SCENE_ENTER_BATTLE = 3
 SCENE_AFTERMATH = 5
 SCENE_TRADE = 9
 SCENE_FINISH = 10
+
+-- Retail's one notice, for ITEM0, with its icon (Bob's Chronofoil capture of 2026-10-14.)
+NOTICE_ITEM0 = 2
+ITEM0_ICON = 30426
 
 CUTSCENE_FLAGS = FADE_OUT | CONDITION_CUTSCENE | HIDE_UI
 AFTERMATH_FLAGS = NO_DEFAULT_CAMERA | CONDITION_CUTSCENE | SILENT_ENTER_TERRI_ENV | HIDE_HOTBAR | SILENT_ENTER_TERRI_BGM | SILENT_ENTER_TERRI_SE | DISABLE_STEALTH | UNK1 | LOCK_HUD | LOCK_HOTBAR | DISABLE_CANCEL_EMOTE
@@ -87,6 +92,7 @@ function onEventActionCast(player)
         play(player, SCENE_ENTER_BATTLE, HIDE_HOTBAR)
     elseif sequence == 3 then
         setVar(player, 1, true, 1) -- UI8BH = 1: ITEM0
+        player:event_notice(EVENT_ID, NOTICE_ITEM0, { ITEM0_ICON })
         player:quest_sequence(EVENT_ID, 255)
         player:finish_event()
     else

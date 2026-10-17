@@ -50,8 +50,8 @@ use kawari::packet::{ConnectionState, ConnectionType, SegmentData, parse_packet_
 use kawari_world::lua::{KawariLua, KawariLuaState, LuaPlayer};
 use kawari_world::{
     CLIENT_QUEUE_SIZE, ChatConnection, CustomIpcConnection, Event, EventHandler, GameData,
-    ObsfucationData, QUEST_BATTLE_SCENE_COMPLETE, QUEST_BATTLE_SCENE_FINISH, Roulette,
-    TeleportReason, ZoneConnection,
+    ObsfucationData, QUEST_BATTLE_SCENE_COMPLETE, QUEST_BATTLE_SCENE_FINISH,
+    QUEST_BATTLE_SCENE_FINISH_FLAGS, Roulette, TeleportReason, ZoneConnection,
 };
 use kawari_world::{
     ChatConnectionChannels, ChatPlayerData, ClientHandle, ClientId, FromServer, MessageInfo,
@@ -212,6 +212,7 @@ async fn initial_setup(
                     event_action_id: 0,
                     quest_battle_stay: false,
                     quest_battle_finish_scene: None,
+                    quest_battle_finish_flags: QUEST_BATTLE_SCENE_FINISH_FLAGS,
                     can_share_teleport: false,
                     exp_chain: (0, None),
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
@@ -4371,11 +4372,19 @@ async fn process_server_msg(
                     );
                 }
             }
-            FromServer::QuestBattleComplete(handler_id, quest_id, sequence, stay, finish_scene) => {
+            FromServer::QuestBattleComplete(
+                handler_id,
+                quest_id,
+                sequence,
+                stay,
+                finish_scene,
+                finish_flags,
+            ) => {
                 // The quest moves on straight away, the scenes are just the victory fanfare.
                 connection.set_quest_sequence(quest_id, sequence).await;
                 connection.quest_battle_stay = stay;
                 connection.quest_battle_finish_scene = Some(finish_scene);
+                connection.quest_battle_finish_flags = finish_flags;
 
                 connection
                     .start_event(
@@ -4420,7 +4429,7 @@ async fn process_server_msg(
                 if events.last_mut().is_some() {
                     lua_player.play_scene(
                         finish_scene,
-                        SceneFlags::HIDE_HOTBAR | SceneFlags::NO_DEFAULT_CAMERA,
+                        SceneFlags::from_bits_retain(connection.quest_battle_finish_flags),
                         Vec::new(),
                     );
                 }

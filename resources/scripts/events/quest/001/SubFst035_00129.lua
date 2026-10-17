@@ -13,6 +13,8 @@
 -- Sequence 4:   coming back into the Central Shroud plays the cutscenes after it (scene 23), then sequence 5.
 -- Sequence 5:   report to ACTOR1 (scene 24.)
 -- Sequence 255: Mother Miounne (ACTOR8) and the reward (scene 25.)
+-- Notices (retail): 0 on reporting to ACTOR1, 1 [count, 5] for each one found, 4 on reporting to ACTOR1 after the
+-- battle. None for the battle or the cutscenes after it.
 
 SCENE_OFFER = 0
 SCENE_ACCEPTED = 1
@@ -32,6 +34,11 @@ EVACUEES = {
     [ACTOR6] = { scene = 16, flag = 5 },
 }
 EVACUEES_NEEDED = 5
+
+-- The notices retail sends (Bob's Chronofoil capture of 2026-10-14.)
+NOTICE_REPORTED = 0
+NOTICE_FOUND = 1
+NOTICE_REPORTED_AFTER = 4
 
 CUTSCENE_FLAGS = FADE_OUT | CONDITION_CUTSCENE | HIDE_UI
 AFTERMATH_FLAGS = NO_DEFAULT_CAMERA | CONDITION_CUTSCENE | SILENT_ENTER_TERRI_ENV | HIDE_HOTBAR | SILENT_ENTER_TERRI_BGM | SILENT_ENTER_TERRI_SE | DISABLE_STEALTH | UNK1 | LOCK_HUD | LOCK_HOTBAR | DISABLE_CANCEL_EMOTE
@@ -122,6 +129,7 @@ function found(player, flag)
     local count = getVar(player, 0, false) + 1 -- UI8AL
     setVar(player, 0, false, count)
     setFlag(player, flag)
+    player:event_notice(EVENT_ID, NOTICE_FOUND, { count, EVACUEES_NEEDED })
     if count >= EVACUEES_NEEDED then
         player:quest_sequence(EVENT_ID, 3)
         for byte = 0, 5 do
@@ -145,6 +153,7 @@ function sceneFinished(scene, results, player)
         player:accept_quest(EVENT_ID)
         player:quest_sequence(EVENT_ID, 1)
     elseif scene == SCENE_ALESTAN then
+        player:event_notice(EVENT_ID, NOTICE_REPORTED)
         player:quest_sequence(EVENT_ID, 2)
     elseif aiding ~= nil and scene == aiding.scene then
         local flag = aiding.flag
@@ -159,6 +168,7 @@ function sceneFinished(scene, results, player)
     elseif scene == SCENE_AFTERMATH then
         player:quest_sequence(EVENT_ID, 5)
     elseif scene == SCENE_ALESTAN_AFTER then
+        player:event_notice(EVENT_ID, NOTICE_REPORTED_AFTER)
         player:quest_sequence(EVENT_ID, 255)
     elseif scene == SCENE_FINISH then
         if results[1] == 1 then

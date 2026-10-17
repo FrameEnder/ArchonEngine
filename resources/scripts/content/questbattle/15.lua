@@ -4,27 +4,32 @@
 -- Timed against Kawari Recorder's recording of retail (seconds from entering):
 --   0.5   director sequence 1, "Defeat the clay golem!"
 --   10.6  the golem rumbles (NpcYell 122) and the fight starts: sequence 2
---   39.4  the masked mage: "You are strong..." (battle talk 1), sequence 3; True Grit lands at 46.2 (4 second cast)
+--   39.4  the masked mage's first line (battle talk 152), sequence 3; True Grit lands at 46.2 (4 second cast)
 --   47.2  sequence 4
---   52.2  "Yesss...writhe!..." (battle talk 2), sequence 5
+--   52.2  his second (153), sequence 5
 --   75.1  sequence 6; it rumbles (NpcYell 123) and casts Plaincracker, which lands at 80.2
 --   91.9  sequence 7; True Grit again, landing at 97.0, then Plaincracker landing at 103.2
---   106.6 the masked mage: "Impossible!..." (battle talk 3), sequence 8
---   118.8 the golem falls: sequence 9 and "Duty Complete"
---   131.2, 134.0 two more lines (battle talk 4 and 5), and out at 143.5
+--   106.6 his third (154), sequence 8
+--   118.8 the golem falls: sequence 9 and "Duty Complete", then the battle's scene 9 (a cutscene with two more
+--         lines, played by the client) and out when it ends, at 143.5
 -- The health at which the lines and skills come is Sapphire's (65%, 60%, 30%, 15%.)
 --
--- The battle talk is the quest's text whose keys contain BATTLETALK, in key order (the server logs which it found.)
--- On retail it's shown in the battle talk window, which Kawari can't show yet, so it's said in chat instead.
+-- Bob's Chronofoil capture of the same battle (2026-10-14) gave the battle talk's text IDs and the scenes: the three
+-- lines come through the battle talk window (DirectorPopupMessage) under BNpcName 750 with no portrait and no
+-- speaker actor (he isn't in the battle), and the closing scene is 9 with cutscene flags.
 
 -- Where retail puts the player and which way they face: their SpawnPlayer in Bob's Chronofoil capture (2026-10-14).
 START_POSITION = { x = 255.77, y = 24.0, z = 191.24 }
 START_ROTATION = -1.544
 
 BNPC_GOLEM = INIT_POP_01 or 3869528
--- Who's talking: the masked mage, by BNpcName (BNPC_NAME_01.) 0 shows "???", as retail does for the other voice.
+-- Who's talking: the masked mage, by BNpcName (BNPC_NAME_01), for all three lines; retail sends no portrait.
 SPEAKER_MASKED_MAGE = BNPC_NAME_01 or 750
-SPEAKER_UNKNOWN = 0
+SPEAKER_ICON = 0
+-- The battle talk lines, by the content's text ID (from the capture.)
+TEXT_STRONG = 152
+TEXT_WRITHE = 153
+TEXT_IMPOSSIBLE = 154
 
 ACTION_TRUE_GRIT = DEF_ACTION_SAND_BREATH or 445
 ACTION_PLAINCRACKER = 482
@@ -33,6 +38,9 @@ YELL_RUMBLE = 123
 
 -- The quest moves to this sequence when the battle is won.
 QUEST_SEQUENCE_AFTER_WIN = 4
+-- The scene retail plays after "Duty Complete", and its flags (a cutscene); the player leaves when it ends.
+FINISH_SCENE = 9
+FINISH_SCENE_FLAGS = 0xF8402EFB
 SEQUENCE_FAILED = 0xFE
 -- How many updates (half a second each) after the player falls before sending them out.
 FAIL_DELAY_UPDATES = 12
@@ -45,11 +53,11 @@ PHASES = {
     {
         health = 65,
         steps = {
-            { 0, "talk", 1, SPEAKER_MASKED_MAGE },
+            { 0, "talk", TEXT_STRONG },
             { 0, "sequence", 3 },
             { 6, "action", ACTION_TRUE_GRIT },
             { 10, "sequence", 4 },
-            { 10, "talk", 2, SPEAKER_UNKNOWN },
+            { 10, "talk", TEXT_WRITHE },
             { 0, "sequence", 5 },
         },
     },
@@ -67,19 +75,16 @@ PHASES = {
     {
         health = 15,
         steps = {
-            { 0, "talk", 3, SPEAKER_MASKED_MAGE },
+            { 0, "talk", TEXT_IMPOSSIBLE },
             { 0, "sequence", 8 },
         },
     },
 }
 
--- Once it falls: "Duty Complete" straight away (players stay), the last lines, then they're sent back.
+-- Once it falls: "Duty Complete" straight away, then the closing cutscene, then they're sent back.
 WON_STEPS = {
     { 0, "sequence", 9 },
     { 0, "complete" },
-    { 25, "talk", 4, SPEAKER_UNKNOWN },
-    { 6, "talk", 5, SPEAKER_UNKNOWN },
-    { 19, "leave" },
 }
 
 local next_phase = 1
@@ -110,15 +115,13 @@ function runStep(director, step)
     if kind == "sequence" then
         director:set_sequence(step[3])
     elseif kind == "talk" then
-        director:say_battle_talk(BNPC_GOLEM, step[3], step[4])
+        director:battle_talk(0, SPEAKER_MASKED_MAGE, step[3], SPEAKER_ICON)
     elseif kind == "yell" then
         director:yell(BNPC_GOLEM, step[3])
     elseif kind == "action" then
         director:use_action(BNPC_GOLEM, step[3]) -- at the player
     elseif kind == "complete" then
-        director:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN, true) -- they stay for the last lines
-    elseif kind == "leave" then
-        director:leave_quest_battle()
+        director:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN, false, FINISH_SCENE, FINISH_SCENE_FLAGS)
     end
 end
 

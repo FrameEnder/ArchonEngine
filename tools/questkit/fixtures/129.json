@@ -1,7 +1,7 @@
 {
   "quest": 129,
   "script": "SubFst035_00129",
-  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387",
+  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387; notices from Bob's Chronofoil capture of retail 2026.10.06",
   "params": {
     "ACTOR0": 1000421,
     "ACTOR1": 1000465,
@@ -45,7 +45,8 @@
       "what": "ACTOR0",
       "expect": {
         "sequence": 1,
-        "vars": "000000000000"
+        "vars": "000000000000",
+        "notices": []
       }
     },
     {
@@ -53,7 +54,8 @@
       "what": "ACTOR1",
       "expect": {
         "sequence": 2,
-        "vars": "000000000000"
+        "vars": "000000000000",
+        "notices": [[0, []]]
       }
     },
     {
@@ -61,7 +63,8 @@
       "what": "ACTOR2",
       "expect": {
         "sequence": 2,
-        "vars": "010000000080"
+        "vars": "010000000080",
+        "notices": [[1, [1, 5]]]
       }
     },
     {
@@ -69,7 +72,8 @@
       "what": "ACTOR3",
       "expect": {
         "sequence": 2,
-        "vars": "0200000000c0"
+        "vars": "0200000000c0",
+        "notices": [[1, [2, 5]]]
       }
     },
     {
@@ -77,7 +81,8 @@
       "what": "ACTOR4",
       "expect": {
         "sequence": 2,
-        "vars": "0300000000e0"
+        "vars": "0300000000e0",
+        "notices": [[1, [3, 5]]]
       }
     },
     {
@@ -85,7 +90,8 @@
       "what": "ACTOR5",
       "expect": {
         "sequence": 2,
-        "vars": "0400000000f0"
+        "vars": "0400000000f0",
+        "notices": [[1, [4, 5]]]
       }
     },
     {
@@ -93,7 +99,8 @@
       "what": "ACTOR6",
       "expect": {
         "sequence": 3,
-        "vars": "000000000000"
+        "vars": "000000000000",
+        "notices": [[1, [5, 5]]]
       }
     },
     {
@@ -104,14 +111,16 @@
       "battle_won": 4,
       "expect": {
         "sequence": 4,
-        "vars": "000000000000"
+        "vars": "000000000000",
+        "notices": []
       }
     },
     {
       "enter_territory": 148,
       "expect": {
         "sequence": 5,
-        "vars": "000000000000"
+        "vars": "000000000000",
+        "notices": []
       }
     },
     {
@@ -119,14 +128,16 @@
       "what": "ACTOR1",
       "expect": {
         "sequence": 255,
-        "vars": "000000000000"
+        "vars": "000000000000",
+        "notices": [[4, []]]
       }
     },
     {
       "talk": 1000100,
       "what": "ACTOR8",
       "expect": {
-        "completed": true
+        "completed": true,
+        "notices": []
       }
     }
   ]

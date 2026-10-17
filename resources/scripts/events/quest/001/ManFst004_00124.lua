@@ -10,7 +10,8 @@
 --                 * visit the Conjurers' Guild (ACTOR2, scene 2)            -> UI8BH = 1
 --                 * hand ITEM0 to ACTOR3 (trade scene 3, then scene 100)  -> UI8BL = 1
 --               ITEM0 is held in UI8CH during this sequence. UI8AH counts the objectives done, and attuning also sets
---               BitFlag8 1 (UI8F 0x80), as the recording shows.
+--               BitFlag8 1 (UI8F 0x80), as the recording shows. Each objective sends its own notice, numbered by
+--               objective (0 attune, 1 guild, 2 delivery) whatever the order, the last one included.
 -- Sequence 255: report to ACTOR4 (scene 5) to finish.
 
 SCENE_OFFER = 0
@@ -22,6 +23,11 @@ SCENE_TRADE = 3
 SCENE_TRADE_OK = 100
 SCENE_TRADE_NO = 99
 SCENE_FINISH = 5
+
+-- One notice per objective, with no arguments (retail, Bob's Chronofoil capture of 2026-10-14.)
+NOTICE_ATTUNED = 0
+NOTICE_GUILD = 1
+NOTICE_DELIVERED = 2
 
 UNLOCK_RETURN = 1 -- UnlockLink for Return, learned when attuning here
 SET_EOBJ_BASE = 0xF8400EF3 -- scene flags the attunement and hand-over scenes use on retail
@@ -120,10 +126,12 @@ function sceneFinished(scene, results, player)
         objectiveDone(player)
         -- BitFlag8 1, as retail sets it when attuning (the recording shows UI8F 0x80 from here on.)
         player:set_quest_var(EVENT_ID, 5, player:get_quest_var(EVENT_ID, 5) | 0x80)
+        player:event_notice(EVENT_ID, NOTICE_ATTUNED)
         checkCompletion(player)
     elseif scene == SCENE_GUILD then
         setVar(player, 1, true, 1) -- UI8BH
         objectiveDone(player)
+        player:event_notice(EVENT_ID, NOTICE_GUILD)
         checkCompletion(player)
     elseif scene == SCENE_TRADE then
         -- 1 means ITEM0 was handed over.
@@ -135,6 +143,7 @@ function sceneFinished(scene, results, player)
         setVar(player, 2, true, 0) -- UI8CH = 0: ITEM0 is gone
         setVar(player, 1, false, 1) -- UI8BL
         objectiveDone(player)
+        player:event_notice(EVENT_ID, NOTICE_DELIVERED)
         checkCompletion(player)
     elseif scene == SCENE_FINISH then
         if results[1] == 1 then

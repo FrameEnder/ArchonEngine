@@ -8,6 +8,7 @@
 --               UI8AH counts the todos done. With both done, retail moves to sequence 2 and keeps only the egg, in
 --               UI8BH (where the client looks for ITEM0 from then on.)
 -- Sequence 2:   report to ACTOR0 (scene 4), which moves to sequence 255.
+-- Notices (retail): 0 with the egg's icon when it's taken, 1 [count, 3] for each anole, 2 on reporting to ACTOR0.
 -- Sequence 255: hand the egg to ACTOR1 (trade scene 5, returns 1 when handed over), then the reward (scene 6.)
 
 SCENE_OFFER = 0
@@ -18,6 +19,12 @@ SCENE_TRADE = 5
 SCENE_FINISH = 6
 
 ANOLES_NEEDED = 3
+
+-- The notices retail sends, and the egg's icon (Bob's Chronofoil capture of 2026-10-14.)
+NOTICE_EGG = 0
+NOTICE_ANOLES = 1
+NOTICE_REPORTED = 2
+ITEM0_ICON = 25251
 
 -- Quest variables: UI8A..F are bytes 0..5, H is the high nibble and L the low one.
 function getVar(player, byte, high)
@@ -96,6 +103,7 @@ function onBNpcKill(base_id, layout_id, player)
     end
     defeated = defeated + 1
     setVar(player, 1, true, defeated)
+    player:event_notice(EVENT_ID, NOTICE_ANOLES, { defeated, ANOLES_NEEDED })
     if defeated >= ANOLES_NEEDED then
         todoDone(player)
     end
@@ -118,8 +126,10 @@ function sceneFinished(scene, results, player)
     elseif scene == SCENE_TAKE_EGG then
         setVar(player, 0, false, 1) -- UI8AL: the egg
         setVar(player, 1, false, 1) -- UI8BL: ITEM0
+        player:event_notice(EVENT_ID, NOTICE_EGG, { ITEM0_ICON })
         todoDone(player)
     elseif scene == SCENE_REPORT then
+        player:event_notice(EVENT_ID, NOTICE_REPORTED)
         player:quest_sequence(EVENT_ID, 255)
     elseif scene == SCENE_TRADE then
         if results[1] == 1 then

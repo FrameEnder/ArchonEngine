@@ -1,7 +1,7 @@
 {
   "quest": 124,
   "script": "ManFst004_00124",
-  "source": "Kawari Recorder export from retail 2026.09.15, a fresh Conjurer",
+  "source": "Kawari Recorder export from retail 2026.09.15, a fresh Conjurer; notices from Bob's Chronofoil capture of retail 2026.10.06",
   "params": {
     "ACTOR0": 1001140,
     "SEQ_0_ACTOR0": 0,
@@ -45,7 +45,8 @@
       "what": "ACTOR0",
       "expect": {
         "sequence": 1,
-        "vars": "000010000000"
+        "vars": "000010000000",
+        "notices": []
       }
     },
     {
@@ -53,7 +54,8 @@
       "what": "ACTOR1 (the aetheryte)",
       "expect": {
         "sequence": 1,
-        "vars": "110010000080"
+        "vars": "110010000080",
+        "notices": [[0, []]]
       }
     },
     {
@@ -61,7 +63,8 @@
       "what": "ACTOR3",
       "expect": {
         "sequence": 1,
-        "vars": "210100000080"
+        "vars": "210100000080",
+        "notices": [[2, []]]
       }
     },
     {
@@ -69,14 +72,16 @@
       "what": "ACTOR2",
       "expect": {
         "sequence": 255,
-        "vars": "000000000000"
+        "vars": "000000000000",
+        "notices": [[1, []]]
       }
     },
     {
       "talk": 1000100,
       "what": "ACTOR4",
       "expect": {
-        "completed": true
+        "completed": true,
+        "notices": []
       }
     }
   ]
