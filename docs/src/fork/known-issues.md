@@ -23,6 +23,8 @@ add one when something is found.
   working on Kawari; the first purchase tells. They have no finders for the startup scan.
 * Only Gridania's marketboard object has a script (`CmnDefMarketBoardGridania_00039`); whether the other cities'
   boards are other CustomTalk scripts hasn't been checked.
+* What the search request's flag byte means (1 on the Weapons and Armor tabs, 0 on Items and Housing) isn't known;
+  it's ignored, and every item of the category is listed.
 * Searching by name isn't handled by the server: the captures had none, and the client seems to do it from its own
   item list, then open the item the usual way. Untested.
 * Retail's order of a category's items isn't known (it isn't item level or ID); Kawari sends them by ID.

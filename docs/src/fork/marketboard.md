@@ -17,7 +17,9 @@ by the server from the item and the settings.
 Every item with an **ItemSearchCategory** (the Item sheet's column), which is how the game itself says what can be on
 the board; untradable items have none and are skipped. The category's **Category** column is its tab: 1 Weapons,
 2 Armor, 3 Items, 4 Housing. `GameData::marketboard` builds the list once, the first time anyone uses the board, from
-the Item sheet already in memory. A search returns the category's items by item ID: the order retail sends them in
+the Item sheet already in memory. ItemSearchCategory has a Name column, so it only exists per language and is read in
+the server's language (read with `Language::None` it fails to resolve, which left the first build's board empty). An
+index whose categories couldn't be read isn't kept, so it's tried again. A search returns the category's items by item ID: the order retail sends them in
 isn't the item level or the ID, and isn't known.
 
 ## Prices
@@ -86,12 +88,14 @@ changes. HQ and NQ of the same item no longer share an inventory stack (`add_in_
 ## The packets
 
 All checked against retail: Bob's Chronofoil captures of 2026-09-15 (sessions 21, 26 and 27: 44 searches, 41 items
-opened, 66 pages of listings, two purchases). Every one of the 350 packets reads and writes back byte for byte with
+opened, 66 pages of listings, two purchases), and the 2026-10-17 bundle from Kawari for the weapons and armor tabs
+(which those captures never browsed: they showed the search's category is one byte, followed by a flag). Every one of the 350 packets reads and writes back byte for byte with
 these structs, except the leftovers in the page requests, which aren't kept.
 
 | Packet | Opcode (7.57) | Size | Layout |
 |---|---|---|---|
-| RequestMarketBoardItems (client) | 921 | 136 | start index u32, request ID u8, kind u8 (0x0A first page, 0x0B the rest), **ItemSearchCategory** u16, then 128 bytes the client doesn't clear (search text, old replies) |
+| MarketBoardOpened (client, fork) | 683 | 8 | the next request ID u32 (0 on a new session, then one more than the last search's), u32; sent as the window opens, answered with an all-zero MarketBoardItems carrying that request ID |
+| RequestMarketBoardItems (client) | 921 | 136 | start index u32, request ID u8, kind u8 (0x0A first page, 0x0B the rest), **ItemSearchCategory** u8, flags u8 (1 on the Weapons and Armor tabs, 0 on Items and Housing: unknown), then 128 bytes the client doesn't clear (search text, old replies) |
 | MarketBoardItems (server) | 960 | 176 | 20 × (item u32, count u32), next index u32 (0 = last page), error u32 (0; 0x70000001 on an empty reply), then the request's start index u32, request ID u8, kind u8, 2 padding |
 | UnkMarketBoardRequest1 (client: open an item) | 584 | 8 | item u32, then 0x0902 (unknown) |
 | MarketBoardHits (server) | 269 | 8 | 0, then how many listings (retail shows at most 100) |
@@ -108,7 +112,8 @@ count u8 @135, on mannequin u8 @136, retainer city u8 @137, stain u16 @138, 4 pa
 history entry shifted and the offerings as raw bytes; older parsers (Dalamud's) read 6 more bytes before the name than
 7.5x's listing has.
 
-**The flow**: the client sends a search page for a category (20 items per page, more as the list scrolls); opening an
+**The flow**: opening the window sends MarketBoardOpened (retail answers with an empty search result at once); the
+client then sends a search page for a category (20 items per page, more as the list scrolls); opening an
 item sends UnkMarketBoardRequest1, answered with MarketBoardHits and MarketBoardHistory; the client then asks for
 listings 10 at a time (UnkMarketBoardRequest2 with the previous page's next index) until next index is 0. A purchase
 on retail was answered with the gil slot (container 2000), an inventory transaction taking the gil, the item's slot,

@@ -74,6 +74,14 @@ ClientZoneIpcType:
       pattern: C7 84 24 E0 00 00 00 ?? ?? ?? ?? 0F 10 00 48 8D 8C 24 04 01 00 00
       offset: 7
       width: 4
+- name: MarketBoardOpened
+  comment: Sent as the marketboard window opens, before any search - answered with an empty MarketBoardItems carrying its request ID.
+  # 156 on 2026.09.15 (Bob's Chronofoil captures: sent as the window opened, answered within 0.1 s with an empty search
+  # result); 683 on 2026.10.06, the same moment and size in Bob's 2026-10-17 bundle.
+  opcode: 683
+  size: 8
+  found_on: 2026.10.06.0000.0000
+  how_to_find: Open the marketboard. The server warns about an unknown 8-byte packet as the window opens.
 - name: MarketBoardPurchaseHandler
   comment: Buying a marketboard listing - its retainer and listing IDs, item, quantity, price and tax as the client saw them.
   # 765 on 2026.09.15 (Bob's Chronofoil captures); 258 on 2026.10.06 is FFXIVOpcodes' (7.57), not yet seen on Kawari.

@@ -160,6 +160,13 @@ pub enum ClientZoneIpcData {
     EventReturnHandler2(EventReturnHandler<2>),
     EventReturnHandler8(EventReturnHandler<8>),
     EventReturnHandler16(EventReturnHandler<16>),
+    /// Sent as the marketboard's window opens, before any search; retail answers with an empty
+    /// `ServerZoneIpcData::MarketBoardItems` whose request ID is this one.
+    MarketBoardOpened {
+        /// Counts up with the searches: 0 on a new session, then one more than the last search's.
+        request_id: u32,
+        unk: u32,
+    },
     /// Buying a marketboard listing: what the listing said when the player chose it (Bob's Chronofoil captures of
     /// 2026-09-15; the server answers with `ServerZoneIpcData::MarketBoardPurchase`.)
     MarketBoardPurchaseHandler {
@@ -473,7 +480,10 @@ pub enum ClientZoneIpcData {
         /// 0x0A for a search's first page, 0x0B for the ones after.
         kind: u8,
         /// Index into the ItemSearchCategory Excel sheet.
-        category: u16,
+        category: u8,
+        /// Unknown: 1 on the Weapons and Armor tabs, 0 on Items and Housing (Bob's 2026-10-17 session; always 0 in
+        /// his 2026-09-15 captures, which only browsed Items.)
+        flags: u8,
         /// Search text and leftovers of earlier replies (the client doesn't clear it.)
         #[br(count = 128)]
         #[brw(pad_size_to = 128)]

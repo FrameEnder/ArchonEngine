@@ -35,19 +35,32 @@ impl ZoneConnection {
         marketboard::listings(item, &prices, &settings, &sold)
     }
 
+    /// The window opened: retail answers with an empty search result (all zeros but the request ID.)
+    pub async fn marketboard_opened(&mut self, request_id: u32) {
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::MarketBoardItems {
+            items: Vec::new(),
+            next_index: 0,
+            error: 0,
+            start_index: 0,
+            request_id: request_id as u8,
+            kind: 0,
+        });
+        self.send_ipc_self(ipc).await;
+    }
+
     /// A page of a search: the items of an ItemSearchCategory, with how many listings each has.
     pub async fn marketboard_search(
         &mut self,
         start_index: u32,
         request_id: u8,
         kind: u8,
-        category: u16,
+        category: u8,
     ) {
         let index = self.game_data.lock().marketboard();
         let settings = self.database.lock().marketboard_settings();
         let ids = index
             .by_category
-            .get(&category)
+            .get(&(category as u16))
             .cloned()
             .unwrap_or_default();
         let start = (start_index as usize).min(ids.len());

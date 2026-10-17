@@ -1629,7 +1629,9 @@ impl GameData {
             return index.clone();
         }
         let tabs: HashMap<u32, u8> =
-            match ItemSearchCategorySheet::read_from(&mut self.resource, Language::None) {
+            // It has a Name column, so it only exists per language (Language::None fails to resolve, which left the
+            // marketboard empty: 2026-10-17 bundle.)
+            match ItemSearchCategorySheet::read_from(&mut self.resource, get_config().world.language()) {
                 Ok(sheet) => sheet
                     .into_iter()
                     .flatten_subrows()
@@ -1673,7 +1675,10 @@ impl GameData {
             index.by_category.len()
         );
         let index = std::sync::Arc::new(index);
-        self.marketboard = Some(index.clone());
+        // Kept only if the categories could be read, so a failure is tried again rather than kept until a restart.
+        if !tabs.is_empty() {
+            self.marketboard = Some(index.clone());
+        }
         index
     }
 

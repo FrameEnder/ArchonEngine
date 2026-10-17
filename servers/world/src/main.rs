@@ -3257,6 +3257,9 @@ async fn process_packet(
                                 .marketboard_search(*start_index, *request_id, *kind, *category)
                                 .await;
                         }
+                        ClientZoneIpcData::MarketBoardOpened { request_id, .. } => {
+                            connection.marketboard_opened(*request_id).await;
+                        }
                         ClientZoneIpcData::SetFriendGroupIcon(icon_info) => {
                             connection.set_friend_group_icon(icon_info).await;
                         }
