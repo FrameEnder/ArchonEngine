@@ -74,6 +74,24 @@ Enemies without a set HP use Sapphire's per-level **BnpcBaseHp** table (`BNPC_BA
 level 1 to 2589 at level 50); it matched retail at every level recorded except 43 (retail 1891). A drop-in's `hp`
 overrides it (Halitostroper 7983, Wood Wailer Sentries 6100, quest enemies).
 
+## Open-world spawns
+
+Kawari only spawns battle NPCs that a zone's drop-in lists (`resources/dropins/`, matched to the zone by `appends`,
+the LGB they add to): retail's LGBs don't have them.
+
+| Zone | Drop-in | Where it came from |
+|---|---|---|
+| Central Shroud (148) | `fst_f1_planmap.json`, layer `LVD_kakashi` (834) | upstream, HP from the per-level table |
+| Central Thanalan (141) | `wil_w1_planmap.json`, layer `BNPCS_RETAIL` (632) | Bob's Chronofoil sessions of 2026-10-17 (flying around the zone): `questkit chronofoil --dropin 141` |
+
+Central Thanalan's spawn points carry retail's level and HP for each (levels 1–17, plus four level 35 Ul'dah guards at
+their posts and one level 50 hunt mark, Ovjang, kept to one of its spots), whether it's aggressive (97 of 632) and its
+links. The 21 FATE monsters seen were left out; their FATEs spawn them. Timelines (hitbox, auto-attack, damage to
+players) were added for the 17 kinds that had none, from the Recorder export of the same day: every hitbox is
+retail's; the auto-attack is the one seen in the captures for the Sun Bat, Antling Soldier, Snapping Shrew, Star
+Marmot, Huge Hornet and Giant Tortoise (the rest keep the default 870); damage to players for the Snapping Shrew,
+Star Marmot, Huge Hornet and Giant Tortoise; the Star Marmot also uses Somersault Slash.
+
 ## Enemy behaviour (`server/npc_behavior.rs`)
 
 | Mechanic | How it works |

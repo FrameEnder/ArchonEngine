@@ -17,6 +17,13 @@ add one when something is found.
   scaffolder guessed (marked TODO) needs the listing or a test in game.
 * The quest battle prompt is always allowed (`ServerRequestReply` result 0); retail presumably checks something.
 
+## Central Thanalan
+
+* Most of its monsters weren't fought on retail yet: their damage to players is the generic 12 % and, where the
+  captures didn't show it, their auto-attack is the default 870. The Huge Hornet's Sharp Sting (seen, no damage
+  recorded) has no skill script. Their drops aren't in `Drops.lua`.
+* Ovjang (the hunt mark) stands at one of its spawn points; retail moves it between them.
+
 ## Marketboard
 
 * The purchase opcodes (MarketBoardPurchaseHandler 258, MarketBoardPurchase 610) are FFXIVOpcodes', not yet seen

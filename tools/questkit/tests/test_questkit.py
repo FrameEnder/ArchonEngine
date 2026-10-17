@@ -867,5 +867,63 @@ def capture_module_load(path):
     return capture.load(path)
 
 
+
+class DropinTest(unittest.TestCase):
+    """questkit chronofoil --dropin: which sightings become spawn points, and where."""
+
+    @staticmethod
+    def sighting(layout, base=100, x=0.0, **extra):
+        spawn = {"layout": layout, "base": base, "name": 7, "owner": 0xE0000000, "max_hp": 126, "display": 0,
+                 "fate": 0, "rotation": 1.5, "kind": 2, "level": 7, "position": [x, 1.0, 0.0], "event_npc": 0,
+                 "flags": 1, "max_links": 4, "link_family": 0, "link_range": 20}
+        spawn.update(extra)
+        return spawn
+
+    def test_build(self):
+        from questkit import chronofoil_dropin as D
+        s = self.sighting
+        seen = {
+            # Seen three times as it wandered: placed where it was nearest the average (x = 2).
+            10: [s(10, x=0.0), s(10, x=2.0), s(10, x=5.0)],
+            11: [s(11, flags=2)],                    # hostile
+            12: [s(12, fate=375)],                   # a FATE's
+            13: [s(13, owner=0x10000001)],           # someone's chocobo
+            14: [s(14, event_npc=4745262)],          # a quest NPC turned battle NPC
+            15: [s(15, base=3180)], 16: [s(16, base=3180)],   # a hunt mark's two spots
+            17: [s(17, base=999)],                   # excluded
+        }
+        dropin, skipped = D.build(seen, "bg/x/planmap.lgb", exclude_bases={999}, one_spot={3180})
+        objects = {o["layout_id"]: o for o in dropin["layers"][0]["objects"]}
+        self.assertEqual(sorted(objects), [10, 11, 15])
+        self.assertEqual(objects[10]["position"]["x"], 2.0)
+        self.assertEqual(objects[10]["data"]["hp"], 126)
+        self.assertFalse(objects[10]["data"]["hostile"])
+        self.assertTrue(objects[11]["data"]["hostile"])
+        self.assertEqual(dropin["appends"], "bg/x/planmap.lgb")
+        self.assertEqual(skipped, {"FATE": 1, "owned by someone": 1, "event NPC": 1,
+                                   "another spot of a one-spot NPC": 1, "excluded": 1})
+
+    def test_reads_spawn_npc(self):
+        import struct
+        from questkit import chronofoil_dropin as D
+        data = bytearray(16 + 600)
+        struct.pack_into("<I", data, 4, 0)
+        data[8] = 2
+        data[11:14] = bytes([4, 0, 20])
+        c = 16
+        struct.pack_into("<IIII", data, c + 48, 351, 262, 3747899, 0)
+        struct.pack_into("<I", data, c + 68, 0xE0000000)
+        struct.pack_into("<I", data, c + 76, 44)
+        struct.pack_into("<H", data, c + 98, 65535)      # quantized: +pi
+        data[c + 113] = 2
+        data[c + 118] = 1
+        struct.pack_into("<fff", data, c + 496, -213.5, -28.5, 128.0)
+        spawn = D._spawn(bytes(data))
+        self.assertEqual((spawn["base"], spawn["name"], spawn["layout"], spawn["max_hp"], spawn["level"]),
+                         (351, 262, 3747899, 44, 1))
+        self.assertAlmostEqual(spawn["rotation"], 3.14159, places=4)
+        self.assertEqual(spawn["position"], [-213.5, -28.5, 128.0])
+        self.assertEqual((spawn["flags"], spawn["max_links"], spawn["link_range"]), (2, 4, 20))
+
 if __name__ == "__main__":
     unittest.main()

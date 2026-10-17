@@ -234,6 +234,15 @@ reads, chat left out), so `compare` and the rest can use it.
   **Before merging upstream's next patch update, run `questkit chronofoil --save-opcodes`**, so captures from the
   outgoing version stay readable.
 * About 0.5 s per hour of play: the whole of Bob's four months (42 sessions) index in 25 s.
+* **`--dropin TERRITORY --appends <lgb>`** writes the territory's open-world battle NPCs as a drop-in
+  (`chronofoil_dropin.py`): every battle NPC SpawnNpc seen there gives a spawn point with its layout ID, BNpcBase,
+  BNpcName, level, retail HP, hostile flag (character flags 0x2), links, display flags, position and facing (the
+  quantized u16 at CommonSpawn + 98). Left out: FATE monsters, NPCs someone owns (pets, chocobos), spawns without a
+  layout ID or turned from an event NPC, and `--exclude-base`s; `--one-spot BASE` keeps one spawn point of something
+  that moves between them (a hunt mark). Monsters wander, so each goes where it was seen nearest the average of its
+  sightings. The LGB is the TerritoryType's `Bg` folder plus `planmap.lgb` (Central Thanalan:
+  `bg/ffxiv/wil_w1/fld/w1f2/level/planmap.lgb`). Flying around a zone with Chronofoil running is enough; Central
+  Thanalan's drop-in came out of two such sessions (see [Combat](combat.md#open-world-spawns)).
 * **`--battle N.V`** turns a visit into a battle run (`chronofoil_battle.py`), saved as `.json.gz` for `questkit
   battle` (or straight to a report with `--out x.md`). From the packets, with Kawari's struct layouts: actors from
   SpawnNpc/SpawnPlayer (BNpcBase and BNpcName, layout ID, HP, battalion, level, class, position; players other than

@@ -201,6 +201,22 @@ def _chronofoil(args) -> int:
         print("No Chronofoil captures found")
         return 1
     tables = chronofoil.load_opcodes()
+    if args.dropin is not None:
+        from . import chronofoil_dropin
+
+        if not args.appends:
+            print("--dropin needs --appends: the LGB the drop-in adds to (TerritoryType's Bg folder + planmap.lgb)")
+            return 1
+        numbers = range(len(captures)) if args.which == "all" else [int(n) for n in args.which.split(",")]
+        seen = chronofoil_dropin.sightings([captures[n] for n in numbers], tables, args.dropin)
+        dropin, skipped = chronofoil_dropin.build(seen, args.appends, exclude_bases=set(args.exclude_base),
+                                                  one_spot=set(args.one_spot))
+        out = args.out or f"dropin-{args.dropin}.json"
+        chronofoil_dropin.write(dropin, out)
+        objects = dropin["layers"][0]["objects"]
+        print(f"Wrote {len(objects)} battle NPCs ({sum(o['data']['hostile'] for o in objects)} hostile) to {out}; "
+              f"left out: {skipped or 'nothing'}")
+        return 0
     if args.battle:
         import gzip
         import json
@@ -309,7 +325,14 @@ def main(argv=None) -> int:
                    help="write visit V of capture N (numbers from the index) as a Kawari packet capture")
     p.add_argument("--battle", metavar="N.V",
                    help="turn visit V of capture N into a battle run for `questkit battle` (or a report, with --out x.md)")
-    p.add_argument("--out", help="where to write the index, the export or the battle")
+    p.add_argument("--dropin", metavar="TERRITORY", type=int,
+                   help="write the territory's battle NPCs (every spawn seen) as a drop-in; needs --appends")
+    p.add_argument("--appends", help="the drop-in's LGB, e.g. bg/ffxiv/wil_w1/fld/w1f2/level/planmap.lgb")
+    p.add_argument("--exclude-base", type=int, action="append", default=[],
+                   help="leave out this BNpcBase (repeatable)")
+    p.add_argument("--one-spot", type=int, action="append", default=[],
+                   help="keep only one spawn point of this BNpcBase, e.g. a hunt mark (repeatable)")
+    p.add_argument("--out", help="where to write the index, the export, the battle or the drop-in")
     p.add_argument("--save-opcodes", action="store_true",
                    help="save Kawari's current opcodes for its game version (before merging a new patch)")
     p.set_defaults(run=_chronofoil)
