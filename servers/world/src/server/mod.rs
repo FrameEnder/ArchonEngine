@@ -415,6 +415,11 @@ impl WorldServer {
 /// How often the server logic runs, in milliseconds.
 const SERVER_TICK_MILLISECONDS: u32 = 500;
 
+/// How often players regenerate HP and MP, and how much MP (retail, from Bob's Chronofoil captures.)
+const PLAYER_REGEN_INTERVAL: Duration = Duration::from_secs(3);
+const MP_REGEN_IN_COMBAT: u32 = 200;
+const MP_REGEN_OUT_OF_COMBAT: u32 = 600;
+
 /// How often queued tasks (finished casts, event actions, despawns...) are checked, in milliseconds. Much finer than
 /// the logic tick, so a cast resolves when its cast bar ends rather than up to half a second later.
 const TASK_TICK_MILLISECONDS: u32 = 20;
@@ -888,11 +893,20 @@ fn server_logic_tick(
             // Damage/healing over time
             periodic_tick(network.clone(), instance);
 
-            // NOTE: I know this isn't retail accurate
+            // Players regenerate on retail's 3 s tick (Bob's Chronofoil captures, 2026-10-14/16): MP by 200 a tick in
+            // combat plus a little for Piety (a level 15 conjurer got 203), and by 600 out of combat; HP only out of
+            // combat here (retail gives a point or two in combat.) It used to run every server tick (500 ms) and not
+            // at all in combat, so casters ran dry mid-fight and couldn't cast again until it ended (2026-10-17).
+            let now = Instant::now();
+            let regen_now = instance.next_regen_tick.is_none_or(|next| now >= next);
+            if regen_now {
+                instance.next_regen_tick = Some(now + PLAYER_REGEN_INTERVAL);
+            }
             for (id, actor) in &mut instance.actors {
                 if let NetworkedActor::Player {
                     spawn,
                     autoattack_timing,
+                    parameters,
                     ..
                 } = actor
                 {
@@ -902,8 +916,27 @@ fn server_logic_tick(
                     // TODO: find a better place for this
                     *autoattack_timing += 1;
 
-                    // Don't heal people who are in combat or dead, please.
-                    if in_combat || is_dead {
+                    if !regen_now || is_dead {
+                        continue;
+                    }
+
+                    if in_combat {
+                        if spawn.common.resource_points < spawn.common.max_resource_points {
+                            // Piety's bonus, as the community's formula has it: 150 per level divisor above the
+                            // level's base substat.
+                            let piety_bonus = parameters
+                                .piety
+                                .saturating_sub(parameters.base_speed.max(0) as u32)
+                                * 150
+                                / parameters.level_div.max(1);
+                            let amount = (MP_REGEN_IN_COMBAT + piety_bonus) as u16;
+                            spawn.common.resource_points = spawn
+                                .common
+                                .resource_points
+                                .saturating_add(amount)
+                                .min(spawn.common.max_resource_points);
+                            actors_to_update_hp_mp.push(*id);
+                        }
                         continue;
                     }
 
@@ -919,8 +952,7 @@ fn server_logic_tick(
                     }
 
                     if spawn.common.resource_points != spawn.common.max_resource_points {
-                        let amount =
-                            (spawn.common.max_resource_points as f32 * 0.10).round() as u16;
+                        let amount = MP_REGEN_OUT_OF_COMBAT as u16;
                         spawn.common.resource_points = u16::clamp(
                             spawn.common.resource_points + amount,
                             0,

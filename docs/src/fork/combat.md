@@ -11,6 +11,12 @@ modifier** (`level_main`, Sapphire's table, levels 1–10 checked against retail
 Determination starts there too; Critical Hit and Direct Hit at `BaseSpeed`, as retail shows. Before this a level 7
 Conjurer had 81 Mind (retail 35–38) and killed everything in one or two hits. HP is unchanged (upstream's formula).
 
+**Regeneration** (`server/mod.rs`, every `PLAYER_REGEN_INTERVAL`, 3 s, as retail's tick): MP **200 a tick in combat**
+plus Piety's bonus (`150 × (Piety − the level's base substat) / level divisor`; a level 15 conjurer got 203 on retail),
+**600 out of combat**; HP 10 % out of combat. Measured in Bob's Chronofoil captures (2026-10-14/16): a conjurer casting
+Stone (200 MP) every 2.5 s went +3 or −197 a tick, so barely drained at all. Kawari regenerated nothing in combat (and
+everything every 500 ms out of it), so casters ran dry mid-fight and couldn't cast until it ended (2026-10-17 bundle).
+
 **Damage and healing** use retail's formula as Sapphire has it:
 
 ```text

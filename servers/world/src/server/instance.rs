@@ -147,6 +147,8 @@ pub struct Instance {
     pub periodic_effects: Vec<PeriodicEffect>,
     /// Battle NPCs a quest brought out, which don't respawn once defeated.
     pub quest_spawned_npcs: HashSet<ObjectId>,
+    /// When players' HP and MP next regenerate (every 3 s, like retail's tick.)
+    pub next_regen_tick: Option<std::time::Instant>,
 }
 
 impl Instance {

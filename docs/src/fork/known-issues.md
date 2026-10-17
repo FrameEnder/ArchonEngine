@@ -106,6 +106,11 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
 * 162 costume sets in the Shop have no contents yet and can't be bought until an admin adds them.
 * Store items arrive as items; what they do when used depends on server support.
 
+## Player regeneration
+
+* Retail gives a point or two of HP a tick in combat (a level 15 conjurer: +1 or +2 every 3 s); Kawari gives none. Out
+  of combat Kawari gives 10 % a tick, which hasn't been measured against retail.
+
 ## FATEs
 
 * Entering a zone, Kawari sends FateInit before CreateFateContext; retail creates the contexts first (during the

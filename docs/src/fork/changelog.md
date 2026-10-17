@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-17 | — | Leaving a zone with FATEs (travel); FATE packet order (known issues).
+| 2026-10-17 | — | Regeneration (combat); in-combat HP regeneration (known issues).
+| 2026-10-17 | `8e2be8d` | Leaving a zone with FATEs (travel); FATE packet order (known issues).
 | 2026-10-17 | `32ba317` | Area attacks' edge, NPC moves, no wandering in content, straight paths when none (combat); To Guard a Guardian's sincallers and start facing, the quest battles' start spots (quest battles); the blanga's Terror Eye (known issues).
 | 2026-10-17 | `8dd3b56` | Mapping the Realm, the whole-map reveal and shared discovery slots, the 31 unlocks in Bob's June–September sessions (character windows); To Guard a Guardian's sincallers, gargoyle, mage and scenery (quest battles); display flags and the gargoyle's wait (known issues).
 | 2026-10-17 | `661aa3e` | Achievements: the list Types start in Key, Mapping the Realm on the first discovery, unique quests counted, and when retail completes them (character windows); ActorControl 518 (known issues).
@@ -71,7 +72,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Leaving a zone takes its FATEs down as retail does (2352 for each start NPC, the new `RemoveFateContext`, 2357, for every FATE, then the FATE director): only terminating the director crashed the client in its FATE update when teleporting from the Central Shroud to Gridania. |
+| — | Players regenerate MP in combat as on retail (200 a tick plus Piety's bonus; 600 out of combat), on a 3 s tick instead of every 500 ms: casters ran out of MP mid-fight and stayed out. |
+| `8e2be8d` | Leaving a zone takes its FATEs down as retail does (2352 for each start NPC, the new `RemoveFateContext`, 2357, for every FATE, then the FATE director): only terminating the director crashed the client in its FATE update when teleporting from the Central Shroud to Gridania. |
 | `32ba317` | Enemy area attacks count half a yalm past their edge, not a whole yalm (players who had left Terror Eye were still hit). NPCs are only sent an ActorMove when they move or turn (idle NPCs flickered between walking and standing, and flooded the open world); NPCs in content don't wander, and walk straight at a target they can't path to instead of dropping it (To Guard a Guardian's mage walking off, the second wave looping around the tree). To Guard a Guardian: sincallers kept back by range alone (they stood inside each other); all four quest battles start the player at retail's spot and facing (To Guard a Guardian's was nearly backwards). Test in `action.rs`. |
 | `8dd3b56` | A Realm Reborn's field zones reveal their whole map on the first visit (LocationDiscovered part 164, as retail), which completes their Mapping the Realm; the rest need every part again, counted over every map sharing the discovery slot (Midas II and the like completed after one floor otherwise). Checked against the 31 unlocks in Bob's June–September sessions. To Guard a Guardian: the sincallers stay back behind Quzal, the gargoyle waits until you've loaded in, the mage also comes when the gargoyle falls, and the background fighters have retail's display flags (no health bar, not targetable; drop-in battle NPCs take `display_flags`). |
 | `661aa3e` | Achievements read the sheet as retail's rows are laid out: Types 2, 6 and 9 list Key and then Data, Type 3 is class Key at level Data[0] (Types 3 and 6 never completed before); Mapping the Realm completes with the map's first discovered part, as on retail; Storyteller's counter (Key 214, unique quests) is counted from the completed quests. Checked against four unlocks in Bob's Chronofoil captures; tests in `achievement.rs`. |
