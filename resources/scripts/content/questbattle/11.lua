@@ -54,7 +54,8 @@ HEAL_BELOW_HEALTH = 50
 HEAL_COOLDOWN_UPDATES = 8
 
 -- Ida and Papalymo's battle chatter, by key in the quest's text sheet. The server looks the lines up in the game data.
--- (On retail these are battle talk pop-ups; until that packet is known, they're said in /say.) When and in what order
+-- (On retail these are the battle talk window, DirectorPopupMessage; until their text IDs are recorded, they're said in
+-- /say.) When and in what order
 -- is from Kawari Recorder's recording of retail: the first lines 4.5 seconds after the fight gets going, the first
 -- wave's 10 seconds after it arrives, each pair 5 seconds apart.
 TEXT_PREFIX = "TEXT_MANFST005_00445_"

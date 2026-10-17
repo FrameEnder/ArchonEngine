@@ -98,5 +98,7 @@ The fork's `CLAUDE.md` (repository root) repeats this rule for anyone working on
 * [Kawari Web](kawari-web.md): what each part does, the Shop's mechanics, Quest Lab, progress, Diagnostics.
 * [Recorder and diagnostics](recorder-and-diagnostics.md): the Dalamud plugins and the bundle format.
 * [Research notes](research.md): content not implemented yet (Palace of the Dead, Blunderville).
+* [Outside sources](sources.md): what to check when a recording leaves something unclear (Cactbot, Chronofoil,
+  OverlayPlugin, Sapphire, Teamcraft, XIVAPI and EXDSchema, the wikis), how far to trust each, and what Cactbot covers.
 * [Known issues](known-issues.md)
 * [Changelog](changelog.md)

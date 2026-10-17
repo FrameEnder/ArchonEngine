@@ -54,6 +54,7 @@
   - [Kawari Web](fork/kawari-web.md)
   - [Recorder and Diagnostics](fork/recorder-and-diagnostics.md)
   - [Research Notes](fork/research.md)
+  - [Outside Sources](fork/sources.md)
   - [Known Issues](fork/known-issues.md)
   - [Changelog](fork/changelog.md)
 

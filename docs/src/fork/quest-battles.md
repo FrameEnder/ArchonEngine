@@ -119,7 +119,8 @@ retail recording (see [questkit](questkit.md#battle)).
 Guardian. Layout (40 bytes): speaker actor (ObjectTypeId, 8 bytes), director handler, BNpcName, text ID, duration ms
 (4000), icon, then one byte each for the speaker's object kind (2, a BattleNpc), style (0) and parameter count (0), a
 pad byte and two u32 parameters. Upstream's struct had the kind as `ObjectKind`, which writes a second byte for a
-BattleNpc and makes the packet 41 bytes; it's a plain `u8` now. The text IDs are the content's own (101–106 in Leia's
+BattleNpc and makes the packet 41 bytes; it's a plain `u8` now. OverlayPlugin reads the same packet (its BattleTalk2:
+opcode 162, 40 bytes, the same fields; see [Outside sources](sources.md#overlayplugin)). The text IDs are the content's own (101–106 in Leia's
 Legacy, 161–181 in To Guard a Guardian), so they're copied from the recording. Chasing Shadows and Spirithold Broken
 still use `say`/`say_battle_talk` (in chat), until their text IDs are recorded.
 
