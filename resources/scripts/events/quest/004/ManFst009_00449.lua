@@ -5,7 +5,9 @@
 -- Sequence 0:   ACTOR0 (Mother Miounne) offers the quest (scene 0, returns 1 when accepted), then explains it (scene 1.)
 -- Sequence 1:   ACTOR1 (Estaine) at Mih Khetto's Amphitheatre (scene 2.) Wearing RITEM0, the Monoa mask from Festive
 --               Endeavors, she takes you to your place (scene 3) and the ceremony plays (cutscene 4), which moves to
---               sequence 255; without it she sends you to put it on (scene 5.) ACTOR2 (Beatin) has a line (scene 6.)
+--               sequence 255 and leaves you at POPRANGE0, in the Roost's inn room (retail sends PrepareZoning as the
+--               cutscene ends: it fades to black and the client waits for the zone change, skipped or not.) Without
+--               the mask she sends you to put it on (scene 5.) ACTOR2 (Beatin) has a line (scene 6.)
 -- Sequence 255: ACTOR4 (the silent conjurer) lets you into the Lotus Stand (scene 8, a yes/no; TERRITORYTYPE0 at
 --               POPRANGE1), where ACTOR3 (Kan-E-Senna) gives the reward (scene 7.)
 
@@ -19,8 +21,12 @@ SCENE_BEATIN = 6
 SCENE_REWARD = 7
 SCENE_DOOR = 8
 
--- The Lotus Stand's entrance (POPRANGE0 is where the cutscene leaves you.)
+-- The Lotus Stand's entrance.
 LOTUS_STAND_ENTRANCE = POPRANGE1 or 3877982
+-- Where the ceremony leaves you: POPRANGE0, a Level in territory 179 (the Roost, Gridania's inn room). The quest names
+-- no territory for it, so 179 is from the Level sheet and Bob's Chronofoil capture of retail (2026-10-16).
+AFTER_CEREMONY_TERRITORY = 179
+AFTER_CEREMONY = POPRANGE0 or 4106221
 
 CUTSCENE_FLAGS = FADE_OUT | CONDITION_CUTSCENE | HIDE_UI
 
@@ -103,6 +109,9 @@ function sceneFinished(scene, results, player)
         return
     elseif scene == SCENE_CEREMONY then
         player:quest_sequence(EVENT_ID, 255)
+        player:finish_event()
+        player:change_territory_pop_range(AFTER_CEREMONY_TERRITORY, AFTER_CEREMONY)
+        return
     elseif scene == SCENE_DOOR then
         if results[1] == 1 then
             player:finish_event()

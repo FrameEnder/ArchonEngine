@@ -131,6 +131,15 @@ New spawns need a drop-in layer with the retail position, level and HP (from a K
 When editing a drop-in JSON, splice the new layer into the text: rewriting it through a JSON library changes how every
 float is written.
 
+### Cutscenes that end somewhere else
+
+Some cutscenes end with the player in another zone: the client fades to black at the end (or when it's skipped) and
+waits for the server's PrepareZoning. If the script only finishes the event, the screen stays black, with only chat
+working. On retail the order is PrepareZoning, then the quest's UpdateQuest, then EventFinish; in a script that's
+`quest_sequence`, `finish_event()`, then `change_territory_pop_range(territory, pop_range)`. A quest parameter named
+`POPRANGE*` that no talk or door uses is the hint; the Level sheet gives its territory. Renewing the Covenant's ceremony
+is one (to the Roost, 179).
+
 ## The script pattern
 
 Every fork quest script follows the same shape (see `SubFst073_00387.lua`):
@@ -222,7 +231,7 @@ Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `
 | 446 | Dread Is in the Air | `004/ManFst006_00446` | client script, Sapphire, recording | Accepting goes straight to 255 with the letter (UI8BH); trade 1 → 100 (99 when the window is closed). |
 | 447 | To Guard a Guardian | `004/ManFst007_00447` | client script, Sapphire, recording, Chronofoil capture (quest battle, 2026-10-17) | Message (UI8BH) for Lewin through the Seat of the First Bow's door (scene 5, POPRANGE0); trade 2 → 3, notice 0 `[1, 1]`; quest battle 12 from the instructor (scene 7) or EVENTRANGE0 (scene 6); the aftermath on re-entering (scene 20). |
 | 448 | Festive Endeavors | `004/ManFst008_00448` | client script, Sapphire, recording | Miounne (notice 0), Beatin gives the mask (UI8BH, notice 1 `[21002]`), trade 5 → 6. |
-| 449 | Renewing the Covenant | `004/ManFst009_00449` | client script, Sapphire, recording | Estaine checks the player is wearing RITEM0 (scene 3 → 4, or 5 without it); Lotus Stand door (scene 8, POPRANGE1). |
+| 449 | Renewing the Covenant | `004/ManFst009_00449` | client script, Sapphire, recording, Chronofoil capture (the ceremony) | Estaine checks the player is wearing RITEM0 (scene 3 → 4, or 5 without it); the ceremony (cutscene 4) leaves you at POPRANGE0 in the Roost (179); Lotus Stand door (scene 8, POPRANGE1). |
 | 507 | The Gridanian Envoy | `005/ManFst200_00507` | Sapphire, recording | Two letters (UI8BH/BL); airships to Limsa Lominsa and Ul'dah (gangplank event action, flights, `change_territory`), notices 0, 3, 4, 7; positions are Sapphire's. Scenes not yet checked against the client's script (needs a dump). |
 | 674 | Call of the Sea | `006/SubWil141_00674` | Sapphire, recording | Accepting goes straight to 255; Baderon gives the reward. Scenes not yet checked against the client's script. |
 
