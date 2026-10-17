@@ -36,23 +36,41 @@ u16, newest first), migration `update-2026-10-16_achievements_portrait`, sizes `
 
 **Completing them.** After finishing a quest, levelling up, discovering a map part, attuning a zone's aether
 currents and defeating an enemy, the server completes (with the pop-up) every achievement whose requirements are
-met, for the Achievement sheet Types it understands. What each Type means comes from the community's sheet
-definitions (SaintCoinach) and what the sheet's Key and Data hold for that Type's achievements, not from the client:
+met, for the Achievement sheet Types it understands. What each Type means comes from what the sheet's Key and Data
+hold for that Type's achievements and from when retail completed them (Bob's Chronofoil captures), not from the
+client. **For the list Types the list starts in Key and goes on in Data**: A Life of Adventure I is Key 44, Data 55
+(both achievements); Gone from Gridania is Key 66043 (The Gridanian Envoy) with Data empty; I Got the Magic Stick I is
+Key 6 (conjurer), Data[0] 10 (the level). Until 2026-10-17 Kawari read only Data, so Types 3 and 6 never completed and
+Types 2 and 9 missed their first ID.
 
 | Type | Achievements | Needs | Progress shown |
 |---|---|---|---|
 | 1 | 2149 | Counter Key reaching Data[0] (only the counters below) | count / wanted |
-| 2 | 67 | Every achievement listed in Data | done / listed |
-| 3 | 267 | The class or job in Data[0] at level Data[1] | level / wanted |
-| 6 | 382 | Every quest listed in Data | done / listed |
-| 8 | 202 | Every part of map Key discovered ("Mapping the Realm"): the discovered parts against Map's DiscoveryFlag (the Central Shroud is map 4, flag 16382, parts 1–13) | parts / all |
-| 9 | 10 | Any quest listed in Data | 0 or 1 of 1 |
+| 2 | 67 | Every achievement in Key and Data | done / listed |
+| 3 | 267 | The class or job Key at level Data[0] | level / wanted |
+| 6 | 382 | Every quest in Key and Data | done / listed |
+| 8 | 202 | Map Key unlocked ("Mapping the Realm", "Visit ... and unlock the area map"): any of its parts discovered (Map's DiscoveryFlag; the Central Shroud is map 4) | 0 or 1 of 1 |
+| 9 | 10 | Any quest in Key and Data | 0 or 1 of 1 |
 | 20 | 30 | Every aether current of AetherCurrentCompFlgSet Key ("Freebird") | 0 or 1 of 1 |
+
+**When retail completes them** (Bob's sessions of 2026-10-14 and 16, `questkit chronofoil`):
+
+* Mapping the Realm: Central Shroud (657, Type 8): on entering the Central Shroud for the first time from Gridania. The
+  client sends NewDiscovery as it arrives; the server answers with the achievement, LocationDiscovered and the
+  discovery EXP. (Kawari had waited for all 13 parts.)
+* I Got the Magic Stick I (45, Type 3): turning in a quest that took conjurer to 10, right after LevelUpMessage.
+* Storyteller I (789, Type 1, Key 214): turning in the tenth quest. Key 214 is unique quests completed; Kawari counts
+  it from the completed quests, so it's right for existing characters too.
+* Gone from Gridania (311, Type 6): turning in The Gridanian Envoy in Ul'dah.
+* Each 515 `AchievementCompleted` is followed by an **ActorControl 518** (not Self) with the same ID, from the player.
+  Kawari doesn't know 518 (presumably what others nearby see); it isn't sent yet. On every zone-in retail also sends 600
+  `AchievementProgress` for the achievements being tracked, then 538.
 
 **Counters** (Type 1, `unlock.achievement_counters`, migration `update-2026-10-16-3_achievement_counters`) are kept
 per character by Key. There are 1128 Keys, which the sheet only describes in words ("Defeat 100 enemies" is Key 11,
 "gil from defeating enemies" 12, levequests 13–22, synthesis by craft and level 23–62, gathering by job, level and
-region from 63…). The server counts **Key 11** (an enemy the player fought was defeated, as quests count kills).
+region from 63…, unique quests 214). The server counts **Key 11** (an enemy the player fought was defeated, as quests
+count kills) and **Key 214** (unique quests: the completed quests, counted from the character's quest log, not kept).
 Counters start at zero when the fork started counting them, where retail's count from the character's creation.
 
 **It has to be quick.** The check runs on the player's connection while their packets wait. In `de2d795` it read the

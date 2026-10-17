@@ -78,6 +78,9 @@ add one when something is found.
 
 ## Character windows
 
+* **Achievements**: retail follows every `AchievementCompleted` (515) with ActorControl 518 and the same ID; Kawari
+  doesn't send 518 (it isn't in `ActorControlCategory`), so what others nearby see when you earn one is probably missing.
+
 * **Adventurer Plate**: a character who has never saved theirs gets upstream's starting design (expression, lighting,
   pose, borders, a made-up profile: active hours, play styles, preferred job 38) around their own look and gear;
   retail's starting plate hasn't been recorded. Once saved, it's the client's own. What the first number of
