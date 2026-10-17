@@ -224,8 +224,12 @@ pub fn npc_behavior(
                 target_actor_pos.insert(*actor, target_pos);
             }
 
+            // Only when it moved or turned: an ActorMove to where it already stands makes the client play a step
+            // (To Guard a Guardian's masked mage flickered between walking and standing, 2026-10-17 bundle.)
             if let Some(position) = position
                 && let Some(rotation) = rotation
+                && (position != spawn.common.position
+                    || (rotation - spawn.common.rotation).abs() > 0.01)
             {
                 actor_moves.push((
                     *id,
@@ -416,7 +420,9 @@ pub fn npc_behavior(
                     *current_target = Some(NpcTarget::Actor(spawn.common.owner_id));
                 }
 
+                // Duties' NPCs stand where they're put until something starts them (retail's never wander.)
                 if *state == NpcState::Wander
+                    && !in_content
                     && current_target.is_none()
                     && Instant::now().duration_since(*last_wander_timestamp) > MOB_WANDER_TIME
                 {
@@ -495,10 +501,16 @@ pub fn npc_behavior(
                     let current_pos = spawn.common.position.0;
                     if needs_repath {
                         let goal = strayed_to.unwrap_or(target_pos);
-                        let path: VecDeque<Vec3A> = instance
+                        let mut path: VecDeque<Vec3A> = instance
                             .navmesh
                             .calculate_path(current_pos, goal, max_off_mesh_gap)
                             .into();
+                        // In content no path at all (e.g. starting off the navmesh, among a tree's roots) means walking
+                        // straight there: dropping the target there sent To Guard a Guardian's second wave wandering
+                        // back to where they appeared, around the tree (2026-10-17 bundle).
+                        if path.is_empty() && in_content {
+                            path.push_back(goal);
+                        }
 
                         *current_path = path.clone();
                         // Start the new path from where we actually are.

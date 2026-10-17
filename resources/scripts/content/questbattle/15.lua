@@ -17,7 +17,8 @@
 -- The battle talk is the quest's text whose keys contain BATTLETALK, in key order (the server logs which it found.)
 -- On retail it's shown in the battle talk window, which Kawari can't show yet, so it's said in chat instead.
 
-START_POSITION = { x = 258.321, y = 24.0, z = 192.406 }
+-- Where retail puts the player and which way they face: their SpawnPlayer in Bob's Chronofoil capture (2026-10-14).
+START_POSITION = { x = 255.77, y = 24.0, z = 191.24 }
 START_ROTATION = -1.544
 
 BNPC_GOLEM = INIT_POP_01 or 3869528

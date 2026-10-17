@@ -106,6 +106,13 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
 * 162 costume sets in the Shop have no contents yet and can't be bought until an admin adds them.
 * Store items arrive as items; what they do when used depends on server support.
 
+## Combat (found 2026-10-17)
+
+* Enemy area attacks now count a player half a yalm past their edge as caught (was a whole yalm); retail's exact margin
+  isn't measured (Bob's retail captures have no area attack on him that he dodged).
+* The blanga's timeline casts Terror Eye 6 s in and every 20 s, at its target; retail's cast it once in its 28 s, at
+  the ground among the allies. One run; needs more before changing it.
+
 ## Packet layouts (from retail captures)
 
 * **HaterList and EnmityList**: on retail the entries start straight after the 4-byte count (HaterList: 264 bytes, 32

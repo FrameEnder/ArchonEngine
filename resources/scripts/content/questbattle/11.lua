@@ -1,12 +1,13 @@
 -- Quest battle: Chasing Shadows, for the quest of the same name (ManFst005_00445)
 -- It takes place in a copy of the Central Shroud, so its BNpcs live in the fst_f1 drop-in (layer QB_ManFst005_001.)
--- Their layout IDs, health, the start position, when each wave arrives and who goes after whom come from Sapphire's
--- script for this battle.
+-- Their layout IDs, health, when each wave arrives and who goes after whom come from Sapphire's script for this battle;
+-- the start position and facing from retail (below).
 --
 -- TODO: The enemies don't use their skills yet, only auto-attacks.
 
-START_POSITION = { x = 323.0, y = -1.28, z = -320.0 }
-START_ROTATION = 3.0
+-- Where retail puts the player and which way they face: their SpawnPlayer in Bob's Chronofoil capture (2026-10-14).
+START_POSITION = { x = 322.29, y = -1.29, z = -320.7 }
+START_ROTATION = -3.137
 
 BNPC_BOSS = 3802315
 BNPC_IDA = 3802271

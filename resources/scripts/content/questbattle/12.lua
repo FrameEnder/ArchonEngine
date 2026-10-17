@@ -26,8 +26,9 @@
 -- The battle talk window (DirectorPopupMessage) shows the content's own text by its ID, so these are the IDs retail
 -- sent; the speaker's name and portrait are numbers from the same packets.
 
+-- Where retail puts the player and which way they face: their SpawnPlayer in Bob's Chronofoil capture (2026-10-16).
 START_POSITION = { x = -299.5, y = 21.2, z = 161.24 }
-START_ROTATION = 1.88
+START_ROTATION = -0.636
 
 BNPC_GALFRID = 4089300
 BNPC_MIRAUDONT = 4089305
@@ -214,13 +215,13 @@ for _, wave in ipairs({ FIRST_IXALI, SECOND_IXALI }) do
     end
 end
 -- capture: the sincallers don't stand like a player healer. They stay back by the tree behind Quzal: from where they
--- appear (18 yalms behind him) they settle about 15 yalms behind him and cast from 12-26 yalms.
+-- appear (18 yalms behind him) they settle about 15 yalms behind him, 1.6 yalms apart, about 19 yalms from Galfrid,
+-- and cast from 12-26 yalms. Their casting range alone keeps them there, each on its own path from where it appeared
+-- (keeping them near Quzal sent both to the same spot, inside each other: 2026-10-17 bundle.)
 SINCALLERS = { 3803263, 3803264 }
-SINCALLER_RANGE = 18
-SINCALLER_NEAR_QUZAL = 16
+SINCALLER_RANGE = 19
 for _, id in ipairs(SINCALLERS) do
     BATTLE.roles[id].range = SINCALLER_RANGE
-    BATTLE.roles[id].keep_near = { anchors = { BNPC_QUZAL }, within = SINCALLER_NEAR_QUZAL }
 end
 -- The heals, on whichever of their targets is lowest (HEALERS has the evidence.)
 for _, h in ipairs(HEALERS) do

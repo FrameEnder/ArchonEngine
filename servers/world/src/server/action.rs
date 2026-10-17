@@ -49,6 +49,11 @@ const EFFECT_THIN_AIR: u16 = 1217;
 /// Extra leniency (in yalms) given to area-of-effect checks, to roughly account for target hitboxes.
 const AOE_HITBOX_LENIENCY: f32 = 1.0;
 
+/// How far past the edge of an NPC's area attack a player still counts as caught: the player's own hitbox, half a yalm.
+/// It was `AOE_HITBOX_LENIENCY` (a whole yalm), and with the server seeing positions a fraction of a second late, players
+/// who had left a 6-yalm Terror Eye were hit at 6.6 and 6.7 yalms (2026-10-17 bundle).
+const PLAYER_HITBOX_RADIUS: f32 = 0.5;
+
 /// How much of their damage NPCs deal to players, in percent, for NPCs whose retail damage isn't recorded in their
 /// timeline (see `Timeline::damage_to_players`.)
 ///
@@ -1716,7 +1721,7 @@ pub fn execute_ornament_action(
 
 /// Whether `point` is inside an area attack of this `shape`, used by an NPC at `caster` (with a hitbox of
 /// `caster_radius`) facing `rotation` and aimed at `aimed_at`. Distances are on the ground, and the player's own hitbox
-/// (`AOE_HITBOX_LENIENCY`) counts, so grazing the edge is a hit.
+/// (`PLAYER_HITBOX_RADIUS`) counts, so grazing the edge is a hit.
 pub fn in_area(
     shape: AreaShape,
     caster: Vec3A,
@@ -1726,7 +1731,7 @@ pub fn in_area(
     caster_radius: f32,
 ) -> bool {
     let flat = |v: Vec3A| Vec2::new(v.x, v.z);
-    let reach = AOE_HITBOX_LENIENCY;
+    let reach = PLAYER_HITBOX_RADIUS;
     let offset = flat(point) - flat(caster);
     let distance = offset.length();
     // Facing `rotation` means looking along (sin, cos) on the ground, the same way NPCs turn to their targets.
@@ -1813,6 +1818,31 @@ mod area_tests {
             Vec3A::new(18.0, 0.0, 0.0),
             3.0
         ));
+    }
+
+    #[test]
+    fn leaving_a_circle_is_a_miss() {
+        // Terror Eye: 6 yalms around where the player stood. The 2026-10-17 bundle's player was hit at 6.6 and 6.7
+        // yalms; only half a yalm past the edge (their own hitbox) still counts.
+        let circle = AreaShape::Circle {
+            radius: 6.0,
+            on_target: true,
+        };
+        let at = |x: f32| {
+            in_area(
+                circle,
+                Vec3A::ZERO,
+                0.0,
+                Vec3A::ZERO,
+                Vec3A::new(x, 0.0, 0.0),
+                1.44,
+            )
+        };
+        assert!(at(4.5));
+        assert!(at(6.4));
+        assert!(!at(6.6));
+        assert!(!at(6.7));
+        assert!(!at(7.8));
     }
 }
 

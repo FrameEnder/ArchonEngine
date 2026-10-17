@@ -202,7 +202,10 @@ player is sent out.
   Miraudont and the guards clear the adds first and only then turn on Quzal; Papalymo takes the gargoyle first and then
   the mage.
 * The sincallers stay back by the tree behind Quzal, unlike a player healer: from where they appear (18 yalms behind
-  him) they settle about 15 yalms behind him and cast from 12-26 yalms (`range` 18, `keep_near` Quzal within 16).
+  him) they settle about 15 yalms behind him, 1.6 yalms apart, and cast from 12-26 yalms. Their range alone (19) keeps
+  them there; keeping them near Quzal had sent both to the same spot, inside each other.
+* The player starts facing -0.636 (retail's SpawnPlayer); it was 1.88, nearly the opposite way. Leia's Legacy (-1.288,
+  was -0.36), Chasing Shadows and Spirithold Broken (start spots about 1 and 3 yalms off) are retail's now too.
 * The background guards and Ixali are scenery: retail spawns them with display flags 0x208 (no health bar, can't be
   targeted) where the fighters have 0x001, and without CharacterData flag 0x1. The drop-in's battle NPCs take a
   `display_flags` now, and those 13 have retail's.

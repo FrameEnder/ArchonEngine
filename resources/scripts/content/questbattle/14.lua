@@ -13,8 +13,9 @@
 -- The battle talk window (DirectorPopupMessage) shows the content's own text by its ID, so these are the IDs retail
 -- sent; the speaker's name and portrait are numbers from the same packets.
 
+-- Where retail puts the player and which way they face: their SpawnPlayer in Bob's Chronofoil capture (2026-10-16).
 START_POSITION = { x = -178.11, y = -27.43, z = 292.18 }
-START_ROTATION = -0.36
+START_ROTATION = -1.288
 
 BNPC_JANREMI = 2319770
 BNPC_KUPLU = 4097283
