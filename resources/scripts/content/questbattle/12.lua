@@ -5,10 +5,12 @@
 --   0      director sequence 2: Galfrid, Miraudont and the guards with you; Quzal Huatotl and six Ixali; more Ixali
 --          and guards fighting each other further off. Galfrid: battle talk 161 at 5, Miraudont 162 at 10
 --   the first six Ixali down: sequence 3, six more arrive; Galfrid 164 eight seconds later
---   Quzal at 33%: sequence 4, Quzal 165 (and Void Call)
---   Quzal at 25%: sequence 5, Quzal 166, a blanga arrives; Galfrid 163 six seconds later, Miraudont 168 three after
+--   Quzal at 34%: sequence 4, Quzal 165
+--   Quzal at about 27%: he casts Void Call (2.7 s); a second after it lands, sequence 5 and Quzal 166, and the
+--          blanga it called arrives; Galfrid 163 six seconds later, Miraudont 168 three after
 --   everyone down: sequence 6, everyone else leaves and the director's scene 6 plays (a cutscene)
---   after it: sequence 7, a lesser gargoyle and the masked mage; the mage 173 five seconds in
+--   after it: sequence 7, a lesser gargoyle and the masked mage; the mage 173 five seconds in. The mage stands by
+--          (spawned not hostile) until someone hits it, then goes after them
 --   22 seconds in: sequence 8, the mage 174 five seconds later
 --   gargoyle at 50%: the mage 176
 --   gargoyle at 25%: sequence 9, Yda and Papalymo arrive; ten seconds later sequence 10, Papalymo 177, Yda 178 five
@@ -17,8 +19,9 @@
 --   the mage down: sequence 11, "Duty Complete", the quest battle's scene 11 and back out (the quest moves to
 --          sequence 3)
 -- Sequence 1 is set before the opening cutscene, as retail does. The layout IDs, health, levels, where everyone stands
--- and the start position are the recording's too. Which six Ixali come first and which in the second wave is a guess
--- from where they stand (the recording doesn't say which layout ID arrived when.)
+-- and the start position are the recording's too. Bob's Chronofoil capture of the same run (2026-10-16, read with
+-- `questkit chronofoil --battle`) confirms the two waves' layout IDs, every step's timing, the HP thresholds and who
+-- goes after whom; where it differed from the Recorder's reading, the capture's numbers are used (marked "capture".)
 --
 -- The battle talk window (DirectorPopupMessage) shows the content's own text by its ID, so these are the IDs retail
 -- sent; the speaker's name and portrait are numbers from the same packets.
@@ -64,8 +67,10 @@ ENEMY_TARGETS = {
     [BNPC_QUZAL] = BNPC_GALFRID,
     [4089296] = BNPC_MIRAUDONT, [4089297] = BNPC_MIRAUDONT, [4089298] = BNPC_MIRAUDONT,
     [3803269] = BNPC_MIRAUDONT, [4089325] = BNPC_MIRAUDONT,
-    [4089292] = BNPC_BOW, [4089293] = BNPC_LANCE, [4089294] = BNPC_BOW, [3803267] = BNPC_LANCE, [3803268] = BNPC_BOW,
-    [3803263] = BNPC_GALFRID, [3803264] = BNPC_MIRAUDONT,
+    -- capture: 3803267 goes after the bow and 3803268 the lance; both sincallers start on Galfrid (then follow
+    -- whoever heals and hits them: Miraudont, the bow, you.)
+    [4089292] = BNPC_BOW, [4089293] = BNPC_LANCE, [4089294] = BNPC_BOW, [3803267] = BNPC_BOW, [3803268] = BNPC_LANCE,
+    [3803263] = BNPC_GALFRID, [3803264] = BNPC_GALFRID,
 }
 
 -- Who casts Cure on whom, below what health (in percent), at most this often (in updates), from the recording: the
@@ -83,7 +88,8 @@ HEALERS = {
     { healer = BNPC_GALFRID, targets = GUARDS, below = 30, every = 40 },
     { healer = 3803263, targets = { BNPC_QUZAL }, below = 50, every = 12 },
     { healer = 3803264, targets = { BNPC_QUZAL }, below = 50, every = 12 },
-    { healer = BNPC_PAPALYMO, targets = { PLAYER }, below = 40, every = 60 },
+    -- capture: Papalymo's one Cure on you came at 67%.
+    { healer = BNPC_PAPALYMO, targets = { PLAYER }, below = 70, every = 60 },
 }
 
 -- Who's talking, by BNpcName, and their portrait in the battle talk window.
@@ -127,15 +133,19 @@ SECOND_WAVE_STEPS = {
     { 16, "talk", SPEAKER_GALFRID, 164 },
 }
 -- As Quzal's health drops to each of these (in percent).
+-- capture: sequence 4 came as Quzal went from 34.8% to 33.4% (so at 34%, not a third). He cast Void Call (2.7 s) at
+-- 26.2%; it landed (a summon) 3 s later, and a second after that came sequence 5 and his line, then the blanga. Whether
+-- Void Call goes by his health or by time (11.8 s after sequence 4) needs a second run to tell.
 QUZAL_PHASES = {
-    { health = 33, steps = { { 0, "sequence", 4 }, { 0, "talk", SPEAKER_QUZAL, 165 }, { 0, "action", BNPC_QUZAL, ACTION_VOID_CALL } } },
+    { health = 34, steps = { { 0, "sequence", 4 }, { 0, "talk", SPEAKER_QUZAL, 165 } } },
     {
-        health = 25,
+        health = 27,
         steps = {
-            { 0, "sequence", 5 },
+            { 0, "action", BNPC_QUZAL, ACTION_VOID_CALL },
+            { 8, "sequence", 5 },
             { 0, "talk", SPEAKER_QUZAL, 166 },
-            { 0, "spawn", { BNPC_BLANGA } },
-            { 12, "talk", SPEAKER_GALFRID, 163 },
+            { 1, "spawn", { BNPC_BLANGA } },
+            { 11, "talk", SPEAKER_GALFRID, 163 },
             { 5, "talk", SPEAKER_MIRAUDONT, 168 },
         },
     },
@@ -176,15 +186,18 @@ MAGE_PHASES = {
 -- (Quzal, then the masked mage) while it's there; Miraudont clears the lostwings and the guards the slowbeaks that are
 -- after them, then the other adds, and only then turn on the boss. Whoever runs out of theirs takes the oldest left.
 BATTLE = Battle.new()
-for _, id in ipairs({ BNPC_GALFRID, BNPC_YDA, BNPC_PAPALYMO }) do
+for _, id in ipairs({ BNPC_GALFRID, BNPC_YDA }) do
     BATTLE:ally(id, { focus = { "boss", "adds" } })
 end
+-- capture: Papalymo takes the gargoyle (the add) first and the mage after, as in Chasing Shadows.
+BATTLE:ally(BNPC_PAPALYMO, { focus = { "adds", "boss" } })
 BATTLE:ally(BNPC_MIRAUDONT, { focus = { "lostwings", "adds", "boss" } })
 BATTLE:ally(BNPC_BOW, { focus = { "slowbeaks", "adds", "boss" } })
 BATTLE:ally(BNPC_LANCE, { focus = { "slowbeaks", "adds", "boss" } })
-for _, id in ipairs({ BNPC_QUZAL, BNPC_MAGE }) do
-    BATTLE:enemy(id, { group = "boss", attacks = ENEMY_TARGETS[id] })
-end
+BATTLE:enemy(BNPC_QUZAL, { group = "boss", attacks = ENEMY_TARGETS[BNPC_QUZAL] })
+-- capture: the mage stands by until it's hit (it engaged a second after the player's first spell, 34 s in), then
+-- turns on Yda when she arrives (her hits outweigh yours.)
+BATTLE:enemy(BNPC_MAGE, { group = "boss", passive = true })
 for _, id in ipairs({ BNPC_BLANGA, BNPC_GARGOYLE }) do
     BATTLE:enemy(id, { group = "adds" })
 end

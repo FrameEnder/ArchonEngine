@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-17 | — | Bob's Chronofoil captures and what's in them (outside sources, recorder and diagnostics); `questkit chronofoil` (questkit); packet sizes that differ on retail (known issues).
+| 2026-10-17 | — | To Guard a Guardian checked against Bob's Chronofoil capture (quest battles); `questkit chronofoil --battle` and who's in the fight (questkit); what the Recorder's raw packets can't be trusted for (recorder and diagnostics); packet layouts from retail captures (known issues).
+| 2026-10-17 | `95ce15b` | Bob's Chronofoil captures and what's in them (outside sources, recorder and diagnostics); `questkit chronofoil` (questkit); packet sizes that differ on retail (known issues).
 | 2026-10-17 | `b435ef4` | Outside Sources (new page): what to check when a recording leaves something unclear, the order of trust, Cactbot's ARR coverage; OverlayPlugin confirms the battle talk window's layout (quest battles).
 | 2026-10-17 | `82f65de` | Placement, battle roles vs class roles (quest battles, combat, questkit).
 | 2026-10-17 | `21d1075` | Roles (quest battles, questkit).
@@ -66,7 +67,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | `questkit chronofoil`: reads Chronofoil captures (finished and unfinished), indexes each session's zones and duties with what happened there, and exports a visit as a Kawari packet capture; opcode tables for game versions 2026.06.18, 09.01 and 09.15 (`tools/questkit/questkit/data/chronofoil_opcodes.json`, derived in `chronofoil_opcodes.py`), checked against every packet's size in Bob's captures. CI installs zstandard. |
+| — | To Guard a Guardian from Bob's Chronofoil capture of the same run: sequence 4 at 34 %, Void Call at 27 % with sequence 5 and the blanga when it lands, the second wave's slowbeaks swapped, both sincallers start on Galfrid, the masked mage passive until hit (not hostile in the drop-in; Battle.lua's `passive`), Papalymo on the adds first and his Cure below 70 %. `questkit chronofoil --battle N.V` turns a capture's duty into a battle run (`chronofoil_battle.py`); `questkit battle` only counts NPCs in your fight and picks an engaged boss. |
+| `95ce15b` | `questkit chronofoil`: reads Chronofoil captures (finished and unfinished), indexes each session's zones and duties with what happened there, and exports a visit as a Kawari packet capture; opcode tables for game versions 2026.06.18, 09.01 and 09.15 (`tools/questkit/questkit/data/chronofoil_opcodes.json`, derived in `chronofoil_opcodes.py`), checked against every packet's size in Bob's captures. CI installs zstandard. |
 | `b435ef4` | Chasing Shadows' comment on battle talk brought up to date (the window is known; its text IDs aren't recorded yet). |
 | `82f65de` | Placement: `keep_near` takes several anchors (Papalymo near Yda and you), `stand_behind` puts an NPC behind the enemy the tank is fighting (`server/placement.rs`); supports default to it. Roles: a battle role (`role`) apart from the class's (`class_role`): in Chasing Shadows Yda, a DPS, plays the tank, and Papalymo is a DPS with some support. questkit only calls an NPC a support when healing is a large part of what it does. |
 | `21d1075` | Roles in the battle framework: tank (leads, pulls enemies off the others: supports first, then DPS, then the player), DPS (highest health first, two or more split the toughest enemies, can heal themselves), support (backline, near the tank, buffs DPS then tank, heals the tank first); enemies take roles too. `onUpdate`'s `info` gains each actor's target. `questkit battle`'s outline gives each ally's role, by class and by what it did. |

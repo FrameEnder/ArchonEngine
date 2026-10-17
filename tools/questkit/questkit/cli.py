@@ -201,6 +201,24 @@ def _chronofoil(args) -> int:
         print("No Chronofoil captures found")
         return 1
     tables = chronofoil.load_opcodes()
+    if args.battle:
+        import gzip
+        import json
+
+        from . import battle, chronofoil_battle
+
+        number, _, visit = args.battle.partition(".")
+        capture = captures[int(number)]
+        chosen = chronofoil.summarize(capture, tables).visits[int(visit)]
+        run = chronofoil_battle.run_from_visit(capture, tables, chosen)
+        out = args.out or f"chronofoil-{capture.id[:8]}-{visit}.json.gz"
+        if out.endswith(".md"):
+            Path(out).write_text(battle.report(run) + "\n")
+        else:
+            Path(out).write_bytes(gzip.compress(json.dumps(run).encode()))
+        print(f"Wrote {out} ({len(run['Actors'])} actors, {len(run['Actions'])} actions); "
+              f"read it with: questkit battle {out}" if not out.endswith(".md") else f"Wrote {out}")
+        return 0
     if args.export:
         number, _, visit = args.export.partition(".")
         capture = captures[int(number)]
@@ -289,7 +307,9 @@ def main(argv=None) -> int:
     p.add_argument("--names", help="a JSON file of territory and duty names from the game data (never committed)")
     p.add_argument("--export", metavar="N.V",
                    help="write visit V of capture N (numbers from the index) as a Kawari packet capture")
-    p.add_argument("--out", help="where to write the index or the export")
+    p.add_argument("--battle", metavar="N.V",
+                   help="turn visit V of capture N into a battle run for `questkit battle` (or a report, with --out x.md)")
+    p.add_argument("--out", help="where to write the index, the export or the battle")
     p.add_argument("--save-opcodes", action="store_true",
                    help="save Kawari's current opcodes for its game version (before merging a new patch)")
     p.set_defaults(run=_chronofoil)

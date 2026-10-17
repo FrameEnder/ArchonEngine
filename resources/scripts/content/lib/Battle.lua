@@ -110,7 +110,8 @@ function Battle:ally(layout, role)
 end
 
 -- An NPC on the other side. role: group (e.g. "boss", "adds"; several groups can be given as a list), attacks (who
--- it goes after first: an ally's layout ID, or nil for the player), enmity (how much), heals, range.
+-- it goes after first: an ally's layout ID, or nil for the player), enmity (how much), heals, range, passive (true:
+-- it goes after no one until someone hits it, as To Guard a Guardian's masked mage stands by until attacked.)
 -- `role` (tank, dps, support) matters for enemies too: whom their supports heal first, whom a tank protects.
 function Battle:enemy(layout, role)
     self.roles[layout] = merge({ side = "enemy", group = "adds" }, role)
@@ -203,7 +204,9 @@ function Battle:spawn(director, layouts)
         if role.side == "enemy" then
             table.insert(self.arrived, layout)
             self.arrival[layout] = #self.arrived
-            director:set_hate(layout, role.attacks, role.enmity or Battle.STARTING_ENMITY) -- nil is the player
+            if not role.passive then
+                director:set_hate(layout, role.attacks, role.enmity or Battle.STARTING_ENMITY) -- nil is the player
+            end
         elseif role.role ~= "tank" and #self:withRole("ally", "tank") > 0 then
             -- The tank goes in first; everyone else follows a moment later.
             self.hold[layout] = self.updates + Battle.FOLLOW_DELAY

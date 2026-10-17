@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from questkit import battle, capture, chronofoil, compare, fixtures, recording, replay, scaffold, triage  # noqa: E402
+from questkit import battle, capture, chronofoil, chronofoil_battle, compare, fixtures, recording, replay, scaffold, triage  # noqa: E402
 from questkit.bundle import Bundle  # noqa: E402
 
 QUEST = 9999
@@ -555,6 +555,7 @@ class OutlineTest(unittest.TestCase):
                     {"S": 90.5, "Id": papa, "T": add4}, {"S": 100.5, "Id": papa, "T": boss}]
         for i in (add1, add2, add3, add4):
             samples.append({"S": actors[i]["Died"], "Id": i, "Hp": 0, "Dead": True})
+        samples.append({"S": 60.0, "Id": boss, "Hp": 14000})  # Yda wearing it down
         actions = []
         def act(t, who, action, target, kind=3, hp=500, max_hp=800):
             actions.append({"S": t, "Source": who, "Action": action, "Type": 1, "SourceHp": 1,
@@ -642,6 +643,14 @@ class BattleFrameworkTest(unittest.TestCase):
 
     def hates(self, who):
         return [args[1] for name, args in self.calls if name == "set_hate" and args[0] == who]
+
+    def test_passive_enemy(self):
+        b, d = self.battle, self.director
+        self.lua.execute("B:enemy(204, { group = 'boss', passive = true })")
+        b.spawn(b, d, self.lua.table_from([204, self.ADD1]))
+        # A passive enemy is sent after no one (it waits to be hit); the others go after the player as usual.
+        self.assertEqual(self.hates(204), [])
+        self.assertEqual(len(self.hates(self.ADD1)), 1)
 
     def test_roles(self):
         b, d = self.battle, self.director
@@ -786,6 +795,64 @@ class ChronofoilTest(unittest.TestCase):
             capture, = chronofoil.find_captures([path])
             self.assertTrue(capture.finished)
             self.assertEqual(len(chronofoil.summarize(capture, self.TABLES).visits), 2)
+
+    def test_battle_from_capture(self):
+        import struct
+
+        you, ally, boss, scenery = 0x1000_0001, 0x4000_0001, 0x4000_0002, 0x4000_0003
+        def spawn_npc(layout, hp, battalion):
+            common = bytearray(560)
+            struct.pack_into("<III", common, 48, 900, 500, layout)
+            struct.pack_into("<II", common, 76, hp, hp)
+            common[113], common[117], common[118] = 2, battalion, 15
+            struct.pack_into("<fff", common, 496, 1.0, 2.0, 3.0)
+            return bytes(16) + bytes(common) + bytes(640 - 16 - 560)
+        def set_target(target):
+            return struct.pack("<HHIIII", 50, 0, 0, 0, 0, 0) + bytes(4) + struct.pack("<II", target, 0)
+        def effect(action, target, amount):
+            data = bytearray(124)
+            struct.pack_into("<I", data, 8, action)
+            data[31], data[33] = 1, 1
+            struct.pack_into("<BBBBBBH", data, 42, 3, 0, 0, 0, 0, 0, amount)
+            struct.pack_into("<I", data, 112, target)
+            return bytes(data)
+        def hp(current):
+            return struct.pack("<IIIIII", 1, 1, 0, current, 0, 0)
+        t = 1_760_000_000_000
+        def frame(ms, src, opcode, data):
+            return _frame(t + ms, 1, [(opcode, src, data)])
+        tables = {self.VERSION: {"ServerZoneIpcType": {716: ("ZoneInit", 136, "t"), 1: ("SpawnNpc", 640, "t"),
+                                                       2: ("ActorControlTarget", 32, "t"), 3: ("ActionEffect1", 124, "t"),
+                                                       4: ("EffectResultBasic", 24, "t"), 225: ("DirectorVars", 24, "t")}}}
+        data = (frame(0, you, 716, _zone_init(1043, 15))
+                + frame(100, ally, 1, spawn_npc(11, 1000, 0)) + frame(100, boss, 1, spawn_npc(22, 5000, 4))
+                + frame(100, scenery, 1, spawn_npc(33, 90000, 4))
+                + frame(2000, 0, 225, (0x8003_0001).to_bytes(4, "little") + bytes([2]) + bytes(19))
+                + frame(2100, ally, 2, set_target(boss)) + frame(2500, ally, 3, effect(873, boss, 300))
+                + frame(2600, boss, 4, hp(4700)))
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "cap"
+            folder.mkdir()
+            version_info, capture_info, _ = _capture_parts("cap", self.VERSION)
+            (folder / "VersionInfo").write_bytes(version_info)
+            (folder / "CaptureInfo").write_bytes(capture_info)
+            (folder / "Data").write_bytes(data)
+            capture, = chronofoil.find_captures([folder])
+            visit, = chronofoil.summarize(capture, tables).visits
+            run = chronofoil_battle.run_from_visit(capture, tables, visit)
+        actors = {a["LayoutId"]: a for a in run["Actors"].values()}
+        self.assertEqual((actors[22]["MaxHp"], actors[22]["Battalion"], actors[22]["BaseId"]), (5000, 4, 900))
+        self.assertEqual(actors[11]["Position"], [1.0, 2.0, 3.0])
+        self.assertEqual(run["Actions"][0]["Targets"][0]["Effects"][0][:2], [3, 300])
+        self.assertIn({"S": 2.1, "Id": ally, "T": boss}, run["Samples"])
+        self.assertIn({"S": 2.6, "Id": boss, "Hp": 4700}, run["Samples"])
+        self.assertEqual(run["Events"][0]["Text"], "0x80030001 sequence 2")
+        b = battle.Battle(run)
+        # The ally and the boss it fights are linked to... nobody here is "you", so everyone is in the fight; the
+        # boss is engaged (it lost HP) and the scenery isn't.
+        self.assertTrue(b.engaged(boss))
+        self.assertFalse(b.engaged(scenery))
+        self.assertEqual(battle._boss_at(b, ally, 3.0)[0], boss)
 
     def test_saved_tables_cover_every_version(self):
         tables = chronofoil.load_opcodes()

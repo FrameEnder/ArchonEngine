@@ -68,6 +68,13 @@ diagnostics repository without an export: `python3 tools/questkit battle ../kawa
 
 ### What a recording can and can't tell
 
+The raw packets the Recorder keeps (Duty packets, a battle's `Packets`) are read from the game's packet handler, after
+the client has already changed some of them in memory: in ActionEffect1, AoeEffect8, ActorCast and StatusEffectList
+the action IDs, effect entries and status timers differ from what came over the wire (found comparing a Recorder export
+with a Chronofoil capture of the same run, see [questkit](questkit.md#chronofoil)). The decoded fields (actions, samples)
+are fine; for a packet's layout, use a Chronofoil capture.
+
+
 The scripts that run a duty's director and its NPCs (when waves come, HP thresholds, targeting, who heals whom) are on
 Square Enix's servers and never reach the client, so no plugin can read them; they're inferred from what everyone did.
 What the client does have, and the Battles tab now keeps:

@@ -95,6 +95,49 @@ class Battle:
 
     # ---- who's who ----
 
+    def engaged(self, i: int) -> bool:
+        """Whether this NPC is really part of your fight: it dies here, loses a real share of its HP (5% or more),
+        you hit it, or it goes after you."""
+        if getattr(self, "_engaged", None) is None:
+            hit = {t["Id"] for act in self.actions if act["Source"] == self.you for t in act.get("Targets") or []}
+            after_you = {i for i, track in self.target.items() if self.you in track.values}
+            died = {i for i, a in self.actors.items() if a.get("Died") is not None}
+            died |= {i for i, track in self.dead.items() if any(track.values)}
+            hurt = {i for i, track in self.hp.items() if self.actors.get(i, {}).get("MaxHp")
+                    and min(v for v in track.values if v is not None) <= 0.95 * self.actors[i]["MaxHp"]}
+            self._engaged = hit | after_you | died | hurt
+        return i in self._engaged
+
+    @property
+    def in_fight(self) -> set[int]:
+        """Everyone linked to you by hits, heals or targets, directly or through others: your fight, without the
+        scenery (NPCs fighting each other in the background, as in To Guard a Guardian, never touch it.) Everyone,
+        when there's no "you"."""
+        if getattr(self, "_in_fight", None) is not None:
+            return self._in_fight
+        if self.you is None:
+            self._in_fight = set(self.actors)
+            return self._in_fight
+        links: dict[int, set[int]] = defaultdict(set)
+        for act in self.actions:
+            for target in act.get("Targets") or []:
+                if target["Id"] != act["Source"]:
+                    links[act["Source"]].add(target["Id"])
+                    links[target["Id"]].add(act["Source"])
+        for i, track in self.target.items():
+            for value in track.values:
+                if value and value != i:
+                    links[i].add(value)
+                    links[value].add(i)
+        seen, todo = {self.you}, [self.you]
+        while todo:
+            for other in links[todo.pop()]:
+                if other not in seen:
+                    seen.add(other)
+                    todo.append(other)
+        self._in_fight = seen
+        return seen
+
     def name(self, i: int | None) -> str:
         if not i:
             return "no one"
@@ -470,9 +513,15 @@ def phases(b: "Battle") -> list[tuple[float, float, str]]:
 
 def _boss_at(b: "Battle", ally: int, t: float):
     """The enemy with the most max HP still standing: what this fight's "boss" is at that moment."""
-    candidates = [c for c in b.actors if b.hostile(ally, c) and b.alive(c, t) and b.actors[c].get("Kind") == "battle npc"]
+    candidates = [c for c in b.actors if b.hostile(ally, c) and b.alive(c, t) and b.actors[c].get("Kind") == "battle npc"
+                  and c in b.in_fight]
     if not candidates:
         return None, []
+    # The boss is one you're fighting: it dies, you hit it or it comes after you. Scenery with huge HP (fighting in
+    # the background, there to look busy) does none of those.
+    engaged = [c for c in candidates if b.engaged(c)]
+    if engaged:
+        candidates = engaged
     boss = max(candidates, key=lambda c: b.actors[c].get("MaxHp", 0))
     return boss, [c for c in candidates if c != boss]
 
@@ -675,7 +724,7 @@ def outline(b: "Battle") -> str:
     lines: list[str] = []
     w = lines.append
     allies = [i for i, a in b.actors.items() if a.get("Kind") == "battle npc" and b.you
-              and not b.hostile(i, b.you) and a.get("MaxHp")]
+              and not b.hostile(i, b.you) and a.get("MaxHp") and i in b.in_fight]
     if not allies:
         return ""
     w("## The director's outline (draft)")

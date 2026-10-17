@@ -86,7 +86,7 @@ BATTLE:onHealth(BNPC_BOSS, 75, function(director) BATTLE:spawn(director, WAVE_1)
 | Part | |
 |---|---|
 | `ally(layout, role)` | `focus`: the enemy groups it goes for, in order (`"any"` is everyone); `order` within a group: `oldest`, `newest`, `highest_hp`, `lowest_hp`, `nearest`; `range` (yalms, `set_attack_range`); `keep_near` (`{ anchor, within }`, `keep_near`); `heals`. |
-| `enemy(layout, role)` | `group` (a name or a list, e.g. `{ "lostwings", "adds" }`); `attacks`: whom it goes for first (an ally, or the player when `nil`) with `enmity` (300); it can have `heals` too (the sincallers heal Quzal). |
+| `enemy(layout, role)` | `group` (a name or a list, e.g. `{ "lostwings", "adds" }`); `attacks`: whom it goes for first (an ally, or the player when `nil`) with `enmity` (300); `passive = true`: no one at first, it waits to be hit (To Guard a Guardian's masked mage); it can have `heals` too (the sincallers heal Quzal). |
 | heals | `{ action, targets (layout IDs, Battle.PLAYER, or "allies" for its whole side), below (%), every (s), say (a function) }`: heals whichever target is lowest under `below`. |
 | `spawn(director, layouts)` / `remove(director, layouts)` | Brings NPCs in as their roles say (placement, first target) / takes them out without dying. |
 | `change(director, name, changes)` | A new context: `changes = { [layout] = { focus = … } }` from now on (the boss gone, someone joining). |
@@ -186,16 +186,27 @@ player is sent out.
   each, the six melee Ixali the other three guards in pairs. The Recorder bears it out: each of three guards took 112
   hits on retail (two Ixali), each of the other two 26 (one sincaller casting), and every guard and Ixal kept fighting
   the whole time. Pairing them by hand had left an Ixal 47 yalms from its guard, with two Ixali and a guard standing
-  idle. The first six down bring six more (sequence 3);
-  Quzal at 33 % (sequence 4, Void Call) and 25 % (sequence 5, a blanga). Which Ixali come first is a guess from where
-  they stand.
+  idle. The first six down bring six more (sequence 3); Quzal at 34 % (sequence 4), and at about 27 % he casts Void
+  Call (2.7 s): a second after it lands, sequence 5 and the blanga it called. Which Ixali come first and which second
+  is confirmed by the capture (below).
 * Everyone down: sequence 6, everyone else is removed and the director's cutscene plays (scene 6). After it (sequence
   7) a lesser gargoyle and the masked mage; sequence 8 22 s later; the gargoyle at 25 % brings Yda and Papalymo
   (sequence 9, 10 s later 10); the mage at 40 % says one more line. The mage down: sequence 11, finish scene 11, the
   quest moves to sequence 3.
-* As on retail: Quzal goes after Galfrid, the lostwings after Miraudont, the slowbeaks after the two guards, the
-  sincallers after Galfrid and Miraudont; the blanga, the gargoyle and the mage after the player. Galfrid, Yda and
-  Papalymo take the boss; Miraudont and the guards clear the adds first (oldest first) and only then turn on Quzal.
+* As on retail: Quzal goes after Galfrid, the lostwings after Miraudont, the slowbeaks after the two guards (3803267
+  the bow, 3803268 the lance), both sincallers after Galfrid at first; the blanga and the gargoyle after the player.
+  The masked mage stands by, spawned not hostile, until someone hits it (34 s after it appeared, on retail), then
+  goes after them, and turns on Yda when she arrives. Galfrid and Yda take the boss; Miraudont and the guards clear the
+  adds first and only then turn on Quzal; Papalymo takes the gargoyle first and then the mage.
+* **Checked against Bob's Chronofoil capture of the same run** (2026-10-16, `questkit chronofoil --battle 41.6`, see
+  [questkit](questkit.md#chronofoil)). The raw packets say what the Recorder couldn't: which layout IDs arrived when
+  (SpawnNpc), every NPC's target as it changed (retail sends ActorControlTarget SetTarget for NPCs too), the enemy
+  list, and the HP at each moment. All 20 timed steps and 20 battle talk lines were within half a second of the
+  script. What changed: sequence 4 at 34 % (Quzal went 34.8 → 33.4 % as it came; a third would never have fired), Void
+  Call at about 27 % instead of with sequence 4, and sequence 5 when Void Call lands rather than at 25 % (Quzal was
+  already at 23 %); the second wave's two slowbeaks swapped; the second sincaller starts on Galfrid; the mage passive
+  until hit; Papalymo on the adds first and his Cure on you below 70 % (retail's came at 67 %). One run can't tell
+  whether Void Call goes by Quzal's health (26.2 % when it began) or by time (11.8 s after sequence 4).
 * Healing, by the Recorder's count of each one's Cures: the bow (9) and Miraudont (9) Cure the two guards for about 60
   and Galfrid (3) for about 200, never themselves or the player; the sincallers (12, about 88) heal Quzal; Papalymo
   heals the player once, big (660). The ~100 Cures on the guards and on the player in the recording were the player's

@@ -103,6 +103,20 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
 * 162 costume sets in the Shop have no contents yet and can't be bought until an admin adds them.
 * Store items arrive as items; what they do when used depends on server support.
 
+## Packet layouts (from retail captures)
+
+* **HaterList and EnmityList**: on retail the entries start straight after the 4-byte count (HaterList: 264 bytes, 32
+  entries of actor and enmity, then 4 bytes; EnmityList 72, 8 entries). Kawari's structs (`hater_list.rs`,
+  `enmity_list.rs`) put 4 bytes of padding there instead, and Kawari sends both: the client probably reads Kawari's
+  enemy list and enmity bars one field off.
+* **EffectResult / EffectResultBasic**: the HP is the packet's own actor's (retail sends each actor's result from that
+  actor); the ID at 8, which Kawari calls `target_id`, is sometimes someone else (20 of 96 EffectResults in To Guard a
+  Guardian).
+* **To Guard a Guardian's masked mage**: retail spawns it not hostile and, when it engages, sends ToggleWeapon,
+  SetEventState 0, SetBattle 1 and SetTarget. Kawari now spawns it not hostile and lets the first hit start it, but
+  sends none of those: check in game that it can be attacked and its nameplate turns hostile.
+* **Void Call** (Quzal): scripted at 27 %; one run can't tell whether retail goes by health or by time after sequence 4.
+
 ## Packet sizes (from retail captures)
 
 Packets whose size on retail isn't what `opcodes.yml` says, from Bob's Chronofoil captures (every version since June

@@ -206,6 +206,11 @@ out.
 Tried on Bob's Kawari capture of To Guard a Guardian (converted to the same shape): its "never acted" list started
 with the three background NPCs that stood idle there (3854723, 3854588, 3854715).
 
+**Who's in the fight.** The outline only looks at NPCs linked to you by hits, heals or targets (directly or through
+others, `Battle.in_fight`), and its "boss" is the healthiest enemy that's engaged: it dies, loses 5 % of its HP or more,
+you hit it, or it comes after you (`Battle.engaged`). Without that, To Guard a Guardian's background Ixali (79750 HP,
+fighting guards nobody else touches) were taken for the boss, and Galfrid looked like he never went for it.
+
 ## chronofoil
 
 `questkit chronofoil <Chronofoil folder or captures>` indexes retail sessions recorded with Chronofoil (see
@@ -229,6 +234,19 @@ reads, chat left out), so `compare` and the rest can use it.
   **Before merging upstream's next patch update, run `questkit chronofoil --save-opcodes`**, so captures from the
   outgoing version stay readable.
 * About 0.5 s per hour of play: the whole of Bob's four months (42 sessions) index in 25 s.
+* **`--battle N.V`** turns a visit into a battle run (`chronofoil_battle.py`), saved as `.json.gz` for `questkit
+  battle` (or straight to a report with `--out x.md`). From the packets, with Kawari's struct layouts: actors from
+  SpawnNpc/SpawnPlayer (BNpcBase and BNpcName, layout ID, HP, battalion, level, class, position; players other than
+  you are just "player"), positions (ActorMove, ActorSetPos), HP (UpdateHpMpTp, EffectResult(Basic): the HP is the
+  packet's own actor's), **targets** (ActorControlTarget SetTarget, which retail sends for NPCs too), deaths
+  (Defeated), every action with its targets and effects, casts in the Recorder's text, the director's sequence and
+  variables, battle talk, NPC yells, map effects, every actor control, and the enemy list (HaterList, EnmityList). It
+  has no names (no game data here: NPCs show as `base N [layout]`), no Action sheet (shapes, omens, class kits) and no
+  layout layers; positions only change when a packet moves someone.
+* Checked on To Guard a Guardian against the Recorder export of the same run (Recorder 2.3, 6241 server packets): the
+  capture has every one of them. 4257 are byte for byte the same; in the rest (ActionEffect1, ActorCast, AoeEffect8,
+  StatusEffectList, a few spawns) the client had already changed fields in memory (action IDs, effect entries, status
+  timers) by the time the Recorder's hook saw the packet. **For packet layouts, Chronofoil's bytes are the wire's.**
 
 ## lua-syntax
 
