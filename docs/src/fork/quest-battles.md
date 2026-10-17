@@ -164,4 +164,6 @@ player is sent out.
    folder.
 3. Add the NPCs to the territory drop-in as a `QB_…` layer.
 4. Write `content/questbattle/<id>.lua` with the callbacks above; keep a timing table in its header.
-5. Add any new enemy skills as action scripts (`resources/scripts/actions/`), see [Combat](combat.md).
+5. Add any new enemy skills as action scripts (`resources/scripts/actions/`), see [Combat](combat.md). Give allies and
+   enemies that fight with a class's actions a `rotation` in their timeline (questkit's report writes one per NPC),
+   rather than fixed timepoints.

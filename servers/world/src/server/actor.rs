@@ -12,6 +12,7 @@ use crate::{
         job_gauge::JobGauge,
         network::{DestinationNetwork, NetworkState},
         party::get_party_id_from_actor_id,
+        rotation::RotationState,
     },
     zone_connection::{BaseParameters, TeleportQuery},
 };
@@ -139,6 +140,8 @@ pub enum NetworkedActor {
         returning_home: bool,
         /// The cast it's in the middle of, if any. It stands still until it's done.
         cast: Option<NpcCast>,
+        /// Where it is in its class rotation (`Timeline::rotation`), if it has one.
+        rotation_state: RotationState,
     },
     Object {
         object: SpawnObject,

@@ -84,6 +84,41 @@ overrides it (Halitostroper 7983, Wood Wailer Sentries 6100, quest enemies).
 
 Player side: sheathing stops auto-attacking (the client doesn't always ask).
 
+## Class rotations (`server/rotation.rs`)
+
+NPCs in duties fight with their class's actions (Miraudont is a lancer, Yda a pugilist, Papalymo a thaumaturge), so a
+timeline can give an NPC a **rotation** instead of fixed timepoints. The class mechanics are read from the Action sheet
+at runtime (`GameData::get_action_mechanics`): whether an action is on the GCD (CooldownGroup 58, or as its additional
+group), its recast, and the action it follows in a combo (`ActionCombo`). The rotation only adds what retail's
+recordings show, and `questkit battle` writes it from a Recorder 2.7 recording:
+
+```json
+"rotation": {
+  "pace": 4.0,
+  "actions": [
+    { "action": 83, "then": 78, "comment": "Life Surge: on cooldown, then Vorpal Thrust" },
+    { "action": 82, "comment": "Leg Sweep: on cooldown" },
+    { "action": 76, "every": 40, "comment": "Feint: every 40 s, not on cooldown" },
+    { "action": 78, "comment": "Vorpal Thrust: only right after True Thrust (its ActionCombo)" },
+    { "action": 75 }
+  ]
+}
+```
+
+Every tick (500 ms) the first ready entry is used:
+
+| Rule | |
+|---|---|
+| `pace` | Seconds between the NPC's weaponskills and spells. Retail NPCs act far less often than players (allies use one every 3–12 s). |
+| GCD actions | Only once `pace` has passed; a combo step only right after its `ActionCombo`, within 15 s; one with a longer recast than `pace` waits for it. |
+| Abilities | Between two GCD actions only (never before the first), a second after the last one, one at a time; then their recast (or `every`). |
+| `refresh` | Not again on the same target for that many seconds: a damage-over-time or debuff, re-applied as it wears off (timed per target, since players' statuses aren't visible here). |
+| `then` | The GCD action that comes next (a buff's follow-up). |
+| `target_hp_below`, `self_hp_below` | Only below that health %. |
+
+A rotation's action replaces that tick's auto-attack; casts work as for any NPC action (it stands still while casting).
+Heals on allies stay in the content's Lua (`runHeals`), since they pick a target other than the NPC's own.
+
 ## Defeating enemies
 
 When a battle NPC dies, everyone on its enmity list, and their party in the same instance, gets:

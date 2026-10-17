@@ -35,6 +35,55 @@ pub struct Timeline {
     /// further, since they're measured from the edge of its hitbox.
     #[serde(default)]
     pub hitbox_radius: f32,
+    /// How this NPC fights with its class's actions, instead of (or as well as) fixed timepoints: see `Rotation`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rotation: Option<Rotation>,
+}
+
+/// A class rotation: which actions an NPC uses, in priority order, by the class's own rules. The mechanics come from
+/// the Action sheet at runtime (whether an action is on the GCD, its recast, the action it follows in a combo), so an
+/// entry is usually just an action ID; the rest is what retail's recordings show (`questkit battle` writes these.)
+///
+/// Each time the NPC can act, the first entry that's ready is used:
+/// * a weaponskill or spell (CooldownGroup 58) when `pace` seconds have passed since its last one, only as the next
+///   step of its combo (right after its ActionCombo, within 15 s) if it has one;
+/// * an ability (off the GCD) once its recast (or `every`) has passed, at most one between two GCD actions;
+/// * `refresh`: not again on the same target for that long (a damage-over-time or debuff, re-applied as it wears off);
+/// * `then`: the GCD action that has to follow this one (Life Surge, then Vorpal Thrust);
+/// * `target_hp_below` / `self_hp_below`: only then (in %).
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
+pub struct Rotation {
+    /// Seconds between this NPC's weaponskills and spells. NPCs act far less often than players (retail's quest battle
+    /// allies use one every 3-12 s); questkit reads it from a recording.
+    #[serde(default = "default_pace")]
+    pub pace: f32,
+    pub actions: Vec<RotationAction>,
+}
+
+fn default_pace() -> f32 {
+    2.5
+}
+
+/// One entry of a `Rotation`.
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone, Default)]
+pub struct RotationAction {
+    pub action: u32,
+    /// Use it at most this often, in seconds (instead of its recast.)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub every: Option<f32>,
+    /// Not again on the same target for this many seconds (its status's duration, less a little.)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub refresh: Option<f32>,
+    /// The GCD action that must come next.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub then: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target_hp_below: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub self_hp_below: Option<f32>,
+    /// Where the numbers came from (ignored by the server.)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub comment: Option<String>,
 }
 
 /// See `Timeline::recorded_amounts`.
@@ -145,6 +194,7 @@ mod tests {
                 damage_to_players: BTreeMap::default(),
                 recorded_amounts: BTreeMap::default(),
                 hitbox_radius: 0.0,
+                rotation: None,
                 timepoints: vec![Timepoint {
                     time: 20,
                     data: TimepointData::Action { action_id: 872 }

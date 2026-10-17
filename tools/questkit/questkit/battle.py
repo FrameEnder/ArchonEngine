@@ -246,6 +246,155 @@ class Battle:
         return reasons
 
 
+# ---- Class mechanics: NPCs fight with their class's actions, by its rules ----
+
+GCD_GROUP = 58
+COMBO_WINDOW = 15.0
+AUTO_ATTACK_CATEGORY = 1
+
+
+def _num(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+class Mechanics:
+    """The Action sheet's class mechanics for one action, from a recording's ActionInfo or a class kit."""
+
+    def __init__(self, action: int, info: dict):
+        self.action = action
+        self.name = info.get("Name", "")
+        self.gcd = _num(info.get("CooldownGroup")) == GCD_GROUP or _num(info.get("AdditionalCooldownGroup")) == GCD_GROUP
+        self.recast = _num(info.get("Recast100ms")) / 10
+        self.cast = _num(info.get("Cast100ms")) / 10
+        self.combo_from = _num(info.get("ActionCombo"))
+        self.level = _num(info.get("ClassJobLevel"))
+        self.class_job = _num(info.get("ClassJob"))
+        self.buff = _num(info.get("StatusGainSelf"))
+        self.proc = _num(info.get("ActionProcStatus"))
+        self.auto_attack = _num(info.get("ActionCategory")) == AUTO_ATTACK_CATEGORY
+
+    def label(self) -> str:
+        return f"{self.action} ({self.name})" if self.name else str(self.action)
+
+
+def class_profile(b: "Battle", i: int) -> dict | None:
+    """How an NPC fought with its class's actions: its class, pace, combos, abilities, buffs and their follow-ups,
+    re-applied debuffs, what its kit had that it didn't use, and a `rotation` for its timeline built from all that."""
+    mine = sorted((x for x in b.actions if x["Source"] == i), key=lambda x: x["S"])
+    if not mine:
+        return None
+    mech = {a: Mechanics(a, b.action_info.get(a) or {}) for a in {x["Action"] for x in mine}}
+    if not any(m.name or m.recast or m.gcd for m in mech.values()):
+        return None  # a recording without ActionInfo (before Recorder 2.6): nothing to go on
+    used = [x for x in mine if not mech[x["Action"]].auto_attack]
+    autos = sorted({x["Action"] for x in mine if mech[x["Action"]].auto_attack})
+    classes = Counter(mech[x["Action"]].class_job for x in used if mech[x["Action"]].class_job > 0)
+    class_job = classes.most_common(1)[0][0] if classes else 0
+    kit = (b.run.get("ClassKits") or {}).get(str(class_job)) or {}
+    profile = {"class_job": class_job, "class": kit.get("Abbreviation") or (f"ClassJob {class_job}" if class_job else ""),
+               "auto_attacks": autos, "facts": [], "rotation": None}
+    facts = profile["facts"]
+    if not used:
+        facts.append("Only auto-attacks.")
+        return profile
+
+    gcd_uses = [x for x in used if mech[x["Action"]].gcd]
+    gcd_times = [x["S"] for x in gcd_uses]
+    gaps = [round(y - x, 2) for x, y in zip(gcd_times, gcd_times[1:]) if y - x < 30]
+    pace = round(_median(gaps), 1) if gaps else 2.5
+    if gaps:
+        facts.append(f"Its weaponskills and spells come every {pace} s (median of {len(gaps)} gaps, "
+                     f"{min(gaps)}–{max(gaps)} s); a player's GCD is 2.5 s.")
+
+    # Combos: does each step follow the step before it?
+    for action, m in sorted(mech.items()):
+        if not m.gcd or not m.combo_from:
+            continue
+        uses = [k for k, x in enumerate(gcd_uses) if x["Action"] == action]
+        follows = sum(1 for k in uses if k > 0 and gcd_uses[k - 1]["Action"] == m.combo_from
+                      and gcd_uses[k]["S"] - gcd_uses[k - 1]["S"] <= COMBO_WINDOW)
+        before = mech.get(m.combo_from)
+        facts.append(f"Combo: {m.label()} follows {before.label() if before else m.combo_from} in {follows}/{len(uses)} uses.")
+
+    entries = []
+    # Abilities: on cooldown, or every so often?
+    for action, m in sorted(mech.items(), key=lambda kv: -kv[1].recast):
+        if m.gcd or m.auto_attack:
+            continue
+        times = [x["S"] for x in used if x["Action"] == action]
+        intervals = [round(y - x, 1) for x, y in zip(times, times[1:])]
+        entry = {"action": action}
+        if intervals:
+            median = _median(intervals)
+            if m.recast and median <= m.recast * 1.3:
+                facts.append(f"{m.label()}: on cooldown (every {median} s; its recast is {m.recast} s).")
+            else:
+                facts.append(f"{m.label()}: every {median} s (its recast is {m.recast} s), so not on cooldown.")
+                entry["every"] = round(median, 1)
+        else:
+            facts.append(f"{m.label()}: once (recast {m.recast} s).")
+        # A buff: which GCD action came next?
+        nexts = Counter()
+        for x in (y for y in used if y["Action"] == action):
+            after = next((g for g in gcd_uses if g["S"] > x["S"]), None)
+            if after:
+                nexts[after["Action"]] += 1
+        if nexts:
+            follow, count = nexts.most_common(1)[0]
+            total = sum(nexts.values())
+            if total >= 2 and count / total >= 0.8:
+                facts.append(f"  then {mech[follow].label()} ({count}/{total} times)")
+                entry["then"] = follow
+        entry["comment"] = f"{len(times)} uses"
+        entries.append(entry)
+
+    # GCD actions: re-applied to the same target after a while (a damage-over-time or debuff)?
+    gcd_entries = []
+    for action, m in mech.items():
+        if not m.gcd:
+            continue
+        per_target = defaultdict(list)
+        for x in gcd_uses:
+            if x["Action"] == action:
+                for h in x["Targets"]:
+                    per_target[h["Id"]].append(x["S"])
+        same_target = [round(y - x, 1) for times in per_target.values() for x, y in zip(times, times[1:])]
+        entry = {"action": action, "comment": f"{sum(len(t) for t in per_target.values())} uses"}
+        if same_target and min(same_target) >= max(pace * 2.5, 6):
+            refresh = round(min(same_target), 1)
+            facts.append(f"{m.label()}: never again on the same target within {refresh} s (a debuff or damage over "
+                         f"time, re-applied as it wears off).")
+            entry["refresh"] = refresh
+        gcd_entries.append((m, entry))
+    # Priority: re-applied ones first, then combo finishers (deepest step first), then the rest.
+    def depth(m):
+        d, seen, cur = 0, set(), m
+        while cur and cur.combo_from and cur.combo_from not in seen:
+            seen.add(cur.combo_from)
+            d += 1
+            cur = mech.get(cur.combo_from)
+        return d
+    gcd_entries.sort(key=lambda me: (0 if "refresh" in me[1] else 1, -depth(me[0]), -me[0].recast))
+    entries += [e for _m, e in gcd_entries]
+
+    # What its class kit had at its level that it never used.
+    level = b.actors.get(i, {}).get("Level") or 0
+    unused = []
+    for key, info in (kit.get("Actions") or {}).items():
+        m = Mechanics(int(key), info)
+        if m.level and m.level <= level and m.action not in mech:
+            unused.append(m)
+    if unused:
+        facts.append(f"Its class kit at level {level} also has (never used here): "
+                     + ", ".join(m.label() for m in sorted(unused, key=lambda m: m.level)[:15])
+                     + (" …" if len(unused) > 15 else ""))
+    profile["rotation"] = {"pace": pace, "actions": entries}
+    return profile
+
+
 def _find(data, key):
     """A field anywhere in a flattened layout object (fields of its parents are nested under ParentData)."""
     if isinstance(data, dict):
@@ -442,6 +591,21 @@ def report(run: dict, npc_filter: str | None = None) -> str:
             w(f"* Of its {switches} target choices, the explanations that fit (how many times):")
             for reason, count in reasons.most_common():
                 w(f"  * {reason}: {count}/{switches}")
+
+        profile = class_profile(b, i)
+        if profile:
+            who = f"fights as **{profile['class']}**" if profile["class"] else "uses no class's actions (its own skills)"
+            autos = ", ".join(b.action_name(a) for a in profile["auto_attacks"])
+            w(f"* Class: {who}" + (f"; auto-attack {autos}" if autos else ""))
+            for fact in profile["facts"]:
+                w(f"  * {fact}" if not fact.startswith("  ") else f"    * {fact.strip()}")
+            if profile["rotation"]:
+                w("* Rotation for its timeline (`\"rotation\"`), from the above:")
+                w("")
+                w("```json")
+                w(json.dumps(profile["rotation"], indent=1))
+                w("```")
+                w("")
 
         by_action = defaultdict(list)
         for x in mine:

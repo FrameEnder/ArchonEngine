@@ -973,6 +973,21 @@ impl GameData {
     }
 
     /// Returns the cast time in milliseconds.
+    /// What a rotation needs to know about an action (see `server::rotation`): on the GCD (CooldownGroup 58, or 58 as
+    /// its additional group), its recast in seconds, and the action it follows in a combo.
+    pub fn get_action_mechanics(
+        &mut self,
+        action_id: u32,
+    ) -> Option<crate::server::ActionMechanics> {
+        let row = self.action_sheet.row(action_id)?;
+        Some(crate::server::ActionMechanics {
+            gcd: row.CooldownGroup == crate::server::GCD_GROUP
+                || row.AdditionalCooldownGroup == crate::server::GCD_GROUP,
+            recast: row.Recast100ms as f32 / 10.0,
+            combo_from: row.ActionCombo as u32,
+        })
+    }
+
     pub fn get_casttime(&mut self, action_id: u32) -> Option<(ActionCategory, u32)> {
         let row = self.action_sheet.row(action_id)?;
 

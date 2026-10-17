@@ -175,6 +175,13 @@ For each battle:
   was the most hurt of its side.
 * **Never acted**: battle NPCs that never used an action (scenery, or a script Kawari is missing).
 
+**Class and rotation** (Recorder 2.7 files): for each NPC, which class it fights as (the class its actions belong
+to, from `ActionInfo`), its auto-attack, how often its weaponskills and spells come (its pace), whether each combo step
+follows the step before it, whether each ability is used on cooldown or less often, which GCD action follows a buff,
+which actions it never re-applies to the same target within N seconds (damage over time, debuffs), and what its class
+kit had at its level that it never used. Then a ready **`rotation` block** for its timeline (see
+[Combat](combat.md#class-rotations-serverrotationrs)), with each entry's evidence in its comment.
+
 From Recorder 2.6 files, also: a warning naming any hook that wasn't working (what the recording can't have); **your
 setup** (job, level, sync, item level, Duty Finder settings, party, statuses at the start); action names from the
 recording's `ActionInfo`; tethers, event objects changing, fast moves (knockbacks) and auto marks in the timeline;

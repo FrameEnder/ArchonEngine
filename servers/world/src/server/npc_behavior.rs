@@ -29,6 +29,7 @@ use crate::{
         },
         instance::{Instance, QueuedTaskData},
         network::{DestinationNetwork, NetworkState},
+        rotation::Situation,
     },
 };
 
@@ -72,6 +73,26 @@ pub fn npc_behavior(
         .iter()
         .filter(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
         .map(|(id, actor)| (*id, actor.get_common_spawn().level))
+        .collect();
+    // Everyone's health in %, for rotations that wait for a target (or themselves) to be low.
+    let health_percent: HashMap<ObjectId, f32> = instance
+        .actors
+        .iter()
+        .filter(|(_, actor)| {
+            matches!(
+                actor,
+                NetworkedActor::Player { .. } | NetworkedActor::Npc { .. }
+            )
+        })
+        .map(|(id, actor)| {
+            let common = actor.get_common_spawn();
+            let percent = if common.max_health_points == 0 {
+                100.0
+            } else {
+                common.health_points as f32 * 100.0 / common.max_health_points as f32
+            };
+            (*id, percent)
+        })
         .collect();
     let mut healed = Vec::new();
     let in_content = instance.content_id != 0 || instance.content_finder_condition_id != 0;
@@ -203,6 +224,7 @@ pub fn npc_behavior(
             returning_home,
             cast,
             parameters,
+            rotation_state,
             ..
         } = actor
             && *state != NpcState::Dead
@@ -501,11 +523,61 @@ pub fn npc_behavior(
                 }
             }
 
+            // Its class rotation, checked every tick (it keeps its own pace.)
+            let mut used_rotation = false;
+            if can_take_action
+                && let Some(rotation) = &timeline.rotation
+                && spawn.common.target_id.object_id.is_valid()
+            {
+                let target = spawn.common.target_id.object_id;
+                let situation = Situation {
+                    now: Instant::now(),
+                    target,
+                    target_hp: health_percent.get(&target).copied().unwrap_or(100.0),
+                    self_hp: health_percent.get(id).copied().unwrap_or(100.0),
+                };
+                let mut game_data = game_data.lock();
+                let mut mechanics = |action| game_data.get_action_mechanics(action);
+                if let Some(action_id) = rotation_state.choose(rotation, &situation, &mut mechanics)
+                {
+                    let action_mechanics = mechanics(action_id);
+                    rotation_state.record(
+                        rotation,
+                        action_id,
+                        target,
+                        situation.now,
+                        action_mechanics,
+                    );
+                    if let Some((category, cast_time)) = game_data.get_casttime(action_id) {
+                        let cast_time_seconds =
+                            parameters.get_adjusted_cast_time(category, cast_time) as f32 / 1000.0;
+                        *cast = Some(NpcCast {
+                            until: Instant::now() + Duration::from_secs_f32(cast_time_seconds),
+                            target_position: target_actor_pos
+                                .get(&target)
+                                .copied()
+                                .unwrap_or(spawn.common.position.0),
+                            rotation: spawn.common.rotation,
+                        });
+                        let request = ActionRequest {
+                            action_id,
+                            action_type: ActionType::Action,
+                            rotation1: spawn.common.rotation,
+                            target: spawn.common.target_id,
+                            ..Default::default()
+                        };
+                        new_action_requests.push((*id, request, cast_time_seconds));
+                        used_rotation = true;
+                    }
+                }
+            }
+
             // Auto-attack every few seconds, counting from when we picked up our target.
             if *state == NpcState::Hate {
                 *autoattack_timing += 1;
             }
             if can_take_action
+                && !used_rotation
                 && spawn.common.target_id.object_id.is_valid()
                 && timeline.autoattack_action_id != 0
                 && *autoattack_timing >= NPC_AUTO_ATTACK_TICKS

@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-16 | — | Recorder 2.6's battle files and sending to Kawari Web (recorder and diagnostics, Kawari Web); the report's new sections (questkit).
+| 2026-10-16 | — | Class rotations (combat); Recorder 2.7's class kits (recorder and diagnostics); the class profile (questkit); adding a quest battle; known issues.
+| 2026-10-16 | `29ecfc9` | Recorder 2.6's battle files and sending to Kawari Web (recorder and diagnostics, Kawari Web); the report's new sections (questkit).
 | 2026-10-16 | `ee05899` | Recorder 2.5's saved battles (recorder and diagnostics); `questkit battle` across runs (questkit).
 | 2026-10-16 | `c2697fd` | Recorder 2.4 and what a recording can and can't tell (recorder and diagnostics); `questkit battle` (questkit, quest battles).
 | 2026-10-16 | `9ef685a` | Combat: partial paths, no leashing in content; To Guard a Guardian's background fights; known issues.
@@ -38,6 +39,7 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
+| 2026-10-16 | `b699bca`, `b1d579e` | Recorder 2.7: the class mechanics in every action's info (combo predecessor, GCD group, level, self-buff, proc, charges) and each class's whole kit (actions and traits) in the battle. |
 | 2026-10-16 | `25015ae`–`97e5538` | Recorder 2.6: hook health (in the tab and in every battle), your setup, each battle's own raw packets, enmity, tethers, event object states, positions every frame and fast moves, cast placement, the Action sheet's info per action, auto marks, Compare with the last run, field fights, and sending battles to Kawari Web. |
 | 2026-10-16 | `b161d2b`, `b24206d` | Recorder 2.5: every battle saved to a file of its own (`battles/<start>-<territory>-<content>.json.gz`), kept until deleted, with labels, per-battle export and delete; exports take the battles not exported yet (or all); 2.4's `battles.json` is split into files. |
 | 2026-10-16 | `ccedc94`–`efafdf2` | Recorder 2.4: the Battles tab (everyone's position, HP, target, casts and statuses every 250 ms, decoded actions, actor controls, casts, map effects, cutscenes, director events, marks, and the layout layers the NPCs came from with their AI settings); duty packets get their actor, the packets from zoning in and NPC/object spawns (up to 2.3 every packet read actor 0 and spawns weren't kept); `/krec mark`. |
@@ -59,7 +61,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | `questkit battle` reports Recorder 2.6's additions: failed hooks, your setup, action names, tethers, event objects, fast moves, auto marks, your enmity, and actor controls by category (named from `ActorControlCategory`). |
+| — | Class rotations for NPCs: a timeline's `rotation` (pace and priority-ordered actions with `every`, `refresh`, `then`, HP conditions), run every tick by `server/rotation.rs` with the Action sheet's GCD group, recast and combo predecessor (`GameData::get_action_mechanics`). `questkit battle` profiles each NPC by its class (pace, combos, abilities on cooldown, buff follow-ups, re-applied debuffs, unused kit) and writes its `rotation`. |
+| `29ecfc9` | `questkit battle` reports Recorder 2.6's additions: failed hooks, your setup, action names, tethers, event objects, fast moves, auto marks, your enmity, and actor controls by category (named from `ActorControlCategory`). |
 | `ee05899` | `questkit battle` reads any number of battles (exports, the Recorder's battles folder, single `.json.gz` files, 2.4's `battles.json`; labels from the index) and, for several runs of the same battle, adds up each NPC's evidence across them. |
 | `c2697fd` | `questkit battle`: a report on a recorded duty or quest battle (Recorder 2.4's `battles.json`): who's in it with their layout layer and AI settings, waves and what preceded them, each NPC's targets with the explanations that fit every change (counted), actions, intervals and heals, and who never acted. Tested on made-up data. |
 | `9ef685a` | To Guard a Guardian could never end: after Quzal fell, the last two Ixali were on a background guard 9 yalms past where the navmesh stops, and every ally stood at the edge (2026-10-16 bundle). NPCs given a partial path now walk straight on to their target (up to 15 yalms out in the world, any distance in content; Detour's success-but-partial status is no longer logged as an error), and enemies in content don't leash (those lostwings had leashed chasing Miraudont the long way round, then picked up the guard). The background fights are the layer's five groups (each sincaller on a guard, the melee Ixali in pairs), as the Recorder shows, so no Ixal or guard stands idle. |

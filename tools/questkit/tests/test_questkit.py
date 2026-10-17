@@ -443,5 +443,79 @@ class BattleRecorder26Test(unittest.TestCase):
         self.assertIn("0 ToggleWeapon: 1", text)
 
 
+class ClassProfileTest(unittest.TestCase):
+    """An NPC lancer and an NPC thaumaturge, read against their class mechanics (Recorder 2.7's ActionInfo)."""
+
+    INFO = {
+        "75": {"Name": "True Thrust", "CooldownGroup": 58, "Recast100ms": 25, "ActionCombo": 0, "ClassJob": 4, "ClassJobLevel": 1},
+        "78": {"Name": "Vorpal Thrust", "CooldownGroup": 58, "Recast100ms": 25, "ActionCombo": 75, "ClassJob": 4, "ClassJobLevel": 4},
+        "83": {"Name": "Life Surge", "CooldownGroup": 3, "Recast100ms": 450, "ClassJob": 4, "ClassJobLevel": 6, "StatusGainSelf": 116},
+        "82": {"Name": "Leg Sweep", "CooldownGroup": 4, "Recast100ms": 200, "ClassJob": 4, "ClassJobLevel": 10},
+        "871": {"Name": "attack", "ActionCategory": 1},
+        "144": {"Name": "Thunder", "CooldownGroup": 58, "Recast100ms": 25, "ClassJob": 7, "ClassJobLevel": 6},
+        "142": {"Name": "Blizzard", "CooldownGroup": 58, "Recast100ms": 25, "ClassJob": 7, "ClassJobLevel": 1},
+    }
+
+    def _run(self):
+        run = _battle_run()
+        run["ActionInfo"] = self.INFO
+        run["ClassKits"] = {"4": {"Abbreviation": "LNC", "Actions": {
+            "75": self.INFO["75"], "78": self.INFO["78"], "83": self.INFO["83"], "82": self.INFO["82"],
+            "79": {"Name": "Piercing Talon", "CooldownGroup": 58, "ClassJob": 4, "ClassJobLevel": 15},
+            "84": {"Name": "Full Thrust", "CooldownGroup": 58, "ActionCombo": 78, "ClassJob": 4, "ClassJobLevel": 26}}}}
+        lancer, thaum, boss = 2, 3, 10
+        def act(t, who, action, target=boss):
+            return {"S": t, "Source": who, "Action": action, "Type": 1, "SourceHp": 1000,
+                    "Targets": [{"Id": target, "Hp": 900, "MaxHp": 1000, "Effects": [[3, 50, 0, 0, 0, 0, 0]]}]}
+        actions = []
+        # The lancer: True Thrust, Life Surge woven, Vorpal Thrust, every 4 s; Leg Sweep every 20 s; autos.
+        t = 0.0
+        for n in range(15):
+            actions.append(act(t, lancer, 75 if n % 2 == 0 else 78))
+            if n % 2 == 0 and n % 12 == 0:
+                actions.append(act(t + 1, lancer, 83))
+            if n % 5 == 1:
+                actions.append(act(t + 1.5, lancer, 82))
+            actions.append(act(t + 0.5, lancer, 871))
+            t += 4.0
+        # The thaumaturge: Thunder on the boss every 18 s, Blizzard between, every 3 s.
+        for n in range(20):
+            t = n * 3.0
+            actions.append(act(t, thaum, 144 if n % 6 == 0 else 142))
+        run["Actions"] = sorted(actions, key=lambda x: x["S"])
+        run["Actors"]["2"]["Level"] = 20
+        return run
+
+    def test_lancer(self):
+        b = battle.Battle(self._run())
+        profile = battle.class_profile(b, 2)
+        self.assertEqual(profile["class"], "LNC")
+        self.assertEqual(profile["auto_attacks"], [871])
+        text = "\n".join(profile["facts"])
+        self.assertIn("every 4.0 s", text)
+        self.assertIn("Combo: 78 (Vorpal Thrust) follows 75 (True Thrust) in 7/7 uses.", text)
+        self.assertIn("82 (Leg Sweep): on cooldown (every 20.0 s", text)
+        self.assertIn("Piercing Talon", text)  # in its kit at level 20, never used
+        self.assertNotIn("Full Thrust", text)  # level 26: not yet
+        rotation = profile["rotation"]
+        self.assertEqual(rotation["pace"], 4.0)
+        order = [e["action"] for e in rotation["actions"]]
+        self.assertLess(order.index(78), order.index(75))  # the finisher before the starter
+        surge = next(e for e in rotation["actions"] if e["action"] == 83)
+        self.assertEqual(surge.get("then"), 78)
+
+    def test_thaumaturge_refresh(self):
+        b = battle.Battle(self._run())
+        profile = battle.class_profile(b, 3)
+        thunder = next(e for e in profile["rotation"]["actions"] if e["action"] == 144)
+        self.assertEqual(thunder.get("refresh"), 18.0)
+        self.assertEqual(profile["rotation"]["actions"][0]["action"], 144)
+
+    def test_report_has_rotation_block(self):
+        text = battle.report(self._run())
+        self.assertIn("fights as **LNC**", text)
+        self.assertIn('"rotation"', text)
+
+
 if __name__ == "__main__":
     unittest.main()

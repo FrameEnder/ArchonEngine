@@ -350,6 +350,7 @@ impl Instance {
                 home: position,
                 returning_home: false,
                 cast: None,
+                rotation_state: Default::default(),
             },
         );
     }

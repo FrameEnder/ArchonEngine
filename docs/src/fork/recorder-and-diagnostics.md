@@ -5,7 +5,7 @@ Bob's server** (what does happen). Both live in the private `FrameEnder/kawari-d
 the Dalamud plugins' source. GitHub Actions builds each plugin on every change (Actions → the plugin's workflow → the
 run → Artifacts).
 
-## Kawari Recorder (retail, `recorder/`, version 2.6)
+## Kawari Recorder (retail, `recorder/`, version 2.7)
 
 A Dalamud plugin used on the **live game**. It replaced Kawari Bestiary (and imports its data on first run). `/krec`
 opens it; **Export (zip)** or `/krec export` writes `kawari-recorder-<date>.zip`; `/krec pause|resume`; `/krec mark
@@ -50,7 +50,8 @@ On top of everyone's samples, actions, actor controls, events and layout layers 
 | Samples' `Visible`, `Targetable`, `State` on event objects | Barriers, crystals, doors appearing, becoming targetable, changing state (also as `object` events) | Arena gimmicks the director drives |
 | Samples' `P` | Positions every frame, written each half yalm (or a tenth of a second after a smaller move); `fast move` events for knockbacks and jumps | Exact paths: walking or running, stuck pathing, knockbacks |
 | `cast` events | Each cast's target, time, where it's aimed (the packet's position and rotation) and omen delay | AoE placement |
-| `ActionInfo` | The client's Action sheet for every action seen: name, cast type, ranges, X-axis modifier, omen, cast and recast | Shapes and sizes of AoEs; names in the report |
+| `ActionInfo` | The client's Action sheet for every action seen: name, cast type, ranges, X-axis modifier, omen, cast and recast, and (2.7) the class mechanics: `ClassJob`, `ClassJobLevel`, `ActionCombo`, `CooldownGroup` (58 = GCD), `StatusGainSelf`, `ActionProcStatus`, `MaxCharges` | Shapes and sizes of AoEs; names in the report; class rotations |
+| `ClassKits` (2.7) | For every class or job whose actions an NPC used: its whole kit from the client's sheets (every non-PvP action with its level, GCD group, recast, cast, combo predecessor, self-buff, proc status, charges, aspect...; its base class's too for a job) and its traits by level | Reading an NPC's rotation against its class; what it could have used at its level |
 | `auto mark` events | You or a party member dying or getting back up, a wipe, bosses (three times your max HP or more) going below 75/50/25/10 % | Signposts without typing |
 | `Field` | Set for fights out in the world (the tab's *Also record fights out in the world*: from entering combat until 15 s after) | Open-world aggro, leash and AI per enemy |
 

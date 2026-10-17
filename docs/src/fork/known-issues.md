@@ -30,6 +30,9 @@ add one when something is found.
   recording for those NPCs; their potency for a player who uses the same action isn't verified, and none of them give
   their statuses (Windbite, Venomous Bite, Terror Eye…).
 * When allies heal (thresholds and how often) is fitted to the recording, not known rules.
+* Class rotations time a re-applied debuff per target (`refresh`) instead of reading the target's statuses, and
+  don't yet know procs (`ActionProcStatus`) or charges. The quest battles' timelines are still fixed timepoints:
+  they move to rotations as Recorder 2.7 recordings of them come in.
 * To Guard a Guardian: which six Ixali come first is a guess from where they stand. Where the navmesh has holes,
   NPCs in content walk straight across them (rocks included) rather than stall the battle. Dying sends you back out to the
   instructor (as any lost quest battle does); whether retail offers a retry first isn't recorded.
