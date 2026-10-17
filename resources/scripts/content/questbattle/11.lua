@@ -12,11 +12,15 @@ BNPC_BOSS = 3802315
 BNPC_IDA = 3802271
 BNPC_PAPALYMO = 3802272
 
--- Ida takes on the boss and Papalymo the adds. The boss and the "B" enemies go after them, the "A" enemies after you.
--- How much enemies hate their first target. Damage adds to this, so hitting an enemy a few times pulls it to you.
-STARTING_ENMITY = 300
--- How much more Ida and Papalymo hate each new target they're given, so they switch to it and stay on it.
-ALLY_ENMITY = 10000
+-- The battle's outline (content/lib/Battle.lua). Yda, a pugilist, is there for the boss: up close, and once it's down
+-- she finishes what's left, the toughest first. Papalymo, a thaumaturge, is the support: he takes the adds from range
+-- (oldest first), stays near you, and heals you when you're low. Neither knows your class, so that's their job
+-- whatever you play. The boss and the "B" enemies go after them, the "A" enemies after you.
+BATTLE = Battle.new()
+BATTLE:ally(BNPC_IDA, { focus = { "boss", "adds" }, order = "highest_hp" })
+-- 10 yalms is his timeline's casting distance; how near he keeps to you is a guess until a recording shows it.
+PAPALYMO_RANGE = 10
+PAPALYMO_STAYS_WITHIN = 15
 INITIAL_ENEMIES = { a = {}, b = { 4094218, 4094220 } }
 -- What arrives as the boss's health drops to 75%, 50% and 25%.
 WAVES = {
@@ -68,97 +72,83 @@ HEAL_LINE_COOLDOWN_UPDATES = 40
 -- How many updates apart lines said together are.
 LINE_GAP_UPDATES = 10
 
--- Enemies still standing, by layout ID, and the order they arrived in.
-local remaining = {}
-local arrived = {}
-local next_wave = 1
 -- Set once the battle is won or lost.
 local over = false
 -- Counts down after the player falls, see onUpdate.
 local fail_in = nil
--- Counts down until Papalymo can heal again.
-local heal_cooldown = 0
-local heal_line_cooldown = 0
--- Lines waiting to be said: { updates left, layout ID, key (a text key to say, or an NpcYell ID to yell) }.
-local pending_lines = {}
--- Counts up once the fight starts, see onUpdate.
-local fight_starts_in = nil
+local next_wave = 1
 -- The last wave's enemies, until they're all defeated.
 local last_wave = nil
+local heal_line_cooldown = 0
 
--- Queues lines to be said one after another, the first after `delay` updates.
-function sayLines(lines, delay)
-    delay = delay or 0
-    for _, line in ipairs(pending_lines) do
-        delay = math.max(delay, line[1] + LINE_GAP_UPDATES)
-    end
-    for _, line in ipairs(lines) do
-        table.insert(pending_lines, { delay, line[1], line[2] })
-        delay = delay + LINE_GAP_UPDATES
-    end
-end
-
-function sayPendingLines(director)
-    local still_pending = {}
-    for _, line in ipairs(pending_lines) do
-        if line[1] <= 0 then
-            if type(line[3]) == "number" then
-                director:yell(line[2], line[3])
-            else
-                director:say(line[2], TEXT_PREFIX .. line[3])
+-- Papalymo's role, with his heal (and its line, at most every so often.)
+BATTLE:ally(BNPC_PAPALYMO, {
+    focus = { "adds", "boss" },
+    order = "oldest",
+    range = PAPALYMO_RANGE,
+    keep_near = { within = PAPALYMO_STAYS_WITHIN },
+    heals = { {
+        action = ACTION_CURE,
+        targets = { Battle.PLAYER },
+        below = HEAL_BELOW_HEALTH,
+        every = HEAL_COOLDOWN_UPDATES / 2,
+        say = function(director)
+            if heal_line_cooldown <= 0 then
+                BATTLE:steps({ { 0, "say", BNPC_PAPALYMO, TEXT_PREFIX .. LINE_HEAL } })
+                heal_line_cooldown = HEAL_LINE_COOLDOWN_UPDATES
             end
+        end,
+    } },
+})
+BATTLE:enemy(BNPC_BOSS, { group = "boss", attacks = BNPC_IDA })
+
+-- The "A" enemies go after the player, the "B" ones after Papalymo.
+function enemies(wave)
+    local ids = {}
+    for _, id in ipairs(wave.a) do
+        BATTLE:enemy(id, { group = "adds" })
+        table.insert(ids, id)
+    end
+    for _, id in ipairs(wave.b) do
+        BATTLE:enemy(id, { group = "adds", attacks = BNPC_PAPALYMO })
+        table.insert(ids, id)
+    end
+    return ids
+end
+
+-- Lines said one after another (LINE_GAP_UPDATES apart), the first after `delay` updates.
+function lines(list, delay)
+    local steps = {}
+    for n, line in ipairs(list) do
+        local gap = n == 1 and (delay or 0) or LINE_GAP_UPDATES
+        if type(line[2]) == "number" then
+            table.insert(steps, { gap, "yell", line[1], line[2] })
         else
-            table.insert(still_pending, { line[1] - 1, line[2], line[3] })
+            table.insert(steps, { gap, "say", line[1], TEXT_PREFIX .. line[2] })
         end
     end
-    pending_lines = still_pending
+    return steps
 end
 
-function spawnEnemy(director, id)
-    remaining[id] = true
-    table.insert(arrived, id)
-    director:spawn_bnpc(id)
-end
-
-function spawnEnemies(director, enemies)
-    for _, id in ipairs(enemies.a) do
-        spawnEnemy(director, id)
-        director:set_hate(id, nil, 1) -- the player
-    end
-    for _, id in ipairs(enemies.b) do
-        spawnEnemy(director, id)
-        director:set_hate(id, BNPC_PAPALYMO, STARTING_ENMITY)
-    end
-end
-
--- The oldest enemy still standing, leaving out the boss if asked.
-function oldestRemaining(skip_boss)
-    for _, id in ipairs(arrived) do
-        if remaining[id] and not (skip_boss and id == BNPC_BOSS) then
-            return id
+-- Each wave as the boss's health drops to it: its enemies, the director's sequence, the lines.
+for n, wave in ipairs(WAVES) do
+    BATTLE:onHealth(BNPC_BOSS, wave.health, function(director)
+        if over then
+            return
         end
-    end
-    return nil
-end
-
--- Ida goes for the boss and Papalymo for the adds, oldest first. Either takes whatever's left once theirs are gone.
-local ally_priority = 0
-function alliesAttack(director)
-    local ida_target = nil
-    if remaining[BNPC_BOSS] then
-        ida_target = BNPC_BOSS
-    else
-        ida_target = oldestRemaining(false)
-    end
-    local papalymo_target = oldestRemaining(true) or ida_target
-
-    ally_priority = ally_priority + ALLY_ENMITY
-    if ida_target ~= nil then
-        director:set_hate(BNPC_IDA, ida_target, ally_priority)
-    end
-    if papalymo_target ~= nil then
-        director:set_hate(BNPC_PAPALYMO, papalymo_target, ally_priority)
-    end
+        BATTLE:spawn(director, enemies(wave))
+        director:set_sequence(SEQUENCE_FIRST_WAVE + n - 1)
+        if LINES_WAVE[n] ~= nil then
+            BATTLE:steps(lines(LINES_WAVE[n], LINES_WAVE_DELAY))
+        end
+        if WAVES[n + 1] == nil then
+            BATTLE:steps(lines({ { BNPC_PAPALYMO, YELL_LAST_WAVE } }, YELL_LAST_WAVE_DELAY))
+            last_wave = enemies(wave)
+            BATTLE:onCleared(last_wave, function()
+                BATTLE:steps(lines(LINE_LAST_WAVE_CLEARED))
+            end)
+        end
+    end)
 end
 
 function onSetup(director)
@@ -166,21 +156,19 @@ end
 
 function onCommence(director)
     director:set_sequence(SEQUENCE_START)
-    fight_starts_in = FIGHT_STARTS_IN
-
-    director:spawn_bnpc(BNPC_IDA)
-    director:spawn_bnpc(BNPC_PAPALYMO)
-
-    spawnEnemy(director, BNPC_BOSS)
-    director:set_hate(BNPC_BOSS, BNPC_IDA, STARTING_ENMITY)
-    spawnEnemies(director, INITIAL_ENEMIES)
-
-    alliesAttack(director)
+    BATTLE:spawn(director, { BNPC_IDA, BNPC_PAPALYMO })
+    BATTLE:spawn(director, { BNPC_BOSS })
+    BATTLE:spawn(director, enemies(INITIAL_ENEMIES))
+    -- The fight gets going FIGHT_STARTS_IN updates in, and the first lines follow.
+    -- (A step runs the update after its count is up, hence the one less.)
+    BATTLE:steps({ { FIGHT_STARTS_IN - 1, "sequence", SEQUENCE_FIGHTING } })
+    BATTLE:steps(lines(LINES_START, LINES_START_DELAY))
 end
 
 -- health: the health (in percent) of every living NPC, by layout ID
 -- player_health: the player's health in percent (nil if they're not here)
-function onUpdate(director, health, player_health)
+-- info: everyone's real numbers and position (see Battle:update)
+function onUpdate(director, health, player_health, info)
     if fail_in ~= nil then
         fail_in = fail_in - 1
         if fail_in <= 0 then
@@ -192,83 +180,23 @@ function onUpdate(director, health, player_health)
     if over then
         return
     end
-
-    if fight_starts_in ~= nil then
-        fight_starts_in = fight_starts_in - 1
-        if fight_starts_in <= 0 then
-            fight_starts_in = nil
-            director:set_sequence(SEQUENCE_FIGHTING)
-            sayLines(LINES_START, LINES_START_DELAY)
-        end
-    end
-
-    sayPendingLines(director)
     if heal_line_cooldown > 0 then
         heal_line_cooldown = heal_line_cooldown - 1
     end
-
-    if heal_cooldown > 0 then
-        heal_cooldown = heal_cooldown - 1
-    elseif player_health ~= nil and player_health > 0 and player_health < HEAL_BELOW_HEALTH
-        and health[BNPC_PAPALYMO] ~= nil then
-        director:use_action(BNPC_PAPALYMO, ACTION_CURE) -- on the player
-        heal_cooldown = HEAL_COOLDOWN_UPDATES
-        if heal_line_cooldown <= 0 then
-            sayLines({ { BNPC_PAPALYMO, LINE_HEAL } })
-            heal_line_cooldown = HEAL_LINE_COOLDOWN_UPDATES
-        end
-    end
-
-    local boss_health = health[BNPC_BOSS]
-    if boss_health == nil then
-        return
-    end
-
-    while WAVES[next_wave] ~= nil and boss_health <= WAVES[next_wave].health do
-        spawnEnemies(director, WAVES[next_wave])
-        director:set_sequence(SEQUENCE_FIRST_WAVE + next_wave - 1)
-        if LINES_WAVE[next_wave] ~= nil then
-            sayLines(LINES_WAVE[next_wave], LINES_WAVE_DELAY)
-        end
-        if WAVES[next_wave + 1] == nil then
-            sayLines({ { BNPC_PAPALYMO, YELL_LAST_WAVE } }, YELL_LAST_WAVE_DELAY)
-            last_wave = {}
-            for _, id in ipairs(WAVES[next_wave].a) do last_wave[id] = true end
-            for _, id in ipairs(WAVES[next_wave].b) do last_wave[id] = true end
-        end
-        next_wave = next_wave + 1
-        -- Papalymo turns to the new adds if he'd run out.
-        alliesAttack(director)
-    end
+    BATTLE:update(director, health, player_health, info)
 end
 
 function onActorDeath(director, layout_id, position)
-    if not remaining[layout_id] then
-        return
-    end
-    remaining[layout_id] = nil
-
     if over then
         return
     end
-
-    if next(remaining) == nil then
+    BATTLE:died(director, layout_id)
+    if BATTLE:enemiesLeft() == 0 and BATTLE.alive[BNPC_BOSS] == nil then
         over = true
+        BATTLE:clearSteps()
         director:set_sequence(SEQUENCE_WON)
         director:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN)
-        return
     end
-
-    if last_wave ~= nil and last_wave[layout_id] then
-        last_wave[layout_id] = nil
-        if next(last_wave) == nil then
-            last_wave = nil
-            sayLines(LINE_LAST_WAVE_CLEARED)
-        end
-    end
-
-    -- Whoever the allies were fighting may be gone, so point them at the next one.
-    alliesAttack(director)
 end
 
 -- Losing sends you back to where you entered, still on the same step of the quest, so you can try again.
@@ -277,6 +205,7 @@ function onPlayerDeath(director)
         return
     end
     over = true
+    BATTLE:clearSteps()
     director:set_sequence(SEQUENCE_FAILED)
     fail_in = FAIL_DELAY_UPDATES
 end

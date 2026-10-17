@@ -142,6 +142,8 @@ pub enum NetworkedActor {
         cast: Option<NpcCast>,
         /// Where it is in its class rotation (`Timeline::rotation`), if it has one.
         rotation_state: RotationState,
+        /// Stay within this many yalms of this actor, whatever it's fighting (the director's `keep_near`.)
+        keep_near: Option<(ObjectId, f32)>,
     },
     Object {
         object: SpawnObject,

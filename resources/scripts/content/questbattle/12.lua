@@ -115,7 +115,7 @@ ALLY_ENMITY = 10000
 -- How much the background fighters hate each other.
 BACKGROUND_ENMITY = 100000
 
--- Steps: { updates after the step before, kind, ... }
+-- Steps: { updates after the step before, kind, ... } (Battle:steps)
 START_STEPS = {
     { 0, "sequence", 2 },
     { 10, "talk", SPEAKER_GALFRID, 161 },
@@ -153,7 +153,7 @@ GARGOYLE_PHASES = {
         health = 25,
         steps = {
             { 0, "sequence", 9 },
-            { 0, "allies", ALLIES_SECOND_HALF },
+            { 0, "spawn", ALLIES_SECOND_HALF },
             { 20, "sequence", 10 },
             { 0, "talk", SPEAKER_PAPALYMO, 177 },
             { 10, "talk", SPEAKER_YDA, 178 },
@@ -172,168 +172,62 @@ MAGE_PHASES = {
     },
 }
 
--- Enemies that have to fall, by layout ID, in the order they arrived.
-local remaining = {}
-local arrived = {}
--- Everyone who has arrived, so the first half only ends once the second wave and the blanga have come and gone.
-local spawned = {}
-local first_wave_left = 0
-local allies = {}
-local pending = {}
--- Which phases of each enemy's have run.
-local phase_done = {}
+-- The battle's outline (content/lib/Battle.lua), as retail ran it: Galfrid, and later Yda and Papalymo, take the boss
+-- (Quzal, then the masked mage) while it's there; Miraudont clears the lostwings and the guards the slowbeaks that are
+-- after them, then the other adds, and only then turn on the boss. Whoever runs out of theirs takes the oldest left.
+BATTLE = Battle.new()
+for _, id in ipairs({ BNPC_GALFRID, BNPC_YDA, BNPC_PAPALYMO }) do
+    BATTLE:ally(id, { focus = { "boss", "adds" } })
+end
+BATTLE:ally(BNPC_MIRAUDONT, { focus = { "lostwings", "adds", "boss" } })
+BATTLE:ally(BNPC_BOW, { focus = { "slowbeaks", "adds", "boss" } })
+BATTLE:ally(BNPC_LANCE, { focus = { "slowbeaks", "adds", "boss" } })
+for _, id in ipairs({ BNPC_QUZAL, BNPC_MAGE }) do
+    BATTLE:enemy(id, { group = "boss", attacks = ENEMY_TARGETS[id] })
+end
+for _, id in ipairs({ BNPC_BLANGA, BNPC_GARGOYLE }) do
+    BATTLE:enemy(id, { group = "adds" })
+end
+for _, wave in ipairs({ FIRST_IXALI, SECOND_IXALI }) do
+    for _, id in ipairs(wave) do
+        local group = LOSTWINGS[id] and { "lostwings", "adds" } or SLOWBEAKS[id] and { "slowbeaks", "adds" } or "adds"
+        BATTLE:enemy(id, { group = group, attacks = ENEMY_TARGETS[id] })
+    end
+end
+-- The heals, on whichever of their targets is lowest (HEALERS has the evidence.)
+for _, h in ipairs(HEALERS) do
+    local role = BATTLE.roles[h.healer]
+    local heal = { action = ACTION_CURE, targets = {}, below = h.below, every = h.every / 2 }
+    for _, target in ipairs(h.targets) do
+        table.insert(heal.targets, target == PLAYER and Battle.PLAYER or target)
+    end
+    role.heals = role.heals or {}
+    table.insert(role.heals, heal)
+end
+
+-- Phases: as each one's health drops to these, its steps (or as soon as it falls, if it falls before.)
+for _, phases in ipairs({ { BNPC_QUZAL, QUZAL_PHASES }, { BNPC_GARGOYLE, GARGOYLE_PHASES }, { BNPC_MAGE, MAGE_PHASES } }) do
+    for _, phase in ipairs(phases[2]) do
+        BATTLE:onHealth(phases[1], phase.health, function()
+            BATTLE:steps(phase.steps)
+        end)
+    end
+end
+-- The first six Ixali down bring six more.
+BATTLE:onCleared(FIRST_IXALI, function()
+    BATTLE:steps(SECOND_WAVE_STEPS)
+end)
+
 local half = 1
 local over = false
 local fail_in = nil
-local ally_priority = 0
-
-function queue(steps)
-    local at = 0
-    for _, step in ipairs(pending) do
-        at = math.max(at, step[1])
-    end
-    for _, step in ipairs(steps) do
-        at = at + step[1]
-        local queued = { at }
-        for i = 2, #step do
-            queued[i] = step[i]
-        end
-        table.insert(pending, queued)
-    end
-end
-
-function spawnEnemies(director, ids)
-    for _, id in ipairs(ids) do
-        remaining[id] = true
-        spawned[id] = true
-        table.insert(arrived, id)
-        director:spawn_bnpc(id)
-        director:set_hate(id, ENEMY_TARGETS[id], STARTING_ENMITY) -- nil is the player
-    end
-    alliesAttack(director)
-end
-
--- Each healer Cures whoever of theirs is lowest, if they're below its threshold.
-function runHeals(director, health, player_health)
-    for _, h in ipairs(HEALERS) do
-        h.wait = (h.wait or 0) - 1
-        if h.wait <= 0 and health[h.healer] ~= nil then
-            local best, best_health = nil, h.below
-            for _, target in ipairs(h.targets) do
-                local current = target == PLAYER and player_health or health[target]
-                if current ~= nil and current > 0 and current < best_health then
-                    best, best_health = target, current
-                end
-            end
-            if best ~= nil then
-                if best == PLAYER then
-                    director:use_action(h.healer, ACTION_CURE)
-                else
-                    director:use_action(h.healer, ACTION_CURE, best)
-                end
-                h.wait = h.every
-            end
-        end
-    end
-end
-
-function spawnAllies(director, ids)
-    for _, id in ipairs(ids) do
-        allies[id] = true
-        director:spawn_bnpc(id)
-    end
-    alliesAttack(director)
-end
-
-function runStep(director, step)
-    local kind = step[2]
-    if kind == "sequence" then
-        director:set_sequence(step[3])
-    elseif kind == "talk" then
-        director:battle_talk(step[3].layout, step[3].name, step[4], step[3].icon)
-    elseif kind == "spawn" then
-        spawnEnemies(director, step[3])
-    elseif kind == "allies" then
-        spawnAllies(director, step[3])
-    elseif kind == "action" then
-        director:use_action(step[3], step[4]) -- at the player
-    end
-end
-
-function runPending(director)
-    local still_pending = {}
-    for _, step in ipairs(pending) do
-        if step[1] <= 0 then
-            runStep(director, step)
-        else
-            step[1] = step[1] - 1
-            table.insert(still_pending, step)
-        end
-    end
-    pending = still_pending
-end
-
--- The oldest enemy still standing, of a kind if asked.
-function oldest(kind)
-    for _, id in ipairs(arrived) do
-        if remaining[id] and (kind == nil or kind[id]) then
-            return id
-        end
-    end
-    return nil
-end
-
--- As on retail: Galfrid, Yda and Papalymo take the boss (Quzal, then the mage) while it's there; Miraudont the
--- lostwings and the guards the slowbeaks that are after them; then whoever's oldest.
-function alliesAttack(director)
-    local boss = nil
-    for _, id in ipairs({ BNPC_QUZAL, BNPC_MAGE }) do
-        if remaining[id] then
-            boss = id
-        end
-    end
-    -- Everyone but the boss-takers clears the adds first (on retail Miraudont and the guards fought the Ixali, and
-    -- only turned on Quzal once they were gone); the boss is what's left.
-    local adds = {}
-    for _, id in ipairs(arrived) do
-        if id ~= BNPC_QUZAL and id ~= BNPC_MAGE then
-            adds[id] = true
-        end
-    end
-    local any = oldest(adds) or boss
-    ally_priority = ally_priority + ALLY_ENMITY
-    for id, _ in pairs(allies) do
-        local target = any
-        if boss ~= nil and (id == BNPC_GALFRID or id == BNPC_YDA or id == BNPC_PAPALYMO) then
-            target = boss
-        elseif id == BNPC_MIRAUDONT then
-            target = oldest(LOSTWINGS) or any
-        elseif id == BNPC_BOW or id == BNPC_LANCE then
-            target = oldest(SLOWBEAKS) or any
-        end
-        if target ~= nil then
-            director:set_hate(id, target, ally_priority)
-        end
-    end
-end
-
-function runPhases(name, phases, health)
-    if health == nil then
-        return
-    end
-    local done = phase_done[name] or 0
-    while phases[done + 1] ~= nil and health <= phases[done + 1].health do
-        done = done + 1
-        queue(phases[done].steps)
-    end
-    phase_done[name] = done
-end
 
 function onSetup(director)
     director:set_sequence(SEQUENCE_START)
 end
 
 function onCommence(director)
+    -- The background fights aren't part of the battle: nobody here goes after them.
     for _, fight in ipairs(BACKGROUND) do
         director:spawn_bnpc(fight.guard)
         for _, ixal in ipairs(fight.ixali) do
@@ -342,14 +236,13 @@ function onCommence(director)
         end
         director:set_hate(fight.guard, fight.ixali[1], BACKGROUND_ENMITY)
     end
-    spawnAllies(director, ALLIES_FIRST_HALF)
-    spawnEnemies(director, { BNPC_QUZAL })
-    spawnEnemies(director, FIRST_IXALI)
-    first_wave_left = #FIRST_IXALI
-    queue(START_STEPS)
+    BATTLE:spawn(director, ALLIES_FIRST_HALF)
+    BATTLE:spawn(director, { BNPC_QUZAL })
+    BATTLE:spawn(director, FIRST_IXALI)
+    BATTLE:steps(START_STEPS)
 end
 
-function onUpdate(director, health, player_health)
+function onUpdate(director, health, player_health, info)
     if fail_in ~= nil then
         fail_in = fail_in - 1
         if fail_in <= 0 then
@@ -361,17 +254,7 @@ function onUpdate(director, health, player_health)
     if over then
         return
     end
-
-    runPending(director)
-
-    runHeals(director, health, player_health)
-
-    if half == 1 then
-        runPhases("quzal", QUZAL_PHASES, health[BNPC_QUZAL])
-    elseif half == 2 then
-        runPhases("gargoyle", GARGOYLE_PHASES, health[BNPC_GARGOYLE])
-        runPhases("mage", MAGE_PHASES, health[BNPC_MAGE])
-    end
+    BATTLE:update(director, health, player_health, info)
 end
 
 -- Everyone from the first half leaves for the cutscene.
@@ -382,40 +265,18 @@ function clearFirstHalf(director)
             director:despawn_bnpc(ixal)
         end
     end
-    for _, id in ipairs(ALLIES_FIRST_HALF) do
-        director:despawn_bnpc(id)
-    end
-    allies = {}
-    arrived = {}
+    BATTLE:remove(director, ALLIES_FIRST_HALF)
 end
 
 function onActorDeath(director, layout_id, position)
-    if not remaining[layout_id] or over then
+    if over or not BATTLE:died(director, layout_id) then
         return
     end
-    remaining[layout_id] = nil
 
-    for _, id in ipairs(FIRST_IXALI) do
-        if id == layout_id then
-            first_wave_left = first_wave_left - 1
-            if first_wave_left == 0 then
-                queue(SECOND_WAVE_STEPS)
-            end
-        end
-    end
-
-    -- Whatever their health would have brought still happens if they fall before it (e.g. the blanga, or Yda and
-    -- Papalymo.)
-    if layout_id == BNPC_QUZAL then
-        runPhases("quzal", QUZAL_PHASES, 0)
-    elseif layout_id == BNPC_GARGOYLE then
-        runPhases("gargoyle", GARGOYLE_PHASES, 0)
-    end
-
-    if half == 1 and next(remaining) == nil and spawned[BNPC_BLANGA] and spawned[SECOND_IXALI[1]] then
+    if half == 1 and BATTLE:enemiesLeft() == 0 and BATTLE.arrival[BNPC_BLANGA] and BATTLE.arrival[SECOND_IXALI[1]] then
         -- Quzal, both waves and the blanga are down.
         half = 0
-        pending = {}
+        BATTLE:clearSteps()
         director:set_sequence(6)
         clearFirstHalf(director)
         director:play_scene(CUTSCENE_SCENE, CUTSCENE_FLAGS)
@@ -424,13 +285,10 @@ function onActorDeath(director, layout_id, position)
 
     if layout_id == BNPC_MAGE then
         over = true
-        pending = {}
+        BATTLE:clearSteps()
         director:set_sequence(11)
         director:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN, false, FINISH_SCENE)
-        return
     end
-
-    alliesAttack(director)
 end
 
 function onSceneFinished(director, scene)
@@ -442,7 +300,7 @@ function onSceneFinished(director, scene)
     -- territory, then ActorSetPos, from the recording); the client waits for it.
     director:warp_players(AFTER_CUTSCENE_POSITION.x, AFTER_CUTSCENE_POSITION.y, AFTER_CUTSCENE_POSITION.z,
         AFTER_CUTSCENE_ROTATION)
-    queue(AFTER_CUTSCENE_STEPS)
+    BATTLE:steps(AFTER_CUTSCENE_STEPS)
 end
 
 -- Losing sends you back to where you entered, still on the same step of the quest, so you can try again.
@@ -451,7 +309,7 @@ function onPlayerDeath(director)
         return
     end
     over = true
-    pending = {}
+    BATTLE:clearSteps()
     director:set_sequence(SEQUENCE_FAILED)
     fail_in = FAIL_DELAY_UPDATES
 end

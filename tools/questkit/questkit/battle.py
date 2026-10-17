@@ -230,6 +230,10 @@ class Battle:
             hps = {c: h for c, h in hps.items() if h is not None}
             if hps and min(hps, key=hps.get) == new:
                 reasons.append("most hurt enemy")
+            current = {c: self.hp[c].at(t) for c in candidates}
+            current = {c: h for c, h in current.items() if h is not None}
+            if current and max(current, key=current.get) == new:
+                reasons.append("healthiest enemy")
             if new == self.you:
                 reasons.append("the player")
             elif self.actors.get(new, {}).get("Kind") == "battle npc" and self.you in candidates:
@@ -393,6 +397,267 @@ def class_profile(b: "Battle", i: int) -> dict | None:
                      + (" …" if len(unused) > 15 else ""))
     profile["rotation"] = {"pace": pace, "actions": entries}
     return profile
+
+
+# ---- The director's outline: what each ally is there to do, phase by phase ----
+
+# A target-choice explanation, and the Battle.lua order it means.
+ORDERS = {"oldest enemy": "oldest", "newest enemy": "newest", "nearest enemy": "nearest",
+          "most hurt enemy": "lowest_hp", "healthiest enemy": "highest_hp"}
+
+
+def phases(b: "Battle") -> list[tuple[float, float, str]]:
+    """The fight cut where the director's sequence changes: (start, end, name) each."""
+    cuts = [(0.0, "start")]
+    for e in b.events:
+        if e["Kind"] == "sequence":
+            name = e["Text"].split()[-1]
+            if not cuts or cuts[-1][1] != f"sequence {name}":
+                cuts.append((e["S"], f"sequence {name}"))
+    out = []
+    for k, (t, name) in enumerate(cuts):
+        end = cuts[k + 1][0] if k + 1 < len(cuts) else b.length
+        if end - t >= 2:
+            out.append((t, end, name))
+    return out
+
+
+def _boss_at(b: "Battle", ally: int, t: float):
+    """The enemy with the most max HP still standing: what this fight's "boss" is at that moment."""
+    candidates = [c for c in b.actors if b.hostile(ally, c) and b.alive(c, t) and b.actors[c].get("Kind") == "battle npc"]
+    if not candidates:
+        return None, []
+    boss = max(candidates, key=lambda c: b.actors[c].get("MaxHp", 0))
+    return boss, [c for c in candidates if c != boss]
+
+
+def ally_outline(b: "Battle", ally: int, start: float, end: float) -> dict:
+    """What one ally did in one phase, as a Battle.lua role with its evidence."""
+    a = b.actors[ally]
+    role, facts = {}, []
+    # Focus: on the boss, or on the adds, while there were both?
+    on_boss = on_adds = 0
+    t = start
+    while t < end:
+        target = b.target[ally].at(t)
+        boss, adds = _boss_at(b, ally, t)
+        if target and boss and adds and b.alive(ally, t):
+            if target == boss:
+                on_boss += 1
+            elif target in adds:
+                on_adds += 1
+        t += 0.5
+    total = on_boss + on_adds
+    if total >= 6:
+        share = on_boss / total
+        if share >= 0.7:
+            role["focus"] = ["boss", "adds"]
+        elif share <= 0.3:
+            role["focus"] = ["adds", "boss"]
+        facts.append(f"while there was a boss and adds, it was on the boss {share:.0%} of the time")
+    # Order: which explanation fits its target choices here, judged within the group it was choosing from (the adds,
+    # when it picked an add: the boss arriving first doesn't make every pick "not the oldest".)
+    reasons, switches, previous = Counter(), 0, b.target[ally].at(start - 0.01) or 0
+    for s0, _e, target in b.target_segments(ally):
+        if s0 < start or s0 >= end:
+            previous = target
+            continue
+        if target and target != previous:
+            switches += 1
+            boss, adds = _boss_at(b, ally, s0)
+            group = adds if target in adds else [target]
+            if len(group) > 1:
+                reasons.update(_order_reasons(b, ally, s0, target, group))
+            else:
+                reasons["the only one of its kind"] += 1
+        previous = target
+    fitting = [(reasons[r], o) for r, o in ORDERS.items() if reasons[r]]
+    choices = switches - reasons["the only one of its kind"]
+    if choices >= 2 and fitting:
+        count, order = max(fitting)
+        if count / choices >= 0.6:
+            role["order"] = order
+    if switches:
+        facts.append(f"its {switches} target changes: " + ", ".join(f"{r} {c}/{switches}" for r, c in reasons.most_common(5)))
+    # Range: how far from its target when it acted.
+    distances = []
+    for x in b.actions:
+        if x["Source"] == ally and start <= x["S"] < end and x["Targets"]:
+            target = x["Targets"][0]["Id"]
+            if b.hostile(ally, target):
+                d = b.distance(ally, target, x["S"])
+                if d is not None:
+                    distances.append(d)
+    if len(distances) >= 3:
+        median = _median(distances)
+        # Melee, or a caster's distance to the nearest 5 yalms (so a phase isn't "different" over a yalm or two.)
+        role["range"] = 3 if median <= 5 else 5 * round(median / 5)
+        facts.append(f"it attacked from {median:.1f} yalms (median of {len(distances)})")
+    # Staying near you.
+    if b.you:
+        near = []
+        t = start
+        while t < end:
+            d = b.distance(ally, b.you, t)
+            if d is not None and b.alive(ally, t):
+                near.append(d)
+            t += 1.0
+        if len(near) >= 5:
+            near.sort()
+            p90 = near[int(len(near) * 0.9) - 1]
+            facts.append(f"it stayed within {p90:.0f} yalms of you 90% of the time")
+            if p90 <= 20 and role.get("range", 0) >= 6:
+                role["keep_near"] = {"within": 5 * round((p90 + 2) / 5 + 0.49)}
+    # Heals.
+    healed = defaultdict(list)
+    for x in b.actions:
+        if x["Source"] == ally and start <= x["S"] < end:
+            for h in x["Targets"]:
+                if any(e[0] == EFFECT_HEAL for e in h["Effects"]) and h.get("MaxHp"):
+                    who = "player" if h["Id"] == b.you else h["Id"]
+                    healed[(x["Action"], who)].append((x["S"], 100 * h["Hp"] / h["MaxHp"]))
+    heals = []
+    for (action, who), uses in healed.items():
+        times = [u[0] for u in uses]
+        gaps = [y - x for x, y in zip(times, times[1:])]
+        below = round(max(u[1] for u in uses) + 5)
+        heal = {"action": action, "targets": [who], "below": min(below, 95)}
+        if gaps:
+            heal["every"] = round(min(gaps), 1)
+        heals.append(heal)
+        facts.append(f"it healed {b.name(who) if who != 'player' else 'you'} with {b.action_name(action)} "
+                     f"{len(uses)} times, at {min(u[1] for u in uses):.0f}–{max(u[1] for u in uses):.0f}% HP")
+    if heals:
+        role["heals"] = heals
+    return {"role": role, "facts": facts}
+
+
+def _order_reasons(b: "Battle", ally: int, t: float, new: int, group: list[int]) -> list[str]:
+    """Which orders pick `new` out of `group` at time t."""
+    reasons = []
+    by_spawn = sorted(group, key=lambda c: b.actors[c].get("Seen", 0))
+    if by_spawn[0] == new:
+        reasons.append("oldest enemy")
+    if by_spawn[-1] == new:
+        reasons.append("newest enemy")
+    distances = {c: b.distance(ally, c, t) for c in group}
+    distances = {c: d for c, d in distances.items() if d is not None}
+    if distances and min(distances, key=distances.get) == new:
+        reasons.append("nearest enemy")
+    percents = {c: b.hp_percent(c, t) for c in group}
+    percents = {c: v for c, v in percents.items() if v is not None}
+    if percents and len(set(percents.values())) > 1 and min(percents, key=percents.get) == new:
+        reasons.append("most hurt enemy")
+    current = {c: b.hp[c].at(t) for c in group}
+    current = {c: v for c, v in current.items() if v is not None}
+    if current and len(set(current.values())) > 1 and max(current, key=current.get) == new:
+        reasons.append("healthiest enemy")
+    return reasons
+
+
+def telegraph_shape(info: dict) -> str | None:
+    """An action's area as Kawari reads it (gamedata.rs `ActionInfo::area_shape`): CastType 2 a circle on its target
+    (or the caster with no range), 5 a circle around the caster, 3/13 a cone, 4/8/12 a line; EffectRange its size."""
+    cast_type, size = _num(info.get("CastType")), _num(info.get("EffectRange"))
+    width = max(_num(info.get("XAxisModifier")), 1)
+    if size == 0:
+        return None
+    if cast_type == 2:
+        return f"circle {size} y" + (" on its target" if _num(info.get("Range")) > 0 else " around itself")
+    if cast_type == 5:
+        return f"circle {size} y around itself"
+    if cast_type in (3, 13):
+        return f"cone {size} y"
+    if cast_type in (4, 8, 12):
+        return f"line {size} y long, {width} y wide"
+    return f"cast type {cast_type}, size {size}"
+
+
+def telegraphs(b: "Battle") -> str:
+    """Every enemy cast with an area (a ground circle, cone or line) and its indicator: shape and size, cast time,
+    omen, how often, and where it was aimed (from the cast events.)"""
+    rows = defaultdict(list)
+    for e in b.events:
+        if e["Kind"] != "cast" or not e.get("Id"):
+            continue
+        parts = e["Text"].split()
+        try:
+            action = int(parts[parts.index("action") + 1])
+        except (ValueError, IndexError):
+            continue
+        rows[(e["Id"], action)].append(e)
+    lines = []
+    for (caster, action), casts in sorted(rows.items(), key=lambda kv: kv[1][0]["S"]):
+        info = b.action_info.get(action) or {}
+        shape = telegraph_shape(info)
+        if shape is None and not _num(info.get("Omen")):
+            continue
+        times = [c["S"] for c in casts]
+        gaps = [round(y - x, 1) for x, y in zip(times, times[1:])]
+        aimed = "at its target" if all(" on 0 " not in c["Text"] for c in casts) else "at the ground"
+        lines.append(f"* {b.name(caster)}: {b.action_name(action)}, {shape or 'no area'}, omen {_num(info.get('Omen'))}, "
+                     f"{_num(info.get('Cast100ms')) / 10} s cast, {len(casts)}×"
+                     + (f" every {_median(gaps)} s" if gaps else "") + f", first at {times[0]:.0f} s, aimed {aimed}")
+    if not lines:
+        return ""
+    return "\n".join(["## Telegraphs", "", "Enemy casts with an area and their indicators (Kawari's action scripts "
+                       "need the shape, size and cast time; the omen is what the client draws):", ""] + lines)
+
+
+def _lua(value) -> str:
+    if isinstance(value, dict):
+        return "{ " + ", ".join(f"{k} = {_lua(v)}" for k, v in value.items()) + " }"
+    if isinstance(value, list):
+        return "{ " + ", ".join(_lua(v) for v in value) + " }"
+    if isinstance(value, str):
+        return "Battle.PLAYER" if value == "player" else f'"{value}"'
+    return str(value)
+
+
+def outline(b: "Battle") -> str:
+    """A draft of the battle's outline for content/lib/Battle.lua: each ally's role in each director phase, with what
+    the recording shows behind it. Roles that change between phases become Battle:change calls."""
+    lines: list[str] = []
+    w = lines.append
+    allies = [i for i, a in b.actors.items() if a.get("Kind") == "battle npc" and b.you
+              and not b.hostile(i, b.you) and a.get("MaxHp")]
+    if not allies:
+        return ""
+    w("## The director's outline (draft)")
+    w("")
+    w("What each ally was there to do in each phase of the fight (the director's sequence), read from what it did: "
+      "who it went for first (boss or adds), in what order, from how far, how near it stayed to you, and whom it "
+      "healed. As `content/lib/Battle.lua` roles; check the evidence under each before using it.")
+    w("")
+    previous: dict[int, dict] = {}
+    for start, end, name in phases(b):
+        present = [i for i in allies if any(b.alive(i, t / 2) for t in range(int(start * 2), int(end * 2)))]
+        if not present:
+            continue
+        w(f"### {name} ({start:.0f}–{end:.0f} s)")
+        w("")
+        changes = {}
+        for i in present:
+            result = ally_outline(b, i, start, end)
+            role = result["role"]
+            w(f"* {b.name(i)}: " + ("; ".join(result["facts"]) if result["facts"] else "nothing to go on"))
+            if role and role != previous.get(i):
+                changes[i] = role
+                previous[i] = role
+        w("")
+        if changes:
+            w("```lua")
+            if name == "start":
+                for i, role in changes.items():
+                    w(f"BATTLE:ally({b.actors[i].get('LayoutId')}, {_lua(role)}) -- {b.name(i)}")
+            else:
+                w(f'{{ 0, "change", "{name}", {{')
+                for i, role in changes.items():
+                    w(f"    [{b.actors[i].get('LayoutId')}] = {_lua(role)}, -- {b.name(i)}")
+                w("} },")
+            w("```")
+            w("")
+    return "\n".join(lines)
 
 
 def _find(data, key):
@@ -656,6 +921,16 @@ def report(run: dict, npc_filter: str | None = None) -> str:
                       f"(median {_median(percents):.0f}%); the most hurt of its side {most_hurt}/{len(heals)} times")
                 who_healed = Counter(b.name(h["Id"]) for _t, h in heals)
                 w("  * healed: " + ", ".join(f"{k} {v}" for k, v in who_healed.most_common()))
+        w("")
+
+    drawn = telegraphs(b)
+    if drawn:
+        w(drawn)
+        w("")
+
+    drafted = outline(b)
+    if drafted:
+        w(drafted)
         w("")
 
     idle = [i for i in fighters if b.actors[i].get("Kind") == "battle npc" and not any(x["Source"] == i for x in b.actions)]

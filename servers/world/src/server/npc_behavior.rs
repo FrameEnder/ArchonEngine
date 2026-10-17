@@ -94,6 +94,26 @@ pub fn npc_behavior(
             (*id, percent)
         })
         .collect();
+    // Everyone's position, for NPCs told to stay near someone (the director's `keep_near`.)
+    let positions: HashMap<ObjectId, Vec3A> = instance
+        .actors
+        .iter()
+        .filter(|(_, actor)| {
+            matches!(
+                actor,
+                NetworkedActor::Player { .. } | NetworkedActor::Npc { .. }
+            )
+        })
+        .map(|(id, actor)| (*id, actor.get_common_spawn().position.0))
+        .collect();
+    // Where an NPC that's strayed too far from its anchor has to head back to, if it has.
+    let back_to = |keep_near: &Option<(ObjectId, f32)>, at: Vec3A| -> Option<Vec3A> {
+        let (anchor, yalms) = (*keep_near)?;
+        positions
+            .get(&anchor)
+            .copied()
+            .filter(|anchor_pos| Vec3A::distance(at, *anchor_pos) > yalms)
+    };
     let mut healed = Vec::new();
     let in_content = instance.content_id != 0 || instance.content_finder_condition_id != 0;
     // In content an NPC that can't path to its target walks the rest of the way straight, however far: our navmesh has
@@ -115,6 +135,7 @@ pub fn npc_behavior(
             state,
             timeline,
             cast,
+            keep_near,
             ..
         } = actor
             && let Some(current_target) = current_target
@@ -154,29 +175,31 @@ pub fn npc_behavior(
                 if rotation >= PI { -PI } else { rotation }
             };
 
-            // If we are in distance, rotate towards target
-            let (position, rotation) = if distance <= min_distance {
-                (
-                    Some(spawn.common.position),
-                    Some(rotate(spawn.common.position.0, target_pos)),
-                )
-            } else if !current_path.is_empty() {
-                // otherwise, Follow current path
-                let next_position = current_path[0];
+            // If we are in distance, rotate towards target (unless it has to get back near someone first.)
+            let strayed = back_to(keep_near, spawn.common.position.0).is_some();
+            let (position, rotation) =
+                if distance <= min_distance && !(strayed && !current_path.is_empty()) {
+                    (
+                        Some(spawn.common.position),
+                        Some(rotate(spawn.common.position.0, target_pos)),
+                    )
+                } else if !current_path.is_empty() {
+                    // otherwise, Follow current path
+                    let next_position = current_path[0];
 
-                let current_position = last_position.unwrap_or(spawn.common.position.0);
+                    let current_position = last_position.unwrap_or(spawn.common.position.0);
 
-                (
-                    Some(Position(Vec3A::lerp(
-                        current_position,
-                        next_position,
-                        *current_path_lerp,
-                    ))),
-                    Some(rotate(current_position, next_position)),
-                )
-            } else {
-                (None, None)
-            };
+                    (
+                        Some(Position(Vec3A::lerp(
+                            current_position,
+                            next_position,
+                            *current_path_lerp,
+                        ))),
+                        Some(rotate(current_position, next_position)),
+                    )
+                } else {
+                    (None, None)
+                };
 
             if let NpcTarget::Actor(actor) = current_target {
                 target_actor_pos.insert(*actor, target_pos);
@@ -225,6 +248,7 @@ pub fn npc_behavior(
             cast,
             parameters,
             rotation_state,
+            keep_near,
             ..
         } = actor
             && *state != NpcState::Dead
@@ -428,9 +452,12 @@ pub fn npc_behavior(
 
                 if !reset_target && let Some(target_pos) = target_pos {
                     let distance = Vec3A::distance(spawn.common.position.0, target_pos);
+                    // Told to stay near someone and too far from them: head back there first.
+                    let strayed_to = back_to(keep_near, spawn.common.position.0);
                     let needs_repath = match current_target {
                         NpcTarget::Actor(_) => {
-                            current_path.is_empty() && distance > timeline.attack_range
+                            current_path.is_empty()
+                                && (distance > timeline.attack_range || strayed_to.is_some())
                         }
                         NpcTarget::Position(_) => current_path.is_empty(),
                     };
@@ -438,9 +465,10 @@ pub fn npc_behavior(
 
                     let current_pos = spawn.common.position.0;
                     if needs_repath {
+                        let goal = strayed_to.unwrap_or(target_pos);
                         let path: VecDeque<Vec3A> = instance
                             .navmesh
-                            .calculate_path(current_pos, target_pos, max_off_mesh_gap)
+                            .calculate_path(current_pos, goal, max_off_mesh_gap)
                             .into();
 
                         *current_path = path.clone();

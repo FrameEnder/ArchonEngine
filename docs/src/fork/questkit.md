@@ -182,6 +182,17 @@ which actions it never re-applies to the same target within N seconds (damage ov
 kit had at its level that it never used. Then a ready **`rotation` block** for its timeline (see
 [Combat](combat.md#class-rotations-serverrotationrs)), with each entry's evidence in its comment.
 
+**The director's outline (draft)**: the fight cut where the director's sequence changes, and for each ally in each
+phase what it was there to do, read from what it did: its focus (on the boss or the adds, by how much of its time
+while there were both; the boss being the standing enemy with the most max HP), its order within that group (which
+of oldest, newest, nearest, most hurt or healthiest fits its target changes, judged among the enemies it was choosing
+from), its range (median distance to its target when it acted, melee or to the nearest 5 yalms), how near it stayed to
+you (90th percentile), and its heals (whom, with what, how low they were). As `content/lib/Battle.lua` roles: a
+`BATTLE:ally` line each for the start, then a `"change"` step for each phase where a role changed.
+
+**Telegraphs**: every enemy cast with an area: its shape and size (CastType and EffectRange read as Kawari does), omen,
+cast time, how often and when, and whether it was aimed at a target or the ground.
+
 From Recorder 2.6 files, also: a warning naming any hook that wasn't working (what the recording can't have); **your
 setup** (job, level, sync, item level, Duty Finder settings, party, statuses at the start); action names from the
 recording's `ActionInfo`; tethers, event objects changing, fast moves (knockbacks) and auto marks in the timeline;

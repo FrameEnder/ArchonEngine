@@ -204,6 +204,17 @@ impl WorldServer {
             }
         }
 
+        // The shared battle framework (roles, focus, phases, heals: content/lib/Battle.lua) comes first, so the
+        // battle's script can describe its fight with it.
+        let library = get_config()
+            .filesystem
+            .locate_script_file("content/lib/Battle.lua");
+        if let Ok(file) = std::fs::read(&library)
+            && let Err(err) = lua.0.load(file).set_name("@".to_string() + &library).exec()
+        {
+            tracing::warn!("Syntax error in {library}: {err:?}");
+        }
+
         let file_name = get_config()
             .filesystem
             .locate_script_file(&format!("content/questbattle/{quest_battle_id}.lua"));

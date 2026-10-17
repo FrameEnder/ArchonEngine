@@ -36,7 +36,7 @@ Callbacks:
 |---|---|
 | `onSetup(director)` | The instance was created. |
 | `onCommence(director)` | The player is in: spawn NPCs, set the first sequence, start the chatter. |
-| `onUpdate(director, health, player_health)` | Every logic tick (500 ms). `health` maps each living NPC's layout ID to its health %, `player_health` the player's. Waves, thresholds and timed steps live here. |
+| `onUpdate(director, health, player_health, info)` | Every logic tick (500 ms). `health` maps each living NPC's layout ID to its health %, `player_health` the player's; `info` has everyone's real numbers and position (`info[layout] = { hp, max_hp, x, y, z }`, `info.player` the same), for highest-HP and nearest choices. Waves, thresholds and timed steps live here. |
 | `onActorDeath(director, layout_id, position)` | An NPC died. Optional (the server skips it when a script, or a FATE's, doesn't define it). |
 | `onPlayerDeath(director)` | The player fell. |
 | `onSceneFinished(director, scene)` | A player finished one of the director's own scenes (`play_scene`), e.g. a cutscene halfway through. Optional. |
@@ -56,9 +56,47 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `play_scene(scene, flags)` | Plays one of the director's scenes for every player (event type GameProgress), e.g. To Guard a Guardian's cutscene, scene 6 with flags `0xF8402EFB`. The script hears `onSceneFinished` when it's over. |
 | `despawn_bnpc(layout_id)` | Removes an NPC without it dying (no `onActorDeath`). |
 | `warp_players(x, y, z, rotation)` | Moves every player in the instance through a loading screen to a position in it (PrepareZoning to the same territory, then ActorSetPos). |
+| `set_attack_range(npc, yalms)` | How close the NPC gets to its target before attacking: melee (3) or a caster's distance. |
+| `keep_near(npc, anchor, yalms)` | Keeps the NPC within `yalms` of `anchor` (an NPC's layout ID, or the player when `nil`): it heads back towards them when it's further, whatever it's fighting, as a support healer stays near everyone. `yalms` `nil` stops it. |
 | `say(npc, key)` | NPC says a line from the quest's text sheet by key, in `/say` under its BNpcName. |
 | `say_battle_talk(npc, number, name_id)` | Says the quest's n-th `*BATTLETALK*` line (key order) under BNpcName `name_id` (0 shows `???`), even if the speaker isn't present. The log names the key it used. |
 | `yell(npc, npc_yell_id)` | NpcYell row (e.g. 118 "Curses! Not now!", 122/123 the golem's rumbles). |
+
+## The battle framework (`content/lib/Battle.lua`)
+
+On retail a battle's director runs the fight by an outline the developers wrote for it: who is on which side, what each
+ally is there to do, and how that changes as the fight does. In Chasing Shadows Yda (a pugilist, close-range damage) is
+there for the boss and then finishes whatever's left, toughest first; Papalymo (a thaumaturge, ranged damage) stands in
+as support, since neither knows your class: he takes the adds from range, stays near everyone and heals you when you're
+low. When new adds arrive the outline already says who deals with them.
+
+`content/lib/Battle.lua` is that outline as code, shared by every battle. The server loads it before the battle's own
+script; the script describes its fight and calls `BATTLE:update` / `BATTLE:died` from its callbacks:
+
+```lua
+BATTLE = Battle.new()
+BATTLE:ally(BNPC_IDA, { focus = { "boss", "adds" }, order = "highest_hp" })
+BATTLE:ally(BNPC_PAPALYMO, { focus = { "adds", "boss" }, order = "oldest", range = 10,
+    keep_near = { within = 15 }, heals = { { action = 120, targets = { Battle.PLAYER }, below = 50, every = 4 } } })
+BATTLE:enemy(BNPC_BOSS, { group = "boss", attacks = BNPC_IDA })
+BATTLE:onHealth(BNPC_BOSS, 75, function(director) BATTLE:spawn(director, WAVE_1) end)
+```
+
+| Part | |
+|---|---|
+| `ally(layout, role)` | `focus`: the enemy groups it goes for, in order (`"any"` is everyone); `order` within a group: `oldest`, `newest`, `highest_hp`, `lowest_hp`, `nearest`; `range` (yalms, `set_attack_range`); `keep_near` (`{ anchor, within }`, `keep_near`); `heals`. |
+| `enemy(layout, role)` | `group` (a name or a list, e.g. `{ "lostwings", "adds" }`); `attacks`: whom it goes for first (an ally, or the player when `nil`) with `enmity` (300); it can have `heals` too (the sincallers heal Quzal). |
+| heals | `{ action, targets (layout IDs, Battle.PLAYER, or "allies" for its whole side), below (%), every (s), say (a function) }`: heals whichever target is lowest under `below`. |
+| `spawn(director, layouts)` / `remove(director, layouts)` | Brings NPCs in as their roles say (placement, first target) / takes them out without dying. |
+| `change(director, name, changes)` | A new context: `changes = { [layout] = { focus = … } }` from now on (the boss gone, someone joining). |
+| `steps(list)` | Timed steps, one after another: `{ updates after the one before, kind, … }` with kinds `sequence`, `talk`, `say`, `yell`, `spawn`, `remove`, `action`, `change`, `call`. A step runs the update after its count is up. |
+| `onHealth(layout, percent, fn)`, `onCleared(group or list, fn)` | Phases: once an NPC's health reaches a mark (or it falls before it), once a group (or a list) that arrived has all fallen. |
+
+Allies are re-pointed whenever an enemy arrives or falls, roles change, and every 2 s (for highest-HP and nearest);
+only an ally whose target changed gets new enmity, each time more than the last (`ALLY_ENMITY`), so it switches and
+stays. Chasing Shadows and To Guard a Guardian run on it; simulated against their previous scripts (lupa), every
+director call and every ally's sequence of targets came out the same. `questkit battle` drafts the outline from a
+retail recording (see [questkit](questkit.md#battle)).
 
 **The battle talk window** is DirectorPopupMessage (162), found in the 2026-10-16 recording of Leia's Legacy and To Guard a
 Guardian. Layout (40 bytes): speaker actor (ObjectTypeId, 8 bytes), director handler, BNpcName, text ID, duration ms
@@ -80,6 +118,8 @@ player is sent out.
 
 ### Quest battle 11 — Chasing Shadows (`content/questbattle/11.lua`)
 
+* On the battle framework. Yda: the boss, then what's left, highest HP first. Papalymo: the adds (oldest first) from
+  10 yalms, staying within 15 yalms of you (a guess until a recording shows it), Cure on you below 50 %.
 * Yda (3802271) and Papalymo (3802272) fight beside you. Yda goes for the boss and stays on it; Papalymo takes the adds
   (oldest first) and casts at 10 yalms. Adds start with some enmity on their ally (`STARTING_ENMITY = 300`) that the
   player can pull away; each new ally order outweighs the last (`ALLY_ENMITY = 10000`).

@@ -442,6 +442,16 @@ class BattleRecorder26Test(unittest.TestCase):
         self.assertIn("Add [202], Boss [200]", text)
         self.assertIn("0 ToggleWeapon: 1", text)
 
+    def test_telegraphs(self):
+        run = _battle_run()
+        run["ActionInfo"] = {"740": {"Name": "Sweep", "CastType": 3, "EffectRange": 8, "Omen": 2, "Cast100ms": 30}}
+        run["Events"] = run["Events"] + [
+            {"S": 12.0, "Kind": "cast", "Id": 10, "Text": "action 740 spell 740 type 1 on 1 3s at 1, 2, 3 facing 0.5 omen delay 0 interruptible False"},
+            {"S": 32.0, "Kind": "cast", "Id": 10, "Text": "action 740 spell 740 type 1 on 1 3s at 1, 2, 3 facing 0.5 omen delay 0 interruptible False"}]
+        text = battle.report(run)
+        self.assertIn("## Telegraphs", text)
+        self.assertIn("Boss [200]: 740 (Sweep), cone 8 y, omen 2, 3.0 s cast, 2× every 20.0 s", text)
+
 
 class ClassProfileTest(unittest.TestCase):
     """An NPC lancer and an NPC thaumaturge, read against their class mechanics (Recorder 2.7's ActionInfo)."""
@@ -515,6 +525,73 @@ class ClassProfileTest(unittest.TestCase):
         text = battle.report(self._run())
         self.assertIn("fights as **LNC**", text)
         self.assertIn('"rotation"', text)
+
+
+class OutlineTest(unittest.TestCase):
+    """A made-up Chasing Shadows: Yda on the boss up close, Papalymo on the adds (oldest first) from range, near you,
+    healing you. The outline should find exactly that."""
+
+    def _run(self):
+        you, yda, papa, boss, add1, add2, add3, add4 = 1, 2, 3, 10, 11, 12, 13, 14
+        def actor(kind, name, layout, battalion, seen, hp, pos, died=None):
+            a = {"Kind": kind, "Name": name, "LayoutId": layout, "Battalion": battalion, "Level": 20, "MaxHp": hp,
+                 "Seen": seen, "LastSeen": 120.0, "Position": list(pos)}
+            if died is not None:
+                a["Died"] = died
+            return a
+        actors = {
+            you: actor("you", "", 0, 0, 0, 900, (0, 0, 0)),
+            yda: actor("battle npc", "Yda", 3802271, 0, 0, 5000, (8, 0, 0)),
+            papa: actor("battle npc", "Papalymo", 3802272, 0, 0, 4000, (-2, 0, 4)),
+            boss: actor("battle npc", "Boss", 3802315, 4, 0, 20000, (10, 0, 0)),
+            add1: actor("battle npc", "Add", 4094218, 4, 0, 800, (-14, 0, 2), died=40.0),
+            add2: actor("battle npc", "Add", 4094238, 4, 30, 800, (-16, 0, 6), died=70.0),
+            add3: actor("battle npc", "Add", 4094239, 4, 31, 800, (-12, 0, 9), died=90.0),
+            add4: actor("battle npc", "Add", 4094240, 4, 32, 800, (-18, 0, 1), died=100.0),
+        }
+        samples = [{"S": a["Seen"], "Id": i, "Hp": a["MaxHp"], "P": a["Position"], "T": 0} for i, a in actors.items()]
+        samples += [{"S": 0.5, "Id": yda, "T": boss}, {"S": 0.5, "Id": papa, "T": add1},
+                    {"S": 40.5, "Id": papa, "T": add2}, {"S": 70.5, "Id": papa, "T": add3},
+                    {"S": 90.5, "Id": papa, "T": add4}, {"S": 100.5, "Id": papa, "T": boss}]
+        for i in (add1, add2, add3, add4):
+            samples.append({"S": actors[i]["Died"], "Id": i, "Hp": 0, "Dead": True})
+        actions = []
+        def act(t, who, action, target, kind=3, hp=500, max_hp=800):
+            actions.append({"S": t, "Source": who, "Action": action, "Type": 1, "SourceHp": 1,
+                            "Targets": [{"Id": target, "Hp": hp, "MaxHp": max_hp, "Effects": [[kind, 50, 0, 0, 0, 0, 0]]}]})
+        for k in range(30):
+            act(1 + k * 3, yda, 53, boss)
+            t = 1.5 + k * 3
+            target = add1 if t < 40 else add2 if t < 70 else add3 if t < 90 else add4 if t < 100 else boss
+            act(t, papa, 142, target)
+        for t in (20.0, 50.0):
+            act(t, papa, 120, you, kind=4, hp=360, max_hp=900)
+        events = [{"S": 8.5, "Kind": "sequence", "Id": 0, "Text": "0x80030001 sequence 2"},
+                  {"S": 30.0, "Kind": "sequence", "Id": 0, "Text": "0x80030001 sequence 3"}]
+        return {"Zone": "Central Shroud", "Content": "", "TerritoryId": 1, "Actors": {str(k): v for k, v in actors.items()},
+                "Samples": samples, "Actions": actions, "Events": events, "Controls": [], "Layers": []}
+
+    def test_roles(self):
+        b = battle.Battle(self._run())
+        start, end, name = battle.phases(b)[-1]
+        self.assertEqual(name, "sequence 3")
+        yda = battle.ally_outline(b, 2, start, end)["role"]
+        self.assertEqual(yda.get("focus"), ["boss", "adds"])
+        self.assertEqual(yda.get("range"), 3)
+        papa = battle.ally_outline(b, 3, start, end)
+        self.assertEqual(papa["role"].get("focus"), ["adds", "boss"])
+        self.assertEqual(papa["role"].get("order"), "oldest")
+        self.assertGreaterEqual(papa["role"].get("range"), 8)
+        self.assertIn("keep_near", papa["role"])
+        heals = battle.ally_outline(b, 3, 0, 120)["role"]["heals"]
+        self.assertEqual(heals[0]["targets"], ["player"])
+        self.assertEqual(heals[0]["action"], 120)
+
+    def test_outline_in_report(self):
+        text = battle.report(self._run())
+        self.assertIn("## The director's outline (draft)", text)
+        self.assertIn("BATTLE:ally(3802271", text)
+        self.assertIn('"change", "sequence 3"', text)
 
 
 if __name__ == "__main__":

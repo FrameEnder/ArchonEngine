@@ -30,6 +30,9 @@ add one when something is found.
   recording for those NPCs; their potency for a player who uses the same action isn't verified, and none of them give
   their statuses (Windbite, Venomous Bite, Terror Eye…).
 * When allies heal (thresholds and how often) is fitted to the recording, not known rules.
+* How near Papalymo stays to you in Chasing Shadows (15 yalms) is a guess until a recording of it shows it.
+  `keep_near` takes the NPC to its anchor itself (not to the edge of the distance), and retargets don't consider
+  whether a target is out of the anchor's reach.
 * Class rotations time a re-applied debuff per target (`refresh`) instead of reading the target's statuses, and
   don't yet know procs (`ActionProcStatus`) or charges. The quest battles' timelines are still fixed timepoints:
   they move to rotations as Recorder 2.7 recordings of them come in.

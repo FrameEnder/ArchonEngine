@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-16 | — | Class rotations (combat); Recorder 2.7's class kits (recorder and diagnostics); the class profile (questkit); adding a quest battle; known issues.
+| 2026-10-17 | — | The battle framework, `set_attack_range`, `keep_near` and `onUpdate`'s `info` (quest battles); staying near someone (combat); the outline and telegraphs (questkit); known issues.
+| 2026-10-16 | `dbedea9` | Class rotations (combat); Recorder 2.7's class kits (recorder and diagnostics); the class profile (questkit); adding a quest battle; known issues.
 | 2026-10-16 | `29ecfc9` | Recorder 2.6's battle files and sending to Kawari Web (recorder and diagnostics, Kawari Web); the report's new sections (questkit).
 | 2026-10-16 | `ee05899` | Recorder 2.5's saved battles (recorder and diagnostics); `questkit battle` across runs (questkit).
 | 2026-10-16 | `c2697fd` | Recorder 2.4 and what a recording can and can't tell (recorder and diagnostics); `questkit battle` (questkit, quest battles).
@@ -57,11 +58,17 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` is at `955b0ce`.
 
+### 2026-10-17
+
+| Commit | Change |
+|---|---|
+| — | The battle framework (`content/lib/Battle.lua`, loaded before every quest battle's script): allies' roles (focus groups, order, range, staying near someone, heals), enemies' groups and first targets, context changes, timed steps and health/cleared phases. Chasing Shadows and To Guard a Guardian run on it (simulated: the same director calls and targets as before; Papalymo now casts from 10 yalms and stays within 15 of you). The director gets `set_attack_range` and `keep_near` (NPCs head back to their anchor), and `onUpdate` a fourth argument with everyone's HP, max HP and position. `questkit battle` drafts the director's outline per phase (focus, order, range, staying near, heals) and lists enemy telegraphs. |
+
 ### 2026-10-16
 
 | Commit | Change |
 |---|---|
-| — | Class rotations for NPCs: a timeline's `rotation` (pace and priority-ordered actions with `every`, `refresh`, `then`, HP conditions), run every tick by `server/rotation.rs` with the Action sheet's GCD group, recast and combo predecessor (`GameData::get_action_mechanics`). `questkit battle` profiles each NPC by its class (pace, combos, abilities on cooldown, buff follow-ups, re-applied debuffs, unused kit) and writes its `rotation`. |
+| `dbedea9` | Class rotations for NPCs: a timeline's `rotation` (pace and priority-ordered actions with `every`, `refresh`, `then`, HP conditions), run every tick by `server/rotation.rs` with the Action sheet's GCD group, recast and combo predecessor (`GameData::get_action_mechanics`). `questkit battle` profiles each NPC by its class (pace, combos, abilities on cooldown, buff follow-ups, re-applied debuffs, unused kit) and writes its `rotation`. |
 | `29ecfc9` | `questkit battle` reports Recorder 2.6's additions: failed hooks, your setup, action names, tethers, event objects, fast moves, auto marks, your enmity, and actor controls by category (named from `ActorControlCategory`). |
 | `ee05899` | `questkit battle` reads any number of battles (exports, the Recorder's battles folder, single `.json.gz` files, 2.4's `battles.json`; labels from the index) and, for several runs of the same battle, adds up each NPC's evidence across them. |
 | `c2697fd` | `questkit battle`: a report on a recorded duty or quest battle (Recorder 2.4's `battles.json`): who's in it with their layout layer and AI settings, waves and what preceded them, each NPC's targets with the explanations that fit every change (counted), actions, intervals and heals, and who never acted. Tested on made-up data. |

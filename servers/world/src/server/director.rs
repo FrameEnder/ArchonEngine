@@ -177,6 +177,18 @@ pub enum LuaDirectorTask {
     SetSequence {
         sequence: u8,
     },
+    /// How close (in yalms) a BNpc gets to its target before attacking: melee (3) or a caster's range (15.)
+    SetAttackRange {
+        layout_id: u32,
+        yalms: f32,
+    },
+    /// Keep a BNpc within `yalms` of another BNpc (by layout ID), or of the player if there's no anchor: it heads back
+    /// towards them when it's further, whatever it's fighting (a healer staying near everyone.) `None` stops it.
+    KeepNear {
+        layout_id: u32,
+        anchor: Option<u32>,
+        yalms: Option<f32>,
+    },
     /// Make a BNpc hate another BNpc (by layout ID), or the player if there's no target, by this much enmity.
     SetHate {
         layout_id: u32,
@@ -187,6 +199,14 @@ pub enum LuaDirectorTask {
         index: u32,
         timeline_id: u32,
     },
+}
+
+/// One actor's numbers for a director's `onUpdate` (see `DirectorData::update`.)
+#[derive(Debug, Clone, Copy)]
+pub struct ActorInfo {
+    pub hp: u32,
+    pub max_hp: u32,
+    pub position: glam::Vec3A,
 }
 
 // TODO: Maybe collapse into DirectorData?
@@ -416,6 +436,25 @@ impl UserData for LuaDirector {
                 Ok(())
             },
         );
+        methods.add_method_mut(
+            "set_attack_range",
+            |_, this, (layout_id, yalms): (u32, f32)| {
+                this.tasks
+                    .push(LuaDirectorTask::SetAttackRange { layout_id, yalms });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "keep_near",
+            |_, this, (layout_id, anchor, yalms): (u32, Option<u32>, Option<f32>)| {
+                this.tasks.push(LuaDirectorTask::KeepNear {
+                    layout_id,
+                    anchor,
+                    yalms,
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut("map_effect", |_, this, (index, timeline_id): (u32, u32)| {
             this.tasks
                 .push(LuaDirectorTask::MapEffect { index, timeline_id });
@@ -482,8 +521,14 @@ impl DirectorData {
     }
 
     /// Called every server tick for scripts that define `onUpdate`, with the health (in percent) of every living NPC
-    /// by its layout ID.
-    pub fn update(&mut self, npc_health: &HashMap<u32, u32>, player_health: Option<u32>) {
+    /// by its layout ID, the player's, and (fourth) everyone's details: `info[layout] = { hp, max_hp, x, y, z }`, and
+    /// `info.player` the same for the player, for scripts that need real numbers or distances (content/lib/Battle.lua.)
+    pub fn update(
+        &mut self,
+        npc_health: &HashMap<u32, u32>,
+        player_health: Option<u32>,
+        info: &HashMap<String, ActorInfo>,
+    ) {
         let Ok(func) = self.lua.0.globals().get::<Function>("onUpdate") else {
             return;
         };
@@ -495,8 +540,21 @@ impl DirectorData {
                 .lua
                 .0
                 .create_table_from(npc_health.iter().map(|(k, v)| (*k, *v)))?;
+            let details = self.lua.0.create_table()?;
+            for (key, actor) in info {
+                let entry = self.lua.0.create_table()?;
+                entry.set("hp", actor.hp)?;
+                entry.set("max_hp", actor.max_hp)?;
+                entry.set("x", actor.position.x)?;
+                entry.set("y", actor.position.y)?;
+                entry.set("z", actor.position.z)?;
+                match key.parse::<u32>() {
+                    Ok(layout_id) => details.set(layout_id, entry)?,
+                    Err(_) => details.set(key.as_str(), entry)?,
+                }
+            }
 
-            func.call::<()>((data, health, player_health))?;
+            func.call::<()>((data, health, player_health, details))?;
 
             Ok(())
         });
@@ -843,8 +901,25 @@ fn update_director(instance: &mut Instance) {
         }
         _ => None,
     });
+    // Everyone's real numbers and position: living NPCs by layout ID, and "player".
+    let mut info = HashMap::new();
+    for actor in instance.actors.values() {
+        let key = match actor {
+            NetworkedActor::Npc { spawn, .. } if spawn.common.health_points > 0 => {
+                spawn.common.layout_id.to_string()
+            }
+            NetworkedActor::Player { .. } => "player".to_string(),
+            _ => continue,
+        };
+        let common = actor.get_common_spawn();
+        info.entry(key).or_insert(ActorInfo {
+            hp: common.health_points,
+            max_hp: common.max_health_points,
+            position: common.position.0,
+        });
+    }
     if let Some(director) = instance.directors.first_mut() {
-        director.update(&npc_health, player_health);
+        director.update(&npc_health, player_health, &info);
     }
 }
 
@@ -1496,6 +1571,43 @@ pub fn director_tick(
                     FromServer::QuestBattleFailed,
                     DestinationNetwork::ZoneClients,
                 );
+            }
+            LuaDirectorTask::SetAttackRange { layout_id, yalms } => {
+                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                    tracing::warn!("Failed to find bnpc {layout_id} for SetAttackRange!");
+                    continue;
+                };
+                if let Some(NetworkedActor::Npc { timeline, .. }) =
+                    instance.find_actor_mut(actor_id)
+                {
+                    timeline.attack_range = yalms.max(0.5);
+                }
+            }
+            LuaDirectorTask::KeepNear {
+                layout_id,
+                anchor,
+                yalms,
+            } => {
+                let anchor_id = match anchor {
+                    Some(anchor) => instance.find_npc(*anchor).map(|(id, _)| id),
+                    None => instance
+                        .actors
+                        .iter()
+                        .find(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+                        .map(|(id, _)| *id),
+                };
+                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                    tracing::warn!("Failed to find bnpc {layout_id} for KeepNear!");
+                    continue;
+                };
+                if let Some(NetworkedActor::Npc { keep_near, .. }) =
+                    instance.find_actor_mut(actor_id)
+                {
+                    *keep_near = match (anchor_id, yalms) {
+                        (Some(anchor_id), Some(yalms)) => Some((anchor_id, *yalms)),
+                        _ => None,
+                    };
+                }
             }
             LuaDirectorTask::SetHate {
                 layout_id,
