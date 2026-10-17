@@ -1,7 +1,7 @@
 {
   "quest": 507,
   "script": "ManFst200_00507",
-  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-16), Gridania after quest 387 up to Call of the Sea",
+  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-16), Gridania after quest 387 up to Call of the Sea; the gangplanks' answers from Bob's Chronofoil capture of retail 2026-10-16",
   "params": {
     "ACTOR0": 1003027,
     "ACTOR1": 1000460,
@@ -89,6 +89,14 @@
         "sequence": 4,
         "vars": "001100000000",
         "notices": []
+      },
+      "results": {
+        "6": [0, 0],
+        "7": {
+          "results": [0, 0],
+          "error": 0
+        },
+        "8": [0, 0]
       }
     },
     {
@@ -125,6 +133,14 @@
         "sequence": 8,
         "vars": "001000000000",
         "notices": []
+      },
+      "results": {
+        "28": [0, 0],
+        "29": {
+          "results": [0, 0],
+          "error": 0
+        },
+        "30": [0, 0]
       }
     },
     {

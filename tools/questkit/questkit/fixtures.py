@@ -21,6 +21,10 @@ A fixture (tools/questkit/fixtures/<quest>.json) is made from a Kawari Recorder 
 "completed". `notices` is the notices the step sends, as [notice, [args]]; it's left out (not checked) where the
 recording didn't capture packets. A step without `expect` only has to run without errors.
 
+`results` sets what the client answers to a scene (every scene answers [1, 0] otherwise): a list, or
+{"results": [...], "error": n} for a scene whose answer is its error code (50 is "No" in The Gridanian Envoy's
+boarding yes/nos; retail's "Yes" there is error 0 with results [0, 0]).
+
 Recorder 2.0 and later record who the player last targeted, which says what each step was. Older recordings don't,
 so their steps come out as {"todo": ...} placeholders to fill in by hand.
 """

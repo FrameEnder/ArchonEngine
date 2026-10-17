@@ -9,14 +9,16 @@
 --               ITEM0 and ITEM1 (UI8BH and UI8BL.)
 -- Sequence 1:   ACTOR2 (Mother Miounne) (cutscene 3): notice 0, sequence 2.
 -- Sequence 2:   ACTOR3 (Lionnellais, Gridania's airship ticketer) (scene 4) takes you up to the landing: sequence 3.
--- Sequence 3:   board at EOBJECT1, the gangplank (EVENT_ACTION_WAITING_SHOR, then scene 7, a yes/no, then the flight,
---               cutscene 8): you land in Limsa Lominsa (TERRITORYTYPE2) at sequence 4. ACTOR3 takes you up again (9.)
+-- Sequence 3:   board at EOBJECT1, the gangplank (scene 6, a check the client answers at once, then
+--               EVENT_ACTION_WAITING_SHOR, then scene 7, a yes/no, then the flight, cutscene 8): you land in Limsa
+--               Lominsa (TERRITORYTYPE2) at sequence 4. ACTOR3 takes you up again (9.) The yes/no's answer is the
+--               scene's error code, not its results: 50 is No (Sapphire; retail's Yes returns 0 with results [0, 0].)
 -- Sequence 4:   ACTOR4 (the Storm Honor Guard) (scene 11): notice 3, sequence 5. ACTOR5 (the arrivals attendant) takes
 --               you down (scene 12.)
 -- Sequence 5:   ACTOR6 (Zanthael) (scene 16, a yes/no, then 17 and the audience, cutscene 18) takes ITEM1 (UI8BL = 0):
 --               notice 4, sequence 6.
 -- Sequence 6:   ACTOR7 (L'nophlo, Limsa's ticketer) (scene 24) takes you up to the landing: sequence 7.
--- Sequence 7:   board at EOBJECT3 (scene 29, then the flight, cutscene 30): you land in Ul'dah (TERRITORYTYPE3) at
+-- Sequence 7:   board at EOBJECT3 (scene 28, the bar, scene 29, then the flight, cutscene 30): you land in Ul'dah (TERRITORYTYPE3) at
 --               sequence 8. ACTOR7 takes you up again (scene 31.)
 -- Sequence 8:   ACTOR8 (the Flame Honor Guard) (scene 35): notice 7, sequence 255. ACTOR9 takes you down (scene 36.)
 -- Sequence 255: ACTOR10 (Bartholomew) (scene 42, then 43, the audience cutscene 44 and the reward, 45.)
@@ -26,6 +28,7 @@ SCENE_ACCEPTED = 1
 SCENE_LOTUS_DOOR = 2
 SCENE_MIOUNNE = 3
 SCENE_GRIDANIA_TICKETS = 4
+SCENE_GRIDANIA_CHECK = 6
 SCENE_GRIDANIA_BOARD = 7
 SCENE_FLIGHT_TO_LIMSA = 8
 SCENE_GRIDANIA_TICKETS_AGAIN = 9
@@ -35,6 +38,7 @@ SCENE_ZANTHAEL = 16
 SCENE_ZANTHAEL_2 = 17
 SCENE_ADMIRAL = 18
 SCENE_LIMSA_TICKETS = 24
+SCENE_LIMSA_CHECK = 28
 SCENE_LIMSA_BOARD = 29
 SCENE_FLIGHT_TO_ULDAH = 30
 SCENE_LIMSA_TICKETS_AGAIN = 31
@@ -55,8 +59,18 @@ LIMSA = TERRITORYTYPE2 or 128
 ULDAH = TERRITORYTYPE3 or 130
 LOTUS_STAND = TERRITORYTYPE0 or 205
 LOTUS_STAND_ENTRANCE = POPRANGE0 or 3877982
--- The progress bar before boarding (Sapphire uses EventAction 10.)
-EVENT_ACTION_BOARD = EVENT_ACTION_WAITING_SHOR or 10
+-- The progress bar before boarding (retail: EventAction 11, as the quest's parameter says; Sapphire uses 10.)
+EVENT_ACTION_BOARD = EVENT_ACTION_WAITING_SHOR or 11
+-- A boarding yes/no answered No (its error code; Sapphire's scripts and Bob's retail captures.)
+SCENE_DECLINED = 50
+-- How retail plays the gangplanks' check and yes/no scenes: HIDE_HOTBAR | NO_DEFAULT_CAMERA (Bob's Chronofoil capture,
+-- 2026-10-16.)
+GANGPLANK_FLAGS = HIDE_HOTBAR | NO_DEFAULT_CAMERA
+-- Each gangplank's yes/no, after its check scene and the progress bar.
+BOARDING_AFTER_CHECK = {
+    [SCENE_GRIDANIA_CHECK] = SCENE_GRIDANIA_BOARD,
+    [SCENE_LIMSA_CHECK] = SCENE_LIMSA_BOARD,
+}
 
 -- Where the ticket counters, the attendants and the flights leave you (Sapphire's positions.)
 GRIDANIA_LANDING = { position = { x = 22.55, y = -19.0, z = 114.2 }, rotation = 0.0 }
@@ -120,8 +134,7 @@ function onTalk(target, player)
     elseif sequence == 3 and BASE_ID == ACTOR3 then
         play(player, SCENE_GRIDANIA_TICKETS_AGAIN, HIDE_HOTBAR)
     elseif sequence == 3 and BASE_ID == EOBJECT1 then
-        boarding = SCENE_GRIDANIA_BOARD
-        player:event_action(EVENT_ACTION_BOARD)
+        play(player, SCENE_GRIDANIA_CHECK, GANGPLANK_FLAGS)
     elseif sequence == 4 and BASE_ID == ACTOR4 then
         play(player, SCENE_STORM_GUARD, HIDE_HOTBAR)
     elseif sequence == 4 and BASE_ID == ACTOR5 then
@@ -133,8 +146,7 @@ function onTalk(target, player)
     elseif sequence == 7 and BASE_ID == ACTOR7 then
         play(player, SCENE_LIMSA_TICKETS_AGAIN, HIDE_HOTBAR)
     elseif sequence == 7 and BASE_ID == EOBJECT3 then
-        boarding = SCENE_LIMSA_BOARD
-        player:event_action(EVENT_ACTION_BOARD)
+        play(player, SCENE_LIMSA_CHECK, GANGPLANK_FLAGS)
     elseif sequence == 8 and BASE_ID == ACTOR8 then
         play(player, SCENE_FLAME_GUARD, HIDE_HOTBAR)
     elseif sequence == 8 and BASE_ID == ACTOR9 then
@@ -153,7 +165,7 @@ function onEventActionCast(player)
     end
     local scene = boarding
     boarding = nil
-    play(player, scene, HIDE_HOTBAR)
+    play(player, scene, GANGPLANK_FLAGS)
 end
 
 -- Ends the event and moves the player, to another zone or within this one.
@@ -197,8 +209,13 @@ function sceneFinished(scene, results, player)
     elseif MOVES[scene] ~= nil then
         move(player, nil, MOVES[scene])
         return
+    elseif BOARDING_AFTER_CHECK[scene] ~= nil then
+        -- The check passed (retail goes straight on): the progress bar, then the yes/no (see onEventActionCast.)
+        boarding = BOARDING_AFTER_CHECK[scene]
+        player:event_action(EVENT_ACTION_BOARD)
+        return
     elseif scene == SCENE_GRIDANIA_BOARD then
-        if results[1] == 1 then
+        if player.scene_error_code ~= SCENE_DECLINED then
             play(player, SCENE_FLIGHT_TO_LIMSA, CUTSCENE_FLAGS)
             return
         end
@@ -226,7 +243,7 @@ function sceneFinished(scene, results, player)
         move(player, nil, LIMSA_LANDING)
         return
     elseif scene == SCENE_LIMSA_BOARD then
-        if results[1] == 1 then
+        if player.scene_error_code ~= SCENE_DECLINED then
             play(player, SCENE_FLIGHT_TO_ULDAH, CUTSCENE_FLAGS)
             return
         end

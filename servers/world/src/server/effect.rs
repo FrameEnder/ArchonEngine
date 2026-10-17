@@ -313,6 +313,7 @@ pub fn remove_effect(
             zone_data: LuaZone::default(),
             base_parameters: BaseParameters::default(),
             current_level: 0,
+            scene_error_code: 0,
         };
 
         let key = effect_id as u32;

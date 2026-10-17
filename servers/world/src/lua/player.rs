@@ -31,6 +31,9 @@ pub struct LuaPlayer {
     // TODO: move this into PlayerData
     pub base_parameters: BaseParameters,
     pub current_level: u8,
+    /// The error code of the scene that just returned (EventReturnHandler): 0 normally, 50 when the player declined
+    /// a yes/no that reports its answer that way (e.g. The Gridanian Envoy's gangplanks; Sapphire, retail captures.)
+    pub scene_error_code: u8,
 }
 
 impl QueueSegments for LuaPlayer {
@@ -1165,6 +1168,7 @@ impl UserData for LuaPlayer {
         });
         fields.add_field_method_get("rotation", |_, this| Ok(this.player_data.volatile.rotation));
         fields.add_field_method_get("position", |_, this| Ok(this.player_data.volatile.position));
+        fields.add_field_method_get("scene_error_code", |_, this| Ok(this.scene_error_code));
         fields.add_field_method_get("inventory", |_, this| {
             Ok(this.player_data.inventory.clone())
         });

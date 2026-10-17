@@ -71,7 +71,7 @@ state after it:
 | `{"battle_won": sequence}` | A quest battle was won (the director sets the sequence) |
 | `"expect": {"sequence", "vars", "notices"}` or `{"completed": true}` | The state after the step; `notices` is left out where the recording had no packets |
 | `"spawns": [layout, …]` | The step must bring these out (`spawn_quest_bnpc`) |
-| `"results": {"scene": [..]}` | What the client answers a scene with, if not `[1, 0]` |
+| `"results": {"scene": [..]}` | What the client answers a scene with, if not `[1, 0]`; `{"results": [..], "error": n}` also sets the scene's error code (`player.scene_error_code`), for yes/nos that answer through it |
 | `"what"` | Which parameter the target is (for reading) |
 
 **The harness** (`harness.py`) runs the real script under Lua 5.4 the way the world server does:

@@ -8,7 +8,9 @@ What it copies from the server (servers/world/src/events/lua.rs, lua/player.rs, 
 * the tasks a callback queued (scenes, sequence and variable changes, notices...) run in order once it returns, and
   accepting a quest starts it at sequence 255 until the script sets one;
 * the client's side is played automatically: every scene returns [1, 0] (accepted / handed over / the first
-  reward) unless the step gives other results, and an event action's progress bar always completes.
+  reward) with error code 0 unless the step gives other results (a list, or {"results": [...], "error": n} for a
+  scene that answers through its error code, like The Gridanian Envoy's gangplanks), and an event action's progress
+  bar always completes. The error code is the script's `player.scene_error_code`, as on the server.
 
 Needs lupa (pip install lupa) for Lua 5.4, which the server uses too.
 """
@@ -82,6 +84,7 @@ class FakePlayer:
         self._h = harness
         self.position = harness.lua.table_from({"x": 0.0, "y": 0.0, "z": 0.0})
         self.rotation = 0.0
+        self.scene_error_code = 0
 
     # Reads, from the copy -----------------------------------------------------------------------------------------
     def get_quest_sequence(self, quest):
@@ -273,6 +276,11 @@ class Harness:
                 raise HarnessError("the event never ends (more than 64 callbacks)")
             if scene is not None:
                 values = results.get(str(scene), results.get(scene, DEFAULT_RESULTS))
+                error = 0
+                if isinstance(values, dict):
+                    error = values.get("error", 0)
+                    values = values.get("results", DEFAULT_RESULTS)
+                self.player.scene_error_code = error
                 table = self.lua.table(*values)
                 if self.lua.globals().onReturn is not None:
                     pending = self._call("onReturn", scene, table, self.player)

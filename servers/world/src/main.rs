@@ -2335,6 +2335,7 @@ async fn process_packet(
                         }
                         ClientZoneIpcData::EventReturnHandler2(handler) => {
                             tracing::info!(message = "Event returned", handler_id = %handler.handler_id, error_code = handler.error_code, scene = handler.scene, params = ?&handler.params[..handler.num_results as usize]);
+                            lua_player.scene_error_code = handler.error_code;
 
                             if let Some(event) = events.last() {
                                 event
@@ -2353,6 +2354,7 @@ async fn process_packet(
                         }
                         ClientZoneIpcData::EventReturnHandler8(handler) => {
                             tracing::info!(message = "Event returned", handler_id = %handler.handler_id, error_code = handler.error_code, scene = handler.scene, params = ?&handler.params[..handler.num_results as usize]);
+                            lua_player.scene_error_code = handler.error_code;
 
                             if let Some(event) = events.last() {
                                 event
@@ -2371,6 +2373,7 @@ async fn process_packet(
                         }
                         ClientZoneIpcData::EventReturnHandler16(handler) => {
                             tracing::info!(message = "Event returned", handler_id = %handler.handler_id, error_code = handler.error_code, scene = handler.scene, params = ?&handler.params[..handler.num_results as usize]);
+                            lua_player.scene_error_code = handler.error_code;
 
                             if let Some(event) = events.last() {
                                 event
@@ -4759,6 +4762,20 @@ async fn process_server_msg(
                 );
             }
         }
+    }
+
+    // Run whatever the message had a script queue (the scene after an event action's progress bar, a kill's
+    // variables, a won quest battle's scenes...) now: left queued, it waits for the client's next packet, which can be
+    // several seconds away when the player is standing still (seen: the gangplank's yes/no 2.7 and 6 s late.)
+    if !lua_player.queued_tasks.is_empty()
+        || !connection.queued_tasks.is_empty()
+        || !lua_player.zone_data.queued_segments.is_empty()
+    {
+        lua_player.queued_tasks.append(&mut connection.queued_tasks);
+        if connection.process_lua_player(lua_player, events).await {
+            connection.process_lua_player(lua_player, events).await;
+        }
+        lua_player.player_data = connection.player_data.clone();
     }
 }
 

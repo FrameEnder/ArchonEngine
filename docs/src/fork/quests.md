@@ -62,6 +62,7 @@ Player methods (`servers/world/src/lua/player.rs`), the ones quests use:
 |---|---|
 | `play_scene(scene, flags, {params})` | Plays a scene of the current event. Flags from `event_scene.rs`: `HIDE_HOTBAR`, `NO_DEFAULT_CAMERA`, `HIDE_UI`, … (Global.lua has the names; `INITIAL_CUTSCENE_FLAGS` is the full cutscene set). |
 | `finish_event()` | Ends the event. Every path through a script must end with one, or the client waits forever. |
+| `player.scene_error_code` | The error code of the scene that just returned: 0 normally. Some yes/nos answer through it instead of their results: The Gridanian Envoy's boarding scenes return results `[0, 0]` either way, and error code 50 for "No" (Sapphire's scripts; retail's "Yes" was 0 in Bob's capture, and a cancelled scene came back with 50). |
 | `accept_quest(id)` | Adds the quest (sequence 0). Scripts then call `quest_sequence(id, 1)` or whatever the recording shows. |
 | `get_quest_sequence(id)` | The sequence, or `nil` if the quest isn't active. |
 | `quest_sequence(id, seq)` | Sets the sequence and sends the update. |
@@ -116,6 +117,11 @@ parameters). When it completes the server ends the bar and calls `onEventActionC
 object's scene. The empty scene after a search is played with flags `0` (`SEARCH_SCENE_FLAGS`), as Sapphire does,
 so the hotbar doesn't flicker. Enemy damage interrupts the bar (see [Timing](timing.md)): the event ends and the player
 tries again.
+
+The bar's end comes from the server (a timer), not from the client, so what `onEventActionCast` queues is sent at once
+(the end of `process_server_msg` runs whatever a server message had a script queue). Before, it waited for the
+client's next packet: objects answered several seconds after the bar (2.7 and 6 s for the gangplank, 2026-10-17
+bundle), as did anything else a server message gives a script (kills, won quest battles).
 
 ### Quest-spawned enemies
 
@@ -232,7 +238,7 @@ Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `
 | 447 | To Guard a Guardian | `004/ManFst007_00447` | client script, Sapphire, recording, Chronofoil capture (quest battle, 2026-10-17) | Message (UI8BH) for Lewin through the Seat of the First Bow's door (scene 5, POPRANGE0); trade 2 → 3, notice 0 `[1, 1]`; quest battle 12 from the instructor (scene 7) or EVENTRANGE0 (scene 6); the aftermath on re-entering (scene 20). |
 | 448 | Festive Endeavors | `004/ManFst008_00448` | client script, Sapphire, recording | Miounne (notice 0), Beatin gives the mask (UI8BH, notice 1 `[21002]`), trade 5 → 6. |
 | 449 | Renewing the Covenant | `004/ManFst009_00449` | client script, Sapphire, recording, Chronofoil capture (the ceremony) | Estaine checks the player is wearing RITEM0 (scene 3 → 4, or 5 without it); the ceremony (cutscene 4) leaves you at POPRANGE0 in the Roost (179); Lotus Stand door (scene 8, POPRANGE1). |
-| 507 | The Gridanian Envoy | `005/ManFst200_00507` | Sapphire, recording | Two letters (UI8BH/BL); airships to Limsa Lominsa and Ul'dah (gangplank event action, flights, `change_territory`), notices 0, 3, 4, 7; positions are Sapphire's. Scenes not yet checked against the client's script (needs a dump). |
+| 507 | The Gridanian Envoy | `005/ManFst200_00507` | Sapphire, recording, Chronofoil capture (gangplanks) | Two letters (UI8BH/BL); airships to Limsa Lominsa and Ul'dah: each gangplank plays a check scene (6, 28), the Waiting bar (event action 11), then the yes/no (7, 29) whose answer is its error code (50 = No), then the flight (8, 30) and `change_territory`; notices 0, 3, 4, 7; positions are Sapphire's. Scenes not yet checked against the client's script (needs a dump). |
 | 674 | Call of the Sea | `006/SubWil141_00674` | Sapphire, recording | Accepting goes straight to 255; Baderon gives the reward. Scenes not yet checked against the client's script. |
 
 Upstream's own scripts cover the three city openings and the Close to Home offers. Gridania's story from Close to

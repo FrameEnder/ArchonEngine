@@ -191,6 +191,7 @@ pub fn execute_action(
         zone_data: LuaZone::default(),
         base_parameters: BaseParameters::default(),
         current_level: 0,
+        scene_error_code: 0,
     };
     // TODO: maybe move these misc effects to their own dedicated functions or something? I had some trouble remembering where this was
     // We need to set the player's mount id in their common spawn so both pillion works and also letting players see this existing actor's mount when they spawn.
