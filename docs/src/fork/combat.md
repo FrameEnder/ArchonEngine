@@ -355,7 +355,9 @@ Second Wind, Bloodbath, True North, Addle, Leg Sweep, Sleep, Rescue, Esuna). How
   Temperance's damage reduction is the party's 1873 (1872, the White Mage's, is +20 % healing magic, not
   implemented); Rampart has no healing bonus below level 94; Firestarter and Thunderhead have no time limit, and
   Thunderhead is only granted when it isn't up (never by Umbral Soul); Shield Samba goes to the party; Cover's param
-  20; True Grit's Blind 7 s and Acorn Armageddon's Heavy 15 s. The self-status effect (kind 15) carries 0x80 in its
+  20; True Grit's Blind 7 s and Acorn Armageddon's Heavy 15 s. Surging Tempest's refresh adds 30 s to the time left
+  (up to 60) and eating again adds the food's time to Well Fed's (up to twice it), as retail; scripts can read a
+  status's time left (`player:effect_time_left(id)`). The self-status effect (kind 15) carries 0x80 in its
   last byte, the target's EffectResult names the target, and ActorControl 20's source is left empty, as retail.
 * **Raise and Resurrection** offer the dead target a revive (status 148, param 8, 60 s; the effect's second byte 20).
   Accepting it (client trigger 200 with 5) brings them back where they lie with 20 % of their HP and MP, Weakness

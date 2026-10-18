@@ -1065,6 +1065,10 @@ impl UserData for LuaPlayer {
         methods.add_method("get_effect", |_, this, effect_id: u16| {
             Ok(this.status_effects.get(effect_id))
         });
+        // Seconds a status has left (nil if it isn't on, 0 if it never runs out.)
+        methods.add_method("effect_time_left", |_, this, effect_id: u16| {
+            Ok(this.status_effects.time_left(effect_id))
+        });
         methods.add_method_mut("start_talk_event", |_, this, _: ()| {
             this.start_talk_event();
             Ok(())

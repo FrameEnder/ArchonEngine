@@ -87,8 +87,7 @@ add one when something is found.
   animation locks are 0.6 s.
 * Raise: Weakness and Brink of Death don't lower stats; status 418 isn't taken away on the first action; the stand-up
   doesn't wait the 3 s retail does; Weakness doesn't survive a death.
-* Statuses: Temperance's healing bonus, the 5 s party auras (Temperance 1873, Asylum 1912, the bard songs), Surging
-  Tempest and Well Fed adding to the time left on refresh (retail; Kawari replaces it), fixed status slots (retail
+* Statuses: Temperance's healing bonus, the 5 s party auras (Temperance 1873, Asylum 1912, the bard songs), fixed status slots (retail
   keeps a status in its slot and leaves gaps; Kawari shifts them, so EffectResult indexes can be off), removed-status
   entries (retail: slot, status 0, source 0xE0000000), Arm's Length's Slow on attackers, and enemies' debuffs from
   Bob's captures (scan `enemy_statuses.csv`) aren't done.

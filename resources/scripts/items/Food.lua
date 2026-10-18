@@ -5,7 +5,11 @@ EFFECT_WELL_FED = 48
 
 function doAction(player, arg)
     effects = EffectsBuilder()
-    effects:gain_effect_self(EFFECT_WELL_FED, arg % 65536, arg // 65536)
+    -- Eating again adds the food's time to what's left (retail, Bob's Chronofoil captures: 1800 s left + 1800 → 3597,
+    -- 2400 + 2400 → 4797), here up to twice the food's time.
+    local duration = arg // 65536
+    local left = player:effect_time_left(EFFECT_WELL_FED) or 0
+    effects:gain_effect_self(EFFECT_WELL_FED, arg % 65536, math.min(left + duration, 2 * duration))
 
     return effects
 end

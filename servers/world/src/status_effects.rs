@@ -47,6 +47,19 @@ impl StatusEffects {
             .map(|i| self.status_effects[i])
     }
 
+    /// How many seconds an effect has left: None if it isn't active, 0 if it never runs out.
+    pub fn time_left(&self, effect_id: u16) -> Option<f32> {
+        let i = self
+            .status_effects
+            .iter()
+            .position(|effect| effect.effect_id == effect_id)?;
+        Some(
+            self.expires[i]
+                .map(|at| at.saturating_duration_since(Instant::now()).as_secs_f32())
+                .unwrap_or(0.0),
+        )
+    }
+
     /// Changes the param (e.g. stack count) of an existing effect. Returns false if the effect isn't active.
     pub fn set_param(&mut self, effect_id: u16, param: u16) -> bool {
         if let Some(effect) = self
