@@ -169,3 +169,17 @@ The client marks hair highlights as on with **0x80** in CustomizeData's byte 7 (
 nobody saw them in game (only in character creation). Now any non-zero value counts, the lobby's list writes "128",
 and packets write 0x80 (`write_customize`, used by CommonSpawn and the adventurer plate). Characters made before this
 have the flag saved off and need their highlights set again.
+
+Checked on Bob's 2026-10-18 bundle: a character made after the fix (`77d5315`) gets 0x80 in its own SpawnPlayer, the
+same 26 bytes character creation sent, and retail's own-character SpawnPlayer and lobby list carry exactly the
+bytes of character creation too (Bob's Chronofoil captures: the lobby's `"128"` and the spawn's 0x80 for the same
+character), so Kawari now matches retail on both. The flag can be lost before it reaches Kawari:
+
+* characters saved before `77d5315` with highlights have them saved off;
+* **Auracite** dumps never have them: its Dalamud plugin reads `Customize[HasHighlights] == 1`
+  (`Auracite/Steps/AppearanceStep.cs`), and the client holds 128, so `has_highlights` is always false. Importing a
+  dump can't recover them.
+
+To turn them back on, give the character a Fantasia (Kawari Web's character page, "Fantasia (remake mode)", while
+they're logged out) and edit the appearance at the lobby: the client sends the new appearance with `"128"`, which is
+now kept.

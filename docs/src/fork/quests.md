@@ -259,7 +259,7 @@ Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `
 | 507 | The Gridanian Envoy | `005/ManFst200_00507` | Sapphire, recording, Chronofoil capture (gangplanks) | Two letters (UI8BH/BL); airships to Limsa Lominsa and Ul'dah: each gangplank plays a check scene (6, 28), the Waiting bar (event action 11), then the yes/no (7, 29) whose answer is its error code (50 = No), then the flight (8, 30) and `change_territory`; notices 0, 3, 4, 7; positions are Sapphire's. Scenes not yet checked against the client's script (needs a dump). |
 | 674 | Call of the Sea | `006/SubWil141_00674` | Sapphire, recording | Accepting goes straight to 255; Baderon gives the reward. Scenes not yet checked against the client's script. |
 | 594 | Coming to Ul'dah | `005/ManWil001_00594` (upstream) | client script, recording, Chronofoil capture | Upstream's script matches retail unchanged: the offer and two scenes come back as yields, the opening (scene 30) nested in the accept. |
-| 568 | Close to Home (Ul'dah) | `005/ManWil002_00568` | client script, recording, Chronofoil capture | Moves the player from the opening's Ul'dah into the real one (130) with ITEM0 (UI8CH); three objectives in any order: hand ITEM0 to the guild (trade scene 4 → 5; UI8BH, BitFlag8 3, notice 2), attune (scenes 1 → 2, then Return; UI8BL, BitFlag8 1, notice 0), talk to ACTOR1 (scene 3; UI8AL, BitFlag8 2, notice 1); UI8AH counts them. The other two classes' versions (569, 570) not done. |
+| 568 | Close to Home (Ul'dah) | `005/ManWil002_00568` | client script, recording, Chronofoil capture | Moves the player from the opening's Ul'dah into the real one (130) with ITEM0 (UI8CH); three objectives in any order: hand ITEM0 to the guild (trade scene 4 → 5; UI8BH, BitFlag8 3, notice 2), attune (scenes 1 → 2, then Return; UI8BL, BitFlag8 1, notice 0), talk to ACTOR1 (scene 3; UI8AL, BitFlag8 2, notice 1); UI8AH counts them. The other two classes' versions (569, 570) not done. The aetheryte step never started in game until aetherytes got a `BASE_ID` (2026-10-18). |
 | 595 | We Must Rebuild | `005/SubWil027_00595` | client script, recording, Chronofoil capture | Accepting goes straight to 255; ACTOR1 gives the chosen reward. |
 | 671 | Nothing to See Here | `006/SubWil025_00671` | client script, recording, Chronofoil capture | Three ITEM0 (UI8CH counts down) handed to three NPCs in any order (trade 1/4/7 → 2/5/8; UI8AL/BH/BL and BitFlag8 1–3), UI8AH counts, notice 0 `[count, 3]` each; reward from ACTOR0 (scene 10). |
 | 550 | Underneath the Sultantree | `005/ManWil005_00550` | client script, Sapphire, recording, Chronofoil capture (quest battle) | Offer and cutscene (0 → 1); ACTOR1 offers quest battle 37 (scene 2); the aftermath on re-entering Central Thanalan (scene 5) moves it to 255; reward (scene 6). No variables or notices at all. |
@@ -273,6 +273,12 @@ Home versions are still upstream's).
 the quest's, sends LearnTeleport (ActorControlSelf 509, the aetheryte ID) and that event's notice and finish about
 5 s later, and only then plays the quest's scene 1 (the client's script only waits in it); Return's unlock
 (ActorControlSelf 41, UnlockLink 1) comes after the attunement cutscene.
+
+The client talks to an aetheryte (or shard) by its **layout ID**, with the quest's handler: aetherytes are part of the
+map, not objects the server spawns, so until 2026-10-18 nothing gave them a `BASE_ID` and Ul'dah's Close to Home, which
+checks `BASE_ID == AETHERYTE0`, ended the event at once (the aetheryte "couldn't be clicked"; Gridania's version
+dodges it with `BASE_ID ~= ACTOR0`). The zone now caches the map's Aetheryte entries (layout ID → Aetheryte row) next
+to the event objects', so `BASE_ID` is the Aetheryte row, the same number as the quest's `AETHERYTE*`.
 
 ## Scenario Guide
 

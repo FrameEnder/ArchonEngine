@@ -244,6 +244,13 @@ impl Zone {
                                 npc.parent_data.parent_data.base_id,
                             );
                         }
+                        // Aetherytes and shards are part of the map (the server doesn't spawn them), and the client
+                        // talks to them by layout ID; their base ID is the Aetheryte row, so quests can check
+                        // `BASE_ID == AETHERYTE0` (Close to Home in Ul'dah.)
+                        if let LayerEntryData::Aetheryte(aetheryte) = &object.data {
+                            zone.cached_eobj_base_ids
+                                .insert(object.instance_id, aetheryte.parent_data.base_id);
+                        }
                         if let LayerEntryData::MapRange(map_range) = &object.data {
                             zone.map_ranges.push(MapRange {
                                 trigger_box_shape: map_range.parent_data.trigger_box_shape,

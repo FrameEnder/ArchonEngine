@@ -182,6 +182,9 @@ add one when something is found.
 
 ## Character windows
 
+* **Hair highlights** of characters saved before `77d5315`, or imported from an Auracite dump (its plugin always
+  writes `has_highlights` false), are off and need a Fantasia to turn back on (character windows, "Hair highlights").
+
 * **Achievements**: retail follows every `AchievementCompleted` (515) with ActorControl 518 and the same ID; Kawari
   doesn't send 518 (it isn't in `ActorControlCategory`), so what others nearby see when you earn one is probably missing.
 
