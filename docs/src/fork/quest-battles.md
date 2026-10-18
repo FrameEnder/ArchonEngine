@@ -1,7 +1,7 @@
 # Quest battles and directors
 
 Quest battles are the solo duties inside story quests (Chasing Shadows, Spirithold Broken, Leia's Legacy, To Guard a
-Guardian). The fork added them on top of upstream's content directors.
+Guardian, Underneath the Sultantree). The fork added them on top of upstream's content directors.
 
 ## Entering one
 
@@ -133,7 +133,33 @@ player is sent out.
 `!directorscene <scene> [flags]` plays any scene of the current director, which is how the victory fanfare scene
 (60001, from the client's generic director script) was found.
 
-## The two battles
+## The battles
+
+### Quest battle 37 — Underneath the Sultantree (`content/questbattle/37.lua`)
+
+* Territory 270, a copy of Central Thanalan (the same LGBs as 141, so its NPCs are a layer of the `wil_w1` drop-in:
+  `QB_ManWil005_001`, `nonpop`). The blanga (4077147, level 12, 13608 HP), the handsome stranger beside you (4077150,
+  level 50, 2589 HP, a gladiator) and three pairs of lesser blangas (level 4, 44 HP): layout IDs, levels, HP,
+  positions, links and display flags from Bob's Chronofoil session of 2026-10-17 (`questkit chronofoil --battle 4.4`,
+  the battle in territory 270, duty 335), and the start spot (198.3, 14.24, 538.25, facing -1.24) from its
+  SpawnPlayer. Sapphire's script has the same layout IDs, two waves (70 % and 40 %) and guessed HP.
+* Sequence 1 before the opening cutscene, 2 the moment the fight starts (0.1 s after scene 60000). The stranger's
+  battle talk (BNpcName 1377, portrait 0x11DCD): 114 five seconds in; at the blanga's 70 % sequence 3 and two lesser
+  blangas, 115 seven seconds later and 116 five after; 117 six seconds after those two fall; at 40 % sequence 4 and
+  two more, 118 ten seconds later; at about 23 % sequence 5 and the last two; 119 at 10 %. Everything down:
+  sequence 6, scene 6 (0x2001), the quest moves to sequence 2. Simulated with lupa against the run's health curve:
+  every step within two seconds of retail.
+* As on retail: the stranger stays on the blanga the whole time and it on him; the lesser blangas go after you.
+* Damage from the capture's hits (`recorded_amounts`): the stranger's auto-attack 212.8, Fast Blade 241.8, Savage
+  Blade 300.2, Rage of Halone 165, Spirits Within 425; the lesser blangas' 3.9 on the player. The blanga missed the
+  stranger 25 times in 46 (its Bloody Claw 3 in 6), against Kawari's fixed 8 %, so its amounts are per swing,
+  misses included (15.3 and 21.8), to wear him down as much as retail did (to about 74 %). On retail the stranger
+  dealt about 13000 of the blanga's 13608.
+* Rotations from the capture: the stranger's (pace 5.6 s; Savage Blade only after Fast Blade, as all four times;
+  Rage of Halone on its own, which needed the combo rule in [Combat](combat.md#class-rotations-serverrotationrs)),
+  the blanga's Bloody Claw every 7.9 s.
+* The quest (`ManWil005_00550`): ACTOR1 offers it with scene 2; retail plays the aftermath
+  (scene 5, flags 0xF8402FFF) on EventStart type 15 when the player is back in Central Thanalan.
 
 ### Quest battle 11 — Chasing Shadows (`content/questbattle/11.lua`)
 

@@ -1,0 +1,20 @@
+{
+    "hitbox_radius": 1.2,
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 15.3
+        },
+        "739": {
+            "npcs": 21.8
+        }
+    },
+    "rotation": {
+        "pace": 2.5,
+        "actions": [
+            { "action": 739, "every": 7.9, "comment": "Bloody Claw: 6 uses, every 7.9 s (its recast is 6 s)" }
+        ]
+    },
+    "timepoints": []
+}

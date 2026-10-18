@@ -1,0 +1,100 @@
+{
+  "quest": 550,
+  "script": "ManWil005_00550",
+  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-17), a fresh Ul'dah character",
+  "params": {
+    "ACTOR0": 1003995,
+    "ACTOR1": 1003996,
+    "EOBJECT0": 2001853,
+    "EVENT_ACTION_SEARCH": 1,
+    "TERRITORYTYPE1": 141,
+    "ACTOR2": 1003997,
+    "ACTOR3": 1003998,
+    "ACTOR4": 1003999,
+    "ACTOR5": 1004000,
+    "ACTOR6": 1004001,
+    "TERRITORYTYPE0": 270,
+    "QUESTBATTLE0": 37,
+    "SEQ_0_ACTOR0_LQ": 50,
+    "ACTOR20": 1006171,
+    "ACTOR30": 1006167,
+    "ACTOR40": 1006168,
+    "ACTOR50": 1006169,
+    "ACTOR60": 1006170,
+    "HOW_TO_QIB": 79,
+    "CUT_SCENE_02": 141,
+    "CUT_SCENE_03": 56,
+    "CUT_SCENE_04": 142
+  },
+  "steps": [
+    {
+      "talk": 1003995,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      },
+      "results": {
+        "0": {
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      }
+    },
+    {
+      "talk": 1003996,
+      "layout": 3970361,
+      "what": "ACTOR1: into the quest battle",
+      "results": {
+        "2": {
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      }
+    },
+    {
+      "battle_won": 2,
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "enter_territory": 141,
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1003995,
+      "what": "ACTOR0",
+      "expect": {
+        "completed": true,
+        "notices": []
+      },
+      "results": {
+        "6": {
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      }
+    }
+  ]
+}

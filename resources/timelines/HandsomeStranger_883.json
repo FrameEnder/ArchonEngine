@@ -1,0 +1,32 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 212.8
+        },
+        "9": {
+            "npcs": 241.8
+        },
+        "11": {
+            "npcs": 300.2
+        },
+        "21": {
+            "npcs": 165.0
+        },
+        "29": {
+            "npcs": 425.0
+        }
+    },
+    "rotation": {
+        "pace": 5.6,
+        "actions": [
+            { "action": 29, "comment": "Spirits Within: 1 use" },
+            { "action": 11, "refresh": 23.8, "comment": "Savage Blade: 4 uses, after Fast Blade (its ActionCombo)" },
+            { "action": 21, "refresh": 23.8, "comment": "Rage of Halone: 4 uses" },
+            { "action": 9, "refresh": 23.8, "comment": "Fast Blade: 4 uses" }
+        ]
+    },
+    "timepoints": []
+}

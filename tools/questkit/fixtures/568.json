@@ -1,0 +1,127 @@
+{
+  "quest": 568,
+  "script": "ManWil002_00568",
+  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-17), a fresh Ul'dah character",
+  "params": {
+    "ACTOR0": 1003988,
+    "ITEM0": 2000386,
+    "AETHERYTE0": 9,
+    "REWARD0": 1,
+    "SCREENIMAGE0": 14,
+    "ACTOR1": 1002277,
+    "ACTOR2": 1003908,
+    "ACTOR3": 1001353,
+    "POPRANGE0": 4110794,
+    "TERRITORYTYPE0": 130,
+    "SEQ_0_ACTOR0_LQ": 50,
+    "LOC_POS_CAM1": 4105872,
+    "LOC_POS_CAM2": 4105874,
+    "LOC_ACTION1": 605,
+    "LOC_MARKER_01": 4009142,
+    "LOC_POS_CAM3": 4009150,
+    "LOC_MARKER_02": 4009152,
+    "ACTOR20": 1001637,
+    "LOC_POS_CAM4": 4143488,
+    "HOW_TO_DESION": 13,
+    "HOW_TO_MAP_AND_NAVI": 4,
+    "LOC_ACTION2": 1005,
+    "BIND_ACTOR0": 6229228
+  },
+  "steps": [
+    {
+      "talk": 1003988,
+      "layout": 3969632,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000010000000",
+        "notices": []
+      },
+      "results": {
+        "0": {
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      }
+    },
+    {
+      "talk": 1003908,
+      "layout": 3969289,
+      "what": "ACTOR2",
+      "expect": {
+        "sequence": 1,
+        "vars": "101000000020",
+        "notices": [
+          [
+            2,
+            []
+          ]
+        ]
+      },
+      "results": {
+        "4": {
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      }
+    },
+    {
+      "talk": 9,
+      "layout": 3885037,
+      "what": "AETHERYTE0",
+      "expect": {
+        "sequence": 1,
+        "vars": "2011000000a0",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1002277,
+      "layout": 3279279,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            1,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1001353,
+      "layout": 3146810,
+      "what": "ACTOR3",
+      "expect": {
+        "completed": true,
+        "notices": []
+      },
+      "results": {
+        "8": {
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      }
+    }
+  ]
+}

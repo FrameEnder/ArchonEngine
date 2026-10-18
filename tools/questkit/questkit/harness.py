@@ -9,7 +9,8 @@ What it copies from the server (servers/world/src/events/lua.rs, lua/player.rs, 
   accepting a quest starts it at sequence 255 until the script sets one;
 * the client's side is played automatically: every scene returns [1, 0] (accepted / handed over / the first
   reward) with error code 0 unless the step gives other results (a list, or {"results": [...], "error": n} for a
-  scene that answers through its error code, like The Gridanian Envoy's gangplanks), and an event action's progress
+  scene that answers through its error code, like The Gridanian Envoy's gangplanks; "yield": true sends it to
+  onYield, as the client does for some scenes, where the script handles the two apart), and an event action's progress
   bar always completes. The error code is the script's `player.scene_error_code`, as on the server.
 
 Needs lupa (pip install lupa) for Lua 5.4, which the server uses too.
@@ -277,12 +278,14 @@ class Harness:
             if scene is not None:
                 values = results.get(str(scene), results.get(scene, DEFAULT_RESULTS))
                 error = 0
+                yielded = False
                 if isinstance(values, dict):
                     error = values.get("error", 0)
+                    yielded = values.get("yield", False)
                     values = values.get("results", DEFAULT_RESULTS)
                 self.player.scene_error_code = error
                 table = self.lua.table(*values)
-                if self.lua.globals().onReturn is not None:
+                if self.lua.globals().onReturn is not None and not yielded:
                     pending = self._call("onReturn", scene, table, self.player)
                 else:
                     pending = self._call("onYield", scene, 0, table, self.player)
@@ -293,10 +296,14 @@ class Harness:
             return outcome
 
     # Steps ------------------------------------------------------------------------------------------------------------
-    def talk(self, base_id: int, results: dict | None = None, trace: list | None = None) -> dict:
+    def talk(self, base_id: int, results: dict | None = None, trace: list | None = None,
+             layout: int | None = None) -> dict:
+        """Talking to an NPC or object. `layout` is its layout ID, the script's `target.object_id` (the cities'
+        opening quests tell their NPCs apart by it.)"""
         self._new_state(base_id)
         trace = trace if trace is not None else []
-        first = self._call("onTalk", None, self.player)
+        target = self.lua.table_from({"object_id": layout}) if layout is not None else None
+        first = self._call("onTalk", target, self.player)
         return self._drive(first, results or {}, trace)
 
     def enter_range(self, arg: int, results: dict | None = None, trace: list | None = None) -> dict:

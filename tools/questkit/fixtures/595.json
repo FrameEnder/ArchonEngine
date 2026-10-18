@@ -1,0 +1,49 @@
+{
+  "quest": 595,
+  "script": "SubWil027_00595",
+  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-17), a fresh Ul'dah character",
+  "params": {
+    "ACTOR0": 1001353,
+    "ACTOR1": 1003995
+  },
+  "steps": [
+    {
+      "talk": 1001353,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      },
+      "results": {
+        "0": {
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      }
+    },
+    {
+      "talk": 1003995,
+      "what": "ACTOR1",
+      "expect": {
+        "completed": true,
+        "notices": []
+      },
+      "results": {
+        "1": {
+          "results": [
+            1,
+            27634,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      }
+    }
+  ]
+}

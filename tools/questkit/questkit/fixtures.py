@@ -13,7 +13,8 @@ A fixture (tools/questkit/fixtures/<quest>.json) is made from a Kawari Recorder 
         {"range": 3842570},                         # walking into an event range
         {"enter_territory": 148, "expect": {...}},  # zoning in (quests that play a scene on arrival)
         {"battle_won": 4, "expect": {...}},         # a quest battle's director winning it
-        {"talk": 1000470, "results": {"24": [1, 0]}, "expect": {"completed": true}}
+        {"talk": 1000470, "results": {"24": [1, 0]}, "expect": {"completed": true}},
+        {"talk": 1003987, "layout": 3969639, "expect": {...}}  # its layout ID too: the script's target.object_id
       ]
     }
 
@@ -23,7 +24,9 @@ recording didn't capture packets. A step without `expect` only has to run withou
 
 `results` sets what the client answers to a scene (every scene answers [1, 0] otherwise): a list, or
 {"results": [...], "error": n} for a scene whose answer is its error code (50 is "No" in The Gridanian Envoy's
-boarding yes/nos; retail's "Yes" there is error 0 with results [0, 0]).
+boarding yes/nos; retail's "Yes" there is error 0 with results [0, 0]). `"yield": true` in it sends the scene to the
+script's `onYield` rather than `onReturn`, for scripts that handle the two apart (the cities' opening quests): which
+one the client sends for each scene is in a Chronofoil capture (EventYieldHandler or EventReturnHandler).
 
 Recorder 2.0 and later record who the player last targeted, which says what each step was. Older recordings don't,
 so their steps come out as {"todo": ...} placeholders to fill in by hand.
@@ -105,13 +108,20 @@ def build(quest: int, recordings: Recordings, dump: dict, source: str = "") -> d
         step: dict = {}
         kind = first.target_kind
         fresh = first.target_seconds_ago is not None and first.target_seconds_ago <= 10 and first.target_base
-        if kind in ("EventNpc", "EventObj") and fresh:
+        territory = last.raw.get("TerritoryId")
+        previous = groups[index - 1][-1].raw.get("TerritoryId") if index > 0 else None
+        if battle and territory is not None and territory == params.get("TERRITORYTYPE0"):
+            # Changed inside the quest battle: its director won it (whoever the player was hitting.)
+            step["battle_won"] = last.sequence
+        elif kind in ("EventNpc", "EventObj", "Aetheryte") and fresh:
             step["talk"] = first.target_base
+            if first.target_layout:
+                step["layout"] = first.target_layout
         elif kind == "BattleNpc" and fresh:
             step["kill"] = [first.target_base, first.target_layout]
-        elif battle and last.kind == "sequence" and index > 0 and steps and \
-                last.raw.get("TerritoryId") != groups[index - 1][-1].raw.get("TerritoryId"):
-            step["battle_won"] = last.sequence
+        elif last.kind == "sequence" and previous is not None and territory != previous:
+            # Changed on arriving somewhere else (e.g. back from a quest battle, a scene on entering the zone.)
+            step["enter_territory"] = territory
         else:
             step["todo"] = (f"{last.kind} in territory {last.raw.get('TerritoryId')}: the recording doesn't say "
                             f"what the player did (talk, kill, range, enter_territory or battle_won)")

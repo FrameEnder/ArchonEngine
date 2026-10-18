@@ -104,8 +104,16 @@ impl RotationState {
             {
                 continue;
             }
-            // The next step of a combo only follows the step before it.
-            if action.gcd && action.combo_from != 0 {
+            // The next step of a combo only follows the step before it, when the NPC has that step at all: retail's
+            // NPCs use a combo's later steps on their own when their kit lacks the step before (Underneath the
+            // Sultantree's stranger: Rage of Halone, whose ActionCombo is Riot Blade, without Riot Blade.)
+            if action.gcd
+                && action.combo_from != 0
+                && rotation
+                    .actions
+                    .iter()
+                    .any(|other| other.action == action.combo_from)
+            {
                 let continues = self.last_gcd.is_some_and(|(last, at)| {
                     last == action.combo_from && now.duration_since(at) <= COMBO_WINDOW
                 });
@@ -286,6 +294,21 @@ mod tests {
                 assert!(mechanics(used[i - 1].1).unwrap().gcd);
             }
         }
+    }
+
+    #[test]
+    fn combo_step_without_its_step_stands_alone() {
+        // Without True Thrust in its kit, Vorpal Thrust is used on its own, every GCD.
+        let rotation = Rotation {
+            pace: 3.0,
+            actions: vec![RotationAction {
+                action: VORPAL_THRUST,
+                ..Default::default()
+            }],
+        };
+        let used = simulate(&rotation, 10);
+        assert!(used.len() >= 3, "{used:?}");
+        assert!(used.iter().all(|(_, a)| *a == VORPAL_THRUST));
     }
 
     #[test]

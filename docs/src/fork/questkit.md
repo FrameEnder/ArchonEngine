@@ -64,20 +64,20 @@ state after it:
 
 | Step | Meaning |
 |---|---|
-| `{"talk": base}` | Talk to / examine an NPC or object (the event's `BASE_ID`) |
+| `{"talk": base}` | Talk to / examine an NPC or object (the event's `BASE_ID`); `"layout"` gives its layout ID, which the script sees as `target.object_id` (upstream's Ul'dah scripts tell NPCs apart by it) |
 | `{"kill": [base, layout]}` | A battle NPC with this BNpcBase and layout ID died (`onBNpcKill`) |
 | `{"range": arg}` | Walked into an event range (`onEnterTrigger`) |
 | `{"enter_territory": id}` | Zoned in (`onEnterTerritory`) |
 | `{"battle_won": sequence}` | A quest battle was won (the director sets the sequence) |
 | `"expect": {"sequence", "vars", "notices"}` or `{"completed": true}` | The state after the step; `notices` is left out where the recording had no packets |
 | `"spawns": [layout, …]` | The step must bring these out (`spawn_quest_bnpc`) |
-| `"results": {"scene": [..]}` | What the client answers a scene with, if not `[1, 0]`; `{"results": [..], "error": n}` also sets the scene's error code (`player.scene_error_code`), for yes/nos that answer through it |
+| `"results": {"scene": [..]}` | What the client answers a scene with, if not `[1, 0]`; `{"results": [..], "error": n}` also sets the scene's error code (`player.scene_error_code`), for yes/nos that answer through it; `"yield": true` sends it back through `onYield` as retail's client did (EventYieldHandler), even when the script has `onReturn` |
 | `"what"` | Which parameter the target is (for reading) |
 
 **The harness** (`harness.py`) runs the real script under Lua 5.4 the way the world server does:
 
-* a new Lua state per event: the scene flags (read from `event_scene.rs`), `Global.lua`, the parameters, the script,
-  then `EVENT_ID` and `BASE_ID`;
+* a new Lua state per event: the scene flags (read from `event_scene.rs`, combinations such as `SET_BASE` included),
+  `Global.lua`, the parameters, the script, then `EVENT_ID` and `BASE_ID`;
 * the script sees a copy of the quests: sequence/variable changes show up in it straight away, accepting doesn't;
 * queued tasks run in order after each callback; accepting starts a quest at sequence 255 (as `accept_quest` does);
 * the client's side is automatic: scenes return `[1, 0]` (accepted, handed over, first reward), progress bars
@@ -88,7 +88,7 @@ something after finishing, sends a notice with more than 4 arguments, or ends in
 notices than retail. **It doesn't check scene numbers** (the client decides what a scene shows), so those still need
 the listing or a test in game.
 
-All 23 scripted quests have fixtures and match (Close to Home and Chasing Shadows only after the fixes the replay
+All 28 scripted quests have fixtures and match (Close to Home and Chasing Shadows only after the fixes the replay
 found, see the [Changelog](changelog.md)). The fixtures for quests with a quest battle use a `battle_won` step for it;
 the battle itself isn't replayed (its director script was simulated with lupa separately).
 
@@ -100,7 +100,10 @@ python3 tools/questkit fixture all --recording rec.zip --recording older.zip --d
 
 Recorder 2.0+ records who was last targeted, so each step comes out filled in (`talk`/`kill`), with the notices
 matched to the change that follows them (within 0.5 s). Older exports don't, and their steps come out as `{"todo": …}`
-to fill in by hand from the script's header. Steps that change nothing (searching the egg in Migrant Marauders,
+to fill in by hand from the script's header. A change inside the quest battle's territory (`TERRITORYTYPE0`) is a
+`battle_won` step whoever the player was hitting, and one on arriving in another territory with nothing targeted an
+`enter_territory` step (Underneath the Sultantree's came out as a kill of the blanga and a second battle win before).
+Talk steps carry the target's layout ID. Steps that change nothing (searching the egg in Migrant Marauders,
 walking into an ambush) aren't recorded at all; add them with `spawns` when they matter.
 
 ## scaffold

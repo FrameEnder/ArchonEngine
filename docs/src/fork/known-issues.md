@@ -10,7 +10,12 @@ add one when something is found.
 * **The Gridanian Envoy** (507) and **Call of the Sea** (674) were written from Sapphire and the recording without the
   client's script: dump them in the Quest Lab to check the scene numbers. Envoy's arrival positions are Sapphire's.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
-* Limsa Lominsa and Ul'dah have only upstream's openings.
+* Limsa Lominsa has only upstream's opening. Ul'dah's story stops after **Underneath the Sultantree** (550), and its
+  **Close to Home** is only scripted for the class Bob played (`ManWil002_00568`); the other two versions
+  (`ManWil003_00569`, `ManWil004_00570`) are still upstream's stubs.
+* Ul'dah's Close to Home: what Momodi's scenes 6 and 7 are for (talking to her during sequence 1?) isn't known, so
+  she just ends the event then. Nothing to See Here's scenes 11–13 (the three NPCs' lines after the quest moves to
+  255) are a guess from the listing.
 * A quest script without `onEnterTerritory` leaves an enter-territory event unfinished (the client waits). The fix (`02e22b5`) was rolled back with the first quest engine and not redone.
 * Quest sequence/variable changes aren't logged or noted in packet captures any more (also lost in the rollback); use the captures' `UpdateQuest` packets or `//gm quest inspect`.
 * `questkit replay` checks variables, notices, sequences and that events finish, not scene numbers: a scene the
@@ -69,6 +74,11 @@ add one when something is found.
 * The new quest battles' timelines (which skills, how often) are loops fitted to how many times the recording saw
   each skill used.
 * Retail sends the player out of a lost battle; the delays are copied from recordings, not from known rules.
+* Underneath the Sultantree: the stranger's Flash, Sentinel and Sword Oath (seen on retail, none of them damage) have
+  no action scripts and aren't in his rotation. The third pair of lesser blangas comes at 23 % of the blanga's health;
+  in the one run it came between 24.2 % and 22.1 %, also 15 s after the second pair, so it might be timed. The blanga
+  never went after the player on retail, so its hits on a player use the generic damage. Kawari ends the battle once
+  everything is down (Sapphire's rule); on retail the blanga happened to fall last.
 
 ## Combat
 

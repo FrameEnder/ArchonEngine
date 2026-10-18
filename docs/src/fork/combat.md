@@ -136,7 +136,7 @@ Every tick (500 ms) the first ready entry is used:
 | Rule | |
 |---|---|
 | `pace` | Seconds between the NPC's weaponskills and spells. Retail NPCs act far less often than players (allies use one every 3–12 s). |
-| GCD actions | Only once `pace` has passed; a combo step only right after its `ActionCombo`, within 15 s; one with a longer recast than `pace` waits for it. |
+| GCD actions | Only once `pace` has passed; a combo step only right after its `ActionCombo`, within 15 s, when that step is in the rotation too (retail NPCs whose kit lacks it use the later step on its own: Underneath the Sultantree's stranger and Rage of Halone); one with a longer recast than `pace` waits for it. |
 | Abilities | Between two GCD actions only (never before the first), a second after the last one, one at a time; then their recast (or `every`). |
 | `refresh` | Not again on the same target for that many seconds: a damage-over-time or debuff, re-applied as it wears off (timed per target, since players' statuses aren't visible here). |
 | `then` | The GCD action that comes next (a buff's follow-up). |
@@ -175,7 +175,8 @@ From the first fork merge (`dc63634`):
 
 Enemy skills added for the Central Shroud and the quest battles: Frost Breath, Ice Spikes, Blood Drain, Acorn
 Armageddon (Heavy ~14 s), True Grit, Plaincracker, Hammer Beak, Snap Jaw and others (see `actions/003`–`actions/009`),
-plus True Strike, Snap Punch, Fire, Thunder for the quest battle allies.
+plus True Strike, Snap Punch, Fire, Thunder for the quest battle allies, and Bloody Claw, Rage of Halone and Spirits
+Within for Underneath the Sultantree.
 
 ## Adding a monster or skill
 

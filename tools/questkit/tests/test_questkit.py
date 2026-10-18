@@ -166,6 +166,46 @@ class Fixtures(unittest.TestCase):
         result = replay.run(fixture, self.script)
         self.assertTrue(result.ok, replay.format_results([result]))
 
+    def test_battle_steps(self):
+        # A quest battle: the director wins it in TERRITORYTYPE0 (while the player hits something), then coming back
+        # to the zone plays a scene that moves the quest on.
+        events = [
+            event(1, "accepted", 1, "000000000000", 1001, 1),
+            dict(event(20, "sequence", 2, "000000000000", 933, 4077147, "BattleNpc"), TerritoryId=270),
+            dict(event(40, "sequence", 255, "000000000000"), TerritoryId=141, TargetSecondsAgo=None),
+            event(60, "completed", 255, "000000000000", 1001, 1),
+        ]
+        rec = self.dir / "battle"
+        rec.mkdir()
+        (rec / "quests.json").write_text(json.dumps(
+            {"Version": 1, "Quests": {str(QUEST): {"Name": "Test", "Events": events}}}))
+        dump = dict(self.dump, params=self.dump["params"] + [{"name": "QUESTBATTLE0", "value": 37},
+                                                             {"name": "TERRITORYTYPE0", "value": 270}])
+        fixture = fixtures.build(QUEST, recording.Recordings.open([rec]), dump)
+        self.assertEqual([s.get("battle_won") or s.get("enter_territory") or s.get("talk") for s in fixture["steps"]],
+                         [1001, 2, 141, 1001])
+
+    def test_layout_and_yield(self):
+        # The script reads the talked-to object's layout ID, and the scene comes back as a yield (onYield, not
+        # onReturn, even though the script has both.)
+        script = self.dir / "layout.lua"
+        script.write_text(SCRIPT.replace(
+            "function onYield(scene, id, results, player) sceneFinished(scene, results, player) end",
+            "function onYield(scene, id, results, player) if target_layout == 77 then "
+            "sceneFinished(scene, results, player) end end").replace(
+            "function onTalk(target, player)", "function onTalk(target, player)\n    target_layout = target.object_id"
+        ).replace(
+            "function onReturn(scene, results, player) sceneFinished(scene, results, player) end",
+            "function onReturn(scene, results, player) player:finish_event() end"))
+        fixture = fixtures.build(QUEST, self.recordings, self.dump)
+        fixture["steps"] = fixture["steps"][:1]
+        fixture["steps"][0]["layout"] = 77
+        fixture["steps"][0]["results"] = {"0": {"results": [1, 0], "yield": True}}
+        result = replay.run(fixture, script)
+        self.assertTrue(result.ok, replay.format_results([result]))
+        fixture["steps"][0]["layout"] = 78
+        self.assertFalse(replay.run(fixture, script).ok)
+
     def test_replay_catches_differences(self):
         fixture = fixtures.build(QUEST, self.recordings, self.dump)
         fixture["steps"][2]["expect"]["vars"] = "020000000080"

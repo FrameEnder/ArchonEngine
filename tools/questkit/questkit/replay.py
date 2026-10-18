@@ -65,7 +65,7 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
         try:
             results = step.get("results", {})
             if "talk" in step:
-                outcome = harness.talk(step["talk"], results, trace)
+                outcome = harness.talk(step["talk"], results, trace, step.get("layout"))
             elif "kill" in step:
                 outcome = harness.kill(step["kill"][0], step["kill"][1], trace)
             elif "range" in step:

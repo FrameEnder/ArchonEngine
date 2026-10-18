@@ -79,7 +79,7 @@ Callbacks a quest script can define:
 | Callback | When |
 |---|---|
 | `onTalk(target, player)` | The player talks to/examines `BASE_ID`. |
-| `onYield(scene, id, results, player)` / `onReturn(scene, results, player)` | A scene finished. The client can report a scene through **both**, so scripts guard with `current_scene` (below). `results` is the scene's return values. Scenes with more than 8 results arrive as EventReturnHandler16 (opcode 200 on 7.57). |
+| `onYield(scene, id, results, player)` / `onReturn(scene, results, player)` | A scene finished. The client can report a scene through **both**, so scripts guard with `current_scene` (below). `results` is the scene's return values. Scenes with more than 8 results arrive as EventReturnHandler16 (opcode 200 on 7.57). Which one a scene comes back as is the client script's choice: in the Ul'dah quests the offers, the rewards and Close to Home's trade were yields (EventYieldHandler4), Nothing to See Here's trades and the cutscenes returns. |
 | `onEventActionCast(player)` | An `event_action` progress bar completed. Not called if it was interrupted. |
 | `onEnterTrigger(player, arg)` | The player walked into one of the quest's event ranges (e.g. `EVENTRANGE0`). |
 | `onEnterTerritory(player)` | Entering a zone where the quest has something to do (e.g. post-battle cutscenes). A script the client starts this for must define it and finish the event; otherwise the error is logged and the client keeps waiting (a fix for that, `02e22b5`, went with the rollback). |
@@ -212,7 +212,7 @@ name, e.g. `SubFst073_00387`).
 
 ## Scripted quests
 
-Gridania's story from Close to Home on, its side quests, and the first quest after it. "Recording" means it matched a retail recording's variables and notices.
+Gridania's story from Close to Home on, its side quests, the first quest after it, and Ul'dah's first five. "Recording" means it matched a retail recording's variables and notices.
 Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `questkit replay`.
 
 | ID | Quest | Script | Checked against | What it involves |
@@ -240,9 +240,21 @@ Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `
 | 449 | Renewing the Covenant | `004/ManFst009_00449` | client script, Sapphire, recording, Chronofoil capture (the ceremony) | Estaine checks the player is wearing RITEM0 (scene 3 → 4, or 5 without it); the ceremony (cutscene 4) leaves you at POPRANGE0 in the Roost (179); Lotus Stand door (scene 8, POPRANGE1). |
 | 507 | The Gridanian Envoy | `005/ManFst200_00507` | Sapphire, recording, Chronofoil capture (gangplanks) | Two letters (UI8BH/BL); airships to Limsa Lominsa and Ul'dah: each gangplank plays a check scene (6, 28), the Waiting bar (event action 11), then the yes/no (7, 29) whose answer is its error code (50 = No), then the flight (8, 30) and `change_territory`; notices 0, 3, 4, 7; positions are Sapphire's. Scenes not yet checked against the client's script (needs a dump). |
 | 674 | Call of the Sea | `006/SubWil141_00674` | Sapphire, recording | Accepting goes straight to 255; Baderon gives the reward. Scenes not yet checked against the client's script. |
+| 594 | Coming to Ul'dah | `005/ManWil001_00594` (upstream) | client script, recording, Chronofoil capture | Upstream's script matches retail unchanged: the offer and two scenes come back as yields, the opening (scene 30) nested in the accept. |
+| 568 | Close to Home (Ul'dah) | `005/ManWil002_00568` | client script, recording, Chronofoil capture | Moves the player from the opening's Ul'dah into the real one (130) with ITEM0 (UI8CH); three objectives in any order: hand ITEM0 to the guild (trade scene 4 → 5; UI8BH, BitFlag8 3, notice 2), attune (scenes 1 → 2, then Return; UI8BL, BitFlag8 1, notice 0), talk to ACTOR1 (scene 3; UI8AL, BitFlag8 2, notice 1); UI8AH counts them. The other two classes' versions (569, 570) not done. |
+| 595 | We Must Rebuild | `005/SubWil027_00595` | client script, recording, Chronofoil capture | Accepting goes straight to 255; ACTOR1 gives the chosen reward. |
+| 671 | Nothing to See Here | `006/SubWil025_00671` | client script, recording, Chronofoil capture | Three ITEM0 (UI8CH counts down) handed to three NPCs in any order (trade 1/4/7 → 2/5/8; UI8AL/BH/BL and BitFlag8 1–3), UI8AH counts, notice 0 `[count, 3]` each; reward from ACTOR0 (scene 10). |
+| 550 | Underneath the Sultantree | `005/ManWil005_00550` | client script, Sapphire, recording, Chronofoil capture (quest battle) | Offer and cutscene (0 → 1); ACTOR1 offers quest battle 37 (scene 2); the aftermath on re-entering Central Thanalan (scene 5) moves it to 255; reward (scene 6). No variables or notices at all. |
 
 Upstream's own scripts cover the three city openings and the Close to Home offers. Gridania's story from Close to
-Home to The Gridanian Envoy is complete; Call of the Sea starts the next part (Limsa Lominsa).
+Home to The Gridanian Envoy is complete; Call of the Sea starts the next part (Limsa Lominsa). Ul'dah's runs from
+Coming to Ul'dah to Underneath the Sultantree (for the class Bob's 2026-10-17 character played; the other two Close to
+Home versions are still upstream's).
+
+**Attuning inside a quest** (Close to Home, Ul'dah): retail starts the aetheryte's own event (handler 0x50009) beside
+the quest's, sends LearnTeleport (ActorControlSelf 509, the aetheryte ID) and that event's notice and finish about
+5 s later, and only then plays the quest's scene 1 (the client's script only waits in it); Return's unlock
+(ActorControlSelf 41, UnlockLink 1) comes after the attunement cutscene.
 
 ## Scenario Guide
 

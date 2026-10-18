@@ -1,0 +1,64 @@
+{
+  "quest": 594,
+  "script": "ManWil001_00594",
+  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-17), a fresh Ul'dah character; which scenes the client yields from Bob's Chronofoil capture of the same session",
+  "params": {
+    "ACTOR0": 1003987,
+    "ACTOR1": 1003988,
+    "EOBJECT0": 2001681,
+    "EVENT_ACTION_SEARCH": 1,
+    "EOBJECT1": 2001682,
+    "EOBJECT2": 2001683,
+    "EOBJECT3": 2001706,
+    "HOWTO_QUEST_ACCEPT": 12,
+    "HOWTO_QUEST_ANNOUNCE": 2,
+    "HOWTO_TODO": 3,
+    "OPENING_EVENT_HANDLER": 1245187,
+    "HOWTO_REWARD": 11,
+    "CUT_EVENT": 188,
+    "ACTOR20": 1001285,
+    "HOW_TO_286": 286,
+    "HOWTO_METEOICON": 80
+  },
+  "steps": [
+    {
+      "talk": 1003987,
+      "layout": 3969639,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      },
+      "results": {
+        "0": {
+          "results": [1, 0],
+          "yield": true
+        },
+        "1": {
+          "results": [1, 0],
+          "yield": true
+        },
+        "2": {
+          "results": [1, 0],
+          "yield": true
+        }
+      }
+    },
+    {
+      "talk": 1003988,
+      "layout": 3969632,
+      "what": "ACTOR1",
+      "expect": {
+        "completed": true,
+        "notices": []
+      },
+      "results": {
+        "5": {
+          "results": [1, 0],
+          "yield": true
+        }
+      }
+    }
+  ]
+}

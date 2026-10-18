@@ -1,0 +1,11 @@
+{
+    "hitbox_radius": 0.6,
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "players": 3.9
+        }
+    },
+    "timepoints": []
+}

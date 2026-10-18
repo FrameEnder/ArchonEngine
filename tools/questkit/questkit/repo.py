@@ -38,8 +38,14 @@ def find_quest_script(quest_id: int) -> Path | None:
 def scene_flags() -> dict[str, int]:
     """The scene flags Kawari gives every Lua state (SceneFlags in event_scene.rs, registered without a prefix)."""
     flags = {}
-    for name, value in re.findall(r"const (\w+) = (0x[0-9A-Fa-f]+);", SCENE_FLAGS_RS.read_text()):
+    text = SCENE_FLAGS_RS.read_text()
+    for name, value in re.findall(r"const (\w+) = (0x[0-9A-Fa-f]+);", text):
         flags[name] = int(value, 16)
+    # Combinations of the others, e.g. SET_BASE = Self::NO_DEFAULT_CAMERA.bits() | Self::FADE_OUT.bits() | ...
+    for name, value in re.findall(r"const (\w+) = ((?:Self::\w+\.bits\(\)\s*\|?\s*)+);", text):
+        flags[name] = 0
+        for part in re.findall(r"Self::(\w+)\.bits\(\)", value):
+            flags[name] |= flags[part]
     return flags
 
 
