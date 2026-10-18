@@ -53,7 +53,7 @@ impl Item {
             condition: ITEM_CONDITION_MAX,
             item_level: row.item_level,
             stack_size: row.stack_size,
-            price_low: row.price_low,
+            price_low: row.sell_price(),
             base_param_ids: row.base_param_ids,
             base_param_values: row.base_param_values,
             defense: row.defense,

@@ -870,6 +870,11 @@ impl UserData for LuaPlayer {
             this.toggle_orchestrion(id);
             Ok(())
         });
+        methods.add_method_mut("pay_for_teleport", |_, this, aetheryte_id: u32| {
+            this.queued_tasks
+                .push(LuaTask::PayForTeleport { aetheryte_id });
+            Ok(())
+        });
         methods.add_method_mut("obtain_drop", |_, this, (id, quantity): (u32, i32)| {
             this.queued_tasks.push(LuaTask::ObtainDrop { id, quantity });
             Ok(())

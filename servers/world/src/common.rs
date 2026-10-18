@@ -275,6 +275,8 @@ pub enum FromServer {
     FATEComplete(u32),
     /// A FATE this player took part in was completed: give its rewards.
     FateReward(u32),
+    /// This player died: their gear wears down.
+    PlayerDied,
     /// Instruct the client's zone connection to check if the teleport can be shared.
     CheckTeleportSharingEligibility(u32),
     /// Inform the client of their player's new CharacterMode.

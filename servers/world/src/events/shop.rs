@@ -242,7 +242,7 @@ impl ShopEventHandler {
                     .push_item(event.id.0, bb_item);
 
                 connection.player_data.inventory.currency.gil.quantity +=
-                    quantity.saturating_mul(item_info.price_low as i32);
+                    quantity.saturating_mul(item_info.sell_price() as i32);
                 Self::send_gilshop_item_update(
                     connection,
                     ItemInfo {
@@ -315,7 +315,7 @@ impl ShopEventHandler {
                     event.id.0,
                     item_info.id,
                     quantity as u32,
-                    item_info.price_low,
+                    item_info.sell_price(),
                     LogMessageType::ItemSold,
                 )
                 .await;

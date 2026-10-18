@@ -499,6 +499,41 @@ impl ZoneConnection {
         }
     }
 
+    /// What teleporting from here to this aetheryte costs: free to the character's free destination, half to a
+    /// favourite (retail; see `GameData::teleport_cost`.)
+    pub fn teleport_cost(&self, aetheryte_id: u32) -> u32 {
+        let aetheryte = &self.player_data.aetheryte;
+        if aetheryte.free_aetheryte != 0 && aetheryte.free_aetheryte as u32 == aetheryte_id {
+            return 0;
+        }
+        let favourite = aetheryte
+            .favorite_aetherytes
+            .0
+            .iter()
+            .any(|favourite| *favourite as u32 == aetheryte_id);
+        self.game_data.lock().teleport_cost(
+            self.player_data.volatile.zone_id as u16,
+            aetheryte_id,
+            favourite,
+        )
+    }
+
+    /// Takes a teleport's gil as it lands, as retail: the gil slot, then the log line (LogMessage 4590, the cost.)
+    pub async fn pay_for_teleport(&mut self, aetheryte_id: u32) {
+        let cost = self.teleport_cost(aetheryte_id);
+        if cost == 0 {
+            return;
+        }
+        let gil = &mut self.player_data.inventory.currency.gil;
+        gil.quantity = gil.quantity.saturating_sub(cost as i32).max(0);
+        self.send_inventory().await;
+        self.actor_control_self(ActorControlCategory::LogMessage {
+            log_message: TELEPORT_PAID_LOG,
+            id: cost,
+        })
+        .await;
+    }
+
     pub async fn change_weather(&mut self, new_weather_id: u8) {
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::WeatherId(WeatherChange {
             weather_id: new_weather_id,
@@ -642,3 +677,6 @@ impl ZoneConnection {
         .await;
     }
 }
+
+/// LogMessage for a teleport's gil (retail's, with the cost.)
+const TELEPORT_PAID_LOG: u32 = 4590;

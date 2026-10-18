@@ -34,6 +34,9 @@ use kawari::ipc::zone::{
 use kawari::common::{CharacterMode, NETWORK_TIMEOUT, RECEIVE_BUFFER_SIZE};
 
 /// How often a player's progress is saved while they play, besides when they log out.
+/// TeleportStart's value for a teleport the character can't afford (Sapphire's; retail sends 0 when they can.)
+const TELEPORT_INSUFFICIENT_GIL: u32 = 2;
+
 const AUTOSAVE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(30);
 
 /// How long a zone connection can go without hearing from the client before it's treated as dropped (and the player
@@ -1899,6 +1902,26 @@ async fn process_packet(
                                 }
                                 ClientTriggerCommand::ZoneDiceRoll { num_sides } => {
                                     connection.send_dice_roll(num_sides as u16).await;
+                                }
+                                // A teleport the character can't pay for is refused straight away (the cost is
+                                // taken when it lands, see `pay_for_teleport`.)
+                                ClientTriggerCommand::TeleportQuery { aetheryte_id, .. }
+                                    if connection.teleport_cost(aetheryte_id)
+                                        > connection
+                                            .player_data
+                                            .inventory
+                                            .currency
+                                            .gil
+                                            .quantity
+                                            .max(0)
+                                            as u32 =>
+                                {
+                                    connection
+                                        .actor_control_self(ActorControlCategory::TeleportStart {
+                                            insufficient_gil: TELEPORT_INSUFFICIENT_GIL,
+                                            aetheryte_id,
+                                        })
+                                        .await;
                                 }
                                 _ => {
                                     // inform the server of our trigger, it will handle sending it to other clients
@@ -4729,6 +4752,9 @@ async fn process_server_msg(
                 if connection.synced_fate == Some(fate_id) {
                     connection.set_fate_level_sync(fate_id, false).await;
                 }
+            }
+            FromServer::PlayerDied => {
+                connection.wear_gear_on_death().await;
             }
             FromServer::FateReward(fate_id) => {
                 connection.give_fate_rewards(fate_id).await;

@@ -27,6 +27,17 @@ Teleport's action script queues the warp as a Lua task when the cast ends. Those
 the connection (see [Timing](timing.md#tasks-from-lua)); before, the warp went out at the client's next packet, up to
 ~10 s later, leaving the player hovering in the teleport animation.
 
+**Teleport costs** (`GameData::teleport_cost`), as the client's Telepo GetTeleportCost works them out and exact for
+all 87 paid teleports in Bob's Chronofoil captures: each zone has a point on a world map (TerritoryTypeTelepo: X, Y,
+Expansion, Relay). A leg between two points costs `floor(distance × m / 1000) / 5 + 100`, where the distance's x wraps
+around the region's width (TelepoRelay's last value) and `m` is 1000, or the two Expansion values plus 600 once they
+add up to 400 or more. In the same region it's one leg; across regions TelepoRelay gives the crossing (enter zone,
+exit zone, cost): the cost plus a leg to the crossing and one from it. Above 1000 it's 1000 plus half the rest; a
+favourite destination costs half, the free destination nothing (the character's saved favourites and free
+aetheryte); housing destinations a quarter (not done). Sapphire's `distance / 2 + 100` was wrong. Kawari charged
+nothing before. As retail, the gil is taken when the cast lands (the gil slot, then LogMessage 4590 with the cost);
+a teleport the character can't afford is refused at once (TeleportStart with 2, Sapphire's value).
+
 ## Leaving a zone with FATEs
 
 Retail takes the zone's FATEs down before the player loads the next map (Bob's Chronofoil captures, leaving the

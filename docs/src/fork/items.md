@@ -30,3 +30,14 @@ bags (`Inventory::use_up_one`), as retail does. If it's already known nothing ha
 
 Before this, only minions and orchestrion rolls were handled, by toggling (using the item again un-learned it) and
 without using the item up; mounts, unlock links, cards, accessories, barding and facewear did nothing.
+
+## Selling to NPCs, wear and repair
+
+* **Sell price** (`ItemRow::sell_price`): PriceLow, and for materia (ItemUICategory 58) a tenth more rounded up in
+  integers (PriceLow 90 sells for 99): exact for all 53 sales in Bob's Chronofoil captures. HQ wasn't seen.
+* **Wear:** dying takes 600 (2 %) off the condition of everything the player wears (not the soul crystal), as retail
+  right after the death (374 items in the captures). Wear while fighting (35–200 an item over a duty on retail) isn't
+  done.
+* **Repair** (not done): retail's NPC repair costs `ceil(ItemRepairPrice[equip level] × (30000 − condition) / 30000)`
+  per item (7 of 7 repairs exact): client trigger 1602 repairs what's worn, 1601 an armoury page; answered with each
+  slot, ActorControlSelf 517 (LogMessage 1388, the number of items), the gil, then the transactions.

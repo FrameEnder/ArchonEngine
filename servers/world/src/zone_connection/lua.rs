@@ -469,6 +469,9 @@ impl ZoneConnection {
                 } => {
                     self.hire_retainer(name, *classjob, *level).await;
                 }
+                LuaTask::PayForTeleport { aetheryte_id } => {
+                    self.pay_for_teleport(*aetheryte_id).await;
+                }
                 LuaTask::ObtainDrop { id, quantity } => {
                     self.obtain_drop(*id, *quantity).await;
                 }

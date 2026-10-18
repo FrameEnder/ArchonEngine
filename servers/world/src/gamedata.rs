@@ -233,6 +233,23 @@ pub struct ItemRow {
     pub physical_damage: u16,
     pub magic_damage: u16,
     pub delay_ms: u16,
+    /// The item's ItemUICategory.
+    pub ui_category: u8,
+}
+
+/// ItemUICategory for materia.
+const ITEM_UI_CATEGORY_MATERIA: u8 = 58;
+
+impl ItemRow {
+    /// What an NPC shop pays for one: PriceLow, and for materia a tenth more, rounded up (retail: exact for all 53
+    /// sales in Bob's Chronofoil captures, 24 of them materia; PriceLow 90 sells for 99.)
+    pub fn sell_price(&self) -> u32 {
+        if self.ui_category == ITEM_UI_CATEGORY_MATERIA {
+            self.price_low + self.price_low.div_ceil(10)
+        } else {
+            self.price_low
+        }
+    }
 }
 
 /// An equipped item's attributes under item level sync, see `GameData::synced_item_stats`.
@@ -850,6 +867,7 @@ impl GameData {
                 physical_damage: matched_row.DamagePhys,
                 magic_damage: matched_row.DamageMag,
                 delay_ms: matched_row.Delayms,
+                ui_category: matched_row.ItemUICategory,
                 equip_restrictions: self
                     .get_equipslot_restrictions(matched_row.EquipSlotCategory)
                     .unwrap(),
@@ -901,6 +919,57 @@ impl GameData {
         let warp_logic_row = warp_logic_sheet.row(warp_logic_id as u32).unwrap();
 
         warp_logic_row.WarpName.to_string() // This shouldn't use SeString features
+    }
+
+    /// What teleporting from this zone to this aetheryte costs in gil, as the client works it out (Telepo's
+    /// GetTeleportCost; exact for all 87 paid teleports in Bob's Chronofoil captures): the distance between the two
+    /// zones on TerritoryTypeTelepo's world map (through TelepoRelay's crossing point when they're in different
+    /// regions, plus its cost), halved above 1000, halved again for a favourite destination. 999 if a zone has no row.
+    pub fn teleport_cost(&mut self, from_zone: u16, aetheryte_id: u32, favourite: bool) -> u32 {
+        let Some(cost) = self.teleport_cost_inner(from_zone, aetheryte_id) else {
+            return 999;
+        };
+        let cost = if cost > 1000 {
+            1000 + (cost - 1000) / 2
+        } else {
+            cost
+        };
+        if favourite { cost / 2 } else { cost }
+    }
+
+    fn teleport_cost_inner(&mut self, from_zone: u16, aetheryte_id: u32) -> Option<u32> {
+        let language = get_config().world.language();
+        let to_zone = AetheryteSheet::read_from(&mut self.resource, language)
+            .ok()?
+            .row(aetheryte_id)?
+            .Territory;
+        let telepo = icarus::TerritoryTypeTelepo::TerritoryTypeTelepoSheet::read_from(
+            &mut self.resource,
+            Language::None,
+        )
+        .ok()?;
+        let relays =
+            icarus::TelepoRelay::TelepoRelaySheet::read_from(&mut self.resource, Language::None)
+                .ok()?;
+        let point = |zone: u16| {
+            telepo
+                .row(zone as u32)
+                .map(|row| (row.X as i64, row.Y as i64, row.Expansion as i64, row.Relay))
+        };
+        let a = point(from_zone)?;
+        let b = point(to_zone)?;
+        let relay_a = relays.row(a.3 as u32)?;
+        let width_a = relay_a.Unknown_70 as i64;
+        if a.3 == b.3 {
+            return Some(teleport_leg(a, b, width_a));
+        }
+        let crossing = relay_a.Relays.get(b.3 as usize)?;
+        let width_b = relays.row(b.3 as u32)?.Unknown_70 as i64;
+        Some(
+            crossing.Cost as u32
+                + teleport_leg(a, point(crossing.EnterTerritory)?, width_a)
+                + teleport_leg(point(crossing.ExitTerritory)?, b, width_b),
+        )
     }
 
     pub fn get_aetheryte(
@@ -3071,5 +3140,40 @@ mod weather_tests {
         // Exact integers: neighbouring windows give their own rolls.
         let rolls: Vec<i32> = (0..20).map(|i| weather_target(start + i * 1400)).collect();
         assert!(rolls.windows(2).any(|pair| pair[0] != pair[1]));
+    }
+}
+
+/// One leg of a teleport's cost between two TerritoryTypeTelepo points (x, y, expansion, relay): the map distance (x
+/// wrapping around a region `width` wide), scaled up for later expansions, / 5 + 100.
+fn teleport_leg(a: (i64, i64, i64, u8), b: (i64, i64, i64, u8), width: i64) -> u32 {
+    let mut dx = (a.0 - b.0).abs();
+    if width > 0 && dx > width && dx < 2 * width {
+        dx = 2 * width - dx;
+    }
+    let dy = a.1 - b.1;
+    let distance = ((dx * dx + dy * dy) as f64).sqrt().floor() as i64;
+    let expansions = a.2 + b.2;
+    let multiplier = if expansions < 400 {
+        1000
+    } else {
+        expansions + 600
+    };
+    ((distance * multiplier / 1000 + 500) / 5) as u32
+}
+
+#[cfg(test)]
+mod teleport_tests {
+    use super::teleport_leg;
+
+    #[test]
+    fn legs() {
+        // Same point: the 100 gil minimum.
+        assert_eq!(teleport_leg((10, 10, 0, 0), (10, 10, 0, 0), 0), 100);
+        // 300 apart: 300 / 5 + 100.
+        assert_eq!(teleport_leg((0, 0, 0, 0), (300, 0, 0, 0), 0), 160);
+        // Wrapping around a 1000-wide region: 1700 apart is 300.
+        assert_eq!(teleport_leg((0, 0, 0, 0), (1700, 0, 0, 0), 1000), 160);
+        // Later expansions cost more per distance.
+        assert_eq!(teleport_leg((0, 0, 300, 0), (300, 0, 300, 0), 0), 172);
     }
 }

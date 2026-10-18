@@ -423,6 +423,18 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
         network.send_ac_in_range_inclusive_instance(instance, actor_id, ac);
     }
 
+    // A player's gear wears down as they die (retail.)
+    if matches!(
+        instance.find_actor(actor_id),
+        Some(NetworkedActor::Player { .. })
+    ) {
+        network.send_to_by_actor_id(
+            actor_id,
+            FromServer::PlayerDied,
+            DestinationNetwork::ZoneClients,
+        );
+    }
+
     // Inform the director that their actor died
     let mut npc_id = None;
     let mut position = None;

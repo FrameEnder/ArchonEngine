@@ -233,6 +233,27 @@ impl ZoneConnection {
         self.update_class_info().await;
     }
 
+    /// Dying takes 600 (2 %) off the condition of everything the player wears, as retail, right after the death
+    /// (Bob's Chronofoil captures, 374 items), each slot sent again.
+    pub async fn wear_gear_on_death(&mut self) {
+        const DEATH_WEAR: u16 = 600;
+        // The soul crystal doesn't wear.
+        const SOUL_CRYSTAL_SLOT: u16 = physis::equipment::EquipSlot::SoulCrystal as u16;
+        let equipped = &mut self.player_data.inventory.equipped;
+        let mut worn = Vec::new();
+        for slot in (0..equipped.max_slots() as u16).filter(|slot| *slot != SOUL_CRYSTAL_SLOT) {
+            let item = equipped.get_slot_mut(slot);
+            if !item.is_empty_slot() && item.condition > 0 {
+                item.condition = item.condition.saturating_sub(DEATH_WEAR);
+                worn.push(slot);
+            }
+        }
+        for slot in worn {
+            self.send_inventory_slot(ContainerType::Equipped, slot)
+                .await;
+        }
+    }
+
     /// An item an enemy dropped, obtained directly: retail's LootMessage (kind 3: who, the item, how many) gives the
     /// log line, then an ack (0xFFFFFFFF, 6) and the slot (Bob's Chronofoil captures; here the whole inventory.)
     pub async fn obtain_drop(&mut self, id: u32, quantity: i32) {

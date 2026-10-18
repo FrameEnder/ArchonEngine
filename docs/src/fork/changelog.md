@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-18 | — | Combat (potencies measured from synced party members, statuses checked against retail, Raise); known issues.
+| 2026-10-18 | — | Travel (teleport costs), items (sell price, wear, repair formula) from Bob's captures.
+| 2026-10-18 | `3247ebd` | Combat (potencies measured from synced party members, statuses checked against retail, Raise); known issues.
 | 2026-10-18 | `82a83ec` | Fixes from a review (combat, timing, opcodes).
 | 2026-10-18 | `daec1d7` | Combat: no chains or synced-down kill EXP in duties; known issues.
 | 2026-10-18 | `6e4487e` | Level sync (FATE rewards), quests (turn-in log lines and order), known issues (FATE and duty rewards).
@@ -95,7 +96,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Class actions, statuses and Raise from Bob's Chronofoil captures: 24 traited actions' potencies set to retail's for levels 1–50 (measured from synced party members); Sheltron 1856, Temperance's party status 1873, no Rampart healing bonus below 94, Firestarter/Thunderhead permanent and Thunderhead only granted when absent, Shield Samba for the party, Cover's param, True Grit and Acorn Armageddon durations; self-status effects' 0x80, the target's EffectResult naming the target, ActorControl 20 without a source; Raise and Resurrection offer a revive and accepting it gets the player up in place with 20 % HP/MP and Weakness (client trigger 200's choice read). |
+| — | Teleports cost gil as retail's client works it out (TerritoryTypeTelepo and TelepoRelay, exact for 87 teleports; favourites half, the free destination nothing), taken as the cast lands with LogMessage 4590, refused if unaffordable; NPCs pay a tenth more for materia; dying wears gear by 600. Workspace icarus features TelepoRelay and TerritoryTypeTelepo. |
+| `3247ebd` | Class actions, statuses and Raise from Bob's Chronofoil captures: 24 traited actions' potencies set to retail's for levels 1–50 (measured from synced party members); Sheltron 1856, Temperance's party status 1873, no Rampart healing bonus below 94, Firestarter/Thunderhead permanent and Thunderhead only granted when absent, Shield Samba for the party, Cover's param, True Grit and Acorn Armageddon durations; self-status effects' 0x80, the target's EffectResult naming the target, ActorControl 20 without a source; Raise and Resurrection offer a revive and accepting it gets the player up in place with 20 % HP/MP and Weakness (client trigger 200's choice read). |
 | `82a83ec` | Fixes from a review of today's changes: Defeated is actually sent (its task was being cancelled with the dead actor's); quest reward log lines only for items given, with the optional reward's count; ExecuteCombo only on players' actions (not auto-attacks or NPCs); patrols walk; idle enemy regeneration only out in the world; the duty clock stops when the duty is complete; mounts and items keep their half-second slidecast window; FATE rewards only for those who fought its enemies and are still there; enmity can't overflow. ActionRequestGroundTargeted's 846 (FFXIVOpcodes 7.57) marked current so it's used. |
 | `daec1d7` | No kill chains in duties, and no kill EXP for players synced down in one (retail). |
 | `6e4487e` | Rewards from Bob's Chronofoil captures: completed FATEs give whoever helped defeat their enemies retail's gold-rank EXP (ScaledQuestXP × QuestExpModifier at the FATE's level) and gil (twice its level); quest turn-ins send the gil and item log lines (LogMessage 1605/1606/1607) first and the EXP last, as retail. |

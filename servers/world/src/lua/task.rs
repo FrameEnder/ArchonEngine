@@ -121,6 +121,10 @@ pub enum LuaTask {
     },
     /// `!retainer list`.
     ListRetainers,
+    /// Pay the gil for teleporting to this aetheryte from here.
+    PayForTeleport {
+        aetheryte_id: u32,
+    },
     /// An item an enemy dropped, obtained directly (with retail's loot message.)
     ObtainDrop {
         id: u32,
