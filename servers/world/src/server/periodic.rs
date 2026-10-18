@@ -58,6 +58,12 @@ pub fn add_periodic_effect(
     });
 }
 
+/// An over-time effect's tick: its amount ±5 %, at least 1.
+fn vary_tick(amount: u32) -> u32 {
+    let variance = 1.0 + (fastrand::f32() * 2.0 - 1.0) * 0.05;
+    ((amount as f32 * variance).round() as u32).max(1)
+}
+
 /// Applies any over-time effects that are due, and drops ones whose status effect has ended.
 pub fn periodic_tick(network: Arc<Mutex<NetworkState>>, instance: &mut Instance) {
     if instance.periodic_effects.is_empty() {
@@ -92,15 +98,17 @@ pub fn periodic_tick(network: Arc<Mutex<NetworkState>>, instance: &mut Instance)
         }
         effect.next_tick += PERIODIC_TICK_INTERVAL;
 
+        // Each tick varies a little like a hit (retail's ticks did; ±5 %.)
+        let amount = vary_tick(effect.amount);
         match effect.kind {
             PeriodicKind::Damage => {
                 if common.name_id != STRIKING_DUMMY_NAME_ID {
-                    common.health_points = common.health_points.saturating_sub(effect.amount);
+                    common.health_points = common.health_points.saturating_sub(amount);
                 }
             }
             PeriodicKind::Heal => {
                 common.health_points =
-                    (common.health_points + effect.amount).min(common.max_health_points);
+                    (common.health_points + amount).min(common.max_health_points);
             }
             PeriodicKind::RestoreMp => {
                 let amount = effect.amount.min(u16::MAX as u32) as u16;
@@ -111,17 +119,26 @@ pub fn periodic_tick(network: Arc<Mutex<NetworkState>>, instance: &mut Instance)
             }
         }
 
-        if effect.kind != PeriodicKind::RestoreMp {
+        // Retail (Bob's Chronofoil captures): a damage tick is ActorControl 1541 (0, amount, source, 0xFFFFFFFF), a heal
+        // tick 1540 (0, amount, source, critical); a heal tick used to go out as 1540 for both, with the status ID.
+        let tick = match effect.kind {
+            PeriodicKind::Damage => Some(ActorControlCategory::DamageFlyingText {
+                unk1: 0,
+                amount,
+                source_actor_id: effect.source,
+                unk4: u32::MAX,
+            }),
+            PeriodicKind::Heal => Some(ActorControlCategory::HotDot {
+                status_id: 0,
+                amount,
+                source_actor_id: effect.source,
+                critical: 0,
+            }),
+            PeriodicKind::RestoreMp => None,
+        };
+        if let Some(tick) = tick {
             let mut network = network.lock();
-            network.send_ac_in_range_inclusive_instance(
-                instance,
-                effect.target,
-                ActorControlCategory::HotDot {
-                    status_id: effect.effect_id as u32,
-                    amount: effect.amount,
-                    source_actor_id: effect.source,
-                },
-            );
+            network.send_ac_in_range_inclusive_instance(instance, effect.target, tick);
         }
 
         if !actors_to_update.contains(&effect.target) {

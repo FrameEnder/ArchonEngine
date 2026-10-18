@@ -135,6 +135,8 @@ pub struct GameData {
     pub base_param_sheet: BaseParamSheet,
     /// Statuses Esuna can remove (Status.CanDispel), read the first time it's needed.
     dispellable_statuses: Option<std::collections::HashSet<u16>>,
+    /// Actions some other action continues from (another row's ActionCombo), filled in on first use.
+    combo_starters: Option<std::collections::HashSet<u16>>,
     pub classjob_sheet: ClassJobSheet,
     pub battalion_sheet: BattalionSheet,
     pub enpc_base_sheet: ENpcBaseSheet,
@@ -755,6 +757,7 @@ impl GameData {
             gimmick_rect_sheet,
             base_param_sheet,
             dispellable_statuses: None,
+            combo_starters: None,
             classjob_sheet,
             battalion_sheet,
             enpc_base_sheet,
@@ -2384,6 +2387,27 @@ impl GameData {
         priorities
     }
 
+    /// Whether an action takes part in combos: it continues one (its ActionCombo is set) or starts one (another action's
+    /// ActionCombo is it.) Only these change a player's combo on retail; other spells and weaponskills in between don't
+    /// break it (Bob's Chronofoil captures: 263 combo steps after other GCDs kept full potency.)
+    pub fn takes_part_in_combos(&mut self, action_id: u32) -> bool {
+        if self.combo_starters.is_none() {
+            self.combo_starters = Some(
+                self.action_sheet
+                    .into_iter()
+                    .flatten_subrows()
+                    .map(|(_, row)| row.ActionCombo)
+                    .filter(|combo| *combo != 0)
+                    .collect(),
+            );
+        }
+        self.get_combo_action(action_id) != 0
+            || self
+                .combo_starters
+                .as_ref()
+                .is_some_and(|starters| starters.contains(&(action_id as u16)))
+    }
+
     /// Whether a status can be removed by Esuna and the like (Status.CanDispel.)
     pub fn is_dispellable(&mut self, status_id: u16) -> bool {
         if self.dispellable_statuses.is_none() {
@@ -2509,6 +2533,12 @@ impl GameData {
         stats.magic_defense =
             scale_by_item_level(stats.magic_defense, synced.MagicDefense, own.MagicDefense);
         Some(stats)
+    }
+
+    /// An action's recast: (CooldownGroup, Recast100ms, MaxCharges.)
+    pub fn get_action_recast(&mut self, id: u32) -> Option<(u8, u16, u8)> {
+        let row = self.action_sheet.row(id)?;
+        Some((row.CooldownGroup, row.Recast100ms, row.MaxCharges))
     }
 
     pub fn get_action_cooldown_group(&mut self, id: u32) -> u8 {

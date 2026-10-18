@@ -982,7 +982,10 @@ pub enum ActorControlCategory {
     #[brw(magic = 1529u32)]
     UnkAnimationRelated,
 
-    /// That's the name of the function in FFXIVClientStructs: ProcessHotDot
+    /// That's the name of the function in FFXIVClientStructs: ProcessHotDot. On retail it's a heal over time's tick
+    /// (Bob's Chronofoil captures): `status_id` 0 for all of a target's HoTs together (a ground effect's status when
+    /// it ticks on its own: Asylum 1911, Sacred Soil 1944...), `critical` 1 for a critical tick (×1.5.) Damage over time
+    /// ticks are DamageFlyingText (1541).
     #[brw(magic = 1540u32)]
     HotDot {
         /// The source status of this HoT(?)
@@ -991,9 +994,12 @@ pub enum ActorControlCategory {
         amount: u32,
         /// Who did the damage?
         source_actor_id: ObjectId,
+        critical: u32,
     },
 
-    /// Shows the flying text and some VFX on the target, but doesn't display in the log or change anything else.
+    /// Shows the flying text and some VFX on the target, but doesn't display in the log or change anything else. On
+    /// retail this is a damage over time tick: `unk1` 0, `unk4` 0xFFFFFFFF (Bob's Chronofoil captures; every DoT on the
+    /// target together.)
     #[brw(magic = 1541u32)]
     DamageFlyingText {
         unk1: u32,

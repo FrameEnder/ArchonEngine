@@ -43,10 +43,10 @@ use crate::{
 };
 use kawari::{
     common::{
-        AUTO_ATTACK_RATE, CharacterMode, DEAD_DESPAWN_TIME, HandlerId, HandlerType,
-        MAX_SPAWNED_ACTORS, MAX_SPAWNED_OBJECTS, MOB_RESPAWN_TIME, ObjectId, ObjectTypeId,
-        ObjectTypeKind, Position, WarpType, determine_initial_pop_range, euler_to_direction,
-        is_private_area, mob_respawn_time,
+        CharacterMode, DEAD_DESPAWN_TIME, HandlerId, HandlerType, MAX_SPAWNED_ACTORS,
+        MAX_SPAWNED_OBJECTS, MOB_RESPAWN_TIME, ObjectId, ObjectTypeId, ObjectTypeKind, Position,
+        WarpType, determine_initial_pop_range, euler_to_direction, is_private_area,
+        mob_respawn_time,
     },
     config::get_config,
     ipc::zone::{
@@ -429,8 +429,16 @@ const MP_REGEN_OUT_OF_COMBAT: u32 = 600;
 /// the logic tick, so a cast resolves when its cast bar ends rather than up to half a second later.
 const TASK_TICK_MILLISECONDS: u32 = 20;
 
-/// Moving during the last part of a cast doesn't interrupt it ("slidecasting"), like retail.
-const SLIDECAST_WINDOW: Duration = Duration::from_millis(500);
+/// A player's time between auto-attacks, in milliseconds: their weapon's delay sped up or slowed by haste (2 s if
+/// they have no weapon.)
+fn auto_attack_delay_ms(parameters: &crate::zone_connection::BaseParameters) -> i64 {
+    let delay = if parameters.weapon_delay_ms == 0 {
+        2000
+    } else {
+        parameters.weapon_delay_ms
+    };
+    (delay as i64 * parameters.haste.max(1) as i64 / 100).max(500)
+}
 
 fn server_logic_tick(
     data: Arc<Mutex<WorldServer>>,
@@ -474,6 +482,7 @@ fn server_logic_tick(
                     inside_instance_exit: inside_instance_entrance,
                     autoattack_target,
                     autoattack_timing,
+                    parameters,
                     ..
                 } = actor
                 else {
@@ -532,9 +541,9 @@ fn server_logic_tick(
 
                 // TODO: find a better place for this
                 if autoattack_target.is_some() {
-                    // Schedule any pending auto-attacks:
-                    let should_auto_attack =
-                        (*autoattack_timing % (AUTO_ATTACK_RATE + 1)) == AUTO_ATTACK_RATE;
+                    // Schedule any pending auto-attacks: one every weapon delay (`autoattack_timing` counts
+                    // milliseconds, see the regeneration loop.)
+                    let should_auto_attack = *autoattack_timing >= auto_attack_delay_ms(parameters);
                     if should_auto_attack {
                         actors_autoattacking.push(*id);
                     }
@@ -921,6 +930,7 @@ fn server_logic_tick(
                 if let NetworkedActor::Player {
                     spawn,
                     autoattack_timing,
+                    autoattack_target,
                     parameters,
                     ..
                 } = actor
@@ -928,8 +938,20 @@ fn server_logic_tick(
                     let in_combat = haters.contains_key(id);
                     let is_dead = spawn.common.health_points == 0;
 
-                    // TODO: find a better place for this
-                    *autoattack_timing += 1;
+                    // Auto-attacks come every weapon delay × haste / 100, as retail's (Bob's Chronofoil captures:
+                    // Paladin 2.27 s for a 2.24 s weapon, Warrior 3.38-3.40 for 3.36, Bob's 2.41 for 2.4); they were
+                    // every 2 s for everyone. A swing just made uses up one delay; while not attacking it's ready at
+                    // once (the first swing comes straight away.)
+                    let delay = auto_attack_delay_ms(parameters);
+                    if autoattack_target.is_some() {
+                        if *autoattack_timing >= delay {
+                            *autoattack_timing -= delay;
+                        }
+                        *autoattack_timing += SERVER_TICK_MILLISECONDS as i64;
+                    } else {
+                        *autoattack_timing =
+                            (*autoattack_timing + SERVER_TICK_MILLISECONDS as i64).min(delay);
+                    }
 
                     if !regen_now || is_dead {
                         continue;
@@ -1660,13 +1682,14 @@ pub async fn server_main_loop(
                         }
 
                         if moved {
-                            // Check if the actor has any in-progress actions, and cancel them if so.
-                            // Except near the end of the cast, which can be slidecast.
-                            let slidecast_from = Instant::now() + SLIDECAST_WINDOW;
+                            // Check if the actor has any in-progress actions, and cancel them if so. A player's cast
+                            // lands half a second before its bar ends, so moving in that last half second doesn't
+                            // interrupt it ("slidecasting"), as on retail.
+                            let now = Instant::now();
                             for task in instance.find_tasks(actor_id) {
                                 if let QueuedTaskData::CastAction { interruptible, .. } = task.data
                                     && interruptible
-                                    && task.point > slidecast_from
+                                    && task.point > now
                                 {
                                     instance.cancel_task(network.clone(), &task);
                                 }

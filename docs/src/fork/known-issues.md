@@ -67,6 +67,16 @@ add one when something is found.
   history (sent empty.) Withdrawn equipment goes to the bags (retail put a weapon in the Armoury Chest.)
 * The lobby's character list doesn't show retainers (DistRetainerInfo is still empty).
 
+## Combat timing
+
+* Over-time ticks aren't summed per target or put on the target's own phase, aren't scaled by Spell Speed and never
+  crit; Lucid Dreaming's MP tick sends no packet.
+* Presence of Mind and slows don't change PlayerStats' haste (so the GCD's recast isn't shortened, only casts); item
+  animation locks are 0.6 s.
+* **Raise** isn't implemented. Retail (117 revivals): the offer is status 148 (param 8, 60 s); accepting brings the
+  player back where they are at 20 % HP and MP with Weakness (43, 100 s), or Brink of Death (44) if already weakened.
+  Kawari's revive always warps to the entrance at full HP.
+
 ## Quest battles and directors
 
 * **Battle talk**: every quest battle uses the window (DirectorPopupMessage) with retail's text IDs, except Papalymo's

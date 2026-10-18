@@ -33,9 +33,9 @@ use kawari::{
     },
     config::get_config,
     ipc::zone::{
-        ActionEffect, ActionRequest, ActionType, ActorControlCategory, BattleNpcSubKind,
-        CommonSpawn, DamageKind, EffectEntry, EffectResult, ObjectKind, ServerZoneIpcData,
-        ServerZoneIpcSegment, SpawnNpc, TargetEffect, TargetEffectKind,
+        ActionEffect, ActionRequest, ActionType, ActorControlCategory, ActorControlSelf,
+        BattleNpcSubKind, CommonSpawn, DamageKind, EffectEntry, EffectResult, ObjectKind,
+        ServerZoneIpcData, ServerZoneIpcSegment, SpawnNpc, TargetEffect, TargetEffectKind,
     },
 };
 
@@ -116,9 +116,11 @@ pub fn handle_action_messages(
 ) -> bool {
     if let ToServer::ActionRequest(from_id, from_actor_id, request) = msg {
         let (category, cast_time);
+        let recast;
         {
             let mut game_data = game_data.lock();
             (category, cast_time) = game_data.get_casttime(request.action_id).unwrap();
+            recast = game_data.get_action_recast(request.action_id);
         }
 
         let mut data = data.lock();
@@ -170,10 +172,54 @@ pub fn handle_action_messages(
             );
         }
 
+        // Retail tells the player each action's recast as they use it (ActorControlSelf 17, with the cast bar or the
+        // action's effect; Bob's Chronofoil captures, exact for 5,394 of 6,043 GCDs): the GCD's 2.5 s (or whatever)
+        // sped up by Spell or Skill Speed and haste, like a cast time; others their Recast100ms, times their charges.
+        if request.action_type == ActionType::Action
+            && let NetworkedActor::Player { .. } = actor
+            && let Some((cooldown_group, recast_100ms, max_charges)) = recast
+            && cooldown_group > 0
+            && recast_100ms > 0
+        {
+            let recast_ms = if cooldown_group == crate::server::GCD_GROUP {
+                parameters
+                    .get_adjusted_cast_time(category, recast_100ms as u32 * 100)
+                    .max(0) as u32
+            } else {
+                recast_100ms as u32 * 100 * max_charges.max(1) as u32
+            };
+            let ipc =
+                ServerZoneIpcSegment::new(ServerZoneIpcData::ActorControlSelf(ActorControlSelf {
+                    category: ActorControlCategory::SetCooldownTimerMax {
+                        cooldown_group: cooldown_group as u32 - 1,
+                        action_id: request.action_id,
+                        milliseconds: recast_ms / 10,
+                    },
+                }));
+            let mut network = network.lock();
+            network.send_to_by_actor_id(
+                *from_actor_id,
+                FromServer::PacketSegment(ipc, *from_actor_id),
+                DestinationNetwork::ZoneClients,
+            );
+        }
+
+        // A player's cast action lands half a second before its cast bar ends, as retail's do (Bob's Chronofoil
+        // captures: 0.50-0.54 s early for 4,165 of 4,805 casts of 1.1 to 7.7 s, Teleport too; mounts and items at the
+        // end.) Moving before then still interrupts it.
+        let lands_after = if adjusted_cast_time > 0
+            && request.action_type == ActionType::Action
+            && matches!(actor, NetworkedActor::Player { .. })
+        {
+            (adjusted_cast_time - CAST_LANDS_EARLY_MS).max(0)
+        } else {
+            adjusted_cast_time
+        };
+
         instance.insert_task(
             *from_id,
             *from_actor_id,
-            Duration::from_millis(adjusted_cast_time as u64),
+            Duration::from_millis(lands_after as u64),
             QueuedTaskData::CastAction {
                 request: request.clone(),
                 interruptible: adjusted_cast_time > 0,
@@ -284,9 +330,12 @@ pub fn execute_action(
 
     let in_combo;
     let combo_action_id;
+    let takes_part_in_combos;
     {
         let mut game_data = game_data.lock();
         combo_action_id = game_data.get_combo_action(request.action_id);
+        takes_part_in_combos = request.action_type == ActionType::Action
+            && game_data.takes_part_in_combos(request.action_id);
 
         let data = data.lock();
         let Some(instance) = data.find_actor_instance(from_actor_id) else {
@@ -610,25 +659,23 @@ pub fn execute_action(
                 }
             }
 
-            // Handle combos: only spells and weaponskills take part (retail sends ExecuteCombo for those alone, and an
-            // ability, auto-attack, item or mount in between doesn't break a combo.)
-            if is_combo_action(action_category) {
+            // Handle combos as retail (Bob's Chronofoil captures): only actions in a combo (starting or continuing one)
+            // change it, so other spells and weaponskills in between don't break it, and neither do abilities. Every
+            // action shows ExecuteCombo (value: the action, 128), with 1 when it continued a combo; a combo step used
+            // out of its combo shows none.
+            if is_combo_action(action_category) && takes_part_in_combos {
                 let Some(actor) = instance.find_actor_mut(from_actor_id) else {
                     return;
                 };
 
-                let sequence;
                 if let NetworkedActor::Player {
                     last_combo_action,
                     combo_sequence,
                     ..
                 } = actor
                 {
-                    sequence = *combo_sequence;
                     *combo_sequence = next_combo_sequence(in_combo, *combo_sequence);
                     *last_combo_action = request.action_id as u16;
-                } else {
-                    sequence = 0;
                 }
 
                 // Ensure we cancel any pending combo resets
@@ -647,11 +694,13 @@ pub fn execute_action(
                     COMBO_TIMEOUT,
                     QueuedTaskData::ResetCombo,
                 );
-
+            }
+            let out_of_combo_step = combo_action_id != 0 && !in_combo;
+            if request.action_type == ActionType::Action && !out_of_combo_step {
                 effects_builder
                     .effects
                     .push(TargetEffect(TargetEffectKind::ExecuteCombo {
-                        sequence,
+                        sequence: u8::from(in_combo && combo_action_id != 0),
                         unk2: 0,
                         unk3: 0,
                         unk4: 0,
@@ -1695,6 +1744,9 @@ fn next_combo_sequence(in_combo: bool, sequence: u8) -> u8 {
     }
 }
 
+/// How long before a player's cast bar ends its action lands (see `handle_action_messages`), in milliseconds.
+const CAST_LANDS_EARLY_MS: i32 = 500;
+
 /// Teleport and Return (General Action rows 5 and 6.)
 const TELEPORT_ACTION: u32 = 5;
 const RETURN_ACTION: u32 = 6;
@@ -1708,8 +1760,19 @@ const ANIMATION_LOCK_TELEPORT: f32 = 2.1;
 
 /// The animation lock (ActionEffect's) for an action: 0.6 for instant ones, as retail sends.
 fn animation_lock(action_type: ActionType, action_id: u32, has_cast_time: bool) -> f32 {
+    // Mounting locks for 0.1 s on retail (Bob's Chronofoil captures.)
+    if action_type == ActionType::Mount {
+        return ANIMATION_LOCK_AFTER_CAST;
+    }
     if action_type != ActionType::Action {
         return ANIMATION_LOCK_TIME;
+    }
+    // Actions retail gives their own lock (every use the same; Bob's Chronofoil captures.)
+    if let Some((_, lock)) = SPECIAL_ANIMATION_LOCKS
+        .iter()
+        .find(|(id, _)| *id == action_id)
+    {
+        return *lock;
     }
     if action_id == TELEPORT_ACTION || action_id == RETURN_ACTION {
         ANIMATION_LOCK_TELEPORT
@@ -1719,6 +1782,30 @@ fn animation_lock(action_type: ActionType, action_id: u32, has_cast_time: bool) 
         ANIMATION_LOCK_TIME
     }
 }
+
+/// Actions whose animation lock isn't the usual 0.6 s on retail, and theirs.
+const SPECIAL_ANIMATION_LOCKS: [(u32, f32); 20] = [
+    (2259, 0.35),
+    (2261, 0.35),
+    (18805, 0.35),
+    (18806, 0.35),
+    (18807, 0.35),
+    (92, 0.8),
+    (94, 0.8),
+    (96, 0.8),
+    (2262, 0.8),
+    (7515, 0.8),
+    (16478, 0.8),
+    (24401, 0.8),
+    (24402, 0.8),
+    (34684, 0.8),
+    (16147, 0.5),
+    (16146, 0.7),
+    (37008, 0.7),
+    (16150, 0.77),
+    (16480, 1.5),
+    (18780, 1.5),
+];
 
 /// Handles normal actions, powered by Lua.
 pub fn execute_normal_action(
@@ -2012,6 +2099,9 @@ mod combo_tests {
         assert_eq!(animation_lock(ActionType::Action, 5, true), 2.1); // Teleport
         assert_eq!(animation_lock(ActionType::Action, 6, true), 2.1); // Return
         assert_eq!(animation_lock(ActionType::Item, 4551, false), 0.6);
+        assert_eq!(animation_lock(ActionType::Mount, 1, false), 0.1);
+        assert_eq!(animation_lock(ActionType::Action, 92, false), 0.8); // Jump
+        assert_eq!(animation_lock(ActionType::Action, 2259, false), 0.35);
     }
 }
 

@@ -92,11 +92,34 @@ Applied after an action's script returns, by the server, so scripts only give th
 
 ### Combos, animation lock, and actions without a script
 
-* **Combos:** only spells and weaponskills take part (ActionCategory 2/3): an ability, auto-attack, item or mount in
-  between no longer breaks one (Fast Blade → Fight or Flight → Riot Blade), and only they get the ExecuteCombo effect,
-  as on retail. The combo step counted up from 0 again (it never advanced: it was compared after being overwritten).
-* **Animation lock** (ActionEffect): 0.1 after a spell with a cast and after auto-attacks, 2.1 after Teleport and Return,
-  0.6 otherwise, as retail sent in Bob's captures (Kawari sent 0.6 always).
+* **Combos** (Bob's Chronofoil captures, 3,295 combo steps): only actions in a combo change it, those with an
+  ActionCombo or that are another action's ActionCombo (`takes_part_in_combos`). Other spells and weaponskills in
+  between don't break it (263 steps after Burst Strike, Inner Beast, Bloodspiller... kept full potency), and neither
+  do abilities, items or mounts; a step of the same chain or another chain's starter does. The window is 30 s. Every
+  action gets the ExecuteCombo effect (kind 27, value the action, param 128) with 1 when it continued a combo and 0
+  otherwise; a combo step used out of its combo gets none. (Kawari only broke combos on other spells/weaponskills'
+  ActionCategory before, and put a running counter in the effect.)
+* **Animation lock** (ActionEffect): 0.1 after a spell with a cast, after auto-attacks and after mounting, 2.1 after
+  Teleport and Return, 0.6 otherwise; and retail's own for some actions (`SPECIAL_ANIMATION_LOCKS`: 0.35, 0.5, 0.7,
+  0.77, 0.8 or 1.5 s, e.g. Jump 0.8), every use the same in Bob's captures. Retail's items: medicines 1.1, food 2.1,
+  items 4745–4751 3.1 (Kawari: 0.6).
+* **Casts land 0.5 s early:** a player's cast action resolves half a second before its bar ends (retail 0.50–0.54 s
+  for 4,165 of 4,805 casts of 1.1–7.7 s, Teleport too; mounts and items at the end). Moving before it lands
+  interrupts it; after, it doesn't (that's slidecasting; Kawari's separate 0.5 s window is gone).
+* **Recast** (ActorControlSelf 17, `SetCooldownTimerMax`: CooldownGroup − 1, the action, the recast in 10 ms units)
+  is sent with every action a player uses, as retail does with the cast bar or the effect: for the GCD (group 58)
+  Recast100ms sped up like a cast time (`1000 − floor(130 × (speed − BaseSpeed) / LevelModifier)` per mille, then
+  haste), otherwise Recast100ms × charges. Exact for 5,394 of 6,043 retail GCDs (the misses: one synced Spell Speed
+  where retail is 1 lower, and an action sending the 2.5 s group timer.)
+* **Auto-attacks** come every weapon delay × haste / 100 (2 s without a weapon); they were every 2 s for everyone.
+  Retail: Paladin 2.27 s for a 2.24 weapon, Warrior 3.38–3.40 for 3.36, Monk 2.05 (2.56 × 0.8 with Greased Lightning),
+  Bob's 2.41 for 2.4.
+* **Over-time ticks:** a damage tick is ActorControl **1541** (0, amount, source, 0xFFFFFFFF), a heal tick **1540**
+  (0, amount, source, 1 if critical), each ±5 %; heal ticks went out as 1540 for both with the status ID. Retail adds
+  all of a target's DoTs into one packet (and HoTs into another), ticks 1.5 s after the target's regeneration tick on
+  its own 3 s phase, the first on the next such tick (0–4.5 s after the action, not a fixed 3 s), and scales ticks by
+  Spell Speed (`1 + floor(130 × (speed − sub) / div) / 1000`); Lucid Dreaming's MP is ActorControl 23 (0, 11, 550,
+  source). Kawari ticks each effect 3 s apart from when it was applied.
 * An action **without a script** still gets an ActionEffect (with no effects) so the client's hotbar doesn't hang; the
   "Effect N isn't scripted" message for statuses is debug-level now (most statuses need no script).
 * **Statuses** in StatusEffectList carry the time **left** (retail counts it down); Kawari sent each status's starting
