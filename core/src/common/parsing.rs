@@ -69,6 +69,18 @@ pub(crate) fn write_packed_position(pos: &Position) -> [u16; 3] {
     ]
 }
 
+/// PlayDismountAnimation's three values: where the player lands, as retail sends them (Bob's Chronofoil captures, all
+/// 9 within 0.03 yalms of the player's last position): packed x, packed y, packed z with the quantized rotation in the
+/// top half.
+pub fn dismount_landing(position: &Position, rotation: f32) -> (u32, u32, u32) {
+    let [x, y, z] = write_packed_position(position);
+    (
+        x as u32,
+        y as u32,
+        z as u32 | (write_quantized_rotation(&rotation) as u32) << 16,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

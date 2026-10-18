@@ -1123,14 +1123,18 @@ async fn process_packet(
                                         .set_character_mode(CharacterMode::Normal, 0, true)
                                         .await;
 
-                                    // Retail indeed does send an AC, not an ACS for this.
+                                    // Retail indeed does send an AC, not an ACS for this, with where the player lands.
+                                    let (unk1, unk2, unk3) = kawari::common::dismount_landing(
+                                        &connection.player_data.volatile.position,
+                                        connection.player_data.volatile.rotation as f32,
+                                    );
                                     connection
                                         .actor_control(
                                             connection.player_data.character.actor_id,
                                             ActorControlCategory::PlayDismountAnimation {
-                                                unk1: 47494,
-                                                unk2: 32711,
-                                                unk3: 1510381914,
+                                                unk1,
+                                                unk2,
+                                                unk3,
                                             },
                                         )
                                         .await;
@@ -2172,6 +2176,38 @@ async fn process_packet(
                                 ))
                                 .await;
                         }
+                        ClientZoneIpcData::ActionRequestGroundTargeted {
+                            action_id,
+                            unk1,
+                            action_type,
+                            sequence,
+                            rotation,
+                            ..
+                        } => {
+                            // Handled like an action on themselves, so the client gets its result (ground placement,
+                            // e.g. Asylum's area, isn't done yet.)
+                            let request = kawari::ipc::zone::ActionRequest {
+                                action_id: *action_id,
+                                unk1: *unk1,
+                                action_type: *action_type,
+                                sequence: *sequence,
+                                rotation1: *rotation,
+                                rotation2: *rotation,
+                                target: ObjectTypeId {
+                                    object_id: connection.player_data.character.actor_id,
+                                    object_type: ObjectTypeKind::None,
+                                },
+                                ..Default::default()
+                            };
+                            connection
+                                .handle
+                                .send(ToServer::ActionRequest(
+                                    connection.id,
+                                    connection.player_data.character.actor_id,
+                                    request,
+                                ))
+                                .await;
+                        }
                         ClientZoneIpcData::PingSync { timestamp, .. } => {
                             // this is *usually* sent in response, but not always
                             let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::PingSyncReply {
@@ -2547,15 +2583,18 @@ async fn process_packet(
                         }
                         ClientZoneIpcData::ContentFinderAction { action, .. } => {
                             if *action == ContentFinderUserAction::Accepted {
-                                // commencing
+                                // commencing: state 4, 1, the duty (ContentFinderCondition) as a u32 at byte 8,
+                                // then how many are ready and the party's size, as retail (Bob's Chronofoil captures;
+                                // Kawari had a 4 where the duty goes.)
                                 {
+                                    let cfc = connection.queued_content.unwrap_or_default() as u32;
+                                    let mut unk1 = [
+                                        4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1,
+                                        0, 0, 0, 0,
+                                    ];
+                                    unk1[8..12].copy_from_slice(&cfc.to_le_bytes());
                                     let ipc = ServerZoneIpcSegment::new(
-                                        ServerZoneIpcData::ContentFinderCommencing {
-                                            unk1: [
-                                                4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0,
-                                                0, 1, 1, 0, 0, 0, 0,
-                                            ],
-                                        },
+                                        ServerZoneIpcData::ContentFinderCommencing { unk1 },
                                     );
                                     connection.send_ipc_self(ipc).await;
                                 }

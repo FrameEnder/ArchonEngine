@@ -73,6 +73,7 @@ pub fn periodic_tick(network: Arc<Mutex<NetworkState>>, instance: &mut Instance)
     let now = Instant::now();
     let mut effects = std::mem::take(&mut instance.periodic_effects);
     let mut actors_to_update = Vec::new();
+    let mut heal_enmity = Vec::new();
 
     effects.retain_mut(|effect| {
         let Some(actor) = instance.find_actor_mut(effect.target) else {
@@ -88,8 +89,7 @@ pub fn periodic_tick(network: Arc<Mutex<NetworkState>>, instance: &mut Instance)
             return false;
         }
 
-        let common = actor.get_common_spawn_mut();
-        if common.health_points == 0 {
+        if actor.get_common_spawn().health_points == 0 {
             return false;
         }
 
@@ -100,6 +100,12 @@ pub fn periodic_tick(network: Arc<Mutex<NetworkState>>, instance: &mut Instance)
 
         // Each tick varies a little like a hit (retail's ticks did; ±5 %.)
         let amount = vary_tick(effect.amount);
+        // Damage ticks make enmity for whoever applied them, as retail's do; heal ticks for the healer (below.)
+        if effect.kind == PeriodicKind::Damage {
+            actor.add_enmity(effect.source, amount);
+        }
+        let common = actor.get_common_spawn_mut();
+        let before = common.health_points;
         match effect.kind {
             PeriodicKind::Damage => {
                 if common.name_id != STRIKING_DUMMY_NAME_ID {
@@ -119,6 +125,8 @@ pub fn periodic_tick(network: Arc<Mutex<NetworkState>>, instance: &mut Instance)
             }
         }
 
+        let restored = common.health_points.saturating_sub(before);
+
         // Retail (Bob's Chronofoil captures): a damage tick is ActorControl 1541 (0, amount, source, 0xFFFFFFFF), a heal
         // tick 1540 (0, amount, source, critical); a heal tick used to go out as 1540 for both, with the status ID.
         let tick = match effect.kind {
@@ -136,6 +144,9 @@ pub fn periodic_tick(network: Arc<Mutex<NetworkState>>, instance: &mut Instance)
             }),
             PeriodicKind::RestoreMp => None,
         };
+        if effect.kind == PeriodicKind::Heal {
+            heal_enmity.push((effect.source, restored));
+        }
         if let Some(tick) = tick {
             let mut network = network.lock();
             network.send_ac_in_range_inclusive_instance(instance, effect.target, tick);
@@ -154,5 +165,8 @@ pub fn periodic_tick(network: Arc<Mutex<NetworkState>>, instance: &mut Instance)
 
     for actor_id in actors_to_update {
         update_actor_hp_mp(network.clone(), instance, actor_id);
+    }
+    for (healer, effective) in heal_enmity {
+        crate::server::action::add_healing_enmity(instance, healer, effective);
     }
 }

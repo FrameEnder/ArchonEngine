@@ -2130,10 +2130,57 @@ pub fn handle_director_messages(
                 FromServer::PacketSegment(ipc, *from_actor_id),
                 DestinationNetwork::ZoneClients,
             );
+            if instance.duty_clock.is_none() {
+                let now = Instant::now();
+                instance.duty_clock = Some((now, now));
+            }
 
             true
         }
         _ => false,
+    }
+}
+
+/// How often a duty's time left is re-sent (retail: every 300 s, Bob's Chronofoil captures.)
+pub const DUTY_CLOCK_RESYNC: Duration = Duration::from_secs(300);
+
+/// Re-sends a running duty's time left to its players every `DUTY_CLOCK_RESYNC`, as retail does.
+pub fn resync_duty_clock(network: &mut NetworkState, instance: &mut Instance) {
+    let (Some((started, last)), Some(duration), Some(director)) = (
+        instance.duty_clock,
+        instance.duration,
+        instance.directors.first(),
+    ) else {
+        return;
+    };
+    let now = Instant::now();
+    if now.duration_since(last) < DUTY_CLOCK_RESYNC {
+        return;
+    }
+    instance.duty_clock = Some((started, now));
+    let remaining = duration
+        .saturating_sub(now.duration_since(started))
+        .as_secs() as u32;
+    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorControlSelf(ActorControlSelf {
+        category: ActorControlCategory::DirectorEvent {
+            handler_id: director.id,
+            event: DirectorEvent::ContentDirector(ContentDirectorEvent::SetDutyTimeRemaining {
+                time_remaining: remaining,
+            }),
+        },
+    }));
+    let players: Vec<ObjectId> = instance
+        .actors
+        .iter()
+        .filter(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+        .map(|(id, _)| *id)
+        .collect();
+    for player in players {
+        network.send_to_by_actor_id(
+            player,
+            FromServer::PacketSegment(ipc.clone(), player),
+            DestinationNetwork::ZoneClients,
+        );
     }
 }
 

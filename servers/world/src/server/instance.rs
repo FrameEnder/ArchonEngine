@@ -129,6 +129,9 @@ pub struct Instance {
     pub weather_id: u16,
     /// The 1400 s weather window `weather_id` was worked out for (Unix time / 1400.)
     pub weather_window: u32,
+    /// The HaterList and EnmityList last sent to each player, so they're only sent when they change.
+    pub last_enmity_lists:
+        HashMap<ObjectId, (kawari::ipc::zone::HaterList, kawari::ipc::zone::EnmityList)>,
     /// The content finder condition associated with this instance.
     pub content_finder_condition_id: u16,
     /// The content ID for the content finder condition, if applicable.
@@ -153,6 +156,8 @@ pub struct Instance {
     pub synced_item_level: Option<u16>,
     /// How long this content lasts for, if applicable.
     pub duration: Option<Duration>,
+    /// When the duty's clock started, and when its time left was last re-sent (retail re-sends it every 300 s.)
+    pub duty_clock: Option<(Instant, Instant)>,
     /// Where players start in a quest battle, and which way they face.
     pub quest_battle_start: Option<(Position, f32)>,
     /// Running over-time effects (DoTs, HoTs, etc.)
@@ -656,6 +661,7 @@ pub fn remove_actor_from_instance(
 ) {
     if let Some(current_instance) = data.find_actor_instance_mut(actor_id) {
         network.remove_actor(current_instance, actor_id);
+        current_instance.last_enmity_lists.remove(&actor_id);
 
         // Take down the zone's FATEs first, as retail does: 2352 for each FATE's start NPC, then every FATE's context
         // (RemoveFateContext, for all the zone's FATEs, running or not), then the FATE director below. Without the

@@ -47,6 +47,8 @@ upstream's [Opcodes](../opcodes.md) page.
 | ItemMarketBoardInfo | server → client | 387 (313 on 2026.09.15) | 32 | The asking price of an item a retainer has on the market. |
 | ItemMarketBoardSummary | server → client | 303 (442 on 2026.09.15) | 8 | How many items a retainer has on the market. |
 | RetainerSaleHistory | server → client | 832 (161 on 2026.09.15) | 1048 | A retainer's sale history. |
+| LootMessage | server → client | 190 (351 on 2026.09.15) | 32 | Loot: kind 3 an item obtained directly (an enemy's drop), 9 gil, 0/1 need/greed rolls and winners. See [Combat](combat.md#defeating-enemies). |
+| ActionRequestGroundTargeted | client → server | 846 (891 on 2026.09.15) | 24 | A ground-targeted action (Asylum...): the action, its type, the sequence, the rotation, where on the ground. 846 is FFXIVOpcodes' 7.57 opcode, not yet seen; the layout is from Bob's captures. Handled as an action on oneself for now. |
 | Achievements | server → client | 991 | 552 | The completed achievements and the last five, the reply to client trigger 1001. Found by its handler (HandleAchievementsPacket). See [Achievements](character-windows.md). |
 
 The client picks the event return packet by result count (2, 4, 8, 16…); EventReturnHandler16's finder looks for its
@@ -69,6 +71,12 @@ which. The `EventNotice` packet (`core`) was checked byte for byte against retai
 | Actor controls 514, 515, 538, 600 | Achievement progress, completion, near-completion lists; see [Achievements](character-windows.md). |
 | Client triggers 1000, 1001, 1002 | Achievement progress, the completed list, the near-completion lists. |
 | QuestActiveList / UpdateQuest | Entry layout, see [Quests](quests.md#what-the-server-keeps-for-a-quest). |
+| AoeEffect8/16/24/32 | Bob's captures (39,333 packets): the effects start at byte 42 as in ActionEffect (40-byte header, bytes 34–41 zero), 64 bytes a target, the target list at the next multiple of 8, then a packed position (0x7FFF ×3 for none) and 6 zero bytes: `align8(42 + 64N) + 8N + 12` = 636, 1212, 1788, 2364 bytes. Kawari's struct had them at 48 (fixed; it isn't sent yet: area actions show one target plus flying text). 2026.10.06's AoeEffect16/24/32 are 912/158/630 per FFXIVOpcodes. Retail also sends AoeEffect8 with no targets for area actions that hit nobody. |
+| Opcode 206 | On 2026.10.06 it's FFXIVOpcodes' CFPreferredRole (a role byte per roulette, sent 113 times unprompted in the captures), not upstream's BeginStrategyBoardSession; the "board data" Kawari logged from it is that. Upstream's table, so not changed here. |
+| Sizes upstream has wrong (every retail packet agrees) | EventScene255 is 1048 (no tail pad when 28 + 4N is a multiple of 8), DeepDungeonParty 24, StatusEffectListDouble 744 (30 statuses, then a whole StatusEffectList, its statuses at 380), TitleList 120, client CrossRealmListingsRequest2 64. In upstream's table, so only noted. |
+| ActorControl 930 PlayDismountAnimation | Where the player lands: packed x, packed y, packed z with the quantized rotation in the top half (all 9 of Bob's within 0.03 yalms of his position). Kawari sent fixed numbers; it now sends the player's position (`dismount_landing`). |
+| ActorControl 6 Defeated, 1540/1541 | Defeated: the killer twice, 2 s after a death; 1540 a heal over time tick, 1541 a damage over time tick (see [Combat](combat.md)). |
+| ContentFinderCommencing | `4, 0,0,0, 1, 0,0,0`, the ContentFinderCondition as a u32 at byte 8, then the ready count (byte 18) and party size (19). Kawari had 4 where the duty goes. |
 | ZoneInit 811, SpawnObject 238, ActorControlSelf/ActorControl/ActorControlTarget 516/607/856 | Confirmed with Kawari Probe on 2026.09.15 while finding 925. |
 
 ## Finding a new one

@@ -432,6 +432,49 @@ const MP_REGEN_OUT_OF_COMBAT: u32 = 600;
 /// the logic tick, so a cast resolves when its cast bar ends rather than up to half a second later.
 const TASK_TICK_MILLISECONDS: u32 = 20;
 
+/// A player's enmity on an enemy's list as a percentage of the top (floor), as the HaterList shows it.
+fn enmity_percent(enemy: &NetworkedActor, player: ObjectId) -> u32 {
+    let NetworkedActor::Npc { enmity, .. } = enemy else {
+        return 0;
+    };
+    let top = enmity.values().copied().max().unwrap_or(0);
+    let theirs = enmity.get(&player).copied().unwrap_or(0);
+    if top == 0 {
+        0
+    } else {
+        (theirs as u64 * 100 / top as u64) as u32
+    }
+}
+
+/// An enemy's list as the EnmityList shows it: the players on it, highest first, as percentages of the top.
+fn target_enmity_list(enemy: &NetworkedActor) -> EnmityList {
+    let NetworkedActor::Npc { enmity, .. } = enemy else {
+        return EnmityList::default();
+    };
+    let top = enmity.values().copied().max().unwrap_or(0);
+    let mut list: Vec<PlayerEnmity> = enmity
+        .iter()
+        .map(|(actor_id, amount)| PlayerEnmity {
+            actor_id: *actor_id,
+            enmity: if top == 0 {
+                0
+            } else {
+                (*amount as u64 * 100 / top as u64) as u32
+            },
+        })
+        .collect();
+    list.sort_by(|a, b| {
+        b.enmity
+            .cmp(&a.enmity)
+            .then(a.actor_id.0.cmp(&b.actor_id.0))
+    });
+    list.truncate(8);
+    EnmityList {
+        count: list.len() as u32,
+        list,
+    }
+}
+
 /// How long natural weather changes fade in, in seconds (retail's WeatherId: 20.0.)
 const WEATHER_FADE_SECONDS: f32 = 20.0;
 
@@ -478,6 +521,7 @@ fn server_logic_tick(
             let mut actors_now_outside_instance_entrances = Vec::new();
             let mut actors_autoattacking = Vec::new();
             let mut combat_over = Vec::new();
+            let mut enmity_updates = Vec::new();
 
             // Player area stuffs
             for (id, actor) in &instance.actors {
@@ -495,51 +539,40 @@ fn server_logic_tick(
                     continue;
                 };
 
+                // The enmity UI as retail fills it (Bob's Chronofoil captures, 39,248 lists): the HaterList has each
+                // enemy that has the player on its list with the player's enmity as a percentage of its top; the
+                // EnmityList is the player's target's list (players only, at most 8, highest first, the top at 100.)
+                // Sent only when they change (below); they used to go out every half second with everything at 100.
+                let hater_list = {
+                    let mut list: Vec<Hater> = haters
+                        .get(id)
+                        .map(|haters| {
+                            haters
+                                .iter()
+                                .map(|enemy| Hater {
+                                    actor_id: *enemy,
+                                    enmity: instance
+                                        .find_actor(*enemy)
+                                        .map(|enemy| enmity_percent(enemy, *id))
+                                        .unwrap_or(0),
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    list.truncate(32);
+                    HaterList {
+                        count: list.len() as u32,
+                        list,
+                    }
+                };
+                let enmity_list = instance
+                    .find_actor(actor.get_common_spawn().target_id.object_id)
+                    .map(target_enmity_list)
+                    .unwrap_or_default();
+                enmity_updates.push((*id, hater_list, enmity_list));
+
                 // Find the ClientState for this player.
                 let mut network = network.lock();
-
-                if let Some(haters) = haters.get(id) {
-                    let mut list: Vec<Hater> = haters
-                        .iter()
-                        .map(|actor_id| Hater {
-                            actor_id: *actor_id,
-                            enmity: 100,
-                        })
-                        .collect();
-                    list.truncate(32);
-                    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::HaterList(HaterList {
-                        count: haters.len() as u32,
-                        list,
-                    }));
-                    network.send_to_by_actor_id(
-                        *id,
-                        FromServer::PacketSegment(ipc, *id),
-                        DestinationNetwork::ZoneClients,
-                    );
-                } else {
-                    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::HaterList(
-                        HaterList::default(),
-                    ));
-                    network.send_to_by_actor_id(
-                        *id,
-                        FromServer::PacketSegment(ipc, *id),
-                        DestinationNetwork::ZoneClients,
-                    );
-                }
-
-                // TODO: send info for party
-                let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::EnmityList(EnmityList {
-                    count: 1,
-                    list: vec![PlayerEnmity {
-                        actor_id: *id,
-                        enmity: 100,
-                    }],
-                }));
-                network.send_to_by_actor_id(
-                    *id,
-                    FromServer::PacketSegment(ipc, *id),
-                    DestinationNetwork::ZoneClients,
-                );
 
                 let Some((handle, state)) = network.get_by_actor_mut(*id) else {
                     continue;
@@ -812,6 +845,38 @@ fn server_logic_tick(
                 }
             }
 
+            // Send each player's enmity lists when they've changed (an empty HaterList once as their fight ends.)
+            for (id, hater_list, enmity_list) in enmity_updates {
+                let last = instance.last_enmity_lists.get(&id);
+                let hater_changed = last.is_none_or(|(haters, _)| *haters != hater_list)
+                    && !(last.is_none() && hater_list.list.is_empty());
+                let enmity_changed = last.is_none_or(|(_, enmity)| *enmity != enmity_list)
+                    && !(last.is_none() && enmity_list.list.is_empty());
+                let mut network = network.lock();
+                if hater_changed {
+                    let ipc =
+                        ServerZoneIpcSegment::new(ServerZoneIpcData::HaterList(hater_list.clone()));
+                    network.send_to_by_actor_id(
+                        id,
+                        FromServer::PacketSegment(ipc, id),
+                        DestinationNetwork::ZoneClients,
+                    );
+                }
+                if enmity_changed {
+                    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::EnmityList(
+                        enmity_list.clone(),
+                    ));
+                    network.send_to_by_actor_id(
+                        id,
+                        FromServer::PacketSegment(ipc, id),
+                        DestinationNetwork::ZoneClients,
+                    );
+                }
+                instance
+                    .last_enmity_lists
+                    .insert(id, (hater_list, enmity_list));
+            }
+
             // Their fight is over: nobody claims them any more (FirstAttack cleared, see first_attack.rs.)
             for id in combat_over {
                 first_attack::clear(&mut network.lock(), instance, id);
@@ -921,6 +986,9 @@ fn server_logic_tick(
 
             // Damage/healing over time
             periodic_tick(network.clone(), instance);
+
+            // A running duty's time left is re-sent every 300 s, as retail.
+            director::resync_duty_clock(&mut network.lock(), instance);
 
             // Out in the world the weather moves on at each 1400 s boundary, sent with retail's 20 s fade.
             let weather_window = timestamp_secs() / WEATHER_WINDOW_SECONDS;

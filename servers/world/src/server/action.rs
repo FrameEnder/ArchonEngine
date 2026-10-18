@@ -575,6 +575,7 @@ pub fn execute_action(
 
             // aggro any NPCs, more so the more damage this does
             {
+                let multiplier = enmity_multiplier(instance, from_actor_id);
                 let Some(actor) = instance.find_actor_mut(request.target.object_id) else {
                     return;
                 };
@@ -587,7 +588,7 @@ pub fn execute_action(
                         _ => None,
                     })
                     .sum();
-                actor.add_enmity(from_actor_id, damage);
+                actor.add_enmity(from_actor_id, damage.saturating_mul(multiplier));
                 if effects_builder.provoke {
                     actor.provoke(from_actor_id);
                 }
@@ -752,6 +753,7 @@ pub fn execute_action(
                                 continue;
                             };
                             let common_spawn = actor.get_common_spawn_mut();
+                            let before = common_spawn.health_points;
                             // You can't heal the dead, that's what Raise is for.
                             if common_spawn.health_points > 0 {
                                 if heal_to_full {
@@ -767,6 +769,8 @@ pub fn execute_action(
                                         .min(common_spawn.max_health_points);
                                 }
                             }
+                            let effective = common_spawn.health_points.saturating_sub(before);
+                            add_healing_enmity(instance, from_actor_id, effective);
                         }
                         TargetEffectKind::Damage {
                             amount,
@@ -1317,6 +1321,7 @@ fn apply_area_of_effect(
         .effects
         .iter()
         .any(|effect| matches!(effect.0, TargetEffectKind::InterruptAction));
+    let multiplier = enmity_multiplier(instance, from_actor_id);
 
     // Enemies in range, closest first, but the primary target always comes first.
     let mut hostiles: Vec<(ObjectId, f32)> = instance
@@ -1393,7 +1398,7 @@ fn apply_area_of_effect(
                     }
                 })
                 .sum();
-            actor.add_enmity(from_actor_id, total);
+            actor.add_enmity(from_actor_id, total.saturating_mul(multiplier));
 
             if !invulnerable {
                 let common_spawn = actor.get_common_spawn_mut();
@@ -1441,11 +1446,14 @@ fn apply_area_of_effect(
                 continue;
             };
             let common_spawn = actor.get_common_spawn_mut();
+            let before = common_spawn.health_points;
             common_spawn.health_points = if effects_builder.heal_to_full {
                 common_spawn.max_health_points
             } else {
                 (common_spawn.health_points + total).min(common_spawn.max_health_points)
             };
+            let effective = common_spawn.health_points.saturating_sub(before);
+            add_healing_enmity(instance, from_actor_id, effective);
 
             if !touched.contains(target_id) {
                 touched.push(*target_id);
@@ -1741,6 +1749,53 @@ fn next_combo_sequence(in_combo: bool, sequence: u8) -> u8 {
         sequence.saturating_add(1)
     } else {
         0
+    }
+}
+
+/// Tank stances (Iron Will, Defiance, Grit, Royal Guard): their wearer's damage makes ten times the enmity, as retail
+/// (Bob's Chronofoil captures: fitted ×10.05-10.8 in 9 eight-player duties; no tank bonus without a stance.)
+const TANK_STANCE_STATUSES: [u16; 4] = [79, 91, 743, 1833];
+const TANK_STANCE_ENMITY_MULTIPLIER: u32 = 10;
+
+/// What an actor's damage is multiplied by for enmity (`TANK_STANCE_STATUSES`.)
+fn enmity_multiplier(instance: &Instance, actor_id: ObjectId) -> u32 {
+    let in_stance = instance
+        .find_actor(actor_id)
+        .and_then(|actor| actor.status_effects())
+        .is_some_and(|effects| {
+            TANK_STANCE_STATUSES
+                .iter()
+                .any(|status| effects.get(*status).is_some())
+        });
+    if in_stance {
+        TANK_STANCE_ENMITY_MULTIPLIER
+    } else {
+        1
+    }
+}
+
+/// Healing makes enmity on every enemy that has the healer on its list: half of what was actually restored (overheal
+/// doesn't count), shared between them (retail: 0.43-0.57 in the one clean case in Bob's captures.)
+pub fn add_healing_enmity(instance: &mut Instance, healer: ObjectId, effective: u32) {
+    if effective == 0 {
+        return;
+    }
+    let enemies: Vec<ObjectId> = instance
+        .actors
+        .iter()
+        .filter(|(_, actor)| {
+            matches!(actor, NetworkedActor::Npc { enmity, .. } if enmity.contains_key(&healer))
+        })
+        .map(|(id, _)| *id)
+        .collect();
+    if enemies.is_empty() {
+        return;
+    }
+    let share = effective / 2 / enemies.len() as u32;
+    for enemy in enemies {
+        if let Some(actor) = instance.find_actor_mut(enemy) {
+            actor.add_enmity(healer, share);
+        }
     }
 }
 

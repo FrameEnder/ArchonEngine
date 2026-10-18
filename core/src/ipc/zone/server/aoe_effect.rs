@@ -31,9 +31,11 @@ pub struct AoeEffect {
     #[br(temp)]
     #[bw(calc = target_ids.len() as u8)]
     target_count: u8,
-    unk11: [u8; 14],
+    /// Zeros. The effects start at byte 42, as ActionEffect's do (Bob's Chronofoil captures: plausible effect kinds for
+    /// 99.4 % of 39,333 retail AoE packets read at 42, 77.5 % at 48), and the target list at the next multiple of 8.
+    unk11: [u8; 8],
     #[br(count = 512)]
-    #[brw(pad_size_to = 512)]
+    #[brw(pad_size_to = 512, pad_after = 6)]
     effects: Vec<u8>,
     #[br(count = max_targets)]
     #[brw(pad_size_to = max_targets * 8)]

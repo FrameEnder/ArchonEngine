@@ -69,6 +69,18 @@ add one when something is found.
 
 ## Combat timing
 
+* **Limit Break** isn't there. Retail's gauge is ActorControlSelf 505 (bars, amount, 10000 a bar, reason, 3 in Trust
+  duties, 0): filled every 3 s in combat by 220 with 3 bars (8 players), 75 with 1 bar and 180 with 2 (4 players: 2
+  bars only for the final boss), 140/220 in alliance raids (2 bars on trash, 3 for bosses, emptied at each boss);
+  using any Limit Break empties it. Kawari's ActorControl table has 504 twice (SetStatusIcon and a SetLimitBreak) and
+  a 4-value 505.
+* Enmity: party members aren't put on an enemy's list at 0 when one of them engages it; Provoke adds 1 above the top
+  (retail adds thousands); Shirk (25 % of the user's enmity to a party member) isn't done.
+* Ground-targeted actions don't place anything (Asylum, Sacred Soil...). ZoneInit's flags in duties are 0x22 (+0x40
+  for the recorder) where retail's are always 0x2A, and flying is allowed everywhere outside duties. Retail sends
+  ActorControlSelf 1530 and 943 after the player's own spawn, and mounting's packets 0.58 s after the action (Kawari:
+  together). StatusEffectList's header bytes 2 and 3 are the real and the synced level on retail.
+
 * Over-time ticks aren't summed per target or put on the target's own phase, aren't scaled by Spell Speed and never
   crit; Lucid Dreaming's MP tick sends no packet.
 * Presence of Mind and slows don't change PlayerStats' haste (so the GCD's recast isn't shortened, only casts); item

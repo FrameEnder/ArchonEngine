@@ -18,9 +18,13 @@ counting "updates", auto-attack timers) are half-second steps.
 ## Casting
 
 * An action with a cast time queues a `CastAction` task at `now + adjusted cast time` (upstream's adjusted cast times,
-  with Swiftcast/Presence of Mind on top).
-* **Slidecasting**: moving cancels an interruptible cast only if more than `SLIDECAST_WINDOW` (500 ms) remains, i.e.
-  `task.point > now + 500 ms`. Moving during the last half second doesn't interrupt it, as on retail.
+  with Swiftcast/Presence of Mind on top), minus 0.5 s for a player's actions: retail's land half a second before the
+  bar ends ([Combat](combat.md)).
+* **Slidecasting**: moving cancels an interruptible cast until it lands (`task.point > now`); as it lands half a
+  second early, moving during the last half second doesn't interrupt it, as on retail.
+* **Duty clock**: once a duty's countdown starts its time left is re-sent every 300 s (`resync_duty_clock`), as
+  retail. Retail's wipe: PartyWipe (0x40000005), 3 s later 0x8000000D, 0x80000029, 0x40000013, then 0x4000000F (time
+  left) and 0x40000011, and DutyRecommence (0x40000006) 10.2 s after the wipe (not done).
 * NPC casts keep an `NpcCast` record (also where an area attack was aimed); interrupting a cast clears it.
 
 ## Event actions (progress bars)

@@ -103,6 +103,13 @@ ClientZoneIpcType:
   size: 8
   found_on: 2026.10.06.0000.0000
   how_to_find: Call a retainer at a summoning bell and open their sale history. The server warns about an unknown 8-byte packet holding the retainer's ID.
+- name: ActionRequestGroundTargeted
+  comment: The client uses a ground-targeted action (Asylum, Sacred Soil...) - the action and where on the ground.
+  # 490 on 2026.06.18, 212 on 2026.09.01, 891 on 2026.09.15 (Bob's Chronofoil captures, all Asylum); 846 on 2026.10.06
+  # is FFXIVOpcodes' (7.57), not yet seen.
+  opcode: 846
+  size: 24
+  how_to_find: Place Asylum (White Mage) or another ground-targeted action on the ground. The server warns about an unknown 24-byte packet starting with the action's ID.
 - name: SetRetainerAppearance
   comment: The appearance chosen for a new retainer at the retainer vocate - voice, then CustomizeData.
   # 670 on 2026.10.06 (Bob's Chronofoil capture of 2026-10-18; the new retainer's SpawnNpc had exactly this.)

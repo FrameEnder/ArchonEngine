@@ -48,8 +48,8 @@ pub use super::social_list::{
 use super::config::Config;
 use crate::common::{
     CHAR_NAME_MAX_LENGTH, ClientLanguage, HandlerId, HouseId, JumpState, MoveAnimationState,
-    MoveAnimationType, ObjectId, Position, read_bool_from, read_string, write_bool_as,
-    write_string,
+    MoveAnimationType, ObjectId, Position, read_bool_from, read_quantized_rotation, read_string,
+    write_bool_as, write_quantized_rotation, write_string,
 };
 use crate::opcodes::ClientZoneIpcType;
 use crate::packet::ServerIpcSegmentHeader;
@@ -132,6 +132,19 @@ pub enum ClientZoneIpcData {
         landset_index: i32,
     },
     ActionRequest(ActionRequest),
+    /// A ground-targeted action (Asylum, Sacred Soil, Doton...): retail's layout (Bob's Chronofoil captures, every
+    /// sample Asylum): the action, a byte, the action type, the sequence, the rotation twice, then where on the ground.
+    ActionRequestGroundTargeted {
+        action_id: u32,
+        unk1: u8,
+        action_type: ActionType,
+        sequence: u16,
+        #[br(map = read_quantized_rotation)]
+        #[bw(map = write_quantized_rotation)]
+        rotation: f32,
+        unk2: u16,
+        position: Position,
+    },
     PingSync {
         timestamp: u32,
         /// Sapphire calls it this, but it never seems to have the player's actor id or any values resembling ids of any sort in it?
