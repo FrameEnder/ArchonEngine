@@ -870,6 +870,10 @@ impl UserData for LuaPlayer {
             this.toggle_orchestrion(id);
             Ok(())
         });
+        methods.add_method_mut("obtain_drop", |_, this, (id, quantity): (u32, i32)| {
+            this.queued_tasks.push(LuaTask::ObtainDrop { id, quantity });
+            Ok(())
+        });
         methods.add_method_mut("add_item", |_, this, (id, quantity): (u32, i32)| {
             // Can't think of any situations where we wouldn't want to force a client inventory update after using debug commands.
             this.add_item(id, quantity, true);

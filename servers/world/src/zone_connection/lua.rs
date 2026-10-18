@@ -469,6 +469,9 @@ impl ZoneConnection {
                 } => {
                     self.hire_retainer(name, *classjob, *level).await;
                 }
+                LuaTask::ObtainDrop { id, quantity } => {
+                    self.obtain_drop(*id, *quantity).await;
+                }
                 LuaTask::ListRetainers => {
                     self.list_retainers().await;
                 }

@@ -135,6 +135,9 @@ pub enum ActorControlCategory {
         amount: u32,
         /// Percentage of bonus EXP to display. Note that this *doesn't* apply it client-side, this is simply an indicator.
         bonus_percent: u32,
+        /// The defeated enemy the EXP is for, or 0xE0000000 for EXP from anything else (a quest, a FATE, a duty), as
+        /// retail sends it (Bob's Chronofoil captures.)
+        source_actor_id: ObjectId,
     },
 
     /// Only updates the UI, it's wiped on the next ClassInfo update.
@@ -157,6 +160,12 @@ pub enum ActorControlCategory {
 
     #[brw(magic = 11u32)]
     Unk11 { unk1: ObjectId, unk2: u32 },
+
+    /// A kill that counts towards an EXP chain (ActorControlSelf, sent right before the EXP message): its place in the
+    /// chain from 0, and how long the next kill has to keep it going, in hundredths of a second (Bob's Chronofoil
+    /// captures: 10000, 8000, 6000, 4000, 2000, then 1000.)
+    #[brw(magic = 12u32)]
+    ExpChain { index: u32, window: u32 },
 
     /// Does what it says!
     #[brw(magic = 13u32)]

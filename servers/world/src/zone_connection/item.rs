@@ -2,10 +2,13 @@
 
 use crate::{
     ItemInfoQuery, ToServer, ZoneConnection,
-    inventory::{DesiredHousingInventoryPages, EQUIP_RESTRICTED, Storage},
+    inventory::{DesiredHousingInventoryPages, EQUIP_RESTRICTED, Item, Storage},
 };
 use kawari::{
-    common::{ContainerType, ItemOperationKind, LegacyEquipmentModelId, ObjectId, WeaponModelId},
+    common::{
+        ContainerType, ERR_INVENTORY_ADD_FAILED, INVENTORY_ACTION_ACK_GENERAL, ItemOperationKind,
+        LegacyEquipmentModelId, ObjectId, WeaponModelId,
+    },
     ipc::zone::{
         ActorControlCategory, ContainerInfo, CurrencyInfo, Equip, ItemInfo, ItemOperation,
         ServerZoneIpcData, ServerZoneIpcSegment,
@@ -228,6 +231,40 @@ impl ZoneConnection {
 
         self.send_stats().await;
         self.update_class_info().await;
+    }
+
+    /// An item an enemy dropped, obtained directly: retail's LootMessage (kind 3: who, the item, how many) gives the
+    /// log line, then an ack (0xFFFFFFFF, 6) and the slot (Bob's Chronofoil captures; here the whole inventory.)
+    pub async fn obtain_drop(&mut self, id: u32, quantity: i32) {
+        let new_item = {
+            let mut game_data = self.game_data.lock();
+            game_data
+                .get_item_info(ItemInfoQuery::ById(id))
+                .map(|info| Item::new(&info, quantity))
+        };
+        let Some(new_item) = new_item else {
+            return;
+        };
+        if !self.player_data.inventory.add_obtained_item(new_item) {
+            self.send_notice(ERR_INVENTORY_ADD_FAILED).await;
+            return;
+        }
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::LootMessage {
+            kind: LOOT_MESSAGE_OBTAINED,
+            params: [
+                self.player_data.character.actor_id.0,
+                id,
+                quantity.max(0) as u32,
+                0,
+                0,
+                0,
+                0,
+            ],
+        });
+        self.send_ipc_self(ipc).await;
+        self.send_inventory_ack(u32::MAX, INVENTORY_ACTION_ACK_GENERAL, 0)
+            .await;
+        self.send_inventory().await;
     }
 
     pub async fn send_inventory_ack(&mut self, sequence: u32, action_type: u8, unk1: u8) {
@@ -453,3 +490,6 @@ impl ZoneConnection {
         }
     }
 }
+
+/// LootMessage's kind for an item obtained directly (an enemy's drop.)
+const LOOT_MESSAGE_OBTAINED: u32 = 3;

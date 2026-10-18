@@ -12,7 +12,7 @@ use crate::{
     zone_connection::PersistentQuest,
 };
 use kawari::{
-    common::{HandlerId, HandlerType},
+    common::{HandlerId, HandlerType, ObjectId},
     config::get_config,
     constants::COMPLETED_QUEST_BITMASK_SIZE,
     ipc::zone::{
@@ -396,6 +396,7 @@ impl ZoneConnection {
         &mut self,
         lua_player: &mut LuaPlayer,
         events: &mut Vec<(Box<dyn EventHandler>, Event)>,
+        actor_id: ObjectId,
         base_id: u32,
         name_id: u32,
         layout_id: u32,
@@ -404,11 +405,26 @@ impl ZoneConnection {
         let (exp, player_level) = {
             let mut game_data = self.game_data.lock();
             let exp = game_data.get_bnpc_exp(level);
-            (exp, self.current_level(&game_data))
+            let level = self
+                .synced_level
+                .map(|level| level as u16)
+                .unwrap_or_else(|| self.current_level(&game_data));
+            (exp, level)
         };
-        let bonus = self.exp_chain_bonus(level as u16 >= player_level);
+        // Enemies well below you give less (retail: full down to 2 levels below, then 10 % less a level.)
+        let exp = exp * kill_exp_percent(level as i32 - player_level as i32) / 100;
+        // Only enemies at or above your level count towards a chain.
+        let chain = self.exp_chain_bonus(level as u16 >= player_level);
+        if let Some((index, window, _)) = chain {
+            self.actor_control_self(ActorControlCategory::ExpChain {
+                index,
+                window: window * 100,
+            })
+            .await;
+        }
         if exp > 0 {
-            self.add_exp_with_bonus(exp, bonus).await;
+            self.add_kill_exp(exp, chain.map(|(_, _, bonus)| bonus).unwrap_or(0), actor_id)
+                .await;
         }
 
         let quest_ids: Vec<u16> = self
@@ -447,32 +463,34 @@ impl ZoneConnection {
         lua_player.player_data = self.player_data.clone();
     }
 
-    /// Moves the EXP chain along for a kill and returns its bonus, in percent.
+    /// Moves the EXP chain along for a kill that counts and returns its place in the chain (from 0), the window the
+    /// next kill has (in seconds) and its bonus in percent; None for a kill that doesn't count.
     ///
-    /// From Kawari Recorder's recording of retail: killing enemies one after another gives +20% EXP for the second,
-    /// +25% for the third and +30% from the fourth (the most seen.) Only enemies at or above your level count, and the
-    /// chain held across 45 seconds between kills but was gone after 62.
-    pub fn exp_chain_bonus(&mut self, counts: bool) -> u32 {
-        const CHAIN_WINDOW: std::time::Duration = std::time::Duration::from_secs(60);
-
-        let now = std::time::Instant::now();
+    /// From Bob's Chronofoil captures (141 kills): the bonus is 0, 20, 25, 30, 40, then 50 from the sixth kill on, and
+    /// the next kill has 100, 80, 60, 40, 20, then 10 s after the last one to keep it going (it broke after 62 s at the
+    /// third, held after 44.5.) Only enemies at or above your level count.
+    pub fn exp_chain_bonus(&mut self, counts: bool) -> Option<(u32, u32, u32)> {
         if !counts {
-            return 0;
+            return None;
         }
+        let now = std::time::Instant::now();
         let (count, last) = self.exp_chain;
-        let count = if last.is_some_and(|last| now.duration_since(last) <= CHAIN_WINDOW) {
-            count + 1
-        } else {
-            1
+        let index = match last {
+            Some(last)
+                if count > 0
+                    && now.duration_since(last).as_secs_f32()
+                        <= exp_chain_window(count - 1) as f32 =>
+            {
+                count
+            }
+            _ => 0,
         };
-        self.exp_chain = (count, Some(now));
-
-        match count {
-            0 | 1 => 0,
-            2 => 20,
-            3 => 25,
-            _ => 30,
-        }
+        self.exp_chain = (index + 1, Some(now));
+        Some((
+            index,
+            exp_chain_window(index),
+            exp_chain_bonus_percent(index),
+        ))
     }
 
     pub fn record_fate_completion(&mut self) {
@@ -480,6 +498,40 @@ impl ZoneConnection {
         if let Some(row) = game_data.get_fate_progress_ui_row(self.player_data.volatile.zone_id) {
             self.player_data.quest.shared_fates.0[row as usize] += 1;
         }
+    }
+}
+
+/// An EXP chain's bonus at this place in it (from 0), in percent.
+fn exp_chain_bonus_percent(index: u32) -> u32 {
+    match index {
+        0 => 0,
+        1 => 20,
+        2 => 25,
+        3 => 30,
+        4 => 40,
+        _ => 50,
+    }
+}
+
+/// How long the next kill has to keep a chain going after the one at this place, in seconds.
+fn exp_chain_window(index: u32) -> u32 {
+    match index {
+        0 => 100,
+        1 => 80,
+        2 => 60,
+        3 => 40,
+        4 => 20,
+        _ => 10,
+    }
+}
+
+/// How much of an enemy's EXP you get for one `difference` levels from you (the enemy's minus yours), in percent:
+/// all of it down to 2 below, then 10 % less a level (Bob's captures: 70 % at 4 below, 60 % at 5, about 40 % at 7.)
+fn kill_exp_percent(difference: i32) -> i32 {
+    if difference >= -2 {
+        100
+    } else {
+        (110 + 10 * difference).max(0)
     }
 }
 
@@ -505,5 +557,28 @@ fn roll_drops(lua_player: &mut LuaPlayer, name_id: u32, level: u8) {
     });
     if let Err(err) = result {
         tracing::warn!("Error while calling onBNpcKill in {file_name}: {err:?}");
+    }
+}
+
+#[cfg(test)]
+mod exp_tests {
+    use super::*;
+
+    #[test]
+    fn chain_and_level_penalty() {
+        assert_eq!(
+            (0..7).map(exp_chain_bonus_percent).collect::<Vec<_>>(),
+            vec![0, 20, 25, 30, 40, 50, 50]
+        );
+        assert_eq!(exp_chain_window(2), 60);
+        assert_eq!(exp_chain_window(9), 10);
+        assert_eq!(kill_exp_percent(3), 100);
+        assert_eq!(kill_exp_percent(-2), 100);
+        assert_eq!(kill_exp_percent(-4), 70);
+        assert_eq!(kill_exp_percent(-5), 60);
+        assert_eq!(kill_exp_percent(-7), 40);
+        assert_eq!(kill_exp_percent(-20), 0);
+        // Retail: a level 6 conjurer got 38 of 55 for a level 2 enemy.
+        assert_eq!(55 * kill_exp_percent(2 - 6) / 100, 38);
     }
 }

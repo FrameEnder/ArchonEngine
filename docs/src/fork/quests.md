@@ -67,7 +67,7 @@ Player methods (`servers/world/src/lua/player.rs`), the ones quests use:
 | `get_quest_sequence(id)` | The sequence, or `nil` if the quest isn't active. |
 | `quest_sequence(id, seq)` | Sets the sequence and sends the update. |
 | `get_quest_var(id, byte)` / `set_quest_var(id, byte, value)` | Reads/writes one variable byte (0–5) and sends the quest update. Changes aren't logged; a packet capture's `UpdateQuest` packets show them. |
-| `finish_quest(id, chosen_item)` | Completes it: gil, EXP, the fixed items and crystals, the optional item the player picked (`results[2]` of the reward scene). |
+| `finish_quest(id, chosen_item)` | Completes it: gil, EXP, the fixed items and crystals, the optional item the player picked (`results[2]` of the reward scene). EXP is `ExpFactor × ScaledQuestXP[L] × QuestExpModifier[L] / 100` with L the player's level but no more than the quest's (ClassJobLevel + QuestLevelOffset): exact on 30+ turn-ins in Bob's captures (a level 1 quest at level 2 gives 400, not 660). |
 | `cancel_quest(id)`, `incomplete_quest(id)`, `has_quest(id)` | As named. |
 | `event_notice(id, notice, {args})` | Sends an EventNotice (see below). |
 | `event_action(id)` | Starts an event action (the progress bar: Searching, Aiding, Interacting…); the script gets `onEventActionCast(player)` when it completes. |

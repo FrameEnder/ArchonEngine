@@ -267,12 +267,27 @@ Heals on allies stay in the content's Lua (`runHeals`), since they pick a target
 When a battle NPC dies, everyone on its enmity list, and their party in the same instance, gets:
 
 * **Quest credit**: each of their active quests' `onBNpcKill(base_id, layout_id, player)` (see [Quests](quests.md)).
-* **EXP**: ParamGrow's `ScaledQuestXP` for the enemy's level (= 45 + 5 × level, exactly what retail gave). **Kill
-  chains** for enemies at or above your level within 60 s: +20 %, +25 %, then +30 %. **Rested EXP** adds 50 % to kill
-  and gathering EXP only (a rounding bug once made it +100 %). Bonuses show in the floating EXP.
+* **EXP**: ParamGrow's `ScaledQuestXP` for the enemy's level (= 45 + 5 × level, exactly what retail gave; enemies
+  above you give no more). Enemies **below** you give less (`kill_exp_percent`): all of it down to 2 levels below,
+  then 10 % less a level (retail: 70 % at 4 below, 60 % at 5, about 40 % at 7). The level is the synced one when
+  synced. From Bob's Chronofoil captures (141 kills, two characters).
+* **Kill chains** for enemies at or above your level: +0, 20, 25, 30, 40, then 50 % (the sixth kill on), and the next
+  kill has 100, 80, 60, 40, 20, then 10 s to keep it going (`exp_chain_bonus`; it was +20/25/30 in a flat 60 s).
+  Each counting kill sends ActorControlSelf 12 `ExpChain` (its place from 0, the window in hundredths) before the EXP
+  message, as retail. Retail had no chains in instanced duties (not done).
+* **Rested EXP** (`rested_exp_part`): with enough in the pool the total is `floor(1.5 × base) − 1` and it uses up
+  `floor((base + part) × 201600 / the bar's EXP)` seconds; a short pool gives `floor(pool × the bar's EXP / 201600 /
+  3)` and empties. The chain's bonus is on the base, the rested part on top, the message showing both as one percent.
+  Kill and gathering EXP only.
+* **EXP packets:** the floating message's fourth value is the enemy (0xE0000000 for EXP from anything else); after a
+  gain only SetEXP (ActorControlSelf 43: the EXP and rested pool) is sent, PlayerStats and the class info only on a
+  level-up, whose message's fourth value is the level now (the synced one when synced).
 * **Drops** (`resources/scripts/battle/Drops.lua`, by BNpcName): items from Garland Tools' data; chance and amount
-  from recordings where known (anole 67 % ×3, ground squirrel 17 % ×2, trickster imp 11 %), otherwise one 50 % roll
-  (a guess). Central Shroud only so far.
+  from recordings where known (anole 67 % ×3, ground squirrel 21 % ×2, trickster imp 11 %, counting Bob's 2026-10
+  captures too), otherwise one 50 % roll (a guess). Central Shroud only so far. A drop is obtained directly with
+  retail's **LootMessage** (fork opcode 190 on 2026.10.06, 32 bytes: kind 3, who, item, count → "You obtain ..."),
+  then an ack (0xFFFFFFFF, 6). LootMessage's other kinds: 9 gil, 0/1 need/greed rolls and winners, 7 cast a lot, 2/8
+  can't obtain.
 
 Level-ups announce only the new levels (the message's third value is the previous level).
 

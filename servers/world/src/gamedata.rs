@@ -1108,6 +1108,11 @@ impl GameData {
 
     /// Calculates the current weather at the current time
     pub fn get_weather_rate(&mut self, weather_rate_id: u32) -> Option<i32> {
+        self.get_weather_rate_at(weather_rate_id, timestamp_secs())
+    }
+
+    /// The weather for this WeatherRate at this Unix time (see `weather_target`.)
+    pub fn get_weather_rate_at(&mut self, weather_rate_id: u32, unix_seconds: u32) -> Option<i32> {
         let row = self.weather_rate_sheet.row(weather_rate_id)?;
 
         // sum up the rates
@@ -1118,7 +1123,7 @@ impl GameData {
             *rate = sum;
         }
 
-        let target = Self::calculate_target();
+        let target = weather_target(unix_seconds);
         let weather_and_rates: Vec<(i32, i32)> = row
             .Weather
             .iter()
@@ -1131,7 +1136,7 @@ impl GameData {
         Some(
             weather_and_rates
                 .iter()
-                .filter(|(_, rate)| target <= *rate)
+                .filter(|(_, rate)| target < *rate)
                 .take(1)
                 .collect::<Vec<&(i32, i32)>>()
                 .first()?
@@ -1140,27 +1145,17 @@ impl GameData {
     }
 
     /// Calculate target window for weather calculations
-    fn calculate_target() -> i32 {
-        let unix_seconds = timestamp_secs();
-        let eorzean_hours = f32::floor(unix_seconds as f32 / 175.0) as u32;
-        let eorzean_days = f32::floor(eorzean_hours as f32 / 24.0) as u32;
-
-        let time_chunk = (eorzean_hours % 24) - (eorzean_hours % 8);
-        let time_chunk = (time_chunk + 8) % 24;
-        let calc_base = (eorzean_days * 100) + time_chunk;
-
-        let step1 = (calc_base << 0xB) ^ calc_base;
-        let step2 = (step1 >> 8) ^ step1;
-
-        (step2 % 100) as i32
-    }
-
     /// Gets the current weather for the given zone id
     pub fn get_weather(&mut self, zone_id: u32) -> Option<i32> {
+        self.get_weather_at(zone_id, timestamp_secs())
+    }
+
+    /// The weather in a zone at this Unix time.
+    pub fn get_weather_at(&mut self, zone_id: u32, unix_seconds: u32) -> Option<i32> {
         let row = self.territory_type_sheet.row(zone_id)?;
 
         let weather_rate_id = row.WeatherRate;
-        self.get_weather_rate(weather_rate_id as u32)
+        self.get_weather_rate_at(weather_rate_id as u32, unix_seconds)
     }
 
     /// Gets the array index used in EXP & levels.
@@ -1463,7 +1458,15 @@ impl GameData {
     pub fn get_quest_rewards(&mut self, quest_id: u32, level: u16) -> (u32, u32) {
         let row = self.quest_sheet.row(quest_id).unwrap();
 
-        let level = level as u32;
+        // Retail scales a quest's EXP to the player's level only up to the quest's own (ClassJobLevel plus
+        // QuestLevelOffset): exact on 30+ turn-ins in Bob's Chronofoil captures (a level 1 quest at level 2 gave 400,
+        // not 660.)
+        let quest_level = row.ClassJobLevel[0] as u32 + row.QuestLevelOffset as u32;
+        let level = if quest_level > 0 {
+            (level as u32).min(quest_level)
+        } else {
+            level as u32
+        };
         let exp = self
             .param_grow_sheet
             .row(level)
@@ -1473,7 +1476,7 @@ impl GameData {
             })
             .unwrap_or(0);
         tracing::info!(
-            "Quest {quest_id} gives {exp} EXP (ExpFactor {} at player level {level}) and {} gil",
+            "Quest {quest_id} gives {exp} EXP (ExpFactor {} at level {level}) and {} gil",
             row.ExpFactor,
             row.GilReward
         );
@@ -3023,5 +3026,38 @@ mod area_tests {
         assert_eq!(sync_cap(385, 135.0, 100.0), 52);
         assert_eq!(scale_by_item_level(1000, 796, 3467), 230);
         assert_eq!(scale_by_item_level(1000, 796, 0), 1000);
+    }
+}
+
+/// The forecast's roll (0-99) for the weather window this Unix time is in: windows are 8 Eorzean hours (1400 s.) In
+/// integers with wrapping shifts, as the client computes it: the float version Kawari had was only exact to 128 s at
+/// today's times, and chose `<=` where retail uses `<`, so it disagreed with retail 8.6 % of the time (Bob's Chronofoil
+/// captures: this matched 261 of 262 zone-ins and 423 of 425 changes, the rest scripted duty weather.)
+pub fn weather_target(unix_seconds: u32) -> i32 {
+    let eorzean_hours = unix_seconds / 175;
+    let eorzean_days = unix_seconds / 4200;
+
+    let time_chunk = (eorzean_hours % 24) - (eorzean_hours % 8);
+    let time_chunk = (time_chunk + 8) % 24;
+    let calc_base = eorzean_days.wrapping_mul(100).wrapping_add(time_chunk);
+
+    let step1 = calc_base.wrapping_shl(11) ^ calc_base;
+    let step2 = (step1 >> 8) ^ step1;
+
+    (step2 % 100) as i32
+}
+
+#[cfg(test)]
+mod weather_tests {
+    use super::weather_target;
+
+    #[test]
+    fn the_target_changes_only_at_window_boundaries() {
+        let start = 1_760_000_000 / 1400 * 1400;
+        assert_eq!(weather_target(start), weather_target(start + 1399));
+        assert!((0..100).contains(&weather_target(start)));
+        // Exact integers: neighbouring windows give their own rolls.
+        let rolls: Vec<i32> = (0..20).map(|i| weather_target(start + i * 1400)).collect();
+        assert!(rolls.windows(2).any(|pair| pair[0] != pair[1]));
     }
 }

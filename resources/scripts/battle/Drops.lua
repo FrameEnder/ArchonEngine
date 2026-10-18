@@ -10,11 +10,13 @@
 
 DROP_CHANCE = 50 -- percent
 
--- Recorded on retail: { percent of kills that dropped something, how many each time }.
+-- Recorded on retail: { percent of kills that dropped something, how many each time }. Kawari Recorder's recording
+-- plus Bob's Chronofoil captures of 2026-10 (counts of both together.)
 CHANCES = {
-    [37] = { 17, 2 },  -- Ground Squirrel: Animal Skin x2 from 1 of 6 kills
-    [120] = { 67, 3 }, -- Anole: Animal Hide x3 from 4 of 6 kills
-    [21] = { 11, 1 },  -- Trickster Imp: Imp Wing from 1 of 9 kills
+    [37] = { 21, 2 },  -- Ground Squirrel: 3 of 14 kills, x2 or x3
+    [120] = { 67, 3 }, -- Anole: 8 of 12 kills, x3
+    [21] = { 11, 1 },  -- Trickster Imp: 2 of 18 kills
+    [43] = { 20, 1 },  -- none in 4 kills (a guess below the default)
 }
 
 DROPS = {
@@ -55,5 +57,6 @@ function onBNpcKill(name_id, level, player)
         return
     end
 
-    player:add_item(items[math.random(1, #items)], quantity)
+    -- Obtained directly, with retail's loot message ("You obtain ...").
+    player:obtain_drop(items[math.random(1, #items)], quantity)
 end

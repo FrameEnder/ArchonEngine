@@ -24,7 +24,7 @@ use crate::{
 use kawari::{
     common::{
         CharacterMode, DistanceRange, ENTRANCE_CIRCLE_IDS, FateState, HandlerId, HandlerType,
-        MAXIMUM_FATES, MOB_WANDER_TIME, ObjectId, Position,
+        MAXIMUM_FATES, MOB_WANDER_TIME, ObjectId, Position, timestamp_secs,
     },
     config::{Config, get_config},
     ipc::zone::{
@@ -114,6 +114,9 @@ impl PartialEq for QueuedTask {
     }
 }
 
+/// Weather changes every 8 Eorzean hours: 1400 real seconds, on the boundary (retail: 161 of 161 within 3 s.)
+pub const WEATHER_WINDOW_SECONDS: u32 = 1400;
+
 #[derive(Debug, Default)]
 pub struct Instance {
     /// List of spawned actors.
@@ -124,6 +127,8 @@ pub struct Instance {
     pub zone: Zone,
     /// The zone's current weather.
     pub weather_id: u16,
+    /// The 1400 s weather window `weather_id` was worked out for (Unix time / 1400.)
+    pub weather_window: u32,
     /// The content finder condition associated with this instance.
     pub content_finder_condition_id: u16,
     /// The content ID for the content finder condition, if applicable.
@@ -169,6 +174,7 @@ impl Instance {
         let mut instance = Instance {
             zone: Zone::load(game_data, id),
             weather_id: game_data.get_weather(id as u32).unwrap_or_default() as u16,
+            weather_window: timestamp_secs() / WEATHER_WINDOW_SECONDS,
             ..Default::default()
         };
 

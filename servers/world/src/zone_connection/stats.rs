@@ -131,6 +131,29 @@ pub fn retail_max_hp(level: u16, job_hp_modifier: u32, tank: bool, vitality: u32
     (base + from_vitality).max(1) as u32
 }
 
+/// The EXP message's source for EXP that isn't for an enemy (retail's 0xE0000000.)
+const NO_EXP_SOURCE: ObjectId = ObjectId(0xE000_0000);
+
+/// The size of one level's EXP bar in rested EXP's units (seconds.)
+const RESTED_SECONDS_PER_BAR: i64 = 201_600;
+
+/// What rested EXP adds to `base` EXP and the pool left, from Bob's Chronofoil captures (20+ kills, exact): with
+/// enough in the pool, the total is floor(1.5 × base) − 1 and it uses up floor((base + part) × 201600 / the bar's EXP);
+/// otherwise the part is floor(pool × the bar's EXP / 201600 / 3) and the pool empties.
+pub fn rested_exp_part(base: i32, pool: i32, exp_to_next: i32) -> (i32, i32) {
+    if pool <= 0 || base <= 0 || exp_to_next <= 0 {
+        return (0, pool.max(0));
+    }
+    let full = (base * 3 / 2 - 1 - base).max(0);
+    let cost = (base + full) as i64 * RESTED_SECONDS_PER_BAR / exp_to_next as i64;
+    if pool as i64 >= cost {
+        (full, pool - cost as i32)
+    } else {
+        let part = (pool as i64 * exp_to_next as i64 / RESTED_SECONDS_PER_BAR / 3) as i32;
+        (part.min(full), 0)
+    }
+}
+
 /// The main stat modifier for a level, see `LEVEL_MAIN`.
 pub fn level_main(level: u16) -> u32 {
     LEVEL_MAIN[(level.clamp(1, LEVEL_MAIN.len() as u16) - 1) as usize] as u32
@@ -912,32 +935,44 @@ impl ZoneConnection {
     /// Adds EXP to the current classjob, handles level-up and so on.
     /// Gives EXP that the rested bonus doesn't apply to, e.g. a quest's reward.
     pub async fn add_exp(&mut self, exp: i32) {
-        self.gain_exp(exp, 0, false).await;
+        self.gain_exp(exp, 0, false, NO_EXP_SOURCE).await;
     }
 
-    /// Gives EXP from defeating an enemy or gathering, which the rested bonus (+50%) applies to while it lasts, on top
-    /// of `bonus_percent` (e.g. a kill chain's.)
+    /// Gives EXP from gathering, which the rested bonus applies to while it lasts, on top of `bonus_percent`.
     pub async fn add_exp_with_bonus(&mut self, exp: i32, bonus_percent: u32) {
-        self.gain_exp(exp, bonus_percent as i32, true).await;
+        self.gain_exp(exp, bonus_percent as i32, true, NO_EXP_SOURCE)
+            .await;
     }
 
-    async fn gain_exp(&mut self, exp: i32, bonus_percent: i32, rested_applies: bool) {
-        let rested_bonus = if rested_applies {
-            self.use_exp_bonus(exp)
+    /// Gives EXP for defeating `source` (a kill chain's bonus in percent on top, and the rested bonus.)
+    pub async fn add_kill_exp(&mut self, exp: i32, chain_percent: u32, source: ObjectId) {
+        self.gain_exp(exp, chain_percent as i32, true, source).await;
+    }
+
+    async fn gain_exp(
+        &mut self,
+        base: i32,
+        bonus_percent: i32,
+        rested_applies: bool,
+        source: ObjectId,
+    ) {
+        // As retail (Bob's Chronofoil captures): the chain's bonus on the base, then the rested part on top, the
+        // message showing both bonuses as one percentage.
+        let rested = if rested_applies {
+            self.use_exp_bonus(base)
         } else {
             0
         };
-        let bonus_percent = bonus_percent + rested_bonus;
-        let exp = exp * (100 + bonus_percent) / 100;
+        let exp = base + base * bonus_percent / 100 + rested;
+        let shown_percent = bonus_percent + rested * 100 / base.max(1);
 
         self.actor_control_self(ActorControlCategory::EXPFloatingMessage {
             classjob_id: self.player_data.classjob.current_class as u32,
             amount: exp as u32,
-            bonus_percent: bonus_percent as u32,
+            bonus_percent: shown_percent as u32,
+            source_actor_id: source,
         })
         .await;
-
-        self.send_rested_exp().await; // If the EXP bonus was used, we need to update in case.
 
         let index;
         let mut level_up = 0;
@@ -973,21 +1008,30 @@ impl ZoneConnection {
             // The client announces each level between this and the new one ("You attain level 2!" up to the new
             // level, with every action learned on the way) and sending 0 made it start from 1 (Bob's screenshot.) It's
             // most likely the previous level, which is what Sapphire sends third for its level-up effect.
+            // The fourth value is the level the player is at now, the synced one when synced (retail.)
+            let effective_level = self
+                .synced_level
+                .map(|level| level as u16)
+                .unwrap_or(new_level);
             self.actor_control_self(ActorControlCategory::LevelUpMessage {
                 classjob_id: self.player_data.classjob.current_class as u32,
                 level: new_level as u32,
                 unk2: curr_level as u32,
-                unk3: 0,
+                unk3: effective_level as u32,
             })
             .await;
-        }
-
-        self.send_stats().await;
-        self.update_class_info().await;
-
-        if level_up > 0 {
+            self.send_stats().await;
+            self.update_class_info().await;
             self.check_achievements(true).await;
         }
+
+        // Retail only sends the new EXP (and the rested pool) after a gain; stats and the class info on a level-up.
+        self.actor_control_self(ActorControlCategory::SetEXP {
+            classjob_id: self.player_data.classjob.current_class as u32,
+            amount: self.player_data.classjob.exp.0[index as usize] as u32,
+            rested_exp: self.player_data.classjob.rested_exp as u32,
+        })
+        .await;
     }
 
     /// The number of seconds to add to the rested EXP bonus.
@@ -1010,46 +1054,41 @@ impl ZoneConnection {
         .await;
     }
 
-    /// "Use" an EXP bonus for the specified amount. Returns the bonus percentage and new amount of EXP earned.
-    /// Remember to update rested EXP when calling this function!
-    /// Uses up rested EXP for `exp` earned, returning its bonus in percent (50, or 0 without any rested EXP.)
-    pub fn use_exp_bonus(&mut self, exp: i32) -> i32 {
-        let mut bonus_percent = 0;
-
-        // TODO: Please write a unit test for this
-        if self.player_data.classjob.rested_exp > 0 {
-            // Here is where the fun calculations come in for rested EXP.
-            // We need to basically convert EXP to "seconds" - which is what rested EXP is counted in.
-
+    /// Uses up rested EXP for `base` EXP earned, returning the extra EXP it gives (see `rested_exp_part`.)
+    pub fn use_exp_bonus(&mut self, base: i32) -> i32 {
+        if self.player_data.classjob.rested_exp <= 0 {
+            return 0;
+        }
+        let exp_to_next = {
             let mut game_data = self.game_data.lock();
             let current_level = self.current_level(&game_data);
-
-            // This is the size of the bar in EXP.
-            let max_exp = game_data.get_max_exp(current_level as u32);
-            assert!(max_exp > 0);
-
-            // This is the size of the bar in seconds.
-            let max_seconds = 201600;
-
-            // Get a relative amount of the bar.
-            let new_exp_relative = exp as f32 / max_exp as f32;
-
-            // Get the amount of seconds to remove from the rested EXP bonus.
-            let seconds_to_remove = new_exp_relative * max_seconds as f32;
-            self.player_data.classjob.rested_exp =
-                (self.player_data.classjob.rested_exp - seconds_to_remove.round() as i32).max(0);
-
-            // Add that sweet EXP bonus.
-            bonus_percent += 50;
-        }
-
-        bonus_percent
+            game_data.get_max_exp(current_level as u32)
+        };
+        let (part, pool) = rested_exp_part(base, self.player_data.classjob.rested_exp, exp_to_next);
+        self.player_data.classjob.rested_exp = pool;
+        part
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Rested EXP as retail gave it (Bob's Chronofoil captures): a full pool's part, the seconds it uses, a short
+    /// pool's part, an empty pool nothing.
+    #[test]
+    fn rested_exp() {
+        // Full pool: floor(1.5 × base) − 1 in all.
+        for (base, total) in [(95, 141), (105, 156), (115, 171), (120, 179), (125, 186)] {
+            let (part, _) = rested_exp_part(base, 604_800, 6_000);
+            assert_eq!(base + part, total);
+        }
+        // Level 10 (ExpToNext 5900): 141 EXP used 4817 seconds.
+        assert_eq!(rested_exp_part(95, 604_800, 5_900), (46, 604_800 - 4_817));
+        // A short pool: 1317 seconds at level 12 (ExpToNext 8620) gave 18.
+        assert_eq!(rested_exp_part(120, 1_317, 8_620), (18, 0));
+        assert_eq!(rested_exp_part(120, 0, 8_800), (0, 0));
+    }
 
     /// Retail max HP (Bob's Chronofoil captures): his own (level, job HP modifier, Vitality, HP), and synced party
     /// members whose Vitality was rebuilt from capped gear.

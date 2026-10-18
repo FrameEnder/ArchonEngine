@@ -53,3 +53,14 @@ The opening takes place in a separate copy of New Gridania (territory 183) with 
 **Close to Home** moves the player into the real New Gridania (132, the quest's `TERRITORYTYPE0`). Earlier attempts to
 move players out of 183 at login, or to drop the guards' boundaries once the opening is done, were rolled back with
 the first quest engine (`3fb25fe`); only the Close to Home move remains.
+
+## Weather
+
+Kawari forecasts weather like the client (WeatherRate's chances against a roll for each 8 Eorzean hour window,
+`weather_target`): in integers with wrapping shifts and a strict `<`, which matched retail's natural weather in 261 of
+262 zone-ins and 423 of 425 changes in Bob's Chronofoil captures (the rest were scripted duty weather). The old float
+version was only exact to 128 s at today's times and used `<=`, and disagreed 8.6 % of the time. Out in the world the
+weather now moves on at each 1400 s boundary (retail: 161 of 161 within 3 s), sent as WeatherId with retail's 20 s
+fade; before, an instance kept the weather it started with. (Retail also re-sends the weather as a WeatherId after
+every zone-in; Kawari doesn't.) EorzeanTimeOffset was never sent on retail: clients work Eorzean time out from the
+server's.

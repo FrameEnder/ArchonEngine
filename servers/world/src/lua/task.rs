@@ -121,6 +121,11 @@ pub enum LuaTask {
     },
     /// `!retainer list`.
     ListRetainers,
+    /// An item an enemy dropped, obtained directly (with retail's loot message.)
+    ObtainDrop {
+        id: u32,
+        quantity: i32,
+    },
     /// The retainer list as the vocate sends it, carrying the menu choice.
     SendRetainerListAtVocate {
         choice: u32,

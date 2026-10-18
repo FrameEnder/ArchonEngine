@@ -111,6 +111,13 @@ ClientZoneIpcType:
   found_on: 2026.10.06.0000.0000
   how_to_find: Hire a retainer at a retainer vocate and finish the appearance editor. The server warns about an unknown 32-byte packet.
 ServerZoneIpcType:
+- name: LootMessage
+  comment: Loot - an item obtained directly (an enemy's drop), gil, need/greed rolls and their winners.
+  # 936 on 2026.06.18, 135 on 2026.09.01, 351 on 2026.09.15, 190 on 2026.10.06 (Bob's Chronofoil captures.)
+  opcode: 190
+  size: 32
+  found_on: 2026.10.06.0000.0000
+  how_to_find: On retail with Chronofoil, defeat an enemy that drops an item - the 32-byte packet starting 03000000 right after the kill's EXP.
 - name: RetainerStateNotice
   comment: Eight bytes sent before every RetainerState and after a retainer's containers (zeros; 0 then 1 before sending away a retainer whose market changed.)
   # 897 on 2026.09.15, 144 on 2026.10.06 (Bob's Chronofoil captures.)

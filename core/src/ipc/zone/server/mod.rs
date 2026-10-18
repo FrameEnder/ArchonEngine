@@ -687,6 +687,13 @@ pub enum ServerZoneIpcData {
     /// A marketboard purchase went through: the reply to `ClientZoneIpcData::MarketBoardPurchaseHandler`, after the gil
     /// and the item's inventory updates.
     MarketBoardPurchase(MarketBoardPurchase),
+    /// Loot (Bob's Chronofoil captures): `kind` 3 an item obtained directly (who, item, count), 9 gil (amount), 0 a
+    /// need/greed roll and 1 its winner (who, 1 need / 2 greed, roll, item, count), 7 someone cast a lot, 2 and 8
+    /// can't obtain (self, item, count, reason.)
+    LootMessage {
+        kind: u32,
+        params: [u32; 7],
+    },
     /// Sent before every RetainerState and after a retainer's containers (Bob's 2026-10-18 capture): zeros, or
     /// `market_changed` 1 before sending away a retainer whose market listings changed.
     RetainerStateNotice {

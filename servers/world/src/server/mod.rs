@@ -25,7 +25,10 @@ use crate::{
         },
         effect::{handle_effect_messages, remove_effect, send_effects_list},
         fate::{ended_fate, fate_tick, start_fate, start_next_fate, unk10_fate},
-        instance::{Instance, NavmeshGenerationStep, QueuedTaskData, remove_actor_from_instance},
+        instance::{
+            Instance, NavmeshGenerationStep, QueuedTaskData, WEATHER_WINDOW_SECONDS,
+            remove_actor_from_instance,
+        },
         linkshell::handle_linkshell_messages,
         network::{DestinationNetwork, NetworkState},
         party::{
@@ -46,14 +49,14 @@ use kawari::{
         CharacterMode, DEAD_DESPAWN_TIME, HandlerId, HandlerType, MAX_SPAWNED_ACTORS,
         MAX_SPAWNED_OBJECTS, MOB_RESPAWN_TIME, ObjectId, ObjectTypeId, ObjectTypeKind, Position,
         WarpType, determine_initial_pop_range, euler_to_direction, is_private_area,
-        mob_respawn_time,
+        mob_respawn_time, timestamp_secs,
     },
     config::get_config,
     ipc::zone::{
         ActionRequest, ActionType, ActorControlCategory, BattleNpcSubKind, ClientTriggerCommand,
         ClientTriggerTarget, Condition, Conditions, DutyFinderSetting, EnmityList, Hater,
         HaterList, ObjectKind, PlayerEnmity, PrepareZoning, PrepareZoningFlag, ServerZoneIpcData,
-        ServerZoneIpcSegment, WaymarkPreset,
+        ServerZoneIpcSegment, WaymarkPreset, WeatherChange,
     },
 };
 
@@ -428,6 +431,9 @@ const MP_REGEN_OUT_OF_COMBAT: u32 = 600;
 /// How often queued tasks (finished casts, event actions, despawns...) are checked, in milliseconds. Much finer than
 /// the logic tick, so a cast resolves when its cast bar ends rather than up to half a second later.
 const TASK_TICK_MILLISECONDS: u32 = 20;
+
+/// How long natural weather changes fade in, in seconds (retail's WeatherId: 20.0.)
+const WEATHER_FADE_SECONDS: f32 = 20.0;
 
 /// A player's time between auto-attacks, in milliseconds: their weapon's delay sped up or slowed by haste (2 s if
 /// they have no weapon.)
@@ -915,6 +921,42 @@ fn server_logic_tick(
 
             // Damage/healing over time
             periodic_tick(network.clone(), instance);
+
+            // Out in the world the weather moves on at each 1400 s boundary, sent with retail's 20 s fade.
+            let weather_window = timestamp_secs() / WEATHER_WINDOW_SECONDS;
+            if weather_window != instance.weather_window
+                && instance.content_id == 0
+                && instance.content_finder_condition_id == 0
+            {
+                instance.weather_window = weather_window;
+                let weather = game_data
+                    .lock()
+                    .get_weather(instance.zone.id as u32)
+                    .unwrap_or_default() as u16;
+                if weather != instance.weather_id {
+                    instance.weather_id = weather;
+                    let ipc =
+                        ServerZoneIpcSegment::new(ServerZoneIpcData::WeatherId(WeatherChange {
+                            weather_id: weather as u8,
+                            fade_length: WEATHER_FADE_SECONDS,
+                            ..Default::default()
+                        }));
+                    let players: Vec<ObjectId> = instance
+                        .actors
+                        .iter()
+                        .filter(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+                        .map(|(id, _)| *id)
+                        .collect();
+                    let mut network = network.lock();
+                    for player in players {
+                        network.send_to_by_actor_id(
+                            player,
+                            FromServer::PacketSegment(ipc.clone(), player),
+                            DestinationNetwork::ZoneClients,
+                        );
+                    }
+                }
+            }
 
             // Players regenerate on retail's 3 s tick (Bob's Chronofoil captures; every point exact, levels 6 to 90): HP by
             // floor(max / 100) in combat and floor(max / 10) out of it; MP by 200 + floor(150 × (Piety − the level's main
