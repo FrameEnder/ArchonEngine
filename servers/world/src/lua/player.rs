@@ -779,7 +779,10 @@ impl UserData for LuaPlayer {
             this.queued_tasks.push(LuaTask::OpenSummoningBell);
             Ok(())
         });
-        methods.add_method_mut("summon_retainer", |_, this, (high, low): (u32, u32)| {
+        // The client returns a retainer's ID as two signed numbers (a half with its top bit set comes back
+        // negative: the 2026-10-18 bundle), so they're taken as i64 and their 32 bits kept.
+        methods.add_method_mut("summon_retainer", |_, this, (high, low): (i64, i64)| {
+            let (high, low) = (high as u32, low as u32);
             this.queued_tasks.push(LuaTask::SummonRetainer {
                 id: crate::retainer::join_id(high, low),
             });
@@ -815,7 +818,8 @@ impl UserData for LuaPlayer {
         );
         methods.add_method_mut(
             "release_retainer_at_vocate",
-            |_, this, (high, low, scene, yield_id): (u32, u32, u16, u8)| {
+            |_, this, (high, low, scene, yield_id): (i64, i64, u16, u8)| {
+                let (high, low) = (high as u32, low as u32);
                 this.queued_tasks.push(LuaTask::ReleaseRetainerAtVocate {
                     id: crate::retainer::join_id(high, low),
                     scene,

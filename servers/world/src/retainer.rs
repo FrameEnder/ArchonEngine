@@ -351,6 +351,11 @@ mod tests {
         // A retail retainer ID and the two numbers the bell's return had (Bob's 2026-09-15 capture.)
         assert_eq!(split_id(0x0078_0017_4aa7_e097), [0x0078_0017, 0x4aa7_e097]);
         assert_eq!(join_id(0x0078_0017, 0x4aa7_e097), 0x0078_0017_4aa7_e097);
+        // As the client returns it: the low half negative (the 2026-10-18 bundle.)
+        assert_eq!(
+            join_id(235_309_321, -1_966_305_711i64 as u32),
+            0x0E06_8909_8ACC_8E51
+        );
     }
 
     #[test]
