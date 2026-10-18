@@ -1,9 +1,10 @@
 -- Vorpal Thrust (Lv. 4), after True Thrust.
 -- Also used by Miraudont in a quest battle (recorded_amounts there); NPCs never have a combo, so they keep NPC_POTENCY.
--- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
+-- Potencies: retail's for levels 1-50, measured from level-synced party members in Bob's Chronofoil captures
+-- (docs/src/fork/combat.md); higher levels' traits raise them.
 local NPC_POTENCY = 140
 local POTENCY = 130
-local COMBO_POTENCY = 280
+local COMBO_POTENCY = 240
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()

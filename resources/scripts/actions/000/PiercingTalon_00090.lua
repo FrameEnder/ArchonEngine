@@ -1,7 +1,8 @@
 -- Piercing Talon (Lv. 15): ranged; stronger with Enhanced Piercing Talon (from Elusive Jump), which it uses up.
--- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
-local POTENCY = 200
-local ENHANCED_POTENCY = 350
+-- Potencies: retail's for levels 1-50, measured from level-synced party members in Bob's Chronofoil captures
+-- (docs/src/fork/combat.md); higher levels' traits raise them.
+local POTENCY = 150
+local ENHANCED_POTENCY = 230
 local EFFECT_ENHANCED_PIERCING_TALON = 1870
 
 function doAction(player, in_combo)

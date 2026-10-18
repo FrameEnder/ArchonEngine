@@ -34,9 +34,9 @@ const DAMAGE_DEALT: &[(u16, f32, f32)] = &[
 const DAMAGE_TAKEN: &[(u16, f32)] = &[
     (1191, 0.80), // Rampart
     (74, 0.70),   // Sentinel
-    (728, 0.85),  // Sheltron
+    (1856, 0.85), // Sheltron (retail's status, Bob's Chronofoil captures)
     (89, 0.70),   // Vengeance
-    (1872, 0.90), // Temperance
+    (1873, 0.90), // Temperance (the party's status; 1872, the White Mage's, is healing +20 %)
     (3254, 1.10), // Trick Attack (on an enemy)
 ];
 
@@ -52,9 +52,10 @@ const HP_FLOOR: &[u16] = &[
 
 /// Statuses on whoever is healed: (status, multiplier.)
 const HEALING_RECEIVED: &[(u16, f32)] = &[
-    (102, 1.10),  // Mantra
-    (87, 1.20),   // Thrill of Battle
-    (1191, 1.15), // Rampart
+    (102, 1.10), // Mantra
+    (87, 1.20),  // Thrill of Battle
+                 // Rampart's +15 % healing received is a level 94 trait: retail's Rampart below that has none (58 effects in Bob's
+                 // captures), so it isn't here.
 ];
 
 /// Classes and jobs whose Tank Mastery takes 20 % off the damage they take from level 1 (GLA, MRD, PLD, WAR, DRK,

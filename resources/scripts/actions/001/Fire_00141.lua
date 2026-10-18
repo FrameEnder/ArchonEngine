@@ -7,9 +7,9 @@ local POTENCY = 180
 local TRAIT_FIRESTARTER = 32
 local EFFECT_FIRESTARTER = 165
 local FIRESTARTER_CHANCE = 0.4
-local FIRESTARTER_DURATION = 30.0
+local FIRESTARTER_DURATION = 0.0 -- no time limit on retail
 local EFFECT_THUNDERHEAD = 3870
-local THUNDERHEAD_DURATION = 30.0
+local THUNDERHEAD_DURATION = 0.0 -- no time limit on retail (Bob's Chronofoil captures; the Status sheet's permanent)
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
@@ -19,7 +19,10 @@ function doAction(player, in_combo)
     end
 
     effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, classPotency(player, POTENCY, TRAITS_THM_MAIM_AND_MEND)))
-    effects:gain_effect_self(EFFECT_THUNDERHEAD, 0, THUNDERHEAD_DURATION)
+    -- Granted when it isn't already up (retail doesn't refresh it.)
+    if player:get_effect(EFFECT_THUNDERHEAD) == nil then
+        effects:gain_effect_self(EFFECT_THUNDERHEAD, 0, THUNDERHEAD_DURATION)
+    end
     if player:has_trait(TRAIT_FIRESTARTER) and math.random() < FIRESTARTER_CHANCE then
         effects:gain_effect_self(EFFECT_FIRESTARTER, 0, FIRESTARTER_DURATION)
     end

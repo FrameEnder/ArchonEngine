@@ -1193,7 +1193,8 @@ pub fn execute_action(
                     ServerZoneIpcSegment::new(ServerZoneIpcData::EffectResult(EffectResult {
                         count: 1,
                         global_sequence: network.global_action_sequence,
-                        target_id: from_actor_id,
+                        // The target's own EffectResult names the target (retail, Bob's Chronofoil captures.)
+                        target_id: request.target.object_id,
                         health_points: common_spawn.health_points,
                         max_health_points: common_spawn.max_health_points,
                         resource_points: common_spawn.resource_points,

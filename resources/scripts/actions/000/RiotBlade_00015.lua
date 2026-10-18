@@ -1,7 +1,8 @@
 -- Riot Blade (Lv. 4), after Fast Blade. Combo bonus: restores MP.
--- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
+-- Potencies: retail's for levels 1-50, measured from level-synced party members in Bob's Chronofoil captures
+-- (docs/src/fork/combat.md); higher levels' traits raise them.
 local POTENCY = 170
-local COMBO_POTENCY = 330
+local COMBO_POTENCY = 260
 local COMBO_MP = 1000
 
 function doAction(player, in_combo)

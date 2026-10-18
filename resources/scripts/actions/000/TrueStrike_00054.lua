@@ -1,9 +1,10 @@
 -- True Strike (Lv. 4): changes to coeurl form.
 -- NOTE: Raptor's Fury isn't implemented.
 -- NPCs use this ID too (quest battles): they keep NPC_POTENCY and nothing else, see isPlayerCaster.
--- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
+-- Potencies: retail's for levels 1-50, measured from level-synced party members in Bob's Chronofoil captures
+-- (docs/src/fork/combat.md); higher levels' traits raise them.
 local NPC_POTENCY = 260
-local POTENCY = 300
+local POTENCY = 270
 local FORM_DURATION = 30.0
 
 function doAction(player, in_combo)

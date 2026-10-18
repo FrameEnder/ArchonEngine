@@ -85,9 +85,13 @@ add one when something is found.
   crit; Lucid Dreaming's MP tick sends no packet.
 * Presence of Mind and slows don't change PlayerStats' haste (so the GCD's recast isn't shortened, only casts); item
   animation locks are 0.6 s.
-* **Raise** isn't implemented. Retail (117 revivals): the offer is status 148 (param 8, 60 s); accepting brings the
-  player back where they are at 20 % HP and MP with Weakness (43, 100 s), or Brink of Death (44) if already weakened.
-  Kawari's revive always warps to the entrance at full HP.
+* Raise: Weakness and Brink of Death don't lower stats; status 418 isn't taken away on the first action; the stand-up
+  doesn't wait the 3 s retail does; Weakness doesn't survive a death.
+* Statuses: Temperance's healing bonus, the 5 s party auras (Temperance 1873, Asylum 1912, the bard songs), Surging
+  Tempest and Well Fed adding to the time left on refresh (retail; Kawari replaces it), fixed status slots (retail
+  keeps a status in its slot and leaves gaps; Kawari shifts them, so EffectResult indexes can be off), removed-status
+  entries (retail: slot, status 0, source 0xE0000000), Arm's Length's Slow on attackers, and enemies' debuffs from
+  Bob's captures (scan `enemy_statuses.csv`) aren't done.
 
 ## Quest battles and directors
 

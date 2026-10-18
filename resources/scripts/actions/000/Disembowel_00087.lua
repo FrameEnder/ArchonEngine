@@ -1,7 +1,8 @@
 -- Disembowel (Lv. 18), after True Thrust. Combo bonus: Power Surge (+10% damage, 30 s).
--- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
+-- Potencies: retail's for levels 1-50, measured from level-synced party members in Bob's Chronofoil captures
+-- (docs/src/fork/combat.md); higher levels' traits raise them.
 local POTENCY = 140
-local COMBO_POTENCY = 250
+local COMBO_POTENCY = 200
 local EFFECT_POWER_SURGE = 2720
 local DURATION = 30.0
 

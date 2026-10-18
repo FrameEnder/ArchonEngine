@@ -6,7 +6,7 @@ local DURATION = 12.0
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
-    effects:gain_effect_self(EFFECT_COVER, 0, DURATION)
+    effects:gain_effect_self(EFFECT_COVER, 20, DURATION) -- retail's param 20
     effects:gain_effect(EFFECT_COVERED, 0, DURATION)
 
     return effects

@@ -59,6 +59,9 @@ pub struct EffectsBuilder {
     pub cleanse: bool,
 }
 
+/// Status: a revive offered (Raise...), which the dead player can accept.
+pub const STATUS_REVIVE_OFFER: u16 = 148;
+
 /// The heal effect's flag (in its last parameter) saying it lands on the one using the action, e.g. a drain.
 /// TODO: confirm against a retail drain's effect, which Kawari Bestiary 0.2 records.
 pub const EFFECT_ON_SOURCE: u8 = 0x80;
@@ -95,6 +98,20 @@ impl UserData for EffectsBuilder {
                 Ok(())
             },
         );
+        // Raise and the like: the dead target is offered a revive (status 148, param 8, 60 s) as retail's effect
+        // carries it (Bob's Chronofoil captures: 20 in the second byte.)
+        methods.add_method_mut("offer_revive", |_, this, _: ()| {
+            this.effects
+                .push(TargetEffect(TargetEffectKind::GainEffect {
+                    unk1: 0,
+                    unk2: 20,
+                    unk3: 0,
+                    effect_id: STATUS_REVIVE_OFFER,
+                    duration: 60.0,
+                    param: 8,
+                }));
+            Ok(())
+        });
         methods.add_method_mut(
             "gain_effect_self",
             |_, this, (effect_id, param, duration): (u16, u16, f32)| {
@@ -102,7 +119,8 @@ impl UserData for EffectsBuilder {
                     .push(TargetEffect(TargetEffectKind::GainEffectSelf {
                         unk1: 0,
                         unk2: 0,
-                        unk3: 0,
+                        // Retail's always has 0x80 here (5,517 of 5,517 in Bob's Chronofoil captures.)
+                        unk3: 0x80,
                         effect_id,
                         duration,
                         param,

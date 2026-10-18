@@ -75,8 +75,10 @@ pub enum ClientTriggerCommand {
     },
 
     /// The client accepted a revive, at least from the system.
+    /// The dead player chose how to come back: 5 accepts a Raise where they lie, 8 returns to the starting point (Bob's
+    /// Chronofoil captures.)
     #[brw(magic = 200u32)]
-    AcceptRevive,
+    AcceptRevive { kind: u32 },
 
     /// The client is finished zoning.
     #[brw(magic = 201u32)]

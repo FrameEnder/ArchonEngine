@@ -1,9 +1,7 @@
--- Resurrection (Lv. 12).
--- NOTE: reviving players isn't implemented yet (as Raise).
-
+-- Resurrection (Lv. 12): offers a dead party member a revive (status 148, 60 s), as Raise.
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
-    player:send_message("Resurrection isn't implemented yet.")
+    effects:offer_revive()
 
     return effects
 end

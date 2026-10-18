@@ -4,8 +4,8 @@
 -- Potency is relative to the enemy auto-attack (100).
 POTENCY = 225
 EFFECT_BLIND = 15
--- TODO: retail's duration, from Kawari Recorder's Statuses tab.
-BLIND_DURATION = 15.0
+-- Retail's Blind lasted 7 s (Bob's Chronofoil captures, 2 samples.)
+BLIND_DURATION = 7.0
 
 function doAction(player, in_combo)
     effects = EffectsBuilder()

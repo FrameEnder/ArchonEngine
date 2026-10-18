@@ -1,7 +1,8 @@
 -- Gust Slash (Lv. 4), after Spinning Edge.
--- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
+-- Potencies: retail's for levels 1-50, measured from level-synced party members in Bob's Chronofoil captures
+-- (docs/src/fork/combat.md); higher levels' traits raise them.
 local POTENCY = 240
-local COMBO_POTENCY = 400
+local COMBO_POTENCY = 260
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()

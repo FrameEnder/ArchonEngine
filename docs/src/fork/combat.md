@@ -339,6 +339,30 @@ Second Wind, Bloodbath, True North, Addle, Leg Sweep, Sleep, Rescue, Esuna). How
 * **New engine methods:** `effects:provoke()` (top of the target's enmity), `effects:cleanse()` (removes the target's
   first status with Status.CanDispel); players' `player.is_player`, `hp`, `max_hp`, `mp`, `max_mp` for scripts.
 * **Second Wind** is potency 500 below level 94 (it was 800).
+* **Potencies measured from synced party members** (Bob's Chronofoil captures: plain hits by players synced to 31,
+  36, 50 and 80; within a job, damage ratios between actions are potency ratios, anchored on actions no trait changes,
+  which agreed within 0–3 %): every untraited action Kawari scripts already had retail's tooltip value; the ones a
+  trait at 54–94 raises had their max-level value, now retail's for 1–50: Fast Blade 150, Riot Blade combo 260, Heavy
+  Swing 150, Maim combo 250, Storm's Path/Eye combo 380, True Thrust 170, Vorpal Thrust combo 240, Disembowel combo
+  200, Jump 250, Piercing Talon 150 (enhanced 230), Bootshine 190, True Strike 270, Snap Punch 240, Twin Snakes 340,
+  Demolish 280, Dragon Kick 250, Spinning Edge 180, Gust Slash combo 260, Aeolian Edge combo 280, Throwing Dagger
+  120, Scholar's Ruin II 140, Art of War 150, Slice 260. Positionals measured (not done): Snap Punch flank, Demolish
+  and Aeolian Edge rear +60, Trick Attack rear +100; Monk's Raptor's Fury +200, Coeurl's Fury +150; Astral Fire III ×1.8
+  fire and ×0.7 ice; direct hit ×1.25, critical about ×1.55 at sync 50. Out-of-combo potencies of combo steps
+  weren't measurable (almost no such hits).
+* **Statuses checked against retail** (every status any action applied in the captures, with the scripts run under
+  lupa): IDs and durations agreed for nearly every scripted action. Fixed: Sheltron is status 1856 (not 728);
+  Temperance's damage reduction is the party's 1873 (1872, the White Mage's, is +20 % healing magic, not
+  implemented); Rampart has no healing bonus below level 94; Firestarter and Thunderhead have no time limit, and
+  Thunderhead is only granted when it isn't up (never by Umbral Soul); Shield Samba goes to the party; Cover's param
+  20; True Grit's Blind 7 s and Acorn Armageddon's Heavy 15 s. The self-status effect (kind 15) carries 0x80 in its
+  last byte, the target's EffectResult names the target, and ActorControl 20's source is left empty, as retail.
+* **Raise and Resurrection** offer the dead target a revive (status 148, param 8, 60 s; the effect's second byte 20).
+  Accepting it (client trigger 200 with 5) brings them back where they lie with 20 % of their HP and MP, Weakness
+  (43, 100 s; Brink of Death 44 if already weakened) and status 418 (5 s), through a warp with the raise's effect (181,
+  warp type 5); returning to the starting point (8) gives full HP and MP and takes Weakness and Brink away. From
+  Bob's captures (19 raises, 7 returns). Retail also lowers main stats by about 26 % under Weakness and 50 % under
+  Brink (not done), stands the player up 3 s after the warp, and keeps Weakness through a death.
 * **Not there:** job gauges (Black Mage's Astral Fire/Umbral Ice — Thunderhead stands in so Thunder can be cast —,
   Monk's chakra and furies, Warrior's Beast Gauge, Paladin's Oath, Summoner/Scholar Aetherflow, Ninja mudras: Ninjutsu
   is always Fuma Shuriken), pets other than Carbuncle (no egis, no Eos), positionals, movement actions (Thunderclap,

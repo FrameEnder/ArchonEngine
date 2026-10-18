@@ -1,8 +1,9 @@
 -- Fast Blade (Lv. 1)
 -- NPCs use this ID too (quest battles): they keep NPC_POTENCY and nothing else, see isPlayerCaster.
--- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
+-- Potencies: retail's for levels 1-50, measured from level-synced party members in Bob's Chronofoil captures
+-- (docs/src/fork/combat.md); higher levels' traits raise them.
 local NPC_POTENCY = 150
-local POTENCY = 220
+local POTENCY = 150
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()

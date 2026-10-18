@@ -475,6 +475,92 @@ fn target_enmity_list(enemy: &NetworkedActor) -> EnmityList {
     }
 }
 
+/// Status: a revive offered by Raise and the like (see `EffectsBuilder::offer_revive`.)
+const STATUS_REVIVE_OFFER: u16 = 148;
+/// ClientTrigger 200's choice for accepting a Raise (8 is returning to the starting point.)
+const REVIVE_ACCEPT_RAISE: u32 = 5;
+/// Weakness and Brink of Death (after a second raise while weakened), 100 s each, and the 5 s status retail gives a
+/// raised player (418, gone on their first action.)
+const STATUS_WEAKNESS: u16 = 43;
+const STATUS_BRINK_OF_DEATH: u16 = 44;
+const STATUS_RAISED: u16 = 418;
+const WEAKNESS_DURATION: f32 = 100.0;
+const RAISED_DURATION: f32 = 5.0;
+
+/// Brings a dead player back where they lie after they accepted a Raise, as retail (Bob's Chronofoil captures, 19
+/// raises): 20 % of their HP and MP, Weakness (or Brink of Death if already weakened) and status 418, through the same
+/// warp a revive uses (PrepareZoning with the raise's effect 181, warp type 5, to where they are.)
+fn revive_in_place(
+    network: Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    from_id: ClientId,
+    actor_id: ObjectId,
+) {
+    let Some(actor) = instance.find_actor_mut(actor_id) else {
+        return;
+    };
+    let weakened = actor
+        .status_effects()
+        .is_some_and(|effects| effects.get(STATUS_WEAKNESS).is_some());
+    if let Some(effects) = actor.status_effects_mut() {
+        effects.remove(STATUS_REVIVE_OFFER);
+        effects.remove(STATUS_WEAKNESS);
+    }
+    let common = actor.get_common_spawn_mut();
+    common.health_points = (common.max_health_points / 5).max(1);
+    common.resource_points = common.max_resource_points / 5;
+    let position = common.position;
+    let rotation = common.rotation;
+
+    let penalty = if weakened {
+        STATUS_BRINK_OF_DEATH
+    } else {
+        STATUS_WEAKNESS
+    };
+    for (status, duration) in [
+        (penalty, WEAKNESS_DURATION),
+        (STATUS_RAISED, RAISED_DURATION),
+    ] {
+        crate::server::effect::gain_effect_instance(
+            network.clone(),
+            from_id,
+            instance,
+            actor_id,
+            status,
+            0,
+            duration,
+            ObjectId(0xE000_0000),
+            true,
+        );
+    }
+    update_actor_hp_mp(network.clone(), instance, actor_id);
+
+    let mut network = network.lock();
+    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::PrepareZoning(PrepareZoning {
+        territory_type_id: instance.zone.id,
+        warp_type: WarpType::Unk5,
+        vfx_id: 181,
+        hide_character: 2,
+        fade_out_delay: 3,
+        flags: PrepareZoningFlag::UNK2,
+        ..Default::default()
+    }));
+    network.send_to_by_actor_id(
+        actor_id,
+        FromServer::PacketSegment(ipc, actor_id),
+        DestinationNetwork::ZoneClients,
+    );
+    do_change_zone(
+        &mut network,
+        instance,
+        false,
+        Some(position),
+        Some(rotation),
+        from_id,
+        WarpType::Unk5,
+    );
+}
+
 /// How long natural weather changes fade in, in seconds (retail's WeatherId: 20.0.)
 const WEATHER_FADE_SECONDS: f32 = 20.0;
 
@@ -2637,14 +2723,33 @@ pub async fn server_main_loop(
                                 start_fate(&mut network, instance, *fate_id);
                             }
                         }
-                        ClientTriggerCommand::AcceptRevive => {
-                            // Currently always warp back to the entrance
+                        ClientTriggerCommand::AcceptRevive { kind } => {
                             let mut data = data.lock();
-                            if let Some(instance) = data.find_actor_instance_mut(from_actor_id) {
+                            // Accepting a Raise (and one was offered): back up where they lie.
+                            if *kind == REVIVE_ACCEPT_RAISE
+                                && let Some(instance) = data.find_actor_instance_mut(from_actor_id)
+                                && instance
+                                    .find_actor(from_actor_id)
+                                    .and_then(|actor| actor.status_effects())
+                                    .is_some_and(|effects| {
+                                        effects.get(STATUS_REVIVE_OFFER).is_some()
+                                    })
+                            {
+                                revive_in_place(network.clone(), instance, from_id, from_actor_id);
+                            } else if let Some(instance) =
+                                data.find_actor_instance_mut(from_actor_id)
+                            {
+                                // Otherwise back to the starting point.
                                 if let Some(actor) = instance.find_actor_mut(from_actor_id) {
-                                    // poor man's revive
-                                    actor.get_common_spawn_mut().health_points =
-                                        actor.get_common_spawn().max_health_points;
+                                    // Full HP and MP, and no Weakness or Brink of Death (retail.)
+                                    let common = actor.get_common_spawn_mut();
+                                    common.health_points = common.max_health_points;
+                                    common.resource_points = common.max_resource_points;
+                                    if let Some(effects) = actor.status_effects_mut() {
+                                        effects.remove(STATUS_REVIVE_OFFER);
+                                        effects.remove(STATUS_WEAKNESS);
+                                        effects.remove(STATUS_BRINK_OF_DEATH);
+                                    }
                                 }
                                 update_actor_hp_mp(network.clone(), instance, from_actor_id);
 

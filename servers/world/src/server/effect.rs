@@ -210,10 +210,11 @@ pub fn gain_effect_instance(
         {
             let mut network = network.lock();
 
+            // Retail never fills in the source here (5,367 of 5,367 in Bob's Chronofoil captures.)
             let ipc = ActorControlCategory::GainEffect {
                 effect_id: effect_id as u32,
                 param: effect_param as u32,
-                source_actor_id: effect_source_actor_id,
+                source_actor_id: ObjectId(0),
             };
 
             // Then, Send an actor control to inform the client if needed
