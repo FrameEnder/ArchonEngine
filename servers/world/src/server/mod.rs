@@ -74,6 +74,7 @@ pub use party::{Party, PartyMember};
 use periodic::periodic_tick;
 pub use rotation::{ActionMechanics, GCD_GROUP};
 mod fate;
+mod first_attack;
 mod npc_behavior;
 mod placement;
 mod rotation;
@@ -458,6 +459,7 @@ fn server_logic_tick(
             let mut actors_now_inside_instance_exits = Vec::new();
             let mut actors_now_outside_instance_entrances = Vec::new();
             let mut actors_autoattacking = Vec::new();
+            let mut combat_over = Vec::new();
 
             // Player area stuffs
             for (id, actor) in &instance.actors {
@@ -627,6 +629,9 @@ fn server_logic_tick(
                 if in_combat != conditions.has_condition(Condition::InCombat) {
                     let _ =
                         handle.send(FromServer::ToggleCondition(Condition::InCombat, in_combat));
+                    if !in_combat {
+                        combat_over.push(*id);
+                    }
                 }
 
                 let is_in_duel_area = overlapping_ranges.iter().filter(|x| x.duel).count() > 0;
@@ -786,6 +791,11 @@ fn server_logic_tick(
                         //self.to_remove.push(id);
                     }
                 }
+            }
+
+            // Their fight is over: nobody claims them any more (FirstAttack cleared, see first_attack.rs.)
+            for id in combat_over {
+                first_attack::clear(&mut network.lock(), instance, id);
             }
 
             // Process any auto-attacks

@@ -1078,8 +1078,14 @@ pub enum ServerZoneIpcData {
         unk1: u32,
         unk2: u32,
     },
+    /// Who first attacked this actor (the packet's source): its "claim". Retail sends it to everyone nearby the
+    /// moment an actor first takes a hostile action, just before that action's EffectResult (an enemy hit by a player,
+    /// a player hit by an enemy), and sends it again cleared when the fight is over for it. The same ID is in
+    /// CommonSpawn's `combat_tagger_id` for those who see the actor spawn later. Bob's Chronofoil captures, 2026-10-14
+    /// to 17 (about 1,100 of them in the Central Shroud and Thanalan).
     FirstAttack {
-        unk1: u32,
+        /// 1: tagged by `combat_tagger`; 0: cleared (the tagger 0); 2: seen between NPCs in duties (unknown).
+        kind: u32,
         unk2: u32,
         combat_tagger: ObjectId,
         unk3: u32,
@@ -1536,5 +1542,24 @@ mod tests {
         assert_eq!(bytes.len(), 552);
         assert_eq!(bytes[0], 0b10);
         assert_eq!(&bytes[0x1FE..0x202], &[1, 0, 2, 0]);
+    }
+
+    /// FirstAttack as retail sent it (Bob's Chronofoil capture of 2026-10-17): an enemy claimed by player 0x10065441.
+    #[test]
+    fn first_attack_layout() {
+        use binrw::BinWrite;
+
+        let data = ServerZoneIpcData::FirstAttack {
+            kind: 1,
+            unk2: 0,
+            combat_tagger: ObjectId(0x10065441),
+            unk3: 0,
+        };
+        let mut cursor = std::io::Cursor::new(Vec::new());
+        data.write_le(&mut cursor).unwrap();
+        assert_eq!(
+            cursor.into_inner(),
+            [1, 0, 0, 0, 0, 0, 0, 0, 0x41, 0x54, 0x06, 0x10, 0, 0, 0, 0]
+        );
     }
 }

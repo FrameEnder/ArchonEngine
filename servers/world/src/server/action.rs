@@ -17,6 +17,7 @@ use crate::{
         WorldServer,
         actor::{NetworkedActor, bnpc_base_hp, create_npc_common_spawn, update_actor_hp_mp},
         effect::{gain_effect, gain_effect_instance, process_effects_list},
+        first_attack,
         instance::{Instance, QueuedTaskData},
         network::{DestinationNetwork, NetworkState},
         party::get_party_id_from_actor_id,
@@ -462,6 +463,21 @@ pub fn execute_action(
                     })
                     .sum();
                 actor.add_enmity(from_actor_id, damage);
+            }
+
+            // The first to attack it claims it (FirstAttack), sent before the action's results as retail does.
+            if effects_builder.effects.iter().any(|effect| {
+                matches!(
+                    effect.0,
+                    TargetEffectKind::Damage { .. } | TargetEffectKind::Miss
+                )
+            }) {
+                first_attack::tag(
+                    &mut network.lock(),
+                    instance,
+                    request.target.object_id,
+                    from_actor_id,
+                );
             }
 
             // Handle invulnerability
@@ -1173,6 +1189,7 @@ fn apply_area_of_effect(
     if has_damage {
         let falloff = effects_builder.aoe_falloff_percent as u32;
         for (index, target_id) in hostiles.iter().enumerate() {
+            first_attack::tag(&mut network.lock(), instance, *target_id, from_actor_id);
             let Some(actor) = instance.find_actor_mut(*target_id) else {
                 continue;
             };

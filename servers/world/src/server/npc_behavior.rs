@@ -27,6 +27,7 @@ use crate::{
             NetworkedActor, NpcCast, NpcState, NpcTarget, set_shared_group_timeline_state,
             update_actor_hp_mp,
         },
+        first_attack,
         instance::{Instance, QueuedTaskData},
         network::{DestinationNetwork, NetworkState},
         rotation::Situation,
@@ -803,9 +804,10 @@ pub fn npc_behavior(
         }
     }
 
-    // Those that gave up a chase are back to full health.
+    // Those that gave up a chase are back to full health, and nobody claims them any more.
     for id in healed {
         update_actor_hp_mp(network.clone(), instance, id);
+        first_attack::clear(&mut network.lock(), instance, id);
     }
 
     // Those that lost their target sheathe their weapon, unless they find another one in the meantime.
