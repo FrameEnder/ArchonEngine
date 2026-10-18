@@ -74,12 +74,22 @@ const NPC_CRITICAL_MULTIPLIER: f32 = 1.5;
 /// monster landed within about 5% of each other.
 const NPC_DAMAGE_VARIANCE: f32 = 0.05;
 
-/// How often an NPC's attack on a player misses, or is parried, in percent, and how much of a parried hit gets through.
-/// From Kawari Recorder's recording of retail: of 266 attacks on a low-level player, 22 missed (8%) and 13 were parried
-/// (5%), parried ones doing about 80% of the usual damage.
-const NPC_MISS_PERCENT: u8 = 8;
+/// How often an NPC's attack on a player is parried, in percent, and how much of a parried hit gets through: 5-6 % of
+/// hits on Bob, a parried one 0.83 times a normal one (Bob's Chronofoil captures, 2,438 hits.)
 const NPC_PARRY_PERCENT: u8 = 5;
-const NPC_PARRY_MULTIPLIER: f32 = 0.8;
+const NPC_PARRY_MULTIPLIER: f32 = 0.83;
+
+/// How often an NPC's attack on a player misses, in percent, by how many levels the player is above it (Bob's
+/// Chronofoil captures: 0-3 % at the same level or below the enemy, 12-14 % 1-2 above, 21-30 % 3-10 above, 32-53 %
+/// further.)
+fn npc_miss_percent(player_level: u8, enemy_level: u8) -> u8 {
+    match player_level.saturating_sub(enemy_level) {
+        0 => 2,
+        1..=2 => 12,
+        3..=10 => 25,
+        _ => 40,
+    }
+}
 
 /// What to multiply an NPC's damage against players by: its recorded retail auto-attack damage over what its stats
 /// give for one, or `NPC_DAMAGE_TO_PLAYERS_PERCENT` if it has no recording.
@@ -408,6 +418,13 @@ pub fn execute_action(
             instance.find_actor(request.target.object_id),
             Some(NetworkedActor::Player { .. })
         );
+        let miss_percent = npc_miss_percent(
+            instance
+                .find_actor(request.target.object_id)
+                .map(|target| target.get_common_spawn().level)
+                .unwrap_or(common_spawn.level),
+            common_spawn.level,
+        );
         let recorded = match actor {
             NetworkedActor::Npc { timeline, .. } => {
                 timeline.recorded_amount(request.action_id, target_is_player)
@@ -428,18 +445,18 @@ pub fn execute_action(
                 .sum();
             if damage > 0 {
                 let scale = recorded / damage as f32;
-                roll_npc_hit(&mut effects_builder.effects, scale);
+                roll_npc_hit(&mut effects_builder.effects, scale, miss_percent);
                 for (_, effects) in &mut area_bystanders {
-                    roll_npc_hit(effects, scale);
+                    roll_npc_hit(effects, scale, miss_percent);
                 }
             } else {
                 scale_npc_heal(&mut effects_builder.effects, recorded);
             }
         } else if npc_hitting_player && let Some(effects_builder) = &mut effects_builder {
             let scale = npc_damage_scale(actor, common_spawn.level);
-            roll_npc_hit(&mut effects_builder.effects, scale);
+            roll_npc_hit(&mut effects_builder.effects, scale, miss_percent);
             for (_, effects) in &mut area_bystanders {
-                roll_npc_hit(effects, scale);
+                roll_npc_hit(effects, scale, miss_percent);
             }
         }
 
@@ -2093,10 +2110,10 @@ fn scale_npc_heal(effects: &mut [TargetEffect], recorded: f32) {
 
 /// Rolls one enemy hit on a player: scaled to what retail does (see `npc_damage_scale`), with a little variance, and
 /// a chance to miss, be parried or be critical. Drains give back what they took.
-fn roll_npc_hit(effects: &mut Vec<TargetEffect>, scale: f32) {
+fn roll_npc_hit(effects: &mut Vec<TargetEffect>, scale: f32, miss_percent: u8) {
     let roll = fastrand::u8(..100);
-    let missed = roll < NPC_MISS_PERCENT;
-    let parried = !missed && roll < NPC_MISS_PERCENT + NPC_PARRY_PERCENT;
+    let missed = roll < miss_percent;
+    let parried = !missed && roll < miss_percent + NPC_PARRY_PERCENT;
     if missed {
         // Nothing lands: no damage, and no drain either.
         effects.retain(|effect| {

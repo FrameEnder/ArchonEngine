@@ -56,11 +56,12 @@ pub const EOBJ_EXIT: u32 = 2000139;
 /// EObj ID for the "entrance" object in housing.
 pub const EOBJ_HOUSING_ENTRANCE: u32 = 2002737;
 
-/// Time until a dead actor fades away. Estimated from retail.
-pub const DEAD_FADE_OUT_TIME: Duration = Duration::from_secs(8);
+/// Time from an actor's death (Kill) until it fades away (DeadFadeOut): 8.05 s on retail, 6.02 s after the Defeated
+/// that follows the death by 2 s, over 1,581 deaths in Bob's Chronofoil captures (duties and open world alike.)
+pub const DEAD_FADE_OUT_TIME: Duration = Duration::from_millis(8050);
 
-/// Time until a dead actor despawns while faded away. Estimated from retail.
-pub const DEAD_DESPAWN_TIME: Duration = Duration::from_secs(2);
+/// Time from fading away to the actor being deleted: retail's DeleteActor came 7.75 s after Defeated.
+pub const DEAD_DESPAWN_TIME: Duration = Duration::from_millis(1750);
 
 /// Maximum number of seconds until rested EXP is full. This is 7 days.
 pub const MAXIMUM_RESTED_EXP: i32 = 604800;
@@ -90,8 +91,19 @@ pub const FATE_TIME_LIMIT: Duration = Duration::from_mins(15);
 /// How many FATEs can be active at once in a instance of a zone.
 pub const MAXIMUM_FATES: usize = 5;
 
-/// How long until a normal mob respawns.
+/// How long until a normal mob respawns, counted from when it's deleted: retail used fixed steps by level (Bob's
+/// Chronofoil captures: 15.7 s for levels 1-4, 30.9 s for 5-9, 61 s from 7 up, and 120.7 s at some spots of any
+/// level), see `mob_respawn_time`.
 pub const MOB_RESPAWN_TIME: Duration = Duration::from_mins(2);
+
+/// The respawn delay retail used for a mob of this level (see `MOB_RESPAWN_TIME`.)
+pub fn mob_respawn_time(level: u8) -> Duration {
+    match level {
+        0..=4 => Duration::from_millis(15_700),
+        5..=9 => Duration::from_millis(30_900),
+        _ => Duration::from_secs(61),
+    }
+}
 
 /// How long until a normal mob decides to move to a new location.
 pub const MOB_WANDER_TIME: Duration = Duration::from_secs(10);

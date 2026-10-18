@@ -899,7 +899,12 @@ impl ZoneConnection {
     }
 
     pub async fn update_hp_mp(&mut self, actor_id: ObjectId, hp: u32, mp: u16) {
-        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateHpMpTp { hp, mp, unk: 0 });
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateHpMpTp {
+            hp,
+            mp,
+            // Players' max MP is ParamGrow's MpModifier, 10000 at every level.
+            max_mp: 10000,
+        });
 
         self.send_ipc_from(actor_id, ipc).await;
     }

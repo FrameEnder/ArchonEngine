@@ -2656,6 +2656,11 @@ impl GameData {
             })
     }
 
+    /// The expansion a zone belongs to (TerritoryType's ExVersion: 0 A Realm Reborn, 1 Heavensward...)
+    pub fn get_ex_version(&mut self, zone_id: u16) -> Option<u8> {
+        Some(self.territory_type_sheet.row(zone_id.into())?.ExVersion)
+    }
+
     /// Returns the TerritoryIntendedUse for a given zone.
     pub fn get_intended_use(&mut self, zone_id: u32) -> Option<TerritoryIntendedUse> {
         let row = self.territory_type_sheet.row(zone_id)?;

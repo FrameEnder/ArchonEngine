@@ -1463,7 +1463,7 @@ pub fn director_tick(
                         action_type: request.action_type,
                         omen_delay: 0,
                         action_id: request.action_id,
-                        cast_time,
+                        cast_time: crate::server::npc_behavior::npc_cast_bar_time(cast_time),
                         target: target_id,
                         rotation,
                         interruptible: false,

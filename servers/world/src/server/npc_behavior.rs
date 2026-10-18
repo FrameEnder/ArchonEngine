@@ -23,10 +23,7 @@ use crate::{
     gamedata::AreaShape,
     navmesh::MAX_OFF_MESH_GAP,
     server::{
-        actor::{
-            NetworkedActor, NpcCast, NpcState, NpcTarget, set_shared_group_timeline_state,
-            update_actor_hp_mp,
-        },
+        actor::{NetworkedActor, NpcCast, NpcState, NpcTarget, set_shared_group_timeline_state},
         first_attack,
         instance::{Instance, QueuedTaskData},
         modifiers,
@@ -42,12 +39,38 @@ const NPC_AUTO_ATTACK_TICKS: i64 = AUTO_ATTACK_RATE * 2;
 /// How long an NPC that lost its target waits before sheathing its weapon.
 const NPC_SHEATHE_DELAY: Duration = Duration::from_secs(2);
 
-/// How close (in yalms) a player has to come for an aggressive enemy to notice them.
-/// TODO: per enemy, from Kawari Recorder's "World" recording (attacks on sight, from how far.)
+/// How close (in yalms) a player has to come for an aggressive enemy to notice them: within its sight, a ±45° cone in
+/// front of it, up to 15 yalms; all round within `AGGRO_PROXIMITY`. From Bob's Chronofoil captures (98 enemies that
+/// came at him on their own: 2-18 yalms, median 9; every one from behind was within about 11.)
 const AGGRO_RANGE: f32 = 15.0;
+/// How close an aggressive enemy notices players whichever way it faces.
+const AGGRO_PROXIMITY: f32 = 11.0;
+/// Half the width of an aggressive enemy's sight, in radians (45°.)
+const AGGRO_SIGHT_HALF_ANGLE: f32 = PI / 4.0;
 
-/// Aggressive enemies ignore players this many levels or more above them.
-const AGGRO_LEVEL_GAP: u8 = 7;
+/// Aggressive enemies ignore players this many levels or more above them: on retail they still came at Bob 7 and 8
+/// levels above them, never 9 or more (195 close passes.)
+const AGGRO_LEVEL_GAP: u8 = 9;
+
+/// How fast enemies move, in yalms a second: walking about while idle, and running (chasing, going home.) Retail's
+/// ActorMove speed byte is this in tenths (20 and 60), Bob's Chronofoil captures.
+const NPC_WALK_SPEED: f32 = 2.0;
+const NPC_RUN_SPEED: f32 = 6.0;
+/// An enemy's cast bar is this much shorter than the action's cast time, which it still lands at: retail's ActorCast
+/// carried the Action sheet's time minus 0.3 s for 99 % of 8,392 enemy casts (Bob's Chronofoil captures.)
+pub const NPC_CAST_BAR_SHORTER_BY: f32 = 0.3;
+
+/// The cast time an NPC's ActorCast shows for an action taking `cast_time` seconds.
+pub fn npc_cast_bar_time(cast_time: f32) -> f32 {
+    if cast_time > NPC_CAST_BAR_SHORTER_BY {
+        cast_time - NPC_CAST_BAR_SHORTER_BY
+    } else {
+        cast_time
+    }
+}
+
+/// How much of a second one behaviour tick is (`SERVER_TICK_MILLISECONDS`.)
+const BEHAVIOR_TICK_SECONDS: f32 = 0.5;
 
 /// How far (in yalms) an enemy will chase from where it spawned before giving up, going home and healing up.
 /// TODO: per enemy, from Kawari Recorder's "World" recording (gave up at ~N yalms from spawn.)
@@ -121,7 +144,7 @@ pub fn npc_behavior(
         .map(|(id, actor)| (*id, actor.get_common_spawn().target_id.object_id))
         .filter(|(_, target)| target.is_valid())
         .collect();
-    let mut healed = Vec::new();
+    let mut gave_up = Vec::new();
     let in_content = instance.content_id != 0 || instance.content_finder_condition_id != 0;
     // In content an NPC that can't path to its target walks the rest of the way straight, however far: our navmesh has
     // holes the arenas don't, and an ally or add stuck at one stalls the whole battle (2026-10-16 bundle).
@@ -144,6 +167,7 @@ pub fn npc_behavior(
             cast,
             placement,
             status_effects,
+            returning_home,
             ..
         } = actor
             && let Some(current_target) = current_target
@@ -236,15 +260,23 @@ pub fn npc_behavior(
                 && (position != spawn.common.position
                     || (rotation - spawn.common.rotation).abs() > 0.01)
             {
+                // Idle enemies walk about; everyone else runs (retail's speed bytes 20 and 60.)
+                let walking = is_walking(state, *returning_home, current_target);
+                let (anim_type, speed) = if walking {
+                    (MoveAnimationType::WALKING_OR_LANDING, NPC_WALK_SPEED)
+                } else {
+                    (MoveAnimationType::empty(), NPC_RUN_SPEED)
+                };
                 actor_moves.push((
                     *id,
                     FromServer::ActorMove(
                         *id,
                         position,
                         rotation,
-                        MoveAnimationType::empty(),
+                        anim_type,
                         MoveAnimationState::None,
                         JumpState::NoneOrFalling,
+                        Some((speed * 10.0) as u8),
                     ),
                 ));
             }
@@ -330,8 +362,8 @@ pub fn npc_behavior(
                 current_path.clear();
                 *current_path_lerp = 0.0;
                 *returning_home = true;
-                spawn.common.health_points = spawn.common.max_health_points;
-                healed.push(*id);
+                // No instant heal: like retail, it regenerates 10 % a tick on the way (`server_logic_tick`.)
+                gave_up.push(*id);
             }
             if *returning_home {
                 enmity.clear();
@@ -413,7 +445,7 @@ pub fn npc_behavior(
                         continue;
                     }
 
-                    if Vec3A::distance(position.0, spawn.common.position.0) < AGGRO_RANGE {
+                    if can_notice(spawn.common.position.0, spawn.common.rotation, position.0) {
                         enmity.entry(*target_id).or_insert(1);
                         *autoattack_timing = 0;
                         *state = NpcState::Hate;
@@ -464,8 +496,18 @@ pub fn npc_behavior(
                 let next_position = current_path[0];
                 let current_position = last_position.unwrap_or(spawn.common.position.0);
                 let distance = Vec3A::distance(current_position, next_position);
+                let speed = if is_walking(state, *returning_home, current_target.as_ref().unwrap())
+                {
+                    NPC_WALK_SPEED
+                } else {
+                    NPC_RUN_SPEED
+                };
 
-                *current_path_lerp = f32::clamp(*current_path_lerp + (2.0 / distance), 0.0, 1.0);
+                *current_path_lerp = f32::clamp(
+                    *current_path_lerp + (speed * BEHAVIOR_TICK_SECONDS / distance),
+                    0.0,
+                    1.0,
+                );
             }
 
             let mut reset_target = false;
@@ -777,7 +819,7 @@ pub fn npc_behavior(
                 action_type: request.action_type,
                 omen_delay: 0,
                 action_id: request.action_id,
-                cast_time,
+                cast_time: npc_cast_bar_time(cast_time),
                 target: request.target.object_id,
                 rotation: request.rotation1,
                 interruptible: false,
@@ -816,9 +858,8 @@ pub fn npc_behavior(
         }
     }
 
-    // Those that gave up a chase are back to full health, and nobody claims them any more.
-    for id in healed {
-        update_actor_hp_mp(network.clone(), instance, id);
+    // Nobody claims those that gave up a chase any more.
+    for id in gave_up {
         first_attack::clear(&mut network.lock(), instance, id);
     }
 
@@ -893,5 +934,47 @@ pub fn npc_behavior(
                 haters.get_mut(actor).unwrap().push(*id);
             }
         }
+    }
+}
+
+/// Whether an NPC is walking about rather than running: idle enemies wandering to a spot near home.
+fn is_walking(state: &NpcState, returning_home: bool, target: &NpcTarget) -> bool {
+    *state == NpcState::Wander && !returning_home && matches!(target, NpcTarget::Position(_))
+}
+
+/// Whether an aggressive enemy at `from`, facing `rotation`, notices someone at `to`: within `AGGRO_PROXIMITY` all
+/// round, or within `AGGRO_RANGE` in its sight cone.
+fn can_notice(from: Vec3A, rotation: f32, to: Vec3A) -> bool {
+    let distance = Vec3A::distance(from, to);
+    if distance < AGGRO_PROXIMITY {
+        return true;
+    }
+    if distance >= AGGRO_RANGE {
+        return false;
+    }
+    let towards = f32::atan2(to.x - from.x, to.z - from.z);
+    let mut difference = (towards - rotation).abs() % (2.0 * PI);
+    if difference > PI {
+        difference = 2.0 * PI - difference;
+    }
+    difference <= AGGRO_SIGHT_HALF_ANGLE
+}
+
+#[cfg(test)]
+mod notice_tests {
+    use super::*;
+
+    #[test]
+    fn sight_and_proximity() {
+        let enemy = Vec3A::ZERO;
+        // Facing +z (rotation 0.)
+        assert!(can_notice(enemy, 0.0, Vec3A::new(0.0, 0.0, 14.0)));
+        assert!(!can_notice(enemy, 0.0, Vec3A::new(0.0, 0.0, -14.0)));
+        assert!(can_notice(enemy, 0.0, Vec3A::new(0.0, 0.0, -10.0)));
+        assert!(!can_notice(enemy, 0.0, Vec3A::new(14.0, 0.0, 0.0)));
+        assert!(can_notice(enemy, PI / 2.0, Vec3A::new(14.0, 0.0, 0.0)));
+        assert!(!can_notice(enemy, 0.0, Vec3A::new(0.0, 0.0, 16.0)));
+        // Across the ±π seam.
+        assert!(can_notice(enemy, PI - 0.1, Vec3A::new(-1.0, 0.0, -13.0)));
     }
 }

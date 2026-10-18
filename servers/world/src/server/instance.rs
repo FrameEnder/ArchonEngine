@@ -57,6 +57,11 @@ pub enum QueuedTaskData {
         effect_param: u16,
         effect_source_actor_id: ObjectId,
     },
+    /// Tell everyone nearby an actor was defeated, and by whom (ActorControl Defeated, 2 s after it died, as retail.)
+    SendDefeated {
+        actor_id: ObjectId,
+        killer: ObjectId,
+    },
     /// Fade out a dead actor.
     DeadFadeOut {
         actor_id: ObjectId,

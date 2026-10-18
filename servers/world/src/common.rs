@@ -110,6 +110,8 @@ pub enum FromServer {
         MoveAnimationType,
         MoveAnimationState,
         JumpState,
+        /// The speed byte to send (tenths of a yalm a second), or None to work it out from the animation.
+        Option<u8>,
     ),
     // An actor should be despawned.
     DeleteActor(ObjectId, u8),

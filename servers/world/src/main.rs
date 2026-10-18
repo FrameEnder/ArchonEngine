@@ -3976,10 +3976,11 @@ async fn process_server_msg(
                 anim_type,
                 anim_state,
                 jump_state,
+                speed,
             ) => {
                 connection
                     .set_actor_position(
-                        actor_id, position, rotation, anim_type, anim_state, jump_state,
+                        actor_id, position, rotation, anim_type, anim_state, jump_state, speed,
                     )
                     .await
             }

@@ -22,8 +22,11 @@ impl ZoneConnection {
         anim_type: MoveAnimationType,
         anim_state: MoveAnimationState,
         jump_state: JumpState,
+        speed: Option<u8>,
     ) {
-        const SPEED_WALKING: u8 = 20;
+        // Players walk at 2.4 yalms a second and run at 6 (retail's speed bytes 24 and 60, Bob's Chronofoil captures;
+        // Sprint is 78.) NPCs pass their own.
+        const SPEED_WALKING: u8 = 24;
         const SPEED_RUNNING: u8 = 60;
 
         let mut anim_type = anim_type;
@@ -53,6 +56,9 @@ impl ZoneConnection {
 
         if anim_state == MoveAnimationState::EnteringCollision {
             anim_type = MoveAnimationType::WALKING_OR_LANDING;
+        }
+        if let Some(speed) = speed {
+            anim_speed = speed;
         }
 
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorMove(ActorMove {

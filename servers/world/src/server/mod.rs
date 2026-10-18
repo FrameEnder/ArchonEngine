@@ -46,13 +46,14 @@ use kawari::{
         AUTO_ATTACK_RATE, CharacterMode, DEAD_DESPAWN_TIME, HandlerId, HandlerType,
         MAX_SPAWNED_ACTORS, MAX_SPAWNED_OBJECTS, MOB_RESPAWN_TIME, ObjectId, ObjectTypeId,
         ObjectTypeKind, Position, WarpType, determine_initial_pop_range, euler_to_direction,
-        is_private_area,
+        is_private_area, mob_respawn_time,
     },
     config::get_config,
     ipc::zone::{
-        ActionRequest, ActionType, ActorControlCategory, ClientTriggerCommand, ClientTriggerTarget,
-        Condition, Conditions, DutyFinderSetting, EnmityList, Hater, HaterList, PlayerEnmity,
-        PrepareZoning, PrepareZoningFlag, ServerZoneIpcData, ServerZoneIpcSegment, WaymarkPreset,
+        ActionRequest, ActionType, ActorControlCategory, BattleNpcSubKind, ClientTriggerCommand,
+        ClientTriggerTarget, Condition, Conditions, DutyFinderSetting, EnmityList, Hater,
+        HaterList, ObjectKind, PlayerEnmity, PrepareZoning, PrepareZoningFlag, ServerZoneIpcData,
+        ServerZoneIpcSegment, WaymarkPreset,
     },
 };
 
@@ -906,10 +907,11 @@ fn server_logic_tick(
             // Damage/healing over time
             periodic_tick(network.clone(), instance);
 
-            // Players regenerate on retail's 3 s tick (Bob's Chronofoil captures, 2026-10-14/16): MP by 200 a tick in
-            // combat plus a little for Piety (a level 15 conjurer got 203), and by 600 out of combat; HP only out of
-            // combat here (retail gives a point or two in combat.) It used to run every server tick (500 ms) and not
-            // at all in combat, so casters ran dry mid-fight and couldn't cast again until it ended (2026-10-17).
+            // Players regenerate on retail's 3 s tick (Bob's Chronofoil captures; every point exact, levels 6 to 90): HP by
+            // floor(max / 100) in combat and floor(max / 10) out of it; MP by 200 + floor(150 × (Piety − the level's main
+            // stat) / the level's divisor) in combat and 600 out of it. (Retail ticks each actor on its own 3 s phase;
+            // here one timer per instance.) It used to run every server tick (500 ms) and not at all in combat, so
+            // casters ran dry mid-fight and couldn't cast again until it ended (2026-10-17).
             let now = Instant::now();
             let regen_now = instance.next_regen_tick.is_none_or(|next| now >= next);
             if regen_now {
@@ -934,20 +936,28 @@ fn server_logic_tick(
                     }
 
                     if in_combat {
+                        let mut updated = false;
                         if spawn.common.resource_points < spawn.common.max_resource_points {
-                            // Piety's bonus, as the community's formula has it: 150 per level divisor above the
-                            // level's base substat.
-                            let piety_bonus = parameters
-                                .piety
-                                .saturating_sub(parameters.base_speed.max(0) as u32)
-                                * 150
-                                / parameters.level_div.max(1);
+                            // Piety's bonus: 150 per level divisor above the level's main stat (exact for all 17 of
+                            // Bob's points, e.g. 46 Piety at 14 → 203, 440 synced to 50 → 304.)
+                            let piety_bonus =
+                                parameters.piety.saturating_sub(parameters.level_main) * 150
+                                    / parameters.level_div.max(1);
                             let amount = (MP_REGEN_IN_COMBAT + piety_bonus) as u16;
                             spawn.common.resource_points = spawn
                                 .common
                                 .resource_points
                                 .saturating_add(amount)
                                 .min(spawn.common.max_resource_points);
+                            updated = true;
+                        }
+                        if spawn.common.health_points < spawn.common.max_health_points {
+                            spawn.common.health_points = (spawn.common.health_points
+                                + spawn.common.max_health_points / 100)
+                                .min(spawn.common.max_health_points);
+                            updated = true;
+                        }
+                        if updated {
                             actors_to_update_hp_mp.push(*id);
                         }
                         continue;
@@ -955,7 +965,7 @@ fn server_logic_tick(
 
                     let mut updated = false;
                     if spawn.common.health_points != spawn.common.max_health_points {
-                        let amount = (spawn.common.max_health_points as f32 * 0.10).round() as u32;
+                        let amount = spawn.common.max_health_points / 10;
                         spawn.common.health_points = u32::clamp(
                             spawn.common.health_points + amount,
                             0,
@@ -977,6 +987,26 @@ fn server_logic_tick(
                     if updated {
                         actors_to_update_hp_mp.push(*id);
                     }
+                } else if let NetworkedActor::Npc {
+                    spawn,
+                    enmity,
+                    state,
+                    ..
+                } = actor
+                    && regen_now
+                    && enmity.is_empty()
+                    && *state != NpcState::Dead
+                    && *state != NpcState::Hate
+                    && spawn.common.health_points > 0
+                    && spawn.common.health_points < spawn.common.max_health_points
+                    && spawn.common.object_kind == ObjectKind::BattleNpc(BattleNpcSubKind::Enemy)
+                {
+                    // Enemies out of combat (or going home after giving up a chase) get 10 % of their max HP back
+                    // every 3 s (Bob's Chronofoil captures, 149 samples.)
+                    spawn.common.health_points = (spawn.common.health_points
+                        + spawn.common.max_health_points / 10)
+                        .min(spawn.common.max_health_points);
+                    actors_to_update_hp_mp.push(*id);
                 }
             }
 
@@ -1197,6 +1227,20 @@ pub async fn server_main_loop(
                                     );
                                 }
                             }
+                            QueuedTaskData::SendDefeated { actor_id, killer } => {
+                                let mut network = network.lock();
+                                let mut data = data.lock();
+                                if let Some(instance) = data.find_actor_instance_mut(*actor_id) {
+                                    network.send_ac_in_range_inclusive_instance(
+                                        instance,
+                                        *actor_id,
+                                        ActorControlCategory::Defeated {
+                                            id1: *killer,
+                                            id2: *killer,
+                                        },
+                                    );
+                                }
+                            }
                             QueuedTaskData::DeadDespawn {
                                 actor_id,
                                 respawn_layout_id,
@@ -1204,6 +1248,12 @@ pub async fn server_main_loop(
                                 // despawn
                                 let mut data = data.lock();
                                 if let Some(instance) = data.find_actor_instance_mut(*actor_id) {
+                                    let respawn_time = instance
+                                        .find_actor(*actor_id)
+                                        .map(|actor| {
+                                            mob_respawn_time(actor.get_common_spawn().level)
+                                        })
+                                        .unwrap_or(MOB_RESPAWN_TIME);
                                     let mut network = network.lock();
                                     network.remove_actor(instance, *actor_id);
 
@@ -1211,7 +1261,7 @@ pub async fn server_main_loop(
                                         instance.insert_task(
                                             ClientId::default(),
                                             ObjectId::default(),
-                                            MOB_RESPAWN_TIME,
+                                            respawn_time,
                                             QueuedTaskData::RespawnMob {
                                                 layout_id: *layout_id,
                                             },
@@ -1599,6 +1649,7 @@ pub async fn server_main_loop(
                             let mut network = network.lock();
                             let msg = FromServer::ActorMove(
                                 actor_id, position, rotation, anim_type, anim_state, jump_state,
+                                None,
                             );
                             network.send_in_range_instance(
                                 actor_id,

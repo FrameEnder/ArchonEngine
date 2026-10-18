@@ -18,7 +18,7 @@ use crate::{
     lua::{KawariLua, LuaZone},
     server::{
         NetworkedActor, WorldServer,
-        actor::{create_npc_common_spawn, set_character_mode},
+        actor::{create_npc_common_spawn, field_enemy_base_hp, set_character_mode},
         fate::inform_fate_spawn,
         instance::{Instance, QueuedTaskData, remove_actor_from_instance},
         job_gauge::JobGauge,
@@ -712,6 +712,11 @@ impl Zone {
                     display_flags,
                 } = object.data
                 {
+                    // Without a set HP, an ordinary enemy of its zone's expansion at its level.
+                    let hp = hp.or_else(|| {
+                        let ex_version = game_data.get_ex_version(self.id).unwrap_or(0);
+                        field_enemy_base_hp(ex_version, level as u8)
+                    });
                     let base_npc = create_npc_common_spawn(game_data, base_id, name_id, hp, level);
                     let spawn = SpawnNpc {
                         gimmick_id,

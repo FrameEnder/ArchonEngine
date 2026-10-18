@@ -1,7 +1,7 @@
 use std::{
     collections::{HashMap, VecDeque},
     sync::Arc,
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use crate::{
@@ -436,6 +436,24 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
     // Let whoever defeated it know, for quests that ask you to defeat enemies.
     credit_battle_npc_kill(&mut network, instance, actor_id);
 
+    // Retail tells everyone nearby who defeated it 2.0-2.09 s after the death animation starts (ActorControl Defeated,
+    // the killer twice; Bob's Chronofoil captures, 1,586 NPC and 92 player deaths.) The one it hated most stands in
+    // for the killer; nobody (an invalid ID) if it hated no one.
+    let killer = match instance.find_actor(actor_id) {
+        Some(NetworkedActor::Npc { enmity, .. }) => enmity
+            .iter()
+            .max_by_key(|(_, amount)| **amount)
+            .map(|(actor, _)| *actor)
+            .unwrap_or_default(),
+        _ => ObjectId::default(),
+    };
+    instance.insert_task(
+        ClientId::default(),
+        actor_id,
+        DEFEATED_DELAY,
+        QueuedTaskData::SendDefeated { actor_id, killer },
+    );
+
     // Transistion into the dead state so they stop moving.
     if let Some(actor) = instance.find_actor_mut(actor_id)
         && let NetworkedActor::Npc { state, spawn, .. } = actor
@@ -522,6 +540,9 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
     }
 }
 
+/// How long after an actor dies everyone is told who defeated it (retail: 2.0-2.09 s.)
+const DEFEATED_DELAY: Duration = Duration::from_millis(2000);
+
 /// Informs the players that defeated a battle NPC, so their quests can count it.
 ///
 /// Credit goes to every player it hated (that is, who fought it), along with their party members in the same instance.
@@ -588,7 +609,7 @@ pub fn update_actor_hp_mp(
             let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateHpMpTp {
                 hp: common_spawn.health_points,
                 mp: common_spawn.resource_points,
-                unk: 0,
+                max_mp: common_spawn.max_resource_points,
             });
             let mut network = network.lock();
             network.send_in_range_inclusive_instance(
@@ -652,6 +673,53 @@ const BNPC_BASE_HP: [u32; 50] = [
     458, 493, 532, 568, 594, 641, 677, 714, 750, 780, 887, 965, 1055, 1142, 1220, 1306, 1409, 1515,
     1587, 1601, 1703, 1789, 1891, 2008, 2112, 2180, 2314, 2383, 2501, 2589,
 ];
+
+/// Heavensward's field zones (ExVersion 1) use higher HP from level 50 (Bob's Chronofoil captures: exactly one HP per
+/// level for ordinary enemies, levels 50-60; 60 is from Azys Lla only.)
+const BNPC_BASE_HP_HEAVENSWARD: [(u8, u32); 11] = [
+    (50, 6679),
+    (51, 7320),
+    (52, 7939),
+    (53, 8525),
+    (54, 9084),
+    (55, 9647),
+    (56, 9980),
+    (57, 10394),
+    (58, 10800),
+    (59, 11072),
+    (60, 11068),
+];
+/// Shadowbringers' field zones (ExVersion 3), levels 70-80 (74 wasn't seen: between 73's and 75's.) 80 is also the
+/// plain trash HP in level 80 dungeons.
+const BNPC_BASE_HP_SHADOWBRINGERS: [(u8, u32); 11] = [
+    (70, 30677),
+    (71, 34907),
+    (72, 35942),
+    (73, 36868),
+    (74, 37673),
+    (75, 38478),
+    (76, 39129),
+    (77, 40048),
+    (78, 40901),
+    (79, 41915),
+    (80, 42687),
+];
+
+/// An ordinary field enemy's health in a zone of this expansion (TerritoryType's ExVersion) at this level, if retail's
+/// was seen: A Realm Reborn's table for ExVersion 0 (and anything below level 50), Heavensward's and Shadowbringers'
+/// where they apply.
+pub fn field_enemy_base_hp(ex_version: u8, level: u8) -> Option<u32> {
+    let table: &[(u8, u32)] = match ex_version {
+        1 => &BNPC_BASE_HP_HEAVENSWARD,
+        3 => &BNPC_BASE_HP_SHADOWBRINGERS,
+        _ => &[],
+    };
+    table
+        .iter()
+        .find(|(at, _)| *at == level)
+        .map(|(_, hp)| *hp)
+        .or_else(|| bnpc_base_hp(level))
+}
 
 /// Ordinary enemies' health at this level, if it's in the table.
 pub fn bnpc_base_hp(level: u8) -> Option<u32> {

@@ -286,8 +286,8 @@ pub enum ServerZoneIpcData {
         hp: u32,
         /// The new resource point value.
         mp: u16,
-        // Unknown. It's filled with... something.
-        unk: u16,
+        /// The maximum MP (Bob's Chronofoil captures: 10000 for players.)
+        max_mp: u16,
     },
     ActionEffect1(#[brw(args { max_targets: 1 } )] ActionEffect),
     Equip(Equip),

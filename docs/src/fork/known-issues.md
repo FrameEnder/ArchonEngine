@@ -111,8 +111,11 @@ add one when something is found.
   opcode is known); the others get flying text and HP updates.
 * **Drop rates** are a 50 % guess except for anoles, ground squirrels and trickster imps; drops cover the Central
   Shroud only.
-* **Aggro range** (15 yalms) and **leash distance** (40 yalms) are global constants; the Recorder's World tab can give
-  per-enemy values.
+* **Aggro** (11 yalms all round, 15 in front), **leash distance** (40 yalms) and speeds (6 and 2 yalms a second) are
+  global; retail's assist (same-kind enemies joining) isn't done. Respawn delays follow retail's level steps but not
+  its 120 s spots. Regeneration ticks once per instance rather than on each actor's own phase. Enemies above level 50
+  outside Heavensward and Shadowbringers field zones, and duty enemies without an `hp`, still use the player-style
+  HP.
 * Player **HP** ([Combat](combat.md)) is retail's at every measured level; levels 23–29, 38–49, 55–59, 61–66,
   71–75, 77–79 and 91–100 are interpolated (or extrapolated), and tanks below 50 and above 80 use a ratio. The party
   bonus (+1–5 % on retail, a few seconds after zoning) and food's HP aren't applied.
@@ -181,11 +184,6 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
 * Gil purchases only work while the character is logged out (by design, see [Saving](saving.md)).
 * 162 costume sets in the Shop have no contents yet and can't be bought until an admin adds them.
 * Store items arrive as items; what they do when used depends on server support.
-
-## Player regeneration
-
-* Retail gives a point or two of HP a tick in combat (a level 15 conjurer: +1 or +2 every 3 s); Kawari gives none. Out
-  of combat Kawari gives 10 % a tick, which hasn't been measured against retail.
 
 ## FATEs
 

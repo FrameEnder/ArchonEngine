@@ -34,8 +34,12 @@ or × 26.6/18.8 (above). Tanks are ClassJob Role 1. Checked by `retail_max_hp_ma
 HpModifier and Sapphire's 5.x level table don't give these numbers.
 
 **Regeneration** (`server/mod.rs`, every `PLAYER_REGEN_INTERVAL`, 3 s, as retail's tick): MP **200 a tick in combat**
-plus Piety's bonus (`150 × (Piety − the level's base substat) / level divisor`; a level 15 conjurer got 203 on retail),
-**600 out of combat**; HP 10 % out of combat. Measured in Bob's Chronofoil captures (2026-10-14/16): a conjurer casting
+plus Piety's bonus (`floor(150 × (Piety − the level's main stat) / level divisor)`: exact for all 17 of Bob's retail
+points, e.g. 46 Piety at 14 → 203, 440 synced to 50 → 304, 1247 at 80 → 304; it used ParamGrow's BaseSpeed instead of
+the main stat, 43 too little at 50), **600 out of combat**; HP **floor(max / 100) in combat** and **floor(max / 10)
+out of it** (45 groups from level 6 to 90 exact). Retail keeps going while casting and ticks each actor on its own 3 s
+phase (Kawari: one timer per instance). UpdateHpMpTp's third field is the max MP (10000 for players). Enemies out of
+combat (and going home after giving up a chase) regain 10 % of their max HP a tick (149 retail samples). Measured in Bob's Chronofoil captures (2026-10-14/16): a conjurer casting
 Stone (200 MP) every 2.5 s went +3 or −197 a tick, so barely drained at all. Kawari regenerated nothing in combat (and
 everything every 500 ms out of it), so casters ran dry mid-fight and couldn't cast until it ended (2026-10-17 bundle).
 
@@ -107,8 +111,14 @@ Enemies still compute damage like players do (stat × potency), which is far too
 * If the enemy's **timeline** records its retail auto-attack damage by level (`damage_to_players` in
   `resources/timelines/<Name>_<BNpcBase>.json`), its auto-attack hits for that, and its other actions for that ×
   their potency / 100. Other levels scale with the per-level HP table. Filled in for the Central Shroud monsters.
-* Otherwise it deals 12 % (`NPC_DAMAGE_TO_PLAYERS_PERCENT`). Retail's enemy formula isn't published.
-* Every hit on a player varies ±5 %, crits 5 % of the time for 1.5×, misses 8 %, is parried 5 % for 80 % damage.
+* Otherwise it deals 12 % (`NPC_DAMAGE_TO_PLAYERS_PERCENT`). Retail's enemy formula isn't published. In Bob's
+  captures (2,438 hits on him) an enemy's damage is set per enemy kind, not by level (level 79 ones hit for 967, 987 or
+  1418); at equal level an open-world auto-attack is about 4–6 % of the enemy's own max HP, dungeon trash 1.7–2.7 %
+  on a healer and 0.9–1.3 % on a tank, boss auto-attacks 6–12 % of a tank's HP.
+* Every hit on a player varies ±5 %, crits 5 % of the time for 1.5× (retail 6.0 %, ×1.50), is parried 5 % for 83 %
+  damage (retail 5–6 % on Bob, 7–9 % on tanks, 0.83×), and misses by how far the player is above the enemy
+  (`npc_miss_percent`, from the captures): 2 % at the same level or below it, 12 % 1–2 levels above, 25 % 3–10 above,
+  40 % more (retail 0–3 %, 12–14 %, 21–30 %, 32–53 %). It was a flat 8 %.
 * **Recorded amounts** come first: a timeline's `recorded_amounts` (`{"<action>": {"players": avg, "npcs": avg}}`)
   says what that NPC's action did on retail to a player and to another NPC. The hit is scaled to it (then varied,
   missed, parried or critical as above), and a heal (Cure) is set to it ±5 %. Used for quest battle allies and
@@ -141,6 +151,20 @@ Enemies without a set HP use Sapphire's per-level **BnpcBaseHp** table (`BNPC_BA
 level 1 to 2589 at level 50); it matched retail at every level recorded except 43 (retail 1891). A drop-in's `hp`
 overrides it (Halitostroper 7983, Wood Wailer Sentries 6100, quest enemies).
 
+Bob's Chronofoil captures (24,644 enemy spawns) show retail's open-world HP is one value per level **per expansion**
+(7,540 of 8,026 ordinary spawns; no (zone, kind, level) with two values), so drop-in enemies without an `hp` get their
+zone's (`field_enemy_base_hp`, by TerritoryType's ExVersion):
+
+* A Realm Reborn: the table above, exact at every level seen (1–50; 42 showed 1341 on three spawns only).
+* Heavensward, from 50: 6679, 7320, 7939, 8525, 9084, 9647, 9980, 10394, 10800, 11072, 11068 (60).
+* Shadowbringers, 70–80: 30677, 34907, 35942, 36868, (74 interpolated 37673), 38478, 39129, 40048, 40901, 41915,
+  42687 (also level 80 dungeons' plain trash).
+* No Stormblood or Endwalker-and-later field zones were captured. Elites and city guards are exactly ×5 (guards at 35
+  = 6100), a few ×2; FATE enemies are 3–0 levels below the FATE, mostly ×1 with ×0.62–×2 variants, bosses ×10–×36.
+* In duties HP is set per enemy (491 kinds, one value each): trash 1.7–6× the field table at its level, bosses
+  10–200×, levels the duty's sync or 2–3 below. The captures' values (by duty, BNpcBase and name) are in the scan's
+  `duty_enemy_hp.csv` (not in git; numbers only) for drop-ins.
+
 ## Open-world spawns
 
 Kawari only spawns battle NPCs that a zone's drop-in lists (`resources/dropins/`, matched to the zone by `appends`,
@@ -164,13 +188,15 @@ Star Marmot, Huge Hornet and Giant Tortoise; the Star Marmot also uses Somersaul
 | Mechanic | How it works |
 |---|---|
 | **Enmity** | Each NPC keeps an enmity table. Damage adds to it; the NPC attacks whoever it hates most. Directors add enmity with `set_hate`. Before this, NPCs switched to whoever hit them last. |
-| **Auto-attacks** | Every 3 s (recorded 3.0–3.1 s), timed per NPC from when it picked up its target. With a cast time they show a cast bar. |
+| **Auto-attacks** | Every 3 s (retail 3.03 s over 8,200; a few kinds 4 or 5 s), timed per NPC from when it picked up its target. With a cast time they show a cast bar. |
+| **Cast bars** | An NPC's ActorCast shows the action's cast time minus 0.3 s, and the action still lands at the full time: retail's for 99 % of 8,392 enemy casts (`npc_cast_bar_time`). |
+| **Speed** | Running (chasing, going home) 6 yalms a second, walking about while idle 2 (retail's ActorMove speed byte, tenths of a yalm a second: 60 and 20; a few kinds chase at 3.) It was 4 for everything, always with the running animation. Players walk at 24 and run at 60 (Sprint 78, Peloton 72, ground mounts 90–150). |
 | **Moving** | An NPC is only sent an ActorMove when it moved or turned. Sending one every half second to where it already stood (as reaching its goal and facing its target did) made the client play a step each time: idle NPCs flickered between walking and standing, and out in the world each sent about 1400 a session for a handful of real moves. In content an NPC with no path at all to its target (e.g. starting off the navmesh) walks straight at it instead of dropping it; dropping it sent To Guard a Guardian's second wave wandering back around the tree. |
 | **Stance** | NPCs draw their weapon when they pick up a target and again 0.5 s after each action lands; they sheathe 2 s after losing their target. |
 | **Placement** (`server/placement.rs`) | An NPC given `keep_near` (anchors and a distance, by the director) heads back to the middle of its anchors whenever it's further than that from any of them, whatever it's fighting, and attacks again once back. One given `stand_behind` (a tank and a distance) goes to the spot that far beyond the enemy the tank is fighting, on the far side from the tank (out of the enemy's frontal cones), when that spot keeps it near its anchors and its own target is in reach from there; within 2.5 yalms counts as there. |
 | **Pathing** | A new path starts from where the NPC actually is, and changing target drops the old path (no more 14–16 yalm jumps). When the navmesh doesn't reach the target, Detour returns a *partial* path (status `0x40000040`, success + partial, which used to be logged as an "Error in dtNavMeshQuery_findPath"): the NPC walks it and then straight on to the target, if that last stretch is at most 15 yalms (`MAX_OFF_MESH_GAP`), and in content however far. Before, it stopped at the edge for good, out of range (To Guard a Guardian's allies stuck 9 yalms from two Ixali, so the battle never ended, 2026-10-16 bundle). |
-| **Aggro** | Aggressive enemies notice players within 15 yalms (`AGGRO_RANGE`), while idle *or* wandering, and ignore players 7+ levels above them (`AGGRO_LEVEL_GAP`). |
-| **Leashing** | Chased more than 40 yalms from spawn (`LEASH_DISTANCE`), or once the one it's after is that far from its spawn, an enemy drops all enmity, heals to full and walks home ignoring everyone until within 3 yalms. Enemies wander around their spawn, **only out in the world**: in content NPCs stand where they're put until something starts them (To Guard a Guardian's masked mage walked off while waiting to be hit). (The second rule is for enemies with no navmesh path to the player: they never moved, so never leashed, and kept the player in combat anywhere in the zone, 2026-10-16 bundle.) **Only out in the world**: enemies in content (a quest battle, a duty) never leash. In To Guard a Guardian the second wave's lostwings, sent the long way round after Miraudont, leashed at full health, and back home picked up a background guard instead, which they could never kill. |
+| **Aggro** | Aggressive enemies notice players within 11 yalms all round (`AGGRO_PROXIMITY`) or within 15 yalms in a ±45° cone in front of them (`AGGRO_RANGE`), while idle *or* wandering, and ignore players 9+ levels above them (`AGGRO_LEVEL_GAP`). From Bob's captures: 98 enemies came at him on their own from 2–18 yalms (median 9); the far ones (12–18) all faced him, every one from behind was within about 11; they still did at 7–8 levels below him (8 of 41 close passes), never at 9+ (0 of 154). (Retail's assist, idle enemies of the same kind within about 4–14 yalms joining when one is hit, isn't done.) |
+| **Leashing** | Chased more than 40 yalms from spawn (`LEASH_DISTANCE`; retail gave up at 34–45, median 39, after 7–20 s, home 7–9 s later at a run), or once the one it's after is that far from its spawn, an enemy drops all enmity, regenerates on the way (10 % a tick; it used to heal to full at once) and walks home ignoring everyone until within 3 yalms. Enemies wander around their spawn, **only out in the world**: in content NPCs stand where they're put until something starts them (To Guard a Guardian's masked mage walked off while waiting to be hit). (The second rule is for enemies with no navmesh path to the player: they never moved, so never leashed, and kept the player in combat anywhere in the zone, 2026-10-16 bundle.) **Only out in the world**: enemies in content (a quest battle, a duty) never leash. In To Guard a Guardian the second wave's lostwings, sent the long way round after Miraudont, leashed at full health, and back home picked up a background guard instead, which they could never kill. |
 | **Claim** (`server/first_attack.rs`) | The first to attack an actor claims it: FirstAttack (374 on 7.57, 16 bytes: kind u32, 0, the claimer's ID u32, 0) goes to everyone nearby with the attacked actor as its source, just before the action's EffectResult, when it first takes damage or a miss: an enemy from a player or an allied NPC, a player from an enemy. It stays with the first attacker until they're gone (dead or left). Cleared (kind 0, no ID) for an enemy that gives up a chase and for a player whose fight is over (as InCombat goes; on retail 0 to 3 s after their enemy list empties). The claimer is also CommonSpawn's `combat_tagger_id`, so others see it when the actor spawns for them. From Bob's Chronofoil captures (2026-10-14 to 17): about 1,100 of them in the Central Shroud and Thanalan, every set one right before the target's EffectResult. Kawari never sent it before. |
 | **In combat** | While any enemy has a player on its enmity list (the HaterList), the server sets the player's **InCombat** condition (wire bit 1, client condition 26), as retail does, and clears it when none do. The client then refuses Teleport, Return, mounting and talking to NPCs itself. Natural HP/MP regeneration waits for it to clear. Before this the server never set it, so the client let players teleport with enemies still after them. |
 | **Area attacks** | Cones, circles and lines from the Action sheet (`CastType`, `EffectRange`, `XAxisModifier`; cone angle from the omen, e.g. `gl_fan090` = 90°). Aimed where the target was and the way the enemy faced when the cast started; the enemy stands still while casting; ground-targeted omens show where the target stood. They land only on players still inside when the cast ends, counting half a yalm past the edge (`PLAYER_HITBOX_RADIUS`, the player's hitbox; it was a whole yalm, so a player who had left a 6-yalm Terror Eye was still hit at 6.6 yalms), each getting their own roll (damage, variance, miss/parry/crit, statuses). The ActionEffect packet still shows only the main target (only the one-target opcode is known). |
@@ -226,6 +252,12 @@ When a battle NPC dies, everyone on its enmity list, and their party in the same
   (a guess). Central Shroud only so far.
 
 Level-ups announce only the new levels (the message's third value is the previous level).
+
+**Death and respawn** (Bob's captures, 1,581 deaths): the death animation (Kill), then **Defeated** (ActorControl 6,
+the killer twice, an invalid ID for none) to everyone nearby 2.0 s later (Kawari: the one it hated most stands in for
+the killer; it never sent Defeated before), DeadFadeOut 8.05 s after the death, DeleteActor 1.75 s after that (was 8 +
+2 s). Respawns count from the deletion, in retail's steps by level (`mob_respawn_time`): 15.7 s for levels 1–4, 30.9 s
+for 5–9, 61 s from 10 (retail also used 120.7 s at some spots of any level; Kawari used 120 s for everything).
 
 ## Healer engine and the White Mage kit
 
