@@ -13,6 +13,9 @@ add one when something is found.
 * Limsa Lominsa has only upstream's opening. Ul'dah's story stops after **Underneath the Sultantree** (550), and its
   **Close to Home** is only scripted for the class Bob played (`ManWil002_00568`); the other two versions
   (`ManWil003_00569`, `ManWil004_00570`) are still upstream's stubs.
+* Attuning to a main aetheryte outside a quest ends the event after the bar (`Aetheryte.lua`); inside Close to Home
+  retail follows the bar with the aetheryte event's notice 0 (one argument, 0), which probably also gives the
+  "attuned" message on its own, but a plain attunement hasn't been recorded to confirm it.
 * Ul'dah's Close to Home: what Momodi's scenes 6 and 7 are for (talking to her during sequence 1?) isn't known, so
   she just ends the event then. Nothing to See Here's scenes 11–13 (the three NPCs' lines after the quest moves to
   255) are a guess from the listing.

@@ -10,6 +10,8 @@ Aetherytes, attunement, Teleport and maps.
   animation, Sapphire's `ACTION_ATTUNE`) instead of unlocking it instantly.
 * When the bar completes (`onEventActionCast`) the aetheryte is unlocked (`unlock_aetheryte`). Shards then play scene 3
   ("you have aethernet access" and its effect, flags `0x2001` and params `{1, 1}` as retail: Bob's 2026-10-18 capture of a Limsa Lominsa shard; the attunement itself, EventAction 19 for 5 s then LearnTeleport, already matched); main aetherytes end the event.
+* Attuning while Ul'dah's Close to Home asks for it nests the aetheryte's event in the quest's and plays the same
+  bar, then the aetheryte's notice 0 and the quest's scenes (quests, "Attuning inside a quest").
 * Already attuned: the aetheryte menu (scene 2) as upstream.
 * Close to Home's attunement objective uses the aetheryte's own event, and also teaches Return.
 

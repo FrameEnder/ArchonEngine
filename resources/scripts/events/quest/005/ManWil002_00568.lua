@@ -28,6 +28,15 @@ NOTICE_ATTUNED = 0
 NOTICE_ACTOR1 = 1
 NOTICE_GUILD = 2
 
+-- Attuning, as retail did it (Bob's Chronofoil capture of 2026-10-18, game 2026.10.06): the aetheryte's own event is
+-- started inside the quest's (EventStart, type Nest), with its condition instead of the quest's, and EventAction 19
+-- (the attunement animation and 5 s bar) on the aetheryte; when the bar ends, LearnTeleport, that event's notice 0
+-- (with one 0), its EventFinish, and only then scene 1 with the quest's condition back.
+AETHERYTE_HANDLER = 0x50000 -- | the Aetheryte row
+EVENT_ACTION_ATTUNE = 19
+CONDITION_OCCUPIED_IN_EVENT = 6
+CONDITION_OCCUPIED_IN_QUEST_EVENT = 7
+
 UNLOCK_RETURN = 1 -- UnlockLink for Return, which retail sends after the attunement cutscene
 CUTSCENE_FLAGS = SET_BASE | HIDE_HOTBAR -- 0xF8402EFB, what retail plays the cutscenes with
 
@@ -69,7 +78,11 @@ function onTalk(target, player)
         play(player, SCENE_OFFER, HIDE_HOTBAR)
     elseif sequence == 1 and BASE_ID == AETHERYTE0 and getVar(player, 1, false) == 0 then
         if not player:has_aetheryte(AETHERYTE0) then
-            player:unlock_aetheryte(1, AETHERYTE0)
+            player:start_nested_event(AETHERYTE_HANDLER | AETHERYTE0)
+            player:set_condition(CONDITION_OCCUPIED_IN_QUEST_EVENT, false)
+            player:set_condition(CONDITION_OCCUPIED_IN_EVENT, true)
+            player:event_action(EVENT_ACTION_ATTUNE) -- continues in onEventActionCast
+            return
         end
         play(player, SCENE_AETHERYTE_WAIT, HIDE_HOTBAR)
     elseif sequence == 1 and BASE_ID == ACTOR1 and getVar(player, 0, false) == 0 then
@@ -81,6 +94,15 @@ function onTalk(target, player)
     else
         player:finish_event()
     end
+end
+
+function onEventActionCast(player)
+    player:unlock_aetheryte(1, AETHERYTE0)
+    player:event_notice(AETHERYTE_HANDLER | AETHERYTE0, 0, {0})
+    player:finish_nested_event(AETHERYTE_HANDLER | AETHERYTE0)
+    player:set_condition(CONDITION_OCCUPIED_IN_EVENT, false)
+    player:set_condition(CONDITION_OCCUPIED_IN_QUEST_EVENT, true)
+    play(player, SCENE_AETHERYTE_WAIT, HIDE_HOTBAR)
 end
 
 -- An objective is done: its variable, its flag, the count, its notice; then turn-in once all three are.

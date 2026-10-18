@@ -49,6 +49,12 @@ pub enum LuaTask {
         notice_id: u8,
         args: Vec<u32>,
     },
+    /// Only the packets of a nested event (EventStart/EventFinish with type Nest, on the current event's target):
+    /// retail starts the aetheryte's event inside Close to Home's while attuning. Kawari doesn't run a handler for it.
+    NestedEventPacket {
+        handler_id: u32,
+        start: bool,
+    },
     ChangeWeather {
         id: u8,
     },

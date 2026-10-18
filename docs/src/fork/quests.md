@@ -70,6 +70,7 @@ Player methods (`servers/world/src/lua/player.rs`), the ones quests use:
 | `finish_quest(id, chosen_item)` | Completes it: gil, EXP, the fixed items and crystals, the optional item the player picked (`results[2]` of the reward scene). EXP is `ExpFactor × ScaledQuestXP[L] × QuestExpModifier[L] / 100` with L the player's level but no more than the quest's (ClassJobLevel + QuestLevelOffset): exact on 30+ turn-ins in Bob's captures (a level 1 quest at level 2 gives 400, not 660). As retail, the log lines come first (EventLogMessage from no event: 1605 the gil, 1606 an item, 1607 items with a count), then the gil and items, then the EXP. |
 | `cancel_quest(id)`, `incomplete_quest(id)`, `has_quest(id)` | As named. |
 | `event_notice(id, notice, {args})` | Sends an EventNotice (see below). |
+| `start_nested_event(handler)` / `finish_nested_event(handler)` | Sends only the packets of a nested event (EventStart / EventFinish, type Nest, on the current event's target), as retail does with the aetheryte's event while attuning in Close to Home; no handler runs for it. If an event action is interrupted, the nested event is finished too (and OccupiedInEvent removed). |
 | `event_action(id)` | Starts an event action (the progress bar: Searching, Aiding, Interacting…); the script gets `onEventActionCast(player)` when it completes. |
 | `spawn_quest_bnpc(layout_id)` | Brings out a battle NPC from the zone's drop-ins for this quest. |
 | `join_quest_battle(id, zone)` | Enters a quest battle (see [Quest battles](quest-battles.md)). |
@@ -259,7 +260,7 @@ Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `
 | 507 | The Gridanian Envoy | `005/ManFst200_00507` | Sapphire, recording, Chronofoil capture (gangplanks) | Two letters (UI8BH/BL); airships to Limsa Lominsa and Ul'dah: each gangplank plays a check scene (6, 28), the Waiting bar (event action 11), then the yes/no (7, 29) whose answer is its error code (50 = No), then the flight (8, 30) and `change_territory`; notices 0, 3, 4, 7; positions are Sapphire's. Scenes not yet checked against the client's script (needs a dump). |
 | 674 | Call of the Sea | `006/SubWil141_00674` | Sapphire, recording | Accepting goes straight to 255; Baderon gives the reward. Scenes not yet checked against the client's script. |
 | 594 | Coming to Ul'dah | `005/ManWil001_00594` (upstream) | client script, recording, Chronofoil capture | Upstream's script matches retail unchanged: the offer and two scenes come back as yields, the opening (scene 30) nested in the accept. |
-| 568 | Close to Home (Ul'dah) | `005/ManWil002_00568` | client script, recording, Chronofoil capture | Moves the player from the opening's Ul'dah into the real one (130) with ITEM0 (UI8CH); three objectives in any order: hand ITEM0 to the guild (trade scene 4 → 5; UI8BH, BitFlag8 3, notice 2), attune (scenes 1 → 2, then Return; UI8BL, BitFlag8 1, notice 0), talk to ACTOR1 (scene 3; UI8AL, BitFlag8 2, notice 1); UI8AH counts them. The other two classes' versions (569, 570) not done. The aetheryte step never started in game until aetherytes got a `BASE_ID` (2026-10-18). |
+| 568 | Close to Home (Ul'dah) | `005/ManWil002_00568` | client script, recording, Chronofoil capture | Moves the player from the opening's Ul'dah into the real one (130) with ITEM0 (UI8CH); three objectives in any order: hand ITEM0 to the guild (trade scene 4 → 5; UI8BH, BitFlag8 3, notice 2), attune (scenes 1 → 2, then Return; UI8BL, BitFlag8 1, notice 0), talk to ACTOR1 (scene 3; UI8AL, BitFlag8 2, notice 1); UI8AH counts them. The other two classes' versions (569, 570) not done. The aetheryte step never started in game until aetherytes got a `BASE_ID`; its attunement (bar, nested aetheryte event) checked against Bob's Chronofoil capture of the quest (2026-10-18). |
 | 595 | We Must Rebuild | `005/SubWil027_00595` | client script, recording, Chronofoil capture | Accepting goes straight to 255; ACTOR1 gives the chosen reward. |
 | 671 | Nothing to See Here | `006/SubWil025_00671` | client script, recording, Chronofoil capture | Three ITEM0 (UI8CH counts down) handed to three NPCs in any order (trade 1/4/7 → 2/5/8; UI8AL/BH/BL and BitFlag8 1–3), UI8AH counts, notice 0 `[count, 3]` each; reward from ACTOR0 (scene 10). |
 | 550 | Underneath the Sultantree | `005/ManWil005_00550` | client script, Sapphire, recording, Chronofoil capture (quest battle) | Offer and cutscene (0 → 1); ACTOR1 offers quest battle 37 (scene 2); the aftermath on re-entering Central Thanalan (scene 5) moves it to 255; reward (scene 6). No variables or notices at all. |
@@ -269,10 +270,15 @@ Home to The Gridanian Envoy is complete; Call of the Sea starts the next part (L
 Coming to Ul'dah to Underneath the Sultantree (for the class Bob's 2026-10-17 character played; the other two Close to
 Home versions are still upstream's).
 
-**Attuning inside a quest** (Close to Home, Ul'dah): retail starts the aetheryte's own event (handler 0x50009) beside
-the quest's, sends LearnTeleport (ActorControlSelf 509, the aetheryte ID) and that event's notice and finish about
-5 s later, and only then plays the quest's scene 1 (the client's script only waits in it); Return's unlock
-(ActorControlSelf 41, UnlockLink 1) comes after the attunement cutscene.
+**Attuning inside a quest** (Close to Home, Ul'dah; Bob's Chronofoil capture of 2026-10-18, game 2026.10.06): the
+client talks to the aetheryte with the quest's handler. Retail answers with the quest's EventStart, then the
+aetheryte's own (handler 0x50009, **type 7, Nest**, same target), swaps OccupiedInQuestEvent (7) for OccupiedInEvent
+(6) and starts EventAction 19 on the aetheryte (ActorControlTarget 3: the attunement animation and its 5 s bar). When
+the bar ends: LearnTeleport (ActorControlSelf 509: 9, 1), the aetheryte event's notice 0 with one argument 0
+(EventNotice2), its EventFinish (type 7, result 1), the quest's scene 1 (flags 0x2000; the client's script only
+waits in it), condition 7 back, and the EventAction's end. Scene 2 is the attunement cutscene; Return's unlock
+(ActorControlSelf 41, UnlockLink 1) comes after it, then the quest's notice 0. `ManWil002_00568` does all of this
+(`start_nested_event`, `event_action`, `onEventActionCast`); until 2026-10-18 it skipped the bar and the nested event.
 
 The client talks to an aetheryte (or shard) by its **layout ID**, with the quest's handler: aetherytes are part of the
 map, not objects the server spawns, so until 2026-10-18 nothing gave them a `BASE_ID` and Ul'dah's Close to Home, which

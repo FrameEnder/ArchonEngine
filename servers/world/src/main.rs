@@ -215,6 +215,7 @@ async fn initial_setup(
                     fate_motivation_npcs: HashMap::new(),
                     content_handler_id: None,
                     event_action_id: 0,
+                    nested_event: None,
                     quest_battle_stay: false,
                     quest_battle_finish_scene: None,
                     quest_battle_finish_flags: QUEST_BATTLE_SCENE_FINISH_FLAGS,
@@ -4354,6 +4355,22 @@ async fn process_server_msg(
                             },
                         )
                         .await;
+                    // A nested event started for the action (the aetheryte's, attuning in a quest) ends too.
+                    if let Some(handler_id) = connection.nested_event.take() {
+                        connection
+                            .send_ipc_self(ServerZoneIpcSegment::new(
+                                ServerZoneIpcData::EventFinish {
+                                    handler_id,
+                                    event_type: EventType::Nest,
+                                    result: 1,
+                                    arg: 0,
+                                },
+                            ))
+                            .await;
+                        connection
+                            .conditions
+                            .remove_condition(kawari::ipc::zone::Condition::OccupiedInEvent);
+                    }
                     connection.event_finish(events).await;
                 }
             }

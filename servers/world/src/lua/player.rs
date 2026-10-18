@@ -185,6 +185,11 @@ impl LuaPlayer {
         });
     }
 
+    fn nested_event_packet(&mut self, handler_id: u32, start: bool) {
+        self.queued_tasks
+            .push(LuaTask::NestedEventPacket { handler_id, start });
+    }
+
     fn set_level(&mut self, level: u16) {
         self.queued_tasks.push(LuaTask::SetLevel { level });
     }
@@ -771,6 +776,14 @@ impl UserData for LuaPlayer {
                 Ok(())
             },
         );
+        methods.add_method_mut("start_nested_event", |_, this, handler_id: u32| {
+            this.nested_event_packet(handler_id, true);
+            Ok(())
+        });
+        methods.add_method_mut("finish_nested_event", |_, this, handler_id: u32| {
+            this.nested_event_packet(handler_id, false);
+            Ok(())
+        });
         methods.add_method_mut("spawn_quest_bnpc", |_, this, layout_id: u32| {
             this.spawn_quest_battle_npc(layout_id);
             Ok(())

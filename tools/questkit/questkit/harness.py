@@ -161,6 +161,10 @@ class FakePlayer:
         values = _values(args)
         if len(values) > 4:
             raise HarnessError(f"event_notice with {len(values)} arguments: the server refuses more than 4")
+        if int(handler) != repo.QUEST_HANDLER_BASE + self._h.quest:
+            # Another event's notice (the aetheryte's, while attuning inside a quest): not the quest's progress.
+            self._h.tasks.append(Task("other_notice", int(handler), int(notice), [int(v) for v in values]))
+            return
         self._h.tasks.append(Task("notice", int(notice), [int(v) for v in values]))
 
     def spawn_quest_bnpc(self, layout):

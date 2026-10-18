@@ -222,6 +222,8 @@ pub struct ZoneConnection {
     pub content_finder_condition_id: u16,
     /// The event action currently being cast by a quest, see `LuaTask::EventAction`.
     pub event_action_id: u32,
+    /// A nested event whose packets a script started (`start_nested_event`) and hasn't finished yet.
+    pub nested_event: Option<HandlerId>,
     /// Whether to stay in a won quest battle after "Duty Complete", until its director sends us back.
     pub quest_battle_stay: bool,
     /// The scene a won quest battle plays before sending us back (`QUEST_BATTLE_SCENE_FINISH` unless its director

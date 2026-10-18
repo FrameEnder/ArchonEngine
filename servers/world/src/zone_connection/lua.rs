@@ -20,8 +20,8 @@ use kawari::{
         ORNAMENT_BITMASK_SIZE, TRIPLE_TRIAD_CARDS_BITMASK_SIZE,
     },
     ipc::zone::{
-        ActorControlCategory, ClientTriggerCommand, DutyFinderSetting, EventNotice, ItemInfo,
-        SceneFlags, ServerZoneIpcData, ServerZoneIpcSegment,
+        ActorControlCategory, ClientTriggerCommand, DutyFinderSetting, EventNotice, EventStart,
+        EventType, ItemInfo, SceneFlags, ServerZoneIpcData, ServerZoneIpcSegment,
     },
 };
 
@@ -200,6 +200,29 @@ impl ZoneConnection {
                             args.len()
                         ),
                     }
+                }
+                LuaTask::NestedEventPacket { handler_id, start } => {
+                    let Some((_, event)) = events.last() else {
+                        tracing::warn!("Tried to nest event {handler_id} without an event!");
+                        continue;
+                    };
+                    self.nested_event = start.then_some(HandlerId(*handler_id));
+                    let ipc = if *start {
+                        ServerZoneIpcSegment::new(ServerZoneIpcData::EventStart(EventStart {
+                            target_id: event.actor_id,
+                            handler_id: HandlerId(*handler_id),
+                            event_type: EventType::Nest,
+                            ..Default::default()
+                        }))
+                    } else {
+                        ServerZoneIpcSegment::new(ServerZoneIpcData::EventFinish {
+                            handler_id: HandlerId(*handler_id),
+                            event_type: EventType::Nest,
+                            result: 1,
+                            arg: 0,
+                        })
+                    };
+                    self.send_ipc_self(ipc).await;
                 }
                 LuaTask::SetLevel { level } => {
                     self.set_current_level(*level);
