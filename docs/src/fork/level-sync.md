@@ -56,6 +56,15 @@ BaseSpeed. Traits follow the synced level already (`has_trait` uses the current 
 Retail sends nothing for them: the client locks and downgrades actions from UpdateClassInfo's **current level** (a
 synced White Mage sent Stone, not Glare). Kawari sent the real level there, now the synced one.
 
+## FATE rewards
+
+A completed FATE (progress 100) gives everyone who helped defeat its enemies (`fate_participants`) its gold-rank
+rewards (`get_fate_rewards`): **EXP** ParamGrow's ScaledQuestXP × QuestExpModifier at the FATE's level, **gil** twice
+its level, as retail in Bob's Chronofoil captures (FATE 222, level 13: 1320 EXP and 26 gil; FATE 1409, level 50: 11700
+and 100). Retail also gave about 5.7 Grand Company seals a level and sometimes items, in this order: ActorControl 2353
+(the FATE, 7), the EXP, the item and gil and seals, then its reward window (opcode 291 on 2026.09.15). Kawari gave
+nothing before.
+
 ## Not done
 
 * Weapon damage under sync (presumably ItemLevel[S]'s Physical/MagicalDamage) isn't capped.

@@ -4729,6 +4729,9 @@ async fn process_server_msg(
                     connection.set_fate_level_sync(fate_id, false).await;
                 }
             }
+            FromServer::FateReward(fate_id) => {
+                connection.give_fate_rewards(fate_id).await;
+            }
             FromServer::CheckTeleportSharingEligibility(aetheryte_id) => {
                 connection.check_tele_sharing_eligibility(aetheryte_id);
             }

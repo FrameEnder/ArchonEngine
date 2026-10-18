@@ -1537,10 +1537,19 @@ pub async fn server_main_loop(
                                 let mut data = data.lock();
                                 let mut ended_ac = None;
                                 let mut unk10_ac = None;
+                                let mut rewarded = Vec::new();
                                 if let Some(instance) = data.instances.get_mut(*instance_index) {
+                                    let participants = instance
+                                        .fate_participants
+                                        .remove(fate_id)
+                                        .unwrap_or_default();
                                     if let Some(fate_instance) =
                                         instance.fates.iter_mut().find(|x| x.fate_id == *fate_id)
                                     {
+                                        // Completed (progress 100): everyone who helped gets its rewards.
+                                        if fate_instance.progress >= 100 {
+                                            rewarded = participants;
+                                        }
                                         ended_fate(fate_instance);
                                         ended_ac = Some(fate_instance.create_fate_init_ac());
 
@@ -1575,6 +1584,13 @@ pub async fn server_main_loop(
                                         FromServer::FATEComplete(*fate_id),
                                         DestinationNetwork::ZoneClients,
                                     );
+                                    for player in rewarded {
+                                        network.send_to_by_actor_id(
+                                            player,
+                                            FromServer::FateReward(*fate_id),
+                                            DestinationNetwork::ZoneClients,
+                                        );
+                                    }
                                 }
 
                                 // Fill in the FATE slot

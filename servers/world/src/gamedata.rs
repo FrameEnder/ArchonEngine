@@ -2808,6 +2808,18 @@ impl GameData {
         PublicContentType::from_repr(self.public_content_sheet.row(id)?.Type)
     }
 
+    /// A FATE's rewards at gold rank, as retail gave them (Bob's Chronofoil captures: FATE 222, level 13, 1320 EXP and
+    /// 26 gil; FATE 1409, level 50, 11700 EXP and 100 gil): EXP is ParamGrow's ScaledQuestXP × QuestExpModifier at the
+    /// FATE's level, gil twice its level. Returns (EXP, gil.)
+    pub fn get_fate_rewards(&mut self, id: u32) -> Option<(u32, u32)> {
+        let level = self.fate_sheet.row(id)?.ClassJobLevel as u32;
+        let grow = self.param_grow_sheet.row(level)?;
+        Some((
+            grow.ScaledQuestXP as u32 * grow.QuestExpModifier as u32,
+            level * 2,
+        ))
+    }
+
     /// Returns the max level for a FATE.
     pub fn get_fate_max_level(&mut self, id: u32) -> Option<u8> {
         let row = self.fate_sheet.row(id)?;

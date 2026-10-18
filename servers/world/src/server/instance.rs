@@ -156,6 +156,8 @@ pub struct Instance {
     pub synced_item_level: Option<u16>,
     /// How long this content lasts for, if applicable.
     pub duration: Option<Duration>,
+    /// Players who helped defeat each running FATE's enemies (by FATE), who get its rewards if it's completed.
+    pub fate_participants: HashMap<u32, Vec<ObjectId>>,
     /// When the duty's clock started, and when its time left was last re-sent (retail re-sends it every 300 s.)
     pub duty_clock: Option<(Instant, Instant)>,
     /// Where players start in a quest battle, and which way they face.

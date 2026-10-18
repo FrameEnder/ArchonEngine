@@ -273,6 +273,8 @@ pub enum FromServer {
     PlayInitialCutscene(u32, u32),
     /// A FATE was completed. This is meant to track SHARED FATE completion and not much else yet.
     FATEComplete(u32),
+    /// A FATE this player took part in was completed: give its rewards.
+    FateReward(u32),
     /// Instruct the client's zone connection to check if the teleport can be shared.
     CheckTeleportSharingEligibility(u32),
     /// Inform the client of their player's new CharacterMode.

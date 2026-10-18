@@ -433,8 +433,20 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
         fate_id = Some(npc.common.fate_id);
     }
 
-    // Let whoever defeated it know, for quests that ask you to defeat enemies.
-    credit_battle_npc_kill(&mut network, instance, actor_id);
+    // Let whoever defeated it know, for quests that ask you to defeat enemies; a FATE's enemy counts them in it.
+    let credited = credit_battle_npc_kill(&mut network, instance, actor_id);
+    let npc_fate_id = instance
+        .find_actor(actor_id)
+        .map(|actor| actor.get_common_spawn().fate_id as u32)
+        .unwrap_or(0);
+    if npc_fate_id != 0 {
+        let participants = instance.fate_participants.entry(npc_fate_id).or_default();
+        for player in credited {
+            if !participants.contains(&player) {
+                participants.push(player);
+            }
+        }
+    }
 
     // Retail tells everyone nearby who defeated it 2.0-2.09 s after the death animation starts (ActorControl Defeated,
     // the killer twice; Bob's Chronofoil captures, 1,586 NPC and 92 player deaths.) The one it hated most stands in
@@ -546,9 +558,13 @@ const DEFEATED_DELAY: Duration = Duration::from_millis(2000);
 /// Informs the players that defeated a battle NPC, so their quests can count it.
 ///
 /// Credit goes to every player it hated (that is, who fought it), along with their party members in the same instance.
-fn credit_battle_npc_kill(network: &mut NetworkState, instance: &Instance, actor_id: ObjectId) {
+fn credit_battle_npc_kill(
+    network: &mut NetworkState,
+    instance: &Instance,
+    actor_id: ObjectId,
+) -> Vec<ObjectId> {
     let Some(NetworkedActor::Npc { spawn, enmity, .. }) = instance.find_actor(actor_id) else {
-        return;
+        return Vec::new();
     };
     let is_player_here =
         |id: ObjectId| matches!(instance.find_actor(id), Some(NetworkedActor::Player { .. }));
@@ -576,7 +592,7 @@ fn credit_battle_npc_kill(network: &mut NetworkState, instance: &Instance, actor
         }
     }
 
-    for player_id in credited {
+    for player_id in credited.iter().copied() {
         network.send_to_by_actor_id(
             player_id,
             FromServer::BattleNpcKilled {
@@ -589,6 +605,7 @@ fn credit_battle_npc_kill(network: &mut NetworkState, instance: &Instance, actor
             DestinationNetwork::ZoneClients,
         );
     }
+    credited
 }
 
 /// Updates other actors about this actor's HP and MP.

@@ -16,8 +16,8 @@ use kawari::{
     config::get_config,
     constants::COMPLETED_QUEST_BITMASK_SIZE,
     ipc::zone::{
-        ActiveQuest, ActorControlCategory, QuestActiveList, QuestTracker, ServerZoneIpcData,
-        ServerZoneIpcSegment, TrackedQuest,
+        ActiveQuest, ActorControlCategory, EventLogMessage, QuestActiveList, QuestTracker,
+        ServerZoneIpcData, ServerZoneIpcSegment, TrackedQuest,
     },
 };
 
@@ -177,8 +177,28 @@ impl ZoneConnection {
             rewards = game_data.get_quest_rewards(id, level);
         }
 
+        // The log lines for the rewards come first, as retail (Bob's Chronofoil captures): the gil (LogMessage 1605),
+        // then each item (1606, or 1607 with a count.)
+        let reward_list = self.game_data.lock().get_quest_reward_items(id);
+        if rewards.1 > 0 {
+            self.send_reward_log(QUEST_REWARD_GIL_LOG, vec![rewards.1])
+                .await;
+        }
+        for (item_id, count) in reward_list
+            .iter()
+            .copied()
+            .chain((optional_item != 0).then_some((optional_item, 1)))
+        {
+            if count > 1 {
+                self.send_reward_log(QUEST_REWARD_ITEMS_LOG, vec![0, item_id, count])
+                    .await;
+            } else {
+                self.send_reward_log(QUEST_REWARD_ITEM_LOG, vec![0, item_id])
+                    .await;
+            }
+        }
+
         // Add gil
-        // TODO: send log message
         self.player_data.inventory.currency.get_slot_mut(0).quantity = self
             .player_data
             .inventory
@@ -187,11 +207,6 @@ impl ZoneConnection {
             .quantity
             .saturating_add_unsigned(rewards.1);
         self.send_inventory().await;
-
-        // Add exp
-        if rewards.0 > 0 {
-            self.add_exp(rewards.0 as i32).await;
-        }
 
         // Add the items it always gives
         let reward_items: Vec<Item>;
@@ -251,6 +266,11 @@ impl ZoneConnection {
                     "Quest {id} doesn't have {optional_item} as an optional reward, so it wasn't given!"
                 ),
             }
+        }
+
+        // Then the EXP (retail: after the gil and items.)
+        if rewards.0 > 0 {
+            self.add_exp(rewards.0 as i32).await;
         }
 
         // The quests after it moved up a slot, so send the whole journal again
@@ -493,6 +513,37 @@ impl ZoneConnection {
         ))
     }
 
+    /// A FATE this player helped with was completed: its EXP and gil (gold rank; retail also gave Grand Company seals,
+    /// about 5.7 a level, and sometimes items, not done.)
+    pub async fn give_fate_rewards(&mut self, fate_id: u32) {
+        let Some((exp, gil)) = self.game_data.lock().get_fate_rewards(fate_id) else {
+            return;
+        };
+        self.player_data.inventory.currency.get_slot_mut(0).quantity = self
+            .player_data
+            .inventory
+            .currency
+            .get_slot_mut(0)
+            .quantity
+            .saturating_add_unsigned(gil);
+        self.send_inventory().await;
+        if exp > 0 {
+            self.add_exp(exp as i32).await;
+        }
+    }
+
+    /// A reward's log line (EventLogMessage from no event.)
+    async fn send_reward_log(&mut self, message_type: u32, params: Vec<u32>) {
+        let message = EventLogMessage {
+            handler_id: HandlerId(0),
+            message_type,
+            params,
+        };
+        if let Some(ipc) = message.package() {
+            self.send_ipc_self(ipc).await;
+        }
+    }
+
     pub fn record_fate_completion(&mut self) {
         let mut game_data = self.game_data.lock();
         if let Some(row) = game_data.get_fate_progress_ui_row(self.player_data.volatile.zone_id) {
@@ -500,6 +551,11 @@ impl ZoneConnection {
         }
     }
 }
+
+/// LogMessage rows for a quest's rewards: the gil, an item, items with a count.
+const QUEST_REWARD_GIL_LOG: u32 = 1605;
+const QUEST_REWARD_ITEM_LOG: u32 = 1606;
+const QUEST_REWARD_ITEMS_LOG: u32 = 1607;
 
 /// An EXP chain's bonus at this place in it (from 0), in percent.
 fn exp_chain_bonus_percent(index: u32) -> u32 {

@@ -212,6 +212,12 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
 * Entering a zone, Kawari sends FateInit before CreateFateContext; retail creates the contexts first (during the
   loading screen) and sends FateInit after the player has loaded in. Not known to break anything.
 * What 2352 (`UnkFate2`, sent with the FATE start NPC's actor ID on leaving) does isn't known.
+* FATE rewards ([Level Sync](level-sync.md#fate-rewards)) are gold rank's EXP and gil only, for whoever helped defeat
+  its enemies; no Grand Company seals, items, ranks or the reward window (opcode 291 on 2026.09.15, 72 bytes, not
+  known for 2026.10.06).
+* Duty rewards aren't given: retail gives each boss's InstanceContent.BossExp (FinalBossExp for the last) times the
+  player's bonus, NewPlayerBonusExp/Gil on a first clear, InstanceClearGil (LootMessage kind 9), 10–12 gil per level 28
+  dungeon enemy, and no kill EXP to players synced down, nor kill chains, in duties.
 
 ## Combat (found 2026-10-17)
 
