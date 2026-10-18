@@ -180,6 +180,10 @@ pub struct ZoneConnection {
     pub event_handler_id: Option<HandlerId>, // TODO: replace with a helper function
     pub recipe: Option<Recipe>,
     pub synced_level: Option<u8>,
+    /// The item level the content syncs to, if it has its own (see `GameData::find_content_synced_item_level`.)
+    pub synced_item_level: Option<u16>,
+    /// The FATE the player synced to, which unsyncs them when it ends.
+    pub synced_fate: Option<u32>,
     /// Player Search results.
     pub search_results: Vec<PlayerEntry>,
     /// The Player Search's current sequence value. Increases by 10 every time the client requests more results.

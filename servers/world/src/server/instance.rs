@@ -139,6 +139,8 @@ pub struct Instance {
     pub content_settings: Option<DutyFinderSetting>,
     /// The maximum synced level for this content, if applicable.
     pub synced_level: Option<u8>,
+    /// The item level this content syncs to, if it has its own (otherwise the synced level's ParamGrow.ItemLevelSync.)
+    pub synced_item_level: Option<u16>,
     /// How long this content lasts for, if applicable.
     pub duration: Option<Duration>,
     /// Where players start in a quest battle, and which way they face.
@@ -493,6 +495,23 @@ impl Instance {
     }
 
     /// Cancels all queued actions for this actor.
+    /// Cancels what `actor_id` is casting (its queued CastAction tasks), and nothing else: its statuses still run out.
+    /// Returns the actions that were being cast.
+    pub fn cancel_actor_casts(&mut self, actor_id: ObjectId) -> Vec<u32> {
+        let mut cancelled = Vec::new();
+        self.queued_task.retain(|task| {
+            if task.from_actor_id == actor_id
+                && let QueuedTaskData::CastAction { request, .. } = &task.data
+            {
+                cancelled.push(request.action_id);
+                false
+            } else {
+                true
+            }
+        });
+        cancelled
+    }
+
     pub fn cancel_actor_tasks(&mut self, actor_id: ObjectId) {
         // Delete the selected task:
         self.queued_task.retain(|x| x.from_actor_id != actor_id);

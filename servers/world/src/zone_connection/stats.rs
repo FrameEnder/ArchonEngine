@@ -1,9 +1,9 @@
 //! Managing statistics, including your classjob and other related information.
 
 use crate::{
-    GameData, ToServer, ZoneConnection,
+    GameData, SyncedItemStats, ToServer, ZoneConnection,
     gamedata::{Attributes, ItemInfoQuery, ItemRow, Modifiers},
-    inventory::{EquippedStorage, Storage},
+    inventory::{ITEM_FLAG_HQ, Storage},
 };
 use icarus::ParamGrow::ParamGrowRow;
 use kawari::{
@@ -426,30 +426,15 @@ impl BaseParameters {
         (normalized_potency * self.healing_magic_potency as f32).floor() as u16
     }
 
-    /// Iterates over the given equipped items and calculates defense, along with any stat bonuses.
-    pub fn calculate_stat_across_all_items(
-        &mut self,
-        equipped: &EquippedStorage,
-        item_level_attributes: Option<&[u16]>,
-    ) {
-        for i in 0..equipped.max_slots() {
-            let slot = equipped.get_slot(i as u16);
-            if slot.quantity > 0 {
-                self.defense += slot.defense as u32;
-                self.magic_defense += slot.magic_defense as u32;
-
-                for (i, param_id) in slot.base_param_ids.iter().enumerate() {
-                    if *param_id != 0 {
-                        // Make sure to cap attributes when ilvl syncing:
-                        let value = if let Some(item_level_attributes) = item_level_attributes {
-                            let attribute_cap = item_level_attributes[i];
-                            (slot.base_param_values[i].min(attribute_cap as i16)) as i32
-                        } else {
-                            slot.base_param_values[i] as i32
-                        };
-                        *self.get_mut(*param_id) =
-                            self.get_mut(*param_id).saturating_add_signed(value);
-                    }
+    /// Adds what the equipped items give (see `GameData::equipped_item_stats`): their attributes, defense and magic
+    /// defense.
+    pub fn add_equipped_items(&mut self, items: &[SyncedItemStats]) {
+        for item in items {
+            self.defense += item.defense;
+            self.magic_defense += item.magic_defense;
+            for (param_id, value) in item.params {
+                if param_id != 0 {
+                    *self.get_mut(param_id) = self.get_mut(param_id).saturating_add_signed(value);
                 }
             }
         }
@@ -510,7 +495,12 @@ impl ZoneConnection {
             ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateClassInfo(UpdateClassInfo {
                 classjob_id: self.player_data.classjob.current_class as u8,
                 class_level: self.current_level(&game_data),
-                current_level: self.current_level(&game_data),
+                // While synced, retail sends the synced level here and the real one in class_level: the client
+                // locks and downgrades actions by it.
+                current_level: self
+                    .synced_level
+                    .map(|level| level as u16)
+                    .unwrap_or(self.current_level(&game_data)),
                 synced_level: self.synced_level.unwrap_or_default() as u16,
                 current_exp: self.current_exp(&game_data),
                 ..Default::default()
@@ -530,6 +520,41 @@ impl ZoneConnection {
             data: [0; 15],
         });
         self.send_ipc_self(ipc).await;
+    }
+
+    /// Syncs the player to a FATE's level (`on`), or ends it (the FATE ended, or they asked.) As retail (Bob's
+    /// Chronofoil captures, docs/src/fork/level-sync.md): only when they're above the FATE's maximum level; stats, class
+    /// info, then FateLevelSynced with the FATE (0 when unsyncing.)
+    pub async fn set_fate_level_sync(&mut self, fate_id: u32, on: bool) {
+        if on {
+            let (max_level, current_level) = {
+                let mut game_data = self.game_data.lock();
+                (
+                    game_data.get_fate_max_level(fate_id),
+                    self.current_level(&game_data),
+                )
+            };
+            let Some(max_level) = max_level.filter(|max| current_level > *max as u16) else {
+                tracing::info!("Not syncing to FATE {fate_id}: already at or below its level.");
+                return;
+            };
+            self.synced_level = Some(max_level);
+            self.synced_item_level = None;
+            self.synced_fate = Some(fate_id);
+        } else {
+            if self.synced_fate.is_none() {
+                return;
+            }
+            self.synced_level = None;
+            self.synced_fate = None;
+        }
+
+        self.send_stats().await;
+        self.update_class_info().await;
+        self.actor_control_self(ActorControlCategory::FateLevelSynced {
+            fate_id: if on { fate_id } else { 0 },
+        })
+        .await;
     }
 
     pub async fn finish_changing_class(&mut self) {
@@ -558,8 +583,34 @@ impl ZoneConnection {
         }
     }
 
-    /// Scaled parameters based on level and item level sync.
-    pub fn base_parameters(&self) -> BaseParameters {
+    /// What each equipped item gives, capped under item level sync `sync_item_level`.
+    fn equipped_item_stats(
+        &self,
+        game_data: &mut GameData,
+        sync_item_level: Option<u16>,
+    ) -> Vec<SyncedItemStats> {
+        let equipped = &self.player_data.inventory.equipped;
+        (0..equipped.max_slots())
+            .map(|i| equipped.get_slot(i as u16))
+            .filter(|item| item.quantity > 0)
+            .filter_map(|item| {
+                game_data.equipped_item_stats(
+                    item.item_id,
+                    item.item_flags & ITEM_FLAG_HQ != 0,
+                    sync_item_level,
+                )
+            })
+            .collect()
+    }
+
+    /// Parameters at `level` (the synced level while synced), with the equipped items capped at `sync_item_level`, or
+    /// without any items when `with_items` is false.
+    fn parameters_at(
+        &self,
+        level: u16,
+        sync_item_level: Option<u16>,
+        with_items: bool,
+    ) -> BaseParameters {
         let mut game_data = self.game_data.lock();
 
         let modifiers = game_data
@@ -569,27 +620,6 @@ impl ZoneConnection {
         let attributes = game_data
             .get_racial_base_attributes(self.player_data.customize.chara_make.customize.tribe as u8)
             .expect("Failed to read racial attributes");
-
-        let level = self
-            .synced_level
-            .map(|x| x as u16)
-            .unwrap_or(self.current_level(&game_data));
-
-        let item_level_sync;
-        {
-            let param_grow = game_data
-                .get_param_grow(level as u32)
-                .expect("Failed to read param grow");
-
-            if self.synced_level.is_some() {
-                item_level_sync = Some(param_grow.ItemLevelSync);
-            } else {
-                item_level_sync = None;
-            }
-        }
-
-        let item_level_attributes =
-            game_data.get_item_level_attributes(item_level_sync.unwrap_or_default());
 
         let param_grow = game_data
             .get_param_grow(level as u32)
@@ -606,57 +636,50 @@ impl ZoneConnection {
         let mut base_parameters = BaseParameters::default();
         base_parameters.use_retail_formula(level, &param_grow, weapon.as_ref());
         base_parameters.perform_calculations(primary_stat, &attributes, &param_grow, &modifiers);
-        base_parameters.calculate_stat_across_all_items(
-            &self.player_data.inventory.equipped,
-            if item_level_sync.is_some() {
-                Some(&item_level_attributes)
-            } else {
-                None
-            },
-        );
+        if with_items {
+            let items = self.equipped_item_stats(&mut game_data, sync_item_level);
+            base_parameters.add_equipped_items(&items);
+        }
         base_parameters.calculate_potencies(&param_grow, Some(&modifiers));
+        // Retail's PlayerStats has the weapon's delay here (2400 for a Maple Wand.)
+        if let Some(weapon) = &weapon {
+            base_parameters.delay = weapon.delay_ms as u32;
+        }
 
         base_parameters
     }
 
-    /// Same as `base_parameters` but doesn't take into account level or item level sync.
-    pub fn unscaled_base_parameters(&mut self) -> BaseParameters {
-        let mut game_data = self.game_data.lock();
+    /// Scaled parameters based on level and item level sync.
+    pub fn base_parameters(&self) -> BaseParameters {
+        let level = match self.synced_level {
+            Some(level) => level as u16,
+            None => self.current_level(&self.game_data.lock()),
+        };
 
-        let modifiers = game_data
-            .get_class_job_modifiers(self.player_data.classjob.current_class as u32)
-            .expect("Failed to read param grow");
+        // Under sync, items are capped at the content's own item level if it has one, or the synced level's.
+        let sync_item_level = self.synced_level.map(|_| {
+            self.synced_item_level.unwrap_or_else(|| {
+                self.game_data
+                    .lock()
+                    .get_param_grow(level as u32)
+                    .map(|param_grow| param_grow.ItemLevelSync)
+                    .unwrap_or_default()
+            })
+        });
 
-        let attributes = game_data
-            .get_racial_base_attributes(self.player_data.customize.chara_make.customize.tribe as u8)
-            .expect("Failed to read racial attributes");
+        self.parameters_at(level, sync_item_level, true)
+    }
 
-        let level = self.current_level(&game_data);
-
-        let param_grow = game_data
-            .get_param_grow(level as u32)
-            .expect("Failed to read param grow");
-
-        let primary_stat = game_data
-            .get_job_primary_stat(self.player_data.classjob.current_class as u16)
-            .unwrap_or(1);
-
-        let weapon = game_data.get_item_info(ItemInfoQuery::ById(
-            self.player_data.inventory.equipped.main_hand.item_id,
-        ));
-
-        let mut base_parameters = BaseParameters::default();
-        base_parameters.use_retail_formula(level, &param_grow, weapon.as_ref());
-        base_parameters.perform_calculations(primary_stat, &attributes, &param_grow, &modifiers);
-        base_parameters.calculate_stat_across_all_items(&self.player_data.inventory.equipped, None);
-        base_parameters.calculate_potencies(&param_grow, Some(&modifiers));
-
-        base_parameters
+    /// The character's own parameters without any gear, at their real level even while synced: what retail sends
+    /// as PlayerStats' base values (the character window shows the difference as the gear's bonus.)
+    pub fn naked_base_parameters(&self) -> BaseParameters {
+        let level = self.current_level(&self.game_data.lock());
+        self.parameters_at(level, None, false)
     }
 
     pub async fn send_stats(&mut self) {
         let base_parameters = self.base_parameters();
-        let unscaled_base_parameters = self.unscaled_base_parameters();
+        let unscaled_base_parameters = self.naked_base_parameters();
 
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::PlayerStats(PlayerStats {
             strength: base_parameters.strength,

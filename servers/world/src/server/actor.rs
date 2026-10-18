@@ -181,6 +181,14 @@ impl NetworkedActor {
         }
     }
 
+    /// Puts `actor_id` at the top of this NPC's enmity (Provoke.) Does nothing for other actors.
+    pub fn provoke(&mut self, actor_id: ObjectId) {
+        if let NetworkedActor::Npc { enmity, .. } = self {
+            let top = enmity.values().copied().max().unwrap_or(0);
+            enmity.insert(actor_id, top.saturating_add(1).max(1));
+        }
+    }
+
     pub fn get_player_spawn(&self) -> Option<&SpawnPlayer> {
         match &self {
             NetworkedActor::Player { spawn, .. } => Some(spawn),

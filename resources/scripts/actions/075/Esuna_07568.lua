@@ -1,7 +1,8 @@
--- Esuna (Lv. 10) - role action
--- NOTE: Removing detrimental effects isn't implemented yet.
+-- Esuna (Lv. 10) - role action: removes one detrimental effect from the target (retail: the effect, or "no effect").
+
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
+    local effects = EffectsBuilder()
+    effects:cleanse()
 
     return effects
 end

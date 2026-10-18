@@ -1,11 +1,22 @@
--- Used by Miraudont in a quest battle. What it does to players and other NPCs there comes from Kawari Recorder's
--- recording of retail (the NPC's timeline, recorded_amounts), not from this potency.
--- TODO: the potency (and any status it gives) isn't verified for players who use it.
-POTENCY = 140
+-- Vorpal Thrust (Lv. 4), after True Thrust.
+-- Also used by Miraudont in a quest battle (recorded_amounts there); NPCs never have a combo, so they keep NPC_POTENCY.
+-- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
+local NPC_POTENCY = 140
+local POTENCY = 130
+local COMBO_POTENCY = 280
 
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_PIERCING, player.parameters:calc_physical_damage(POTENCY))
+    local effects = EffectsBuilder()
+    if not isPlayerCaster(player) then
+        effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, NPC_POTENCY))
+        return effects
+    end
+
+    local potency = POTENCY
+    if in_combo then
+        potency = COMBO_POTENCY
+    end
+    effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, potency))
 
     return effects
 end

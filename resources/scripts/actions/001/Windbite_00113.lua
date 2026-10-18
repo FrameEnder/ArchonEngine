@@ -1,11 +1,22 @@
--- Used by Galfrid in a quest battle. What it does to players and other NPCs there comes from Kawari Recorder's
--- recording of retail (the NPC's timeline, recorded_amounts), not from this potency.
--- TODO: the potency (and any status it gives) isn't verified for players who use it.
-POTENCY = 100
+-- Windbite (Lv. 30): wind damage over time.
+-- Also used by Galfrid in a quest battle (recorded_amounts there).
+-- NPCs use this ID too (quest battles): they keep NPC_POTENCY and nothing else, see isPlayerCaster.
+-- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
+local NPC_POTENCY = 100
+local POTENCY = 60
+local DOT_POTENCY = 20
+local DURATION = 45.0
+local EFFECT_WINDBITE = 129
 
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_PIERCING, player.parameters:calc_physical_damage(POTENCY))
+    local effects = EffectsBuilder()
+    if not isPlayerCaster(player) then
+        effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, NPC_POTENCY))
+        return effects
+    end
+
+    effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, classPotency(player, POTENCY, TRAITS_ARC_ACTION_DAMAGE)))
+    effects:damage_over_time(EFFECT_WINDBITE, DURATION, physicalDamage(player, classPotency(player, DOT_POTENCY, TRAITS_ARC_ACTION_DAMAGE)))
 
     return effects
 end

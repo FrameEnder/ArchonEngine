@@ -1,11 +1,23 @@
--- Used by Papalymo in a quest battle. What it does to players and other NPCs there comes from Kawari Recorder's
--- recording of retail (the NPC's timeline, recorded_amounts), not from this potency.
--- TODO: the potency (and any status it gives) isn't verified for players who use it.
-POTENCY = 100
+-- Scathe (Lv. 15): 20% chance of double potency.
+-- Also used by Papalymo in a quest battle (recorded_amounts there).
+-- NPCs use this ID too (quest battles): they keep NPC_POTENCY and nothing else, see isPlayerCaster.
+-- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
+local NPC_POTENCY = 100
+local POTENCY = 100
+local DOUBLE_CHANCE = 0.2
 
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_MAGIC, player.parameters:calc_magical_damage(POTENCY))
+    local effects = EffectsBuilder()
+    if not isPlayerCaster(player) then
+        effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, NPC_POTENCY))
+        return effects
+    end
+
+    local potency = POTENCY
+    if math.random() < DOUBLE_CHANCE then
+        potency = POTENCY * 2
+    end
+    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, classPotency(player, potency, TRAITS_THM_MAIM_AND_MEND)))
 
     return effects
 end

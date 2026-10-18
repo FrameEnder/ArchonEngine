@@ -1,11 +1,22 @@
--- Used by Papalymo in a quest battle. What it does to players and other NPCs there comes from Kawari Recorder's
--- recording of retail (the NPC's timeline, recorded_amounts), not from this potency.
--- TODO: the potency (and any status it gives) isn't verified for players who use it.
-POTENCY = 260
+-- Blizzard III (Lv. 35).
+-- NOTE: Astral Fire and Umbral Ice (the job gauge) aren't implemented: no potency or MP changes from them. Since 7.x Thunder spells need Thunderhead; without the gauge, changing element (this) grants it.
+-- Also used by Papalymo in a quest battle (recorded_amounts there).
+-- NPCs use this ID too (quest battles): they keep NPC_POTENCY and nothing else, see isPlayerCaster.
+-- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
+local NPC_POTENCY = 260
+local POTENCY = 290
+local EFFECT_THUNDERHEAD = 3870
+local THUNDERHEAD_DURATION = 30.0
 
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_MAGIC, player.parameters:calc_magical_damage(POTENCY))
+    local effects = EffectsBuilder()
+    if not isPlayerCaster(player) then
+        effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, NPC_POTENCY))
+        return effects
+    end
+
+    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, classPotency(player, POTENCY, TRAITS_THM_MAIM_AND_MEND)))
+    effects:gain_effect_self(EFFECT_THUNDERHEAD, 0, THUNDERHEAD_DURATION)
 
     return effects
 end

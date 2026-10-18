@@ -114,9 +114,24 @@ add one when something is found.
   Shroud only.
 * **Aggro range** (15 yalms) and **leash distance** (40 yalms) are global constants; the Recorder's World tab can give
   per-enemy values.
-* Player **HP** still uses upstream's approximate formula (low for levels 1–50).
-* Most jobs besides White Mage and Dancer have only their starter skills. Cooldowns aren't sent
-  (`server/action.rs` TODO), so the client doesn't show recasts from the server.
+* Player **HP** still uses upstream's approximate formula: 35 % low by level 17 (Conjurer 189 vs retail 293), about
+  half of retail at 18–50 ([Level Sync](level-sync.md#not-done) has the retail points).
+* **Class actions 1–50** ([Combat](combat.md#class-and-role-actions-levels-150)): potencies are 7.x max-level tooltip
+  values, not checked at low level (only Conjurer/White Mage are in Bob's captures). No job gauges (BLM Astral Fire and
+  Umbral Ice, MNK chakra/furies, WAR Beast, PLD Oath, SMN/SCH Aetherflow, NIN mudras), no egis or fairy, no
+  positionals, movement actions do nothing on the server, barriers don't absorb damage, Bloodbath doesn't heal, Cover
+  doesn't redirect, Thrill of Battle doesn't raise max HP, Peloton is the caster's only. Berserk's and Perfect
+  Balance's stacks aren't used up.
+* **Combat items:** HQ values aren't used; food gives Well Fed without its stat bonuses; elixirs give their caps.
+* **Cooldowns** (ActorControlSelf 17, retail sends one before every action) aren't sent; the client works recasts out
+  itself. Item recasts aren't tracked.
+* Retail adds up all of a target's HoTs into one tick (status 0) and shows MP ticks (Lucid Dreaming) as ActorControl 23;
+  Kawari sends one tick per effect and no MP tick. Barriers' share isn't sent in EffectResult.
+* Sprint: retail gives Jog (4209, +20 % speed until combat) when Sprint runs out, and keeps Sprint over a zone change;
+  Kawari does neither (statuses are dropped on zone change). 8 of 37 retail Sprints lasted 10 s instead of 20 (all on
+  the new 2026.10.06 characters), unexplained.
+* Materia isn't counted in stats.
+* No Limit Break gauge or Limit Break actions.
 
 * **Teleport animation stayed on** after a same-zone teleport (Bentbranch, 2026-10-16 bundle): the warp itself was
   on time (PrepareZoning straight after the cast, ActorSetPos 2 s later, ZoneIn with 110 after FinishZoning), but two

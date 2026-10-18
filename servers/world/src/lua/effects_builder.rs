@@ -53,6 +53,10 @@ pub struct EffectsBuilder {
     pub aoe_falloff_percent: u8,
     /// If true, heals restore the target to full HP regardless of their amount (e.g. Benediction.)
     pub heal_to_full: bool,
+    /// If true, the caster goes to the top of the target's enmity (Provoke.)
+    pub provoke: bool,
+    /// If true, the target's first status that can be removed is (Esuna.)
+    pub cleanse: bool,
 }
 
 /// The heal effect's flag (in its last parameter) saying it lands on the one using the action, e.g. a drain.
@@ -143,6 +147,16 @@ impl UserData for EffectsBuilder {
                 unk1: [0; 5],
                 amount: u16::MAX, // Replaced with the real amount later
             }));
+            Ok(())
+        });
+        // The caster goes to the top of the target's enmity list.
+        methods.add_method_mut("provoke", |_, this, _: ()| {
+            this.provoke = true;
+            Ok(())
+        });
+        // Removes the target's first status that can be (Status.CanDispel), e.g. Esuna.
+        methods.add_method_mut("cleanse", |_, this, _: ()| {
+            this.cleanse = true;
             Ok(())
         });
         methods.add_method_mut("interrupt", |_, this, _: ()| {

@@ -43,6 +43,7 @@
   - [Quests](fork/quests.md)
   - [Quest Battles and Directors](fork/quest-battles.md)
   - [Combat and NPCs](fork/combat.md)
+  - [Level Sync](fork/level-sync.md)
   - [Timing, Casting and Tasks](fork/timing.md)
   - [Saving and Connections](fork/saving.md)
   - [Travel](fork/travel.md)

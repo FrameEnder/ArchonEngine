@@ -34,6 +34,13 @@ pub struct LuaPlayer {
     /// The error code of the scene that just returned (EventReturnHandler): 0 normally, 50 when the player declined
     /// a yes/no that reports its answer that way (e.g. The Gridanian Envoy's gangplanks; Sapphire, retail captures.)
     pub scene_error_code: u8,
+    /// Whether this is a player (action scripts also run for NPCs, through the same object.)
+    pub is_player: bool,
+    /// Their HP and MP now and at most, for action and item scripts (potions heal a share of the maximum.)
+    pub hp: u32,
+    pub max_hp: u32,
+    pub mp: u16,
+    pub max_mp: u16,
 }
 
 impl QueueSegments for LuaPlayer {
@@ -1224,5 +1231,10 @@ impl UserData for LuaPlayer {
             Ok(this.player_data.customize.chara_make.clone())
         });
         fields.add_field_method_get("level", |_, this| Ok(this.current_level));
+        fields.add_field_method_get("is_player", |_, this| Ok(this.is_player));
+        fields.add_field_method_get("hp", |_, this| Ok(this.hp));
+        fields.add_field_method_get("max_hp", |_, this| Ok(this.max_hp));
+        fields.add_field_method_get("mp", |_, this| Ok(this.mp));
+        fields.add_field_method_get("max_mp", |_, this| Ok(this.max_mp));
     }
 }

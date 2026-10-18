@@ -2000,7 +2000,7 @@ pub fn handle_director_messages(
             if let Some(synced_level) = instance.synced_level {
                 network.send_to_by_actor_id(
                     *from_actor_id,
-                    FromServer::SyncMaxLevel(synced_level),
+                    FromServer::SyncMaxLevel(synced_level, instance.synced_item_level),
                     DestinationNetwork::ZoneClients,
                 );
             }

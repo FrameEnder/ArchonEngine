@@ -93,7 +93,8 @@ pub fn send_effects_list(
 
     let mut statuses = [StatusEffect::default(); 30];
     let status_data = status_effects.data();
-    statuses[..status_data.len()].copy_from_slice(status_data);
+    let count = status_data.len().min(statuses.len());
+    statuses[..count].copy_from_slice(&status_data[..count]);
 
     let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::StatusEffectList(StatusEffectList {
         statuses,
@@ -198,7 +199,12 @@ pub fn gain_effect_instance(
     };
 
     let index = status_effects.len() as u8;
-    status_effects.add(effect_id, effect_param, effect_duration);
+    status_effects.add(
+        effect_id,
+        effect_param,
+        effect_duration,
+        effect_source_actor_id,
+    );
 
     if inform_players {
         {
@@ -314,6 +320,7 @@ pub fn remove_effect(
             base_parameters: BaseParameters::default(),
             current_level: 0,
             scene_error_code: 0,
+            ..Default::default()
         };
 
         let key = effect_id as u32;
@@ -339,7 +346,8 @@ pub fn remove_effect(
                 })
                 .unwrap();
         } else {
-            tracing::warn!("Effect {effect_id} isn't scripted yet! Ignoring...");
+            // Most statuses need no script (their numbers are in `modifiers`), so this isn't worth a warning.
+            tracing::debug!("Effect {effect_id} isn't scripted, nothing to run.");
         }
 
         // Inform the client of any new Lua tasks

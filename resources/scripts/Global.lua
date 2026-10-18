@@ -107,6 +107,55 @@ function traitPotency(player, trait, base_potency, enhanced_potency)
     return base_potency
 end
 
+-- Pugilist/Monk forms (status effects), changed by each step of the combo.
+STATUS_OPO_OPO_FORM = 107
+STATUS_RAPTOR_FORM = 108
+STATUS_COEURL_FORM = 109
+
+-- Other classes' damage traits. has_trait only checks the level, so each class names its own: {trait, multiplier},
+-- highest first. Maim and Mend (Thaumaturge 29/31, Arcanist 66/69: +10% at 20, +30% at 40), Increased Action Damage
+-- (Archer 18/20: +10% at 20, +20% at 40.)
+TRAITS_THM_MAIM_AND_MEND = { { 31, 1.3 }, { 29, 1.1 } }
+TRAITS_ACN_MAIM_AND_MEND = { { 69, 1.3 }, { 66, 1.1 } }
+TRAITS_ARC_ACTION_DAMAGE = { { 20, 1.2 }, { 18, 1.1 } }
+
+-- Applies a class's damage traits (one of the TRAITS_ tables above) to a potency, like whmPotency.
+function classPotency(player, potency, traits)
+    for _, entry in ipairs(traits) do
+        if player:has_trait(entry[1]) then
+            return math.floor(potency * entry[2])
+        end
+    end
+    return potency
+end
+
+function physicalDamage(player, potency)
+    return player.parameters:calc_physical_damage(potency)
+end
+
+function magicalDamage(player, potency)
+    return player.parameters:calc_magical_damage(potency)
+end
+
+function healAmount(player, potency)
+    return player.parameters:calc_heal_amount(potency)
+end
+
+-- Whether a player (not an NPC) is using the action. Some action IDs are also used by NPCs in quest battles, whose damage
+-- is tuned to recordings of retail: their scripts keep the NPC numbers unless this says a player cast it.
+function isPlayerCaster(player)
+    return player.is_player == true
+end
+
+-- Toggles a stance (Iron Will, Defiance): on with no time limit, or off if it's on.
+function toggleStance(player, effects, effect_id)
+    if player:get_effect(effect_id) ~= nil then
+        effects:consume_effect(effect_id)
+    else
+        effects:gain_effect_self(effect_id, 0, 0.0)
+    end
+end
+
 -- Shorthands for Conjurer/White Mage damage and healing amounts.
 function whmDamage(player, potency)
     return player.parameters:calc_magical_damage(whmPotency(player, potency))

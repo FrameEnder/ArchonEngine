@@ -29,6 +29,7 @@ use crate::{
         },
         first_attack,
         instance::{Instance, QueuedTaskData},
+        modifiers,
         network::{DestinationNetwork, NetworkState},
         rotation::Situation,
     },
@@ -142,10 +143,13 @@ pub fn npc_behavior(
             timeline,
             cast,
             placement,
+            status_effects,
             ..
         } = actor
             && let Some(current_target) = current_target
             && !cast.is_some_and(|cast| cast.until > Instant::now())
+            // Stunned, asleep or bound: it doesn't move.
+            && !modifiers::is_rooted(status_effects)
             && *state != NpcState::Dead
             && *state != NpcState::AoeTest
             && spawn.common.health_points > 0
@@ -273,6 +277,7 @@ pub fn npc_behavior(
             parameters,
             rotation_state,
             placement,
+            status_effects,
             ..
         } = actor
             && *state != NpcState::Dead
@@ -288,6 +293,11 @@ pub fn npc_behavior(
             // Enemies stand still (and keep their target) while they cast.
             // (The cast stays recorded afterwards, for the action to land where it was aimed.)
             if cast.is_some_and(|cast| cast.until > Instant::now()) {
+                continue;
+            }
+
+            // Stunned or asleep: it does nothing at all until that wears off (or, asleep, it's hit.)
+            if modifiers::is_incapacitated(status_effects) {
                 continue;
             }
 

@@ -65,6 +65,7 @@ mod director;
 mod effect;
 mod instance;
 mod job_gauge;
+mod modifiers;
 use job_gauge::CLASSJOB_WHITE_MAGE;
 mod linkshell;
 mod network;
@@ -374,6 +375,8 @@ impl WorldServer {
         if needs_sync {
             instance.synced_level =
                 game_data.find_content_synced_level(instance.content_finder_condition_id);
+            instance.synced_item_level =
+                game_data.find_content_synced_item_level(instance.content_finder_condition_id);
         }
 
         self.instances.push(instance);
@@ -1387,7 +1390,7 @@ pub async fn server_main_loop(
                                     network.send_to_instance(
                                         ObjectId::default(),
                                         instance,
-                                        FromServer::FATEComplete,
+                                        FromServer::FATEComplete(*fate_id),
                                         DestinationNetwork::ZoneClients,
                                     );
                                 }
@@ -2842,16 +2845,23 @@ pub async fn server_main_loop(
                             continue;
                         };
 
-                        // Job gauges don't carry over between classes.
-                        if actor.get_common_spawn().class_job != class_job
+                        // Job gauges don't carry over between classes, and retail empties them on a level sync too.
+                        if (actor.get_common_spawn().class_job != class_job
+                            || actor.get_common_spawn().level != level)
                             && let NetworkedActor::Player { job_gauge, .. } = actor
                         {
                             job_gauge.reset();
                         }
 
-                        actor.get_common_spawn_mut().level = level;
-                        actor.get_common_spawn_mut().max_health_points = new_parameters.hp;
-                        actor.get_common_spawn_mut().max_resource_points = new_parameters.mp as u16;
+                        let common = actor.get_common_spawn_mut();
+                        common.level = level;
+                        common.max_health_points = new_parameters.hp;
+                        common.max_resource_points = new_parameters.mp as u16;
+                        // Syncing down cuts HP and MP to the new maximum (retail kept them as they were when the sync
+                        // ended, rather than filling them up.)
+                        common.health_points = common.health_points.min(common.max_health_points);
+                        common.resource_points =
+                            common.resource_points.min(common.max_resource_points);
                         actor.get_common_spawn_mut().class_job = class_job;
 
                         if let NetworkedActor::Player { parameters, .. } = actor {

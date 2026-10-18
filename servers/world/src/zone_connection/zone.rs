@@ -405,6 +405,8 @@ impl ZoneConnection {
         self.send_conditions().await;
 
         self.synced_level = None;
+        self.synced_item_level = None;
+        self.synced_fate = None;
         self.update_class_info().await;
         self.send_stats().await;
 

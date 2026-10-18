@@ -44,6 +44,7 @@ use icarus::IKDRoute::IKDRouteSheet;
 use icarus::InstanceContent::InstanceContentSheet;
 use icarus::Item::ItemSheet;
 use icarus::ItemAction::ItemActionSheet;
+use icarus::ItemLevel::ItemLevelRow;
 use icarus::ItemLevel::ItemLevelSheet;
 use icarus::ItemSearchCategory::ItemSearchCategorySheet;
 use icarus::Level::LevelSheet;
@@ -132,6 +133,8 @@ pub struct GameData {
     pub item_level_sheet: ItemLevelSheet,
     pub gimmick_rect_sheet: GimmickRectSheet,
     pub base_param_sheet: BaseParamSheet,
+    /// Statuses Esuna can remove (Status.CanDispel), read the first time it's needed.
+    dispellable_statuses: Option<std::collections::HashSet<u16>>,
     pub classjob_sheet: ClassJobSheet,
     pub battalion_sheet: BattalionSheet,
     pub enpc_base_sheet: ENpcBaseSheet,
@@ -228,6 +231,94 @@ pub struct ItemRow {
     pub physical_damage: u16,
     pub magic_damage: u16,
     pub delay_ms: u16,
+}
+
+/// An equipped item's attributes under item level sync, see `GameData::synced_item_stats`.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct SyncedItemStats {
+    /// BaseParam IDs and their (capped) values; ID 0 is an empty slot.
+    pub params: [(u8, i32); 6],
+    pub defense: u32,
+    pub magic_defense: u32,
+}
+
+const BASE_PARAM_DEFENSE: u8 = 21;
+const BASE_PARAM_MAGIC_DEFENSE: u8 = 24;
+
+/// An attribute's cap under item level sync: ItemLevel × slot percent × MeldParam / 100000, rounded.
+fn sync_cap(item_level_value: u16, slot_percent: f64, meld_param: f64) -> i32 {
+    (item_level_value as f64 * slot_percent * meld_param / 100000.0).round() as i32
+}
+
+/// Defense under item level sync: scaled by the sync item level's value over the item's own.
+fn scale_by_item_level(value: u32, synced: u16, own: u16) -> u32 {
+    if own == 0 {
+        value
+    } else {
+        (value as f64 * synced as f64 / own as f64).round() as u32
+    }
+}
+
+/// The ItemLevel sheet's value for a BaseParam: its columns are in BaseParam ID order (1 Strength ... 73
+/// Perception.) Only the ones gear has.
+fn item_level_value(row: &ItemLevelRow, param: u8) -> Option<u16> {
+    Some(match param {
+        1 => row.Strength,
+        2 => row.Dexterity,
+        3 => row.Vitality,
+        4 => row.Intelligence,
+        5 => row.Mind,
+        6 => row.Piety,
+        7 => row.HP,
+        8 => row.MP,
+        10 => row.GP,
+        11 => row.CP,
+        12 => row.PhysicalDamage,
+        13 => row.MagicalDamage,
+        19 => row.Tenacity,
+        20 => row.AttackPower,
+        21 => row.Defense,
+        22 => row.DirectHitRate,
+        23 => row.Evasion,
+        24 => row.MagicDefense,
+        27 => row.CriticalHit,
+        33 => row.AttackMagicPotency,
+        34 => row.HealingMagicPotency,
+        44 => row.Determination,
+        45 => row.SkillSpeed,
+        46 => row.SpellSpeed,
+        70 => row.Craftsmanship,
+        71 => row.Control,
+        72 => row.Gathering,
+        73 => row.Perception,
+        _ => return None,
+    })
+}
+
+/// A BaseParam's share for an EquipSlotCategory (percent of the ItemLevel value an item in that slot may have.)
+fn slot_percent(row: &BaseParamRow, equip_slot_category: u8) -> u16 {
+    match equip_slot_category {
+        1 => row.OneHandWeaponPercent,
+        2 => row.OffHandPercent,
+        3 => row.HeadPercent,
+        4 => row.ChestPercent,
+        5 => row.HandsPercent,
+        6 => row.WaistPercent,
+        7 => row.LegsPercent,
+        8 => row.FeetPercent,
+        9 => row.EarringPercent,
+        10 => row.NecklacePercent,
+        11 => row.BraceletPercent,
+        12 => row.RingPercent,
+        13 => row.TwoHandWeaponPercent,
+        15 => row.ChestHeadPercent,
+        16 => row.ChestHeadLegsFeetPercent,
+        18 => row.LegsFeetPercent,
+        19 => row.HeadChestHandsLegsFeetPercent,
+        20 => row.ChestLegsGlovesPercent,
+        21 => row.ChestLegsFeetPercent,
+        _ => 0,
+    }
 }
 
 #[derive(Debug)]
@@ -661,6 +752,7 @@ impl GameData {
             item_level_sheet,
             gimmick_rect_sheet,
             base_param_sheet,
+            dispellable_statuses: None,
             classjob_sheet,
             battalion_sheet,
             enpc_base_sheet,
@@ -2289,6 +2381,41 @@ impl GameData {
         priorities
     }
 
+    /// Whether a status can be removed by Esuna and the like (Status.CanDispel.)
+    pub fn is_dispellable(&mut self, status_id: u16) -> bool {
+        if self.dispellable_statuses.is_none() {
+            let sheet = icarus::Status::StatusSheet::read_from(
+                &mut self.resource,
+                get_config().world.language(),
+            );
+            self.dispellable_statuses = Some(
+                sheet
+                    .map(|sheet| {
+                        sheet
+                            .into_iter()
+                            .flatten_subrows()
+                            .filter(|(_, row)| row.CanDispel)
+                            .map(|(id, _)| id as u16)
+                            .collect()
+                    })
+                    .unwrap_or_default(),
+            );
+        }
+        self.dispellable_statuses
+            .as_ref()
+            .is_some_and(|statuses| statuses.contains(&status_id))
+    }
+
+    /// Returns the item level this content syncs to, if it has its own (ContentFinderCondition.ItemLevelSync: 420,
+    /// 440, 470, 505 and 60 on retail in Bob's captures); otherwise it's the synced level's ParamGrow.ItemLevelSync.
+    pub fn find_content_synced_item_level(&mut self, content_finder_row_id: u16) -> Option<u16> {
+        let content_finder_row = self
+            .content_finder_condition_sheet
+            .row(content_finder_row_id as u32)?;
+
+        Some(content_finder_row.ItemLevelSync).filter(|x| *x != 0)
+    }
+
     /// Returns the synced level for this content.
     pub fn find_content_synced_level(&mut self, content_finder_row_id: u16) -> Option<u8> {
         let content_finder_row = self
@@ -2310,6 +2437,75 @@ impl GameData {
             row.Mind,
             row.Piety,
         ]
+    }
+
+    /// What an equipped item gives: its attributes (with the HQ bonuses, BaseParamValueSpecial, when `hq`), defense
+    /// and magic defense, capped under item level sync `sync_item_level` (docs/src/fork/level-sync.md). Fitted to Bob's
+    /// Chronofoil captures of retail (a White Mage at 86, and synced to 50 and to 18): each attribute is capped at
+    /// `round(ItemLevel[sync][attribute] × BaseParam[attribute].<slot>Percent × BaseParam[attribute].MeldParam[item's
+    /// BaseParamModifier] / 100000)`, and defense and magic defense scale by ItemLevel[sync] / ItemLevel[item's level];
+    /// items at or below the sync item level are unchanged. `None` if the item isn't in the sheet.
+    pub fn equipped_item_stats(
+        &mut self,
+        item_id: u32,
+        hq: bool,
+        sync_item_level: Option<u16>,
+    ) -> Option<SyncedItemStats> {
+        let item = self.item_sheet.row(item_id)?;
+        let mut stats = SyncedItemStats {
+            params: std::array::from_fn(|i| (item.BaseParam[i], item.BaseParamValue[i] as i32)),
+            defense: item.DefensePhys as u32,
+            magic_defense: item.DefenseMag as u32,
+        };
+        if hq {
+            for (param, bonus) in item.BaseParamSpecial.iter().zip(item.BaseParamValueSpecial) {
+                match *param {
+                    0 => {}
+                    BASE_PARAM_DEFENSE => {
+                        stats.defense = stats.defense.saturating_add_signed(bonus as i32)
+                    }
+                    BASE_PARAM_MAGIC_DEFENSE => {
+                        stats.magic_defense =
+                            stats.magic_defense.saturating_add_signed(bonus as i32)
+                    }
+                    _ => {
+                        // Only attributes the item already has (weapon damage bonuses aren't counted here.)
+                        if let Some((_, value)) =
+                            stats.params.iter_mut().find(|(id, _)| id == param)
+                        {
+                            *value += bonus as i32;
+                        }
+                    }
+                }
+            }
+        }
+        let Some(sync_item_level) = sync_item_level.filter(|sync| item.LevelItem > *sync) else {
+            return Some(stats);
+        };
+        let synced = self.item_level_sheet.row(sync_item_level as u32)?;
+        let own = self.item_level_sheet.row(item.LevelItem as u32)?;
+        for (param, value) in &mut stats.params {
+            if *param == 0 {
+                continue;
+            }
+            let Some(base) = item_level_value(&synced, *param) else {
+                continue;
+            };
+            let Some(base_param) = self.base_param_sheet.row(*param as u32) else {
+                continue;
+            };
+            let percent = slot_percent(&base_param, item.EquipSlotCategory) as f64;
+            let meld = base_param
+                .MeldParam
+                .get(item.BaseParamModifier as usize)
+                .copied()
+                .unwrap_or(100) as f64;
+            *value = (*value).min(sync_cap(base, percent, meld));
+        }
+        stats.defense = scale_by_item_level(stats.defense, synced.Defense, own.Defense);
+        stats.magic_defense =
+            scale_by_item_level(stats.magic_defense, synced.MagicDefense, own.MagicDefense);
+        Some(stats)
     }
 
     pub fn get_action_cooldown_group(&mut self, id: u32) -> u8 {
@@ -2771,12 +2967,23 @@ impl Resource for SqPackResourceSpy {
 
 #[cfg(test)]
 mod area_tests {
-    use super::cone_angle_from_omen;
+    use super::{cone_angle_from_omen, scale_by_item_level, sync_cap};
 
     #[test]
     fn cone_angles() {
         assert_eq!(cone_angle_from_omen("gl_fan090_1bf"), Some(90.0));
         assert_eq!(cone_angle_from_omen("er_gl_fan120_1bf"), Some(120.0));
         assert_eq!(cone_angle_from_omen("general_1bf"), None);
+    }
+
+    /// The level sync caps with the sheets' numbers: a body piece synced to item level 130 (level 50's ParamGrow), Vitality
+    /// (ItemLevel 414, ChestPercent 135, MeldParam 90 for a healer's item) and Mind (385, 135, 100); defense 1000 on an
+    /// item level 530 piece (ItemLevel Defense 3467 there, 796 at 130.)
+    #[test]
+    fn level_sync_caps() {
+        assert_eq!(sync_cap(414, 135.0, 90.0), 50);
+        assert_eq!(sync_cap(385, 135.0, 100.0), 52);
+        assert_eq!(scale_by_item_level(1000, 796, 3467), 230);
+        assert_eq!(scale_by_item_level(1000, 796, 0), 1000);
     }
 }

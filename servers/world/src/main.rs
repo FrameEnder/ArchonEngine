@@ -192,6 +192,8 @@ async fn initial_setup(
                     recipe: None,
                     is_party_leader: false,
                     synced_level: None,
+                    synced_item_level: None,
+                    synced_fate: None,
                     search_results: Vec::new(),
                     search_index: 0,
                     friend_results: Vec::new(),
@@ -1832,25 +1834,8 @@ async fn process_packet(
                                     connection.send_ipc_self(ipc).await;
                                 }
                                 ClientTriggerCommand::FateLevelSync { fate_id, unk1, .. } => {
-                                    tracing::info!("Syncing level for fate {fate_id} {unk1}");
-
-                                    // Toggles the syncing on and off
-                                    if connection.synced_level.is_none() {
-                                        let mut game_data = connection.game_data.lock();
-                                        connection.synced_level =
-                                            game_data.get_fate_max_level(fate_id);
-                                    } else {
-                                        connection.synced_level = None;
-                                    }
-
-                                    connection.send_stats().await;
-                                    connection.update_class_info().await;
-
-                                    connection
-                                        .actor_control_self(ActorControlCategory::FateLevelSynced {
-                                            fate_id,
-                                        })
-                                        .await;
+                                    // unk1 is 1 to sync (all of Bob's retail captures), 0 to unsync.
+                                    connection.set_fate_level_sync(fate_id, unk1 != 0).await;
                                 }
                                 ClientTriggerCommand::EquipGlasses { slot, id } => {
                                     connection.player_data.equipped_glasses_ids[slot as usize] =
@@ -4606,7 +4591,7 @@ async fn process_server_msg(
                     ))
                     .await;
             }
-            FromServer::SyncMaxLevel(synced_level) => {
+            FromServer::SyncMaxLevel(synced_level, synced_item_level) => {
                 let current_level;
                 {
                     let game_data = connection.game_data.lock();
@@ -4615,6 +4600,7 @@ async fn process_server_msg(
 
                 if current_level > synced_level as u16 {
                     connection.synced_level = Some(synced_level);
+                    connection.synced_item_level = synced_item_level;
                     connection.update_class_info().await;
                     connection.send_stats().await;
                 }
@@ -4647,8 +4633,12 @@ async fn process_server_msg(
                     params,
                 )
             }
-            FromServer::FATEComplete => {
+            FromServer::FATEComplete(fate_id) => {
                 connection.record_fate_completion();
+                // A FATE ending unsyncs whoever synced to it (retail: the same packets as syncing, FateLevelSynced 0.)
+                if connection.synced_fate == Some(fate_id) {
+                    connection.set_fate_level_sync(fate_id, false).await;
+                }
             }
             FromServer::CheckTeleportSharingEligibility(aetheryte_id) => {
                 connection.check_tele_sharing_eligibility(aetheryte_id);

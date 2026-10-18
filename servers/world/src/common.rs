@@ -264,12 +264,12 @@ pub enum FromServer {
     FurnitureTranslated((bool, u8), u16, Position, f32, bool),
     /// Inform the client that another player in their party has offered them a teleport.
     TeleportOffered(u32, TeleportQuery),
-    /// Sync to this new max level.
-    SyncMaxLevel(u8),
+    /// Sync to this new max level, and item level if the content has its own (ContentFinderCondition.ItemLevelSync.)
+    SyncMaxLevel(u8, Option<u16>),
     /// Play the initial cutscene for instanced content.
     PlayInitialCutscene(u32, u32),
     /// A FATE was completed. This is meant to track SHARED FATE completion and not much else yet.
-    FATEComplete,
+    FATEComplete(u32),
     /// Instruct the client's zone connection to check if the teleport can be shared.
     CheckTeleportSharingEligibility(u32),
     /// Inform the client of their player's new CharacterMode.

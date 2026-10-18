@@ -19,6 +19,7 @@ use crate::{
         effect::{gain_effect, gain_effect_instance, process_effects_list},
         first_attack,
         instance::{Instance, QueuedTaskData},
+        modifiers,
         network::{DestinationNetwork, NetworkState},
         party::get_party_id_from_actor_id,
         periodic::add_periodic_effect,
@@ -27,8 +28,8 @@ use crate::{
 };
 use kawari::{
     common::{
-        ANIMATION_LOCK_TIME, COMBO_TIMEOUT, CharacterMode, ObjectId, ObjectTypeId, ObjectTypeKind,
-        STRIKING_DUMMY_NAME_ID,
+        ANIMATION_LOCK_TIME, ActionCategory, COMBO_TIMEOUT, CharacterMode, ObjectId, ObjectTypeId,
+        ObjectTypeKind, STRIKING_DUMMY_NAME_ID,
     },
     config::get_config,
     ipc::zone::{
@@ -193,6 +194,7 @@ pub fn execute_action(
         base_parameters: BaseParameters::default(),
         current_level: 0,
         scene_error_code: 0,
+        ..Default::default()
     };
     // TODO: maybe move these misc effects to their own dedicated functions or something? I had some trouble remembering where this was
     // We need to set the player's mount id in their common spawn so both pillion works and also letting players see this existing actor's mount when they spawn.
@@ -237,16 +239,18 @@ pub fn execute_action(
     // Targeting/cost info, only relevant to normal actions.
     let action_info;
     let has_cast_time;
+    let action_category;
     {
         let mut game_data = game_data.lock();
         if request.action_type == ActionType::Action {
             action_info = game_data.get_action_info(request.action_id);
-            has_cast_time = game_data
-                .get_casttime(request.action_id)
-                .is_some_and(|(_, cast_time)| cast_time > 0);
+            let cast = game_data.get_casttime(request.action_id);
+            has_cast_time = cast.is_some_and(|(_, cast_time)| cast_time > 0);
+            action_category = cast.map(|(category, _)| category);
         } else {
             action_info = None;
             has_cast_time = false;
+            action_category = None;
         }
     }
 
@@ -324,6 +328,11 @@ pub fn execute_action(
 
         common_spawn = actor.get_common_spawn().clone();
         lua_player.current_level = common_spawn.level;
+        lua_player.is_player = matches!(actor, NetworkedActor::Player { .. });
+        lua_player.hp = common_spawn.health_points;
+        lua_player.max_hp = common_spawn.max_health_points;
+        lua_player.mp = common_spawn.resource_points;
+        lua_player.max_mp = common_spawn.max_resource_points;
 
         effects_builder = match &request.action_type {
             ActionType::None => None,
@@ -433,6 +442,56 @@ pub fn execute_action(
                 roll_npc_hit(effects, scale);
             }
         }
+
+        // What statuses, traits, critical hits and variance do (see `modifiers`.)
+        if let Some(effects_builder) = &mut effects_builder {
+            let target = instance.find_actor(request.target.object_id);
+            let caster_statuses = status_ids(actor);
+            match actor {
+                NetworkedActor::Player { parameters, .. } => {
+                    let target_statuses = target.map(status_ids).unwrap_or_default();
+                    modifiers::apply_player_hit(
+                        &mut effects_builder.effects,
+                        &modifiers::PlayerHit {
+                            chances: modifiers::HitChances::from_stats(
+                                parameters.critical_hit,
+                                parameters.direct_hit_rate,
+                                parameters.base_speed.max(0) as u32,
+                                parameters.level_modifier.max(0) as u32,
+                            ),
+                            caster_statuses: &caster_statuses,
+                            target_statuses: &target_statuses,
+                            target_classjob: target
+                                .map(|target| target.get_common_spawn().class_job)
+                                .unwrap_or_default(),
+                            target_is_player: matches!(target, Some(NetworkedActor::Player { .. })),
+                            rolls: [fastrand::f32(), fastrand::f32(), fastrand::f32()],
+                        },
+                    );
+                }
+                NetworkedActor::Npc { .. } => {
+                    if let Some(target @ NetworkedActor::Player { .. }) = target {
+                        modifiers::apply_hit_on_player(
+                            &mut effects_builder.effects,
+                            &caster_statuses,
+                            &status_ids(target),
+                            target.get_common_spawn().class_job,
+                        );
+                    }
+                    for (id, effects) in &mut area_bystanders {
+                        if let Some(bystander) = instance.find_actor(*id) {
+                            modifiers::apply_hit_on_player(
+                                effects,
+                                &caster_statuses,
+                                &status_ids(bystander),
+                                bystander.get_common_spawn().class_job,
+                            );
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
     }
 
     // tell them the action results
@@ -463,6 +522,35 @@ pub fn execute_action(
                     })
                     .sum();
                 actor.add_enmity(from_actor_id, damage);
+                if effects_builder.provoke {
+                    actor.provoke(from_actor_id);
+                }
+            }
+
+            // Esuna and the like: the target's first status that can be removed goes.
+            if effects_builder.cleanse {
+                let removed = instance
+                    .find_actor(request.target.object_id)
+                    .and_then(|actor| actor.status_effects())
+                    .and_then(|statuses| {
+                        let mut game_data = game_data.lock();
+                        statuses
+                            .data()
+                            .into_iter()
+                            .find(|status| game_data.is_dispellable(status.effect_id))
+                    });
+                if let Some(status) = removed {
+                    instance.insert_task(
+                        from_id,
+                        request.target.object_id,
+                        Duration::ZERO,
+                        QueuedTaskData::LoseStatusEffect {
+                            effect_id: status.effect_id,
+                            effect_param: status.param,
+                            effect_source_actor_id: status.source_actor_id,
+                        },
+                    );
+                }
             }
 
             // The first to attack it claims it (FirstAttack), sent before the action's results as retail does.
@@ -505,10 +593,9 @@ pub fn execute_action(
                 }
             }
 
-            // Handle combos
-            {
-                // TODO: don't send this for auto-attacks. it should be harmless in the meantime
-
+            // Handle combos: only spells and weaponskills take part (retail sends ExecuteCombo for those alone, and an
+            // ability, auto-attack, item or mount in between doesn't break a combo.)
+            if is_combo_action(action_category) {
                 let Some(actor) = instance.find_actor_mut(from_actor_id) else {
                     return;
                 };
@@ -520,12 +607,9 @@ pub fn execute_action(
                     ..
                 } = actor
                 {
-                    *last_combo_action = request.action_id as u16;
                     sequence = *combo_sequence;
-
-                    if combo_action_id == *last_combo_action {
-                        *combo_sequence += 1;
-                    }
+                    *combo_sequence = next_combo_sequence(in_combo, *combo_sequence);
+                    *last_combo_action = request.action_id as u16;
                 } else {
                     sequence = 0;
                 }
@@ -628,10 +712,13 @@ pub fn execute_action(
                                 continue;
                             };
                             let hit_player = matches!(actor, NetworkedActor::Player { .. });
+                            let floor = u32::from(modifiers::has_hp_floor(&status_ids(actor)));
                             let common_spawn = actor.get_common_spawn_mut();
                             if common_spawn.name_id != STRIKING_DUMMY_NAME_ID {
-                                common_spawn.health_points =
-                                    common_spawn.health_points.saturating_sub(*amount as u32);
+                                common_spawn.health_points = common_spawn
+                                    .health_points
+                                    .saturating_sub(*amount as u32)
+                                    .max(floor.min(common_spawn.health_points));
                             }
 
                             // Being hit interrupts searching something for a quest.
@@ -642,15 +729,32 @@ pub fn execute_action(
                                 );
                             }
 
+                            // Being hit wakes you up.
+                            if *amount > 0
+                                && let Some(sleep) = instance
+                                    .find_actor(request.target.object_id)
+                                    .and_then(|actor| actor.status_effects())
+                                    .and_then(|statuses| statuses.get(modifiers::SLEEP))
+                            {
+                                instance.insert_task(
+                                    from_id,
+                                    request.target.object_id,
+                                    Duration::ZERO,
+                                    QueuedTaskData::LoseStatusEffect {
+                                        effect_id: sleep.effect_id,
+                                        effect_param: sleep.param,
+                                        effect_source_actor_id: sleep.source_actor_id,
+                                    },
+                                );
+                            }
+
                             // Update from game data
                             let mut game_data = game_data.lock();
                             *damage_element =
                                 game_data.get_action_damage_element(request.action_id);
                         }
                         TargetEffectKind::InterruptAction => {
-                            // TODO: this could cancel more than just casting, so we need to be more specific eventually
-                            // TODO: also cancel the cast visually
-                            instance.cancel_actor_tasks(request.target.object_id);
+                            interrupt_cast(network.clone(), instance, request.target.object_id);
                         }
                         TargetEffectKind::SummonPet { .. } => {
                             let Some(actor) = instance.find_actor(from_actor_id) else {
@@ -850,7 +954,11 @@ pub fn execute_action(
                     animation_target_id: request.target,
                     targets: packet_targets,
                     action_id: request.action_id,
-                    animation_lock: ANIMATION_LOCK_TIME,
+                    animation_lock: animation_lock(
+                        request.action_type,
+                        request.action_id,
+                        has_cast_time,
+                    ),
                     rotation: common_spawn.rotation,
                     spell_id: action_animation_id,
                     source_sequence: request.sequence,
@@ -1244,7 +1352,7 @@ fn apply_area_of_effect(
             }
 
             if has_interrupt {
-                instance.cancel_actor_tasks(*target_id);
+                interrupt_cast(network.clone(), instance, *target_id);
             }
 
             touched.push(*target_id);
@@ -1524,6 +1632,77 @@ pub fn cancel_action(
     }
 }
 
+/// Interrupts what an actor is casting (Head Graze, Interject): its cast tasks only (its statuses still run out), and
+/// everyone nearby sees the cast bar cancelled.
+fn interrupt_cast(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, actor_id: ObjectId) {
+    let cancelled = instance.cancel_actor_casts(actor_id);
+    if let Some(NetworkedActor::Npc { cast, .. }) = instance.find_actor_mut(actor_id) {
+        *cast = None;
+    }
+    let mut network = network.lock();
+    for action_id in cancelled {
+        network.send_ac_in_range_inclusive_instance(
+            instance,
+            actor_id,
+            ActorControlCategory::CancelCast {
+                unk1: 538,
+                unk2: 1,
+                action_id,
+            },
+        );
+    }
+}
+
+/// The IDs of an actor's statuses.
+fn status_ids(actor: &NetworkedActor) -> Vec<u16> {
+    actor
+        .status_effects()
+        .map(|statuses| statuses.ids().collect())
+        .unwrap_or_default()
+}
+
+/// Whether an action takes part in combos: spells and weaponskills (ActionCategory 2 and 3.)
+fn is_combo_action(category: Option<ActionCategory>) -> bool {
+    matches!(
+        category,
+        Some(ActionCategory::Spell | ActionCategory::Weaponskill)
+    )
+}
+
+/// The combo step after a spell or weaponskill: one more when it continued the combo, else back to the start.
+fn next_combo_sequence(in_combo: bool, sequence: u8) -> u8 {
+    if in_combo {
+        sequence.saturating_add(1)
+    } else {
+        0
+    }
+}
+
+/// Teleport and Return (General Action rows 5 and 6.)
+const TELEPORT_ACTION: u32 = 5;
+const RETURN_ACTION: u32 = 6;
+/// Auto-attack (Action rows 7 and 8.)
+const AUTO_ATTACK_ACTIONS: [u32; 2] = [7, 8];
+/// The animation lock retail sends after a spell that had a cast, and after an auto-attack (Bob's Chronofoil captures:
+/// Stone, Cure, Holy, Raise... all 0.1).
+const ANIMATION_LOCK_AFTER_CAST: f32 = 0.1;
+/// After Teleport and Return (2.1 on retail.)
+const ANIMATION_LOCK_TELEPORT: f32 = 2.1;
+
+/// The animation lock (ActionEffect's) for an action: 0.6 for instant ones, as retail sends.
+fn animation_lock(action_type: ActionType, action_id: u32, has_cast_time: bool) -> f32 {
+    if action_type != ActionType::Action {
+        return ANIMATION_LOCK_TIME;
+    }
+    if action_id == TELEPORT_ACTION || action_id == RETURN_ACTION {
+        ANIMATION_LOCK_TELEPORT
+    } else if has_cast_time || AUTO_ATTACK_ACTIONS.contains(&action_id) {
+        ANIMATION_LOCK_AFTER_CAST
+    } else {
+        ANIMATION_LOCK_TIME
+    }
+}
+
 /// Handles normal actions, powered by Lua.
 pub fn execute_normal_action(
     lua: Arc<Mutex<KawariLua>>,
@@ -1561,6 +1740,9 @@ pub fn execute_normal_action(
             .unwrap();
     } else {
         tracing::warn!("Action {key} isn't scripted yet!");
+        // Still answer, with no effects: without an ActionEffect the client waits for one (its hotbar and animation
+        // lock hang until they time out.)
+        effects_builder = Some(EffectsBuilder::default());
     }
 
     effects_builder
@@ -1785,6 +1967,38 @@ pub fn in_area(
 }
 
 #[cfg(test)]
+mod combo_tests {
+    use super::*;
+
+    /// Fast Blade → Fight or Flight → Riot Blade: the ability in between doesn't touch the combo, the second
+    /// weaponskill continues it, and an unrelated one starts over.
+    #[test]
+    fn abilities_dont_break_combos() {
+        assert!(is_combo_action(Some(ActionCategory::Weaponskill)));
+        assert!(is_combo_action(Some(ActionCategory::Spell)));
+        assert!(!is_combo_action(Some(ActionCategory::Ability)));
+        assert!(!is_combo_action(Some(ActionCategory::AutoAttack)));
+        assert!(!is_combo_action(None));
+
+        assert_eq!(next_combo_sequence(false, 0), 0);
+        assert_eq!(next_combo_sequence(true, 0), 1);
+        assert_eq!(next_combo_sequence(true, 1), 2);
+        assert_eq!(next_combo_sequence(false, 2), 0);
+    }
+
+    /// Retail's animation locks (Bob's Chronofoil captures.)
+    #[test]
+    fn animation_locks() {
+        assert_eq!(animation_lock(ActionType::Action, 119, true), 0.1); // Stone
+        assert_eq!(animation_lock(ActionType::Action, 121, false), 0.6); // Aero
+        assert_eq!(animation_lock(ActionType::Action, 7, false), 0.1); // auto-attack
+        assert_eq!(animation_lock(ActionType::Action, 5, true), 2.1); // Teleport
+        assert_eq!(animation_lock(ActionType::Action, 6, true), 2.1); // Return
+        assert_eq!(animation_lock(ActionType::Item, 4551, false), 0.6);
+    }
+}
+
+#[cfg(test)]
 mod area_tests {
     use super::*;
 
@@ -1947,11 +2161,15 @@ fn hit_area_bystander(
     let Some(actor) = instance.find_actor_mut(target_id) else {
         return;
     };
+    let floor = u32::from(modifiers::has_hp_floor(&status_ids(actor)));
     let common_spawn = actor.get_common_spawn_mut();
     if common_spawn.health_points == 0 {
         return;
     }
-    common_spawn.health_points = common_spawn.health_points.saturating_sub(damage);
+    common_spawn.health_points = common_spawn
+        .health_points
+        .saturating_sub(damage)
+        .max(floor.min(common_spawn.health_points));
 
     if damage > 0 {
         let mut network = network.lock();

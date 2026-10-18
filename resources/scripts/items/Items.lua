@@ -1,3 +1,10 @@
+ITEM_ACTION_TYPE_STATUS_REMOVAL = 842
+ITEM_ACTION_TYPE_FOOD = 844
+ITEM_ACTION_TYPE_FOOD_2 = 845
+ITEM_ACTION_TYPE_FOOD_3 = 846
+ITEM_ACTION_TYPE_HP_POTION = 847
+ITEM_ACTION_TYPE_MP_POTION = 848
+ITEM_ACTION_TYPE_ELIXIR = 849
 ITEM_ACTION_TYPE_GYSHAL_GREENS = 851
 ITEM_ACTION_TYPE_MINION = 853
 ITEM_ACTION_TYPE_BUDDY_EQUIP = 1013
@@ -37,6 +44,18 @@ function dispatchItem(player, id, action_type, action_data, additional_data, is_
         return runAction("items/GenericNoEffect.lua", 0)
     elseif action_type == ITEM_ACTION_TYPE_FANTASIA then
         return runAction("items/Fantasia.lua", 0)
+    -- Combat items (ItemAction Data: action_data[1] is Data[0].)
+    elseif action_type == ITEM_ACTION_TYPE_HP_POTION then
+        return runAction("items/Potion.lua", action_data[1] * 65536 + action_data[2])
+    elseif action_type == ITEM_ACTION_TYPE_MP_POTION then
+        return runAction("items/Ether.lua", action_data[1] * 65536 + action_data[2])
+    elseif action_type == ITEM_ACTION_TYPE_ELIXIR then
+        return runAction("items/Elixir.lua", action_data[2] + action_data[4] * 65536)
+    elseif action_type == ITEM_ACTION_TYPE_STATUS_REMOVAL then
+        return runAction("items/StatusRemoval.lua", action_data[1])
+    elseif action_type == ITEM_ACTION_TYPE_FOOD or action_type == ITEM_ACTION_TYPE_FOOD_2
+        or action_type == ITEM_ACTION_TYPE_FOOD_3 then
+        return runAction("items/Food.lua", action_data[2] + action_data[3] * 65536)
     elseif action_type == ITEM_ACTION_TYPE_GYSHAL_GREENS then
         return runAction("items/GyshalGreens.lua", additional_data)
     -- Otherwise, check if our item belongs to the Seasonal Miscellany or Miscellany item categories and has a vfx or not. Examples of ones that do play vfx: DAM, peach confetti. Examples of ones that don't play vfx: Realm Reborn Red, Heavenscracker.

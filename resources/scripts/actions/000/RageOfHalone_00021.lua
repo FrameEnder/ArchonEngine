@@ -1,11 +1,17 @@
--- Used by the handsome stranger in Underneath the Sultantree's quest battle. What it does to NPCs there comes from Bob's
--- Chronofoil capture of retail (the NPC's timeline, recorded_amounts), not from this potency.
--- TODO: the potency (and its combo bonus after Riot Blade) isn't verified for players who use it.
-POTENCY = 100
+-- Rage of Halone (Lv. 26), after Riot Blade.
+-- Also used by the handsome stranger in Underneath the Sultantree's quest battle: NPCs never have a combo, so they keep
+-- POTENCY, and what it does there comes from the recording (the timeline's recorded_amounts.)
+-- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
+local POTENCY = 100
+local COMBO_POTENCY = 330
 
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_SLASHING, player.parameters:calc_physical_damage(POTENCY))
+    local effects = EffectsBuilder()
+    local potency = POTENCY
+    if in_combo then
+        potency = COMBO_POTENCY
+    end
+    effects:damage(DAMAGE_TYPE_SLASHING, physicalDamage(player, potency))
 
     return effects
 end

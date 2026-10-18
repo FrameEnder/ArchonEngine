@@ -44,6 +44,9 @@ use crate::{GameData, ItemInfoQuery};
 
 use physis::TerritoryIntendedUse;
 
+/// An item's HQ flag (`Item::item_flags`; ItemFlags.HighQuality in FFXIVClientStructs.)
+pub const ITEM_FLAG_HQ: u8 = 1;
+
 const MAX_NORMAL_STORAGE: usize = 35;
 pub const MAX_LARGE_STORAGE: usize = 50;
 

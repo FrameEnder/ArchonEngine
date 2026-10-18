@@ -30,7 +30,52 @@ auto-attacks: f(WD) × weapon delay / 3 s, potency 90
 
 `level_div` is ParamGrow's `LevelModifier`. Attack power is Strength, or Dexterity for Dexterity classes; magic attack
 is Intelligence, or **Mind for healers**; healing potency is Mind. Stone, Aero, Cure and auto-attacks land within a few
-percent of the recording at levels 6–9. Variance, criticals and traits are applied by the caller.
+percent of the recording at levels 6–9. Traits are applied by the scripts (`whmPotency`, `classPotency`); variance,
+criticals and statuses afterwards (below).
+
+**Gear** (`GameData::equipped_item_stats`): an item gives its BaseParam values, defense and magic defense, plus its HQ
+bonuses (`BaseParamValueSpecial`, item flag 1) when it's HQ. Checked against retail PlayerStats (Bob's captures, a
+White Mage at 86 in HQ gear): Vitality 1757 = 370 naked + 1261 + 126 HQ, Mind 1885 = 424 + 1330 + 131, defense 1413 =
+1267 + 146, every value to the point. Materia isn't counted yet. PlayerStats' `base_*` values are the **naked** stats at
+the real level (retail: a level 6 Conjurer with 34 Mind sends 27; synced to 31, the unsynced naked 430), so the
+character window shows the gear's bonus; `delay` is the weapon's (2400 for a Maple Wand). Under level sync items are
+capped, see [Level Sync](level-sync.md).
+
+### Damage and healing modifiers (`server/modifiers.rs`)
+
+Applied after an action's script returns, by the server, so scripts only give the base amount and the statuses:
+
+* **Player actions:** ±5 % variance (`PLAYER_VARIANCE`); a critical hit with the chance and multiplier from Critical
+  Hit (`⌊200 × (CRIT − sub) / div + 50⌋ / 1000`, `⌊200 × (CRIT − sub) / div + 1400⌋ / 1000`: 5 % for ×1.4 at base),
+  flag `0x20` on the damage effect (heals: `0x20` in their second byte); a direct hit from Direct Hit Rate
+  (`⌊550 × (DH − sub) / div⌋ / 1000`, ×1.25, flag `0x40`). Retail (Bob's captures): ±5 % (Stone at 7: 19–22), crits 4 %
+  at Conjurer 1–17 and 12 % at White Mage 80–88 for about ×1.35–1.5, direct hits almost never early on.
+* **Statuses** by ID (the game's tooltip numbers): damage dealt Fight or Flight 76 +25 %, Raging Strikes 125 +15 %,
+  Lance Charge 1864, Power Surge 2720, Surging Tempest 2677 +10 %; on an enemy Feint 1195 (−10 % physical, −5 % magic),
+  Addle 1203 (the reverse), Reprisal 1193 −10 %; damage taken Rampart 1191 −20 %, Sentinel 74 −30 %, Sheltron 728
+  −15 %, Vengeance 89 −30 %, Temperance 1872 −10 %, Trick Attack 3254 +10 %; Hallowed Ground 82 turns hits into
+  "Invulnerable", Holmgang 409 keeps HP at 1 or more; healing received Mantra 102 +10 %, Thrill of Battle 87 +20 %,
+  Rampart +15 %.
+* **Tank Mastery:** Gladiators, Marauders and their jobs (and DRK/GNB) take 20 % less from enemies.
+* **Enemy hits on players** keep their own variance and criticals (`roll_npc_hit`), then get the enemy's debuffs and the
+  player's defences above.
+* **Crowd control:** Stun (2) and Sleep (3) stop an enemy completely, Bind (13) keeps it in place; Sleep ends when it's
+  hit (`npc_behavior`, `action.rs`).
+* **Interrupts** (Head Graze, Interject) cancel only the target's cast and send ActorControl 15 (CancelCast) to everyone
+  nearby; they used to delete every queued task of the target, so its statuses never wore off.
+
+### Combos, animation lock, and actions without a script
+
+* **Combos:** only spells and weaponskills take part (ActionCategory 2/3): an ability, auto-attack, item or mount in
+  between no longer breaks one (Fast Blade → Fight or Flight → Riot Blade), and only they get the ExecuteCombo effect,
+  as on retail. The combo step counted up from 0 again (it never advanced: it was compared after being overwritten).
+* **Animation lock** (ActionEffect): 0.1 after a spell with a cast and after auto-attacks, 2.1 after Teleport and Return,
+  0.6 otherwise, as retail sent in Bob's captures (Kawari sent 0.6 always).
+* An action **without a script** still gets an ActionEffect (with no effects) so the client's hotbar doesn't hang; the
+  "Effect N isn't scripted" message for statuses is debug-level now (most statuses need no script).
+* **Statuses** in StatusEffectList carry the time **left** (retail counts it down); Kawari sent each status's starting
+  duration every time, so timers jumped back whenever the list was re-sent. Refreshing a status takes its new param and
+  source, and the source (the caster) is filled in.
 
 ## Enemy damage to players
 
@@ -178,6 +223,37 @@ Enemy skills added for the Central Shroud and the quest battles: Frost Breath, I
 Armageddon (Heavy ~14 s), True Grit, Plaincracker, Hammer Beak, Snap Jaw and others (see `actions/003`–`actions/009`),
 plus True Strike, Snap Punch, Fire, Thunder for the quest battle allies, and Bloody Claw, Rage of Halone and Spirits
 Within for Underneath the Sultantree.
+
+## Class and role actions, levels 1–50
+
+Every action from level 1 to 50 of Gladiator/Paladin, Pugilist/Monk, Marauder/Warrior, Lancer/Dragoon, Archer/Bard,
+Thaumaturge/Black Mage, Arcanist/Summoner, Scholar and Rogue/Ninja has a script now (131 new, 26 rewritten; Conjurer/White
+Mage was already complete), plus the role actions up to 50 (Rampart, Provoke, Reprisal, Shirk, Interject, Low Blow,
+Second Wind, Bloodbath, True North, Addle, Leg Sweep, Sleep, Rescue, Esuna). How they were checked:
+
+* **Retail data:** Bob's captures only have Conjurer/White Mage player actions (and the healer role actions), so the
+  others are from the 7.x game data: potencies are the tooltip text (the **max-level** values; each script says so, and
+  the client's tooltip on Kawari shows the value at your level to compare), status IDs and durations from the Status
+  sheet. 7.x player IDs where they differ from the old ones NPCs still use: Blizzard II 25793, Thunder II 7447, Wide
+  Volley 36974, Leg Sweep 7863.
+* **Shared IDs:** 18 actions are also used by quest battle NPCs (9, 53, 54, 56, 70, 75, 78, 97, 100, 106, 113, 141,
+  142, 144, 147, 154, 156): their scripts keep the recorded NPC numbers unless `isPlayerCaster(player)` (the new
+  `player.is_player`).
+* **Combo steps** use `in_combo` for their combo potency and bonus (Riot Blade 330 and MP, Maim, Storm's Path/Eye, Vorpal
+  Thrust, Gust Slash...). Traits: `classPotency(player, potency, TRAITS_...)` for Thaumaturge and Arcanist Maim and Mend
+  and Archer's Increased Action Damage.
+* **New engine methods:** `effects:provoke()` (top of the target's enmity), `effects:cleanse()` (removes the target's
+  first status with Status.CanDispel); players' `player.is_player`, `hp`, `max_hp`, `mp`, `max_mp` for scripts.
+* **Second Wind** is potency 500 below level 94 (it was 800).
+* **Not there:** job gauges (Black Mage's Astral Fire/Umbral Ice — Thunderhead stands in so Thunder can be cast —,
+  Monk's chakra and furies, Warrior's Beast Gauge, Paladin's Oath, Summoner/Scholar Aetherflow, Ninja mudras: Ninjutsu
+  is always Fuma Shuriken), pets other than Carbuncle (no egis, no Eos), positionals, movement actions (Thunderclap,
+  Rescue...), barriers absorbing damage, Bloodbath's lifesteal, Peloton for the party. See
+  [Known Issues](known-issues.md#combat).
+
+**Combat items** (`items/Items.lua`): potions (ItemAction 847: the % of max HP up to the cap), ethers (848, MP),
+elixirs (849, their caps), status removal (842), food (844–846: Well Fed 48 with the ItemFood row and duration, no stat
+bonus yet).
 
 ## Adding a monster or skill
 
