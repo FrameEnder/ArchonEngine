@@ -23,13 +23,12 @@ use crate::{
 /// retainer's menu.
 const SCENE_LIST_AGAIN: u16 = 1;
 const SCENE_RETAINER_MENU: u16 = 2;
-/// Scene 2's first parameter on retail (unknown.)
-const MENU_PARAM_1: u32 = 4;
-/// Scene 2's third parameter was 3 with two retainers hired (2026-09-15) and 4 with one (2026-10-18): taken as five
-/// minus the number hired, a guess.
-const MENU_PARAM_3_BASE: u32 = 5;
-/// Scene 1's first parameter on retail, before the retainer's ID (unknown.)
-const LIST_AGAIN_PARAM_1: u32 = 2;
+/// Scene 2's parameters on retail are the retainer's actor, a number (3 with two retainers hired, 4 with one: taken as
+/// five minus the number hired, a guess), 0 and 1. (The first reading of the captures took the parameter count, 4, for
+/// the first parameter, so Kawari sent the actor second and the client couldn't start the scene: "Unable to commence
+/// cutscene", 2026-10-18 bundle.)
+const MENU_PARAM_2_BASE: u32 = 5;
+const MENU_PARAM_4: u32 = 1;
 
 /// The retainer called at a summoning bell.
 #[derive(Debug, Clone)]
@@ -175,10 +174,10 @@ impl ZoneConnection {
                 SCENE_RETAINER_MENU,
                 SceneFlags::HIDE_HOTBAR,
                 vec![
-                    MENU_PARAM_1,
                     actor_id.0,
-                    MENU_PARAM_3_BASE.saturating_sub(hired),
+                    MENU_PARAM_2_BASE.saturating_sub(hired),
                     0,
+                    MENU_PARAM_4,
                 ],
             )
             .await;
@@ -247,7 +246,7 @@ impl ZoneConnection {
                 &event.1,
                 SCENE_LIST_AGAIN,
                 SceneFlags::HIDE_HOTBAR,
-                vec![LIST_AGAIN_PARAM_1, high, low],
+                vec![high, low],
             )
             .await;
         }

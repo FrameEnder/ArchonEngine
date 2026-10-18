@@ -160,3 +160,12 @@ conditions when the flags say so. Entries: 31 Recommendations → agent 109 (fla
 rows only, so wire bit n is the n-th of those), so the Adventurer Plate is only refused while bound by duty. (The
 "unavailable" messages in Bob's 2026-10-16 screenshot were the Recommendations window's: the bundle shows the
 plate opening and being saved at the same time.)
+
+## Hair highlights
+
+The client marks hair highlights as on with **0x80** in CustomizeData's byte 7 (retail's SpawnPlayer: 786 with 0x80,
+348 with 0, never 1, in Bob's Chronofoil captures; Sapphire: "negative to enable"), and character creation sends it as
+"128". Kawari read only "1" as on, so a new character's highlights were dropped, and physis writes the flag as 1, so
+nobody saw them in game (only in character creation). Now any non-zero value counts, the lobby's list writes "128",
+and packets write 0x80 (`write_customize`, used by CommonSpawn and the adventurer plate). Characters made before this
+have the flag saved off and need their highlights set again.

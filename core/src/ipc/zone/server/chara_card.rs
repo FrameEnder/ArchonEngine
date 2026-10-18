@@ -20,6 +20,7 @@ pub struct CharaCardData {
     pub ambient_lighting_color_blue: u8,
     pub ambient_lighting_color_brightness: u8,
     pub class_job_id: u8,
+    #[bw(map = crate::common::write_customize)]
     pub customize: CustomizeData,
     pub stain_ids1: [u8; 12],
     pub gear_visibility_flag: u8,

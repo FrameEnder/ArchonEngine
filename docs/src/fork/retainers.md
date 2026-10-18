@@ -53,7 +53,7 @@ the items as JSON (`inventory`), so Kawari Web can change both later.
 | Talk to the bell | EventStart (CustomTalk handler `0x000B0220`, CmnDefRetainerBell 544, condition 23 OccupiedSummoningBell), scene 0 with flags `0x2000` | Same; scene **1001** ("You have not yet hired a retainer.") without retainers, as retail |
 | The list | Client trigger 9003 command 2 → ten RetainerInfo (empty slots only have their index) and RetainerInfoEnd, all with the inventory sequence | Same, from the table |
 | Choose one | Scene 0 returns their ID as two numbers, high half first, **signed** (a half with its top bit set comes back negative) | `player:summon_retainer(high, low)`, which keeps each half's 32 bits; it took them as unsigned, so a retainer whose ID's low half had its top bit set couldn't be called and the player was left stuck in the bell's event (2026-10-18 bundle) |
-| Call them | RetainerStateNotice (144), RetainerState (state 4), their containers, ItemMarketBoardInfo per listing, ItemMarketBoardSummary, RetainerStateNotice, ActorControlSelf 570 and 574 (zeros), then scene 2 with `{4, retainer actor ID, n, 0}` and their NPC (SpawnNpc, object kind 10). n was 3 with two retainers hired, 4 with one | Same, n = 5 − retainers hired (a guess from the two); the containers once (retail sent them two or three times, an Equip from the retainer between), no ACS 570/574 |
+| Call them | RetainerStateNotice (144), RetainerState (state 4), their containers, ItemMarketBoardInfo per listing, ItemMarketBoardSummary, RetainerStateNotice, ActorControlSelf 570 and 574 (zeros), an Equip from the retainer's actor, then scene 2 with `{retainer actor ID, n, 0, 1}` and their NPC (SpawnNpc, object kind 10). n was 3 with two retainers hired, 4 with one | Same, n = 5 − retainers hired (a guess from the two); the containers once (retail sent them two or three times), no Equip or ACS 570/574. Kawari sent `{4, actor, n, 0}` at first, misreading the parameter count as the first parameter, and the client refused the scene ("Unable to commence cutscene", 2026-10-18 bundle) |
 | Their menu | Client trigger 9003 command 4 → ActorControlSelf 925 (ServerRequestReply) with command 4, result 0 | Same |
 | Drag and drop | ItemOperation Move/Exchange between the bags and containers 10000–10006 → InventoryActionAck only | Same; the retainer's items are saved after each change |
 | Entrust / withdraw from the menu | ItemOperation **BASE+22** (entrust, 0x132 on 2026.10.06) / **BASE+23** (withdraw, also from the market 12002): source and quantity only, the **server picks the destination** (the same item's stack with room, else the first empty slot) → UpdateInventorySlot for source and destination, InventoryActionAck. The client then sends client trigger **419** (container, slot) and gets that slot again | Same (`transfer_with_retainer`, `retainer_item_operation`, `send_inventory_slot`) |
@@ -62,12 +62,16 @@ the items as JSON (`inventory`), so Kawari Web can change both later.
 | Change a price | Client trigger **400** (slot, price), no reply | Same (`set_retainer_market_price`) |
 | Open the sale list | The client sends RequestPlayerRetainerInfo (580 on 2026.09.15, **818** on 2026.10.06) → PlayerRetainerInfo (480 bytes) | Same |
 | Sale history | RequestRetainerSaleHistory (243, **274** on 2026.10.06) with the retainer's ID → RetainerSaleHistory | Same, answered empty |
-| Close the menu | Scene 2 returns nothing → RetainerStateNotice (`0, 1` if their market changed), RetainerState (state 3, flags `0x81` if it did), scene 1 with `{2, ID high, ID low}`: the list again, which returns like scene 0 | `player:dismiss_retainer()`; the NPC goes away |
+| Close the menu | Scene 2 returns nothing → RetainerStateNotice (`0, 1` if their market changed), RetainerState (state 3, flags `0x81` if it did), scene 1 with `{ID high, ID low}` (Kawari had `{2, high, low}`, the same misreading): the list again, which returns like scene 0 | `player:dismiss_retainer()`; the NPC goes away |
 | Pick another | 9003 command 3 with the ID → that retainer's RetainerInfo and RetainerInfoEnd (count 1) | Same |
 | Leave | Scene 1 returns nothing → EventFinish | Same |
 
 A new character on 2026.10.06 got scene **1000** ("You have not yet received approval to hire retainers."); Kawari
 doesn't check the quest that gives approval.
+
+A retainer wearing nothing on the body, hands, legs or feet shows retail's retainer outfit there (model 38, variants
+25, 75, 52 and 106: the Equip retail sent for a newly hired retainer); new retainers were in their smallclothes
+(2026-10-18 bundle). Only one retainer's outfit was seen; other races or genders may differ.
 
 The retainer's NPC: SpawnNpc with object kind 10, no base or name ID, their name, CustomizeData, voice, class, level
 and gear models, 0x40000 display flags, 400 MP (retail's HP were 721 and 1,124; Kawari sends 1,000). Retail placed them

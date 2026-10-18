@@ -69,6 +69,21 @@ pub(crate) fn write_packed_position(pos: &Position) -> [u16; 3] {
     ]
 }
 
+/// CustomizeData as the client writes it: physis writes the hair highlights flag (byte 7) as 1, but the client uses 0x80
+/// for "on" (retail's SpawnPlayer: 786 with 0x80, 348 with 0, never 1; Bob's Chronofoil captures), so others never saw
+/// a character's highlights.
+pub fn write_customize(customize: &physis::savedata::chardat::CustomizeData) -> [u8; 26] {
+    use binrw::BinWrite;
+    let mut cursor = std::io::Cursor::new(Vec::with_capacity(26));
+    let _ = customize.write_le(&mut cursor);
+    let mut bytes = [0u8; 26];
+    let written = cursor.into_inner();
+    let len = written.len().min(26);
+    bytes[..len].copy_from_slice(&written[..len]);
+    bytes[7] = if customize.enable_highlights { 0x80 } else { 0 };
+    bytes
+}
+
 /// PlayDismountAnimation's three values: where the player lands, as retail sends them (Bob's Chronofoil captures, all
 /// 9 within 0.03 yalms of the player's last position): packed x, packed y, packed z with the quantized rotation in the
 /// top half.

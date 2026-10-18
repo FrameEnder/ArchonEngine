@@ -13,7 +13,14 @@ pub fn customize_data_to_json(customize: &CustomizeData) -> Value {
         (customize.tribe as u8).to_string(),
         customize.face.to_string(),
         customize.hair.to_string(),
-        (customize.enable_highlights as u8).to_string(),
+        // The client uses 128 for "on" (it sent 128 from character creation; Kawari read only 1 as on, so
+        // highlights were lost, 2026-10-18.)
+        (if customize.enable_highlights {
+            128u8
+        } else {
+            0
+        })
+        .to_string(),
         customize.skin_tone.to_string(),
         customize.right_eye_color.to_string(),
         customize.hair_tone.to_string(),
@@ -44,7 +51,7 @@ pub fn customize_data_from_json(json: &Value) -> CustomizeData {
         tribe: Tribe::from_repr(json[4].as_str().unwrap().parse::<u8>().unwrap()).unwrap(),
         face: json[5].as_str().unwrap().parse::<u8>().unwrap(),
         hair: json[6].as_str().unwrap().parse::<u8>().unwrap(),
-        enable_highlights: json[7].as_str().unwrap().parse::<u8>().unwrap() == 1,
+        enable_highlights: json[7].as_str().unwrap().parse::<u8>().unwrap() != 0,
         skin_tone: json[8].as_str().unwrap().parse::<u8>().unwrap(),
         right_eye_color: json[9].as_str().unwrap().parse::<u8>().unwrap(),
         hair_tone: json[10].as_str().unwrap().parse::<u8>().unwrap(),

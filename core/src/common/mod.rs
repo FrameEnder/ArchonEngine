@@ -16,8 +16,8 @@ mod object;
 pub use object::*;
 
 mod parsing;
-pub use parsing::dismount_landing;
 pub(crate) use parsing::*;
+pub use parsing::{dismount_landing, write_customize};
 
 mod dropin;
 pub use dropin::*;

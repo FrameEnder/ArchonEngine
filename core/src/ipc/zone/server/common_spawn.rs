@@ -308,6 +308,7 @@ pub struct CommonSpawn {
     #[bw(map = write_string)]
     pub name: String,
     /// Customization data for humanoid characters.
+    #[bw(map = crate::common::write_customize)]
     pub look: CustomizeData,
     /// Their short Free Company tag.
     #[br(count = 6)]

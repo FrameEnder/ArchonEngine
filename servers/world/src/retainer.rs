@@ -7,7 +7,7 @@ use std::io::Cursor;
 
 use binrw::{BinRead, BinWrite};
 use kawari::{
-    common::{ContainerType, ObjectId, ObjectTypeId, Position},
+    common::{ContainerType, LegacyEquipmentModelId, ObjectId, ObjectTypeId, Position},
     ipc::zone::{
         CommonSpawn, DisplayFlag, ObjectKind, PLAYER_RETAINER_ENTRIES, PlayerRetainerEntry,
         PlayerRetainerInfo, ServerZoneIpcData, SpawnNpc,
@@ -259,6 +259,18 @@ impl Retainer {
             equipped: self.inventory.equipped,
             ..Default::default()
         };
+        // A retainer wearing nothing there has retail's retainer outfit instead (body, hands, legs and feet: model 38,
+        // variants 25, 75, 52 and 106; the Equip retail sent for a newly hired retainer, Bob's 2026-10-18 capture.)
+        let mut models = wearing.legacy_model_ids(game_data);
+        for (slot, variant) in RETAINER_OUTFIT {
+            if models[slot].id == 0 {
+                models[slot] = LegacyEquipmentModelId {
+                    id: RETAINER_OUTFIT_MODEL,
+                    variant,
+                    stain: 0,
+                };
+            }
+        }
 
         SpawnNpc {
             common: CommonSpawn {
@@ -275,7 +287,7 @@ impl Retainer {
                 level: self.level,
                 class_job: self.classjob,
                 position,
-                models: wearing.legacy_model_ids(game_data),
+                models,
                 second_model_stain_ids: wearing.second_model_stain_ids(),
                 name: self.name.clone(),
                 look: self.customize.clone(),
@@ -289,6 +301,10 @@ impl Retainer {
         }
     }
 }
+
+/// The retainer outfit's model, and its variant for each model slot it covers (1 body, 2 hands, 3 legs, 4 feet.)
+const RETAINER_OUTFIT_MODEL: u16 = 38;
+const RETAINER_OUTFIT: [(usize, u8); 4] = [(1, 25), (2, 75), (3, 52), (4, 106)];
 
 /// The character's retainers for the marketboard (PlayerRetainerInfo.)
 pub fn player_retainer_info(retainers: &[Retainer]) -> PlayerRetainerInfo {
