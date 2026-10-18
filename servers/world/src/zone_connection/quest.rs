@@ -432,9 +432,17 @@ impl ZoneConnection {
             (exp, level)
         };
         // Enemies well below you give less (retail: full down to 2 levels below, then 10 % less a level.)
-        let exp = exp * kill_exp_percent(level as i32 - player_level as i32) / 100;
+        let mut exp = exp * kill_exp_percent(level as i32 - player_level as i32) / 100;
+        // In a duty, retail gave players synced down no kill EXP at all, and nobody a kill chain (Bob's captures.)
+        let in_duty = self.content_finder_condition_id != 0;
+        let synced_down = self
+            .synced_level
+            .is_some_and(|synced| (synced as u16) < self.current_level(&self.game_data.lock()));
+        if in_duty && synced_down {
+            exp = 0;
+        }
         // Only enemies at or above your level count towards a chain.
-        let chain = self.exp_chain_bonus(level as u16 >= player_level);
+        let chain = self.exp_chain_bonus(!in_duty && level as u16 >= player_level);
         if let Some((index, window, _)) = chain {
             self.actor_control_self(ActorControlCategory::ExpChain {
                 index,

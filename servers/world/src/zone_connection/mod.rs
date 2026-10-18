@@ -218,6 +218,8 @@ pub struct ZoneConnection {
     pub fate_motivation_npcs: HashMap<ObjectId, u16>,
     /// Used only for the local player's PlayerSpawn.
     pub content_handler_id: Option<HandlerId>,
+    /// The duty (ContentFinderCondition) the player is in, 0 out in the world.
+    pub content_finder_condition_id: u16,
     /// The event action currently being cast by a quest, see `LuaTask::EventAction`.
     pub event_action_id: u32,
     /// Whether to stay in a won quest battle after "Duty Complete", until its director sends us back.

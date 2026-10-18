@@ -219,6 +219,7 @@ async fn initial_setup(
                     exp_chain: (0, None),
                     called_retainer: None,
                     pending_retainer_appearance: None,
+                    content_finder_condition_id: 0,
                     pending_event_text: None,
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
                 };

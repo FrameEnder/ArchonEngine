@@ -216,8 +216,8 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
   its enemies; no Grand Company seals, items, ranks or the reward window (opcode 291 on 2026.09.15, 72 bytes, not
   known for 2026.10.06).
 * Duty rewards aren't given: retail gives each boss's InstanceContent.BossExp (FinalBossExp for the last) times the
-  player's bonus, NewPlayerBonusExp/Gil on a first clear, InstanceClearGil (LootMessage kind 9), 10–12 gil per level 28
-  dungeon enemy, and no kill EXP to players synced down, nor kill chains, in duties.
+  player's bonus, NewPlayerBonusExp/Gil on a first clear, InstanceClearGil (LootMessage kind 9), and 10–12 gil per
+  level 28 dungeon enemy.
 
 ## Combat (found 2026-10-17)
 

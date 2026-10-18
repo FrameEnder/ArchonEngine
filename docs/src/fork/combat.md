@@ -276,7 +276,7 @@ When a battle NPC dies, everyone on its enmity list, and their party in the same
 * **Kill chains** for enemies at or above your level: +0, 20, 25, 30, 40, then 50 % (the sixth kill on), and the next
   kill has 100, 80, 60, 40, 20, then 10 s to keep it going (`exp_chain_bonus`; it was +20/25/30 in a flat 60 s).
   Each counting kill sends ActorControlSelf 12 `ExpChain` (its place from 0, the window in hundredths) before the EXP
-  message, as retail. Retail had no chains in instanced duties (not done).
+  message, as retail. In duties there are no chains, and players synced down get no kill EXP at all (retail).
 * **Rested EXP** (`rested_exp_part`): with enough in the pool the total is `floor(1.5 × base) − 1` and it uses up
   `floor((base + part) × 201600 / the bar's EXP)` seconds; a short pool gives `floor(pool × the bar's EXP / 201600 /
   3)` and empties. The chain's bonus is on the base, the rested part on top, the message showing both as one percent.

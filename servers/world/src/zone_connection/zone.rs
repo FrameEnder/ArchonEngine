@@ -60,6 +60,7 @@ impl ZoneConnection {
         self.spawned_in = false;
         self.fate_motivation_npcs.clear();
         self.content_handler_id = handler_id;
+        self.content_finder_condition_id = content_finder_condition_id;
 
         // Quest battles are instanced content too, but don't come from the Duty Finder.
         let bound_by_duty = content_finder_condition_id != 0
