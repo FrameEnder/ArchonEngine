@@ -51,6 +51,7 @@ mod mail;
 mod marketboard;
 mod party;
 mod quest;
+mod retainer;
 mod social;
 mod stats;
 pub use stats::BaseParameters;
@@ -227,6 +228,8 @@ pub struct ZoneConnection {
     pub can_share_teleport: bool, // TODO: remove this and add more teleport reasons
     /// The current EXP chain: how many kills in a row, and when the last one was. See `on_battle_npc_killed`.
     pub exp_chain: (u32, Option<std::time::Instant>),
+    /// The retainer called at a summoning bell, if any (their items are in `player_data.inventory.retainer`.)
+    pub called_retainer: Option<retainer::CalledRetainer>,
     /// Packet capture for debugging, if enabled in the config.
     pub capture: crate::capture::PacketCapture,
 }
@@ -346,6 +349,9 @@ impl ZoneConnection {
     }
 
     pub async fn begin_log_out(&mut self) {
+        // A retainer still out at a bell goes home (saving what they hold.)
+        self.release_called_retainer().await;
+
         // Mark the player as offline in the db.
         self.player_data.volatile.is_online = false;
 

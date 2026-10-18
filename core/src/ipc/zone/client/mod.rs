@@ -180,6 +180,16 @@ pub enum ClientZoneIpcData {
         /// Unknown: `03 00 00 04 01 00 00 00` and `00 00 00 01 00 00 00 00` on retail.
         unk: [u8; 8],
     },
+    /// The client asks for its retainers for the marketboard's listings, as it opens a retainer's sale list (580 on
+    /// 2026.09.15, Bob's Chronofoil captures; all zeros there.) Answered with `ServerZoneIpcData::PlayerRetainerInfo`.
+    RequestPlayerRetainerInfo {
+        unk: u64,
+    },
+    /// The client asks for a retainer's sale history (243 on 2026.09.15, Bob's Chronofoil captures.) Answered with
+    /// `ServerZoneIpcData::RetainerSaleHistory`.
+    RequestRetainerSaleHistory {
+        retainer_id: u64,
+    },
     /// The client sets its adventurer plate's portrait (the Portraits window), as BannerData in FFXIVClientStructs. The
     /// server sends it back in `ServerZoneIpcData::PortraitsInformation`.
     SetAdventurerPlatePortrait {

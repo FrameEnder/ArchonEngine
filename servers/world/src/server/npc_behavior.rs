@@ -278,6 +278,8 @@ pub fn npc_behavior(
             && *state != NpcState::Dead
             && *state != NpcState::AoeTest
             && spawn.common.health_points > 0
+            // A called retainer stands where they appeared until they're sent away.
+            && spawn.common.object_kind != ObjectKind::Retainer
         {
             // NOTE: this is *intentional* as I believe in retail the timing of actions are dependent on when the actor spawned
             // This doesn't have an effect if you re-aggro them or whatever.

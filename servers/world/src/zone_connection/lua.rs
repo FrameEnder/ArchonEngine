@@ -21,9 +21,14 @@ use kawari::{
     },
     ipc::zone::{
         ActorControlCategory, ClientTriggerCommand, DutyFinderSetting, EventNotice, ItemInfo,
-        ServerZoneIpcData, ServerZoneIpcSegment,
+        SceneFlags, ServerZoneIpcData, ServerZoneIpcSegment,
     },
 };
+
+/// The summoning bell's list of retainers (CmnDefRetainerBell scene 0, flags as on retail.)
+const SUMMONING_BELL_SCENE_LIST: u16 = 0;
+/// "You have not yet hired a retainer."
+const SUMMONING_BELL_SCENE_NO_RETAINER: u16 = 1001;
 
 impl ZoneConnection {
     pub async fn process_lua_player(
@@ -434,6 +439,41 @@ impl ZoneConnection {
                             *layout_id,
                         ))
                         .await;
+                }
+                LuaTask::OpenSummoningBell => {
+                    // Retail plays scene 1000 without approval to hire retainers (An Ill-Conceived Venture); Kawari
+                    // doesn't check that, so it's 1001 (no retainer yet) or the list.
+                    let scene = if self.has_retainers() {
+                        SUMMONING_BELL_SCENE_LIST
+                    } else {
+                        SUMMONING_BELL_SCENE_NO_RETAINER
+                    };
+                    if let Some(event) = events.last() {
+                        self.event_scene(&event.1, scene, SceneFlags::HIDE_HOTBAR, Vec::new())
+                            .await;
+                    }
+                }
+                LuaTask::SummonRetainer { id } => {
+                    if !self.summon_retainer(*id, events).await {
+                        self.event_finish(events).await;
+                        run_finish_event = true;
+                    }
+                }
+                LuaTask::DismissRetainer => {
+                    self.dismiss_retainer(events).await;
+                }
+                LuaTask::HireRetainer {
+                    name,
+                    classjob,
+                    level,
+                } => {
+                    self.hire_retainer(name, *classjob, *level).await;
+                }
+                LuaTask::ListRetainers => {
+                    self.list_retainers().await;
+                }
+                LuaTask::ReleaseRetainer { name } => {
+                    self.release_retainer_by_name(name).await;
                 }
                 LuaTask::ToggleGlassesStyle { id } => {
                     self.toggle_glasses_style(*id).await;

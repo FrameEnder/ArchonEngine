@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-18 | — | Claims, FirstAttack (combat).
+| 2026-10-18 | — | Retainers (new page): the summoning bell, calling and sending away, entrusting, selling, the packets from Bob's captures; fork opcodes; `!retainer` (tools); known issues.
+| 2026-10-18 | `2a6e491` | Claims, FirstAttack (combat).
 | 2026-10-17 | `b0a07af` | Fixtures from Chronofoil, replay checking scenes, flags and effects, `battle-sim`, `lint`, CI (questkit); retail's scene flags and how searches play (quests); the quest battles' timings and health marks from the captures, adding a quest battle (quest battles); what the new checks can't see (known issues).
 | 2026-10-17 | `5f16817` | Ul'dah's first five quests, attuning inside a quest, which scenes come back as yields (quests); Underneath the Sultantree (quest battles); combo steps without their step, the blanga's and the stranger's skills (combat); fixtures with layouts and yields, battle steps found by territory, composite scene flags (questkit); known issues.
 | 2026-10-17 | `3f9a8bc` | Open-world spawns, Central Thanalan's monsters (combat); `questkit chronofoil --dropin` (questkit); Central Thanalan (known issues).
@@ -83,7 +84,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Claims: the first to attack an enemy (or an enemy a player) is sent to everyone nearby (FirstAttack, 374), right before the hit's results, and cleared when an enemy gives up a chase or a player's fight is over; the claimer is in CommonSpawn too. From Bob's Chronofoil captures; `first_attack_layout` test. |
+| — | Retainers: a `retainer` table and `!retainer hire/list/release`; summoning bells list them (client trigger 9003 commands 2, 3 and 4), call one (RetainerState, their containers and market prices, their NPC, their menu) and send them away; entrusting, withdrawing and putting items up for sale work on their containers, which are saved after each change; PlayerRetainerInfo and an empty sale history. RetainerInfo's and RetainerInfoEnd's fields named from retail. Unhandled item operations warn instead of panicking. From Bob's Chronofoil captures of 2026-09-15; opcodes from FFXIVOpcodes, not yet seen working. |
+| `2a6e491` | Claims: the first to attack an enemy (or an enemy a player) is sent to everyone nearby (FirstAttack, 374), right before the hit's results, and cleared when an enemy gives up a chase or a player's fight is over; the claimer is in CommonSpawn too. From Bob's Chronofoil captures; `first_attack_layout` test. |
 
 ### 2026-10-17
 

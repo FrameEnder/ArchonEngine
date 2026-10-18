@@ -574,9 +574,17 @@ pub enum ClientTriggerCommand {
         num_sides: u32,
     },
 
-    /// The client opens the Mogpendium or interacts with the Retainer Bell.
+    /// The client opens the Mogpendium or interacts with the Retainer Bell. A ServerRequestCallbackManager request:
+    /// unk1 is the callback slot and unk2 the command. At a summoning bell (Bob's Chronofoil captures of retail): 2
+    /// asks for the retainer list, 3 for one retainer's entry (unk3 and unk4 are their ID, high half first), 4 is
+    /// answered with ServerRequestReply.
     #[brw(magic = 9003u32)]
-    OpenUnk1 { unk1: u32, unk2: u32 },
+    OpenUnk1 {
+        unk1: u32,
+        unk2: u32,
+        unk3: u32,
+        unk4: u32,
+    },
 
     /// The client tells us how far in the distance we should see actors.
     #[brw(magic = 9005u32)]
@@ -682,5 +690,26 @@ mod tests {
                 object_type: ObjectTypeKind::EObjOrNpc,
             })
         )
+    }
+
+    /// A summoning bell asking for one retainer's entry (client trigger 9003, command 3), as retail's client sent it
+    /// (Bob's Chronofoil capture of 2026-09-15.)
+    #[test]
+    fn read_retainer_entry_request() {
+        let bytes: Vec<u8> = [
+            0x2b, 0x23, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0x17, 0, 0x78, 0, 0x97, 0xe0, 0xa7, 0x4a, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ]
+        .to_vec();
+        let trigger = ClientTrigger::read_le(&mut Cursor::new(&bytes)).unwrap();
+        assert_eq!(
+            trigger.trigger,
+            ClientTriggerCommand::OpenUnk1 {
+                unk1: 0,
+                unk2: 3,
+                unk3: 0x0078_0017,
+                unk4: 0x4aa7_e097,
+            }
+        );
     }
 }

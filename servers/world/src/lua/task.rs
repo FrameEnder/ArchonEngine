@@ -105,6 +105,26 @@ pub enum LuaTask {
     SpawnQuestBattleNpc {
         layout_id: u32,
     },
+    /// A summoning bell was used: its list (scene 0), or scene 1001 without retainers.
+    OpenSummoningBell,
+    /// Call the retainer with this ID (from the bell's list) and play their menu.
+    SummonRetainer {
+        id: u64,
+    },
+    /// Send the called retainer away and play the list again.
+    DismissRetainer,
+    /// `!retainer hire`.
+    HireRetainer {
+        name: String,
+        classjob: u8,
+        level: u8,
+    },
+    /// `!retainer list`.
+    ListRetainers,
+    /// `!retainer release`.
+    ReleaseRetainer {
+        name: String,
+    },
     ToggleGlassesStyle {
         id: u32,
     },

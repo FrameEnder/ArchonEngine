@@ -89,7 +89,53 @@ ClientZoneIpcType:
   size: 40
   found_on: 2026.10.06.0000.0000
   how_to_find: Buy anything on the marketboard. If nothing happens, the server warns about an unknown 40-byte packet - that's this one.
+- name: RequestPlayerRetainerInfo
+  comment: The client asks for its retainers for the marketboard, as a retainer's sale list opens - answered with PlayerRetainerInfo.
+  # 580 on 2026.09.15 (Bob's Chronofoil captures, all zeros); not known for 2026.10.06 yet.
+  size: 8
+  how_to_find: Call a retainer at a summoning bell (one hired with !retainer hire) and open Sell items in your inventory. The server warns about an unknown 8-byte packet as the window opens.
+- name: RequestRetainerSaleHistory
+  comment: The client asks for a retainer's sale history (the retainer's ID) - answered with RetainerSaleHistory.
+  # 243 on 2026.09.15 (Bob's Chronofoil captures); not known for 2026.10.06 yet.
+  size: 8
+  how_to_find: Call a retainer at a summoning bell and open their sale history. The server warns about an unknown 8-byte packet holding the retainer's ID.
 ServerZoneIpcType:
+- name: RetainerState
+  comment: A retainer is called (state 4) or sent away (state 3) at a summoning bell - their ID and name.
+  # 908 on 2026.09.15 (Bob's Chronofoil captures, FFXIVOpcodes' RetainerState there); 249 on 2026.10.06 is
+  # FFXIVOpcodes' (7.57), not yet seen working.
+  opcode: 249
+  size: 56
+  found_on: 2026.10.06.0000.0000
+  how_to_find: On retail with the Kawari Recorder or Chronofoil, call a retainer at a summoning bell - the 56-byte packet with their ID and name, right after choosing them.
+- name: PlayerRetainerInfo
+  comment: The character's retainers for the marketboard's listings, the reply to RequestPlayerRetainerInfo.
+  # 599 on 2026.09.15 (Bob's Chronofoil captures); 712 on 2026.10.06 is FFXIVOpcodes' (7.57), not yet seen working.
+  opcode: 712
+  size: 480
+  found_on: 2026.10.06.0000.0000
+  how_to_find: On retail with the Kawari Recorder or Chronofoil, call a retainer and open Sell items in your inventory - the 480-byte reply.
+- name: ItemMarketBoardInfo
+  comment: The asking price of one item a retainer has on the market, sent with their containers as they're called.
+  # 313 on 2026.09.15 (Bob's Chronofoil captures); 387 on 2026.10.06 is FFXIVOpcodes' (7.57), not yet seen working.
+  opcode: 387
+  size: 32
+  found_on: 2026.10.06.0000.0000
+  how_to_find: On retail with the Kawari Recorder or Chronofoil, call a retainer who has items on the market - one 32-byte packet per item after their containers.
+- name: ItemMarketBoardSummary
+  comment: How many items a retainer has on the market, after their ItemMarketBoardInfos.
+  # 442 on 2026.09.15 (Bob's Chronofoil captures); 303 on 2026.10.06 is FFXIVOpcodes' (7.57), not yet seen working.
+  opcode: 303
+  size: 8
+  found_on: 2026.10.06.0000.0000
+  how_to_find: On retail with the Kawari Recorder or Chronofoil, call a retainer - the 8-byte packet after their containers (sequence, then how many items they have on the market.)
+- name: RetainerSaleHistory
+  comment: A retainer's sale history, the reply to RequestRetainerSaleHistory.
+  # 161 on 2026.09.15 (Bob's Chronofoil captures); 832 on 2026.10.06 is FFXIVOpcodes' (7.57), not yet seen working.
+  opcode: 832
+  size: 1048
+  found_on: 2026.10.06.0000.0000
+  how_to_find: On retail with the Kawari Recorder or Chronofoil, call a retainer and open their sale history - the 1048-byte reply.
 - name: MarketBoardPurchase
   comment: A marketboard purchase went through - the item and how many, after the gil and inventory updates.
   # 665 on 2026.09.15 (Bob's Chronofoil captures); 610 on 2026.10.06 is FFXIVOpcodes' (7.57), not yet seen working.

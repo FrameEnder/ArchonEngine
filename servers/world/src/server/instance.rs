@@ -28,8 +28,8 @@ use kawari::{
     },
     config::{Config, get_config},
     ipc::zone::{
-        ActionRequest, ActorControlCategory, Conditions, DutyFinderSetting, ServerZoneIpcSegment,
-        SpawnNpc, SpawnObject, SpawnPlayer, SpawnTreasure,
+        ActionRequest, ActorControlCategory, Conditions, DutyFinderSetting, ObjectKind,
+        ServerZoneIpcSegment, SpawnNpc, SpawnObject, SpawnPlayer, SpawnTreasure,
     },
 };
 use parking_lot::Mutex;
@@ -374,6 +374,8 @@ impl Instance {
             .filter(|(_, y)| {
                 y.get_common_spawn().health_points > 0
                     && y.get_common_spawn().mode != CharacterMode::Dead
+                    // Nothing goes after a retainer called at a bell.
+                    && y.get_common_spawn().object_kind != ObjectKind::Retainer
             })
             .map(|(x, y)| {
                 (

@@ -67,6 +67,10 @@ pub struct Inventory {
     pub currency: CurrencyStorage,
     pub crystals: CrystalsStorage,
     pub key_items: GenericStorage<MAX_NORMAL_STORAGE>,
+    /// The retainer called at a summoning bell, if any: their containers (10000-12002) work like the player's own while
+    /// they're out. Kept in the retainer table, not with the player's inventory.
+    #[serde(skip)]
+    pub retainer: Option<Box<crate::retainer::RetainerInventory>>,
 }
 
 impl serialize::ToSql<Text, Sqlite> for Inventory {
@@ -110,6 +114,7 @@ impl Default for Inventory {
             currency: CurrencyStorage::default(),
             crystals: CrystalsStorage::default(),
             key_items: GenericStorage::new(ContainerType::KeyItems),
+            retainer: None,
         }
     }
 }
@@ -342,7 +347,44 @@ impl Inventory {
                     }
                 }
             }
-            _ => todo!(),
+            ItemOperationKind::RetainerMarketList
+            | ItemOperationKind::RetainerMarketListCrystal => {
+                self.list_on_retainer_market(action);
+            }
+            kind => {
+                tracing::warn!(
+                    "Unhandled item operation {kind:?}, the server's inventory didn't change!"
+                );
+            }
+        }
+    }
+
+    /// Puts `src_stack` of the item at the source up for sale in the called retainer's market slot at the destination,
+    /// at `dst_item_id` gil each (see `ItemOperationKind::RetainerMarketList`.)
+    fn list_on_retainer_market(&mut self, action: &ItemOperation) {
+        let Some(source) = self.get_item(action.src_storage_id, action.src_container_index) else {
+            return;
+        };
+        let quantity = (action.src_stack as i32).clamp(1, source.quantity.max(1));
+        let Some(retainer) = self.retainer.as_mut() else {
+            tracing::warn!("Listing an item for sale without a retainer called, ignoring it!");
+            return;
+        };
+        let slot = action.dst_container_index as usize;
+        if slot >= retainer.market.slots.len() || source.is_empty_slot() {
+            return;
+        }
+        retainer.market.slots[slot] = Item { quantity, ..source };
+        if let Some(price) = retainer.market_prices.get_mut(slot) {
+            *price = action.dst_item_id;
+        }
+        if let Some(src_slot) = self.get_item_mut(action.src_storage_id, action.src_container_index)
+        {
+            src_slot.quantity -= quantity;
+            // Crystals keep their slot (and item ID) when there are none left.
+            if src_slot.quantity <= 0 && action.src_storage_id != ContainerType::Crystals {
+                *src_slot = Item::default();
+            }
         }
     }
 
@@ -467,7 +509,10 @@ impl Inventory {
             ContainerType::ArmorySoulCrystal => Some(&mut self.armoury_soul_crystal),
             ContainerType::ArmoryWeapon => Some(&mut self.armoury_main_hand),
             ContainerType::KeyItems => Some(&mut self.key_items),
-            _ => None,
+            _ => self
+                .retainer
+                .as_mut()
+                .and_then(|retainer| retainer.container_mut(*container_type)),
         }
     }
 
@@ -493,7 +538,10 @@ impl Inventory {
             ContainerType::ArmorySoulCrystal => Some(&self.armoury_soul_crystal),
             ContainerType::ArmoryWeapon => Some(&self.armoury_main_hand),
             ContainerType::KeyItems => Some(&self.key_items),
-            _ => None,
+            _ => self
+                .retainer
+                .as_ref()
+                .and_then(|retainer| retainer.container(container_type)),
         }
     }
 
@@ -951,6 +999,83 @@ mod tests {
         assert_eq!(inventory.pages[0].get_slot(2).quantity, 0);
         assert_eq!(inventory.armoury_body.get_slot(0).item_id, 2990);
         assert_eq!(inventory.armoury_body.get_slot(0).quantity, 1);
+    }
+
+    /// Entrusting an item to a called retainer and taking it back: the retail moves (type 0x203 on 2026.09.15) between
+    /// the player's bags and the retainer's pages.
+    #[test]
+    fn entrust_and_withdraw() {
+        let mut inventory = Inventory::default();
+        // Without a retainer called, their containers don't exist.
+        assert!(
+            inventory
+                .get_container(ContainerType::RetainerPage1)
+                .is_none()
+        );
+
+        inventory.retainer = Some(Box::default());
+        inventory.add_in_slot(item(5057), &ContainerType::Inventory1, 4);
+        inventory.process_action(&ItemOperation {
+            operation_type: ItemOperationKind::Move,
+            src_storage_id: ContainerType::Inventory1,
+            src_container_index: 4,
+            dst_storage_id: ContainerType::RetainerPage2,
+            dst_container_index: 20,
+            ..Default::default()
+        });
+        assert!(inventory.pages[1].get_slot(4).is_empty_slot());
+        let retainer = inventory.retainer.as_ref().unwrap();
+        assert_eq!(retainer.pages[1].get_slot(20).item_id, 5057);
+        assert_eq!(retainer.item_count(), 1);
+
+        inventory.process_action(&ItemOperation {
+            operation_type: ItemOperationKind::Move,
+            src_storage_id: ContainerType::RetainerPage2,
+            src_container_index: 20,
+            dst_storage_id: ContainerType::Inventory0,
+            dst_container_index: 0,
+            ..Default::default()
+        });
+        assert_eq!(inventory.pages[0].get_slot(0).item_id, 5057);
+        assert_eq!(inventory.retainer.as_ref().unwrap().item_count(), 0);
+    }
+
+    /// Putting part of a stack up for sale (type 0x215 on 2026.09.15: one item from bag 2 slot 34 into market slot 0
+    /// at 3,400 gil.)
+    #[test]
+    fn list_on_retainer_market() {
+        let mut inventory = Inventory::default();
+        inventory.retainer = Some(Box::default());
+        inventory.add_in_slot(
+            Item {
+                quantity: 5,
+                ..item(4850)
+            },
+            &ContainerType::Inventory2,
+            34,
+        );
+        inventory.process_action(&ItemOperation {
+            operation_type: ItemOperationKind::RetainerMarketList,
+            src_storage_id: ContainerType::Inventory2,
+            src_container_index: 34,
+            src_stack: 1,
+            dst_storage_id: ContainerType::RetainerMarket,
+            dst_container_index: 0,
+            dst_item_id: 3400,
+            ..Default::default()
+        });
+        assert_eq!(inventory.pages[2].get_slot(34).quantity, 4);
+        let listings = inventory.retainer.as_ref().unwrap().market_listings();
+        assert_eq!(listings.len(), 1);
+        assert_eq!(
+            (
+                listings[0].0,
+                listings[0].1.item_id,
+                listings[0].1.quantity,
+                listings[0].2
+            ),
+            (0, 4850, 1, 3400)
+        );
     }
 
     /// Swapping with the Armoury Chest is still a plain swap.

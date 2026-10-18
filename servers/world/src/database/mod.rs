@@ -3,6 +3,7 @@ mod friends;
 mod linkshell;
 mod mail;
 mod marketboard;
+mod retainer;
 
 mod models;
 pub use models::{

@@ -605,6 +605,8 @@ impl WorldDatabase {
                 .unwrap();
         }
 
+        self.delete_retainers(for_content_id);
+
         {
             use schema::inventory::dsl::*;
             diesel::delete(inventory.filter(content_id.eq(for_content_id as i64)))

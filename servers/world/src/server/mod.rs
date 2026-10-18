@@ -2810,6 +2810,26 @@ pub async fn server_main_loop(
                         enmity.insert(from_actor_id, 1);
                     }
                 }
+                ToServer::SpawnRetainer(from_actor_id, retainer_id, spawn) => {
+                    let mut data = data.lock();
+                    let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
+                        continue;
+                    };
+                    // Everyone nearby sees them, as on retail; the usual spawning takes care of that.
+                    let config = get_config();
+                    let mut game_data = game_data.lock();
+                    instance.insert_npc(retainer_id, *spawn, &config, &mut game_data);
+                }
+                ToServer::DespawnRetainer(from_actor_id, retainer_id) => {
+                    let mut network = network.lock();
+                    let mut data = data.lock();
+                    let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
+                        continue;
+                    };
+                    if instance.find_actor(retainer_id).is_some() {
+                        network.remove_actor(instance, retainer_id);
+                    }
+                }
                 ToServer::SetNewStatValues(from_actor_id, level, class_job, new_parameters) => {
                     // Update internal data model
                     {

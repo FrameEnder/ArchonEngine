@@ -64,6 +64,7 @@ Typed in game chat; the full list is in [Debug Commands](../debug_commands.md).
 | `!rawpacket <opcode> <hex>` | Send any IPC packet. How the QuestWork layout was mapped (marker bytes). |
 | `!rawsweep <from> <to> <hex>` | Send the same data with every *unknown* opcode in a range, to find one the client reacts to. |
 | `!directorscene <scene> [flags hex]` | Play a scene of the current director (found the 60001 victory fanfare). |
+| `!retainer hire <name> [class/job] [level]` / `list` / `release <name>` | Hire a retainer, list them, let one go. See [Retainers](retainers.md#hiring). |
 | `!forkopcodes` | List the fork's opcodes, which are known for this game version, and how to find the rest. |
 | `!achievement <id>` / `clear <id>` / `check` | Complete an achievement (with the pop-up), take one away, or complete every one whose requirements are met (`check` says how many it completed). |
 

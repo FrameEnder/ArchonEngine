@@ -107,7 +107,11 @@ impl ZoneConnection {
             }
 
             let ipc = match container_type {
-                ContainerType::Currency | ContainerType::Crystals => ServerZoneIpcSegment::new(
+                // A retainer's gil came this way too on retail (Bob's Chronofoil captures.)
+                ContainerType::Currency
+                | ContainerType::Crystals
+                | ContainerType::RetainerGil
+                | ContainerType::RetainerCrystals => ServerZoneIpcSegment::new(
                     ServerZoneIpcData::CurrencyCrystalInfo(CurrencyInfo {
                         sequence: self.player_data.item_sequence,
                         container: container_type,

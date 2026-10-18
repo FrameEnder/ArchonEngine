@@ -321,3 +321,20 @@ diesel::table! {
         sold_at -> BigInt,
     }
 }
+
+// Retainers (migration update-2026-10-18_retainers.)
+diesel::table! {
+    retainer (id) {
+        id -> BigInt,
+        content_id -> BigInt,
+        display_order -> Integer,
+        name -> Text,
+        classjob -> Integer,
+        level -> Integer,
+        town -> Integer,
+        customize -> Text,
+        voice -> Integer,
+        inventory -> Text,
+        hired_at -> BigInt,
+    }
+}

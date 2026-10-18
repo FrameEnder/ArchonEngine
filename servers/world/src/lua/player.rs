@@ -768,6 +768,39 @@ impl UserData for LuaPlayer {
             this.spawn_quest_battle_npc(layout_id);
             Ok(())
         });
+        methods.add_method_mut("open_summoning_bell", |_, this, _: ()| {
+            this.queued_tasks.push(LuaTask::OpenSummoningBell);
+            Ok(())
+        });
+        methods.add_method_mut("summon_retainer", |_, this, (high, low): (u32, u32)| {
+            this.queued_tasks.push(LuaTask::SummonRetainer {
+                id: crate::retainer::join_id(high, low),
+            });
+            Ok(())
+        });
+        methods.add_method_mut("dismiss_retainer", |_, this, _: ()| {
+            this.queued_tasks.push(LuaTask::DismissRetainer);
+            Ok(())
+        });
+        methods.add_method_mut(
+            "hire_retainer",
+            |_, this, (name, classjob, level): (String, Option<u8>, Option<u8>)| {
+                this.queued_tasks.push(LuaTask::HireRetainer {
+                    name,
+                    classjob: classjob.unwrap_or(0),
+                    level: level.unwrap_or(1),
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut("list_retainers", |_, this, _: ()| {
+            this.queued_tasks.push(LuaTask::ListRetainers);
+            Ok(())
+        });
+        methods.add_method_mut("release_retainer", |_, this, name: String| {
+            this.queued_tasks.push(LuaTask::ReleaseRetainer { name });
+            Ok(())
+        });
         methods.add_method_mut("change_weather", |_, this, id: u8| {
             this.change_weather(id);
             Ok(())

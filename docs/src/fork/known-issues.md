@@ -47,7 +47,26 @@ add one when something is found.
 * Retail's order of a category's items isn't known (it isn't item level or ID); Kawari sends them by ID.
 * A purchase doesn't send retail's inventory transaction for the gil, only the gil and item slots (as the NPC shops
   do); the upper 16 bits of a search result's count (1, 2 or 5 on retail) aren't known.
-* Selling isn't there: players can't list their own items.
+* Selling isn't there: players can put items up for sale with a [retainer](retainers.md), but those don't show on the
+  board.
+
+## Retainers
+
+* Not tried on Kawari yet. RetainerState (249), PlayerRetainerInfo (712), ItemMarketBoardInfo (387),
+  ItemMarketBoardSummary (303) and RetainerSaleHistory (832) are FFXIVOpcodes' 2026.10.06 opcodes; the two client
+  requests (580 and 243 on 2026.09.15) aren't known for 2026.10.06; retail's 8-byte packet 897 (sent before each
+  RetainerState) isn't known at all and isn't sent. A capture of calling a retainer on 2026.10.06 would settle them.
+* Hiring is only `!retainer hire`: no retainer vocate (CmnDefRetainerDesk), no appearance editor (the retainer looks
+  like the character), no approval quest (retail's scene 1000).
+* Entrusting or withdrawing gil isn't handled (the captures had none): an item operation on the gil containers moves
+  the whole stack. Crystals likewise.
+* Selling: items can be put up for sale, but changing a price, taking an item back from the market and other players
+  buying them aren't there (the captures don't show the first two: Bob's 2026-10-06 capture is wanted). Items on the
+  market don't show on the marketboard, and listings never end.
+* Ventures, the retainer's class and gear changes beyond moving items (their level, the class change at the bell),
+  and the retainer's sale history (sent empty) aren't there.
+* Retail places the retainer at a spot set for each bell; Kawari puts them in front of the player.
+* The lobby's character list doesn't show retainers (DistRetainerInfo is still empty).
 
 ## Quest battles and directors
 

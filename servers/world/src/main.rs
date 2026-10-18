@@ -47,6 +47,7 @@ use kawari::constants::{
 use kawari::packet::oodle::OodleNetwork;
 use kawari::packet::{ConnectionState, ConnectionType, SegmentData, parse_packet_header};
 use kawari_world::lua::{KawariLua, KawariLuaState, LuaPlayer};
+use kawari_world::retainer;
 use kawari_world::{
     CLIENT_QUEUE_SIZE, ChatConnection, CustomIpcConnection, Event, EventHandler, GameData,
     ObsfucationData, QUEST_BATTLE_SCENE_COMPLETE, QUEST_BATTLE_SCENE_FINISH,
@@ -214,6 +215,7 @@ async fn initial_setup(
                     quest_battle_finish_flags: QUEST_BATTLE_SCENE_FINISH_FLAGS,
                     can_share_teleport: false,
                     exp_chain: (0, None),
+                    called_retainer: None,
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
                 };
 
@@ -1484,7 +1486,7 @@ async fn process_packet(
                                     }
                                     connection.update_online_status().await;
                                 }
-                                ClientTriggerCommand::OpenUnk1 { unk1, unk2 }
+                                ClientTriggerCommand::OpenUnk1 { unk1, unk2, .. }
                                     if events.last().is_some_and(|x| {
                                         x.1.id.handler_type() == HandlerType::Quest
                                     }) =>
@@ -1503,42 +1505,36 @@ async fn process_packet(
                                         )
                                         .await;
                                 }
-                                ClientTriggerCommand::OpenUnk1 { .. } => {
-                                    for i in 0..10 {
-                                        let ipc = ServerZoneIpcSegment::new(
-                                            ServerZoneIpcData::RetainerInfo {
-                                                sequence: 1,
-                                                unk2: 0,
-                                                retainer_id: 1 + i as u64,
-                                                index: i,
-                                                item_count: 174,
-                                                gil: 144492,
-                                                unk55: 0,
-                                                unk56: 2,
-                                                classjob_id: 26,
-                                                level: 33,
-                                                unk7: 0,
-                                                unk8: 0,
-                                                unk9: 0,
-                                                unk10: 1,
-                                                unk11: 0,
-                                                name: "Test Retainer".to_string(),
-                                            },
-                                        );
-                                        connection.send_ipc_self(ipc).await;
+                                ClientTriggerCommand::OpenUnk1 {
+                                    unk1,
+                                    unk2,
+                                    unk3,
+                                    unk4,
+                                } => {
+                                    // At a summoning bell (docs/src/fork/retainers.md.)
+                                    match unk2 {
+                                        2 => connection.send_retainer_list().await,
+                                        3 => {
+                                            connection
+                                                .send_one_retainer_info(retainer::join_id(
+                                                    unk3, unk4,
+                                                ))
+                                                .await
+                                        }
+                                        command => {
+                                            // Command 4 came as a retainer was called and again as their menu
+                                            // reopened; retail answered with nothing but this.
+                                            connection
+                                                .actor_control_self(
+                                                    ActorControlCategory::ServerRequestReply {
+                                                        callback_index: unk1,
+                                                        command,
+                                                        result: 0,
+                                                    },
+                                                )
+                                                .await;
+                                        }
                                     }
-
-                                    let ipc = ServerZoneIpcSegment::new(
-                                        ServerZoneIpcData::RetainerInfoEnd {
-                                            sequence: 1,
-                                            unk1: 66826,
-                                            unk2: 0,
-                                            unk3: 4294967295,
-                                            unk4: 4294967295,
-                                            unk5: 65535,
-                                        },
-                                    );
-                                    connection.send_ipc_self(ipc).await;
                                 }
                                 ClientTriggerCommand::RequestApartmentList { starting_index } => {
                                     connection.send_apartment_list(starting_index).await;
@@ -2202,6 +2198,11 @@ async fn process_packet(
                                 .await;
 
                             connection.player_data.inventory.process_action(action);
+                            if retainer::is_retainer_container(action.src_storage_id)
+                                || retainer::is_retainer_container(action.dst_storage_id)
+                            {
+                                connection.save_called_retainer();
+                            }
 
                             if action.operation_type == ItemOperationKind::Discard {
                                 tracing::info!("Client is discarding from their inventory!");
@@ -3256,6 +3257,12 @@ async fn process_packet(
                             connection
                                 .marketboard_search(*start_index, *request_id, *kind, *category)
                                 .await;
+                        }
+                        ClientZoneIpcData::RequestPlayerRetainerInfo { .. } => {
+                            connection.send_player_retainer_info().await;
+                        }
+                        ClientZoneIpcData::RequestRetainerSaleHistory { retainer_id } => {
+                            connection.send_retainer_sale_history(*retainer_id).await;
                         }
                         ClientZoneIpcData::MarketBoardOpened { request_id, .. } => {
                             connection.marketboard_opened(*request_id).await;

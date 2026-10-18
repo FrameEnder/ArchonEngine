@@ -170,6 +170,13 @@ pub use marketboard::{
 mod linkshell;
 pub use linkshell::*;
 
+mod retainer;
+pub use retainer::{
+    ItemMarketBoardInfo, ItemMarketBoardSummary, PLAYER_RETAINER_ENTRIES, PlayerRetainerEntry,
+    PlayerRetainerInfo, RETAINER_STATE_DISMISSED, RETAINER_STATE_SUMMONED, RetainerSaleHistory,
+    RetainerState,
+};
+
 mod fellowships;
 pub use fellowships::*;
 
@@ -680,6 +687,16 @@ pub enum ServerZoneIpcData {
     /// A marketboard purchase went through: the reply to `ClientZoneIpcData::MarketBoardPurchaseHandler`, after the gil
     /// and the item's inventory updates.
     MarketBoardPurchase(MarketBoardPurchase),
+    /// A retainer is called or sent away at a summoning bell.
+    RetainerState(RetainerState),
+    /// The character's retainers for the marketboard's listings.
+    PlayerRetainerInfo(PlayerRetainerInfo),
+    /// The asking price of one item a retainer has on the market.
+    ItemMarketBoardInfo(ItemMarketBoardInfo),
+    /// How many items a retainer has on the market.
+    ItemMarketBoardSummary(ItemMarketBoardSummary),
+    /// A retainer's sale history.
+    RetainerSaleHistory(RetainerSaleHistory),
     /// The completed achievements, the reply to `ClientTriggerCommand::RequestAchievements` (FFXIVClientStructs'
     /// AchievementsPacket; the client's handler copies it into its Achievement state and marks it loaded.)
     Achievements {
@@ -1131,25 +1148,32 @@ pub enum ServerZoneIpcData {
         common: CWLSCommon,
     },
     RetainerInfo {
+        /// The inventory sequence (every RetainerInfo in a list has the same one, then RetainerInfoEnd.)
         sequence: u32,
         unk2: u32,
-        /// Unique ID for this retainer.
+        /// Unique ID for this retainer. Zero for an empty slot of the list.
         retainer_id: u64,
+        /// Which of the character's ten slots this is.
         index: u8,
         #[brw(pad_after = 2)] // appears empty
         /// How many of their inventory slots are filled.
         item_count: u8,
         /// The amount of gil in their possession.
         gil: u32,
-        unk55: u8,
-        unk56: u8,
+        /// How many items they have on the market.
+        market_item_count: u8,
+        /// Their town (FFXIVClientStructs' RetainerManager.RetainerTown: 1 Limsa Lominsa, 2 Gridania, 3 Ul'dah...)
+        town: u8,
         classjob_id: u8,
         level: u8,
-        unk7: u32,
-        unk8: u32,
-        unk9: u32,
-        /// If set to zero, it shows "contract suspended".
-        unk10: u32,
+        /// When their market listings end (Unix time), 0 with nothing on the market.
+        market_expire: u32,
+        /// Index into the RetainerTask Excel sheet, their venture.
+        venture_id: u32,
+        /// When their venture is done (Unix time.)
+        venture_complete: u32,
+        /// If set to zero, it shows "contract suspended". 1 on retail.
+        available: u32,
         unk11: u8,
         /// The name of this retainer.
         #[brw(pad_size_to = CHAR_NAME_MAX_LENGTH)]
@@ -1160,11 +1184,21 @@ pub enum ServerZoneIpcData {
         name: String,
     },
     RetainerInfoEnd {
+        /// The same sequence as the RetainerInfos before it.
         sequence: u32,
-        unk1: u32,
+        /// How many RetainerInfos came before it: 10 for the whole list, 1 for one retainer.
+        entry_count: u8,
+        /// How many retainers the character may hire (2 on retail without extra retainers.)
+        max_retainers: u8,
+        /// 1 on retail.
+        #[brw(pad_after = 1)]
+        unk1: u8,
         unk2: u32,
+        /// 0xFFFFFFFF on retail.
         unk3: u32,
+        /// 0xFFFFFFFF on retail.
         unk4: u32,
+        /// 0xFFFF on retail.
         unk5: u32,
     },
     CrossworldLinkshellDisbanded {
@@ -1560,6 +1594,66 @@ mod tests {
         assert_eq!(
             cursor.into_inner(),
             [1, 0, 0, 0, 0, 0, 0, 0, 0x41, 0x54, 0x06, 0x10, 0, 0, 0, 0]
+        );
+    }
+
+    fn hex(bytes: &str) -> Vec<u8> {
+        let bytes: String = bytes.split_whitespace().collect();
+        (0..bytes.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&bytes[i..i + 2], 16).unwrap())
+            .collect()
+    }
+
+    /// A retainer's entry in the bell's list and the end of the list, as retail sent them (Bob's Chronofoil capture of
+    /// 2026-09-15; the retainer's name replaced): miner level 49 from Limsa Lominsa, 130 items, 242,668 gil, 12 items
+    /// on the market.
+    #[test]
+    fn retainer_info_layout() {
+        use binrw::BinWrite;
+
+        let data = ServerZoneIpcData::RetainerInfo {
+            sequence: 0x118,
+            unk2: 0,
+            retainer_id: 0x0078_0017_4aa7_db83,
+            index: 0,
+            item_count: 0x82,
+            gil: 0x0003_b3ec,
+            market_item_count: 12,
+            town: 1,
+            classjob_id: 16,
+            level: 49,
+            market_expire: 0x6abf_d9bc,
+            venture_id: 0,
+            venture_complete: 0,
+            available: 1,
+            unk11: 0,
+            name: "Abc".to_string(),
+        };
+        let mut cursor = std::io::Cursor::new(Vec::new());
+        data.write_le(&mut cursor).unwrap();
+        let mut expected = hex(
+            "18010000 00000000 83dba74a 17007800 00820000 ecb30300 0c011031 bcd9bf6a 00000000 00000000 01000000 00",
+        );
+        expected.extend_from_slice(b"Abc");
+        expected.resize(80, 0);
+        assert_eq!(cursor.into_inner(), expected);
+
+        let data = ServerZoneIpcData::RetainerInfoEnd {
+            sequence: 0x118,
+            entry_count: 10,
+            max_retainers: 2,
+            unk1: 1,
+            unk2: 0,
+            unk3: u32::MAX,
+            unk4: u32::MAX,
+            unk5: 0xffff,
+        };
+        let mut cursor = std::io::Cursor::new(Vec::new());
+        data.write_le(&mut cursor).unwrap();
+        assert_eq!(
+            cursor.into_inner(),
+            hex("18010000 0a020100 00000000 ffffffff ffffffff ffff0000")
         );
     }
 }

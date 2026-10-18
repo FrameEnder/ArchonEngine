@@ -22,6 +22,9 @@ mod database;
 
 /// The marketboard's items, prices, listings and history.
 pub mod marketboard;
+
+/// Retainers: who they are, what they hold, and how they're shown at a summoning bell.
+pub mod retainer;
 pub use database::{Content, Unlock, WorldDatabase};
 
 pub mod lua;
