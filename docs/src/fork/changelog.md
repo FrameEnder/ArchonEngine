@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-18 | — | Quests (aetherytes' `BASE_ID`, attuning in Ul'dah's Close to Home), character windows (highlights: retail check, Auracite, Fantasia), known issues.
+| 2026-10-18 | — | Character windows: the aesthetician saves hair highlights; known issues.
+| 2026-10-18 | `81833d0` | Quests (aetherytes' `BASE_ID`, attuning in Ul'dah's Close to Home), character windows (highlights: retail check, Auracite, Fantasia), known issues.
 | 2026-10-18 | `77d5315` | Retainers (scene parameters corrected, the retainer outfit), character windows (hair highlights).
 | 2026-10-18 | `51ccb7f` | Retainers: the bell's retainer ID halves are signed (2026-10-18 bundle).
 | 2026-10-18 | `710fda2` | Combat: Surging Tempest and Well Fed refreshes add to the time left.
@@ -100,7 +101,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Fix from the 2026-10-18 bundles: aetherytes and shards get a `BASE_ID` (their Aetheryte row, cached from the map's Aetheryte entries by layout ID), so Ul'dah's Close to Home can attune at the aetheryte (the event ended at once). Hair highlights: the server already sends retail's bytes for characters made since `77d5315`; older and Auracite-imported characters need a Fantasia (documented). |
+| — | Fix: the aesthetician saved everything but hair highlights (the client sends the flag as 128, the script took only 1 as on). |
+| `81833d0` | Fix from the 2026-10-18 bundles: aetherytes and shards get a `BASE_ID` (their Aetheryte row, cached from the map's Aetheryte entries by layout ID), so Ul'dah's Close to Home can attune at the aetheryte (the event ended at once). Hair highlights: the server already sends retail's bytes for characters made since `77d5315`; older and Auracite-imported characters need a Fantasia (documented). |
 | `77d5315` | Fixes from the 2026-10-18 bundles: a called retainer's menu (scene 2) gets retail's parameters `{actor, n, 0, 1}` and the list again (scene 1) `{high, low}` (the parameter count had been read as a parameter; the client refused the scene); retainers wearing nothing show retail's retainer outfit; hair highlights are kept from character creation (any non-zero value) and sent as the client's 0x80 (they never showed in game). |
 | `51ccb7f` | Fix: calling a retainer whose ID's low half has its top bit set (the client returns it negative) failed in `summon_retainer` and left the player stuck in the bell's event; the bell and the vocate's release take signed halves now (2026-10-18 bundle). |
 | `710fda2` | Surging Tempest's refresh adds 30 s up to 60, eating again adds the food's time to Well Fed's (retail); `player:effect_time_left`. |

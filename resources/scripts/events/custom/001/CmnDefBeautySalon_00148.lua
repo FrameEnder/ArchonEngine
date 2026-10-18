@@ -42,7 +42,8 @@ function onYield(scene, id, results, player)
         customize.tribe = tribe_from_repr(results[6])
         customize.face = results[7]
         customize.hair = results[8]
-        customize.enable_highlights = results[9] == 1
+        -- The client sends 128 for "on" (Bob's 2026-10-18 bundle: yield 27 had 128 here), like character creation.
+        customize.enable_highlights = results[9] ~= 0
         customize.skin_tone = results[10]
         customize.right_eye_color = results[11]
         customize.hair_tone = results[12]
