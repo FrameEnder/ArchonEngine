@@ -170,6 +170,20 @@ pub enum ClientTriggerCommand {
         id: ObjectId,
     },
 
+    /// A called retainer's market listing gets a new asking price (Bob's Chronofoil capture of 2026-10-18: slot 0 →
+    /// 501 gil.) No reply on retail.
+    #[brw(magic = 400u32)]
+    SetRetainerMarketPrice { slot: u32, price: u32 },
+
+    /// The client asks for one inventory slot again (after entrusting to or withdrawing from a retainer, the source
+    /// slot); answered with that slot's UpdateInventorySlot.
+    #[brw(magic = 419u32)]
+    RequestInventorySlot {
+        #[brw(pad_size_to = 4)] // ContainerType is u16
+        container: ContainerType,
+        slot: u32,
+    },
+
     /// The client requests materia melding from another player.
     #[brw(magic = 413u32)]
     RequestMateriaMeld { actor_id: ObjectId },

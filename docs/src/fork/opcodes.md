@@ -38,13 +38,15 @@ upstream's [Opcodes](../opcodes.md) page.
 | MarketBoardOpened | client → server | 683 (156 on 2026.09.15) | 8 | The marketboard window opened; answered with an empty search result. Same moment and size as retail's 156 (2026-10-17 bundle); no finder. |
 | MarketBoardPurchaseHandler | client → server | 258 (765 on 2026.09.15) | 40 | Buying a marketboard listing. 258 is FFXIVOpcodes' 7.57 opcode, not yet seen on Kawari; no finder. See [Marketboard](marketboard.md). |
 | MarketBoardPurchase | server → client | 610 (665 on 2026.09.15) | 16 | A purchase went through: item and quantity. FFXIVOpcodes' 7.57 opcode; no finder. |
-| RequestPlayerRetainerInfo | client → server | not known (580 on 2026.09.15) | 8 | Asks for the character's retainers as a retainer's sale list opens. See [Retainers](retainers.md). |
-| RequestRetainerSaleHistory | client → server | not known (243 on 2026.09.15) | 8 | Asks for a retainer's sale history (their ID). |
-| RetainerState | server → client | 249 (908 on 2026.09.15) | 56 | A retainer called (4) or sent away (3). FFXIVOpcodes' 7.57 opcode, not yet seen working; no finder. |
-| PlayerRetainerInfo | server → client | 712 (599 on 2026.09.15) | 480 | The character's retainers for the marketboard. FFXIVOpcodes' 7.57 opcode. |
-| ItemMarketBoardInfo | server → client | 387 (313 on 2026.09.15) | 32 | The asking price of an item a retainer has on the market. FFXIVOpcodes' 7.57 opcode. |
-| ItemMarketBoardSummary | server → client | 303 (442 on 2026.09.15) | 8 | How many items a retainer has on the market. FFXIVOpcodes' 7.57 opcode. |
-| RetainerSaleHistory | server → client | 832 (161 on 2026.09.15) | 1048 | A retainer's sale history. FFXIVOpcodes' 7.57 opcode. |
+| RequestPlayerRetainerInfo | client → server | 818 (580 on 2026.09.15) | 8 | Asks for the character's retainers as a retainer's sale list opens. See [Retainers](retainers.md). |
+| RequestRetainerSaleHistory | client → server | 274 (243 on 2026.09.15) | 8 | Asks for a retainer's sale history (their ID). |
+| SetRetainerAppearance | client → server | 670 | 32 | The new retainer's voice and CustomizeData from the vocate's editor. |
+| RetainerStateNotice | server → client | 144 (897 on 2026.09.15) | 8 | Before every RetainerState and after a retainer's containers. |
+| RetainerState | server → client | 249 (908 on 2026.09.15) | 56 | A retainer called (4), sent away (3) or hired (1). Seen on 2026.10.06 (Bob's 2026-10-18 capture), like the four below; no finders. |
+| PlayerRetainerInfo | server → client | 712 (599 on 2026.09.15) | 480 | The character's retainers for the marketboard. |
+| ItemMarketBoardInfo | server → client | 387 (313 on 2026.09.15) | 32 | The asking price of an item a retainer has on the market. |
+| ItemMarketBoardSummary | server → client | 303 (442 on 2026.09.15) | 8 | How many items a retainer has on the market. |
+| RetainerSaleHistory | server → client | 832 (161 on 2026.09.15) | 1048 | A retainer's sale history. |
 | Achievements | server → client | 991 | 552 | The completed achievements and the last five, the reply to client trigger 1001. Found by its handler (HandleAchievementsPacket). See [Achievements](character-windows.md). |
 
 The client picks the event return packet by result count (2, 4, 8, 16…); EventReturnHandler16's finder looks for its
@@ -58,7 +60,9 @@ which. The `EventNotice` packet (`core`) was checked byte for byte against retai
 |---|---|
 | Actor control 925 `ServerRequestReply` | Reply to client trigger 9003 (ServerRequestCallbackManager), e.g. the quest battle prompt, or command 4 at a summoning bell. |
 | Client trigger 9003 (`OpenUnk1`) | Callback slot, command, then two parameters: at a summoning bell, command 2 asks for the retainer list and 3 for one retainer (the parameters are their ID). See [Retainers](retainers.md). |
-| ItemOperation types | Retail 2026.09.15 had Move at 0x203, so its 0x215 and 0x216 (putting an item up for sale with a retainer) are BASE_INVENTORY_ACTION + 25 and + 26. |
+| ItemOperation types | Retainers: BASE_INVENTORY_ACTION + 22 entrust, + 23 withdraw, + 24 gil, + 25 put up for sale (+ 26 from the crystals), the same offsets on 2026.09.15 (Move 0x203) and 2026.10.06 (Move 0x123). |
+| Opcode 308 | Upstream's CreateLocalLinkshellRequest; on 2026.10.06 also an event's text answer (a retainer's name), 48 bytes. |
+| EventResume with 8 results | Retail sent it as **329** on 2026.10.06 (the retainer vocate); upstream's EventResume8 is 513 (FFXIVOpcodes: ResultDialog). Not changed, needs checking. |
 | DirectorVars | First byte (Kawari's `DirectorData.flag`) is the director's sequence. |
 | DirectorPopupMessage (162) | The battle talk window, see [Quest battles](quest-battles.md#director-script). Its kind is one byte. |
 | PortraitsInformation (182) | The adventurer plate's portrait (BannerData), the reply to client trigger 3200. |

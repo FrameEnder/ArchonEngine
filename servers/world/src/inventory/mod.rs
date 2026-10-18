@@ -44,6 +44,24 @@ use crate::{GameData, ItemInfoQuery};
 
 use physis::TerritoryIntendedUse;
 
+/// A retainer's seven pages, where entrusted items go.
+const RETAINER_PAGES: [ContainerType; 7] = [
+    ContainerType::RetainerPage1,
+    ContainerType::RetainerPage2,
+    ContainerType::RetainerPage3,
+    ContainerType::RetainerPage4,
+    ContainerType::RetainerPage5,
+    ContainerType::RetainerPage6,
+    ContainerType::RetainerPage7,
+];
+/// The player's four bags, where withdrawn items go.
+const PLAYER_BAGS: [ContainerType; 4] = [
+    ContainerType::Inventory0,
+    ContainerType::Inventory1,
+    ContainerType::Inventory2,
+    ContainerType::Inventory3,
+];
+
 /// An item's HQ flag (`Item::item_flags`; ItemFlags.HighQuality in FFXIVClientStructs.)
 pub const ITEM_FLAG_HQ: u8 = 1;
 
@@ -360,6 +378,100 @@ impl Inventory {
                 );
             }
         }
+    }
+
+    /// Entrusting to or withdrawing from the called retainer from their menu (`ItemOperationKind::RetainerEntrust` /
+    /// `RetainerWithdraw`): `src_stack` of the source item (all of it when 0) goes where the server picks, as retail
+    /// does (Bob's 2026-10-18 capture): onto the same item's stack if it has room, otherwise the first empty slot of the
+    /// retainer's pages (entrusting) or the player's bags (withdrawing.) Returns the source and destination slots, or
+    /// None if nothing moved (empty source, no room, no retainer called.)
+    pub fn transfer_with_retainer(
+        &mut self,
+        action: &ItemOperation,
+    ) -> Option<[(ContainerType, u16); 2]> {
+        self.retainer.as_ref()?;
+        let source = self.get_item(action.src_storage_id, action.src_container_index)?;
+        if source.is_empty_slot() {
+            return None;
+        }
+        let quantity = match action.src_stack as i32 {
+            0 => source.quantity,
+            wanted => wanted.min(source.quantity),
+        };
+        let destinations: &[ContainerType] =
+            if action.operation_type == ItemOperationKind::RetainerEntrust {
+                &RETAINER_PAGES
+            } else {
+                &PLAYER_BAGS
+            };
+
+        // The same item's stack with room first, then the first empty slot.
+        let mut chosen = None;
+        if source.stack_size > 1 {
+            'stacks: for container_type in destinations {
+                let Some(container) = self.get_container(*container_type) else {
+                    continue;
+                };
+                for slot in 0..container.max_slots() as u16 {
+                    let item = container.get_slot(slot);
+                    if !item.is_empty_slot()
+                        && item.item_id == source.item_id
+                        && item.item_flags == source.item_flags
+                        && item.quantity + quantity <= source.stack_size as i32
+                    {
+                        chosen = Some((*container_type, slot));
+                        break 'stacks;
+                    }
+                }
+            }
+        }
+        if chosen.is_none() {
+            chosen = destinations.iter().find_map(|container_type| {
+                let container = self.get_container(*container_type)?;
+                get_next_free_slot(container).map(|slot| (*container_type, slot))
+            });
+        }
+        let (dst_container, dst_slot) = chosen?;
+
+        let destination = self.get_item_mut(dst_container, dst_slot)?;
+        if destination.is_empty_slot() {
+            *destination = Item { quantity, ..source };
+        } else {
+            destination.quantity += quantity;
+        }
+        let source_slot = self.get_item_mut(action.src_storage_id, action.src_container_index)?;
+        source_slot.quantity -= quantity;
+        if source_slot.quantity <= 0 {
+            *source_slot = Item::default();
+        }
+        Some([
+            (action.src_storage_id, action.src_container_index),
+            (dst_container, dst_slot),
+        ])
+    }
+
+    /// Gil to or from the called retainer (`ItemOperationKind::RetainerGil`): retail's entrust carried the amount in
+    /// `src_stack` (and `dst_stack`), its "withdraw everything" all zeros (Bob's 2026-10-18 capture; a partial
+    /// withdrawal wasn't captured.) Returns false if there's no retainer or not enough gil.
+    pub fn transfer_gil_with_retainer(&mut self, action: &ItemOperation) -> bool {
+        let Some(retainer) = self.retainer.as_mut() else {
+            return false;
+        };
+        let retainer_gil = &mut retainer.gil.slots[0];
+        let player_gil = &mut self.currency.gil;
+        let amount = action.src_stack as i32;
+        if amount > 0 {
+            if player_gil.quantity < amount {
+                return false;
+            }
+            player_gil.quantity -= amount;
+            retainer_gil.quantity += amount;
+        } else {
+            player_gil.quantity += retainer_gil.quantity;
+            retainer_gil.quantity = 0;
+        }
+        retainer_gil.item_id = player_gil.item_id;
+        true
     }
 
     /// Puts `src_stack` of the item at the source up for sale in the called retainer's market slot at the destination,
@@ -1079,6 +1191,84 @@ mod tests {
             ),
             (0, 4850, 1, 3400)
         );
+    }
+
+    /// Entrusting from the retainer's menu (0x132 on 2026.10.06): the server picks the slot, merging into the same
+    /// item's stack; withdrawing part of it back; gil both ways.
+    #[test]
+    fn entrust_from_the_menu() {
+        let mut inventory = Inventory::default();
+        inventory.retainer = Some(Box::default());
+        let ore = |quantity| Item {
+            quantity,
+            stack_size: 999,
+            ..item(5106)
+        };
+        inventory.add_in_slot(ore(10), &ContainerType::Inventory0, 30);
+        let entrust = |slot, stack| ItemOperation {
+            operation_type: ItemOperationKind::RetainerEntrust,
+            src_storage_id: ContainerType::Inventory0,
+            src_container_index: slot,
+            src_stack: stack,
+            ..Default::default()
+        };
+        assert_eq!(
+            inventory.transfer_with_retainer(&entrust(30, 7)),
+            Some([
+                (ContainerType::Inventory0, 30),
+                (ContainerType::RetainerPage1, 0)
+            ])
+        );
+        assert_eq!(inventory.pages[0].get_slot(30).quantity, 3);
+        // The rest goes onto the same stack.
+        assert_eq!(
+            inventory.transfer_with_retainer(&entrust(30, 3)),
+            Some([
+                (ContainerType::Inventory0, 30),
+                (ContainerType::RetainerPage1, 0)
+            ])
+        );
+        assert!(inventory.pages[0].get_slot(30).is_empty_slot());
+        assert_eq!(
+            inventory.retainer.as_ref().unwrap().pages[0].slots[0].quantity,
+            10
+        );
+
+        // Withdraw one.
+        let withdraw = ItemOperation {
+            operation_type: ItemOperationKind::RetainerWithdraw,
+            src_storage_id: ContainerType::RetainerPage1,
+            src_container_index: 0,
+            src_stack: 1,
+            ..Default::default()
+        };
+        assert_eq!(
+            inventory.transfer_with_retainer(&withdraw),
+            Some([
+                (ContainerType::RetainerPage1, 0),
+                (ContainerType::Inventory0, 0)
+            ])
+        );
+        assert_eq!(
+            inventory.retainer.as_ref().unwrap().pages[0].slots[0].quantity,
+            9
+        );
+
+        // Gil: entrust 20, then take it all back.
+        inventory.currency.gil.quantity = 100;
+        let gil = |amount| ItemOperation {
+            operation_type: ItemOperationKind::RetainerGil,
+            src_stack: amount,
+            dst_stack: amount,
+            ..Default::default()
+        };
+        assert!(inventory.transfer_gil_with_retainer(&gil(20)));
+        assert_eq!(inventory.currency.gil.quantity, 80);
+        assert_eq!(inventory.retainer.as_ref().unwrap().gil(), 20);
+        assert!(!inventory.transfer_gil_with_retainer(&gil(500)));
+        assert!(inventory.transfer_gil_with_retainer(&gil(0)));
+        assert_eq!(inventory.currency.gil.quantity, 100);
+        assert_eq!(inventory.retainer.as_ref().unwrap().gil(), 0);
     }
 
     /// Swapping with the Armoury Chest is still a plain swap.

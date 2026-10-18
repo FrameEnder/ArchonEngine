@@ -173,8 +173,8 @@ pub use linkshell::*;
 mod retainer;
 pub use retainer::{
     ItemMarketBoardInfo, ItemMarketBoardSummary, PLAYER_RETAINER_ENTRIES, PlayerRetainerEntry,
-    PlayerRetainerInfo, RETAINER_STATE_DISMISSED, RETAINER_STATE_SUMMONED, RetainerSaleHistory,
-    RetainerState,
+    PlayerRetainerInfo, RETAINER_STATE_DISMISSED, RETAINER_STATE_HIRED, RETAINER_STATE_SUMMONED,
+    RetainerSaleHistory, RetainerState,
 };
 
 mod fellowships;
@@ -687,7 +687,13 @@ pub enum ServerZoneIpcData {
     /// A marketboard purchase went through: the reply to `ClientZoneIpcData::MarketBoardPurchaseHandler`, after the gil
     /// and the item's inventory updates.
     MarketBoardPurchase(MarketBoardPurchase),
-    /// A retainer is called or sent away at a summoning bell.
+    /// Sent before every RetainerState and after a retainer's containers (Bob's 2026-10-18 capture): zeros, or
+    /// `market_changed` 1 before sending away a retainer whose market listings changed.
+    RetainerStateNotice {
+        unk: u32,
+        market_changed: u32,
+    },
+    /// A retainer is called or sent away at a summoning bell, or hired.
     RetainerState(RetainerState),
     /// The character's retainers for the marketboard's listings.
     PlayerRetainerInfo(PlayerRetainerInfo),

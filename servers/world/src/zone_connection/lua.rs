@@ -472,6 +472,27 @@ impl ZoneConnection {
                 LuaTask::ListRetainers => {
                     self.list_retainers().await;
                 }
+                LuaTask::SendRetainerListAtVocate { choice } => {
+                    self.send_retainer_list_for(Some(*choice)).await;
+                }
+                LuaTask::HireRetainerAtVocate { scene, yield_id } => {
+                    self.hire_retainer_at_vocate(*scene, *yield_id).await;
+                }
+                LuaTask::ReleaseRetainerAtVocate {
+                    id,
+                    scene,
+                    yield_id,
+                } => {
+                    self.release_retainer_at_vocate(*id, *scene, *yield_id)
+                        .await;
+                }
+                LuaTask::SendRetainerCount => {
+                    self.send_retainer_count().await;
+                }
+                LuaTask::SetCondition { condition, on } => {
+                    self.conditions.toggle_condition(*condition, *on);
+                    self.send_conditions().await;
+                }
                 LuaTask::ReleaseRetainer { name } => {
                     self.release_retainer_by_name(name).await;
                 }

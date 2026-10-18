@@ -1,5 +1,6 @@
 use binrw::binrw;
 use kawari_core_macro::opcode_data;
+use physis::savedata::chardat::CustomizeData;
 use physis::sestring::SeString;
 
 mod action_request;
@@ -184,6 +185,15 @@ pub enum ClientZoneIpcData {
     /// 2026.09.15, Bob's Chronofoil captures; all zeros there.) Answered with `ServerZoneIpcData::PlayerRetainerInfo`.
     RequestPlayerRetainerInfo {
         unk: u64,
+    },
+    /// The appearance chosen for a new retainer in the retainer vocate's editor (Bob's 2026-10-18 capture: the new
+    /// retainer's SpawnNpc had exactly this voice and CustomizeData.)
+    SetRetainerAppearance {
+        voice: u8,
+        look: CustomizeData,
+        /// 0xFF on retail.
+        #[brw(pad_after = 4)]
+        unk: u8,
     },
     /// The client asks for a retainer's sale history (243 on 2026.09.15, Bob's Chronofoil captures.) Answered with
     /// `ServerZoneIpcData::RetainerSaleHistory`.
@@ -499,17 +509,13 @@ pub enum ClientZoneIpcData {
         #[brw(pad_size_to = 128)]
         unk: Vec<u8>,
     },
+    /// Named after creating a local linkshell (upstream), but on 2026.10.06 this opcode is also how the client answers
+    /// an event's text input: a yield with a string, e.g. a retainer's name at the retainer vocate (Bob's Chronofoil
+    /// capture of 2026-10-18, 48 bytes: handler u32, scene u16, yield u8, u8, u32 4, u32 0, the text from byte 16.)
+    /// Kept as raw bytes since the two don't agree on the layout; see `event_text`. Only the first 40 bytes are read
+    /// (the size upstream knows), which holds a text of up to 24 bytes: retainer names are at most 20.
     CreateLocalLinkshellRequest {
-        unk1: u16,
-        unk2: u16,
-        #[brw(pad_after = 1)] // Seems to be empty/zeroes
-        unk3: u16,
-        #[brw(pad_size_to = CHAR_NAME_MAX_LENGTH)]
-        #[br(count = CHAR_NAME_MAX_LENGTH)]
-        #[br(map = read_string)]
-        #[bw(map = write_string)]
-        name: String,
-        unk4: [u8; 1],
+        data: [u8; 40],
     },
     CrossworldLinkshellMemberListRequest {
         linkshell_id: u64,
@@ -751,5 +757,58 @@ mod tests {
     #[test]
     fn client_zone_ipc_sizes() {
         test_opcodes::<ClientZoneIpcSegment>();
+    }
+}
+
+/// The text an event yield carried (`ClientZoneIpcData::CreateLocalLinkshellRequest` in its 48-byte form): the event's
+/// handler, scene, yield ID and the text.
+#[derive(Debug, Clone, PartialEq)]
+pub struct EventText {
+    pub handler_id: u32,
+    pub scene: u16,
+    pub yield_id: u8,
+    pub text: String,
+}
+
+/// Reads an event yield's text from the packet's bytes (the 48-byte layout; the text from byte 16 to the end of what was
+/// read.) None if it's too short or isn't for an event (no handler.)
+pub fn event_text(data: &[u8]) -> Option<EventText> {
+    if data.len() < 40 || data[..4] == [0; 4] {
+        return None;
+    }
+    let text = &data[16..];
+    let end = text
+        .iter()
+        .position(|byte| *byte == 0)
+        .unwrap_or(text.len());
+    Some(EventText {
+        handler_id: u32::from_le_bytes(data[0..4].try_into().ok()?),
+        scene: u16::from_le_bytes(data[4..6].try_into().ok()?),
+        yield_id: data[6],
+        text: String::from_utf8_lossy(&text[..end]).into_owned(),
+    })
+}
+
+#[cfg(test)]
+mod event_text_tests {
+    use super::*;
+
+    /// The retainer vocate's name yield as retail's client sent it (Bob's 2026-10-18 capture, the name replaced.)
+    #[test]
+    fn reads_event_text() {
+        let mut data = vec![0x09, 0x00, 0x0b, 0x00, 1, 0, 5, 0, 4, 0, 0, 0, 0, 0, 0, 0];
+        data.extend_from_slice(b"Abc");
+        data.resize(48, 0);
+        assert_eq!(
+            event_text(&data),
+            Some(EventText {
+                handler_id: 0x000b_0009,
+                scene: 1,
+                yield_id: 5,
+                text: "Abc".to_string(),
+            })
+        );
+        assert_eq!(event_text(&data[..40]).unwrap().text, "Abc");
+        assert_eq!(event_text(&data[..30]), None);
     }
 }

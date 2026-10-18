@@ -9,7 +9,7 @@ Aetherytes, attunement, Teleport and maps.
 * Talking to an aetheryte or shard you haven't attuned to starts **EventAction 19** ("Attuning", 5 s bar and
   animation, Sapphire's `ACTION_ATTUNE`) instead of unlocking it instantly.
 * When the bar completes (`onEventActionCast`) the aetheryte is unlocked (`unlock_aetheryte`). Shards then play scene 3
-  ("you have aethernet access" and its effect); main aetherytes end the event.
+  ("you have aethernet access" and its effect, flags `0x2001` and params `{1, 1}` as retail: Bob's 2026-10-18 capture of a Limsa Lominsa shard; the attunement itself, EventAction 19 for 5 s then LearnTeleport, already matched); main aetherytes end the event.
 * Already attuned: the aetheryte menu (scene 2) as upstream.
 * Close to Home's attunement objective uses the aetheryte's own event, and also teaches Return.
 

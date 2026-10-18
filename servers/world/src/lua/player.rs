@@ -800,6 +800,42 @@ impl UserData for LuaPlayer {
                 Ok(())
             },
         );
+        methods.add_method_mut("send_retainer_list_at_vocate", |_, this, choice: u32| {
+            this.queued_tasks
+                .push(LuaTask::SendRetainerListAtVocate { choice });
+            Ok(())
+        });
+        methods.add_method_mut(
+            "hire_retainer_at_vocate",
+            |_, this, (scene, yield_id): (u16, u8)| {
+                this.queued_tasks
+                    .push(LuaTask::HireRetainerAtVocate { scene, yield_id });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "release_retainer_at_vocate",
+            |_, this, (high, low, scene, yield_id): (u32, u32, u16, u8)| {
+                this.queued_tasks.push(LuaTask::ReleaseRetainerAtVocate {
+                    id: crate::retainer::join_id(high, low),
+                    scene,
+                    yield_id,
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut("send_retainer_count", |_, this, _: ()| {
+            this.queued_tasks.push(LuaTask::SendRetainerCount);
+            Ok(())
+        });
+        methods.add_method_mut(
+            "set_condition",
+            |_, this, (condition, on): (kawari::ipc::zone::Condition, bool)| {
+                this.queued_tasks
+                    .push(LuaTask::SetCondition { condition, on });
+                Ok(())
+            },
+        );
         methods.add_method_mut("list_retainers", |_, this, _: ()| {
             this.queued_tasks.push(LuaTask::ListRetainers);
             Ok(())

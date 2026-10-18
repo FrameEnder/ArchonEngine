@@ -9,6 +9,8 @@ use crate::common::{CHAR_NAME_MAX_LENGTH, ContainerType, read_string, write_stri
 pub const RETAINER_STATE_SUMMONED: u8 = 4;
 /// `RetainerState::state` when they're sent away.
 pub const RETAINER_STATE_DISMISSED: u8 = 3;
+/// `RetainerState::state` when they've just been hired (Bob's 2026-10-18 capture.)
+pub const RETAINER_STATE_HIRED: u8 = 1;
 
 /// A retainer is called or sent away at a summoning bell (FFXIVOpcodes' RetainerState.)
 #[binrw]

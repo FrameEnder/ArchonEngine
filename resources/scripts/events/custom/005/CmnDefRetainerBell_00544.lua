@@ -7,6 +7,8 @@
 -- * closing the menu returns from scene 2: the server sends them away and plays scene 1, the list again, with
 --   {2, their ID's two halves}; that returns like scene 0.
 
+CONDITION = 23 -- OccupiedSummoningBell, as retail (Bob's 2026-10-18 capture)
+
 -- Scenes
 SCENE_LIST = 00000
 SCENE_LIST_AGAIN = 00001

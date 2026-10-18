@@ -121,6 +121,28 @@ pub enum LuaTask {
     },
     /// `!retainer list`.
     ListRetainers,
+    /// The retainer list as the vocate sends it, carrying the menu choice.
+    SendRetainerListAtVocate {
+        choice: u32,
+    },
+    /// Hire the retainer chosen at the vocate (appearance and name from the client), answering the yield.
+    HireRetainerAtVocate {
+        scene: u16,
+        yield_id: u8,
+    },
+    /// Let a retainer go at the vocate, answering the yield.
+    ReleaseRetainerAtVocate {
+        id: u64,
+        scene: u16,
+        yield_id: u8,
+    },
+    /// ActorControlSelf 152: how many retainers the character has.
+    SendRetainerCount,
+    /// Turn a condition on or off (e.g. CreatingCharacter while the retainer appearance editor is open.)
+    SetCondition {
+        condition: kawari::ipc::zone::Condition,
+        on: bool,
+    },
     /// `!retainer release`.
     ReleaseRetainer {
         name: String,

@@ -361,6 +361,11 @@ pub enum ActorControlCategory {
     #[brw(magic = 142u32)]
     SetImmediateAction { unk1: u32 },
 
+    /// How many retainers the character has, sent as a retainer vocate visit ends (Bob's Chronofoil capture of
+    /// 2026-10-18: 1 after hiring one, 0 after letting them go.)
+    #[brw(magic = 152u32)]
+    RetainerCount { count: u32 },
+
     #[brw(magic = 156u32)]
     ToggleAdventureUnlock {
         id: u32, // Index to Adventure sheet

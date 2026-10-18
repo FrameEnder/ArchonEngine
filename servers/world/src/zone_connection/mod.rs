@@ -234,6 +234,10 @@ pub struct ZoneConnection {
     pub exp_chain: (u32, Option<std::time::Instant>),
     /// The retainer called at a summoning bell, if any (their items are in `player_data.inventory.retainer`.)
     pub called_retainer: Option<retainer::CalledRetainer>,
+    /// The appearance chosen at the retainer vocate (voice, CustomizeData), until the retainer is named.
+    pub pending_retainer_appearance: Option<(u8, physis::savedata::chardat::CustomizeData)>,
+    /// The text the client typed into the current event (a retainer's name), see `kawari::ipc::zone::event_text`.
+    pub pending_event_text: Option<String>,
     /// Packet capture for debugging, if enabled in the config.
     pub capture: crate::capture::PacketCapture,
 }

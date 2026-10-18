@@ -746,8 +746,17 @@ pub enum ItemOperationKind {
     CombineStack = BASE_INVENTORY_ACTION + 11,
     /// The operation opcode/type when the server wants the client to equip the mannequin (character sheet/try on preview model?). Seen during login and probably elsewhere.
     EquipMannequin = BASE_INVENTORY_ACTION + 18,
+    /// Entrusting an item to a called retainer from their menu (0x132 on 2026.10.06, Bob's 2026-10-18 capture): the
+    /// destination is all zeros, the server picks it (the same item's stack with room, else the first empty slot.)
+    RetainerEntrust = BASE_INVENTORY_ACTION + 22,
+    /// Taking an item back from a retainer (their pages, or the market container), the server picking the slot.
+    RetainerWithdraw = BASE_INVENTORY_ACTION + 23,
+    /// Gil to or from a retainer: the amount in `src_stack` and `dst_stack` when entrusting, zeros when withdrawing
+    /// everything.
+    RetainerGil = BASE_INVENTORY_ACTION + 24,
     /// Putting an item up for sale with a retainer: from the inventory into their market container, the asking price
-    /// (per item) in `dst_item_id`. 0x215 on 2026.09.15, where Move was 0x203 (Bob's Chronofoil captures.)
+    /// (per item) in `dst_item_id`. 0x215 on 2026.09.15, where Move was 0x203, and 0x135 on 2026.10.06 (Bob's Chronofoil
+    /// captures.)
     RetainerMarketList = BASE_INVENTORY_ACTION + 25,
     /// The same from the crystal bag (0x216 on 2026.09.15.)
     RetainerMarketListCrystal = BASE_INVENTORY_ACTION + 26,

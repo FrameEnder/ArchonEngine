@@ -27,8 +27,9 @@ end
 
 function onEventActionCast(player)
     player:unlock_aetheryte(1, aetheryteId())
-    -- "You have aethernet access" and its effect, then the event ends.
-    player:play_scene(SCENE_HAVE_AETHERNET_ACCESS, HIDE_HOTBAR, {0})
+    -- "You have aethernet access" and its effect, then the event ends. Flags and params as retail sent them (Bob's
+    -- Chronofoil capture of 2026-10-18, an aethernet shard in Limsa Lominsa: scene 3, 0x2001, {1, 1}.)
+    player:play_scene(SCENE_HAVE_AETHERNET_ACCESS, HIDE_HOTBAR | NO_DEFAULT_CAMERA, {1, 1})
 end
 
 function onReturn(scene, results, player)

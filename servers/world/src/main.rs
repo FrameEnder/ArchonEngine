@@ -218,6 +218,8 @@ async fn initial_setup(
                     can_share_teleport: false,
                     exp_chain: (0, None),
                     called_retainer: None,
+                    pending_retainer_appearance: None,
+                    pending_event_text: None,
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
                 };
 
@@ -1538,6 +1540,12 @@ async fn process_packet(
                                         }
                                     }
                                 }
+                                ClientTriggerCommand::SetRetainerMarketPrice { slot, price } => {
+                                    connection.set_retainer_market_price(slot, price);
+                                }
+                                ClientTriggerCommand::RequestInventorySlot { container, slot } => {
+                                    connection.send_inventory_slot(container, slot as u16).await;
+                                }
                                 ClientTriggerCommand::RequestApartmentList { starting_index } => {
                                     connection.send_apartment_list(starting_index).await;
                                 }
@@ -2172,6 +2180,16 @@ async fn process_packet(
                             });
                             connection.send_ipc_self(ipc).await;
                         }
+                        ClientZoneIpcData::ItemOperation(action)
+                            if matches!(
+                                action.operation_type,
+                                ItemOperationKind::RetainerEntrust
+                                    | ItemOperationKind::RetainerWithdraw
+                                    | ItemOperationKind::RetainerGil
+                            ) =>
+                        {
+                            connection.retainer_item_operation(action).await;
+                        }
                         ClientZoneIpcData::ItemOperation(action) => {
                             tracing::info!("Client is modifying inventory! {action:#?}");
                             connection
@@ -2183,6 +2201,13 @@ async fn process_packet(
                                 .await;
 
                             connection.player_data.inventory.process_action(action);
+                            if matches!(
+                                action.operation_type,
+                                ItemOperationKind::RetainerMarketList
+                                    | ItemOperationKind::RetainerMarketListCrystal
+                            ) {
+                                connection.mark_market_changed();
+                            }
                             if retainer::is_retainer_container(action.src_storage_id)
                                 || retainer::is_retainer_container(action.dst_storage_id)
                             {
@@ -3255,8 +3280,29 @@ async fn process_packet(
                         ClientZoneIpcData::SetFriendGroupIcon(icon_info) => {
                             connection.set_friend_group_icon(icon_info).await;
                         }
-                        ClientZoneIpcData::CreateLocalLinkshellRequest { .. } => {
-                            tracing::warn!("Creating local linkshells is unimplemented");
+                        ClientZoneIpcData::SetRetainerAppearance { voice, look, .. } => {
+                            connection.pending_retainer_appearance = Some((*voice, look.clone()));
+                        }
+                        ClientZoneIpcData::CreateLocalLinkshellRequest { data } => {
+                            // On 2026.10.06 this is also an event's text answer (a retainer's name at the vocate.)
+                            if let Some(text) = kawari::ipc::zone::event_text(data)
+                                && let Some(event) = events.last()
+                            {
+                                connection.pending_event_text = Some(text.text.clone());
+                                event
+                                    .0
+                                    .on_yield(
+                                        &event.1,
+                                        connection,
+                                        text.scene,
+                                        text.yield_id,
+                                        &[],
+                                        lua_player,
+                                    )
+                                    .await;
+                            } else {
+                                tracing::warn!("Creating local linkshells is unimplemented");
+                            }
                         }
                         ClientZoneIpcData::CrossworldLinkshellMemberListRequest {
                             linkshell_id,

@@ -52,20 +52,19 @@ add one when something is found.
 
 ## Retainers
 
-* Not tried on Kawari yet. RetainerState (249), PlayerRetainerInfo (712), ItemMarketBoardInfo (387),
-  ItemMarketBoardSummary (303) and RetainerSaleHistory (832) are FFXIVOpcodes' 2026.10.06 opcodes; the two client
-  requests (580 and 243 on 2026.09.15) aren't known for 2026.10.06; retail's 8-byte packet 897 (sent before each
-  RetainerState) isn't known at all and isn't sent. A capture of calling a retainer on 2026.10.06 would settle them.
-* Hiring is only `!retainer hire`: no retainer vocate (CmnDefRetainerDesk), no appearance editor (the retainer looks
-  like the character), no approval quest (retail's scene 1000).
-* Entrusting or withdrawing gil isn't handled (the captures had none): an item operation on the gil containers moves
-  the whole stack. Crystals likewise.
-* Selling: items can be put up for sale, but changing a price, taking an item back from the market and other players
-  buying them aren't there (the captures don't show the first two: Bob's 2026-10-06 capture is wanted). Items on the
-  market don't show on the marketboard, and listings never end.
-* Ventures, the retainer's class and gear changes beyond moving items (their level, the class change at the bell),
-  and the retainer's sale history (sent empty) aren't there.
-* Retail places the retainer at a spot set for each bell; Kawari puts them in front of the player.
+* Not tried on Kawari yet; every opcode is confirmed from Bob's 2026.10.06 capture.
+* The vocate's menu choices other than hiring and letting go (5 and 8 on retail) end the visit; hiring's yield 3 is
+  answered with one 0, not retail's eight zeros on resume opcode 329 (upstream's EventResume8 is 513: which is right
+  for 2026.10.06 isn't settled.) No approval quest check (retail's scene 1000).
+* Partial gil withdrawals weren't captured: Kawari treats a 0 amount as "everything" and any other amount as an
+  entrust.
+* Retail sends a retainer's containers two or three times with an Equip in between, and ActorControlSelf 570/574 before
+  their menu; Kawari sends the containers once. Scene 2's third number is guessed (5 − retainers hired).
+* Retail placed the retainer at a spot set for each bell; Kawari puts them in front of the player. A new retainer is
+  level 1 (retail 0) so the NPC has stats.
+* Items on the market don't show on the marketboard and other players can't buy them; listings never end
+  (PlayerRetainerInfo's time is 0, retail sends about a week ahead.) No ventures, no class change at the bell, no sale
+  history (sent empty.) Withdrawn equipment goes to the bags (retail put a weapon in the Armoury Chest.)
 * The lobby's character list doesn't show retainers (DistRetainerInfo is still empty).
 
 ## Quest battles and directors
