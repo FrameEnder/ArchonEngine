@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-18 | — | Quests: attuning inside Ul'dah's Close to Home from Bob's capture of the quest (nested aetheryte event, EventAction 19, order of packets), `start_nested_event`/`finish_nested_event`.
+| 2026-10-18 | — | Quest battles (Underneath the Sultantree checked against a second run: 117 is timed, the stranger's Cure), combat (Central Thanalan's monsters, drops, kill EXP checked), known issues.
+| 2026-10-18 | `8b665c6` | Quests: attuning inside Ul'dah's Close to Home from Bob's capture of the quest (nested aetheryte event, EventAction 19, order of packets), `start_nested_event`/`finish_nested_event`.
 | 2026-10-18 | `bd8bfdd` | Character windows: the aesthetician saves hair highlights; known issues.
 | 2026-10-18 | `81833d0` | Quests (aetherytes' `BASE_ID`, attuning in Ul'dah's Close to Home), character windows (highlights: retail check, Auracite, Fantasia), known issues.
 | 2026-10-18 | `77d5315` | Retainers (scene parameters corrected, the retainer outfit), character windows (hair highlights).
@@ -102,7 +103,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Ul'dah's Close to Home attunes as retail (Bob's Chronofoil capture of the quest, 2026-10-18): the aetheryte's event nested in the quest's, the attunement animation and 5 s bar (EventAction 19), then LearnTeleport, the aetheryte's notice and finish, and scene 1. New Lua `start_nested_event`/`finish_nested_event` (packets only; finished on interrupt). questkit's harness keeps other events' notices apart from the quest's. |
+| — | From Bob's 2026-10-18 Chronofoil capture and Recorder export of the Ul'dah quests: Underneath the Sultantree's 117 is a timer (25 s after sequence 3) and the stranger heals you with Cure; Central Thanalan monsters get retail's auto-attacks (5 kinds), damage to players (7), the Orobon's Gnaw, and the Star Marmot's and Huge Hornet's drops (`Drops.lua` entries can give a quantity). Ul'dah's five scripted quests re-checked against the new capture: all match. |
+| `8b665c6` | Ul'dah's Close to Home attunes as retail (Bob's Chronofoil capture of the quest, 2026-10-18): the aetheryte's event nested in the quest's, the attunement animation and 5 s bar (EventAction 19), then LearnTeleport, the aetheryte's notice and finish, and scene 1. New Lua `start_nested_event`/`finish_nested_event` (packets only; finished on interrupt). questkit's harness keeps other events' notices apart from the quest's. |
 | `bd8bfdd` | Fix: the aesthetician saved everything but hair highlights (the client sends the flag as 128, the script took only 1 as on). |
 | `81833d0` | Fix from the 2026-10-18 bundles: aetherytes and shards get a `BASE_ID` (their Aetheryte row, cached from the map's Aetheryte entries by layout ID), so Ul'dah's Close to Home can attune at the aetheryte (the event ended at once). Hair highlights: the server already sends retail's bytes for characters made since `77d5315`; older and Auracite-imported characters need a Fantasia (documented). |
 | `77d5315` | Fixes from the 2026-10-18 bundles: a called retainer's menu (scene 2) gets retail's parameters `{actor, n, 0, 1}` and the list again (scene 1) `{high, low}` (the parameter count had been read as a parameter; the client refused the scene); retainers wearing nothing show retail's retainer outfit; hair highlights are kept from character creation (any non-zero value) and sent as the client's 0x80 (they never showed in game). |

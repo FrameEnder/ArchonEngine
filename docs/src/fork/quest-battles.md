@@ -145,11 +145,18 @@ player is sent out.
   SpawnPlayer. Sapphire's script has the same layout IDs, two waves (70 % and 40 %) and guessed HP.
 * Sequence 1 before the opening cutscene, 2 the moment the fight starts (0.1 s after scene 60000). The stranger's
   battle talk (BNpcName 1377, portrait 0x11DCD): 114 five seconds in; at the blanga's 70 % sequence 3 and two lesser
-  blangas, 115 seven seconds later and 116 five after; 117 eight seconds after those two's health reaches 0; at 40 %
+  blangas, 115 seven seconds later, 116 five after and 117 thirteen after that (25 s after sequence 3); at 40 %
   sequence 4 and two more, 118 ten seconds later; at about 23 % sequence 5 and the last two; 119 at 10 %. Everything
   down: sequence 6, scene 6 (0x2001), the quest moves to sequence 2. `questkit battle-sim 37`: every step within two
   seconds of retail.
-* As on retail: the stranger stays on the blanga the whole time and it on him; the lesser blangas go after you.
+* As on retail: the stranger stays on the blanga the whole time and it on him; the lesser blangas go after you; once
+  the blanga is down he kills the lesser blangas one after another, and he casts Cure (120) on you when you're low
+  (retail: once, at 42 %; Kawari below 50 %, at most every 15 s).
+* A second run (Bob's Chronofoil capture of 2026-10-18, `questkit chronofoil --battle 0.9`, a level 6 gladiator)
+  agreed on the layout IDs, levels, HP and timings, and settled two things: 117 is a timer (+25.1 s after sequence 3
+  in both runs; the first pair was still alive in the second, so it isn't "the pair went down"), and the pairs come
+  at the blanga's health (the hit before sequence 5 took it from 24.8 % to 22.7 %; both runs were also 15 s after the
+  second pair, which follows from the stranger's steady damage).
 * Damage from the capture's hits (`recorded_amounts`): the stranger's auto-attack 212.8, Fast Blade 241.8, Savage
   Blade 300.2, Rage of Halone 165, Spirits Within 425; the lesser blangas' 3.9 on the player. The blanga missed the
   stranger 25 times in 46 (its Bloody Claw 3 in 6), against Kawari's fixed 8 %, so its amounts are per swing,

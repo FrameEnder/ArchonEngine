@@ -206,6 +206,22 @@ retail's; the auto-attack is the one seen in the captures for the Sun Bat, Antli
 Marmot, Huge Hornet and Giant Tortoise (the rest keep the default 870); damage to players for the Snapping Shrew,
 Star Marmot, Huge Hornet and Giant Tortoise; the Star Marmot also uses Somersault Slash.
 
+Bob's Chronofoil capture and Recorder export of 2026-10-18 (a gladiator, levels 6–12, through Central and Western
+Thanalan) added: the auto-attack of the Toxic Toad (872), Syrphid Cloud (872), Quiveron Guard (872), Quiveron
+Attendant (873) and Hammer Beak (871), which had the default 870; damage to players for the Toxic Toad, Syrphid
+Cloud, Orobon, Quiveron Guard, Quiveron Attendant, Hammer Beak and Antling Soldier (the medians of the hits on Bob,
+a tank, so probably low for other roles; the kinds that already had numbers kept them); the Orobon's Gnaw (541),
+once early in each fight; and drops for the Star Marmot (13 of 23 kills: Garland's 5291, two at a time, or 4758) and
+the Huge Hornet (2 of 13: 4850) in `battle/Drops.lua`, whose entries can now say how many. Skills seen but not
+scripted: the Toxic Toad's Sticky Tongue (347) and Labored Leap (1006), the Hammer Beak's Poison Breath (507), the
+Qiqirn Scrambler's Faze (495), the Black Eft's Stagnant Spray (448), and the Quiveron Attendants' archer kit
+(Hawk's Eye 99 first, then Raging Strikes, Heavy Shot, Venomous Bite) and the Guards' Featherfoot, Footwork and
+Triple Threat (55, 476, 475).
+
+Kill EXP checked on the 105 solo kills of that export: Kawari's formula (the level's ScaledQuestXP, full down to two
+levels below, then 10 % less a level) gives the recorded EXP for all but level-ups during the fight, chains and kills
+that gave nothing.
+
 ## Enemy behaviour (`server/npc_behavior.rs`)
 
 | Mechanic | How it works |

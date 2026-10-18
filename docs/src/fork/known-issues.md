@@ -32,9 +32,10 @@ add one when something is found.
 
 ## Central Thanalan
 
-* Most of its monsters weren't fought on retail yet: their damage to players is the generic 12 % and, where the
-  captures didn't show it, their auto-attack is the default 870. The Huge Hornet's Sharp Sting (seen, no damage
-  recorded) has no skill script. Their drops aren't in `Drops.lua`.
+* Some of its monsters still weren't fought on retail: the Sun Bat, Spriggans, Cochineal Cactuar, Antling Worker,
+  Amalj'aa, Qiqirn Scrambler and the guards deal the generic 12 %, and the numbers that are there are from a
+  gladiator (a tank). Skills seen but not scripted: the Huge Hornet's Sharp Sting, and those listed in combat.md
+  ("Open-world spawns"). Only the Star Marmot's and Huge Hornet's drops are in `Drops.lua`.
 * Ovjang (the hunt mark) stands at one of its spawn points; retail moves it between them.
 
 ## Marketboard

@@ -2,5 +2,25 @@
     "hitbox_radius": 0.8,
     "autoattack_action_id": 870,
     "timeline_always_plays": false,
-    "timepoints": []
+    "timepoints": [
+        {
+            "time": 3,
+            "data": {
+                "type": "action",
+                "action_id": 541
+            },
+            "comment": "Gnaw: retail used it 2-6 s into each of five fights (Bob's Chronofoil capture of 2026-10-18), once each"
+        },
+        {
+            "time": 30,
+            "data": {
+                "type": "invulnerability",
+                "invulnerable": false
+            },
+            "comment": "Marks the end of the loop"
+        }
+    ],
+    "damage_to_players": {
+        "5": 3
+    }
 }

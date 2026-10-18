@@ -6,7 +6,10 @@
 -- How often, and how many, come from Kawari Recorder's recording of retail where there's enough of it (CHANCES below);
 -- the rest drop DROP_CHANCE percent of the time, one at a time, which is a guess.
 --
--- So far this covers the monsters in the Central Shroud (fst_f1). Monsters Garland lists no drops for aren't here.
+-- So far this covers the monsters in the Central Shroud (fst_f1), and the Central Thanalan ones retail was seen dropping
+-- something (Kawari Recorder, 2026-10-18). Monsters Garland lists no drops for aren't here.
+--
+-- An entry in DROPS is an item ID, or { item ID, how many } when retail gave more than one of it at a time.
 
 DROP_CHANCE = 50 -- percent
 
@@ -17,6 +20,8 @@ CHANCES = {
     [120] = { 67, 3 }, -- Anole: 8 of 12 kills, x3
     [21] = { 11, 1 },  -- Trickster Imp: 2 of 18 kills
     [43] = { 20, 1 },  -- none in 4 kills (a guess below the default)
+    [262] = { 57, 1 }, -- Star Marmot: 13 of 23 kills (Central Thanalan, 2026-10-18)
+    [632] = { 15, 1 }, -- Huge Hornet: 2 of 13 kills (Central Thanalan, 2026-10-18)
 }
 
 DROPS = {
@@ -39,6 +44,8 @@ DROPS = {
     [196] = { 5291 },
     [221] = { 5292 },
     [238] = { 5554 },
+    [262] = { { 5291, 2 }, 4758 }, -- 5291 nine times (16 in all), 4758 six times, one each
+    [632] = { 4850 },
     [2057] = { 5554 },
     [2190] = { 12 },
 }
@@ -58,5 +65,9 @@ function onBNpcKill(name_id, level, player)
     end
 
     -- Obtained directly, with retail's loot message ("You obtain ...").
-    player:obtain_drop(items[math.random(1, #items)], quantity)
+    local item = items[math.random(1, #items)]
+    if type(item) == "table" then
+        item, quantity = item[1], item[2]
+    end
+    player:obtain_drop(item, quantity)
 end

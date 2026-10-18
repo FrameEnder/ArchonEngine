@@ -1,6 +1,10 @@
 {
     "hitbox_radius": 0.5,
-    "autoattack_action_id": 870,
+    "autoattack_action_id": 873,
     "timeline_always_plays": false,
-    "timepoints": []
+    "timepoints": [],
+    "damage_to_players": {
+        "9": 6,
+        "11": 7.5
+    }
 }

@@ -10,7 +10,8 @@
 --   5      the stranger: battle talk 114
 --   the blanga at 70%: sequence 3, two lesser blangas (they go after you); the stranger 115 seven seconds later and
 --          116 five after that
---   those two down: the stranger 117 eight seconds after the last one's health reached 0
+--   the stranger 117 25 s after sequence 3 (13 s after 116); a timer, not the pair going down: the second run
+--          (2026-10-18) had them alive until the end and 117 still came at +25.1 s, as in the first run
 --   the blanga at 40%: sequence 4, two more; the stranger 118 ten seconds later
 --   the blanga at about 23%: sequence 5, the last two (it went from 24.2% to 22.1% around then; one run can't tell
 --          whether this goes by its health or comes 15 s after the second pair, as it also did)
@@ -18,7 +19,13 @@
 --   everyone down: sequence 6, "Duty Complete", the quest battle's scene 6 (0x2001) and back out; the quest moves
 --          to sequence 2
 -- The stranger stays on the blanga the whole time, and the blanga on him; the lesser
--- blangas go after you. How hard each hits is in their timelines' recorded_amounts.
+-- blangas go after you. Once the blanga is down he kills the lesser blangas one after another. He cast Cure (120)
+-- on you once, when you were at 42% (the second run; you never got that low in the first.) How hard each hits is in
+-- their timelines' recorded_amounts.
+--
+-- Checked again against Bob's Chronofoil capture of 2026-10-18 (`questkit chronofoil --battle 0.9`, a level 6
+-- gladiator): the same layout IDs, levels and HP, the pairs at 70% / 40% / about 23% (the blanga went from 24.8% to
+-- 22.7% on the hit before sequence 5), the same talk timings.
 
 -- Where retail puts the player and which way they face: their SpawnPlayer in the capture.
 START_POSITION = { x = 198.3, y = 14.24, z = 538.25 }
@@ -49,17 +56,31 @@ START_STEPS = {
     { 10, "talk", SPEAKER_STRANGER, 114 },
 }
 PAIR_STEPS = {
-    [1] = { { 14, "talk", SPEAKER_STRANGER, 115 }, { 10, "talk", SPEAKER_STRANGER, 116 } },
+    [1] = {
+        { 14, "talk", SPEAKER_STRANGER, 115 },
+        { 10, "talk", SPEAKER_STRANGER, 116 },
+        { 26, "talk", SPEAKER_STRANGER, 117 },
+    },
     [2] = { { 20, "talk", SPEAKER_STRANGER, 118 } },
 }
-FIRST_PAIR_CLEARED_STEPS = { { 16, "talk", SPEAKER_STRANGER, 117 } }
 LOW_HEALTH = 10
 LOW_HEALTH_STEPS = { { 0, "talk", SPEAKER_STRANGER, 119 } }
 
 -- The battle's outline (content/lib/Battle.lua): the stranger (a gladiator) plays the tank, up close on the blanga
 -- (it on him) and only then on whatever's left; he doesn't pull the lesser blangas off you.
 BATTLE = Battle.new()
-BATTLE:ally(BNPC_STRANGER, { role = "tank", protect = false, focus = { "boss", "adds" }, range = 3 })
+ACTION_CURE = 120
+HEAL_BELOW_HEALTH = 50 -- he healed you at 42%; one heal in two runs doesn't show where the line is
+HEAL_EVERY_SECONDS = 15
+BATTLE:ally(BNPC_STRANGER, {
+    role = "tank",
+    protect = false,
+    focus = { "boss", "adds" },
+    range = 3,
+    heals = {
+        { action = ACTION_CURE, targets = { Battle.PLAYER }, below = HEAL_BELOW_HEALTH, every = HEAL_EVERY_SECONDS },
+    },
+})
 BATTLE:enemy(BNPC_BLANGA, { group = "boss", attacks = BNPC_STRANGER })
 for n, pair in ipairs(PAIRS) do
     for _, id in ipairs(pair.adds) do
@@ -73,9 +94,6 @@ for n, pair in ipairs(PAIRS) do
         end
     end)
 end
-BATTLE:onCleared(PAIRS[1].adds, function()
-    BATTLE:steps(FIRST_PAIR_CLEARED_STEPS)
-end)
 BATTLE:onHealth(BNPC_BLANGA, LOW_HEALTH, function()
     BATTLE:steps(LOW_HEALTH_STEPS)
 end)
