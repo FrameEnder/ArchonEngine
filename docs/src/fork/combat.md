@@ -9,7 +9,29 @@ otherwise.
 **Stats** (`zone_connection/stats.rs`, `use_retail_formula`): a player's main stats start from the level's **main
 modifier** (`level_main`, Sapphire's table, levels 1–10 checked against retail) instead of ParamGrow `BaseSpeed`.
 Determination starts there too; Critical Hit and Direct Hit at `BaseSpeed`, as retail shows. Before this a level 7
-Conjurer had 81 Mind (retail 35–38) and killed everything in one or two hits. HP is unchanged (upstream's formula).
+Conjurer had 81 Mind (retail 35–38) and killed everything in one or two hits.
+
+**Max HP** (`retail_max_hp`): `floor(base[level] × job HP modifier / 100) + floor(per_vit[level, tank] × (Vitality −
+level main))`, the shape Akh Morning describes, with retail 7.x's numbers fitted from Bob's Chronofoil captures:
+
+* his own PlayerStats (exact Vitality and HP: levels 1–22, 30–37, 50, 54, 60, 67, 70, 76, 80, 86–90 on Conjurer,
+  White Mage, Samurai, Reaper, Gunbreaker, Paladin, Dark Knight, Black Mage, Pictomancer, Viper);
+* level-synced party members (sync 50 and 80, 82 players): synced gear is capped, so a player's Vitality is the naked
+  value (level main × the job's Vitality % + race) plus every slot's cap (ItemLevel[sync].Vitality × slot share ×
+  MeldParam: 90 % for caster/healer gear, 100 % for the rest; [Level Sync](level-sync.md)). Their zone-in max HP
+  (before the party bonus arrives, about 3 s later) matched to the point; the rest had food or were barely above the
+  sync. All 112 of Bob's own points but the transition oddities match within 1 HP.
+
+| Level | 1 | 10 | 18 | 22 | 30 | 36 | 50 | 54 | 60 | 70 | 76 | 80 | 86 | 90 | 100 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| base | 86 | 167 | 279 | 371 | 537 | 747 | 1400 | 1440 | 1500 | 1700 | 1880 | 2000 | 2600 | 3000 | 4000* |
+| per Vitality | 5.6 | 5.6 | 5.6 | 5.6 | 8.0 | 9.0 | 11.2 | 11.9 | | 14.0 | | 18.8 | 22.1 | 24.3 | |
+| tanks | | | | | | | 15.5 | | 17.5 | | 23.5 | 26.6 | | | |
+
+(* extrapolated: +100 a level as from 80 to 90.) The base rises +9 a level to 10, +14 to 20, then faster; levels
+between measured ones are interpolated. Tanks' per-Vitality outside 50–80 is the non-tank value × 15.5/11.2 (below)
+or × 26.6/18.8 (above). Tanks are ClassJob Role 1. Checked by `retail_max_hp_matches_captures`. ParamGrow's
+HpModifier and Sapphire's 5.x level table don't give these numbers.
 
 **Regeneration** (`server/mod.rs`, every `PLAYER_REGEN_INTERVAL`, 3 s, as retail's tick): MP **200 a tick in combat**
 plus Piety's bonus (`150 × (Piety − the level's base substat) / level divisor`; a level 15 conjurer got 203 on retail),

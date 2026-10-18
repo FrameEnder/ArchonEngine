@@ -32,6 +32,105 @@ const LEVEL_MAIN: [u16; 100] = [
     355, 360, 365, 370, 375, 380, 385, 390, 395, 400, 405, 410, 415, 420, 425, 430, 435, 440,
 ];
 
+/// Retail's max HP (patch 7.x), fitted from Bob's Chronofoil captures: his own PlayerStats (exact Vitality and HP,
+/// levels 1-22, 30-37, 50, 54, 60, 67, 70, 76, 80, 86-90 on several jobs) and level-synced party members, whose gear
+/// is capped so their Vitality can be rebuilt (sync 50 and 80: 82 players matched to the HP, the rest had food or
+/// were barely above the sync.) See docs/src/fork/combat.md.
+///
+/// HP = floor(base × job HP modifier / 100) + floor(per_vitality × (Vitality − the level's main stat)).
+///
+/// The base per level, at the levels it was measured; levels in between are interpolated (and past 90 it keeps rising
+/// 100 a level, as from 80 to 90.)
+const HP_BASE: [(u16, u32); 24] = [
+    (1, 86),
+    (10, 167),
+    (18, 279),
+    (19, 293),
+    (20, 307),
+    (21, 337),
+    (22, 371),
+    (30, 537),
+    (31, 577),
+    (36, 747),
+    (37, 785),
+    (50, 1400),
+    (54, 1440),
+    (60, 1500),
+    (67, 1640),
+    (70, 1700),
+    (76, 1880),
+    (80, 2000),
+    (86, 2600),
+    (87, 2700),
+    (88, 2800),
+    (90, 3000),
+    (100, 4000),
+    (u16::MAX, 4000),
+];
+/// HP per point of Vitality above the level's main stat, in tenths, for everyone but tanks.
+const HP_PER_VITALITY: [(u16, u32); 13] = [
+    (1, 56),
+    (22, 56),
+    (30, 80),
+    (31, 81),
+    (36, 90),
+    (37, 90),
+    (50, 112),
+    (54, 119),
+    (70, 140),
+    (80, 188),
+    (86, 221),
+    (87, 226),
+    (90, 243),
+];
+/// The same for tanks, measured from 50 to 80; outside that, the non-tank value times the tank/non-tank ratio at the
+/// nearest end (15.5/11.2 at 50, 26.6/18.8 at 80.)
+const TANK_HP_PER_VITALITY: [(u16, u32); 5] =
+    [(50, 155), (60, 175), (67, 185), (76, 235), (80, 266)];
+
+/// Linear interpolation in a (level, value) table, rounding half up; past the last level it continues the last slope.
+fn interpolate_level_table(table: &[(u16, u32)], level: u16) -> u32 {
+    let level = level.max(1) as i64;
+    if level <= table[0].0 as i64 {
+        return table[0].1;
+    }
+    for pair in table.windows(2) {
+        let ((a, va), (b, vb)) = (pair[0], pair[1]);
+        let (a, b, va, vb) = (a as i64, b as i64, va as i64, vb as i64);
+        if level <= b {
+            let span = b - a;
+            return (va * span + (vb - va) * (level - a) + span / 2).div_euclid(span) as u32;
+        }
+    }
+    let (&(a, va), &(b, vb)) = (&table[table.len() - 2], &table[table.len() - 1]);
+    let (a, b, va, vb) = (a as i64, b as i64, va as i64, vb as i64);
+    (vb + (vb - va) * (level - b) / (b - a)).max(0) as u32
+}
+
+/// HP per Vitality point (tenths) at this level, for tanks or not.
+fn hp_per_vitality(level: u16, tank: bool) -> u32 {
+    let non_tank = interpolate_level_table(&HP_PER_VITALITY, level);
+    if !tank {
+        return non_tank;
+    }
+    let (first, last) = (TANK_HP_PER_VITALITY[0], TANK_HP_PER_VITALITY[4]);
+    if level < first.0 {
+        (non_tank * first.1 * 2 + 112) / (112 * 2) // × 15.5/11.2, rounded
+    } else if level > last.0 {
+        (non_tank * last.1 * 2 + 188) / (188 * 2) // × 26.6/18.8, rounded
+    } else {
+        interpolate_level_table(&TANK_HP_PER_VITALITY, level)
+    }
+}
+
+/// A player's max HP on retail for their level, job (HP modifier, tank or not) and Vitality, see `HP_BASE`.
+pub fn retail_max_hp(level: u16, job_hp_modifier: u32, tank: bool, vitality: u32) -> u32 {
+    let base = interpolate_level_table(&HP_BASE, level) as i64 * job_hp_modifier as i64 / 100;
+    let above = vitality as i64 - level_main(level) as i64;
+    let from_vitality = (hp_per_vitality(level, tank) as i64 * above).div_euclid(10);
+    (base + from_vitality).max(1) as u32
+}
+
 /// The main stat modifier for a level, see `LEVEL_MAIN`.
 pub fn level_main(level: u16) -> u32 {
     LEVEL_MAIN[(level.clamp(1, LEVEL_MAIN.len() as u16) - 1) as usize] as u32
@@ -128,6 +227,8 @@ pub struct BaseParameters {
     pub level_main: u32,
     /// The level's divisor (ParamGrow's LevelModifier.)
     pub level_div: u32,
+    /// The level the stats are for.
+    pub level: u16,
     /// The main hand weapon's physical and magic damage, and its auto-attack delay in milliseconds.
     pub weapon_physical_damage: u32,
     pub weapon_magic_damage: u32,
@@ -295,6 +396,7 @@ impl BaseParameters {
         weapon: Option<&ItemRow>,
     ) {
         self.retail_formula = true;
+        self.level = level;
         self.level_main = level_main(level);
         self.level_div = (param_grow.LevelModifier as u32).max(1);
         if let Some(weapon) = weapon {
@@ -336,6 +438,18 @@ impl BaseParameters {
                 self.strength
             };
             self.attack_power = self.physical_damage;
+        }
+
+        if self.retail_formula
+            && let Some(modifiers) = modifiers
+        {
+            self.hp = retail_max_hp(
+                self.level,
+                modifiers.hp as u32,
+                modifiers.tank,
+                self.vitality,
+            );
+            return;
         }
 
         // To calculate HP, we use a formula loosely inspired by Akh Morning and take some liberties to keep it fairly simple, at least for now.
@@ -931,6 +1045,46 @@ impl ZoneConnection {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Retail max HP (Bob's Chronofoil captures): his own (level, job HP modifier, Vitality, HP), and synced party
+    /// members whose Vitality was rebuilt from capped gear.
+    #[test]
+    fn retail_max_hp_matches_captures() {
+        // Conjurer (100) and White Mage (105).
+        for (level, job, vitality, hp) in [
+            (1, 100, 23, 102),
+            (1, 105, 25, 118),
+            (9, 105, 47, 243),
+            (12, 100, 42, 217),
+            (17, 105, 79, 429),
+            (18, 105, 75, 409),
+            (22, 105, 106, 607),
+            (31, 105, 146, 969),
+            (36, 105, 188, 1360),
+            (50, 105, 332, 2926),
+            (50, 105, 575, 5647),
+            (80, 105, 1408, 22178),
+            (80, 105, 1811, 29754),
+            (87, 105, 1832, 35763),
+            (90, 105, 3224, 72016),
+        ] {
+            assert_eq!(
+                retail_max_hp(level, job, false, vitality),
+                hp,
+                "level {level}"
+            );
+        }
+        // Samurai 54 (109), Reaper 70 (115); tanks (140): Gunbreaker 60, Paladin 67, Dark Knight 76.
+        assert_eq!(retail_max_hp(54, 109, false, 550), 5626);
+        assert_eq!(retail_max_hp(70, 115, false, 1249), 15353);
+        assert_eq!(retail_max_hp(60, 140, true, 925), 14472);
+        assert_eq!(retail_max_hp(67, 140, true, 931), 14561);
+        assert_eq!(retail_max_hp(76, 140, true, 1509), 30573);
+        // Synced party members at the gear cap: Dark Knight 80, Warrior (145) and Paladin 50.
+        assert_eq!(retail_max_hp(80, 140, true, 1973), 46237);
+        assert_eq!(retail_max_hp(50, 145, true, 640), 8819);
+        assert_eq!(retail_max_hp(50, 140, true, 640), 8749);
+    }
 
     /// A level 9 conjurer as a retail recording shows one: Mind 41, Strength 22, Determination 33, with a Maple Wand
     /// (11 physical and magic damage, 2.4s delay).

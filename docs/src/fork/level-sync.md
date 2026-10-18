@@ -58,8 +58,6 @@ synced White Mage sent Stone, not Glare). Kawari sent the real level there, now 
 
 ## Not done
 
-* HP: Kawari's formula gives about half of retail's at 18–50 (retail White Mage: 409 at 18, 969 at 31, 1315 at 36,
-  5647 at 50; Conjurer 293 at 17). The captures don't give enough to fit a formula yet (one class per level).
 * Weapon damage under sync (presumably ItemLevel[S]'s Physical/MagicalDamage) isn't capped.
 * StatusEffectList's header bytes 2–3 (the real level and the synced level on retail) aren't sent that way.
 * Leaving a FATE's area while synced (not in the captures), FATE EXP under sync.

@@ -113,8 +113,9 @@ add one when something is found.
   Shroud only.
 * **Aggro range** (15 yalms) and **leash distance** (40 yalms) are global constants; the Recorder's World tab can give
   per-enemy values.
-* Player **HP** still uses upstream's approximate formula: 35 % low by level 17 (Conjurer 189 vs retail 293), about
-  half of retail at 18–50 ([Level Sync](level-sync.md#not-done) has the retail points).
+* Player **HP** ([Combat](combat.md)) is retail's at every measured level; levels 23–29, 38–49, 55–59, 61–66,
+  71–75, 77–79 and 91–100 are interpolated (or extrapolated), and tanks below 50 and above 80 use a ratio. The party
+  bonus (+1–5 % on retail, a few seconds after zoning) and food's HP aren't applied.
 * **Class actions 1–50** ([Combat](combat.md#class-and-role-actions-levels-150)): potencies are 7.x max-level tooltip
   values, not checked at low level (only Conjurer/White Mage are in Bob's captures). No job gauges (BLM Astral Fire and
   Umbral Ice, MNK chakra/furies, WAR Beast, PLD Oath, SMN/SCH Aetherflow, NIN mudras), no egis or fairy, no

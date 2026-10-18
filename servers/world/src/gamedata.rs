@@ -444,6 +444,8 @@ fn cone_angle_from_omen(path: &str) -> Option<f32> {
 #[derive(Debug, Clone, Copy)]
 pub struct Modifiers {
     pub hp: u16,
+    /// Whether the class is a tank (ClassJob's Role 1): more HP per Vitality.
+    pub tank: bool,
     pub mp: u16,
     pub strength: u16,
     pub vitality: u16,
@@ -2122,6 +2124,7 @@ impl GameData {
 
         Some(Modifiers {
             hp: row.ModifierHitPoints,
+            tank: row.Role == 1,
             mp: row.ModifierManaPoints,
             strength: row.ModifierStrength,
             vitality: row.ModifierVitality,
