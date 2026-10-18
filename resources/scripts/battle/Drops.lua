@@ -6,8 +6,8 @@
 -- How often, and how many, come from Kawari Recorder's recording of retail where there's enough of it (CHANCES below);
 -- the rest drop DROP_CHANCE percent of the time, one at a time, which is a guess.
 --
--- So far this covers the monsters in the Central Shroud (fst_f1), and the Central Thanalan ones retail was seen dropping
--- something (Kawari Recorder, 2026-10-18). Monsters Garland lists no drops for aren't here.
+-- So far this covers the monsters in the Central Shroud (fst_f1), and the Central and Western Thanalan ones retail was
+-- seen dropping something (Kawari Recorder, 2026-10-18). Monsters Garland lists no drops for aren't here.
 --
 -- An entry in DROPS is an item ID, or { item ID, how many } when retail gave more than one of it at a time.
 
@@ -45,6 +45,7 @@ DROPS = {
     [221] = { 5292 },
     [238] = { 5554 },
     [262] = { { 5291, 2 }, 4758 }, -- 5291 nine times (16 in all), 4758 six times, one each
+    [298] = { 5492 }, -- Sun Midge Swarm (Western Thanalan): 2 of 4 kills, one each (the default chance)
     [632] = { 4850 },
     [2057] = { 5554 },
     [2190] = { 12 },

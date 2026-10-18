@@ -36,6 +36,9 @@ add one when something is found.
   Amalj'aa, Qiqirn Scrambler and the guards deal the generic 12 %, and the numbers that are there are from a
   gladiator (a tank). Skills seen but not scripted: the Huge Hornet's Sharp Sting, and those listed in combat.md
   ("Open-world spawns"). Only the Star Marmot's and Huge Hornet's drops are in `Drops.lua`.
+* Western Thanalan (140) has retail's spawn points from one walk around it (2026-10-18), so spots Bob didn't pass
+  near are missing; most of its kinds deal the generic 12 % (damage was recorded for six), none of their skills are
+  scripted, and only the Sun Midge Swarm's drop is in `Drops.lua`. Not tested in game yet.
 * Ovjang (the hunt mark) stands at one of its spawn points; retail moves it between them.
 
 ## Marketboard

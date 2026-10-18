@@ -197,6 +197,7 @@ the LGB they add to): retail's LGBs don't have them.
 |---|---|---|
 | Central Shroud (148) | `fst_f1_planmap.json`, layer `LVD_kakashi` (834) | upstream, HP from the per-level table |
 | Central Thanalan (141) | `wil_w1_planmap.json`, layer `BNPCS_RETAIL` (632) | Bob's Chronofoil sessions of 2026-10-17 (flying around the zone): `questkit chronofoil --dropin 141` |
+| Western Thanalan (140) | `wil_w1f1_planmap.json`, layer `BNPCS_RETAIL` (381) | Bob's Chronofoil capture of 2026-10-18 (walking the zone) with the older captures: `questkit chronofoil --dropin 140 --appends bg/ffxiv/wil_w1/fld/w1f1/level/planmap.lgb` |
 
 Central Thanalan's spawn points carry retail's level and HP for each (levels 1–17, plus four level 35 Ul'dah guards at
 their posts and one level 50 hunt mark, Ovjang, kept to one of its spots), whether it's aggressive (97 of 632) and its
@@ -217,6 +218,16 @@ scripted: the Toxic Toad's Sticky Tongue (347) and Labored Leap (1006), the Hamm
 Qiqirn Scrambler's Faze (495), the Black Eft's Stagnant Spray (448), and the Quiveron Attendants' archer kit
 (Hawk's Eye 99 first, then Raging Strikes, Heavy Shot, Venomous Bite) and the Guards' Featherfoot, Footwork and
 Triple Threat (55, 476, 475).
+
+Western Thanalan's 381 spawn points (42 kinds, levels 1–24, plus the level 35 Flame and Brass Blade guards and the
+level 48–49 4th Cohort near its edge, as retail had them; 74 aggressive) were made the same way, leaving out 12 FATE
+monsters and 5 that belonged to someone. Its quest battle copy (273) loads the same drop-in, but quest battle
+instances drop the open-world NPCs. Timelines for the 31 kinds that had none (and Central Thanalan's Stone Torch)
+come from the Recorder export: hitboxes, the auto-attack used most (the Sun Midge Swarm's 872, the 4th Cohort
+Eques' 871, the rest 870) and the damage to players recorded for the Yarzon Scavenger, Sun Midge Swarm, Desert
+Peiste, Rusty/Copper Coblyns (base 187) and the Eques. Their skills (Foul Bite, Sanguine Bite, Body Slam, Cold
+Gaze, Shatter, the gigantoad's Sticky Tongue and Labored Leap, the guards' Rampart, Fight or Flight and Fast Blade)
+aren't scripted. The Sun Midge Swarm drops 5492 (2 of 4 kills).
 
 Kill EXP checked on the 105 solo kills of that export: Kawari's formula (the level's ScaledQuestXP, full down to two
 levels below, then 10 % less a level) gives the recorded EXP for all but level-ups during the fight, chains and kills
