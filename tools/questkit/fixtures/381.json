@@ -1,7 +1,7 @@
 {
   "quest": 381,
   "script": "SubFst060_00381",
-  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387",
+  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387; scenes and effects from Bob's Chronofoil capture of 2026-10-14, 2026-10-15, 2026-10-16",
   "params": {
     "ACTOR0": 1000741,
     "SEQ_0_ACTOR0": 0,
@@ -19,41 +19,40 @@
   "steps": [
     {
       "talk": 1000741,
+      "layout": 1317437,
       "what": "ACTOR0",
-      "expect": {
-        "sequence": 1,
-        "vars": "000000000000",
-        "notices": []
-      }
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
     },
     {
       "talk": 2001006,
-      "what": "EOBJECT0: searching the egg brings out the vultures",
-      "spawns": [3838969, 3838970]
+      "layout": 3838947,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 1, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 100, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "spawns": [3838969, 3838970],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
     },
     {
       "kill": [12, 3838970],
-      "expect": {
-        "sequence": 1,
-        "vars": "010000000000",
-        "notices": []
-      }
+      "expect": {"sequence": 1, "vars": "010000000000", "notices": []}
     },
     {
       "kill": [12, 3838970],
-      "expect": {
-        "sequence": 255,
-        "vars": "000000000000",
-        "notices": [[0, []]]
-      }
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, []]]}
     },
     {
       "talk": 1000491,
+      "layout": 1146409,
       "what": "ACTOR1",
-      "expect": {
-        "completed": true,
-        "notices": []
-      }
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 5824, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
     }
   ]
 }

@@ -1,30 +1,26 @@
 {
   "quest": 28,
   "script": "SubFst005_00028",
-  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387; notices from Bob's Chronofoil capture of retail 2026.10.06",
-  "params": {
-    "ACTOR0": 1000100,
-    "SEQ_0_ACTOR0": 0,
-    "ACTOR1": 1000421,
-    "SEQ_1_ACTOR1": 1
-  },
+  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387; notices from Bob's Chronofoil capture of retail 2026.10.06; scenes and effects from Bob's Chronofoil capture of 2026-10-14, 2026-10-15, 2026-10-16",
+  "params": {"ACTOR0": 1000100, "SEQ_0_ACTOR0": 0, "ACTOR1": 1000421, "SEQ_1_ACTOR1": 1},
   "steps": [
     {
       "talk": 1000100,
+      "layout": 1140490,
       "what": "ACTOR0",
-      "expect": {
-        "sequence": 255,
-        "vars": "000000000000",
-        "notices": []
-      }
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
     },
     {
       "talk": 1000421,
+      "layout": 1145504,
       "what": "ACTOR1",
-      "expect": {
-        "completed": true,
-        "notices": []
-      }
+      "scenes": [
+        {"scene": 1, "flags": "0x2000", "results": [1, 27665, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
     }
   ]
 }

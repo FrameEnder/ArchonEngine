@@ -1,8 +1,8 @@
 # The fork's checks (upstream's own CI is .forgejo/workflows/main.yml, for Codeberg).
 #
 # Every push and pull request runs the quick checks (about a minute each): questkit's tests, every Lua script
-# compiling, every scripted quest replayed against its retail fixture, the changed files' formatting and changelog
-# entry, and the documentation building. The full Rust build and tests take much longer, and the repository is private
+# compiling, every scripted quest replayed and every quest battle simulated against retail, the lint, the changed
+# files' formatting and changelog entry, and the documentation building. The full Rust build and tests take much longer, and the repository is private
 # (Actions minutes are limited), so they run on pull requests, on pushes to master, and by hand (Actions -> Fork checks
 # -> Run workflow).
 #
@@ -36,8 +36,12 @@ jobs:
         run: python -m unittest discover tools/questkit/tests -v
       - name: Every Lua script compiles
         run: python tools/questkit lua-syntax
-      - name: Every scripted quest does what retail did
+      - name: Every scripted quest does what retail did (scenes, flags, effects, variables, notices)
         run: python tools/questkit replay -v
+      - name: Every quest battle does what retail did (sequences, battle talk, waves, timing)
+        run: python tools/questkit battle-sim -v
+      - name: Nothing that fails silently in game (unscripted NPC actions, missing timelines and fixtures)
+        run: python tools/questkit lint
 
   changes:
     name: Formatting and changelog

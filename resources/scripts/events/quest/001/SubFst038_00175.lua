@@ -2,10 +2,12 @@
 --
 -- Checked against the client's quest script (kawari-questdump) and a live recording of the quest:
 -- Sequence 0:   ACTOR0 offers the quest (scene 0, returns 1 when accepted.)
--- Sequence 1:   search the four objects in the cave (EVENT_ACTION_SEARCH, then their scene):
---                 EOBJECT0 survey records (scene 1):           todo 0, UI8AL = 1, ITEM0 count in UI8CH
---                 EOBJECT1/2 surveyor's instruments (2 and 3): todo 1, UI8BH counts to 2, ITEM1 count in UI8CL
---                 EOBJECT3 surveyor's rope (scene 4):          todo 2, UI8BL = 1, ITEM2 count in UI8DH
+-- Sequence 1:   search the four objects in the cave: the object's scene, then EVENT_ACTION_SEARCH (the progress bar),
+--               then its "found it" scene (retail, Bob's Chronofoil capture of 2026-10-14; all with HIDE_HOTBAR |
+--               NO_DEFAULT_CAMERA):
+--                 EOBJECT0 survey records (scenes 1, 100):             todo 0, UI8AL = 1, ITEM0 count in UI8CH
+--                 EOBJECT1/2 surveyor's instruments (2, 98 / 3, 96):   todo 1, UI8BH counts to 2, ITEM1 in UI8CL
+--                 EOBJECT3 surveyor's rope (scenes 4, 94):             todo 2, UI8BL = 1, ITEM2 count in UI8DH
 --               Each object searched sets its BitFlag8 (1-4, kept in UI8F), which stops the client offering it
 --               again, and UI8AH counts the todos completed. Once all three are done, retail moves straight to
 --               sequence 255 and keeps only the item counts, where the client looks for them then: ITEM0 in
@@ -18,13 +20,14 @@ SCENE_OFFER = 0
 SCENE_TRADE = 5
 SCENE_FINISH = 92
 
--- Each object: its scene and BitFlag8 index.
+-- Each object: its scene before the progress bar, the one after it, and its BitFlag8 index.
 OBJECTS = {
-    [EOBJECT0] = { scene = 1, flag = 1 },
-    [EOBJECT1] = { scene = 2, flag = 2 },
-    [EOBJECT2] = { scene = 3, flag = 3 },
-    [EOBJECT3] = { scene = 4, flag = 4 },
+    [EOBJECT0] = { scene = 1, found = 100, flag = 1 },
+    [EOBJECT1] = { scene = 2, found = 98, flag = 2 },
+    [EOBJECT2] = { scene = 3, found = 96, flag = 3 },
+    [EOBJECT3] = { scene = 4, found = 94, flag = 4 },
 }
+SEARCH_FLAGS = HIDE_HOTBAR | NO_DEFAULT_CAMERA
 
 INSTRUMENTS_NEEDED = 2
 
@@ -86,9 +89,9 @@ function onTalk(target, player)
     if sequence == nil and BASE_ID == ACTOR0 then
         play(player, SCENE_OFFER, HIDE_HOTBAR)
     elseif sequence == 1 and object ~= nil and not hasFlag(player, object.flag) then
-        -- Searching shows a progress bar; the scene plays once it finishes (see onEventActionCast.)
+        -- The object's scene, then the progress bar (see sceneFinished), then its "found it" scene.
         searching = object
-        player:event_action(EVENT_ACTION_SEARCH)
+        play(player, object.scene, SEARCH_FLAGS)
     elseif sequence == 255 and BASE_ID == ACTOR1 then
         play(player, SCENE_TRADE, HIDE_HOTBAR)
     else
@@ -101,7 +104,7 @@ function onEventActionCast(player)
         player:finish_event()
         return
     end
-    play(player, searching.scene, HIDE_HOTBAR)
+    play(player, searching.found, SEARCH_FLAGS)
 end
 
 -- What searching each object gives, as retail records it.
@@ -152,9 +155,14 @@ function sceneFinished(scene, results, player)
             player:accept_quest(EVENT_ID)
             player:quest_sequence(EVENT_ID, 1)
         end
-    elseif scene >= 1 and scene <= 4 then
+    elseif searching ~= nil and scene == searching.scene then
+        -- Searching shows a progress bar; its "found it" scene plays once it finishes (see onEventActionCast.)
+        player:event_action(EVENT_ACTION_SEARCH)
+        return
+    elseif searching ~= nil and scene == searching.found then
+        local object = searching
         searching = nil
-        searched(player, scene)
+        searched(player, object.scene)
     elseif scene == SCENE_TRADE then
         if results[1] == 1 then
             play(player, SCENE_FINISH, HIDE_HOTBAR)

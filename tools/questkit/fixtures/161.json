@@ -1,7 +1,7 @@
 {
   "quest": 161,
   "script": "SubFst055_00161",
-  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-16), Gridania after quest 387 up to Call of the Sea",
+  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-16), Gridania after quest 387 up to Call of the Sea; scenes and effects from Bob's Chronofoil capture of 2026-10-14, 2026-10-15, 2026-10-16",
   "params": {
     "ACTOR0": 1000471,
     "ACTOR1": 1000476,
@@ -25,86 +25,92 @@
   "steps": [
     {
       "talk": 1000471,
+      "layout": 1145877,
       "what": "ACTOR0",
-      "expect": {
-        "sequence": 1,
-        "vars": "000000000000",
-        "notices": []
-      }
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
     },
     {
       "talk": 1000484,
+      "layout": 1146387,
       "what": "ACTOR3",
-      "expect": {
-        "sequence": 1,
-        "vars": "010000000020",
-        "notices": [[0, [1, 3]]]
-      }
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "010000000020", "notices": [[0, [1, 3]]]}
     },
     {
       "talk": 1000476,
+      "layout": 1146378,
       "what": "ACTOR1",
-      "expect": {
-        "sequence": 1,
-        "vars": "0200000000a0",
-        "notices": [[0, [2, 3]]]
-      }
+      "scenes": [
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "0200000000a0", "notices": [[0, [2, 3]]]}
     },
     {
       "talk": 1000483,
+      "layout": 1146385,
       "what": "ACTOR2",
-      "expect": {
-        "sequence": 2,
-        "vars": "000000000000",
-        "notices": [[0, [3, 3]]]
-      }
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, [3, 3]]]}
     },
     {
       "talk": 1000471,
+      "layout": 1145877,
       "what": "ACTOR0",
-      "expect": {
-        "sequence": 3,
-        "vars": "000000000000",
-        "notices": [[1, []]]
-      }
+      "scenes": [
+        {"scene": 4, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": [[1, []]]}
     },
     {
       "talk": 1003002,
-      "what": "ACTOR4: into the quest battle"
+      "layout": 3857282,
+      "what": "ACTOR4",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 227}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": []}
     },
     {
       "battle_won": 4,
-      "expect": {
-        "sequence": 4,
-        "vars": "000000000000",
-        "notices": []
-      }
+      "expect": {"sequence": 4, "vars": "000000000000", "notices": []}
     },
     {
       "talk": 1003002,
+      "layout": 3857282,
       "what": "ACTOR4",
-      "expect": {
-        "sequence": 5,
-        "vars": "001000000000",
-        "notices": [[3, [25252]]]
-      }
+      "scenes": [
+        {"scene": 11, "flags": "0xf8406ef3", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 5, "vars": "001000000000", "notices": [[3, [25252]]]}
     },
     {
       "talk": 1000471,
+      "layout": 1145877,
       "what": "ACTOR0",
-      "expect": {
-        "sequence": 255,
-        "vars": "000000000000",
-        "notices": [[4, []]]
-      }
+      "scenes": [
+        {"scene": 15, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 16, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[4, []]]}
     },
     {
       "talk": 1000471,
+      "layout": 1145877,
       "what": "ACTOR0",
-      "expect": {
-        "completed": true,
-        "notices": []
-      }
+      "scenes": [
+        {"scene": 18, "flags": "0x2000", "results": [1, 5824, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
     }
   ]
 }

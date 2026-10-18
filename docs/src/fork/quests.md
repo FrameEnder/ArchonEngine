@@ -113,10 +113,14 @@ window was closed. On `1`, play the "trade OK" scene, which returns `[1, chosen_
 ### Searching objects (event actions)
 
 `player:event_action(EVENT_ACTION_SEARCH)` shows the 'Searching' bar (the EventAction row comes from the Quest sheet's
-parameters). When it completes the server ends the bar and calls `onEventActionCast`; the script then plays the
-object's scene. The empty scene after a search is played with flags `0` (`SEARCH_SCENE_FLAGS`), as Sapphire does,
-so the hotbar doesn't flicker. Enemy damage interrupts the bar (see [Timing](timing.md)): the event ends and the player
-tries again.
+parameters). When it completes the server ends the bar and calls `onEventActionCast`. Retail plays a search in three
+parts (Bob's Chronofoil captures of 2026-10-14, every search, aid and examination in Gridania's quests): the object's
+scene (`SEQ_n_EOBJECTm`, which only waits), then the bar when that scene returns, then the object's "found it" scene
+(`SEQ_n_EOBJECTm_EVENTACTIONOK`, e.g. 100, 98, 96…; `…NO`, one less, is what retail plays when the bar is broken off).
+Both scenes use `HIDE_HOTBAR | NO_DEFAULT_CAMERA` (0x2001), and aiding someone in Spirithold Broken adds `INVINCIBLE`
+to the second (0x6001). The fork's scripts started the bar straight away and played only one scene, with flags 0 (as
+Sapphire does), until `questkit replay` began checking scenes. Enemy damage interrupts the bar (see
+[Timing](timing.md)): the event ends and the player tries again.
 
 The bar's end comes from the server (a timer), not from the client, so what `onEventActionCast` queues is sent at once
 (the end of `process_server_msg` runs whatever a server message had a script queue). Before, it waited for the
@@ -187,7 +191,17 @@ function onReturn(scene, results, player) sceneFinished(scene, results, player) 
 
 Rules: the header's "Checked against…" line says what it was verified with (Kawari Web's progress page counts a quest
 as *verified* when it mentions a recording); scene numbers come from the client's script (Sapphire's when the client's
-doesn't name them); variables and notices come from the recording; everything else (names, text) from game data.
+doesn't name them); variables and notices come from the recording; scene flags and anything else the server does
+(zone changes, unlocks) from a Chronofoil capture, which the fixture holds and replay checks; everything else (names,
+text) from game data.
+
+**Retail's scene flags** (every quest in Bob's 2026-10-14 to 17 captures): talking to someone `HIDE_HOTBAR` (0x2000);
+cutscenes `SET_BASE | HIDE_HOTBAR` (0xF8402EFB, which hides other players, NPCs and objects: the fork's scripts had
+`FADE_OUT | CONDITION_CUTSCENE | HIDE_UI` until replay checked flags), some with `DISABLE_SKIP` (Spirithold Broken's
+reward, 0xF8482EFB) or `INVIS_ENPC | INVIS_AETHERYTE` too (Underneath the Sultantree's aftermath and reward,
+0xF8402FFF); objects and searches `HIDE_HOTBAR | NO_DEFAULT_CAMERA` (0x2001). One-offs are in the scripts with where
+they came from. Moving the player within a zone (The Gridanian Envoy's ticket counters and attendants) goes through a
+loading screen on retail, PrepareZoning to the same territory, so the scripts use `change_territory` for it too.
 The script goes in `resources/scripts/events/quest/<id / 100, 3 digits>/<ScriptId>.lua` (the Quest sheet's script
 name, e.g. `SubFst073_00387`).
 
@@ -203,7 +217,9 @@ name, e.g. `SubFst073_00387`).
    the pattern above and its replay fixture, and replays it. Fix the scenes marked TODO against the listing (and
    Sapphire), and anything retail does that didn't change the quest (spawns: add `spawns` to the fixture step). New
    enemies → drop-in layer; new solo duty → quest battle script.
-5. **Replay**: `python3 tools/questkit replay <id> -v` until every step matches retail's variables and notices. The
+5. **Replay**: make the fixture from Bob's Chronofoil capture of the quest (`questkit fixture <id> --chronofoil …`,
+   see [questkit](questkit.md#making-fixtures)), then `python3 tools/questkit replay <id> -v` until every step matches
+   retail's scenes, flags, effects, variables and notices. The
    fixture is committed with the script, and CI replays it on every push from then on.
 6. **Test in game**: Kawari Web → Quest Lab → *Test this quest* sets the character up, turns capture on, and sends a
    bundle tagged with the quest when you finish; `questkit triage` and `questkit compare` read it. (Or by hand:
@@ -212,7 +228,9 @@ name, e.g. `SubFst073_00387`).
 
 ## Scripted quests
 
-Gridania's story from Close to Home on, its side quests, the first quest after it, and Ul'dah's first five. "Recording" means it matched a retail recording's variables and notices.
+Gridania's story from Close to Home on, its side quests, the first quest after it, and Ul'dah's first five. Every one
+has a fixture from Bob's Chronofoil captures (2026-10-14 to 17), so replay checks its scenes, their flags and what it
+does outside the quest as well as its variables and notices. "Recording" means it matched a retail recording's variables and notices.
 Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `questkit replay`.
 
 | ID | Quest | Script | Checked against | What it involves |

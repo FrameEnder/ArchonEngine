@@ -3,7 +3,9 @@
 -- Checked against the client's quest script (kawari-questdump) and a live recording of the quest:
 -- Sequence 0:   ACTOR0 offers the quest (scene 0, returns 1 when accepted), then explains it (scene 1.)
 -- Sequence 1:   two todos, in any order:
---                 todo 0: take the anole egg, EOBJECT0 (EVENTACTION0, then scene 2): UI8AL = 1, ITEM0 count in UI8BL
+--                 todo 0: take the anole egg, EOBJECT0 (scene 2, EVENTACTION0, then scene 3, both HIDE_HOTBAR |
+--                         NO_DEFAULT_CAMERA as Bob's Chronofoil capture of 2026-10-14 shows): UI8AL = 1, ITEM0 count in
+--                         UI8BL
 --                 todo 1: defeat three ENEMY0 (anoles): UI8BH counts them
 --               UI8AH counts the todos done. With both done, retail moves to sequence 2 and keeps only the egg, in
 --               UI8BH (where the client looks for ITEM0 from then on.)
@@ -13,7 +15,9 @@
 
 SCENE_OFFER = 0
 SCENE_ACCEPTED = 1
-SCENE_TAKE_EGG = 2
+SCENE_EGG = 2
+SCENE_TAKE_EGG = 3
+EGG_FLAGS = HIDE_HOTBAR | NO_DEFAULT_CAMERA
 SCENE_REPORT = 4
 SCENE_TRADE = 5
 SCENE_FINISH = 6
@@ -72,8 +76,8 @@ function onTalk(target, player)
     if sequence == nil and BASE_ID == ACTOR0 then
         play(player, SCENE_OFFER, HIDE_HOTBAR)
     elseif sequence == 1 and BASE_ID == EOBJECT0 and getVar(player, 0, false) == 0 then
-        -- Taking the egg shows a progress bar; its scene plays once it finishes (see onEventActionCast.)
-        player:event_action(EVENTACTION0)
+        -- The egg's scene, the progress bar (see sceneFinished), then its scene once that finishes.
+        play(player, SCENE_EGG, EGG_FLAGS)
     elseif sequence == 2 and BASE_ID == ACTOR0 then
         play(player, SCENE_REPORT, HIDE_HOTBAR)
     elseif sequence == 255 and BASE_ID == ACTOR1 then
@@ -88,7 +92,7 @@ function onEventActionCast(player)
         player:finish_event()
         return
     end
-    play(player, SCENE_TAKE_EGG, HIDE_HOTBAR)
+    play(player, SCENE_TAKE_EGG, EGG_FLAGS)
 end
 
 -- Each ENEMY0 you (or your party) defeat counts, up to three.
@@ -123,6 +127,10 @@ function sceneFinished(scene, results, player)
     elseif scene == SCENE_ACCEPTED then
         player:accept_quest(EVENT_ID)
         player:quest_sequence(EVENT_ID, 1)
+    elseif scene == SCENE_EGG then
+        -- Taking the egg shows a progress bar; its scene plays once it finishes (see onEventActionCast.)
+        player:event_action(EVENTACTION0)
+        return
     elseif scene == SCENE_TAKE_EGG then
         setVar(player, 0, false, 1) -- UI8AL: the egg
         setVar(player, 1, false, 1) -- UI8BL: ITEM0

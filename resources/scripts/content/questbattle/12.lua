@@ -178,9 +178,10 @@ GARGOYLE_PHASES = {
         },
     },
 }
+-- capture (questkit battle-sim): the mage's line came as its health went from 42.0% to 41.9%, so below 42%.
 MAGE_PHASES = {
     {
-        health = 40,
+        health = 42,
         steps = {
             { 0, "talk", SPEAKER_MAGE, 179 },
             { 15, "talk", SPEAKER_PAPALYMO, 180 },
@@ -254,6 +255,8 @@ BATTLE:onCleared(FIRST_IXALI, function()
 end)
 
 local half = 1
+local won_in = nil
+WON_DELAY_UPDATES = 4
 local over = false
 local fail_in = nil
 
@@ -283,6 +286,15 @@ function onUpdate(director, health, player_health, info)
         if fail_in <= 0 then
             fail_in = nil
             director:fail_quest_battle()
+        end
+        return
+    end
+    if won_in ~= nil then
+        won_in = won_in - 1
+        if won_in <= 0 then
+            won_in = nil
+            director:set_sequence(11)
+            director:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN, false, FINISH_SCENE)
         end
         return
     end
@@ -321,8 +333,8 @@ function onActorDeath(director, layout_id, position)
     if layout_id == BNPC_MAGE then
         over = true
         BATTLE:clearSteps()
-        director:set_sequence(11)
-        director:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN, false, FINISH_SCENE)
+        -- capture: "Duty Complete" came 2 s after the mage's health reached 0, as its death animation ended.
+        won_in = WON_DELAY_UPDATES
     end
 end
 

@@ -145,10 +145,10 @@ player is sent out.
   SpawnPlayer. Sapphire's script has the same layout IDs, two waves (70 % and 40 %) and guessed HP.
 * Sequence 1 before the opening cutscene, 2 the moment the fight starts (0.1 s after scene 60000). The stranger's
   battle talk (BNpcName 1377, portrait 0x11DCD): 114 five seconds in; at the blanga's 70 % sequence 3 and two lesser
-  blangas, 115 seven seconds later and 116 five after; 117 six seconds after those two fall; at 40 % sequence 4 and
-  two more, 118 ten seconds later; at about 23 % sequence 5 and the last two; 119 at 10 %. Everything down:
-  sequence 6, scene 6 (0x2001), the quest moves to sequence 2. Simulated with lupa against the run's health curve:
-  every step within two seconds of retail.
+  blangas, 115 seven seconds later and 116 five after; 117 eight seconds after those two's health reaches 0; at 40 %
+  sequence 4 and two more, 118 ten seconds later; at about 23 % sequence 5 and the last two; 119 at 10 %. Everything
+  down: sequence 6, scene 6 (0x2001), the quest moves to sequence 2. `questkit battle-sim 37`: every step within two
+  seconds of retail.
 * As on retail: the stranger stays on the blanga the whole time and it on him; the lesser blangas go after you.
 * Damage from the capture's hits (`recorded_amounts`): the stranger's auto-attack 212.8, Fast Blade 241.8, Savage
   Blade 300.2, Rage of Halone 165, Spirits Within 425; the lesser blangas' 3.9 on the player. The blanga missed the
@@ -169,13 +169,15 @@ player is sent out.
 * Yda (3802271) and Papalymo (3802272) fight beside you. Yda goes for the boss and stays on it; Papalymo takes the adds
   (oldest first) and casts at 10 yalms. Adds start with some enmity on their ally (`STARTING_ENMITY = 300`) that the
   player can pull away; each new ally order outweighs the last (`ALLY_ENMITY = 10000`).
-* Waves arrive as the boss drops to 75 %, 50 % and 25 % (Sapphire's layout IDs).
+* Waves arrive as the boss drops to 75 %, 45 % and 25 % (Sapphire's layout IDs; Sapphire has 50 % for the second,
+  but the capture shows it at 45 %: the boss went from 45.8 % to 43.7 % as it came).
 * Yda: Pugilist rotation (Bootshine, True Strike, Snap Punch, 3 s apart). Papalymo: Thunder (refreshed as it runs out),
   Fire and Blizzard, and **Cure on the player below 50 %** at most every 4 s, with a line at most every 20 s.
-* Director sequence as recorded on retail: 1 at the start, 2 at 8.5 s, 3–5 with each wave, 6 on winning.
-* Battle talk with retail's text IDs (Bob's Chronofoil capture, 2026-10-14): Papalymo 126 and Yda 130 4.5 s after the
-  fight starts, Yda 131 and Papalymo 127 10 s after the first wave, each pair 5 s apart, Papalymo 128 once the last
-  wave is cleared; Papalymo's BNpcName here is 1376 (portrait 0x11DCC), Yda's 1375 (0x11DC4). Speech bubbles about
+* Director sequence as on retail: 1 before the opening cutscene, 2 the moment the fight starts (scene 60000; the
+  Recorder's "8.5 s" was from entering the zone), 3–5 with each wave, 6 on winning.
+* Battle talk with retail's text IDs (Bob's Chronofoil capture, 2026-10-14): Papalymo 126 and Yda 130 5 s after the
+  fight starts, Yda 131 and Papalymo 127 10 s after the first wave, each pair 5 s apart, Papalymo 128 3 s after the
+  last wave's health reaches 0; Papalymo's BNpcName here is 1376 (portrait 0x11DCC), Yda's 1375 (0x11DC4). Speech bubbles about
   7 s after the last wave: Papalymo's NpcYell 118, then Yda's 117 1.5 s later. Closing scene 6 (0x2001).
 * Losing: sequence `0xFE`, out after 6 s. Winning moves the quest to sequence 2.
 * Not yet: the enemies' own skills (auto-attacks only).
@@ -184,13 +186,13 @@ player is sent out.
 
 * The clay golem (layout 3869528, level 10, 844 HP) with auto-attacks, **True Grit** (120° cone, Blind) and
   **Plaincracker** (circle around it).
-* Timed from a retail recording (seconds from entering): sequence 1 at 0.5 s, rumble and sequence 2 at 10.6 s, the
-  masked mage's lines (battle talk 152, 153 and 154, BNpcName 750, no speaker actor or portrait) and sequences 3–8
-  through the fight, "Duty Complete" the moment the golem falls (sequence 9), then the battle's scene 9, a cutscene
-  (0xF8402EFB) with two more lines the client plays itself, and out when it ends, at about 143 s
-  (`complete_quest_battle(4, false, 9, 0xF8402EFB)`). The text IDs and the closing scene are from Bob's Chronofoil
-  capture (2026-10-14), whose timings agree with the recording. Health thresholds for lines and skills are
-  Sapphire's (65 %, 60 %, 30 %, 15 %).
+* Timed from a retail recording and Bob's Chronofoil capture (2026-10-14): sequence 1 before the opening cutscene,
+  the rumble and sequence 2 the moment the fight starts (it was 10 s later, timed from entering the zone), the masked
+  mage's lines (battle talk 152, 153 and 154, BNpcName 750, no speaker actor or portrait) and sequences 3–8 through the
+  fight, "Duty Complete" the moment the golem falls (sequence 9), then the battle's scene 9, a cutscene (0xF8402EFB)
+  with two more lines the client plays itself, and out when it ends (`complete_quest_battle(4, false, 9,
+  0xF8402EFB)`). The phases come at the golem's 70 %, 45 % and 15 %, as the capture shows (`questkit battle-sim 15`);
+  Sapphire's 65 % and 30 % came 7 and 16 s late against it.
 * Winning moves the quest to sequence 4; re-entering the Central Shroud plays the aftermath (scene 23).
 
 ### Quest battle 14 — Leia's Legacy (`content/questbattle/14.lua`)
@@ -224,8 +226,9 @@ player is sent out.
   is confirmed by the capture (below).
 * Everyone down: sequence 6, everyone else is removed and the director's cutscene plays (scene 6). After it (sequence
   7) a lesser gargoyle and the masked mage; sequence 8 22 s later; the gargoyle at 25 % brings Yda and Papalymo
-  (sequence 9, 10 s later 10); the mage at 40 % says one more line. The mage down: sequence 11, finish scene 11, the
-  quest moves to sequence 3.
+  (sequence 9, 10 s later 10); the mage below 42 % says one more line (the capture, `questkit battle-sim 12`). The
+  mage down: 2 s later (its death animation, as retail waits) sequence 11, finish scene 11, the quest moves to
+  sequence 3.
 * As on retail: Quzal goes after Galfrid, the lostwings after Miraudont, the slowbeaks after the two guards (3803267
   the bow, 3803268 the lance), both sincallers after Galfrid at first; the blanga and the gargoyle after the player.
   The masked mage stands by, spawned not hostile, until someone hits it (34 s after it appeared, on retail), then
@@ -277,7 +280,11 @@ player is sent out.
 2. Dump the battle's client script: `kawari-questdump extract <Name>Btl.luab` finds it by name in any game_script
    folder.
 3. Add the NPCs to the territory drop-in as a `QB_…` layer.
-4. Write `content/questbattle/<id>.lua` with the callbacks above; keep a timing table in its header.
-5. Add any new enemy skills as action scripts (`resources/scripts/actions/`), see [Combat](combat.md). Give allies and
+4. Write `content/questbattle/<id>.lua` with the callbacks above; keep a timing table in its header (seconds from the
+   fight starting, the director's scene 60000, not from entering).
+5. Make its battle fixture from a Chronofoil capture of the run (`questkit chronofoil --battle N.V --out run.json.gz`,
+   then `questkit battle-sim --make <id> --run run.json.gz`) and run `questkit battle-sim <id> -v` until it matches
+   ([questkit](questkit.md#battle-sim)); CI holds it to that from then on.
+6. Add any new enemy skills as action scripts (`resources/scripts/actions/`), see [Combat](combat.md). Give allies and
    enemies that fight with a class's actions a `rotation` in their timeline (questkit's report writes one per NPC),
    rather than fixed timepoints.

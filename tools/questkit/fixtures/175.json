@@ -1,7 +1,7 @@
 {
   "quest": 175,
   "script": "SubFst038_00175",
-  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387; notices from Bob's Chronofoil capture of retail 2026.10.06",
+  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387; notices from Bob's Chronofoil capture of retail 2026.10.06; scenes and effects from Bob's Chronofoil capture of 2026-10-14, 2026-10-15, 2026-10-16",
   "params": {
     "ACTOR0": 1000449,
     "EOBJECT0": 2000141,
@@ -17,56 +17,62 @@
   "steps": [
     {
       "talk": 1000449,
+      "layout": 1145816,
       "what": "ACTOR0",
-      "expect": {
-        "sequence": 1,
-        "vars": "000000000000",
-        "notices": []
-      }
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
     },
     {
       "talk": 2000141,
+      "layout": 2538891,
       "what": "EOBJECT0",
-      "expect": {
-        "sequence": 1,
-        "vars": "110010000080",
-        "notices": [[0, [26151]]]
-      }
+      "scenes": [
+        {"scene": 1, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 100, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "110010000080", "notices": [[0, [26151]]]}
     },
     {
       "talk": 2000147,
+      "layout": 2648853,
       "what": "EOBJECT1",
-      "expect": {
-        "sequence": 1,
-        "vars": "1110110000c0",
-        "notices": [[1, [1, 2, 21002]]]
-      }
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 98, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "1110110000c0", "notices": [[1, [1, 2, 21002]]]}
     },
     {
       "talk": 2000149,
+      "layout": 2648855,
       "what": "EOBJECT3",
-      "expect": {
-        "sequence": 1,
-        "vars": "2111111000d0",
-        "notices": [[2, [26103]]]
-      }
+      "scenes": [
+        {"scene": 4, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 94, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "2111111000d0", "notices": [[2, [26103]]]}
     },
     {
       "talk": 2000148,
+      "layout": 2648854,
       "what": "EOBJECT2",
-      "expect": {
-        "sequence": 255,
-        "vars": "001210000000",
-        "notices": [[1, [2, 2, 21002]]]
-      }
+      "scenes": [
+        {"scene": 3, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 96, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001210000000", "notices": [[1, [2, 2, 21002]]]}
     },
     {
       "talk": 1000685,
+      "layout": 1161162,
       "what": "ACTOR1",
-      "expect": {
-        "completed": true,
-        "notices": []
-      }
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [1, 2000141, 1, 0, 2000146, 2, 0, 2000147, 1, 0, 0, 0]},
+        {"scene": 92, "flags": "0x2000", "results": [1, 3000, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
     }
   ]
 }

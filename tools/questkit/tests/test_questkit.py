@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from questkit import battle, capture, chronofoil, chronofoil_battle, compare, fixtures, recording, replay, scaffold, triage  # noqa: E402
+from questkit import battle, battle_sim, capture, chronofoil, chronofoil_battle, chronofoil_quest, compare, fixtures, lint, recording, replay, scaffold, triage  # noqa: E402
 from questkit.bundle import Bundle  # noqa: E402
 
 QUEST = 9999
@@ -967,3 +967,232 @@ class DropinTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ChronofoilQuestTest(unittest.TestCase):
+    """A quest read out of a (made-up) Chronofoil capture, made into a fixture with scenes and effects, and replayed."""
+
+    VERSION = "2026.10.06.0000.0000"
+    TABLES = {VERSION: {
+        "ServerZoneIpcType": {716: ("ZoneInit", 136, "t"), 10: ("EventStart", 24, "t"), 11: ("EventScene2", 40, "t"),
+                              12: ("AcceptQuest", 8, "t"), 13: ("UpdateQuest", 24, "t"), 14: ("EventFinish", 16, "t"),
+                              15: ("PrepareZoning", 16, "t"), 16: ("EventNotice2", 16, "t")},
+        "ClientZoneIpcType": {20: ("StartTalkEvent", 16, "t"), 21: ("EventYieldHandler4", 24, "t"),
+                              22: ("EventReturnHandler2", 16, "t")},
+    }}
+    SCRIPT = """
+current_scene = nil
+function play(player, scene, flags) current_scene = scene; player:play_scene(scene, flags, {}) end
+function onTalk(target, player)
+    if player:get_quest_sequence(EVENT_ID) == nil then play(player, 0, HIDE_HOTBAR) else player:finish_event() end
+end
+function sceneFinished(scene, results, player)
+    if scene ~= current_scene then return end
+    current_scene = nil
+    if scene == 0 and results[1] == 1 then
+        play(player, 1, CUTSCENE)
+        return
+    elseif scene == 1 then
+        player:accept_quest(EVENT_ID)
+        player:quest_sequence(EVENT_ID, 1)
+        player:event_notice(EVENT_ID, 0)
+        player:change_territory(130, { x = 0, y = 0, z = 0 }, 0)
+    end
+    player:finish_event()
+end
+function onYield(scene, id, results, player) sceneFinished(scene, results, player) end
+function onReturn(scene, results, player) sceneFinished(scene, results, player) end
+"""
+
+    def capture(self, tmp):
+        import struct
+
+        handler = 0x10000 + QUEST
+        layout = 3969632
+        t = 1_760_000_000_000
+
+        def out(ms, opcode, data):
+            return _frame(t + ms, 1, [(opcode, 0, data)])
+
+        def into(ms, opcode, data):
+            return _frame(t + ms, 2, [(opcode, 0, data)])
+
+        def scene(number, flags):
+            return struct.pack("<QIHHII", layout, handler, number, 0, flags, 0) + bytes(16)
+
+        data = (out(0, 716, _zone_init(182, 0))
+                + into(100, 20, struct.pack("<QII", layout, handler, 0))
+                + out(150, 10, struct.pack("<QIBBHII", layout, handler, 1, 0, 0, 0, 0))
+                + out(160, 11, scene(0, 0x2000))
+                + into(2000, 21, struct.pack("<IHBBiii", handler, 0, 0, 3, 1, 0, 0) + bytes(4))
+                + out(2100, 11, scene(1, 0xF8402EFB))
+                + into(9000, 22, struct.pack("<IHBBii", handler, 1, 0, 2, 0, 0))
+                + out(9100, 12, struct.pack("<H", QUEST) + bytes(6))
+                + out(9100, 16, struct.pack("<IBBH", handler, 0, 0, 0) + bytes(8))
+                + out(9100, 15, struct.pack("<IH", 0, 130) + bytes(10))
+                + out(9100, 13, struct.pack("<HHHBB", 0, 0, QUEST, 1, 0) + bytes(6) + bytes([0] * 6) + bytes(4))
+                + out(9200, 14, struct.pack("<I", handler) + bytes(12)))
+        folder = Path(tmp) / "cap"
+        folder.mkdir()
+        version_info, capture_info, _ = _capture_parts("cap", self.VERSION)
+        (folder / "VersionInfo").write_bytes(version_info)
+        (folder / "CaptureInfo").write_bytes(capture_info)
+        (folder / "Data").write_bytes(data)
+        return chronofoil.find_captures([folder])
+
+    def test_events_fixture_and_replay(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            flows = chronofoil_quest.quest_events(self.capture(tmp), self.TABLES, [QUEST])
+            kinds = [e.kind for e in flows[QUEST]]
+            self.assertEqual(kinds, ["talk", "start", "scene", "answer", "scene", "answer", "accept", "notice", "zone",
+                                     "update", "finish"])
+            dump = {"script": "SubTst001_09999", "params": [{"name": "ACTOR0", "value": 1001}]}
+            fixture = fixtures.build_from_chronofoil(QUEST, flows[QUEST], dump, {3969632: 1001})
+            step, = fixture["steps"]
+            self.assertEqual((step["talk"], step["layout"], step["what"]), (1001, 3969632, "ACTOR0"))
+            self.assertEqual(step["scenes"], [
+                {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": True},
+                {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]}])
+            self.assertEqual(step["effects"], [{"zone": 130}])
+            self.assertEqual(step["expect"], {"sequence": 1, "vars": "000000000000", "notices": [[0, []]]})
+
+            good = Path(tmp) / "good.lua"
+            good.write_text(self.SCRIPT.replace("CUTSCENE", "SET_BASE | HIDE_HOTBAR"))
+            self.assertTrue(replay.run(fixture, good).ok, replay.format_results([replay.run(fixture, good)]))
+            # The wrong flags for the cutscene, or no zone change, fail.
+            wrong = Path(tmp) / "wrong.lua"
+            wrong.write_text(self.SCRIPT.replace("CUTSCENE", "HIDE_HOTBAR"))
+            result = replay.run(fixture, wrong)
+            self.assertIn("scenes 0 (0x2000), 1 (0x2000), retail 0 (0x2000), 1 (0xf8402efb)",
+                          result.steps[-1].problems[0])
+            stays = Path(tmp) / "stays.lua"
+            stays.write_text(self.SCRIPT.replace("CUTSCENE", "SET_BASE | HIDE_HOTBAR").replace(
+                "player:change_territory(130, { x = 0, y = 0, z = 0 }, 0)", ""))
+            result = replay.run(fixture, stays)
+            self.assertIn("did nothing outside the quest, retail zone 130", result.steps[-1].problems[0])
+
+    def test_unnamed_steps_come_from_the_old_fixture(self):
+        Event = chronofoil_quest.Event
+        events = [
+            Event(0, 148, "talk", {"actor": 5}), Event(0, 148, "start", {"type": 1, "actor": 5, "flags": 0, "arg": 0}),
+            Event(1, 148, "scene", {"scene": 0, "flags": 0x2000, "params": []}),
+            Event(2, 148, "answer", {"scene": 0, "yielded": True, "code": 0, "results": [0, 0, 0]}),
+            Event(2, 148, "finish", {}),  # the offer declined
+            Event(10, 148, "talk", {"actor": 5}), Event(10, 148, "start", {"type": 1, "actor": 5, "flags": 0, "arg": 0}),
+            Event(11, 148, "scene", {"scene": 0, "flags": 0x2000, "params": []}),
+            Event(12, 148, "answer", {"scene": 0, "yielded": True, "code": 0, "results": [1, 0, 0]}),
+            Event(12, 148, "accept", {}), Event(12, 148, "update", {"sequence": 1, "vars": "000000000000"}),
+            Event(12, 148, "finish", {}),
+            Event(20, 148, "talk", {"actor": 7}), Event(20, 148, "start", {"type": 1, "actor": 7, "flags": 0, "arg": 0}),
+            Event(21, 148, "scene", {"scene": 2, "flags": 0x2001, "params": []}),
+            Event(23, 148, "finish", {}),  # broken off during the progress bar: nothing happened
+            Event(30, 148, "notice", {"notice": 1, "args": [1, 2]}),
+            Event(30, 148, "update", {"sequence": 255, "vars": "000000000000"}),  # a kill
+        ]
+        previous = {"steps": [
+            {"talk": 1001, "expect": {"sequence": 1, "vars": "000000000000"}},
+            {"kill": [12, 3838969], "expect": {"sequence": 255, "vars": "000000000000"}}]}
+        dump = {"script": "X", "params": [{"name": "ACTOR0", "value": 1001}]}
+        fixture = fixtures.build_from_chronofoil(QUEST, events, dump, {}, previous=previous)
+        steps = fixture["steps"]
+        self.assertEqual([s.get("talk") or s.get("kill") for s in steps], [1001, 1001, [12, 3838969]])
+        self.assertEqual(steps[0]["expect"], {"accepted": False, "notices": []})
+        self.assertEqual(steps[2]["expect"]["notices"], [[1, [1, 2]]])
+        self.assertNotIn("todo", json.dumps(steps))
+
+
+class BattleSimTest(unittest.TestCase):
+    """A quest battle script against a made-up retail run: a boss, a wave at half health, a line, the win."""
+
+    SCRIPT = """
+BATTLE = Battle.new()
+BATTLE:ally(11, { role = "tank" })
+BATTLE:enemy(22, { group = "boss", attacks = 11 })
+BATTLE:enemy(33, { group = "adds" })
+BATTLE:onHealth(22, HALF, function(director)
+    director:set_sequence(3)
+    BATTLE:spawn(director, { 33 })
+end)
+function onSetup(director) director:set_sequence(1) end
+function onCommence(director)
+    director:set_sequence(2)
+    BATTLE:spawn(director, { 11, 22 })
+    BATTLE:steps({ { 10, "talk", { layout = 11, name = 1, icon = 2 }, 100 } })
+end
+function onUpdate(director, health, player_health, info) BATTLE:update(director, health, player_health, info) end
+function onActorDeath(director, layout)
+    BATTLE:died(director, layout)
+    if BATTLE:enemiesLeft() == 0 and BATTLE.alive[22] == nil then
+        director:set_sequence(4)
+        director:complete_quest_battle(2)
+    end
+end
+"""
+    FIXTURE = {
+        "quest_battle": 9999, "tolerance": 1.0, "scenes": {},
+        "npcs": {"11": {"spawn": None, "death": None, "hp": [[0, 100]]},
+                 "22": {"spawn": None, "death": 60.0, "hp": [[0, 100], [30, 50], [60, 0]]},
+                 "33": {"spawn": 30.5, "death": 40.0, "hp": [[30.5, 100], [40, 0]]}},
+        "events": [[0.0, "sequence", 2], [5.0, "talk", 100], [30.0, "sequence", 3], [30.5, "spawn", 33],
+                   [60.0, "sequence", 4], [60.0, "won"]],
+    }
+
+    def run_script(self, half):
+        try:
+            import lupa  # noqa: F401
+        except ImportError:
+            self.skipTest("lupa isn't installed")
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(tmp) / "9999.lua"
+            script.write_text(self.SCRIPT.replace("HALF", str(half)))
+            original = battle_sim.dropin_layouts
+            battle_sim.dropin_layouts = lambda: {11, 22, 33}
+            try:
+                return battle_sim.simulate(self.FIXTURE, script)
+            finally:
+                battle_sim.dropin_layouts = original
+
+    def test_matches(self):
+        result = self.run_script(50)
+        self.assertTrue(result.ok, battle_sim.format_results([result], verbose=True))
+        self.assertEqual(len(result.matched), 6)
+
+    def test_late_wave(self):
+        # At 25% the wave comes 15 s late; the add then falls 15 s late too, but the boss still falls at 60 s.
+        result = self.run_script(25)
+        self.assertFalse(result.ok)
+        self.assertIn("sequence 3: 45.0 s, retail 30.0 s", result.problems)
+
+    def test_fixture_from_run(self):
+        run = {
+            "Actors": {"1": {"Kind": "battle npc", "LayoutId": 22, "MaxHp": 1000, "Seen": 1.0, "Died": 62.0},
+                       "2": {"Kind": "battle npc", "LayoutId": 33, "MaxHp": 100, "Seen": 40.0, "Died": 52.0}},
+            "Samples": [{"S": 10.0, "Id": 1, "Hp": 1000}, {"S": 40.0, "Id": 1, "Hp": 500},
+                        {"S": 60.0, "Id": 1, "Hp": 0}, {"S": 50.0, "Id": 2, "Hp": 0}],
+            "Actions": [],
+            "Events": [{"S": 2.0, "Kind": "sequence", "Text": "0x80060025 sequence 1"},
+                       {"S": 10.0, "Kind": "scene", "Text": "event 0x80060025 scene 60000 flags 0x40000"},
+                       {"S": 10.0, "Kind": "sequence", "Text": "0x80060025 sequence 2"},
+                       {"S": 15.0, "Kind": "battle talk", "Text": "text 100 name 1 icon 2 4000 ms"},
+                       {"S": 62.0, "Kind": "scene", "Text": "event 0x80060025 scene 60001 flags 0x40000"},
+                       {"S": 63.0, "Kind": "sequence", "Text": "0x80060025 sequence 254"}],
+        }
+        fixture = battle_sim.fixture_from_run(run, 9999)
+        self.assertEqual(fixture["events"], [[0.0, "sequence", 2], [5.0, "talk", 100], [30.0, "spawn", 33],
+                                             [52.0, "won"]])
+        self.assertEqual(fixture["npcs"]["22"], {"spawn": None, "death": 50.0, "hp": [[0.0, 100.0], [30.0, 50.0],
+                                                                                    [50.0, 0.0]]})
+        self.assertEqual(fixture["npcs"]["33"]["death"], 40.0)  # its health reached 0 before its Defeated
+
+
+class LintTest(unittest.TestCase):
+    def test_timeline_actions(self):
+        timeline = {"autoattack_action_id": 870, "timepoints": [{"data": {"type": "action", "action_id": 739}},
+                                                                {"data": {"type": "invulnerability"}}],
+                    "rotation": {"actions": [{"action": 9}]}, "recorded_amounts": {"21": {"npcs": 1}}}
+        self.assertEqual(lint.timeline_actions(timeline), {870, 739, 9, 21})
+
+    def test_repository_is_clean(self):
+        report = lint.run()
+        self.assertTrue(report.ok, lint.format_report(report))
+        self.assertIn(870, lint.scripted_actions())

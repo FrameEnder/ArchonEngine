@@ -1,133 +1,56 @@
 {
   "quest": 671,
   "script": "SubWil025_00671",
-  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-17), a fresh Ul'dah character",
-  "params": {
-    "ACTOR0": 1003995,
-    "ITEM0": 2000463,
-    "ACTOR1": 1004599,
-    "ACTOR2": 1004600,
-    "ACTOR3": 1004601
-  },
+  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-17), a fresh Ul'dah character; scenes and effects from Bob's Chronofoil capture of 2026-10-17",
+  "params": {"ACTOR0": 1003995, "ITEM0": 2000463, "ACTOR1": 1004599, "ACTOR2": 1004600, "ACTOR3": 1004601},
   "steps": [
     {
       "talk": 1003995,
+      "layout": 3970164,
       "what": "ACTOR0",
-      "expect": {
-        "sequence": 1,
-        "vars": "000030000000",
-        "notices": []
-      },
-      "results": {
-        "0": {
-          "results": [
-            1,
-            0,
-            0
-          ],
-          "yield": true
-        }
-      }
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "000030000000", "notices": []}
     },
     {
       "talk": 1004600,
+      "layout": 4092919,
       "what": "ACTOR2",
-      "expect": {
-        "sequence": 1,
-        "vars": "101020000040",
-        "notices": [
-          [
-            0,
-            [
-              1,
-              3
-            ]
-          ]
-        ]
-      },
-      "results": {
-        "4": [
-          1,
-          1999439,
-          1,
-          0,
-          0,
-          0
-        ]
-      }
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [1, 2000463, 1, 0, 0, 0]},
+        {"scene": 5, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "101020000040", "notices": [[0, [1, 3]]]}
     },
     {
       "talk": 1004599,
+      "layout": 4092950,
       "what": "ACTOR1",
-      "expect": {
-        "sequence": 1,
-        "vars": "2110100000c0",
-        "notices": [
-          [
-            0,
-            [
-              2,
-              3
-            ]
-          ]
-        ]
-      },
-      "results": {
-        "1": [
-          1,
-          1999439,
-          1,
-          0,
-          0,
-          0
-        ]
-      }
+      "scenes": [
+        {"scene": 1, "flags": "0x2000", "results": [1, 2000463, 1, 0, 0, 0]},
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "2110100000c0", "notices": [[0, [2, 3]]]}
     },
     {
       "talk": 1004601,
+      "layout": 4092929,
       "what": "ACTOR3",
-      "expect": {
-        "sequence": 255,
-        "vars": "000000000000",
-        "notices": [
-          [
-            0,
-            [
-              3,
-              3
-            ]
-          ]
-        ]
-      },
-      "results": {
-        "7": [
-          1,
-          1999439,
-          1,
-          0,
-          0,
-          0
-        ]
-      }
+      "scenes": [
+        {"scene": 7, "flags": "0x2000", "results": [1, 2000463, 1, 0, 0, 0]},
+        {"scene": 8, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, [3, 3]]]}
     },
     {
       "talk": 1003995,
+      "layout": 3970164,
       "what": "ACTOR0",
-      "expect": {
-        "completed": true,
-        "notices": []
-      },
-      "results": {
-        "10": {
-          "results": [
-            1,
-            1602,
-            0,
-            0
-          ],
-          "yield": true
-        }
-      }
+      "scenes": [
+        {"scene": 10, "flags": "0x2000", "results": [1, 1602, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
     }
   ]
 }

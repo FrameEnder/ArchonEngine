@@ -3,8 +3,8 @@
 -- Checked against the client's quest script (kawari-questdump), Sapphire's script and a live recording of the quest:
 -- Sequence 0:   ACTOR0 offers the quest (scene 0, returns 1 when accepted), then explains it in a cutscene (scene 1.)
 -- Sequence 1:   report to ACTOR1 at Spirithold (scene 2.)
--- Sequence 2:   find the five who were left behind, ACTOR2 to ACTOR6, in any order: aid each one (EVENT_ACTION_,
---               "Aiding", a progress bar), then their scene (4, 7, 10, 13 and 16.) UI8AL counts them for the todo and
+-- Sequence 2:   find the five who were left behind, ACTOR2 to ACTOR6, in any order: a scene (3, 6, 9, 12, 15), aiding
+--               them (EVENT_ACTION_, "Aiding", a progress bar), then their scene (4, 7, 10, 13 and 16.) UI8AL counts them for the todo and
 --               each sets its BitFlag8 (1 to 5, in UI8F), which stops the client offering them again. With all five
 --               found, retail clears the variables and moves to sequence 3. ACTOR7 (the Hearer) only has a line (18.)
 -- Sequence 3:   talk to the Hearer (ACTOR7) again, or EOBJECT0 next to him, and agree to enter the quest battle
@@ -27,11 +27,11 @@ SCENE_FINISH = 25
 
 -- The five to find: their scene and BitFlag8 index.
 EVACUEES = {
-    [ACTOR2] = { scene = 4, flag = 1 },
-    [ACTOR3] = { scene = 7, flag = 2 },
-    [ACTOR4] = { scene = 10, flag = 3 },
-    [ACTOR5] = { scene = 13, flag = 4 },
-    [ACTOR6] = { scene = 16, flag = 5 },
+    [ACTOR2] = { before = 3, scene = 4, flag = 1 },
+    [ACTOR3] = { before = 6, scene = 7, flag = 2 },
+    [ACTOR4] = { before = 9, scene = 10, flag = 3 },
+    [ACTOR5] = { before = 12, scene = 13, flag = 4 },
+    [ACTOR6] = { before = 15, scene = 16, flag = 5 },
 }
 EVACUEES_NEEDED = 5
 
@@ -40,9 +40,13 @@ NOTICE_REPORTED = 0
 NOTICE_FOUND = 1
 NOTICE_REPORTED_AFTER = 4
 
-CUTSCENE_FLAGS = FADE_OUT | CONDITION_CUTSCENE | HIDE_UI
-AFTERMATH_FLAGS = NO_DEFAULT_CAMERA | CONDITION_CUTSCENE | SILENT_ENTER_TERRI_ENV | HIDE_HOTBAR | SILENT_ENTER_TERRI_BGM | SILENT_ENTER_TERRI_SE | DISABLE_STEALTH | UNK1 | LOCK_HUD | LOCK_HOTBAR | DISABLE_CANCEL_EMOTE
-REWARD_FLAGS = FADE_OUT | HIDE_HOTBAR | CONDITION_CUTSCENE | HIDE_UI
+CUTSCENE_FLAGS = SET_BASE | HIDE_HOTBAR -- 0xF8402EFB, as retail plays its cutscenes (Bob's Chronofoil capture of 2026-10-14)
+-- Aiding someone, as retail plays it (Bob's Chronofoil capture of 2026-10-14): a scene before the progress bar
+-- (HIDE_HOTBAR | NO_DEFAULT_CAMERA), and their scene after it with INVINCIBLE too.
+AID_FLAGS = HIDE_HOTBAR | NO_DEFAULT_CAMERA
+AIDED_FLAGS = HIDE_HOTBAR | NO_DEFAULT_CAMERA | INVINCIBLE
+AFTERMATH_FLAGS = SET_BASE | HIDE_HOTBAR -- 0xF8402EFB, as retail plays the aftermath (Bob's Chronofoil capture of 2026-10-14)
+REWARD_FLAGS = SET_BASE | HIDE_HOTBAR | DISABLE_SKIP -- 0xF8482EFB, retail's (Bob's Chronofoil capture of 2026-10-14)
 
 -- Quest variables: UI8A..F are bytes 0..5, H is the high nibble and L the low one.
 function getVar(player, byte, high)
@@ -91,9 +95,9 @@ function onTalk(target, player)
     elseif sequence == 1 and BASE_ID == ACTOR1 then
         play(player, SCENE_ALESTAN, HIDE_HOTBAR)
     elseif sequence == 2 and evacuee ~= nil and not hasFlag(player, evacuee.flag) then
-        -- Aiding shows a progress bar; their scene plays once it finishes (see onEventActionCast.)
+        -- Their first scene, then the progress bar (see sceneFinished), then their scene once it finishes.
         aiding = evacuee
-        player:event_action(EVENT_ACTION_)
+        play(player, evacuee.before, AID_FLAGS)
     elseif sequence == 2 and BASE_ID == ACTOR7 then
         play(player, SCENE_HEARER, HIDE_HOTBAR)
     elseif sequence == 3 and (BASE_ID == ACTOR7 or BASE_ID == EOBJECT0) then
@@ -112,7 +116,7 @@ function onEventActionCast(player)
         player:finish_event()
         return
     end
-    play(player, aiding.scene, HIDE_HOTBAR)
+    play(player, aiding.scene, AIDED_FLAGS)
 end
 
 -- Back in the Central Shroud after winning the battle.
@@ -155,6 +159,10 @@ function sceneFinished(scene, results, player)
     elseif scene == SCENE_ALESTAN then
         player:event_notice(EVENT_ID, NOTICE_REPORTED)
         player:quest_sequence(EVENT_ID, 2)
+    elseif aiding ~= nil and scene == aiding.before then
+        -- Aiding shows a progress bar; their scene plays once it finishes (see onEventActionCast.)
+        player:event_action(EVENT_ACTION_)
+        return
     elseif aiding ~= nil and scene == aiding.scene then
         local flag = aiding.flag
         aiding = nil

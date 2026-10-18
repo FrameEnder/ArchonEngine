@@ -63,7 +63,7 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
             result.steps.append(StepResult(index, step, False, [f"not filled in: {step['todo']}"]))
             break
         try:
-            results = step.get("results", {})
+            results = step["scenes"] if "scenes" in step else step.get("results", {})
             if "talk" in step:
                 outcome = harness.talk(step["talk"], results, trace, step.get("layout"))
             elif "kill" in step:
@@ -87,7 +87,11 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
         expect = step.get("expect")
         state = harness.state()
         if expect and not problems:
-            if expect.get("completed"):
+            if expect.get("accepted") is False:
+                # Retail hadn't accepted it yet (the offer was declined).
+                if "sequence" in state or state.get("completed"):
+                    problems.append("the quest was accepted, retail declined the offer")
+            elif expect.get("completed"):
                 if not state.get("completed"):
                     problems.append(f"expected the quest to be completed, it's at sequence {state.get('sequence')} "
                                     f"vars {state.get('vars')}")
@@ -105,6 +109,16 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
                 got = outcome.get("notices", [])
                 if got != expect["notices"]:
                     problems.append(f"notices {got}, retail {expect['notices']}")
+        if "scenes" in step and not problems:
+            problems += compare_scenes(outcome.get("played", []), step["scenes"])
+        if "effects" in step and not problems:
+            got, want = sorted(map(_key, outcome.get("effects", []))), sorted(map(_key, step["effects"]))
+            if got != want:
+                problems.append(f"did {_effects_text(outcome.get('effects', []))} outside the quest, retail "
+                                f"{_effects_text(step['effects'])}")
+        elif "scenes" in step and not problems and outcome.get("effects"):
+            # Retail did nothing outside the quest here, the script did.
+            problems.append(f"did {_effects_text(outcome['effects'])} outside the quest, retail nothing")
         if "spawns" in step and not problems:
             if outcome.get("spawned", []) != step["spawns"]:
                 problems.append(f"spawned {outcome.get('spawned', [])}, expected {step['spawns']}")
@@ -112,6 +126,34 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
         if problems:
             break
     return result
+
+
+def _key(effect: dict) -> tuple:
+    return tuple(sorted(effect.items()))
+
+
+def _effects_text(effects: list[dict]) -> str:
+    return ", ".join(f"{k} {v}" for e in effects for k, v in e.items()) or "nothing"
+
+
+def _flags(value) -> int:
+    return int(value, 16) if isinstance(value, str) else int(value)
+
+
+def compare_scenes(played: list[dict], retail: list[dict]) -> list[str]:
+    """The scenes the script played against retail's: the same numbers in the same order, with the same flags and
+    parameters (where retail sent any)."""
+    def text(scenes):
+        return ", ".join(f"{s['scene']} ({_flags(s['flags']):#x}{', ' + str(s['params']) if s.get('params') else ''})"
+                         for s in scenes) or "none"
+
+    same = len(played) == len(retail) and all(
+        p["scene"] == r["scene"] and p["flags"] == _flags(r["flags"]) and list(p.get("params") or []) ==
+        list(r.get("params") or [])
+        for p, r in zip(played, retail))
+    if same:
+        return []
+    return [f"scenes {text(played)}, retail {text(retail)}"]
 
 
 def spaced(hex_text: str) -> str:

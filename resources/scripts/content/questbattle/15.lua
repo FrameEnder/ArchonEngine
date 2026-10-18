@@ -1,18 +1,20 @@
 -- Quest battle: Spirithold Broken, for the quest of the same name (SubFst035_00129.)
 -- It takes place in a copy of the Central Shroud, so the clay golem lives in the fst_f1 drop-in (layer QB_SubFst035_001.)
 --
--- Timed against Kawari Recorder's recording of retail (seconds from entering):
---   0.5   director sequence 1, "Defeat the clay golem!"
---   10.6  the golem rumbles (NpcYell 122) and the fight starts: sequence 2
---   39.4  the masked mage's first line (battle talk 152), sequence 3; True Grit lands at 46.2 (4 second cast)
---   47.2  sequence 4
---   52.2  his second (153), sequence 5
---   75.1  sequence 6; it rumbles (NpcYell 123) and casts Plaincracker, which lands at 80.2
---   91.9  sequence 7; True Grit again, landing at 97.0, then Plaincracker landing at 103.2
---   106.6 his third (154), sequence 8
---   118.8 the golem falls: sequence 9 and "Duty Complete", then the battle's scene 9 (a cutscene with two more
---         lines, played by the client) and out when it ends, at 143.5
--- The health at which the lines and skills come is Sapphire's (65%, 60%, 30%, 15%.)
+-- Timed against Kawari Recorder's recording of retail and Bob's Chronofoil capture of 2026-10-14 (seconds from
+-- entering; the fight starts at 10.5, the director's scene 60000, which is Kawari's onCommence):
+--   0.8   director sequence 1, "Defeat the clay golem!", and the opening cutscene
+--   10.5  the fight starts: sequence 2, and the golem rumbles (NpcYell 122)
+--   39.7  the golem at 70%: the masked mage's first line (battle talk 152), sequence 3; True Grit 2.6 s later
+--   47.4  sequence 4
+--   52.5  his second (153), sequence 5
+--   75.1  the golem at 45%: sequence 6; it rumbles (NpcYell 123) and casts Plaincracker
+--   91.8  sequence 7; True Grit again, then Plaincracker
+--   106.9 the golem at 15%: his third (154), sequence 8
+--   118.9 the golem falls: sequence 9 and "Duty Complete", then the battle's scene 9 (a cutscene with two more
+--         lines, played by the client) and out when it ends, at 142.5
+-- The health marks are the capture's (questkit battle-sim: it crossed 70% at the first line, 45% at sequence 6 and
+-- 15% at the third line); Sapphire's 65% and 30% came 7 and 16 s late against it.
 --
 -- Bob's Chronofoil capture of the same battle (2026-10-14) gave the battle talk's text IDs and the scenes: the three
 -- lines come through the battle talk window (DirectorPopupMessage) under BNpcName 750 with no portrait and no
@@ -45,13 +47,10 @@ SEQUENCE_FAILED = 0xFE
 -- How many updates (half a second each) after the player falls before sending them out.
 FAIL_DELAY_UPDATES = 12
 
--- Things that happen a number of updates (half a second each) after something else, in order.
-FIGHT_STARTS_IN = 21
-
 -- As the golem's health drops to each of these (in percent), these steps run, each this many updates after the last.
 PHASES = {
     {
-        health = 65,
+        health = 70,
         steps = {
             { 0, "talk", TEXT_STRONG },
             { 0, "sequence", 3 },
@@ -62,7 +61,7 @@ PHASES = {
         },
     },
     {
-        health = 30,
+        health = 45,
         steps = {
             { 0, "sequence", 6 },
             { 4, "yell", YELL_RUMBLE },
@@ -90,7 +89,6 @@ WON_STEPS = {
 local next_phase = 1
 -- Steps waiting to run: { updates left, kind, ... }.
 local pending = {}
-local fight_starts_in = nil
 local over = false
 local fail_in = nil
 
@@ -139,12 +137,15 @@ function runPending(director)
 end
 
 function onSetup(director)
+    director:set_sequence(1)
 end
 
+-- The fight starts as the opening cutscene ends: the golem rumbles and comes for the player.
 function onCommence(director)
-    director:set_sequence(1)
     director:spawn_bnpc(BNPC_GOLEM)
-    fight_starts_in = FIGHT_STARTS_IN
+    director:yell(BNPC_GOLEM, YELL_RUMBLE_START)
+    director:set_sequence(2)
+    director:set_hate(BNPC_GOLEM, nil, 1) -- the player
 end
 
 -- health: the health (in percent) of every living NPC, by layout ID
@@ -161,17 +162,6 @@ function onUpdate(director, health, player_health)
 
     runPending(director)
     if over then
-        return
-    end
-
-    if fight_starts_in ~= nil then
-        fight_starts_in = fight_starts_in - 1
-        if fight_starts_in <= 0 then
-            fight_starts_in = nil
-            director:yell(BNPC_GOLEM, YELL_RUMBLE_START)
-            director:set_sequence(2)
-            director:set_hate(BNPC_GOLEM, nil, 1) -- the player
-        end
         return
     end
 

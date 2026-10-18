@@ -9,7 +9,7 @@
 SCENE_OFFER = 0
 SCENE_FINISH = 1
 
-REWARD_FLAGS = FADE_OUT | HIDE_HOTBAR | CONDITION_CUTSCENE | HIDE_UI
+REWARD_FLAGS = SET_BASE | HIDE_HOTBAR -- 0xF8402EFB, as retail plays its cutscenes (Bob's Chronofoil capture of 2026-10-14)
 
 -- Only the scene we last played may finish, in case the client reports a scene through both yield and return.
 current_scene = nil

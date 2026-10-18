@@ -2,8 +2,9 @@
 --
 -- Checked against the client's quest script (kawari-questdump), Sapphire's script and a live recording of the quest:
 -- Sequence 0:   ACTOR0 (Osha Jaab) offers the quest (scene 0, returns 1 when accepted.)
--- Sequence 1:   search the four blue trumpets, EOBJECT0 to EOBJECT3, in any order (EVENT_ACTION_SEARCH, a progress bar,
---               then the trumpet's scene, 1 to 4.) UI8AL counts them, each sets its BitFlag8 (1 to 4, in UI8F) so the
+-- Sequence 1:   search the four blue trumpets, EOBJECT0 to EOBJECT3, in any order: the trumpet's scene (1 to 4), then
+--               EVENT_ACTION_SEARCH (a progress bar), then its EVENTACTIONOK scene (100, 98, 96, 94), all with
+--               HIDE_HOTBAR | NO_DEFAULT_CAMERA (retail, Bob's Chronofoil capture of 2026-10-14). UI8AL counts them, each sets its BitFlag8 (1 to 4, in UI8F) so the
 --               client stops offering it, and each sends notice 0 with [count, 4], the progress pop-up. The fourth moves
 --               straight to sequence 255 with the variables cleared.
 -- Sequence 255: ACTOR1 (Theodore) and the reward (scene 5.)
@@ -11,20 +12,18 @@
 SCENE_OFFER = 0
 SCENE_FINISH = 5
 
--- Each trumpet: its scene and BitFlag8 index.
+-- Each trumpet: its scene before the progress bar, the one after it, and its BitFlag8 index.
 TRUMPETS = {
-    [EOBJECT0] = { scene = 1, flag = 1 },
-    [EOBJECT1] = { scene = 2, flag = 2 },
-    [EOBJECT2] = { scene = 3, flag = 3 },
-    [EOBJECT3] = { scene = 4, flag = 4 },
+    [EOBJECT0] = { scene = SEQ_1_EOBJECT0, found = SEQ_1_EOBJECT0_EVENTACTIONOK, flag = 1 },
+    [EOBJECT1] = { scene = SEQ_1_EOBJECT1, found = SEQ_1_EOBJECT1_EVENTACTIONOK, flag = 2 },
+    [EOBJECT2] = { scene = SEQ_1_EOBJECT2, found = SEQ_1_EOBJECT2_EVENTACTIONOK, flag = 3 },
+    [EOBJECT3] = { scene = SEQ_1_EOBJECT3, found = SEQ_1_EOBJECT3_EVENTACTIONOK, flag = 4 },
 }
 TRUMPETS_NEEDED = 4
 
 NOTICE_PROGRESS = 0
 
--- The scene after a search has nothing to show, so it plays without hiding the hotbar (as Sapphire does), which
--- would only make it flicker once the progress bar ends.
-SEARCH_SCENE_FLAGS = 0
+SEARCH_SCENE_FLAGS = HIDE_HOTBAR | NO_DEFAULT_CAMERA
 
 -- Quest variables: UI8A..F are bytes 0..5, H is the high nibble and L the low one.
 function getVar(player, byte, high)
@@ -71,9 +70,9 @@ function onTalk(target, player)
     if sequence == nil and BASE_ID == ACTOR0 then
         play(player, SCENE_OFFER, HIDE_HOTBAR)
     elseif sequence == 1 and trumpet ~= nil and not hasFlag(player, trumpet.flag) then
-        -- Searching shows a progress bar; the trumpet's scene plays once it finishes (see onEventActionCast.)
+        -- The trumpet's scene, then the progress bar (see sceneFinished), then its "found it" scene.
         searching = trumpet
-        player:event_action(EVENT_ACTION_SEARCH)
+        play(player, trumpet.scene, SEARCH_SCENE_FLAGS)
     elseif sequence == 255 and BASE_ID == ACTOR1 then
         play(player, SCENE_FINISH, HIDE_HOTBAR)
     else
@@ -86,7 +85,7 @@ function onEventActionCast(player)
         player:finish_event()
         return
     end
-    play(player, searching.scene, SEARCH_SCENE_FLAGS)
+    play(player, searching.found, SEARCH_SCENE_FLAGS)
 end
 
 -- One trumpet searched.
@@ -116,6 +115,10 @@ function sceneFinished(scene, results, player)
             player:quest_sequence(EVENT_ID, 1)
         end
     elseif searching ~= nil and scene == searching.scene then
+        -- The progress bar; its "found it" scene plays once it finishes (see onEventActionCast.)
+        player:event_action(EVENT_ACTION_SEARCH)
+        return
+    elseif searching ~= nil and scene == searching.found then
         local flag = searching.flag
         searching = nil
         searched(player, flag)

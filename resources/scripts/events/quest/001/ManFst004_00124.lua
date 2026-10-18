@@ -31,7 +31,7 @@ NOTICE_DELIVERED = 2
 
 UNLOCK_RETURN = 1 -- UnlockLink for Return, learned when attuning here
 SET_EOBJ_BASE = 0xF8400EF3 -- scene flags the attunement and hand-over scenes use on retail
-CUTSCENE_FLAGS = FADE_OUT | CONDITION_CUTSCENE | HIDE_UI
+CUTSCENE_FLAGS = SET_BASE | HIDE_HOTBAR -- 0xF8402EFB, as retail plays its cutscenes (Bob's Chronofoil capture of 2026-10-14)
 
 -- Quest variables: UI8A..F are bytes 0..5, H is the high nibble and L the low one.
 function getVar(player, byte, high)
@@ -75,7 +75,7 @@ function onTalk(target, player)
             player:unlock_aetheryte(1, ACTOR1)
         end
         player:unlock(UNLOCK_RETURN)
-        play(player, SCENE_AETHERYTE_WAIT, HIDE_HOTBAR)
+        play(player, SCENE_AETHERYTE_WAIT, HIDE_HOTBAR | NO_DEFAULT_CAMERA)
     elseif sequence == 255 and BASE_ID == ACTOR4 then
         play(player, SCENE_FINISH, CUTSCENE_FLAGS)
     else
@@ -106,7 +106,7 @@ function sceneFinished(scene, results, player)
 
     if scene == SCENE_OFFER then
         if results[1] == 1 then
-            play(player, SCENE_EXPLAIN, HIDE_HOTBAR)
+            play(player, SCENE_EXPLAIN, CUTSCENE_FLAGS)
             return
         end
     elseif scene == SCENE_EXPLAIN then

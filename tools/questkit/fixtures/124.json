@@ -1,7 +1,7 @@
 {
   "quest": 124,
   "script": "ManFst004_00124",
-  "source": "Kawari Recorder export from retail 2026.09.15, a fresh Conjurer; notices from Bob's Chronofoil capture of retail 2026.10.06",
+  "source": "Kawari Recorder export from retail 2026.09.15, a fresh Conjurer; notices from Bob's Chronofoil capture of retail 2026.10.06; scenes and effects from Bob's Chronofoil capture of 2026-10-14, 2026-10-15, 2026-10-16",
   "params": {
     "ACTOR0": 1001140,
     "SEQ_0_ACTOR0": 0,
@@ -42,47 +42,58 @@
   "steps": [
     {
       "talk": 1001140,
+      "layout": 1985113,
       "what": "ACTOR0",
-      "expect": {
-        "sequence": 1,
-        "vars": "000010000000",
-        "notices": []
-      }
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 50, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "effects": [
+        {"zone": 132}
+      ],
+      "expect": {"sequence": 1, "vars": "000010000000", "notices": []}
     },
     {
       "talk": 2,
-      "what": "ACTOR1 (the aetheryte)",
-      "expect": {
-        "sequence": 1,
-        "vars": "110010000080",
-        "notices": [[0, []]]
-      }
+      "layout": 3693652,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 51, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "effects": [
+        {"aetheryte": 2},
+        {"unlock": 1}
+      ],
+      "expect": {"sequence": 1, "vars": "110010000080", "notices": [[0, []]]}
     },
     {
       "talk": 1000768,
+      "layout": 1332324,
       "what": "ACTOR3",
-      "expect": {
-        "sequence": 1,
-        "vars": "210100000080",
-        "notices": [[2, []]]
-      }
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [1, 2000120, 1, 0, 0, 0]},
+        {"scene": 100, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "210100000080", "notices": [[2, []]]}
     },
     {
       "talk": 1000323,
+      "layout": 1161195,
       "what": "ACTOR2",
-      "expect": {
-        "sequence": 255,
-        "vars": "000000000000",
-        "notices": [[1, []]]
-      }
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[1, []]]}
     },
     {
       "talk": 1000100,
+      "layout": 1140490,
       "what": "ACTOR4",
-      "expect": {
-        "completed": true,
-        "notices": []
-      }
+      "scenes": [
+        {"scene": 5, "flags": "0xf8402efb", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
     }
   ]
 }

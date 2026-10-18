@@ -3,7 +3,8 @@
 -- Checked against the client's quest script (kawari-questdump), Sapphire's script and a live recording of the quest:
 -- Sequence 0:   ACTOR0 (Eylgar) offers the quest (scene 0, returns 1 when accepted.) The client itself refuses it while
 --               QST_ACCEPT_CHECK isn't complete.
--- Sequence 1:   search EOBJECT0, the vulture egg (EVENT_ACTION_SEARCH, then scene 100, the "vultures appear" message),
+-- Sequence 1:   search EOBJECT0, the vulture egg (scene 1, EVENT_ACTION_SEARCH, then scene 100, the "vultures appear"
+--               message; both HIDE_HOTBAR | NO_DEFAULT_CAMERA, as Bob's Chronofoil capture of 2026-10-14 shows),
 --               which brings out ENEMY0 and ENEMY1, two northern vultures (layout IDs, in the Central Shroud drop-ins.)
 --               Defeating them is counted in UI8AL (and UI8BH as its high part, as the client reads it.) Retail sends no
 --               notice for the first; the second sends notice 0 (no arguments) and moves straight to sequence 255 with
@@ -12,7 +13,9 @@
 -- Sequence 255: report to ACTOR1 (Lothaire) (scene 2, with the reward.)
 
 SCENE_OFFER = 0
+SCENE_SEARCH = 1
 SCENE_EGG = 100
+SEARCH_SCENE_FLAGS = HIDE_HOTBAR | NO_DEFAULT_CAMERA
 SCENE_FINISH = 2
 
 VULTURES_NEEDED = 2
@@ -55,7 +58,7 @@ function onTalk(target, player)
         play(player, SCENE_OFFER, HIDE_HOTBAR)
     elseif sequence == 1 and BASE_ID == EOBJECT0 then
         searching = true
-        player:event_action(EVENT_ACTION_SEARCH)
+        play(player, SCENE_SEARCH, SEARCH_SCENE_FLAGS)
     elseif sequence == 255 and BASE_ID == ACTOR1 then
         play(player, SCENE_FINISH, HIDE_HOTBAR)
     else
@@ -69,7 +72,7 @@ function onEventActionCast(player)
         return
     end
     searching = false
-    play(player, SCENE_EGG, HIDE_HOTBAR)
+    play(player, SCENE_EGG, SEARCH_SCENE_FLAGS)
 end
 
 -- Each vulture you (or your party) defeat counts.
@@ -96,7 +99,11 @@ function sceneFinished(scene, results, player)
     end
     current_scene = nil
 
-    if scene == SCENE_OFFER then
+    if scene == SCENE_SEARCH and searching then
+        -- The progress bar; the egg's scene plays once it finishes (see onEventActionCast.)
+        player:event_action(EVENT_ACTION_SEARCH)
+        return
+    elseif scene == SCENE_OFFER then
         if results[1] == 1 then
             player:accept_quest(EVENT_ID)
             player:quest_sequence(EVENT_ID, 1)

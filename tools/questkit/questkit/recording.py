@@ -216,6 +216,20 @@ class Recordings:
                 best = events
         return best
 
+    def layout_bases(self) -> dict[int, int]:
+        """Layout IDs to base IDs: the NPCs Kawari Recorder saw (world.json) and every quest step's target."""
+        bases: dict[int, int] = {}
+        for recording in self.recordings:
+            world = recording.json("world.json") or {}
+            for npc in (world.get("Npcs") or {}).values():
+                if npc.get("LayoutId") and npc.get("BaseId"):
+                    bases.setdefault(int(npc["LayoutId"]), int(npc["BaseId"]))
+            for quest in recording.quests.values():
+                for raw in quest.get("Events", []):
+                    if raw.get("TargetLayoutId") and raw.get("TargetBaseId"):
+                        bases.setdefault(int(raw["TargetLayoutId"]), int(raw["TargetBaseId"]))
+        return bases
+
     def notices(self, quest_id: int) -> tuple[list[Notice], bool]:
         """The quest's notices, and whether any recording's packets covered the quest at all (if not, an empty list
         means unknown rather than none.)"""

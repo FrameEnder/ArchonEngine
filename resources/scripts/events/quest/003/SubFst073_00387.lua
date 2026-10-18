@@ -4,8 +4,8 @@
 -- The Quest sheet doesn't name this quest's scenes; the numbers come from the client's script and Sapphire's.
 -- Sequence 0:   ACTOR0 (Armelle) offers the quest (scene 0, returns 1 when accepted; the client itself refuses it while
 --               QST_ACCEPT_CHECK isn't complete), then explains it (scene 1, which shows the quest as accepted.)
--- Sequence 1:   search the two fallen cargoes, EOBJECT0 and EOBJECT1, in either order (EVENT_ACTION_SEARCH, then scene
---               2 or 3.) Each gives one ITEM0 (counted in UI8BH; the client lists it as a key item from that), counts in
+-- Sequence 1:   search the two fallen cargoes, EOBJECT0 and EOBJECT1, in either order (scene 2 or 5, then
+--               EVENT_ACTION_SEARCH, then scene 3 or 6, as Bob's Chronofoil capture of 2026-10-14 shows.) Each gives one ITEM0 (counted in UI8BH; the client lists it as a key item from that), counts in
 --               UI8AL and sets its BitFlag8 (1 or 2, in UI8F) so the client stops offering it, and sends notice 0 with
 --               [count, 2, ITEM0's icon], the progress pop-up. The second moves straight to sequence 255 with the count
 --               and flags cleared (the items stay.)
@@ -21,10 +21,10 @@ SCENE_AMBUSH = 22
 SCENE_TRADE = 23
 SCENE_TRADE_OK = 24
 
--- Each fallen cargo: its scene and BitFlag8 index.
+-- Each fallen cargo: its scenes before and after the progress bar, and its BitFlag8 index.
 CARGOES = {
-    [EOBJECT0] = { scene = 2, flag = 1 },
-    [EOBJECT1] = { scene = 3, flag = 2 },
+    [EOBJECT0] = { before = 2, scene = 3, flag = 1 },
+    [EOBJECT1] = { before = 5, scene = 6, flag = 2 },
 }
 CARGOES_NEEDED = 2
 
@@ -32,9 +32,7 @@ CARGOES_NEEDED = 2
 NOTICE_PROGRESS = 0
 ITEM0_ICON = 21003
 
--- The scene after a search has nothing to show, so it plays without hiding the hotbar (as Sapphire does), which
--- would only make it flicker once the progress bar ends.
-SEARCH_SCENE_FLAGS = 0
+SEARCH_SCENE_FLAGS = HIDE_HOTBAR | NO_DEFAULT_CAMERA -- retail's (Bob's Chronofoil capture of 2026-10-14)
 
 -- Quest variables: UI8A..F are bytes 0..5, H is the high nibble and L the low one.
 function getVar(player, byte, high)
@@ -81,9 +79,9 @@ function onTalk(target, player)
     if sequence == nil and BASE_ID == ACTOR0 then
         play(player, SCENE_OFFER, HIDE_HOTBAR)
     elseif sequence == 1 and cargo ~= nil and not hasFlag(player, cargo.flag) then
-        -- Searching shows a progress bar; the cargo's scene plays once it finishes (see onEventActionCast.)
+        -- The cargo's first scene, the progress bar (see sceneFinished), then its scene once that finishes.
         searching = cargo
-        player:event_action(EVENT_ACTION_SEARCH)
+        play(player, cargo.before, SEARCH_SCENE_FLAGS)
     elseif sequence == 255 and BASE_ID == ACTOR1 then
         play(player, SCENE_TRADE, HIDE_HOTBAR)
     else
@@ -138,6 +136,10 @@ function sceneFinished(scene, results, player)
     elseif scene == SCENE_ACCEPTED then
         player:accept_quest(EVENT_ID)
         player:quest_sequence(EVENT_ID, 1)
+    elseif searching ~= nil and scene == searching.before then
+        -- Searching shows a progress bar; the cargo's scene plays once it finishes (see onEventActionCast.)
+        player:event_action(EVENT_ACTION_SEARCH)
+        return
     elseif searching ~= nil and scene == searching.scene then
         local flag = searching.flag
         searching = nil

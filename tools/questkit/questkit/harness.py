@@ -11,7 +11,10 @@ What it copies from the server (servers/world/src/events/lua.rs, lua/player.rs, 
   reward) with error code 0 unless the step gives other results (a list, or {"results": [...], "error": n} for a
   scene that answers through its error code, like The Gridanian Envoy's gangplanks; "yield": true sends it to
   onYield, as the client does for some scenes, where the script handles the two apart), and an event action's progress
-  bar always completes. The error code is the script's `player.scene_error_code`, as on the server.
+  bar always completes. The error code is the script's `player.scene_error_code`, as on the server. A fixture made
+  from Chronofoil gives every scene retail's own answer instead (its "scenes" list);
+* every scene the script plays (number, flags, parameters) and what it does outside the quest (zone changes, quest
+  battles, aetherytes, unlocks: "effects") is kept, for replay to compare with retail.
 
 Needs lupa (pip install lupa) for Lua 5.4, which the server uses too.
 """
@@ -76,6 +79,22 @@ def _values(table) -> list:
         return [table[i] for i in range(1, len(table) + 1)]
     except TypeError:
         return list(table.values())
+
+
+def _effect(task: Task) -> dict | None:
+    """What a task does outside the quest, in a fixture's "effects" terms: a zone change (to a quest battle too), an
+    aetheryte attuned, an unlock."""
+    if task.kind == "join_battle":
+        return {"zone": int(task.args[1])}
+    if task.kind == "aetheryte":
+        return {"aetheryte": int(task.args[0])}
+    if task.kind == "call" and len(task.args) >= 2:
+        name, first = task.args[0], task.args[1]
+        if name in ("change_territory", "change_territory_pop_range"):
+            return {"zone": int(first)}
+        if name == "unlock":
+            return {"unlock": int(first)}
+    return None
 
 
 class FakePlayer:
@@ -249,9 +268,14 @@ class Harness:
 
     def _drive(self, first: list[Task], results: dict, trace: list) -> dict:
         """Plays the client's side of an event until the script finishes it."""
-        outcome = {"notices": [], "scenes": [], "finished": False, "calls": [], "spawned": []}
+        outcome = {"notices": [], "scenes": [], "played": [], "effects": [], "finished": False, "calls": [],
+                   "spawned": []}
         pending = list(first)
         callbacks = 0
+        # A fixture's "scenes" (what retail played, in order): each scene takes the client's answer from the first
+        # unused entry with its number.
+        unused = list(results) if isinstance(results, list) else None
+        nested = False
         while True:
             scene = None
             action = False
@@ -262,6 +286,9 @@ class Harness:
                 elif task.kind == "scene":
                     scene = task.args[0]
                     outcome["scenes"].append(scene)
+                    # A scene after start_event is the nested event's (the cities' openings), not the quest's.
+                    if not nested:
+                        outcome["played"].append({"scene": scene, "flags": task.args[1], "params": task.args[2]})
                 elif task.kind == "event_action":
                     action = True
                 elif task.kind == "finish_event":
@@ -270,13 +297,23 @@ class Harness:
                     outcome["spawned"].append(task.args[0])
                 elif task.kind in ("call", "join_battle"):
                     outcome["calls"].append(task.kind if task.kind != "call" else task.args[0])
+                    nested = nested or (task.kind == "call" and task.args[0] == "start_event")
+                effect = _effect(task)
+                if effect is not None:
+                    outcome["effects"].append(effect)
             if outcome["finished"] and (scene is not None or action):
                 raise HarnessError("the script played something after finishing the event")
             callbacks += 1
             if callbacks > MAX_CALLBACKS:
                 raise HarnessError("the event never ends (more than 64 callbacks)")
             if scene is not None:
-                values = results.get(str(scene), results.get(scene, DEFAULT_RESULTS))
+                if unused is not None:
+                    entry = next((e for e in unused if e.get("scene") == scene), None)
+                    if entry is not None:
+                        unused.remove(entry)
+                    values = entry if entry is not None else DEFAULT_RESULTS
+                else:
+                    values = results.get(str(scene), results.get(scene, DEFAULT_RESULTS))
                 error = 0
                 yielded = False
                 if isinstance(values, dict):
@@ -322,7 +359,8 @@ class Harness:
         self._new_state(None)
         trace = trace if trace is not None else []
         if self.lua.globals().onBNpcKill is None:
-            return {"notices": [], "scenes": [], "finished": True, "calls": [], "spawned": [], "no_handler": True}
+            return {"notices": [], "scenes": [], "played": [], "effects": [], "finished": True, "calls": [],
+                    "spawned": [], "no_handler": True}
         first = self._call("onBNpcKill", base_id, layout_id, self.player)
         outcome = self._drive(first, {}, trace)
         outcome["finished"] = True  # kills aren't events
@@ -337,7 +375,8 @@ class Harness:
             raise HarnessError("battle_won for a quest that isn't active")
         quest.sequence = sequence
         self.world.battle = None
-        return {"notices": [], "scenes": [], "finished": True, "calls": [], "spawned": []}
+        return {"notices": [], "scenes": [], "played": [], "effects": [], "finished": True, "calls": [],
+                "spawned": []}
 
     def state(self) -> dict:
         quest = self.world.quests.get(self.quest)

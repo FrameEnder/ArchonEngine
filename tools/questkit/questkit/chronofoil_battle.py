@@ -93,10 +93,16 @@ def run_from_visit(capture: Capture, tables: dict, visit: Visit) -> dict:
             continue
         if position > visit.last:
             break
-        if segment.dir != "out":
-            continue
         name = names.name(segment)
         data, t, src = segment.data, segment.t, segment.src
+        if segment.dir != "out":
+            # When the client finishes a director's scene (a cutscene halfway through, the closing scene.)
+            if name.startswith(("EventReturnHandler", "EventYieldHandler")) and len(data) >= 6:
+                handler, scene = struct.unpack_from("<IH", data, 0)
+                if handler >= 0x80000000:
+                    events.append({"S": at(t), "Kind": "scene end", "Id": 0,
+                                   "Text": f"event 0x{handler:08X} scene {scene}"})
+            continue
         if you is None and segment.dst:
             you = segment.dst
         try:
@@ -165,6 +171,12 @@ def run_from_visit(capture: Capture, tables: dict, visit: Visit) -> dict:
                     targets.append(entry)
                 actions.append({"S": at(t), "Source": src, "Action": action, "Type": kind,
                                 "SourceHp": hp.get(src), "Targets": targets})
+            elif name.startswith("EventScene") and len(data) >= 20:
+                handler, scene = struct.unpack_from("<IH", data, 8)
+                flags, = struct.unpack_from("<I", data, 16)
+                if handler >= 0x80000000:  # the director's own (60000 starts the fight, 60001 is "Duty Complete")
+                    events.append({"S": at(t), "Kind": "scene", "Id": 0,
+                                   "Text": f"event 0x{handler:08X} scene {scene} flags 0x{flags:X}"})
             elif name == "DirectorVars" and len(data) >= 16:
                 handler, sequence, branch = struct.unpack_from("<IBB", data, 0)
                 variables = list(data[6:16])

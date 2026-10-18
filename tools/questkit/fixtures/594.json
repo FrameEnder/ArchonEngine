@@ -1,7 +1,7 @@
 {
   "quest": 594,
   "script": "ManWil001_00594",
-  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-17), a fresh Ul'dah character; which scenes the client yields from Bob's Chronofoil capture of the same session",
+  "source": "Kawari Recorder export from retail 2026.10.06 (2026-10-17), a fresh Ul'dah character; which scenes the client yields from Bob's Chronofoil capture of the same session; scenes and effects from Bob's Chronofoil capture of 2026-10-17",
   "params": {
     "ACTOR0": 1003987,
     "ACTOR1": 1003988,
@@ -25,40 +25,22 @@
       "talk": 1003987,
       "layout": 3969639,
       "what": "ACTOR0",
-      "expect": {
-        "sequence": 255,
-        "vars": "000000000000",
-        "notices": []
-      },
-      "results": {
-        "0": {
-          "results": [1, 0],
-          "yield": true
-        },
-        "1": {
-          "results": [1, 0],
-          "yield": true
-        },
-        "2": {
-          "results": [1, 0],
-          "yield": true
-        }
-      }
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0xf8482efb", "results": [1, 0, 0], "yield": true},
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
     },
     {
       "talk": 1003988,
       "layout": 3969632,
       "what": "ACTOR1",
-      "expect": {
-        "completed": true,
-        "notices": []
-      },
-      "results": {
-        "5": {
-          "results": [1, 0],
-          "yield": true
-        }
-      }
+      "scenes": [
+        {"scene": 4, "flags": "0xf8402efb", "results": [0, 0]},
+        {"scene": 5, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
     }
   ]
 }

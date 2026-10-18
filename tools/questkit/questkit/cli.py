@@ -26,6 +26,14 @@ def _fixture(args) -> int:
     from . import fixtures
     from .recording import Recordings
 
+    if args.chronofoil:
+        return _fixture_chronofoil(args)
+    if not args.recording:
+        print("Give a Recorder export (--recording) or Chronofoil captures (--chronofoil)")
+        return 1
+    if not args.dumps:
+        print("Give kawari-questdump's output folder (--dumps)")
+        return 1
     recordings = Recordings.open(args.recording)
     quests = recordings.quest_ids if args.quests == ["all"] else [int(q) for q in args.quests]
     status = 0
@@ -43,6 +51,61 @@ def _fixture(args) -> int:
         fixtures.save(fixture, path)
         todo = sum(1 for step in fixture["steps"] if "todo" in step)
         print(f"{quest}: wrote {path} ({len(fixture['steps'])} steps{f', {todo} to fill in' if todo else ''})")
+    return status
+
+
+def _fixture_chronofoil(args) -> int:
+    """Fixtures from Chronofoil captures: every talk with its scenes and effects (see fixtures.build_from_chronofoil.)"""
+    from . import chronofoil, chronofoil_quest, fixtures
+    from .recording import Recordings
+
+    captures = chronofoil.find_captures(args.chronofoil)
+    if args.capture != "all":
+        captures = [captures[int(n)] for n in args.capture.split(",")]
+    if not captures:
+        print("No Chronofoil captures found")
+        return 1
+    if args.quests == ["all"]:
+        print("Name the quests: a Chronofoil capture holds every quest the session touched")
+        return 1
+    quests = [int(q) for q in args.quests]
+    tables = chronofoil.load_opcodes()
+    flows = chronofoil_quest.quest_events(captures, tables, quests)
+    bases = chronofoil_quest.object_bases(captures, tables)
+    if args.recording:
+        for layout, base in Recordings.open(args.recording).layout_bases().items():
+            bases.setdefault(layout, base)
+    dates = sorted({c.start.date().isoformat() for c in captures if c.start})
+    status = 0
+    for quest in quests:
+        path = fixtures.fixture_path(quest)
+        previous = fixtures.load(path) if path.exists() else None
+        dump = fixtures.load_dump(Path(args.dumps), quest) if args.dumps else None
+        if dump is None and previous is not None:
+            # No dump: the existing fixture has the parameters.
+            dump = {"script": previous.get("script", ""),
+                    "params": [{"name": k, "value": v} for k, v in previous.get("params", {}).items()]}
+        if dump is None:
+            print(f"{quest}: no dump in {args.dumps} (kawari-questdump dump {quest}) and no fixture yet")
+            status = 1
+            continue
+        if not flows.get(quest):
+            print(f"{quest}: not in these captures")
+            status = 1
+            continue
+        source = args.source or (previous or {}).get("source", "")
+        note = f"scenes and effects from Bob's Chronofoil capture of {', '.join(dates)}"
+        if note not in source:
+            source = f"{source}; {note}" if source else note
+        fixture = fixtures.build_from_chronofoil(quest, flows[quest], dump, bases, source, previous)
+        if path.exists() and not args.force:
+            print(f"{quest}: {path} exists, --force to replace it")
+            continue
+        fixtures.save(fixture, path)
+        todo = [step["todo"] for step in fixture["steps"] if "todo" in step]
+        print(f"{quest}: wrote {path} ({len(fixture['steps'])} steps{f', {len(todo)} to fill in' if todo else ''})")
+        for text in todo:
+            print(f"    todo: {text}")
     return status
 
 
@@ -217,6 +280,18 @@ def _chronofoil(args) -> int:
         print(f"Wrote {len(objects)} battle NPCs ({sum(o['data']['hostile'] for o in objects)} hostile) to {out}; "
               f"left out: {skipped or 'nothing'}")
         return 0
+    if args.quest:
+        from . import chronofoil_quest
+
+        numbers = range(len(captures)) if args.which == "all" else [int(n) for n in args.which.split(",")]
+        quests = [int(q) for q in args.quest.split(",")]
+        flows = chronofoil_quest.quest_events([captures[n] for n in numbers], tables, quests)
+        for quest in quests:
+            events = flows.get(quest, [])
+            print(f"## Quest {quest}: {len(events)} events")
+            if events:
+                print(chronofoil_quest.describe(events))
+        return 0 if flows else 1
     if args.battle:
         import gzip
         import json
@@ -256,6 +331,40 @@ def _chronofoil(args) -> int:
     return 0
 
 
+def _battle_sim(args) -> int:
+    from . import battle_sim
+
+    if args.make is not None:
+        import gzip
+        import json
+
+        if not args.run_file:
+            print("--make needs --run: a battle run (questkit chronofoil --battle N.V --out run.json.gz)")
+            return 1
+        raw = Path(args.run_file).read_bytes()
+        run = json.loads(gzip.decompress(raw) if raw[:2] == b"\x1f\x8b" else raw)
+        fixture = battle_sim.fixture_from_run(run, args.make, args.source or run.get("Source", ""))
+        path = battle_sim.BATTLES / f"{args.make}.json"
+        if path.exists() and not args.force:
+            print(f"{path} exists, --force to replace it")
+            return 1
+        battle_sim.save(fixture, path)
+        print(f"Wrote {path}: {len(fixture['npcs'])} NPCs, {len(fixture['events'])} events")
+        return 0
+    numbers = [int(n) for n in args.battles] if args.battles else None
+    results = battle_sim.run_all(numbers)
+    print(battle_sim.format_results(results, verbose=args.verbose))
+    return 0 if results and all(r.ok for r in results) else 1
+
+
+def _lint(args) -> int:
+    from . import lint
+
+    report = lint.run()
+    print(lint.format_report(report))
+    return 0 if report.ok else 1
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="questkit", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -266,11 +375,18 @@ def main(argv=None) -> int:
     p.add_argument("--write", action="store_true", help="write TRIAGE.md into the bundle instead of printing")
     p.set_defaults(run=_triage)
 
-    p = commands.add_parser("fixture", help="make replay fixtures from a Kawari Recorder export and quest dumps")
-    p.add_argument("quests", nargs="+", help="quest numbers, or all")
-    p.add_argument("--recording", action="append", required=True,
-                   help="a Recorder export (zip or unpacked folder); repeat for several")
-    p.add_argument("--dumps", required=True, help="kawari-questdump's output folder (quest-dumps)")
+    p = commands.add_parser("fixture", help="make replay fixtures from Chronofoil captures or a Kawari Recorder "
+                                            "export, and quest dumps")
+    p.add_argument("quests", nargs="+", help="quest numbers, or all (Recorder exports only)")
+    p.add_argument("--chronofoil", action="append",
+                   help="Chronofoil captures (a folder, captures or capture folders): fixtures with every talk, "
+                        "scene and effect; repeatable")
+    p.add_argument("--capture", default="all", help="with --chronofoil: which captures, by number (e.g. 3,4,5)")
+    p.add_argument("--recording", action="append",
+                   help="a Recorder export (zip or unpacked folder); repeat for several. With --chronofoil, only "
+                        "for the base IDs of the NPCs talked to")
+    p.add_argument("--dumps", help="kawari-questdump's output folder (quest-dumps); with --chronofoil, an existing "
+                                   "fixture's parameters do without")
     p.add_argument("--source", help="where the recording came from, kept in the fixture")
     p.add_argument("--force", action="store_true", help="replace existing fixtures")
     p.set_defaults(run=_fixture)
@@ -325,6 +441,9 @@ def main(argv=None) -> int:
                    help="write visit V of capture N (numbers from the index) as a Kawari packet capture")
     p.add_argument("--battle", metavar="N.V",
                    help="turn visit V of capture N into a battle run for `questkit battle` (or a report, with --out x.md)")
+    p.add_argument("--quest", metavar="Q[,Q]",
+                   help="what these quests did: talks, scenes (flags, yield or return, results), updates, notices, "
+                        "zone changes and unlocks")
     p.add_argument("--dropin", metavar="TERRITORY", type=int,
                    help="write the territory's battle NPCs (every spawn seen) as a drop-in; needs --appends")
     p.add_argument("--appends", help="the drop-in's LGB, e.g. bg/ffxiv/wil_w1/fld/w1f2/level/planmap.lgb")
@@ -336,6 +455,19 @@ def main(argv=None) -> int:
     p.add_argument("--save-opcodes", action="store_true",
                    help="save Kawari's current opcodes for its game version (before merging a new patch)")
     p.set_defaults(run=_chronofoil)
+
+    p = commands.add_parser("battle-sim", help="run quest battle scripts against what the same battles did on retail")
+    p.add_argument("battles", nargs="*", help="only these quest battles")
+    p.add_argument("-v", "--verbose", action="store_true", help="every matched event and its timing")
+    p.add_argument("--make", type=int, metavar="QUEST_BATTLE", help="make this quest battle's fixture from --run")
+    p.add_argument("--run", dest="run_file", help="a battle run (questkit chronofoil --battle N.V --out x.json.gz)")
+    p.add_argument("--source", help="where the run came from, kept in the fixture")
+    p.add_argument("--force", action="store_true", help="replace an existing fixture")
+    p.set_defaults(run=_battle_sim)
+
+    p = commands.add_parser("lint", help="find what fails silently in game: unscripted NPC actions, quest battle "
+                                         "NPCs without timelines, checked scripts without fixtures")
+    p.set_defaults(run=_lint)
 
     p = commands.add_parser("lua-syntax", help="check that every Lua script compiles (Lua 5.4, like the server)")
     p.add_argument("path", nargs="?", help="a folder of scripts (default: resources/scripts)")

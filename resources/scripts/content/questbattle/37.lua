@@ -10,7 +10,7 @@
 --   5      the stranger: battle talk 114
 --   the blanga at 70%: sequence 3, two lesser blangas (they go after you); the stranger 115 seven seconds later and
 --          116 five after that
---   those two down: the stranger 117 six seconds later
+--   those two down: the stranger 117 eight seconds after the last one's health reached 0
 --   the blanga at 40%: sequence 4, two more; the stranger 118 ten seconds later
 --   the blanga at about 23%: sequence 5, the last two (it went from 24.2% to 22.1% around then; one run can't tell
 --          whether this goes by its health or comes 15 s after the second pair, as it also did)
@@ -52,7 +52,7 @@ PAIR_STEPS = {
     [1] = { { 14, "talk", SPEAKER_STRANGER, 115 }, { 10, "talk", SPEAKER_STRANGER, 116 } },
     [2] = { { 20, "talk", SPEAKER_STRANGER, 118 } },
 }
-FIRST_PAIR_CLEARED_STEPS = { { 12, "talk", SPEAKER_STRANGER, 117 } }
+FIRST_PAIR_CLEARED_STEPS = { { 16, "talk", SPEAKER_STRANGER, 117 } }
 LOW_HEALTH = 10
 LOW_HEALTH_STEPS = { { 0, "talk", SPEAKER_STRANGER, 119 } }
 

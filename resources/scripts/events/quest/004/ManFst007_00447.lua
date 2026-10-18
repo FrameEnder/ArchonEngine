@@ -26,7 +26,7 @@ SCENE_DOOR_FINISH = 22
 
 NOTICE_DELIVERED = 0
 
-CUTSCENE_FLAGS = FADE_OUT | CONDITION_CUTSCENE | HIDE_UI
+CUTSCENE_FLAGS = SET_BASE | HIDE_HOTBAR -- 0xF8402EFB, as retail plays its cutscenes (Bob's Chronofoil capture of 2026-10-14)
 
 -- Quest variables: UI8A..F are bytes 0..5, H is the high nibble and L the low one.
 function getVar(player, byte, high)
@@ -67,7 +67,8 @@ function onTalk(target, player)
     elseif sequence == 2 and BASE_ID == ACTOR3 then
         play(player, SCENE_BATTLE, HIDE_HOTBAR)
     elseif sequence == 255 and BASE_ID == ACTOR1 then
-        play(player, SCENE_REWARD, HIDE_HOTBAR)
+        -- Retail's flags for the reward scene (Bob's Chronofoil capture of 2026-10-16.)
+        play(player, SCENE_REWARD, DISABLE_STEALTH | HIDE_HOTBAR | CONDITION_CUTSCENE)
     elseif sequence == 255 and BASE_ID == ACTOR2 then
         play(player, SCENE_DOOR_FINISH, HIDE_HOTBAR)
     else

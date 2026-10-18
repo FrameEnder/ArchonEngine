@@ -1,7 +1,7 @@
 {
   "quest": 445,
   "script": "ManFst005_00445",
-  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387; notices from Bob's Chronofoil capture of retail 2026.10.06",
+  "source": "Kawari Recorder exports from retail 2026.09.15-2026.10.06, a fresh character from the opening to quest 387; notices from Bob's Chronofoil capture of retail 2026.10.06; scenes and effects from Bob's Chronofoil capture of 2026-10-14, 2026-10-15, 2026-10-16",
   "params": {
     "ACTOR0": 1000421,
     "EOBJECT0": 2000953,
@@ -20,49 +20,57 @@
   "steps": [
     {
       "talk": 1000421,
+      "layout": 1145504,
       "what": "ACTOR0",
-      "expect": {
-        "sequence": 1,
-        "vars": "000000000000",
-        "notices": []
-      }
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0xf8402efb", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
     },
     {
       "talk": 2000953,
-      "what": "EOBJECT0: into the quest battle"
+      "layout": 3802075,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 3, "flags": "0x2001", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 233}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
     },
     {
       "battle_won": 2,
-      "expect": {
-        "sequence": 2,
-        "vars": "000000000000",
-        "notices": []
-      }
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": []}
     },
     {
       "enter_territory": 148,
-      "expect": {
-        "sequence": 3,
-        "vars": "000000000000",
-        "notices": []
-      }
+      "scenes": [
+        {"scene": 5, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": []}
     },
     {
       "talk": 2001194,
+      "layout": 4202446,
       "what": "EOBJECT1",
-      "expect": {
-        "sequence": 255,
-        "vars": "001000000000",
-        "notices": [[2, [30426]]]
-      }
+      "scenes": [
+        {"scene": 6, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 7, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001000000000", "notices": [[2, [30426]]]}
     },
     {
       "talk": 1000421,
+      "layout": 1145504,
       "what": "ACTOR0",
-      "expect": {
-        "completed": true,
-        "notices": []
-      }
+      "scenes": [
+        {"scene": 9, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 10, "flags": "0xf8402efb", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
     }
   ]
 }

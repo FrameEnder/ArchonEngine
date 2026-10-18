@@ -26,26 +26,26 @@ BATTLE:ally(BNPC_IDA, { role = "tank", class_role = "dps", protect = false, focu
 PAPALYMO_RANGE = 10
 PAPALYMO_STAYS_WITHIN = 15
 INITIAL_ENEMIES = { a = {}, b = { 4094218, 4094220 } }
--- What arrives as the boss's health drops to 75%, 50% and 25%.
+-- What arrives as the boss's health drops to 75%, 45% and 25%. Sapphire has 50% for the second wave; Bob's
+-- Chronofoil capture (2026-10-14, questkit battle-sim) shows it coming as the boss went from 45.8% to 43.7%.
 WAVES = {
     { health = 75, a = { 4094238, 4094239 }, b = { 4094232, 4094233 } },
-    { health = 50, a = { 4094240, 4094471 }, b = { 4094474, 4094475 } },
+    { health = 45, a = { 4094240, 4094471 }, b = { 4094474, 4094475 } },
     { health = 25, a = { 4094472, 4094473 }, b = {} },
 }
 
 -- The quest moves to this sequence when the battle is won.
 QUEST_SEQUENCE_AFTER_WIN = 2
--- The director's sequence, as retail moves it along (recorded with Kawari Recorder): 1 at the start (the client's script
--- shows the duty objective for it), 2 when the fight gets going 8.5 seconds in, 3, 4 and 5 as each wave arrives, and 6
--- once it's won. Losing sets it to 0xFE (the client shows "Duty Failed"), and the six seconds before sending the player
+-- The director's sequence, as retail moves it along: 1 before the opening cutscene (the client's script shows the duty
+-- objective for it), 2 the moment the fight starts (scene 60000, Kawari's onCommence; the Recorder's "8.5 seconds in"
+-- was from entering, Bob's Chronofoil capture of 2026-10-14 shows), 3, 4 and 5 as each wave arrives, and 6 once it's
+-- won. Losing sets it to 0xFE (the client shows "Duty Failed"), and the six seconds before sending the player
 -- out are what Sapphire's quest battles do.
 SEQUENCE_START = 1
 SEQUENCE_FIGHTING = 2
 SEQUENCE_FIRST_WAVE = 3
 SEQUENCE_WON = 6
 SEQUENCE_FAILED = 0xFE
--- How many updates (half a second each) after starting the fight gets going.
-FIGHT_STARTS_IN = 17
 -- How many updates (half a second each) to wait after the player falls before sending them out.
 FAIL_DELAY_UPDATES = 12
 
@@ -56,12 +56,12 @@ HEAL_COOLDOWN_UPDATES = 8
 
 -- Ida and Papalymo's battle chatter, in the battle talk window (DirectorPopupMessage): who says it (their BNpcName and
 -- portrait in this battle) and the content's text ID, from Bob's Chronofoil capture of retail (2026-10-14). When and in
--- what order is from Kawari Recorder's recording of retail, and the capture agrees: the first lines 4.5 seconds after
--- the fight gets going, the first wave's 10 seconds after it arrives, each pair 5 seconds apart.
+-- what order is from Kawari Recorder's recording of retail, and the capture agrees: the first lines 5 seconds after
+-- the fight starts, the first wave's 10 seconds after it arrives, each pair 5 seconds apart.
 SPEAKER_PAPALYMO = { layout = BNPC_PAPALYMO, name = 1376, icon = 0x11dcc }
 SPEAKER_IDA = { layout = BNPC_IDA, name = 1375, icon = 0x11dc4 }
 LINES_START = { { SPEAKER_PAPALYMO, 126 }, { SPEAKER_IDA, 130 } }
-LINES_START_DELAY = 9
+LINES_START_DELAY = 10
 LINES_WAVE = {
     [1] = { { SPEAKER_IDA, 131 }, { SPEAKER_PAPALYMO, 127 } },
 }
@@ -71,8 +71,10 @@ LINES_WAVE_DELAY = 19
 YELLS_LAST_WAVE = { { BNPC_PAPALYMO, 118 }, { BNPC_IDA, 117 } }
 YELL_LAST_WAVE_DELAY = 13
 YELL_GAP_UPDATES = 3
--- Once the last wave's enemies are defeated, Papalymo says this.
+-- Once the last wave's enemies are defeated, Papalymo says this, 3 s after the last one's health reached 0 (the
+-- capture, questkit battle-sim.)
 LINE_LAST_WAVE_CLEARED = { { SPEAKER_PAPALYMO, 128 } }
+LINE_LAST_WAVE_CLEARED_DELAY = 6
 -- Said in /say when Papalymo heals the player, at most this often (in updates): the quest's text by key, as retail's
 -- text ID for it hasn't been seen (no heal in the capture.)
 TEXT_PREFIX = "TEXT_MANFST005_00445_"
@@ -163,23 +165,21 @@ for n, wave in ipairs(WAVES) do
             BATTLE:steps(yells(YELLS_LAST_WAVE, YELL_LAST_WAVE_DELAY))
             last_wave = enemies(wave)
             BATTLE:onCleared(last_wave, function()
-                BATTLE:steps(lines(LINE_LAST_WAVE_CLEARED))
+                BATTLE:steps(lines(LINE_LAST_WAVE_CLEARED, LINE_LAST_WAVE_CLEARED_DELAY))
             end)
         end
     end)
 end
 
 function onSetup(director)
+    director:set_sequence(SEQUENCE_START)
 end
 
 function onCommence(director)
-    director:set_sequence(SEQUENCE_START)
+    director:set_sequence(SEQUENCE_FIGHTING)
     BATTLE:spawn(director, { BNPC_IDA, BNPC_PAPALYMO })
     BATTLE:spawn(director, { BNPC_BOSS })
     BATTLE:spawn(director, enemies(INITIAL_ENEMIES))
-    -- The fight gets going FIGHT_STARTS_IN updates in, and the first lines follow.
-    -- (A step runs the update after its count is up, hence the one less.)
-    BATTLE:steps({ { FIGHT_STARTS_IN - 1, "sequence", SEQUENCE_FIGHTING } })
     BATTLE:steps(lines(LINES_START, LINES_START_DELAY))
 end
 

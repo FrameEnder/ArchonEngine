@@ -80,7 +80,7 @@ LIMSA_BELOW = { position = { x = -13.95, y = 91.5, z = -5.88 }, rotation = 2.89 
 ULDAH_ARRIVAL = { position = { x = -44.14, y = 84.0, z = -0.47 }, rotation = 1.3 }
 ULDAH_BELOW = { position = { x = -19.45, y = 83.2, z = 3.85 }, rotation = 1.8 }
 
-CUTSCENE_FLAGS = FADE_OUT | CONDITION_CUTSCENE | HIDE_UI
+CUTSCENE_FLAGS = SET_BASE | HIDE_HOTBAR -- 0xF8402EFB, as retail plays its cutscenes (Bob's Chronofoil capture of 2026-10-14)
 
 -- Quest variables: UI8A..F are bytes 0..5, H is the high nibble and L the low one.
 function getVar(player, byte, high)
@@ -111,10 +111,10 @@ end
 
 -- Where the scenes that only move you about leave you.
 MOVES = {
-    [SCENE_GRIDANIA_TICKETS_AGAIN] = GRIDANIA_LANDING,
-    [SCENE_LIMSA_ATTENDANT] = LIMSA_BELOW,
-    [SCENE_LIMSA_TICKETS_AGAIN] = LIMSA_LANDING,
-    [SCENE_ULDAH_ATTENDANT] = ULDAH_BELOW,
+    [SCENE_GRIDANIA_TICKETS_AGAIN] = { GRIDANIA, GRIDANIA_LANDING },
+    [SCENE_LIMSA_ATTENDANT] = { LIMSA, LIMSA_BELOW },
+    [SCENE_LIMSA_TICKETS_AGAIN] = { LIMSA, LIMSA_LANDING },
+    [SCENE_ULDAH_ATTENDANT] = { ULDAH, ULDAH_BELOW },
 }
 
 -- The scene the boarding progress bar leads to.
@@ -168,14 +168,11 @@ function onEventActionCast(player)
     play(player, scene, GANGPLANK_FLAGS)
 end
 
--- Ends the event and moves the player, to another zone or within this one.
+-- Ends the event and moves the player, to another zone or within this one. Retail moves them within a zone through a
+-- loading screen too (PrepareZoning to the same territory, Bob's Chronofoil capture of 2026-10-14), not on the spot.
 function move(player, territory, place)
     player:finish_event()
-    if territory ~= nil then
-        player:change_territory(territory, place.position, place.rotation)
-    else
-        player:set_position(place.position, place.rotation)
-    end
+    player:change_territory(territory, place.position, place.rotation)
 end
 
 function sceneFinished(scene, results, player)
@@ -204,11 +201,14 @@ function sceneFinished(scene, results, player)
         player:quest_sequence(EVENT_ID, 2)
     elseif scene == SCENE_GRIDANIA_TICKETS then
         player:quest_sequence(EVENT_ID, 3)
-        move(player, nil, GRIDANIA_LANDING)
+        move(player, GRIDANIA, GRIDANIA_LANDING)
         return
     elseif MOVES[scene] ~= nil then
-        move(player, nil, MOVES[scene])
-        return
+        -- A yes/no too: retail stays put when it's answered No (error code 50, Bob's Chronofoil capture.)
+        if player.scene_error_code ~= SCENE_DECLINED then
+            move(player, MOVES[scene][1], MOVES[scene][2])
+            return
+        end
     elseif BOARDING_AFTER_CHECK[scene] ~= nil then
         -- The check passed (retail goes straight on): the progress bar, then the yes/no (see onEventActionCast.)
         boarding = BOARDING_AFTER_CHECK[scene]
@@ -240,7 +240,7 @@ function sceneFinished(scene, results, player)
         player:quest_sequence(EVENT_ID, 6)
     elseif scene == SCENE_LIMSA_TICKETS then
         player:quest_sequence(EVENT_ID, 7)
-        move(player, nil, LIMSA_LANDING)
+        move(player, LIMSA, LIMSA_LANDING)
         return
     elseif scene == SCENE_LIMSA_BOARD then
         if player.scene_error_code ~= SCENE_DECLINED then

@@ -28,7 +28,7 @@ LOTUS_STAND_ENTRANCE = POPRANGE1 or 3877982
 AFTER_CEREMONY_TERRITORY = 179
 AFTER_CEREMONY = POPRANGE0 or 4106221
 
-CUTSCENE_FLAGS = FADE_OUT | CONDITION_CUTSCENE | HIDE_UI
+CUTSCENE_FLAGS = SET_BASE | HIDE_HOTBAR -- 0xF8402EFB, as retail plays its cutscenes (Bob's Chronofoil capture of 2026-10-14)
 
 -- Quest variables: UI8A..F are bytes 0..5, H is the high nibble and L the low one.
 function getVar(player, byte, high)

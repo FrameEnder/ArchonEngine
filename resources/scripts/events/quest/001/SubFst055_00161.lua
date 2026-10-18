@@ -36,7 +36,7 @@ NOTICE_REPORTED = 1
 NOTICE_EGG = 3
 NOTICE_RETURNED = 4
 -- Cutscenes play as Sapphire plays them.
-CUTSCENE_FLAGS = FADE_OUT | CONDITION_CUTSCENE | HIDE_UI
+CUTSCENE_FLAGS = SET_BASE | HIDE_HOTBAR -- 0xF8402EFB, as retail plays its cutscenes (Bob's Chronofoil capture of 2026-10-14)
 
 -- ITEM0's icon, as retail sends it with notice 3.
 ITEM0_ICON = 25252
@@ -96,7 +96,8 @@ function onTalk(target, player)
     elseif sequence == 3 and BASE_ID == ACTOR4 then
         play(player, SCENE_BATTLE, HIDE_HOTBAR)
     elseif sequence == 4 and BASE_ID == ACTOR4 then
-        play(player, SCENE_EGG, CUTSCENE_FLAGS)
+        -- Retail's flags here: the cutscene set without hiding event objects, and INVINCIBLE (0xF8406EF3.)
+        play(player, SCENE_EGG, (SET_BASE & ~INVIS_EOBJ) | HIDE_HOTBAR | INVINCIBLE)
     elseif sequence == 5 and BASE_ID == ACTOR0 then
         play(player, SCENE_TRADE, HIDE_HOTBAR)
     elseif sequence == 255 and BASE_ID == ACTOR0 then

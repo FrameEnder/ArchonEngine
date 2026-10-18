@@ -6,7 +6,8 @@
 --               quest battle (scene 3, YesNoQuestBattle returns 1.) Its todo is checked by UI8AL.
 --               QUESTBATTLE0 takes place in TERRITORYTYPE0, and winning it moves the quest to sequence 2.
 -- Sequence 2:   coming back into the Central Shroud plays the aftermath cutscenes (scene 5.)
--- Sequence 3:   examine the second magicked blade, EOBJECT1 (EVENT_ACTION_PROCESS_SHOR), which gives you ITEM0.
+-- Sequence 3:   examine the second magicked blade, EOBJECT1 (scene 6, EVENT_ACTION_PROCESS_SHOR, then scene 7), which
+--               gives you ITEM0.
 --               ITEM0 is held in UI8BH from here on, and notice 2 shows its icon (the only notice retail sends in
 --               this quest.)
 -- Sequence 255: hand ITEM0 to ACTOR0 (trade scene 9, returns 1 when handed over), then the reward (scene 10.)
@@ -15,6 +16,8 @@ SCENE_OFFER = 0
 SCENE_ACCEPTED = 1
 SCENE_EXAMINE_BLADE = 2
 SCENE_ENTER_BATTLE = 3
+SCENE_EXAMINE_SECOND = 6
+SCENE_SECOND_FOUND = 7
 SCENE_AFTERMATH = 5
 SCENE_TRADE = 9
 SCENE_FINISH = 10
@@ -23,9 +26,11 @@ SCENE_FINISH = 10
 NOTICE_ITEM0 = 2
 ITEM0_ICON = 30426
 
-CUTSCENE_FLAGS = FADE_OUT | CONDITION_CUTSCENE | HIDE_UI
-AFTERMATH_FLAGS = NO_DEFAULT_CAMERA | CONDITION_CUTSCENE | SILENT_ENTER_TERRI_ENV | HIDE_HOTBAR | SILENT_ENTER_TERRI_BGM | SILENT_ENTER_TERRI_SE | DISABLE_STEALTH | UNK1 | LOCK_HUD | LOCK_HOTBAR | DISABLE_CANCEL_EMOTE
-REWARD_FLAGS = FADE_OUT | HIDE_HOTBAR | CONDITION_CUTSCENE | HIDE_UI
+CUTSCENE_FLAGS = SET_BASE | HIDE_HOTBAR -- 0xF8402EFB, as retail plays its cutscenes (Bob's Chronofoil capture of 2026-10-14)
+AFTERMATH_FLAGS = SET_BASE | HIDE_HOTBAR -- 0xF8402EFB, as retail plays the aftermath (Bob's Chronofoil capture of 2026-10-14)
+-- The blade's scenes, as retail plays an object's (Bob's Chronofoil capture of 2026-10-14.)
+OBJECT_FLAGS = HIDE_HOTBAR | NO_DEFAULT_CAMERA
+REWARD_FLAGS = SET_BASE | HIDE_HOTBAR -- 0xF8402EFB, as retail plays its cutscenes (Bob's Chronofoil capture of 2026-10-14)
 
 -- Quest variables: UI8A..F are bytes 0..5, H is the high nibble and L the low one.
 function getVar(player, byte, high)
@@ -62,12 +67,12 @@ function onTalk(target, player)
     elseif sequence == 1 and BASE_ID == EOBJECT0 then
         if getVar(player, 0, false) == 1 then
             -- Already examined, they only need to agree to the battle this time.
-            play(player, SCENE_ENTER_BATTLE, HIDE_HOTBAR)
+            play(player, SCENE_ENTER_BATTLE, OBJECT_FLAGS)
         else
-            play(player, SCENE_EXAMINE_BLADE, HIDE_HOTBAR)
+            play(player, SCENE_EXAMINE_BLADE, OBJECT_FLAGS)
         end
     elseif sequence == 3 and BASE_ID == EOBJECT1 then
-        player:event_action(EVENT_ACTION_PROCESS_SHOR)
+        play(player, SCENE_EXAMINE_SECOND, OBJECT_FLAGS)
     elseif sequence == 255 and BASE_ID == ACTOR0 then
         play(player, SCENE_TRADE, HIDE_HOTBAR)
     else
@@ -89,12 +94,9 @@ function onEventActionCast(player)
 
     if sequence == 1 then
         setVar(player, 0, false, 1) -- UI8AL: the blade was examined
-        play(player, SCENE_ENTER_BATTLE, HIDE_HOTBAR)
+        play(player, SCENE_ENTER_BATTLE, OBJECT_FLAGS)
     elseif sequence == 3 then
-        setVar(player, 1, true, 1) -- UI8BH = 1: ITEM0
-        player:event_notice(EVENT_ID, NOTICE_ITEM0, { ITEM0_ICON })
-        player:quest_sequence(EVENT_ID, 255)
-        player:finish_event()
+        play(player, SCENE_SECOND_FOUND, OBJECT_FLAGS)
     else
         player:finish_event()
     end
@@ -118,6 +120,14 @@ function sceneFinished(scene, results, player)
         -- The event carries on once the progress bar finishes, see onEventActionCast.
         player:event_action(EVENT_ACTION_PROCESS_SHOR)
         return
+    elseif scene == SCENE_EXAMINE_SECOND then
+        -- The event carries on once the progress bar finishes, see onEventActionCast.
+        player:event_action(EVENT_ACTION_PROCESS_SHOR)
+        return
+    elseif scene == SCENE_SECOND_FOUND then
+        setVar(player, 1, true, 1) -- UI8BH = 1: ITEM0
+        player:event_notice(EVENT_ID, NOTICE_ITEM0, { ITEM0_ICON })
+        player:quest_sequence(EVENT_ID, 255)
     elseif scene == SCENE_ENTER_BATTLE then
         if results[1] == 1 then
             -- Retail's variables are all 0 once the battle is won (UI8AL only remembers the examined blade here.)

@@ -69,7 +69,9 @@ state after it:
 | `{"range": arg}` | Walked into an event range (`onEnterTrigger`) |
 | `{"enter_territory": id}` | Zoned in (`onEnterTerritory`) |
 | `{"battle_won": sequence}` | A quest battle was won (the director sets the sequence) |
-| `"expect": {"sequence", "vars", "notices"}` or `{"completed": true}` | The state after the step; `notices` is left out where the recording had no packets |
+| `"expect": {"sequence", "vars", "notices"}`, `{"completed": true}` or `{"accepted": false}` | The state after the step (`accepted: false`: the offer was turned down); `notices` is left out where the recording had no packets |
+| `"scenes": [{"scene", "flags", "params", "results", "yield", "error"}, …]` | Every scene retail played in the step, in order, with its flags (hex), parameters (when it had any) and the client's answer. The script must play the same scenes with the same flags and parameters, and each gets retail's answer (a fixture from Chronofoil) |
+| `"effects": [{"zone": id}, {"aetheryte": id}, {"unlock": id}]` | What retail did outside the quest while the event was open: zone changes (`change_territory`, a pop range, joining a quest battle), attunements, unlocks. With `scenes`, a step without `effects` must do none |
 | `"spawns": [layout, …]` | The step must bring these out (`spawn_quest_bnpc`) |
 | `"results": {"scene": [..]}` | What the client answers a scene with, if not `[1, 0]`; `{"results": [..], "error": n}` also sets the scene's error code (`player.scene_error_code`), for yes/nos that answer through it; `"yield": true` sends it back through `onYield` as retail's client did (EventYieldHandler), even when the script has `onReturn` |
 | `"what"` | Which parameter the target is (for reading) |
@@ -80,19 +82,48 @@ state after it:
   `Global.lua`, the parameters, the script, then `EVENT_ID` and `BASE_ID`;
 * the script sees a copy of the quests: sequence/variable changes show up in it straight away, accepting doesn't;
 * queued tasks run in order after each callback; accepting starts a quest at sequence 255 (as `accept_quest` does);
-* the client's side is automatic: scenes return `[1, 0]` (accepted, handed over, first reward), progress bars
-  complete, and `onReturn` (or `onYield`) gets the scene back.
+* the client's side is automatic: with `scenes`, each scene gets retail's own answer; otherwise scenes return
+  `[1, 0]` (accepted, handed over, first reward). Progress bars complete, and `onReturn` (or `onYield`) gets the
+  scene back;
+* every scene the script plays (number, flags, parameters) and what it does outside the quest are kept. Scenes after
+  `start_event` are the nested event's (the cities' openings) and aren't compared.
 
 A step fails if the script errors, leaves the event **unfinished** (no `finish_event`, the client would hang), plays
-something after finishing, sends a notice with more than 4 arguments, or ends in a different sequence, variables or
-notices than retail. **It doesn't check scene numbers** (the client decides what a scene shows), so those still need
-the listing or a test in game.
+something after finishing, sends a notice with more than 4 arguments, ends in a different sequence, variables or
+notices than retail, or (fixtures from Chronofoil) plays other scenes or other flags than retail, or does other
+things outside the quest. What a scene *shows* is the client's, so a scene number right for the wrong reason still
+needs the listing.
 
-All 28 scripted quests have fixtures and match (Close to Home and Chasing Shadows only after the fixes the replay
-found, see the [Changelog](changelog.md)). The fixtures for quests with a quest battle use a `battle_won` step for it;
-the battle itself isn't replayed (its director script was simulated with lupa separately).
+All 28 scripted quests have fixtures from Bob's Chronofoil captures (2026-10-14 to 17) and match. Checking scenes and
+effects found real differences in 15 of them, all fixed (2026-10-17, see the [Changelog](changelog.md)): cutscenes
+played with `FADE_OUT | CONDITION_CUTSCENE | HIDE_UI` where retail uses `SET_BASE | HIDE_HOTBAR` (0xF8402EFB, which
+hides the other players and NPCs), searches and other progress bars missing the scene retail plays before the bar
+(the object's scene, the bar, then its "found it" scene, all `HIDE_HOTBAR | NO_DEFAULT_CAMERA`), The Gridanian Envoy
+moving you about without the loading screen retail shows and not honouring a "No" to the attendant, and a few scenes
+with their own flags. The fixtures for quests with a quest battle use a `battle_won` step for it; the battle itself
+is simulated by `battle-sim` (below).
 
 ### Making fixtures
+
+From **Chronofoil** (the better source: every talk, scene and effect):
+
+```shell
+python3 tools/questkit fixture 568 595 --chronofoil chronofoil/ --capture 3,4,5 --recording rec.zip --dumps quest-dumps
+```
+
+`chronofoil_quest.py` reads each quest's events out of the captures (`questkit chronofoil <folder> --quest 568`
+prints them): StartTalkEvent, EventStart, the scenes and the client's answers (EventReturnHandler or
+EventYieldHandler), notices, AcceptQuest/UpdateQuest/FinishQuest, EventFinish, and while the quest's event is open
+(or within a second after it), PrepareZoning and the ActorControlSelf LearnTeleport (509) and ToggleUnlock (41). Each
+talk or zone-entry event becomes a step; a quest change outside any event is a quest battle won (in TERRITORYTYPE0) or
+a kill. Talks that change nothing are steps too (agreeing to a quest battle); a progress bar broken off (a scene the
+client never answered) isn't, since nothing happened. The talked-to actor is the layout ID of an event NPC or object;
+its base ID comes from the server's SpawnObject packets, the Recorder export's NPC list (`--recording`, optional) or
+the existing fixture, which also gives what the capture can't (kills, `spawns`) by matching the state each step left
+the quest in. Unlocks in the step that completes a quest are left out: those are the Quest sheet's, sent by the
+server's `finish_quest`. Without a dump, the existing fixture's parameters are used.
+
+From a **Kawari Recorder** export:
 
 ```shell
 python3 tools/questkit fixture all --recording rec.zip --recording older.zip --dumps quest-dumps --source "…"
@@ -252,13 +283,65 @@ reads, chat left out), so `compare` and the rest can use it.
   you are just "player"), positions (ActorMove, ActorSetPos), HP (UpdateHpMpTp, EffectResult(Basic): the HP is the
   packet's own actor's), **targets** (ActorControlTarget SetTarget, which retail sends for NPCs too), deaths
   (Defeated), every action with its targets and effects, casts in the Recorder's text, the director's sequence and
-  variables, battle talk, NPC yells, map effects, every actor control, and the enemy list (HaterList, EnmityList). It
+  variables, its scenes (60000 starts the fight, 60001 is "Duty Complete") and when the client finished each, battle
+  talk, NPC yells, map effects, every actor control, and the enemy list (HaterList, EnmityList). It
   has no names (no game data here: NPCs show as `base N [layout]`), no Action sheet (shapes, omens, class kits) and no
   layout layers; positions only change when a packet moves someone.
+* **`--quest Q[,Q]`** prints what those quests did (`chronofoil_quest.py`): talks, scenes with their flags and the
+  client's answers (yield or return, results, error code), notices, quest updates, and the zone changes, attunements
+  and unlocks while their events were open. `questkit fixture --chronofoil` makes fixtures from the same reading.
 * Checked on To Guard a Guardian against the Recorder export of the same run (Recorder 2.3, 6241 server packets): the
   capture has every one of them. 4257 are byte for byte the same; in the rest (ActionEffect1, ActorCast, AoeEffect8,
   StatusEffectList, a few spawns) the client had already changed fields in memory (action IDs, effect entries, status
   timers) by the time the Recorder's hook saw the packet. **For packet layouts, Chronofoil's bytes are the wire's.**
+
+## battle-sim
+
+```shell
+python3 tools/questkit battle-sim                 # every quest battle against retail
+python3 tools/questkit battle-sim 12 -v           # one, with every event's timing
+python3 tools/questkit chronofoil chronofoil/ --battle 41.6 --out run.json.gz
+python3 tools/questkit battle-sim --make 12 --run run.json.gz --source "…"   # its fixture
+```
+
+**Battle fixtures** (`tools/questkit/battles/<quest battle>.json`, numbers only) hold what the battle did on retail,
+in seconds from the fight starting (the director's scene 60000, Kawari's `onCommence`): each NPC's health curve, when
+it appeared (or `null`: there from the start) and when its health reached 0, how long the client took over each of
+the director's own scenes, and the events to match: the director's sequence changes (not the 0xFE the server sets
+when it's over), battle talk by text ID, the NPCs that arrived during the fight, and "won" (scene 60001).
+
+`battle_sim.py` runs the director script with `content/lib/Battle.lua` in Lua 5.4: `onSetup` (not compared: retail's
+sequence 1 comes before the opening cutscene too), `onCommence` at 0, `onUpdate` every half second with each spawned
+NPC's health from retail's curve, counted from when the *script* spawned it (a wave brought in late also falls late),
+`onActorDeath` when its health reaches 0 (when Kawari calls it; retail's Defeated comes about 2 s later, after the
+death animation), and `onSceneFinished` after as long as the client took on retail. Retail's events are then matched
+to the script's, in order, each within the fixture's tolerance (2 s). It also fails on an NPC the script spawns that
+no drop-in has, or that retail never had.
+
+It doesn't simulate positions, enmity or who hits whom (the health curves are retail's whatever the script's
+targeting does), the player's health (losing isn't replayed), or the NPCs' casts and yells (not compared).
+
+All five quest battles have fixtures from Bob's Chronofoil captures and match. The first run found three of them
+timed from entering the zone rather than from the fight starting (Chasing Shadows' and Spirithold Broken's sequence 2
+and first lines came 8–10 s late), Sapphire's health marks where retail's differ (Chasing Shadows' second wave at 45 %,
+not 50 %; Spirithold Broken's phases at 70 % and 45 %, not 65 % and 30 %), To Guard a Guardian's last line at 42 %
+and its "Duty Complete" 2 s after the mage falls, and the lines after a group falls 2–3 s early (see
+[Quest battles](quest-battles.md)).
+
+## lint
+
+`questkit lint` finds what fails silently in game:
+
+* an action an NPC uses with no action script (the server only logs "isn't scripted yet" and the NPC does nothing):
+  every action in a timeline (auto-attack, timepoints, rotation, recorded amounts, on death) and the `ACTION_*`
+  numbers in quest battle scripts;
+* a battle NPC in a quest battle's drop-in layer (`QB_*`) with no timeline (it fights with the defaults); open-world
+  layers are only counted;
+* a fork quest script whose header says what it was "Checked against" with no fixture, a quest battle script with no
+  battle fixture, and fixture steps still marked `todo`.
+
+Its first run found Chasing Shadows' frenzied oaks (BNpcBase 886) without a timeline; they have one now (from the
+Recorder and the capture: hitbox 1.5, auto-attack 872, 12 a swing on Papalymo, misses included).
 
 ## lua-syntax
 
@@ -269,7 +352,7 @@ Compiles every script with Lua 5.4's `load` (nothing runs). It found upstream's 
 
 | Job | Runs on | Does |
 |---|---|---|
-| Quest replays and scripts | every push and PR | questkit's tests (with lupa and zstandard), `lua-syntax`, `replay -v` |
+| Quest replays and scripts | every push and PR | questkit's tests (with lupa and zstandard), `lua-syntax`, `replay -v`, `battle-sim -v`, `lint` |
 | Formatting and changelog | every push and PR | `tools/ci/check-changes.sh`: `rustfmt --check --edition 2024` on the changed `.rs` files only, and a changelog entry for any change outside `docs/` (skip with `[no-docs]` in a commit message, e.g. upstream merges) |
 | Documentation builds | every push and PR | `mdbook build docs` (mdBook 0.5.4) |
 | Build and test | PRs, pushes to master, by hand | `cargo build --workspace --locked`, `cargo test --workspace --locked -- --skip test_item_level` |

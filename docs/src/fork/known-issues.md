@@ -18,8 +18,13 @@ add one when something is found.
   255) are a guess from the listing.
 * A quest script without `onEnterTerritory` leaves an enter-territory event unfinished (the client waits). The fix (`02e22b5`) was rolled back with the first quest engine and not redone.
 * Quest sequence/variable changes aren't logged or noted in packet captures any more (also lost in the rollback); use the captures' `UpdateQuest` packets or `//gm quest inspect`.
-* `questkit replay` checks variables, notices, sequences and that events finish, not scene numbers: a scene the
-  scaffolder guessed (marked TODO) needs the listing or a test in game.
+* `questkit replay` checks the scenes retail played and their flags (fixtures from Chronofoil), not what a scene
+  shows: a scene the scaffolder guessed (marked TODO) can still be the wrong one with the right number. A progress bar
+  broken off (retail then plays the "no" scene, e.g. 99 or 8) isn't replayed: Kawari's scripts get no callback for it.
+  Unlocks sent as a quest completes are taken as the Quest sheet's (the server's `finish_quest`) and not checked.
+* `questkit battle-sim` doesn't compare the NPCs' casts or yells, positions, enmity, or the player's health; one run
+  per battle can't tell a health mark from a timer (Underneath the Sultantree's third pair, To Guard a Guardian's
+  second wave, which came with five of the first six down rather than all six).
 * The quest battle prompt is always allowed (`ServerRequestReply` result 0); retail presumably checks something.
 
 ## Central Thanalan

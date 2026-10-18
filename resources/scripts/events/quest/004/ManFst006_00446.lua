@@ -12,7 +12,7 @@ SCENE_TRADE = SEQ_1_ACTOR1 or 1
 SCENE_TRADE_OK = SEQ_1_ACTOR1_NPCTRADEOK or 100
 SCENE_TRADE_NO = SEQ_1_ACTOR1_NPCTRADENO or 99
 
-CUTSCENE_FLAGS = FADE_OUT | CONDITION_CUTSCENE | HIDE_UI
+CUTSCENE_FLAGS = SET_BASE | HIDE_HOTBAR -- 0xF8402EFB, as retail plays its cutscenes (Bob's Chronofoil capture of 2026-10-14)
 
 -- Quest variables: UI8A..F are bytes 0..5, H is the high nibble and L the low one.
 function getVar(player, byte, high)
