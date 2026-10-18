@@ -1766,6 +1766,8 @@ pub fn director_tick(
                 );
             }
             LuaDirectorTask::CompleteDuty => {
+                // The clock stops: no more time-left re-sends.
+                instance.duty_clock = None;
                 let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorControlSelf(
                     ActorControlSelf {
                         category: ActorControlCategory::DirectorEvent {

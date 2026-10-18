@@ -177,7 +177,8 @@ impl NetworkedActor {
     /// Makes this NPC hate `actor_id` a bit more. Does nothing for other actors.
     pub fn add_enmity(&mut self, actor_id: ObjectId, amount: u32) {
         if let NetworkedActor::Npc { enmity, .. } = self {
-            *enmity.entry(actor_id).or_default() += amount.max(1);
+            let entry = enmity.entry(actor_id).or_default();
+            *entry = entry.saturating_add(amount.max(1));
         }
     }
 
@@ -440,8 +441,16 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
         .map(|actor| actor.get_common_spawn().fate_id as u32)
         .unwrap_or(0);
     if npc_fate_id != 0 {
+        // Only those who fought it themselves (not their party elsewhere) take part in the FATE.
+        let fighters: Vec<ObjectId> = match instance.find_actor(actor_id) {
+            Some(NetworkedActor::Npc { enmity, .. }) => credited
+                .into_iter()
+                .filter(|player| enmity.contains_key(player))
+                .collect(),
+            _ => Vec::new(),
+        };
         let participants = instance.fate_participants.entry(npc_fate_id).or_default();
-        for player in credited {
+        for player in fighters {
             if !participants.contains(&player) {
                 participants.push(player);
             }
@@ -459,9 +468,10 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
             .unwrap_or_default(),
         _ => ObjectId::default(),
     };
+    // Queued from no actor: the actor's own tasks are cancelled below.
     instance.insert_task(
         ClientId::default(),
-        actor_id,
+        ObjectId::default(),
         DEFEATED_DELAY,
         QueuedTaskData::SendDefeated { actor_id, killer },
     );

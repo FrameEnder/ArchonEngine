@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-18 | — | Combat: no chains or synced-down kill EXP in duties; known issues.
+| 2026-10-18 | — | Fixes from a review (combat, timing, opcodes).
+| 2026-10-18 | `daec1d7` | Combat: no chains or synced-down kill EXP in duties; known issues.
 | 2026-10-18 | `6e4487e` | Level sync (FATE rewards), quests (turn-in log lines and order), known issues (FATE and duty rewards).
 | 2026-10-18 | `234465d` | Combat (enmity rules and lists, ground-targeted actions), fork opcodes (LootMessage, ActionRequestGroundTargeted; AoE layout, opcode 206, upstream's wrong sizes, dismount, Defeated, Commencing), timing (casts, duty clock, wipe), known issues (Limit Break, enmity, packets).
 | 2026-10-18 | `3affb9a` | Combat (EXP: level penalty, chains, rested, packets; drops' LootMessage), quests (quest EXP's level), travel (weather) from Bob's captures.
@@ -93,7 +94,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | No kill chains in duties, and no kill EXP for players synced down in one (retail). |
+| — | Fixes from a review of today's changes: Defeated is actually sent (its task was being cancelled with the dead actor's); quest reward log lines only for items given, with the optional reward's count; ExecuteCombo only on players' actions (not auto-attacks or NPCs); patrols walk; idle enemy regeneration only out in the world; the duty clock stops when the duty is complete; mounts and items keep their half-second slidecast window; FATE rewards only for those who fought its enemies and are still there; enmity can't overflow. ActionRequestGroundTargeted's 846 (FFXIVOpcodes 7.57) marked current so it's used. |
+| `daec1d7` | No kill chains in duties, and no kill EXP for players synced down in one (retail). |
 | `6e4487e` | Rewards from Bob's Chronofoil captures: completed FATEs give whoever helped defeat their enemies retail's gold-rank EXP (ScaledQuestXP × QuestExpModifier at the FATE's level) and gil (twice its level); quest turn-ins send the gil and item log lines (LogMessage 1605/1606/1607) first and the EXP last, as retail. |
 | `234465d` | Enmity and packets from Bob's Chronofoil captures: tank stances ×10 enmity, damage over time ticks credit their source, healing adds half its effective amount to every enemy with the healer on its list; the HaterList and EnmityList with real percentages, sent only when they change; ActionRequestGroundTargeted (fork opcode 846, layout from the captures) handled as an action on oneself; AoeEffect's effects at byte 42; PlayDismountAnimation with the landing position; ContentFinderCommencing with the duty ID; a duty's time left re-sent every 300 s. |
 | `3affb9a` | EXP and weather from Bob's Chronofoil captures: quest EXP at no more than the quest's level; kill EXP reduced for enemies more than 2 levels below; chains of 0/20/25/30/40/50 % with 100/80/60/40/20/10 s windows and ActorControlSelf 12; retail's rested EXP formula; the EXP message's source enemy, SetEXP after a gain (stats and class info only on level-up), the level-up's effective level; drops obtained with LootMessage (fork opcode 190) and new drop chances; the weather forecast in exact integers with `<`, changing at each 1400 s boundary with a 20 s fade. |

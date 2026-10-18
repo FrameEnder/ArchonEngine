@@ -697,7 +697,15 @@ pub fn execute_action(
                 );
             }
             let out_of_combo_step = combo_action_id != 0 && !in_combo;
-            if request.action_type == ActionType::Action && !out_of_combo_step {
+            let caster_is_player = matches!(
+                instance.find_actor(from_actor_id),
+                Some(NetworkedActor::Player { .. })
+            );
+            if request.action_type == ActionType::Action
+                && caster_is_player
+                && !AUTO_ATTACK_ACTIONS.contains(&request.action_id)
+                && !out_of_combo_step
+            {
                 effects_builder
                     .effects
                     .push(TargetEffect(TargetEffectKind::ExecuteCombo {

@@ -21,7 +21,8 @@ counting "updates", auto-attack timers) are half-second steps.
   with Swiftcast/Presence of Mind on top), minus 0.5 s for a player's actions: retail's land half a second before the
   bar ends ([Combat](combat.md)).
 * **Slidecasting**: moving cancels an interruptible cast until it lands (`task.point > now`); as it lands half a
-  second early, moving during the last half second doesn't interrupt it, as on retail.
+  second early, moving during the last half second doesn't interrupt it, as on retail. Mount and item casts land at
+  the end of their bar and keep a half-second window (`task.point > now + 500 ms`).
 * **Duty clock**: once a duty's countdown starts its time left is re-sent every 300 s (`resync_duty_clock`), as
   retail. Retail's wipe: PartyWipe (0x40000005), 3 s later 0x8000000D, 0x80000029, 0x40000013, then 0x4000000F (time
   left) and 0x40000011, and DutyRecommence (0x40000006) 10.2 s after the wipe (not done).

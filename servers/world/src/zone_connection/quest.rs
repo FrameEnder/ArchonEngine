@@ -178,24 +178,10 @@ impl ZoneConnection {
         }
 
         // The log lines for the rewards come first, as retail (Bob's Chronofoil captures): the gil (LogMessage 1605),
-        // then each item (1606, or 1607 with a count.)
-        let reward_list = self.game_data.lock().get_quest_reward_items(id);
+        // then each item given (1606, or 1607 with a count.)
         if rewards.1 > 0 {
             self.send_reward_log(QUEST_REWARD_GIL_LOG, vec![rewards.1])
                 .await;
-        }
-        for (item_id, count) in reward_list
-            .iter()
-            .copied()
-            .chain((optional_item != 0).then_some((optional_item, 1)))
-        {
-            if count > 1 {
-                self.send_reward_log(QUEST_REWARD_ITEMS_LOG, vec![0, item_id, count])
-                    .await;
-            } else {
-                self.send_reward_log(QUEST_REWARD_ITEM_LOG, vec![0, item_id])
-                    .await;
-            }
         }
 
         // Add gil
@@ -225,7 +211,10 @@ impl ZoneConnection {
         if !reward_items.is_empty() {
             for item in reward_items {
                 let item_id = item.item_id;
-                if !self.player_data.inventory.add_obtained_item(item) {
+                let count = item.quantity.max(0) as u32;
+                if self.player_data.inventory.add_obtained_item(item) {
+                    self.send_item_reward_log(item_id, count).await;
+                } else {
                     tracing::error!(
                         "Couldn't add the reward {item_id} for quest {id}, the inventory is full!"
                     );
@@ -249,12 +238,14 @@ impl ZoneConnection {
             }
             match new_item {
                 Some(new_item) => {
+                    let count = new_item.quantity.max(0) as u32;
                     if self
                         .player_data
                         .inventory
                         .add_in_next_free_slot(new_item)
                         .is_some()
                     {
+                        self.send_item_reward_log(optional_item, count).await;
                         self.send_inventory().await;
                     } else {
                         tracing::error!(
@@ -537,6 +528,17 @@ impl ZoneConnection {
         self.send_inventory().await;
         if exp > 0 {
             self.add_exp(exp as i32).await;
+        }
+    }
+
+    /// An item reward's log line: 1606 for one, 1607 with a count.
+    async fn send_item_reward_log(&mut self, item_id: u32, count: u32) {
+        if count > 1 {
+            self.send_reward_log(QUEST_REWARD_ITEMS_LOG, vec![0, item_id, count])
+                .await;
+        } else {
+            self.send_reward_log(QUEST_REWARD_ITEM_LOG, vec![0, item_id])
+                .await;
         }
     }
 

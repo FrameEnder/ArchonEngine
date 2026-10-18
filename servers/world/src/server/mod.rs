@@ -1033,6 +1033,9 @@ fn server_logic_tick(
             // casters ran dry mid-fight and couldn't cast again until it ended (2026-10-17).
             let now = Instant::now();
             let regen_now = instance.next_regen_tick.is_none_or(|next| now >= next);
+            // Idle enemies only regenerate out in the world (in content scripts set their health.)
+            let instance_is_open_world =
+                instance.content_id == 0 && instance.content_finder_condition_id == 0;
             if regen_now {
                 instance.next_regen_tick = Some(now + PLAYER_REGEN_INTERVAL);
             }
@@ -1132,6 +1135,8 @@ fn server_logic_tick(
                     && spawn.common.health_points > 0
                     && spawn.common.health_points < spawn.common.max_health_points
                     && spawn.common.object_kind == ObjectKind::BattleNpc(BattleNpcSubKind::Enemy)
+                    && !spawn.common.owner_id.is_valid()
+                    && instance_is_open_world
                 {
                     // Enemies out of combat (or going home after giving up a chase) get 10 % of their max HP back
                     // every 3 s (Bob's Chronofoil captures, 149 samples.)
@@ -1585,6 +1590,10 @@ pub async fn server_main_loop(
                                         DestinationNetwork::ZoneClients,
                                     );
                                     for player in rewarded {
+                                        // Only those still here.
+                                        if instance.find_actor(player).is_none() {
+                                            continue;
+                                        }
                                         network.send_to_by_actor_id(
                                             player,
                                             FromServer::FateReward(*fate_id),
@@ -1811,11 +1820,20 @@ pub async fn server_main_loop(
                             // Check if the actor has any in-progress actions, and cancel them if so. A player's cast
                             // lands half a second before its bar ends, so moving in that last half second doesn't
                             // interrupt it ("slidecasting"), as on retail.
+                            // (Mounts and items land when their bar ends, so they keep a half-second window.)
                             let now = Instant::now();
                             for task in instance.find_tasks(actor_id) {
-                                if let QueuedTaskData::CastAction { interruptible, .. } = task.data
-                                    && interruptible
-                                    && task.point > now
+                                if let QueuedTaskData::CastAction {
+                                    interruptible,
+                                    request,
+                                } = &task.data
+                                    && *interruptible
+                                    && task.point
+                                        > if request.action_type == ActionType::Action {
+                                            now
+                                        } else {
+                                            now + Duration::from_millis(500)
+                                        }
                                 {
                                     instance.cancel_task(network.clone(), &task);
                                 }

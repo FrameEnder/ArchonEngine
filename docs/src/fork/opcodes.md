@@ -48,7 +48,7 @@ upstream's [Opcodes](../opcodes.md) page.
 | ItemMarketBoardSummary | server → client | 303 (442 on 2026.09.15) | 8 | How many items a retainer has on the market. |
 | RetainerSaleHistory | server → client | 832 (161 on 2026.09.15) | 1048 | A retainer's sale history. |
 | LootMessage | server → client | 190 (351 on 2026.09.15) | 32 | Loot: kind 3 an item obtained directly (an enemy's drop), 9 gil, 0/1 need/greed rolls and winners. See [Combat](combat.md#defeating-enemies). |
-| ActionRequestGroundTargeted | client → server | 846 (891 on 2026.09.15) | 24 | A ground-targeted action (Asylum...): the action, its type, the sequence, the rotation, where on the ground. 846 is FFXIVOpcodes' 7.57 opcode, not yet seen; the layout is from Bob's captures. Handled as an action on oneself for now. |
+| ActionRequestGroundTargeted | client → server | 846 (891 on 2026.09.15) | 24 | A ground-targeted action (Asylum...): the action, its type, the sequence, the rotation, where on the ground. 846 is FFXIVOpcodes' 7.57 opcode (marked current, like MarketBoardPurchaseHandler's), not yet seen on Kawari; the layout is from Bob's captures. Handled as an action on oneself for now. |
 | Achievements | server → client | 991 | 552 | The completed achievements and the last five, the reply to client trigger 1001. Found by its handler (HandleAchievementsPacket). See [Achievements](character-windows.md). |
 
 The client picks the event return packet by result count (2, 4, 8, 16…); EventReturnHandler16's finder looks for its

@@ -937,9 +937,14 @@ pub fn npc_behavior(
     }
 }
 
-/// Whether an NPC is walking about rather than running: idle enemies wandering to a spot near home.
+/// Whether an NPC is walking rather than running: idle enemies wandering to a spot near home, and patrols.
 fn is_walking(state: &NpcState, returning_home: bool, target: &NpcTarget) -> bool {
-    *state == NpcState::Wander && !returning_home && matches!(target, NpcTarget::Position(_))
+    match state {
+        // Patrols walk their route.
+        NpcState::OnPath { .. } => true,
+        NpcState::Wander => !returning_home && matches!(target, NpcTarget::Position(_)),
+        _ => false,
+    }
 }
 
 /// Whether an aggressive enemy at `from`, facing `rotation`, notices someone at `to`: within `AGGRO_PROXIMITY` all
