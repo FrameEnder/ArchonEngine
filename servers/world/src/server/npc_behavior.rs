@@ -79,6 +79,14 @@ const LEASH_DISTANCE: f32 = 40.0;
 
 /// How close to home an enemy that gave up has to get before it pays attention again.
 const HOME_DISTANCE: f32 = 3.0;
+/// Path points closer than this (yalms, across the ground) to where an NPC stands are where it already is.
+const MIN_STEP: f32 = 0.05;
+
+/// The distance between two points across the ground: the navmesh's heights are a little off the NPCs' (a quarter
+/// yalm on a flat test mesh), so a path to where it stands starts that far above it.
+fn flat_distance(a: Vec3A, b: Vec3A) -> f32 {
+    Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length()
+}
 /// How many NPCs that can't wander an instance logs (the rest are only counted.)
 const STUCK_WANDERERS_LOGGED: usize = 5;
 
@@ -239,6 +247,13 @@ pub fn npc_behavior(
                     let next_position = current_path[0];
 
                     let current_position = last_position.unwrap_or(spawn.common.position.0);
+                    // A step that goes nowhere keeps its facing (atan2(0, 0) turned NPCs north at the start and end of
+                    // every walk, 2026-10-19 bundle.)
+                    let rotation = if flat_distance(current_position, next_position) < MIN_STEP {
+                        spawn.common.rotation
+                    } else {
+                        rotate(current_position, next_position)
+                    };
 
                     (
                         Some(Position(Vec3A::lerp(
@@ -246,7 +261,7 @@ pub fn npc_behavior(
                             next_position,
                             *current_path_lerp,
                         ))),
-                        Some(rotate(current_position, next_position)),
+                        Some(rotation),
                     )
                 } else {
                     (None, None)
@@ -563,6 +578,18 @@ pub fn npc_behavior(
                     can_take_action = distance <= timeline.attack_range;
 
                     let current_pos = spawn.common.position.0;
+                    // Standing in range of who it's after: forget the path, so it sets off from where it stands when
+                    // they move. The old one kept advancing while it stood, and it jumped back and forth along it
+                    // when it ran again (2026-10-19 bundle.)
+                    if matches!(current_target, NpcTarget::Actor(_))
+                        && distance <= timeline.attack_range
+                        && strayed_to.is_none()
+                        && !current_path.is_empty()
+                    {
+                        current_path.clear();
+                        *last_position = Some(current_pos);
+                        *current_path_lerp = 0.0;
+                    }
                     if needs_repath {
                         let goal = strayed_to.unwrap_or(target_pos);
                         let mut path: VecDeque<Vec3A> = instance
@@ -575,6 +602,24 @@ pub fn npc_behavior(
                         if path.is_empty() && in_content {
                             path.push_back(goal);
                         }
+                        let found_path = !path.is_empty();
+                        // Detour's path starts where it stands: no step there.
+                        while path
+                            .front()
+                            .is_some_and(|point| flat_distance(*point, current_pos) < MIN_STEP)
+                        {
+                            path.pop_front();
+                        }
+                        // Got to the spot it was walking to (or as near as the navmesh goes): it's done. Kept, the
+                        // spot made it plan a path to where it stood forever, so it never wandered again and walked
+                        // on the spot after a chase (2026-10-19 bundle.)
+                        let arrived = matches!(current_target, NpcTarget::Position(_))
+                            && !matches!(state, NpcState::OnPath { .. })
+                            && found_path
+                            && path.is_empty();
+                        if arrived {
+                            reset_target_for_path = true;
+                        }
 
                         *current_path = path.clone();
                         // Start the new path from where we actually are.
@@ -582,7 +627,7 @@ pub fn npc_behavior(
                         *current_path_lerp = 0.0;
 
                         // Drop the current target if we can't path to them too
-                        if path.is_empty() {
+                        if !found_path {
                             reset_target = true;
                             if *state == NpcState::Wander
                                 && !*returning_home

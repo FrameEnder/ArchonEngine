@@ -65,6 +65,9 @@ unsafe impl Sync for Navmesh {}
 /// Ixali they were after). Content passes no limit (see `calculate_path`).
 pub const MAX_OFF_MESH_GAP: f32 = 15.0;
 
+/// How many random spots `find_wander_position` tries for one within its radius.
+const WANDER_TRIES: usize = 4;
+
 unsafe extern "C" fn frand() -> f32 {
     fastrand::f32()
 }
@@ -252,25 +255,35 @@ impl Navmesh {
             // Retail strays a median 6 yalms (90 % within 9) from where it's first seen, so about 5 from home.
             let max_radius = 5.0;
 
-            let mut random_ref = 0;
-            let mut random_pt = [0.0; 3];
-
-            if dtNavMeshQuery_findRandomPointAroundCircle(
-                self.navmesh_query,
-                start_poly,
-                &position.x,
-                max_radius,
-                &filter,
-                Some(frand),
-                &mut random_ref,
-                random_pt.as_mut_ptr(),
-            ) & DT_SUCCESS
-                == 0
-            {
-                return None;
+            // Detour's point can be anywhere on a polygon that touches the circle, and open ground has big ones (17
+            // yalms away on a flat test mesh): take one inside it, or the way to the last one, cut short.
+            let mut spot = None;
+            for _ in 0..WANDER_TRIES {
+                let mut random_ref = 0;
+                let mut random_pt = [0.0; 3];
+                if dtNavMeshQuery_findRandomPointAroundCircle(
+                    self.navmesh_query,
+                    start_poly,
+                    &position.x,
+                    max_radius,
+                    &filter,
+                    Some(frand),
+                    &mut random_ref,
+                    random_pt.as_mut_ptr(),
+                ) & DT_SUCCESS
+                    == 0
+                {
+                    return None;
+                }
+                let point = Vec3A::from_array(random_pt);
+                let distance = Vec3A::new(point.x - position.x, 0.0, point.z - position.z).length();
+                if distance <= max_radius {
+                    return Some(point);
+                }
+                spot = Some(position.lerp(point, max_radius * fastrand::f32() / distance));
             }
 
-            Some(Vec3A::from_array(random_pt))
+            spot
         }
     }
 
