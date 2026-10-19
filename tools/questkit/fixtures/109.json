@@ -1,0 +1,77 @@
+{
+  "quest": 109,
+  "script": "ManSea003_00109",
+  "source": "adapted from 124's retail fixture and the client script; no retail recording of this version",
+  "params": {
+    "ACTOR0": 1002697,
+    "ITEM0": 2000105,
+    "AETHERYTE0": 8,
+    "REWARD0": 1,
+    "SCREENIMAGE0": 14,
+    "ACTOR1": 1001217,
+    "ACTOR2": 1000895,
+    "ACTOR3": 1000972,
+    "LOC_POS_CAM1": 4106696,
+    "LOC_POS_CAM2": 4106698,
+    "LOC_ACTOR1": 1001023,
+    "LOC_FACE0": 604,
+    "LOC_FACE1": 605,
+    "HOW_TO_DESION": 13,
+    "UNLOCK_DESION": 14,
+    "HOW_TO_MAIN_COMMAND": 14,
+    "HOW_TO_MAP_AND_NAVI": 4,
+    "BIND_ACTOR0": 6229226
+  },
+  "steps": [
+    {
+      "talk": 1002697,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "effects": [
+        {"zone": 128}
+      ],
+      "expect": {"sequence": 1, "vars": "000010000000", "notices": []}
+    },
+    {
+      "talk": 8,
+      "what": "AETHERYTE0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 3, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "effects": [
+        {"aetheryte": 8},
+        {"unlock": 1}
+      ],
+      "expect": {"sequence": 1, "vars": "100110000080", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1001217,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [1, 2000105, 1, 0, 0, 0]},
+        {"scene": 5, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "2011000000c0", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1000895,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 6, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[2, []]]}
+    },
+    {
+      "talk": 1000972,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 7, "flags": "0xf8402efb", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 -- Quest: Close to Home (Gridania), for Conjurers
--- NOTE: The Lancer (ManFst002_00085) and Archer (ManFst003_00123) versions are the same quest with a different guild,
--- but only this one is implemented so far.
+-- NOTE: The Lancer (ManFst002_00085) and Archer (ManFst003_00123) versions are the same quest with a different guild
+-- (the same client script apart from ACTOR2 and ITEM0); keep the three in step.
 --
 -- Checked against the client's quest script (kawari-questdump) and a live recording of the quest (questkit replay):
 -- Sequence 0:   ACTOR0 offers the quest (scene 0), then explains it (scene 50.) Accepting moves you from the opening's

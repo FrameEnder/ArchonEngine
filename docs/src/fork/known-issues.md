@@ -5,12 +5,17 @@ add one when something is found.
 
 ## Quests
 
-* **Close to Home** is only scripted for Conjurers (`ManFst004_00124`); the Lancer (`ManFst002_00085`) and Archer
-  (`ManFst003_00123`) versions still stop after accepting.
+* Gridania's Lancer and Archer **Close to Home** (85, 123) and Limsa Lominsa's two (108, 109) come from their client
+  scripts only, with fixtures adapted from 124's (no retail recording). Limsa's move from the opening's Upper Decks (181)
+  to the real one (128) is from Sapphire's NPC positions, not the client or retail; its flags, notices and attunement
+  are 568's. Gridania's three still attune the simple way (no bar or nested aetheryte event, as 124's 2026-10-14
+  fixture showed).
 * **The Gridanian Envoy** (507) and **Call of the Sea** (674) were written from Sapphire and the recording without the
   client's script: dump them in the Quest Lab to check the scene numbers. Envoy's arrival positions are Sapphire's.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
-* Limsa Lominsa has only upstream's opening. Ul'dah's story stops after **Way Down in the Hole** (320), before **Takin' What They're Givin'** (623),. Its Pugilist and
+* Limsa Lominsa has only upstream's opening, checked against the client's script but not retail: the client's
+  sequence 1 (riding the Crow's Lift with Grehfarr, UI8AL/BitFlag8 1) is skipped, since accepting goes straight to 255.
+  Ul'dah's story stops after **Way Down in the Hole** (320), before **Takin' What They're Givin'** (623). Its Pugilist and
   Thaumaturge **Close to Home** (569, 570) come from their client scripts only: no retail capture, and their replay
   fixtures are 568's with their ITEM0 and ACTOR1 (ACTOR1's layout taken from the quest's todo location).
 * Way Down in the Hole (320): in sequence 4 the client also offers ACTOR7–12 and EOBJECT0 with empty scenes (18–25);
@@ -21,9 +26,8 @@ add one when something is found.
 * Attuning to a main aetheryte outside a quest ends the event after the bar (`Aetheryte.lua`); inside Close to Home
   retail follows the bar with the aetheryte event's notice 0 (one argument, 0), which probably also gives the
   "attuned" message on its own, but a plain attunement hasn't been recorded to confirm it.
-* Ul'dah's Close to Home: what Momodi's scenes 6 and 7 are for (talking to her during sequence 1?) isn't known, so
-  she just ends the event then. Nothing to See Here's scenes 11–13 (the three NPCs' lines after the quest moves to
-  255) are a guess from the listing.
+* Ul'dah's Close to Home: the client lets you talk to Momodi (ACTOR0) in sequence 1; its scene 7 only returns true and
+  scene 6 is empty (as Gridania's 124 has 4 and 99). What retail does with it isn't known, so she just ends the event.
 * A quest script without `onEnterTerritory` leaves an enter-territory event unfinished (the client waits). The fix (`02e22b5`) was rolled back with the first quest engine and not redone.
 * Quest sequence/variable changes aren't logged or noted in packet captures any more (also lost in the rollback); use the captures' `UpdateQuest` packets or `//gm quest inspect`.
 * `questkit replay` checks the scenes retail played and their flags (fixtures from Chronofoil), not what a scene

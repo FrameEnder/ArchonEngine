@@ -7,6 +7,10 @@
 -- scene 2: you have begun a quest!
 -- scene 4: miounne's cutscene
 -- scene 5: accept reward dialog
+--
+-- Checked against the client's quest script (kawari-questdump, 2026-10-19): the scenes above are the client's 0-5;
+-- its scenes 6-9 are empty. In sequence 255 the client also lets you talk to EOBJECT0 and EOBJECT1 (IsAcceptEvent),
+-- which this script just ends. The reward scene only completes the quest when it returns 1 (QuestReward).
 
 ENPC_BERTENNANT = 1985150
 ENPC_MIOUNNE = 1985113
@@ -16,6 +20,8 @@ function onTalk(target, player)
         player:play_scene(00000, HIDE_HOTBAR, {})
     elseif target.object_id == ENPC_MIOUNNE then
         player:play_scene(00004, SET_BASE | HIDE_HOTBAR, {})
+    else
+        player:finish_event()
     end
 end
 
@@ -51,7 +57,9 @@ function onYield(scene, id, results, player)
         return
     elseif scene == 5 then
         local completed = results[1] == 1
-        player:finish_quest(EVENT_ID)
+        if completed then
+            player:finish_quest(EVENT_ID)
+        end
     end
 
     player:finish_event()

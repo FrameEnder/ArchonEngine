@@ -2,13 +2,18 @@
 -- NOTE: These openings are so similar, ensure changes are synced between all of them!
 
 -- scene 0: show quest prompt
--- scene 3: decline
+-- scene 4: decline
 -- scene 1: after quest acceptance
 -- scene 2: you have begun a quest!
--- scene 4: unk
--- scene 5: take the crow's lift
+-- scene 5: take the crow's lift (13 is the same scene, for sequence 255)
 -- scene 11: cutscene with grehfarr
 -- scene 12: quest completed prompt
+--
+-- Checked against the client's quest script (kawari-questdump, 2026-10-19), not yet against retail: the decline is
+-- scene 4 (the client's scene 3 is empty; this script played 3, then 4 before the lift's yes/no), scenes 3, 6-10 are
+-- empty. The client has a sequence 1 (ride the lift: ACTOR1 while UI8AL is 0 and BitFlag8 1 unset, with EOBJECT0/1),
+-- then 255 (ACTOR2); this script still goes straight to 255 on accepting, as it always has, until a recording shows
+-- what retail sets. The reward scene only completes the quest when it returns 1 (QuestReward).
 
 ENPC_RYSSFLOH = 4102039
 ENPC_BADERON = 4102072
@@ -24,9 +29,11 @@ function onTalk(target, player)
     if target.object_id == ENPC_RYSSFLOH then
         player:play_scene(00000, HIDE_HOTBAR, {})
     elseif target.object_id == ENPC_GREHFARR then
-        player:play_scene(00004, HIDE_HOTBAR, {})
+        player:play_scene(00005, HIDE_HOTBAR, {})
     elseif target.object_id == ENPC_BADERON then
         player:play_scene(00011, SET_BASE | HIDE_HOTBAR, {})
+    else
+        player:finish_event()
     end
 end
 
@@ -34,9 +41,6 @@ function onReturn(scene, results, player)
     -- Note that the scene yields, not returns - unlike the other openings.
     if scene == 1 then
         player:play_scene(00002, HIDE_HOTBAR, {})
-        return
-    elseif scene == 4 then
-        player:play_scene(00005, HIDE_HOTBAR, {})
         return
     elseif scene == 6 then
         -- Move the player into the destination position
@@ -57,7 +61,7 @@ function onYield(scene, id, results, player)
             player:play_scene(00001, SET_BASE | HIDE_HOTBAR | DISABLE_SKIP, {})
             return
         else
-            player:play_scene(00003, HIDE_HOTBAR, {})
+            player:play_scene(00004, HIDE_HOTBAR, {})
             return
         end
 
@@ -76,7 +80,9 @@ function onYield(scene, id, results, player)
         end
     elseif scene == 12 then
         local completed = results[1] == 1
-        player:finish_quest(EVENT_ID)
+        if completed then
+            player:finish_quest(EVENT_ID)
+        end
     end
 
     player:finish_event()

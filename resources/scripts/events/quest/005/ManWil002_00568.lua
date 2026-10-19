@@ -1,6 +1,6 @@
 -- Quest: Close to Home (Ul'dah)
--- NOTE: ManWil003_00569 and ManWil004_00570 are the same quest for the other Ul'dah classes, but only this one is
--- implemented so far.
+-- NOTE: ManWil003_00569 and ManWil004_00570 are the same quest for the other Ul'dah classes (the same client script
+-- apart from ITEM0 and ACTOR1); keep the three in step.
 --
 -- Checked against the client's quest script (kawari-questdump) and retail (a Kawari Recorder export and Bob's
 -- Chronofoil session of 2026-10-17, questkit replay 568):
