@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-19 | — | Kawari Web 2.18.0 (dependency mirrors; what each git dependency does).
+| 2026-10-19 | — | `master` fast-forwarded to `Latest-Quest` again, after Bob tested Step Nine and Prudence at This Junction (changelog).
+| 2026-10-19 | `5b5e91f` | Kawari Web 2.18.0 (dependency mirrors; what each git dependency does).
 | 2026-10-18 | `2aaf671` | Tools (`kawari-questdump content`), Kawari Web 2.17.0 (Misc Content).
 | 2026-10-18 | `762dd27` | Kawari Web 2.16.0 (storage limits).
 | 2026-10-18 | `89caa75` | Quests: Prudence at This Junction (3852), what a capture shows and a dump adds, the script name fallback; known issues.
@@ -107,13 +108,14 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 ## Kawari (fork)
 
-Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`).
+Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`), and on 2026-10-19 (right after `5b5e91f`).
 
 ### 2026-10-19
 
 | Commit | Change |
 |---|---|
-| — | Documentation for Kawari Web 2.18.0 (dependency mirrors) and what each git dependency does. |
+| — | `master` fast-forwarded to `Latest-Quest` with Bob's OK (Step Nine and Prudence at This Junction tested in game). |
+| `5b5e91f` | Documentation for Kawari Web 2.18.0 (dependency mirrors) and what each git dependency does. |
 
 ### 2026-10-18
 
