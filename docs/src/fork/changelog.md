@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-19 | — | Quests (Out of House and Home, Way Down in the Hole, key items used on things), quest battles (18), known issues.
+| 2026-10-19 | — | Kawari Web 2.18.1 (phones).
+| 2026-10-19 | `ddc8317` | Quests (Out of House and Home, Way Down in the Hole, key items used on things), quest battles (18), known issues.
 | 2026-10-19 | `31b1e8b` | `master` fast-forwarded to `Latest-Quest` again, after Bob tested Step Nine and Prudence at This Junction (changelog).
 | 2026-10-19 | `5b5e91f` | Kawari Web 2.18.0 (dependency mirrors; what each git dependency does).
 | 2026-10-18 | `2aaf671` | Tools (`kawari-questdump content`), Kawari Web 2.17.0 (Misc Content).
@@ -78,6 +79,7 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
+| 2026-10-19 | `2a14453` | 2.18.1: the top bar and the dashboard's menu on phones. |
 | 2026-10-19 | `ca5b725` | 2.18.0: Updates → Dependency mirrors: the build's GitHub dependencies from Gitea/Forgejo mirrors (git `insteadOf` rewrites, cargo fetching through git). |
 | 2026-10-18 | `c6c0a8e` | 2.17.0: Progress → Misc Content: every duty (by content type) and open-world zone per expansion, against the active build's content scripts and drop-ins, from `kawari-questdump content`. |
 | 2026-10-18 | `ebe70cd` | 2.16.0: storage limits: the newest 20 backups and 30 snapshots per character by default, pruned as new ones are made (never a backup a build on disk would restore); old builds pruned after every install; tick and delete several backups or snapshots. |
@@ -115,7 +117,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Out of House and Home (307) and Way Down in the Hole (320) with quest battle 18, from Bob's 2026-10-18 capture. Key items can be used on things (ActionRequest type EventItem: the cast bar, the effect, the quest's EventItem event and `onEventItem`); before, using one panicked the world server's task, as did any ActionRequest without an Action row. questkit replays `event_item` steps. |
+| — | Documentation for Kawari Web 2.18.1 (the top bar on phones). |
+| `ddc8317` | Out of House and Home (307) and Way Down in the Hole (320) with quest battle 18, from Bob's 2026-10-18 capture. Key items can be used on things (ActionRequest type EventItem: the cast bar, the effect, the quest's EventItem event and `onEventItem`); before, using one panicked the world server's task, as did any ActionRequest without an Action row. questkit replays `event_item` steps. |
 | `31b1e8b` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (Step Nine and Prudence at This Junction tested in game). |
 | `5b5e91f` | Documentation for Kawari Web 2.18.0 (dependency mirrors) and what each git dependency does. |
 

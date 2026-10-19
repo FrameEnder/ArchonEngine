@@ -1,6 +1,6 @@
 # Kawari Web
 
-Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.18.0**) runs beside the server in its own container. Its
+Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.18.1**) runs beside the server in its own container. Its
 README is the user guide (setup, pages, service, forges, builds); this page is about **how its features work** and
 how they depend on the fork. Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates).
 
@@ -85,6 +85,13 @@ first. Nothing removed them, so each update left a little more on disk. `kawari_
 
 Kawari Probe's diagnostics snapshots were already capped (200). Packet captures (`data/captures`) still are only
 cleared by hand (Diagnostics).
+
+## Phones (2.18.1)
+
+Under 700 px wide the top bar is two short rows: the brand with the bell and account menus, then the site menu
+scrolling sideways (it used to wrap into three rows); the bell and account menus open across the screen under the bar;
+the dashboard's section menu is one scrolling row, scrolled to the current section (`static/app.js`). `static/style.css`
+holds both, in `@media (max-width: 700px)` blocks at its end.
 
 ## Dependency mirrors (2.18.0)
 
