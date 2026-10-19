@@ -7,6 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
+| 2026-10-19 | — | Kawari Web 2.19.1 and 2.20.0 (Quest Progress fix; the redesign's player pages, announcements, shop pictures).
+| 2026-10-19 | `9a3a7ff` | Changelog: Kawari Web 2.19.0's commit hashes.
 | 2026-10-19 | `002dff8` | Kawari Web 2.19.0 (the redesign's styles, top bar and admin layout, on its `UI-Redesign` branch).
 | 2026-10-19 | `511d7e1` | Quests: Give It to Me Raw (503); known issues (quest-spawned enemies, the marshlights' timeline).
 | 2026-10-19 | `f7c0c98` | Quests: Takin' What They're Givin' (623), Supply and Demands (328), The Perfect Swarm (329); known issues.
@@ -86,6 +88,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
+| 2026-10-19 | `8a41f4a` | 2.20.0 (branch `UI-Redesign`): the redesign's player pages (Home, Connect, sign in, first run, errors, Community, posts, Notifications, Settings, Profile with a Full stats pop-up per character, the Shop); Dashboard → Announcements with a record of what was sent; shop thumbnails from the game's own item icons (fetched with `kawari-questdump extract`, converted from `.tex` with Pillow) or uploaded covers, and up to 8 preview images per listing. |
+| 2026-10-19 | `a73cfb3` | 2.19.1: Quest Progress no longer fails with a 500 (the admin layout's `page` variable hid the page number). |
 | 2026-10-19 | `d88dfb7` | 2.19.0 (branch `UI-Redesign`): the redesign's first part: a new stylesheet (dark slate, light kept; Sora and IBM Plex bundled in `static/fonts`), inline SVG icons, and an admin layout with a sidebar grouped by job in place of the 11 tabs; Shop management moved into it. |
 | 2026-10-19 | `2a14453` | 2.18.1: the top bar and the dashboard's menu on phones. |
 | 2026-10-19 | `ca5b725` | 2.18.0: Updates → Dependency mirrors: the build's GitHub dependencies from Gitea/Forgejo mirrors (git `insteadOf` rewrites, cargo fetching through git). |
@@ -125,6 +129,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
+| — | Documentation for Kawari Web 2.19.1 and 2.20.0. |
+| `9a3a7ff` | Changelog: Kawari Web 2.19.0's commit hashes. |
 | `002dff8` | Documentation for Kawari Web 2.19.0 (the redesign's styles, top bar and admin layout). |
 | `511d7e1` | Give It to Me Raw (503) from its client script and Bob's 2026-10-18 capture: three ore mounds, each a scene, the gathering bar (EventAction 6) and a scene, then its marshlight; a new Western Thanalan drop-in layer `QB_SubWil095_001` with the three at retail's positions, level and HP; fixture 503. |
 | `f7c0c98` | Takin' What They're Givin' (623), Supply and Demands (328) and The Perfect Swarm (329), from their client scripts (Bob's 2026-10-19 dumps) and his 2026-10-18 Chronofoil capture; fixtures 623, 328, 329. |

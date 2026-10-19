@@ -1,6 +1,6 @@
 # Kawari Web
 
-Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.19.0** on the `UI-Redesign` branch, **2.18.1** on `master`) runs beside the server in its own container. Its
+Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.20.0** on the `UI-Redesign` branch, **2.18.1** on `master`) runs beside the server in its own container. Its
 README is the user guide (setup, pages, service, forges, builds); this page is about **how its features work** and
 how they depend on the fork. Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates).
 
@@ -106,7 +106,37 @@ The redesign (branch `UI-Redesign` of Kawari-Web, not yet merged) starts with th
 
 The pages themselves are redone in later commits on the same branch, from the design canvas Bob approved.
 
+2.19.1 fixed a 500 on Quest Progress: the layout kept its page lookup in a variable named `page`, which hid the
+page number Quest Progress passes. The layout's variables are `_adm_*` now.
+
+## Player pages, announcements and shop pictures (2.20.0)
+
+* **Player pages** rebuilt to the design: Home, How to connect, sign in/register, first run, errors, Community (the
+  feed), posts, Notifications (`?kind=` filter), Settings, Profile. The styles are all in `static/style.css`, one
+  section per area.
+* **Character pop-up.** Profile shows each character as a slim card; **Full stats** opens every stat
+  (`stats.character_detail`, which now also returns jobs grouped by role, every currency and the top classes). It's
+  a `:target` overlay, so it works without JavaScript; with JavaScript it's driven by a class instead, because
+  Chrome keeps `:target` matched after `history.replaceState`.
+* **In game** (Home's players, Profile, Community's *Who's online*, the server's player count) is believed only
+  while the container is known to run: `stats.server_up()`. `volatile.is_online` stays set after a crash, and
+  without Podman there's no way to tell, so then nobody shows as in game.
+* **Announcements** (Dashboard → Announcements) are recorded in the web app's `announcement` table (title, body,
+  sender, delivered, accounts), since the notifications themselves can be cleared per account.
+* **Shop pictures.** A listing's thumbnail is its cover upload, else the game icon of its first linked item
+  (`item-index.json`'s `icon`). **Fetch item icons** runs `kawari-questdump extract ui/icon/<folder>/<id>_hr1.tex
+  ui/icon/<folder>/<id>.tex …` (missing paths are skipped, so both are asked for), then
+  `kawari_core/icons.py` turns each `.tex` into `<data>/web/item-icons/<id>.png`, preferring the high-resolution
+  copy. It reads the 80-byte header (format at 4, width/height at 8 and 10, the first surface's offset at 28) and
+  decodes BC1/BC2/BC3/BC5/BC7 with Pillow's BCn decoder and the uncompressed 8888, 8888X, 4444, 5551, L8 and A8
+  formats itself. Uploaded preview images (up to 8 a listing) are in `shop_listing_image`; deleting a listing or
+  resetting the shop deletes their files.
+
 ## Phones (2.18.1, changed in 2.19.0)
+
+The profile's character pop-up fills the screen on a phone; every rebuilt page works at 390 px without sideways
+scrolling.
+
 
 From 2.19.0 the top bar's two-row phone layout starts under 760 px, and the dashboard's sidebar folds behind a
 **Menu** button under 900 px (a checkbox, so no JavaScript); the scrolling section row below is gone with the tabs.
