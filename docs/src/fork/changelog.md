@@ -7,7 +7,7 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-19 | — | Kawari Web 2.19.0 (the redesign's styles, top bar and admin layout, on its `UI-Redesign` branch).
+| 2026-10-19 | `002dff8` | Kawari Web 2.19.0 (the redesign's styles, top bar and admin layout, on its `UI-Redesign` branch).
 | 2026-10-19 | `511d7e1` | Quests: Give It to Me Raw (503); known issues (quest-spawned enemies, the marshlights' timeline).
 | 2026-10-19 | `f7c0c98` | Quests: Takin' What They're Givin' (623), Supply and Demands (328), The Perfect Swarm (329); known issues.
 | 2026-10-19 | `359bdfe` | `master` fast-forwarded to `Latest-Quest` again, after Bob ran the checked quests (changelog).
@@ -86,7 +86,7 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-19 | `b5c57a3` | 2.19.0 (branch `UI-Redesign`): the redesign's first part: a new stylesheet (dark slate, light kept; Sora and IBM Plex bundled in `static/fonts`), inline SVG icons, and an admin layout with a sidebar grouped by job in place of the 11 tabs; Shop management moved into it. |
+| 2026-10-19 | `d88dfb7` | 2.19.0 (branch `UI-Redesign`): the redesign's first part: a new stylesheet (dark slate, light kept; Sora and IBM Plex bundled in `static/fonts`), inline SVG icons, and an admin layout with a sidebar grouped by job in place of the 11 tabs; Shop management moved into it. |
 | 2026-10-19 | `2a14453` | 2.18.1: the top bar and the dashboard's menu on phones. |
 | 2026-10-19 | `ca5b725` | 2.18.0: Updates → Dependency mirrors: the build's GitHub dependencies from Gitea/Forgejo mirrors (git `insteadOf` rewrites, cargo fetching through git). |
 | 2026-10-18 | `c6c0a8e` | 2.17.0: Progress → Misc Content: every duty (by content type) and open-world zone per expansion, against the active build's content scripts and drop-ins, from `kawari-questdump content`. |
@@ -125,7 +125,7 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Documentation for Kawari Web 2.19.0 (the redesign's styles, top bar and admin layout). |
+| `002dff8` | Documentation for Kawari Web 2.19.0 (the redesign's styles, top bar and admin layout). |
 | `511d7e1` | Give It to Me Raw (503) from its client script and Bob's 2026-10-18 capture: three ore mounds, each a scene, the gathering bar (EventAction 6) and a scene, then its marshlight; a new Western Thanalan drop-in layer `QB_SubWil095_001` with the three at retail's positions, level and HP; fixture 503. |
 | `f7c0c98` | Takin' What They're Givin' (623), Supply and Demands (328) and The Perfect Swarm (329), from their client scripts (Bob's 2026-10-19 dumps) and his 2026-10-18 Chronofoil capture; fixtures 623, 328, 329. |
 | `359bdfe` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (the quests checked against his 2026-10-19 dumps run well). |
