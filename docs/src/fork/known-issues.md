@@ -141,6 +141,13 @@ add one when something is found.
 * Class rotations time a re-applied debuff per target (`refresh`) instead of reading the target's statuses, and
   don't yet know procs (`ActionProcStatus`) or charges. The quest battles' timelines are still fixed timepoints:
   they move to rotations as Recorder 2.7 recordings of them come in.
+* Eastern, Southern and Northern Thanalan's and Mor Dhona's monsters have no timelines (no Recorder export of those
+  zones): default auto-attack, hitbox and damage, no skills. Northern Thanalan's drop-in only has the 99 spawn points
+  of a short visit.
+* Monsters standing still where they spawned (Bob, Western Thanalan, 2026-10-19): retail's all wander. The world
+  server now logs the first few NPCs per zone that can't (`can't wander from ...: no navmesh path there`) and wanders
+  on retail's timing; the cause in Bob's game (no navmesh for the zone, or spawn points off it) needs a bundle from
+  there.
 * To Guard a Guardian: which six Ixali come first is a guess from where they stand. Where the navmesh has holes,
   NPCs in content walk straight across them (rocks included) rather than stall the battle. Dying sends you back out to the
   instructor (as any lost quest battle does); whether retail offers a retry first isn't recorded.

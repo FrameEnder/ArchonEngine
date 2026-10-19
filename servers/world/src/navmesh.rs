@@ -233,7 +233,8 @@ impl Navmesh {
         }
     }
 
-    pub fn find_wander_position(&mut self, position: Vec3A) -> Vec3A {
+    /// A random spot on the navmesh near `position`, or None when `position` isn't on the navmesh.
+    pub fn find_wander_position(&mut self, position: Vec3A) -> Option<Vec3A> {
         unsafe {
             let mut filter = dtQueryFilter {
                 m_areaCost: [0.0; 64],
@@ -244,26 +245,32 @@ impl Navmesh {
 
             let (start_poly, _) =
                 Self::get_polygon_at_location(self.navmesh_query, position, &filter);
+            if start_poly == 0 {
+                return None;
+            }
 
-            let max_radius = 5.0; // TODO: hardcoded
+            // Retail strays a median 6 yalms (90 % within 9) from where it's first seen, so about 5 from home.
+            let max_radius = 5.0;
 
             let mut random_ref = 0;
             let mut random_pt = [0.0; 3];
 
-            assert!(
-                dtNavMeshQuery_findRandomPointAroundCircle(
-                    self.navmesh_query,
-                    start_poly,
-                    &position.x,
-                    max_radius,
-                    &filter,
-                    Some(frand),
-                    &mut random_ref,
-                    random_pt.as_mut_ptr()
-                ) == DT_SUCCESS
-            );
+            if dtNavMeshQuery_findRandomPointAroundCircle(
+                self.navmesh_query,
+                start_poly,
+                &position.x,
+                max_radius,
+                &filter,
+                Some(frand),
+                &mut random_ref,
+                random_pt.as_mut_ptr(),
+            ) & DT_SUCCESS
+                == 0
+            {
+                return None;
+            }
 
-            Vec3A::from_array(random_pt)
+            Some(Vec3A::from_array(random_pt))
         }
     }
 

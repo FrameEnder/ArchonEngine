@@ -8,8 +8,9 @@ use std::{
 use glam::Vec3A;
 use kawari::{
     common::{
-        AUTO_ATTACK_RATE, JumpState, MOB_WANDER_TIME, MoveAnimationState, MoveAnimationType,
-        ObjectId, ObjectTypeId, ObjectTypeKind, Position, STRIKING_DUMMY_NAME_ID, TimepointData,
+        AUTO_ATTACK_RATE, JumpState, MOB_WANDER_JITTER, MOB_WANDER_TIME, MoveAnimationState,
+        MoveAnimationType, ObjectId, ObjectTypeId, ObjectTypeKind, Position,
+        STRIKING_DUMMY_NAME_ID, TimepointData,
     },
     ipc::zone::{
         ActionRequest, ActionType, ActorControlCategory, BattleNpcSubKind, CharacterDataFlag,
@@ -78,6 +79,8 @@ const LEASH_DISTANCE: f32 = 40.0;
 
 /// How close to home an enemy that gave up has to get before it pays attention again.
 const HOME_DISTANCE: f32 = 3.0;
+/// How many NPCs that can't wander an instance logs (the rest are only counted.)
+const STUCK_WANDERERS_LOGGED: usize = 5;
 
 /// Updates NPCs in this instance.
 pub fn npc_behavior(
@@ -287,6 +290,8 @@ pub fn npc_behavior(
     let mut new_action_requests = Vec::new();
     let mut new_timeline_states = Vec::new();
     let mut dropped_targets = Vec::new();
+    // Idle NPCs that couldn't wander (off the navmesh, or no path to the spot): (actor, layout ID, where.)
+    let mut cant_wander: Vec<(ObjectId, u32, Vec3A)> = Vec::new();
 
     // mut pass
     for (id, actor) in &mut instance.actors {
@@ -472,10 +477,14 @@ pub fn npc_behavior(
                     && Instant::now().duration_since(*last_wander_timestamp) > MOB_WANDER_TIME
                 {
                     // Wander around home, rather than drifting further away each time.
-                    *current_target = Some(NpcTarget::Position(
-                        instance.navmesh.find_wander_position(*home),
-                    ));
-                    *last_wander_timestamp = Instant::now();
+                    match instance.navmesh.find_wander_position(*home) {
+                        Some(spot) => *current_target = Some(NpcTarget::Position(spot)),
+                        None => cant_wander.push((*id, spawn.common.layout_id, *home)),
+                    }
+                    *last_wander_timestamp = Instant::now()
+                        + Duration::from_millis(fastrand::u64(
+                            0..=MOB_WANDER_JITTER.as_millis() as u64,
+                        ));
                 }
 
                 if let NpcState::OnPath { layout_id, index } = *state {
@@ -575,6 +584,12 @@ pub fn npc_behavior(
                         // Drop the current target if we can't path to them too
                         if path.is_empty() {
                             reset_target = true;
+                            if *state == NpcState::Wander
+                                && !*returning_home
+                                && matches!(current_target, NpcTarget::Position(_))
+                            {
+                                cant_wander.push((*id, spawn.common.layout_id, current_pos));
+                            }
                         }
 
                         if let NpcState::OnPath { layout_id, index } = state {
@@ -855,6 +870,24 @@ pub fn npc_behavior(
         if let Some(actor_id) = actor_id {
             let mut network = network.lock();
             set_shared_group_timeline_state(instance, &mut network, actor_id, &states);
+        }
+    }
+
+    // Say which NPCs stand still because the navmesh doesn't let them wander, once each, and only the first few.
+    for (id, layout_id, position) in cant_wander {
+        if instance.stuck_wanderers.insert(id) {
+            let count = instance.stuck_wanderers.len();
+            if count <= STUCK_WANDERERS_LOGGED {
+                tracing::warn!(
+                    "NPC {layout_id} can't wander from {position:?} in zone {}: no navmesh path there",
+                    instance.zone.id
+                );
+            } else if count == STUCK_WANDERERS_LOGGED + 1 {
+                tracing::warn!(
+                    "More NPCs can't wander in zone {} (not logging the rest)",
+                    instance.zone.id
+                );
+            }
         }
     }
 

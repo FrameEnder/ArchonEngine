@@ -105,8 +105,13 @@ pub fn mob_respawn_time(level: u8) -> Duration {
     }
 }
 
-/// How long until a normal mob decides to move to a new location.
-pub const MOB_WANDER_TIME: Duration = Duration::from_secs(10);
+/// How long until a normal mob decides to move to a new location, at least: each pause adds up to
+/// `MOB_WANDER_JITTER` more. Retail idles 20-30 s between walks (median 24 s, ~2600 idle monsters in six zones,
+/// Bob's Chronofoil captures of 2026-10-18 and 19.)
+pub const MOB_WANDER_TIME: Duration = Duration::from_secs(20);
+
+/// The most a mob's pause between walks varies by, on top of `MOB_WANDER_TIME`.
+pub const MOB_WANDER_JITTER: Duration = Duration::from_secs(10);
 
 /// How many Shared FATEs are shown on each page.
 pub const TAB_SHARED_FATE_COUNT: usize = 6;

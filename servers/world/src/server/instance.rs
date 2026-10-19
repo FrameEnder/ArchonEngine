@@ -144,6 +144,8 @@ pub struct Instance {
     pub directors: Vec<DirectorData>,
     /// Whether enemy AI is currently disabled.
     pub enemy_ai_disabled: bool,
+    /// Idle NPCs found unable to wander (off the navmesh), so each is only logged once.
+    pub stuck_wanderers: std::collections::HashSet<ObjectId>,
     /// List of running/preparing FATEs.
     pub fates: Vec<FateInstance>,
     /// List of FATEs that are able to spawn.

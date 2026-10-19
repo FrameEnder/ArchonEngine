@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-19 | — | Quests: Heir Today, Gone Tomorrow (3853); known issues.
+| 2026-10-19 | — | Combat: spawns for Eastern, Southern and Northern Thanalan and Mor Dhona, more for Western; wandering on retail's timing; known issues.
+| 2026-10-19 | `34e8a80` | Quests: Heir Today, Gone Tomorrow (3853); known issues.
 | 2026-10-19 | `a97d170` | Quests: Last Letter to Lost Hope (330), Passing the Blade (332), Following Footfalls (333); known issues.
 | 2026-10-19 | `16a962b` | Merged the Kawari Web 2.19–2.20 documentation another session pushed meanwhile (changelog).
 | 2026-10-19 | `3c2b08b` | `master` fast-forwarded to `Latest-Quest` again, after Bob ran 623, 328, 503 and 329 (changelog).
@@ -133,7 +134,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Heir Today, Gone Tomorrow (3853) from its client script and Bob's 2026-10-18 capture: a range event (scene 2), then a mildewed goobbue (new Central Thanalan drop-in layer `QB_XxaWil083_001`, timeline `MildewedGoobbue_355`) whose death moves it on; fixture 3853. |
+| — | Open-world spawns from Bob's 2026-10-19 Chronofoil capture with all the older ones: new drop-ins for Eastern (`wil_w1f3_planmap.json`, 370), Southern (`wil_w1f4_planmap.json`, 448) and Northern Thanalan (`wil_w1f5_planmap.json`, 99) and Mor Dhona (`roc_r1f1_planmap.json`, 173), and 16 more for Western Thanalan; S-rank marks left out, one spot per A/B mark. Idle NPCs wander after 20–30 s instead of every 10 s (retail's pauses, measured on ~2600 idle monsters), `find_wander_position` returns None off the navmesh instead of asserting, and the first five NPCs per zone that can't wander are logged. |
+| `34e8a80` | Heir Today, Gone Tomorrow (3853) from its client script and Bob's 2026-10-18 capture: a range event (scene 2), then a mildewed goobbue (new Central Thanalan drop-in layer `QB_XxaWil083_001`, timeline `MildewedGoobbue_355`) whose death moves it on; fixture 3853. |
 | `a97d170` | Last Letter to Lost Hope (330), Passing the Blade (332) and Following Footfalls (333) from their client scripts (Bob's 2026-10-19 dumps) and his 2026-10-18 Chronofoil capture; fixtures 330, 332, 333. |
 | `16a962b` | Merge of the Kawari Web 2.19–2.20 documentation (pushed from another session while `master` was being fast-forwarded), so `master` still fast-forwards. |
 | `3c2b08b` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (623, 328, 503 and 329 work in game). |
