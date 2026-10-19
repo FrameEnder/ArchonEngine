@@ -66,6 +66,7 @@ state after it:
 |---|---|
 | `{"talk": base}` | Talk to / examine an NPC or object (the event's `BASE_ID`); `"layout"` gives its layout ID, which the script sees as `target.object_id` (upstream's Ul'dah scripts tell NPCs apart by it) |
 | `{"kill": [base, layout]}` | A battle NPC with this BNpcBase and layout ID died (`onBNpcKill`) |
+| `{"event_item": [item, base], "layout": …}` | A key item used on this NPC or object (`onEventItem`, after the server's EventItem event starts) |
 | `{"range": arg}` | Walked into an event range (`onEnterTrigger`) |
 | `{"enter_territory": id}` | Zoned in (`onEnterTerritory`) |
 | `{"battle_won": sequence}` | A quest battle was won (the director sets the sequence) |

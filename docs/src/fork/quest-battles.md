@@ -135,6 +135,18 @@ player is sent out.
 
 ## The battles
 
+### Quest battle 18 — Way Down in the Hole (`content/questbattle/18.lua`)
+
+* Territory 248, a copy of Central Thanalan (layer `QB_SubWil066_001` of the `wil_w1` drop-in): the clay golem
+  (3872242, level 10, 844 HP, at retail's spot), the player starting at (-224.76, -31.75, 111.42), facing -0.537.
+  Bob's Chronofoil capture of 2026-10-18 (`questkit chronofoil --battle 0.11`, territory 248, duty 312).
+* Spirithold Broken's fight (quest battle 15) with Ul'dah's numbers: sequence 1 and the opening cutscene; 2 at the
+  start, 3 three seconds later with the golem's NpcYell 122; at 70% the masked mage's battle talk 95 (BNpcName 750, no
+  portrait) and sequence 4, Sand Breath (445) 2.4 s later, sequence 5, then talk 96 and sequence 6; below 45% (it went
+  45.5% -> 41.4%) sequence 7, NpcYell 123 and Plaincracker (482); at 30% sequence 8, Sand Breath, then Plaincracker
+  every 16.3 s; at 15% talk 97 and sequence 9; dead: sequence 10, "Duty Complete", scene 10 (0xF8402EFB) and out; the
+  quest moves to sequence 5. `questkit battle-sim 18`: every step within two seconds of retail.
+
 ### Quest battle 37 — Underneath the Sultantree (`content/questbattle/37.lua`)
 
 * Territory 270, a copy of Central Thanalan (the same LGBs as 141, so its NPCs are a layer of the `wil_w1` drop-in:

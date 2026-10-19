@@ -223,6 +223,9 @@ pub enum FromServer {
     QuestBattleFailed,
     /// An event action (the progress bar for examining things and such) finished casting during a quest event.
     QuestEventActionCast,
+    /// A key item's cast bar ended (an ActionRequest of type EventItem): the item, and what it was used on. The
+    /// zone connection starts its quest's event (type EventItem.)
+    EventItemUsed(u32, ObjectTypeId),
     /// An enemy's attack interrupted the event action (the progress bar) during a quest event.
     QuestEventActionInterrupted,
     /// Inform the client that another player has dismounted.

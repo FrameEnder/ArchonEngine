@@ -476,6 +476,11 @@ impl LuaPlayer {
         }
     }
 
+    /// Whether this quest (its handler ID, e.g. 65843, or quest ID) is underway.
+    pub fn has_active_quest(&mut self, id: u32) -> bool {
+        self.active_quest_mut(id).is_some()
+    }
+
     /// Our copy of an active quest.
     fn active_quest_mut(
         &mut self,

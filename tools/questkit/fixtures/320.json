@@ -1,0 +1,107 @@
+{
+  "quest": 320,
+  "script": "SubWil066_00320",
+  "source": "Bob's Chronofoil capture of 2026-10-18 (71045ef2); no client dump yet; scenes and effects from Bob's Chronofoil capture of 2026-10-18",
+  "params": {"QUESTBATTLE0": 18, "TERRITORYTYPE0": 248},
+  "steps": [
+    {
+      "talk": 1001578,
+      "layout": 3775589,
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1002947,
+      "layout": 3815997,
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000004000000", "notices": [[0, [24051]]]}
+    },
+    {
+      "talk": 1002949,
+      "layout": 3841641,
+      "scenes": [
+        {"scene": 6, "flags": "0x2001", "results": [1, 0, 0], "yield": true},
+        {"scene": 7, "flags": "0x6001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "101003000040", "notices": [[1, [1, 4]]]}
+    },
+    {
+      "talk": 1002948,
+      "layout": 3841638,
+      "scenes": [
+        {"scene": 3, "flags": "0x2001", "results": [1, 0, 0], "yield": true},
+        {"scene": 4, "flags": "0x6001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "2110020000c0", "notices": [[1, [2, 4]]]}
+    },
+    {
+      "talk": 1002950,
+      "layout": 3841642,
+      "scenes": [
+        {"scene": 9, "flags": "0x2001", "results": [1, 0, 0], "yield": true},
+        {"scene": 10, "flags": "0x6001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "3111010000e0", "notices": [[1, [3, 4]]]}
+    },
+    {
+      "talk": 1002951,
+      "layout": 3841645,
+      "scenes": [
+        {"scene": 12, "flags": "0x2001", "results": [1, 0, 0], "yield": true},
+        {"scene": 13, "flags": "0x6001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": [[1, [4, 4]]]}
+    },
+    {
+      "talk": 1002947,
+      "layout": 3815997,
+      "scenes": [
+        {"scene": 16, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 4, "vars": "000000000000", "notices": [[2, []]]}
+    },
+    {
+      "talk": 1002955,
+      "layout": 3817007,
+      "scenes": [
+        {"scene": 17, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 248}
+      ],
+      "expect": {"sequence": 4, "vars": "000000000000", "notices": []}
+    },
+    {
+      "battle_won": 5,
+      "expect": {"sequence": 5, "vars": "000000000000", "notices": []}
+    },
+    {
+      "enter_territory": 141,
+      "scenes": [
+        {"scene": 26, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 6, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1002947,
+      "layout": 3815997,
+      "scenes": [
+        {"scene": 27, "flags": "0x6001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[5, []]]}
+    },
+    {
+      "talk": 1001353,
+      "layout": 3146810,
+      "scenes": [
+        {"scene": 28, "flags": "0xf8482efb", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

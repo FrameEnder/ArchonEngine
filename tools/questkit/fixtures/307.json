@@ -1,0 +1,66 @@
+{
+  "quest": 307,
+  "script": "SubWil064_00307",
+  "source": "Bob's Chronofoil capture of 2026-10-18 (71045ef2); parameters from Sapphire's SubWil064 (no client dump yet); scenes and effects from Bob's Chronofoil capture of 2026-10-18",
+  "params": {
+    "ACTOR0": 1001447,
+    "ENEMY0": 3785130,
+    "ENEMY1": 3785131,
+    "ENEMY2": 3785134,
+    "EOBJECT0": 2000268,
+    "ITEM0": 2000212
+  },
+  "steps": [
+    {
+      "talk": 1001447,
+      "layout": 2464318,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []}
+    },
+    {
+      "talk": 2000268,
+      "layout": 3505674,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 1, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []}
+    },
+    {
+      "event_item": [2000212, 2000268],
+      "layout": 3505674,
+      "what": "ITEM0 on EOBJECT0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []}
+    },
+    {
+      "kill": [187, 3785130],
+      "what": "ENEMY0",
+      "expect": {"sequence": 1, "vars": "011000000000", "notices": []}
+    },
+    {
+      "kill": [187, 3785134],
+      "what": "ENEMY2",
+      "expect": {"sequence": 1, "vars": "021000000000", "notices": []}
+    },
+    {
+      "kill": [187, 3785131],
+      "what": "ENEMY1",
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1001447,
+      "layout": 2464318,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 13, "flags": "0x2000", "results": [1, 1603, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

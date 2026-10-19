@@ -109,6 +109,16 @@ pub struct QuestBattleInfo {
     pub variables: Vec<(String, u32)>,
 }
 
+/// A key item's EventItem row (see `GameData::get_event_item`.)
+#[derive(Debug, Clone, Copy)]
+pub struct EventItemInfo {
+    /// The Quest row it belongs to (65536 + the quest ID), 0 for none.
+    pub quest: u32,
+    pub cast_time_ms: u32,
+    /// The Action row its use animates as (ActorCast and ActionEffect's spell ID.)
+    pub action: u16,
+}
+
 /// Convenient methods built on top of Physis to access data relevant to the server
 #[derive(Clone)]
 pub struct GameData {
@@ -1163,6 +1173,22 @@ impl GameData {
                 || row.AdditionalCooldownGroup == crate::server::GCD_GROUP,
             recast: row.Recast100ms as f32 / 10.0,
             combo_from: row.ActionCombo as u32,
+        })
+    }
+
+    /// A key item's EventItem row: the quest it belongs to (Quest row, e.g. 65843), its cast time in milliseconds and
+    /// the Action row its use animates as.
+    pub fn get_event_item(&mut self, item_id: u32) -> Option<EventItemInfo> {
+        let sheet = icarus::EventItem::EventItemSheet::read_from(
+            &mut self.resource,
+            get_config().world.language(),
+        )
+        .ok()?;
+        let row = sheet.row(item_id)?;
+        Some(EventItemInfo {
+            quest: row.Quest,
+            cast_time_ms: row.CastTime as u32 * 1000,
+            action: row.Action,
         })
     }
 

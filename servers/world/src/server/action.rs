@@ -115,11 +115,26 @@ pub fn handle_action_messages(
     msg: &ToServer,
 ) -> bool {
     if let ToServer::ActionRequest(from_id, from_actor_id, request) = msg {
+        if request.action_type == ActionType::EventItem {
+            start_event_item(data, game_data, network, *from_id, *from_actor_id, request);
+            return true;
+        }
+
         let (category, cast_time);
         let recast;
         {
             let mut game_data = game_data.lock();
-            (category, cast_time) = game_data.get_casttime(request.action_id).unwrap();
+            // Not an action the Action sheet has (an ActionRequest the server doesn't handle yet): ignored, rather
+            // than taking the server down.
+            let Some(cast) = game_data.get_casttime(request.action_id) else {
+                tracing::warn!(
+                    "No Action row for {:?} {}, ignoring the request",
+                    request.action_type,
+                    request.action_id
+                );
+                return true;
+            };
+            (category, cast_time) = cast;
             recast = game_data.get_action_recast(request.action_id);
         }
 
@@ -231,6 +246,119 @@ pub fn handle_action_messages(
 
     false
 }
+
+/// A key item used on something (ActionRequest of type EventItem), as retail does it (Bob's Chronofoil capture of
+/// 2026-10-18, Out of House and Home): its cast bar (ActorCast with the EventItem's Action as the spell, the item as
+/// the action and its CastTime), then, when the bar ends (`use_event_item`), the use itself.
+fn start_event_item(
+    data: Arc<Mutex<WorldServer>>,
+    game_data: Arc<Mutex<GameData>>,
+    network: Arc<Mutex<NetworkState>>,
+    from_id: ClientId,
+    from_actor_id: ObjectId,
+    request: &ActionRequest,
+) {
+    let Some(info) = game_data.lock().get_event_item(request.action_id) else {
+        tracing::warn!(
+            "{} isn't an event item, ignoring its use",
+            request.action_id
+        );
+        return;
+    };
+
+    let mut data = data.lock();
+    let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
+        return;
+    };
+    let Some(actor) = instance.find_actor(from_actor_id) else {
+        return;
+    };
+    if info.cast_time_ms > 0 {
+        let actor_cast = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
+            spell_id: info.action,
+            action_id: request.action_id,
+            action_type: request.action_type,
+            omen_delay: 0,
+            cast_time: info.cast_time_ms as f32 / 1000.0,
+            target: request.target.object_id,
+            rotation: request.rotation1,
+            interruptible: false,
+            ballista_entity_id: ObjectId::default(),
+            position: actor.position(),
+        });
+        let mut network = network.lock();
+        network.send_in_range_inclusive_instance(
+            from_actor_id,
+            instance,
+            FromServer::PacketSegment(actor_cast, from_actor_id),
+            DestinationNetwork::ZoneClients,
+        );
+    }
+    // Moving cancels it like any cast (`CastAction`, which `execute_queued_task` sends to `use_event_item`.)
+    instance.insert_task(
+        from_id,
+        from_actor_id,
+        Duration::from_millis(info.cast_time_ms as u64),
+        QueuedTaskData::CastAction {
+            request: request.clone(),
+            interruptible: info.cast_time_ms > 0,
+        },
+    );
+}
+
+/// The key item's cast bar ended: retail's ActionEffect (the EventItem's Action as the animation, no effects, a 0.1 s
+/// lock), then the quest's event, started by the zone connection (`FromServer::EventItemUsed`.)
+pub fn use_event_item(
+    network: Arc<Mutex<NetworkState>>,
+    data: Arc<Mutex<WorldServer>>,
+    game_data: Arc<Mutex<GameData>>,
+    from_id: ClientId,
+    from_actor_id: ObjectId,
+    request: &ActionRequest,
+) {
+    let spell_id = game_data
+        .lock()
+        .get_event_item(request.action_id)
+        .map(|info| info.action)
+        .unwrap_or_default();
+    let data = data.lock();
+    let Some(instance) = data.find_actor_instance(from_actor_id) else {
+        return;
+    };
+    let Some(actor) = instance.find_actor(from_actor_id) else {
+        return;
+    };
+    let mut network = network.lock();
+    let ipc = ActionEffect {
+        animation_target_id: request.target,
+        targets: vec![request.target],
+        action_id: request.action_id,
+        animation_lock: EVENT_ITEM_ANIMATION_LOCK,
+        rotation: actor.rotation(),
+        spell_id,
+        source_sequence: request.sequence,
+        action_type: ActionType::EventItem,
+        global_sequence: network.global_action_sequence,
+        ..Default::default()
+    }
+    .package()
+    .unwrap();
+    network.global_action_sequence += 1;
+    network.send_in_range_inclusive_instance(
+        from_actor_id,
+        instance,
+        FromServer::PacketSegment(ipc, from_actor_id),
+        DestinationNetwork::ZoneClients,
+    );
+    network.send_to(
+        from_id,
+        FromServer::EventItemUsed(request.action_id, request.target),
+        DestinationNetwork::ZoneClients,
+    );
+}
+
+/// What retail's ActionEffect for a key item's use locks (0.1 s, Bob's 2026-10-18 capture.)
+const EVENT_ITEM_ANIMATION_LOCK: f32 = 0.1;
 
 /// Executes an action, and returns a list of Tasks that must be executed by the client.
 pub fn execute_action(

@@ -128,6 +128,26 @@ The bar's end comes from the server (a timer), not from the client, so what `onE
 client's next packet: objects answered several seconds after the bar (2.7 and 6 s for the gangplank, 2026-10-17
 bundle), as did anything else a server message gives a script (kills, won quest battles).
 
+### Key items used on something (event items)
+
+Some steps want a key item used on an object or NPC (Out of House and Home: ITEM0 on the fissure). On retail (Bob's
+Chronofoil capture of 2026-10-18):
+
+1. the client sends an **ActionRequest** of type **EventItem** (3) with the item as the action and the object
+   (its layout ID) as the target;
+2. the server shows its cast bar: ActorCast with the EventItem row's `Action` as the spell, the item as the action and
+   the row's `CastTime` (3 s for it); moving cancels it like any cast;
+3. when it ends: ActionEffect (same spell and item, no effects, a 0.1 s animation lock), then the quest's event:
+   EventStart on the object with **type 8 (EventItem) and the item as its argument**, the quest's scene, EventFinish
+   (type 8, result 1, the item).
+
+Kawari does this in `server/action.rs` (`start_event_item`, `use_event_item`, the cast as a `CastAction` task) and
+`main.rs` (`FromServer::EventItemUsed`): the EventItem row's `Quest` must be underway, and its script gets
+`onEventItem(item_id, target, player)` with `BASE_ID` the object's base ID. Before, any EventItem ActionRequest hit
+an `unimplemented!()` (and any ActionRequest without an Action row an `unwrap`), panicking the world server's task;
+an unknown action is now ignored with a warning. questkit's fixtures replay it as an `event_item: [item, base ID]`
+step.
+
 ### Quest-spawned enemies
 
 `player:spawn_quest_bnpc(layout_id)` (`ToServer::SpawnQuestBattleNpc`, handled in `server/mod.rs`):
@@ -236,7 +256,7 @@ digits>.lua`: `quest_script_path` (`event.rs`) falls back to it when the sheet's
 
 ## Scripted quests
 
-Gridania's story from Close to Home on, its side quests, the first quest after it, and Ul'dah's first seven. Every one
+Gridania's story from Close to Home on, its side quests, the first quest after it, and Ul'dah's first nine. Every one
 has a fixture from Bob's Chronofoil captures (2026-10-14 to 17), so replay checks its scenes, their flags and what it
 does outside the quest as well as its variables and notices. "Recording" means it matched a retail recording's variables and notices.
 Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `questkit replay`.
@@ -273,6 +293,8 @@ Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `
 | 550 | Underneath the Sultantree | `005/ManWil005_00550` | client script, Sapphire, recording, Chronofoil captures (2026-10-17, re-checked on 2026-10-18) (quest battle) | Offer and cutscene (0 → 1); ACTOR1 offers quest battle 37 (scene 2); the aftermath on re-entering Central Thanalan (scene 5) moves it to 255; reward (scene 6). No variables or notices at all. |
 | 303 | Step Nine | `003/SubWil060_00303` | Sapphire, Chronofoil capture (2026-10-18); **not yet the client's script** (no dump); tested in game by Bob (2026-10-19) | ACTOR0 offers it (scene 0, a yield) and gives ITEM0 (UI8BH); ACTOR1 takes it (hand-over scene 1, then 2) and gives ITEM1 (UI8BH 0, UI8BL 1, notice 0 with its icon 25210), sequence 255; ACTOR2 takes ITEM1 (scene 4) and rewards (scene 5, a yield). Parameters from Sapphire's SubWil060 until a dump confirms them. |
 | 3852 | Prudence at This Junction | `038/XxaWil063_03852` | client script, Chronofoil capture (2026-10-18); tested in game by Bob (2026-10-19) | ACTOR0 (Roger) offers it (scene 0, a yield, then scene 1; accepted after 1); ACTOR1 (Warin) moves it to 255 (scene 2, notice 0, no variables) and rewards it (scene 3, a yield with the chosen item). The client refuses the offer while 324, 305 or 306 is accepted, and the reward without item level 5 in head, body, hands, legs and feet. Not the same quest as 306 (SubWil063, same name, now a side quest). |
+| 307 | Out of House and Home | `003/SubWil064_00307` | Sapphire, Chronofoil capture (2026-10-18); **not yet the client's script** | Warin offers it (scene 0, a yield; ITEM0 in UI8BH); talking to the fissure (EOBJECT0) only plays scene 1; using ITEM0 on it (a 3 s cast, the EventItem event) plays scene 2 and brings out a coblyn (ENEMY0); its death counts UI8AL 1 and brings out two more (ENEMY1, ENEMY2); the third kill sends notice 0, clears the variables, sequence 255 (Sapphire counted to 4); Warin rewards it (scene 13). The coblyns are drop-in layer `QB_SubWil064_001` with retail's positions, levels (6, 4, 4) and HP. |
+| 320 | Way Down in the Hole | `003/SubWil066_00320` | Chronofoil capture (2026-10-18), Sapphire's quest battle; **not yet the client's script** (NPCs by recorded ENpc IDs) | Offer (0, then 1); the foreman gives four items (scene 2, UI8CL 4, notice 0 `[24051]`); one to each of four miners in any order (yield scenes 3/6/9/12 then 4/7/10/13 with 0x6001; UI8AH counts, notice 1 `[n, 4]`, a variable and BitFlag8 each, UI8CL the items left); the foreman's cutscene (16, notice 2); the guard sends you into quest battle 18 (17); winning moves to 5; back in Central Thanalan the aftermath (26, an enter-territory event) moves to 6; the foreman (27, notice 5) to 255; Momodi rewards it (28). |
 
 Upstream's own scripts cover the three city openings and the Close to Home offers. Gridania's story from Close to
 Home to The Gridanian Envoy is complete; Call of the Sea starts the next part (Limsa Lominsa). Ul'dah's runs from

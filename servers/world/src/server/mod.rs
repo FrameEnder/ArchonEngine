@@ -13,7 +13,7 @@ use crate::{
     GameData, Navmesh,
     lua::KawariLua,
     server::{
-        action::{execute_action, handle_action_messages},
+        action::{execute_action, handle_action_messages, use_event_item},
         actor::{
             NetworkedActor, NpcState, kill_actor, set_character_mode, set_player_minion,
             spawn_custom_bnpc, update_actor_hp_mp,
@@ -1394,6 +1394,18 @@ pub async fn server_main_loop(
 
                     for (instance_index, task) in &tasks_to_execute {
                         match &task.data {
+                            QueuedTaskData::CastAction { request, .. }
+                                if request.action_type == ActionType::EventItem =>
+                            {
+                                use_event_item(
+                                    network.clone(),
+                                    data.clone(),
+                                    game_data.clone(),
+                                    task.from_id,
+                                    task.from_actor_id,
+                                    request,
+                                );
+                            }
                             QueuedTaskData::CastAction { request, .. } => {
                                 execute_action(
                                     network.clone(),

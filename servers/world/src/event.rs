@@ -42,6 +42,16 @@ pub trait EventHandler: std::fmt::Debug + Send + Sync {
 
     async fn on_talk(&self, event: &Event, target_id: ObjectTypeId, player: &mut LuaPlayer) {}
 
+    /// A key item of this quest was used on `target_id` (the event was started with type EventItem.)
+    async fn on_event_item(
+        &self,
+        event: &Event,
+        item_id: u32,
+        target_id: ObjectTypeId,
+        player: &mut LuaPlayer,
+    ) {
+    }
+
     async fn on_yield(
         &self,
         event: &Event,

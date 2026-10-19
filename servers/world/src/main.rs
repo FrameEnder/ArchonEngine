@@ -4374,6 +4374,34 @@ async fn process_server_msg(
                     connection.event_finish(events).await;
                 }
             }
+            FromServer::EventItemUsed(item_id, target) => {
+                // A key item's quest event (type EventItem, its argument the item), when its quest is underway.
+                let quest = connection
+                    .game_data
+                    .lock()
+                    .get_event_item(item_id)
+                    .map(|info| info.quest)
+                    .unwrap_or_default();
+                if quest == 0 || !lua_player.has_active_quest(quest) {
+                    tracing::info!("Event item {item_id} used, but quest {quest} isn't underway");
+                } else if connection
+                    .start_event(
+                        target,
+                        HandlerId(quest),
+                        EventType::EventItem,
+                        item_id,
+                        events,
+                        lua_player,
+                    )
+                    .await
+                    && let Some(event) = events.last_mut()
+                {
+                    event
+                        .0
+                        .on_event_item(&event.1, item_id, target, lua_player)
+                        .await;
+                }
+            }
             FromServer::QuestEventActionCast => {
                 if let Some((handler, event)) = events.last() {
                     tracing::info!("Event action finished casting during event {}", event.id);

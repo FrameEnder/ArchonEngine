@@ -347,6 +347,17 @@ class Harness:
         first = self._call("onTalk", target, self.player)
         return self._drive(first, results or {}, trace)
 
+    def event_item(self, item_id: int, base_id: int, results: dict | None = None, trace: list | None = None,
+                   layout: int | None = None) -> dict:
+        """A key item used on an NPC or object (the server's EventItem event, `onEventItem(item, target, player)`)."""
+        self._new_state(base_id)
+        trace = trace if trace is not None else []
+        if self.lua.globals().onEventItem is None:
+            raise HarnessError("the script has no onEventItem for the key item's use")
+        target = self.lua.table_from({"object_id": layout}) if layout is not None else None
+        first = self._call("onEventItem", item_id, target, self.player)
+        return self._drive(first, results or {}, trace)
+
     def enter_range(self, arg: int, results: dict | None = None, trace: list | None = None) -> dict:
         self._new_state(None)
         trace = trace if trace is not None else []
