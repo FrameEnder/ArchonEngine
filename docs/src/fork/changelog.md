@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-19 | — | Kawari Web 2.18.1 (phones).
+| 2026-10-19 | — | Quests: Ul'dah's Close to Home for Pugilists (569) and Thaumaturges (570), from their client scripts; known issues.
+| 2026-10-19 | `5ad6bb2` | Kawari Web 2.18.1 (phones).
 | 2026-10-19 | `ddc8317` | Quests (Out of House and Home, Way Down in the Hole, key items used on things), quest battles (18), known issues.
 | 2026-10-19 | `31b1e8b` | `master` fast-forwarded to `Latest-Quest` again, after Bob tested Step Nine and Prudence at This Junction (changelog).
 | 2026-10-19 | `5b5e91f` | Kawari Web 2.18.0 (dependency mirrors; what each git dependency does).
@@ -117,7 +118,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Documentation for Kawari Web 2.18.1 (the top bar on phones). |
+| — | Ul'dah's Close to Home for Pugilists (`ManWil003_00569`) and Thaumaturges (`ManWil004_00570`), no longer upstream's stubs: their client scripts are 568's apart from ITEM0 and ACTOR1, so both are 568's script; replay fixtures 569 and 570 adapted from 568's. |
+| `5ad6bb2` | Documentation for Kawari Web 2.18.1 (the top bar on phones). |
 | `ddc8317` | Out of House and Home (307) and Way Down in the Hole (320) with quest battle 18, from Bob's 2026-10-18 capture. Key items can be used on things (ActionRequest type EventItem: the cast bar, the effect, the quest's EventItem event and `onEventItem`); before, using one panicked the world server's task, as did any ActionRequest without an Action row. questkit replays `event_item` steps. |
 | `31b1e8b` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (Step Nine and Prudence at This Junction tested in game). |
 | `5b5e91f` | Documentation for Kawari Web 2.18.0 (dependency mirrors) and what each git dependency does. |

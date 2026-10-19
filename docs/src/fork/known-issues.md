@@ -10,9 +10,9 @@ add one when something is found.
 * **The Gridanian Envoy** (507) and **Call of the Sea** (674) were written from Sapphire and the recording without the
   client's script: dump them in the Quest Lab to check the scene numbers. Envoy's arrival positions are Sapphire's.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
-* Limsa Lominsa has only upstream's opening. Ul'dah's story stops after **Way Down in the Hole** (320), before **Takin' What They're Givin'** (623), and its
-  **Close to Home** is only scripted for the class Bob played (`ManWil002_00568`); the other two versions
-  (`ManWil003_00569`, `ManWil004_00570`) are still upstream's stubs.
+* Limsa Lominsa has only upstream's opening. Ul'dah's story stops after **Way Down in the Hole** (320), before **Takin' What They're Givin'** (623),. Its Pugilist and
+  Thaumaturge **Close to Home** (569, 570) come from their client scripts only: no retail capture, and their replay
+  fixtures are 568's with their ITEM0 and ACTOR1 (ACTOR1's layout taken from the quest's todo location).
 * Step Nine (303), Out of House and Home (307) and Way Down in the Hole (320) were written from one retail run and
   Sapphire, without the client's scripts: branches that run didn't take may be missing, and 320's fourth miner's
   variable (UI8CH) is a guess (the last miner clears everything, so retail never showed it).

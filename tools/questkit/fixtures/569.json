@@ -1,0 +1,87 @@
+{
+  "quest": 569,
+  "script": "ManWil003_00569",
+  "source": "adapted from 568's retail fixture and the client script; no retail recording of this version",
+  "params": {
+    "ACTOR0": 1003988,
+    "ITEM0": 2000387,
+    "AETHERYTE0": 9,
+    "REWARD0": 1,
+    "SCREENIMAGE0": 14,
+    "ACTOR1": 1001286,
+    "ACTOR2": 1003908,
+    "ACTOR3": 1001353,
+    "POPRANGE0": 4110794,
+    "TERRITORYTYPE0": 130,
+    "SEQ_0_ACTOR0_LQ": 50,
+    "LOC_POS_CAM1": 4105872,
+    "LOC_POS_CAM2": 4105874,
+    "LOC_ACTION1": 605,
+    "LOC_MARKER_01": 4009142,
+    "LOC_POS_CAM3": 4009150,
+    "LOC_MARKER_02": 4009152,
+    "ACTOR20": 1001637,
+    "LOC_POS_CAM4": 4143488,
+    "HOW_TO_DESION": 13,
+    "HOW_TO_MAP_AND_NAVI": 4,
+    "LOC_ACTION2": 1005,
+    "BIND_ACTOR0": 6229228
+  },
+  "steps": [
+    {
+      "talk": 1003988,
+      "layout": 3969632,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 50, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "effects": [
+        {"zone": 130}
+      ],
+      "expect": {"sequence": 1, "vars": "000010000000", "notices": []}
+    },
+    {
+      "talk": 1003908,
+      "layout": 3969289,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 5, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "101000000020", "notices": [[2, []]]}
+    },
+    {
+      "talk": 9,
+      "layout": 3885037,
+      "what": "AETHERYTE0",
+      "scenes": [
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 2, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "effects": [
+        {"aetheryte": 9},
+        {"unlock": 1}
+      ],
+      "expect": {"sequence": 1, "vars": "2011000000a0", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1001286,
+      "layout": 2360563,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1001353,
+      "layout": 3146810,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 8, "flags": "0xf8402efb", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}
