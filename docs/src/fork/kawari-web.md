@@ -1,6 +1,6 @@
 # Kawari Web
 
-Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.15.0**) runs beside the server in its own container. Its
+Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.16.0**) runs beside the server in its own container. Its
 README is the user guide (setup, pages, service, forges, builds); this page is about **how its features work** and
 how they depend on the fork. Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates).
 
@@ -66,6 +66,25 @@ purchase history.
 
 What retail store items *do* (Tales of Adventure boosts, Fantasia, etc.) is not implemented on the server: they arrive
 as items; whether using them works depends on the server's support for that item.
+
+## Storage limits (2.16.0)
+
+Every update and build switch backs up both databases (`~/.kawari/backups/*.tar.gz`) and snapshots every character
+(`~/.kawari/characters/<content id>/*.json`); every edit, Probe sync and Auracite import snapshots that character
+first. Nothing removed them, so each update left a little more on disk. `kawari_web/retention.py` caps them:
+
+* **Backups**: the newest 20 by default (setting `keep_backups`), pruned whenever one is made. Backups that a build
+  still on disk would restore when switched back to (its `leave_backup` in `versions.json`) are never pruned, nor
+  the one just restored from.
+* **Snapshots**: the newest 30 per character by default (`keep_snapshots`), pruned whenever that character gets one;
+  the update's "Snapshot every character" step prunes every character.
+* **Builds**: installs end with "Remove old builds", the existing Prune (unpinned builds beyond Builds to keep, and
+  their image tags).
+* 0 keeps everything. The limits, the space used and "Save and apply" are on Dashboard → Database (Storage limits);
+  backups and a character's snapshots have checkboxes and **Delete ticked**.
+
+Kawari Probe's diagnostics snapshots were already capped (200). Packet captures (`data/captures`) still are only
+cleared by hand (Diagnostics).
 
 ## Quest Lab (Dashboard → Quests)
 

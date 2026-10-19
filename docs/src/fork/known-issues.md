@@ -221,6 +221,8 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
 * Gil purchases only work while the character is logged out (by design, see [Saving](saving.md)).
 * 162 costume sets in the Shop have no contents yet and can't be bought until an admin adds them.
 * Store items arrive as items; what they do when used depends on server support.
+* Packet captures (`data/captures`, one file per connection while capturing is on) have no limit; only Diagnostics'
+  clear button removes them.
 
 ## FATEs
 
