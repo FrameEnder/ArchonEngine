@@ -1,6 +1,6 @@
 # Kawari Web
 
-Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.17.0**) runs beside the server in its own container. Its
+Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.18.0**) runs beside the server in its own container. Its
 README is the user guide (setup, pages, service, forges, builds); this page is about **how its features work** and
 how they depend on the fork. Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates).
 
@@ -85,6 +85,23 @@ first. Nothing removed them, so each update left a little more on disk. `kawari_
 
 Kawari Probe's diagnostics snapshots were already capped (200). Packet captures (`data/captures`) still are only
 cleared by hand (Diagnostics).
+
+## Dependency mirrors (2.18.0)
+
+Building from source fetches Kawari's git dependencies from GitHub (`Cargo.toml`):
+
+| Repository | What it is for the server |
+|---|---|
+| `redstrate/physis` | Reads the game's files: the SqPack archives, Excel sheets, the zones' layouts (LGB/LVB: NPCs, event objects, map ranges), navmesh tiles, character customize data and save data. Kawari's `CustomizeData`, race and tribe types and layout reading come from it. |
+| `redstrate/Icarus` | Generated, typed bindings for every Excel sheet (`QuestSheet`, `ActionSheet`, `TerritoryTypeSheet`…), one branch per game patch (`ver/2026.09.01.0000.0000` now), on top of physis. `gamedata.rs` and `kawari-questdump` read all game data through it; only the sheets listed in the workspace's `features` are compiled. |
+| `redstrate/recastnavigation-rs-sys` | Rust bindings to Recast/Detour: building navmeshes from zone geometry (`generate_navmesh`) and path-finding for monsters and NPCs. |
+| `recastnavigation/recastnavigation` | The C++ Recast/Detour library itself, a git submodule of the bindings. |
+
+Updates → Dependency mirrors (`kawari_web/mirrors.py`) maps any of them to a mirror ("original mirror" per line). The
+builder sets each as `git config --global url.<mirror>.insteadOf <original>` and exports
+`CARGO_NET_GIT_FETCH_WITH_CLI=true`, so cargo's fetches and the submodule go through git and its rewrites;
+`Cargo.toml` and `Cargo.lock` are untouched. A mirror has to have the locked commits (and for Icarus the patch's
+branch) and be readable without signing in. Oodle isn't fetched by the build (it's uploaded in Setup).
 
 ## Quest Lab (Dashboard → Quests)
 

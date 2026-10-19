@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-18 | — | Tools (`kawari-questdump content`), Kawari Web 2.17.0 (Misc Content).
+| 2026-10-19 | — | Kawari Web 2.18.0 (dependency mirrors; what each git dependency does).
+| 2026-10-18 | `2aaf671` | Tools (`kawari-questdump content`), Kawari Web 2.17.0 (Misc Content).
 | 2026-10-18 | `762dd27` | Kawari Web 2.16.0 (storage limits).
 | 2026-10-18 | `89caa75` | Quests: Prudence at This Junction (3852), what a capture shows and a dump adds, the script name fallback; known issues.
 | 2026-10-18 | `d32b4af` | Quests: Step Nine (303); what 3852 needs (known issues).
@@ -75,6 +76,7 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
+| 2026-10-19 | `ca5b725` | 2.18.0: Updates → Dependency mirrors: the build's GitHub dependencies from Gitea/Forgejo mirrors (git `insteadOf` rewrites, cargo fetching through git). |
 | 2026-10-18 | `c6c0a8e` | 2.17.0: Progress → Misc Content: every duty (by content type) and open-world zone per expansion, against the active build's content scripts and drop-ins, from `kawari-questdump content`. |
 | 2026-10-18 | `ebe70cd` | 2.16.0: storage limits: the newest 20 backups and 30 snapshots per character by default, pruned as new ones are made (never a backup a build on disk would restore); old builds pruned after every install; tick and delete several backups or snapshots. |
 | 2026-10-17 | `4c80b86` | 2.15.0: Dashboard → Marketboard: every tab's rates, categories' changes, items' own prices and the listing settings, laid out like the board, written to `world.db`. |
@@ -107,11 +109,17 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`).
 
+### 2026-10-19
+
+| Commit | Change |
+|---|---|
+| — | Documentation for Kawari Web 2.18.0 (dependency mirrors) and what each git dependency does. |
+
 ### 2026-10-18
 
 | Commit | Change |
 |---|---|
-| — | `kawari-questdump content`: `content-index.json`, every duty and open-world zone with names, content types, territories and expansions, for Kawari Web's Misc Content progress. |
+| `2aaf671` | `kawari-questdump content`: `content-index.json`, every duty and open-world zone with names, content types, territories and expansions, for Kawari Web's Misc Content progress. |
 | `762dd27` | Documentation for Kawari Web 2.16.0 (storage limits). |
 | `89caa75` | Prudence at This Junction (3852, after Step Nine) from Bob's 2026-10-18 capture, checked against its client script (dump of 2026-10-19); quest scripts can be found by quest number when the sheet's script name has no file (`quest_script_path`), for quests newer than the references. |
 | `d32b4af` | Step Nine (303), the quest after Underneath the Sultantree, from Bob's 2026-10-18 capture and Sapphire (fixture and replay; the client's script still to check). |
