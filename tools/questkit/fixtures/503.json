@@ -1,0 +1,86 @@
+{
+  "quest": 503,
+  "script": "SubWil095_00503",
+  "source": "Bob's Chronofoil capture of 2026-10-18 (71045ef2); parameters from the client's quest script (kawari-questdump, 2026-10-19); scenes and effects from Bob's Chronofoil capture of 2026-10-18",
+  "params": {
+    "ACTOR0": 1002061,
+    "EOBJECT0": 2001368,
+    "EVENT_ACTION_GATHER_SHORT": 6,
+    "ENEMY0": 3952090,
+    "EVENT_ACTION_SEARCH": 1,
+    "ITEM0": 2000369,
+    "EOBJECT1": 2001369,
+    "ENEMY1": 3952281,
+    "EOBJECT2": 2001735,
+    "ENEMY2": 3952286
+  },
+  "steps": [
+    {
+      "talk": 1002061,
+      "layout": 3629834,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 2001368,
+      "layout": 3951891,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 1, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "spawns": [3952090],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [187, 3952090],
+      "what": "ENEMY0",
+      "expect": {"sequence": 1, "vars": "110010000080", "notices": [[0, [1, 3, 20004]]]}
+    },
+    {
+      "talk": 2001735,
+      "layout": 4161181,
+      "what": "EOBJECT2",
+      "scenes": [
+        {"scene": 7, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 8, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "spawns": [3952286],
+      "expect": {"sequence": 1, "vars": "110010000080", "notices": []}
+    },
+    {
+      "kill": [187, 3952286],
+      "what": "ENEMY2",
+      "expect": {"sequence": 1, "vars": "2101200000a0", "notices": [[0, [2, 3, 20004]]]}
+    },
+    {
+      "talk": 2001369,
+      "layout": 3951893,
+      "what": "EOBJECT1",
+      "scenes": [
+        {"scene": 4, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 5, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "spawns": [3952281],
+      "expect": {"sequence": 1, "vars": "2101200000a0", "notices": []}
+    },
+    {
+      "kill": [187, 3952281],
+      "what": "ENEMY1",
+      "expect": {"sequence": 255, "vars": "003000000000", "notices": [[0, [3, 3, 20004]]]}
+    },
+    {
+      "talk": 1002061,
+      "layout": 3629834,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 10, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 11, "flags": "0x2000", "results": [1, 2662, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}
