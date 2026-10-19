@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-19 | — | Merged the Kawari Web 2.19–2.20 documentation another session pushed meanwhile (changelog).
+| 2026-10-19 | — | Quests: Last Letter to Lost Hope (330), Passing the Blade (332), Following Footfalls (333); known issues.
+| 2026-10-19 | `16a962b` | Merged the Kawari Web 2.19–2.20 documentation another session pushed meanwhile (changelog).
 | 2026-10-19 | `3c2b08b` | `master` fast-forwarded to `Latest-Quest` again, after Bob ran 623, 328, 503 and 329 (changelog).
 | 2026-10-19 | `cc0bd05` | Kawari Web 2.19.1 and 2.20.0 (Quest Progress fix; the redesign's player pages, announcements, shop pictures).
 | 2026-10-19 | `9a3a7ff` | Changelog: Kawari Web 2.19.0's commit hashes.
@@ -131,7 +132,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Merge of the Kawari Web 2.19–2.20 documentation (pushed from another session while `master` was being fast-forwarded), so `master` still fast-forwards. |
+| — | Last Letter to Lost Hope (330), Passing the Blade (332) and Following Footfalls (333) from their client scripts (Bob's 2026-10-19 dumps) and his 2026-10-18 Chronofoil capture; fixtures 330, 332, 333. |
+| `16a962b` | Merge of the Kawari Web 2.19–2.20 documentation (pushed from another session while `master` was being fast-forwarded), so `master` still fast-forwards. |
 | `3c2b08b` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (623, 328, 503 and 329 work in game). |
 | `cc0bd05` | Documentation for Kawari Web 2.19.1 and 2.20.0. |
 | `9a3a7ff` | Changelog: Kawari Web 2.19.0's commit hashes. |

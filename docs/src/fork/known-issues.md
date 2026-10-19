@@ -15,7 +15,7 @@ add one when something is found.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
 * Limsa Lominsa has only upstream's opening, checked against the client's script but not retail: the client's
   sequence 1 (riding the Crow's Lift with Grehfarr, UI8AL/BitFlag8 1) is skipped, since accepting goes straight to 255.
-  Ul'dah's quests stop after **The Perfect Swarm** (329). Its Pugilist and
+  Ul'dah's quests stop after **Last Letter to Lost Hope** (330): **Heir Today, Gone Tomorrow** (3853), which **Passing the Blade** (332) and **Following Footfalls** (333) need, isn't scripted yet. Its Pugilist and
   Thaumaturge **Close to Home** (569, 570) come from their client scripts only: no retail capture, and their replay
   fixtures are 568's with their ITEM0 and ACTOR1 (ACTOR1's layout taken from the quest's todo location).
 * Quest-spawned enemies (307's coblyns, 503's marshlights) lack the quest fields retail's SpawnNpc gives them (Bob's
