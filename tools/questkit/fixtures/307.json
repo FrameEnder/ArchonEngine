@@ -1,15 +1,8 @@
 {
   "quest": 307,
   "script": "SubWil064_00307",
-  "source": "Bob's Chronofoil capture of 2026-10-18 (71045ef2); parameters from Sapphire's SubWil064 (no client dump yet); scenes and effects from Bob's Chronofoil capture of 2026-10-18",
-  "params": {
-    "ACTOR0": 1001447,
-    "ENEMY0": 3785130,
-    "ENEMY1": 3785131,
-    "ENEMY2": 3785134,
-    "EOBJECT0": 2000268,
-    "ITEM0": 2000212
-  },
+  "source": "Bob's Chronofoil capture of 2026-10-18 (71045ef2); parameters from the client's quest script (kawari-questdump, 2026-10-19); scenes and effects from Bob's Chronofoil capture of 2026-10-18",
+  "params": {"ACTOR0": 1001447, "ITEM0": 2000212, "EOBJECT0": 2000268, "ENEMY0": 3785130, "ENEMY1": 3785131, "ENEMY2": 3785134},
   "steps": [
     {
       "talk": 1001447,

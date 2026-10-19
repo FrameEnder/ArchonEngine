@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-19 | — | Quests: Ul'dah's Close to Home for Pugilists (569) and Thaumaturges (570), from their client scripts; known issues.
+| 2026-10-19 | — | Quests: Step Nine, Out of House and Home and Way Down in the Hole checked against their client scripts; known issues.
+| 2026-10-19 | `c73d330` | Quests: Ul'dah's Close to Home for Pugilists (569) and Thaumaturges (570), from their client scripts; known issues.
 | 2026-10-19 | `5ad6bb2` | Kawari Web 2.18.1 (phones).
 | 2026-10-19 | `ddc8317` | Quests (Out of House and Home, Way Down in the Hole, key items used on things), quest battles (18), known issues.
 | 2026-10-19 | `31b1e8b` | `master` fast-forwarded to `Latest-Quest` again, after Bob tested Step Nine and Prudence at This Junction (changelog).
@@ -118,7 +119,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Ul'dah's Close to Home for Pugilists (`ManWil003_00569`) and Thaumaturges (`ManWil004_00570`), no longer upstream's stubs: their client scripts are 568's apart from ITEM0 and ACTOR1, so both are 568's script; replay fixtures 569 and 570 adapted from 568's. |
+| — | Step Nine (303), Out of House and Home (307) and Way Down in the Hole (320) checked against their client scripts (Bob's 2026-10-19 dumps): 303 and 307 already matched (307's three kills confirmed); 320 now uses the quest's ACTOR names instead of recorded ENpc IDs, offers each recipient only while their variable and BitFlag8 are unset (the fourth's UI8CH confirmed), plays the foreman's scene 15 in sequence 2, and checks the guard as the client does. Fixtures carry the dumps' params. |
+| `c73d330` | Ul'dah's Close to Home for Pugilists (`ManWil003_00569`) and Thaumaturges (`ManWil004_00570`), no longer upstream's stubs: their client scripts are 568's apart from ITEM0 and ACTOR1, so both are 568's script; replay fixtures 569 and 570 adapted from 568's. |
 | `5ad6bb2` | Documentation for Kawari Web 2.18.1 (the top bar on phones). |
 | `ddc8317` | Out of House and Home (307) and Way Down in the Hole (320) with quest battle 18, from Bob's 2026-10-18 capture. Key items can be used on things (ActionRequest type EventItem: the cast bar, the effect, the quest's EventItem event and `onEventItem`); before, using one panicked the world server's task, as did any ActionRequest without an Action row. questkit replays `event_item` steps. |
 | `31b1e8b` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (Step Nine and Prudence at This Junction tested in game). |

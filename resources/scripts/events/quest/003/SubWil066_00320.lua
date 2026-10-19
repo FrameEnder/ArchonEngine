@@ -1,35 +1,35 @@
 -- Quest: Way Down in the Hole (Ul'dah)
 --
--- Written from retail (Bob's Chronofoil capture of 2026-10-18, questkit replay 320) and Sapphire's quest battle; not
--- yet checked against the client's script (no kawari-questdump of it yet), so the NPCs are compared by the ENpc IDs
--- retail showed rather than the quest's ACTOR names:
--- Sequence 0:   the issuer offers it (scene 0, a yield returning 1 when accepted), then scene 1; accepted after it.
--- Sequence 1:   the foreman (scene 2) hands you four of the item (UI8CL = 4, notice 0 with its icon 24051), sequence 2.
--- Sequence 2:   give one to each of four miners, in any order (each a yield, scenes 3, 6, 9 or 12, returning 1, then
---               the next scene with 0x6001): UI8AH counts them (notice 1 [count, 4]), UI8CL counts the items left,
---               and each miner has their own variable and BitFlag8 (the first UI8AL and flag 1, the second UI8BH and
---               flag 2, the third UI8BL and flag 3; the fourth's isn't seen: the last one clears everything and moves
---               to sequence 3.)
+-- Checked against the client's quest script (kawari-questdump, 2026-10-19) and retail (Bob's Chronofoil capture of
+-- 2026-10-18, questkit replay 320; the quest battle from Sapphire's):
+-- Sequence 0:   ACTOR0 offers it (scene 0, a yield: the client's QuestOffer, 1 when accepted; the client itself refuses
+--               while QST_ACCEPT_CHECK is accepted), then scene 1, where the client accepts it; accepted after it.
+-- Sequence 1:   the foreman, ACTOR1 (scene 2, only talk), hands you four ITEM0 (UI8CL = 4, notice 0 with its icon
+--               24051), sequence 2. (The client lists ITEM0 from UI8BH in sequence 1 and from UI8CL in sequence 2.)
+-- Sequence 2:   give one to each of ACTOR2..ACTOR5, in any order (each a hand-over window, scenes 3, 6, 9 or 12,
+--               a yield returning 1 when handed over, then the next scene, 4, 7, 10 or 13, with 0x6001, where they
+--               run off): UI8AH counts them (todo 1 ticks at 4; notice 1 [count, 4]), UI8CL counts the items left,
+--               and each has their own variable and BitFlag8, the client offering them while both are unset: ACTOR2
+--               UI8AL and flag 1, ACTOR3 UI8BH and flag 2, ACTOR4 UI8BL and flag 3, ACTOR5 UI8CH and flag 4 (the
+--               last one done clears everything and moves to sequence 3, so retail never shows the fourth's.)
+--               The foreman can be talked to meanwhile (scene 15, only talk; from the client's script, not retail.)
 -- Sequence 3:   the foreman's cutscene (scene 16): notice 2, sequence 4.
--- Sequence 4:   the guard at the mine (scene 17, a yield returning 1) sends you into quest battle 18 (territory 248);
---               winning it moves the quest to sequence 5.
--- Sequence 5:   back in Central Thanalan, the aftermath cutscene (scene 26, an enter-territory event): sequence 6.
+-- Sequence 4:   ACTOR6 at the mine (scene 17, a yield: the client's YesNoQuestBattle for QUESTBATTLE0, 1 for yes; the
+--               client offers it while UI8AL and BitFlag8 1 are unset) sends you into QUESTBATTLE0 (TERRITORYTYPE0);
+--               winning it moves the quest to sequence 5. ACTOR7..ACTOR12 and EOBJECT0 are also offered in this
+--               sequence, but the client's script has no scene for them (18-25 are empty): the event just ends.
+-- Sequence 5:   back in TERRITORYTYPE1, the aftermath cutscene (scene 26, an enter-territory event): sequence 6.
 -- Sequence 6:   the foreman (scene 27, 0x6001): notice 5, sequence 255.
--- Sequence 255: Momodi in Ul'dah rewards it (scene 28, a yield with the chosen item.)
+-- Sequence 255: ACTOR13 (Momodi) in Ul'dah rewards it (scene 28, a yield: QuestReward, 1 and the chosen item; the
+--               client shows the unlocks itself, the server grants REWARD0 and REWARD_LEVE.)
 
-ISSUER = 1001578       -- layout 3775589
-FOREMAN = 1002947      -- layout 3815997
-GUARD = 1002955        -- layout 3817007, the way into the mine
-MOMODI = 1001353       -- layout 3146810
-QUEST_BATTLE = QUESTBATTLE0 or 18
-QUEST_BATTLE_TERRITORY = TERRITORYTYPE0 or 248
-
--- The four miners: their ENpc, the scenes (offer, then hand-over), and the variable and BitFlag8 marking them done.
+-- The four ITEM0 recipients: the scenes (hand-over, then given) and the variable and BitFlag8 marking them done,
+-- from the client's IsAcceptEvent.
 MINERS = {
-    [1002948] = { offer = 3, given = 4, byte = 0, high = false, flag = 1 }, -- layout 3841638, UI8AL
-    [1002949] = { offer = 6, given = 7, byte = 1, high = true, flag = 2 },  -- layout 3841641, UI8BH
-    [1002950] = { offer = 9, given = 10, byte = 1, high = false, flag = 3 }, -- layout 3841642, UI8BL
-    [1002951] = { offer = 12, given = 13, byte = 2, high = true, flag = 4 }, -- layout 3841645, UI8CH (a guess)
+    [ACTOR2] = { offer = 3, given = 4, byte = 0, high = false, flag = 1 }, -- UI8AL
+    [ACTOR3] = { offer = 6, given = 7, byte = 1, high = true, flag = 2 }, -- UI8BH
+    [ACTOR4] = { offer = 9, given = 10, byte = 1, high = false, flag = 3 }, -- UI8BL
+    [ACTOR5] = { offer = 12, given = 13, byte = 2, high = true, flag = 4 }, -- UI8CH
 }
 MINERS_NEEDED = 4
 ITEMS_GIVEN = 4
@@ -37,6 +37,7 @@ ITEMS_GIVEN = 4
 SCENE_OFFER = 0
 SCENE_ACCEPTED = 1
 SCENE_FOREMAN = 2
+SCENE_FOREMAN_WAITING = 15
 SCENE_FOREMAN_CUTSCENE = 16
 SCENE_ENTER_BATTLE = 17
 SCENE_AFTERMATH = 26
@@ -96,20 +97,23 @@ function onTalk(target, player)
     local sequence = player:get_quest_sequence(EVENT_ID)
     local miner = MINERS[BASE_ID]
 
-    if sequence == nil and BASE_ID == ISSUER then
+    if sequence == nil and BASE_ID == ACTOR0 then
         play(player, SCENE_OFFER, HIDE_HOTBAR)
-    elseif sequence == 1 and BASE_ID == FOREMAN then
+    elseif sequence == 1 and BASE_ID == ACTOR1 then
         play(player, SCENE_FOREMAN, HIDE_HOTBAR)
-    elseif sequence == 2 and miner ~= nil and not hasBitFlag8(player, miner.flag) then
+    elseif sequence == 2 and miner ~= nil and getVar(player, miner.byte, miner.high) == 0
+        and not hasBitFlag8(player, miner.flag) then
         current_miner = miner
         play(player, miner.offer, MINER_FLAGS)
-    elseif sequence == 3 and BASE_ID == FOREMAN then
+    elseif sequence == 2 and BASE_ID == ACTOR1 then
+        play(player, SCENE_FOREMAN_WAITING, HIDE_HOTBAR)
+    elseif sequence == 3 and BASE_ID == ACTOR1 then
         play(player, SCENE_FOREMAN_CUTSCENE, CUTSCENE_FLAGS)
-    elseif sequence == 4 and BASE_ID == GUARD then
+    elseif sequence == 4 and BASE_ID == ACTOR6 and getVar(player, 0, false) == 0 and not hasBitFlag8(player, 1) then
         play(player, SCENE_ENTER_BATTLE, HIDE_HOTBAR)
-    elseif sequence == 6 and BASE_ID == FOREMAN then
+    elseif sequence == 6 and BASE_ID == ACTOR1 then
         play(player, SCENE_REPORT, MINER_GIVEN_FLAGS)
-    elseif sequence == 255 and BASE_ID == MOMODI then
+    elseif sequence == 255 and BASE_ID == ACTOR13 then
         play(player, SCENE_FINISH, REWARD_FLAGS)
     else
         player:finish_event()
@@ -174,7 +178,7 @@ function sceneFinished(scene, results, player)
     elseif scene == SCENE_ENTER_BATTLE then
         if results[1] == 1 then
             player:finish_event()
-            player:join_quest_battle(QUEST_BATTLE, QUEST_BATTLE_TERRITORY)
+            player:join_quest_battle(QUESTBATTLE0, TERRITORYTYPE0)
             return
         end
     elseif scene == SCENE_AFTERMATH then

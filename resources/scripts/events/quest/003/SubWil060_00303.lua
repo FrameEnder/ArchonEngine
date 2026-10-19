@@ -1,12 +1,16 @@
 -- Quest: Step Nine (Ul'dah)
 --
--- Written from retail (Bob's Chronofoil capture of 2026-10-18, questkit replay 303) and Sapphire's SubWil060; not yet
--- checked against the client's script (no kawari-questdump of it yet):
--- Sequence 0:   ACTOR0 offers it (scene 0, a yield returning 1 when accepted.) Accepting gives you ITEM0 to deliver
---               (UI8BH = 1.)
--- Sequence 1:   ACTOR1 takes ITEM0 (scene 1, a hand-over returning 1 and the item) and gives you ITEM1 (scene 2):
---               UI8BH = 0, UI8BL = 1, notice 0 with ITEM1's icon, then sequence 255.
--- Sequence 255: ACTOR2 takes ITEM1 (scene 4, a hand-over) and gives the reward (scene 5, a yield returning 1.)
+-- Checked against the client's quest script (kawari-questdump, 2026-10-19) and retail (Bob's Chronofoil capture of
+-- 2026-10-18, questkit replay 303):
+-- Sequence 0:   ACTOR0 offers it (scene 0, a yield: the client's QuestOffer, 1 when accepted, 0 when declined.)
+--               Accepting gives you ITEM0 to deliver (UI8BH = 1; the client lists ITEM0 from UI8BH.)
+-- Sequence 1:   ACTOR1 takes ITEM0 (scene 1, the hand-over window, returning 1 and the item; nothing when it's closed)
+--               and gives you ITEM1 (scene 2, which only talks): UI8BH = 0, UI8BL = 1 (ITEM1's count), notice 0 with
+--               ITEM1's icon, then sequence 255. (The client ticks todo 0 on UI8AL >= 1 in sequence 1, which retail
+--               never sets: it moves straight on.)
+-- Sequence 255: ACTOR2 takes ITEM1 (scene 4, a hand-over) and gives the reward (scene 5, a yield: the client's
+--               QuestReward, 1 to complete it; anything else cancels the trade and the quest stays at 255.)
+-- Scenes 3 and 6 are empty in the client's script and never played.
 
 SCENE_OFFER = 0
 SCENE_DELIVER = 1
