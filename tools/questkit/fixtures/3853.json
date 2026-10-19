@@ -1,0 +1,41 @@
+{
+  "quest": 3853,
+  "script": "XxaWil083_03853",
+  "source": "Bob's Chronofoil capture of 2026-10-18 (71045ef2); parameters from the client's quest script (kawari-questdump, 2026-10-19); scenes and effects from Bob's Chronofoil capture of 2026-10-18",
+  "params": {"ACTOR0": 1001605, "EVENTRANGE0": 8371791, "ENEMY0": 4142933, "EOBJECT0": 2001740, "QST_ACCEPT_CHECK": 65867},
+  "steps": [
+    {
+      "talk": 1001605,
+      "layout": 3955852,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "range": 8371791,
+      "what": "EVENTRANGE0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "spawns": [4142933],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [355, 4142933],
+      "what": "ENEMY0",
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1001605,
+      "layout": 3955852,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [1, 3539, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

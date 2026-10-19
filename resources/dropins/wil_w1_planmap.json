@@ -14196,6 +14196,34 @@
                     "rotation": 2.47
                 }
             ]
+        },
+        {
+            "name": "QB_XxaWil083_001",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 355,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 243,
+                        "level": 12,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 328,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147
+                    },
+                    "layout_id": 4142933,
+                    "position": {
+                        "x": 128.118,
+                        "y": 29.617,
+                        "z": -13.033
+                    },
+                    "rotation": -2.271
+                }
+            ]
         }
     ]
 }
