@@ -15,7 +15,7 @@ add one when something is found.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
 * Limsa Lominsa has only upstream's opening, checked against the client's script but not retail: the client's
   sequence 1 (riding the Crow's Lift with Grehfarr, UI8AL/BitFlag8 1) is skipped, since accepting goes straight to 255.
-  Ul'dah's story stops after **Way Down in the Hole** (320), before **Takin' What They're Givin'** (623). Its Pugilist and
+  Ul'dah's quests stop after **Supply and Demands** (328): **Give It to Me Raw** (503), which **The Perfect Swarm** (329) needs, isn't scripted yet. Its Pugilist and
   Thaumaturge **Close to Home** (569, 570) come from their client scripts only: no retail capture, and their replay
   fixtures are 568's with their ITEM0 and ACTOR1 (ACTOR1's layout taken from the quest's todo location).
 * Way Down in the Hole (320): in sequence 4 the client also offers ACTOR7–12 and EOBJECT0 with empty scenes (18–25);

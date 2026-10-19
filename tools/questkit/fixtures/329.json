@@ -1,0 +1,42 @@
+{
+  "quest": 329,
+  "script": "SubWil081_00329",
+  "source": "scenes and effects from Bob's Chronofoil capture of 2026-10-18; params from the client's script (kawari-questdump, 2026-10-19); the sprites' layout IDs are stand-ins from the drop-in (the capture's kills aren't tied to a layout)",
+  "params": {"ACTOR0": 1002061, "ENEMY0": 136, "ACTOR1": 1002058},
+  "steps": [
+    {
+      "talk": 1002061,
+      "layout": 3629834,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [136, 3928803],
+      "expect": {"sequence": 1, "vars": "010000000000", "notices": [[0, [1, 4]]]}
+    },
+    {
+      "kill": [136, 3928804],
+      "expect": {"sequence": 1, "vars": "020000000000", "notices": [[0, [2, 4]]]}
+    },
+    {
+      "kill": [136, 3928805],
+      "expect": {"sequence": 1, "vars": "030000000000", "notices": [[0, [3, 4]]]}
+    },
+    {
+      "kill": [136, 3928806],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, [4, 4]]]}
+    },
+    {
+      "talk": 1002058,
+      "layout": 3629823,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 1, "flags": "0x2000", "results": [1, 3016, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}
