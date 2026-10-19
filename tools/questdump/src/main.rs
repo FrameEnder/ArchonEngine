@@ -14,11 +14,13 @@ use std::{
 
 use icarus::{
     BNpcName::BNpcNameSheet, ClassJobCategory::ClassJobCategorySheet,
+    ContentFinderCondition::ContentFinderConditionSheet, ContentType::ContentTypeSheet,
     ENpcResident::ENpcResidentSheet, EObjName::EObjNameSheet, ExVersion::ExVersionSheet,
     Item::ItemSheet, ItemSearchCategory::ItemSearchCategorySheet,
     ItemUICategory::ItemUICategorySheet, JournalCategory::JournalCategorySheet,
     JournalGenre::JournalGenreSheet, JournalSection::JournalSectionSheet,
     PlaceName::PlaceNameSheet, Quest::QuestSheet, ScenarioTree::ScenarioTreeSheet,
+    TerritoryType::TerritoryTypeSheet,
 };
 use kawari::config::get_config;
 use physis::Language;
@@ -36,6 +38,7 @@ USAGE:
     kawari-questdump extract <GAME PATH>... [--out DIR]
     kawari-questdump index [--out DIR]
     kawari-questdump items [--out DIR]
+    kawari-questdump content [--out DIR]
     kawari-questdump disasm <FILE.luab> [--listing]
 
 QUEST can be a quest ID (3854 or 69390), a script ID (XxaFst034_03854) or the quest's name in quotes.
@@ -52,6 +55,10 @@ COMMANDS:
               whether it's unique/untradable, and what the marketboard needs (search category, rarity, levels,
               whether it can be HQ); and marketboard-categories.json, the marketboard's search categories (Kawari
               Web's shop links its listings to items with these, and its Marketboard page lays items out by them.)
+    content   Write content-index.json: every duty (ContentFinderCondition: name, short code, content type,
+              territory, levels, expansion) and every open-world zone (TerritoryType: name, region, background
+              folder, expansion), for Kawari Web's Misc Content progress (which duties the server has a script for,
+              which zones have monster spawns.)
     disasm    Print a readable listing of a compiled script you already have.
 
 OPTIONS:
@@ -777,6 +784,95 @@ fn marketboard_categories(resolver: &mut ResourceResolver) -> Result<Vec<Value>,
     Ok(categories)
 }
 
+/// The content index (`content`): duties and open-world zones, with the names the game gives them.
+fn content_index(resolver: &mut ResourceResolver) -> Result<Value, String> {
+    let language = get_config().world.language();
+    let place_names: HashMap<u32, String> = PlaceNameSheet::read_from(resolver, language)
+        .map(|sheet| {
+            sheet
+                .into_iter()
+                .flatten_subrows()
+                .map(|(id, row)| (id, row.Name.to_string()))
+                .collect()
+        })
+        .unwrap_or_default();
+    let mut expansions = serde_json::Map::new();
+    if let Ok(sheet) = ExVersionSheet::read_from(resolver, language) {
+        for (id, row) in sheet.into_iter().flatten_subrows() {
+            expansions.insert(id.to_string(), json!(row.Name.to_string()));
+        }
+    }
+    let mut content_types = serde_json::Map::new();
+    if let Ok(sheet) = ContentTypeSheet::read_from(resolver, language) {
+        for (id, row) in sheet.into_iter().flatten_subrows() {
+            content_types.insert(id.to_string(), json!(row.Name.to_string()));
+        }
+    }
+
+    // Territories first: a duty's expansion and background come from its territory.
+    let territories = TerritoryTypeSheet::read_from(resolver, Language::None)
+        .map_err(|err| format!("couldn't read the TerritoryType sheet: {err:?}"))?;
+    let mut territory_info = HashMap::new();
+    let mut zones = Vec::new();
+    for (id, row) in territories.into_iter().flatten_subrows() {
+        let bg = row.Bg.to_string();
+        territory_info.insert(id, (row.ExVersion, bg.clone(), row.TerritoryIntendedUse));
+        // Open-world zones (TerritoryIntendedUse 1) with a name.
+        let name = place_names
+            .get(&(row.PlaceName as u32))
+            .cloned()
+            .unwrap_or_default();
+        if row.TerritoryIntendedUse == 1 && !name.is_empty() && !bg.is_empty() {
+            zones.push(json!({
+                "id": id,
+                "name": name,
+                "region": place_names.get(&(row.PlaceNameRegion as u32)).cloned().unwrap_or_default(),
+                "internal_name": row.Name.to_string(),
+                "bg": bg,
+                "ex_version": row.ExVersion,
+            }));
+        }
+    }
+
+    let duties_sheet = ContentFinderConditionSheet::read_from(resolver, language)
+        .map_err(|err| format!("couldn't read the ContentFinderCondition sheet: {err:?}"))?;
+    let mut duties = Vec::new();
+    for (id, row) in duties_sheet.into_iter().flatten_subrows() {
+        let name = row.Name.to_string();
+        if name.is_empty() || row.ContentType == 0 {
+            continue;
+        }
+        let (ex_version, bg, intended_use) = territory_info
+            .get(&(row.TerritoryType as u32))
+            .cloned()
+            .unwrap_or_default();
+        duties.push(json!({
+            "id": id,
+            "name": name,
+            "short_code": row.ShortCode.to_string(),
+            "content_type": row.ContentType,
+            "territory": row.TerritoryType,
+            "territory_bg": bg,
+            "intended_use": intended_use,
+            "level": row.ClassJobLevelRequired,
+            "level_sync": row.ClassJobLevelSync,
+            "item_level": row.ItemLevelRequired,
+            "ex_version": ex_version,
+            "in_duty_finder": row.IsInDutyFinder,
+            "high_end": row.HighEndDuty,
+            "pvp": row.PvP,
+            "sort_key": row.SortKey,
+        }));
+    }
+    Ok(json!({
+        "format": 1,
+        "expansions": expansions,
+        "content_types": content_types,
+        "duties": duties,
+        "zones": zones,
+    }))
+}
+
 fn run(args: &[String]) -> Result<(), String> {
     let Some(command) = args.first() else {
         return Err(USAGE.to_string());
@@ -870,6 +966,22 @@ fn run(args: &[String]) -> Result<(), String> {
             println!(
                 "Wrote {} marketboard categories to {}",
                 categories.len(),
+                destination.display()
+            );
+            Ok(())
+        }
+        "content" => {
+            let mut data = GameData::open(options.game.as_deref())?;
+            std::fs::create_dir_all(&options.out)
+                .map_err(|err| format!("couldn't create {}: {err}", options.out.display()))?;
+            let destination = options.out.join("content-index.json");
+            let index = content_index(&mut data.resolver)?;
+            std::fs::write(&destination, serde_json::to_string(&index).unwrap())
+                .map_err(|err| format!("couldn't write {}: {err}", destination.display()))?;
+            println!(
+                "Wrote {} duties and {} zones to {}",
+                index["duties"].as_array().map_or(0, Vec::len),
+                index["zones"].as_array().map_or(0, Vec::len),
                 destination.display()
             );
             Ok(())

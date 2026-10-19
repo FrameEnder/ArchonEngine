@@ -1,6 +1,6 @@
 # Kawari Web
 
-Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.16.0**) runs beside the server in its own container. Its
+Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.17.0**) runs beside the server in its own container. Its
 README is the user guide (setup, pages, service, forges, builds); this page is about **how its features work** and
 how they depend on the fork. Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates).
 
@@ -119,6 +119,15 @@ Every quest from A Realm Reborn to Dawntrail from the quest index (format 2), Ma
 side quests by journal section. **Implemented** = the active build has
 `resources/scripts/events/quest/<id/100>/<script>.lua`; **verified** = its header says it was checked against a retail
 recording. Totals per expansion and a filterable list linking to Quest Lab.
+
+**Misc Content** (2.17.0, `kawari_core/content_progress.py`, the second tab): every duty and open-world zone from
+`content-index.json` (`kawari-questdump content`, built from the tab), per expansion. Dungeons, Trials, Raids,
+Ultimate Raids, Deep Dungeons, V&C Dungeons and Guildhests (ContentType 2, 4, 5, 28, 21, 30, 3) get their own groups,
+the rest share "Other duties". A duty is **scripted** when the active build has `resources/scripts/content/<short
+code>.lua` (what `server/mod.rs` loads when the duty starts) and **has spawns** when a drop-in whose `appends` LGB is
+in the duty territory's level folder (TerritoryType `Bg` without its last part) has battle NPCs, nonpop ones included
+since directors spawn them; done = both, started = one. A zone has spawns the same way, counting each map once and
+leaving out quest battle layers (`QB_*`). It measures what the build has, not how complete a script is.
 
 ## Marketboard (Dashboard → Marketboard)
 
