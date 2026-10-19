@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-19 | — | Quests: Give It to Me Raw (503); known issues (quest-spawned enemies, the marshlights' timeline).
+| 2026-10-19 | — | `master` fast-forwarded to `Latest-Quest` again, after Bob ran 623, 328, 503 and 329 (changelog).
+| 2026-10-19 | `511d7e1` | Quests: Give It to Me Raw (503); known issues (quest-spawned enemies, the marshlights' timeline).
 | 2026-10-19 | `f7c0c98` | Quests: Takin' What They're Givin' (623), Supply and Demands (328), The Perfect Swarm (329); known issues.
 | 2026-10-19 | `359bdfe` | `master` fast-forwarded to `Latest-Quest` again, after Bob ran the checked quests (changelog).
 | 2026-10-19 | `6bd4b19` | Quests: the other Close to Home versions (85, 123, 108, 109), the openings and nine scripts checked against the client's scripts, the Lua API's `accept_quest`; known issues.
@@ -117,13 +118,14 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 ## Kawari (fork)
 
-Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`), and on 2026-10-19 (right after `5b5e91f`, and again right after `6bd4b19`).
+Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`), and on 2026-10-19 (right after `5b5e91f`, and again right after `6bd4b19` and `511d7e1`).
 
 ### 2026-10-19
 
 | Commit | Change |
 |---|---|
-| — | Give It to Me Raw (503) from its client script and Bob's 2026-10-18 capture: three ore mounds, each a scene, the gathering bar (EventAction 6) and a scene, then its marshlight; a new Western Thanalan drop-in layer `QB_SubWil095_001` with the three at retail's positions, level and HP; fixture 503. |
+| — | `master` fast-forwarded to `Latest-Quest` with Bob's OK (623, 328, 503 and 329 work in game). |
+| `511d7e1` | Give It to Me Raw (503) from its client script and Bob's 2026-10-18 capture: three ore mounds, each a scene, the gathering bar (EventAction 6) and a scene, then its marshlight; a new Western Thanalan drop-in layer `QB_SubWil095_001` with the three at retail's positions, level and HP; fixture 503. |
 | `f7c0c98` | Takin' What They're Givin' (623), Supply and Demands (328) and The Perfect Swarm (329), from their client scripts (Bob's 2026-10-19 dumps) and his 2026-10-18 Chronofoil capture; fixtures 623, 328, 329. |
 | `359bdfe` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (the quests checked against his 2026-10-19 dumps run well). |
 | `6bd4b19` | Gridania's Close to Home for Lancers (85) and Archers (123): 124's script, whose client script they match apart from the guild's ACTOR2 and ITEM0. Limsa Lominsa's Close to Home (108, 109) rewritten from their client scripts on 568's model (upstream's waited for a scene 50 that doesn't exist and used a TERRITORYTYPE0 they don't have); the move to Upper Decks 128 is from Sapphire's NPC positions. Openings (39, 107, 594): every unknown talk ends the event (the client allows the opening's objects in sequence 255) and the reward scene completes the quest only when it returns 1; Coming to Limsa Lominsa plays the client's decline scene (4) and the lift's yes/no (5) directly. 28, 201, 445, 3854, 550, 595, 671, 3852 and 568 re-checked against the client's scripts (2026-10-19 dumps): no changes. Fixtures 85, 123, 108, 109 (adapted from 124's). |
