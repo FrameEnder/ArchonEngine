@@ -1,6 +1,6 @@
 # Kawari Web
 
-Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.18.1**) runs beside the server in its own container. Its
+Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.19.0** on the `UI-Redesign` branch, **2.18.1** on `master`) runs beside the server in its own container. Its
 README is the user guide (setup, pages, service, forges, builds); this page is about **how its features work** and
 how they depend on the fork. Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates).
 
@@ -21,7 +21,7 @@ over the database, so direct edits only happen while the character is logged out
 
 ## Pages (summary)
 
-Home, How to Connect, Feed and profiles (character tile boards, private by default), Notifications, Settings,
+Home, How to Connect, Feed (called Community in the top bar from 2.19.0) and profiles (character tile boards, private by default), Notifications, Settings,
 **Shop**, and the admin **Dashboard**: server control, config editor, database health/migrations, backups, accounts,
 Auracite import/export, branding, Quest Lab, Progress, Marketboard, Diagnostics, Updates (which fork/forge/commit the server is
 built from), container logs.
@@ -86,7 +86,31 @@ first. Nothing removed them, so each update left a little more on disk. `kawari_
 Kawari Probe's diagnostics snapshots were already capped (200). Packet captures (`data/captures`) still are only
 cleared by hand (Diagnostics).
 
-## Phones (2.18.1)
+## Look and admin layout (2.19.0)
+
+The redesign (branch `UI-Redesign` of Kawari-Web, not yet merged) starts with the parts every page shares:
+
+* `static/style.css` is rewritten around design tokens: a dark slate theme, the light theme kept, status shown as
+  coloured dots and callouts. Every class the templates already used is restyled, so pages that haven't been redone
+  yet still work and pick up the new look.
+* Fonts: Sora (headings), IBM Plex Sans (text), IBM Plex Mono (IDs, ports, logs), bundled as woff2 in
+  `static/fonts` with their SIL Open Font License files. Nothing is fetched from outside, so the container still
+  works offline.
+* Icons are inline SVG (`templates/_icons.html`), replacing the emoji bell.
+* `--on-accent`: `app.py`'s `on_accent()` picks dark or white text for anything painted in the Branding accent,
+  whichever has more contrast. The default accent is now `#5aa9f0`; a saved accent is kept.
+* Admin pages extend `templates/dashboard/_layout.html`: a sidebar (`dashboard/_nav.html`) grouped Server, Build &
+  config, Game data, Content and Community, and a header with the page's group and title (pages can override the
+  `page_title` and `page_actions` blocks). The page for an endpoint is looked up in the layout's table. Shop
+  management and the listing editor use it too. *Announcements* links to the Overview's announce card for now.
+
+The pages themselves are redone in later commits on the same branch, from the design canvas Bob approved.
+
+## Phones (2.18.1, changed in 2.19.0)
+
+From 2.19.0 the top bar's two-row phone layout starts under 760 px, and the dashboard's sidebar folds behind a
+**Menu** button under 900 px (a checkbox, so no JavaScript); the scrolling section row below is gone with the tabs.
+
 
 Under 700 px wide the top bar is two short rows: the brand with the bell and account menus, then the site menu
 scrolling sideways (it used to wrap into three rows); the bell and account menus open across the screen under the bar;
