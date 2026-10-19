@@ -227,9 +227,16 @@ name, e.g. `SubFst073_00387`).
    `//gm quest accept|sequence|incomplete …`.)
 7. **Document**: add it to the table below and the [Changelog](changelog.md).
 
+**Quests without a dump.** A capture shows everything retail did on one run: who you talked to, every scene and its
+flags and answers, the variables, notices, items and rewards. What it can't show is what the client's script would do
+on another run: other answers, the checks the client makes on its own (Prudence at This Junction's equipment check),
+and the parameter names (`ACTOR0`…, injected from the sheet) with the script's file name. A script written from a
+capture alone compares NPCs by their recorded ENpc IDs and can be named anything ending in `_<quest number, five
+digits>.lua`: `quest_script_path` (`event.rs`) falls back to it when the sheet's script name has no file.
+
 ## Scripted quests
 
-Gridania's story from Close to Home on, its side quests, the first quest after it, and Ul'dah's first six. Every one
+Gridania's story from Close to Home on, its side quests, the first quest after it, and Ul'dah's first seven. Every one
 has a fixture from Bob's Chronofoil captures (2026-10-14 to 17), so replay checks its scenes, their flags and what it
 does outside the quest as well as its variables and notices. "Recording" means it matched a retail recording's variables and notices.
 Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `questkit replay`.
@@ -265,6 +272,7 @@ Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `
 | 671 | Nothing to See Here | `006/SubWil025_00671` | client script, recording, Chronofoil captures (2026-10-17, re-checked on 2026-10-18) | Three ITEM0 (UI8CH counts down) handed to three NPCs in any order (trade 1/4/7 → 2/5/8; UI8AL/BH/BL and BitFlag8 1–3), UI8AH counts, notice 0 `[count, 3]` each; reward from ACTOR0 (scene 10). |
 | 550 | Underneath the Sultantree | `005/ManWil005_00550` | client script, Sapphire, recording, Chronofoil captures (2026-10-17, re-checked on 2026-10-18) (quest battle) | Offer and cutscene (0 → 1); ACTOR1 offers quest battle 37 (scene 2); the aftermath on re-entering Central Thanalan (scene 5) moves it to 255; reward (scene 6). No variables or notices at all. |
 | 303 | Step Nine | `003/SubWil060_00303` | Sapphire, Chronofoil capture (2026-10-18); **not yet the client's script** (no dump) | ACTOR0 offers it (scene 0, a yield) and gives ITEM0 (UI8BH); ACTOR1 takes it (hand-over scene 1, then 2) and gives ITEM1 (UI8BH 0, UI8BL 1, notice 0 with its icon 25210), sequence 255; ACTOR2 takes ITEM1 (scene 4) and rewards (scene 5, a yield). Parameters from Sapphire's SubWil060 until a dump confirms them. |
+| 3852 | Prudence at This Junction | `038/XxaWil063_03852` | client script, Chronofoil capture (2026-10-18) | ACTOR0 (Roger) offers it (scene 0, a yield, then scene 1; accepted after 1); ACTOR1 (Warin) moves it to 255 (scene 2, notice 0, no variables) and rewards it (scene 3, a yield with the chosen item). The client refuses the offer while 324, 305 or 306 is accepted, and the reward without item level 5 in head, body, hands, legs and feet. Not the same quest as 306 (SubWil063, same name, now a side quest). |
 
 Upstream's own scripts cover the three city openings and the Close to Home offers. Gridania's story from Close to
 Home to The Gridanian Envoy is complete; Call of the Sea starts the next part (Limsa Lominsa). Ul'dah's runs from

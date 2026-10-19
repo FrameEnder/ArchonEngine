@@ -1,0 +1,33 @@
+{
+  "quest": 3852,
+  "script": "XxaWil063_03852",
+  "source": "Bob's Chronofoil capture of 2026-10-18 (71045ef2); parameters from the client's dump of 2026-10-19; scenes and effects from Bob's Chronofoil capture of 2026-10-18",
+  "params": {"ACTOR0": 1001541, "ACTOR1": 1001447},
+  "steps": [
+    {
+      "talk": 1001541,
+      "layout": 2494901,
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1001447,
+      "layout": 2464318,
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1001447,
+      "layout": 2464318,
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [1, 3008, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

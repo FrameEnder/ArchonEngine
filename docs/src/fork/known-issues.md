@@ -10,13 +10,11 @@ add one when something is found.
 * **The Gridanian Envoy** (507) and **Call of the Sea** (674) were written from Sapphire and the recording without the
   client's script: dump them in the Quest Lab to check the scene numbers. Envoy's arrival positions are Sapphire's.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
-* Limsa Lominsa has only upstream's opening. Ul'dah's story stops after **Step Nine** (303; written without the client's script, from Sapphire and a capture), and its
+* Limsa Lominsa has only upstream's opening. Ul'dah's story stops after **Prudence at This Junction** (3852), before **Out of House and Home** (307), and its
   **Close to Home** is only scripted for the class Bob played (`ManWil002_00568`); the other two versions
   (`ManWil003_00569`, `ManWil004_00570`) are still upstream's stubs.
-* The next Ul'dah story quest, 3852 (between Step Nine and Out of House and Home, 307), is newer than Sapphire and the
-  sheets here, so its script name isn't known: it needs a Quest Lab dump. Retail (2026-10-18 capture): Step Nine's
-  ACTOR2 offers it (scenes 0 → 1), the NPC at layout 2464318 moves it to 255 (scene 2, notice 0), and the same NPC
-  rewards it (scene 3, a yield with the chosen item).
+* Step Nine (303) was written from one retail run and Sapphire, without the client's script: branches that run didn't
+  take may be missing.
 * Attuning to a main aetheryte outside a quest ends the event after the bar (`Aetheryte.lua`); inside Close to Home
   retail follows the bar with the aetheryte event's notice 0 (one argument, 0), which probably also gives the
   "attuned" message on its own, but a plain attunement hasn't been recorded to confirm it.

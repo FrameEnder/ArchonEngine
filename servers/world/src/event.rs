@@ -5,6 +5,7 @@ use parking_lot::Mutex;
 
 use kawari::{
     common::{CharacterMode, HandlerId, HandlerType, ObjectId, ObjectTypeId},
+    config::get_config,
     ipc::zone::{Condition, EventType},
 };
 
@@ -118,7 +119,36 @@ pub fn quest_script_path(
     };
 
     let script_folder = folder_from_script_id(script_id);
-    Some(format!("events/quest/{script_folder}/{script_name}.lua"))
+    let path = format!("events/quest/{script_folder}/{script_name}.lua");
+    let config = get_config();
+    if std::fs::exists(config.filesystem.locate_script_file(&path)).unwrap_or_default() {
+        return Some(path);
+    }
+
+    // Otherwise a script for the same quest number under another name: one written from a retail capture before
+    // the client's script (and so its name) was dumped, e.g. a quest newer than the references.
+    let suffix = format!("_{script_id:05}.lua");
+    let folders = config
+        .filesystem
+        .additional_resource_paths
+        .iter()
+        .map(|x| format!("{x}/scripts/events/quest/{script_folder}"))
+        .chain(std::iter::once(format!(
+            "resources/scripts/events/quest/{script_folder}"
+        )));
+    for folder in folders {
+        let Ok(entries) = std::fs::read_dir(folder) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let file_name = entry.file_name().to_string_lossy().to_string();
+            if file_name.ends_with(&suffix) {
+                return Some(format!("events/quest/{script_folder}/{file_name}"));
+            }
+        }
+    }
+
+    Some(path)
 }
 
 /// Finds and creates the relevant `EventHandler` for this event.

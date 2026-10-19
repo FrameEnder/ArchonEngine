@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-18 | — | Quests: Step Nine (303); what 3852 needs (known issues).
+| 2026-10-18 | — | Quests: Prudence at This Junction (3852), what a capture shows and a dump adds, the script name fallback; known issues.
+| 2026-10-18 | `d32b4af` | Quests: Step Nine (303); what 3852 needs (known issues).
 | 2026-10-18 | `e810499` | `master` fast-forwarded to `Latest-Quest` again (changelog).
 | 2026-10-18 | `37e0762` | Combat: Western Thanalan's spawns (drop-in, timelines, a drop); known issues.
 | 2026-10-18 | `8f4a43c` | Quest battles (Underneath the Sultantree checked against a second run: 117 is timed, the stranger's Cure), combat (Central Thanalan's monsters, drops, kill EXP checked), known issues.
@@ -106,7 +107,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Step Nine (303), the quest after Underneath the Sultantree, from Bob's 2026-10-18 capture and Sapphire (fixture and replay; the client's script still to check). |
+| — | Prudence at This Junction (3852, after Step Nine) from Bob's 2026-10-18 capture, checked against its client script (dump of 2026-10-19); quest scripts can be found by quest number when the sheet's script name has no file (`quest_script_path`), for quests newer than the references. |
+| `d32b4af` | Step Nine (303), the quest after Underneath the Sultantree, from Bob's 2026-10-18 capture and Sapphire (fixture and replay; the client's script still to check). |
 | `e810499` | `master` fast-forwarded to `Latest-Quest` with Bob's OK. |
 | `37e0762` | Western Thanalan's monsters: 381 retail spawn points (drop-in `wil_w1f1_planmap.json`, from Bob's 2026-10-18 walk), timelines for 31 kinds plus Central Thanalan's Stone Torch (hitboxes, auto-attacks, damage where recorded), the Sun Midge Swarm's drop. |
 | `8f4a43c` | From Bob's 2026-10-18 Chronofoil capture and Recorder export of the Ul'dah quests: Underneath the Sultantree's 117 is a timer (25 s after sequence 3) and the stranger heals you with Cure; Central Thanalan monsters get retail's auto-attacks (5 kinds), damage to players (7), the Orobon's Gnaw, and the Star Marmot's and Huge Hornet's drops (`Drops.lua` entries can give a quantity). Ul'dah's five scripted quests re-checked against the new capture: all match. |
