@@ -162,6 +162,7 @@
                     "data": {
                         "base_id": 582,
                         "gimmick_id": 0,
+                        "character_data_flags": 4,
                         "hostile": false,
                         "hp": 6100,
                         "level": 35,
@@ -184,6 +185,7 @@
                     "data": {
                         "base_id": 580,
                         "gimmick_id": 0,
+                        "character_data_flags": 4,
                         "hostile": false,
                         "hp": 6100,
                         "level": 35,
@@ -206,6 +208,7 @@
                     "data": {
                         "base_id": 583,
                         "gimmick_id": 0,
+                        "character_data_flags": 4,
                         "hostile": false,
                         "hp": 6100,
                         "level": 35,
@@ -1924,6 +1927,7 @@
                     "data": {
                         "base_id": 582,
                         "gimmick_id": 0,
+                        "character_data_flags": 4,
                         "hostile": false,
                         "hp": 6100,
                         "level": 35,
@@ -1946,6 +1950,7 @@
                     "data": {
                         "base_id": 580,
                         "gimmick_id": 0,
+                        "character_data_flags": 4,
                         "hostile": false,
                         "hp": 6100,
                         "level": 35,
@@ -5881,6 +5886,7 @@
                     "data": {
                         "base_id": 582,
                         "gimmick_id": 0,
+                        "character_data_flags": 4,
                         "hostile": false,
                         "hp": 6100,
                         "level": 35,
@@ -8602,6 +8608,7 @@
                     "data": {
                         "base_id": 581,
                         "gimmick_id": 0,
+                        "character_data_flags": 4,
                         "hostile": false,
                         "hp": 6100,
                         "level": 35,
@@ -12480,6 +12487,7 @@
                     "data": {
                         "base_id": 582,
                         "gimmick_id": 0,
+                        "character_data_flags": 4,
                         "hostile": false,
                         "hp": 6100,
                         "level": 35,
@@ -14805,6 +14813,7 @@
                     "data": {
                         "base_id": 580,
                         "gimmick_id": 0,
+                        "character_data_flags": 4,
                         "hostile": false,
                         "hp": 6100,
                         "level": 35,

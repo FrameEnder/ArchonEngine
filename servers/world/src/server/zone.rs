@@ -723,6 +723,8 @@ impl Zone {
                     link_range,
                     display_flags,
                     stationary,
+                    character_data_flags,
+                    behavior,
                 } = object.data
                 {
                     if stationary {
@@ -736,10 +738,10 @@ impl Zone {
                     let base_npc = create_npc_common_spawn(game_data, base_id, name_id, hp, level);
                     let spawn = SpawnNpc {
                         gimmick_id,
-                        character_data_flags: if hostile {
-                            CharacterDataFlag::HOSTILE
-                        } else {
-                            CharacterDataFlag::empty()
+                        character_data_flags: match character_data_flags {
+                            Some(flags) => CharacterDataFlag::from_bits_retain(flags),
+                            None if hostile => CharacterDataFlag::HOSTILE,
+                            None => CharacterDataFlag::empty(),
                         },
                         max_links,
                         link_family,
@@ -751,6 +753,7 @@ impl Zone {
                             display_flags: display_flags
                                 .map(DisplayFlag)
                                 .unwrap_or(base_npc.common.display_flags),
+                            behavior: behavior.unwrap_or(base_npc.common.behavior),
                             ..base_npc.common
                         },
                         ..base_npc

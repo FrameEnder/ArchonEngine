@@ -242,6 +242,14 @@ Flames and Northern Thanalan's level 50 guards are where retail had them. None o
 (no Recorder export of these zones), so they fight with the defaults (auto-attack 870, a default hitbox and damage).
 Central Thanalan's capture had nothing its drop-in lacked.
 
+SpawnNpc's character data flags (byte 8) aren't only "hostile": retail sends 0x1 for passive monsters, 0x2 for
+aggressive ones and 0x4 for guards (Ul'dah's Brass Blades and Flames, bases 791–798 and 1342; Gridania's Wood Wailers,
+580–583; Mor Dhona's 1776–1778; and the rest of the 22 kinds that only ever had 0x4, Bob's Chronofoil captures), which
+the client shows without a nameplate. Guards also have their own Behavior row each (30051–30055; ordinary monsters
+30246). A drop-in battle NPC's `character_data_flags` and `behavior` set those as retail sent them: the 36 guards in
+the Thanalan, Mor Dhona and Central Shroud drop-ins have 0x4 (and the Thanalan and Mor Dhona ones their spot's
+Behavior). Without them Kawari still sends 0x2 or 0 from `hostile`.
+
 Kill EXP checked on the 105 solo kills of that export: Kawari's formula (the level's ScaledQuestXP, full down to two
 levels below, then 10 % less a level) gives the recorded EXP for all but level-ups during the fight, chains and kills
 that gave nothing.

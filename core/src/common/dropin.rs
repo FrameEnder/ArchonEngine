@@ -71,6 +71,14 @@ pub enum DropInObjectData {
         /// more without moving in Bob's Chronofoil captures.)
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         stationary: bool,
+        /// If set, SpawnNpc's character data flags as retail sent them, instead of what `hostile` gives (0x2 or 0).
+        /// Retail sends 0x1 for passive enemies, 0x2 for aggressive ones and 0x4 for guards (the Brass Blades and
+        /// Flames, Mor Dhona's), which shows no nameplate (Bob's Chronofoil captures of 2026-10-18 and 19.)
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        character_data_flags: Option<u8>,
+        /// If set, the spawn's Behavior row as retail sent it (guards each have their own, 30051-30055.)
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        behavior: Option<u16>,
     },
     /// Represents a battle or event NPC.
     #[serde(rename = "event_npc")]
