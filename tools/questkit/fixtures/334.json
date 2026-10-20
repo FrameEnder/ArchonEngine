@@ -1,0 +1,26 @@
+{
+  "quest": 334,
+  "script": "SubWil086_00334",
+  "source": "scenes and effects from Bob's Chronofoil capture of 2026-10-18; params from the client's script (kawari-questdump, 2026-10-20)",
+  "params": {"ACTOR0": 1002067, "ACTOR1": 1002068},
+  "steps": [
+    {
+      "talk": 1002067,
+      "layout": 3629897,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1002068,
+      "layout": 3629898,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 1, "flags": "0x2000", "results": [1, 5824, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

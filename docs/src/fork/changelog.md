@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-20 | — | `master` fast-forwarded to `Latest-Quest` again, after Bob found the monsters stable and 330, 3853, 332 and 333 working (changelog).
+| 2026-10-20 | — | Quests: Storms on the Horizon (334), Secrets and Lies (628); known issues.
+| 2026-10-20 | `1adab38` | `master` fast-forwarded to `Latest-Quest` again, after Bob found the monsters stable and 330, 3853, 332 and 333 working (changelog).
 | 2026-10-19 | `666a398` | Combat: the back-and-forth after a minute or two of wandering; the Brass Blade by Horizon stands; known issues.
 | 2026-10-19 | `111b0f9` | Combat: guards and other stationary spawns stand still; the looping walk; corrected wandering numbers; known issues.
 | 2026-10-19 | `c417c13` | Combat: why monsters stood still (wandering never ended), the chase jitter, turning north; known issues.
@@ -138,7 +139,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | `master` fast-forwarded to `Latest-Quest` with Bob's OK (2026-10-20: the monsters' wandering stable; 330, 3853, 332 and 333 work in game). |
+| — | Storms on the Horizon (334) and Secrets and Lies (628) from their client scripts (Bob's 2026-10-20 dumps) and his 2026-10-18 Chronofoil capture; fixtures 334, 628. |
+| `1adab38` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (2026-10-20: the monsters' wandering stable; 330, 3853, 332 and 333 work in game). |
 | `666a398` | NPCs no longer end up walking back and forth: a walk ends within half a yalm of its spot, not only on an empty path, because a spot off the navmesh (a spawn point by a wall) gave a path out to the mesh and back, re-planned every half second forever (56 of 69 moving NPCs in Bob's 2026-10-20 bundle); wander spots cut short go on the navmesh. Stationary spots recounted without sightings where the NPC fought (the Brass Blade by Horizon only moved fighting): 257. Checked by running the NPC behaviour on a Recast test mesh for ten simulated minutes, against the previous build, which looped. |
 | `111b0f9` | Drop-in battle NPCs can be `stationary` (`core/src/common/dropin.rs`, `Zone::stationary_npcs`): 253 spawn points in Central, Western, Eastern, Southern and Northern Thanalan and Mor Dhona that retail's never moved (the Brass Blade and Flame guards, among others; 28 % of idle retail monsters stand still). No more ActorMove that only turns an NPC where it stands at the start of a walk, or turns it north on the spot it reached at the end: the client played a step on the spot for each, the looping walk of Bob's 2026-10-20 bundle (a Brass Blade and an Orobon by the Sunset Gate). |
 | `c417c13` | Monsters stood still because a walk never ended: Detour's path to where an NPC already stands is that one point, so a wander spot (or home, after a chase) was re-planned forever, and a new one is only picked without one (Bob's 2026-10-19 bundles: each wandered once, a Dusty Mongrel walked on the spot at home). Arriving now drops the spot; wander spots stay within 5 yalms (Detour's were anywhere on a big polygon); a zero-length step keeps the facing instead of turning north; an NPC in range of its target drops its path, which kept advancing and made it jump back and forth when it ran again. Checked on a flat test navmesh built with Recast. |

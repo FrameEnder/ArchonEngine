@@ -15,7 +15,7 @@ add one when something is found.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
 * Limsa Lominsa has only upstream's opening, checked against the client's script but not retail: the client's
   sequence 1 (riding the Crow's Lift with Grehfarr, UI8AL/BitFlag8 1) is skipped, since accepting goes straight to 255.
-  Ul'dah's quests stop after **Following Footfalls** (333). Its Pugilist and
+  Ul'dah's quests stop after **Storms on the Horizon** (334): **Oh Captain, My Captain** (336), which **Secrets and Lies** (628) needs, isn't scripted yet, nor is **Duty, Honor, Country** (551). Its Pugilist and
   Thaumaturge **Close to Home** (569, 570) come from their client scripts only: no retail capture, and their replay
   fixtures are 568's with their ITEM0 and ACTOR1 (ACTOR1's layout taken from the quest's todo location).
 * Quest-spawned enemies (307's coblyns, 503's marshlights, 3853's goobbue) lack the quest fields retail's SpawnNpc gives them (Bob's
