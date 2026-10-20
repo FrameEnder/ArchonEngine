@@ -34,8 +34,8 @@ use kawari::{
     config::get_config,
     ipc::zone::{
         ActionEffect, ActionRequest, ActionType, ActorControlCategory, ActorControlSelf,
-        BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DamageKind, EffectEntry, EffectResult,
-        ObjectKind, ServerZoneIpcData, ServerZoneIpcSegment, SpawnNpc, TargetEffect,
+        BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DamageKind, DamageType, EffectEntry,
+        EffectResult, ObjectKind, ServerZoneIpcData, ServerZoneIpcSegment, SpawnNpc, TargetEffect,
         TargetEffectKind,
     },
 };
@@ -676,6 +676,20 @@ pub fn execute_action(
             }
         }
 
+        // A player's auto-attack shows their weapon's damage type.
+        if let Some(effects_builder) = &mut effects_builder
+            && matches!(actor, NetworkedActor::Player { .. })
+            && request.action_type == ActionType::Action
+            && AUTO_ATTACK_ACTIONS.contains(&request.action_id)
+            && let Some(kind) = auto_attack_damage_type(common_spawn.class_job)
+        {
+            for effect in &mut effects_builder.effects {
+                if let TargetEffectKind::Damage { damage_type, .. } = &mut effect.0 {
+                    *damage_type = kind;
+                }
+            }
+        }
+
         // What statuses, traits, critical hits and variance do (see `modifiers`.)
         if let Some(effects_builder) = &mut effects_builder {
             let target = instance.find_actor(request.target.object_id);
@@ -1220,6 +1234,15 @@ pub fn execute_action(
                     ),
                     rotation: common_spawn.rotation,
                     spell_id: action_animation_id,
+                    // Auto-attacks swing one of three ways, picked at random (retail, Bob's Chronofoil captures: 0, 1
+                    // and 2 about a third each over 663; Kawari always sent 0.)
+                    animation_variation: if request.action_type == ActionType::Action
+                        && AUTO_ATTACK_ACTIONS.contains(&request.action_id)
+                    {
+                        fastrand::u8(0..3)
+                    } else {
+                        0
+                    },
                     source_sequence: request.sequence,
                     effects,
                     action_type: request.action_type,
@@ -1997,6 +2020,102 @@ const TELEPORT_ACTION: u32 = 5;
 const RETURN_ACTION: u32 = 6;
 /// Auto-attack (Action rows 7 and 8.)
 const AUTO_ATTACK_ACTIONS: [u32; 2] = [7, 8];
+/// How far a player's auto-attack reaches past their own hitbox and the target's (retail, Bob's Chronofoil captures of
+/// 2026-10-18: a Gladiator's 597 auto-attacks all came within 3.6 yalms of the target's hitbox, on the ground; in 17 s
+/// spent 3.6 to 4.7 yalms off, none came, and they started again 0.1 s after he stepped back in.)
+const AUTO_ATTACK_RANGE: f32 = 3.0;
+/// Archers, Bards, Machinists and Dancers shoot from 25 yalms (Sapphire's; not seen in Bob's captures.)
+const RANGED_AUTO_ATTACK_RANGE: f32 = 25.0;
+const RANGED_AUTO_ATTACK_CLASSES: [u8; 4] = [5, 23, 31, 38];
+/// The hitbox assumed for an NPC whose timeline doesn't record one: with the player's 3.5 yalms that's 5, NPCs' own
+/// default reach (`attack_range`.)
+const UNKNOWN_HITBOX_RADIUS: f32 = 1.5;
+
+/// Who a player's next auto-attack hits, if anyone. As on retail (Bob's Chronofoil captures: 663 auto-attacks, every
+/// one on the player's current target, also after switching targets without turning auto-attack off and on), it's
+/// their current target, not the one they turned it on with, and only an enemy (or their duel opponent) that's alive
+/// and in reach; and none while they're casting (2 of 663 during a cast). Auto-attack stays on meanwhile.
+pub fn auto_attack_target(instance: &Instance, player_id: ObjectId) -> Option<ObjectId> {
+    let Some(NetworkedActor::Player {
+        spawn,
+        dueling_opponent_id,
+        ..
+    }) = instance.find_actor(player_id)
+    else {
+        return None;
+    };
+    let target_id = spawn.common.target_id.object_id;
+    if target_id == player_id || !target_id.is_valid() || spawn.common.health_points == 0 {
+        return None;
+    }
+    let target = instance.find_actor(target_id)?;
+    let target_hitbox = match target {
+        NetworkedActor::Npc {
+            spawn: npc,
+            timeline,
+            ..
+        } if npc
+            .character_data_flags
+            .contains(CharacterDataFlag::HOSTILE) =>
+        {
+            if timeline.hitbox_radius > 0.0 {
+                timeline.hitbox_radius
+            } else {
+                UNKNOWN_HITBOX_RADIUS
+            }
+        }
+        NetworkedActor::Player { .. } if target_id == *dueling_opponent_id => PLAYER_HITBOX_RADIUS,
+        _ => return None,
+    };
+    if target.get_common_spawn().health_points == 0 {
+        return None;
+    }
+
+    let casting = instance.queued_task.iter().any(|task| {
+        task.from_actor_id == player_id
+            && matches!(
+                task.data,
+                QueuedTaskData::CastAction {
+                    interruptible: true,
+                    ..
+                }
+            )
+    });
+    if casting {
+        return None;
+    }
+
+    in_auto_attack_reach(
+        spawn.common.class_job,
+        spawn.common.position.0,
+        target.position().0,
+        target_hitbox,
+    )
+    .then_some(target_id)
+}
+
+/// Whether a player of this class at `from` reaches a target at `to` (with a hitbox of `target_hitbox`) with an
+/// auto-attack. Distances are on the ground, as measured.
+fn in_auto_attack_reach(class_job: u8, from: Vec3A, to: Vec3A, target_hitbox: f32) -> bool {
+    let range = if RANGED_AUTO_ATTACK_CLASSES.contains(&class_job) {
+        RANGED_AUTO_ATTACK_RANGE
+    } else {
+        AUTO_ATTACK_RANGE
+    };
+    let distance = Vec2::new(from.x - to.x, from.z - to.z).length();
+    distance <= range + PLAYER_HITBOX_RADIUS + target_hitbox
+}
+
+/// The damage type a player's auto-attack shows: their weapon's (retail: Gladiators slashing, Conjurers and White Mages
+/// blunt, Bob's Chronofoil captures; the other classes by their weapons.) Kawari's script sent "Physical" (7).
+fn auto_attack_damage_type(class_job: u8) -> Option<DamageType> {
+    match class_job {
+        1 | 3 | 19 | 21 | 29 | 30 | 32 | 34 | 37 | 39 | 41 => Some(DamageType::Slashing),
+        4 | 5 | 22 | 23 | 31 | 35 => Some(DamageType::Piercing),
+        2 | 6 | 7 | 20 | 24 | 25 | 26 | 27 | 28 | 33 | 36 | 40 | 42 => Some(DamageType::Blunt),
+        _ => None,
+    }
+}
 /// The animation lock retail sends after a spell that had a cast, and after an auto-attack (Bob's Chronofoil captures:
 /// Stone, Cure, Holy, Raise... all 0.1).
 const ANIMATION_LOCK_AFTER_CAST: f32 = 0.1;
@@ -2365,6 +2484,26 @@ mod combo_tests {
         assert_eq!(animation_lock(ActionType::Mount, 1, false), 0.1);
         assert_eq!(animation_lock(ActionType::Action, 92, false), 0.8); // Jump
         assert_eq!(animation_lock(ActionType::Action, 2259, false), 0.35);
+    }
+
+    /// Retail's reach (Bob's Chronofoil captures): 3.5 yalms past the target's hitbox, on the ground.
+    #[test]
+    fn auto_attack_reach() {
+        let reaches = |class_job, x, y, z, hitbox| {
+            in_auto_attack_reach(class_job, Vec3A::ZERO, Vec3A::new(x, y, z), hitbox)
+        };
+        // A Gladiator next to an antling soldier (hitbox 1.95), and 3.4 / 3.7 yalms past its edge.
+        assert!(reaches(1, 2.0, 0.0, 0.0, 1.95));
+        assert!(reaches(1, 5.35, 0.0, 0.0, 1.95));
+        assert!(!reaches(1, 5.65, 0.0, 0.0, 1.95));
+        // Height doesn't count.
+        assert!(reaches(1, 3.0, 2.5, 0.0, 0.4));
+        // Bob's 2026-10-20 bundle: 9 yalms away is out of reach of a sun bat (0.4); an Archer reaches it.
+        assert!(!reaches(1, 0.0, 0.0, 9.0, 0.4));
+        assert!(reaches(5, 0.0, 0.0, 9.0, 0.4));
+
+        assert_eq!(auto_attack_damage_type(1), Some(DamageType::Slashing));
+        assert_eq!(auto_attack_damage_type(24), Some(DamageType::Blunt));
     }
 }
 

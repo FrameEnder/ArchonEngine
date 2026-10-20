@@ -114,7 +114,19 @@ Applied after an action's script returns, by the server, so scripts only give th
   where retail is 1 lower, and an action sending the 2.5 s group timer.)
 * **Auto-attacks** come every weapon delay × haste / 100 (2 s without a weapon); they were every 2 s for everyone.
   Retail: Paladin 2.27 s for a 2.24 weapon, Warrior 3.38–3.40 for 3.36, Monk 2.05 (2.56 × 0.8 with Greased Lightning),
-  Bob's 2.41 for 2.4.
+  Bob's 2.41 for 2.4. As on retail (Bob's Chronofoil captures, 663 of his auto-attacks), a swing (`auto_attack_target`)
+  goes to the player's **current target**, not the one auto-attack was turned on with (after a target switch the next
+  swing went to the new target, never the old one, and the client doesn't re-send ToggleAutoAttack), only to a living
+  enemy (or duel opponent) within **3.5 yalms of its hitbox** (3 + the player's 0.5, on the ground; Archers, Bards,
+  Machinists and Dancers 25, Sapphire's), and never while casting (2 of 663 during a cast). A Gladiator's 597 all came
+  within 3.6 yalms of the hitbox, and none in 17 s spent 3.6–4.7 off. A swing that can't be made stays ready and comes
+  as soon as it can (retail: 0.1 s after stepping back in). Auto-attack stays on meanwhile; the client turns it off a
+  median 0.05 s after its target's HP reaches 0. Kawari used to keep hitting the toggled target from any distance
+  (9–21 yalms in the 2026-10-20 bundle). Each swing shows the weapon's damage type (retail 0x71 slashing for
+  Gladiators, 0x73 blunt for Conjurers/White Mages; Kawari sent 7 "Physical") and one of three swing animations
+  (ActionEffect byte 30, `animation_variation`, 0–2 at random), and names its target with object type 0. Its damage
+  was always applied (HP, enmity, UpdateHpMpTp, sent just before the ActionEffect); the auto-attack to Fast Blade ratio
+  is retail's (level 15 Gladiator: 13 / 36 on retail, 10 / 27 on Kawari).
 * **Over-time ticks:** a damage tick is ActorControl **1541** (0, amount, source, 0xFFFFFFFF), a heal tick **1540**
   (0, amount, source, 1 if critical), each ±5 %; heal ticks went out as 1540 for both with the status ID. Retail adds
   all of a target's DoTs into one packet (and HoTs into another), ticks 1.5 s after the target's regeneration tick on

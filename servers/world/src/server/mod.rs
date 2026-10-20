@@ -667,10 +667,13 @@ fn server_logic_tick(
                 // TODO: find a better place for this
                 if autoattack_target.is_some() {
                     // Schedule any pending auto-attacks: one every weapon delay (`autoattack_timing` counts
-                    // milliseconds, see the regeneration loop.)
+                    // milliseconds, see the regeneration loop), on the player's current target when it's in reach
+                    // (`auto_attack_target`); otherwise the swing waits, ready, until it is.
                     let should_auto_attack = *autoattack_timing >= auto_attack_delay_ms(parameters);
-                    if should_auto_attack {
-                        actors_autoattacking.push(*id);
+                    if should_auto_attack
+                        && let Some(target) = action::auto_attack_target(instance, *id)
+                    {
+                        actors_autoattacking.push((*id, target));
                     }
                 }
 
@@ -969,12 +972,8 @@ fn server_logic_tick(
             }
 
             // Process any auto-attacks
-            for actor in &actors_autoattacking {
-                let Some(NetworkedActor::Player {
-                    autoattack_target,
-                    spawn,
-                    ..
-                }) = instance.find_actor_mut(*actor)
+            for (actor, target) in &actors_autoattacking {
+                let Some(NetworkedActor::Player { spawn, .. }) = instance.find_actor_mut(*actor)
                 else {
                     continue;
                 };
@@ -983,9 +982,11 @@ fn server_logic_tick(
                     action_id: 7, // TODO: Unsure if this is actually the correct player auto-attack
                     action_type: ActionType::Action,
                     rotation1: spawn.common.rotation,
+                    // Retail's auto-attacks name their target with no object type (Bob's Chronofoil captures, all
+                    // 663); Kawari's said EObjOrNpc (1).
                     target: ObjectTypeId {
-                        object_id: autoattack_target.unwrap(),
-                        object_type: ObjectTypeKind::EObjOrNpc,
+                        object_id: *target,
+                        object_type: ObjectTypeKind::None,
                     },
                     ..Default::default()
                 };
@@ -1139,14 +1140,18 @@ fn server_logic_tick(
 
                     // Auto-attacks come every weapon delay × haste / 100, as retail's (Bob's Chronofoil captures:
                     // Paladin 2.27 s for a 2.24 s weapon, Warrior 3.38-3.40 for 3.36, Bob's 2.41 for 2.4); they were
-                    // every 2 s for everyone. A swing just made uses up one delay; while not attacking it's ready at
-                    // once (the first swing comes straight away.)
+                    // every 2 s for everyone. A swing just made uses up one delay; one that couldn't be made (out of
+                    // reach, casting, no enemy targeted) stays ready, so it comes as soon as it can, as retail's do
+                    // (0.1 s after stepping back in). While not attacking it's ready at once (the first swing comes
+                    // straight away.)
                     let delay = auto_attack_delay_ms(parameters);
                     if autoattack_target.is_some() {
-                        if *autoattack_timing >= delay {
+                        if actors_autoattacking.iter().any(|(actor, _)| actor == id) {
                             *autoattack_timing -= delay;
                         }
-                        *autoattack_timing += SERVER_TICK_MILLISECONDS as i64;
+                        if *autoattack_timing < delay {
+                            *autoattack_timing += SERVER_TICK_MILLISECONDS as i64;
+                        }
                     } else {
                         *autoattack_timing =
                             (*autoattack_timing + SERVER_TICK_MILLISECONDS as i64).min(delay);
