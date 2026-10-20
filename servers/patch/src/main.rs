@@ -69,6 +69,27 @@ async fn verify_session(
 
         let game_version = Version(&game_version);
 
+        // A newer game whose opcodes the world server found for itself (auto-opcodes/<version>.json, see
+        // docs/src/fork/opcodes.md) is current too, with the expansions of the install it found them in.
+        if let Some((_, expansions)) = kawari::opcode_match::accepted_game_versions()
+            .into_iter()
+            .find(|(version, _)| Version(version) == game_version)
+        {
+            let theirs: Vec<&str> = expansion_versions
+                .iter()
+                .filter_map(|line| line.split('\t').nth(1))
+                .collect();
+            if theirs
+                .iter()
+                .zip(&expansions)
+                .all(|(theirs, ours)| Version(theirs) <= Version(ours))
+            {
+                let mut headers = HeaderMap::new();
+                headers.insert("X-Patch-Unique-Id", sid.parse().unwrap());
+                return (headers).into_response();
+            }
+        }
+
         for expansion_version in expansion_versions {
             let expac_version_parts: Vec<&str> = expansion_version.split('\t').collect();
             let expansion_index = expac_version_parts[0]

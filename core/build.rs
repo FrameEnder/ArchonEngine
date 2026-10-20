@@ -256,6 +256,34 @@ pub fn is_known_opcode(kind: &str, opcode: u16) -> bool {
 }
 ",
     );
+
+    // Each packet's size, for matching opcodes to a new game version (opcode_match.)
+    code.push_str(
+        "\n/// Every packet's size (its data, without headers): (list, name, size.)\npub const OPCODE_SIZES: &[(&str, &str, u32)] = &[\n",
+    );
+    for (kind, list) in opcodes.as_mapping().unwrap() {
+        for opcode in list.as_sequence().unwrap() {
+            let (Some(name), Some(size)) = (
+                opcode.get("name").and_then(|name| name.as_str()),
+                opcode.get("size").and_then(|size| size.as_u64()),
+            ) else {
+                continue;
+            };
+            code.push_str(&format!(
+                "({:?}, {name:?}, {size}),\n",
+                kind.as_str().unwrap()
+            ));
+        }
+    }
+    code.push_str(
+        "];
+
+/// The size of the packet `name` in the `kind` opcode list (its data, without headers.)
+pub fn opcode_size(kind: &str, name: &str) -> Option<usize> {
+    OPCODE_SIZES.iter().find(|(k, n, _)| *k == kind && *n == name).map(|(_, _, size)| *size as usize)
+}
+",
+    );
     code
 }
 

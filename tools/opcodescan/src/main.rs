@@ -8,6 +8,12 @@
 //!     Prints the code address a switch sends an opcode to.
 //! kawari-opcodescan <exe> handler <function RVA in hex>
 //!     Follows calls back from a function to the switch cases (opcodes) that lead to it.
+//! kawari-opcodescan <exe> fingerprint <out.json> <opcodes.yml> <fork_opcodes.yml> <game version>
+//!     Records the fingerprints of every zone opcode in those files (as they are on that game version) from this
+//!     executable, for finding them in the next version (resources/data/opcode_fingerprints.json.)
+//! kawari-opcodescan <exe> match <fingerprints.json>
+//!     Finds the fingerprinted opcodes in this executable, and prints them as JSON: {list: {name: opcode, or a list
+//!     of candidates, or null}}.
 //! kawari-opcodescan <exe> check-handlers <switch table RVA in hex> <opcode list, e.g. ServerZoneIpcType>
 //!     Checks the handler method against every known opcode in the list: from each opcode's case in the switch to the
 //!     function it calls, and back again.
@@ -15,6 +21,7 @@
 use std::path::{Path, PathBuf};
 
 use kawari::exe_scan::{Exe, check_opcode, find_opcode};
+use kawari::opcode_match;
 use kawari::opcodes::{FORK_OPCODES, KNOWN_OPCODES};
 
 fn main() {
@@ -83,6 +90,58 @@ fn main() {
             }
         }
         Some("check-handlers") => check_handlers(&exe, hex(&args[2]), &args[3]),
+        Some("fingerprint") => {
+            let read = |path: &String| {
+                std::fs::read_to_string(path).unwrap_or_else(|err| panic!("{path}: {err}"))
+            };
+            let known = opcode_match::known_from_yaml(&read(&args[3]), &read(&args[4]), &args[5])
+                .expect("couldn't read the opcodes");
+            let prints =
+                opcode_match::fingerprint(&exe, &args[5], &known).expect("couldn't fingerprint");
+            let client_sites: usize = prints
+                .client
+                .iter()
+                .filter(|print| !print.sites.is_empty())
+                .count();
+            std::fs::write(&args[2], serde_json::to_string_pretty(&prints).unwrap())
+                .expect("couldn't write");
+            println!(
+                "{}: {} server opcodes ({} with a second dispatcher), {} client opcodes ({} with a function that builds them)",
+                args[2],
+                prints.server.len(),
+                prints
+                    .server
+                    .iter()
+                    .filter(|print| print.sub.is_some())
+                    .count(),
+                prints.client.len(),
+                client_sites
+            );
+        }
+        Some("paths") => {
+            for (opcode, case, end) in opcode_match::debug_paths(&exe, hex(&args[2])) {
+                println!("{opcode} 0x{case:X} 0x{end:X}");
+            }
+        }
+        Some("match") => {
+            let text = std::fs::read_to_string(&args[2]).expect("can't read the fingerprints");
+            let prints: opcode_match::Fingerprints =
+                serde_json::from_str(&text).expect("not fingerprints");
+            let mut out = serde_json::Map::new();
+            for ((kind, name), found) in opcode_match::match_fingerprints(&exe, &prints) {
+                let value = match found {
+                    opcode_match::Found::Opcode(opcode) => serde_json::json!(opcode),
+                    opcode_match::Found::OneOf(candidates) => serde_json::json!(candidates),
+                    opcode_match::Found::NotFound => serde_json::Value::Null,
+                };
+                out.entry(kind)
+                    .or_insert_with(|| serde_json::Value::Object(Default::default()))
+                    .as_object_mut()
+                    .unwrap()
+                    .insert(name, value);
+            }
+            println!("{}", serde_json::to_string_pretty(&out).unwrap());
+        }
         Some(other) => eprintln!("Unknown command {other}"),
     }
 }

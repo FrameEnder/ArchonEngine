@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-20 | — | 7.57h1: every fork opcode found (opcodes, marketboard; four new finders); retainers stand at the bell's spot, facing the player (retainers); known issues.
+| 2026-10-20 | — | Every opcode found again after a game update, from the new executable alone: fingerprints, matching, startup remapping, the patch server (opcodes, tools); known issues.
+| 2026-10-20 | `85124c4` | 7.57h1: every fork opcode found (opcodes, marketboard; four new finders); retainers stand at the bell's spot, facing the player (retainers); known issues.
 | 2026-10-20 | `6f92ff6` | Upstream merged through `f8a4b48` (patch 7.57h1, 2026.10.16) on branch `upstream-7.57h1`: opcodes, known issues (changelog).
 | 2026-10-20 | `7ff3e65` | questkit: the opcodes of 2026.10.06 saved before upstream's 7.57h1 (changelog).
 | 2026-10-20 | `645c05a` | `master` fast-forwarded to `Latest-Quest` again, after Bob ran the rest of the Ul'dah opening (changelog).

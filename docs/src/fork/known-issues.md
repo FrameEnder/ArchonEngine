@@ -5,6 +5,12 @@ add one when something is found.
 
 ## Upstream 7.57h1 (branch `upstream-7.57h1`)
 
+* Automatic opcodes after a game update ([Fork Opcodes](opcodes.md#every-opcode-after-a-game-update)) haven't run on a
+  live update yet, only against Bob's 10.06 and 10.16 executables. About 16 server packets come from candidate lists
+  (the notices, EventResume2/4/8, InitResponse and PingSyncReply, the inventory and market packets): a wrong pick shows
+  as that packet doing nothing. 14 client packets aren't found and wait to be learnt by size. `BASE_INVENTORY_ACTION`,
+  the mail result codes and other constants aren't found automatically.
+
 * The merged server only takes a 7.57h1 client (2026.10.16.0000.0000). All the fork's opcodes are found for it (see
   [Fork Opcodes](opcodes.md#finding-them-on-757h1)), but only MarketBoardOpened and MarketBoardPurchaseHandler have
   been seen from a 7.57h1 client so far. EventNotice2 and EventNotice4 are two of the five notice opcodes (any works,

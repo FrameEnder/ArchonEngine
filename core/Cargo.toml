@@ -36,6 +36,8 @@ tokio = { workspace = true, optional = true }
 mlua = { workspace = true, optional = true }
 diesel = { workspace = true, optional = true }
 glam = { workspace = true }
+# Decoding the game's code to match opcodes across game versions (opcode_match.rs.)
+iced-x86 = { version = "1.21", default-features = false, features = ["std", "decoder", "instr_info"] }
 
 # Used for managing our insane amount of opcodes.
 kawari-core-macro = { path = "macro" }

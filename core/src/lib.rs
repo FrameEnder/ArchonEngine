@@ -4,6 +4,9 @@
 /// Reads opcodes out of the game's executable.
 pub mod exe_scan;
 
+/// Finding every opcode again after a game update.
+pub mod opcode_match;
+
 pub mod common;
 
 /// Config management.

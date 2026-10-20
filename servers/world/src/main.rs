@@ -4951,6 +4951,7 @@ async fn main() {
     let game_data = Arc::new(Mutex::new(GameData::new()));
 
     tracing::info!("Server started on {addr}");
+    kawari_world::auto_opcodes::adapt_to_game(&config.filesystem.game_path());
     kawari_world::fork_opcodes::scan_executable(&config.filesystem.game_path());
     kawari_world::fork_opcodes::log_outstanding();
 

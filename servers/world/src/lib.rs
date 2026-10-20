@@ -6,6 +6,8 @@ pub use chat_connection::{ChatConnection, ChatConnectionChannels, ChatPlayerData
 
 mod zone_connection;
 
+/// Every opcode found again after a game update (docs/src/fork/opcodes.md).
+pub mod auto_opcodes;
 /// Help finding the fork's own opcodes again after a game update.
 pub mod fork_opcodes;
 use diesel::backend::Backend;

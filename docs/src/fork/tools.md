@@ -33,6 +33,9 @@ the server's startup scan (see [Opcodes](opcodes.md)), and explores the executab
 | `case <switch RVA> <opcode>` | Where a switch sends an opcode |
 | `handler <function RVA>` | Follows calls back from a function to the switch cases that lead to it |
 | `check-handlers <switch RVA> <ServerZoneIpcType…>` | Round-trips the handler method over every known opcode (7.57 server packets: 139 exact, 41 sharing a handler, 1 mismatch) |
+| `fingerprint <out.json> <opcodes.yml> <fork_opcodes.yml> <game version>` | Records every zone opcode's fingerprints from this executable, the opcode files being right for it (the fork's entries found on that version only); see [Every opcode after a game update](opcodes.md#every-opcode-after-a-game-update) |
+| `match <fingerprints.json>` | Finds the fingerprinted opcodes in this executable and prints `{list: {name: opcode, [candidates] or null}}` |
+| `paths <dispatcher RVA>` | Each opcode's case and where its path ends, as the matcher follows it |
 
 Keep the executable outside the repository.
 

@@ -123,7 +123,92 @@ others (the retainer requests, and the server packets other than the notices and
 
 ## After a game patch
 
-1. Merge upstream (their `opcodes.yml` update).
-2. Bump nothing in `fork_opcodes.yml` by hand: start the server against the new game; the log lists which fork opcodes
-   were found by the scan and what to save. Update `opcode` and `found_on`.
-3. Anything not found stays outstanding (safe placeholder) until found by hand.
+1. **Nothing, to start with:** update the game and start the server. If the game is newer than
+   `SUPPORTED_GAME_VERSION`, the world server finds every zone opcode for it by itself
+   ([below](#every-opcode-after-a-game-update)), and the patch server lets that version in.
+2. When upstream releases their update, merge it (their `opcodes.yml`, constants and scrambler data).
+3. Save the fork's opcodes the server found in `fork_opcodes.yml` (`auto-opcodes/<version>.json` has them; the log
+   also says what to save for those with finders), and set `found_on`. Then record new fingerprints
+   (`kawari-opcodescan <game> fingerprint resources/data/opcode_fingerprints.json resources/data/opcodes.yml
+   resources/data/fork_opcodes.yml <version>`); the server also records them by itself into `auto-opcodes/` when it
+   runs on the supported version.
+4. Anything not found stays switched off (or outstanding) until found by hand.
+
+## Every opcode after a game update
+
+`core/src/opcode_match.rs`, `servers/world/src/auto_opcodes.rs`. When the game in the game folder is newer than
+`SUPPORTED_GAME_VERSION`, the world server reads its `ffxiv_dx11.exe` at startup and finds **every zone opcode,
+upstream's and the fork's**, from that executable alone: no recording, no old executable, nothing looked up by hand.
+It takes about three seconds.
+
+**Fingerprints.** While the opcodes are known, `fingerprint` records how the client's code treats each packet into
+`resources/data/opcode_fingerprints.json` (recorded on 2026.10.16 from Bob's executable; about 200 KB). Only hashes of
+each instruction's shape are kept (what it does, its registers, numbers under 0x1000, no addresses), with where the
+code was and the packets' names: nothing of the game itself. For each packet:
+
+* **Server packets** (the client handles them): the client's zone dispatcher reads the opcode out of the packet
+  (`movzx r, word [packet + 2]`) and branches on it. `walk` follows that code for each opcode with the opcode's value,
+  keeping track of registers holding the opcode (or numbers made from it), the packet pointer and the compare flags:
+  compares, subtractions, jump tables (including byte-indexed ones), `cdqe`, and calls that are passed the opcode or
+  the packet. A branch the opcode doesn't decide is followed both ways (a limited number of times) and the path that
+  decides most is kept; a call that decides nothing is stepped over. What's recorded: the code of the opcode's case
+  (40 instructions, calls one level down), how many opcodes share it, the handler it calls (for the order, below),
+  where the opcode's path ends further in (many cases pass the packet to a handler that branches on the opcode again,
+  e.g. ItemMarketBoardInfo and Summary), and, for packets that still share an end, where one of ~120 *second
+  dispatchers* (other functions that read a packet's opcode and compare it) sends them.
+* **Client packets** (the client builds them): the function that writes the packet's opcode and, within ten
+  instructions, its size with the IPC header (`mov [base+x], opcode`, `mov [base+x+8], size + 16`); every packet's size
+  is in the opcode files. The whole function (300 instructions, the opcode's own write marked) is recorded.
+
+**Matching**, in the new executable:
+
+1. The dispatcher: the biggest switch over opcodes whose start looks most like the recorded one.
+2. Exact: the same code, shared by the same number of opcodes, **unique both ways** (two places with the same code in
+   the old version, or in the new one, aren't exact.)
+3. By order: the game's functions stay in the same order from one version to the next, so the handlers matched so far
+   predict where each other one moved. The candidate exactly where the order says wins, then the most alike (at least
+   half the same instructions), within 0x200 bytes (0x40 for client functions). Three rounds.
+4. Inside a case shared by several opcodes: ends with exactly the same code; then second dispatchers. How alike ends
+   are isn't used here: the ends of one compare tree are a few bytes apart and run on into each other (that's what put
+   10.06's CurrencyCrystalInfo on UpdateItem's opcode before.)
+5. Client packets: exact functions (built for one packet only in the old version) vote 3, clearly the closest vote 1,
+   then the order of functions.
+
+What comes back for each packet is an opcode, a list of candidates the client's code doesn't tell apart, or nothing.
+
+**Tested** on Bob's 2026.10.06 and 2026.10.16 executables against both versions' known opcodes, in both directions:
+
+| | Server packets (211) | Client packets (112) |
+|---|---|---|
+| 10.06 → 10.16 | 195 exact, 16 among candidates (the right one always in the list), **0 wrong** | 98 exact, 14 not found, **0 wrong** |
+| 10.16 → 10.06 | 192 exact, 19 among candidates, **0 wrong** | 98 exact, 14 not found, **0 wrong** |
+
+The candidates: the notices (EventNotice2/4, five opcodes the client handles identically), EventResume2/4/8 (eight),
+InitResponse and PingSyncReply (21: they end in the dispatcher's default case, so they're handled before it), the
+three inventory packets (UpdateItem, ContainerInfo, CurrencyCrystalInfo), the two InventoryTransactions, the two
+ItemMarketBoards, Mogpendium, SearchFellowshipsResults. The client packets not found are built differently (not
+`opcode` then `size` next to each other) or by code shared with another packet (EventYield/EventReturnHandler16).
+
+**At startup** (`auto_opcodes::adapt_to_game`, before the fork finders):
+
+* The newest fingerprints older than the game are used: the shipped ones, or `auto-opcodes/fingerprints-*.json`
+  recorded since, so it chains across several updates.
+* Found opcodes replace the whole `ServerZoneIpcType` and `ClientZoneIpcType` lists (`remap::set_table`). In a
+  replaced list, an incoming opcode that isn't in it is read as unknown (`0xF000` + its opcode, never as the packet
+  that had that number before; `remap::real_unknown` gives it back for the log), and a packet that wasn't found goes
+  out as `0xFFFE`, which the game ignores. Chat and lobby opcodes didn't change between 10.06 and 10.16 and aren't
+  touched.
+* Candidates: packets sharing a list take different ones in order (logged as a warning, with the others to try with
+  `!rawpacket`).
+* Client packets not found are **learnt by size**: the first unknown packet whose size only one of them has is it from
+  then on (logged).
+* Written to `auto-opcodes/<version>.json` (opcodes, guesses, what wasn't found, and the install's expansion versions),
+  and this version's fingerprints to `auto-opcodes/fingerprints-<version>.json` from the opcodes found exactly. The
+  patch server accepts a game version with a result there (and expansions no newer than the install's) as current.
+* When the game *is* `SUPPORTED_GAME_VERSION` and the shipped fingerprints are for another version, its fingerprints
+  are recorded instead.
+
+**Not covered:** a patch also changes `BASE_INVENTORY_ACTION`, the mail result codes and the scrambler tables in
+`constants.yml`. Obfuscation is off by default (`enable_packet_obsfucation`), so the scrambler isn't needed to play;
+item moves and mail need upstream's (or a hand-found) value. Content patches can also change bitmask sizes and packet
+layouts, which no opcode table fixes.

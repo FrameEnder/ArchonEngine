@@ -116,6 +116,9 @@ pub fn log_outstanding() {
 /// When an unknown packet arrives, says which outstanding fork opcode it could be, going by its size.
 /// `kind` is the opcode list, e.g. ClientZoneIpcType, and `size` the size of its data.
 pub fn hint_unknown_packet(kind: &str, opcode: u16, size: usize) {
+    // After a game update, a packet the opcode match didn't place may be learnt from it.
+    crate::auto_opcodes::learn_unknown_packet(kind, opcode, size);
+    let opcode = kawari::packet::remap::real_unknown(opcode);
     for candidate in
         outstanding_fork_opcodes(kind, size).filter(|candidate| found(candidate).is_none())
     {

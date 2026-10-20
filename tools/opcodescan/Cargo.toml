@@ -8,3 +8,4 @@ workspace = true
 
 [dependencies]
 kawari = { path = "../../core" }
+serde_json = { workspace = true }

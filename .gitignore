@@ -25,3 +25,6 @@ quest-dumps/
 
 # Python (tools/questkit)
 __pycache__/
+
+# Opcodes the world server found for a newer game version, and fingerprints it recorded (docs/src/fork/opcodes.md)
+auto-opcodes/
