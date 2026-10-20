@@ -1,0 +1,24 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "attack_range": 10.0,
+    "recorded_amounts": {
+        "146": {
+            "players": 12.0,
+            "npcs": 12.0
+        },
+        "147": {
+            "players": 34.0,
+            "npcs": 34.0
+        }
+    },
+    "timepoints": [
+        { "time": 0, "data": { "type": "action", "action_id": 146 } },
+        { "time": 6, "data": { "type": "action", "action_id": 146 } },
+        { "time": 12, "data": { "type": "action", "action_id": 146 } },
+        { "time": 18, "data": { "type": "action", "action_id": 146 } },
+        { "time": 24, "data": { "type": "action", "action_id": 147 } },
+        { "time": 30, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
+    ]
+}

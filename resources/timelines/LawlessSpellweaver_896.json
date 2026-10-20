@@ -1,0 +1,18 @@
+{
+    "hitbox_radius": 0.45,
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 32.8
+        },
+        "120": {
+            "npcs": 87.9
+        }
+    },
+    "timepoints": [
+        { "time": 0, "data": { "type": "action", "action_id": 119 } },
+        { "time": 5, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
+    ]
+}

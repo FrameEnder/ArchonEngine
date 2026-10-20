@@ -1,0 +1,31 @@
+{
+    "hitbox_radius": 0.45,
+    "autoattack_action_id": 873,
+    "timeline_always_plays": false,
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "873": {
+            "npcs": 25.0,
+            "players": 14.0
+        },
+        "97": {
+            "npcs": 39.1
+        },
+        "100": {
+            "npcs": 25.3
+        },
+        "18190": {
+            "npcs": 35.1
+        }
+    },
+    "rotation": {
+        "pace": 6.6,
+        "actions": [
+            {"action": 101, "then": 97, "comment": "Raging Strikes: once each"},
+            {"action": 100, "refresh": 18.0, "comment": "Venomous Bite: 1-2 each"},
+            {"action": 18190, "refresh": 7.6, "comment": "Straight Shot: 2-3 each"},
+            {"action": 97, "comment": "Heavy Shot: 3-4 each"}
+        ]
+    },
+    "timepoints": []
+}

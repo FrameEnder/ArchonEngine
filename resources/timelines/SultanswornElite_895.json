@@ -1,0 +1,25 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 6.8
+        },
+        "9": {
+            "npcs": 11.0
+        },
+        "11": {
+            "npcs": 16.0
+        }
+    },
+    "rotation": {
+        "pace": 9.2,
+        "actions": [
+            {"action": 101, "comment": "Raging Strikes: on cooldown (2 uses)"},
+            {"action": 11, "comment": "Savage Blade: 8 uses, after Fast Blade (its ActionCombo) 8 of 8"},
+            {"action": 9, "comment": "Fast Blade: 8 uses"}
+        ]
+    },
+    "timepoints": []
+}

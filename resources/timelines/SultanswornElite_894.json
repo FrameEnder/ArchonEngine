@@ -1,0 +1,27 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 6.7
+        },
+        "9": {
+            "npcs": 10.9
+        },
+        "15": {
+            "npcs": 12.2
+        },
+        "120": {
+            "npcs": 72.0
+        }
+    },
+    "rotation": {
+        "pace": 15.0,
+        "actions": [
+            {"action": 15, "comment": "Riot Blade: 5 uses"},
+            {"action": 9, "comment": "Fast Blade: 5 uses"}
+        ]
+    },
+    "timepoints": []
+}

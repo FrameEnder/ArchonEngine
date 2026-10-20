@@ -1,0 +1,30 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 872,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "872": {
+            "npcs": 24.2,
+            "players": 12.7
+        },
+        "53": {
+            "npcs": 54.0
+        },
+        "54": {
+            "npcs": 62.0
+        },
+        "56": {
+            "npcs": 60.5,
+            "players": 31.0
+        }
+    },
+    "rotation": {
+        "pace": 4.7,
+        "actions": [
+            {"action": 56, "refresh": 17.8, "comment": "Snap Punch"},
+            {"action": 54, "refresh": 17.8, "comment": "True Strike"},
+            {"action": 53, "refresh": 17.8, "comment": "Bootshine: about 3 each, 18-27 s apart"}
+        ]
+    },
+    "timepoints": []
+}

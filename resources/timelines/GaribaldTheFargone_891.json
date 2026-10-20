@@ -1,0 +1,32 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 23.6,
+            "players": 21.8
+        },
+        "31": {
+            "npcs": 38.9,
+            "players": 28.0
+        },
+        "37": {
+            "npcs": 40.5,
+            "players": 50.0
+        },
+        "41": {
+            "npcs": 21.0,
+            "players": 21.0
+        }
+    },
+    "rotation": {
+        "pace": 12.0,
+        "actions": [
+            {"action": 41, "refresh": 32.4, "comment": "Overpower: 3 uses a run"},
+            {"action": 37, "comment": "Maim: after Heavy Swing (its ActionCombo), 1-2 a run"},
+            {"action": 31, "comment": "Heavy Swing: 4-6 a run"}
+        ]
+    },
+    "timepoints": []
+}

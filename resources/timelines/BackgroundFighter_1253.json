@@ -1,0 +1,11 @@
+{
+    "hitbox_radius": 0.45,
+    "autoattack_action_id": 871,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "871": {
+            "npcs": 6.6
+        }
+    },
+    "timepoints": []
+}

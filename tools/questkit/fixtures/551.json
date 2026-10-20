@@ -1,0 +1,130 @@
+{
+  "quest": 551,
+  "script": "ManWil007_00551",
+  "source": "Bob's Chronofoil capture of 2026-10-18 (retail 2026.10.06): every talk, scene and effect; the first two quest battles were lost, the third won",
+  "params": {
+    "ACTOR0": 1001353,
+    "ITEM0": 2000398,
+    "ACTOR1": 1004005,
+    "ACTOR2": 1004002,
+    "EOBJECT0": 2001427,
+    "EVENT_ACTION_WAITING3_LONG": 13,
+    "TERRITORYTYPE2": 141,
+    "ACTOR3": 1004003,
+    "TERRITORYTYPE0": 210,
+    "POPRANGE0": 4087066,
+    "TERRITORYTYPE1": 271,
+    "QUESTBATTLE0": 38,
+    "CUT_MANWIL00710": 193,
+    "CUT_MANWIL00745": 197,
+    "CUT_MANWIL00750": 143,
+    "CUT_SCENE_QIB_AFTER_01": 196
+  },
+  "steps": [
+    {
+      "talk": 1001353,
+      "layout": 3146810,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]},
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []}
+    },
+    {
+      "talk": 1004005,
+      "layout": 4094111,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 210}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []}
+    },
+    {
+      "talk": 1004002,
+      "layout": 4094165,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 5, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, [1, 1]]]}
+    },
+    {
+      "talk": 2001427,
+      "layout": 3978247,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 7, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 8, "flags": "0x2001", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 271}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 2001427,
+      "layout": 3978247,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 7, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 8, "flags": "0x2001", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 271}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 2001427,
+      "layout": 3978247,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 7, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 8, "flags": "0x2001", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 271}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": []}
+    },
+    {
+      "battle_won": 3,
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": []}
+    },
+    {
+      "enter_territory": 141,
+      "scenes": [
+        {"scene": 10, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1004005,
+      "layout": 4094111,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 11, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 210}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1004003,
+      "layout": 4094167,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 12, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true},
+        {"scene": 13, "flags": "0xf8402efb", "params": [0], "results": [0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

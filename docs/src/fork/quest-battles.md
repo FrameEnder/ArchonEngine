@@ -135,6 +135,34 @@ player is sent out.
 
 ## The battles
 
+### Quest battle 38 — Duty, Honor, Country (`content/questbattle/38.lua`)
+
+* Territory 271, a copy of Central Thanalan (layer `QB_ManWil007_001` of the `wil_w1` drop-in, 39 NPCs): Papashan
+  (4087433, level 26, 5128 HP), Owyne (4087434, 17, 3690) and two Sultansworn elites (4087459/60, 15, 765) with you
+  against Garibald (4087437, 20, 3799), three bowmen (271 HP) and three fistfighters (190); nine background pairs (26400
+  HP each, display flags 0x40208) fight each other; the player starts at (247.74, -17.58, -131.33) facing 1.351. From
+  Bob's Chronofoil capture of 2026-10-18, three runs (`questkit chronofoil --battle 0.36`, `0.38` lost as Papashan and
+  Owyne fell, `0.40` won).
+* Sequence 2 at the start, Papashan 149 at 5 s and Owyne 151 at 10 s. Garibald at 70 %: sequence 3, six more half a
+  second later, Papashan 155 8 s after the sequence. Sequence 4 and Garibald's 157 at 30 %, or at 40 % once at most one
+  other enemy stands (a guess that fits the three runs: 29.9 % with six standing, 36.5 % as the last-but-one fell, never
+  at 50 %). At about 27 % he casts Void Call (867); a second after it lands, sequence 5, his 158, and the blanga it
+  called (after you); Owyne 156 5 s later; Papashan 150 at Garibald's 10 %.
+* Papashan or Owyne falling loses it (at their 0 HP: sequence 0xFE and their line, 160 or 161); the elite 4087459
+  falling only says 162.
+* Everyone down (the blanga last): sequence 6, everyone else removed, the director's scene 6 (0xF8402EFB), then a
+  loading screen to (258.39, -19.72, -129.58, facing 1.288). Sequence 7: a lesser gargoyle (after you) and the masked
+  mage (passive until hit), the mage 165 at 5 s; sequence 8 at 22 s, 166 5 s later; the gargoyle at 50 % 168, at 30 %
+  sequence 9 and Thancred (4087577, level 50), sequence 10 and his 169 10 s later, the mage 167 5 s after; the mage at
+  40 % 170, Thancred 171 5 s later; the mage down: 2 s later sequence 11, scene 11 (0x2001), the quest moves to
+  sequence 3. `questkit battle-sim 38`: every step within two seconds of retail.
+* Who goes after whom, the same in every run: Garibald after Papashan, the bowmen after Owyne, the fistfighters
+  4087449/452 after the elite 4087459 and 4087451 after 4087460, the second wave's fistfighters 504 → 460 and 502 → 459,
+  its bowmen after Owyne, its two casters after Papashan; Papashan stays on Garibald, Owyne takes the bowmen, the elites
+  the fistfighters. Papashan, Owyne and the elite 4087459 Cure each other (35–70 %, never you); the spellweaver Cures
+  its side. Damage and heals are the capture's (`recorded_amounts`, 20 new timelines; hitboxes from Bob's Recorder
+  export of the same runs).
+
 ### Quest battle 39 — Oh Captain, My Captain (`content/questbattle/39.lua`)
 
 * Territory 273, a copy of Western Thanalan (the same Bg as 140, so its NPCs are layer `QB_SubWil088_001` of the

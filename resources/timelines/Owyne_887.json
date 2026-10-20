@@ -1,0 +1,27 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 17.0
+        },
+        "9": {
+            "npcs": 27.7
+        },
+        "15": {
+            "npcs": 33.6
+        },
+        "120": {
+            "npcs": 80.3
+        }
+    },
+    "rotation": {
+        "pace": 17.0,
+        "actions": [
+            {"action": 15, "comment": "Riot Blade: 4 uses, 3 after Fast Blade (its ActionCombo)"},
+            {"action": 9, "comment": "Fast Blade: 5 uses"}
+        ]
+    },
+    "timepoints": []
+}

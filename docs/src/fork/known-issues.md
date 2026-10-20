@@ -15,7 +15,7 @@ add one when something is found.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
 * Limsa Lominsa has only upstream's opening, checked against the client's script but not retail: the client's
   sequence 1 (riding the Crow's Lift with Grehfarr, UI8AL/BitFlag8 1) is skipped, since accepting goes straight to 255.
-  Ul'dah's quests stop after **Secrets and Lies** (628): **Duty, Honor, Country** (551) isn't scripted yet. Its Pugilist and
+  Ul'dah's quests stop after **Duty, Honor, Country** (551). Its Pugilist and
   Thaumaturge **Close to Home** (569, 570) come from their client scripts only: no retail capture, and their replay
   fixtures are 568's with their ITEM0 and ACTOR1 (ACTOR1's layout taken from the quest's todo location).
 * Quest-spawned enemies (307's coblyns, 503's marshlights, 3853's goobbue) lack the quest fields retail's SpawnNpc gives them (Bob's
@@ -27,6 +27,13 @@ add one when something is found.
   sprite's spacing, not retail's ~3.1 s.
 * Monster timelines are keyed by BNpcBase, so 503's marshlights (base 187, name 901) fight as the coblyns that share
   the base (auto-attack 870 only; retail's marshlights also cast 516 once, about 6.5 s in). Needs per-name timelines.
+* Duty, Honor, Country (551): territory 210 (w1e4) is untested in game (arriving at POPRANGE0, Owyne and Papashan there,
+  leaving through the exit warp 0x2000D), as is EOBJECT0 (2001427) appearing in Central Thanalan in sequence 2; the
+  client's (empty) scene 6, probably for a broken-off Waiting bar, is never played, and Kawari ends the event then.
+* Quest battle 38: the sequence-4 trigger is a guess that fits all three runs; the second elite's falling line was never
+  seen; the allies' Cure interval (8 s) is fitted; actions with no script are left out of the timelines (Rampart,
+  Flash, Sword Oath, Foresight, Fracture, Bloodbath, Skull Sunder, Featherfoot, Second Wind, Shield Bash), so Garibald
+  hits Papashan less often than on retail.
 * Oh Captain, My Captain (quest battle 39): Fufulupa's Gut Rip (477; Critical Skill on himself before sequence 5) and
   Baldewyn's Rampart (10, once a run) have no action scripts, so neither is used (Heartstopper's recorded amounts are
   retail's critical hits, so its damage matches anyway); Fufulupa keeps his True Thrust, Feint and Leg Sweep rotation
