@@ -1603,7 +1603,9 @@ impl GameData {
 
     /// Returns how many seconds this EventAction takes to cast.
     pub fn get_event_action_cast_time(&mut self, id: u32) -> u8 {
-        EventActionSheet::read_from(&mut self.resource, Language::None)
+        // It has a Name column, so it only exists per language: read without one it failed and every bar finished
+        // after the fallback's 2 s, before the client's (Bob's 2026-10-20 bundle: aethernet shards, 551's destination.)
+        EventActionSheet::read_from(&mut self.resource, get_config().world.language())
             .ok()
             .and_then(|sheet| sheet.row(id))
             .map(|row| row.CastTime)
@@ -1879,7 +1881,9 @@ impl GameData {
 
     /// The style a pair of glasses (Glasses sheet row) unlocks, which is what the unlock bitmask counts.
     pub fn get_glasses_style(&mut self, glasses_id: u32) -> Option<u32> {
-        let sheet = GlassesSheet::read_from(&mut self.resource, Language::None).ok()?;
+        // Per language, as it has a Name column (Language::None fails to resolve.)
+        let sheet =
+            GlassesSheet::read_from(&mut self.resource, get_config().world.language()).ok()?;
         u32::try_from(sheet.row(glasses_id)?.Style).ok()
     }
 

@@ -71,7 +71,7 @@ Player methods (`servers/world/src/lua/player.rs`), the ones quests use:
 | `cancel_quest(id)`, `incomplete_quest(id)`, `has_quest(id)` | As named. |
 | `event_notice(id, notice, {args})` | Sends an EventNotice (see below). |
 | `start_nested_event(handler)` / `finish_nested_event(handler)` | Sends only the packets of a nested event (EventStart / EventFinish, type Nest, on the current event's target), as retail does with the aetheryte's event while attuning in Close to Home; no handler runs for it. If an event action is interrupted, the nested event is finished too (and OccupiedInEvent removed). |
-| `event_action(id)` | Starts an event action (the progress bar: Searching, Aiding, Interacting…); the script gets `onEventActionCast(player)` when it completes. |
+| `event_action(id)` | Starts an event action (the progress bar: Searching, Aiding, Interacting…); the script gets `onEventActionCast(player)` when it completes, after the EventAction row's CastTime (read in the world server's language: the sheet has a Name column, and read without one it failed and every bar ended after a 2 s fallback, before the client's, until 2026-10-20). Directors' event actions (`begin_event_action`) take the same time. |
 | `spawn_quest_bnpc(layout_id)` | Brings out a battle NPC from the zone's drop-ins for this quest. |
 | `join_quest_battle(id, zone)` | Enters a quest battle (see [Quest battles](quest-battles.md)). |
 

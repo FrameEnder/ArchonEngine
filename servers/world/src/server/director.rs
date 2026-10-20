@@ -1149,11 +1149,11 @@ pub fn director_tick(
 
                 // TODO: set OccupiedInEvent?
 
-                // TODO: don't hardcode this duration, take it from the EventAction sheet!
+                let cast_time = game_data.lock().get_event_action_cast_time(*action_id);
                 instance.insert_task(
                     ClientId::default(),
                     *actor_id,
-                    Duration::from_secs(2),
+                    Duration::from_secs(cast_time as u64),
                     QueuedTaskData::CastEventAction { target: *target },
                 );
             }
