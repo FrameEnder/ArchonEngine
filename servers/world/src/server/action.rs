@@ -34,8 +34,9 @@ use kawari::{
     config::get_config,
     ipc::zone::{
         ActionEffect, ActionRequest, ActionType, ActorControlCategory, ActorControlSelf,
-        BattleNpcSubKind, CommonSpawn, DamageKind, EffectEntry, EffectResult, ObjectKind,
-        ServerZoneIpcData, ServerZoneIpcSegment, SpawnNpc, TargetEffect, TargetEffectKind,
+        BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DamageKind, EffectEntry, EffectResult,
+        ObjectKind, ServerZoneIpcData, ServerZoneIpcSegment, SpawnNpc, TargetEffect,
+        TargetEffectKind,
     },
 };
 
@@ -545,13 +546,19 @@ pub fn execute_action(
                 instance.find_actor(request.target.object_id),
                 Some(NetworkedActor::Player { .. })
             );
-        // Area attacks land on every player inside them when the cast finishes (aimed where the target was, and
-        // facing the way the enemy was, when it started casting), not just on its target.
-        if npc_hitting_player
-            && let Some(effects_builder) = &mut effects_builder
+        // Area attacks land on everyone of the target's side inside them when the cast finishes (aimed where the
+        // target was, and facing the way the enemy was, when it started casting), not just on its target: the
+        // players, and in content the NPCs fighting beside them (retail's Terror Eye in Duty, Honor, Country hit the
+        // player and the allies by them, Bob's Recorder capture of 2026-10-18).
+        if let Some(effects_builder) = &mut effects_builder
             && let Some(shape) = action_info.and_then(|info| info.area_shape())
             && let NetworkedActor::Npc { cast, timeline, .. } = actor
+            && request.target.object_id != from_actor_id
             && let Some(target) = instance.find_actor(request.target.object_id)
+            && effects_builder
+                .effects
+                .iter()
+                .any(|effect| matches!(effect.0, TargetEffectKind::Damage { .. }))
         {
             let (rotation, aimed_at) = match cast {
                 Some(cast) => (cast.rotation, cast.target_position),
@@ -573,9 +580,16 @@ pub fn execute_action(
             unscaled.retain(|effect| {
                 !matches!(effect.0, TargetEffectKind::Heal { unk1, .. } if unk1[4] & EFFECT_ON_SOURCE != 0)
             });
+            let side = area_side(target);
+            // NPCs only where the recording says what the attack does to them: without it an NPC's hit on another
+            // isn't scaled, which for an area attack nobody aimed at them would be far too much.
+            let hits_npcs = timeline.recorded_amount(request.action_id, false).is_some();
             for (id, other) in &instance.actors {
                 if *id != request.target.object_id
-                    && matches!(other, NetworkedActor::Player { .. })
+                    && *id != from_actor_id
+                    && area_side(other).is_some()
+                    && area_side(other) == side
+                    && (hits_npcs || matches!(other, NetworkedActor::Player { .. }))
                     && other.get_common_spawn().health_points > 0
                     && caught(other.position().0)
                 {
@@ -623,16 +637,41 @@ pub fn execute_action(
             if damage > 0 {
                 let scale = recorded / damage as f32;
                 roll_npc_hit(&mut effects_builder.effects, scale, miss_percent);
-                for (_, effects) in &mut area_bystanders {
-                    roll_npc_hit(effects, scale, miss_percent);
-                }
             } else {
                 scale_npc_heal(&mut effects_builder.effects, recorded);
             }
         } else if npc_hitting_player && let Some(effects_builder) = &mut effects_builder {
             let scale = npc_damage_scale(actor, common_spawn.level);
             roll_npc_hit(&mut effects_builder.effects, scale, miss_percent);
-            for (_, effects) in &mut area_bystanders {
+        }
+        // Everyone else caught in an area attack is hit as that kind of target would be: what the recording says the
+        // action does to a player or to an NPC, or for a player without one the NPC's usual scale.
+        for (id, effects) in &mut area_bystanders {
+            let Some(bystander) = instance.find_actor(*id) else {
+                continue;
+            };
+            let is_player = matches!(bystander, NetworkedActor::Player { .. });
+            let damage: u32 = effects
+                .iter()
+                .filter_map(|effect| match effect.0 {
+                    TargetEffectKind::Damage { amount, .. } => Some(amount as u32),
+                    _ => None,
+                })
+                .sum();
+            let recorded = match actor {
+                NetworkedActor::Npc { timeline, .. } => {
+                    timeline.recorded_amount(request.action_id, is_player)
+                }
+                _ => None,
+            };
+            let scale = match recorded {
+                Some(recorded) if damage > 0 => Some(recorded / damage as f32),
+                _ if is_player => Some(npc_damage_scale(actor, common_spawn.level)),
+                _ => None,
+            };
+            if let Some(scale) = scale {
+                let miss_percent =
+                    npc_miss_percent(bystander.get_common_spawn().level, common_spawn.level);
                 roll_npc_hit(effects, scale, miss_percent);
             }
         }
@@ -673,7 +712,9 @@ pub fn execute_action(
                         );
                     }
                     for (id, effects) in &mut area_bystanders {
-                        if let Some(bystander) = instance.find_actor(*id) {
+                        if let Some(bystander @ NetworkedActor::Player { .. }) =
+                            instance.find_actor(*id)
+                        {
                             modifiers::apply_hit_on_player(
                                 effects,
                                 &caster_statuses,
@@ -716,7 +757,16 @@ pub fn execute_action(
                         _ => None,
                     })
                     .sum();
-                actor.add_enmity(from_actor_id, damage.saturating_mul(multiplier));
+                // A heal (or anything on oneself) doesn't make the target hate whoever used it: an NPC healed by an
+                // ally got the healer on its enmity list, the healing enmity piled up there, and once its own target
+                // fell it turned on its healer (Duty, Honor, Country's fistfighters on their spellweaver, Bob's
+                // 2026-10-20 bundle).
+                let heals_target = effects_builder.effects.iter().any(|effect| {
+                    matches!(effect.0, TargetEffectKind::Heal { unk1, .. } if unk1[4] & EFFECT_ON_SOURCE == 0)
+                });
+                if request.target.object_id != from_actor_id && (damage > 0 || !heals_target) {
+                    actor.add_enmity(from_actor_id, damage.saturating_mul(multiplier));
+                }
                 if effects_builder.provoke {
                     actor.provoke(from_actor_id);
                 }
@@ -2215,6 +2265,24 @@ pub fn execute_ornament_action(
     None
 }
 
+/// Which side of a fight an actor is on, for whom an NPC's area attack catches besides its target: players and the
+/// NPCs that aren't hostile to them (`false`), or hostile NPCs (`true`). `None` for anything that isn't a fighter.
+fn area_side(actor: &NetworkedActor) -> Option<bool> {
+    match actor {
+        NetworkedActor::Player { .. } => Some(false),
+        NetworkedActor::Npc { spawn, .. }
+            if matches!(spawn.common.object_kind, ObjectKind::BattleNpc(_)) =>
+        {
+            Some(
+                spawn
+                    .character_data_flags
+                    .contains(CharacterDataFlag::HOSTILE),
+            )
+        }
+        _ => None,
+    }
+}
+
 /// Whether `point` is inside an area attack of this `shape`, used by an NPC at `caster` (with a hitbox of
 /// `caster_radius`) facing `rotation` and aimed at `aimed_at`. Distances are on the ground, and the player's own hitbox
 /// (`PLAYER_HITBOX_RADIUS`) counts, so grazing the edge is a hit.
@@ -2437,8 +2505,9 @@ fn roll_npc_hit(effects: &mut Vec<TargetEffect>, scale: f32, miss_percent: u8) {
     }
 }
 
-/// Lands an enemy's area attack on another player inside it: their damage (shown as flying text, since the
-/// ActionEffect packet only carries the target), any statuses, and their new HP.
+/// Lands an enemy's area attack on another player (or NPC of the target's side) inside it: their damage (shown as
+/// flying text, since the ActionEffect packet only carries the target), any statuses, their new HP, and for an NPC
+/// enmity on the attacker as for its target.
 fn hit_area_bystander(
     network: Arc<Mutex<NetworkState>>,
     instance: &mut Instance,
@@ -2461,10 +2530,11 @@ fn hit_area_bystander(
         return;
     };
     let floor = u32::from(modifiers::has_hp_floor(&status_ids(actor)));
-    let common_spawn = actor.get_common_spawn_mut();
-    if common_spawn.health_points == 0 {
+    if actor.get_common_spawn().health_points == 0 {
         return;
     }
+    actor.add_enmity(from_actor_id, damage);
+    let common_spawn = actor.get_common_spawn_mut();
     common_spawn.health_points = common_spawn
         .health_points
         .saturating_sub(damage)

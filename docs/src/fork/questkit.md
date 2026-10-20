@@ -309,7 +309,9 @@ python3 tools/questkit battle-sim --make 12 --run run.json.gz --source "…"   #
 in seconds from the fight starting (the director's scene 60000, Kawari's `onCommence`): each NPC's health curve, when
 it appeared (or `null`: there from the start) and when its health reached 0, how long the client took over each of
 the director's own scenes, and the events to match: the director's sequence changes (not the 0xFE the server sets
-when it's over), battle talk by text ID, the NPCs that arrived during the fight, and "won" (scene 60001).
+when it's over), battle talk by text ID, the NPCs that arrived during the fight, and "won" (scene 60001). An NPC
+the script spawns outside `onUpdate` (in `onCommence`, `onActorDeath`, `onSceneFinished`) has no health on the next
+update, as on the server, which runs the director's spawns after `onUpdate`.
 
 `battle_sim.py` runs the director script with `content/lib/Battle.lua` in Lua 5.4: `onSetup` (not compared: retail's
 sequence 1 comes before the opening cutscene too), `onCommence` at 0, `onUpdate` every half second with each spawned

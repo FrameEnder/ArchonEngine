@@ -14,16 +14,19 @@
 --   Garibald at 30%, or at 40% once no more than one of the others is standing: sequence 4, Garibald 157. (One run
 --          had it as he went from 30.2% to 29.9% with six still standing, the other at 36.5% just as the second
 --          last fell; the run lost at 50% never had it. A guess that fits all three.)
---   Garibald at about 27%: he casts Void Call (2.7 s; 0.7 s after he passed 27% in both runs); a second after it
---          lands, sequence 5 and his 158, and the blanga it called half a second later (it goes after you); Owyne
---          156 five seconds after the sequence
+--   Garibald at about 27%: he casts Void Call (2.7 s) on himself, 0.6-0.7 s after he passed 27% in both runs (5.3 s
+--          and 9.3 s after sequence 4, so it goes by his health, not a timer); a second after it lands, sequence 5
+--          and his 158, and the blanga it called half a second later (it goes after you); Owyne 156 five seconds after
+--          the sequence. The blanga's Terror Eye (740, a 6 yalm circle where you stand, 2.5 s) comes 16.3 and 16.9 s
+--          after it appears, then every 14.4 s, and hits whoever of your side is in it (you and the allies by you)
 --   Garibald at 10%: Papashan 150
 --   everyone down (the blanga last): sequence 6, everyone else leaves and the director's cutscene plays (scene 6,
 --          0xF8402EFB); retail sends you on through a loading screen (PrepareZoning to the same territory, then
 --          ActorSetPos 1.5 s later)
 --   after it: sequence 7, a lesser gargoyle (after you) and the masked mage (spawned not hostile, standing by
 --          until hit) half a second later; the mage 165 five seconds in
---   22 seconds in: sequence 8, the mage 166 five seconds later
+--   22 seconds in: sequence 8 (a second after the gargoyle's Corrupted Tail, its timeline), the mage 166 five seconds
+--          later
 --   the gargoyle at 50%: the mage 168
 --   the gargoyle at 30% (it went from 30.5% to 28.0%): sequence 9 and Thancred; ten seconds later sequence 10 and
 --          his 169, the mage 167 five seconds after that. He takes the gargoyle and then the mage
@@ -37,8 +40,8 @@
 -- and 4087452 after one elite (4087459) and 4087451 after the other; of the second six, 4087504 goes after 4087460,
 -- 4087502 after 4087459, the bowmen after Owyne and the two casters after Papashan. Papashan stays on Garibald, Owyne
 -- takes the bowmen, the elites the fistfighters, then everyone what's left, Garibald last. Papashan, Owyne and
--- 4087459 Cure the others (never you) when they're down to about two thirds. How hard everyone hits and heals is in
--- their timelines' recorded_amounts.
+-- 4087459 Cure whichever of the four (themselves too, never you) is below 70%, each about every 6 s. How hard
+-- everyone hits and heals is in their timelines' recorded_amounts.
 
 -- Where retail puts the player and which way they face: their SpawnPlayer in the capture.
 START_POSITION = { x = 247.74, y = -17.58, z = -131.33 }
@@ -97,6 +100,7 @@ FAIL_DELAY_UPDATES = 12
 WON_DELAY_UPDATES = 4
 
 ACTION_VOID_CALL = 867
+ACTION_TERROR_EYE = 740
 ACTION_CURE = 120
 BACKGROUND_ENMITY = 100000
 
@@ -115,7 +119,7 @@ SEQUENCE_4_STEPS = { { 0, "sequence", 4 }, { 0, "talk", SPEAKER_GARIBALD, 157 } 
 VOID_CALL_STEPS = {
     { 0, "call", function(director)
         if BATTLE.alive[BNPC_GARIBALD] then
-            director:use_action(BNPC_GARIBALD, ACTION_VOID_CALL)
+            director:use_action(BNPC_GARIBALD, ACTION_VOID_CALL, BNPC_GARIBALD) -- on himself, as retail
         end
     end },
     { 8, "sequence", 5 },
@@ -128,6 +132,11 @@ SEQUENCE_4_HEALTH_FEW_LEFT = 40
 FEW_LEFT = 1
 VOID_CALL_HEALTH = 27
 PAPASHAN_LINE_HEALTH = 10
+-- The blanga's Terror Eye, in updates: the first 16.3-16.9 s after it appears, then every 14.4 s (retail, run 0.38;
+-- the blanga of run 0.40 died before its second.) Counted from the update that spawns it. What it does is in the
+-- blanga's timeline (recorded_amounts: 32-34 on you in 4 of 4, 57-63 on Papashan and the elites, 2 misses in 8.)
+TERROR_EYE_FIRST = 34
+TERROR_EYE_EVERY = 29
 AFTER_CUTSCENE_STEPS = {
     { 0, "sequence", 7 },
     { 1, "spawn", { BNPC_GARGOYLE, BNPC_MAGE } },
@@ -168,14 +177,14 @@ BATTLE:ally(BNPC_ELITE_1, { role = "dps", focus = { "fistfighters", "adds", "bos
 BATTLE:ally(BNPC_ELITE_2, { role = "dps", focus = { "fistfighters", "adds", "boss" }, order = "oldest", range = 3 })
 -- Thancred takes the gargoyle and then the mage.
 BATTLE:ally(BNPC_THANCRED, { focus = { "adds", "boss" }, range = 3 })
--- Their Cures (retail: on each other at 35-70% health, about 10 each a run, never on the player or, but for the
--- first elite, themselves.)
+-- Their Cures (retail, 191 in three runs: whoever of the four is below 70%, the healer too, never the player; each
+-- healer about every 6 s, medians 5.6-6.9.)
 HEALS = {
-    [BNPC_PAPASHAN] = { targets = { BNPC_OWYNE, BNPC_ELITE_1, BNPC_ELITE_2 }, below = 66 },
-    [BNPC_OWYNE] = { targets = { BNPC_ELITE_1, BNPC_PAPASHAN, BNPC_ELITE_2 }, below = 69 },
+    [BNPC_PAPASHAN] = { targets = { BNPC_OWYNE, BNPC_ELITE_1, BNPC_ELITE_2, "self" }, below = 70 },
+    [BNPC_OWYNE] = { targets = { BNPC_ELITE_1, BNPC_PAPASHAN, BNPC_ELITE_2, "self" }, below = 70 },
     [BNPC_ELITE_1] = { targets = { BNPC_OWYNE, BNPC_ELITE_2, "self", BNPC_PAPASHAN }, below = 70 },
 }
-HEAL_EVERY_SECONDS = 8
+HEAL_EVERY_SECONDS = 6
 for healer, h in pairs(HEALS) do
     BATTLE.roles[healer].heals = {
         { action = ACTION_CURE, targets = h.targets, below = h.below, every = HEAL_EVERY_SECONDS },
@@ -222,6 +231,7 @@ local half = 1
 local sequence_4 = false
 local void_call = false
 local won_in = nil
+local terror_eye_in = nil
 local over = false
 local fail_in = nil
 
@@ -250,7 +260,15 @@ function checkGaribald(director, health)
     if half ~= 1 or BATTLE.arrival[BNPC_GARIBALD] == nil or void_call then
         return
     end
-    local garibald = BATTLE.alive[BNPC_GARIBALD] and health[BNPC_GARIBALD] or 0
+    local garibald = 0
+    if BATTLE.alive[BNPC_GARIBALD] then
+        garibald = health[BNPC_GARIBALD]
+        if garibald == nil then
+            -- Not spawned yet: the server spawns the script's NPCs after the update that asked for them (Bob's
+            -- 2026-10-20 runs had sequence 4 and Void Call queued on the very first update this way.)
+            return
+        end
+    end
     if not sequence_4 then
         local others = BATTLE:enemiesLeft() - (BATTLE.alive[BNPC_GARIBALD] and 1 or 0)
         if garibald <= SEQUENCE_4_HEALTH or (garibald <= SEQUENCE_4_HEALTH_FEW_LEFT and others <= FEW_LEFT) then
@@ -287,6 +305,14 @@ function onUpdate(director, health, player_health, info)
     end
     BATTLE:update(director, health, player_health, info)
     checkGaribald(director, health or {})
+
+    if BATTLE.alive[BNPC_BLANGA] then
+        terror_eye_in = (terror_eye_in or TERROR_EYE_FIRST) - 1
+        if terror_eye_in <= 0 then
+            director:use_action(BNPC_BLANGA, ACTION_TERROR_EYE) -- at the player
+            terror_eye_in = TERROR_EYE_EVERY
+        end
+    end
 end
 
 -- Everyone from the first half leaves for the cutscene.

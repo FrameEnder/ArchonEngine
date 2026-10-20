@@ -30,6 +30,10 @@ Battle.ALLY_ENMITY = 10000
 Battle.RETARGET_EVERY = 4
 -- The player, wherever a target list takes NPC layout IDs.
 Battle.PLAYER = "player"
+-- How long (in updates) no other healer picks a target someone has just started healing: a Cure's cast (1.2 s) and
+-- its landing, so the others see its health after the heal instead of all healing it at once (three healers on one
+-- target in the same update overhealed it by twice its Cure in Bob's 2026-10-20 runs of Duty, Honor, Country.)
+Battle.HEAL_PENDING_UPDATES = 3
 
 -- ---- Roles ----
 -- Every class belongs to one of three roles, and the role says most of what an NPC is there to do (enemies follow it
@@ -89,6 +93,7 @@ function Battle.new()
     self.context = "start"
     self.hold = {}       -- ally layout ID -> the update it may start fighting (others wait for the tank)
     self.tank_priority = 0
+    self.heal_pending = {} -- target -> the update until which it's being healed by someone
     return self
 end
 
@@ -377,7 +382,8 @@ end
 
 -- A heal rule (in a role's `heals`): action (the heal), targets (a list of layout IDs and/or "player", or "allies"
 -- for its whole side), below (health % that calls for it), every (seconds between heals at most), say (a function
--- called with the director when it heals, e.g. for a line.) It heals whoever of its targets is lowest.
+-- called with the director when it heals, e.g. for a line.) It heals whoever of its targets is lowest, leaving one
+-- another healer has just started on (Battle.HEAL_PENDING_UPDATES).
 function Battle:runHeals(director)
     for layout, role in pairs(self.roles) do
         if role.heals ~= nil and self.alive[layout] then
@@ -406,7 +412,8 @@ function Battle:runHeals(director)
                         best_health = heal.tank_below or 70
                         for _, target in ipairs(first) do
                             local current = self.health[target]
-                            if current ~= nil and current > 0 and current < best_health then
+                            if current ~= nil and current > 0 and current < best_health
+                                and (self.heal_pending[target] or 0) <= self.updates then
                                 best, best_health = target, current
                             end
                         end
@@ -424,11 +431,13 @@ function Battle:runHeals(director)
                         else
                             current = self.alive[target] and self.health[target] or nil
                         end
-                        if current ~= nil and current > 0 and current < best_health then
+                        if current ~= nil and current > 0 and current < best_health
+                            and (self.heal_pending[target] or 0) <= self.updates then
                             best, best_health = target, current
                         end
                     end
                     if best ~= nil then
+                        self.heal_pending[best] = self.updates + Battle.HEAL_PENDING_UPDATES
                         if best == Battle.PLAYER then
                             director:use_action(layout, heal.action)
                         else

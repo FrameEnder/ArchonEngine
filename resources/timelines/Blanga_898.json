@@ -8,10 +8,11 @@
     "recorded_amounts": {
         "870": {
             "players": 9.3
+        },
+        "740": {
+            "players": 32.5,
+            "npcs": 60.3
         }
     },
-    "timepoints": [
-        { "time": 6, "data": { "type": "action", "action_id": 740 } },
-        { "time": 20, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
-    ]
+    "timepoints": []
 }

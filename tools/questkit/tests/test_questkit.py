@@ -1163,6 +1163,18 @@ end
         self.assertFalse(result.ok)
         self.assertIn("sequence 3: 45.0 s, retail 30.0 s", result.problems)
 
+    def test_spawned_npcs_have_no_health_on_the_next_update(self):
+        # The server spawns what onCommence asked for after the first update, so that update has no health for it:
+        # a script treating a missing health as 0 (Duty, Honor, Country's Garibald, 2026-10-20) jumps ahead.
+        self.SCRIPT = self.SCRIPT.replace(
+            "function onUpdate(director, health, player_health, info) BATTLE:update(director, health, player_health, info) end",
+            "function onUpdate(director, health, player_health, info)\n"
+            "    if not EARLY and (health[22] or 0) <= 50 then EARLY = true; director:set_sequence(3) end\n"
+            "    BATTLE:update(director, health, player_health, info)\nend")
+        result = self.run_script(50)
+        self.assertFalse(result.ok)
+        self.assertIn("sequence 3: 0.0 s, retail 30.0 s", result.problems)
+
     def test_fixture_from_run(self):
         run = {
             "Actors": {"1": {"Kind": "battle npc", "LayoutId": 22, "MaxHp": 1000, "Seen": 1.0, "Died": 62.0},

@@ -14,7 +14,7 @@
         }
     },
     "timepoints": [
-        { "time": 30, "data": { "type": "action", "action_id": 619 } },
+        { "time": 20, "data": { "type": "action", "action_id": 619 }, "comment": "Corrupted Tail: 20.6 s after it appeared on retail (run 0.40), a second before sequence 8" },
         { "time": 120, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
     ]
 }

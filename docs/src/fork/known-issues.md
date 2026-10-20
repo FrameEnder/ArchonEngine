@@ -34,6 +34,10 @@ add one when something is found.
   seen; the allies' Cure interval (8 s) is fitted; actions with no script are left out of the timelines (Rampart,
   Flash, Sword Oath, Foresight, Fracture, Bloodbath, Skull Sunder, Featherfoot, Second Wind, Shield Bash), so Garibald
   hits Papashan less often than on retail.
+* Quest battle 38: Corrupted Tail (619) doesn't give Poison (retail: status 18, 30 s); the masked mage's spells come in
+  its timeline's order from when it spawned, where retail's (Fire II, Fire, then Blizzard II ×4) starts when it's first
+  hit; Thancred's Flash isn't used.
+* NPC area attacks show their damage on the others they catch only as flying text (a one-target ActionEffect).
 * Oh Captain, My Captain (quest battle 39): Fufulupa's Gut Rip (477; Critical Skill on himself before sequence 5) and
   Baldewyn's Rampart (10, once a run) have no action scripts, so neither is used (Heartstopper's recorded amounts are
   retail's critical hits, so its damage matches anyway); Fufulupa keeps his True Thrust, Feint and Leg Sweep rotation
@@ -294,7 +298,6 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
 * **To Guard a Guardian's masked mage**: retail spawns it not hostile and, when it engages, sends ToggleWeapon,
   SetEventState 0, SetBattle 1 and SetTarget. Kawari now spawns it not hostile and lets the first hit start it, but
   sends none of those: check in game that it can be attacked and its nameplate turns hostile.
-* **Void Call** (Quzal): scripted at 27 %; one run can't tell whether retail goes by health or by time after sequence 4.
 * **Display flags 0x008 and 0x200**: To Guard a Guardian's scenery NPCs have them (no health bar, not targetable on
   retail); which bit does which isn't known (Kawari calls 0x008 `UNK2`, 0x200 has no name). They're copied as a pair.
 * **The gargoyle's wait** in To Guard a Guardian is 5 s after it appears, retail's time; Kawari has no "player has

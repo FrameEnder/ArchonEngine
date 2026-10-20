@@ -85,7 +85,7 @@ BATTLE:onHealth(BNPC_BOSS, 75, function(director) BATTLE:spawn(director, WAVE_1)
 
 | Part | |
 |---|---|
-| `ally(layout, role)` | `focus`: the enemy groups it goes for, in order (`"any"` is everyone); `order` within a group: `oldest`, `newest`, `highest_hp`, `lowest_hp`, `nearest`; `range` (yalms, `set_attack_range`); `keep_near` (`{ anchor, within }`, `keep_near`); `heals`. |
+| `ally(layout, role)` | `focus`: the enemy groups it goes for, in order (`"any"` is everyone); `order` within a group: `oldest`, `newest`, `highest_hp`, `lowest_hp`, `nearest`; `range` (yalms, `set_attack_range`); `keep_near` (`{ anchor, within }`, `keep_near`); `heals` (another healer doesn't pick a target one has just started healing for `HEAL_PENDING_UPDATES`, 1.5 s: three healers on one timer all Cured the same ally at once, QB 38). |
 | `enemy(layout, role)` | `group` (a name or a list, e.g. `{ "lostwings", "adds" }`); `attacks`: whom it goes for first (an ally, or the player when `nil`) with `enmity` (300); `passive = true`: no one at first, it waits to be hit (To Guard a Guardian's masked mage); it can have `heals` too (the sincallers heal Quzal). |
 | heals | `{ action, targets (layout IDs, Battle.PLAYER, or "allies" for its whole side), below (%), every (s), say (a function) }`: heals whichever target is lowest under `below`. |
 | `spawn(director, layouts)` / `remove(director, layouts)` | Brings NPCs in as their roles say (placement, first target) / takes them out without dying. |
@@ -146,8 +146,14 @@ player is sent out.
 * Sequence 2 at the start, Papashan 149 at 5 s and Owyne 151 at 10 s. Garibald at 70 %: sequence 3, six more half a
   second later, Papashan 155 8 s after the sequence. Sequence 4 and Garibald's 157 at 30 %, or at 40 % once at most one
   other enemy stands (a guess that fits the three runs: 29.9 % with six standing, 36.5 % as the last-but-one fell, never
-  at 50 %). At about 27 % he casts Void Call (867); a second after it lands, sequence 5, his 158, and the blanga it
-  called (after you); Owyne 156 5 s later; Papashan 150 at Garibald's 10 %.
+  at 50 %). At about 27 % he casts Void Call (867) on himself (retail's has no damage; it goes by his health: 0.6–0.7 s
+  after he passed 27 % in both runs, 5.3 and 9.3 s after sequence 4); a second after it lands, sequence 5, his 158, and
+  the blanga it called (after you); Owyne 156 5 s later; Papashan 150 at Garibald's 10 %. The blanga's Terror Eye (740,
+  a 6-yalm circle where you stand) comes 16.3–16.9 s after it appears and then every 14.4 s (the script casts it),
+  hitting you for about 33 and the allies by you for about 60.
+* Bob's 2026-10-20 runs had sequence 4, Void Call and the blanga 10 s in: the script took Garibald's missing health on
+  the first update (he's spawned after it) for 0 %; it now waits for his health, and battle-sim leaves NPCs spawned
+  outside `onUpdate` out of the next update's health, as the server does, so it catches that.
 * Papashan or Owyne falling loses it (at their 0 HP: sequence 0xFE and their line, 160 or 161); the elite 4087459
   falling only says 162.
 * Everyone down (the blanga last): sequence 6, everyone else removed, the director's scene 6 (0xF8402EFB), then a
@@ -159,8 +165,9 @@ player is sent out.
 * Who goes after whom, the same in every run: Garibald after Papashan, the bowmen after Owyne, the fistfighters
   4087449/452 after the elite 4087459 and 4087451 after 4087460, the second wave's fistfighters 504 → 460 and 502 → 459,
   its bowmen after Owyne, its two casters after Papashan; Papashan stays on Garibald, Owyne takes the bowmen, the elites
-  the fistfighters. Papashan, Owyne and the elite 4087459 Cure each other (35–70 %, never you); the spellweaver Cures
-  its side. Damage and heals are the capture's (`recorded_amounts`, 20 new timelines; hitboxes from Bob's Recorder
+  the fistfighters. Papashan, Owyne and the elite 4087459 Cure whichever of the four is below 70 % (themselves too, never
+  you), each about every 6 s (191 Cures in three runs); the spellweaver Cures its side. The gargoyle's Corrupted Tail
+  comes 20.6 s after it appears, a second before sequence 8. Damage and heals are the capture's (`recorded_amounts`, 20 new timelines; hitboxes from Bob's Recorder
   export of the same runs).
 
 ### Quest battle 39 — Oh Captain, My Captain (`content/questbattle/39.lua`)

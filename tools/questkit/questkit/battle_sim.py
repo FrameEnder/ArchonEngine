@@ -17,7 +17,9 @@ Kawari calls `onActorDeath`; retail's Defeated comes about 2 s later), `hp` its 
 arrived during the fight, and "won" ("Duty Complete", the director's scene 60001).
 
 The simulator runs the real script with content/lib/Battle.lua in Lua 5.4: `onSetup`, `onCommence` at 0, then
-`onUpdate` every half second, as the server does. Each NPC the script spawns follows retail's health curve and falls
+`onUpdate` every half second, as the server does. An NPC spawned outside `onUpdate` (in `onCommence`, `onActorDeath`
+or `onSceneFinished`) isn't in the next update's health yet: the server spawns it only after that update (its
+director tasks run after `onUpdate`), so a script reading `health[npc]` for it then sees nil. Each NPC the script spawns follows retail's health curve and falls
 when it fell on retail, counted from when the script spawned it (so a wave the script brings in late also falls late),
 and the script hears `onActorDeath` for it. A director scene the script plays finishes after as long as the client
 took on retail (`onSceneFinished`). Then the script's sequences, battle talk, spawns and win are matched to retail's,
@@ -221,16 +223,20 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
     dead: set[int] = set()
     scenes_due: list[tuple[float, int]] = []
     seen_calls = 0
+    # Spawned outside onUpdate: not in the next update's health yet (the server spawns them after that update.)
+    not_yet: set[int] = set()
     end = max([e[0] for e in fixture["events"]] or [0]) + AFTER_LAST_EVENT
     known = dropin_layouts()
 
-    def follow_calls():
+    def follow_calls(outside_update: bool = True):
         nonlocal seen_calls
         for t, name, args in calls[seen_calls:]:
             if name == "spawn_bnpc" and args and args[0] not in spawned:
                 layout = int(args[0])
                 spawned[layout] = t
                 alive.add(layout)
+                if outside_update:
+                    not_yet.add(layout)
                 if layout not in known:
                     result.problems.append(f"spawns {layout}, which no drop-in has")
                 elif layout not in npcs:
@@ -271,7 +277,7 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                         g.onActorDeath(director, layout, None)
                     follow_calls()
             health, info_table = {}, {}
-            for layout in alive:
+            for layout in alive - not_yet:
                 spec = npcs.get(layout)
                 offset = spawned[layout] - ((spec or {}).get("spawn") or 0.0)
                 pct = _health_at(spec["hp"], t - offset) if spec else 100.0
@@ -279,7 +285,8 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                 info_table[layout] = lua.table_from({"hp": pct, "max_hp": 100, "x": 0, "y": 0, "z": 0})
             info_table["player"] = lua.table_from({"hp": 100, "max_hp": 100, "x": 0, "y": 0, "z": 0})
             g.onUpdate(director, lua.table_from(health), 100, lua.table_from(info_table))
-            follow_calls()
+            not_yet.clear()
+            follow_calls(outside_update=False)
             t = round(t + TICK, 2)
     except Exception as error:  # Lua errors
         result.error = f"script error at {clock[0]:.1f} s: {str(error).strip().splitlines()[0]}"

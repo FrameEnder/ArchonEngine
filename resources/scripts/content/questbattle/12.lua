@@ -142,7 +142,7 @@ QUZAL_PHASES = {
     {
         health = 27,
         steps = {
-            { 0, "action", BNPC_QUZAL, ACTION_VOID_CALL },
+            { 0, "action", BNPC_QUZAL, ACTION_VOID_CALL, BNPC_QUZAL }, -- on himself
             { 8, "sequence", 5 },
             { 0, "talk", SPEAKER_QUZAL, 166 },
             { 1, "spawn", { BNPC_BLANGA } },
