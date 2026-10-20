@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-19 | — | Combat: the back-and-forth after a minute or two of wandering; the Brass Blade by Horizon stands; known issues.
+| 2026-10-20 | — | `master` fast-forwarded to `Latest-Quest` again, after Bob found the monsters stable and 330, 3853, 332 and 333 working (changelog).
+| 2026-10-19 | `666a398` | Combat: the back-and-forth after a minute or two of wandering; the Brass Blade by Horizon stands; known issues.
 | 2026-10-19 | `111b0f9` | Combat: guards and other stationary spawns stand still; the looping walk; corrected wandering numbers; known issues.
 | 2026-10-19 | `c417c13` | Combat: why monsters stood still (wandering never ended), the chase jitter, turning north; known issues.
 | 2026-10-19 | `d9d37d4` | Combat: spawns for Eastern, Southern and Northern Thanalan and Mor Dhona, more for Western; wandering on retail's timing; known issues.
@@ -131,13 +132,14 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 ## Kawari (fork)
 
-Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`), and on 2026-10-19 (right after `5b5e91f`, and again right after `6bd4b19` and `511d7e1`).
+Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`), and on 2026-10-19 (right after `5b5e91f`, and again right after `6bd4b19` and `511d7e1`), and on 2026-10-20 (right after `666a398`).
 
 ### 2026-10-19
 
 | Commit | Change |
 |---|---|
-| — | NPCs no longer end up walking back and forth: a walk ends within half a yalm of its spot, not only on an empty path, because a spot off the navmesh (a spawn point by a wall) gave a path out to the mesh and back, re-planned every half second forever (56 of 69 moving NPCs in Bob's 2026-10-20 bundle); wander spots cut short go on the navmesh. Stationary spots recounted without sightings where the NPC fought (the Brass Blade by Horizon only moved fighting): 257. Checked by running the NPC behaviour on a Recast test mesh for ten simulated minutes, against the previous build, which looped. |
+| — | `master` fast-forwarded to `Latest-Quest` with Bob's OK (2026-10-20: the monsters' wandering stable; 330, 3853, 332 and 333 work in game). |
+| `666a398` | NPCs no longer end up walking back and forth: a walk ends within half a yalm of its spot, not only on an empty path, because a spot off the navmesh (a spawn point by a wall) gave a path out to the mesh and back, re-planned every half second forever (56 of 69 moving NPCs in Bob's 2026-10-20 bundle); wander spots cut short go on the navmesh. Stationary spots recounted without sightings where the NPC fought (the Brass Blade by Horizon only moved fighting): 257. Checked by running the NPC behaviour on a Recast test mesh for ten simulated minutes, against the previous build, which looped. |
 | `111b0f9` | Drop-in battle NPCs can be `stationary` (`core/src/common/dropin.rs`, `Zone::stationary_npcs`): 253 spawn points in Central, Western, Eastern, Southern and Northern Thanalan and Mor Dhona that retail's never moved (the Brass Blade and Flame guards, among others; 28 % of idle retail monsters stand still). No more ActorMove that only turns an NPC where it stands at the start of a walk, or turns it north on the spot it reached at the end: the client played a step on the spot for each, the looping walk of Bob's 2026-10-20 bundle (a Brass Blade and an Orobon by the Sunset Gate). |
 | `c417c13` | Monsters stood still because a walk never ended: Detour's path to where an NPC already stands is that one point, so a wander spot (or home, after a chase) was re-planned forever, and a new one is only picked without one (Bob's 2026-10-19 bundles: each wandered once, a Dusty Mongrel walked on the spot at home). Arriving now drops the spot; wander spots stay within 5 yalms (Detour's were anywhere on a big polygon); a zero-length step keeps the facing instead of turning north; an NPC in range of its target drops its path, which kept advancing and made it jump back and forth when it ran again. Checked on a flat test navmesh built with Recast. |
 | `d9d37d4` | Open-world spawns from Bob's 2026-10-19 Chronofoil capture with all the older ones: new drop-ins for Eastern (`wil_w1f3_planmap.json`, 370), Southern (`wil_w1f4_planmap.json`, 448) and Northern Thanalan (`wil_w1f5_planmap.json`, 99) and Mor Dhona (`roc_r1f1_planmap.json`, 173), and 16 more for Western Thanalan; S-rank marks left out, one spot per A/B mark. Idle NPCs wander after 20–30 s instead of every 10 s (retail's pauses, measured on ~2600 idle monsters), `find_wander_position` returns None off the navmesh instead of asserting, and the first five NPCs per zone that can't wander are logged. |
