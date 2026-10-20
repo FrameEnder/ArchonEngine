@@ -15,7 +15,7 @@ add one when something is found.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
 * Limsa Lominsa has only upstream's opening, checked against the client's script but not retail: the client's
   sequence 1 (riding the Crow's Lift with Grehfarr, UI8AL/BitFlag8 1) is skipped, since accepting goes straight to 255.
-  Ul'dah's quests stop after **Duty, Honor, Country** (551). Its Pugilist and
+  Ul'dah's quests stop after **A Royal Reception** (552): **The Ul'dahn Envoy** (528), which **Call of the Sea** (673) needs, isn't scripted yet. Quest 641 (between 551 and 552) was written from the capture alone: dump it in the Quest Lab to check it against the client's script (scene numbers, branches, the item, its script name). Its Pugilist and
   Thaumaturge **Close to Home** (569, 570) come from their client scripts only: no retail capture, and their replay
   fixtures are 568's with their ITEM0 and ACTOR1 (ACTOR1's layout taken from the quest's todo location).
 * Quest-spawned enemies (307's coblyns, 503's marshlights, 3853's goobbue) lack the quest fields retail's SpawnNpc gives them (Bob's

@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-20 | — | `master` fast-forwarded to `Latest-Quest` again, after Bob found the quests (334, 336, 628, 551), combat and monsters working (changelog).
+| 2026-10-20 | — | Quests: 641, A Royal Reception (552), Call of the Sea from Ul'dah (673); known issues.
+| 2026-10-20 | `3566c69` | `master` fast-forwarded to `Latest-Quest` again, after Bob found the quests (334, 336, 628, 551), combat and monsters working (changelog).
 | 2026-10-20 | `f6ff8ea` | Combat: auto-attacks (range, current target, damage type, swing animation); known issues.
 | 2026-10-20 | `7ae6113` | Combat: abilities don't touch the combo (no ExecuteCombo).
 | 2026-10-20 | `87adda3` | Quest battles (38 checked against Bob's runs), combat (area attacks on allies, enmity from heals), questkit (battle-sim's spawns); known issues.
@@ -150,7 +151,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | `master` fast-forwarded to `Latest-Quest` with Bob's OK (334, 336, 628, 551, the guards, progress bars, quest battle 38, combos and auto-attacks). |
+| — | Quest 641 (from the capture alone: no dump yet), A Royal Reception (552: the cutscene leaves you in the Hourglass, 178, at POPRANGE0) and Call of the Sea from Ul'dah (673), from Bob's 2026-10-20 dumps and his 2026-10-18 capture; fixtures 641, 552, 673. |
+| `3566c69` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (334, 336, 628, 551, the guards, progress bars, quest battle 38, combos and auto-attacks). |
 | `f6ff8ea` | Player auto-attacks as retail (663 of Bob's measured): they go to the current target, not the one auto-attack was toggled on, only within 3.5 yalms of its hitbox (ranged classes 25), alive, and not while casting; a swing that can't be made waits and comes as soon as it can; the weapon's damage type, a random swing animation, object type 0. Their damage was always applied (the HP update just goes out before the ActionEffect: known issues). |
 | `7ae6113` | ExecuteCombo only on spells and weaponskills, as retail (Fast Blade 205 of 208, Riot Blade 137 of 141; Fight or Flight 0 of 20, Low Blow 0 of 12, Sprint 0 of 43): sent on Fight or Flight, it made the client drop the Fast Blade → Riot Blade combo (Bob's 2026-10-20 bundle). |
 | `87adda3` | Quest battle 38 against Bob's 2026-10-20 run and retail's three: the blanga came 10 s in (the script read Garibald's not-yet-spawned health as 0 %; battle-sim now leaves spawns outside `onUpdate` out of the next update's health, which catches it); Void Call on Garibald himself and harmless, as on retail (QB 12's Quzal too); three healers on one timer all Cured the same ally (`Battle.lua`: a target being healed isn't picked by another for 1.5 s; QB 38's heal anyone below 70 % every 6 s, themselves included); Terror Eye on its retail timing, hitting allies too; the gargoyle's Corrupted Tail at 20 s. Combat: NPC area attacks land on NPCs of the target's side where the timeline records an amount for them, and on players whoever they're aimed at; a heal or an action on oneself gives the target no enmity (healed enemies turned on their healer). |

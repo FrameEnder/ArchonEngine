@@ -1,0 +1,52 @@
+{
+  "quest": 552,
+  "script": "ManWil009_00552",
+  "source": "scenes and effects from Bob's Chronofoil capture of 2026-10-18; params from the client's script (kawari-questdump, 2026-10-20)",
+  "params": {
+    "ACTOR0": 1001353,
+    "ACTOR1": 1001821,
+    "RITEM0": 4196,
+    "ACTOR2": 1004093,
+    "ACTOR3": 1004004,
+    "POPRANGE0": 4108401,
+    "CUT_MANWIL00910": 144,
+    "CUT_MANWIL00925": 224,
+    "CUT_MANWIL00920": 63
+  },
+  "steps": [
+    {
+      "talk": 1001353,
+      "layout": 3146810,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1001821,
+      "layout": 2621121,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 4, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "effects": [
+        {"zone": 178}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1004004,
+      "layout": 4077648,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 7, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 8, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

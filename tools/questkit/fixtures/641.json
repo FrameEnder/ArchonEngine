@@ -1,0 +1,46 @@
+{
+  "quest": 641,
+  "script": "ManWil008_00641",
+  "source": "scenes and effects from Bob's Chronofoil capture of 2026-10-18; no dump of 641 yet (layouts only)",
+  "params": {},
+  "steps": [
+    {
+      "talk": 1004002,
+      "layout": 4094165,
+      "what": "Owyne",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1001353,
+      "layout": 3146810,
+      "what": "Momodi",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 0,
+      "layout": 3985683,
+      "what": "the item giver (base ID not known without a dump)",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001000000000", "notices": [[1, [21002]]]}
+    },
+    {
+      "talk": 1001353,
+      "layout": 3146810,
+      "what": "Momodi",
+      "scenes": [
+        {"scene": 6, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 7, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}
