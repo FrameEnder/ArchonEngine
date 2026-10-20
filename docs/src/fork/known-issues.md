@@ -144,9 +144,8 @@ add one when something is found.
 * Eastern, Southern and Northern Thanalan's and Mor Dhona's monsters have no timelines (no Recorder export of those
   zones): default auto-attack, hitbox and damage, no skills. Northern Thanalan's drop-in only has the 99 spawn points
   of a short visit.
-* NPCs that patrol on retail (Western Thanalan's Brass Blade by Horizon, layout 4057563, paces between two spots 11
-  yalms apart) wander around their spawn point instead. `stationary` in the drop-ins came from a one-off scan of the
-  captures; `questkit chronofoil --dropin` doesn't write it yet.
+* `stationary` in the drop-ins came from a one-off scan of the captures; `questkit chronofoil --dropin` doesn't write it
+  yet. Guards don't attack monsters that come near them, as retail's do.
 * To Guard a Guardian: which six Ixali come first is a guess from where they stand. Where the navmesh has holes,
   NPCs in content walk straight across them (rocks included) rather than stall the battle. Dying sends you back out to the
   instructor (as any lost quest battle does); whether retail offers a retry first isn't recorded.

@@ -79,6 +79,8 @@ const LEASH_DISTANCE: f32 = 40.0;
 
 /// How close to home an enemy that gave up has to get before it pays attention again.
 const HOME_DISTANCE: f32 = 3.0;
+/// An NPC this close (yalms, across the ground) to the spot it walks to has got there.
+const ARRIVE_DISTANCE: f32 = 0.5;
 /// Path points closer than this (yalms, across the ground) to where an NPC stands are where it already is.
 const MIN_STEP: f32 = 0.05;
 
@@ -623,15 +625,19 @@ pub fn npc_behavior(
                         {
                             path.pop_front();
                         }
-                        // Got to the spot it was walking to (or as near as the navmesh goes): it's done. Kept, the
-                        // spot made it plan a path to where it stood forever, so it never wandered again and walked
-                        // on the spot after a chase (2026-10-19 bundle.)
+                        // Got to the spot it was walking to: it's done. Kept, the spot made it plan a path to where
+                        // it stood forever, so it never wandered again and walked on the spot after a chase
+                        // (2026-10-19 bundle.) The spot can be off the navmesh (a spawn point by a wall, where the
+                        // mesh is eroded), and the path there then starts at the nearest navmesh point and comes
+                        // back, so being there is what counts; that walked a Brass Blade by Horizon out and back
+                        // every half second, forever (2026-10-20 bundle.)
                         let arrived = matches!(current_target, NpcTarget::Position(_))
                             && !matches!(state, NpcState::OnPath { .. })
-                            && found_path
-                            && path.is_empty();
+                            && (flat_distance(current_pos, goal) <= ARRIVE_DISTANCE
+                                || (found_path && path.is_empty()));
                         if arrived {
                             reset_target_for_path = true;
+                            path.clear();
                         }
 
                         *current_path = path.clone();
@@ -640,7 +646,7 @@ pub fn npc_behavior(
                         *current_path_lerp = 0.0;
 
                         // Drop the current target if we can't path to them too
-                        if !found_path {
+                        if !found_path && !arrived {
                             reset_target = true;
                             if *state == NpcState::Wander
                                 && !*returning_home

@@ -1855,7 +1855,8 @@
                         "max_links": 4,
                         "name_id": 259,
                         "nonpop": false,
-                        "type": "battle_npc"
+                        "type": "battle_npc",
+                        "stationary": true
                     },
                     "layout_id": 4128273,
                     "position": {

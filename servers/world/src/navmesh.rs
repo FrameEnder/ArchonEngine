@@ -283,7 +283,10 @@ impl Navmesh {
                 spot = Some(position.lerp(point, max_radius * fastrand::f32() / distance));
             }
 
-            spot
+            // Cut short, it can be off the navmesh: stand it on the nearest point that isn't.
+            let (spot_poly, spot) =
+                Self::get_polygon_at_location(self.navmesh_query, spot?, &filter);
+            (spot_poly != 0).then_some(spot)
         }
     }
 
