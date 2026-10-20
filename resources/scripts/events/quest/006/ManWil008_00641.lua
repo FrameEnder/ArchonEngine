@@ -4,8 +4,9 @@
 -- 2026-10-18, questkit replay 641):
 -- Sequence 0:   ACTOR0 (Owyne, in TERRITORYTYPE0 210) offers it (scene 0, a yield returning 1 when accepted; the
 --               client offers her while UI8AL and BitFlag8 1 are unset), then scene 1, after which it's accepted:
---               sequence 1. ACTOR1 (a Sultansworn elite) is offered too, with a yes/no (scene 2) the client script
---               does nothing with and retail didn't play, so the server just ends the event for him.
+--               sequence 1. ACTOR1 (the Sultansworn elite outside) asks whether to go in (scene 2, a yes/no: 1 for
+--               yes), which takes the player back to POPRANGE0 in TERRITORYTYPE0 to accept it (retail accepted it
+--               without leaving; without this, leaving the room first made the quest impossible to pick up.)
 -- Sequence 1:   ACTOR2 (Momodi) (scene 3, while UI8AL and BitFlag8 1 are unset): notice 0, sequence 2. ACTOR0 only
 --               talks (scene 4.)
 -- Sequence 2:   ACTOR3 (Serendipity, the Steps of Thal) gives ITEM0 (scene 5): notice 1 with its icon (21002 on
@@ -15,6 +16,7 @@
 
 SCENE_OFFER = 0
 SCENE_ACCEPTED = 1
+SCENE_GO_IN = 2
 SCENE_MOMODI = 3
 SCENE_OWYNE = 4
 SCENE_SERENDIPITY = 5
@@ -38,6 +40,8 @@ function onTalk(target, player)
 
     if sequence == nil and BASE_ID == ACTOR0 then
         play(player, SCENE_OFFER, HIDE_HOTBAR)
+    elseif sequence == nil and BASE_ID == ACTOR1 then
+        play(player, SCENE_GO_IN, HIDE_HOTBAR)
     elseif sequence == 1 and BASE_ID == ACTOR2 then
         play(player, SCENE_MOMODI, HIDE_HOTBAR)
     elseif sequence == 1 and BASE_ID == ACTOR0 then
@@ -60,6 +64,12 @@ function sceneFinished(scene, results, player)
     if scene == SCENE_OFFER then
         if results[1] == 1 then
             play(player, SCENE_ACCEPTED, HIDE_HOTBAR)
+            return
+        end
+    elseif scene == SCENE_GO_IN then
+        if results[1] == 1 then
+            player:finish_event()
+            player:change_territory_pop_range(TERRITORYTYPE0, POPRANGE0)
             return
         end
     elseif scene == SCENE_ACCEPTED then
