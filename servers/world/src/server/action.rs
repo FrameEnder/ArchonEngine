@@ -839,9 +839,11 @@ pub fn execute_action(
             }
 
             // Handle combos as retail (Bob's Chronofoil captures): only actions in a combo (starting or continuing one)
-            // change it, so other spells and weaponskills in between don't break it, and neither do abilities. Every
-            // action shows ExecuteCombo (value: the action, 128), with 1 when it continued a combo; a combo step used
-            // out of its combo shows none.
+            // change it, so other spells and weaponskills in between don't break it, and neither do abilities. Spells and
+            // weaponskills show ExecuteCombo (value: the action, 128), with 1 when it continued a combo; a combo step
+            // used out of its combo shows none, and abilities never do (retail: Fast Blade 205 of 208, Riot Blade 137 of
+            // 141; Fight or Flight 0 of 20, Low Blow 0 of 12, Sprint 0 of 43). Sent on Fight or Flight, it made the
+            // client drop the Fast Blade -> Riot Blade combo (2026-10-20 bundle.)
             if is_combo_action(action_category) && takes_part_in_combos {
                 let Some(actor) = instance.find_actor_mut(from_actor_id) else {
                     return;
@@ -881,6 +883,7 @@ pub fn execute_action(
             );
             if request.action_type == ActionType::Action
                 && caster_is_player
+                && is_combo_action(action_category)
                 && !AUTO_ATTACK_ACTIONS.contains(&request.action_id)
                 && !out_of_combo_step
             {

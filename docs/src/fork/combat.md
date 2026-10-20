@@ -96,8 +96,9 @@ Applied after an action's script returns, by the server, so scripts only give th
   ActionCombo or that are another action's ActionCombo (`takes_part_in_combos`). Other spells and weaponskills in
   between don't break it (263 steps after Burst Strike, Inner Beast, Bloodspiller... kept full potency), and neither
   do abilities, items or mounts; a step of the same chain or another chain's starter does. The window is 30 s. Every
-  player action (not auto-attacks) gets the ExecuteCombo effect (kind 27, value the action, param 128) with 1 when it continued a combo and 0
-  otherwise; a combo step used out of its combo gets none. (Kawari only broke combos on other spells/weaponskills'
+  player spell and weaponskill gets the ExecuteCombo effect (kind 27, value the action, param 128) with 1 when it continued a combo and 0
+  otherwise, and abilities and auto-attacks none (Fight or Flight 0 of 20, Low Blow 0 of 12, Sprint 0 of 43: sent on Fight or Flight
+  it made the client drop the Fast Blade → Riot Blade combo, 2026-10-20); a combo step used out of its combo gets none. (Kawari only broke combos on other spells/weaponskills'
   ActionCategory before, and put a running counter in the effect.)
 * **Animation lock** (ActionEffect): 0.1 after a spell with a cast, after auto-attacks and after mounting, 2.1 after
   Teleport and Return, 0.6 otherwise; and retail's own for some actions (`SPECIAL_ANIMATION_LOCKS`: 0.35, 0.5, 0.7,
