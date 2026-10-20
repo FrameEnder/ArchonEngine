@@ -1,0 +1,29 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 10.7
+        },
+        "9": {
+            "npcs": 15.6
+        },
+        "15": {
+            "npcs": 13.4
+        },
+        "120": {
+            "players": 64.4,
+            "npcs": 64.8
+        }
+    },
+    "rotation": {
+        "pace": 10.0,
+        "actions": [
+            { "action": 15, "comment": "Riot Blade: 7 uses in 3 runs, 4.5-11 s after Fast Blade (its ActionCombo)" },
+            { "action": 9, "comment": "Fast Blade: 10 uses in 3 runs, every 15-22 s" }
+        ]
+    },
+    "timepoints": [],
+    "comment": "Oh Captain, My Captain's ally (quest battle 39, drop-in layer QB_SubWil088_001), a gladiator. From Bob's Chronofoil capture of 2026-10-18 (three runs): level 15, 701 HP; his auto-attack, Fast Blade and Riot Blade on the enemies (misses left out), and Cure (120, cast by the director's heals) on himself and the player for about 65. He also used Rampart (10) once a run, which has no action script. Hitbox not recorded."
+}

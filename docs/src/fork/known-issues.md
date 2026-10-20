@@ -15,7 +15,7 @@ add one when something is found.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
 * Limsa Lominsa has only upstream's opening, checked against the client's script but not retail: the client's
   sequence 1 (riding the Crow's Lift with Grehfarr, UI8AL/BitFlag8 1) is skipped, since accepting goes straight to 255.
-  Ul'dah's quests stop after **Storms on the Horizon** (334): **Oh Captain, My Captain** (336), which **Secrets and Lies** (628) needs, isn't scripted yet, nor is **Duty, Honor, Country** (551). Its Pugilist and
+  Ul'dah's quests stop after **Secrets and Lies** (628): **Duty, Honor, Country** (551) isn't scripted yet. Its Pugilist and
   Thaumaturge **Close to Home** (569, 570) come from their client scripts only: no retail capture, and their replay
   fixtures are 568's with their ITEM0 and ACTOR1 (ACTOR1's layout taken from the quest's todo location).
 * Quest-spawned enemies (307's coblyns, 503's marshlights, 3853's goobbue) lack the quest fields retail's SpawnNpc gives them (Bob's
@@ -27,6 +27,12 @@ add one when something is found.
   sprite's spacing, not retail's ~3.1 s.
 * Monster timelines are keyed by BNpcBase, so 503's marshlights (base 187, name 901) fight as the coblyns that share
   the base (auto-attack 870 only; retail's marshlights also cast 516 once, about 6.5 s in). Needs per-name timelines.
+* Oh Captain, My Captain (quest battle 39): Fufulupa's Gut Rip (477; Critical Skill on himself before sequence 5) and
+  Baldewyn's Rampart (10, once a run) have no action scripts, so neither is used (Heartstopper's recorded amounts are
+  retail's critical hits, so its damage matches anyway); Fufulupa keeps his True Thrust, Feint and Leg Sweep rotation
+  in the Heartstopper phase, where retail only auto-attacked (a rotation can't be switched off from Lua); the
+  thaumaturge casts in a fixed order every 6 s, where retail used Blizzard II only with the player close; hitboxes are
+  guessed (0.5). Quest 336's layout 3931797 is taken to be ACTOR1 (Baldewyn) from the client's script.
 * Way Down in the Hole (320): in sequence 4 the client also offers ACTOR7–12 and EOBJECT0 with empty scenes (18–25);
   which scene goes with which isn't known, so the server just ends their events. The foreman's waiting scene (15) uses
   the usual talk flags; retail never played it.

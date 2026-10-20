@@ -1,0 +1,33 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 872,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "872": {
+            "players": 12.5
+        },
+        "75": {
+            "players": 23.0
+        },
+        "76": {
+            "players": 15.8
+        },
+        "82": {
+            "players": 17.2
+        },
+        "866": {
+            "players": 58.5,
+            "npcs": 110.0
+        }
+    },
+    "rotation": {
+        "pace": 7.0,
+        "actions": [
+            { "action": 82, "every": 60, "comment": "Leg Sweep: 4 uses in 3 runs, about once a minute" },
+            { "action": 76, "refresh": 45, "comment": "Feint: 5 uses in the longest run" },
+            { "action": 75, "comment": "True Thrust: 20 uses in 3 runs, every 7-9 s" }
+        ]
+    },
+    "timepoints": [],
+    "comment": "Oh Captain, My Captain's boss (quest battle 39, drop-in layer QB_SubWil088_001), a lancer. From Bob's Chronofoil capture of 2026-10-18 (three runs, a level 14 gladiator): level 15, 1403 HP; what each action did to the player (misses left out). Heartstopper (866, the director's, after Gut Rip: Critical Skill, so every one was a critical hit) hit the player for 56-60 and Baldewyn for 104-112. Hitbox not recorded."
+}

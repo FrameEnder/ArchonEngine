@@ -1,0 +1,30 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "141": {
+            "players": 17.7
+        },
+        "142": {
+            "players": 14.7
+        },
+        "146": {
+            "players": 4.0
+        },
+        "147": {
+            "players": 8.0
+        }
+    },
+    "timepoints": [
+        { "time": 0, "data": { "type": "action", "action_id": 141 } },
+        { "time": 6, "data": { "type": "action", "action_id": 142 } },
+        { "time": 12, "data": { "type": "action", "action_id": 146 } },
+        { "time": 18, "data": { "type": "action", "action_id": 141 } },
+        { "time": 24, "data": { "type": "action", "action_id": 142 } },
+        { "time": 30, "data": { "type": "action", "action_id": 147 } },
+        { "time": 36, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
+    ],
+    "comment": "Oh Captain, My Captain's thaumaturge (quest battle 39, drop-in layer QB_SubWil088_001). From Bob's Chronofoil capture of 2026-10-18 (three runs): level 15, 382 HP; no auto-attack, a spell every 6-8 s on the player from where he stands (14 yalms away and more): Fire and Blizzard, Blizzard II (around him) when the player was close, Fire II now and then. Hitbox not recorded."
+}

@@ -1,0 +1,12 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 873,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "873": {
+            "npcs": 9.8
+        }
+    },
+    "timepoints": [],
+    "comment": "Oh Captain, My Captain's two Brass Blades (quest battle 39, drop-in layer QB_SubWil088_001). From Bob's Chronofoil capture of 2026-10-18 (three runs): level 14, 175 HP; only auto-attacks (873, every 3 s), all on Baldewyn, for about 10 (misses left out). Hitbox not recorded."
+}

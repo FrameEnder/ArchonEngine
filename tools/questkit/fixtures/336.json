@@ -1,0 +1,91 @@
+{
+  "quest": 336,
+  "script": "SubWil088_00336",
+  "source": "Bob's Chronofoil capture of 2026-10-18 (71045ef2); parameters from the client's quest script (kawari-questdump, 2026-10-20); scenes and effects from Bob's Chronofoil capture of 2026-10-18 (the first two battles lost, the third won)",
+  "params": {
+    "ACTOR0": 1002071,
+    "ACTOR1": 1003816,
+    "ACTOR2": 1004307,
+    "ACTOR3": 1004308,
+    "ACTOR4": 1004309,
+    "ACTOR5": 1004310,
+    "ACTOR6": 1004311,
+    "EOBJECT0": 2001852,
+    "ACTOR7": 1002058,
+    "TERRITORYTYPE0": 273,
+    "QUESTBATTLE0": 39,
+    "SEQ_0_ACTOR0_LQ": 50,
+    "ACTOR20": 1002058,
+    "LOC_MARKER_01": 4011232,
+    "LOC_MARKER_02": 4011233,
+    "LOC_POS_CAM1": 4011264,
+    "LOC_MARKER_03": 4011557,
+    "LOC_MARKER_04": 4011562,
+    "ACTOR30": 1004350,
+    "LOC_MARKER_05": 4012536,
+    "LOC_MARKER_06": 4012537,
+    "LOC_MARKER_07": 4012538,
+    "LOC_MARKER_08": 4012539,
+    "ACTOR40": 1001605,
+    "LOC_ACTION1": 961,
+    "ACTOR50": 1004310,
+    "ACTOR60": 1003810,
+    "LOC_ACTION2": 607,
+    "LOC_ACTION3": 617,
+    "LOC_ACTION4": 605,
+    "LOC_ACTION5": 615,
+    "LOC_ACTION6": 776,
+    "QST_ACCEPT_CHECK": 65871
+  },
+  "steps": [
+    {
+      "talk": 1002071, "layout": 3629901,
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1003816, "layout": 3931797,
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 273}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1003816, "layout": 3931797,
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 273}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1003816, "layout": 3931797,
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 273}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "battle_won": 255,
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1002058, "layout": 3629823,
+      "scenes": [
+        {"scene": 9, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

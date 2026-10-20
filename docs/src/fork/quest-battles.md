@@ -135,6 +135,28 @@ player is sent out.
 
 ## The battles
 
+### Quest battle 39 — Oh Captain, My Captain (`content/questbattle/39.lua`)
+
+* Territory 273, a copy of Western Thanalan (the same Bg as 140, so its NPCs are layer `QB_SubWil088_001` of the
+  `wil_w1f1` drop-in, `nonpop`): Baldewyn beside you (4093947, level 15, 701 HP, a gladiator), Fufulupa (4093955,
+  level 15, 1403 HP, a lancer), a thaumaturge (4093957, level 15, 382 HP) and two Brass Blades (4093961, 4093962,
+  level 14, 175 HP). Layout IDs, levels, HP, positions, display flags and the start spot (-238.43, 15.2, -270.35,
+  facing 3.098) come from Bob's Chronofoil capture of 2026-10-18 (`questkit chronofoil --battle 0.23`, `0.25`, `0.27`,
+  duty 337: lost, lost, won).
+* Sequence 1 before the opening cutscene, 2 when the fight starts; Fufulupa's battle talk 102 (BNpcName 1381, portrait
+  0x11E27) at 5 s, Baldewyn's 103 (1378, 0x11E26) at 10 s; Fufulupa at 70 %: sequence 3 and 104; below 45 % (45.5 %
+  and 45.7 % didn't trigger it): sequence 4 and 105; 10.2 s later (a timer: his health then was 31 %, 30 % and 25 % in
+  the three runs) sequence 5, half a second after he uses Gut Rip (477, Critical Skill) on himself; Baldewyn's 106
+  3.1 s later; Heartstopper (866) at you 6.1 s after sequence 5 and every 6 s after (crits: about 58 on you, 110 on
+  Baldewyn). Everyone but Baldewyn down: 2 s later sequence 6, "Duty Complete", scene 6 (0xF8402EFB); the quest moves
+  to 255. `questkit battle-sim 39`: every step within a second of retail in all three runs.
+* **Losing:** Baldewyn falling is a loss (both lost runs): his talk 101 and sequence 0xFE at once, out about 6 s later.
+  The battle's fixtures include the two lost runs (`battles/39-lost-*.json`, which `battle-sim` checks too).
+* As on retail: Fufulupa and the thaumaturge go after you, the Brass Blades after Baldewyn; Baldewyn takes the
+  thaumaturge, then the Brass Blades, then Fufulupa, and casts Cure (about 65) on you (47–70 %) and himself (9–50 %).
+  The hits are the capture's (`recorded_amounts`, timelines `BaldewynFourYalms_953`, `FufulupaTheUnbending_954`,
+  `SerBaronVonQuiveronIVEsquire_955`, `BrassBlade_956`).
+
 ### Quest battle 18 — Way Down in the Hole (`content/questbattle/18.lua`)
 
 * Territory 248, a copy of Central Thanalan (layer `QB_SubWil066_001` of the `wil_w1` drop-in): the clay golem
