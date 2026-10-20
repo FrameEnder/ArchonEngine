@@ -469,8 +469,9 @@ pub enum ToServer {
     SetMP(ClientId, ObjectId, u16),
     /// A quest brings out the battle NPC at this layout ID (from the zone's drop-ins), already after this player.
     SpawnQuestBattleNpc(ClientId, ObjectId, u32),
-    /// A player (the first ID) called a retainer at a summoning bell: they appear as this NPC with the second ID.
-    SpawnRetainer(ObjectId, ObjectId, Box<SpawnNpc>),
+    /// A player (the first ID) called a retainer at a summoning bell (its layout ID), standing at this position: they
+    /// appear as this NPC with the second ID, at the bell's spot for retainers if the zone has one.
+    SpawnRetainer(ObjectId, ObjectId, Box<SpawnNpc>, u32, Position),
     /// A player (the first ID) sent their retainer (the second) away.
     DespawnRetainer(ObjectId, ObjectId),
     /// The client discovered a new location in this zone.

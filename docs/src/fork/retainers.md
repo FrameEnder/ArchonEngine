@@ -74,9 +74,29 @@ A retainer wearing nothing on the body, hands, legs or feet shows retail's retai
 (2026-10-18 bundle). Only one retainer's outfit was seen; other races or genders may differ.
 
 The retainer's NPC: SpawnNpc with object kind 10, no base or name ID, their name, CustomizeData, voice, class, level
-and gear models, 0x40000 display flags, 400 MP (retail's HP were 721 and 1,124; Kawari sends 1,000). Retail placed them
-at a spot set for each bell (the spawn's layout ID), 1.6 to 2.8 yalms from where the player stood and roughly facing
-them; Kawari puts them 1.8 yalms in front of the player, facing them. Everyone nearby sees them. They don't wander
+and gear models, 0x40000 display flags, 400 MP (retail's HP were 721 and 1,124; Kawari sends 1,000). Everyone nearby
+sees them.
+
+**Where they stand.** Retail places them at the bell, not by the player: the spawn's layout ID names a spot (a
+different one at each bell), the position doesn't follow where the player stood, and the retainer faces the player
+exactly (rotation = atan2 of player − retainer, to 0.01 rad). From Bob's Chronofoil captures, 14 calls at five bells:
+
+| Bell (layout ID) | Zone | Spot (spawn's layout ID) | Calls (client) | Retainer from the player |
+|---|---|---|---|---|
+| 4167365 | 129 | 4317727 | 3 (2026.10.06) | 1.0–1.8 yalms; the position differed by up to 0.6 yalms between calls |
+| 4469211 | 131 | 4255823 | 2 (2026.09.15) | 1.7 yalms, the same position both times |
+| 5925191 | 478 | 5877682 | 3 (2026.09.15) | 1.6 yalms, the same position each time |
+| 6652982 | 628 | 6905784 | 3 (2026.09.15) | 2.3 yalms, the same position each time |
+| 7954283 | 819 | 7857659 | 3 (2026.09.15) | 2.8 yalms, the same position each time |
+
+That looks like a pop range (a position plus several points to choose from, like players' arrival spots).
+`Zone::retainer_spot` takes the pop range the bell's EventObject is bound to (`bound_instance_id`), or failing that the
+pop range nearest the bell within 5 yalms, picks one of its points (`pick_point_in_pop_range`), sends the pop range's
+ID as the spawn's layout ID and turns the retainer to the player. Without either (a bell not among the zone's
+top-level layout objects), they stand 1.8 yalms in front of the player as before; the log says which happened
+("Retainer spot for bell…" or "No retainer spot for bell…"). Bob's 2026-10-20 bundle: calling from further away put
+the retainer in front of the player, sometimes inside the bell. Not checked against the game's layout yet (no game
+data here): the log's pop range at the bells above should be the spot in the table. They don't wander
 and nothing attacks them (`npc_behavior`, `find_possible_enemies`). A retainer still out when the player logs out
 goes home.
 

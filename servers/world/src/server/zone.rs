@@ -555,6 +555,61 @@ impl Zone {
         None
     }
 
+    /// Where a retainer called at the summoning bell with this layout ID stands: the pop range the bell is bound to
+    /// (its EventObject's bound instance), or failing that the pop range nearest the bell; one of its points, as
+    /// retail did (docs/src/fork/retainers.md). The pop range's layout ID, the spot, and how it was found.
+    pub fn retainer_spot(&self, bell_id: u32) -> Option<(u32, Position, &'static str)> {
+        let mut bell = None;
+        let mut pop_ranges = Vec::new();
+        for layer_group in &self.layer_groups {
+            for layer in &layer_group.chunks[0].layers {
+                if !layer.header.has_layer_set(self.layer_set as u32) {
+                    continue;
+                }
+                for object in &layer.objects {
+                    match &object.data {
+                        LayerEntryData::EventObject(eobj) if object.instance_id == bell_id => {
+                            bell = Some((
+                                Vec3A::from_array(object.transform.translation),
+                                eobj.bound_instance_id,
+                            ));
+                        }
+                        LayerEntryData::PopRange(_) => pop_ranges.push(object),
+                        _ => {}
+                    }
+                }
+            }
+        }
+
+        let (bell_position, bound) = bell?;
+        if let Some(object) = pop_ranges
+            .iter()
+            .find(|object| bound != 0 && object.instance_id == bound)
+        {
+            return Some((
+                object.instance_id,
+                pick_point_in_pop_range(object),
+                "bound to the bell",
+            ));
+        }
+        pop_ranges
+            .iter()
+            .map(|object| {
+                let distance =
+                    Vec3A::from_array(object.transform.translation).distance(bell_position);
+                (distance, object)
+            })
+            .filter(|(distance, _)| *distance <= RETAINER_SPOT_SEARCH_DISTANCE)
+            .min_by(|a, b| a.0.total_cmp(&b.0))
+            .map(|(_, object)| {
+                (
+                    object.instance_id,
+                    pick_point_in_pop_range(object),
+                    "nearest the bell",
+                )
+            })
+    }
+
     /// Returns a random pop range in this zone.
     pub fn find_random_pop_range(&self) -> Option<&InstanceObject> {
         let object_id = fastrand::choice(&self.cached_pop_ranges)?.0;
@@ -946,6 +1001,10 @@ fn begin_change_zone<'a>(
         (instance, false)
     }
 }
+
+/// How far from a summoning bell its retainers' pop range may be, when the bell doesn't name it. Retail's retainers
+/// stood 1.0 to 2.8 yalms from the player at the bell (Bob's Chronofoil captures, clients 2026.09.15 and 2026.10.06).
+const RETAINER_SPOT_SEARCH_DISTANCE: f32 = 5.0;
 
 /// Finds a random position from the pop range. Most have several positions available to stop people from spawning in the same place.
 fn pick_point_in_pop_range(object: &InstanceObject) -> Position {

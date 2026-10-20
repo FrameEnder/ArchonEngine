@@ -119,10 +119,10 @@ listings 10 at a time (UnkMarketBoardRequest2 with the previous page's next inde
 on retail was answered with the gil slot (container 2000), an inventory transaction taking the gil, the item's slot,
 then MarketBoardPurchase. Kawari sends the slots without the transaction.
 
-**The purchase opcodes**: 765 and 665 on 2026.09.15; on 2026.10.06, 258 and 610 are FFXIVOpcodes' (7.57), whose other
-marketboard opcodes all match Kawari's. Neither appears in Bob's 10.06 sessions for anything else. The first purchase
-on Kawari confirms them; if nothing happens, the server warns about an unknown 40-byte packet (see
-[Fork Opcodes](opcodes.md)).
+**The purchase opcodes**: 765 and 665 on 2026.09.15; 258 and 610 on 2026.10.06 (FFXIVOpcodes' 7.57); 245 and 353 on
+2026.10.16 (7.57h1). On 7.57h1 buying did nothing until they were found: the fork's opcodes were outstanding after the
+upstream merge, and Bob's 2026-10-20 bundle shows his purchases arriving as unknown 40-byte packets (opcode 245), as
+the window's opening did (319, MarketBoardOpened). See [Fork Opcodes](opcodes.md#finding-them-on-757h1).
 
 **The marketboard object** (CustomTalk `CmnDefMarketBoardGridania_00039`) plays scene 0 with HIDE_HOTBAR |
 NO_DEFAULT_CAMERA and no parameters, as retail does; the window then talks to the server through the packets above,

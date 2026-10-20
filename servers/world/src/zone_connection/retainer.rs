@@ -154,11 +154,18 @@ impl ZoneConnection {
                 self.player_data.volatile.rotation as f32,
             )
         };
+        // The bell is the event's actor (its layout ID, as the client talked to it.)
+        let bell_id = events
+            .last()
+            .map(|(_, event)| event.actor_id.object_id.0)
+            .unwrap_or_default();
         self.handle
             .send(ToServer::SpawnRetainer(
                 self.player_data.character.actor_id,
                 actor_id,
                 Box::new(spawn),
+                bell_id,
+                self.player_data.volatile.position,
             ))
             .await;
         self.called_retainer = Some(CalledRetainer {

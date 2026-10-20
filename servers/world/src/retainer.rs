@@ -36,8 +36,8 @@ const GIL_ITEM_ID: u32 = 1;
 const FIRST_CRYSTAL_ITEM_ID: u32 = 2;
 const CRYSTAL_SLOTS: usize = 18;
 
-/// How far in front of the player a retainer appears. On retail they appear at a spot set for each bell, 1.6 to 2.8
-/// yalms from where the player stood, roughly facing them (Bob's captures); Kawari doesn't read those spots yet.
+/// How far in front of the player a retainer appears when the bell has no spot for them (`Zone::retainer_spot`, the
+/// pop range retail placed them in.)
 const SUMMON_DISTANCE: f32 = 1.8;
 /// The HP retail gave retainers (721 and 1,124 for two of them; only shown on their nameplate if at all.)
 const RETAINER_HP: u32 = 1000;
@@ -166,6 +166,12 @@ impl RetainerInventory {
     }
 }
 
+/// The rotation of someone at `from` facing `to`: retail's retainers faced the player exactly (Bob's Chronofoil
+/// captures.)
+pub fn facing(from: Position, to: Position) -> f32 {
+    (to.0.x - from.0.x).atan2(to.0.z - from.0.z)
+}
+
 /// A retainer's ID as the two numbers the bell's scenes use (high half first.)
 pub fn split_id(id: u64) -> [u32; 2] {
     [(id >> 32) as u32, id as u32]
@@ -243,7 +249,8 @@ impl Retainer {
         }
     }
 
-    /// The retainer as an NPC standing in front of the player at `position`, facing `rotation` (the player's.)
+    /// The retainer as an NPC standing in front of the player at `position`, facing `rotation` (the player's.) The
+    /// server moves them to the bell's spot when it has one.
     pub fn spawn(&self, game_data: &mut GameData, position: Position, rotation: f32) -> SpawnNpc {
         let mut position = position;
         position.0.x += SUMMON_DISTANCE * rotation.sin();
@@ -361,6 +368,22 @@ pub fn valid_name(name: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn retainers_face_the_player() {
+        // Three calls at a Limsa Lominsa bell on retail (Bob's Chronofoil capture of 2026-10-18): the retainer's
+        // position and rotation, and where the player stood.
+        let calls = [
+            ([-149.066, 18.206, 20.005], [-148.292, 18.2, 20.905], 0.71),
+            ([-149.641, 18.206, 20.108], [-148.641, 18.2, 20.065], 1.614),
+            ([-149.687, 18.206, 20.15], [-148.075, 18.2, 19.375], 2.019),
+        ];
+        for (retainer, player, rotation) in calls {
+            let from = Position(glam::Vec3A::from_array(retainer));
+            let to = Position(glam::Vec3A::from_array(player));
+            assert!((facing(from, to) - rotation).abs() < 0.01, "{retainer:?}");
+        }
+    }
 
     #[test]
     fn retainer_ids_in_scenes() {

@@ -26,39 +26,68 @@ upstream's [Opcodes](../opcodes.md) page.
 * In game, `!forkopcodes` lists them; when an unknown client packet has an outstanding entry's size, the log says which
   it probably is.
 
-Since upstream's 7.57h1 (2026.10.16, merged on `upstream-7.57h1`), every entry below is outstanding (found on
-2026.10.06): the startup scan finds them on a 7.57h1 game install, uses them and logs what to save here; Bob's first
-7.57h1 server log is what updates this table.
+Since upstream's 7.57h1 (2026.10.16, merged on `upstream-7.57h1`) every entry is found on 2026.10.16 (see
+[Finding them on 7.57h1](#finding-them-on-757h1) below). Ten have finders, so the startup scan checks them on each
+start and re-finds them after the next patch.
 
-## Current entries (game 2026.10.06, patch 7.57)
+## Current entries (game 2026.10.16, patch 7.57h1)
 
-| Name | Direction | Opcode | Size | What it is |
-|---|---|---|---|---|
-| EventReturnHandler16 | client → server | 200 (856 on 2026.09.15) | 72 | A scene finished with up to 16 results, e.g. a three-item NPC trade returns 12 (Surveying the Damage). |
-| EventNotice2 | server → client | 386 | 16 | A quest/event notice with 0–2 arguments: the progress pop-up. |
-| EventNotice4 | server → client | 210 | 24 | The same with 3–4 arguments. |
-| SetAdventurerPlatePortrait | client → server | 107 | 56 | The client sets its adventurer plate's portrait. Found by the sender writing the opcode and the 72-byte size. |
-| UpdateAdventurerPlate | client → server | 795 | 200 | The client saves its adventurer plate (CharaCardData). Found in the 2026-10-16 bundle; the finder is the sender writing the opcode, then the 216-byte size. See [Adventurer Plate](character-windows.md#adventurer-plate). |
-| MarketBoardOpened | client → server | 683 (156 on 2026.09.15) | 8 | The marketboard window opened; answered with an empty search result. Same moment and size as retail's 156 (2026-10-17 bundle); no finder. |
-| MarketBoardPurchaseHandler | client → server | 258 (765 on 2026.09.15) | 40 | Buying a marketboard listing. 258 is FFXIVOpcodes' 7.57 opcode, not yet seen on Kawari; no finder. See [Marketboard](marketboard.md). |
-| MarketBoardPurchase | server → client | 610 (665 on 2026.09.15) | 16 | A purchase went through: item and quantity. FFXIVOpcodes' 7.57 opcode; no finder. |
-| RequestPlayerRetainerInfo | client → server | 818 (580 on 2026.09.15) | 8 | Asks for the character's retainers as a retainer's sale list opens. See [Retainers](retainers.md). |
-| RequestRetainerSaleHistory | client → server | 274 (243 on 2026.09.15) | 8 | Asks for a retainer's sale history (their ID). |
-| SetRetainerAppearance | client → server | 670 | 32 | The new retainer's voice and CustomizeData from the vocate's editor. |
-| RetainerStateNotice | server → client | 144 (897 on 2026.09.15) | 8 | Before every RetainerState and after a retainer's containers. |
-| RetainerState | server → client | 249 (908 on 2026.09.15) | 56 | A retainer called (4), sent away (3) or hired (1). Seen on 2026.10.06 (Bob's 2026-10-18 capture), like the four below; no finders. |
-| PlayerRetainerInfo | server → client | 712 (599 on 2026.09.15) | 480 | The character's retainers for the marketboard. |
-| ItemMarketBoardInfo | server → client | 387 (313 on 2026.09.15) | 32 | The asking price of an item a retainer has on the market. |
-| ItemMarketBoardSummary | server → client | 303 (442 on 2026.09.15) | 8 | How many items a retainer has on the market. |
-| RetainerSaleHistory | server → client | 832 (161 on 2026.09.15) | 1048 | A retainer's sale history. |
-| LootMessage | server → client | 190 (351 on 2026.09.15) | 32 | Loot: kind 3 an item obtained directly (an enemy's drop), 9 gil, 0/1 need/greed rolls and winners. See [Combat](combat.md#defeating-enemies). |
-| ActionRequestGroundTargeted | client → server | 846 (891 on 2026.09.15) | 24 | A ground-targeted action (Asylum...): the action, its type, the sequence, the rotation, where on the ground. 846 is FFXIVOpcodes' 7.57 opcode (marked current, like MarketBoardPurchaseHandler's), not yet seen on Kawari; the layout is from Bob's captures. Handled as an action on oneself for now. |
-| Achievements | server → client | 991 | 552 | The completed achievements and the last five, the reply to client trigger 1001. Found by its handler (HandleAchievementsPacket). See [Achievements](character-windows.md). |
+| Name | Direction | Opcode | Earlier | Size | What it is |
+|---|---|---|---|---|---|
+| EventReturnHandler16 | client → server | 555 | 856 (09.15), 200 (10.06) | 72 | A scene finished with up to 16 results, e.g. a three-item NPC trade returns 12 (Surveying the Damage). Finder. |
+| EventNotice2 | server → client | 467 | 386 (10.06) | 16 | A quest/event notice with 0–2 arguments: the progress pop-up. Finder (confirms only, see below). |
+| EventNotice4 | server → client | 561 | 210 (10.06) | 24 | The same with 3–4 arguments. Finder (confirms only). |
+| SetAdventurerPlatePortrait | client → server | 431 | 107 (10.06) | 56 | The client sets its adventurer plate's portrait. Finder: the sender writing the opcode and the 72-byte size. |
+| UpdateAdventurerPlate | client → server | 350 | 795 (10.06) | 200 | The client saves its adventurer plate (CharaCardData). Finder: the sender writing the opcode, then the 216-byte size. See [Adventurer Plate](character-windows.md#adventurer-plate). |
+| MarketBoardOpened | client → server | 319 | 156 (09.15), 683 (10.06) | 8 | The marketboard window opened; answered with an empty search result. Seen in Bob's 2026-10-20 bundle as the window opened. Finder. |
+| MarketBoardPurchaseHandler | client → server | 245 | 765 (09.15), 258 (10.06) | 40 | Buying a marketboard listing. Seen in Bob's 2026-10-20 bundle (his purchases); FFXIVOpcodes' 7.57h agrees. Finder. See [Marketboard](marketboard.md). |
+| MarketBoardPurchase | server → client | 353 | 665 (09.15), 610 (10.06) | 16 | A purchase went through: item and quantity. |
+| RequestPlayerRetainerInfo | client → server | 348 | 580 (09.15), 818 (10.06) | 8 | Asks for the character's retainers as a retainer's sale list opens. See [Retainers](retainers.md). |
+| RequestRetainerSaleHistory | client → server | 372 | 243 (09.15), 274 (10.06) | 8 | Asks for a retainer's sale history (their ID). |
+| SetRetainerAppearance | client → server | 463 | 670 (10.06) | 32 | The new retainer's voice and CustomizeData from the vocate's editor. Finder. |
+| RetainerStateNotice | server → client | 987 | 897 (09.15), 144 (10.06) | 8 | Before every RetainerState and after a retainer's containers. |
+| RetainerState | server → client | 735 | 908 (09.15), 249 (10.06) | 56 | A retainer called (4), sent away (3) or hired (1). |
+| PlayerRetainerInfo | server → client | 715 | 599 (09.15), 712 (10.06) | 480 | The character's retainers for the marketboard. |
+| ItemMarketBoardInfo | server → client | 471 | 313 (09.15), 387 (10.06) | 32 | The asking price of an item a retainer has on the market. |
+| ItemMarketBoardSummary | server → client | 290 | 442 (09.15), 303 (10.06) | 8 | How many items a retainer has on the market. |
+| RetainerSaleHistory | server → client | 551 | 161 (09.15), 832 (10.06) | 1048 | A retainer's sale history. |
+| LootMessage | server → client | 154 | 351 (09.15), 190 (10.06) | 32 | Loot: kind 3 an item obtained directly (an enemy's drop), 9 gil, 0/1 need/greed rolls and winners. See [Combat](combat.md#defeating-enemies). |
+| ActionRequestGroundTargeted | client → server | 492 | 891 (09.15), 846 (10.06) | 24 | A ground-targeted action (Asylum...): the action, its type, the sequence, the rotation, where on the ground. Not yet seen on Kawari; the layout is from Bob's captures. Handled as an action on oneself for now. Finder. |
+| Achievements | server → client | 985 | 991 (10.06) | 552 | The completed achievements and the last five, the reply to client trigger 1001. Finder: its handler (HandleAchievementsPacket). See [Achievements](character-windows.md). |
 
 The client picks the event return packet by result count (2, 4, 8, 16…); EventReturnHandler16's finder looks for its
 16 case writing the opcode and the 88-byte size, and uses `with: EventReturnHandler2` because the yield sender has
 identical code. All notice sizes share one handler, so their finder only confirms them; a recording said which size is
 which. The `EventNotice` packet (`core`) was checked byte for byte against retail.
+
+## Finding them on 7.57h1
+
+The startup scan re-found the six with finders from Bob's 7.57h1 server log (2026-10-20 bundle); the rest were found
+from Bob's 2026.10.06 and 2026.10.16 `ffxiv_dx11.exe` side by side, with `kawari-opcodescan` and capstone (scripts not
+kept; the method is below):
+
+* **FFXIVOpcodes' 7.57h table** (2026-10-20) has 39 of upstream's 40 shared 7.57h1 opcodes the same (FreeCompanyInfo
+  differs), and its 7.57 table has every one of its names that the fork also has at the fork's 2026.10.06 value, so its
+  names mean the same packets. It gives RetainerState, PlayerRetainerInfo, ItemMarketBoardInfo/Summary,
+  RetainerSaleHistory, MarketBoardPurchase, MarketBoardPurchaseHandler and ActionRequestGroundTargeted; each was
+  checked against the executables below.
+* **Server packets**: each opcode's case in the zone dispatcher (the 525-case switch, table at `0x18DA592` on 10.06,
+  `0x18DABF3` on 10.16), disassembled with the function it calls, has the same code on both versions. LootMessage's
+  matches 154 and 821 (821 is upstream's UpdateClassInfo); RetainerStateNotice's only 987. Opcodes sharing a case
+  (ItemMarketBoardInfo and Summary; the five notices) can't be told apart this way.
+* **Client packets**: the function that sends each writes `mov [rsp+20h], opcode` and the size with its header; the
+  matching site on 10.16 has the same code after it. Requests without arguments have the same code as each other, but
+  the marketboard and retainer senders sit in the same order 0x640 bytes on (MarketBoardPurchaseHandler 0x9716C0 →
+  0x971D00), which gives RequestPlayerRetainerInfo 348. RequestRetainerSaleHistory has a twin with near-identical code
+  (810), so the closest match (372, identical) was taken.
+* **The notices**: in 10.16's dispatcher the five notice cases (467, 561, 834, 927, 928) are one block that reads the
+  handler ID, notice ID, argument count and the arguments from the packet (+0x10, +0x14, +0x15, +0x18 with the IPC
+  header). The client doesn't use the opcode to know the size, so any two of the five show notices correctly; 467 and
+  561 were taken. A 7.57h1 recording would say which are retail's.
+
+Four new finders (MarketBoardOpened, MarketBoardPurchaseHandler, ActionRequestGroundTargeted, SetRetainerAppearance)
+are each unique in both versions and read 10.06's opcode from 10.06's executable and 10.16's from 10.16's. The
+others (the retainer requests, and the server packets other than the notices and Achievements) still have none.
 
 ## Other packet facts found by the fork
 

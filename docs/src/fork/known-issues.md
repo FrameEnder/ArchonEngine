@@ -5,8 +5,10 @@ add one when something is found.
 
 ## Upstream 7.57h1 (branch `upstream-7.57h1`)
 
-* The merged server only takes a 7.57h1 client (2026.10.16.0000.0000). The fork's 23 opcodes are outstanding until the
-  startup scan re-finds them on that client's `ffxiv_dx11.exe` (their values from its log go in `fork_opcodes.yml`).
+* The merged server only takes a 7.57h1 client (2026.10.16.0000.0000). All the fork's opcodes are found for it (see
+  [Fork Opcodes](opcodes.md#finding-them-on-757h1)), but only MarketBoardOpened and MarketBoardPurchaseHandler have
+  been seen from a 7.57h1 client so far. EventNotice2 and EventNotice4 are two of the five notice opcodes (any works,
+  but retail's pair isn't known).
   The fork's inventory operations (retainer entrust/withdraw/gil/market, `BASE_INVENTORY_ACTION` + 22..26) are
   assumed to keep their offsets from the new base (234), unchecked on 7.57h1.
 
@@ -111,7 +113,8 @@ add one when something is found.
 
 ## Retainers
 
-* Not tried on Kawari yet; every opcode is confirmed from Bob's 2026.10.06 capture.
+* Calling a retainer and their menu were tried on Kawari (2026-10-18 and 2026-10-20 bundles). The 7.57h1 opcodes are
+  from the executable, not yet seen from the client except the marketboard's.
 * The vocate's menu choices other than hiring and letting go (5 and 8 on retail) end the visit; hiring's yield 3 is
   answered with one 0, not retail's eight zeros on resume opcode 329 (upstream's EventResume8 is 513: which is right
   for 2026.10.06 isn't settled.) No approval quest check (retail's scene 1000).
@@ -119,8 +122,9 @@ add one when something is found.
   entrust.
 * Retail sends a retainer's containers two or three times with an Equip in between, and ActorControlSelf 570/574 before
   their menu; Kawari sends the containers once. Scene 2's third number is guessed (5 − retainers hired).
-* Retail placed the retainer at a spot set for each bell; Kawari puts them in front of the player. A new retainer is
-  level 1 (retail 0) so the NPC has stats.
+* The retainer's spot at a bell (`Zone::retainer_spot`: the bell's bound pop range, or the nearest) is untested against
+  the game's layout; bells inside shared groups wouldn't be found, and the retainer then stands in front of the
+  player as before. See [Retainers](retainers.md). A new retainer is level 1 (retail 0) so the NPC has stats.
 * Items on the market don't show on the marketboard and other players can't buy them; listings never end
   (PlayerRetainerInfo's time is 0, retail sends about a week ahead.) No ventures, no class change at the bell, no sale
   history (sent empty.) Withdrawn equipment goes to the bags (retail put a weapon in the Armoury Chest.)

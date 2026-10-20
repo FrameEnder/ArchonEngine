@@ -3153,11 +3153,35 @@ pub async fn server_main_loop(
                         enmity.insert(from_actor_id, 1);
                     }
                 }
-                ToServer::SpawnRetainer(from_actor_id, retainer_id, spawn) => {
+                ToServer::SpawnRetainer(
+                    from_actor_id,
+                    retainer_id,
+                    spawn,
+                    bell_id,
+                    player_position,
+                ) => {
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
                         continue;
                     };
+                    let mut spawn = spawn;
+                    // At the bell's spot, facing the player, as on retail; without one, in front of the player.
+                    match instance.zone.retainer_spot(bell_id) {
+                        Some((pop_range, position, how)) => {
+                            tracing::info!(
+                                "Retainer spot for bell {bell_id}: pop range {pop_range} ({how}), {:.2} yalms from the player",
+                                position.0.distance(player_position.0)
+                            );
+                            spawn.common.position = position;
+                            spawn.common.layout_id = pop_range;
+                            spawn.common.rotation =
+                                crate::retainer::facing(position, player_position);
+                        }
+                        None => tracing::info!(
+                            "No retainer spot for bell {bell_id} in zone {}: the retainer stands in front of the player",
+                            instance.zone.id
+                        ),
+                    }
                     // Everyone nearby sees them, as on retail; the usual spawning takes care of that.
                     let config = get_config();
                     let mut game_data = game_data.lock();
