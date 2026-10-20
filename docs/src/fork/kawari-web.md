@@ -1,6 +1,6 @@
 # Kawari Web
 
-Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.20.0** on the `UI-Redesign` branch, **2.18.1** on `master`) runs beside the server in its own container. Its
+Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.20.1** on the `UI-Redesign` branch, **2.18.1** on `master`) runs beside the server in its own container. Its
 README is the user guide (setup, pages, service, forges, builds); this page is about **how its features work** and
 how they depend on the fork. Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates).
 
@@ -131,6 +131,16 @@ page number Quest Progress passes. The layout's variables are `_adm_*` now.
   decodes BC1/BC2/BC3/BC5/BC7 with Pillow's BCn decoder and the uncompressed 8888, 8888X, 4444, 5551, L8 and A8
   formats itself. Uploaded preview images (up to 8 a listing) are in `shop_listing_image`; deleting a listing or
   resetting the shop deletes their files.
+
+## Client compatibility (2.20.1)
+
+Overview compares the client's `.ver` files (`ffxivgame.ver`, `boot/ffxivboot.ver`, `sqpack/exN/exN.ver`) with the
+active build's supported versions (`SUPPORTED_GAME_VERSION` and friends, the *Supports* Updates shows), the same way
+the patch server does (`versions.compare_client`). Kawari Web's container mounts only the data folder, so the game
+folder usually isn't visible to it: `kawari_web/clientver.py` then starts a short-lived container from the server's
+image with the install's folder (the game path's parent, so `boot/` is included) mounted read-only at `/client`, and
+`/bin/sh` prints each `.ver` file. The answer is cached for ten minutes (one minute after a failure); **Check again**
+clears it. Without the Podman API socket or a server image it says so instead.
 
 ## Phones (2.18.1, changed in 2.19.0)
 

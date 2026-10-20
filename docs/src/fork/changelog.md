@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-20 | — | Quests: Duty, Honor, Country (551); quest battles (38); known issues.
+| 2026-10-20 | — | Kawari Web 2.20.1 (Client compatibility reads the client's version through a container).
+| 2026-10-20 | `79a2267` | Quests: Duty, Honor, Country (551); quest battles (38); known issues.
 | 2026-10-20 | `879ae17` | Quests: Oh Captain, My Captain (336); quest battles (39); known issues.
 | 2026-10-20 | `327a00d` | Quests: Storms on the Horizon (334), Secrets and Lies (628); known issues.
 | 2026-10-20 | `1adab38` | `master` fast-forwarded to `Latest-Quest` again, after Bob found the monsters stable and 330, 3853, 332 and 333 working (changelog).
@@ -100,6 +101,7 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
+| 2026-10-20 | `056a7cb` | 2.20.1: Overview's Client compatibility works in the container again: when the game folder isn't visible, the `.ver` files are read through a short-lived container from the server's image (install mounted read-only), cached for ten minutes; the card shows the client's version beside the build's Supports. |
 | 2026-10-19 | `8a41f4a` | 2.20.0 (branch `UI-Redesign`): the redesign's player pages (Home, Connect, sign in, first run, errors, Community, posts, Notifications, Settings, Profile with a Full stats pop-up per character, the Shop); Dashboard → Announcements with a record of what was sent; shop thumbnails from the game's own item icons (fetched with `kawari-questdump extract`, converted from `.tex` with Pillow) or uploaded covers, and up to 8 preview images per listing. |
 | 2026-10-19 | `a73cfb3` | 2.19.1: Quest Progress no longer fails with a 500 (the admin layout's `page` variable hid the page number). |
 | 2026-10-19 | `d88dfb7` | 2.19.0 (branch `UI-Redesign`): the redesign's first part: a new stylesheet (dark slate, light kept; Sora and IBM Plex bundled in `static/fonts`), inline SVG icons, and an admin layout with a sidebar grouped by job in place of the 11 tabs; Shop management moved into it. |
@@ -141,7 +143,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Duty, Honor, Country (551) and quest battle 38 from the client's script and Bob's 2026-10-18 capture (two lost runs, one won): territory 210 by pop range, the Waiting bar (EventAction 13) before the battle, the aftermath on returning to Central Thanalan, the closing cutscenes; drop-in layer `QB_ManWil007_001` (39 NPCs) in `wil_w1_planmap.json` (271 shares Central Thanalan's Bg), 20 timelines (hitboxes from the Recorder export of the same runs), fixture 551 and battle fixture `38.json`. |
+| — | Documentation for Kawari Web 2.20.1 (Client compatibility). |
+| `79a2267` | Duty, Honor, Country (551) and quest battle 38 from the client's script and Bob's 2026-10-18 capture (two lost runs, one won): territory 210 by pop range, the Waiting bar (EventAction 13) before the battle, the aftermath on returning to Central Thanalan, the closing cutscenes; drop-in layer `QB_ManWil007_001` (39 NPCs) in `wil_w1_planmap.json` (271 shares Central Thanalan's Bg), 20 timelines (hitboxes from the Recorder export of the same runs), fixture 551 and battle fixture `38.json`. |
 | `879ae17` | Oh Captain, My Captain (336) and quest battle 39 from the client's script and Bob's 2026-10-18 capture (two lost runs, one won): drop-in layer `QB_SubWil088_001` in `wil_w1f1_planmap.json` (territory 273 shares Western Thanalan's Bg), timelines for Baldewyn, Fufulupa, the thaumaturge and the Brass Blades, fixture 336 and battle fixtures `39.json`, `39-lost-1.json`, `39-lost-2.json` (losing runs checked too). |
 | `327a00d` | Storms on the Horizon (334) and Secrets and Lies (628) from their client scripts (Bob's 2026-10-20 dumps) and his 2026-10-18 Chronofoil capture; fixtures 334, 628. |
 | `1adab38` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (2026-10-20: the monsters' wandering stable; 330, 3853, 332 and 333 work in game). |
