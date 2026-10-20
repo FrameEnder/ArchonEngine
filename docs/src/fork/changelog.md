@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-20 | — | Combat: auto-attacks (range, current target, damage type, swing animation); known issues.
+| 2026-10-20 | — | `master` fast-forwarded to `Latest-Quest` again, after Bob found the quests (334, 336, 628, 551), combat and monsters working (changelog).
+| 2026-10-20 | `f6ff8ea` | Combat: auto-attacks (range, current target, damage type, swing animation); known issues.
 | 2026-10-20 | `7ae6113` | Combat: abilities don't touch the combo (no ExecuteCombo).
 | 2026-10-20 | `87adda3` | Quest battles (38 checked against Bob's runs), combat (area attacks on allies, enmity from heals), questkit (battle-sim's spawns); known issues.
 | 2026-10-20 | `f336250` | Quests: progress bars finish when the client's do (EventAction read per language).
@@ -143,13 +144,14 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 ## Kawari (fork)
 
-Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`), and on 2026-10-19 (right after `5b5e91f`, and again right after `6bd4b19` and `511d7e1`), and on 2026-10-20 (right after `666a398`).
+Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`), and on 2026-10-19 (right after `5b5e91f`, and again right after `6bd4b19` and `511d7e1`), and on 2026-10-20 (right after `666a398`, and again right after `f6ff8ea`).
 
 ### 2026-10-19
 
 | Commit | Change |
 |---|---|
-| — | Player auto-attacks as retail (663 of Bob's measured): they go to the current target, not the one auto-attack was toggled on, only within 3.5 yalms of its hitbox (ranged classes 25), alive, and not while casting; a swing that can't be made waits and comes as soon as it can; the weapon's damage type, a random swing animation, object type 0. Their damage was always applied (the HP update just goes out before the ActionEffect: known issues). |
+| — | `master` fast-forwarded to `Latest-Quest` with Bob's OK (334, 336, 628, 551, the guards, progress bars, quest battle 38, combos and auto-attacks). |
+| `f6ff8ea` | Player auto-attacks as retail (663 of Bob's measured): they go to the current target, not the one auto-attack was toggled on, only within 3.5 yalms of its hitbox (ranged classes 25), alive, and not while casting; a swing that can't be made waits and comes as soon as it can; the weapon's damage type, a random swing animation, object type 0. Their damage was always applied (the HP update just goes out before the ActionEffect: known issues). |
 | `7ae6113` | ExecuteCombo only on spells and weaponskills, as retail (Fast Blade 205 of 208, Riot Blade 137 of 141; Fight or Flight 0 of 20, Low Blow 0 of 12, Sprint 0 of 43): sent on Fight or Flight, it made the client drop the Fast Blade → Riot Blade combo (Bob's 2026-10-20 bundle). |
 | `87adda3` | Quest battle 38 against Bob's 2026-10-20 run and retail's three: the blanga came 10 s in (the script read Garibald's not-yet-spawned health as 0 %; battle-sim now leaves spawns outside `onUpdate` out of the next update's health, which catches it); Void Call on Garibald himself and harmless, as on retail (QB 12's Quzal too); three healers on one timer all Cured the same ally (`Battle.lua`: a target being healed isn't picked by another for 1.5 s; QB 38's heal anyone below 70 % every 6 s, themselves included); Terror Eye on its retail timing, hitting allies too; the gargoyle's Corrupted Tail at 20 s. Combat: NPC area attacks land on NPCs of the target's side where the timeline records an amount for them, and on players whoever they're aimed at; a heal or an action on oneself gives the target no enmity (healed enemies turned on their healer). |
 | `f336250` | Event actions last as long as the client's bar: the EventAction sheet (it has a Name column) was read without a language, failed, and every bar finished after the 2 s fallback (aethernet shards' attunement, Duty, Honor, Country's Waiting bar: Bob's 2026-10-20 bundle). Directors' event actions read it too instead of a fixed 2 s. The Glasses sheet (a Name column too) is read per language as well, for the glasses' style unlock. |
