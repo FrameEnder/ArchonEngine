@@ -5007,6 +5007,16 @@
      24,
      "kawari"
     ],
+    "258": [
+     "MarketBoardPurchaseHandler",
+     40,
+     "fork"
+    ],
+    "274": [
+     "RequestRetainerSaleHistory",
+     8,
+     "fork"
+    ],
     "281": [
      "InviteReply",
      16,
@@ -5252,6 +5262,16 @@
      32,
      "kawari"
     ],
+    "670": [
+     "SetRetainerAppearance",
+     32,
+     "fork"
+    ],
+    "683": [
+     "MarketBoardOpened",
+     8,
+     "fork"
+    ],
     "695": [
      "ShareStrategyBoard",
      1184,
@@ -5316,6 +5336,16 @@
      "PartyMemberKick",
      48,
      "kawari"
+    ],
+    "818": [
+     "RequestPlayerRetainerInfo",
+     8,
+     "fork"
+    ],
+    "846": [
+     "ActionRequestGroundTargeted",
+     24,
+     "fork"
     ],
     "850": [
      "WalkOutsideEvent",
@@ -5665,6 +5695,11 @@
      24,
      "kawari"
     ],
+    "144": [
+     "RetainerStateNotice",
+     8,
+     "fork"
+    ],
     "149": [
      "UnkDirector1",
      32,
@@ -5724,6 +5759,11 @@
      "ActionEffect1",
      124,
      "kawari"
+    ],
+    "190": [
+     "LootMessage",
+     32,
+     "fork"
     ],
     "192": [
      "HouseList",
@@ -5810,6 +5850,11 @@
      728,
      "kawari"
     ],
+    "249": [
+     "RetainerState",
+     56,
+     "fork"
+    ],
     "252": [
      "Fellowships",
      808,
@@ -5859,6 +5904,11 @@
      "CWLinkshellNameAvailability",
      40,
      "kawari"
+    ],
+    "303": [
+     "ItemMarketBoardSummary",
+     8,
+     "fork"
     ],
     "304": [
      "PrepareZoning",
@@ -5943,6 +5993,11 @@
     "386": [
      "EventNotice2",
      16,
+     "fork"
+    ],
+    "387": [
+     "ItemMarketBoardInfo",
+     32,
      "fork"
     ],
     "396": [
@@ -6210,6 +6265,11 @@
      968,
      "kawari"
     ],
+    "610": [
+     "MarketBoardPurchase",
+     16,
+     "fork"
+    ],
     "613": [
      "SpawnPlayer",
      664,
@@ -6329,6 +6389,11 @@
      "OpenedTreasure",
      24,
      "kawari"
+    ],
+    "712": [
+     "PlayerRetainerInfo",
+     480,
+     "fork"
     ],
     "716": [
      "ZoneInit",
@@ -6464,6 +6529,11 @@
      "CrossworldLinkshells",
      456,
      "kawari"
+    ],
+    "832": [
+     "RetainerSaleHistory",
+     1048,
+     "fork"
     ],
     "854": [
      "OccultCrescentSetup",

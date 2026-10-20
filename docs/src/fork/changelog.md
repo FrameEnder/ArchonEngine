@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-20 | — | `master` fast-forwarded to `Latest-Quest` again, after Bob ran the rest of the Ul'dah opening (changelog).
+| 2026-10-20 | — | questkit: the opcodes of 2026.10.06 saved before upstream's 7.57h1 (changelog).
+| 2026-10-20 | `645c05a` | `master` fast-forwarded to `Latest-Quest` again, after Bob ran the rest of the Ul'dah opening (changelog).
 | 2026-10-20 | `3851eba` | Quests: A Matter of Tradition's entrance (641).
 | 2026-10-20 | `627e08e` | Quests: The Ul'dahn Envoy (528), the Ul'dah opening complete; known issues.
 | 2026-10-20 | `771794e` | Quests: A Matter of Tradition (641) checked against its client script.
@@ -155,7 +156,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | `master` fast-forwarded to `Latest-Quest` with Bob's OK (641, 552, 528 and 673 work in game: the Ul'dah opening complete). |
+| — | `questkit chronofoil --save-opcodes` for 2026.10.06.0000.0000 (7.57), before merging upstream's 7.57h1 (2026.10.16), so Bob's captures from 7.57 stay readable. |
+| `645c05a` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (641, 552, 528 and 673 work in game: the Ul'dah opening complete). |
 | `3851eba` | A Matter of Tradition (641): the Sultansworn elite's yes/no (scene 2) takes the player into the room (TERRITORYTYPE0 210, POPRANGE0) to accept it; it was taken for an unused scene and ended, so leaving the room before accepting made the quest impossible to pick up. The other dumped quests' yes/no scenes and pop ranges checked: all played (Coming to Limsa Lominsa's lift repeat, 13, is the known gap). |
 | `627e08e` | The Ul'dahn Envoy (528) from its client script and Bob's 2026-10-18 capture: the letters, Ul'dah's landing, the gangplank's Waiting bar and flights to Limsa Lominsa and Gridania by pop range, the hand-overs to Zanthael and the silent conjurer; the ticketers' later flights from the client script; fixture 528. |
 | `771794e` | A Matter of Tradition (641) checked against Bob's dump of it: the quest's ACTOR names instead of layout IDs, Owyne's line in sequence 1 (scene 4), Momodi's hand-over window (6) before the reward (7); fixture 641 carries the dump's params. |
