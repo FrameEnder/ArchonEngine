@@ -8,12 +8,12 @@ use kawari::common::{
     BasicServiceAccountData, ClientLanguage, ContainerType, DEBUG_COMMAND_TRIGGER, FestivalId,
     HandlerId, HandlerType, InstanceContentType, ItemOperationKind, LogMessageType, ObjectId,
     ObjectTypeId, ObjectTypeKind, PlayerStateFlags1, PlayerStateFlags2, PlayerStateFlags3,
-    Position, QuestSpecialFlags, TAB_SHARED_FATE_COUNT, WarpType, calculate_max_level,
-    in_housing_area,
+    Position, QuestSpecialFlags, TAB_SHARED_FATE_COUNT, TerritoryIntendedUse, WarpType,
+    calculate_max_level, in_housing_area,
 };
 use kawari::config::get_config;
 use kawari_world::inventory::{Item, MAX_LARGE_STORAGE, Storage, get_next_free_slot};
-use physis::{TerritoryIntendedUse, equipment::EquipSlot};
+use physis::equipment::EquipSlot;
 
 use kawari::ipc::chat::ClientChatIpcData;
 

@@ -3,6 +3,13 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Upstream 7.57h1 (branch `upstream-7.57h1`)
+
+* The merged server only takes a 7.57h1 client (2026.10.16.0000.0000). The fork's 23 opcodes are outstanding until the
+  startup scan re-finds them on that client's `ffxiv_dx11.exe` (their values from its log go in `fork_opcodes.yml`).
+  The fork's inventory operations (retainer entrust/withdraw/gil/market, `BASE_INVENTORY_ACTION` + 22..26) are
+  assumed to keep their offsets from the new base (234), unchecked on 7.57h1.
+
 ## Quests
 
 * Gridania's Lancer and Archer **Close to Home** (85, 123) and Limsa Lominsa's two (108, 109) come from their client

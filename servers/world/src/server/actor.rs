@@ -793,8 +793,8 @@ pub fn create_npc_common_spawn(
             .get_class_job_modifiers(classjob_id as u32)
             .expect("Failed to read param grow");
 
-        let attributes = game_data
-            .get_racial_base_attributes(classjob_id)
+        let tribe_row = game_data
+            .get_tribe(classjob_id)
             .expect("Failed to read racial attributes");
 
         let param_grow = game_data
@@ -805,7 +805,7 @@ pub fn create_npc_common_spawn(
         let primary_stat = game_data
             .get_job_primary_stat(classjob_id as u16)
             .unwrap_or(1);
-        base_parameters.perform_calculations(primary_stat, &attributes, &param_grow, &modifiers);
+        base_parameters.perform_calculations(primary_stat, &tribe_row, &param_grow, &modifiers);
         base_parameters.calculate_potencies(&param_grow, None); // TODO: If NPCs have classjob modifiers and such, change that None!
 
         usable_hp = base_parameters.hp;

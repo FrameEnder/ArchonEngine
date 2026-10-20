@@ -2,10 +2,10 @@
 
 use crate::{
     GameData, SyncedItemStats, ToServer, ZoneConnection,
-    gamedata::{Attributes, ItemInfoQuery, ItemRow, Modifiers},
+    gamedata::{ItemInfoQuery, ItemRow, Modifiers},
     inventory::{ITEM_FLAG_HQ, Storage},
 };
-use icarus::ParamGrow::ParamGrowRow;
+use icarus::{ParamGrow::ParamGrowRow, Tribe::TribeRow};
 use kawari::{
     common::{ActionCategory, MAXIMUM_RESTED_EXP, ObjectId},
     ipc::zone::{
@@ -350,7 +350,7 @@ impl BaseParameters {
     pub fn perform_calculations(
         &mut self,
         primary_stat: u8,
-        attributes: &Attributes,
+        tribe_row: &TribeRow,
         param_grow: &ParamGrowRow,
         modifiers: &Modifiers,
     ) {
@@ -359,22 +359,22 @@ impl BaseParameters {
         let base = self.stat_base(param_grow);
         self.strength = modifiers
             .apply_to(1, base)
-            .saturating_add_signed(attributes.strength as i32);
+            .saturating_add_signed(tribe_row.STR as i32);
         self.dexterity = modifiers
             .apply_to(2, base)
-            .saturating_add_signed(attributes.dexterity as i32);
+            .saturating_add_signed(tribe_row.DEX as i32);
         self.vitality = modifiers
             .apply_to(3, base)
-            .saturating_add_signed(attributes.vitality as i32);
+            .saturating_add_signed(tribe_row.VIT as i32);
         self.intelligence = modifiers
             .apply_to(4, base)
-            .saturating_add_signed(attributes.intelligence as i32);
+            .saturating_add_signed(tribe_row.INT as i32);
         self.mind = modifiers
             .apply_to(5, base)
-            .saturating_add_signed(attributes.mind as i32);
+            .saturating_add_signed(tribe_row.MND as i32);
         self.piety = modifiers
             .apply_to(6, base)
-            .saturating_add_signed(attributes.piety as i32);
+            .saturating_add_signed(tribe_row.PIE as i32);
 
         self.spell_speed = param_grow.BaseSpeed as u32;
         self.tenacity = param_grow.BaseSpeed as u32;
@@ -754,9 +754,9 @@ impl ZoneConnection {
             .get_class_job_modifiers(self.player_data.classjob.current_class as u32)
             .expect("Failed to read param grow");
 
-        let attributes = game_data
-            .get_racial_base_attributes(self.player_data.customize.chara_make.customize.tribe as u8)
-            .expect("Failed to read racial attributes");
+        let tribe_row = game_data
+            .get_tribe(self.player_data.customize.chara_make.customize.tribe as u8)
+            .expect("Failed to read tribe");
 
         let param_grow = game_data
             .get_param_grow(level as u32)
@@ -772,7 +772,7 @@ impl ZoneConnection {
 
         let mut base_parameters = BaseParameters::default();
         base_parameters.use_retail_formula(level, &param_grow, weapon.as_ref());
-        base_parameters.perform_calculations(primary_stat, &attributes, &param_grow, &modifiers);
+        base_parameters.perform_calculations(primary_stat, &tribe_row, &param_grow, &modifiers);
         if with_items {
             let items = self.equipped_item_stats(&mut game_data, sync_item_level);
             base_parameters.add_equipped_items(&items);

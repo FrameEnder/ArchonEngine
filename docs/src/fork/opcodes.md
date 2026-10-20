@@ -26,6 +26,10 @@ upstream's [Opcodes](../opcodes.md) page.
 * In game, `!forkopcodes` lists them; when an unknown client packet has an outstanding entry's size, the log says which
   it probably is.
 
+Since upstream's 7.57h1 (2026.10.16, merged on `upstream-7.57h1`), every entry below is outstanding (found on
+2026.10.06): the startup scan finds them on a 7.57h1 game install, uses them and logs what to save here; Bob's first
+7.57h1 server log is what updates this table.
+
 ## Current entries (game 2026.10.06, patch 7.57)
 
 | Name | Direction | Opcode | Size | What it is |

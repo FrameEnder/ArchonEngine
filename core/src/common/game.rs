@@ -4,8 +4,7 @@ use std::{collections::HashMap, io::Cursor, time::Duration};
 
 use binrw::{BinReaderExt, BinWrite, binrw};
 use bitflags::bitflags;
-use physis::TerritoryIntendedUse;
-use serde::{Deserialize, Serialize};
+use serde_derive::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter, FromRepr};
 
 use crate::{
@@ -781,10 +780,16 @@ pub enum ItemOperationKind {
     UnkDiscard = 0x90,
     /// Seen during trading (256 in 7.55)
     UnkTrading1 = 244,
-    /// Seen during trading (256 in 7.55)
-    UnkTrading2 = 256,
     /// Seen while equipping gearsets.
     UnkGearSetEquipped = 567,
+}
+
+impl ItemOperationKind {
+    /// Upstream's "seen during trading" operation, 256 in 7.55 and 7.57h1: that's BASE_INVENTORY_ACTION + 22 there
+    /// (234), the same operation as entrusting to a retainer (0x132 = 284 + 22 on 2026.10.06, Bob's capture), so one
+    /// variant (an enum can't have two with the same value.)
+    #[allow(non_upper_case_globals)]
+    pub const UnkTrading2: Self = Self::RetainerEntrust;
 }
 
 /// Useful pre-defined log messages. Feel free to add any ones we need. Index into the LogMessage Excel sheet.
@@ -1556,6 +1561,234 @@ pub fn in_housing_area(intended_use: TerritoryIntendedUse) -> bool {
         intended_use,
         TerritoryIntendedUse::HousingIndoor | TerritoryIntendedUse::HousingOutdoor
     )
+}
+
+/// List of known GimmickAccessor types.
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, FromRepr)]
+pub enum GimmickAccessorType {
+    /// Used for things like Tiny Keys in ARR dungeons. Doesn't use any parameters.
+    Interactable = 1,
+    /// Opens a prompt with text from Param0, and optionally something in Param1 like a pop range.
+    InfalliblePrompt = 2,
+    /// Opens a prompt with text from Param0, and Param1 contains the log message if the check fails. One example is not having the correct key for a door.
+    FalliblePrompt = 3,
+    /// Used by things like the Inconspicuous Switch and Unnatural Ripples in Sastasha. Param0 is a LogMessage meant to be used for failure/inactivity/etc.
+    Message = 4,
+    /// Used for generic shortcuts (like the one for teleporting to bossrooms) as well as ones that go to specific locations. Poprange is in Param1, an optional LogMessage is in Param2 and an unknown parameter in Param3.
+    Shortcut = 5,
+    /// Used for exits. An optional PopRange is in Param1, and an unknown parameter in Param2.
+    DutyExit = 6,
+    /// Used by the Warden in The Sunken Temple of Qarn.
+    Unknown7 = 7,
+    /// Used by the stone pedestal in The Sunken Temple of Qarn.
+    Unknown8 = 8,
+    /// Used by the rusty winch in The Sil'dihn Subterrane and more.
+    Unknown9 = 9,
+    /// Guessing this is used when exiting deep dungeons, based on the text.
+    DeepDungeonExit = 10,
+    /// Makes the player follow a client path, such as the Balloons in the Strayborough Deadwalk. Param0 is unknown, Param1 is the ClientPath and Param2 is a PopRange.
+    GimmickPath = 11,
+    /// Some kind of teleportation. Used by the teleportation sigil in Occult Crescent: South Horn. Param0 is unknown, Param1 is a PopRange.
+    Unknown12 = 12,
+    /// Used for hangar terminals in Rival Wings.
+    HangarTerminal = 13,
+    /// Used by the exit in Leap of Faith.
+    LeapOfFaithExit = 14,
+    /// Used in PublicContent like Occult Crescent, uses all parameters.
+    Unknown16 = 16,
+    /// Only displays text, used for flavor. Param0 is an index into GimmickTalk.
+    Talk = 17,
+    /// Doesn't appear to be used.
+    Unknown18 = 18,
+    /// Only used by the fallen ring in Zadnor. Param0 is unknown.
+    Unknown19 = 19,
+    Unknown20 = 20,
+    Unknown21 = 21,
+    Unknown22 = 22,
+    Unknown23 = 23,
+    Unknown24 = 24,
+    Unknown25 = 25,
+}
+
+/// List of known trigger kinds used by GimmickRect.
+#[repr(u8)]
+#[derive(Debug, Copy, Clone, FromRepr, PartialEq)]
+pub enum GimmickRectTriggerType {
+    Unknown0 = 0,
+    /// Seen in Sastasha for triggering the final boss' cutscene.
+    Cutscene = 1,
+    Unknown3 = 3,
+    Unknown4 = 4,
+    Unknown5 = 5,
+    /// Seen in Sycrus Tower, used to fake going into a separate zone.
+    FakeExit = 6,
+    Unknown7 = 7,
+    /// Seen in the Gold Saucer for its jumping pads.
+    Jump = 8,
+    Unknown9 = 9,
+    Unknown10 = 10,
+    Unknown11 = 11,
+    Unknown12 = 12,
+    /// 90% sure this is used for Duty Support/Trust NPCs talking. You can see this in the entrance of Sastasha,
+    /// where it has an EventRange placed which suspiciously lines up with when the NPCs yell.
+    FaithTalk = 13,
+    Unknown14 = 14,
+    Unknown15 = 15,
+    Unknown16 = 16,
+    Unknown17 = 17,
+    /// Obviously not only used for this, but seen in The Merchants Tale.
+    VVDRouteTrigger = 18,
+    Unknown19 = 19,
+    Unknown20 = 20,
+    Unknown21 = 21,
+    Unknown22 = 22,
+    Unknown23 = 23,
+    Unknown24 = 24,
+    Unknown25 = 25,
+}
+
+/// Names for the rows of the Excel sheet of the same name.
+///
+/// Based off of <https://github.com/aers/FFXIVClientStructs/blob/main/FFXIVClientStructs/FFXIV/Client/Enums/TerritoryIntendedUse.cs>.
+#[repr(u8)]
+#[derive(FromRepr, Display, Clone, Copy, PartialEq, Debug, Default, Deserialize, Serialize)]
+pub enum TerritoryIntendedUse {
+    /// Towns such as Limsa Lominsa.
+    #[default]
+    Town = 0,
+    /// Open world zones such as everything out of towns.
+    Overworld = 1,
+    /// Inn rooms.
+    Inn = 2,
+    /// Dungeon zones and other misc duties like Air Force One.
+    Dungeon = 3,
+    /// Variant dungeons like The Sil'dihn Subterrane.
+    VariantDungeon = 4,
+    /// Jail zones like Mordion Gaol.
+    MordionGaol = 5,
+    /// Copies of Towns that are only during the opening.
+    OpeningArea = 6,
+    /// Rarely seen "lobby zones", such as the Phantom Village for Occult Crescent.
+    BeforeTrialDung = 7,
+    /// Zones used in Alliance Raids.
+    AllianceRaid = 8,
+    /// Used for (pre-Endwalker?) quest battles.
+    PreEwOverworldQuestBattle = 9,
+    /// Trial battles.
+    Trial = 10,
+    /// Currently unused.
+    Unknown11 = 11,
+    /// Used in some raids, unclear what for though?
+    WaitingRoom = 12,
+    /// Outdoor housing zones like the Mist.
+    HousingOutdoor = 13,
+    /// Indoor housing zones.
+    HousingIndoor = 14,
+    /// Used for zones such as the Command Room (ARR) or the Unmoored Isle (DT) where you shouldn't see other players.
+    SoloOverworldInstances = 15,
+    /// Raids with trash mobs in the beginning. Can revive self, but won't be able to re-enter ongoing battles.
+    Raid1 = 16,
+    /// Raids with boss arena. Unable to self-revive. Seen in at least AAC Heavyweight M1 (Savage).
+    Raid2 = 17,
+    /// Zones used for Frontline PvP.
+    Frontline = 18,
+    /// Now unused.
+    ChocoboSquareOld = 19,
+    /// Chocobo Racing zones.
+    ChocoboRacing = 20,
+    /// Used for the only Ishgard Restoration zone, the Firamament.
+    Firmament = 21,
+    /// The Sanctum of the Twelve zone used for weddings.
+    SanctumOfTheTwelve = 22,
+    /// Gold Saucer zones.
+    GoldSaucer = 23,
+    /// Now unused.
+    OriginalStepsOfFaith = 24,
+    /// Used by the Lord of Verminion minigame.
+    LordOfVerminion = 25,
+    /// Used by the Diadem.
+    ExploratoryMissions = 26,
+    /// Used for the Hall of Novice tutorials.
+    HallOfTheNovice = 27,
+    /// Zones used for Crystalline Conflict PvP.
+    CrystallineConflict = 28,
+    /// Used for events like Solo Duties.
+    SoloDuty = 29,
+    /// The barracks zones of grand companies.
+    GrandCompanyBarracks = 30,
+    /// Zones used for Deep Dugeons, e.g. Palace of the Dead.
+    DeepDungeon = 31,
+    /// Used for zones only accessible seasonally, like Starlight Halls.
+    Seasonal = 32,
+    /// Treasure dungeons like Vault Oneiron.
+    TreasureMapInstance = 33,
+    /// Used for zones like the Haunted Manor and the Patisserie.
+    SeasonalInstancedArea = 34,
+    /// Used by the Triple Triad Battlehall duty.
+    TripleTriadBattleHall = 35,
+    /// Used for raids like The Cloud of Darkness (Chaotic).
+    ChaoticRaid = 36,
+    /// Used for Crystalline Conflict Custom Matches.
+    CrystallineConflictCustomMatch = 37,
+    /// Diadem
+    HuntingGrounds = 38,
+    /// Used in Rival Wings content.
+    RivalWings = 39,
+    /// Mordion Gaol (The Rising 2017), Frondale's Home for Friendless Foundlings, Starlight Stalls.
+    Seasonal2 = 40,
+    /// Eureka zones.
+    Eureka = 41,
+    /// ???
+    Unknown42 = 42,
+    /// ???
+    TheCalamityRetold = 43,
+    /// Leap of Faith zones.
+    LeapOfFaith = 44,
+    /// Used for the Blue Mage The Masked Carnivale.
+    MaskedCarnival = 45,
+    /// Zones used for Ocean Fishing.
+    OceanFishing = 46,
+    /// Diadem zones.
+    Diadem = 47,
+    /// Bozja zones.
+    Bozja = 48,
+    /// Island Sanctuary zones.
+    IslandSanctuary = 49,
+    /// Used in the Triple Triad Open Tournament duty.
+    TripleTriadOpenTournament = 50,
+    /// Used in the Triple Triad Invitational Parlor duty.
+    TripleTriadInvitationalParlor = 51,
+    /// Used by the Delubrum Reginae duty.
+    DelubrumReginae = 52,
+    /// Used by the Delubrum Reginae (Savage) duty.
+    DelubrumReginaeSavage = 53,
+    /// Propylaion and Ultima Thule
+    EndwalkerMsqSoloOverworld = 54,
+    /// Currently unused.
+    Unknown55 = 55,
+    /// Instanced area for the Omicron Allied Society quests.
+    Elysion = 56,
+    /// Criterion Dungeon zones.
+    CriterionDungeon = 57,
+    /// Savage Criterion Dungeon zones.
+    CriterionDungeonSavage = 58,
+    /// Bean containment zones.
+    Blunderville = 59,
+    /// Cosmic Exploration zones.
+    CosmicExploration = 60,
+    /// Occult Crescent zones.
+    OccultCrescent = 61,
+    /// Used for Beastmaster's Crucible boards.
+    CrucibleOfTheUnbroken = 62,
+    /// Lilyswim (Hatching-tide 2026)
+    Seasonal3 = 63,
+    /// Used by the Air Force One minigame.
+    AirForceOne = 64,
+    /// Used by the Keybound Brawler minigame.
+    KeyboundBrawler = 65,
+    /// Currently unused.
+    Unknown66 = 66,
 }
 
 #[cfg(test)]

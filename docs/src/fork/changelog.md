@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-20 | — | questkit: the opcodes of 2026.10.06 saved before upstream's 7.57h1 (changelog).
+| 2026-10-20 | — | Upstream merged through `f8a4b48` (patch 7.57h1, 2026.10.16) on branch `upstream-7.57h1`: opcodes, known issues (changelog).
+| 2026-10-20 | `7ff3e65` | questkit: the opcodes of 2026.10.06 saved before upstream's 7.57h1 (changelog).
 | 2026-10-20 | `645c05a` | `master` fast-forwarded to `Latest-Quest` again, after Bob ran the rest of the Ul'dah opening (changelog).
 | 2026-10-20 | `3851eba` | Quests: A Matter of Tradition's entrance (641).
 | 2026-10-20 | `627e08e` | Quests: The Ul'dahn Envoy (528), the Ul'dah opening complete; known issues.
@@ -156,7 +157,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | `questkit chronofoil --save-opcodes` for 2026.10.06.0000.0000 (7.57), before merging upstream's 7.57h1 (2026.10.16), so Bob's captures from 7.57 stay readable. |
+| — | Merge upstream Kawari from Codeberg (through `f8a4b48`: patch 7.57h1, 2026.10.16.0000.0000; 19 commits: the CI, dependencies and Physis, gamedata moved into `kawari::common`, the 7.57h1 opcodes, `BASE_INVENTORY_ACTION` 234, scrambler data, mail constants), on branch `upstream-7.57h1`. Conflicts kept the fork's code on upstream's new API: the retail stat formula reads the Tribe row (upstream dropped `Attributes`), the fork's imports with upstream's moved types (`TerritoryIntendedUse`, `GimmickAccessorType`, `GimmickRectTriggerType`), `serde_derive` in timelines, upstream's 7.57h1 mail results with the fork's bitmask constants. `ItemOperationKind::UnkTrading2` (upstream's 256) is now an alias of the fork's `RetainerEntrust`: both are `BASE_INVENTORY_ACTION + 22` on 7.57h1 and 7.55, and an enum can't hold two. `kawari-questdump` reads index files for Physis's new `ReadableFile`. The 23 fork opcodes are outstanding until the startup scan finds them on 7.57h1. |
+| `7ff3e65` | `questkit chronofoil --save-opcodes` for 2026.10.06.0000.0000 (7.57), before merging upstream's 7.57h1 (2026.10.16), so Bob's captures from 7.57 stay readable. |
 | `645c05a` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (641, 552, 528 and 673 work in game: the Ul'dah opening complete). |
 | `3851eba` | A Matter of Tradition (641): the Sultansworn elite's yes/no (scene 2) takes the player into the room (TERRITORYTYPE0 210, POPRANGE0) to accept it; it was taken for an unused scene and ended, so leaving the room before accepting made the quest impossible to pick up. The other dumped quests' yes/no scenes and pop ranges checked: all played (Coming to Limsa Lominsa's lift repeat, 13, is the known gap). |
 | `627e08e` | The Ul'dahn Envoy (528) from its client script and Bob's 2026-10-18 capture: the letters, Ul'dah's landing, the gangplank's Waiting bar and flights to Limsa Lominsa and Gridania by pop range, the hand-overs to Zanthael and the silent conjurer; the ticketers' later flights from the client script; fixture 528. |

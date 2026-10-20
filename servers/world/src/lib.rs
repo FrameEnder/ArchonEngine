@@ -59,8 +59,8 @@ pub use bitmask::{Bitmask, QuestBitmask};
 
 mod gamedata;
 pub use gamedata::{
-    ActionInfo, GameData, GatheringPointItem, GimmickRectTrigger, ItemInfoQuery, ItemRow, Recipe,
-    Roulette, SyncedItemStats, TerritoryNameKind,
+    ActionInfo, GameData, GatheringPointItem, ItemInfoQuery, ItemRow, Recipe, Roulette,
+    SyncedItemStats, TerritoryNameKind,
 };
 
 mod chara_make;

@@ -717,7 +717,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "kawari"
-version = "7.57.0"
+version = "7.57.1"
 dependencies = [
  "binrw",
  "bitflags",
@@ -728,6 +728,7 @@ dependencies = [
  "mlua",
  "physis",
  "serde",
+ "serde_derive",
  "serde_json",
  "serde_yaml_ng",
  "strum",
@@ -738,7 +739,7 @@ dependencies = [
 
 [[package]]
 name = "kawari-admin"
-version = "7.57.0"
+version = "7.57.1"
 dependencies = [
  "axum",
  "kawari",
@@ -755,7 +756,7 @@ dependencies = [
 
 [[package]]
 name = "kawari-core-macro"
-version = "7.57.0"
+version = "7.57.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -764,7 +765,7 @@ dependencies = [
 
 [[package]]
 name = "kawari-frontier"
-version = "7.57.0"
+version = "7.57.1"
 dependencies = [
  "axum",
  "kawari",
@@ -779,7 +780,7 @@ dependencies = [
 
 [[package]]
 name = "kawari-lobby"
-version = "7.57.0"
+version = "7.57.1"
 dependencies = [
  "kawari",
  "physis",
@@ -793,7 +794,7 @@ dependencies = [
 
 [[package]]
 name = "kawari-login"
-version = "7.57.0"
+version = "7.57.1"
 dependencies = [
  "axum",
  "axum-extra",
@@ -815,7 +816,7 @@ dependencies = [
 
 [[package]]
 name = "kawari-navimesh"
-version = "7.57.0"
+version = "7.57.1"
 dependencies = [
  "glam",
  "icarus",
@@ -829,14 +830,14 @@ dependencies = [
 
 [[package]]
 name = "kawari-opcodescan"
-version = "7.57.0"
+version = "7.57.1"
 dependencies = [
  "kawari",
 ]
 
 [[package]]
 name = "kawari-patch"
-version = "7.57.0"
+version = "7.57.1"
 dependencies = [
  "axum",
  "kawari",
@@ -849,7 +850,7 @@ dependencies = [
 
 [[package]]
 name = "kawari-questdump"
-version = "7.57.0"
+version = "7.57.1"
 dependencies = [
  "icarus",
  "kawari",
@@ -859,7 +860,7 @@ dependencies = [
 
 [[package]]
 name = "kawari-run"
-version = "7.57.0"
+version = "7.57.1"
 dependencies = [
  "nu-ansi-term",
  "tokio",
@@ -867,7 +868,7 @@ dependencies = [
 
 [[package]]
 name = "kawari-web"
-version = "7.57.0"
+version = "7.57.1"
 dependencies = [
  "axum",
  "kawari",
@@ -880,7 +881,7 @@ dependencies = [
 
 [[package]]
 name = "kawari-world"
-version = "7.57.0"
+version = "7.57.1"
 dependencies = [
  "async-trait",
  "axum",
@@ -921,9 +922,9 @@ checksum = "34b357333733e8260735ba5894eb928c02ecc69c78715f01a8019e7fa7f2db4c"
 
 [[package]]
 name = "libc"
-version = "0.2.190"
+version = "0.2.191"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce5d3ddc6d3fa000eb1536d85e147bfe31aacaba692ed6a876f95cb7c855be78"
+checksum = "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a"
 
 [[package]]
 name = "libloading"
@@ -944,15 +945,6 @@ dependencies = [
  "cc",
  "pkg-config",
  "vcpkg",
-]
-
-[[package]]
-name = "libz-rs-sys"
-version = "0.6.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "434324ee61a8e4a05dd3fdf03d51c073ea7fdaf5a35b2ca33c4ca9f3f37def4a"
-dependencies = [
- "zlib-rs",
 ]
 
 [[package]]
@@ -991,9 +983,9 @@ dependencies = [
 
 [[package]]
 name = "lzma-rust2"
-version = "0.21.0"
+version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fde178a3caf126c440fa15628147772d8ee590a39477d711353fbe2e58a73a5b"
+checksum = "7277c9742229dc25243236d578b6471a798c554512c6f6a04365ec2e87c2a3bb"
 dependencies = [
  "sha2",
 ]
@@ -1056,9 +1048,9 @@ dependencies = [
 
 [[package]]
 name = "minijinja"
-version = "3.0.0"
+version = "3.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13345868cfa94eadafc067112ff29271380a820d5594d9ee6ba81a8d00ea5dc2"
+checksum = "789a6b737c4a13bec43cd3c1b982aa8a8a192ff4bf444e0fb1fd5a324f064fd1"
 dependencies = [
  "serde",
 ]
@@ -1229,16 +1221,17 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 [[package]]
 name = "physis"
 version = "0.7.0"
-source = "git+https://github.com/redstrate/physis#444e89b085d0d8a871cd87c1712b2082be5491f8"
+source = "git+https://github.com/redstrate/physis#207300efd721138983fa11d2030f1421a079d09c"
 dependencies = [
  "binrw",
  "bitflags",
  "glam",
  "half",
- "libz-rs-sys",
  "serde",
+ "serde_derive",
  "strum",
  "strum_macros",
+ "zlib-rs",
 ]
 
 [[package]]
@@ -1590,9 +1583,6 @@ name = "strum"
 version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9628de9b8791db39ceda2b119bbe13134770b56c138ec1d3af810d045c04f9bd"
-dependencies = [
- "strum_macros",
-]
 
 [[package]]
 name = "strum_macros"
@@ -1996,9 +1986,9 @@ dependencies = [
 
 [[package]]
 name = "zip"
-version = "9.0.3"
+version = "9.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2d98561b612a84ae525331a7a094429ef8a5772514ed507ff6db5f54badc971"
+checksum = "a954114b47a54df49f83d2722814e86b23d4bb1b54a1b90fb7d92b41619ddc22"
 dependencies = [
  "bzip2",
  "crc32fast",

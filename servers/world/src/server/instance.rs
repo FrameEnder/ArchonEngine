@@ -334,9 +334,9 @@ impl Instance {
             .get_class_job_modifiers(spawn.common.class_job as u32)
             .expect("Failed to read param grow");
 
-        let attributes = game_data
-            .get_racial_base_attributes(spawn.common.look.tribe as u8)
-            .expect("Failed to read racial attributes");
+        let tribe_row = game_data
+            .get_tribe(spawn.common.look.tribe as u8)
+            .expect("Failed to read tribe");
 
         let level = spawn.common.level;
 
@@ -349,7 +349,7 @@ impl Instance {
             .unwrap_or(1);
 
         let mut parameters = BaseParameters::default();
-        parameters.perform_calculations(primary_stat, &attributes, &param_grow, &modifiers);
+        parameters.perform_calculations(primary_stat, &tribe_row, &param_grow, &modifiers);
         parameters.calculate_potencies(&param_grow, Some(&modifiers));
 
         let position = spawn.common.position.0;

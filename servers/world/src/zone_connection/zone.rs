@@ -7,7 +7,7 @@ use crate::{
 use kawari::{
     common::{
         FestivalId, HandlerId, HandlerType, HouseId, HouseUnit, HousingFlag, LandData, Position,
-        WarpType, timestamp_secs,
+        TerritoryIntendedUse, WarpType, timestamp_secs,
     },
     constants::{
         DISCOVERY_MAPS_WITH_UP_TO_16_REGIONS_BITMASK_SIZE, MAP_DISCOVERY_BITMASK_SIZE,
@@ -20,7 +20,6 @@ use kawari::{
     },
     packet::{ConnectionState, PacketSegment, ScramblerKeyGenerator, SegmentData, SegmentType},
 };
-use physis::TerritoryIntendedUse;
 
 impl ZoneConnection {
     /// Request the global server state to change our zone.

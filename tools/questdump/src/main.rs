@@ -25,6 +25,7 @@ use icarus::{
 use kawari::config::get_config;
 use physis::Language;
 use physis::Platform;
+use physis::ReadableFile;
 use physis::resource::{ResourceResolver, SqPackResource, UnpackedResource};
 use physis::sqpack::{Hash, SqPackIndex};
 use serde_json::{Value, json};
@@ -584,7 +585,10 @@ fn find_file(options: &Options, file_name: &str) -> Result<usize, String> {
     let name_hash = SqPackIndex::calculate_partial_hash(file_name);
     let mut found = 0;
     for index_path in &indices {
-        let Some(index) = SqPackIndex::from_existing(Platform::Win32, index_path) else {
+        let Ok(bytes) = std::fs::read(index_path) else {
+            continue;
+        };
+        let Ok(index) = SqPackIndex::from_existing(Platform::Win32, &bytes) else {
             continue;
         };
         for entry in &index.entries {

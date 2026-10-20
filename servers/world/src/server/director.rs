@@ -9,9 +9,10 @@ use std::{
 use kawari::{
     common::{
         ContentDirectorEvent, DirectorEvent, DirectorTrigger, DutyOption, EOBJ_EXIT, EOBJ_SHORTCUT,
-        EventState, GimmickRectEvent, HandlerId, HandlerType, InstanceContentDirectorEvent,
-        LeveDirectorEvent, LogMessageType, ObjectId, ObjectTypeId, ObjectTypeKind, Position,
-        PublicContentType, WARP_DELAY, WarpType, timestamp_secs,
+        EventState, GimmickAccessorType, GimmickRectEvent, HandlerId, HandlerType,
+        InstanceContentDirectorEvent, LeveDirectorEvent, LogMessageType, ObjectId, ObjectTypeId,
+        ObjectTypeKind, Position, PublicContentType, TerritoryIntendedUse, WARP_DELAY, WarpType,
+        timestamp_secs,
     },
     config::get_config,
     ipc::chat::ChatChannelType,
@@ -23,12 +24,10 @@ use kawari::{
 };
 use mlua::{Function, LuaSerdeExt, UserData, UserDataMethods, Value};
 use parking_lot::Mutex;
-use physis::TerritoryIntendedUse;
 
 use crate::{
     ClientId, FromServer, GameData, QUEST_BATTLE_SCENE_FINISH, QUEST_BATTLE_SCENE_FINISH_FLAGS,
     ToServer,
-    gamedata::GimmickAccessorType,
     lua::KawariLua,
     server::{
         WorldServer,
