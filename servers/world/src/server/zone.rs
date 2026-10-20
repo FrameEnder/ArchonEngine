@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 use glam::{Affine3A, EulerRot, Vec3A};
 use parking_lot::Mutex;
@@ -114,6 +117,8 @@ pub struct Zone {
     cached_eobj_base_ids: HashMap<u32, u32>,
     pub cached_pop_ranges: HashMap<u32, (Position, f32)>,
     pub cached_paths: HashMap<u32, ServerPathInstanceObject>,
+    /// Layout IDs of the drop-ins' battle NPCs that stand where they are instead of wandering.
+    pub stationary_npcs: HashSet<u32>,
 }
 
 impl Zone {
@@ -717,8 +722,12 @@ impl Zone {
                     link_family,
                     link_range,
                     display_flags,
+                    stationary,
                 } = object.data
                 {
+                    if stationary {
+                        self.stationary_npcs.insert(object.layout_id);
+                    }
                     // Without a set HP, an ordinary enemy of its zone's expansion at its level.
                     let hp = hp.or_else(|| {
                         let ex_version = game_data.get_ex_version(self.id).unwrap_or(0);

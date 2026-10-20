@@ -67,6 +67,10 @@ pub enum DropInObjectData {
         /// Guardian's guards and Ixali fighting in the background, have 0x208: no health bar, can't be targeted.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         display_flags: Option<u32>,
+        /// If true, it stands where it is instead of wandering about, like retail's guards (seen idle for a minute or
+        /// more without moving in Bob's Chronofoil captures.)
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        stationary: bool,
     },
     /// Represents a battle or event NPC.
     #[serde(rename = "event_npc")]

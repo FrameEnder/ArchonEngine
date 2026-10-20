@@ -236,36 +236,45 @@ pub fn npc_behavior(
                         timeline.attack_range,
                     )
                     .is_some();
-            let (position, rotation) =
-                if distance <= min_distance && !(strayed && !current_path.is_empty()) {
-                    (
-                        Some(spawn.common.position),
-                        Some(rotate(spawn.common.position.0, target_pos)),
-                    )
-                } else if !current_path.is_empty() {
-                    // otherwise, Follow current path
-                    let next_position = current_path[0];
-
-                    let current_position = last_position.unwrap_or(spawn.common.position.0);
-                    // A step that goes nowhere keeps its facing (atan2(0, 0) turned NPCs north at the start and end of
-                    // every walk, 2026-10-19 bundle.)
-                    let rotation = if flat_distance(current_position, next_position) < MIN_STEP {
-                        spawn.common.rotation
-                    } else {
-                        rotate(current_position, next_position)
-                    };
-
-                    (
-                        Some(Position(Vec3A::lerp(
-                            current_position,
-                            next_position,
-                            *current_path_lerp,
-                        ))),
-                        Some(rotation),
-                    )
+            let (position, rotation) = if distance <= min_distance
+                && !(strayed && !current_path.is_empty())
+            {
+                // Standing on the spot it walked to keeps its facing (atan2(0, 0) turned it north there.)
+                let rotation = if flat_distance(spawn.common.position.0, target_pos) < MIN_STEP {
+                    spawn.common.rotation
                 } else {
-                    (None, None)
+                    rotate(spawn.common.position.0, target_pos)
                 };
+                (Some(spawn.common.position), Some(rotation))
+            } else if !current_path.is_empty() {
+                // otherwise, Follow current path
+                let next_position = current_path[0];
+
+                let current_position = last_position.unwrap_or(spawn.common.position.0);
+                // A step that goes nowhere keeps its facing (atan2(0, 0) turned NPCs north at the start and end of
+                // every walk, 2026-10-19 bundle.)
+                let rotation = if flat_distance(current_position, next_position) < MIN_STEP {
+                    spawn.common.rotation
+                } else {
+                    rotate(current_position, next_position)
+                };
+
+                let position = Position(Vec3A::lerp(
+                    current_position,
+                    next_position,
+                    *current_path_lerp,
+                ));
+                // Not moved yet (a new path's first tick): nothing to send. Retail's first ActorMove of a walk is
+                // already a step; one that only turns it where it stands makes the client play a step on the
+                // spot, the "looping walk" of Bob's 2026-10-20 bundle.
+                if position == spawn.common.position {
+                    (None, None)
+                } else {
+                    (Some(position), Some(rotation))
+                }
+            } else {
+                (None, None)
+            };
 
             if let NpcTarget::Actor(actor) = current_target {
                 target_actor_pos.insert(*actor, target_pos);
@@ -489,6 +498,10 @@ pub fn npc_behavior(
                 if *state == NpcState::Wander
                     && !in_content
                     && current_target.is_none()
+                    && !instance
+                        .zone
+                        .stationary_npcs
+                        .contains(&spawn.common.layout_id)
                     && Instant::now().duration_since(*last_wander_timestamp) > MOB_WANDER_TIME
                 {
                     // Wander around home, rather than drifting further away each time.

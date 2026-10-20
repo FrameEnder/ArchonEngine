@@ -38,7 +38,8 @@
                         "max_links": 4,
                         "name_id": 1275,
                         "nonpop": false,
-                        "type": "battle_npc"
+                        "type": "battle_npc",
+                        "stationary": true
                     },
                     "layout_id": 4057838,
                     "position": {
@@ -60,7 +61,8 @@
                         "max_links": 4,
                         "name_id": 1275,
                         "nonpop": false,
-                        "type": "battle_npc"
+                        "type": "battle_npc",
+                        "stationary": true
                     },
                     "layout_id": 4057854,
                     "position": {
@@ -170,7 +172,8 @@
                         "max_links": 4,
                         "name_id": 304,
                         "nonpop": false,
-                        "type": "battle_npc"
+                        "type": "battle_npc",
+                        "stationary": true
                     },
                     "layout_id": 4143263,
                     "position": {
@@ -962,7 +965,8 @@
                         "max_links": 4,
                         "name_id": 113,
                         "nonpop": false,
-                        "type": "battle_npc"
+                        "type": "battle_npc",
+                        "stationary": true
                     },
                     "layout_id": 4143686,
                     "position": {
@@ -1050,7 +1054,8 @@
                         "max_links": 4,
                         "name_id": 113,
                         "nonpop": false,
-                        "type": "battle_npc"
+                        "type": "battle_npc",
+                        "stationary": true
                     },
                     "layout_id": 4143698,
                     "position": {
@@ -1534,7 +1539,8 @@
                         "max_links": 4,
                         "name_id": 269,
                         "nonpop": false,
-                        "type": "battle_npc"
+                        "type": "battle_npc",
+                        "stationary": true
                     },
                     "layout_id": 4144020,
                     "position": {
@@ -1578,7 +1584,8 @@
                         "max_links": 4,
                         "name_id": 269,
                         "nonpop": false,
-                        "type": "battle_npc"
+                        "type": "battle_npc",
+                        "stationary": true
                     },
                     "layout_id": 4144022,
                     "position": {
@@ -1688,7 +1695,8 @@
                         "max_links": 4,
                         "name_id": 113,
                         "nonpop": false,
-                        "type": "battle_npc"
+                        "type": "battle_npc",
+                        "stationary": true
                     },
                     "layout_id": 4144094,
                     "position": {
@@ -1952,7 +1960,8 @@
                         "max_links": 4,
                         "name_id": 1690,
                         "nonpop": false,
-                        "type": "battle_npc"
+                        "type": "battle_npc",
+                        "stationary": true
                     },
                     "layout_id": 4323847,
                     "position": {
@@ -1974,7 +1983,8 @@
                         "max_links": 4,
                         "name_id": 1681,
                         "nonpop": false,
-                        "type": "battle_npc"
+                        "type": "battle_npc",
+                        "stationary": true
                     },
                     "layout_id": 4323849,
                     "position": {
@@ -2084,7 +2094,8 @@
                         "max_links": 4,
                         "name_id": 1681,
                         "nonpop": false,
-                        "type": "battle_npc"
+                        "type": "battle_npc",
+                        "stationary": true
                     },
                     "layout_id": 4323855,
                     "position": {
@@ -2106,7 +2117,8 @@
                         "max_links": 4,
                         "name_id": 1681,
                         "nonpop": false,
-                        "type": "battle_npc"
+                        "type": "battle_npc",
+                        "stationary": true
                     },
                     "layout_id": 4323856,
                     "position": {
@@ -2128,7 +2140,8 @@
                         "max_links": 4,
                         "name_id": 1681,
                         "nonpop": false,
-                        "type": "battle_npc"
+                        "type": "battle_npc",
+                        "stationary": true
                     },
                     "layout_id": 4323857,
                     "position": {
