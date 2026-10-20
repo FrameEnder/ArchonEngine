@@ -244,11 +244,14 @@ Central Thanalan's capture had nothing its drop-in lacked.
 
 SpawnNpc's character data flags (byte 8) aren't only "hostile": retail sends 0x1 for passive monsters, 0x2 for
 aggressive ones and 0x4 for guards (Ul'dah's Brass Blades and Flames, bases 791–798 and 1342; Gridania's Wood Wailers,
-580–583; Mor Dhona's 1776–1778; and the rest of the 22 kinds that only ever had 0x4, Bob's Chronofoil captures), which
-the client shows without a nameplate. Guards also have their own Behavior row each (30051–30055; ordinary monsters
-30246). A drop-in battle NPC's `character_data_flags` and `behavior` set those as retail sent them: the 36 guards in
-the Thanalan, Mor Dhona and Central Shroud drop-ins have 0x4 (and the Thanalan and Mor Dhona ones their spot's
-Behavior). Without them Kawari still sends 0x2 or 0 from `hostile`.
+580–583; Mor Dhona's 1776–1778; 22 kinds in all, Bob's Chronofoil captures). Guards also have their own Behavior row
+each (30051–30055; ordinary monsters 30246). A drop-in battle NPC can set both (`character_data_flags`, `behavior`).
+With 0x4 the client offers a talk (a DefaultTalk event it asks the server for, 1839 for the Brass Blade by Horizon)
+and still shows the nameplate; Kawari doesn't answer that event, which soft-locked Bob (2026-10-20). The guards are
+decorative on Bob's server, so the 36 in the Thanalan, Mor Dhona and Central Shroud drop-ins keep retail's Behavior
+(their pose) but not 0x4, and have display flags 0x208 (no nameplate or health bar, can't be targeted), as retail's
+scenery NPCs do. On retail they're ordinary battle NPCs (display flags 0) that also fight monsters that come near; the
+one by Horizon's gate is the only server-spawned NPC there, its counterpart is the zone's own event NPC.
 
 Kill EXP checked on the 105 solo kills of that export: Kawari's formula (the level's ScaledQuestXP, full down to two
 levels below, then 10 % less a level) gives the recorded EXP for all but level-ups during the fight, chains and kills

@@ -106,8 +106,8 @@
                         "nonpop": false,
                         "type": "battle_npc",
                         "stationary": true,
-                        "character_data_flags": 4,
-                        "behavior": 30051
+                        "behavior": 30051,
+                        "display_flags": 520
                     },
                     "layout_id": 4057759,
                     "position": {
@@ -131,8 +131,8 @@
                         "nonpop": false,
                         "type": "battle_npc",
                         "stationary": true,
-                        "character_data_flags": 4,
-                        "behavior": 30052
+                        "behavior": 30052,
+                        "display_flags": 520
                     },
                     "layout_id": 4057772,
                     "position": {
@@ -156,8 +156,8 @@
                         "nonpop": false,
                         "type": "battle_npc",
                         "stationary": true,
-                        "character_data_flags": 4,
-                        "behavior": 30055
+                        "behavior": 30055,
+                        "display_flags": 520
                     },
                     "layout_id": 4057782,
                     "position": {
@@ -180,8 +180,8 @@
                         "name_id": 1278,
                         "nonpop": false,
                         "type": "battle_npc",
-                        "character_data_flags": 4,
-                        "behavior": 30054
+                        "behavior": 30054,
+                        "display_flags": 520
                     },
                     "layout_id": 4057793,
                     "position": {
@@ -8229,8 +8229,8 @@
                         "name_id": 1278,
                         "nonpop": false,
                         "type": "battle_npc",
-                        "character_data_flags": 4,
-                        "behavior": 30053
+                        "behavior": 30053,
+                        "display_flags": 520
                     },
                     "layout_id": 4172352,
                     "position": {
@@ -8253,8 +8253,8 @@
                         "name_id": 1278,
                         "nonpop": false,
                         "type": "battle_npc",
-                        "character_data_flags": 4,
-                        "behavior": 30053
+                        "behavior": 30053,
+                        "display_flags": 520
                     },
                     "layout_id": 4172376,
                     "position": {

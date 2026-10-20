@@ -7811,8 +7811,8 @@
                         "nonpop": false,
                         "type": "battle_npc",
                         "stationary": true,
-                        "character_data_flags": 4,
-                        "behavior": 30051
+                        "behavior": 30051,
+                        "display_flags": 520
                     },
                     "layout_id": 4057505,
                     "position": {
@@ -7836,8 +7836,8 @@
                         "nonpop": false,
                         "type": "battle_npc",
                         "stationary": true,
-                        "character_data_flags": 4,
-                        "behavior": 30055
+                        "behavior": 30055,
+                        "display_flags": 520
                     },
                     "layout_id": 4057530,
                     "position": {
@@ -7861,8 +7861,8 @@
                         "nonpop": false,
                         "type": "battle_npc",
                         "stationary": true,
-                        "character_data_flags": 4,
-                        "behavior": 30054
+                        "behavior": 30054,
+                        "display_flags": 520
                     },
                     "layout_id": 4057532,
                     "position": {
@@ -7886,8 +7886,8 @@
                         "nonpop": false,
                         "type": "battle_npc",
                         "stationary": true,
-                        "character_data_flags": 4,
-                        "behavior": 30052
+                        "behavior": 30052,
+                        "display_flags": 520
                     },
                     "layout_id": 4057541,
                     "position": {
@@ -7911,8 +7911,8 @@
                         "nonpop": false,
                         "type": "battle_npc",
                         "stationary": true,
-                        "character_data_flags": 4,
-                        "behavior": 30051
+                        "behavior": 30051,
+                        "display_flags": 520
                     },
                     "layout_id": 4057553,
                     "position": {
@@ -7936,8 +7936,8 @@
                         "nonpop": false,
                         "type": "battle_npc",
                         "stationary": true,
-                        "character_data_flags": 4,
-                        "behavior": 30053
+                        "behavior": 30053,
+                        "display_flags": 520
                     },
                     "layout_id": 4057563,
                     "position": {
@@ -7961,8 +7961,8 @@
                         "nonpop": false,
                         "type": "battle_npc",
                         "stationary": true,
-                        "character_data_flags": 4,
-                        "behavior": 30051
+                        "behavior": 30051,
+                        "display_flags": 520
                     },
                     "layout_id": 4057572,
                     "position": {
@@ -8432,8 +8432,8 @@
                         "nonpop": false,
                         "type": "battle_npc",
                         "stationary": true,
-                        "character_data_flags": 4,
-                        "behavior": 30051
+                        "behavior": 30051,
+                        "display_flags": 520
                     },
                     "layout_id": 4510228,
                     "position": {

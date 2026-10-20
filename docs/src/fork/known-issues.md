@@ -157,8 +157,11 @@ add one when something is found.
 * Eastern, Southern and Northern Thanalan's and Mor Dhona's monsters have no timelines (no Recorder export of those
   zones): default auto-attack, hitbox and damage, no skills. Northern Thanalan's drop-in only has the 99 spawn points
   of a short visit.
-* Kawari sends character data flags 0 for passive monsters, where retail sends 0x1 (only the guards' 0x4 is set in the
-  drop-ins), and no Behavior for monsters (retail: 30246 for most); what either changes in the client isn't known.
+* Kawari sends character data flags 0 for passive monsters, where retail sends 0x1, and no Behavior for monsters
+  (retail: 30246 for most); what either changes in the client isn't known.
+* A battle NPC with a talk (character data flags 0x4) makes the client ask the server to play its DefaultTalk, which
+  Kawari doesn't, and the player is stuck in the event. No drop-in sets 0x4 now (the guards are decorative instead,
+  differently from retail: see Combat).
 * `stationary` in the drop-ins came from a one-off scan of the captures; `questkit chronofoil --dropin` doesn't write it
   yet. Guards don't attack monsters that come near them, as retail's do.
 * To Guard a Guardian: which six Ixali come first is a guess from where they stand. Where the navmesh has holes,
