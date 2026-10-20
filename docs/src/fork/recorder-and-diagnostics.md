@@ -141,6 +141,22 @@ Read them with `questkit chronofoil` ([questkit](questkit.md#chronofoil), [Outsi
 New captures go in a new release the same way (`gh release create <tag> <files> --repo FrameEnder/kawari-diagnostics`);
 censor them first when they might ever be shared beyond this repository.
 
+**After a game patch** Chronofoil stops until its author releases it again: its manifest names the game version it's
+for (Dalamud loads no plugin made for an older game), and it takes the packet scrambler's tables for the running
+version from Unscrambler, whose `ForGameVersion` throws for a version it doesn't know as capturing starts. Unscrambler
+usually has the new tables first. On 7.57 hotfix 1 (2026.10.16), Unscrambler had them on 2026-10-20 (`56afde3`) while
+Chronofoil 1.0.4.18 was still 1.0.4.17's code (`applicable_version: 2026.10.06`, Unscrambler 7.57.0); its four hook
+signatures still matched. The diagnostics repository's **Build Chronofoil for the current game** workflow builds it from
+source against Unscrambler's source for a given version, to load as a dev plugin meanwhile
+(`notes/chronofoil-build.md` there).
+
+**The Recorder and the Probe** hook through FFXIVClientStructs, which comes with Dalamud, so they follow Dalamud's
+updates without a rebuild. On 2026.10.16 every signature they use matched once with the ClientStructs of Dalamud
+15.0.3.9 (`dd57986`); `HandleMapEffectPacket` and `HandlePrepareZoningPacket` had needed new ones that day, so before
+that Dalamud the Recorder's *Map effects* hook failed (the Battles tab's Hooks shows it). Of ClientStructs' 2,449
+signatures, four didn't match 2026.10.16 once (AtkServer.SetDrawState, RenderTargetManager.Instance,
+InventoryItem.GetCrafterContentId, Telepo.UpdateAetheryteList); none are used.
+
 ## Research notes (`notes/`)
 
 Analyses of recordings for content not implemented yet; see [Research notes](research.md).
