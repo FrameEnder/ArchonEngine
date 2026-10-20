@@ -15,7 +15,7 @@ add one when something is found.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
 * Limsa Lominsa has only upstream's opening, checked against the client's script but not retail: the client's
   sequence 1 (riding the Crow's Lift with Grehfarr, UI8AL/BitFlag8 1) is skipped, since accepting goes straight to 255.
-  Ul'dah's quests stop after **A Royal Reception** (552): **The Ul'dahn Envoy** (528), which **Call of the Sea** (673) needs, isn't scripted yet. Its Pugilist and
+  Ul'dah's story stops after **Call of the Sea** (673), which hands over to Limsa Lominsa. The Ul'dahn Envoy's (528) later ticketer flights (Elyenora in sequences 4–255, L'nophlo in 8–255: a yes/no and an airship cutscene) send you to Limsa Lominsa's (POPRANGE1) or Gridania's (POPRANGE4) arrival from the client script's cutscene IDs only, unseen on retail; its POPRANGE2/3/5 are placed by order and retail's positions. Its Pugilist and
   Thaumaturge **Close to Home** (569, 570) come from their client scripts only: no retail capture, and their replay
   fixtures are 568's with their ITEM0 and ACTOR1 (ACTOR1's layout taken from the quest's todo location).
 * Quest-spawned enemies (307's coblyns, 503's marshlights, 3853's goobbue) lack the quest fields retail's SpawnNpc gives them (Bob's
@@ -44,6 +44,9 @@ add one when something is found.
   weaponskill, then 0.56, 0.11…, never below 0.1). Ranged classes' auto-attacks are action 7 at 25 yalms (Sapphire's;
   retail's Shot, 8, isn't in Bob's captures); damage types for classes other than Gladiator, Conjurer and White Mage
   come from their weapons; NPCs without a recorded hitbox count as 1.5 yalms for auto-attacks.
+* PrepareZoning for quest moves goes out with hide_character 0 and flags 0; retail sent hide 1 with flags 1
+  (HIDE_TERRITORY_NAME) for moves within a zone, 9 for airship flights and 8 for the warp NPCs (Bob's 2026-10-18
+  capture, The Ul'dahn Envoy), so Kawari probably shows the territory name on in-zone loading screens. Every quest.
 * NPC area attacks show their damage on the others they catch only as flying text (a one-target ActionEffect).
 * Oh Captain, My Captain (quest battle 39): Fufulupa's Gut Rip (477; Critical Skill on himself before sequence 5) and
   Baldewyn's Rampart (10, once a run) have no action scripts, so neither is used (Heartstopper's recorded amounts are

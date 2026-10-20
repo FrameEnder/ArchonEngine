@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-20 | — | Quests: A Matter of Tradition (641) checked against its client script.
+| 2026-10-20 | — | Quests: The Ul'dahn Envoy (528), the Ul'dah opening complete; known issues.
+| 2026-10-20 | `771794e` | Quests: A Matter of Tradition (641) checked against its client script.
 | 2026-10-20 | `2a48448` | Quests: 641, A Royal Reception (552), Call of the Sea from Ul'dah (673); known issues.
 | 2026-10-20 | `3566c69` | `master` fast-forwarded to `Latest-Quest` again, after Bob found the quests (334, 336, 628, 551), combat and monsters working (changelog).
 | 2026-10-20 | `f6ff8ea` | Combat: auto-attacks (range, current target, damage type, swing animation); known issues.
@@ -152,7 +153,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | A Matter of Tradition (641) checked against Bob's dump of it: the quest's ACTOR names instead of layout IDs, Owyne's line in sequence 1 (scene 4), Momodi's hand-over window (6) before the reward (7); fixture 641 carries the dump's params. |
+| — | The Ul'dahn Envoy (528) from its client script and Bob's 2026-10-18 capture: the letters, Ul'dah's landing, the gangplank's Waiting bar and flights to Limsa Lominsa and Gridania by pop range, the hand-overs to Zanthael and the silent conjurer; the ticketers' later flights from the client script; fixture 528. |
+| `771794e` | A Matter of Tradition (641) checked against Bob's dump of it: the quest's ACTOR names instead of layout IDs, Owyne's line in sequence 1 (scene 4), Momodi's hand-over window (6) before the reward (7); fixture 641 carries the dump's params. |
 | `2a48448` | Quest 641 (from the capture alone: no dump yet), A Royal Reception (552: the cutscene leaves you in the Hourglass, 178, at POPRANGE0) and Call of the Sea from Ul'dah (673), from Bob's 2026-10-20 dumps and his 2026-10-18 capture; fixtures 641, 552, 673. |
 | `3566c69` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (334, 336, 628, 551, the guards, progress bars, quest battle 38, combos and auto-attacks). |
 | `f6ff8ea` | Player auto-attacks as retail (663 of Bob's measured): they go to the current target, not the one auto-attack was toggled on, only within 3.5 yalms of its hitbox (ranged classes 25), alive, and not while casting; a swing that can't be made waits and comes as soon as it can; the weapon's damage type, a random swing animation, object type 0. Their damage was always applied (the HP update just goes out before the ActionEffect: known issues). |
