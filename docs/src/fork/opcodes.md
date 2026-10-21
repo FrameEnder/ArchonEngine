@@ -26,7 +26,7 @@ upstream's [Opcodes](../opcodes.md) page.
 * In game, `!forkopcodes` lists them; when an unknown client packet has an outstanding entry's size, the log says which
   it probably is.
 
-Since upstream's 7.57h1 (2026.10.16, merged on `upstream-7.57h1`) every entry is found on 2026.10.16 (see
+Since upstream's 7.57h1 (2026.10.16, merged on the `upstream-7.57h1` branch, in `master` since 2026-10-21) every entry is found on 2026.10.16 (see
 [Finding them on 7.57h1](#finding-them-on-757h1) below). Ten have finders, so the startup scan checks them on each
 start and re-finds them after the next patch.
 

@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-21 | — | Known issues (what CI runs where).
+| 2026-10-21 | — | `master` fast-forwarded, `upstream-7.57h1` retired (changelog, known issues, opcodes).
+| 2026-10-21 | `6da62d9` | Known issues (what CI runs where).
 | 2026-10-21 | `bf8ff98` | questkit (older recordings' notice opcodes); known issues (CI's questkit tests).
 | 2026-10-21 | `0cd23fb` | Quests: Sky-high, Thanks a Million, Relighting the Torch, On to the Drydocks (397, 402, 403, 406); known issues.
 | 2026-10-21 | `c747776` | `master` fast-forwarded again (changelog).
@@ -177,13 +178,14 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 ## Kawari (fork)
 
-Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`), and on 2026-10-19 (right after `5b5e91f`, and again right after `6bd4b19` and `511d7e1`), and on 2026-10-20 (right after `666a398`, and again right after `f6ff8ea` and `3851eba`), and on 2026-10-21 (right after `23a4b40`, bringing in the `upstream-7.57h1` work: upstream's 7.57h1 and everything since; and again right after `09088d6`).
+Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`), and on 2026-10-19 (right after `5b5e91f`, and again right after `6bd4b19` and `511d7e1`), and on 2026-10-20 (right after `666a398`, and again right after `f6ff8ea` and `3851eba`), and on 2026-10-21 (right after `23a4b40`, bringing in the `upstream-7.57h1` work: upstream's 7.57h1 and everything since; and again right after `09088d6`, and right after `6da62d9`, when the `upstream-7.57h1` branch was retired: work goes on `Latest-Quest` again).
 
 ### 2026-10-21
 
 | Commit | Change |
 |---|---|
-| — | Known issues: CI's full Rust build runs only on `master`, pull requests and by hand. |
+| — | `master` and `Latest-Quest` fast-forwarded to `upstream-7.57h1` with Bob's OK (397–406, the CI fix), and the `upstream-7.57h1` branch retired: new work goes on `Latest-Quest`. |
+| `6da62d9` | Known issues: CI's full Rust build runs only on `master`, pull requests and by hand. |
 | `bf8ff98` | questkit reads older Recorder exports' notices with that version's saved opcodes (`data/chronofoil_opcodes.json`): it only knew the current version's from `fork_opcodes.yml`, so since 7.57h1's opcodes went in (`85124c4`) five of its own tests failed and CI's "Fork checks" failed on every push. |
 | `0cd23fb` | Limsa Lominsa's Sky-high, Thanks a Million, Relighting the Torch and On to the Drydocks (397, 402, 403, 406) from Bob's dumps and his 2026-10-21 capture, with fixtures; 398 and 404 marked completed with 397 and 402, as retail; the ambushes (drop-in layers `QB_SubSea105_001` in `sea_s1f1`, `QB_SubSea106_001` in `sea_s1f2`). |
 | `c747776` | `master` and `Latest-Quest` fast-forwarded to `upstream-7.57h1` with Bob's OK (466–469 with quest battle 29, emote events, hit results and cast timing, the wander fix). |

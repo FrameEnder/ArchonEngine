@@ -3,7 +3,7 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
-## Upstream 7.57h1 (branch `upstream-7.57h1`)
+## Upstream 7.57h1 (merged into `master` on 2026-10-21)
 
 * Automatic opcodes after a game update ([Fork Opcodes](opcodes.md#every-opcode-after-a-game-update)) haven't run on a
   live update yet, only against Bob's 10.06 and 10.16 executables. About 16 server packets come from candidate lists
