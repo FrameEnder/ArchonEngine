@@ -268,7 +268,11 @@ reads, chat left out), so `compare` and the rest can use it.
   (DirectorVars, the only 24-byte packet starting with a director ID). Every table was checked against the size of
   every packet in Bob's captures of that version; the index warns when packets aren't the size their table says.
   **Before merging upstream's next patch update, run `questkit chronofoil --save-opcodes`**, so captures from the
-  outgoing version stay readable.
+  outgoing version stay readable. Kawari Recorder exports use the saved tables too: their notices' opcodes come from
+  `fork_opcodes.yml` for the current version and from `data/chronofoil_opcodes.json` for older ones
+  (`repo.notice_opcodes`). Until 2026-10-21 it read only `fork_opcodes.yml`, so once 7.57h1's opcodes replaced
+  2026.10.06's every older recording lost its notices and five of questkit's own tests failed in CI (from `85124c4`,
+  2026-10-20, on every push since).
 * About 0.5 s per hour of play: the whole of Bob's four months (42 sessions) index in 25 s.
 * **`--dropin TERRITORY --appends <lgb>`** writes the territory's open-world battle NPCs as a drop-in
   (`chronofoil_dropin.py`): every battle NPC SpawnNpc seen there gives a spawn point with its layout ID, BNpcBase,

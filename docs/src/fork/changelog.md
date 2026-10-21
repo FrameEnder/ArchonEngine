@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-21 | — | Quests: Sky-high, Thanks a Million, Relighting the Torch, On to the Drydocks (397, 402, 403, 406); known issues.
+| 2026-10-21 | — | questkit (older recordings' notice opcodes); known issues (CI's questkit tests).
+| 2026-10-21 | `0cd23fb` | Quests: Sky-high, Thanks a Million, Relighting the Torch, On to the Drydocks (397, 402, 403, 406); known issues.
 | 2026-10-21 | `c747776` | `master` fast-forwarded again (changelog).
 | 2026-10-21 | `09088d6` | Combat: casts land as the bar ends; each hit's result; known issues.
 | 2026-10-21 | `698f0a2` | Combat: wandering's back-and-forth by spots off the navmesh.
@@ -181,7 +182,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Limsa Lominsa's Sky-high, Thanks a Million, Relighting the Torch and On to the Drydocks (397, 402, 403, 406) from Bob's dumps and his 2026-10-21 capture, with fixtures; 398 and 404 marked completed with 397 and 402, as retail; the ambushes (drop-in layers `QB_SubSea105_001` in `sea_s1f1`, `QB_SubSea106_001` in `sea_s1f2`). |
+| — | questkit reads older Recorder exports' notices with that version's saved opcodes (`data/chronofoil_opcodes.json`): it only knew the current version's from `fork_opcodes.yml`, so since 7.57h1's opcodes went in (`85124c4`) five of its own tests failed and CI's "Fork checks" failed on every push. |
+| `0cd23fb` | Limsa Lominsa's Sky-high, Thanks a Million, Relighting the Torch and On to the Drydocks (397, 402, 403, 406) from Bob's dumps and his 2026-10-21 capture, with fixtures; 398 and 404 marked completed with 397 and 402, as retail; the ambushes (drop-in layers `QB_SubSea105_001` in `sea_s1f1`, `QB_SubSea106_001` in `sea_s1f2`). |
 | `c747776` | `master` and `Latest-Quest` fast-forwarded to `upstream-7.57h1` with Bob's OK (466–469 with quest battle 29, emote events, hit results and cast timing, the wander fix). |
 | `09088d6` | Players' casts land when their bar ends again (with the half-second slidecast window back): landing 0.5 s early, as retail's ActionEffect does, applied the damage, death and EXP before the bar had ended, since Kawari applies effects as it sends them and retail's target side waits for the hit (Bob's 2026-10-21 bundle). Results follow every effect by 0.5 s. |
 | `698f0a2` | NPCs walking to a spot stop when the new path's end is no nearer it than where they stand (as near as the navmesh goes): a level 6 pugil by its off-mesh spawn point stepped between two points 0.75 yalms apart every half second for 16 minutes, each one's path ending at the other (Bob's 2026-10-21 bundle). |

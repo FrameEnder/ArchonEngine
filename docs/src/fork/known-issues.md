@@ -388,5 +388,8 @@ Packets whose size on retail isn't what `opcodes.yml` says, from Bob's Chronofoi
 
 * `inventory::equipped::tests::test_item_level` needs a real game install, so `cargo test --workspace` fails without
   one.
+* CI's "Quest replays and scripts" job runs questkit's own tests (`python -m unittest discover tools/questkit/tests`);
+  run them before pushing. They failed from 2026-10-20 (`85124c4`) to 2026-10-21 (see the changelog) without anyone
+  noticing, and "Build and test" is skipped on branches when they fail.
 * Running `cargo fmt` on the workspace reformats upstream files; only check the files you changed
   (`rustfmt --check --edition 2024 <files>`).

@@ -7,6 +7,7 @@ the code it sits next to.
 from __future__ import annotations
 
 import re
+import json
 from pathlib import Path
 
 # tools/questkit/questkit/repo.py -> the repository root
@@ -77,6 +78,16 @@ def notice_opcodes(game_version: str | None) -> set[int]:
         if entry["name"].startswith("EventNotice") and "opcode" in entry:
             if game_version is None or entry.get("found_on") == game_version:
                 found.add(entry["opcode"])
+    if not found and game_version is not None:
+        # An older version: fork_opcodes.yml only has the current one's, so take the opcodes saved for it before the
+        # update (questkit chronofoil --save-opcodes, data/chronofoil_opcodes.json). Without this every recording from
+        # 2026.10.06 lost its notices once 7.57h1's opcodes went in (and questkit's tests failed in CI.)
+        try:
+            saved = json.loads((Path(__file__).parent / "data" / "chronofoil_opcodes.json").read_text())
+        except (OSError, json.JSONDecodeError):
+            saved = {}
+        zone = saved.get("versions", {}).get(game_version, {}).get("ServerZoneIpcType", {})
+        found = {int(opcode) for opcode, entry in zone.items() if entry[0].startswith("EventNotice")}
     return found
 
 
