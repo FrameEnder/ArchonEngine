@@ -1,0 +1,156 @@
+{
+ "quest": 468,
+ "script": "SubSea056_00468",
+ "source": "Bob's Chronofoil capture of the Limsa story (2026-10-21, ee0909d9); scenes and effects from Bob's Chronofoil capture of 2026-10-21",
+ "params": {
+  "ACTOR0": 1002631,
+  "ENEMY0": 348,
+  "ENEMY1": 349,
+  "ITEM0": 2000348,
+  "ACTOR1": 1002626
+ },
+ "steps": [
+  {
+   "talk": 1002631,
+   "layout": 3908017,
+   "what": "ACTOR0",
+   "scenes": [
+    {
+     "scene": 0,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "expect": {
+    "sequence": 1,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "kill": [
+    349,
+    3929955
+   ],
+   "what": "ENEMY1",
+   "expect": {
+    "sequence": 1,
+    "vars": "011000000000",
+    "notices": [
+     [
+      0,
+      [
+       1,
+       3,
+       21002
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "kill": [
+    349,
+    3929959
+   ],
+   "what": "ENEMY1",
+   "expect": {
+    "sequence": 1,
+    "vars": "022000000000",
+    "notices": [
+     [
+      0,
+      [
+       2,
+       3,
+       21002
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "kill": [
+    349,
+    3929955
+   ],
+   "what": "ENEMY1",
+   "expect": {
+    "sequence": 2,
+    "vars": "003000000000",
+    "notices": [
+     [
+      0,
+      [
+       3,
+       3,
+       21002
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 1002631,
+   "layout": 3908017,
+   "what": "ACTOR0",
+   "scenes": [
+    {
+     "scene": 1,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    },
+    {
+     "scene": 2,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 255,
+    "vars": "000000000000",
+    "notices": [
+     [
+      1,
+      []
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 1002626,
+   "layout": 3906890,
+   "what": "ACTOR1",
+   "scenes": [
+    {
+     "scene": 4,
+     "flags": "0x2000",
+     "results": [
+      1,
+      2144,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "expect": {
+    "completed": true,
+    "notices": []
+   }
+  }
+ ]
+}

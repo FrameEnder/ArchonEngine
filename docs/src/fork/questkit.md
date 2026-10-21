@@ -68,6 +68,7 @@ state after it:
 | `{"kill": [base, layout]}` | A battle NPC with this BNpcBase and layout ID died (`onBNpcKill`) |
 | `{"event_item": [item, base], "layout": …}` | A key item used on this NPC or object (`onEventItem`, after the server's EventItem event starts) |
 | `{"range": arg}` | Walked into an event range (`onEnterTrigger`) |
+| `{"emote": [emote, base], "layout": …}` | An emote used on this NPC (`onEmote`, after the server's Emote event starts); `fixture --chronofoil` writes it from retail's EventStart of type 2 |
 | `{"enter_territory": id}` | Zoned in (`onEnterTerritory`) |
 | `{"battle_won": sequence}` | A quest battle was won (the director sets the sequence) |
 | `"expect": {"sequence", "vars", "notices"}`, `{"completed": true}` or `{"accepted": false}` | The state after the step (`accepted: false`: the offer was turned down); `notices` is left out where the recording had no packets |
@@ -331,9 +332,12 @@ It doesn't simulate positions, enmity or who hits whom (the health curves are re
 targeting does), losing, or the NPCs' casts and yells (not compared). The player's health is retail's when the fixture
 has it (`player`, written by `--make` since 2026-10-21: for lines said as it drops), as the last value seen (it
 jumps, with hits and potions, so it isn't interpolated); full otherwise. `tolerances` (by label, e.g.
-`{"talk 86": 4.5}`) gives one event more slack where the runs disagree; `--make` doesn't write it.
+`{"talk 86": 4.5}`) gives one event more slack where the runs disagree; `--make` doesn't write it. NPCs' health is
+interpolated between samples, unless the fixture says `"npc_health": "held"` (written by hand): then it holds until
+the next one, for runs where the player stopped attacking for a while (quest battle 29: interpolating put a 30 % mark
+53 s early). Holding it for every fixture throws Chasing Shadows' and Lurkers in the Grotto's marks off by 3–5 s.
 
-All five quest battles have fixtures from Bob's Chronofoil captures and match. The first run found three of them
+Every quest battle has a fixture from Bob's Chronofoil captures and matches. The first run found three of them
 timed from entering the zone rather than from the fight starting (Chasing Shadows' and Spirithold Broken's sequence 2
 and first lines came 8–10 s late), Sapphire's health marks where retail's differ (Chasing Shadows' second wave at 45 %,
 not 50 %; Spirithold Broken's phases at 70 % and 45 %, not 65 % and 30 %), To Guard a Guardian's last line at 42 %

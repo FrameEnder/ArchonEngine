@@ -229,6 +229,32 @@ impl EventHandler for LuaEventHandler {
         }
     }
 
+    async fn on_emote(
+        &self,
+        _event: &Event,
+        emote: u32,
+        target_id: ObjectTypeId,
+        player: &mut LuaPlayer,
+    ) {
+        let mut run_script = || {
+            self.lua.0.scope(|scope| {
+                let player = scope.create_userdata_ref_mut(player)?;
+                let func: Function = self.lua.0.globals().get("onEmote")?;
+                func.call::<()>((emote, target_id, player))?;
+                Ok(())
+            })
+        };
+        if let Err(err) = run_script() {
+            tracing::warn!(
+                "Error while calling onEmote in {} (does it have one?): {:?}",
+                self.file_name,
+                err
+            );
+            // Don't leave the player stuck in the event.
+            player.finish_event();
+        }
+    }
+
     async fn on_yield(
         &self,
         _event: &Event,

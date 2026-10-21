@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-21 | — | `master` fast-forwarded (changelog).
+| 2026-10-21 | — | Quests: Double Dealing, Loam Maintenance, Plowshares to Swords, Just Deserts (466–469), emotes on an NPC; quest battles: 29; questkit (emote steps, `npc_health`); known issues.
+| 2026-10-21 | `6900080` | `master` fast-forwarded (changelog).
 | 2026-10-21 | `23a4b40` | Party bots: walking to their spots on their own (party bots).
 | 2026-10-21 | `0910f44` | Party bots: walking with you, spawned as chocobo companions (party bots); known issues.
 | 2026-10-21 | `c8d4119` | Party bots kept apart from battle NPCs (party bots); quest battles (35's ally).
@@ -173,7 +174,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | `master` and `Latest-Quest` fast-forwarded to `upstream-7.57h1` with Bob's OK (the Limsa opening through Washed Up, 465, and party bots stage 1 work in game). |
+| — | Limsa Lominsa's Double Dealing, Loam Maintenance, Plowshares to Swords and Just Deserts (466–469) from Bob's dumps and his 2026-10-21 capture, with fixtures; quest battle 29 (the golem fight, layer `QB_SubSea057_001` in `sea_s1f1`, battle fixture). Emotes on an NPC start the quest event that listens for them (`FromServer::EmotedAt`, `GameData::quest_listens_for_emote`, `onEmote`), as retail's EventStart of type Emote. questkit: `emote` fixture steps (and `fixture --chronofoil` writes them), `"npc_health": "held"` in battle fixtures. |
+| `6900080` | `master` and `Latest-Quest` fast-forwarded to `upstream-7.57h1` with Bob's OK (the Limsa opening through Washed Up, 465, and party bots stage 1 work in game). |
 | `23a4b40` | Party bots walk to their formation spots on their own out of combat (`PartyBot::walking_itself`, its own path, ActorMove each tick; NPCs' own walking skips them until they fight): with both steering, a bot reached its spot and was pulled back along its old path, to and fro every half second (Bob's 2026-10-21 bundle). |
 | `0910f44` | Party bots walk with you: a moving spot re-aims the bot's path at most once a second, from where it stands, keeping its step (it used to drop the path every tick while you ran, so bots only set off once you stopped). Bots are spawned as retail's chocobo companions by default, whose nameplates show their names (Bob tried both in game); `kind=partymember` for the old way. |
 | `c8d4119` | Bots' rules are keyed to the bots (`Instance::party_bots`), not to an NPC kind: walking straight without a navmesh path and regenerating between fights check the bot list, `natural_state_of` is upstream's again (bots follow because they're owned), `is_party_bot_kind` is gone. Quest battle 35's ally goes to the boss instead of staying within 3 yalms of you, which in Bob's first run (2026-10-21 bundle, no bots there) had the boss walk over and everyone pile onto him. |

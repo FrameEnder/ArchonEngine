@@ -305,7 +305,10 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
             for layout in alive - not_yet:
                 spec = npcs.get(layout)
                 offset = spawned[layout] - ((spec or {}).get("spawn") or 0.0)
-                pct = _health_at(spec["hp"], t - offset) if spec else 100.0
+                # `"npc_health": "held"`: an NPC's health only changes when it's hit, so it holds between samples
+                # (a run where the player stopped attacking for a while); otherwise it's interpolated.
+                at = _health_then if fixture.get("npc_health") == "held" else _health_at
+                pct = at(spec["hp"], t - offset) if spec else 100.0
                 health[layout] = max(pct, 0.1)
                 info_table[layout] = lua.table_from({"hp": pct, "max_hp": 100, "x": 0, "y": 0, "z": 0})
             player_pct = _health_then(fixture["player"], t) if fixture.get("player") else 100.0

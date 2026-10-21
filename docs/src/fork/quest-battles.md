@@ -216,6 +216,23 @@ player is sent out.
   because Bob stood by the boss there), it stayed by Bob casting from the start, the boss walked over to it and
   everyone piled onto him. The ally now goes to the boss.
 
+### Quest battle 29 — Just Deserts (`content/questbattle/29.lua`)
+
+* Territory 272, taken to be a copy of Middle La Noscea as 252 is (retail's positions are Middle La Noscea's), so the
+  clay golem is layer `QB_SubSea057_001` of the `sea_s1f1` drop-in: layout 4082418, base 549, level 10, 844 HP, display
+  flags 0x40000, at retail's spot; the player starts at (-25.52, 10.87, -439.72), facing 2.49. Bob's Chronofoil capture
+  of 2026-10-21 (`questkit chronofoil --battle 0.11`, territory 272, duty 333, won; he was an arcanist, so his
+  carbuncle, BNpcBase 13498, is in it too). The golem's timeline is Spirithold Broken's (`ClayGolem_549`).
+* Way Down in the Hole's fight with Limsa Lominsa's lines (battle talk 82, 83, 84 under BNpcName 750, no portrait):
+  sequence 2 at the start, 3 five seconds later with NpcYell 122; at 70 % talk 82 and sequence 4, Sand Breath 3.2 s
+  later, sequence 5 8 s after 4, talk 83 and sequence 6 5 s after that; below 45 % sequence 7, then a second later
+  NpcYell 123 and Plaincracker, every 16.3 s from then on (Ul'dah's started at 30 %); below 30 % sequence 8, Sand
+  Breath 2 s later and Plaincracker 6.4 s after it, then every 16.3 s again; below 15 % talk 84 and sequence 9; its
+  health at 0: 2 s later sequence 10, "Duty Complete", scene 10 (0xF8402EFB) and out; the quest moves to 5.
+* `questkit battle-sim 29`: every step within 2 s. Bob stopped attacking twice for about 50 s, so the golem sat at
+  30.1 % for 55 s; interpolating its health between hits put sequence 8 53 s early, so this fixture holds the health
+  between hits (`"npc_health": "held"`, see [questkit](questkit.md#battle-sim)).
+
 ### Quest battle 18 — Way Down in the Hole (`content/questbattle/18.lua`)
 
 * Territory 248, a copy of Central Thanalan (layer `QB_SubWil066_001` of the `wil_w1` drop-in): the clay golem

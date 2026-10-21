@@ -2147,6 +2147,12 @@ pub async fn server_main_loop(
                                     msg,
                                     DestinationNetwork::ZoneClients,
                                 );
+                                // A quest may be waiting for it (retail's EventStart of type Emote follows the emote.)
+                                network.send_to(
+                                    from_id,
+                                    FromServer::EmotedAt(*emote, actor),
+                                    DestinationNetwork::ZoneClients,
+                                );
 
                                 // setup persistence if looping
                                 let emote_mode;

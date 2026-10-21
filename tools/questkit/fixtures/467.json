@@ -1,0 +1,211 @@
+{
+ "quest": 467,
+ "script": "SubSea055_00467",
+ "source": "Bob's Chronofoil capture of the Limsa story (2026-10-21, ee0909d9); scenes and effects from Bob's Chronofoil capture of 2026-10-21",
+ "params": {
+  "ACTOR0": 1002627,
+  "ACTOR1": 1002629,
+  "EOBJECT0": 2001237,
+  "EVENT_ACTION_PROCESS_MIDDLE": 16,
+  "ITEM0": 2000347,
+  "EOBJECT1": 2001238,
+  "EOBJECT2": 2001239,
+  "EVENT_ACTION_SEARCH": 1,
+  "ACTOR2": 1002631,
+  "QST_ACCEPT_CHECK": 66000
+ },
+ "steps": [
+  {
+   "talk": 1002627,
+   "layout": 3906893,
+   "what": "ACTOR0",
+   "scenes": [
+    {
+     "scene": 0,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "expect": {
+    "sequence": 1,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "talk": 1002629,
+   "layout": 3907815,
+   "what": "ACTOR1",
+   "scenes": [
+    {
+     "scene": 1,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 2,
+    "vars": "000000000000",
+    "notices": [
+     [
+      0,
+      []
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 2001239,
+   "layout": 3929268,
+   "what": "EOBJECT2",
+   "scenes": [
+    {
+     "scene": 4,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ]
+    },
+    {
+     "scene": 96,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 2,
+    "vars": "100110000020",
+    "notices": [
+     [
+      1,
+      [
+       1,
+       3,
+       21466
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 2001238,
+   "layout": 3929267,
+   "what": "EOBJECT1",
+   "scenes": [
+    {
+     "scene": 3,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ]
+    },
+    {
+     "scene": 98,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 2,
+    "vars": "201120000060",
+    "notices": [
+     [
+      1,
+      [
+       2,
+       3,
+       21466
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 2001237,
+   "layout": 3929266,
+   "what": "EOBJECT0",
+   "scenes": [
+    {
+     "scene": 2,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ]
+    },
+    {
+     "scene": 100,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 255,
+    "vars": "003000000000",
+    "notices": [
+     [
+      1,
+      [
+       3,
+       3,
+       21466
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 1002631,
+   "layout": 3908017,
+   "what": "ACTOR2",
+   "scenes": [
+    {
+     "scene": 5,
+     "flags": "0x2000",
+     "results": [
+      1,
+      2000347,
+      3,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "scene": 94,
+     "flags": "0x2000",
+     "results": [
+      1,
+      4092,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "expect": {
+    "completed": true,
+    "notices": []
+   }
+  }
+ ]
+}

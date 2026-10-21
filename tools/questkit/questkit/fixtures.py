@@ -11,6 +11,7 @@ A fixture (tools/questkit/fixtures/<quest>.json) is made from a Kawari Recorder 
         {"talk": 1000503, "expect": {"sequence": 1, "vars": "000000000000", "notices": []}},
         {"kill": [12, 3838969], "expect": {...}},
         {"range": 3842570},                         # walking into an event range
+        {"emote": [12, 1002640], "layout": 3929260},  # an emote (its Emote row) on an NPC (base ID)
         {"enter_territory": 148, "expect": {...}},  # zoning in (quests that play a scene on arrival)
         {"battle_won": 4, "expect": {...}},         # a quest battle's director winning it
         {"talk": 1000470, "results": {"24": [1, 0]}, "expect": {"completed": true}},
@@ -59,8 +60,9 @@ from .recording import Recordings
 MERGE_SECONDS = 3.0
 EVENT_ENTER_TERRITORY = 15
 EVENT_WITHIN_RANGE = 10
+EVENT_EMOTE = 2
 AFTER_FINISH = 1.0  # seconds after its event finished that a quest update still belongs to the step
-ACTIONS = ("talk", "kill", "range", "enter_territory", "battle_won")
+ACTIONS = ("talk", "emote", "kill", "range", "enter_territory", "battle_won")
 NOTICE_LEAD = 0.5  # notices arrive just before the quest change they go with
 
 
@@ -303,6 +305,15 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
                 step["enter_territory"] = event.zone
             elif data["type"] == EVENT_WITHIN_RANGE:
                 step["range"] = data["arg"]
+            elif data["type"] == EVENT_EMOTE:
+                # An emote on an NPC: the event's argument is the emote, its actor the NPC.
+                actor = data["actor"]
+                step["layout"] = actor
+                if actor in known:
+                    step["emote"] = [data["arg"], known[actor]]
+                else:
+                    step["todo"] = f"emote {data['arg']} on actor {actor} in territory {event.zone}: its base ID isn't known"
+                    step["_actor"] = actor
             else:
                 step["todo"] = f"event type {data['type']} (argument {data['arg']}) in territory {event.zone}"
         elif kind == "scene" and step is not None:
@@ -357,7 +368,7 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
         if what:
             s["what"] = what
     # The order a step's keys read in.
-    order = ["talk", "layout", "territory", "kill", "range", "enter_territory", "battle_won", "todo", "what", "scenes", "effects",
+    order = ["talk", "emote", "layout", "territory", "kill", "range", "enter_territory", "battle_won", "todo", "what", "scenes", "effects",
              "spawns", "expect"]
     steps = [{k: s[k] for k in order if k in s} | {k: v for k, v in s.items() if k not in order} for s in steps]
     return {

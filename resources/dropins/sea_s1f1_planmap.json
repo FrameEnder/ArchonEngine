@@ -8486,6 +8486,34 @@
                     "rotation": -3.0407
                 }
             ]
+        },
+        {
+            "name": "QB_SubSea057_001",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 549,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 844,
+                        "level": 10,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 30,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262144
+                    },
+                    "layout_id": 4082418,
+                    "position": {
+                        "x": -15.077,
+                        "y": 12.844,
+                        "z": -453.069
+                    },
+                    "rotation": -0.562
+                }
+            ]
         }
     ]
 }

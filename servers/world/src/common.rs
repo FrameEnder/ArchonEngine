@@ -226,6 +226,9 @@ pub enum FromServer {
     /// A key item's cast bar ended (an ActionRequest of type EventItem): the item, and what it was used on. The
     /// zone connection starts its quest's event (type EventItem.)
     EventItemUsed(u32, ObjectTypeId),
+    /// The player used an emote (its Emote row) on an actor: the zone connection starts the quest event that listens
+    /// for it, if one does (type Emote.)
+    EmotedAt(u32, ObjectTypeId),
     /// An enemy's attack interrupted the event action (the progress bar) during a quest event.
     QuestEventActionInterrupted,
     /// Inform the client that another player has dismounted.

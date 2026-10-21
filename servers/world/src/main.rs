@@ -4413,6 +4413,52 @@ async fn process_server_msg(
                         .await;
                 }
             }
+            FromServer::EmotedAt(emote, target) => {
+                // An emote on an NPC or object a quest listens to in its current sequence (the Quest sheet's
+                // listeners of type Emote) starts that quest's event, as on retail (Double Dealing, 466.)
+                let base_id = lua_player
+                    .zone_data
+                    .cached_npc_base_ids
+                    .get(&target.object_id)
+                    .copied()
+                    .or(lua_player
+                        .zone_data
+                        .cached_eobj_base_ids
+                        .get(&target.object_id.0)
+                        .copied());
+                let quests: Vec<(u32, u8)> = lua_player
+                    .player_data
+                    .quest
+                    .active
+                    .0
+                    .iter()
+                    .map(|quest| (quest.id as u32 + 0x10000, quest.sequence))
+                    .collect();
+                let quest = base_id.and_then(|base_id| {
+                    let mut game_data = connection.game_data.lock();
+                    quests.into_iter().find_map(|(quest, sequence)| {
+                        game_data
+                            .quest_listens_for_emote(quest, base_id, sequence)
+                            .then_some(quest)
+                    })
+                });
+                if events.is_empty()
+                    && let Some(quest) = quest
+                    && connection
+                        .start_event(
+                            target,
+                            HandlerId(quest),
+                            EventType::Emote,
+                            emote,
+                            events,
+                            lua_player,
+                        )
+                        .await
+                    && let Some(event) = events.last_mut()
+                {
+                    event.0.on_emote(&event.1, emote, target, lua_player).await;
+                }
+            }
             FromServer::QuestEventActionCast => {
                 if let Some((handler, event)) = events.last() {
                     tracing::info!("Event action finished casting during event {}", event.id);

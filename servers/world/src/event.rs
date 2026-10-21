@@ -52,6 +52,16 @@ pub trait EventHandler: std::fmt::Debug + Send + Sync {
     ) {
     }
 
+    /// The player used an emote on `target_id` (the event was started with type Emote, its argument the emote.)
+    async fn on_emote(
+        &self,
+        event: &Event,
+        emote: u32,
+        target_id: ObjectTypeId,
+        player: &mut LuaPlayer,
+    ) {
+    }
+
     async fn on_yield(
         &self,
         event: &Event,

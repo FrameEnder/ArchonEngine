@@ -85,6 +85,7 @@ Callbacks a quest script can define:
 | `onEventActionCast(player)` | An `event_action` progress bar completed. Not called if it was interrupted. |
 | `onEnterTrigger(player, arg)` | The player walked into one of the quest's event ranges (e.g. `EVENTRANGE0`). |
 | `onEnterTerritory(player)` | Entering a zone where the quest has something to do (e.g. post-battle cutscenes). A script the client starts this for must define it and finish the event; otherwise the error is logged and the client keeps waiting (a fix for that, `02e22b5`, went with the rollback). |
+| `onEmote(emote, target, player)` | The player used an emote (its Emote row) on `BASE_ID`, an NPC or object the quest listens to for emotes in its current sequence (see [Emotes](#emotes-on-an-npc)). |
 | `onBNpcKill(base_id, layout_id, player)` | A battle NPC the player (or their party in the same instance) had enmity with died. `base_id` is the **BNpcBase** ID, which is what `ENEMY*` parameters are (an anole is base 142, name 120). |
 
 ### Notices (the progress pop-up)
@@ -149,6 +150,21 @@ Kawari does this in `server/action.rs` (`start_event_item`, `use_event_item`, th
 an `unimplemented!()` (and any ActionRequest without an Action row an `unwrap`), panicking the world server's task;
 an unknown action is now ignored with a warning. questkit's fixtures replay it as an `event_item: [item, base ID]`
 step.
+
+### Emotes on an NPC
+
+Some quests want an emote used on an NPC (Double Dealing, 466: ACTOR1 won't talk until you do). On retail (Bob's
+Chronofoil capture of 2026-10-21) the server sends the emote as usual (ActorControlTarget, category 290, the emote),
+then starts the quest's event on the NPC: EventStart with **type 2 (Emote) and the emote as its argument** (12 there),
+the quest's scene, EventFinish. The client sends nothing quest-specific; the server knows from the Quest sheet's
+listeners, where event type 2 (`QuestUInt8A`) marks an NPC that takes an emote in that sequence (`ActorSpawnSeq`; the
+listener says no emote, so any emote does).
+
+Kawari: `server/mod.rs` sends the emoting player's connection `FromServer::EmotedAt(emote, target)`; `main.rs` looks
+up the target's base ID and, if no event is running and an active quest listens for emotes on it in its current
+sequence (`GameData::quest_listens_for_emote`), starts that quest's event (type Emote, the emote as its argument) and
+calls `onEmote(emote, target, player)`, with `BASE_ID` the NPC's base ID. questkit's fixtures replay it as an
+`emote: [emote, base ID]` step.
 
 ### Quest-spawned enemies
 
@@ -324,6 +340,10 @@ Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `
 | 462 | On to Summerford | `004/SubSea050_00462` | client script (2026-10-21), Chronofoil capture (2026-10-21) | ACTOR0 (Upper Decks) offers it (scene 0, a yield; the client's empty scene 1, then accepted straight into 255); ACTOR1 at Summerford Farms: the cutscene and reward (scene 2, 0xF8402EFB, a yield with the reward picked). |
 | 463 | Dressed to Call | `004/SubSea051_00463` | client script (2026-10-21), Chronofoil capture (2026-10-21) | As Passing Muster: ACTOR0 offers it (scene 0, accepted into 255); scene 1 checks your gear's item level on the client (checkEquippedItemLevel) and returns 1 and the reward, or 0. |
 | 543 | Lurkers in the Grotto | `005/ManSea005_00543` | client script (2026-10-21), Sapphire, Chronofoil capture (2026-10-21, quest battle lost then won) | ACTOR0 offers it (scene 0, a yield; cutscene 1, sequence 1). The stone monument (EOBJECT0): scene 2, EVENT_ACTION_PROCESS_MIDDLE (16), the quest battle's yes/no (scene 3), all 0x2001; quest battle 35 in territory 252. Winning sets sequence 2 and UI8BH = 1 (ITEM0) in one update; back in Middle La Noscea (TERRITORYTYPE1) the aftermath (scene 4, 0xF8402EFB) sets 255; ACTOR0 takes ITEM0 (scene 5, an NpcTrade) and the reward (6). Retail then sends FinishQuest for 464 too (`mark_quest_completed`: no rewards), which Washed Up checks. |
+| 466 | Double Dealing | `004/SubSea054_00466` | client script (2026-10-21), Chronofoil capture (2026-10-21) | ACTOR0 offers it (scene 0, a yield). ACTOR1 won't talk (scene 1) until you use an emote on him (scene 2, the first emote event: notice 0, sequence 2). EVENTRANGE0: scene 16 (a pop message). ACTOR2..4 in any order: scene 3n + 1, EVENT_ACTION_ (35), scene 3n + 2 (0x2001), notice 1 `[count, 3]`, UI8AL counts, BitFlag8 n - 1; ACTOR1 (scene 24) notice 2; EOBJECT2: scene 28, EVENT_ACTION_PROCESS_MIDDLE, scene 29, ITEM0 (UI8BH, notice 3 `[25919]`); ACTOR5 takes it (trade 33 → 34) for ITEM1 (UI8BL, notice 4); ACTOR0 takes that (trade 36 → reward 37). |
+| 467 | Loam Maintenance | `004/SubSea055_00467` | client script (2026-10-21), Chronofoil capture (2026-10-21) | ACTOR0 offers it (scene 0); ACTOR1 (scene 1) notice 0. EOBJECT0..2 in any order: scene n + 2, EVENT_ACTION_PROCESS_MIDDLE, scene 100 - 2n (0x2001), notice 1 `[count, 3, 21466]`; UI8AH counts, UI8CH the items held, UI8AL/BH/BL and BitFlag8 n + 1 the object; the third leaves UI8BH = 3 in 255. ACTOR2 takes them (trade 5 → reward 94). |
+| 468 | Plowshares to Swords | `004/SubSea056_00468` | client script (2026-10-21), Chronofoil capture (2026-10-21) | ACTOR0 offers it (scene 0). Three kills of ENEMY0 or ENEMY1 (each gave an item on retail: three of ENEMY1), notice 0 `[count, 3, 21002]`, UI8AL counts, UI8BH the items; the third leaves UI8BH = 3 in sequence 2. ACTOR0 takes them (trade 1 → 2, notice 1, 255); ACTOR1 rewards it (scene 4). |
+| 469 | Just Deserts | `004/SubSea057_00469` | client script (2026-10-21), Chronofoil capture (2026-10-21, quest battle won) | ACTOR0 offers it (scene 0, then the cutscene 1, accepted after it). ACTOR1 (2), ACTOR2 (3), ACTOR4 (10, EVENT_ACTION_, 11): notices 0–2, sequences 2–4. ACTOR5: scene 18, EVENT_ACTION_, the quest battle's yes/no (19): quest battle 29 in territory 272; winning sets 5; back in Middle La Noscea the aftermath (26, notice 4, 6); ACTOR0 (27, notice 5, 7; 29, notice 6, 255); ACTOR10 in Limsa Lominsa rewards it (30, 0xF8482EFB; the server grants the unlocks). The other NPCs' one-liners from the client script. |
 | 465 | Washed Up | `004/SubSea053_00465` | client script (2026-10-21), Chronofoil capture (2026-10-21) | ACTOR0 offers it (scene 0, a yield: sequence 1; the client refuses it while QST_ACCEPT_CHECK, 464, is accepted). ACTOR1..5 in any order: ACTORn plays scene n (0x2001, a menu that changes nothing here), notice 0 `[count, 5]`, UI8AL counts, BitFlag8 n; the fifth sets 255. ACTOR0: the reward (scene 6). |
 
 Upstream's own scripts cover the three city openings and the Close to Home offers. Gridania's story from Close to

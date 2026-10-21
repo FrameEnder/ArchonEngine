@@ -2197,6 +2197,20 @@ impl GameData {
         translated_variables
     }
 
+    /// Whether a quest (its Quest row, e.g. 66002) listens for emotes on this NPC or object (its base ID) in this
+    /// sequence: a listener of event type 2 (Emote) in the Quest sheet, as kawari-questdump lists them.
+    pub fn quest_listens_for_emote(&mut self, quest_id: u32, base_id: u32, sequence: u8) -> bool {
+        const EMOTE: u8 = 2; // EventType::Emote
+        let Some(row) = self.quest_sheet.row(quest_id) else {
+            return false;
+        };
+        row.QuestListenerParams.iter().any(|listener| {
+            listener.Listener == base_id
+                && listener.QuestUInt8A == EMOTE
+                && listener.ActorSpawnSeq == sequence
+        })
+    }
+
     /// The unlock links finishing this quest grants: its `REWARD…` parameters (e.g. Spirithold Broken's REWARD0 = 9,
     /// the Recommendations window, and REWARD_LEVE = 5; Close to Home's REWARD_DESION = 1, Return), except the ones
     /// that are amounts (REWARD_GIL…, REWARD_EXP…). The client checks these with IsUnlockLinkUnlocked, e.g.
