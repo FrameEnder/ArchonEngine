@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-21 | — | Combat: each hit's result (EffectResultBasic, the effect's global sequence); known issues.
+| 2026-10-21 | — | Combat: wandering's back-and-forth by spots off the navmesh.
+| 2026-10-21 | `965778a` | Combat: each hit's result (EffectResultBasic, the effect's global sequence); known issues.
 | 2026-10-21 | `c6fdd57` | Quests: Double Dealing's sack of oranges; known issues.
 | 2026-10-21 | `d6a6692` | Quests: Double Dealing's ambush; known issues.
 | 2026-10-21 | `1102de5` | Quests: Double Dealing, Loam Maintenance, Plowshares to Swords, Just Deserts (466–469), emotes on an NPC; quest battles: 29; questkit (emote steps, `npc_health`); known issues.
@@ -177,7 +178,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Each hit's result as retail sends it: EffectResultBasic from the target with its HP 0.5 s after the ActionEffect (1.0 s for a player's cast), and EffectResults under the ActionEffect's own global sequence (they had the next one). The client waits for it, so a spell's damage only showed when the next spell's effect came (Bob's 2026-10-21 bundle). |
+| — | NPCs walking to a spot stop when the new path's end is no nearer it than where they stand (as near as the navmesh goes): a level 6 pugil by its off-mesh spawn point stepped between two points 0.75 yalms apart every half second for 16 minutes, each one's path ending at the other (Bob's 2026-10-21 bundle). |
+| `965778a` | Each hit's result as retail sends it: EffectResultBasic from the target with its HP 0.5 s after the ActionEffect (1.0 s for a player's cast), and EffectResults under the ActionEffect's own global sequence (they had the next one). The client waits for it, so a spell's damage only showed when the next spell's effect came (Bob's 2026-10-21 bundle). |
 | `c6fdd57` | Double Dealing (466): the sack of oranges in sequence 4 is EOBJECT0 (it was taken for EOBJECT2, so talking to it did nothing: Bob's 2026-10-21 bundle, Kuina stuck in sequence 4); EOBJECT2 is accepted too. |
 | `d6a6692` | Double Dealing (466): walking into EVENTRANGE0 brings out its two ambushers after scene 16, as on retail (the capture's SpawnNpcs: layouts 3931777/9, BNpcBase 52, level 5, 91 HP), in drop-in layer `QB_SubSea054_001` with a timeline (`DoubleDealingAmbusher_52`); the first build only played the scene (Bob's 2026-10-21 bundle). |
 | `1102de5` | Limsa Lominsa's Double Dealing, Loam Maintenance, Plowshares to Swords and Just Deserts (466–469) from Bob's dumps and his 2026-10-21 capture, with fixtures; quest battle 29 (the golem fight, layer `QB_SubSea057_001` in `sea_s1f1`, battle fixture). Emotes on an NPC start the quest event that listens for them (`FromServer::EmotedAt`, `GameData::quest_listens_for_emote`, `onEmote`), as retail's EventStart of type Emote. questkit: `emote` fixture steps (and `fixture --chronofoil` writes them), `"npc_health": "held"` in battle fixtures. |

@@ -83,6 +83,9 @@ const HOME_DISTANCE: f32 = 3.0;
 const ARRIVE_DISTANCE: f32 = 0.5;
 /// Path points closer than this (yalms, across the ground) to where an NPC stands are where it already is.
 const MIN_STEP: f32 = 0.05;
+/// A path that ends less than this much nearer (yalms, across the ground) to an NPC's spot than where it stands gets it
+/// no closer: it has arrived.
+const NO_CLOSER_MARGIN: f32 = 0.1;
 
 /// The distance between two points across the ground: the navmesh's heights are a little off the NPCs' (a quarter
 /// yalm on a flat test mesh), so a path to where it stands starts that far above it.
@@ -667,10 +670,18 @@ pub fn npc_behavior(
                         // mesh is eroded), and the path there then starts at the nearest navmesh point and comes
                         // back, so being there is what counts; that walked a Brass Blade by Horizon out and back
                         // every half second, forever (2026-10-20 bundle.)
+                        // And a path whose end is no nearer the spot than where it stands gets it no closer: that's as
+                        // near as the navmesh goes. From each of two points by a level 6 pugil's spot (its spawn
+                        // point, off the mesh) the path's end was the other one, 0.75 yalms off, so it stepped between
+                        // them every half second for 16 minutes (Bob's 2026-10-21 bundle.)
+                        let no_closer = path.back().is_some_and(|end| {
+                            flat_distance(*end, goal) + NO_CLOSER_MARGIN
+                                >= flat_distance(current_pos, goal)
+                        });
                         let arrived = matches!(current_target, NpcTarget::Position(_))
                             && !matches!(state, NpcState::OnPath { .. })
                             && (flat_distance(current_pos, goal) <= ARRIVE_DISTANCE
-                                || (found_path && path.is_empty()));
+                                || (found_path && (path.is_empty() || no_closer)));
                         if arrived {
                             reset_target_for_path = true;
                             path.clear();
