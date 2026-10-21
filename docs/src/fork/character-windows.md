@@ -163,10 +163,15 @@ in `volatile.adventurer_plate_saved` (migrations `update-2026-10-16-2_adventurer
 and logs the section ("Adventurer plate saved (section N)"). AdventurerPlate sends them back with the character's
 account ID and sex and the saved time (0 if never). Before, Kawari sent account 0, sex 1 (so male characters' plates
 said female) and the current time as the timestamp, and echoed the client's `unk14`. Kawari has no free companies,
-so the crest and FC name are empty. A character who never saved one gets upstream's starting design around their
-look and gear. The level is the class/job's own (upstream sent 100). Upstream's field list had no base plate, so its
-glasses were two bytes off; the starting design puts base plate 78 and decorations 18, 8, 28, 339 where the client's
-own save has them. `adventurer_plate_layout` (`core/src/ipc/zone/server/mod.rs`) checks the offsets.
+so the crest and FC name are empty. The level is the class/job's own (upstream sent 100).
+
+**A plate never saved** is sent as 188 zero bytes (version 0), as retail sent a brand-new character's (Bob's capture of
+the Limsa opening, 2026-10-20: CharaCardData all zero, timestamp 0, no comment); the client then makes its own
+starting design from the character when the window opens, and the first save (section 1) sends it: version 4, zoom
+160, white directional and grey ambient light, banner timeline 1, decoration 1, background 8, frame 1, the
+character's customize data and gear. Kawari used to send upstream's made-up design instead (expression 22, base plate
+78, active hours, play styles, preferred job 38). `CharaCardData::never_saved` (test `never_saved_is_zeroes`).
+`adventurer_plate_layout` (`core/src/ipc/zone/server/mod.rs`) checks the offsets.
 
 ## Recommendations
 

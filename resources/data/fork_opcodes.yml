@@ -236,8 +236,9 @@ ServerZoneIpcType:
   how_to_find: On retail with the Kawari Recorder or Chronofoil, buy something on the marketboard - the 16-byte packet after the inventory updates (item ID, then quantity.)
 - name: EventNotice2
   comment: A notice from an event with up to 2 arguments, e.g. a quest's progress pop-up as an enemy is defeated.
-  # 386 on 2026.10.06; 467 on 2026.10.16 (one of the five notice opcodes (467, 561, 834, 927, 928) - see below.)
-  opcode: 467
+  # 386 on 2026.10.06; 834 on 2026.10.16 (one of the five notice opcodes (467, 561, 834, 927, 928) - see below; Bob's
+  # Chronofoil capture of 2026-10-20 has the 16-byte notices as 834: Close to Home's, and the aetheryte's.)
+  opcode: 834
   size: 16
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with the Kawari Recorder, kill an enemy a quest counts (e.g. You Shall Not Trespass) - its pop-up is this packet, sent to the quest's handler with 2 args or fewer.
@@ -246,13 +247,14 @@ ServerZoneIpcType:
   # this one is still among them); a recording says which size is which. The client doesn't need to know: in
   # 2026.10.16's zone dispatcher all five cases are the same code, which reads the handler ID, notice ID, argument count
   # and arguments from the packet (offsets 0x10, 0x14, 0x15, 0x18 with the IPC header) - so any two of them show
-  # notices correctly. Replace 467 and 561 with the right ones when a 2026.10.16 recording has them.
+  # notices correctly. 2026.10.16's are from a recording (see the comments on the opcodes).
   - handler:
       pattern: 41 0F B6 D9 49 8B F8 0F B6 F2 8B E9 E8 ?? ?? ?? ?? 4C 8B CF 88 5C 24 20 44 0F B6 C6 8B D5 48 8B C8 E8
 - name: EventNotice4
   comment: A notice from an event with 3 or 4 arguments.
-  # 210 on 2026.10.06; 561 on 2026.10.16 (one of the five notice opcodes (467, 561, 834, 927, 928) - see EventNotice2.)
-  opcode: 561
+  # 210 on 2026.10.06; 467 on 2026.10.16 (one of the five notice opcodes (467, 561, 834, 927, 928) - see EventNotice2;
+  # the 24-byte notices are 467 in Bob's Chronofoil capture of 2026-10-20, with 3 arguments.)
+  opcode: 467
   size: 24
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with the Kawari Recorder, a quest notice with 3 arguments (e.g. in Salvaging the Scene) - sent to the quest's handler.

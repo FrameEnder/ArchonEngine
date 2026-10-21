@@ -1,17 +1,17 @@
 -- Quest: Close to Home (Limsa Lominsa), for Arcanists
 -- NOTE: ManSea002_00108 is the same quest for Marauders (another ITEM0 and guild, ACTOR2); keep the two in sync.
 --
--- Checked against the client's quest script (kawari-questdump) only; no retail recording of this version. It is laid
--- out like Ul'dah's ManWil002_00568 (checked against retail) with other scene numbers and its trade and talk the other
--- way round, so the flags, the attunement and the notices are 568's:
--- Sequence 0:   ACTOR0 offers the quest (scene 0), then explains it (scene 1, which accepts it on the client.)
---               Accepting moves you from the opening's Upper Decks into the real one (TERRITORY_UPPER_DECKS) and gives
---               you ITEM0 to deliver (UI8CH = 1, GetEventItems.)
+-- Checked against the client's quest script (kawari-questdump) and, for the Arcanists' version (109), Bob's Chronofoil
+-- capture of the Limsa opening on retail (2026-10-20): scenes, flags, variables, the attunement and the notices. It is
+-- laid out like Ul'dah's ManWil002_00568 with other scene numbers and its trade and talk the other way round.
+-- Sequence 0:   ACTOR0 offers the quest (scene 0), then explains it (scene 1, which accepts it on the client), giving
+--               you ITEM0 to deliver (UI8CH = 1, GetEventItems.) Unlike Gridania and Ul'dah, accepting doesn't move
+--               you out of the opening's zone (181): quest 111's exit does that, into the Lower Decks (retail.)
 -- Sequence 1:   three objectives, in any order (IsTodoChecked and IsAcceptEvent):
 --                 * attune to the aetheryte (AETHERYTE0, scene 2 then 3)  -> UI8BL = 1, BitFlag8 1, notice 0
 --                 * hand ITEM0 to ACTOR1 (trade scene 4, then scene 5)    -> UI8BH = 1, BitFlag8 2, notice 1
 --                 * visit the guild (ACTOR2, scene 6)                     -> UI8AL = 1, BitFlag8 3, notice 2
---               UI8AH counts the objectives done, as retail does in the other cities' versions. The last one clears
+--               UI8AH counts the objectives done (retail). The last one clears
 --               the variables and moves to sequence 255.
 -- Sequence 255: report to ACTOR3 (scene 7) to finish.
 
@@ -24,14 +24,10 @@ SCENE_TRADE_OK = 5
 SCENE_GUILD = 6
 SCENE_FINISH = 7
 
--- One notice per objective (its todo), with no arguments, as retail sends them in the other cities' versions.
+-- One notice per objective (its todo), with no arguments, as retail sends them (109's capture.)
 NOTICE_ATTUNED = 0
 NOTICE_DELIVERED = 1
 NOTICE_GUILD = 2
-
--- The client's script has no TERRITORYTYPE0. ACTOR0 stands in the opening's zone (181) where ACTOR3 stands in the
--- Upper Decks (Sapphire's ENpc positions: the same spot), so accepting moves you there, as in the other cities.
-TERRITORY_UPPER_DECKS = 128
 
 -- Attuning, as retail did it in ManWil002_00568 (Bob's Chronofoil capture of 2026-10-18): the aetheryte's own event
 -- nested in the quest's, with its condition, and EventAction 19 (the attunement and its 5 s bar); when the bar ends,
@@ -139,12 +135,6 @@ function sceneFinished(scene, results, player)
         player:accept_quest(EVENT_ID)
         player:quest_sequence(EVENT_ID, 1)
         player:set_quest_var(EVENT_ID, 2, 0x10) -- UI8CH = 1: ITEM0, the delivery
-
-        -- Just like in retail, "seamlessly" transition them to the real zone:
-        local old_position = player.position
-        local old_rotation = player.rotation
-        local position = { x = old_position.x, y = old_position.y, z = old_position.z }
-        player:change_territory(TERRITORY_UPPER_DECKS, position, old_rotation)
     elseif scene == SCENE_AETHERYTE_WAIT then
         play(player, SCENE_AETHERYTE, CUTSCENE_FLAGS)
         return

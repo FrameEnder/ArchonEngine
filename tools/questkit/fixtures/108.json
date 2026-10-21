@@ -1,7 +1,7 @@
 {
   "quest": 108,
   "script": "ManSea002_00108",
-  "source": "adapted from 124's retail fixture and the client script; no retail recording of this version",
+  "source": "adapted from 109's retail fixture (Bob's Chronofoil capture of the Limsa opening, 2026-10-20) and the client script; no retail recording of this version",
   "params": {
     "ACTOR0": 1002697,
     "ITEM0": 2000104,
@@ -30,9 +30,6 @@
         {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
         {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]}
       ],
-      "effects": [
-        {"zone": 128}
-      ],
       "expect": {"sequence": 1, "vars": "000010000000", "notices": []}
     },
     {
@@ -52,7 +49,7 @@
       "talk": 1001217,
       "what": "ACTOR1",
       "scenes": [
-        {"scene": 4, "flags": "0x2000", "results": [1, 2000104, 1, 0, 0, 0]},
+        {"scene": 4, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
         {"scene": 5, "flags": "0xf8402efb", "results": [0, 0]}
       ],
       "expect": {"sequence": 1, "vars": "2011000000c0", "notices": [[1, []]]}

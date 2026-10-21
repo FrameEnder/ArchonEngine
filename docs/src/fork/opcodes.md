@@ -35,8 +35,8 @@ start and re-finds them after the next patch.
 | Name | Direction | Opcode | Earlier | Size | What it is |
 |---|---|---|---|---|---|
 | EventReturnHandler16 | client → server | 555 | 856 (09.15), 200 (10.06) | 72 | A scene finished with up to 16 results, e.g. a three-item NPC trade returns 12 (Surveying the Damage). Finder. |
-| EventNotice2 | server → client | 467 | 386 (10.06) | 16 | A quest/event notice with 0–2 arguments: the progress pop-up. Finder (confirms only, see below). |
-| EventNotice4 | server → client | 561 | 210 (10.06) | 24 | The same with 3–4 arguments. Finder (confirms only). |
+| EventNotice2 | server → client | 834 | 386 (10.06) | 16 | A quest/event notice with 0–2 arguments: the progress pop-up. Finder (confirms only, see below); 10.16's from a retail capture. |
+| EventNotice4 | server → client | 467 | 210 (10.06) | 24 | The same with 3–4 arguments. Finder (confirms only); 10.16's from a retail capture. |
 | SetAdventurerPlatePortrait | client → server | 431 | 107 (10.06) | 56 | The client sets its adventurer plate's portrait. Finder: the sender writing the opcode and the 72-byte size. |
 | UpdateAdventurerPlate | client → server | 350 | 795 (10.06) | 200 | The client saves its adventurer plate (CharaCardData). Finder: the sender writing the opcode, then the 216-byte size. See [Adventurer Plate](character-windows.md#adventurer-plate). |
 | MarketBoardOpened | client → server | 319 | 156 (09.15), 683 (10.06) | 8 | The marketboard window opened; answered with an empty search result. Seen in Bob's 2026-10-20 bundle as the window opened. Finder. |
@@ -83,7 +83,8 @@ kept; the method is below):
 * **The notices**: in 10.16's dispatcher the five notice cases (467, 561, 834, 927, 928) are one block that reads the
   handler ID, notice ID, argument count and the arguments from the packet (+0x10, +0x14, +0x15, +0x18 with the IPC
   header). The client doesn't use the opcode to know the size, so any two of the five show notices correctly; 467 and
-  561 were taken. A 7.57h1 recording would say which are retail's.
+  561 were taken at first. Bob's capture of the Limsa opening (2026-10-20) has retail's: the 16-byte notices (Close to
+  Home's, the aetheryte's) are **834**, the 24-byte ones (quest 111's, three arguments) **467**.
 
 Four new finders (MarketBoardOpened, MarketBoardPurchaseHandler, ActionRequestGroundTargeted, SetRetainerAppearance)
 are each unique in both versions and read 10.06's opcode from 10.06's executable and 10.16's from 10.16's. The

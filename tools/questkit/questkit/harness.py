@@ -81,9 +81,12 @@ def _values(table) -> list:
         return list(table.values())
 
 
-def _effect(task: Task) -> dict | None:
+def _effect(task: Task, territory: int | None = None) -> dict | None:
     """What a task does outside the quest, in a fixture's "effects" terms: a zone change (to a quest battle too), an
-    aetheryte attuned, an unlock."""
+    aetheryte attuned, an unlock. `territory` is where the step happens (its fixture's `territory`): moving the player
+    to a pop range there (`move_to_pop_range`) is retail's PrepareZoning to the same territory."""
+    if task.kind == "call" and task.args and task.args[0] == "move_to_pop_range" and territory is not None:
+        return {"zone": int(territory)}
     if task.kind == "join_battle":
         return {"zone": int(task.args[1])}
     if task.kind == "aetheryte":
@@ -206,6 +209,7 @@ class Harness:
         self.lua = None
         self.copy = World()
         self.tasks: list[Task] = []
+        self.territory: int | None = None  # where the current step happens, when its fixture says
 
     def quest_number(self, value) -> int:
         value = int(value)
@@ -302,7 +306,7 @@ class Harness:
                 elif task.kind in ("call", "join_battle"):
                     outcome["calls"].append(task.kind if task.kind != "call" else task.args[0])
                     nested = nested or (task.kind == "call" and task.args[0] == "start_event")
-                effect = _effect(task)
+                effect = _effect(task, self.territory)
                 if effect is not None:
                     outcome["effects"].append(effect)
             if outcome["finished"] and (scene is not None or action):

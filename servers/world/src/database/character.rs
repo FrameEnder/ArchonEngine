@@ -794,10 +794,6 @@ impl WorldDatabase {
             .select(Volatile::as_select())
             .first(&mut self.connection)
             .unwrap();
-        let inventory = Inventory::belonging_to(&for_character)
-            .select(Inventory::as_select())
-            .first(&mut self.connection)
-            .unwrap();
         let classjob = ClassJob::belonging_to(&for_character)
             .select(ClassJob::as_select())
             .first(&mut self.connection)
@@ -821,105 +817,12 @@ impl WorldDatabase {
             .and_then(|index| classjob.levels.0.get(index as usize).copied())
             .unwrap_or(1);
 
-        // Read before the starting design below takes the customize data.
         let sex = customize.chara_make.customize.gender as u8;
 
-        // What the plate shows: as the client last saved it (UpdateAdventurerPlate), or upstream's starting design
-        // around the character's look and gear if it never has.
-        let chara_card =
-            CharaCardData::from_bytes(&volatile.adventurer_plate.data).unwrap_or_else(|| {
-                CharaCardData {
-                    version: 4,
-                    expression: 22,
-                    camera_zoom: 94,
-                    directional_lighting_color_red: 118,
-                    directional_lighting_color_green: 54,
-                    directional_lighting_color_blue: 0,
-                    directional_lighting_color_brightness: 199,
-                    ambient_lighting_color_red: 126,
-                    ambient_lighting_color_green: 103,
-                    ambient_lighting_color_blue: 255,
-                    ambient_lighting_color_brightness: 42,
-                    class_job_id: classjob.current_class as u8,
-                    customize: customize.chara_make.customize,
-                    stain_ids1: [
-                        inventory.contents.equipped.main_hand.stains[0],
-                        inventory.contents.equipped.off_hand.stains[0],
-                        inventory.contents.equipped.head.stains[0],
-                        inventory.contents.equipped.body.stains[0],
-                        inventory.contents.equipped.hands.stains[0],
-                        inventory.contents.equipped.legs.stains[0],
-                        inventory.contents.equipped.feet.stains[0],
-                        inventory.contents.equipped.ears.stains[0],
-                        inventory.contents.equipped.neck.stains[0],
-                        inventory.contents.equipped.wrists.stains[0],
-                        inventory.contents.equipped.left_ring.stains[0],
-                        inventory.contents.equipped.right_ring.stains[0],
-                    ],
-                    gear_visibility_flag: 5,
-                    top_border: 30,
-                    bottom_border: 0,
-                    preferred_class_job_id: 38,
-                    active_hours_weekdays: [15, 0, 240],
-                    active_hours_weekends: [15, 240, 255],
-                    play_styles: [14, 1, 20, 25, 31, 0],
-                    flags: 0,
-                    unk13: 0,
-                    privacy_flags: 0,
-                    stain_ids2: [
-                        inventory.contents.equipped.main_hand.stains[1],
-                        inventory.contents.equipped.off_hand.stains[1],
-                        inventory.contents.equipped.head.stains[1],
-                        inventory.contents.equipped.body.stains[1],
-                        inventory.contents.equipped.hands.stains[1],
-                        inventory.contents.equipped.legs.stains[1],
-                        inventory.contents.equipped.feet.stains[1],
-                        inventory.contents.equipped.ears.stains[1],
-                        inventory.contents.equipped.neck.stains[1],
-                        inventory.contents.equipped.wrists.stains[1],
-                        inventory.contents.equipped.left_ring.stains[1],
-                        inventory.contents.equipped.right_ring.stains[1],
-                    ],
-                    unk14: 0,
-                    banner_timeline: 5,
-                    animation_progress: 340,
-                    head_direction_y: 44994,
-                    head_direction_x: 45771,
-                    eye_direction_y: 45293,
-                    eye_direction_x: 46485,
-                    camera_position_x: 13398,
-                    camera_position_y: 44758,
-                    camera_position_z: 14135,
-                    camera_target_x: 11330,
-                    camera_target_y: 44393,
-                    camera_target_z: 42093,
-                    image_rotation: 4,
-                    directional_lighting_vertical: 17,
-                    directional_lighting_horizontal: 65442,
-                    banner_decoration: 1,
-                    banner_bg: 5,
-                    banner_frame: 2,
-                    title: volatile.title as u16,
-                    base_plate: 78,
-                    decorations: [18, 8, 28, 339, 0],
-                    glasses_ids: inventory.equipped_glasses_ids.0.try_into().unwrap(),
-                    unk18: 0,
-                    item_ids: [
-                        inventory.contents.equipped.main_hand.apparent_id(),
-                        inventory.contents.equipped.off_hand.apparent_id(),
-                        inventory.contents.equipped.head.apparent_id(),
-                        inventory.contents.equipped.body.apparent_id(),
-                        inventory.contents.equipped.hands.apparent_id(),
-                        inventory.contents.equipped.legs.apparent_id(),
-                        inventory.contents.equipped.feet.apparent_id(),
-                        inventory.contents.equipped.ears.apparent_id(),
-                        inventory.contents.equipped.neck.apparent_id(),
-                        inventory.contents.equipped.wrists.apparent_id(),
-                        inventory.contents.equipped.right_ring.apparent_id(),
-                        inventory.contents.equipped.left_ring.apparent_id(),
-                    ],
-                }
-            });
+        // What the plate shows: as the client last saved it (UpdateAdventurerPlate), or all zeroes if it never has, as
+        // retail sends a new character's (the client then makes its own starting design from their look and gear).
+        let chara_card = CharaCardData::from_bytes(&volatile.adventurer_plate.data)
+            .unwrap_or_else(CharaCardData::never_saved);
 
         let config = get_config();
         ServerZoneIpcSegment::new(ServerZoneIpcData::AdventurerPlate {

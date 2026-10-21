@@ -75,6 +75,12 @@ impl CharaCardData {
         cursor.into_inner()
     }
 
+    /// The plate of a character who never saved one: all zeroes (version 0), as retail sends it (Bob's Chronofoil
+    /// capture of a new character opening theirs, 2026-10-20). The client makes its own starting design from it.
+    pub fn never_saved() -> Self {
+        Self::from_bytes(&[0; Self::SIZE]).unwrap()
+    }
+
     /// Reads saved bytes back, if they're a whole plate.
     pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
         use binrw::BinRead;
@@ -117,5 +123,14 @@ mod tests {
         let mut out = Cursor::new(Vec::new());
         card.write(&mut out).unwrap();
         assert_eq!(out.into_inner(), bytes);
+    }
+
+    /// A never-saved plate goes out as 188 zero bytes.
+    #[test]
+    fn never_saved_is_zeroes() {
+        assert_eq!(
+            CharaCardData::never_saved().to_bytes(),
+            vec![0u8; CharaCardData::SIZE]
+        );
     }
 }

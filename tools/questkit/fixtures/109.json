@@ -1,7 +1,7 @@
 {
   "quest": 109,
   "script": "ManSea003_00109",
-  "source": "adapted from 124's retail fixture and the client script; no retail recording of this version",
+  "source": "Bob's Chronofoil capture of the Limsa opening (2026-10-20, 857576e6)",
   "params": {
     "ACTOR0": 1002697,
     "ITEM0": 2000105,
@@ -25,18 +25,17 @@
   "steps": [
     {
       "talk": 1002697,
+      "layout": 4102072,
       "what": "ACTOR0",
       "scenes": [
         {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
         {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]}
       ],
-      "effects": [
-        {"zone": 128}
-      ],
       "expect": {"sequence": 1, "vars": "000010000000", "notices": []}
     },
     {
       "talk": 8,
+      "layout": 3693860,
       "what": "AETHERYTE0",
       "scenes": [
         {"scene": 2, "flags": "0x2000", "results": [0, 0]},
@@ -50,15 +49,17 @@
     },
     {
       "talk": 1001217,
+      "layout": 2093197,
       "what": "ACTOR1",
       "scenes": [
-        {"scene": 4, "flags": "0x2000", "results": [1, 2000105, 1, 0, 0, 0]},
+        {"scene": 4, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
         {"scene": 5, "flags": "0xf8402efb", "results": [0, 0]}
       ],
       "expect": {"sequence": 1, "vars": "2011000000c0", "notices": [[1, []]]}
     },
     {
       "talk": 1000895,
+      "layout": 1673275,
       "what": "ACTOR2",
       "scenes": [
         {"scene": 6, "flags": "0x2000", "results": [0, 0]}
@@ -67,6 +68,7 @@
     },
     {
       "talk": 1000972,
+      "layout": 1673081,
       "what": "ACTOR3",
       "scenes": [
         {"scene": 7, "flags": "0xf8402efb", "results": [1, 0, 0, 0], "yield": true}

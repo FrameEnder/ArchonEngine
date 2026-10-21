@@ -64,7 +64,7 @@ state after it:
 
 | Step | Meaning |
 |---|---|
-| `{"talk": base}` | Talk to / examine an NPC or object (the event's `BASE_ID`); `"layout"` gives its layout ID, which the script sees as `target.object_id` (upstream's Ul'dah scripts tell NPCs apart by it) |
+| `{"talk": base}` | Talk to / examine an NPC or object (the event's `BASE_ID`); `"layout"` gives its layout ID, which the script sees as `target.object_id` (upstream's Ul'dah scripts tell NPCs apart by it). `"territory"` says where it happened, written when retail moved the player within that territory (PrepareZoning to the same one), so replay counts a script's `move_to_pop_range` as that zone change. A quest with no dump can have `"talk": 0` (base unknown) when its script compares layout IDs |
 | `{"kill": [base, layout]}` | A battle NPC with this BNpcBase and layout ID died (`onBNpcKill`) |
 | `{"event_item": [item, base], "layout": …}` | A key item used on this NPC or object (`onEventItem`, after the server's EventItem event starts) |
 | `{"range": arg}` | Walked into an event range (`onEnterTrigger`) |

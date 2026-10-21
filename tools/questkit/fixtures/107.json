@@ -1,0 +1,63 @@
+{
+  "quest": 107,
+  "script": "ManSea001_00107",
+  "source": "Bob's Chronofoil capture of the Limsa opening (2026-10-20, 857576e6)",
+  "params": {
+    "ACTOR0": 1001028,
+    "ACTOR1": 1002732,
+    "EOBJECT0": 2001679,
+    "EVENT_ACTION_SEARCH": 1,
+    "EOBJECT1": 2001680,
+    "ACTOR2": 1002697,
+    "POPRANGE0": 4127803,
+    "TERRITORYTYPE0": 181,
+    "OPENING_EVENT_HANDLER": 1245185,
+    "HOWTO_QUEST_ACCEPT": 12,
+    "HOWTO_QUEST_ANNOUNCE": 2,
+    "HOWTO_TODO": 3,
+    "HOWTO_REWARD": 11,
+    "CUT_EVENT": 202,
+    "LOC_ACTOR0": 1002732,
+    "LOC_POS_ACTOR0": 4107186,
+    "HOW_TO_286": 286,
+    "HOWTO_METEOICON": 80
+  },
+  "steps": [
+    {
+      "talk": 1001028,
+      "layout": 4102039,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0xf8482efb", "results": [0, 0]},
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1002732,
+      "layout": 4107186,
+      "territory": 181,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 6, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "effects": [
+        {"zone": 181}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1002697,
+      "layout": 4102072,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 11, "flags": "0xf8402efb", "results": [0, 0]},
+        {"scene": 12, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

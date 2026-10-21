@@ -286,7 +286,7 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
         if kind == "talk":
             close()
             actor = data["actor"]
-            step = {"scenes": [], "effects": [], "notices": []}
+            step = {"scenes": [], "effects": [], "notices": [], "_zone": event.zone}
             if actor in known:
                 step["talk"] = known[actor]
                 step["layout"] = actor
@@ -298,7 +298,7 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
             if step is not None and step.get("_open") and data["type"] == 1:
                 continue  # the talk's own EventStart
             close()
-            step = {"scenes": [], "effects": [], "notices": [], "_open": True}
+            step = {"scenes": [], "effects": [], "notices": [], "_open": True, "_zone": event.zone}
             if data["type"] == EVENT_ENTER_TERRITORY:
                 step["enter_territory"] = event.zone
             elif data["type"] == EVENT_WITHIN_RANGE:
@@ -321,6 +321,10 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
         elif kind in ("zone", "aetheryte", "unlock") and step is not None:
             value = data.get("territory", data.get("aetheryte", data.get("unlock")))
             step["effects"].append({kind: value})
+            if kind == "zone" and value == step.get("_zone"):
+                # Moved within the territory the step happens in (PrepareZoning to the same one): replay needs to
+                # know where that is (a script's move_to_pop_range.)
+                step["territory"] = value
         elif kind in ("update", "finish_quest"):
             # Part of the step while its event is open, or just after it finished (a zone change, then the update.)
             if step is not None and (step.get("_open") or event.t - step.get("_finished", -1e9) <= AFTER_FINISH):
@@ -344,7 +348,7 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
     close()
     _fill_from(steps, previous_steps)
     for s in steps:
-        for key in ("_open", "_changed", "_actor", "_finished"):
+        for key in ("_open", "_changed", "_actor", "_finished", "_zone"):
             s.pop(key, None)
         what = None
         for name, value in params.items():
@@ -353,7 +357,7 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
         if what:
             s["what"] = what
     # The order a step's keys read in.
-    order = ["talk", "layout", "kill", "range", "enter_territory", "battle_won", "todo", "what", "scenes", "effects",
+    order = ["talk", "layout", "territory", "kill", "range", "enter_territory", "battle_won", "todo", "what", "scenes", "effects",
              "spawns", "expect"]
     steps = [{k: s[k] for k in order if k in s} | {k: v for k, v in s.items() if k not in order} for s in steps]
     return {

@@ -255,6 +255,17 @@ def handler(name):
     return f"handler_id: HandlerId {{ type: QUEST, id: {QUEST} }}"
 
 
+class InZoneMoveTest(unittest.TestCase):
+    """Moving the player to a pop range in the zone they're in is retail's PrepareZoning to that same territory: replay
+    counts it as a zone change there when the step says where it happens (Coming to Limsa Lominsa's lift.)"""
+
+    def test_move_to_pop_range(self):
+        from questkit.harness import Task, _effect
+        task = Task("call", "move_to_pop_range", 4127803, True)
+        self.assertEqual(_effect(task, 181), {"zone": 181})
+        self.assertIsNone(_effect(task, None))
+
+
 class CaptureTools(unittest.TestCase):
     def setUp(self):
         self.dir = Path(tempfile.mkdtemp())
