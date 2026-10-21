@@ -1,13 +1,29 @@
 {
   "quest": 111,
-  "script": "ManSeaOpening_00111",
+  "script": "SubSea001_00111",
   "source": "Bob's Chronofoil capture of the Limsa opening (2026-10-20, 857576e6)",
-  "params": {},
+  "params": {
+    "ACTOR0": 1002698,
+    "ACTOR1": 1000969,
+    "EOBJECT0": 2001563,
+    "EVENT_ACTION_PROCESS": 14,
+    "EOBJECT1": 2001564,
+    "EOBJECT2": 2001565,
+    "EOBJECT3": 2001566,
+    "EOBJECT4": 2001567,
+    "EOBJECT5": 2001568,
+    "ITEM0": 2000447,
+    "ACTOR2": 1003604,
+    "POPRANGE0": 4161445,
+    "TERRITORYTYPE0": 129,
+    "QUEST0": 65644,
+    "QUEST1": 65645
+  },
   "steps": [
     {
-      "talk": 0,
+      "talk": 1002698,
       "layout": 4102073,
-      "what": "offerer (base ID unknown: no dump)",
+      "what": "ACTOR0",
       "scenes": [
         {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
         {"scene": 1, "flags": "0x2000", "results": [0, 0]}
@@ -15,9 +31,9 @@
       "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
     },
     {
-      "talk": 0,
+      "talk": 1000969,
       "layout": 2367400,
-      "what": "exit (base ID unknown: no dump)",
+      "what": "ACTOR1",
       "scenes": [
         {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
       ],
@@ -27,9 +43,9 @@
       "expect": {"sequence": 2, "vars": "000000000000", "notices": []}
     },
     {
-      "talk": 0,
+      "talk": 2001563,
       "layout": 4082215,
-      "what": "person 1 (base ID unknown: no dump)",
+      "what": "EOBJECT0",
       "scenes": [
         {"scene": 3, "flags": "0x2001", "results": [0, 0]},
         {"scene": 4, "flags": "0x2001", "results": [0, 0]}
@@ -37,9 +53,9 @@
       "expect": {"sequence": 2, "vars": "011000000080", "notices": [[1, [1, 6, 25002]]]}
     },
     {
-      "talk": 0,
+      "talk": 2001564,
       "layout": 4082216,
-      "what": "person 2 (base ID unknown: no dump)",
+      "what": "EOBJECT1",
       "scenes": [
         {"scene": 5, "flags": "0x2001", "results": [0, 0]},
         {"scene": 6, "flags": "0x2001", "results": [0, 0]}
@@ -47,9 +63,9 @@
       "expect": {"sequence": 2, "vars": "0220000000c0", "notices": [[1, [2, 6, 25002]]]}
     },
     {
-      "talk": 0,
+      "talk": 2001565,
       "layout": 4082217,
-      "what": "person 3 (base ID unknown: no dump)",
+      "what": "EOBJECT2",
       "scenes": [
         {"scene": 7, "flags": "0x2001", "results": [0, 0]},
         {"scene": 8, "flags": "0x2001", "results": [0, 0]}
@@ -57,9 +73,9 @@
       "expect": {"sequence": 2, "vars": "0330000000e0", "notices": [[1, [3, 6, 25002]]]}
     },
     {
-      "talk": 0,
+      "talk": 2001566,
       "layout": 4082218,
-      "what": "person 4 (base ID unknown: no dump)",
+      "what": "EOBJECT3",
       "scenes": [
         {"scene": 9, "flags": "0x2001", "results": [0, 0]},
         {"scene": 10, "flags": "0x2001", "results": [0, 0]}
@@ -67,9 +83,9 @@
       "expect": {"sequence": 2, "vars": "0440000000f0", "notices": [[1, [4, 6, 25002]]]}
     },
     {
-      "talk": 0,
+      "talk": 2001567,
       "layout": 4082219,
-      "what": "person 5 (base ID unknown: no dump)",
+      "what": "EOBJECT4",
       "scenes": [
         {"scene": 11, "flags": "0x2001", "results": [0, 0]},
         {"scene": 12, "flags": "0x2001", "results": [0, 0]}
@@ -77,9 +93,9 @@
       "expect": {"sequence": 2, "vars": "0550000000f8", "notices": [[1, [5, 6, 25002]]]}
     },
     {
-      "talk": 0,
+      "talk": 2001568,
       "layout": 4082220,
-      "what": "person 6 (base ID unknown: no dump)",
+      "what": "EOBJECT5",
       "scenes": [
         {"scene": 13, "flags": "0x2001", "results": [0, 0]},
         {"scene": 14, "flags": "0x2001", "results": [0, 0]}
@@ -87,9 +103,9 @@
       "expect": {"sequence": 255, "vars": "006000000000", "notices": [[1, [6, 6, 25002]]]}
     },
     {
-      "talk": 0,
+      "talk": 1003604,
       "layout": 4069046,
-      "what": "finisher (base ID unknown: no dump)",
+      "what": "ACTOR2",
       "scenes": [
         {"scene": 16, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
         {"scene": 17, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}

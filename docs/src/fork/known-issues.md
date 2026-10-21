@@ -23,17 +23,16 @@ add one when something is found.
 * Gridania's Lancer and Archer **Close to Home** (85, 123) and Limsa Lominsa's Marauder one (108) come from their client
   scripts only, with fixtures adapted from 124's and 109's (no retail recording). Gridania's three still attune the
   simple way (no bar or nested aetheryte event, as 124's 2026-10-14 fixture showed).
-* **Quest 111** (the Limsa opening's way out) was written from Bob's capture alone (no dump): its script's name and
-  parameters aren't known, its NPCs are told apart by layout ID, and what its six people do when talked to twice, or
-  someone declines, isn't recorded (the script just ends the event). Retail sent no AcceptQuest for it, only the
-  journal update; Kawari's `accept_quest` always sends one. Dump it in the Quest Lab to check.
+* **Making a Name** (111) is the only way out of the Limsa opening's zone (181) in Kawari, as in Bob's retail run; if
+  some other exit exists on retail, it isn't recorded. Its ferry back (scene 15, sequence 2) is from the client script
+  only. Retail sent no AcceptQuest for it, only the journal update; Kawari's `accept_quest` always sends one.
 * Retail tells a new Limsa Lominsa character who to talk to next (an unnamed server packet, opcode 533 on 7.57h1:
   a count, then each offer's ID, the NPC's layout ID and the quest, e.g. Close to Home and quest 111 after Coming to
   Limsa Lominsa). Kawari doesn't send it.
 * **The Gridanian Envoy** (507) and **Call of the Sea** (674) were written from Sapphire and the recording without the
   client's script: dump them in the Quest Lab to check the scene numbers. Envoy's arrival positions are Sapphire's.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
-* Limsa Lominsa's story stops after Close to Home (108, 109) and quest 111.
+* Limsa Lominsa's story stops after Close to Home (108, 109) and Making a Name (111).
   Ul'dah's story stops after **Call of the Sea** (673), which hands over to Limsa Lominsa. The Ul'dahn Envoy's (528) later ticketer flights (Elyenora in sequences 4–255, L'nophlo in 8–255: a yes/no and an airship cutscene) send you to Limsa Lominsa's (POPRANGE1) or Gridania's (POPRANGE4) arrival from the client script's cutscene IDs only, unseen on retail; its POPRANGE2/3/5 are placed by order and retail's positions. Its Pugilist and
   Thaumaturge **Close to Home** (569, 570) come from their client scripts only: no retail capture, and their replay
   fixtures are 568's with their ITEM0 and ACTOR1 (ACTOR1's layout taken from the quest's todo location).
