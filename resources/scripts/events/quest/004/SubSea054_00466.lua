@@ -6,7 +6,10 @@
 --               accepted): sequence 1.
 -- Sequence 1:   ACTOR1 won't talk (scene 1); an emote on ACTOR1 (the Quest sheet listens for one; retail's was emote
 --               12) plays scene 2: notice 0, sequence 2.
--- Sequence 2:   walking into EVENTRANGE0 plays scene 16 (the client's pop message; nothing changes). ACTOR2..ACTOR4, in
+-- Sequence 2:   walking into EVENTRANGE0 plays scene 16 (the client's pop message), then brings out ENEMY1 and ENEMY0
+--               (layout IDs: drop-in layer QB_SubSea054_001, with retail's positions, level 5 and 91 HP); killing them
+--               changes nothing in the quest (Bob's capture: retail spawned them as the scene ended, owned by the
+--               player, and sent no update when they died). ACTOR2..ACTOR4, in
 --               any order: ACTORn plays scene 3n + 1 (empty), EVENT_ACTION_ (35, the progress bar), then scene 3n + 2
 --               (they run off), then notice 1 with [count, 3]. UI8AL counts them, BitFlag8 n - 1 marks ACTORn; the
 --               third clears the variables and moves to sequence 3. ACTOR1 has a line meanwhile (scene 18).
@@ -17,7 +20,7 @@
 --               notice 4 [25919], sequence 255.
 -- Sequence 255: hand ITEM1 to ACTOR0 (scene 36, an NpcTrade), then the reward (scene 37, a yield: 1 completes it.)
 -- All scenes as retail played them: the talks with NPCs and objects in sequences 2-4 with HIDE_HOTBAR |
--- NO_DEFAULT_CAMERA, the rest with HIDE_HOTBAR. EOBJECT0, EOBJECT1 and ENEMY0/1 weren't used on retail.
+-- NO_DEFAULT_CAMERA, the rest with HIDE_HOTBAR. EOBJECT0 and EOBJECT1 weren't used on retail.
 
 SCENE_OFFER = 0
 SCENE_WONT_TALK = 1
@@ -152,6 +155,12 @@ function sceneFinished(scene, results, player)
             player:accept_quest(EVENT_ID)
             player:quest_sequence(EVENT_ID, 1)
         end
+    elseif scene == SCENE_RANGE then
+        -- Retail's order: the scene, its end, then the ambush (each is brought out once at a time.)
+        player:finish_event()
+        player:spawn_quest_bnpc(ENEMY1)
+        player:spawn_quest_bnpc(ENEMY0)
+        return
     elseif scene == SCENE_EMOTE then
         player:event_notice(EVENT_ID, NOTICE_EMOTE, {})
         player:quest_sequence(EVENT_ID, 2)

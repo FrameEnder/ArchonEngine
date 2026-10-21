@@ -1,0 +1,10 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "damage_to_players": {
+        "8": 7.5
+    },
+    "comment": "Double Dealing's ambushers (quest 466, drop-in layer QB_SubSea054_001): level 5, 91 HP. From Bob's Chronofoil capture of 2026-10-21: melee auto-attacks (870) for 7-8 against a level 8 arcanist (two misses and two 0s out of nine). Hitbox not recorded."
+}

@@ -48,8 +48,9 @@ add one when something is found.
   (`mark_quest_completed`); why (the sheet, presumably) isn't known.
 * 466–469 (2026-10-21) are untested in game. Their NPCs' and objects' base IDs were matched to retail's layout IDs by
   the scenes they play and the Quest sheet's listeners (the capture doesn't say). Double Dealing's emote takes any
-  emote (the listener names none; Bob used 12); its EOBJECT0, EOBJECT1, ENEMY0/1 and the EVENTRANGE0 exit listener
-  weren't used on retail and do nothing. Plowshares to Swords counts every kill of ENEMY0 or ENEMY1 (each gave an
+  emote (the listener names none; Bob used 12); its EOBJECT0, EOBJECT1 and the EVENTRANGE0 exit listener weren't used
+  on retail and do nothing; its ambushers lack the quest fields retail's SpawnNpc gives them (the player as owner,
+  EVENTRANGE0 in the event field, flags 2), like the other quest-spawned enemies below. Plowshares to Swords counts every kill of ENEMY0 or ENEMY1 (each gave an
   item on retail, three of three; the listeners are drops, so retail may have a chance). Just Deserts' one-liners for
   the other NPCs (client script only) are played with HIDE_HOTBAR, a guess.
 * **Just Deserts' quest battle** (29): territory 272 is taken to have Middle La Noscea's Bg, as 252 (so it loads
