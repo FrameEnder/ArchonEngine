@@ -262,6 +262,11 @@ pub enum LuaTask {
     CancelQuest {
         id: u32,
     },
+    /// Mark a quest completed with no rewards and no scene, as retail does for a quest another one replaces (Lurkers
+    /// in the Grotto, 543, completes 464 with it.)
+    MarkQuestCompleted {
+        id: u32,
+    },
     IncompleteQuest {
         id: u32,
     },

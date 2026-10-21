@@ -47,7 +47,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 |---|---|
 | `spawn_bnpc(layout_id)` | (upstream) Spawns a drop-in NPC. |
 | `set_sequence(n)` | Sets the director's sequence and sends DirectorVars (its first byte is the sequence). The client's own battle script reacts to it (e.g. `OnSequence001` sets the duty objective). `0xFE` = lost, shows "Duty Failed". |
-| `complete_quest_battle(quest_sequence, stay, finish_scene)` | Wins: the quest moves to `quest_sequence`, "Duty Complete" and the victory fanfare (60001) play, then `finish_scene` (default 6, `QUEST_BATTLE_SCENE_FINISH`; retail plays 6 in Chasing Shadows and Leia's Legacy, 11 in To Guard a Guardian, 9 in Spirithold Broken) with `finish_flags` (default 0x2001, HIDE_HOTBAR and NO_DEFAULT_CAMERA, as retail plays all of them but Spirithold Broken's, a cutscene with 0xF8402EFB), and the players go back when it ends. With `stay = true` the players remain (for closing lines) until `leave_quest_battle()`. |
+| `complete_quest_battle(quest_sequence, stay, finish_scene, finish_flags, variables)` | Wins: the quest moves to `quest_sequence` (with `variables`, a table of quest variable index 0–5 to value, in the same journal update: Lurkers in the Grotto's UI8BH, `{ [1] = 0x10 }`, as retail sets it; replay reads the battle script's `QUEST_VARS_AFTER_WIN` for its `battle_won` step), "Duty Complete" and the victory fanfare (60001) play, then `finish_scene` (default 6, `QUEST_BATTLE_SCENE_FINISH`; retail plays 6 in Chasing Shadows and Leia's Legacy, 11 in To Guard a Guardian, 9 in Spirithold Broken) with `finish_flags` (default 0x2001, HIDE_HOTBAR and NO_DEFAULT_CAMERA, as retail plays all of them but Spirithold Broken's, a cutscene with 0xF8402EFB), and the players go back when it ends. With `stay = true` the players remain (for closing lines) until `leave_quest_battle()`. |
 | `leave_quest_battle()` | Sends the players back where they entered. |
 | `fail_quest_battle()` | Loses: players go back where they entered, the quest stays on the same step to retry. Retail sets sequence `0xFE` first and sends them out about 6 s later. |
 | `set_hate(npc, target, amount)` | Gives NPC `npc` enmity on `target` (another NPC's layout ID, or the player when `nil`). Used to make allies and enemies fight each other. |
@@ -191,6 +191,27 @@ player is sent out.
   thaumaturge, then the Brass Blades, then Fufulupa, and casts Cure (about 65) on you (47–70 %) and himself (9–50 %).
   The hits are the capture's (`recorded_amounts`, timelines `BaldewynFourYalms_953`, `FufulupaTheUnbending_954`,
   `SerBaronVonQuiveronIVEsquire_955`, `BrassBlade_956`).
+
+### Quest battle 35 — Lurkers in the Grotto (`content/questbattle/35.lua`)
+
+* Territory 252, a copy of Middle La Noscea (retail's positions in it are Middle La Noscea's, where the quest's stone
+  monument stands, so its NPCs are layer `QB_ManSea005_001` of the `sea_s1f1` drop-in, `nonpop`; that 252 loads that
+  drop-in, i.e. has Middle La Noscea's Bg, is assumed until a run shows it): the ally beside you (4083622, level 50,
+  1372 HP, a conjurer), the boss (4083604, level 12, 6196 HP) and three waves of two (4083606/07 and 4083610/11, level
+  5, 56 HP; 4083608/09, level 6, 75 HP). Layout IDs, levels, HP, positions, display flags (0x40003) and the start spot
+  (-58.21, 25.26, -135.32, facing 0.122) come from Bob's Chronofoil capture of 2026-10-21 (`questkit chronofoil
+  --battle 0.7` and `0.9`, duty 332: lost, won).
+* Sequence 1 before the opening cutscene, 2 when the fight starts; the ally's battle talk 82 (BNpcName 1374, portrait
+  73187) at 10 s; the boss at 65 % (it went 73.5 % → 63.0 % around then; Kawari's first guess, 75 %, came 6 s early in
+  the simulation): sequence 3, the first wave and 83 seven seconds later; at 41 % (45.5 % → 37.2 %): sequence 4 and
+  the second wave; 10 s later (a timer, both runs): sequence 5, the third wave and 85. The ally's 84, 86 and 87 come
+  as the player's health drops below 80 %, 40 % and 15 % (86 came 0.5 s and 4.1 s after the player fell below 40 % in
+  the two runs, so its fixture allows 4.5 s). Everyone down: 2 s later sequence 6, "Duty Complete", scene 6 (0x2001);
+  the quest moves to 2 with UI8BH = 1 (ITEM0). Losing (the player down): 0xFE, out 6 s later.
+* As on retail: the boss fights the ally the whole time and the waves go after you; the ally stays on the boss, then
+  takes the adds, within 3 yalms of you, casting Stone, Aero, Stone II and Aero II from about 5 yalms and Cure on you
+  (17–48 %, every 12–20 s). The hits are the capture's (`recorded_amounts`, timelines `QB35Ally_904`, `QB35Boss_902`,
+  `QB35Add_903`, `QB35Add_905`). `questkit battle-sim 35`: every step within 1 s of the won run but 86.
 
 ### Quest battle 18 — Way Down in the Hole (`content/questbattle/18.lua`)
 

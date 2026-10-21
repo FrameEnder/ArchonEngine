@@ -1,0 +1,79 @@
+{
+  "quest": 465,
+  "script": "SubSea053_00465",
+  "source": "Bob's Chronofoil capture of the Limsa story (2026-10-21, ee0909d9)",
+  "params": {
+    "ACTOR0": 1002626,
+    "ACTOR1": 1002635,
+    "ACTOR2": 1002636,
+    "ACTOR3": 1002637,
+    "ACTOR4": 1002638,
+    "ACTOR5": 1002639,
+    "QST_ACCEPT_CHECK": 66000
+  },
+  "steps": [
+    {
+      "talk": 1002626,
+      "layout": 3906890,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1002639,
+      "layout": 3929256,
+      "what": "ACTOR5",
+      "scenes": [
+        {"scene": 5, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "010000000008", "notices": [[0, [1, 5]]]}
+    },
+    {
+      "talk": 1002635,
+      "layout": 3929252,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 1, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "020000000088", "notices": [[0, [2, 5]]]}
+    },
+    {
+      "talk": 1002636,
+      "layout": 3929253,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "0300000000c8", "notices": [[0, [3, 5]]]}
+    },
+    {
+      "talk": 1002637,
+      "layout": 3929254,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 3, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "0400000000e8", "notices": [[0, [4, 5]]]}
+    },
+    {
+      "talk": 1002638,
+      "layout": 3929255,
+      "what": "ACTOR4",
+      "scenes": [
+        {"scene": 4, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, [5, 5]]]}
+    },
+    {
+      "talk": 1002626,
+      "layout": 3906890,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 6, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

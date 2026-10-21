@@ -266,6 +266,21 @@ class InZoneMoveTest(unittest.TestCase):
         self.assertIsNone(_effect(task, None))
 
 
+class BattleSimPlayerTest(unittest.TestCase):
+    """battle-sim gives a script the player's health as retail's last seen value (it jumps, so no interpolating), and
+    a fixture can give one event more slack than the rest."""
+
+    def test_player_health_and_tolerances(self):
+        curve = [[0.0, 100.0], [93.89, 13.2], [94.15, 100.0]]
+        self.assertEqual(battle_sim._health_then(curve, 94.0), 13.2)
+        self.assertEqual(battle_sim._health_then(curve, 94.2), 100.0)
+        fixture = {"tolerance": 2.0, "tolerances": {"talk 86": 4.5}, "npcs": {},
+                   "events": [[80.9, "talk", 86], [10.0, "talk", 82]]}
+        calls = [(77.0, "battle_talk", [1, 2, 86, 3]), (13.0, "battle_talk", [1, 2, 82, 3])]
+        problems = battle_sim.compare(fixture, calls, battle_sim.SimResult(1, None))
+        self.assertEqual(problems, ["talk 82: 13.0 s, retail 10.0 s"])
+
+
 class CaptureTools(unittest.TestCase):
     def setUp(self):
         self.dir = Path(tempfile.mkdtemp())

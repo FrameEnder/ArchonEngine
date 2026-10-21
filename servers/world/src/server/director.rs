@@ -122,6 +122,9 @@ pub enum LuaDirectorTask {
         finish_scene: u16,
         /// Its scene flags, see `QUEST_BATTLE_SCENE_FINISH_FLAGS`.
         finish_flags: u32,
+        /// Quest variables (index 0-5, value) set in the same journal update as the sequence (Lurkers in the Grotto's
+        /// ITEM0, UI8BH, as retail sets it on winning.)
+        variables: Vec<(u8, u8)>,
     },
     /// Play one of the director's scenes for every player (e.g. a cutscene halfway through a quest battle), with
     /// these scene flags. The script's `onSceneFinished(director, scene)` is called when a player finishes it.
@@ -350,17 +353,27 @@ impl UserData for LuaDirector {
             "complete_quest_battle",
             |_,
              this,
-             (sequence, stay, finish_scene, finish_flags): (
+             (sequence, stay, finish_scene, finish_flags, variables): (
                 u8,
                 Option<bool>,
                 Option<u16>,
                 Option<u32>,
+                Option<mlua::Table>,
             )| {
+                // `variables` is a table of quest variable index (0-5) to value, e.g. { [1] = 0x10 }.
+                let mut set = Vec::new();
+                if let Some(variables) = variables {
+                    for pair in variables.pairs::<u8, u8>() {
+                        set.push(pair?);
+                    }
+                    set.sort();
+                }
                 this.tasks.push(LuaDirectorTask::CompleteQuestBattle {
                     sequence,
                     stay: stay.unwrap_or(false),
                     finish_scene: finish_scene.unwrap_or(QUEST_BATTLE_SCENE_FINISH),
                     finish_flags: finish_flags.unwrap_or(QUEST_BATTLE_SCENE_FINISH_FLAGS),
+                    variables: set,
                 });
                 Ok(())
             },
@@ -1316,6 +1329,7 @@ pub fn director_tick(
                 stay,
                 finish_scene,
                 finish_flags,
+                variables,
             } => {
                 let quest_id = instance.directors.first().unwrap().quest_battle_quest_id;
                 let mut network = network.lock();
@@ -1329,6 +1343,7 @@ pub fn director_tick(
                         *stay,
                         *finish_scene,
                         *finish_flags,
+                        variables.clone(),
                     ),
                     DestinationNetwork::ZoneClients,
                 );

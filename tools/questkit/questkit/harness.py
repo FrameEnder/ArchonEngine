@@ -393,9 +393,26 @@ class Harness:
         if quest is None:
             raise HarnessError("battle_won for a quest that isn't active")
         quest.sequence = sequence
+        # What the battle's script sets with the sequence (`complete_quest_battle`'s variables), if it says.
+        for index, value in self._battle_variables().items():
+            quest.variables[index] = value
         self.world.battle = None
         return {"notices": [], "scenes": [], "played": [], "effects": [], "finished": True, "calls": [],
                 "spawned": []}
+
+    def _battle_variables(self) -> dict[int, int]:
+        """The quest battle script's QUEST_VARS_AFTER_WIN (variable index to value), read by running it with
+        content/lib/Battle.lua as battle-sim does."""
+        number = self.params.get("QUESTBATTLE0")
+        script = repo.SCRIPTS / "content" / "questbattle" / f"{number}.lua"
+        if number is None or not script.exists():
+            return {}
+        lua = LuaRuntime(unpack_returned_tuples=True)
+        lua.globals().LOG = lambda *args: None
+        lua.execute((repo.SCRIPTS / "content" / "lib" / "Battle.lua").read_text())
+        lua.execute(script.read_text())
+        table = lua.globals().QUEST_VARS_AFTER_WIN
+        return {int(k): int(v) for k, v in table.items()} if table is not None else {}
 
     def state(self) -> dict:
         quest = self.world.quests.get(self.quest)

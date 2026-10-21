@@ -1,0 +1,37 @@
+{
+  "quest": 462,
+  "script": "SubSea050_00462",
+  "source": "Bob's Chronofoil capture of the Limsa story (2026-10-21, ee0909d9)",
+  "params": {
+    "ACTOR0": 1000972,
+    "ACTOR1": 1002626,
+    "LOC_ACTOR0": 1003289,
+    "LOC_POS_ACTOR0": 4201224,
+    "LOC_POS_CAM1": 4201231,
+    "LOC_FACE0": 604,
+    "LOC_FACE1": 617,
+    "LOC_SE1": 39,
+    "LOC_SE2": 40
+  },
+  "steps": [
+    {
+      "talk": 1000972,
+      "layout": 1673081,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1002626,
+      "layout": 3906890,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0xf8402efb", "results": [1, 27665, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 28.5
+        }
+    },
+    "timepoints": [],
+    "comment": "Lurkers in the Grotto's boss (quest battle 35, drop-in layer QB_ManSea005_001): level 12, 6196 HP. From Bob's Chronofoil capture of 2026-10-21 (two runs): it fights the ally the whole time, auto-attacking every 3 s (many misses; 28.5 the median hit). It also used 575 every 6.4 s (0-40 damage), which has no action script yet, so it's left out. Hitbox not recorded."
+}

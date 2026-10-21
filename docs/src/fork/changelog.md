@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-21 | — | Quests: Making a Name (111) checked against its client script.
+| 2026-10-21 | — | Quests: On to Summerford, Dressed to Call, Lurkers in the Grotto, Washed Up (462, 463, 543, 465), `mark_quest_completed`; quest battles: 35, `complete_quest_battle`'s variables; combat (the drop-in layer); questkit (battle-sim's player health and `tolerances`); known issues.
+| 2026-10-21 | `b88b355` | Quests: Making a Name (111) checked against its client script.
 | 2026-10-20 | `8c321d9` | Quests: Coming to Limsa Lominsa (107), Close to Home (108, 109) and quest 111 from Bob's capture of the Limsa opening; character windows (a never-saved plate is zeroes); opcodes (retail's notice opcodes); questkit (`territory`); known issues.
 | 2026-10-20 | `4cc15cf` | Character windows: the Adventurer Plate as on retail (its fields, the saved time, unk14, the section saved); saving; known issues.
 | 2026-10-20 | `7278037` | Combat: La Noscea's six zones' spawns; every drop-in of a zone loads; questkit's drop-ins write guards, Behavior and `stationary` (questkit); known issues.
@@ -165,7 +166,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Making a Name (111) from Bob's dump of its client script: `SubSea001_00111` (was `ManSeaOpening_00111`, written from the capture alone), with the sheet's parameters instead of layout IDs; the six "people" are herbs picked with EVENT_ACTION_PROCESS (the progress bar between their two scenes), UI8BH is the herbs held, ACTOR2 takes them in an NpcTrade, the ferry only offers to go once Close to Home is accepted (the client's check) and asks again in sequence 2 (scene 15). Fixture with base IDs. |
+| — | The Limsa story's next four quests from Bob's dumps and his Chronofoil capture of the Limsa story on retail (2026-10-21): On to Summerford (462), Dressed to Call (463), Lurkers in the Grotto (543) and Washed Up (465), with replay fixtures. Quest battle 35 (Lurkers in the Grotto) from the capture's two runs: drop-in layer `QB_ManSea005_001` in `sea_s1f1`, timelines `QB35Ally_904`, `QB35Boss_902`, `QB35Add_903`, `QB35Add_905`, its battle fixture. `complete_quest_battle` takes quest variables to set with the sequence (one journal update, as retail: 543's UI8BH); the replay harness reads them from the battle script (`QUEST_VARS_AFTER_WIN`). `player:mark_quest_completed(id)`: a quest completed with no rewards, as retail sends 464's FinishQuest after 543's. battle-sim: the player's health from retail's run (`player`, not interpolated) for lines said as it drops, and per-event `tolerances`. |
+| `b88b355` | Making a Name (111) from Bob's dump of its client script: `SubSea001_00111` (was `ManSeaOpening_00111`, written from the capture alone), with the sheet's parameters instead of layout IDs; the six "people" are herbs picked with EVENT_ACTION_PROCESS (the progress bar between their two scenes), UI8BH is the herbs held, ACTOR2 takes them in an NpcTrade, the ferry only offers to go once Close to Home is accepted (the client's check) and asks again in sequence 2 (scene 15). Fixture with base IDs. |
 
 ### 2026-10-20
 

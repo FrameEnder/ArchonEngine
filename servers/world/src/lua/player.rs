@@ -517,6 +517,10 @@ impl LuaPlayer {
         self.queued_tasks.push(LuaTask::CancelQuest { id });
     }
 
+    fn mark_quest_completed(&mut self, id: u32) {
+        self.queued_tasks.push(LuaTask::MarkQuestCompleted { id });
+    }
+
     fn incomplete_quest(&mut self, id: u32) {
         self.queued_tasks.push(LuaTask::IncompleteQuest { id });
     }
@@ -1156,6 +1160,10 @@ impl UserData for LuaPlayer {
         );
         methods.add_method_mut("cancel_quest", |_, this, quest_id: u32| {
             this.cancel_quest(quest_id);
+            Ok(())
+        });
+        methods.add_method_mut("mark_quest_completed", |_, this, quest_id: u32| {
+            this.mark_quest_completed(quest_id);
             Ok(())
         });
         methods.add_method_mut("incomplete_quest", |_, this, quest_id: u32| {

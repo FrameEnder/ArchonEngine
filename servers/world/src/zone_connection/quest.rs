@@ -282,6 +282,23 @@ impl ZoneConnection {
         self.check_achievements(true).await;
     }
 
+    /// Marks quest `id` completed with no rewards: its FinishQuest, as retail sends one for a quest another replaces
+    /// right after that one's (Lurkers in the Grotto's, then 464's; Bob's Chronofoil capture of 2026-10-21.)
+    pub async fn mark_quest_completed(&mut self, id: u32) {
+        let adjusted_id = adjust_quest_id(id);
+        if let Some(index) = self.quest_slot(adjusted_id) {
+            self.player_data.quest.active.0.remove(index);
+            self.send_active_quests().await;
+        }
+        self.player_data.quest.completed.set(adjusted_id);
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::FinishQuest {
+            quest_id: adjusted_id as u16,
+            flag1: 1,
+            flag2: 1,
+        });
+        self.send_ipc_self(ipc).await;
+    }
+
     /// Unlocks what finishing quest `id` (its full row ID) grants (`GameData::get_quest_unlock_links`). `notify`
     /// tells the client straight away; otherwise it's in PlayerSetup, at login.
     pub async fn grant_quest_unlocks(&mut self, id: u32, notify: bool) {
@@ -370,6 +387,23 @@ impl ZoneConnection {
         self.player_data.quest.active.0[slot].sequence = sequence;
         self.send_quest_update(slot).await;
         self.send_quest_tracker().await;
+    }
+
+    /// Changes an active quest's variables (index 0-5, value) without telling the client: the next journal update
+    /// (e.g. `set_quest_sequence`) carries them.
+    pub fn preset_quest_variables(&mut self, id: u32, variables: &[(u8, u8)]) {
+        let adjusted_id = adjust_quest_id(id);
+        let Some(slot) = self.quest_slot(adjusted_id) else {
+            return;
+        };
+        for (index, value) in variables {
+            if let Some(variable) = self.player_data.quest.active.0[slot]
+                .variables
+                .get_mut(*index as usize)
+            {
+                *variable = *value;
+            }
+        }
     }
 
     /// Sets one of an active quest's variables (0 = UI8A through 5 = UI8F.)

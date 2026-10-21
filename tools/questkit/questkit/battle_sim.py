@@ -26,8 +26,8 @@ took on retail (`onSceneFinished`). Then the script's sequences, battle talk, sp
 in order, each within `tolerance` seconds. It also checks that everything the script spawns is in a drop-in layer.
 
 What it doesn't simulate: positions (everyone stands at the origin, so "nearest" choices are arbitrary), enmity and
-who hits whom (the health curves are retail's whatever the script's targeting does), and the player's health (always
-full: losing isn't replayed).
+who hits whom (the health curves are retail's whatever the script's targeting does), and losing. The player's health
+follows retail's curve when the fixture has one (`player`, for lines said as the player's health drops), full otherwise.
 """
 
 from __future__ import annotations
@@ -89,6 +89,18 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
             if key in curves and "Hp" in target and target.get("MaxHp"):
                 curves[key].append([rel(action["S"]), round(100 * target["Hp"] / target["MaxHp"], 1)])
 
+    you = next((k for k, a in run.get("Actors", {}).items() if a.get("Kind") == "you" and a.get("MaxHp")), None)
+    player: list = []
+    if you is not None:
+        max_hp = run["Actors"][you]["MaxHp"]
+        # By time only, keeping the order of samples at the same moment (a hit's health comes after the one before.)
+        points = sorted(([rel(s["S"]), round(100 * s["Hp"] / max_hp, 1)] for s in run.get("Samples", [])
+                         if str(s.get("Id")) == you and "Hp" in s), key=lambda p: p[0])
+        points = [p for p in points if p[0] >= 0] or points[-1:]
+        for point in points:
+            if not player or point[1] != player[-1][1]:
+                player.append(point)
+
     npcs, events = {}, []
     for key, actor in actors.items():
         curve = sorted(curves[key])
@@ -135,8 +147,11 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
         if end is not None:
             durations[str(n)] = round(end - t, 2)
     events.sort(key=lambda e: (e[0], e[1]))
-    return {"quest_battle": quest_battle, "source": source, "tolerance": DEFAULT_TOLERANCE, "npcs": npcs,
-            "scenes": durations, "events": events}
+    fixture = {"quest_battle": quest_battle, "source": source, "tolerance": DEFAULT_TOLERANCE, "npcs": npcs,
+               "scenes": durations, "events": events}
+    if player:
+        fixture["player"] = player
+    return fixture
 
 
 def save(fixture: dict, path: Path | None = None) -> Path:
@@ -160,6 +175,16 @@ def _health_at(curve: list, t: float) -> float:
         if a <= t <= b:
             return x + (y - x) * (t - a) / (b - a) if b > a else y
     return curve[-1][1]
+
+
+def _health_then(curve: list, t: float) -> float:
+    """The last health seen at or before t: a player's health jumps (a hit, a potion), so it isn't interpolated."""
+    value = 100.0
+    for at, pct in curve:
+        if at > t:
+            break
+        value = pct
+    return value
 
 
 def dropin_layouts() -> set[int]:
@@ -283,8 +308,9 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                 pct = _health_at(spec["hp"], t - offset) if spec else 100.0
                 health[layout] = max(pct, 0.1)
                 info_table[layout] = lua.table_from({"hp": pct, "max_hp": 100, "x": 0, "y": 0, "z": 0})
-            info_table["player"] = lua.table_from({"hp": 100, "max_hp": 100, "x": 0, "y": 0, "z": 0})
-            g.onUpdate(director, lua.table_from(health), 100, lua.table_from(info_table))
+            player_pct = _health_then(fixture["player"], t) if fixture.get("player") else 100.0
+            info_table["player"] = lua.table_from({"hp": player_pct, "max_hp": 100, "x": 0, "y": 0, "z": 0})
+            g.onUpdate(director, lua.table_from(health), player_pct, lua.table_from(info_table))
             not_yet.clear()
             follow_calls(outside_update=False)
             t = round(t + TICK, 2)
@@ -335,7 +361,8 @@ def compare(fixture: dict, calls: list[tuple], result: SimResult) -> list[str]:
             continue
         used[found] = True
         result.matched.append((kind, value, t, mine[found][0]))
-        if abs(mine[found][0] - t) > tolerance:
+        # A fixture can allow one event more slack (`tolerances`, by label) where the runs disagree.
+        if abs(mine[found][0] - t) > fixture.get("tolerances", {}).get(label, tolerance):
             problems.append(f"{label}: {mine[found][0]:.1f} s, retail {t:.1f} s")
     for i, other in enumerate(mine):
         if not used[i]:

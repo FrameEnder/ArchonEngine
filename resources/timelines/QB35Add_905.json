@@ -1,0 +1,12 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 872,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "872": {
+            "players": 5
+        }
+    },
+    "timepoints": [],
+    "comment": "Lurkers in the Grotto's first and third waves (quest battle 35, drop-in layer QB_ManSea005_001): level 5, 56 HP. From Bob's Chronofoil capture of 2026-10-21 (two runs): auto-attacks (872) on the player for 3-7. Hitbox not recorded."
+}

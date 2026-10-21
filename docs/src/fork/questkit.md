@@ -328,7 +328,10 @@ to the script's, in order, each within the fixture's tolerance (2 s). It also fa
 no drop-in has, or that retail never had.
 
 It doesn't simulate positions, enmity or who hits whom (the health curves are retail's whatever the script's
-targeting does), the player's health (losing isn't replayed), or the NPCs' casts and yells (not compared).
+targeting does), losing, or the NPCs' casts and yells (not compared). The player's health is retail's when the fixture
+has it (`player`, written by `--make` since 2026-10-21: for lines said as it drops), as the last value seen (it
+jumps, with hits and potions, so it isn't interpolated); full otherwise. `tolerances` (by label, e.g.
+`{"talk 86": 4.5}`) gives one event more slack where the runs disagree; `--make` doesn't write it.
 
 All five quest battles have fixtures from Bob's Chronofoil captures and match. The first run found three of them
 timed from entering the zone rather than from the fight starting (Chasing Shadows' and Spirithold Broken's sequence 2

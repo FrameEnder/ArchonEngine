@@ -4443,8 +4443,11 @@ async fn process_server_msg(
                 stay,
                 finish_scene,
                 finish_flags,
+                variables,
             ) => {
-                // The quest moves on straight away, the scenes are just the victory fanfare.
+                // The quest moves on straight away, the scenes are just the victory fanfare. Its variables change
+                // in the same journal update, as retail sends it.
+                connection.preset_quest_variables(quest_id, &variables);
                 connection.set_quest_sequence(quest_id, sequence).await;
                 connection.quest_battle_stay = stay;
                 connection.quest_battle_finish_scene = Some(finish_scene);

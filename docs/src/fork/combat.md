@@ -215,7 +215,7 @@ the LGB they add to): retail's LGBs don't have them.
 | Southern Thanalan (146) | `wil_w1f4_planmap.json`, layer `BNPCS_RETAIL` (448) | the same: `--dropin 146 --appends bg/ffxiv/wil_w1/fld/w1f4/level/planmap.lgb` |
 | Northern Thanalan (147) | `wil_w1f5_planmap.json`, layer `BNPCS_RETAIL` (99) | the same: `--dropin 147 --appends bg/ffxiv/wil_w1/fld/w1f5/level/planmap.lgb` (a short visit: 21 kinds) |
 | Mor Dhona (156) | `roc_r1f1_planmap.json`, layer `BNPCS_RETAIL` (173) | the same: `--dropin 156 --appends bg/ffxiv/roc_r1/fld/r1f1/level/planmap.lgb` |
-| Middle La Noscea (134) | `sea_s1f1_planmap.json`, layer `BNPCS_RETAIL` (376) | Bob's Chronofoil capture of 2026-10-21 (flying through every La Noscea zone, an hour) with all the older ones: `--dropin 134 --appends bg/ffxiv/sea_s1/fld/s1f1/level/planmap.lgb` (with upstream's gathering points, `s1f1_planlive.json`) |
+| Middle La Noscea (134) | `sea_s1f1_planmap.json`, layer `BNPCS_RETAIL` (376), and quest battle 35's `QB_ManSea005_001` (8, `nonpop`) | Bob's Chronofoil capture of 2026-10-21 (flying through every La Noscea zone, an hour) with all the older ones: `--dropin 134 --appends bg/ffxiv/sea_s1/fld/s1f1/level/planmap.lgb` (with upstream's gathering points, `s1f1_planlive.json`) |
 | Lower La Noscea (135) | `sea_s1f2_planmap.json` (400) | the same, `s1f2` |
 | Eastern La Noscea (137) | `sea_s1f3_planmap.json` (241) | the same, `s1f3` |
 | Western La Noscea (138) | `sea_s1f4_planmap.json` (294) | the same, `s1f4` |

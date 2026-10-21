@@ -1,0 +1,78 @@
+{
+  "quest": 543,
+  "script": "ManSea005_00543",
+  "source": "Bob's Chronofoil capture of the Limsa story (2026-10-21, ee0909d9)",
+  "params": {
+    "ACTOR0": 1002626,
+    "EOBJECT0": 2001582,
+    "EVENT_ACTION_PROCESS_MIDDLE": 16,
+    "ITEM0": 2000522,
+    "TERRITORYTYPE1": 134,
+    "TERRITORYTYPE0": 252,
+    "QUESTBATTLE0": 35,
+    "SEQ_0_ACTOR0_LQ": 90,
+    "HOW_TO_QIB": 79,
+    "CUT_SCENE_02": 134,
+    "CUT_SCENE_03": 56,
+    "CUT_SCENE_04": 135
+  },
+  "steps": [
+    {
+      "talk": 1002626,
+      "layout": 3906890,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 2001582,
+      "layout": 4081044,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 3, "flags": "0x2001", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 252}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 2001582,
+      "layout": 4081044,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 3, "flags": "0x2001", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 252}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "battle_won": 2,
+      "expect": {"sequence": 2, "vars": "001000000000", "notices": []}
+    },
+    {
+      "enter_territory": 134,
+      "scenes": [
+        {"scene": 4, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001000000000", "notices": []}
+    },
+    {
+      "talk": 1002626,
+      "layout": 3906890,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 6, "flags": "0xf8402efb", "results": [1, 4555, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

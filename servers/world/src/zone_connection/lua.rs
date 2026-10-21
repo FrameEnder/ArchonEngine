@@ -694,6 +694,9 @@ impl ZoneConnection {
                 LuaTask::AcceptQuest { id } => {
                     self.accept_quest(*id).await;
                 }
+                LuaTask::MarkQuestCompleted { id } => {
+                    self.mark_quest_completed(*id).await;
+                }
                 LuaTask::FinishQuest { id, optional_item } => {
                     // this means "all"
                     if *id == 65535 {

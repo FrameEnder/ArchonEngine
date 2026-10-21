@@ -1,0 +1,34 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "attack_range": 5.0,
+    "timeline_always_plays": false,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 306
+        },
+        "121": {
+            "npcs": 107
+        },
+        "127": {
+            "npcs": 410
+        },
+        "132": {
+            "npcs": 108
+        },
+        "120": {
+            "players": 988
+        }
+    },
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            { "action": 132, "every": 32, "comment": "Aero II: 4 uses in 2 runs, every 32-34 s" },
+            { "action": 121, "every": 20, "comment": "Aero: 7 uses in 2 runs, every 17-51 s" },
+            { "action": 127, "comment": "Stone II: 12 uses in 2 runs, every 6-22 s" },
+            { "action": 119, "comment": "Stone: 5 uses (the won run), every 6-58 s" }
+        ]
+    },
+    "timepoints": [],
+    "comment": "Lurkers in the Grotto's ally (quest battle 35, drop-in layer QB_ManSea005_001), a conjurer: level 50, 1372 HP. From Bob's Chronofoil capture of 2026-10-21 (two runs, `questkit chronofoil --battle 0.7` and `0.9`): no auto-attack, Stone, Aero, Stone II and Aero II on the enemies from about 5 yalms (median damage), and Cure (120, cast by the director's heals) on the player, which retail recorded as up to 988 (the player has about 136 HP, so it fills them). Action 129 (on itself, 5 uses) has no script and is left out. Hitbox not recorded."
+}

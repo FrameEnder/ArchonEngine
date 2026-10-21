@@ -32,7 +32,14 @@ add one when something is found.
 * **The Gridanian Envoy** (507) and **Call of the Sea** (674) were written from Sapphire and the recording without the
   client's script: dump them in the Quest Lab to check the scene numbers. Envoy's arrival positions are Sapphire's.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
-* Limsa Lominsa's story stops after Close to Home (108, 109) and Making a Name (111).
+* Limsa Lominsa's story stops after Washed Up (465). Bob's capture of 2026-10-21 has the rest up to Call of the Sea
+  (674; 466–469, 397, 402, 403, 406, 412–415, 544–546, 689, 690, and the side quest 471): they need dumps. Retail
+  also marked quests 398 and 404 completed along with 397 and 402, as 464 with 543 (`mark_quest_completed`); why
+  (the sheet, presumably) isn't known.
+* **Lurkers in the Grotto's quest battle** (35): territory 252 is taken to have Middle La Noscea's Bg (so it loads
+  `sea_s1f1`'s `QB_ManSea005_001`) from retail's positions; if its enemies don't appear, that's why. The boss's
+  action 575 (every 6.4 s on the ally) has no action script, so it only auto-attacks, and the ally's 129 (on itself)
+  is left out too. When the second wave comes (41 %) is read off a sparse health curve.
   Ul'dah's story stops after **Call of the Sea** (673), which hands over to Limsa Lominsa. The Ul'dahn Envoy's (528) later ticketer flights (Elyenora in sequences 4–255, L'nophlo in 8–255: a yes/no and an airship cutscene) send you to Limsa Lominsa's (POPRANGE1) or Gridania's (POPRANGE4) arrival from the client script's cutscene IDs only, unseen on retail; its POPRANGE2/3/5 are placed by order and retail's positions. Its Pugilist and
   Thaumaturge **Close to Home** (569, 570) come from their client scripts only: no retail capture, and their replay
   fixtures are 568's with their ITEM0 and ACTOR1 (ACTOR1's layout taken from the quest's todo location).
