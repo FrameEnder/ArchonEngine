@@ -107,7 +107,7 @@
                         "type": "battle_npc",
                         "stationary": true,
                         "behavior": 30051,
-                        "display_flags": 520
+                        "character_data_flags": 4
                     },
                     "layout_id": 4057759,
                     "position": {
@@ -132,7 +132,7 @@
                         "type": "battle_npc",
                         "stationary": true,
                         "behavior": 30052,
-                        "display_flags": 520
+                        "character_data_flags": 4
                     },
                     "layout_id": 4057772,
                     "position": {
@@ -157,7 +157,7 @@
                         "type": "battle_npc",
                         "stationary": true,
                         "behavior": 30055,
-                        "display_flags": 520
+                        "character_data_flags": 4
                     },
                     "layout_id": 4057782,
                     "position": {
@@ -181,7 +181,7 @@
                         "nonpop": false,
                         "type": "battle_npc",
                         "behavior": 30054,
-                        "display_flags": 520
+                        "character_data_flags": 4
                     },
                     "layout_id": 4057793,
                     "position": {
@@ -8230,7 +8230,7 @@
                         "nonpop": false,
                         "type": "battle_npc",
                         "behavior": 30053,
-                        "display_flags": 520
+                        "character_data_flags": 4
                     },
                     "layout_id": 4172352,
                     "position": {
@@ -8254,7 +8254,7 @@
                         "nonpop": false,
                         "type": "battle_npc",
                         "behavior": 30053,
-                        "display_flags": 520
+                        "character_data_flags": 4
                     },
                     "layout_id": 4172376,
                     "position": {

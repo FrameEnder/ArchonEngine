@@ -137,6 +137,8 @@ pub enum NetworkedActor {
         parameters: BaseParameters,
         /// Where it spawned: it wanders around here, and gives up a chase that takes it too far away.
         home: Vec3A,
+        /// Which way it faced there: an NPC that stands at a post turns back to it when it gets home.
+        home_rotation: f32,
         /// It gave up a chase and is heading home, ignoring everyone until it's there.
         returning_home: bool,
         /// The cast it's in the middle of, if any. It stands still until it's done.

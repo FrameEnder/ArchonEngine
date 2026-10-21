@@ -6,7 +6,7 @@ use parking_lot::Mutex;
 use kawari::{
     common::{CharacterMode, HandlerId, HandlerType, ObjectId, ObjectTypeId},
     config::get_config,
-    ipc::zone::{Condition, EventType},
+    ipc::zone::{Condition, EventType, SceneFlags},
 };
 
 use crate::{
@@ -104,6 +104,25 @@ impl DummyEventHandler {
 
 #[async_trait]
 impl EventHandler for DummyEventHandler {}
+
+/// A DefaultTalk (an NPC's line) the client asks the server for, e.g. a guard with character data flags 0x4. Retail
+/// answers with scene 0, flags 0x2001 (HIDE_HOTBAR | NO_DEFAULT_CAMERA), no parameters; the client shows the line and
+/// returns the scene, and the event finishes (Bob's Chronofoil capture of 2026-10-21, the Horizon guards' DefaultTalks
+/// 1838 and 1839). Without the scene the client waited for one forever. A DefaultTalk nested in another event (SwitchTalk)
+/// has its scene played by that event's script instead: `on_talk` only runs for the client's own talk.
+#[derive(Debug)]
+pub struct DefaultTalkEventHandler {}
+
+#[async_trait]
+impl EventHandler for DefaultTalkEventHandler {
+    async fn on_talk(&self, _event: &Event, _target_id: ObjectTypeId, player: &mut LuaPlayer) {
+        player.play_scene(
+            0,
+            SceneFlags::HIDE_HOTBAR | SceneFlags::NO_DEFAULT_CAMERA,
+            Vec::new(),
+        );
+    }
+}
 
 /// Extracts the script id from a given CustomTalk `name`. For example, "CmnDefBeginnerGuide_00327" will return 327.
 fn extract_script_id(name: &str) -> Result<u32, std::num::ParseIntError> {
@@ -223,7 +242,9 @@ pub fn dispatch_event(
                 generic_lua_event("events/generic/AethernetShard.lua")
             }
         }
-        HandlerType::DefaultTalk => Some(Box::new(DummyEventHandler::new())), // This is normally handled client-side, however in certain cases e.g. SwitchTalk we need this scripted for... reasons.
+        // Mostly played by the client itself; the server is asked for one by battle NPCs with a talk (guards) and nested
+        // in SwitchTalk.
+        HandlerType::DefaultTalk => Some(Box::new(DefaultTalkEventHandler {})),
         HandlerType::Craft => Some(Box::new(CraftingEventHandler::new())),
         HandlerType::GuildLeveAssignment => generic_lua_event("events/generic/Levemete.lua"),
         HandlerType::CustomTalk => {

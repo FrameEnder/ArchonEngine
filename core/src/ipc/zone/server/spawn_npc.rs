@@ -13,6 +13,9 @@ bitflags! {
     impl CharacterDataFlag: u8 {
         /// If set, this marks the enemy as "hostile" including changing the nameplate icon.
         const HOSTILE = 0x2;
+        /// A friendly battle NPC with a talk, e.g. a city guard: it fights monsters that come near its post, and
+        /// clicking it plays its DefaultTalk (retail's Brass Blades, Flames, Wood Wailers; passive monsters have 0x1.)
+        const GUARD = 0x4;
     }
 }
 

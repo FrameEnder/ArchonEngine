@@ -259,12 +259,31 @@ SpawnNpc's character data flags (byte 8) aren't only "hostile": retail sends 0x1
 aggressive ones and 0x4 for guards (Ul'dah's Brass Blades and Flames, bases 791–798 and 1342; Gridania's Wood Wailers,
 580–583; Mor Dhona's 1776–1778; 22 kinds in all, Bob's Chronofoil captures). Guards also have their own Behavior row
 each (30051–30055; ordinary monsters 30246). A drop-in battle NPC can set both (`character_data_flags`, `behavior`).
-With 0x4 the client offers a talk (a DefaultTalk event it asks the server for, 1839 for the Brass Blade by Horizon)
-and still shows the nameplate; Kawari doesn't answer that event, which soft-locked Bob (2026-10-20). The guards are
-decorative on Bob's server, so the 36 in the Thanalan, Mor Dhona and Central Shroud drop-ins keep retail's Behavior
-(their pose) but not 0x4, and have display flags 0x208 (no nameplate or health bar, can't be targeted), as retail's
-scenery NPCs do. On retail they're ordinary battle NPCs (display flags 0) that also fight monsters that come near; the
-one by Horizon's gate is the only server-spawned NPC there, its counterpart is the zone's own event NPC.
+With 0x4 the client treats the NPC as a friendly one with a talk: clicking it asks the server for its DefaultTalk.
+
+**Guards** (all 36 in the Thanalan, Mor Dhona and Central Shroud drop-ins) are as on retail: display flags 0,
+character data flags 0x4 (`CharacterDataFlag::GUARD`), their Behavior row. Bob's Chronofoil capture of 2026-10-21
+(2026.10.16) has both Horizon guards, server spawns with the same flags (layout 4057563, base 795, the Lalafell by
+the west gate; layout 4057553, base 798, by the east one), battalion 0 (monsters 4):
+
+* **They defend their post.** A guard notices monsters the way aggressive monsters notice players (`can_notice`: 15
+  yalms in front, 11 all round, battalions that are enemies), never players, and fights them. The Lalafell left his
+  post for a monster 14.5 yalms off, drew his weapon (ActorControl 0, 1), went into combat (ActorControl 4, 1) and
+  targeted it, fought it with auto-attacks (870) and weaponskills (717, 718; the game credited him as first attacker),
+  took on a second one, then sheathed (ActorControl 0, 0), left combat and **walked** back, turning on the spot to his
+  spawn rotation (−1.462) at the end. Kawari: an NPC at a post (a guard, or a `stationary` spot) that loses its
+  target walks back home still watching (it can pick up another monster on the way; leashed enemies run home ignoring
+  everyone instead), and on arrival turns to the rotation it spawned with (`home_rotation`), one ActorMove. Out in
+  the world only. The nameplate shows while it's fighting, so the one that saw no monster showed none.
+* **Clicking one plays its line.** Retail answers the client's StartTalkEvent (DefaultTalk 1838 for base 798, 1839 for
+  the Lalafell) with EventStart (Talk), then scene 0 with flags 0x2001 (HIDE_HOTBAR | NO_DEFAULT_CAMERA) and no
+  parameters; the client shows the line and returns the scene (EventReturnHandler2), and the event finishes.
+  Kawari's DefaultTalk handler (`DefaultTalkEventHandler`) does that; before, it sent EventStart and nothing else, and
+  the client waited for the scene forever (Bob's soft lock, 2026-10-20). A DefaultTalk nested in a SwitchTalk keeps
+  its own script's scene (`on_talk` only runs for the client's own talk). When the guard was busy fighting, retail
+  ended the event 0.4 s in without a scene (EventFinish with 0x1D); Kawari always plays it.
+
+(From 2026-10-20 until this, the guards were decorative on Kawari, display flags 0x208, from a misremembered retail.)
 
 Kill EXP checked on the 105 solo kills of that export: Kawari's formula (the level's ScaledQuestXP, full down to two
 levels below, then 10 % less a level) gives the recorded EXP for all but level-ups during the fight, chains and kills

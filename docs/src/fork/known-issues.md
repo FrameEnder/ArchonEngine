@@ -190,11 +190,12 @@ add one when something is found.
   of a short visit.
 * Kawari sends character data flags 0 for passive monsters, where retail sends 0x1, and no Behavior for monsters
   (retail: 30246 for most); what either changes in the client isn't known.
-* A battle NPC with a talk (character data flags 0x4) makes the client ask the server to play its DefaultTalk, which
-  Kawari doesn't, and the player is stuck in the event. No drop-in sets 0x4 now (the guards are decorative instead,
-  differently from retail: see Combat).
+* Guards ([Combat](combat.md)): untested in game since they fight. They notice monsters with the aggressive monsters'
+  rule (15 yalms in front, 11 all round), measured from one retail engagement; none of their kinds has a timeline, so
+  they auto-attack only (retail's Lalafell also used 717 and 718). Talking to one that's fighting plays its line
+  (retail ended the event at once).
 * `stationary` in the drop-ins came from a one-off scan of the captures; `questkit chronofoil --dropin` doesn't write it
-  yet. Guards don't attack monsters that come near them, as retail's do.
+  yet.
 * To Guard a Guardian: which six Ixali come first is a guess from where they stand. Where the navmesh has holes,
   NPCs in content walk straight across them (rocks included) rather than stall the battle. Dying sends you back out to the
   instructor (as any lost quest battle does); whether retail offers a retry first isn't recorded.

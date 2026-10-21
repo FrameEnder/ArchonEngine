@@ -335,6 +335,7 @@ pub fn npc_behavior(
             currently_invulnerable,
             last_wander_timestamp,
             home,
+            home_rotation,
             returning_home,
             cast,
             parameters,
@@ -455,12 +456,18 @@ pub fn npc_behavior(
             }
 
             // Aggressive enemies notice players who come close, whether they're standing around or wandering, unless
-            // they're far above them.
+            // they're far above them. Guards (character data flags 0x4) notice monsters the same way, never players:
+            // retail's Lalafell Brass Blade by Horizon took on a monster 14.5 yalms from his post and one more after
+            // it, then walked back (Bob's Chronofoil capture of 2026-10-21).
+            let guard = spawn
+                .character_data_flags
+                .contains(CharacterDataFlag::GUARD);
             if *state == NpcState::Wander
                 && !*returning_home
-                && spawn
-                    .character_data_flags
-                    .contains(CharacterDataFlag::HOSTILE)
+                && (guard
+                    || spawn
+                        .character_data_flags
+                        .contains(CharacterDataFlag::HOSTILE))
             {
                 let mut game_data = game_data.lock();
                 let possible_enemies =
@@ -468,6 +475,9 @@ pub fn npc_behavior(
 
                 for (target_id, position, battalion) in &enemies {
                     if !possible_enemies[*battalion as usize] {
+                        continue;
+                    }
+                    if guard && levels.contains_key(target_id) {
                         continue;
                     }
                     if levels.get(target_id).is_some_and(|level| {
@@ -551,6 +561,13 @@ pub fn npc_behavior(
 
             let mut reset_target = false;
             let mut reset_target_for_path = false;
+            // Guards, and NPCs that never wander, stand at a post: after a fight they walk back to it.
+            let stands_at_post = guard
+                || instance
+                    .zone
+                    .stationary_npcs
+                    .contains(&spawn.common.layout_id);
+            let was_after_someone = matches!(current_target, Some(NpcTarget::Actor(_)));
             let can_take_action; // FIXME: this is kind of stupid because enemies can do ranged attacks, etc.
             if let Some(current_target) = current_target {
                 let target_pos;
@@ -823,9 +840,42 @@ pub fn npc_behavior(
                 *current_target = None;
                 *state = NpcState::natural_state_of(spawn);
                 spawn.common.target_id = ObjectTypeId::default();
+
+                // Back to its post at a walk, still watching (retail's Horizon guard took on a second monster on the
+                // way), rather than giving up like a leashed enemy.
+                if stands_at_post
+                    && was_after_someone
+                    && !*returning_home
+                    && !in_content
+                    && flat_distance(spawn.common.position.0, *home) > ARRIVE_DISTANCE
+                {
+                    *current_target = Some(NpcTarget::Position(*home));
+                    current_path.clear();
+                    *current_path_lerp = 0.0;
+                }
             }
 
             if reset_target_for_path {
+                // Home at its post: it turns to face the way it did (retail's guard turned back to its spawn
+                // rotation on the spot.)
+                if stands_at_post
+                    && matches!(current_target, Some(NpcTarget::Position(goal)) if flat_distance(*goal, *home) < MIN_STEP)
+                    && (spawn.common.rotation - *home_rotation).abs() > 0.01
+                {
+                    spawn.common.rotation = *home_rotation;
+                    actor_moves.push((
+                        *id,
+                        FromServer::ActorMove(
+                            *id,
+                            spawn.common.position,
+                            *home_rotation,
+                            MoveAnimationType::WALKING_OR_LANDING,
+                            MoveAnimationState::None,
+                            JumpState::NoneOrFalling,
+                            Some((NPC_WALK_SPEED * 10.0) as u8),
+                        ),
+                    ));
+                }
                 *current_target = None;
             }
 

@@ -221,7 +221,7 @@
                         "type": "battle_npc",
                         "stationary": true,
                         "behavior": 30052,
-                        "display_flags": 520
+                        "character_data_flags": 4
                     },
                     "layout_id": 4291568,
                     "position": {
@@ -246,7 +246,7 @@
                         "type": "battle_npc",
                         "stationary": true,
                         "behavior": 30055,
-                        "display_flags": 520
+                        "character_data_flags": 4
                     },
                     "layout_id": 4292672,
                     "position": {
@@ -271,7 +271,7 @@
                         "type": "battle_npc",
                         "stationary": true,
                         "behavior": 30054,
-                        "display_flags": 520
+                        "character_data_flags": 4
                     },
                     "layout_id": 4292673,
                     "position": {

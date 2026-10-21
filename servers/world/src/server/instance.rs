@@ -353,6 +353,7 @@ impl Instance {
         parameters.calculate_potencies(&param_grow, Some(&modifiers));
 
         let position = spawn.common.position.0;
+        let rotation = spawn.common.rotation;
         self.actors.insert(
             id,
             NetworkedActor::Npc {
@@ -372,6 +373,7 @@ impl Instance {
                     + Duration::from_secs(fastrand::u64(0..MOB_WANDER_TIME.as_secs())),
                 parameters,
                 home: position,
+                home_rotation: rotation,
                 returning_home: false,
                 cast: None,
                 rotation_state: Default::default(),
