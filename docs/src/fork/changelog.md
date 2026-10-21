@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-21 | — | Combat: casts land as the bar ends; each hit's result; known issues.
+| 2026-10-21 | — | `master` fast-forwarded again (changelog).
+| 2026-10-21 | `09088d6` | Combat: casts land as the bar ends; each hit's result; known issues.
 | 2026-10-21 | `698f0a2` | Combat: wandering's back-and-forth by spots off the navmesh.
 | 2026-10-21 | `965778a` | Combat: each hit's result (EffectResultBasic, the effect's global sequence); known issues.
 | 2026-10-21 | `c6fdd57` | Quests: Double Dealing's sack of oranges; known issues.
@@ -173,13 +174,14 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 ## Kawari (fork)
 
-Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`), and on 2026-10-19 (right after `5b5e91f`, and again right after `6bd4b19` and `511d7e1`), and on 2026-10-20 (right after `666a398`, and again right after `f6ff8ea` and `3851eba`), and on 2026-10-21 (right after `23a4b40`, bringing in the `upstream-7.57h1` work: upstream's 7.57h1 and everything since).
+Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`), and on 2026-10-19 (right after `5b5e91f`, and again right after `6bd4b19` and `511d7e1`), and on 2026-10-20 (right after `666a398`, and again right after `f6ff8ea` and `3851eba`), and on 2026-10-21 (right after `23a4b40`, bringing in the `upstream-7.57h1` work: upstream's 7.57h1 and everything since; and again right after `09088d6`).
 
 ### 2026-10-21
 
 | Commit | Change |
 |---|---|
-| — | Players' casts land when their bar ends again (with the half-second slidecast window back): landing 0.5 s early, as retail's ActionEffect does, applied the damage, death and EXP before the bar had ended, since Kawari applies effects as it sends them and retail's target side waits for the hit (Bob's 2026-10-21 bundle). Results follow every effect by 0.5 s. |
+| — | `master` and `Latest-Quest` fast-forwarded to `upstream-7.57h1` with Bob's OK (466–469 with quest battle 29, emote events, hit results and cast timing, the wander fix work in game). |
+| `09088d6` | Players' casts land when their bar ends again (with the half-second slidecast window back): landing 0.5 s early, as retail's ActionEffect does, applied the damage, death and EXP before the bar had ended, since Kawari applies effects as it sends them and retail's target side waits for the hit (Bob's 2026-10-21 bundle). Results follow every effect by 0.5 s. |
 | `698f0a2` | NPCs walking to a spot stop when the new path's end is no nearer it than where they stand (as near as the navmesh goes): a level 6 pugil by its off-mesh spawn point stepped between two points 0.75 yalms apart every half second for 16 minutes, each one's path ending at the other (Bob's 2026-10-21 bundle). |
 | `965778a` | Each hit's result as retail sends it: EffectResultBasic from the target with its HP 0.5 s after the ActionEffect (1.0 s for a player's cast), and EffectResults under the ActionEffect's own global sequence (they had the next one). The client waits for it, so a spell's damage only showed when the next spell's effect came (Bob's 2026-10-21 bundle). |
 | `c6fdd57` | Double Dealing (466): the sack of oranges in sequence 4 is EOBJECT0 (it was taken for EOBJECT2, so talking to it did nothing: Bob's 2026-10-21 bundle, Kuina stuck in sequence 4); EOBJECT2 is accepted too. |
