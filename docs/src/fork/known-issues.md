@@ -194,8 +194,12 @@ add one when something is found.
   rule (15 yalms in front, 11 all round), measured from one retail engagement; none of their kinds has a timeline, so
   they auto-attack only (retail's Lalafell also used 717 and 718). Talking to one that's fighting plays its line
   (retail ended the event at once).
-* `stationary` in the drop-ins came from a one-off scan of the captures; `questkit chronofoil --dropin` doesn't write it
-  yet.
+* `stationary` in the Thanalan and Mor Dhona drop-ins came from a one-off scan; `questkit chronofoil --dropin` writes it
+  now (La Noscea's). Regenerating Western Thanalan with it agrees on 382 of 397 spots: the 15 others (bases 12, 42,
+  131, 187, 313, 431, 769, 1445) are marked stationary but were seen wandering while idle, several times each, in the
+  captures since; not changed yet.
+* La Noscea's monsters have no timelines (default auto-attack, hitbox and damage), and its zones' `Bg` folders weren't
+  checked against the game (see Combat).
 * To Guard a Guardian: which six Ixali come first is a guess from where they stand. Where the navmesh has holes,
   NPCs in content walk straight across them (rocks included) rather than stall the battle. Dying sends you back out to the
   instructor (as any lost quest battle does); whether retail offers a retry first isn't recorded.

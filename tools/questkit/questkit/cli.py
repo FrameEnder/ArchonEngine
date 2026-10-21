@@ -277,8 +277,18 @@ def _chronofoil(args) -> int:
         out = args.out or f"dropin-{args.dropin}.json"
         chronofoil_dropin.write(dropin, out)
         objects = dropin["layers"][0]["objects"]
-        print(f"Wrote {len(objects)} battle NPCs ({sum(o['data']['hostile'] for o in objects)} hostile) to {out}; "
+        print(f"Wrote {len(objects)} battle NPCs ({sum(o['data']['hostile'] for o in objects)} hostile, "
+              f"{sum(bool(o['data'].get('stationary')) for o in objects)} stationary, "
+              f"{sum('character_data_flags' in o['data'] for o in objects)} guards) to {out}; "
               f"left out: {skipped or 'nothing'}")
+        # Hunt marks are level 50 in zones far below that; their spawns are conditional (S ranks: --exclude-base) or
+        # move between spots (A and B ranks: --one-spot).
+        high = {}
+        for o in objects:
+            if o["data"]["level"] >= 50 and "character_data_flags" not in o["data"]:
+                high.setdefault(o["data"]["base_id"], []).append(o["data"]["hp"])
+        for base, hps in sorted(high.items()):
+            print(f"  level 50+: base {base}, {len(hps)} spot(s), HP {max(hps)}: a hunt mark?")
         return 0
     if args.quest:
         from . import chronofoil_quest

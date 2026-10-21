@@ -200,13 +200,18 @@ impl Zone {
                 .collect();
             search_dirs.push("resources/dropins/".to_string());
 
-            'outer: for search_dir in search_dirs {
+            // Every drop-in for this zone in the first folder that has any (a zone can have several, e.g. Middle La
+            // Noscea's gathering points and its battle NPCs; it used to stop at the first, so only one of them loaded.)
+            for search_dir in search_dirs {
                 let Ok(search_dir) = std::fs::read_dir(search_dir) else {
                     continue;
                 };
+                let mut entries: Vec<_> = search_dir.flatten().collect();
+                entries.sort_by_key(|entry| entry.file_name());
+                let mut loaded_any = false;
 
                 // Load drop-ins
-                for entry in search_dir.flatten() {
+                for entry in entries {
                     if !entry.file_name().to_str().unwrap().ends_with(".json") {
                         continue;
                     }
@@ -217,7 +222,7 @@ impl Zone {
                                 if lvb.sections[0].lgb_paths.contains(&dropin.appends) {
                                     tracing::info!("Loaded dropin from {:?}", entry.path());
                                     zone.dropin_layers.append(&mut dropin.layers);
-                                    break 'outer;
+                                    loaded_any = true;
                                 }
                             }
                             Err(err) => {
@@ -225,6 +230,9 @@ impl Zone {
                             }
                         }
                     }
+                }
+                if loaded_any {
+                    break;
                 }
             }
 

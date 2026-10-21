@@ -915,9 +915,27 @@ class DropinTest(unittest.TestCase):
     def sighting(layout, base=100, x=0.0, **extra):
         spawn = {"layout": layout, "base": base, "name": 7, "owner": 0xE0000000, "max_hp": 126, "display": 0,
                  "fate": 0, "rotation": 1.5, "kind": 2, "level": 7, "position": [x, 1.0, 0.0], "event_npc": 0,
-                 "flags": 1, "max_links": 4, "link_family": 0, "link_range": 20}
+                 "flags": 1, "max_links": 4, "link_family": 0, "link_range": 20, "behavior": 30246,
+                 "seconds": 0.0, "moved": False, "busy": False}
         spawn.update(extra)
         return spawn
+
+    def test_stationary_and_guards(self):
+        from questkit import chronofoil_dropin as D
+        s = self.sighting
+        seen = {
+            20: [s(20, seconds=90)],                              # idle a minute and a half, never moved
+            21: [s(21, seconds=90), s(21, seconds=5, moved=True)],  # seen walking once: wanders
+            22: [s(22, seconds=120, busy=True)],                  # only seen fighting: can't tell
+            # A kind that never moved in two long sightings: its briefly seen spot stands still too.
+            30: [s(30, base=200, seconds=70)], 31: [s(31, base=200, seconds=80)], 32: [s(32, base=200, seconds=3)],
+            40: [s(40, base=791, flags=4, behavior=30053)],      # a guard
+        }
+        dropin, _ = D.build(seen, "bg/x/planmap.lgb")
+        data = {o["layout_id"]: o["data"] for o in dropin["layers"][0]["objects"]}
+        self.assertEqual(sorted(k for k, d in data.items() if d.get("stationary")), [20, 30, 31, 32])
+        self.assertEqual((data[40]["character_data_flags"], data[40]["behavior"]), (4, 30053))
+        self.assertNotIn("character_data_flags", data[20])
 
     def test_build(self):
         from questkit import chronofoil_dropin as D

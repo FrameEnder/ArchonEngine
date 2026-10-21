@@ -1,0 +1,5341 @@
+{
+    "appends": "bg/ffxiv/sea_s1/fld/s1f3/level/planmap.lgb",
+    "layers": [
+        {
+            "name": "BNPCS_RETAIL",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3965984,
+                    "position": {
+                        "x": 293.591,
+                        "y": 43.094,
+                        "z": 744.919
+                    },
+                    "rotation": 2.2483
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3965987,
+                    "position": {
+                        "x": 296.209,
+                        "y": 43.544,
+                        "z": 748.161
+                    },
+                    "rotation": 1.5111
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3965988,
+                    "position": {
+                        "x": 327.574,
+                        "y": 32.6,
+                        "z": 702.416
+                    },
+                    "rotation": 1.6427
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3965990,
+                    "position": {
+                        "x": 390.632,
+                        "y": 27.375,
+                        "z": 712.792
+                    },
+                    "rotation": -2.1247
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3965997,
+                    "position": {
+                        "x": 390.855,
+                        "y": 27.599,
+                        "z": 713.951
+                    },
+                    "rotation": 2.4371
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966001,
+                    "position": {
+                        "x": 384.111,
+                        "y": 25.302,
+                        "z": 705.306
+                    },
+                    "rotation": -2.8656
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966005,
+                    "position": {
+                        "x": 390.336,
+                        "y": 25.265,
+                        "z": 698.903
+                    },
+                    "rotation": -0.4299
+                },
+                {
+                    "data": {
+                        "base_id": 322,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1313,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966021,
+                    "position": {
+                        "x": 289.39,
+                        "y": 41.887,
+                        "z": 549.944
+                    },
+                    "rotation": -2.9706
+                },
+                {
+                    "data": {
+                        "base_id": 322,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1313,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966030,
+                    "position": {
+                        "x": 276.819,
+                        "y": 41.825,
+                        "z": 662.081
+                    },
+                    "rotation": -0.0654
+                },
+                {
+                    "data": {
+                        "base_id": 322,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1313,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true
+                    },
+                    "layout_id": 3966033,
+                    "position": {
+                        "x": 386.769,
+                        "y": 24.215,
+                        "z": 525.918
+                    },
+                    "rotation": 0.9937
+                },
+                {
+                    "data": {
+                        "base_id": 322,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1313,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966039,
+                    "position": {
+                        "x": 455.201,
+                        "y": 33.518,
+                        "z": 544.971
+                    },
+                    "rotation": 0.6352
+                },
+                {
+                    "data": {
+                        "base_id": 322,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1313,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966043,
+                    "position": {
+                        "x": 342.453,
+                        "y": 30.112,
+                        "z": 454.02
+                    },
+                    "rotation": 0.0018
+                },
+                {
+                    "data": {
+                        "base_id": 322,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1313,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966045,
+                    "position": {
+                        "x": 286.203,
+                        "y": 43.959,
+                        "z": 364.186
+                    },
+                    "rotation": -0.7072
+                },
+                {
+                    "data": {
+                        "base_id": 322,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1313,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966046,
+                    "position": {
+                        "x": 298.372,
+                        "y": 41.619,
+                        "z": 353.542
+                    },
+                    "rotation": -0.2108
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966078,
+                    "position": {
+                        "x": 423.168,
+                        "y": 17.37,
+                        "z": 742.085
+                    },
+                    "rotation": -1.0353
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966084,
+                    "position": {
+                        "x": 425.381,
+                        "y": 15.864,
+                        "z": 733.653
+                    },
+                    "rotation": -1.0936
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966085,
+                    "position": {
+                        "x": 432.63,
+                        "y": 14.965,
+                        "z": 729.068
+                    },
+                    "rotation": -0.1229
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966086,
+                    "position": {
+                        "x": 431.102,
+                        "y": 15.098,
+                        "z": 723.16
+                    },
+                    "rotation": -2.8865
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966092,
+                    "position": {
+                        "x": 388.383,
+                        "y": 24.999,
+                        "z": 694.981
+                    },
+                    "rotation": -0.1256
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966095,
+                    "position": {
+                        "x": 431.759,
+                        "y": 13.436,
+                        "z": 671.467
+                    },
+                    "rotation": 1.6221
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966096,
+                    "position": {
+                        "x": 428.521,
+                        "y": 13.873,
+                        "z": 666.976
+                    },
+                    "rotation": -2.7531
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966097,
+                    "position": {
+                        "x": 420.421,
+                        "y": 14.671,
+                        "z": 663.815
+                    },
+                    "rotation": -2.639
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966100,
+                    "position": {
+                        "x": 428.336,
+                        "y": 14.128,
+                        "z": 659.949
+                    },
+                    "rotation": -0.5938
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966104,
+                    "position": {
+                        "x": 352.98,
+                        "y": 31.067,
+                        "z": 729.321
+                    },
+                    "rotation": -2.4233
+                },
+                {
+                    "data": {
+                        "base_id": 325,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 560,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966108,
+                    "position": {
+                        "x": 505.731,
+                        "y": 9.21,
+                        "z": 685.395
+                    },
+                    "rotation": 0.1121
+                },
+                {
+                    "data": {
+                        "base_id": 325,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 560,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966112,
+                    "position": {
+                        "x": 467.201,
+                        "y": 10.933,
+                        "z": 696.325
+                    },
+                    "rotation": 0.6303
+                },
+                {
+                    "data": {
+                        "base_id": 325,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 560,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966115,
+                    "position": {
+                        "x": 480.977,
+                        "y": 9.391,
+                        "z": 730.036
+                    },
+                    "rotation": 0.8297
+                },
+                {
+                    "data": {
+                        "base_id": 325,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 560,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966117,
+                    "position": {
+                        "x": 482.203,
+                        "y": 9.377,
+                        "z": 764.791
+                    },
+                    "rotation": 2.6733
+                },
+                {
+                    "data": {
+                        "base_id": 325,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 560,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966118,
+                    "position": {
+                        "x": 495.312,
+                        "y": 9.264,
+                        "z": 755.61
+                    },
+                    "rotation": 1.4204
+                },
+                {
+                    "data": {
+                        "base_id": 325,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 560,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966120,
+                    "position": {
+                        "x": 485.232,
+                        "y": 10.033,
+                        "z": 640.116
+                    },
+                    "rotation": -1.7416
+                },
+                {
+                    "data": {
+                        "base_id": 325,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 560,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true
+                    },
+                    "layout_id": 3966122,
+                    "position": {
+                        "x": 507.816,
+                        "y": 9.328,
+                        "z": 628.995
+                    },
+                    "rotation": 1.8395
+                },
+                {
+                    "data": {
+                        "base_id": 325,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 560,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966123,
+                    "position": {
+                        "x": 467.588,
+                        "y": 12.509,
+                        "z": 599.974
+                    },
+                    "rotation": 3.0806
+                },
+                {
+                    "data": {
+                        "base_id": 312,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 361,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966128,
+                    "position": {
+                        "x": 523.628,
+                        "y": 9.438,
+                        "z": 251.83
+                    },
+                    "rotation": 0.8276
+                },
+                {
+                    "data": {
+                        "base_id": 312,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 361,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966129,
+                    "position": {
+                        "x": 502.176,
+                        "y": 10.69,
+                        "z": 207.569
+                    },
+                    "rotation": 2.4881
+                },
+                {
+                    "data": {
+                        "base_id": 312,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 361,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966132,
+                    "position": {
+                        "x": 507.148,
+                        "y": 10.087,
+                        "z": 206.81
+                    },
+                    "rotation": 0.2427
+                },
+                {
+                    "data": {
+                        "base_id": 312,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 361,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966134,
+                    "position": {
+                        "x": 493.61,
+                        "y": 11.532,
+                        "z": 233.159
+                    },
+                    "rotation": -2.5488
+                },
+                {
+                    "data": {
+                        "base_id": 312,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 361,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966135,
+                    "position": {
+                        "x": 512.047,
+                        "y": 9.282,
+                        "z": 265.532
+                    },
+                    "rotation": -1.7922
+                },
+                {
+                    "data": {
+                        "base_id": 312,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 361,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966139,
+                    "position": {
+                        "x": 516.597,
+                        "y": 9.208,
+                        "z": 223.373
+                    },
+                    "rotation": -2.4522
+                },
+                {
+                    "data": {
+                        "base_id": 312,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 361,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966142,
+                    "position": {
+                        "x": 537.84,
+                        "y": 10.189,
+                        "z": 200.055
+                    },
+                    "rotation": 1.0554
+                },
+                {
+                    "data": {
+                        "base_id": 312,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 361,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966143,
+                    "position": {
+                        "x": 478.608,
+                        "y": 11.551,
+                        "z": 252.457
+                    },
+                    "rotation": -1.7723
+                },
+                {
+                    "data": {
+                        "base_id": 170,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 351,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966185,
+                    "position": {
+                        "x": 225.32,
+                        "y": 54.267,
+                        "z": 564.565
+                    },
+                    "rotation": 1.2266
+                },
+                {
+                    "data": {
+                        "base_id": 170,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 351,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966191,
+                    "position": {
+                        "x": 236.913,
+                        "y": 53.074,
+                        "z": 558.817
+                    },
+                    "rotation": -1.7658
+                },
+                {
+                    "data": {
+                        "base_id": 170,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 351,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966193,
+                    "position": {
+                        "x": 237.525,
+                        "y": 52.242,
+                        "z": 560.93
+                    },
+                    "rotation": 1.891
+                },
+                {
+                    "data": {
+                        "base_id": 170,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 351,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966195,
+                    "position": {
+                        "x": 238.676,
+                        "y": 52.594,
+                        "z": 558.355
+                    },
+                    "rotation": 0.1639
+                },
+                {
+                    "data": {
+                        "base_id": 170,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 351,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966197,
+                    "position": {
+                        "x": 234.047,
+                        "y": 60.532,
+                        "z": 532.494
+                    },
+                    "rotation": -0.7773
+                },
+                {
+                    "data": {
+                        "base_id": 170,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 351,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966198,
+                    "position": {
+                        "x": 232.41,
+                        "y": 60.253,
+                        "z": 532.799
+                    },
+                    "rotation": 1.3111
+                },
+                {
+                    "data": {
+                        "base_id": 328,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 379,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true
+                    },
+                    "layout_id": 3966204,
+                    "position": {
+                        "x": 318.658,
+                        "y": 37.687,
+                        "z": 233.86
+                    },
+                    "rotation": -1.2219
+                },
+                {
+                    "data": {
+                        "base_id": 328,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 379,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true
+                    },
+                    "layout_id": 3966224,
+                    "position": {
+                        "x": 322.804,
+                        "y": 37.675,
+                        "z": 206.378
+                    },
+                    "rotation": 1.4878
+                },
+                {
+                    "data": {
+                        "base_id": 328,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 379,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966226,
+                    "position": {
+                        "x": 330.075,
+                        "y": 36.501,
+                        "z": 218.118
+                    },
+                    "rotation": 0.8391
+                },
+                {
+                    "data": {
+                        "base_id": 329,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 369,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966237,
+                    "position": {
+                        "x": 325.863,
+                        "y": 37.461,
+                        "z": 205.066
+                    },
+                    "rotation": -0.6993
+                },
+                {
+                    "data": {
+                        "base_id": 329,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 369,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true
+                    },
+                    "layout_id": 3966240,
+                    "position": {
+                        "x": 316.045,
+                        "y": 38.194,
+                        "z": 236.655
+                    },
+                    "rotation": 2.6986
+                },
+                {
+                    "data": {
+                        "base_id": 329,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 369,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966241,
+                    "position": {
+                        "x": 313.36,
+                        "y": 38.494,
+                        "z": 219.982
+                    },
+                    "rotation": -2.4397
+                },
+                {
+                    "data": {
+                        "base_id": 331,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 373,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966242,
+                    "position": {
+                        "x": 336.501,
+                        "y": 37.389,
+                        "z": 239.568
+                    },
+                    "rotation": 0.7983
+                },
+                {
+                    "data": {
+                        "base_id": 331,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 373,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966243,
+                    "position": {
+                        "x": 315.073,
+                        "y": 38.121,
+                        "z": 233.173
+                    },
+                    "rotation": 0.6912
+                },
+                {
+                    "data": {
+                        "base_id": 331,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 373,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966244,
+                    "position": {
+                        "x": 313.302,
+                        "y": 40.064,
+                        "z": 200.061
+                    },
+                    "rotation": -0.711
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true
+                    },
+                    "layout_id": 3966270,
+                    "position": {
+                        "x": 309.264,
+                        "y": 31.171,
+                        "z": 522.699
+                    },
+                    "rotation": 2.6608
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966278,
+                    "position": {
+                        "x": 282.716,
+                        "y": 42.088,
+                        "z": 402.299
+                    },
+                    "rotation": -1.1537
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966279,
+                    "position": {
+                        "x": 331.013,
+                        "y": 37.462,
+                        "z": 426.593
+                    },
+                    "rotation": -2.0245
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966281,
+                    "position": {
+                        "x": 413.18,
+                        "y": 28.372,
+                        "z": 489.22
+                    },
+                    "rotation": 0.4554
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966285,
+                    "position": {
+                        "x": 426.813,
+                        "y": 21.206,
+                        "z": 773.499
+                    },
+                    "rotation": -1.9054
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966288,
+                    "position": {
+                        "x": 439.949,
+                        "y": 13.83,
+                        "z": 702.387
+                    },
+                    "rotation": -1.4055
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966289,
+                    "position": {
+                        "x": 419.022,
+                        "y": 19.533,
+                        "z": 592.164
+                    },
+                    "rotation": -2.3497
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true
+                    },
+                    "layout_id": 3966291,
+                    "position": {
+                        "x": 240.017,
+                        "y": 53.346,
+                        "z": 617.953
+                    },
+                    "rotation": 1.1371
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966296,
+                    "position": {
+                        "x": 305.188,
+                        "y": 37.748,
+                        "z": 597.579
+                    },
+                    "rotation": -1.5485
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966311,
+                    "position": {
+                        "x": 463.884,
+                        "y": 13.985,
+                        "z": 273.973
+                    },
+                    "rotation": 1.7828
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966322,
+                    "position": {
+                        "x": 465.125,
+                        "y": 13.895,
+                        "z": 272.31
+                    },
+                    "rotation": 1.6818
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966331,
+                    "position": {
+                        "x": 437.821,
+                        "y": 16.79,
+                        "z": 325.004
+                    },
+                    "rotation": 2.3368
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966340,
+                    "position": {
+                        "x": 429.726,
+                        "y": 36.553,
+                        "z": 130.421
+                    },
+                    "rotation": 2.9535
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966343,
+                    "position": {
+                        "x": 438.937,
+                        "y": 35.491,
+                        "z": 195.461
+                    },
+                    "rotation": 2.9008
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966351,
+                    "position": {
+                        "x": 334.54,
+                        "y": 38.712,
+                        "z": 329.37
+                    },
+                    "rotation": 1.1105
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966355,
+                    "position": {
+                        "x": 369.277,
+                        "y": 34.517,
+                        "z": 249.946
+                    },
+                    "rotation": 2.5431
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966368,
+                    "position": {
+                        "x": 526.382,
+                        "y": 41.752,
+                        "z": 548.265
+                    },
+                    "rotation": 2.2454
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966375,
+                    "position": {
+                        "x": 520.958,
+                        "y": 41.121,
+                        "z": 548.588
+                    },
+                    "rotation": -0.1255
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966380,
+                    "position": {
+                        "x": 473.271,
+                        "y": 33.244,
+                        "z": 555.331
+                    },
+                    "rotation": -0.053
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966581,
+                    "position": {
+                        "x": 354.069,
+                        "y": 30.617,
+                        "z": 728.477
+                    },
+                    "rotation": 0.4885
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966589,
+                    "position": {
+                        "x": 332.38,
+                        "y": 31.396,
+                        "z": 701.75
+                    },
+                    "rotation": 0.9419
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true
+                    },
+                    "layout_id": 3966594,
+                    "position": {
+                        "x": 369.983,
+                        "y": 30.274,
+                        "z": 745.767
+                    },
+                    "rotation": 2.0347
+                },
+                {
+                    "data": {
+                        "base_id": 322,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1313,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966604,
+                    "position": {
+                        "x": 312.976,
+                        "y": 38.183,
+                        "z": 433.421
+                    },
+                    "rotation": 2.1189
+                },
+                {
+                    "data": {
+                        "base_id": 322,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1313,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966613,
+                    "position": {
+                        "x": 414.307,
+                        "y": 29.191,
+                        "z": 516.227
+                    },
+                    "rotation": 0.4819
+                },
+                {
+                    "data": {
+                        "base_id": 314,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 780,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 341,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966614,
+                    "position": {
+                        "x": 298.4,
+                        "y": 38.873,
+                        "z": 705.433
+                    },
+                    "rotation": -2.9571
+                },
+                {
+                    "data": {
+                        "base_id": 322,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 887,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1313,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966630,
+                    "position": {
+                        "x": 398.23,
+                        "y": 35.323,
+                        "z": 222.875
+                    },
+                    "rotation": -0.7488
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966825,
+                    "position": {
+                        "x": 333.002,
+                        "y": 38.506,
+                        "z": 171.266
+                    },
+                    "rotation": 0.7586
+                },
+                {
+                    "data": {
+                        "base_id": 133,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 115,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966829,
+                    "position": {
+                        "x": 337.777,
+                        "y": 37.838,
+                        "z": 167.406
+                    },
+                    "rotation": 0.5619
+                },
+                {
+                    "data": {
+                        "base_id": 170,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 351,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966836,
+                    "position": {
+                        "x": 255.029,
+                        "y": 48.944,
+                        "z": 555.257
+                    },
+                    "rotation": 2.3081
+                },
+                {
+                    "data": {
+                        "base_id": 170,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 351,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966837,
+                    "position": {
+                        "x": 228.376,
+                        "y": 54.328,
+                        "z": 580.678
+                    },
+                    "rotation": -0.7794
+                },
+                {
+                    "data": {
+                        "base_id": 386,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 639,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966848,
+                    "position": {
+                        "x": 421.865,
+                        "y": 34.931,
+                        "z": 171.875
+                    },
+                    "rotation": -0.3625
+                },
+                {
+                    "data": {
+                        "base_id": 386,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 639,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966849,
+                    "position": {
+                        "x": 432.296,
+                        "y": 36.795,
+                        "z": 103.001
+                    },
+                    "rotation": 1.7669
+                },
+                {
+                    "data": {
+                        "base_id": 386,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 639,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966850,
+                    "position": {
+                        "x": 452.512,
+                        "y": 13.137,
+                        "z": 153.638
+                    },
+                    "rotation": -1.7217
+                },
+                {
+                    "data": {
+                        "base_id": 386,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 639,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966851,
+                    "position": {
+                        "x": 457.645,
+                        "y": 13.121,
+                        "z": 181.938
+                    },
+                    "rotation": -1.8967
+                },
+                {
+                    "data": {
+                        "base_id": 386,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 639,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966852,
+                    "position": {
+                        "x": 438.802,
+                        "y": 36.673,
+                        "z": 117.451
+                    },
+                    "rotation": -2.1643
+                },
+                {
+                    "data": {
+                        "base_id": 386,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 639,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966853,
+                    "position": {
+                        "x": 427.347,
+                        "y": 36.519,
+                        "z": 103.094
+                    },
+                    "rotation": -1.7579
+                },
+                {
+                    "data": {
+                        "base_id": 386,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 639,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966854,
+                    "position": {
+                        "x": 421.3,
+                        "y": 35.819,
+                        "z": 156.139
+                    },
+                    "rotation": 1.7126
+                },
+                {
+                    "data": {
+                        "base_id": 386,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 639,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966855,
+                    "position": {
+                        "x": 445.083,
+                        "y": 36.12,
+                        "z": 195.575
+                    },
+                    "rotation": -1.4289
+                },
+                {
+                    "data": {
+                        "base_id": 386,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 639,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966856,
+                    "position": {
+                        "x": 415.14,
+                        "y": 35.262,
+                        "z": 161.163
+                    },
+                    "rotation": -0.2824
+                },
+                {
+                    "data": {
+                        "base_id": 386,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 639,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966857,
+                    "position": {
+                        "x": 482.753,
+                        "y": 44.225,
+                        "z": 159.972
+                    },
+                    "rotation": -1.067
+                },
+                {
+                    "data": {
+                        "base_id": 386,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 639,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966858,
+                    "position": {
+                        "x": 501.286,
+                        "y": 48.824,
+                        "z": 140.335
+                    },
+                    "rotation": -0.0106
+                },
+                {
+                    "data": {
+                        "base_id": 386,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 639,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966859,
+                    "position": {
+                        "x": 477.5,
+                        "y": 32.189,
+                        "z": 210.607
+                    },
+                    "rotation": -0.0965
+                },
+                {
+                    "data": {
+                        "base_id": 386,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 639,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966860,
+                    "position": {
+                        "x": 508.912,
+                        "y": 49.92,
+                        "z": 136.639
+                    },
+                    "rotation": 0.0861
+                },
+                {
+                    "data": {
+                        "base_id": 386,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 639,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966861,
+                    "position": {
+                        "x": 515.23,
+                        "y": 30.84,
+                        "z": 185.305
+                    },
+                    "rotation": -0.3967
+                },
+                {
+                    "data": {
+                        "base_id": 386,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 639,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966862,
+                    "position": {
+                        "x": 523.288,
+                        "y": 30.647,
+                        "z": 183.363
+                    },
+                    "rotation": 1.7153
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966932,
+                    "position": {
+                        "x": -109.863,
+                        "y": 59.312,
+                        "z": 668.811
+                    },
+                    "rotation": -2.5809
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966938,
+                    "position": {
+                        "x": -100.047,
+                        "y": 63.508,
+                        "z": 686.358
+                    },
+                    "rotation": -0.3634
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966939,
+                    "position": {
+                        "x": -91.077,
+                        "y": 63.876,
+                        "z": 683.268
+                    },
+                    "rotation": -0.1254
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966940,
+                    "position": {
+                        "x": -171.853,
+                        "y": 63.329,
+                        "z": 682.741
+                    },
+                    "rotation": -1.1184
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966941,
+                    "position": {
+                        "x": -166.81,
+                        "y": 60.966,
+                        "z": 675.177
+                    },
+                    "rotation": -2.1724
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966942,
+                    "position": {
+                        "x": -93.297,
+                        "y": 57.472,
+                        "z": 635.48
+                    },
+                    "rotation": 0.2329
+                },
+                {
+                    "data": {
+                        "base_id": 178,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 366,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966944,
+                    "position": {
+                        "x": -0.514,
+                        "y": 50.87,
+                        "z": 508.918
+                    },
+                    "rotation": -1.8442
+                },
+                {
+                    "data": {
+                        "base_id": 178,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 366,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966947,
+                    "position": {
+                        "x": -45.164,
+                        "y": 53.08,
+                        "z": 573.218
+                    },
+                    "rotation": -2.906
+                },
+                {
+                    "data": {
+                        "base_id": 178,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 366,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966949,
+                    "position": {
+                        "x": -44.447,
+                        "y": 44.008,
+                        "z": 513.76
+                    },
+                    "rotation": 2.7979
+                },
+                {
+                    "data": {
+                        "base_id": 178,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 366,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966950,
+                    "position": {
+                        "x": -54.347,
+                        "y": 52.901,
+                        "z": 583.26
+                    },
+                    "rotation": 3.1051
+                },
+                {
+                    "data": {
+                        "base_id": 178,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 366,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966951,
+                    "position": {
+                        "x": -76.2,
+                        "y": 44.441,
+                        "z": 550.453
+                    },
+                    "rotation": -0.8528
+                },
+                {
+                    "data": {
+                        "base_id": 178,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 366,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966952,
+                    "position": {
+                        "x": -103.115,
+                        "y": 37.436,
+                        "z": 459.967
+                    },
+                    "rotation": 2.372
+                },
+                {
+                    "data": {
+                        "base_id": 178,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 366,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966954,
+                    "position": {
+                        "x": -100.182,
+                        "y": 40.45,
+                        "z": 501.401
+                    },
+                    "rotation": -2.6088
+                },
+                {
+                    "data": {
+                        "base_id": 117,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 352,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966958,
+                    "position": {
+                        "x": -122.492,
+                        "y": 52.485,
+                        "z": 326.579
+                    },
+                    "rotation": -1.9692
+                },
+                {
+                    "data": {
+                        "base_id": 117,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 352,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966982,
+                    "position": {
+                        "x": -87.523,
+                        "y": 61.694,
+                        "z": 345.273
+                    },
+                    "rotation": 1.5371
+                },
+                {
+                    "data": {
+                        "base_id": 117,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 352,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966983,
+                    "position": {
+                        "x": -183.968,
+                        "y": 39.353,
+                        "z": 342.148
+                    },
+                    "rotation": 2.5592
+                },
+                {
+                    "data": {
+                        "base_id": 117,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 352,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966984,
+                    "position": {
+                        "x": -146.601,
+                        "y": 47.365,
+                        "z": 342.68
+                    },
+                    "rotation": -3.1326
+                },
+                {
+                    "data": {
+                        "base_id": 117,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 352,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966987,
+                    "position": {
+                        "x": -98.016,
+                        "y": 47.195,
+                        "z": 281.133
+                    },
+                    "rotation": -2.3703
+                },
+                {
+                    "data": {
+                        "base_id": 117,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 352,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966988,
+                    "position": {
+                        "x": -144.603,
+                        "y": 41.368,
+                        "z": 290.754
+                    },
+                    "rotation": -0.5023
+                },
+                {
+                    "data": {
+                        "base_id": 117,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 352,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966993,
+                    "position": {
+                        "x": -130.19,
+                        "y": 48.824,
+                        "z": 320.71
+                    },
+                    "rotation": -1.1056
+                },
+                {
+                    "data": {
+                        "base_id": 117,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 352,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966994,
+                    "position": {
+                        "x": -169.204,
+                        "y": 41.118,
+                        "z": 319.595
+                    },
+                    "rotation": -0.4931
+                },
+                {
+                    "data": {
+                        "base_id": 26,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 26,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966998,
+                    "position": {
+                        "x": -195.764,
+                        "y": 34.501,
+                        "z": 259.411
+                    },
+                    "rotation": 2.8485
+                },
+                {
+                    "data": {
+                        "base_id": 26,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 26,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3966999,
+                    "position": {
+                        "x": -132.255,
+                        "y": 35.746,
+                        "z": 238.282
+                    },
+                    "rotation": -1.2221
+                },
+                {
+                    "data": {
+                        "base_id": 26,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 26,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "display_flags": 262144
+                    },
+                    "layout_id": 3967000,
+                    "position": {
+                        "x": -324.117,
+                        "y": 44.541,
+                        "z": 362.417
+                    },
+                    "rotation": -0.0005
+                },
+                {
+                    "data": {
+                        "base_id": 26,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 26,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967001,
+                    "position": {
+                        "x": -118.926,
+                        "y": 35.912,
+                        "z": 238.227
+                    },
+                    "rotation": -0.3763
+                },
+                {
+                    "data": {
+                        "base_id": 26,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 26,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967002,
+                    "position": {
+                        "x": -60.731,
+                        "y": 34.424,
+                        "z": 222.514
+                    },
+                    "rotation": -1.5388
+                },
+                {
+                    "data": {
+                        "base_id": 26,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 26,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967003,
+                    "position": {
+                        "x": -233.531,
+                        "y": 35.026,
+                        "z": 292.159
+                    },
+                    "rotation": 1.3332
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967006,
+                    "position": {
+                        "x": -166.371,
+                        "y": 55.554,
+                        "z": 637.231
+                    },
+                    "rotation": -1.2044
+                },
+                {
+                    "data": {
+                        "base_id": 320,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 353,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967008,
+                    "position": {
+                        "x": -220.149,
+                        "y": 53.032,
+                        "z": 602.131
+                    },
+                    "rotation": 1.4294
+                },
+                {
+                    "data": {
+                        "base_id": 320,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 353,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967012,
+                    "position": {
+                        "x": -155.755,
+                        "y": 54.934,
+                        "z": 619.824
+                    },
+                    "rotation": -0.8445
+                },
+                {
+                    "data": {
+                        "base_id": 320,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 353,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967013,
+                    "position": {
+                        "x": -52.763,
+                        "y": 44.471,
+                        "z": 391.94
+                    },
+                    "rotation": -0.1511
+                },
+                {
+                    "data": {
+                        "base_id": 320,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 353,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967015,
+                    "position": {
+                        "x": 0.506,
+                        "y": 41.712,
+                        "z": 382.205
+                    },
+                    "rotation": 1.6446
+                },
+                {
+                    "data": {
+                        "base_id": 320,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 353,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967016,
+                    "position": {
+                        "x": -145.363,
+                        "y": 45.332,
+                        "z": 396.766
+                    },
+                    "rotation": -0.7047
+                },
+                {
+                    "data": {
+                        "base_id": 320,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 353,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967019,
+                    "position": {
+                        "x": -215.1,
+                        "y": 47.75,
+                        "z": 445.721
+                    },
+                    "rotation": 0.1742
+                },
+                {
+                    "data": {
+                        "base_id": 320,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 353,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967021,
+                    "position": {
+                        "x": -198.605,
+                        "y": 47.558,
+                        "z": 494.806
+                    },
+                    "rotation": -2.6475
+                },
+                {
+                    "data": {
+                        "base_id": 320,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 353,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967023,
+                    "position": {
+                        "x": -256.498,
+                        "y": 46.036,
+                        "z": 528.196
+                    },
+                    "rotation": -0.6096
+                },
+                {
+                    "data": {
+                        "base_id": 320,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 353,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967024,
+                    "position": {
+                        "x": -189.279,
+                        "y": 48.151,
+                        "z": 566.495
+                    },
+                    "rotation": 1.884
+                },
+                {
+                    "data": {
+                        "base_id": 321,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 355,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967040,
+                    "position": {
+                        "x": -229.889,
+                        "y": 44.866,
+                        "z": 552.874
+                    },
+                    "rotation": 0.2815
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967048,
+                    "position": {
+                        "x": -245.091,
+                        "y": 51.601,
+                        "z": 199.761
+                    },
+                    "rotation": -2.8926
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967053,
+                    "position": {
+                        "x": -233.029,
+                        "y": 45.411,
+                        "z": 227.517
+                    },
+                    "rotation": -2.4207
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967054,
+                    "position": {
+                        "x": -234.123,
+                        "y": 44.159,
+                        "z": 235.047
+                    },
+                    "rotation": 2.1776
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967056,
+                    "position": {
+                        "x": -305.63,
+                        "y": 52.668,
+                        "z": 251.347
+                    },
+                    "rotation": 1.7821
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967057,
+                    "position": {
+                        "x": -279.368,
+                        "y": 53.022,
+                        "z": 221.399
+                    },
+                    "rotation": 0.9422
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967060,
+                    "position": {
+                        "x": 120.104,
+                        "y": 83.069,
+                        "z": -61.413
+                    },
+                    "rotation": -0.7939
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967063,
+                    "position": {
+                        "x": 138.881,
+                        "y": 91.674,
+                        "z": -78.017
+                    },
+                    "rotation": 1.5312
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967064,
+                    "position": {
+                        "x": 135.212,
+                        "y": 89.152,
+                        "z": -72.473
+                    },
+                    "rotation": -1.936
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967067,
+                    "position": {
+                        "x": 110.931,
+                        "y": 88.026,
+                        "z": -90.739
+                    },
+                    "rotation": -1.7486
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967069,
+                    "position": {
+                        "x": 116.85,
+                        "y": 74.489,
+                        "z": -31.121
+                    },
+                    "rotation": -1.2169
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967071,
+                    "position": {
+                        "x": 79.736,
+                        "y": 75.209,
+                        "z": -5.355
+                    },
+                    "rotation": -2.4148
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967072,
+                    "position": {
+                        "x": 86.938,
+                        "y": 77.019,
+                        "z": -62.393
+                    },
+                    "rotation": 3.1261
+                },
+                {
+                    "data": {
+                        "base_id": 2,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 411,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967079,
+                    "position": {
+                        "x": 119.787,
+                        "y": 71.431,
+                        "z": 14.98
+                    },
+                    "rotation": -0.6804
+                },
+                {
+                    "data": {
+                        "base_id": 384,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 684,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967232,
+                    "position": {
+                        "x": -66.402,
+                        "y": 41.719,
+                        "z": 199.848
+                    },
+                    "rotation": -1.8985
+                },
+                {
+                    "data": {
+                        "base_id": 384,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 684,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967236,
+                    "position": {
+                        "x": -114.106,
+                        "y": 40.376,
+                        "z": 201.857
+                    },
+                    "rotation": 0.2828
+                },
+                {
+                    "data": {
+                        "base_id": 384,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 684,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967238,
+                    "position": {
+                        "x": -112.996,
+                        "y": 42.362,
+                        "z": 198.723
+                    },
+                    "rotation": 2.2437
+                },
+                {
+                    "data": {
+                        "base_id": 384,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 684,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967239,
+                    "position": {
+                        "x": -116.493,
+                        "y": 40.499,
+                        "z": 201.551
+                    },
+                    "rotation": 2.2743
+                },
+                {
+                    "data": {
+                        "base_id": 384,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 684,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true
+                    },
+                    "layout_id": 3967240,
+                    "position": {
+                        "x": -149.472,
+                        "y": 48.555,
+                        "z": 173.189
+                    },
+                    "rotation": -1.761
+                },
+                {
+                    "data": {
+                        "base_id": 384,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 684,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967241,
+                    "position": {
+                        "x": -153.8,
+                        "y": 48.361,
+                        "z": 175.543
+                    },
+                    "rotation": 1.6328
+                },
+                {
+                    "data": {
+                        "base_id": 384,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 684,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967242,
+                    "position": {
+                        "x": -153.435,
+                        "y": 49.536,
+                        "z": 169.108
+                    },
+                    "rotation": -2.821
+                },
+                {
+                    "data": {
+                        "base_id": 384,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 684,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967244,
+                    "position": {
+                        "x": -161.915,
+                        "y": 46.293,
+                        "z": 189.747
+                    },
+                    "rotation": 0.1889
+                },
+                {
+                    "data": {
+                        "base_id": 384,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 684,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967245,
+                    "position": {
+                        "x": -132.427,
+                        "y": 49.186,
+                        "z": 164.632
+                    },
+                    "rotation": 1.3076
+                },
+                {
+                    "data": {
+                        "base_id": 384,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 684,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967246,
+                    "position": {
+                        "x": -164.749,
+                        "y": 47.105,
+                        "z": 184.76
+                    },
+                    "rotation": -2.3987
+                },
+                {
+                    "data": {
+                        "base_id": 384,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 684,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967247,
+                    "position": {
+                        "x": -99.288,
+                        "y": 46.292,
+                        "z": 178.6
+                    },
+                    "rotation": -2.3969
+                },
+                {
+                    "data": {
+                        "base_id": 384,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 684,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967248,
+                    "position": {
+                        "x": -95.424,
+                        "y": 46.347,
+                        "z": 178.822
+                    },
+                    "rotation": -2.7216
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967250,
+                    "position": {
+                        "x": -258.253,
+                        "y": 55.253,
+                        "z": 196.0
+                    },
+                    "rotation": -0.7414
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967251,
+                    "position": {
+                        "x": -246.764,
+                        "y": 43.35,
+                        "z": 254.259
+                    },
+                    "rotation": 1.9089
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967252,
+                    "position": {
+                        "x": -1.855,
+                        "y": 41.165,
+                        "z": 300.626
+                    },
+                    "rotation": -0.8281
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967253,
+                    "position": {
+                        "x": -13.23,
+                        "y": 41.515,
+                        "z": 341.717
+                    },
+                    "rotation": -2.9717
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967254,
+                    "position": {
+                        "x": -9.826,
+                        "y": 41.617,
+                        "z": 354.403
+                    },
+                    "rotation": 0.086
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967255,
+                    "position": {
+                        "x": -116.657,
+                        "y": 45.528,
+                        "z": 407.28
+                    },
+                    "rotation": 2.2105
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967256,
+                    "position": {
+                        "x": -276.097,
+                        "y": 43.989,
+                        "z": 328.021
+                    },
+                    "rotation": -1.0542
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967257,
+                    "position": {
+                        "x": -206.14,
+                        "y": 41.21,
+                        "z": 380.105
+                    },
+                    "rotation": -3.0603
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967260,
+                    "position": {
+                        "x": -204.487,
+                        "y": 42.502,
+                        "z": 386.182
+                    },
+                    "rotation": -1.4002
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967261,
+                    "position": {
+                        "x": -72.443,
+                        "y": 34.572,
+                        "z": 222.729
+                    },
+                    "rotation": -1.4461
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967262,
+                    "position": {
+                        "x": -187.261,
+                        "y": 34.848,
+                        "z": 260.765
+                    },
+                    "rotation": 1.7818
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967263,
+                    "position": {
+                        "x": -144.19,
+                        "y": 47.255,
+                        "z": 332.631
+                    },
+                    "rotation": 0.0238
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967264,
+                    "position": {
+                        "x": -83.98,
+                        "y": 49.669,
+                        "z": 284.897
+                    },
+                    "rotation": -0.8573
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967265,
+                    "position": {
+                        "x": -93.435,
+                        "y": 58.879,
+                        "z": 653.192
+                    },
+                    "rotation": -2.9142
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967266,
+                    "position": {
+                        "x": -157.446,
+                        "y": 64.462,
+                        "z": 697.382
+                    },
+                    "rotation": -1.3974
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967267,
+                    "position": {
+                        "x": -134.464,
+                        "y": 54.205,
+                        "z": 637.713
+                    },
+                    "rotation": -0.8213
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967268,
+                    "position": {
+                        "x": -191.003,
+                        "y": 52.523,
+                        "z": 609.156
+                    },
+                    "rotation": -0.6402
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967269,
+                    "position": {
+                        "x": -192.591,
+                        "y": 52.611,
+                        "z": 608.664
+                    },
+                    "rotation": 0.1667
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967270,
+                    "position": {
+                        "x": -147.957,
+                        "y": 50.554,
+                        "z": 564.381
+                    },
+                    "rotation": 1.7027
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967271,
+                    "position": {
+                        "x": -233.014,
+                        "y": 45.076,
+                        "z": 562.918
+                    },
+                    "rotation": 2.4036
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967272,
+                    "position": {
+                        "x": -240.729,
+                        "y": 45.134,
+                        "z": 492.78
+                    },
+                    "rotation": -0.0006
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967275,
+                    "position": {
+                        "x": -304.076,
+                        "y": 45.48,
+                        "z": 466.483
+                    },
+                    "rotation": 3.0953
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967276,
+                    "position": {
+                        "x": -311.16,
+                        "y": 45.674,
+                        "z": 465.177
+                    },
+                    "rotation": -1.2663
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967277,
+                    "position": {
+                        "x": -79.425,
+                        "y": 38.198,
+                        "z": 479.227
+                    },
+                    "rotation": 0.7544
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967278,
+                    "position": {
+                        "x": -27.103,
+                        "y": 51.357,
+                        "z": 543.57
+                    },
+                    "rotation": 1.945
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1142,
+                        "level": 34,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967280,
+                    "position": {
+                        "x": -88.568,
+                        "y": 45.871,
+                        "z": 568.078
+                    },
+                    "rotation": -0.46
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967290,
+                    "position": {
+                        "x": 77.168,
+                        "y": 78.003,
+                        "z": -13.602
+                    },
+                    "rotation": 0.1369
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967292,
+                    "position": {
+                        "x": 138.914,
+                        "y": 74.296,
+                        "z": 14.517
+                    },
+                    "rotation": -0.5958
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967294,
+                    "position": {
+                        "x": 145.486,
+                        "y": 74.499,
+                        "z": 11.376
+                    },
+                    "rotation": 1.9613
+                },
+                {
+                    "data": {
+                        "base_id": 136,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 396,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967295,
+                    "position": {
+                        "x": 114.07,
+                        "y": 81.498,
+                        "z": -64.143
+                    },
+                    "rotation": -0.7909
+                },
+                {
+                    "data": {
+                        "base_id": 178,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 965,
+                        "level": 32,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 366,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967308,
+                    "position": {
+                        "x": -40.828,
+                        "y": 46.585,
+                        "z": 523.859
+                    },
+                    "rotation": -0.9223
+                },
+                {
+                    "data": {
+                        "base_id": 320,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 353,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967595,
+                    "position": {
+                        "x": -210.933,
+                        "y": 39.537,
+                        "z": 366.034
+                    },
+                    "rotation": 3.1091
+                },
+                {
+                    "data": {
+                        "base_id": 320,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 353,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967644,
+                    "position": {
+                        "x": -273.742,
+                        "y": 43.784,
+                        "z": 333.793
+                    },
+                    "rotation": -1.8254
+                },
+                {
+                    "data": {
+                        "base_id": 320,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 1055,
+                        "level": 33,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 353,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 3967651,
+                    "position": {
+                        "x": -138.931,
+                        "y": 48.183,
+                        "z": 545.764
+                    },
+                    "rotation": -0.1624
+                },
+                {
+                    "data": {
+                        "base_id": 789,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 6100,
+                        "level": 35,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1274,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true,
+                        "character_data_flags": 4,
+                        "behavior": 30051
+                    },
+                    "layout_id": 4057235,
+                    "position": {
+                        "x": 404.56,
+                        "y": 20.447,
+                        "z": 453.365
+                    },
+                    "rotation": -2.2175
+                },
+                {
+                    "data": {
+                        "base_id": 790,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 6100,
+                        "level": 35,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1274,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true,
+                        "character_data_flags": 4,
+                        "behavior": 30053
+                    },
+                    "layout_id": 4057253,
+                    "position": {
+                        "x": 464.608,
+                        "y": 13.737,
+                        "z": 386.294
+                    },
+                    "rotation": -1.6091
+                },
+                {
+                    "data": {
+                        "base_id": 789,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 6100,
+                        "level": 35,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1274,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true,
+                        "character_data_flags": 4,
+                        "behavior": 30054
+                    },
+                    "layout_id": 4057266,
+                    "position": {
+                        "x": 521.744,
+                        "y": 9.241,
+                        "z": 564.869
+                    },
+                    "rotation": -0.0
+                },
+                {
+                    "data": {
+                        "base_id": 788,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 6530,
+                        "level": 36,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1273,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true,
+                        "character_data_flags": 4,
+                        "behavior": 30053
+                    },
+                    "layout_id": 4057293,
+                    "position": {
+                        "x": 8.463,
+                        "y": 65.47,
+                        "z": 50.653
+                    },
+                    "rotation": 0.9304
+                },
+                {
+                    "data": {
+                        "base_id": 1378,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 12945,
+                        "level": 50,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1326,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "display_flags": 4
+                    },
+                    "layout_id": 4167103,
+                    "position": {
+                        "x": 551.065,
+                        "y": 15.553,
+                        "z": 91.882
+                    },
+                    "rotation": 0.4602
+                },
+                {
+                    "data": {
+                        "base_id": 55,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1821,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312742,
+                    "position": {
+                        "x": 183.526,
+                        "y": 74.618,
+                        "z": -3.409
+                    },
+                    "rotation": 0.2032
+                },
+                {
+                    "data": {
+                        "base_id": 61,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1822,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312743,
+                    "position": {
+                        "x": 200.552,
+                        "y": 74.747,
+                        "z": -29.243
+                    },
+                    "rotation": -1.1942
+                },
+                {
+                    "data": {
+                        "base_id": 62,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1823,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312744,
+                    "position": {
+                        "x": 234.247,
+                        "y": 76.235,
+                        "z": -2.409
+                    },
+                    "rotation": 3.0333
+                },
+                {
+                    "data": {
+                        "base_id": 63,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1824,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312745,
+                    "position": {
+                        "x": 201.521,
+                        "y": 75.193,
+                        "z": -30.807
+                    },
+                    "rotation": -1.5494
+                },
+                {
+                    "data": {
+                        "base_id": 64,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1825,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312746,
+                    "position": {
+                        "x": 214.063,
+                        "y": 75.191,
+                        "z": -10.38
+                    },
+                    "rotation": -1.3291
+                },
+                {
+                    "data": {
+                        "base_id": 62,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1823,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true
+                    },
+                    "layout_id": 4312748,
+                    "position": {
+                        "x": 242.298,
+                        "y": 74.479,
+                        "z": -23.728
+                    },
+                    "rotation": -1.6399
+                },
+                {
+                    "data": {
+                        "base_id": 62,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1823,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true
+                    },
+                    "layout_id": 4312759,
+                    "position": {
+                        "x": 335.849,
+                        "y": 76.161,
+                        "z": -11.49
+                    },
+                    "rotation": -1.9478
+                },
+                {
+                    "data": {
+                        "base_id": 62,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1823,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312813,
+                    "position": {
+                        "x": 429.465,
+                        "y": 76.158,
+                        "z": -63.432
+                    },
+                    "rotation": -1.1033
+                },
+                {
+                    "data": {
+                        "base_id": 62,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1823,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312814,
+                    "position": {
+                        "x": 387.137,
+                        "y": 76.397,
+                        "z": -61.814
+                    },
+                    "rotation": 0.1745
+                },
+                {
+                    "data": {
+                        "base_id": 55,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1821,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312815,
+                    "position": {
+                        "x": 288.987,
+                        "y": 76.346,
+                        "z": -4.549
+                    },
+                    "rotation": 2.6478
+                },
+                {
+                    "data": {
+                        "base_id": 62,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1823,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312816,
+                    "position": {
+                        "x": 314.363,
+                        "y": 76.345,
+                        "z": -34.488
+                    },
+                    "rotation": 2.1927
+                },
+                {
+                    "data": {
+                        "base_id": 61,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1822,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312817,
+                    "position": {
+                        "x": 302.88,
+                        "y": 76.291,
+                        "z": -16.152
+                    },
+                    "rotation": 1.4482
+                },
+                {
+                    "data": {
+                        "base_id": 63,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1824,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312818,
+                    "position": {
+                        "x": 301.046,
+                        "y": 76.301,
+                        "z": -17.927
+                    },
+                    "rotation": -2.5165
+                },
+                {
+                    "data": {
+                        "base_id": 64,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1825,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312819,
+                    "position": {
+                        "x": 280.947,
+                        "y": 76.797,
+                        "z": -26.474
+                    },
+                    "rotation": -0.0165
+                },
+                {
+                    "data": {
+                        "base_id": 61,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1822,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312874,
+                    "position": {
+                        "x": 446.413,
+                        "y": 76.197,
+                        "z": -10.428
+                    },
+                    "rotation": -0.1991
+                },
+                {
+                    "data": {
+                        "base_id": 64,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1825,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312875,
+                    "position": {
+                        "x": 359.491,
+                        "y": 76.436,
+                        "z": -35.666
+                    },
+                    "rotation": -2.6947
+                },
+                {
+                    "data": {
+                        "base_id": 63,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1824,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312876,
+                    "position": {
+                        "x": 411.813,
+                        "y": 76.197,
+                        "z": 0.212
+                    },
+                    "rotation": 0.5114
+                },
+                {
+                    "data": {
+                        "base_id": 62,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1823,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312877,
+                    "position": {
+                        "x": 410.927,
+                        "y": 76.197,
+                        "z": 2.861
+                    },
+                    "rotation": 0.6182
+                },
+                {
+                    "data": {
+                        "base_id": 55,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1821,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312878,
+                    "position": {
+                        "x": 374.718,
+                        "y": 76.288,
+                        "z": -18.731
+                    },
+                    "rotation": 2.1952
+                },
+                {
+                    "data": {
+                        "base_id": 62,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1823,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312880,
+                    "position": {
+                        "x": 481.615,
+                        "y": 76.891,
+                        "z": -107.208
+                    },
+                    "rotation": -1.182
+                },
+                {
+                    "data": {
+                        "base_id": 64,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1825,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312881,
+                    "position": {
+                        "x": 473.201,
+                        "y": 76.197,
+                        "z": -87.136
+                    },
+                    "rotation": 0.1826
+                },
+                {
+                    "data": {
+                        "base_id": 55,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1821,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312882,
+                    "position": {
+                        "x": 480.861,
+                        "y": 76.42,
+                        "z": -57.728
+                    },
+                    "rotation": 0.9047
+                },
+                {
+                    "data": {
+                        "base_id": 61,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1822,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312883,
+                    "position": {
+                        "x": 433.158,
+                        "y": 76.197,
+                        "z": -102.134
+                    },
+                    "rotation": 0.497
+                },
+                {
+                    "data": {
+                        "base_id": 63,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1824,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312885,
+                    "position": {
+                        "x": 456.628,
+                        "y": 76.197,
+                        "z": -126.435
+                    },
+                    "rotation": 0.4103
+                },
+                {
+                    "data": {
+                        "base_id": 62,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1823,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312886,
+                    "position": {
+                        "x": 432.29,
+                        "y": 76.197,
+                        "z": -101.017
+                    },
+                    "rotation": -0.1742
+                },
+                {
+                    "data": {
+                        "base_id": 201,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2589,
+                        "level": 50,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1826,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312887,
+                    "position": {
+                        "x": 383.527,
+                        "y": 76.298,
+                        "z": -45.0
+                    },
+                    "rotation": -1.9389
+                },
+                {
+                    "data": {
+                        "base_id": 201,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2589,
+                        "level": 50,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1826,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312890,
+                    "position": {
+                        "x": 432.992,
+                        "y": 76.197,
+                        "z": -44.241
+                    },
+                    "rotation": 2.4363
+                },
+                {
+                    "data": {
+                        "base_id": 201,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2589,
+                        "level": 50,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1826,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true
+                    },
+                    "layout_id": 4312892,
+                    "position": {
+                        "x": 355.095,
+                        "y": 76.141,
+                        "z": -93.768
+                    },
+                    "rotation": 0.7345
+                },
+                {
+                    "data": {
+                        "base_id": 201,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2589,
+                        "level": 50,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1826,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312893,
+                    "position": {
+                        "x": 366.363,
+                        "y": 76.335,
+                        "z": -98.833
+                    },
+                    "rotation": 0.265
+                },
+                {
+                    "data": {
+                        "base_id": 64,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1825,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312895,
+                    "position": {
+                        "x": 376.376,
+                        "y": 79.864,
+                        "z": -55.37
+                    },
+                    "rotation": 0.7521
+                },
+                {
+                    "data": {
+                        "base_id": 64,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1825,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true
+                    },
+                    "layout_id": 4312896,
+                    "position": {
+                        "x": 401.51,
+                        "y": 79.864,
+                        "z": -80.451
+                    },
+                    "rotation": 0.7521
+                },
+                {
+                    "data": {
+                        "base_id": 64,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1825,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312897,
+                    "position": {
+                        "x": 448.056,
+                        "y": 79.864,
+                        "z": -48.74
+                    },
+                    "rotation": -0.8106
+                },
+                {
+                    "data": {
+                        "base_id": 64,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1825,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true
+                    },
+                    "layout_id": 4312908,
+                    "position": {
+                        "x": 336.852,
+                        "y": 79.864,
+                        "z": 1.148
+                    },
+                    "rotation": -1.6712
+                },
+                {
+                    "data": {
+                        "base_id": 64,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1825,
+                        "nonpop": false,
+                        "type": "battle_npc",
+                        "stationary": true
+                    },
+                    "layout_id": 4312909,
+                    "position": {
+                        "x": 336.852,
+                        "y": 79.864,
+                        "z": -34.551
+                    },
+                    "rotation": -1.6712
+                },
+                {
+                    "data": {
+                        "base_id": 201,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2589,
+                        "level": 50,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1826,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312910,
+                    "position": {
+                        "x": 460.567,
+                        "y": 76.197,
+                        "z": -79.278
+                    },
+                    "rotation": 2.0662
+                },
+                {
+                    "data": {
+                        "base_id": 201,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2589,
+                        "level": 50,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1826,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312911,
+                    "position": {
+                        "x": 454.6,
+                        "y": 76.197,
+                        "z": -95.656
+                    },
+                    "rotation": -0.5457
+                },
+                {
+                    "data": {
+                        "base_id": 62,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1823,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312912,
+                    "position": {
+                        "x": 389.016,
+                        "y": 76.085,
+                        "z": -102.387
+                    },
+                    "rotation": -1.2522
+                },
+                {
+                    "data": {
+                        "base_id": 62,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 2501,
+                        "level": 49,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1823,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4312913,
+                    "position": {
+                        "x": 354.466,
+                        "y": 76.065,
+                        "z": -67.589
+                    },
+                    "rotation": 2.0053
+                },
+                {
+                    "data": {
+                        "base_id": 3186,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 21618,
+                        "level": 50,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 0,
+                        "name_id": 2930,
+                        "nonpop": false,
+                        "type": "battle_npc"
+                    },
+                    "layout_id": 4890100,
+                    "position": {
+                        "x": 522.349,
+                        "y": 9.198,
+                        "z": 288.206
+                    },
+                    "rotation": -1.0677
+                }
+            ]
+        }
+    ]
+}

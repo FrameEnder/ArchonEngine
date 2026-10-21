@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-20 | — | Combat: guards as on retail (they defend their post, walk back and face their post again; their DefaultTalk plays), NPCs at a post go back after a fight; known issues.
+| 2026-10-20 | — | Combat: La Noscea's six zones' spawns; every drop-in of a zone loads; questkit's drop-ins write guards, Behavior and `stationary` (questkit); known issues.
+| 2026-10-20 | `d9bf1d7` | Combat: guards as on retail (they defend their post, walk back and face their post again; their DefaultTalk plays), NPCs at a post go back after a fight; known issues.
 | 2026-10-20 | `4c1afc8` | Chronofoil, the Recorder and the Probe after a game patch (recorder and diagnostics).
 | 2026-10-20 | `c70bd60` | Every opcode found again after a game update, from the new executable alone: fingerprints, matching, startup remapping, the patch server (opcodes, tools); known issues.
 | 2026-10-20 | `85124c4` | 7.57h1: every fork opcode found (opcodes, marketboard; four new finders); retainers stand at the bell's spot, facing the player (retainers); known issues.

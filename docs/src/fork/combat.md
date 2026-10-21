@@ -215,6 +215,12 @@ the LGB they add to): retail's LGBs don't have them.
 | Southern Thanalan (146) | `wil_w1f4_planmap.json`, layer `BNPCS_RETAIL` (448) | the same: `--dropin 146 --appends bg/ffxiv/wil_w1/fld/w1f4/level/planmap.lgb` |
 | Northern Thanalan (147) | `wil_w1f5_planmap.json`, layer `BNPCS_RETAIL` (99) | the same: `--dropin 147 --appends bg/ffxiv/wil_w1/fld/w1f5/level/planmap.lgb` (a short visit: 21 kinds) |
 | Mor Dhona (156) | `roc_r1f1_planmap.json`, layer `BNPCS_RETAIL` (173) | the same: `--dropin 156 --appends bg/ffxiv/roc_r1/fld/r1f1/level/planmap.lgb` |
+| Middle La Noscea (134) | `sea_s1f1_planmap.json`, layer `BNPCS_RETAIL` (376) | Bob's Chronofoil capture of 2026-10-21 (flying through every La Noscea zone, an hour) with all the older ones: `--dropin 134 --appends bg/ffxiv/sea_s1/fld/s1f1/level/planmap.lgb` (with upstream's gathering points, `s1f1_planlive.json`) |
+| Lower La Noscea (135) | `sea_s1f2_planmap.json` (400) | the same, `s1f2` |
+| Eastern La Noscea (137) | `sea_s1f3_planmap.json` (241) | the same, `s1f3` |
+| Western La Noscea (138) | `sea_s1f4_planmap.json` (294) | the same, `s1f4` |
+| Upper La Noscea (139) | `sea_s1f5_planmap.json` (137) | the same, `s1f5` |
+| Outer La Noscea (180) | `sea_s1f6_planmap.json` (167) | the same, `s1f6` |
 
 Central Thanalan's spawn points carry retail's level and HP for each (levels 1–17, plus four level 35 Ul'dah guards at
 their posts and one level 50 hunt mark, Ovjang, kept to one of its spots), whether it's aggressive (97 of 632) and its
@@ -254,6 +260,20 @@ spot but one of each A/B-rank mark (bases 3179–3196), as Central Thanalan's Ov
 Flames and Northern Thanalan's level 50 guards are where retail had them. None of their kinds has a timeline yet
 (no Recorder export of these zones), so they fight with the defaults (auto-attack 870, a default hitbox and damage).
 Central Thanalan's capture had nothing its drop-in lacked.
+
+The six La Noscea zones came from Bob's Chronofoil capture of 2026-10-21 (2026.10.16, an hour flying through them)
+with every older capture, written whole by `questkit chronofoil --dropin` (guards, Behavior and `stationary`
+included): 1615 spawn points, 121 kinds, levels 1–50 (Middle and Lower 1–50 with their marks, Western 10–50, Upper
+20–50, Eastern and Outer 30–50), 584 aggressive, 122 stationary, and Limsa Lominsa's Yellowjackets (bases 783–790,
+Behavior 30051–30055, character data flags 0x4) where retail had them. Left out: 102 FATE monsters, 11 that belonged
+to someone, Upper La Noscea's S-rank mark (base 3205, 249,139 HP) and all but one spot of each A/B-rank mark (bases
+3184–3189, about 20,000 HP). No timelines yet (no Recorder export of these zones): they fight with the defaults. The
+`Bg` folders (`sea_s1/fld/s1f1`–`s1f6` for 134, 135, 137, 138, 139, 180) are TerritoryType's, not read from the game
+here: a drop-in whose LGB isn't the zone's doesn't load (no "Loaded dropin" line for it in the log).
+
+**Several drop-ins per zone**: the zone loader took the first drop-in matching the zone and stopped, so Middle La
+Noscea would have had either upstream's gathering points or its battle NPCs. It now loads every matching drop-in in the
+first folder that has any (sorted by name), so an extra resource path still overrides the built-in ones.
 
 SpawnNpc's character data flags (byte 8) aren't only "hostile": retail sends 0x1 for passive monsters, 0x2 for
 aggressive ones and 0x4 for guards (Ul'dah's Brass Blades and Flames, bases 791–798 and 1342; Gridania's Wood Wailers,

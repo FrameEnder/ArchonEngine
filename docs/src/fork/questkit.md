@@ -275,7 +275,13 @@ reads, chat left out), so `compare` and the rest can use it.
   quantized u16 at CommonSpawn + 98). Left out: FATE monsters, NPCs someone owns (pets, chocobos), spawns without a
   layout ID or turned from an event NPC, and `--exclude-base`s; `--one-spot BASE` keeps one spawn point of something
   that moves between them (a hunt mark). Monsters wander, so each goes where it was seen nearest the average of its
-  sightings. The LGB is the TerritoryType's `Bg` folder plus `planmap.lgb` (Central Thanalan:
+  sightings. Guards (character data flags 0x4) keep the flag and their Behavior row (CommonSpawn + 94). Each sighting
+  records how long the NPC was seen (until DeleteActor, whose actor ID is at byte 4, or leaving the zone), whether it
+  moved more than a yalm while idle (ActorMove's packed position at byte 6) and whether it fought (its own
+  ActorControlTarget, ActorCast or actions): a spot is `stationary` when it was seen idle a minute or more without
+  moving and never seen idle and moving, and so are the briefly seen spots of a kind that never moved in two or more
+  such sightings. Level 50+ NPCs are listed after the summary, to find hunt marks (`--exclude-base` the S ranks,
+  `--one-spot` the A and B ranks). The LGB is the TerritoryType's `Bg` folder plus `planmap.lgb` (Central Thanalan:
   `bg/ffxiv/wil_w1/fld/w1f2/level/planmap.lgb`). Flying around a zone with Chronofoil running is enough; Central
   Thanalan's drop-in came out of two such sessions (see [Combat](combat.md#open-world-spawns)).
 * **`--battle N.V`** turns a visit into a battle run (`chronofoil_battle.py`), saved as `.json.gz` for `questkit
