@@ -8565,6 +8565,57 @@
                     "rotation": -1.257
                 }
             ]
+        },
+        {
+            "name": "QB_SubSea105_001",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 39,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 192,
+                        "level": 10,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 962,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147
+                    },
+                    "layout_id": 3927183,
+                    "position": {
+                        "x": -320.943,
+                        "y": 25.954,
+                        "z": -526.726
+                    },
+                    "rotation": 0.702
+                },
+                {
+                    "data": {
+                        "base_id": 39,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 192,
+                        "level": 10,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 962,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147
+                    },
+                    "layout_id": 3927184,
+                    "position": {
+                        "x": -320.481,
+                        "y": 25.606,
+                        "z": -528.66
+                    },
+                    "rotation": -2.5
+                }
+            ]
         }
     ]
 }

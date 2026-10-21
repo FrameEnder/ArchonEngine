@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-21 | — | `master` fast-forwarded again (changelog).
+| 2026-10-21 | — | Quests: Sky-high, Thanks a Million, Relighting the Torch, On to the Drydocks (397, 402, 403, 406); known issues.
+| 2026-10-21 | `c747776` | `master` fast-forwarded again (changelog).
 | 2026-10-21 | `09088d6` | Combat: casts land as the bar ends; each hit's result; known issues.
 | 2026-10-21 | `698f0a2` | Combat: wandering's back-and-forth by spots off the navmesh.
 | 2026-10-21 | `965778a` | Combat: each hit's result (EffectResultBasic, the effect's global sequence); known issues.
@@ -180,7 +181,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | `master` and `Latest-Quest` fast-forwarded to `upstream-7.57h1` with Bob's OK (466–469 with quest battle 29, emote events, hit results and cast timing, the wander fix work in game). |
+| — | Limsa Lominsa's Sky-high, Thanks a Million, Relighting the Torch and On to the Drydocks (397, 402, 403, 406) from Bob's dumps and his 2026-10-21 capture, with fixtures; 398 and 404 marked completed with 397 and 402, as retail; the ambushes (drop-in layers `QB_SubSea105_001` in `sea_s1f1`, `QB_SubSea106_001` in `sea_s1f2`). |
+| `c747776` | `master` and `Latest-Quest` fast-forwarded to `upstream-7.57h1` with Bob's OK (466–469 with quest battle 29, emote events, hit results and cast timing, the wander fix). |
 | `09088d6` | Players' casts land when their bar ends again (with the half-second slidecast window back): landing 0.5 s early, as retail's ActionEffect does, applied the damage, death and EXP before the bar had ended, since Kawari applies effects as it sends them and retail's target side waits for the hit (Bob's 2026-10-21 bundle). Results follow every effect by 0.5 s. |
 | `698f0a2` | NPCs walking to a spot stop when the new path's end is no nearer it than where they stand (as near as the navmesh goes): a level 6 pugil by its off-mesh spawn point stepped between two points 0.75 yalms apart every half second for 16 minutes, each one's path ending at the other (Bob's 2026-10-21 bundle). |
 | `965778a` | Each hit's result as retail sends it: EffectResultBasic from the target with its HP 0.5 s after the ActionEffect (1.0 s for a player's cast), and EffectResults under the ActionEffect's own global sequence (they had the next one). The client waits for it, so a spell's damage only showed when the next spell's effect came (Bob's 2026-10-21 bundle). |

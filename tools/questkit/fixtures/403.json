@@ -1,0 +1,249 @@
+{
+ "quest": 403,
+ "script": "SubSea106_00403",
+ "source": "Bob's Chronofoil capture of the Limsa story (2026-10-21, ee0909d9); scenes and effects from Bob's Chronofoil capture of 2026-10-21",
+ "params": {
+  "ACTOR0": 1003245,
+  "ACTOR1": 1003246,
+  "ITEM0": 2000343,
+  "EOBJECT0": 2001260,
+  "EOBJECT1": 2001261,
+  "EVENT_ACTION_": 32,
+  "ENEMY0": 3929855,
+  "EVENT_ACTION_SEARCH": 1,
+  "ITEM1": 2000344,
+  "ACTOR2": 1001000,
+  "QST_ACCEPT_CHECK": 65940
+ },
+ "steps": [
+  {
+   "talk": 1003245,
+   "layout": 4137926,
+   "what": "ACTOR0",
+   "scenes": [
+    {
+     "scene": 0,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "expect": {
+    "sequence": 1,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "talk": 1003246,
+   "layout": 3921240,
+   "what": "ACTOR1",
+   "scenes": [
+    {
+     "scene": 1,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 2,
+    "vars": "001000000000",
+    "notices": [
+     [
+      0,
+      [
+       21003
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 2001260,
+   "layout": 3929792,
+   "what": "EOBJECT0",
+   "scenes": [
+    {
+     "scene": 2,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 2,
+    "vars": "001000000000",
+    "notices": []
+   }
+  },
+  {
+   "event_item": [
+    2000343,
+    2001260
+   ],
+   "layout": 3929792,
+   "what": "EOBJECT0",
+   "scenes": [
+    {
+     "scene": 3,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 3,
+    "vars": "000000000000",
+    "notices": [
+     [
+      1,
+      []
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 2001261,
+   "layout": 3929797,
+   "what": "EOBJECT1",
+   "scenes": [
+    {
+     "scene": 5,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ]
+    },
+    {
+     "scene": 6,
+     "flags": "0x2001",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 3,
+    "vars": "000000000000",
+    "notices": []
+   },
+   "spawns": [
+    3929855
+   ]
+  },
+  {
+   "kill": [
+    17,
+    3929855
+   ],
+   "what": "ENEMY0",
+   "expect": {
+    "sequence": 4,
+    "vars": "000100000000",
+    "notices": [
+     [
+      2,
+      [
+       22623
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 1003246,
+   "layout": 3921240,
+   "what": "ACTOR1",
+   "scenes": [
+    {
+     "scene": 11,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    },
+    {
+     "scene": 12,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 5,
+    "vars": "000000000000",
+    "notices": [
+     [
+      3,
+      []
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 1003245,
+   "layout": 4137926,
+   "what": "ACTOR0",
+   "scenes": [
+    {
+     "scene": 17,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 255,
+    "vars": "000000000000",
+    "notices": [
+     [
+      4,
+      []
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 1001000,
+   "layout": 1673111,
+   "what": "ACTOR2",
+   "scenes": [
+    {
+     "scene": 18,
+     "flags": "0x2000",
+     "results": [
+      1,
+      2661,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "expect": {
+    "completed": true,
+    "notices": []
+   }
+  }
+ ]
+}

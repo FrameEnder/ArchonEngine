@@ -42,10 +42,13 @@ add one when something is found.
 * **The Gridanian Envoy** (507) and **Call of the Sea** (674) were written from Sapphire and the recording without the
   client's script: dump them in the Quest Lab to check the scene numbers. Envoy's arrival positions are Sapphire's.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
-* Limsa Lominsa's story stops after Just Deserts (469). Bob's capture of 2026-10-21 has the rest up to Call of the
-  Sea (674; 397, 402, 403, 406, 412–415, 544–546, 689, 690, and the side quest 471), and Bob's dumps of 2026-10-21
-  cover them but 471. Retail also marked quests 398 and 404 completed along with 397 and 402, as 464 with 543
-  (`mark_quest_completed`); why (the sheet, presumably) isn't known.
+* Limsa Lominsa's story stops after On to the Drydocks (406). Bob's capture of 2026-10-21 has the rest up to Call of
+  the Sea (674; 412–415, 544–546, 689, 690, and the side quest 471), and Bob's dumps of 2026-10-21 cover them but 471.
+  Retail also marked quests 398 and 404 completed along with 397 and 402, as 464 with 543 (the scripts do it with
+  `mark_quest_completed`); why (the sheet, presumably) isn't known.
+* 397, 402, 403 and 406 (2026-10-21) are untested in game. Their ambushers (402's two, 403's one) use the existing
+  timelines of their BNpcBase (`TreeSlug_39`, `Bomb_17`), not ones made from these fights. 402's and 403's objects are
+  also recognised by retail's layout IDs, in case their base IDs were matched wrongly (as Double Dealing's sack was).
 * 466–469 (2026-10-21): their NPCs' and objects' base IDs were matched to retail's layout IDs by the scenes they play
   and the Quest sheet's listeners (the capture doesn't say). Double Dealing's sack of oranges was taken for EOBJECT2
   at first, so it did nothing (Bob's 2026-10-21 bundle); Loam Maintenance's three objects are matched by order
