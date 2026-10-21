@@ -2645,11 +2645,22 @@ async fn process_packet(
                             // Saved with the character and sent back whenever the client asks for it.
                             connection.player_data.volatile.portrait.data = portrait.to_vec();
                         }
-                        ClientZoneIpcData::UpdateAdventurerPlate { chara_card, .. } => {
+                        ClientZoneIpcData::UpdateAdventurerPlate {
+                            section,
+                            chara_card,
+                            ..
+                        } => {
                             // Saved straight away: the client asks for the plate again right after saving it, and
-                            // other players' requests read it from the database.
+                            // other players' requests read it from the database. As on retail (2026-10-20 capture),
+                            // unk14 is the client's leftover memory and is stored as 0, and the save time goes back
+                            // to the client as the plate's timestamp.
+                            tracing::info!("Adventurer plate saved (section {section})");
+                            let mut chara_card = chara_card.clone();
+                            chara_card.unk14 = 0;
                             connection.player_data.volatile.adventurer_plate.data =
                                 chara_card.to_bytes();
+                            connection.player_data.volatile.adventurer_plate_saved =
+                                kawari::common::timestamp_secs() as i64;
                             let mut database = connection.database.lock();
                             database.commit_volatile(&connection.player_data);
                         }

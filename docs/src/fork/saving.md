@@ -52,8 +52,9 @@ folders count as one (add `-2`, `-3`… for more on the same day). `database::mi
   `update-2026-10-14_map_discovery`, size `MAP_DISCOVERY_BITMASK_SIZE` in `constants.yml`) and sent in PlayerSetup.
 * **Achievement counters** (`unlock.achievement_counters`, migration `update-2026-10-16-3_achievement_counters`); see
   [Achievements](character-windows.md).
-* The **adventurer plate** as the client saved it (`volatile.adventurer_plate`, migration
-  `update-2026-10-16-2_adventurer_plate`); see [Adventurer Plate](character-windows.md#adventurer-plate).
+* The **adventurer plate** as the client saved it and when (`volatile.adventurer_plate`,
+  `volatile.adventurer_plate_saved`; migrations `update-2026-10-16-2_adventurer_plate`,
+  `update-2026-10-20_adventurer_plate_saved`); see [Adventurer Plate](character-windows.md#adventurer-plate).
 * **Achievements** (`unlock.achievements`, `unlock.achievement_history`) and the **adventurer plate's portrait**
   (`volatile.portrait`), migration `update-2026-10-16_achievements_portrait`; see
   [Achievements, Portraits and Recommendations](character-windows.md).

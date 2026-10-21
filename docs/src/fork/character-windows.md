@@ -123,22 +123,50 @@ up at `0x14658B0`, naming "BannerList"; CharaCard's portrait getters are at `0xB
 ## Adventurer Plate
 
 **What the client does.** Opening a plate (your own, or another player's) sends **RequestAdventurerPlate** with the
-actor; the reply is **AdventurerPlate** (server, 480 bytes; FFXIVClientStructs' CharaCardPacket): FC crest and account
-(unknown, zeroes), content ID, actor, a state number (2), world, the class/job's level and the class/job, sex (1),
-Grand Company and rank, then **CharaCardData** (188 bytes, `core/src/ipc/zone/server/chara_card.rs`), a timestamp,
-the search comment and the name. CharaCardData is the plate: version (4), the portrait's expression, zoom and
-lighting, class/job, the character's customize data, dyes, gear visibility, borders, preferred job, active hours,
-play styles, privacy flags, the pose and camera (u16s), decoration, background, frame, title, **base plate**,
-five decorations, glasses, and the twelve gear item IDs. Saving the plate in the window sends
-**UpdateAdventurerPlate** (client opcode **795**, 200 bytes, a fork opcode): a u32 (1), the same 188-byte
-CharaCardData, a timestamp and padding; the client then asks for the plate again.
+actor; the reply is **AdventurerPlate** (server, 480 bytes; FFXIVClientStructs' CharaCardPacket). Checked against
+Bob's Chronofoil capture of retail (2026-10-20: his plate opened and saved eight times, one section at a time):
 
-**What the server does.** Saves the 188 bytes in `volatile.adventurer_plate` (migration
-`update-2026-10-16-2_adventurer_plate`, committed straight away so the re-request and other players see it) and sends
-them back as they were. A character who never saved one gets upstream's starting design around their look and gear.
-The level is now the class/job's own (upstream sent 100). Upstream's field list had no base plate, so its glasses
-were two bytes off; the starting design now puts base plate 78 and decorations 18, 8, 28, 339 where the client's own
-save has them.
+| Offset | Field | Retail |
+|---|---|---|
+| 0x00 | FC crest (CrestData, u64) | 0 without one |
+| 0x08 | account ID (u64) | the character's account, nonzero |
+| 0x10 | content ID (u64) | |
+| 0x18 | actor | |
+| 0x1C | a state number (u32) | 2 |
+| 0x20 | world (u16) | |
+| 0x22 | level of the class/job they're on (u16) | |
+| 0x24 | that class/job (u8) | |
+| 0x25 | **sex** (u8) | 1 for Bob's female character, matching customize byte 1 |
+| 0x26 | Grand Company, rank | |
+| 0x28 | **CharaCardData** (188 bytes, `core/src/ipc/zone/server/chara_card.rs`) | |
+| 0xE4 | **timestamp** (u32, Unix seconds) | 0 for a plate never saved; afterwards the time of the last save |
+| 0xE8 | search comment (193 bytes) | |
+| 0x1A9 | name (32 bytes) | |
+| 0x1C9 | free company name (22 bytes), one empty byte | |
+
+CharaCardData is the plate: version, the portrait's expression, zoom and lighting, class/job, the character's
+customize data, dyes, gear visibility, borders, preferred job, active hours, play styles, flags (2: visible to no
+one), byte 0x43 (1 on retail, meaning unknown), privacy flags (1: friends only), more dyes, byte 0x51 (`unk14`), the
+pose and camera (u16s), decoration, background, frame, title, **base plate**, five decorations, glasses, a u32 (0 on
+retail; ClientStructs calls it a timestamp) and the twelve gear item IDs.
+
+Saving the plate in the window sends **UpdateAdventurerPlate** (client opcode **795** on 10.06, 350 on 7.57h1;
+200 bytes, a fork opcode): a u32 naming **the window section saved** (1 portrait, 2 profile: title, active hours,
+play styles; 3 design: base plate and decorations; 4 settings: who can see it), the whole 188-byte CharaCardData, the
+timestamp of the plate it last received, and 4 bytes of leftover memory; the client then asks for the plate again.
+Its `unk14` is leftover memory too (80, 25, 1, 149, 137, 9 in the capture): retail stores and sends back 0. The
+version the client saved (4) is kept, even when retail's had been 3.
+
+**What the server does.** Saves the 188 bytes in `volatile.adventurer_plate` with `unk14` set to 0, and the save time
+in `volatile.adventurer_plate_saved` (migrations `update-2026-10-16-2_adventurer_plate`,
+`update-2026-10-20_adventurer_plate_saved`), committed straight away so the re-request and other players see it,
+and logs the section ("Adventurer plate saved (section N)"). AdventurerPlate sends them back with the character's
+account ID and sex and the saved time (0 if never). Before, Kawari sent account 0, sex 1 (so male characters' plates
+said female) and the current time as the timestamp, and echoed the client's `unk14`. Kawari has no free companies,
+so the crest and FC name are empty. A character who never saved one gets upstream's starting design around their
+look and gear. The level is the class/job's own (upstream sent 100). Upstream's field list had no base plate, so its
+glasses were two bytes off; the starting design puts base plate 78 and decorations 18, 8, 28, 339 where the client's
+own save has them. `adventurer_plate_layout` (`core/src/ipc/zone/server/mod.rs`) checks the offsets.
 
 ## Recommendations
 

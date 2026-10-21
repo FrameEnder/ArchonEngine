@@ -76,6 +76,7 @@ diesel::table! {
         current_mount -> Integer,
         portrait -> Text,
         adventurer_plate -> Text,
+        adventurer_plate_saved -> BigInt,
     }
 }
 

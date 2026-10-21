@@ -274,8 +274,11 @@ add one when something is found.
 
 * **Adventurer Plate**: a character who has never saved theirs gets upstream's starting design (expression, lighting,
   pose, borders, a made-up profile: active hours, play styles, preferred job 38) around their own look and gear;
-  retail's starting plate hasn't been recorded. Once saved, it's the client's own. What the first number of
-  UpdateAdventurerPlate (1) and the server's AdventurerPlate unk fields mean isn't known.
+  retail's plate in the 2026-10-20 capture had been made long before, so retail's starting design for a new character
+  still isn't known. Once saved, it's the client's own. Kawari has no free companies, so the crest and FC name are
+  empty. CharaCardData's byte 0x43 (`unk13`, 1 on retail), the state number at 0x1C (2) and Data32's first u32 (0 on
+  retail; FFXIVClientStructs calls it a timestamp) aren't understood. Plates saved before
+  `update-2026-10-20_adventurer_plate_saved` show timestamp 0 until saved again.
 * **Achievements**: only Types 2, 3, 6, 8, 9 and 20 and counter 11 are completed automatically (of 33 Types and 1128
   counters), and what those Types mean is the community's reading of the sheet, not checked on retail. Mapping the
   Realm needs every part of the map discovered, and Kawari reveals map parts one at a time as the player walks into

@@ -1472,36 +1472,49 @@ pub enum ServerZoneIpcData {
     UpdateRecastTimes {
         unk: [u8; 640],
     },
+    /// Another character's (or your own) adventurer plate, answering RequestAdventurerPlate. CharaCardPacket in
+    /// FFXIVClientStructs; checked against a retail capture of Bob's plate being edited (2026-10-20).
     AdventurerPlate {
-        unk1: u32,
-        unk2: u32,
-        unk3: u32,
-        unk4: u32,
+        /// The free company crest (CrestData); 0 without one.
+        crest: u64,
+        /// The character's account (as in their spawn); retail sends it.
+        account_id: u64,
         content_id: u64,
         actor_id: ObjectId,
+        /// 2 on retail.
         unk5: u32,
         world_id: u16,
+        /// The level of the class/job they're on.
         favored_class_level: u16,
-        favored_class: u8, // TODO: not actually?!
-        unk7: u8,
+        /// The class/job they're on.
+        favored_class: u8,
+        /// The character's sex (0 male, 1 female), as in their customize data.
+        sex: u8,
         grand_company: GrandCompany,
         grand_company_rank: u8,
         /// What the plate shows (CharaCardData), as the client last saved it.
         chara_card: CharaCardData,
+        /// When the plate was last saved (Unix seconds), 0 if it never was. The client sends it back with its next
+        /// UpdateAdventurerPlate.
         timestamp: u32,
-        #[brw(pad_after = 132)] // empty? maybe?
-        #[brw(pad_size_to = 60)]
-        #[br(count = 60)]
+        /// The search comment (SearchComment, 193 bytes).
+        #[brw(pad_size_to = 193)]
+        #[br(count = 193)]
         #[br(map = read_string)]
         #[bw(map = write_string)]
         comment: String,
-        #[brw(pad_before = 1)] // empty
-        #[brw(pad_after = 23)] // empty
         #[brw(pad_size_to = CHAR_NAME_MAX_LENGTH)]
         #[br(count = CHAR_NAME_MAX_LENGTH)]
         #[br(map = read_string)]
         #[bw(map = write_string)]
         name: String,
+        /// The free company's name (22 bytes); empty without one.
+        #[brw(pad_after = 1)] // empty
+        #[brw(pad_size_to = 22)]
+        #[br(count = 22)]
+        #[br(map = read_string)]
+        #[bw(map = write_string)]
+        free_company: String,
     },
     RecordGatheringLog {
         /// Index into the bitmask.
@@ -1589,6 +1602,50 @@ mod tests {
         assert_eq!(bytes.len(), 552);
         assert_eq!(bytes[0], 0b10);
         assert_eq!(&bytes[0x1FE..0x202], &[1, 0, 2, 0]);
+    }
+
+    /// Where each part of AdventurerPlate lands, as retail sent Bob's plate (Chronofoil capture of 2026-10-20; its
+    /// layout and numbers, with made-up IDs and text): account at 8, content ID at 16, sex at 0x25, the search comment at 0xE8, the
+    /// name at 0x1A9 and the free company at 0x1C9, 480 bytes in all.
+    #[test]
+    fn adventurer_plate_layout() {
+        use binrw::BinWrite;
+
+        let data = ServerZoneIpcData::AdventurerPlate {
+            crest: 0,
+            account_id: 0x0102_0304_0506_0708,
+            content_id: 0x0040_0011_2233_4455,
+            actor_id: ObjectId(0x1000_0001),
+            unk5: 2,
+            world_id: 57,
+            favored_class_level: 88,
+            favored_class: 24,
+            sex: 1,
+            grand_company: GrandCompany::Flames,
+            grand_company_rank: 10,
+            chara_card: CharaCardData::default(),
+            timestamp: 1_792_546_070,
+            comment: "c".to_string(),
+            name: "n".to_string(),
+            free_company: "f".to_string(),
+        };
+        let mut cursor = std::io::Cursor::new(Vec::new());
+        data.write_le(&mut cursor).unwrap();
+        let bytes = cursor.into_inner();
+        assert_eq!(bytes.len(), 480);
+        assert_eq!(bytes[8], 0x08);
+        assert_eq!(
+            &bytes[0x10..0x18],
+            &[0x55, 0x44, 0x33, 0x22, 0x11, 0x00, 0x40, 0x00]
+        );
+        assert_eq!(
+            &bytes[0x1C..0x28],
+            &[2, 0, 0, 0, 57, 0, 88, 0, 24, 1, 3, 10]
+        );
+        assert_eq!(&bytes[0xE4..0xE8], &1_792_546_070u32.to_le_bytes());
+        assert_eq!(bytes[0xE8], b'c');
+        assert_eq!(bytes[0x1A9], b'n');
+        assert_eq!(bytes[0x1C9], b'f');
     }
 
     /// FirstAttack as retail sent it (Bob's Chronofoil capture of 2026-10-17): an enemy claimed by player 0x10065441.

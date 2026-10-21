@@ -165,6 +165,8 @@ pub struct Volatile {
     pub portrait: Bitmask<ADVENTURER_PLATE_PORTRAIT_SIZE>,
     /// The adventurer plate (CharaCardData), as the client last saved it (empty if it never did.)
     pub adventurer_plate: Bitmask<ADVENTURER_PLATE_SIZE>,
+    /// When the client last saved the adventurer plate (Unix seconds, 0 if it never did.)
+    pub adventurer_plate_saved: i64,
 }
 
 #[derive(

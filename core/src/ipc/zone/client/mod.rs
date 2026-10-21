@@ -221,11 +221,15 @@ pub enum ClientZoneIpcData {
     },
     /// The client saves its adventurer plate (the Adventurer Plate window): what the plate shows, as the server sends
     /// it back in `ServerZoneIpcData::AdventurerPlate`. Sent by CharaCard (`0xC4AB2E` writes the opcode, 216 bytes
-    /// with the header); the first number was 1 when Bob saved his.
+    /// with the header). Retail capture (2026-10-20): the server keeps it as sent except `unk14`, which the client
+    /// fills with leftover memory and retail stores as 0.
     UpdateAdventurerPlate {
-        unk: u32,
+        /// Which part of the Adventurer Plate window was saved: 1 portrait, 2 profile (title, active hours, play
+        /// styles), 3 design (base plate, decorations), 4 settings (who can see it).
+        section: u32,
         chara_card: crate::ipc::zone::CharaCardData,
-        #[brw(pad_after = 4)]
+        /// The timestamp of the plate the client last received (0 if it was never saved).
+        #[brw(pad_after = 4)] // leftover memory
         timestamp: u32,
     },
     Config(Config),

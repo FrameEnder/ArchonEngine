@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-20 | — | Combat: La Noscea's six zones' spawns; every drop-in of a zone loads; questkit's drop-ins write guards, Behavior and `stationary` (questkit); known issues.
+| 2026-10-20 | — | Character windows: the Adventurer Plate as on retail (its fields, the saved time, unk14, the section saved); saving; known issues.
+| 2026-10-20 | `7278037` | Combat: La Noscea's six zones' spawns; every drop-in of a zone loads; questkit's drop-ins write guards, Behavior and `stationary` (questkit); known issues.
 | 2026-10-20 | `d9bf1d7` | Combat: guards as on retail (they defend their post, walk back and face their post again; their DefaultTalk plays), NPCs at a post go back after a fight; known issues.
 | 2026-10-20 | `4c1afc8` | Chronofoil, the Recorder and the Probe after a game patch (recorder and diagnostics).
 | 2026-10-20 | `c70bd60` | Every opcode found again after a game update, from the new executable alone: fingerprints, matching, startup remapping, the patch server (opcodes, tools); known issues.
@@ -158,11 +159,21 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`), and on 2026-10-19 (right after `5b5e91f`, and again right after `6bd4b19` and `511d7e1`), and on 2026-10-20 (right after `666a398`, and again right after `f6ff8ea` and `3851eba`).
 
+### 2026-10-20
+
+| Commit | Change |
+|---|---|
+| — | The Adventurer Plate as retail sends it (Bob's Chronofoil capture of his plate being edited): AdventurerPlate's account ID (from the character), sex (from their customize data; it was always 1, female), the 193-byte search comment and the free company's name (empty) are named and sent; its timestamp is when the plate was last saved, 0 if never (it was the current time), kept in `volatile.adventurer_plate_saved` (migration `update-2026-10-20_adventurer_plate_saved`); UpdateAdventurerPlate's first number is the window section saved (logged), and its `unk14` (the client's leftover memory) is stored as 0. Test `adventurer_plate_layout`. |
+| `7278037` | La Noscea's six zones' spawns from Bob's flight (drop-ins `sea_s1f1`–`sea_s1f6`); the loader loads every drop-in of a zone; questkit's drop-ins write guards, Behavior and `stationary`. |
+| `d9bf1d7` | Guards as on retail: character data flag 0x4, they defend their post against monsters, walk back and face it again; DefaultTalk plays scene 0. |
+| `c70bd60` | Every opcode found again after a game update from the executable alone (`core/src/opcode_match.rs`, `auto_opcodes.rs`, `opcodescan fingerprint/match/paths`). |
+| `85124c4` | 7.57h1: every fork opcode found (four new finders); retainers stand at the bell's spot, facing the player. |
+
 ### 2026-10-19
 
 | Commit | Change |
 |---|---|
-| — | Merge upstream Kawari from Codeberg (through `f8a4b48`: patch 7.57h1, 2026.10.16.0000.0000; 19 commits: the CI, dependencies and Physis, gamedata moved into `kawari::common`, the 7.57h1 opcodes, `BASE_INVENTORY_ACTION` 234, scrambler data, mail constants), on branch `upstream-7.57h1`. Conflicts kept the fork's code on upstream's new API: the retail stat formula reads the Tribe row (upstream dropped `Attributes`), the fork's imports with upstream's moved types (`TerritoryIntendedUse`, `GimmickAccessorType`, `GimmickRectTriggerType`), `serde_derive` in timelines, upstream's 7.57h1 mail results with the fork's bitmask constants. `ItemOperationKind::UnkTrading2` (upstream's 256) is now an alias of the fork's `RetainerEntrust`: both are `BASE_INVENTORY_ACTION + 22` on 7.57h1 and 7.55, and an enum can't hold two. `kawari-questdump` reads index files for Physis's new `ReadableFile`. The 23 fork opcodes are outstanding until the startup scan finds them on 7.57h1. |
+| `6f92ff6` | Merge upstream Kawari from Codeberg (through `f8a4b48`: patch 7.57h1, 2026.10.16.0000.0000; 19 commits: the CI, dependencies and Physis, gamedata moved into `kawari::common`, the 7.57h1 opcodes, `BASE_INVENTORY_ACTION` 234, scrambler data, mail constants), on branch `upstream-7.57h1`. Conflicts kept the fork's code on upstream's new API: the retail stat formula reads the Tribe row (upstream dropped `Attributes`), the fork's imports with upstream's moved types (`TerritoryIntendedUse`, `GimmickAccessorType`, `GimmickRectTriggerType`), `serde_derive` in timelines, upstream's 7.57h1 mail results with the fork's bitmask constants. `ItemOperationKind::UnkTrading2` (upstream's 256) is now an alias of the fork's `RetainerEntrust`: both are `BASE_INVENTORY_ACTION + 22` on 7.57h1 and 7.55, and an enum can't hold two. `kawari-questdump` reads index files for Physis's new `ReadableFile`. The 23 fork opcodes are outstanding until the startup scan finds them on 7.57h1. |
 | `7ff3e65` | `questkit chronofoil --save-opcodes` for 2026.10.06.0000.0000 (7.57), before merging upstream's 7.57h1 (2026.10.16), so Bob's captures from 7.57 stay readable. |
 | `645c05a` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (641, 552, 528 and 673 work in game: the Ul'dah opening complete). |
 | `3851eba` | A Matter of Tradition (641): the Sultansworn elite's yes/no (scene 2) takes the player into the room (TERRITORYTYPE0 210, POPRANGE0) to accept it; it was taken for an unused scene and ended, so leaving the room before accepting made the quest impossible to pick up. The other dumped quests' yes/no scenes and pop ranges checked: all played (Coming to Limsa Lominsa's lift repeat, 13, is the known gap). |

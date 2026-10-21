@@ -8,7 +8,6 @@ use crate::{
 use kawari::{
     common::{
         BasicCharacterData, ObjectId, WORLD_NAME, WeaponModelId, determine_initial_homepoint,
-        timestamp_secs,
     },
     config::get_config,
     ipc::{
@@ -822,6 +821,9 @@ impl WorldDatabase {
             .and_then(|index| classjob.levels.0.get(index as usize).copied())
             .unwrap_or(1);
 
+        // Read before the starting design below takes the customize data.
+        let sex = customize.chara_make.customize.gender as u8;
+
         // What the plate shows: as the client last saved it (UpdateAdventurerPlate), or upstream's starting design
         // around the character's look and gear if it never has.
         let chara_card =
@@ -921,17 +923,15 @@ impl WorldDatabase {
 
         let config = get_config();
         ServerZoneIpcSegment::new(ServerZoneIpcData::AdventurerPlate {
-            unk1: 0,
-            unk2: 0,
-            unk3: 0,
-            unk4: 0,
+            crest: 0,
+            account_id: for_character.service_account_id as u64,
             content_id: for_character.content_id as u64,
             actor_id: for_actor_id,
             unk5: 2,
             world_id: config.world.world_id,
             favored_class_level: level,
             favored_class: classjob.current_class as u8,
-            unk7: 1,
+            sex,
             grand_company: grand_company.active_company,
             // No Grand Company (0) has no rank; indexing with 0 - 1 panicked the server when the Portraits window
             // asked for the plate.
@@ -940,9 +940,12 @@ impl WorldDatabase {
                 .and_then(|index| grand_company.company_ranks.0.get(index).copied())
                 .unwrap_or(0),
             chara_card,
-            timestamp: timestamp_secs(),
+            // When it was last saved, 0 if never (retail; the current time made every plate look just saved.)
+            timestamp: volatile.adventurer_plate_saved as u32,
             comment: search_info.comment.clone(),
             name: for_character.name.clone(),
+            // Kawari has no free companies yet.
+            free_company: String::new(),
         })
     }
 
