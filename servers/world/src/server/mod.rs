@@ -1233,8 +1233,7 @@ fn server_logic_tick(
                         && !spawn.common.owner_id.is_valid()
                         && instance_is_open_world)
                         // Party bots too, between fights, anywhere (a guess: players' own regeneration isn't this.)
-                        || spawn.common.object_kind
-                            == ObjectKind::BattleNpc(BattleNpcSubKind::NpcPartyMember))
+                        || party_bot::is_party_bot_kind(spawn))
                 {
                     // Enemies out of combat (or going home after giving up a chase) get 10 % of their max HP back
                     // every 3 s (Bob's Chronofoil captures, 149 samples.)

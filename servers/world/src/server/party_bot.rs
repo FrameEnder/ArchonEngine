@@ -28,7 +28,9 @@ use glam::Vec3A;
 use kawari::{
     common::{ObjectId, ObjectTypeId, Position, Rotation, RotationAction},
     config::get_config,
-    ipc::zone::{BattleNpcSubKind, CommonSpawn, DisplayFlag, ObjectKind, SpawnNpc},
+    ipc::zone::{
+        BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DisplayFlag, ObjectKind, SpawnNpc,
+    },
 };
 use parking_lot::Mutex;
 use physis::{
@@ -91,6 +93,15 @@ const TWO_HANDED: u8 = 13;
 const OFF_HAND: u8 = 2;
 const ARMOUR_SLOTS: [u8; 9] = [3, 4, 5, 7, 8, 9, 10, 11, 12];
 const RING: u8 = 12;
+
+/// Whether this NPC is a party bot's kind of NPC: a party member, or (the `kind=chocobo` test) an owned chocobo.
+pub fn is_party_bot_kind(spawn: &SpawnNpc) -> bool {
+    match spawn.common.object_kind {
+        ObjectKind::BattleNpc(BattleNpcSubKind::NpcPartyMember) => true,
+        ObjectKind::BattleNpc(BattleNpcSubKind::Chocobo) => spawn.common.owner_id.is_valid(),
+        _ => false,
+    }
+}
 
 /// What part a bot plays in the party.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -565,6 +576,17 @@ pub fn spawn_party_bot(
     leader: ObjectId,
     class_name: &str,
 ) -> Result<String, String> {
+    // `kind=chocobo` (a test, for the nameplate): spawned as retail spawns a chocobo companion instead (sub-kind 3,
+    // character data flags 0x1, no display flags), whose nameplate shows the spawn's name text.
+    let words: Vec<&str> = class_name.split_whitespace().collect();
+    let as_chocobo = words.contains(&"kind=chocobo");
+    let class_name = words
+        .iter()
+        .filter(|word| !word.starts_with("kind="))
+        .copied()
+        .collect::<Vec<_>>()
+        .join(" ");
+    let class_name = class_name.as_str();
     let classjob = game_data
         .find_combat_classjob(class_name)
         .ok_or_else(|| format!("No combat class or job is called \"{class_name}\"."))?;
@@ -661,9 +683,17 @@ pub fn spawn_party_bot(
             resource_points: 10000,
             // As retail spawns its party-member NPCs (Trust, Bob's Chronofoil captures in 822 and 884: 6 of them):
             // owned by the player, display flags 0x40000. Without them the bots had no nameplate (2026-10-21 bundle.)
-            object_kind: ObjectKind::BattleNpc(BattleNpcSubKind::NpcPartyMember),
+            object_kind: ObjectKind::BattleNpc(if as_chocobo {
+                BattleNpcSubKind::Chocobo
+            } else {
+                BattleNpcSubKind::NpcPartyMember
+            }),
             owner_id: leader,
-            display_flags: DisplayFlag::UNK1,
+            display_flags: if as_chocobo {
+                DisplayFlag::empty()
+            } else {
+                DisplayFlag::UNK1
+            },
             battalion: 0,
             model_chara: 0,
             level,
@@ -674,6 +704,12 @@ pub fn spawn_party_bot(
             look,
             target_id: ObjectTypeId::default(),
             ..Default::default()
+        },
+        // Retail's chocobo companions have 0x1 here (its Trust members 0x2, which Kawari reads as hostile.)
+        character_data_flags: if as_chocobo {
+            CharacterDataFlag::from_bits_retain(0x1)
+        } else {
+            CharacterDataFlag::empty()
         },
         ..Default::default()
     };

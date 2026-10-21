@@ -23,8 +23,9 @@ add one when something is found.
 * Stage 1 only (see [Party Bots](party-bots.md)): `!spawn playernpc` bots aren't in the party list (retail lists Duty
   Support members through its own packets, not recorded yet), aren't level synced, don't follow you into another
   zone, stay down when they die, use single-target attacks and one heal only, and don't dodge area attacks. The Duty
-  Finder doesn't fill roles with them yet. In combat melee bots still stand on the same spot by their target. Whether
-  the owner and display flag 0x40000 bring their nameplates back (as retail's Trust members have them) is untested.
+  Finder doesn't fill roles with them yet. In combat melee bots still stand on the same spot by their target. Their
+  nameplates show "Lv100" without the name (it comes from a BNpcName for this kind of NPC); `kind=chocobo` tries
+  retail's chocobo companion arrangement, whose nameplate shows its spawn's name text.
 
 ## Quests
 

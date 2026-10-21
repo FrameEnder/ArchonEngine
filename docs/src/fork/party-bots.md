@@ -21,13 +21,17 @@ Code: `servers/world/src/server/party_bot.rs` (`spawn_party_bot`, `update`), the
 
 ## What a bot is
 
-* **An NPC with a player's look.** A battle NPC of BattleNpcSubKind 9, `NpcPartyMember`, battalion 0 (your side),
-  ModelChara 0 (a human model built from its customize data and gear). Retail spawns its party-member NPCs this way
-  (Trust, six in Bob's Chronofoil captures in territories 822 and 884): **owned by the player** (`owner_id`), display
-  flags **0x40000**, battalion 0, character data flags 0x2, with a BNpcBase and BNpcName. The bots copy the owner and
-  display flags; without them (stage 1's first build) they had no nameplate, only their name in the battle log (Bob's
-  2026-10-21 bundle). They keep character data flags 0, since Kawari reads 0x2 as hostile, and have no BNpcName (their
-  name is the spawn's name string). Player area attacks don't hit them (they only hit `Enemy` NPCs).
+* **An NPC with a player's look.** A battle NPC of BattleNpcSubKind 9, `NpcPartyMember`, owned by the player
+  (`owner_id`), display flags 0x40000, battalion 0 (your side), ModelChara 0 (a human model built from its customize
+  data and gear), as retail spawns its party-member NPCs (Trust, six in Bob's Chronofoil captures in territories 822
+  and 884: those also have character data flags 0x2, which Kawari reads as hostile, so the bots keep 0, and a
+  BNpcBase and BNpcName). Player area attacks don't hit them (they only hit `Enemy` NPCs).
+* **Its nameplate shows "Lv100" but no name** (Bob's 2026-10-21 bundles, with and without the owner): the battle log
+  shows the spawn's name text, so the client has it, but for this kind of NPC the nameplate's name comes from
+  elsewhere (retail's Trust members have a BNpcName, `name_id`). Retail's **chocobo companions** are the other owned
+  battle NPCs with a made-up name: sub-kind 3, the name in the text and **no** `name_id`, character data flags 0x1, no
+  display flags, and their nameplate shows that name. `!spawn playernpc <class> kind=chocobo` spawns a bot that way,
+  to see in game whether its name shows (and whether the client then treats it as your chocobo).
 * **A random look.** One of the first six races (Hyur, Elezen, Lalafell, Miqo'te, Roegadyn, Au Ra) and either sex, its
   face and hairstyle 1–4 (which every tribe and sex has) and random features and colours within small ranges. Hrothgar
   and Viera are left out until their valid ranges are read from the character creator's data.
@@ -49,6 +53,9 @@ Code: `servers/world/src/server/party_bot.rs` (`spawn_party_bot`, `update`), the
 
 Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot what to do:
 
+* **Movement.** Where the navmesh has no path (none around Summerford Farms' houses), a bot walks straight to where
+  it's going, as NPCs in content do; out in the world other NPCs give up, and bots stood still while you walked off
+  (Bob's 2026-10-21 bundle: 550 failed paths, both ends off the mesh).
 * **Out of combat** it follows the party's tank (you, if you're on a tank class; else a tank bot), or you; the tank bot
   follows you. Each bot has **its own spot in a formation** behind the one it follows (`FORMATION`, by the order they
   joined: 35° either side of straight behind at 2.5 yalms, straight behind at 3.8, out to the sides at 75°, then
