@@ -208,10 +208,13 @@ player is sent out.
   as the player's health drops below 80 %, 40 % and 15 % (86 came 0.5 s and 4.1 s after the player fell below 40 % in
   the two runs, so its fixture allows 4.5 s). Everyone down: 2 s later sequence 6, "Duty Complete", scene 6 (0x2001);
   the quest moves to 2 with UI8BH = 1 (ITEM0). Losing (the player down): 0xFE, out 6 s later.
-* As on retail: the boss fights the ally the whole time and the waves go after you; the ally stays on the boss, then
-  takes the adds, within 3 yalms of you, casting Stone, Aero, Stone II and Aero II from about 5 yalms and Cure on you
+* As on retail: the boss fights the ally the whole time and the waves go after you; the ally goes to the boss (which
+  hardly moves: at most 4.1 yalms on retail) and stays on it, then takes the adds, casting Stone, Aero, Stone II and Aero II from about 5 yalms and Cure on you
   (17–48 %, every 12–20 s). The hits are the capture's (`recorded_amounts`, timelines `QB35Ally_904`, `QB35Boss_902`,
   `QB35Add_903`, `QB35Add_905`). `questkit battle-sim 35`: every step within 1 s of the won run but 86.
+* First run in Kawari (Bob's 2026-10-21 bundle): with the ally told to stay within 3 yalms of you (retail's figure,
+  because Bob stood by the boss there), it stayed by Bob casting from the start, the boss walked over to it and
+  everyone piled onto him. The ally now goes to the boss.
 
 ### Quest battle 18 — Way Down in the Hole (`content/questbattle/18.lua`)
 

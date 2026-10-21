@@ -21,7 +21,10 @@
 --          update
 --   the player down (the lost run): sequence 0xFE, and out 6 s later; the quest stays as it was
 -- As on retail (both runs): the boss fights the ally the whole time and the waves go after you; the ally stays on the
--- boss, then takes the adds one by one, within 3 yalms of you, and casts Cure (120) on you (at 17-48%, every 12-20 s.)
+-- boss, then takes the adds one by one, and casts Cure (120) on you (at 17-48%, every 12-20 s.) It goes to the boss,
+-- which hardly moves (at most 4.1 yalms in both runs): it was within 3 yalms of you 90% of the time on retail because
+-- you were by the boss too. Kept within 3 of you (the first version), it stayed by you when you hung back, the boss came
+-- over to it and everyone ended up on top of you (Bob's 2026-10-21 bundle).
 -- How hard each hits is in their timelines' recorded_amounts (QB35*_<base>.json).
 
 -- Where retail puts the player and which way they face: their SpawnPlayer in the capture.
@@ -78,7 +81,7 @@ BATTLE:ally(BNPC_ALLY, {
     role = "support",
     focus = { "boss", "adds" },
     range = 5,
-    keep_near = { within = 3 },
+    -- The support role's own keep_near (near the tank and you, within 20) still applies.
     heals = {
         { action = ACTION_CURE, targets = { Battle.PLAYER }, below = HEAL_BELOW_HEALTH, every = HEAL_EVERY_SECONDS },
     },

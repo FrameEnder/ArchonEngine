@@ -634,7 +634,7 @@ pub fn npc_behavior(
                         // Party bots likewise, anywhere: the open world's navmesh has holes too (none around
                         // Summerford Farms' houses), and a bot that can't find a path stood still while its party walked
                         // off (Bob's 2026-10-21 bundle: 550 failed paths, both ends off the mesh.)
-                        let party_bot = crate::server::party_bot::is_party_bot_kind(spawn);
+                        let party_bot = instance.party_bots.contains_key(id);
                         if path.is_empty() && (in_content || party_bot) {
                             path.push_back(goal);
                         }

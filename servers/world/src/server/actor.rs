@@ -57,10 +57,7 @@ impl NpcState {
     ///
     /// For example, normal NPCs should wander after resetting agro. Pets need to follow their owners instead.
     pub fn natural_state_of(spawn: &SpawnNpc) -> Self {
-        // Party bots (`server/party_bot.rs`) follow their party when they aren't fighting.
-        if spawn.common.owner_id.is_valid()
-            || spawn.common.object_kind == ObjectKind::BattleNpc(BattleNpcSubKind::NpcPartyMember)
-        {
+        if spawn.common.owner_id.is_valid() {
             Self::Follow
         } else {
             Self::Wander

@@ -94,15 +94,6 @@ const OFF_HAND: u8 = 2;
 const ARMOUR_SLOTS: [u8; 9] = [3, 4, 5, 7, 8, 9, 10, 11, 12];
 const RING: u8 = 12;
 
-/// Whether this NPC is a party bot's kind of NPC: a party member, or (the `kind=chocobo` test) an owned chocobo.
-pub fn is_party_bot_kind(spawn: &SpawnNpc) -> bool {
-    match spawn.common.object_kind {
-        ObjectKind::BattleNpc(BattleNpcSubKind::NpcPartyMember) => true,
-        ObjectKind::BattleNpc(BattleNpcSubKind::Chocobo) => spawn.common.owner_id.is_valid(),
-        _ => false,
-    }
-}
-
 /// What part a bot plays in the party.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BotRole {

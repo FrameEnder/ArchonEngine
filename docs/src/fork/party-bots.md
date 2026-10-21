@@ -9,6 +9,14 @@ without other players. Delivered in stages; this page describes what exists and 
 | 2 | The Duty Finder fills the roles your party lacks with bots (a tank, a healer, two DPS), level synced to the duty; unsynced duties get none; bots in the party list as retail lists Duty Support members | needs a retail Chronofoil capture of a Duty Support run (Sastasha) for the party list packets |
 | 3 | Dodging area attacks, killing adds first, following each dungeon's rules (Sastasha first) | to do |
 
+## Bots and battle NPCs are kept apart
+
+Everything bots do is keyed to the bots themselves (`Instance::party_bots`, the actors `spawn_party_bot` made), never
+to a kind of NPC, so quest battle allies, enemies and other battle NPCs fight as before, from their scripts, drop-ins
+and timelines, as retail's recordings show: `party_bot::update` only gives orders to `party_bots`; walking straight
+where there's no navmesh path and regenerating between fights check `instance.party_bots` too; bots follow because
+they're owned (`owner_id`, as pets are), not because of their kind.
+
 ## Spawning one
 
 `!spawn playernpc <class>` in Say (any class's or job's name, without spaces or not, or its abbreviation, in the
