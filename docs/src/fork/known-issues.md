@@ -83,9 +83,9 @@ add one when something is found.
 * Quest battle 38: Corrupted Tail (619) doesn't give Poison (retail: status 18, 30 s); the masked mage's spells come in
   its timeline's order from when it spawned, where retail's (Fire II, Fire, then Blizzard II ×4) starts when it's first
   hit; Thancred's Flash isn't used.
-* Retail applies an action's damage when it hits, and the target sends EffectResultBasic with its new HP about 0.5 s
-  after the ActionEffect (468 of 476 auto-attacks); Kawari applies it at once and sends UpdateHpMpTp just before the
-  ActionEffect, so the HP bar drops before the swing lands.
+* Retail applies an action's damage when it hits; Kawari applies it at once and sends the target's UpdateHpMpTp just
+  before the ActionEffect, so the HP bar can drop before the swing lands. (The result that follows, EffectResultBasic,
+  is sent since 2026-10-21, see [Combat](combat.md).) Results for AoE targets other than the one shown aren't sent.
 * A player's auto-attack shows animation lock 0.1, where retail sends the player's remaining lock (0.6 with a
   weaponskill, then 0.56, 0.11…, never below 0.1). Ranged classes' auto-attacks are action 7 at 25 yalms (Sapphire's;
   retail's Shot, 8, isn't in Bob's captures); damage types for classes other than Gladiator, Conjurer and White Mage

@@ -1180,6 +1180,9 @@ pub fn execute_action(
 
         // TODO: send Cooldown ActorControlSelf
 
+        // The ActionEffect's global sequence, which its results name, and who it showed effects on.
+        let effect_sequence;
+        let mut shown_on: Vec<ObjectId> = Vec::new();
         {
             let mut network = network.lock();
 
@@ -1225,7 +1228,7 @@ pub fn execute_action(
 
                 let ipc = ActionEffect {
                     animation_target_id: request.target,
-                    targets: packet_targets,
+                    targets: packet_targets.clone(),
                     action_id: request.action_id,
                     animation_lock: animation_lock(
                         request.action_type,
@@ -1251,6 +1254,13 @@ pub fn execute_action(
                 }
                 .package()
                 .unwrap();
+                effect_sequence = network.global_action_sequence;
+                if effect_count > 0 {
+                    shown_on = packet_targets
+                        .iter()
+                        .map(|target| target.object_id)
+                        .collect();
+                }
                 network.global_action_sequence += 1;
 
                 let mut data = data.lock();
@@ -1358,7 +1368,9 @@ pub fn execute_action(
                 let ipc =
                     ServerZoneIpcSegment::new(ServerZoneIpcData::EffectResult(EffectResult {
                         count: 1,
-                        global_sequence: network.global_action_sequence,
+                        // The ActionEffect's own (retail: 6,603 of 6,838 results in Bob's 2026-10-21 capture;
+                        // Kawari sent the next one, which no effect had.)
+                        global_sequence: effect_sequence,
                         target_id: request.target.object_id,
                         health_points: common_spawn.health_points,
                         max_health_points: common_spawn.max_health_points,
@@ -1380,6 +1392,52 @@ pub fn execute_action(
                 );
             }
 
+            // Each target the effect showed on gets its result as the hit lands: its health, under the effect's
+            // global sequence (EffectResultBasic; EffectResult when it gained statuses, above and below.) The client
+            // holds an action's damage until then, so without it each hit only showed when the next action's effect
+            // came (Bob's 2026-10-21 bundle). Retail sends it 0.5 s after the ActionEffect (3,677 of 6,180), or for
+            // a player's cast, which lands half a second before its bar ends, about 0.5 s after the bar (1.07 s).
+            {
+                let with_statuses = (num_target_entries > 0).then_some(request.target.object_id);
+                let mut data = data.lock();
+                if let Some(instance) = data.find_actor_instance_mut(from_actor_id) {
+                    let player_cast = has_cast_time
+                        && matches!(
+                            instance.find_actor(from_actor_id),
+                            Some(NetworkedActor::Player { .. })
+                        );
+                    let lands_in = if player_cast {
+                        EFFECT_RESULT_AFTER_CAST
+                    } else {
+                        EFFECT_RESULT_AFTER
+                    };
+                    for target_id in shown_on.iter().copied() {
+                        if Some(target_id) == with_statuses {
+                            continue;
+                        }
+                        let Some(target) = instance.find_actor(target_id) else {
+                            continue;
+                        };
+                        let current_hp = target.get_common_spawn().health_points;
+                        let segment =
+                            ServerZoneIpcSegment::new(ServerZoneIpcData::EffectResultBasic {
+                                count: 1,
+                                global_sequence: effect_sequence,
+                                target_id,
+                                current_hp,
+                                unk3: 0,
+                                unk4: 0,
+                            });
+                        instance.insert_task(
+                            ClientId::default(),
+                            target_id,
+                            lands_in,
+                            QueuedTaskData::EffectResultLands { segment },
+                        );
+                    }
+                }
+            }
+
             if num_target_entries > 0 {
                 let mut data = data.lock();
                 let Some(instance) = data.find_actor_instance_mut(request.target.object_id) else {
@@ -1396,7 +1454,9 @@ pub fn execute_action(
                 let ipc =
                     ServerZoneIpcSegment::new(ServerZoneIpcData::EffectResult(EffectResult {
                         count: 1,
-                        global_sequence: network.global_action_sequence,
+                        // The ActionEffect's own (retail: 6,603 of 6,838 results in Bob's 2026-10-21 capture;
+                        // Kawari sent the next one, which no effect had.)
+                        global_sequence: effect_sequence,
                         // The target's own EffectResult names the target (retail, Bob's Chronofoil captures.)
                         target_id: request.target.object_id,
                         health_points: common_spawn.health_points,
@@ -2014,6 +2074,12 @@ pub fn add_healing_enmity(instance: &mut Instance, healer: ObjectId, effective: 
 
 /// How long before a player's cast bar ends its action lands (see `handle_action_messages`), in milliseconds.
 const CAST_LANDS_EARLY_MS: i32 = 500;
+
+/// When an action's result (EffectResultBasic) follows its ActionEffect on retail: 0.5 s (Bob's Chronofoil capture of
+/// 2026-10-21: 3,677 of 6,180 results), and for a player's cast about 0.5 s after its bar ends, so 1.0 s after the
+/// effect that lands early (Ruin: 1.07 s).
+const EFFECT_RESULT_AFTER: Duration = Duration::from_millis(500);
+const EFFECT_RESULT_AFTER_CAST: Duration = Duration::from_millis(1000);
 
 /// Teleport and Return (General Action rows 5 and 6.)
 const TELEPORT_ACTION: u32 = 5;

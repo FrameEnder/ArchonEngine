@@ -104,6 +104,15 @@ Applied after an action's script returns, by the server, so scripts only give th
   Teleport and Return, 0.6 otherwise; and retail's own for some actions (`SPECIAL_ANIMATION_LOCKS`: 0.35, 0.5, 0.7,
   0.77, 0.8 or 1.5 s, e.g. Jump 0.8), every use the same in Bob's captures. Retail's items: medicines 1.1, food 2.1,
   items 4745–4751 3.1 (Kawari: 0.6).
+* **Each hit's result:** after an ActionEffect, the target sends its result as the hit lands: EffectResultBasic
+  (opcode 235 on 7.57, 24 bytes: count 1, the ActionEffect's global sequence, the target, its HP, 8 zero bytes), or
+  EffectResult when it gained statuses, both under **the ActionEffect's own global sequence**. Retail (Bob's
+  Chronofoil capture of 2026-10-21): 6,603 of 6,838 results share their effect's sequence, sent 0.5 s after it (3,677
+  of 6,180; 0.8–1.1 s for most others), and for a player's cast about 0.5 s after its bar ends (Ruin: 1.07 s after its
+  early effect). The client holds an action's damage until its result comes: Kawari sent none for plain damage and
+  gave EffectResults the next sequence, so each spell's damage only showed when the next spell's effect arrived (Bob,
+  2026-10-21). Kawari now sends EffectResultBasic 0.5 s after the effect (1.0 s for a player's cast, `server/action.rs`,
+  a queued `EffectResultLands`) to each target the effect showed on, unless it got an EffectResult.
 * **Casts land 0.5 s early:** a player's cast action resolves half a second before its bar ends (retail 0.50–0.54 s
   for 4,165 of 4,805 casts of 1.1–7.7 s, Teleport too; mounts and items at the end). Moving before it lands
   interrupts it; after, it doesn't (that's slidecasting; Kawari's separate 0.5 s window is gone).
