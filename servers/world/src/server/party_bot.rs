@@ -24,10 +24,11 @@ use std::{
     time::{Duration, Instant},
 };
 
+use glam::Vec3A;
 use kawari::{
     common::{ObjectId, ObjectTypeId, Position, Rotation, RotationAction},
     config::get_config,
-    ipc::zone::{BattleNpcSubKind, CommonSpawn, ObjectKind, SpawnNpc},
+    ipc::zone::{BattleNpcSubKind, CommonSpawn, DisplayFlag, ObjectKind, SpawnNpc},
 };
 use parking_lot::Mutex;
 use physis::{
@@ -121,6 +122,42 @@ pub struct PartyBot {
     pub heal_action: Option<u32>,
     pub next_heal: Instant,
     pub next_provoke: Instant,
+    /// When it joined, among its party's bots: its place in the formation.
+    pub order: usize,
+    /// The formation spot it's walking to, if it's on its way.
+    pub goal: Option<Vec3A>,
+}
+
+/// Where the n-th bot following someone stands out of combat, relative to them: (degrees from straight behind, yalms
+/// away). Two behind on either side, then one straight behind further back, then out to the sides, so none stand on
+/// each other (or on the one they follow.)
+const FORMATION: [(f32, f32); 7] = [
+    (-35.0, 2.5),
+    (35.0, 2.5),
+    (0.0, 3.8),
+    (-75.0, 3.2),
+    (75.0, 3.2),
+    (-25.0, 5.0),
+    (25.0, 5.0),
+];
+/// A bot this close to its formation spot is there.
+const AT_SPOT: f32 = 0.6;
+/// The spot moved this far from where it was walking: it sets off for the new one.
+const SPOT_MOVED: f32 = 1.0;
+/// Standing at its spot, it only faces the one it follows (an "attack range" this wide keeps it from walking to them.)
+const STANDING_RANGE: f32 = 12.0;
+
+/// The formation spot `index` for someone at `position` facing `rotation`.
+fn formation_spot(position: Vec3A, rotation: f32, index: usize) -> Vec3A {
+    let (degrees, distance) = FORMATION[index % FORMATION.len()];
+    // Further rings for parties bigger than the formation.
+    let distance = distance + (index / FORMATION.len()) as f32 * 3.5;
+    let angle = rotation + std::f32::consts::PI + degrees.to_radians();
+    Vec3A::new(
+        position.x + distance * angle.sin(),
+        position.y,
+        position.z + distance * angle.cos(),
+    )
 }
 
 /// One of a class's actions, as far as a bot's rotation goes.
@@ -622,7 +659,11 @@ pub fn spawn_party_bot(
             health_points: hp,
             max_resource_points: 10000,
             resource_points: 10000,
+            // As retail spawns its party-member NPCs (Trust, Bob's Chronofoil captures in 822 and 884: 6 of them):
+            // owned by the player, display flags 0x40000. Without them the bots had no nameplate (2026-10-21 bundle.)
             object_kind: ObjectKind::BattleNpc(BattleNpcSubKind::NpcPartyMember),
+            owner_id: leader,
+            display_flags: DisplayFlag::UNK1,
             battalion: 0,
             model_chara: 0,
             level,
@@ -637,6 +678,13 @@ pub fn spawn_party_bot(
         ..Default::default()
     };
 
+    let order = instance
+        .party_bots
+        .values()
+        .filter(|bot| bot.leader == leader)
+        .map(|bot| bot.order + 1)
+        .max()
+        .unwrap_or(0);
     let actor_id = Instance::generate_actor_id();
     let config = get_config();
     instance.insert_npc(actor_id, spawn, &config, game_data);
@@ -663,6 +711,8 @@ pub fn spawn_party_bot(
             heal_action: heal,
             next_heal: Instant::now(),
             next_provoke: Instant::now(),
+            order,
+            goal: None,
         },
     );
 
@@ -703,7 +753,7 @@ pub fn dismiss_party_bots(
 /// What one enemy fighting the party is doing.
 struct Engaged {
     id: ObjectId,
-    position: glam::Vec3A,
+    position: Vec3A,
     /// Whom it's after most.
     after: Option<ObjectId>,
 }
@@ -829,8 +879,37 @@ fn update_party(
         .min_by(|a, b| a.1.total_cmp(&b.1))
         .map(|(id, _)| id);
 
+    // Where everyone is and faces, and each bot's place behind the one it follows.
+    let where_is: HashMap<ObjectId, (Vec3A, f32)> = members
+        .iter()
+        .filter_map(|id| {
+            instance
+                .find_actor(*id)
+                .map(|actor| (*id, (actor.position().0, actor.rotation())))
+        })
+        .collect();
+    let follows = |bot_id: ObjectId| {
+        if Some(bot_id) == tank {
+            leader
+        } else {
+            tank.unwrap_or(leader)
+        }
+    };
+    let mut spots: HashMap<ObjectId, usize> = HashMap::new();
+    {
+        let mut by_order: Vec<&(ObjectId, PartyBot)> = bots.iter().collect();
+        by_order.sort_by_key(|(_, bot)| bot.order);
+        let mut taken: HashMap<ObjectId, usize> = HashMap::new();
+        for (bot_id, _) in by_order {
+            let count = taken.entry(follows(*bot_id)).or_insert(0);
+            spots.insert(*bot_id, *count);
+            *count += 1;
+        }
+    }
+
     let mut heals = Vec::new();
     let mut provokes = Vec::new();
+    let mut goals = Vec::new();
     for (bot_id, bot) in &bots {
         let Some(NetworkedActor::Npc {
             spawn,
@@ -850,15 +929,11 @@ fn update_party(
         if spawn.common.health_points == 0 || *state == NpcState::Dead {
             continue;
         }
-        let follow = if Some(*bot_id) == tank {
-            leader
-        } else {
-            tank.unwrap_or(leader)
-        };
+        let follow = follows(*bot_id);
         let casting = cast.is_some_and(|cast| cast.until > now);
 
         if engaged.is_empty() {
-            // Out of combat: follow, a little behind.
+            // Out of combat: its spot in the formation behind the one it follows.
             enmity.clear();
             if *state != NpcState::Follow {
                 *state = NpcState::Follow;
@@ -866,10 +941,34 @@ fn update_party(
                 *navmesh_path_lerp = 0.0;
             }
             spawn.common.target_id = ObjectTypeId::default();
-            *navmesh_target = Some(NpcTarget::Actor(follow));
-            timeline.attack_range = FOLLOW_DISTANCE;
             *placement = Placement::default();
+            let Some((anchor, facing)) = where_is.get(&follow).copied() else {
+                continue;
+            };
+            let spot = formation_spot(anchor, facing, spots.get(bot_id).copied().unwrap_or(0));
+            let here = spawn.common.position.0;
+            let flat = |a: Vec3A, b: Vec3A| Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length();
+            if flat(here, spot) <= AT_SPOT {
+                // There: stand, facing the one it follows.
+                *navmesh_target = Some(NpcTarget::Actor(follow));
+                timeline.attack_range = STANDING_RANGE;
+                goals.push((*bot_id, None));
+            } else {
+                let moved = bot.goal.is_none_or(|goal| flat(goal, spot) > SPOT_MOVED);
+                if moved {
+                    // Set off for where the spot is now.
+                    navmesh_path.clear();
+                    *navmesh_path_lerp = 0.0;
+                    goals.push((*bot_id, Some(spot)));
+                }
+                *navmesh_target = Some(NpcTarget::Position(
+                    bot.goal.filter(|_| !moved).unwrap_or(spot),
+                ));
+            }
             continue;
+        }
+        if bot.goal.is_some() {
+            goals.push((*bot_id, None));
         }
 
         // The healer heals first.
@@ -937,6 +1036,11 @@ fn update_party(
         };
     }
 
+    for (bot_id, goal) in goals {
+        if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
+            bot.goal = goal;
+        }
+    }
     for (bot_id, enemy) in provokes {
         if let Some(NetworkedActor::Npc { enmity, .. }) = instance.actors.get_mut(&enemy) {
             let top = enmity.values().copied().max().unwrap_or(0);
@@ -1046,6 +1150,23 @@ mod tests {
         let aero = "-- Aero (Lv. 4)\nPOTENCY = 50\nDOT_POTENCY = 30\nDURATION = 30.0\n\nfunction doAction(player, in_combo)\n    effects:damage_over_time(EFFECT_AERO, DURATION, 1)\nend\n";
         assert_eq!(script_facts(aero), (50, Some(30.0)));
         assert_eq!(script_facts("POTENCY = 140\n"), (140, None));
+    }
+
+    /// Up to ten bots behind one player all get their own spot, behind them and apart from each other.
+    #[test]
+    fn formation_spots_apart() {
+        let here = Vec3A::new(10.0, 5.0, -3.0);
+        let facing = 0.7;
+        let spots: Vec<Vec3A> = (0..10).map(|i| formation_spot(here, facing, i)).collect();
+        for (i, a) in spots.iter().enumerate() {
+            assert!(a.distance(here) >= 2.4, "spot {i} is on the player");
+            // Behind: the opposite way from where the player faces.
+            let ahead = Vec3A::new(facing.sin(), 0.0, facing.cos());
+            assert!((*a - here).dot(ahead) < 0.0, "spot {i} is in front");
+            for (j, b) in spots.iter().enumerate().skip(i + 1) {
+                assert!(a.distance(*b) >= 1.0, "spots {i} and {j} overlap");
+            }
+        }
     }
 
     #[test]

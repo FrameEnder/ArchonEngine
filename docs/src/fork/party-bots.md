@@ -21,9 +21,13 @@ Code: `servers/world/src/server/party_bot.rs` (`spawn_party_bot`, `update`), the
 
 ## What a bot is
 
-* **An NPC with a player's look.** A battle NPC of BattleNpcSubKind 9, `NpcPartyMember` (retail's Duty Support
-  members are this kind), battalion 0 (your side), ModelChara 0 (a human model built from its customize data and gear).
-  Player area attacks don't hit it (they only hit `Enemy` NPCs).
+* **An NPC with a player's look.** A battle NPC of BattleNpcSubKind 9, `NpcPartyMember`, battalion 0 (your side),
+  ModelChara 0 (a human model built from its customize data and gear). Retail spawns its party-member NPCs this way
+  (Trust, six in Bob's Chronofoil captures in territories 822 and 884): **owned by the player** (`owner_id`), display
+  flags **0x40000**, battalion 0, character data flags 0x2, with a BNpcBase and BNpcName. The bots copy the owner and
+  display flags; without them (stage 1's first build) they had no nameplate, only their name in the battle log (Bob's
+  2026-10-21 bundle). They keep character data flags 0, since Kawari reads 0x2 as hostile, and have no BNpcName (their
+  name is the spawn's name string). Player area attacks don't hit them (they only hit `Enemy` NPCs).
 * **A random look.** One of the first six races (Hyur, Elezen, Lalafell, Miqo'te, Roegadyn, Au Ra) and either sex, its
   face and hairstyle 1–4 (which every tribe and sex has) and random features and colours within small ranges. Hrothgar
   and Viera are left out until their valid ranges are read from the character creator's data.
@@ -45,8 +49,13 @@ Code: `servers/world/src/server/party_bot.rs` (`spawn_party_bot`, `update`), the
 
 Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot what to do:
 
-* **Out of combat** it follows the party's tank (you, if you're on a tank class; else a tank bot), or you, keeping
-  2.5 yalms behind; the tank bot follows you. It regenerates 10 % of its HP every 3 s between fights.
+* **Out of combat** it follows the party's tank (you, if you're on a tank class; else a tank bot), or you; the tank bot
+  follows you. Each bot has **its own spot in a formation** behind the one it follows (`FORMATION`, by the order they
+  joined: 35° either side of straight behind at 2.5 yalms, straight behind at 3.8, out to the sides at 75°, then
+  further back; more than seven start another ring 3.5 yalms out), turned with the way they face. It walks to its spot
+  when it's more than 0.6 yalms off, sets off again when the spot moves a yalm, and once there stands facing them. (The
+  first build had every bot walk to within 2.5 yalms of the same person, so they ended up on top of each other: Bob's
+  2026-10-21 bundle.) It regenerates 10 % of its HP every 3 s between fights.
 * **In combat**: anything with you or a bot on its enmity list is fighting the party.
   * The **tank** goes for whatever is after someone else (the nearest first) and pulls it onto itself every 10 s
     (50,000 enmity above the top of that enemy's list, as the quest battle framework's tanks do), otherwise keeps on
@@ -65,6 +74,7 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
 
 ## Not done yet
 
+* In combat melee bots still crowd the same spot by their target (only following is in formation).
 * Bots aren't in the party list, don't follow you into another zone (they leave when you do), aren't level synced,
   and stay down when they die (dismiss and spawn again).
 * No area attacks, buffs, role actions, mitigation, Raise, or dodging enemy area attacks.
