@@ -1,0 +1,1067 @@
+//! Party bots: player-like NPCs that join a player, follow the party's tank (or the player) and fight by their class's
+//! role. See `docs/src/fork/party-bots.md`.
+//!
+//! A bot is a battle NPC (BattleNpcSubKind::NpcPartyMember, as retail's Duty Support members are) with a player's
+//! look: a random race and face, a made-up name, and the best gear its class can wear at its level, all read from the
+//! game data at runtime. Its stats are a player's (the class, race, level and that gear, by the same formulas), and it
+//! fights with the actions its class has learned by its level that Kawari has scripts for, through the NPC class
+//! rotations (`server/rotation.rs`).
+//!
+//! Every server tick, before the NPCs move (`npc_behavior`), each bot is told what to do:
+//! * out of combat it follows the party's tank (a tank bot, or the player if they're a tank), or the player;
+//! * once anything is fighting the party (an NPC with any of them on its enmity list), it fights by role: the tank goes
+//!   for whatever is attacking someone else and pulls it off them every few seconds; damage dealers attack what the tank
+//!   (or the player) is attacking; the healer heals whoever is lowest when someone's below `HEAL_BELOW_PERCENT`, and
+//!   otherwise attacks too.
+//!
+//! What isn't done yet (stage 1): bots aren't in the party list (retail lists Duty Support members through its own
+//! packets, still to be recorded), don't follow you to another zone, don't avoid area attacks, use only single-target
+//! actions, and aren't level synced.
+
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
+use kawari::{
+    common::{ObjectId, ObjectTypeId, Position, Rotation, RotationAction},
+    config::get_config,
+    ipc::zone::{BattleNpcSubKind, CommonSpawn, ObjectKind, SpawnNpc},
+};
+use parking_lot::Mutex;
+use physis::{
+    race::{Gender, Race, Tribe},
+    savedata::chardat::CustomizeData,
+};
+
+use crate::{
+    GameData, ItemInfoQuery,
+    inventory::{Inventory, Item},
+    server::{
+        WorldServer,
+        actor::{NetworkedActor, NpcState, NpcTarget},
+        instance::Instance,
+        network::NetworkState,
+        npc_behavior::npc_use_action,
+        placement::Placement,
+    },
+    zone_connection::BaseParameters,
+};
+
+/// The level bots are made at: the game's highest, so they're useful anywhere once level synced.
+pub const BOT_LEVEL: u8 = 100;
+
+/// How far behind the one they follow bots keep, in yalms, out of combat.
+const FOLLOW_DISTANCE: f32 = 2.5;
+/// How close melee bots get to their target (as an enemy does with its attack range.)
+const MELEE_RANGE: f32 = 3.0;
+/// How far ranged bots and healers stand from their target.
+const RANGED_RANGE: f32 = 15.0;
+/// Ranged bots and healers stay within this of the one they follow while fighting.
+const RANGED_STAY_WITHIN: f32 = 20.0;
+
+/// The healer heals someone below this much health (in %), the lowest first.
+const HEAL_BELOW_PERCENT: f32 = 60.0;
+/// The tank pulls an enemy off someone else at most this often.
+const PROVOKE_EVERY: Duration = Duration::from_secs(10);
+/// How much enmity a pull gives the tank on that enemy (more each time it's needed, as the top of its list grows.)
+const PROVOKE_ENMITY: u32 = 50_000;
+/// The pace of their weaponskills and spells, in seconds: a player's global cooldown.
+const BOT_PACE: f32 = 2.5;
+/// A damage over time is re-applied this many seconds before it would wear off.
+const DOT_REFRESH_EARLY: f32 = 2.0;
+
+/// NPC auto-attack actions (EnemyAutoAttack_00870 and _00872): melee, and physical ranged.
+const AUTO_ATTACK_MELEE: u32 = 870;
+const AUTO_ATTACK_RANGED: u32 = 872;
+
+/// ClassJob's Role column.
+const ROLE_TANK: u8 = 1;
+const ROLE_MELEE: u8 = 2;
+const ROLE_RANGED: u8 = 3;
+const ROLE_HEALER: u8 = 4;
+/// BaseParam IDs of the main stats (ClassJob's PrimaryStat.)
+const PRIMARY_DEXTERITY: u8 = 2;
+
+/// Item EquipSlotCategory rows bots pick gear for, and the equipped slot each fills.
+const MAIN_HAND: u8 = 1;
+const TWO_HANDED: u8 = 13;
+const OFF_HAND: u8 = 2;
+const ARMOUR_SLOTS: [u8; 9] = [3, 4, 5, 7, 8, 9, 10, 11, 12];
+const RING: u8 = 12;
+
+/// What part a bot plays in the party.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BotRole {
+    Tank,
+    Dps,
+    Healer,
+}
+
+impl BotRole {
+    pub fn from_classjob_role(role: u8) -> Self {
+        match role {
+            ROLE_TANK => Self::Tank,
+            ROLE_HEALER => Self::Healer,
+            _ => Self::Dps,
+        }
+    }
+}
+
+/// A bot's side of things, kept by its instance (`Instance::party_bots`, by actor ID.)
+#[derive(Debug, Clone)]
+pub struct PartyBot {
+    /// The player it joined.
+    pub leader: ObjectId,
+    pub role: BotRole,
+    /// How close it gets to what it attacks.
+    pub attack_range: f32,
+    /// Its single-target heal (healers), if it has one.
+    pub heal_action: Option<u32>,
+    pub next_heal: Instant,
+    pub next_provoke: Instant,
+}
+
+/// One of a class's actions, as far as a bot's rotation goes.
+#[derive(Debug, Clone, Copy)]
+struct ClassAction {
+    id: u32,
+    level: u8,
+    gcd: bool,
+    combo_from: u32,
+    hostile: bool,
+    single_target: bool,
+    heals: bool,
+    /// From its script: its potency, and for a damage over time how long it lasts.
+    potency: u32,
+    dot_seconds: Option<f32>,
+}
+
+/// What an action's script says about it, as far as choosing goes: its `POTENCY`, and its `DURATION` if it puts a
+/// damage over time on the target (`damage_over_time`.)
+pub fn script_facts(source: &str) -> (u32, Option<f32>) {
+    let number = |name: &str| {
+        source.lines().find_map(|line| {
+            let (key, value) = line.split_once('=')?;
+            (key.trim() == name)
+                .then(|| value.trim().split_whitespace().next()?.parse::<f32>().ok())?
+        })
+    };
+    let potency = number("POTENCY").unwrap_or(0.0) as u32;
+    let dot = source
+        .contains("damage_over_time")
+        .then(|| number("DURATION"))
+        .flatten();
+    (potency, dot)
+}
+
+impl GameData {
+    /// The combat class or job called `name`: its name (any language the server reads, ignoring case and spaces), its
+    /// English name or its abbreviation, e.g. "whitemage", "White Mage" or "WHM".
+    pub fn find_combat_classjob(&mut self, name: &str) -> Option<u8> {
+        let wanted = normalise(name);
+        self.classjob_sheet
+            .into_iter()
+            .flatten_subrows()
+            .find(|(_, row)| {
+                row.Role != 0
+                    && [&row.Name, &row.NameEnglish, &row.Abbreviation]
+                        .iter()
+                        .any(|text| normalise(&text.to_string()) == wanted)
+            })
+            .map(|(id, _)| id as u8)
+    }
+
+    /// A class's Role (1 tank, 2 melee, 3 ranged, 4 healer), ClassJobParent and PrimaryStat.
+    pub fn classjob_role(&mut self, classjob: u8) -> Option<(u8, u8, u8)> {
+        let row = self.classjob_sheet.row(classjob as u32)?;
+        Some((row.Role, row.ClassJobParent, row.PrimaryStat))
+    }
+
+    /// The best gear `classjob` can wear at `level`: for each slot, the item of the highest item level it can equip
+    /// (rarity, then the newest, breaking ties), PvP gear left out. Returns (EquipSlotCategory, item ID) pairs, a
+    /// ring twice.
+    pub fn best_gear(&mut self, classjob: u8, level: u8) -> Vec<(u8, u32)> {
+        let wears = self.classjob_categories_with(classjob);
+        let mut best: HashMap<u8, (u16, u8, u32)> = HashMap::new();
+        let mut second_ring: Option<(u16, u8, u32)> = None;
+        let rows: Vec<(u32, u8, u8, u8, u16, u8, bool, bool)> = self
+            .item_sheet
+            .into_iter()
+            .flatten_subrows()
+            .filter(|(_, row)| row.LevelEquip > 0 && row.EquipSlotCategory > 0)
+            .map(|(id, row)| {
+                (
+                    id,
+                    row.EquipSlotCategory,
+                    row.ClassJobCategory,
+                    row.LevelEquip,
+                    row.LevelItem,
+                    row.Rarity,
+                    row.IsPvP,
+                    row.IsUnique,
+                )
+            })
+            .collect();
+        for (id, slot, category, level_equip, item_level, rarity, pvp, unique) in rows {
+            if pvp || level_equip > level {
+                continue;
+            }
+            let slot = if slot == TWO_HANDED { MAIN_HAND } else { slot };
+            if slot != MAIN_HAND && slot != OFF_HAND && !ARMOUR_SLOTS.contains(&slot) {
+                continue;
+            }
+            if !wears.contains(&category) {
+                continue;
+            }
+            let key = (item_level, rarity, id);
+            match best.get(&slot) {
+                Some(current) if *current >= key => {
+                    // Not the best ring, but maybe the best other one.
+                    if slot == RING && second_ring.is_none_or(|ring| ring < key) {
+                        second_ring = Some(key);
+                    }
+                }
+                current => {
+                    if slot == RING {
+                        // The old best is now the second ring; a non-unique best can be worn twice.
+                        let previous = current.copied();
+                        second_ring = if unique { previous } else { Some(key) };
+                    }
+                    best.insert(slot, key);
+                }
+            }
+        }
+
+        // A two-handed weapon leaves no room for an off-hand item.
+        let two_handed = best
+            .get(&MAIN_HAND)
+            .and_then(|(_, _, id)| self.item_sheet.row(*id))
+            .is_some_and(|row| row.EquipSlotCategory == TWO_HANDED);
+        if two_handed {
+            best.remove(&OFF_HAND);
+        }
+
+        let mut gear: Vec<(u8, u32)> = best.iter().map(|(slot, (_, _, id))| (*slot, *id)).collect();
+        if let Some((_, _, id)) = second_ring {
+            gear.push((RING, id));
+        }
+        gear.sort();
+        gear
+    }
+
+    /// Every ClassJobCategory row that includes `classjob` (its column, after the row's name), reading the sheet once.
+    fn classjob_categories_with(&mut self, classjob: u8) -> HashSet<u8> {
+        let config = get_config();
+        let Ok(sheet) = self
+            .resource
+            .read_excel_sheet_header("ClassJobCategory")
+            .and_then(|exh| {
+                self.resource
+                    .read_excel_sheet(&exh, "ClassJobCategory", config.world.language())
+            })
+        else {
+            return HashSet::new();
+        };
+        let mut categories = HashSet::new();
+        for category in 0..=u8::MAX {
+            if sheet
+                .row(category as u32)
+                .and_then(|row| {
+                    row.columns
+                        .get(classjob as usize + 1)
+                        .and_then(|column| column.into_bool().copied())
+                })
+                .unwrap_or(false)
+            {
+                categories.insert(category);
+            }
+        }
+        categories
+    }
+
+    /// The actions `classjob` (or its base class, `parent`) has learned by `level` that `usable` says the server can
+    /// perform (has a script for): player actions only, no PvP or role actions.
+    fn class_actions(
+        &mut self,
+        classjob: u8,
+        parent: u8,
+        level: u8,
+        usable: &HashMap<u32, String>,
+    ) -> Vec<ClassAction> {
+        let mut actions = Vec::new();
+        for (id, row) in self.action_sheet.into_iter().flatten_subrows() {
+            let class = row.ClassJob;
+            if !row.IsPlayerAction
+                || row.IsPvP
+                || row.IsRoleAction
+                || row.ClassJobLevel == 0
+                || row.ClassJobLevel > level
+                || class < 0
+                || (class as u8 != classjob && class as u8 != parent)
+                || !usable.contains_key(&id)
+            {
+                continue;
+            }
+            // The registered path is the script file itself (`KawariLuaState::action_scripts`.)
+            let (potency, dot_seconds) = std::fs::read_to_string(&usable[&id])
+                .map(|source| script_facts(&source))
+                .unwrap_or((0, None));
+            actions.push(ClassAction {
+                id,
+                level: row.ClassJobLevel,
+                gcd: row.CooldownGroup == crate::server::GCD_GROUP
+                    || row.AdditionalCooldownGroup == crate::server::GCD_GROUP,
+                combo_from: row.ActionCombo as u32,
+                hostile: row.CanTargetHostile,
+                single_target: row.CastType <= 1,
+                heals: !row.CanTargetHostile && (row.CanTargetParty || row.CanTargetAlly),
+                potency,
+                dot_seconds,
+            });
+        }
+        actions
+    }
+}
+
+/// Lower case without spaces, apostrophes or hyphens, for matching class names.
+fn normalise(text: &str) -> String {
+    text.chars()
+        .filter(|c| c.is_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect()
+}
+
+/// A bot's rotation from its class's actions (a heuristic until bots' rotations are recorded), single-target attacks
+/// only: its abilities off the GCD whenever they're ready; its combos, each step after the one it follows (the highest
+/// level first, so a combo runs to its end); its damage over time spells and weaponskills re-applied as they wear off
+/// (their scripts' `DURATION`, less a little); and its filler: the highest level combo starter, or else its strongest
+/// plain weaponskill or spell (its script's `POTENCY`). Weaker plain ones (Stone once there's Stone II) aren't used.
+fn build_rotation(actions: &[ClassAction]) -> Rotation {
+    let attacks: Vec<&ClassAction> = actions
+        .iter()
+        .filter(|action| action.hostile && action.single_target)
+        .collect();
+    let starters: HashSet<u32> = attacks
+        .iter()
+        .filter(|action| action.combo_from != 0)
+        .map(|action| action.combo_from)
+        .collect();
+    let by_level_desc = |list: &mut Vec<&ClassAction>| {
+        list.sort_by(|a, b| b.level.cmp(&a.level).then(b.id.cmp(&a.id)))
+    };
+
+    let mut abilities: Vec<&ClassAction> = attacks.iter().copied().filter(|a| !a.gcd).collect();
+    let mut combos: Vec<&ClassAction> = attacks
+        .iter()
+        .copied()
+        .filter(|a| a.gcd && a.combo_from != 0)
+        .collect();
+    let mut dots: Vec<&ClassAction> = attacks
+        .iter()
+        .copied()
+        .filter(|a| a.gcd && a.combo_from == 0 && a.dot_seconds.is_some())
+        .collect();
+    let mut plain: Vec<&ClassAction> = attacks
+        .iter()
+        .copied()
+        .filter(|a| a.gcd && a.combo_from == 0 && a.dot_seconds.is_none())
+        .collect();
+    by_level_desc(&mut abilities);
+    by_level_desc(&mut combos);
+    by_level_desc(&mut dots);
+    by_level_desc(&mut plain);
+
+    let filler = plain
+        .iter()
+        .find(|a| starters.contains(&a.id))
+        .or_else(|| plain.iter().max_by_key(|a| (a.potency, a.level, a.id)))
+        .map(|a| a.id);
+
+    let mut entries = Vec::new();
+    for action in abilities.into_iter().chain(combos) {
+        entries.push(RotationAction {
+            action: action.id,
+            ..Default::default()
+        });
+    }
+    for action in dots {
+        entries.push(RotationAction {
+            action: action.id,
+            refresh: action
+                .dot_seconds
+                .map(|seconds| (seconds - DOT_REFRESH_EARLY).max(BOT_PACE)),
+            ..Default::default()
+        });
+    }
+    if let Some(filler) = filler {
+        entries.push(RotationAction {
+            action: filler,
+            ..Default::default()
+        });
+    }
+    Rotation {
+        pace: BOT_PACE,
+        actions: entries,
+    }
+}
+
+/// The healer's heal: its highest level single-target heal on the GCD.
+fn heal_action(actions: &[ClassAction]) -> Option<u32> {
+    actions
+        .iter()
+        .filter(|a| a.heals && a.gcd && a.single_target)
+        .max_by_key(|a| (a.level, a.id))
+        .map(|a| a.id)
+}
+
+/// A random player look: one of the first six races (whose faces and hairstyles 1-4 every tribe and sex has), either
+/// sex, random features and colours within the character creator's smallest ranges.
+fn random_look() -> CustomizeData {
+    let race = Race::from_repr(fastrand::u8(1..=6)).unwrap_or_default();
+    let tribe = Tribe::from_repr(race as u8 * 2 - fastrand::u8(0..=1)).unwrap_or_default();
+    let gender = if fastrand::bool() {
+        Gender::Male
+    } else {
+        Gender::Female
+    };
+    let eye_colour = fastrand::u8(0..=30);
+    CustomizeData {
+        race,
+        gender,
+        age: 1,
+        height: fastrand::u8(0..=100),
+        tribe,
+        face: fastrand::u8(1..=4),
+        hair: fastrand::u8(1..=4),
+        enable_highlights: false,
+        skin_tone: fastrand::u8(0..=20),
+        right_eye_color: eye_colour,
+        hair_tone: fastrand::u8(0..=40),
+        highlights: 0,
+        facial_features: 0,
+        facial_feature_color: 0,
+        eyebrows: fastrand::u8(0..=2),
+        left_eye_color: eye_colour,
+        eyes: fastrand::u8(0..=4),
+        nose: fastrand::u8(0..=4),
+        jaw: fastrand::u8(0..=3),
+        mouth: fastrand::u8(0..=3),
+        lips_tone_fur_pattern: fastrand::u8(0..=10),
+        race_feature_size: fastrand::u8(0..=100),
+        race_feature_type: fastrand::u8(1..=4),
+        bust: fastrand::u8(0..=100),
+        face_paint: 0,
+        face_paint_color: 0,
+        ..Default::default()
+    }
+}
+
+/// A made-up first and last name, from syllables (not from the game's text.)
+fn random_name() -> String {
+    const START: [&str; 16] = [
+        "Ka", "Ri", "Sel", "Mo", "Thal", "Ae", "Bran", "Lu", "Vey", "Or", "Ny", "Dar", "Il", "Ce",
+        "Fen", "Ja",
+    ];
+    const MIDDLE: [&str; 12] = [
+        "ra", "len", "mi", "do", "va", "ri", "no", "the", "ka", "se", "lo", "",
+    ];
+    const END: [&str; 12] = [
+        "n", "th", "ra", "s", "el", "a", "ix", "or", "e", "yn", "is", "ar",
+    ];
+    let word = |syllables: usize| {
+        let mut word = START[fastrand::usize(..START.len())].to_string();
+        for _ in 1..syllables {
+            word.push_str(MIDDLE[fastrand::usize(..MIDDLE.len())]);
+        }
+        word.push_str(END[fastrand::usize(..END.len())]);
+        word
+    };
+    // Retail's limits: each part 2-15 letters, the whole name at most 20 with the space.
+    let mut name = format!(
+        "{} {}",
+        word(fastrand::usize(1..=2)),
+        word(fastrand::usize(1..=3))
+    );
+    name.truncate(20);
+    name.trim().to_string()
+}
+
+/// A player's stats for `classjob` of `tribe` at `level` wearing `items`, as `ZoneConnection::parameters_at` works
+/// them out for players.
+fn bot_parameters(
+    game_data: &mut GameData,
+    classjob: u8,
+    tribe: u8,
+    level: u8,
+    items: &[u32],
+    weapon: Option<u32>,
+) -> Option<BaseParameters> {
+    let modifiers = game_data.get_class_job_modifiers(classjob as u32)?;
+    let tribe_row = game_data.get_tribe(tribe)?;
+    let param_grow = game_data.get_param_grow(level as u32)?;
+    let primary_stat = game_data.get_job_primary_stat(classjob as u16).unwrap_or(1);
+    let weapon = weapon.and_then(|id| game_data.get_item_info(ItemInfoQuery::ById(id)));
+
+    let mut parameters = BaseParameters::default();
+    parameters.use_retail_formula(level as u16, &param_grow, weapon.as_ref());
+    parameters.perform_calculations(primary_stat, &tribe_row, &param_grow, &modifiers);
+    let stats: Vec<_> = items
+        .iter()
+        .filter_map(|id| game_data.equipped_item_stats(*id, true, None))
+        .collect();
+    parameters.add_equipped_items(&stats);
+    parameters.calculate_potencies(&param_grow, Some(&modifiers));
+    if let Some(weapon) = &weapon {
+        parameters.delay = weapon.delay_ms as u32;
+    }
+    Some(parameters)
+}
+
+/// Spawns a bot of the class called `class_name` next to the player `leader`, and has it join them. `usable` is every
+/// action the server has a script for (its path.) Returns the bot's name and class abbreviation, or why it couldn't.
+pub fn spawn_party_bot(
+    data: &mut WorldServer,
+    game_data: &mut GameData,
+    usable: &HashMap<u32, String>,
+    leader: ObjectId,
+    class_name: &str,
+) -> Result<String, String> {
+    let classjob = game_data
+        .find_combat_classjob(class_name)
+        .ok_or_else(|| format!("No combat class or job is called \"{class_name}\"."))?;
+    let (role_column, parent, primary_stat) = game_data
+        .classjob_role(classjob)
+        .ok_or_else(|| format!("No ClassJob row {classjob}."))?;
+    let level = BOT_LEVEL;
+
+    // Gear, worn on an inventory so the model helpers work on it.
+    let gear = game_data.best_gear(classjob, level);
+    let mut wearing = Inventory::default();
+    let mut rings = 0;
+    for (slot, item_id) in &gear {
+        let Some(info) = game_data.get_item_info(ItemInfoQuery::ById(*item_id)) else {
+            continue;
+        };
+        let item = Item::new(&info, 1);
+        let equipped = &mut wearing.equipped;
+        match *slot {
+            MAIN_HAND => equipped.main_hand = item,
+            OFF_HAND => equipped.off_hand = item,
+            3 => equipped.head = item,
+            4 => equipped.body = item,
+            5 => equipped.hands = item,
+            7 => equipped.legs = item,
+            8 => equipped.feet = item,
+            9 => equipped.ears = item,
+            10 => equipped.neck = item,
+            11 => equipped.wrists = item,
+            RING if rings == 0 => {
+                equipped.right_ring = item;
+                rings += 1;
+            }
+            RING => equipped.left_ring = item,
+            _ => {}
+        }
+    }
+    let item_ids: Vec<u32> = gear.iter().map(|(_, id)| *id).collect();
+    let weapon = gear
+        .iter()
+        .find(|(slot, _)| *slot == MAIN_HAND)
+        .map(|(_, id)| *id);
+
+    let look = random_look();
+    let name = random_name();
+    let parameters = bot_parameters(
+        game_data,
+        classjob,
+        look.tribe as u8,
+        level,
+        &item_ids,
+        weapon,
+    )
+    .ok_or("Couldn't work out the bot's stats.")?;
+
+    let actions = game_data.class_actions(classjob, parent, level, usable);
+    let rotation = build_rotation(&actions);
+    let role = BotRole::from_classjob_role(role_column);
+    let heal = if role == BotRole::Healer {
+        heal_action(&actions)
+    } else {
+        None
+    };
+    let ranged = matches!(role_column, ROLE_RANGED | ROLE_HEALER);
+    let autoattack = match role_column {
+        ROLE_TANK | ROLE_MELEE => AUTO_ATTACK_MELEE,
+        ROLE_RANGED if primary_stat == PRIMARY_DEXTERITY => AUTO_ATTACK_RANGED,
+        _ => 0,
+    };
+    let attack_range = if ranged { RANGED_RANGE } else { MELEE_RANGE };
+
+    let instance = data
+        .find_actor_instance_mut(leader)
+        .ok_or("You aren't in a zone.")?;
+    let leader_actor = instance.find_actor(leader).ok_or("You aren't in a zone.")?;
+    let mut position = leader_actor.position();
+    let rotation_facing = leader_actor.rotation();
+    // A little to one side of you, a different spot for each bot.
+    let angle =
+        rotation_facing + std::f32::consts::PI + (instance.party_bots.len() as f32 - 1.5) * 0.6;
+    position.0.x += FOLLOW_DISTANCE * angle.sin();
+    position.0.z += FOLLOW_DISTANCE * angle.cos();
+
+    let hp = parameters.hp.max(1);
+    let spawn = SpawnNpc {
+        common: CommonSpawn {
+            main_weapon_model: wearing.get_main_weapon_id(game_data),
+            sec_weapon_model: wearing.get_sub_weapon_id(game_data),
+            models: wearing.legacy_model_ids(game_data),
+            second_model_stain_ids: wearing.second_model_stain_ids(),
+            max_health_points: hp,
+            health_points: hp,
+            max_resource_points: 10000,
+            resource_points: 10000,
+            object_kind: ObjectKind::BattleNpc(BattleNpcSubKind::NpcPartyMember),
+            battalion: 0,
+            model_chara: 0,
+            level,
+            class_job: classjob,
+            position: Position(position.0),
+            rotation: rotation_facing,
+            name: name.clone(),
+            look,
+            target_id: ObjectTypeId::default(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    let actor_id = Instance::generate_actor_id();
+    let config = get_config();
+    instance.insert_npc(actor_id, spawn, &config, game_data);
+    if let Some(NetworkedActor::Npc {
+        timeline,
+        parameters: npc_parameters,
+        state,
+        ..
+    }) = instance.find_actor_mut(actor_id)
+    {
+        timeline.autoattack_action_id = autoattack;
+        timeline.attack_range = FOLLOW_DISTANCE;
+        timeline.hitbox_radius = 0.5;
+        timeline.rotation = Some(rotation);
+        *npc_parameters = parameters;
+        *state = NpcState::Follow;
+    }
+    instance.party_bots.insert(
+        actor_id,
+        PartyBot {
+            leader,
+            role,
+            attack_range,
+            heal_action: heal,
+            next_heal: Instant::now(),
+            next_provoke: Instant::now(),
+        },
+    );
+
+    let abbreviation = game_data
+        .classjob_sheet
+        .row(classjob as u32)
+        .map(|row| row.Abbreviation.to_string())
+        .unwrap_or_default();
+    tracing::info!(
+        "Party bot {name} ({abbreviation}, level {level}, {hp} HP) joined {leader}: gear {item_ids:?}, rotation {:?}, heal {heal:?}",
+        actions.iter().map(|a| a.id).collect::<Vec<_>>()
+    );
+    Ok(format!("{name} ({abbreviation})"))
+}
+
+/// Removes every bot that joined `leader` from their instance. Returns how many.
+pub fn dismiss_party_bots(
+    data: &mut WorldServer,
+    network: &mut NetworkState,
+    leader: ObjectId,
+) -> usize {
+    let Some(instance) = data.find_actor_instance_mut(leader) else {
+        return 0;
+    };
+    let bots: Vec<ObjectId> = instance
+        .party_bots
+        .iter()
+        .filter(|(_, bot)| bot.leader == leader)
+        .map(|(id, _)| *id)
+        .collect();
+    for id in &bots {
+        instance.party_bots.remove(id);
+        network.remove_actor(instance, *id);
+    }
+    bots.len()
+}
+
+/// What one enemy fighting the party is doing.
+struct Engaged {
+    id: ObjectId,
+    position: glam::Vec3A,
+    /// Whom it's after most.
+    after: Option<ObjectId>,
+}
+
+/// Tells every bot in this instance what to do this tick (see the module's description.)
+pub fn update(
+    network: &Arc<Mutex<NetworkState>>,
+    game_data: &Arc<Mutex<GameData>>,
+    instance: &mut Instance,
+) {
+    if instance.party_bots.is_empty() {
+        return;
+    }
+    let now = Instant::now();
+
+    // Bots whose player left (or that are gone themselves) leave too.
+    let gone: Vec<ObjectId> = instance
+        .party_bots
+        .iter()
+        .filter(|(id, bot)| {
+            !instance.actors.contains_key(id) || !instance.actors.contains_key(&bot.leader)
+        })
+        .map(|(id, _)| *id)
+        .collect();
+    for id in gone {
+        instance.party_bots.remove(&id);
+        if instance.actors.contains_key(&id) {
+            network.lock().remove_actor(instance, id);
+        }
+    }
+
+    let leaders: HashSet<ObjectId> = instance.party_bots.values().map(|bot| bot.leader).collect();
+    for leader in leaders {
+        update_party(network, game_data, instance, leader, now);
+    }
+}
+
+fn health_percent(actor: &NetworkedActor) -> f32 {
+    let common = actor.get_common_spawn();
+    if common.max_health_points == 0 {
+        100.0
+    } else {
+        common.health_points as f32 * 100.0 / common.max_health_points as f32
+    }
+}
+
+fn update_party(
+    network: &Arc<Mutex<NetworkState>>,
+    game_data: &Arc<Mutex<GameData>>,
+    instance: &mut Instance,
+    leader: ObjectId,
+    now: Instant,
+) {
+    let bots: Vec<(ObjectId, PartyBot)> = instance
+        .party_bots
+        .iter()
+        .filter(|(_, bot)| bot.leader == leader)
+        .map(|(id, bot)| (*id, bot.clone()))
+        .collect();
+    let mut members: Vec<ObjectId> = vec![leader];
+    members.extend(bots.iter().map(|(id, _)| *id));
+
+    // Who the party follows: its tank (the player, if they're one; else a tank bot), or the player.
+    let leader_classjob = instance
+        .find_actor(leader)
+        .map(|actor| actor.get_common_spawn().class_job)
+        .unwrap_or(0);
+    let leader_is_tank = game_data
+        .lock()
+        .classjob_role(leader_classjob)
+        .is_some_and(|(role, _, _)| role == ROLE_TANK);
+    let tank_bot = bots
+        .iter()
+        .find(|(id, bot)| {
+            bot.role == BotRole::Tank
+                && instance
+                    .find_actor(*id)
+                    .is_some_and(|actor| actor.get_common_spawn().health_points > 0)
+        })
+        .map(|(id, _)| *id);
+    let tank = if leader_is_tank {
+        Some(leader)
+    } else {
+        tank_bot
+    };
+    let leader_target = instance
+        .find_actor(leader)
+        .map(|actor| actor.get_common_spawn().target_id.object_id)
+        .filter(|target| target.is_valid());
+
+    // Everything fighting the party: any NPC (not a bot) with one of them on its enmity list.
+    let engaged: Vec<Engaged> = instance
+        .actors
+        .iter()
+        .filter(|(id, _)| !instance.party_bots.contains_key(id))
+        .filter_map(|(id, actor)| match actor {
+            NetworkedActor::Npc { enmity, spawn, .. }
+                if spawn.common.health_points > 0
+                    && enmity.keys().any(|hated| members.contains(hated)) =>
+            {
+                let after = enmity
+                    .iter()
+                    .max_by_key(|(_, amount)| **amount)
+                    .map(|(hated, _)| *hated);
+                Some(Engaged {
+                    id: *id,
+                    position: spawn.common.position.0,
+                    after,
+                })
+            }
+            _ => None,
+        })
+        .collect();
+    let is_engaged = |id: ObjectId| engaged.iter().any(|enemy| enemy.id == id);
+
+    // Whom the healer helps first: the lowest of the party below the line.
+    let hurt = members
+        .iter()
+        .filter_map(|id| instance.find_actor(*id).map(|actor| (*id, actor)))
+        .filter(|(_, actor)| actor.get_common_spawn().health_points > 0)
+        .map(|(id, actor)| (id, health_percent(actor)))
+        .filter(|(_, percent)| *percent < HEAL_BELOW_PERCENT)
+        .min_by(|a, b| a.1.total_cmp(&b.1))
+        .map(|(id, _)| id);
+
+    let mut heals = Vec::new();
+    let mut provokes = Vec::new();
+    for (bot_id, bot) in &bots {
+        let Some(NetworkedActor::Npc {
+            spawn,
+            state,
+            enmity,
+            navmesh_target,
+            navmesh_path,
+            navmesh_path_lerp,
+            timeline,
+            placement,
+            cast,
+            ..
+        }) = instance.actors.get_mut(bot_id)
+        else {
+            continue;
+        };
+        if spawn.common.health_points == 0 || *state == NpcState::Dead {
+            continue;
+        }
+        let follow = if Some(*bot_id) == tank {
+            leader
+        } else {
+            tank.unwrap_or(leader)
+        };
+        let casting = cast.is_some_and(|cast| cast.until > now);
+
+        if engaged.is_empty() {
+            // Out of combat: follow, a little behind.
+            enmity.clear();
+            if *state != NpcState::Follow {
+                *state = NpcState::Follow;
+                navmesh_path.clear();
+                *navmesh_path_lerp = 0.0;
+            }
+            spawn.common.target_id = ObjectTypeId::default();
+            *navmesh_target = Some(NpcTarget::Actor(follow));
+            timeline.attack_range = FOLLOW_DISTANCE;
+            *placement = Placement::default();
+            continue;
+        }
+
+        // The healer heals first.
+        if bot.role == BotRole::Healer
+            && let (Some(heal), Some(patient)) = (bot.heal_action, hurt)
+            && now >= bot.next_heal
+            && !casting
+        {
+            heals.push((*bot_id, heal, patient));
+            continue;
+        }
+
+        let current = match navmesh_target {
+            Some(NpcTarget::Actor(target)) if *state == NpcState::Hate => Some(*target),
+            _ => None,
+        };
+        let target = match bot.role {
+            BotRole::Tank => {
+                // Whatever is after someone else, the nearest first; then what it's on already.
+                let position = spawn.common.position.0;
+                let loose = engaged
+                    .iter()
+                    .filter(|enemy| enemy.after != Some(*bot_id))
+                    .min_by(|a, b| {
+                        a.position
+                            .distance(position)
+                            .total_cmp(&b.position.distance(position))
+                    })
+                    .map(|enemy| enemy.id);
+                if let Some(loose) = loose
+                    && now >= bot.next_provoke
+                {
+                    provokes.push((*bot_id, loose));
+                }
+                current
+                    .filter(|id| is_engaged(*id))
+                    .or(loose)
+                    .or_else(|| engaged.first().map(|enemy| enemy.id))
+            }
+            BotRole::Dps | BotRole::Healer => {
+                // What the tank (or the player) is attacking.
+                let tank_target =
+                    tank.and_then(|tank| tank_target(&engaged, tank, &bots, leader_target));
+                tank_target
+                    .or(leader_target.filter(|id| is_engaged(*id)))
+                    .or(current.filter(|id| is_engaged(*id)))
+                    .or_else(|| engaged.first().map(|enemy| enemy.id))
+            }
+        };
+        let Some(target) = target else {
+            continue;
+        };
+
+        enmity.clear();
+        enmity.insert(target, 1);
+        timeline.attack_range = bot.attack_range;
+        *placement = if bot.attack_range > MELEE_RANGE {
+            Placement {
+                anchors: vec![follow],
+                within: RANGED_STAY_WITHIN,
+                ..Default::default()
+            }
+        } else {
+            Placement::default()
+        };
+    }
+
+    for (bot_id, enemy) in provokes {
+        if let Some(NetworkedActor::Npc { enmity, .. }) = instance.actors.get_mut(&enemy) {
+            let top = enmity.values().copied().max().unwrap_or(0);
+            let tank = enmity.entry(bot_id).or_insert(0);
+            *tank = (*tank).max(top).saturating_add(PROVOKE_ENMITY);
+        }
+        if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
+            bot.next_provoke = now + PROVOKE_EVERY;
+        }
+    }
+    for (bot_id, heal, patient) in heals {
+        npc_use_action(network, game_data, instance, bot_id, heal, patient);
+        let cast = game_data
+            .lock()
+            .get_casttime(heal)
+            .map(|(_, ms)| ms)
+            .unwrap_or(0) as f32
+            / 1000.0;
+        if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
+            bot.next_heal = now + Duration::from_secs_f32(cast.max(BOT_PACE));
+        }
+    }
+}
+
+/// What the tank is attacking, if it's fighting the party: a tank bot's own target, or the player's.
+fn tank_target(
+    engaged: &[Engaged],
+    tank: ObjectId,
+    bots: &[(ObjectId, PartyBot)],
+    leader_target: Option<ObjectId>,
+) -> Option<ObjectId> {
+    let is_bot = bots.iter().any(|(id, _)| *id == tank);
+    if is_bot {
+        // The tank bot's target is the enemy most after it (it pulls them onto itself.)
+        engaged
+            .iter()
+            .find(|enemy| enemy.after == Some(tank))
+            .map(|enemy| enemy.id)
+            .or_else(|| engaged.first().map(|enemy| enemy.id))
+    } else {
+        leader_target.filter(|id| engaged.iter().any(|enemy| enemy.id == *id))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn action(id: u32, level: u8, gcd: bool, combo_from: u32) -> ClassAction {
+        ClassAction {
+            id,
+            level,
+            gcd,
+            combo_from,
+            hostile: true,
+            single_target: true,
+            heals: false,
+            potency: 0,
+            dot_seconds: None,
+        }
+    }
+
+    /// A gladiator's combo runs to its end (each step before the one it follows), abilities come first, and the
+    /// combo's starter is the filler, last.
+    #[test]
+    fn combos_run_to_their_end() {
+        let actions = [
+            action(9, 1, true, 0),    // Fast Blade
+            action(15, 4, true, 9),   // Riot Blade, after Fast Blade
+            action(21, 26, true, 15), // Rage of Halone, after Riot Blade
+            action(23, 50, false, 0), // Circle of Scorn (an ability)
+        ];
+        let rotation = build_rotation(&actions);
+        let order: Vec<u32> = rotation.actions.iter().map(|a| a.action).collect();
+        assert_eq!(order, vec![23, 21, 15, 9]);
+        assert_eq!(rotation.pace, BOT_PACE);
+    }
+
+    /// A conjurer's filler is its strongest plain spell (Stone II over Stone), Aero (a damage over time) is re-applied
+    /// as it wears off, and heals aren't attacks.
+    #[test]
+    fn filler_and_damage_over_time() {
+        let mut heal = action(120, 2, true, 0);
+        heal.hostile = false;
+        heal.heals = true;
+        let mut stone = action(119, 1, true, 0);
+        stone.potency = 140;
+        let mut aero = action(121, 4, true, 0);
+        aero.potency = 50;
+        aero.dot_seconds = Some(30.0);
+        let mut stone_ii = action(127, 22, true, 0);
+        stone_ii.potency = 200;
+        let actions = [stone, aero, stone_ii, heal];
+        let rotation = build_rotation(&actions);
+        let entries: Vec<(u32, Option<f32>)> = rotation
+            .actions
+            .iter()
+            .map(|a| (a.action, a.refresh))
+            .collect();
+        assert_eq!(entries, vec![(121, Some(28.0)), (127, None)]);
+        assert_eq!(heal_action(&actions), Some(120));
+    }
+
+    /// The numbers come from the action scripts themselves.
+    #[test]
+    fn reads_scripts() {
+        let aero = "-- Aero (Lv. 4)\nPOTENCY = 50\nDOT_POTENCY = 30\nDURATION = 30.0\n\nfunction doAction(player, in_combo)\n    effects:damage_over_time(EFFECT_AERO, DURATION, 1)\nend\n";
+        assert_eq!(script_facts(aero), (50, Some(30.0)));
+        assert_eq!(script_facts("POTENCY = 140\n"), (140, None));
+    }
+
+    #[test]
+    fn class_names_match_loosely() {
+        assert_eq!(normalise("White Mage"), "whitemage");
+        assert_eq!(normalise("whitemage"), "whitemage");
+        assert_eq!(normalise("WHM"), "whm");
+    }
+
+    /// Names keep within retail's 20 characters, as two words.
+    #[test]
+    fn names_are_two_words() {
+        for _ in 0..200 {
+            let name = random_name();
+            assert!(name.len() <= 20, "{name}");
+            assert_eq!(name.split(' ').count(), 2, "{name}");
+        }
+    }
+}

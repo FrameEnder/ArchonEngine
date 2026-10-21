@@ -74,6 +74,7 @@ use job_gauge::CLASSJOB_WHITE_MAGE;
 mod linkshell;
 mod network;
 mod party;
+mod party_bot;
 mod periodic;
 pub use party::{Party, PartyMember};
 use periodic::periodic_tick;
@@ -599,6 +600,8 @@ fn server_logic_tick(
         }
 
         for instance in &mut data.instances {
+            // Party bots decide what to do before the NPCs move.
+            party_bot::update(&network, &game_data, instance);
             let mut haters = HashMap::new();
             npc_behavior::npc_behavior(network.clone(), game_data.clone(), instance, &mut haters);
 
@@ -1225,9 +1228,13 @@ fn server_logic_tick(
                     && *state != NpcState::Hate
                     && spawn.common.health_points > 0
                     && spawn.common.health_points < spawn.common.max_health_points
-                    && spawn.common.object_kind == ObjectKind::BattleNpc(BattleNpcSubKind::Enemy)
-                    && !spawn.common.owner_id.is_valid()
-                    && instance_is_open_world
+                    && ((spawn.common.object_kind
+                        == ObjectKind::BattleNpc(BattleNpcSubKind::Enemy)
+                        && !spawn.common.owner_id.is_valid()
+                        && instance_is_open_world)
+                        // Party bots too, between fights, anywhere (a guess: players' own regeneration isn't this.)
+                        || spawn.common.object_kind
+                            == ObjectKind::BattleNpc(BattleNpcSubKind::NpcPartyMember))
                 {
                     // Enemies out of combat (or going home after giving up a chase) get 10 % of their max HP back
                     // every 3 s (Bob's Chronofoil captures, 149 samples.)

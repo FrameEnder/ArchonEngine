@@ -51,6 +51,7 @@
   - [Items That Teach Things](fork/items.md)
   - [Marketboard](fork/marketboard.md)
   - [Retainers](fork/retainers.md)
+  - [Party Bots](fork/party-bots.md)
   - [Fork Opcodes](fork/opcodes.md)
   - [Tools and Debug Commands](fork/tools.md)
   - [questkit and CI](fork/questkit.md)

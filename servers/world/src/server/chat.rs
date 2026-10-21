@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use kawari::{
     common::{
@@ -15,7 +15,7 @@ use physis::sestring::SeString;
 
 use crate::{
     ClientId, FromServer, GameData, ToServer,
-    lua::KawariLua,
+    lua::{KawariLua, KawariLuaState},
     server::{
         WorldServer,
         action::execute_action,
@@ -24,6 +24,7 @@ use crate::{
         fate::spawn_fate,
         instance::QueuedTaskData,
         network::{DestinationNetwork, NetworkState},
+        party_bot,
         zone::change_zone_warp_to_pop_range,
     },
 };
@@ -160,7 +161,64 @@ fn process_debug_commands(
 
     let parts: Vec<&str> = chat_message.split(' ').collect();
 
+    // Tells the player something (a ServerNoticeMessage.)
+    let notify = |message: String| {
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ServerNoticeMessage(
+            ServerNoticeMessage {
+                message,
+                ..Default::default()
+            },
+        ));
+        network.lock().send_to(
+            from_id,
+            FromServer::PacketSegment(ipc, from_actor_id),
+            DestinationNetwork::ZoneClients,
+        );
+    };
+
     match parts[0] {
+        // A party bot of a class, which joins you: `!spawn playernpc whitemage` (any class's or job's name or
+        // abbreviation), or `!spawn playernpc dismiss` to send yours away. See docs/src/fork/party-bots.md.
+        "!spawn" if parts.get(1) == Some(&"playernpc") => {
+            let class_name = parts[2..].join(" ");
+            if class_name.is_empty() {
+                notify("Usage: !spawn playernpc <class> (e.g. whitemage, PLD), or !spawn playernpc dismiss".into());
+                return true;
+            }
+            if class_name == "dismiss" {
+                let count = {
+                    let mut data = data.lock();
+                    let mut network = network.lock();
+                    party_bot::dismiss_party_bots(&mut data, &mut network, from_actor_id)
+                };
+                notify(format!("Dismissed {count} party bot(s)."));
+                return true;
+            }
+            let usable: HashMap<u32, String> = {
+                let lua = lua.lock();
+                let state = lua.0.app_data_ref::<KawariLuaState>().unwrap();
+                state.action_scripts.clone()
+            };
+            let result = {
+                let mut data = data.lock();
+                let mut game_data = game_data.lock();
+                party_bot::spawn_party_bot(
+                    &mut data,
+                    &mut game_data,
+                    &usable,
+                    from_actor_id,
+                    &class_name,
+                )
+            };
+            match result {
+                Ok(name) => notify(format!(
+                    "{name} joined you (level {}).",
+                    party_bot::BOT_LEVEL
+                )),
+                Err(error) => notify(error),
+            }
+            true
+        }
         "!spawnmonster" => {
             if let Some((_, id)) = chat_message.split_once(' ')
                 && let Ok(id) = id.parse::<u32>()

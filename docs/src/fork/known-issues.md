@@ -18,6 +18,14 @@ add one when something is found.
   The fork's inventory operations (retainer entrust/withdraw/gil/market, `BASE_INVENTORY_ACTION` + 22..26) are
   assumed to keep their offsets from the new base (234), unchecked on 7.57h1.
 
+## Party bots
+
+* Stage 1 only (see [Party Bots](party-bots.md)): `!spawn playernpc` bots aren't in the party list (retail lists Duty
+  Support members through its own packets, not recorded yet), aren't level synced, don't follow you into another
+  zone, stay down when they die, use single-target attacks and one heal only, and don't dodge area attacks. The Duty
+  Finder doesn't fill roles with them yet. Their look (random customize values), gear models and how the client shows
+  an `NpcPartyMember` outside a duty haven't been seen in game.
+
 ## Quests
 
 * Gridania's Lancer and Archer **Close to Home** (85, 123) and Limsa Lominsa's Marauder one (108) come from their client

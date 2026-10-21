@@ -1130,3 +1130,84 @@ mod notice_tests {
         assert!(can_notice(enemy, PI - 0.1, Vec3A::new(-1.0, 0.0, -13.0)));
     }
 }
+
+/// Has the NPC `actor_id` use `action_id` on `target_id` now, as a director's `use_action` does (and party bots'
+/// heals): it stands still while it casts (its area lands where it was aimed now), shows its cast bar, and the action
+/// lands when the cast ends.
+pub fn npc_use_action(
+    network: &Arc<Mutex<NetworkState>>,
+    game_data: &Arc<Mutex<GameData>>,
+    instance: &mut Instance,
+    actor_id: ObjectId,
+    action_id: u32,
+    target_id: ObjectId,
+) {
+    let Some(actor) = instance.find_actor(actor_id) else {
+        return;
+    };
+    let position = actor.position();
+    let rotation = actor.rotation();
+    let cast_time = {
+        let mut game_data = game_data.lock();
+        game_data
+            .get_casttime(action_id)
+            .map(|(_, cast_time)| cast_time)
+            .unwrap_or(0) as f32
+            / 1000.0
+    };
+    let request = ActionRequest {
+        action_id,
+        action_type: ActionType::Action,
+        rotation1: rotation,
+        target: ObjectTypeId {
+            object_id: target_id,
+            object_type: ObjectTypeKind::None,
+        },
+        ..Default::default()
+    };
+
+    let target_position = instance
+        .find_actor(target_id)
+        .map(|actor| actor.position().0)
+        .unwrap_or(position.0);
+    if let Some(NetworkedActor::Npc { cast, .. }) = instance.find_actor_mut(actor_id) {
+        *cast = Some(NpcCast {
+            until: Instant::now() + Duration::from_secs_f32(cast_time),
+            target_position,
+            rotation,
+        });
+    }
+
+    // Show the cast bar, the same way NPCs cast their own actions.
+    if cast_time > 0.0 {
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
+            spell_id: request.action_id as u16,
+            action_type: request.action_type,
+            omen_delay: 0,
+            action_id: request.action_id,
+            cast_time: npc_cast_bar_time(cast_time),
+            target: target_id,
+            rotation,
+            interruptible: false,
+            ballista_entity_id: ObjectId::default(),
+            position,
+        });
+        let mut network = network.lock();
+        network.send_in_range_instance(
+            actor_id,
+            instance,
+            FromServer::PacketSegment(ipc, actor_id),
+            DestinationNetwork::ZoneClients,
+        );
+    }
+
+    instance.insert_task(
+        ClientId::default(),
+        actor_id,
+        Duration::from_secs_f32(cast_time),
+        QueuedTaskData::CastAction {
+            request,
+            interruptible: cast_time > 0.0,
+        },
+    );
+}

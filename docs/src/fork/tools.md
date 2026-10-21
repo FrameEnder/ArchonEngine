@@ -69,6 +69,7 @@ Typed in game chat; the full list is in [Debug Commands](../debug_commands.md).
 | `!rawsweep <from> <to> <hex>` | Send the same data with every *unknown* opcode in a range, to find one the client reacts to. |
 | `!directorscene <scene> [flags hex]` | Play a scene of the current director (found the 60001 victory fanfare). |
 | `!retainer hire <name> [class/job] [level]` / `list` / `release <name>` | Hire a retainer, list them, let one go. See [Retainers](retainers.md#hiring). |
+| `!spawn playernpc <class>` / `dismiss` | A party bot of that class (name or abbreviation) joins you; `dismiss` sends yours away. See [Party Bots](party-bots.md). |
 | `!forkopcodes` | List the fork's opcodes, which are known for this game version, and how to find the rest. |
 | `!achievement <id>` / `clear <id>` / `check` | Complete an achievement (with the pop-up), take one away, or complete every one whose requirements are met (`check` says how many it completed). |
 

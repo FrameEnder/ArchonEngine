@@ -17,9 +17,9 @@ use kawari::{
     config::get_config,
     ipc::chat::ChatChannelType,
     ipc::zone::{
-        ActionRequest, ActionType, ActorControlCategory, ActorControlSelf, ActorSetPos,
-        ChatMessage, DutyFinderSetting, EventLogMessage, MapEffects, PrepareZoning,
-        ServerZoneIpcData, ServerZoneIpcSegment, WalkInEvent,
+        ActorControlCategory, ActorControlSelf, ActorSetPos, ChatMessage, DutyFinderSetting,
+        EventLogMessage, MapEffects, PrepareZoning, ServerZoneIpcData, ServerZoneIpcSegment,
+        WalkInEvent,
     },
 };
 use mlua::{Function, LuaSerdeExt, UserData, UserDataMethods, Value};
@@ -31,7 +31,7 @@ use crate::{
     lua::KawariLua,
     server::{
         WorldServer,
-        actor::{NetworkedActor, NpcCast},
+        actor::NetworkedActor,
         effect::gain_effect_instance,
         instance::{Instance, QueuedTaskData},
         network::{DestinationNetwork, NetworkState},
@@ -1419,7 +1419,7 @@ pub fn director_tick(
                 action_id,
                 target,
             } => {
-                let Some((actor_id, position)) = instance.find_npc(*layout_id) else {
+                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
                     tracing::warn!("Failed to find bnpc {layout_id} for UseAction!");
                     continue;
                 };
@@ -1434,73 +1434,8 @@ pub fn director_tick(
                 let Some(target_id) = target_id else {
                     continue;
                 };
-                let rotation = instance
-                    .find_actor(actor_id)
-                    .map(|actor| actor.rotation())
-                    .unwrap_or_default();
-                let cast_time = {
-                    let mut game_data = game_data.lock();
-                    game_data
-                        .get_casttime(*action_id)
-                        .map(|(_, cast_time)| cast_time)
-                        .unwrap_or(0) as f32
-                        / 1000.0
-                };
-                let request = ActionRequest {
-                    action_id: *action_id,
-                    action_type: ActionType::Action,
-                    rotation1: rotation,
-                    target: ObjectTypeId {
-                        object_id: target_id,
-                        object_type: ObjectTypeKind::None,
-                    },
-                    ..Default::default()
-                };
-
-                // Like their own casts, it stands still and its area lands where it was aimed now.
-                let target_position = instance
-                    .find_actor(target_id)
-                    .map(|actor| actor.position().0)
-                    .unwrap_or(position.0);
-                if let Some(NetworkedActor::Npc { cast, .. }) = instance.find_actor_mut(actor_id) {
-                    *cast = Some(NpcCast {
-                        until: Instant::now() + Duration::from_secs_f32(cast_time),
-                        target_position,
-                        rotation,
-                    });
-                }
-
-                // Show the cast bar, the same way NPCs cast their own actions.
-                if cast_time > 0.0 {
-                    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
-                        spell_id: request.action_id as u16,
-                        action_type: request.action_type,
-                        omen_delay: 0,
-                        action_id: request.action_id,
-                        cast_time: crate::server::npc_behavior::npc_cast_bar_time(cast_time),
-                        target: target_id,
-                        rotation,
-                        interruptible: false,
-                        ballista_entity_id: ObjectId::default(),
-                        position,
-                    });
-                    let mut network = network.lock();
-                    network.send_in_range_instance(
-                        actor_id,
-                        instance,
-                        FromServer::PacketSegment(ipc, actor_id),
-                        DestinationNetwork::ZoneClients,
-                    );
-                }
-
-                instance.insert_task(
-                    ClientId::default(),
-                    actor_id,
-                    Duration::from_secs_f32(cast_time),
-                    QueuedTaskData::CastAction {
-                        request,
-                        interruptible: cast_time > 0.0,
-                    },
+                crate::server::npc_behavior::npc_use_action(
+                    &network, &game_data, instance, actor_id, *action_id, target_id,
                 );
             }
             LuaDirectorTask::Say { .. } | LuaDirectorTask::SayBattleTalk { .. } => {

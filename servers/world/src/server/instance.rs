@@ -146,6 +146,8 @@ pub struct Instance {
     pub enemy_ai_disabled: bool,
     /// Idle NPCs found unable to wander (off the navmesh), so each is only logged once.
     pub stuck_wanderers: std::collections::HashSet<ObjectId>,
+    /// The party bots here, by actor ID (`server/party_bot.rs`.)
+    pub party_bots: HashMap<ObjectId, crate::server::party_bot::PartyBot>,
     /// List of running/preparing FATEs.
     pub fates: Vec<FateInstance>,
     /// List of FATEs that are able to spawn.
