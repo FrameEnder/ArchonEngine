@@ -26,7 +26,10 @@ use std::{
 
 use glam::Vec3A;
 use kawari::{
-    common::{ObjectId, ObjectTypeId, Position, Rotation, RotationAction},
+    common::{
+        JumpState, MoveAnimationState, MoveAnimationType, ObjectId, ObjectTypeId, Position,
+        Rotation, RotationAction,
+    },
     config::get_config,
     ipc::zone::{
         BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DisplayFlag, ObjectKind, SpawnNpc,
@@ -39,13 +42,13 @@ use physis::{
 };
 
 use crate::{
-    GameData, ItemInfoQuery,
+    FromServer, GameData, ItemInfoQuery,
     inventory::{Inventory, Item},
     server::{
         WorldServer,
         actor::{NetworkedActor, NpcState, NpcTarget},
         instance::Instance,
-        network::NetworkState,
+        network::{DestinationNetwork, NetworkState},
         npc_behavior::{BEHAVIOR_TICK_SECONDS, NPC_RUN_SPEED, npc_use_action},
         placement::Placement,
     },
@@ -126,8 +129,9 @@ pub struct PartyBot {
     pub next_provoke: Instant,
     /// When it joined, among its party's bots: its place in the formation.
     pub order: usize,
-    /// The formation spot it's walking to, if it's on its way.
-    pub goal: Option<Vec3A>,
+    /// Out of combat it walks itself, along this path to its formation spot (`npc_behavior` leaves it alone then.)
+    pub walking_itself: bool,
+    pub path: std::collections::VecDeque<Vec3A>,
     /// When it last re-aimed its path at its moving spot.
     pub reaimed: Instant,
 }
@@ -159,8 +163,6 @@ fn instance_navmesh_path(navmesh: &crate::navmesh::Navmesh, from: Vec3A, to: Vec
 const AT_SPOT: f32 = 0.6;
 /// The spot moved this far from where it was walking: it sets off for the new one.
 const SPOT_MOVED: f32 = 1.0;
-/// Standing at its spot, it only faces the one it follows (an "attack range" this wide keeps it from walking to them.)
-const STANDING_RANGE: f32 = 12.0;
 
 /// The formation spot `index` for someone at `position` facing `rotation`.
 fn formation_spot(position: Vec3A, rotation: f32, index: usize) -> Vec3A {
@@ -753,7 +755,8 @@ pub fn spawn_party_bot(
             next_heal: Instant::now(),
             next_provoke: Instant::now(),
             order,
-            goal: None,
+            walking_itself: true,
+            path: Default::default(),
             reaimed: Instant::now(),
         },
     );
@@ -951,7 +954,8 @@ fn update_party(
 
     let mut heals = Vec::new();
     let mut provokes = Vec::new();
-    let mut goals = Vec::new();
+    let mut walks = Vec::new();
+    let mut fighting = Vec::new();
     let navmesh = &instance.navmesh;
     for (bot_id, bot) in &bots {
         let Some(NetworkedActor::Npc {
@@ -992,41 +996,58 @@ fn update_party(
             let spot = formation_spot(anchor, facing, spots.get(bot_id).copied().unwrap_or(0));
             let here = spawn.common.position.0;
             let flat = |a: Vec3A, b: Vec3A| Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length();
-            let walking = !navmesh_path.is_empty();
-            if flat(here, spot) <= AT_SPOT && !walking {
-                // There: stand, facing the one it follows.
-                *navmesh_target = Some(NpcTarget::Actor(follow));
-                timeline.attack_range = STANDING_RANGE;
-                goals.push((*bot_id, None, now));
+            // Out of combat the bot walks itself (`walking_itself`: NPCs' own walking leaves it alone), so nothing
+            // else steers it: with both, it reached its spot and was pulled back along its old path, to and fro
+            // every half second (Bob's 2026-10-21 bundle).
+            *navmesh_target = None;
+            navmesh_path.clear();
+            *navmesh_path_lerp = 0.0;
+            *last_position = None;
+            let mut path = bot.path.clone();
+            if flat(here, spot) <= AT_SPOT && path.is_empty() {
+                walks.push((*bot_id, path, None, bot.reaimed));
                 continue;
             }
-            *navmesh_target = Some(NpcTarget::Position(spot));
-            // Walking with you: re-aim its path at where its spot is now, from where it is, at most every
-            // `REAIM_EVERY` (a new path each tick would never let it take a step), and only when the spot has moved
-            // away from the path's end. It keeps the step it was due this tick, so it doesn't pause.
-            let path_end = navmesh_path.back().copied().or(bot.goal);
-            let drifted = path_end.is_none_or(|end| flat(end, spot) > SPOT_MOVED);
-            let due = now.duration_since(bot.reaimed) >= REAIM_EVERY || !walking;
+            // Its path, re-aimed at where its spot is now (from where it stands) at most every `REAIM_EVERY`, and
+            // only when the spot has moved off the path's end.
+            let drifted = path.back().is_none_or(|end| flat(*end, spot) > SPOT_MOVED);
+            let due = path.is_empty() || now.duration_since(bot.reaimed) >= REAIM_EVERY;
+            let mut reaimed = bot.reaimed;
             if drifted && due {
-                let mut path: std::collections::VecDeque<Vec3A> =
-                    instance_navmesh_path(navmesh, here, spot).into();
-                while path.front().is_some_and(|point| flat(*point, here) < 0.05) {
+                path = instance_navmesh_path(navmesh, here, spot).into();
+                if path.back().is_none_or(|end| flat(*end, spot) > AT_SPOT) {
+                    path.push_back(spot); // straight on where the navmesh stops
+                }
+                reaimed = now;
+            }
+            // A tick's run along it.
+            let mut at = here;
+            let mut left = NPC_RUN_SPEED * BEHAVIOR_TICK_SECONDS;
+            while left > 0.0
+                && let Some(next) = path.front().copied()
+            {
+                let distance = at.distance(next);
+                if distance <= left {
+                    at = next;
+                    left -= distance;
                     path.pop_front();
+                } else {
+                    at += (next - at) * (left / distance);
+                    left = 0.0;
                 }
-                if path.is_empty() {
-                    path.push_back(spot);
-                }
-                let first = path[0];
-                let step = NPC_RUN_SPEED * BEHAVIOR_TICK_SECONDS / here.distance(first).max(0.01);
-                *navmesh_path = path;
-                *last_position = Some(here);
-                *navmesh_path_lerp = step.min(1.0);
-                goals.push((*bot_id, Some(spot), now));
+            }
+            if flat(at, here) >= 0.05 {
+                let facing = f32::atan2(at.x - here.x, at.z - here.z);
+                spawn.common.position = Position(at);
+                spawn.common.rotation = facing;
+                walks.push((*bot_id, path, Some((at, facing)), reaimed));
+            } else {
+                walks.push((*bot_id, path, None, reaimed));
             }
             continue;
         }
-        if bot.goal.is_some() {
-            goals.push((*bot_id, None, bot.reaimed));
+        if bot.walking_itself {
+            fighting.push(*bot_id);
         }
 
         // The healer heals first.
@@ -1094,10 +1115,34 @@ fn update_party(
         };
     }
 
-    for (bot_id, goal, reaimed) in goals {
+    for (bot_id, path, moved, reaimed) in walks {
         if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
-            bot.goal = goal;
+            bot.path = path;
             bot.reaimed = reaimed;
+            bot.walking_itself = true;
+        }
+        if let Some((position, rotation)) = moved {
+            network.lock().send_in_range_instance(
+                bot_id,
+                instance,
+                FromServer::ActorMove(
+                    bot_id,
+                    Position(position),
+                    rotation,
+                    MoveAnimationType::empty(),
+                    MoveAnimationState::None,
+                    JumpState::NoneOrFalling,
+                    Some((NPC_RUN_SPEED * 10.0) as u8),
+                ),
+                DestinationNetwork::ZoneClients,
+            );
+        }
+    }
+    // Fighting: NPCs' own walking (chasing its target) takes over again.
+    for bot_id in fighting {
+        if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
+            bot.walking_itself = false;
+            bot.path.clear();
         }
     }
     for (bot_id, enemy) in provokes {

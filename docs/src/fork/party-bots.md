@@ -65,12 +65,16 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
   follows you. Each bot has **its own spot in a formation** behind the one it follows (`FORMATION`, by the order they
   joined: 35° either side of straight behind at 2.5 yalms, straight behind at 3.8, out to the sides at 75°, then
   further back; more than seven start another ring 3.5 yalms out), turned with the way they face. It walks to its spot
-  when it's more than 0.6 yalms off and once there stands facing them. While you move it **walks with you**: its path
-  is re-aimed at where its spot is now, from where it stands, at most once a second (`REAIM_EVERY`) and only when the
-  spot has moved a yalm from the path's end, keeping the step it was due that tick; it runs at NPCs' running speed (6
-  yalms a second). (The first build had every bot walk to within 2.5 yalms of the same person, so they ended up on top
-  of each other; the next threw its path away each time the spot moved a yalm, which is every tick while you run, so
-  bots only set off once you stopped: Bob's 2026-10-21 bundles and testing.) It regenerates 10 % of its HP every 3 s between fights.
+  when it's more than 0.6 yalms off and stops there. Out of combat **the bot walks itself** (`PartyBot::walking_itself`):
+  `party_bot::update` keeps its path, moves it along it at NPCs' running speed (6 yalms a second, 3 a tick) and sends
+  the ActorMove, and NPCs' own walking (`npc_behavior`) leaves it alone until it fights, when that takes over to chase
+  its target. While you move it **walks with you**: its path is re-aimed at where its spot is now, from where it
+  stands (the navmesh, straight on where that stops), at most once a second (`REAIM_EVERY`) and only when the spot has
+  moved a yalm from the path's end. (The first build had every bot walk to within 2.5 yalms of the same person, so
+  they ended up on top of each other; the next threw its path away each time the spot moved a yalm, which is every
+  tick while you run, so bots only set off once you stopped; the one after left both its own code and NPCs' walking
+  steering it, and NPCs' walking pulled it back along its old path, so it went to and fro at its spot: Bob's
+  2026-10-21 bundles and testing.) It regenerates 10 % of its HP every 3 s between fights.
 * **In combat**: anything with you or a bot on its enmity list is fighting the party.
   * The **tank** goes for whatever is after someone else (the nearest first) and pulls it onto itself every 10 s
     (50,000 enmity above the top of that enemy's list, as the quest battle framework's tanks do), otherwise keeps on

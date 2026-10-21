@@ -169,6 +169,14 @@ pub fn npc_behavior(
 
     // const pass
     for (id, actor) in &instance.actors {
+        // A party bot out of combat walks itself (server/party_bot.rs.)
+        if instance
+            .party_bots
+            .get(id)
+            .is_some_and(|bot| bot.walking_itself)
+        {
+            continue;
+        }
         if let NetworkedActor::Npc {
             navmesh_path: current_path,
             navmesh_path_lerp: current_path_lerp,
@@ -321,6 +329,13 @@ pub fn npc_behavior(
 
     // mut pass
     for (id, actor) in &mut instance.actors {
+        if instance
+            .party_bots
+            .get(id)
+            .is_some_and(|bot| bot.walking_itself)
+        {
+            continue;
+        }
         if let NetworkedActor::Npc {
             state,
             navmesh_path: current_path,
