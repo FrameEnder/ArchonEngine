@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-21 | — | Quests: Double Dealing's ambush; known issues.
+| 2026-10-21 | — | Quests: Double Dealing's sack of oranges; known issues.
+| 2026-10-21 | `d6a6692` | Quests: Double Dealing's ambush; known issues.
 | 2026-10-21 | `1102de5` | Quests: Double Dealing, Loam Maintenance, Plowshares to Swords, Just Deserts (466–469), emotes on an NPC; quest battles: 29; questkit (emote steps, `npc_health`); known issues.
 | 2026-10-21 | `6900080` | `master` fast-forwarded (changelog).
 | 2026-10-21 | `23a4b40` | Party bots: walking to their spots on their own (party bots).
@@ -175,7 +176,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Double Dealing (466): walking into EVENTRANGE0 brings out its two ambushers after scene 16, as on retail (the capture's SpawnNpcs: layouts 3931777/9, BNpcBase 52, level 5, 91 HP), in drop-in layer `QB_SubSea054_001` with a timeline (`DoubleDealingAmbusher_52`); the first build only played the scene (Bob's 2026-10-21 bundle). |
+| — | Double Dealing (466): the sack of oranges in sequence 4 is EOBJECT0 (it was taken for EOBJECT2, so talking to it did nothing: Bob's 2026-10-21 bundle, Kuina stuck in sequence 4); EOBJECT2 is accepted too. |
+| `d6a6692` | Double Dealing (466): walking into EVENTRANGE0 brings out its two ambushers after scene 16, as on retail (the capture's SpawnNpcs: layouts 3931777/9, BNpcBase 52, level 5, 91 HP), in drop-in layer `QB_SubSea054_001` with a timeline (`DoubleDealingAmbusher_52`); the first build only played the scene (Bob's 2026-10-21 bundle). |
 | `1102de5` | Limsa Lominsa's Double Dealing, Loam Maintenance, Plowshares to Swords and Just Deserts (466–469) from Bob's dumps and his 2026-10-21 capture, with fixtures; quest battle 29 (the golem fight, layer `QB_SubSea057_001` in `sea_s1f1`, battle fixture). Emotes on an NPC start the quest event that listens for them (`FromServer::EmotedAt`, `GameData::quest_listens_for_emote`, `onEmote`), as retail's EventStart of type Emote. questkit: `emote` fixture steps (and `fixture --chronofoil` writes them), `"npc_health": "held"` in battle fixtures. |
 | `6900080` | `master` and `Latest-Quest` fast-forwarded to `upstream-7.57h1` with Bob's OK (the Limsa opening through Washed Up, 465, and party bots stage 1 work in game). |
 | `23a4b40` | Party bots walk to their formation spots on their own out of combat (`PartyBot::walking_itself`, its own path, ActorMove each tick; NPCs' own walking skips them until they fight): with both steering, a bot reached its spot and was pulled back along its old path, to and fro every half second (Bob's 2026-10-21 bundle). |

@@ -46,9 +46,11 @@ add one when something is found.
   Sea (674; 397, 402, 403, 406, 412–415, 544–546, 689, 690, and the side quest 471), and Bob's dumps of 2026-10-21
   cover them but 471. Retail also marked quests 398 and 404 completed along with 397 and 402, as 464 with 543
   (`mark_quest_completed`); why (the sheet, presumably) isn't known.
-* 466–469 (2026-10-21) are untested in game. Their NPCs' and objects' base IDs were matched to retail's layout IDs by
-  the scenes they play and the Quest sheet's listeners (the capture doesn't say). Double Dealing's emote takes any
-  emote (the listener names none; Bob used 12); its EOBJECT0, EOBJECT1 and the EVENTRANGE0 exit listener weren't used
+* 466–469 (2026-10-21): their NPCs' and objects' base IDs were matched to retail's layout IDs by the scenes they play
+  and the Quest sheet's listeners (the capture doesn't say). Double Dealing's sack of oranges was taken for EOBJECT2
+  at first, so it did nothing (Bob's 2026-10-21 bundle); Loam Maintenance's three objects are matched by order
+  (layouts 3929266–68 to EOBJECT0–2), untested. Double Dealing's emote takes any
+  emote (the listener names none; Bob used 12); its EOBJECT1 and the EVENTRANGE0 exit listener weren't used
   on retail and do nothing; its ambushers lack the quest fields retail's SpawnNpc gives them (the player as owner,
   EVENTRANGE0 in the event field, flags 2), like the other quest-spawned enemies below. Plowshares to Swords counts every kill of ENEMY0 or ENEMY1 (each gave an
   item on retail, three of three; the listeners are drops, so retail may have a chance). Just Deserts' one-liners for

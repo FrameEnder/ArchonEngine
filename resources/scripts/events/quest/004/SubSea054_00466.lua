@@ -14,13 +14,14 @@
 --               (they run off), then notice 1 with [count, 3]. UI8AL counts them, BitFlag8 n - 1 marks ACTORn; the
 --               third clears the variables and moves to sequence 3. ACTOR1 has a line meanwhile (scene 18).
 -- Sequence 3:   ACTOR1 (scene 24): notice 2, sequence 4.
--- Sequence 4:   EOBJECT2: scene 28 (empty), EVENT_ACTION_PROCESS_MIDDLE, scene 29: ITEM0 (UI8BH = 1), notice 3
+-- Sequence 4:   EOBJECT0, the sack of oranges (layout 3929264 on retail; the Quest sheet also lists EOBJECT2 for this
+--               sequence, so it's taken too): scene 28 (empty), EVENT_ACTION_PROCESS_MIDDLE, scene 29: ITEM0 (UI8BH = 1), notice 3
 --               [25919], sequence 5.
 -- Sequence 5:   hand ITEM0 to ACTOR5 (scene 33, an NpcTrade: 1 if given), then scene 34: ITEM1 instead (UI8BL = 1),
 --               notice 4 [25919], sequence 255.
 -- Sequence 255: hand ITEM1 to ACTOR0 (scene 36, an NpcTrade), then the reward (scene 37, a yield: 1 completes it.)
 -- All scenes as retail played them: the talks with NPCs and objects in sequences 2-4 with HIDE_HOTBAR |
--- NO_DEFAULT_CAMERA, the rest with HIDE_HOTBAR. EOBJECT0 and EOBJECT1 weren't used on retail.
+-- NO_DEFAULT_CAMERA, the rest with HIDE_HOTBAR. EOBJECT1 wasn't used on retail.
 
 SCENE_OFFER = 0
 SCENE_WONT_TALK = 1
@@ -106,7 +107,7 @@ function onTalk(target, player)
         play(player, 3 * n + 1, OBJECT_FLAGS)
     elseif sequence == 3 and BASE_ID == ACTOR1 then
         play(player, SCENE_ACTOR1_REPORT, OBJECT_FLAGS)
-    elseif sequence == 4 and BASE_ID == EOBJECT2 then
+    elseif sequence == 4 and (BASE_ID == EOBJECT0 or BASE_ID == EOBJECT2) then
         play(player, SCENE_EOBJECT, OBJECT_FLAGS)
     elseif sequence == 5 and BASE_ID == ACTOR5 then
         play(player, SCENE_TRADE_ACTOR5, HIDE_HOTBAR)
