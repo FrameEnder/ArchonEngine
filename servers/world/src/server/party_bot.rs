@@ -46,7 +46,7 @@ use crate::{
         actor::{NetworkedActor, NpcState, NpcTarget},
         instance::Instance,
         network::NetworkState,
-        npc_behavior::npc_use_action,
+        npc_behavior::{BEHAVIOR_TICK_SECONDS, NPC_RUN_SPEED, npc_use_action},
         placement::Placement,
     },
     zone_connection::BaseParameters,
@@ -128,6 +128,8 @@ pub struct PartyBot {
     pub order: usize,
     /// The formation spot it's walking to, if it's on its way.
     pub goal: Option<Vec3A>,
+    /// When it last re-aimed its path at its moving spot.
+    pub reaimed: Instant,
 }
 
 /// Where the n-th bot following someone stands out of combat, relative to them: (degrees from straight behind, yalms
@@ -142,6 +144,17 @@ const FORMATION: [(f32, f32); 7] = [
     (-25.0, 5.0),
     (25.0, 5.0),
 ];
+/// How often a walking bot re-aims its path at its moving formation spot.
+const REAIM_EVERY: Duration = Duration::from_millis(1000);
+
+/// A path from `from` to `to` on the navmesh (straight there where it has none: bots walk on regardless.)
+fn instance_navmesh_path(navmesh: &crate::navmesh::Navmesh, from: Vec3A, to: Vec3A) -> Vec<Vec3A> {
+    if !navmesh.is_available() {
+        return vec![to];
+    }
+    navmesh.calculate_path(from, to, f32::INFINITY)
+}
+
 /// A bot this close to its formation spot is there.
 const AT_SPOT: f32 = 0.6;
 /// The spot moved this far from where it was walking: it sets off for the new one.
@@ -567,10 +580,11 @@ pub fn spawn_party_bot(
     leader: ObjectId,
     class_name: &str,
 ) -> Result<String, String> {
-    // `kind=chocobo` (a test, for the nameplate): spawned as retail spawns a chocobo companion instead (sub-kind 3,
-    // character data flags 0x1, no display flags), whose nameplate shows the spawn's name text.
+    // Spawned as retail spawns a chocobo companion (sub-kind 3, owned, the name in the spawn's text and no BNpcName,
+    // character data flags 0x1, no display flags): its nameplate shows that name, which a party member's (sub-kind 9,
+    // as retail's Trust) doesn't (Bob tried both in game, 2026-10-21). `kind=partymember` spawns the sub-kind 9 way.
     let words: Vec<&str> = class_name.split_whitespace().collect();
-    let as_chocobo = words.contains(&"kind=chocobo");
+    let as_chocobo = !words.contains(&"kind=partymember");
     let class_name = words
         .iter()
         .filter(|word| !word.starts_with("kind="))
@@ -740,6 +754,7 @@ pub fn spawn_party_bot(
             next_provoke: Instant::now(),
             order,
             goal: None,
+            reaimed: Instant::now(),
         },
     );
 
@@ -937,9 +952,11 @@ fn update_party(
     let mut heals = Vec::new();
     let mut provokes = Vec::new();
     let mut goals = Vec::new();
+    let navmesh = &instance.navmesh;
     for (bot_id, bot) in &bots {
         let Some(NetworkedActor::Npc {
             spawn,
+            last_position,
             state,
             enmity,
             navmesh_target,
@@ -975,27 +992,41 @@ fn update_party(
             let spot = formation_spot(anchor, facing, spots.get(bot_id).copied().unwrap_or(0));
             let here = spawn.common.position.0;
             let flat = |a: Vec3A, b: Vec3A| Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length();
-            if flat(here, spot) <= AT_SPOT {
+            let walking = !navmesh_path.is_empty();
+            if flat(here, spot) <= AT_SPOT && !walking {
                 // There: stand, facing the one it follows.
                 *navmesh_target = Some(NpcTarget::Actor(follow));
                 timeline.attack_range = STANDING_RANGE;
-                goals.push((*bot_id, None));
-            } else {
-                let moved = bot.goal.is_none_or(|goal| flat(goal, spot) > SPOT_MOVED);
-                if moved {
-                    // Set off for where the spot is now.
-                    navmesh_path.clear();
-                    *navmesh_path_lerp = 0.0;
-                    goals.push((*bot_id, Some(spot)));
+                goals.push((*bot_id, None, now));
+                continue;
+            }
+            *navmesh_target = Some(NpcTarget::Position(spot));
+            // Walking with you: re-aim its path at where its spot is now, from where it is, at most every
+            // `REAIM_EVERY` (a new path each tick would never let it take a step), and only when the spot has moved
+            // away from the path's end. It keeps the step it was due this tick, so it doesn't pause.
+            let path_end = navmesh_path.back().copied().or(bot.goal);
+            let drifted = path_end.is_none_or(|end| flat(end, spot) > SPOT_MOVED);
+            let due = now.duration_since(bot.reaimed) >= REAIM_EVERY || !walking;
+            if drifted && due {
+                let mut path: std::collections::VecDeque<Vec3A> =
+                    instance_navmesh_path(navmesh, here, spot).into();
+                while path.front().is_some_and(|point| flat(*point, here) < 0.05) {
+                    path.pop_front();
                 }
-                *navmesh_target = Some(NpcTarget::Position(
-                    bot.goal.filter(|_| !moved).unwrap_or(spot),
-                ));
+                if path.is_empty() {
+                    path.push_back(spot);
+                }
+                let first = path[0];
+                let step = NPC_RUN_SPEED * BEHAVIOR_TICK_SECONDS / here.distance(first).max(0.01);
+                *navmesh_path = path;
+                *last_position = Some(here);
+                *navmesh_path_lerp = step.min(1.0);
+                goals.push((*bot_id, Some(spot), now));
             }
             continue;
         }
         if bot.goal.is_some() {
-            goals.push((*bot_id, None));
+            goals.push((*bot_id, None, bot.reaimed));
         }
 
         // The healer heals first.
@@ -1063,9 +1094,10 @@ fn update_party(
         };
     }
 
-    for (bot_id, goal) in goals {
+    for (bot_id, goal, reaimed) in goals {
         if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
             bot.goal = goal;
+            bot.reaimed = reaimed;
         }
     }
     for (bot_id, enemy) in provokes {

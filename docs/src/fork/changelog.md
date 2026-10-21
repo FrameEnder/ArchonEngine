@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-21 | — | Party bots kept apart from battle NPCs (party bots); quest battles (35's ally).
+| 2026-10-21 | — | Party bots: walking with you, spawned as chocobo companions (party bots); known issues.
+| 2026-10-21 | `c8d4119` | Party bots kept apart from battle NPCs (party bots); quest battles (35's ally).
 | 2026-10-21 | `8758465` | Party bots: walking where there's no navmesh path, the nameplate (what retail's companions do, `kind=chocobo`); known issues.
 | 2026-10-21 | `53965ab` | Party bots: the formation, retail's owner and display flags (nameplates); known issues.
 | 2026-10-21 | `1f3777e` | Party bots, stage 1 (new page); tools, debug commands; known issues.
@@ -170,7 +171,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Bots' rules are keyed to the bots (`Instance::party_bots`), not to an NPC kind: walking straight without a navmesh path and regenerating between fights check the bot list, `natural_state_of` is upstream's again (bots follow because they're owned), `is_party_bot_kind` is gone. Quest battle 35's ally goes to the boss instead of staying within 3 yalms of you, which in Bob's first run (2026-10-21 bundle, no bots there) had the boss walk over and everyone pile onto him. |
+| — | Party bots walk with you: a moving spot re-aims the bot's path at most once a second, from where it stands, keeping its step (it used to drop the path every tick while you ran, so bots only set off once you stopped). Bots are spawned as retail's chocobo companions by default, whose nameplates show their names (Bob tried both in game); `kind=partymember` for the old way. |
+| `c8d4119` | Bots' rules are keyed to the bots (`Instance::party_bots`), not to an NPC kind: walking straight without a navmesh path and regenerating between fights check the bot list, `natural_state_of` is upstream's again (bots follow because they're owned), `is_party_bot_kind` is gone. Quest battle 35's ally goes to the boss instead of staying within 3 yalms of you, which in Bob's first run (2026-10-21 bundle, no bots there) had the boss walk over and everyone pile onto him. |
 | `8758465` | Party bots walk straight where the navmesh has no path (as NPCs in content do): around Summerford Farms they stood still (Bob's 2026-10-21 bundle, 550 failed paths). Their nameplates still show only "Lv100": `!spawn playernpc <class> kind=chocobo` spawns one as retail spawns chocobo companions (sub-kind 3, name text and no BNpcName, character data flags 0x1), whose nameplates show the name, to try in game. `party_bot::is_party_bot_kind`. |
 | `53965ab` | Party bots follow in formation: each its own spot behind the one it follows, by the order they joined (they stacked on one another, Bob's 2026-10-21 bundle). Bots are spawned as retail spawns its party-member NPCs (Trust, six in Bob's captures): owned by the player, display flags 0x40000 (they had no nameplate). |
 | `1f3777e` | Party bots, stage 1 (`server/party_bot.rs`): `!spawn playernpc <class>` spawns a player-like NPC (BattleNpcSubKind 9, a random look and made-up name, level 100, the best gear its class can wear found in the Item sheet, a player's stats) that follows the party's tank or you and fights by role (tank pulls, DPS on the tank's target, healer heals below 60 %), with a rotation built from its class's scripted actions (potency and damage-over-time durations read from their scripts); `dismiss` sends them away. Bots regenerate between fights. The director's `use_action` is now `npc_behavior::npc_use_action`, shared with the bots' heals. |

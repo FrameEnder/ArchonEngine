@@ -29,17 +29,14 @@ Code: `servers/world/src/server/party_bot.rs` (`spawn_party_bot`, `update`), the
 
 ## What a bot is
 
-* **An NPC with a player's look.** A battle NPC of BattleNpcSubKind 9, `NpcPartyMember`, owned by the player
-  (`owner_id`), display flags 0x40000, battalion 0 (your side), ModelChara 0 (a human model built from its customize
-  data and gear), as retail spawns its party-member NPCs (Trust, six in Bob's Chronofoil captures in territories 822
-  and 884: those also have character data flags 0x2, which Kawari reads as hostile, so the bots keep 0, and a
-  BNpcBase and BNpcName). Player area attacks don't hit them (they only hit `Enemy` NPCs).
-* **Its nameplate shows "Lv100" but no name** (Bob's 2026-10-21 bundles, with and without the owner): the battle log
-  shows the spawn's name text, so the client has it, but for this kind of NPC the nameplate's name comes from
-  elsewhere (retail's Trust members have a BNpcName, `name_id`). Retail's **chocobo companions** are the other owned
-  battle NPCs with a made-up name: sub-kind 3, the name in the text and **no** `name_id`, character data flags 0x1, no
-  display flags, and their nameplate shows that name. `!spawn playernpc <class> kind=chocobo` spawns a bot that way,
-  to see in game whether its name shows (and whether the client then treats it as your chocobo).
+* **An NPC with a player's look**, spawned as retail spawns a **chocobo companion**: a battle NPC of sub-kind 3
+  (`Chocobo`), owned by the player (`owner_id`), its name in the spawn's text and no BNpcName (`name_id` 0), character
+  data flags 0x1, no display flags, battalion 0 (your side), ModelChara 0 (a human model built from its customize data
+  and gear). Its nameplate then shows its name (Bob, in game, 2026-10-21). Retail's party-member NPCs (Trust, six in
+  Bob's Chronofoil captures in territories 822 and 884) are sub-kind 9 (`NpcPartyMember`), owned, display flags
+  0x40000, character data flags 0x2 and a BNpcName; spawned that way (`kind=partymember`) a bot's nameplate shows
+  only "Lv100", since for that kind the client takes the name from the BNpcName. Player area attacks don't hit
+  bots (they only hit `Enemy` NPCs).
 * **A random look.** One of the first six races (Hyur, Elezen, Lalafell, Miqo'te, Roegadyn, Au Ra) and either sex, its
   face and hairstyle 1–4 (which every tribe and sex has) and random features and colours within small ranges. Hrothgar
   and Viera are left out until their valid ranges are read from the character creator's data.
@@ -68,9 +65,12 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
   follows you. Each bot has **its own spot in a formation** behind the one it follows (`FORMATION`, by the order they
   joined: 35° either side of straight behind at 2.5 yalms, straight behind at 3.8, out to the sides at 75°, then
   further back; more than seven start another ring 3.5 yalms out), turned with the way they face. It walks to its spot
-  when it's more than 0.6 yalms off, sets off again when the spot moves a yalm, and once there stands facing them. (The
-  first build had every bot walk to within 2.5 yalms of the same person, so they ended up on top of each other: Bob's
-  2026-10-21 bundle.) It regenerates 10 % of its HP every 3 s between fights.
+  when it's more than 0.6 yalms off and once there stands facing them. While you move it **walks with you**: its path
+  is re-aimed at where its spot is now, from where it stands, at most once a second (`REAIM_EVERY`) and only when the
+  spot has moved a yalm from the path's end, keeping the step it was due that tick; it runs at NPCs' running speed (6
+  yalms a second). (The first build had every bot walk to within 2.5 yalms of the same person, so they ended up on top
+  of each other; the next threw its path away each time the spot moved a yalm, which is every tick while you run, so
+  bots only set off once you stopped: Bob's 2026-10-21 bundles and testing.) It regenerates 10 % of its HP every 3 s between fights.
 * **In combat**: anything with you or a bot on its enmity list is fighting the party.
   * The **tank** goes for whatever is after someone else (the nearest first) and pulls it onto itself every 10 s
     (50,000 enmity above the top of that enemy's list, as the quest battle framework's tanks do), otherwise keeps on

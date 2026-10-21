@@ -56,7 +56,7 @@ const AGGRO_LEVEL_GAP: u8 = 9;
 /// How fast enemies move, in yalms a second: walking about while idle, and running (chasing, going home.) Retail's
 /// ActorMove speed byte is this in tenths (20 and 60), Bob's Chronofoil captures.
 const NPC_WALK_SPEED: f32 = 2.0;
-const NPC_RUN_SPEED: f32 = 6.0;
+pub const NPC_RUN_SPEED: f32 = 6.0;
 /// An enemy's cast bar is this much shorter than the action's cast time, which it still lands at: retail's ActorCast
 /// carried the Action sheet's time minus 0.3 s for 99 % of 8,392 enemy casts (Bob's Chronofoil captures.)
 pub const NPC_CAST_BAR_SHORTER_BY: f32 = 0.3;
@@ -71,7 +71,7 @@ pub fn npc_cast_bar_time(cast_time: f32) -> f32 {
 }
 
 /// How much of a second one behaviour tick is (`SERVER_TICK_MILLISECONDS`.)
-const BEHAVIOR_TICK_SECONDS: f32 = 0.5;
+pub const BEHAVIOR_TICK_SECONDS: f32 = 0.5;
 
 /// How far (in yalms) an enemy will chase from where it spawned before giving up, going home and healing up.
 /// TODO: per enemy, from Kawari Recorder's "World" recording (gave up at ~N yalms from spawn.)
