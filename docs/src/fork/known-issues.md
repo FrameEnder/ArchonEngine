@@ -390,6 +390,7 @@ Packets whose size on retail isn't what `opcodes.yml` says, from Bob's Chronofoi
   one.
 * CI's "Quest replays and scripts" job runs questkit's own tests (`python -m unittest discover tools/questkit/tests`);
   run them before pushing. They failed from 2026-10-20 (`85124c4`) to 2026-10-21 (see the changelog) without anyone
-  noticing, and "Build and test" is skipped on branches when they fail.
+  noticing. "Build and test" (the full Rust build) only runs on pushes to `master`, pull requests and by hand, so a
+  branch's run being green doesn't mean the Rust side was built there.
 * Running `cargo fmt` on the workspace reformats upstream files; only check the files you changed
   (`rustfmt --check --edition 2024 <files>`).
