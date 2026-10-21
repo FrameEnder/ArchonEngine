@@ -421,6 +421,8 @@ impl WorldServer {
     }
 }
 
+/// Moving during the last half second of a cast doesn't interrupt it ("slidecasting"), like retail.
+const SLIDECAST_WINDOW_MS: u64 = 500;
 /// How often the server logic runs, in milliseconds.
 const SERVER_TICK_MILLISECONDS: u32 = 500;
 
@@ -1942,23 +1944,15 @@ pub async fn server_main_loop(
                         }
 
                         if moved {
-                            // Check if the actor has any in-progress actions, and cancel them if so. A player's cast
-                            // lands half a second before its bar ends, so moving in that last half second doesn't
-                            // interrupt it ("slidecasting"), as on retail.
-                            // (Mounts and items land when their bar ends, so they keep a half-second window.)
-                            let now = Instant::now();
+                            // Check if the actor has any in-progress actions, and cancel them if so. Moving in the last
+                            // half second of a cast doesn't interrupt it ("slidecasting"), as on retail, where a
+                            // player's cast resolves half a second before its bar ends.
+                            let slidecast_from =
+                                Instant::now() + Duration::from_millis(SLIDECAST_WINDOW_MS);
                             for task in instance.find_tasks(actor_id) {
-                                if let QueuedTaskData::CastAction {
-                                    interruptible,
-                                    request,
-                                } = &task.data
+                                if let QueuedTaskData::CastAction { interruptible, .. } = &task.data
                                     && *interruptible
-                                    && task.point
-                                        > if request.action_type == ActionType::Action {
-                                            now
-                                        } else {
-                                            now + Duration::from_millis(500)
-                                        }
+                                    && task.point > slidecast_from
                                 {
                                     instance.cancel_task(network.clone(), &task);
                                 }

@@ -108,14 +108,18 @@ Applied after an action's script returns, by the server, so scripts only give th
   (opcode 235 on 7.57, 24 bytes: count 1, the ActionEffect's global sequence, the target, its HP, 8 zero bytes), or
   EffectResult when it gained statuses, both under **the ActionEffect's own global sequence**. Retail (Bob's
   Chronofoil capture of 2026-10-21): 6,603 of 6,838 results share their effect's sequence, sent 0.5 s after it (3,677
-  of 6,180; 0.8–1.1 s for most others), and for a player's cast about 0.5 s after its bar ends (Ruin: 1.07 s after its
+  of 6,180; 0.8–1.1 s for most others), and for a player's cast about 0.57 s after its bar ends (Ruin: 1.07 s after its
   early effect). The client holds an action's damage until its result comes: Kawari sent none for plain damage and
   gave EffectResults the next sequence, so each spell's damage only showed when the next spell's effect arrived (Bob,
-  2026-10-21). Kawari now sends EffectResultBasic 0.5 s after the effect (1.0 s for a player's cast, `server/action.rs`,
-  a queued `EffectResultLands`) to each target the effect showed on, unless it got an EffectResult.
-* **Casts land 0.5 s early:** a player's cast action resolves half a second before its bar ends (retail 0.50–0.54 s
-  for 4,165 of 4,805 casts of 1.1–7.7 s, Teleport too; mounts and items at the end). Moving before it lands
-  interrupts it; after, it doesn't (that's slidecasting; Kawari's separate 0.5 s window is gone).
+  2026-10-21). Kawari now sends EffectResultBasic 0.5 s after the effect (`server/action.rs`, a queued `EffectResultLands`) to each target the effect showed on, unless it got an EffectResult.
+* **Casts land as the bar ends:** on retail a player's ActionEffect comes half a second before its bar ends (0.50–0.54 s
+  for 4,165 of 4,805 casts of 1.1–7.7 s, Teleport too; mounts and items at the end), but the target's side (FirstAttack,
+  aggro, its health in EffectResultBasic, death) comes 1.07 s after that effect, about 0.57 s after the bar (Bob's
+  Chronofoil capture of 2026-10-21, Ruin), and the target's UpdateHpMpTp isn't sent. Kawari applies an action's
+  effects (health, death, EXP) the moment it sends them, so from 2026-10-18 to 2026-10-21 its casts landing early took
+  the target's health and killed it before the bar had ended (Bob's 2026-10-21 bundle); they land when the bar ends
+  again, the result 0.5 s later, and moving in the last half second doesn't interrupt them (slidecasting,
+  `SLIDECAST_WINDOW_MS`).
 * **Recast** (ActorControlSelf 17, `SetCooldownTimerMax`: CooldownGroup − 1, the action, the recast in 10 ms units)
   is sent with every action a player uses, as retail does with the cast bar or the effect: for the GCD (group 58)
   Recast100ms sped up like a cast time (`1000 − floor(130 × (speed − BaseSpeed) / LevelModifier)` per mille, then

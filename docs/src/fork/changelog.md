@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-21 | — | Combat: wandering's back-and-forth by spots off the navmesh.
+| 2026-10-21 | — | Combat: casts land as the bar ends; each hit's result; known issues.
+| 2026-10-21 | `698f0a2` | Combat: wandering's back-and-forth by spots off the navmesh.
 | 2026-10-21 | `965778a` | Combat: each hit's result (EffectResultBasic, the effect's global sequence); known issues.
 | 2026-10-21 | `c6fdd57` | Quests: Double Dealing's sack of oranges; known issues.
 | 2026-10-21 | `d6a6692` | Quests: Double Dealing's ambush; known issues.
@@ -178,7 +179,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | NPCs walking to a spot stop when the new path's end is no nearer it than where they stand (as near as the navmesh goes): a level 6 pugil by its off-mesh spawn point stepped between two points 0.75 yalms apart every half second for 16 minutes, each one's path ending at the other (Bob's 2026-10-21 bundle). |
+| — | Players' casts land when their bar ends again (with the half-second slidecast window back): landing 0.5 s early, as retail's ActionEffect does, applied the damage, death and EXP before the bar had ended, since Kawari applies effects as it sends them and retail's target side waits for the hit (Bob's 2026-10-21 bundle). Results follow every effect by 0.5 s. |
+| `698f0a2` | NPCs walking to a spot stop when the new path's end is no nearer it than where they stand (as near as the navmesh goes): a level 6 pugil by its off-mesh spawn point stepped between two points 0.75 yalms apart every half second for 16 minutes, each one's path ending at the other (Bob's 2026-10-21 bundle). |
 | `965778a` | Each hit's result as retail sends it: EffectResultBasic from the target with its HP 0.5 s after the ActionEffect (1.0 s for a player's cast), and EffectResults under the ActionEffect's own global sequence (they had the next one). The client waits for it, so a spell's damage only showed when the next spell's effect came (Bob's 2026-10-21 bundle). |
 | `c6fdd57` | Double Dealing (466): the sack of oranges in sequence 4 is EOBJECT0 (it was taken for EOBJECT2, so talking to it did nothing: Bob's 2026-10-21 bundle, Kuina stuck in sequence 4); EOBJECT2 is accepted too. |
 | `d6a6692` | Double Dealing (466): walking into EVENTRANGE0 brings out its two ambushers after scene 16, as on retail (the capture's SpawnNpcs: layouts 3931777/9, BNpcBase 52, level 5, 91 HP), in drop-in layer `QB_SubSea054_001` with a timeline (`DoubleDealingAmbusher_52`); the first build only played the scene (Bob's 2026-10-21 bundle). |

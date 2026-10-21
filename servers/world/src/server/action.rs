@@ -220,17 +220,12 @@ pub fn handle_action_messages(
             );
         }
 
-        // A player's cast action lands half a second before its cast bar ends, as retail's do (Bob's Chronofoil
-        // captures: 0.50-0.54 s early for 4,165 of 4,805 casts of 1.1 to 7.7 s, Teleport too; mounts and items at the
-        // end.) Moving before then still interrupts it.
-        let lands_after = if adjusted_cast_time > 0
-            && request.action_type == ActionType::Action
-            && matches!(actor, NetworkedActor::Player { .. })
-        {
-            (adjusted_cast_time - CAST_LANDS_EARLY_MS).max(0)
-        } else {
-            adjusted_cast_time
-        };
+        // A cast lands as its bar ends. Retail sends a player's ActionEffect half a second before that (Bob's Chronofoil
+        // captures: 0.50-0.54 s early for 4,165 of 4,805 casts of 1.1 to 7.7 s), but the target's side (its health,
+        // aggro, death) only comes with the result, 1.07 s after that effect; Kawari applies an action's effects when
+        // it sends them, so landing early took the target's health off before the bar had ended (Bob's 2026-10-21
+        // bundle). Moving in the last half second doesn't interrupt it (slidecasting, `server/mod.rs`.)
+        let lands_after = adjusted_cast_time;
 
         instance.insert_task(
             *from_id,
@@ -1395,22 +1390,12 @@ pub fn execute_action(
             // Each target the effect showed on gets its result as the hit lands: its health, under the effect's
             // global sequence (EffectResultBasic; EffectResult when it gained statuses, above and below.) The client
             // holds an action's damage until then, so without it each hit only showed when the next action's effect
-            // came (Bob's 2026-10-21 bundle). Retail sends it 0.5 s after the ActionEffect (3,677 of 6,180), or for
-            // a player's cast, which lands half a second before its bar ends, about 0.5 s after the bar (1.07 s).
+            // came (Bob's 2026-10-21 bundle). Retail sends it 0.5 s after the ActionEffect (3,677 of 6,180).
             {
                 let with_statuses = (num_target_entries > 0).then_some(request.target.object_id);
                 let mut data = data.lock();
                 if let Some(instance) = data.find_actor_instance_mut(from_actor_id) {
-                    let player_cast = has_cast_time
-                        && matches!(
-                            instance.find_actor(from_actor_id),
-                            Some(NetworkedActor::Player { .. })
-                        );
-                    let lands_in = if player_cast {
-                        EFFECT_RESULT_AFTER_CAST
-                    } else {
-                        EFFECT_RESULT_AFTER
-                    };
+                    let lands_in = EFFECT_RESULT_AFTER;
                     for target_id in shown_on.iter().copied() {
                         if Some(target_id) == with_statuses {
                             continue;
@@ -2072,14 +2057,9 @@ pub fn add_healing_enmity(instance: &mut Instance, healer: ObjectId, effective: 
     }
 }
 
-/// How long before a player's cast bar ends its action lands (see `handle_action_messages`), in milliseconds.
-const CAST_LANDS_EARLY_MS: i32 = 500;
-
 /// When an action's result (EffectResultBasic) follows its ActionEffect on retail: 0.5 s (Bob's Chronofoil capture of
-/// 2026-10-21: 3,677 of 6,180 results), and for a player's cast about 0.5 s after its bar ends, so 1.0 s after the
-/// effect that lands early (Ruin: 1.07 s).
+/// 2026-10-21: 3,677 of 6,180 results; a player's cast's comes about 0.57 s after its bar ends.)
 const EFFECT_RESULT_AFTER: Duration = Duration::from_millis(500);
-const EFFECT_RESULT_AFTER_CAST: Duration = Duration::from_millis(1000);
 
 /// Teleport and Return (General Action rows 5 and 6.)
 const TELEPORT_ACTION: u32 = 5;
