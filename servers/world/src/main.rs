@@ -1821,6 +1821,7 @@ async fn process_packet(
                                                 offered_teleport.aetheryte_id as u32,
                                                 false,
                                                 true,
+                                                WarpType::Teleport,
                                             )
                                             .await;
                                     } else {

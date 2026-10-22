@@ -29,6 +29,15 @@ Teleport's action script queues the warp as a Lua task when the cast ends. Those
 the connection (see [Timing](timing.md#tasks-from-lua)); before, the warp went out at the client's next packet, up to
 ~10 s later, leaving the player hovering in the teleport animation.
 
+**Warp type.** Retail's Teleport is warp type 4 (Return 7) in both PrepareZoning and, within a zone, ActorSetPos, with
+the character hidden (`hide_character` 1) and flags 0x02 within a zone, 0x0A (with PRESERVE_COMPANION) to another one:
+all 15 teleports in Bob's Chronofoil capture of 2026-10-21. Kawari sent warp type 1 with nothing hidden, and a teleport
+within the zone you're in (Moraby Drydocks from Lower La Noscea, Bentbranch from the Central Shroud) left the player in
+the teleport animation after landing (2026-10-16 and 2026-10-22 bundles). Since 2026-10-22 the Teleport spell passes
+`player:warp_aetheryte(id, false, true)` and Return uses warp type 7; aethernet shards and housing exits keep type 1.
+Retail also sends ActorControlSelf 263 (1 as it starts, 0 after landing), 236 after the ActorSetPos and 253 with 0, 1
+after landing; Kawari doesn't yet.
+
 **Teleport costs** (`GameData::teleport_cost`), as the client's Telepo GetTeleportCost works them out and exact for
 all 87 paid teleports in Bob's Chronofoil captures: each zone has a point on a world map (TerritoryTypeTelepo: X, Y,
 Expansion, Relay). A leg between two points costs `floor(distance × m / 1000) / 5 + 100`, where the distance's x wraps

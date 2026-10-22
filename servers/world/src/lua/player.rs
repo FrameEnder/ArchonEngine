@@ -172,10 +172,11 @@ impl LuaPlayer {
             .push(LuaTask::UnlockClassJob { classjob_id });
     }
 
-    fn warp_aetheryte(&mut self, aetheryte_id: u32, housing_aethernet: bool) {
+    fn warp_aetheryte(&mut self, aetheryte_id: u32, housing_aethernet: bool, teleport: bool) {
         self.queued_tasks.push(LuaTask::WarpAetheryte {
             aetheryte_id,
             housing_aethernet,
+            teleport,
         });
     }
 
@@ -768,8 +769,8 @@ impl UserData for LuaPlayer {
         });
         methods.add_method_mut(
             "warp_aetheryte",
-            |_, this, (aetheryte_id, housing_aethernet): (u32, bool)| {
-                this.warp_aetheryte(aetheryte_id, housing_aethernet);
+            |_, this, (aetheryte_id, housing_aethernet, teleport): (u32, bool, Option<bool>)| {
+                this.warp_aetheryte(aetheryte_id, housing_aethernet, teleport.unwrap_or(false));
                 Ok(())
             },
         );

@@ -28,6 +28,9 @@ pub enum LuaTask {
     WarpAetheryte {
         aetheryte_id: u32,
         housing_aethernet: bool,
+        /// The Teleport spell (retail's warp type 4, which ends the teleport animation), rather than an aethernet or
+        /// housing move.
+        teleport: bool,
     },
     ToggleInvisibility {
         invisible: bool,

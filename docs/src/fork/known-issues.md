@@ -259,6 +259,13 @@ add one when something is found.
 
 ## Combat
 
+* **Carbuncle** (2026-10-22, untested in game): it isn't summoned again after zoning (retail resummons it as you load
+  in), summoning again doesn't dismiss the one out, it doesn't fight, and pet actions other than Away (Heel, Place…)
+  do nothing. The 50-yalm catch-up distance is a guess.
+* **Enemies and the navmesh's edge**: an enemy walks straight on from the edge to a player within 15 yalms of it; a
+  player standing off the navmesh further than that can't be reached, and after 7 s the enemy gives up if the player
+  is beyond its leash (since 2026-10-22; before, it gave up at once).
+
 * **Enemy damage** without a `damage_to_players` recording falls back to 12 % of a player-style calculation; retail's
   enemy formula is unknown. Only Central Shroud monsters have recordings.
 * **Area attacks** on several players show only the main target in the ActionEffect packet (only the one-target
@@ -275,7 +282,8 @@ add one when something is found.
   bonus (+1–5 % on retail, a few seconds after zoning) and food's HP aren't applied.
 * **Class actions 1–50** ([Combat](combat.md#class-and-role-actions-levels-150)): potencies are 7.x max-level tooltip
   values, not checked at low level (only Conjurer/White Mage are in Bob's captures). No job gauges (BLM Astral Fire and
-  Umbral Ice, MNK chakra/furies, WAR Beast, PLD Oath, SMN/SCH Aetherflow, NIN mudras), no egis or fairy, no
+  Umbral Ice, MNK chakra/furies, WAR Beast, PLD Oath, SCH Aetherflow, NIN mudras; SMN's has Aetherflow only), no egis
+  or fairy, no
   positionals, movement actions do nothing on the server, barriers don't absorb damage, Bloodbath doesn't heal, Cover
   doesn't redirect, Thrill of Battle doesn't raise max HP, Peloton is the caster's only. Berserk's and Perfect
   Balance's stacks aren't used up.
@@ -290,14 +298,9 @@ add one when something is found.
 * Materia isn't counted in stats.
 * No Limit Break gauge or Limit Break actions.
 
-* **Teleport animation stayed on** after a same-zone teleport (Bentbranch, 2026-10-16 bundle): the warp itself was
-  on time (PrepareZoning straight after the cast, ActorSetPos 2 s later, ZoneIn with 110 after FinishZoning), but two
-  enemies that couldn't path to the player still had them on their enmity list throughout. With InCombat now set,
-  the client won't start a teleport in combat, so this shouldn't come up again; if it does without enemies, it's a
-  different cause.
-
-## Connections
-
+* **Teleport animation stayed on** after a teleport within the same zone (Bentbranch, 2026-10-16; Moraby Drydocks,
+  2026-10-22): Kawari sent warp type 1 where retail sends 4 (see [Travel](travel.md#teleporting)); fixed 2026-10-22,
+  untested in game. Retail's ActorControlSelf 263/236/253 around the warp still aren't sent.
 * Anything that keeps a player's connection busy for a second or so (a slow sheet read in a loop, say) desyncs the
   client's Oodle stream: every later packet from it fails to parse and the player is stuck (frozen, endless loading)
   until they reconnect. Why a delay breaks the stream, rather than only slowing it, isn't known.

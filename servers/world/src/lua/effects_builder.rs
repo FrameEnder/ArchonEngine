@@ -32,6 +32,10 @@ pub enum GaugeOp {
     SpendLily,
     /// Spend the fully bloomed Blood Lily (White Mage.)
     SpendBloodLily,
+    /// Fill Aetherflow (Arcanist/Summoner: Energy Drain.)
+    GainAetherflow,
+    /// Spend one Aetherflow stack (Arcanist/Summoner: Fester, Painflare.)
+    SpendAetherflow,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -320,6 +324,14 @@ impl UserData for EffectsBuilder {
         });
         methods.add_method_mut("spend_blood_lily", |_, this, _: ()| {
             this.gauge_ops.push(GaugeOp::SpendBloodLily);
+            Ok(())
+        });
+        methods.add_method_mut("gain_aetherflow", |_, this, _: ()| {
+            this.gauge_ops.push(GaugeOp::GainAetherflow);
+            Ok(())
+        });
+        methods.add_method_mut("spend_aetherflow", |_, this, _: ()| {
+            this.gauge_ops.push(GaugeOp::SpendAetherflow);
             Ok(())
         });
 

@@ -940,6 +940,23 @@ impl Zone {
     }
 }
 
+/// How PrepareZoning hides the character for a warp. Retail's Teleport and Return (warp types 4 and 7) hide the
+/// character, with flags 0x02 within a zone and 0x0A to another one (Bob's Chronofoil capture of 2026-10-21: all 15
+/// of them). Teleporting within a zone with warp type 1 and nothing hidden, as Kawari did, left the player in the
+/// teleport animation after landing (Bentbranch, 2026-10-16 bundle; Moraby Drydocks, 2026-10-22 bundle.)
+fn warp_appearance(warp_type: WarpType, same_zone: bool) -> (u8, PrepareZoningFlag) {
+    match warp_type {
+        WarpType::Teleport | WarpType::Return => {
+            let mut flags = PrepareZoningFlag::UNK2;
+            if !same_zone {
+                flags |= PrepareZoningFlag::PRESERVE_COMPANION;
+            }
+            (1, flags)
+        }
+        _ => (0, PrepareZoningFlag::default()),
+    }
+}
+
 fn begin_change_zone<'a>(
     data: &'a mut WorldServer,
     network: &mut NetworkState,
@@ -952,15 +969,19 @@ fn begin_change_zone<'a>(
 ) -> (&'a mut Instance, bool) {
     if let Some(destination_zone_id) = destination_zone_id {
         let mut needs_init_zone = false;
+        let same_zone = data
+            .find_actor_instance(actor_id)
+            .is_some_and(|instance| instance.zone.id == destination_zone_id);
+        let (hide_character, flags) = warp_appearance(warp_type, same_zone);
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::PrepareZoning(PrepareZoning {
             territory_type_id: destination_zone_id,
             warp_type,
             log_message: 0,
             vfx_id: 0,
             loading_screen_vfx_id,
-            hide_character: 0,
+            hide_character,
             fade_out_delay: 1,
-            flags: PrepareZoningFlag::default(),
+            flags,
         }));
 
         network.send_to_by_actor_id(
@@ -1389,7 +1410,7 @@ pub fn handle_zone_messages(
 
             true
         }
-        ToServer::WarpAetheryte(from_id, actor_id, aetheryte_id, housing_aethernet) => {
+        ToServer::WarpAetheryte(from_id, actor_id, aetheryte_id, housing_aethernet, warp_type) => {
             let mut data = data.lock();
             let mut network = network.lock();
             let mut game_data = game_data.lock();
@@ -1409,7 +1430,7 @@ pub fn handle_zone_messages(
                 destination_instance_id,
                 *actor_id,
                 *from_id,
-                WarpType::Normal,
+                *warp_type,
                 0,
             );
 

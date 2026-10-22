@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-21 | — | Quests: Rocks in a Hard Place (471); known issues.
+| 2026-10-22 | — | Combat (Aetherflow, Carbuncle's Away and following, leashing); travel (the teleport's warp type); known issues.
+| 2026-10-21 | `1048fb0` | Quests: Rocks in a Hard Place (471); known issues.
 | 2026-10-21 | `7ee2cf0` | Quests: Without a Doubt to The Lominsan Envoy (412–415, 544–546, 689, 690); quest battles: 24, 36; known issues.
 | 2026-10-21 | `78469df` | Quests: Relighting the Torch's enemy in Western La Noscea's drop-in.
 | 2026-10-21 | `da7e82e` | `master` fast-forwarded, `upstream-7.57h1` retired (changelog, known issues, opcodes).
@@ -183,11 +184,17 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`), and on 2026-10-19 (right after `5b5e91f`, and again right after `6bd4b19` and `511d7e1`), and on 2026-10-20 (right after `666a398`, and again right after `f6ff8ea` and `3851eba`), and on 2026-10-21 (right after `23a4b40`, bringing in the `upstream-7.57h1` work: upstream's 7.57h1 and everything since; and again right after `09088d6`, and right after `6da62d9`, when the `upstream-7.57h1` branch was retired: work goes on `Latest-Quest` again).
 
+### 2026-10-22
+
+| Commit | Change |
+|---|---|
+| — | Fixes from Bob's 2026-10-22 bundles. Teleporting uses retail's warp type 4 (Return 7) with the character hidden, which within a zone left the player in the teleport animation (Moraby Drydocks). Carbuncle's "Away" dismisses it as retail does (it was an unknown client trigger); following its owner it walks on past the navmesh's edge instead of stepping back and forth there, and is put back beside an owner 50 yalms away. Arcanist/Summoner Aetherflow: Energy Drain fills it, Fester and Painflare spend it (the client wouldn't cast Fester without it). Enemies no longer give up the moment the player they're after is beyond their leash: only after 7 s without reaching them (a Qiqirn Eggdigger gave up each time it was hit). |
+
 ### 2026-10-21
 
 | Commit | Change |
 |---|---|
-| — | Rocks in a Hard Place (471), Limsa Lominsa's side quest in Middle La Noscea, from Bob's dump of 2026-10-22 and his 2026-10-21 capture, with a fixture: the shovel, three rocks (ITEM0 used on each) and three piles of debris in any order. |
+| `1048fb0` | Rocks in a Hard Place (471), Limsa Lominsa's side quest in Middle La Noscea, from Bob's dump of 2026-10-22 and his 2026-10-21 capture, with a fixture: the shovel, three rocks (ITEM0 used on each) and three piles of debris in any order. |
 | `7ee2cf0` | The rest of Limsa Lominsa's story from Bob's dumps and his 2026-10-21 capture, with fixtures: Without a Doubt, Righting the Shipwright, Do Angry Pirates Dream, Victory in Peril, Men of the Blue Tattoos, Feint and Strike, High Society, A Mizzenmast Repast and The Lominsan Envoy (412, 415, 413, 414, 689, 544, 690, 545, 546). Quest battles 24 (Victory in Peril) and 36 (Feint and Strike) with their timelines and battle-sim fixtures; drop-in layers `QB_SubSea117_001` and `QB_SubSea118_001` (Righting the Shipwright's ambushers) in `sea_s1f2`, `QB_ManSea007_001` in `sea_s1f4`. |
 | `78469df` | Relighting the Torch (403): its enemy (layer `QB_SubSea106_001`) moved from `sea_s1f2` (Lower La Noscea, 135) to `sea_s1f4` (Western La Noscea, 138), where the quest is; lighting the Iron Brazier logged "isn't in this zone's drop-ins" and nothing came out (Bob's 2026-10-21 bundle). |
 | `da7e82e` | `master` and `Latest-Quest` fast-forwarded to `upstream-7.57h1` with Bob's OK (397–406, the CI fix), and the `upstream-7.57h1` branch retired: new work goes on `Latest-Quest`. |

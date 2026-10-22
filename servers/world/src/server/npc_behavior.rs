@@ -77,6 +77,10 @@ pub const BEHAVIOR_TICK_SECONDS: f32 = 0.5;
 /// TODO: per enemy, from Kawari Recorder's "World" recording (gave up at ~N yalms from spawn.)
 const LEASH_DISTANCE: f32 = 40.0;
 
+/// How long (in behaviour ticks) an enemy goes without reaching the one it's after, who's beyond `LEASH_DISTANCE` of
+/// its home, before giving up: 7 s, the shortest chase before retail's enemies gave up (Bob's Chronofoil captures.)
+const GIVE_UP_UNREACHED_TICKS: i64 = 14;
+
 /// How close to home an enemy that gave up has to get before it pays attention again.
 const HOME_DISTANCE: f32 = 3.0;
 /// An NPC this close (yalms, across the ground) to the spot it walks to has got there.
@@ -384,13 +388,21 @@ pub fn npc_behavior(
             }
 
             // Chased too far from home: give up, go back and heal up, paying no attention to anyone on the way. That's
-            // also when the one it's after is that far from its home: an enemy that can't find a path (no navmesh
-            // route, so it never moves) would otherwise keep them in combat forever, wherever they went in the zone.
+            // also when the one it's after is that far from its home and it hasn't reached them for a while (out of
+            // reach, no attack for `GIVE_UP_UNREACHED_TICKS`): an enemy that can't find a path (no navmesh route, so
+            // it never moves) would otherwise keep them in combat forever, wherever they went in the zone. Only then:
+            // a Qiqirn Eggdigger hit from 10 yalms by a player standing 41 yalms from its home gave up at once,
+            // every time it was hit, and stood still (Bob's 2026-10-22 bundle).
             let from_home = Vec3A::distance(spawn.common.position.0, *home);
             let target_from_home = match current_target {
                 Some(NpcTarget::Actor(target)) => enemies
                     .iter()
                     .find(|(id, _, _)| id == target)
+                    .filter(|(_, position, _)| {
+                        *autoattack_timing >= GIVE_UP_UNREACHED_TICKS
+                            && Vec3A::distance(position.0, spawn.common.position.0)
+                                > timeline.attack_range
+                    })
                     .map(|(_, position, _)| Vec3A::distance(position.0, *home)),
                 _ => None,
             };
@@ -640,11 +652,22 @@ pub fn npc_behavior(
                         *last_position = Some(current_pos);
                         *current_path_lerp = 0.0;
                     }
+                    // A pet following its owner goes wherever they went: where the navmesh doesn't reach (a hole, or
+                    // off its edge), it walks the rest of the way straight. Left to the navmesh, Carbuncle stopped at
+                    // the mesh's edge in Lower La Noscea and stepped back and forth there while Kuina stood 17-68
+                    // yalms off (Bob's 2026-10-22 bundle.)
+                    let following_owner = spawn.common.owner_id.is_valid()
+                        && matches!(current_target, NpcTarget::Actor(actor) if *actor == spawn.common.owner_id);
                     if needs_repath {
                         let goal = strayed_to.unwrap_or(target_pos);
+                        let gap = if following_owner {
+                            f32::INFINITY
+                        } else {
+                            max_off_mesh_gap
+                        };
                         let mut path: VecDeque<Vec3A> = instance
                             .navmesh
-                            .calculate_path(current_pos, goal, max_off_mesh_gap)
+                            .calculate_path(current_pos, goal, gap)
                             .into();
                         // In content no path at all (e.g. starting off the navmesh, among a tree's roots) means walking
                         // straight there: dropping the target there sent To Guard a Guardian's second wave wandering
@@ -653,7 +676,7 @@ pub fn npc_behavior(
                         // Summerford Farms' houses), and a bot that can't find a path stood still while its party walked
                         // off (Bob's 2026-10-21 bundle: 550 failed paths, both ends off the mesh.)
                         let party_bot = instance.party_bots.contains_key(id);
-                        if path.is_empty() && (in_content || party_bot) {
+                        if path.is_empty() && (in_content || party_bot || following_owner) {
                             path.push_back(goal);
                         }
                         let found_path = !path.is_empty();

@@ -465,6 +465,7 @@ impl ZoneConnection {
         aetheryte_id: u32,
         housing_aethernet: bool,
         taking_offered_teleport: bool,
+        warp_type: WarpType,
     ) {
         self.teleport_reason = TeleportReason::Aetheryte;
         self.handle
@@ -473,6 +474,7 @@ impl ZoneConnection {
                 self.player_data.character.actor_id,
                 aetheryte_id,
                 housing_aethernet,
+                warp_type,
             ))
             .await;
 

@@ -1,4 +1,4 @@
-//! Server-side job gauge state. Currently only the White Mage Healing Gauge (Lilies) is simulated.
+//! Server-side job gauge state: the White Mage Healing Gauge (Lilies) and Arcanist/Summoner Aetherflow.
 
 use kawari::ipc::zone::{ServerZoneIpcData, ServerZoneIpcSegment};
 
@@ -6,6 +6,18 @@ use crate::lua::GaugeOp;
 
 /// ClassJob ID for White Mage.
 pub const CLASSJOB_WHITE_MAGE: u8 = 24;
+
+/// ClassJob IDs for Arcanist and Summoner, whose gauge carries Aetherflow.
+pub const CLASSJOB_ARCANIST: u8 = 26;
+pub const CLASSJOB_SUMMONER: u8 = 27;
+
+/// Energy Drain fills Aetherflow to two stacks.
+const MAX_AETHERFLOW: u8 = 2;
+
+/// Aetherflow is the low two bits of this byte of ActorGauge's data, the rest being Summoner's attunement flags
+/// (retail, Bob's Chronofoil capture of 2026-10-21: 0x02 after each Energy Drain, 0x01 after the Fester that followed,
+/// 0x22/0x21 with a summon's flag set.)
+const DATA_OFFSET_AETHERFLOW: usize = 8;
 
 /// Level of the "Secret of the Lily" trait (Trait 196), which starts Lily generation.
 pub const SECRET_OF_THE_LILY_LEVEL: u8 = 52;
@@ -37,6 +49,8 @@ pub struct JobGauge {
     pub lily_timer_ms: u32,
     /// Blood Lily growth (0-3, 3 meaning it's in full bloom.)
     pub blood_lily: u8,
+    /// Aetherflow stacks (Arcanist/Summoner, 0-2.)
+    pub aetherflow: u8,
 }
 
 impl JobGauge {
@@ -79,6 +93,12 @@ impl JobGauge {
             GaugeOp::SpendBloodLily => {
                 self.blood_lily = 0;
             }
+            GaugeOp::GainAetherflow => {
+                self.aetherflow = MAX_AETHERFLOW;
+            }
+            GaugeOp::SpendAetherflow => {
+                self.aetherflow = self.aetherflow.saturating_sub(1);
+            }
         }
     }
 
@@ -90,6 +110,8 @@ impl JobGauge {
             data[DATA_OFFSET_LILY_TIMER..DATA_OFFSET_LILY_TIMER + 2].copy_from_slice(&timer);
             data[DATA_OFFSET_LILY] = self.lilies;
             data[DATA_OFFSET_BLOOD_LILY] = self.blood_lily;
+        } else if classjob_id == CLASSJOB_ARCANIST || classjob_id == CLASSJOB_SUMMONER {
+            data[DATA_OFFSET_AETHERFLOW] = self.aetherflow & 0x03;
         }
         data
     }
@@ -163,11 +185,27 @@ mod tests {
     }
 
     #[test]
+    fn aetherflow_fills_and_spends() {
+        let mut gauge = JobGauge::default();
+        gauge.apply(GaugeOp::GainAetherflow, 15);
+        assert_eq!(gauge.to_packet_data(CLASSJOB_ARCANIST)[8], 2);
+        gauge.apply(GaugeOp::SpendAetherflow, 15);
+        assert_eq!(gauge.to_packet_data(CLASSJOB_SUMMONER)[8], 1);
+        gauge.apply(GaugeOp::SpendAetherflow, 15);
+        gauge.apply(GaugeOp::SpendAetherflow, 15);
+        assert_eq!(gauge.aetherflow, 0);
+        // White Mage's gauge doesn't carry it.
+        gauge.aetherflow = 2;
+        assert_eq!(gauge.to_packet_data(CLASSJOB_WHITE_MAGE)[8], 0);
+    }
+
+    #[test]
     fn packet_layout() {
         let gauge = JobGauge {
             lilies: 2,
             lily_timer_ms: 0x1234,
             blood_lily: 1,
+            ..Default::default()
         };
         let data = gauge.to_packet_data(CLASSJOB_WHITE_MAGE);
         assert_eq!(data[2], 0x34);

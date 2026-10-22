@@ -76,6 +76,7 @@ mod network;
 mod party;
 mod party_bot;
 mod periodic;
+mod pet;
 pub use party::{Party, PartyMember};
 use periodic::periodic_tick;
 pub use rotation::{ActionMechanics, GCD_GROUP};
@@ -604,6 +605,8 @@ fn server_logic_tick(
         for instance in &mut data.instances {
             // Party bots decide what to do before the NPCs move.
             party_bot::update(&network, &game_data, instance);
+            // Pets left far behind (a teleport) go back beside their owner before they walk.
+            pet::catch_up(&mut network.lock(), instance);
             let mut haters = HashMap::new();
             npc_behavior::npc_behavior(network.clone(), game_data.clone(), instance, &mut haters);
 
@@ -2834,6 +2837,15 @@ pub async fn server_main_loop(
                                 *handler_id,
                                 trigger,
                             );
+                        }
+                        ClientTriggerCommand::PetAction { action_id }
+                            if *action_id == pet::PET_ACTION_AWAY =>
+                        {
+                            let mut data = data.lock();
+                            if let Some(instance) = data.find_actor_instance_mut(from_actor_id) {
+                                let mut network = network.lock();
+                                pet::dismiss(&mut network, instance, from_actor_id);
+                            }
                         }
                         ClientTriggerCommand::ReadyForDirectorVars => {
                             send_director_vars(
