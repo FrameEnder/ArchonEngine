@@ -12,7 +12,10 @@ use parking_lot::Mutex;
 use crate::{
     ActionInfo, ClientId, FromServer, GameData, PlayerData, StatusEffects, ToServer,
     gamedata::AreaShape,
-    lua::{EFFECT_ON_SOURCE, EffectsBuilder, KawariLua, KawariLuaState, LuaPlayer, LuaZone},
+    lua::{
+        EFFECT_ON_SOURCE, EffectsBuilder, KawariLua, KawariLuaState, LuaPlayer, LuaZone,
+        PeriodicKind, PeriodicSpec,
+    },
     server::{
         WorldServer,
         actor::{NetworkedActor, bnpc_base_hp, create_npc_common_spawn, update_actor_hp_mp},
@@ -632,12 +635,14 @@ pub fn execute_action(
             if damage > 0 {
                 let scale = recorded / damage as f32;
                 roll_npc_hit(&mut effects_builder.effects, scale, miss_percent);
+                scale_npc_periodic_damage(&mut effects_builder.periodic, scale);
             } else {
                 scale_npc_heal(&mut effects_builder.effects, recorded);
             }
         } else if npc_hitting_player && let Some(effects_builder) = &mut effects_builder {
             let scale = npc_damage_scale(actor, common_spawn.level);
             roll_npc_hit(&mut effects_builder.effects, scale, miss_percent);
+            scale_npc_periodic_damage(&mut effects_builder.periodic, scale);
         }
         // Everyone else caught in an area attack is hit as that kind of target would be: what the recording says the
         // action does to a player or to an NPC, or for a player without one the NPC's usual scale.
@@ -2635,6 +2640,18 @@ mod area_tests {
 
 /// Brings an NPC's heal (not one on itself from a drain) to `recorded`, the average retail's recording shows for it,
 /// varied a little like its hits.
+/// An NPC's damage over time is scaled as its hit was: the action script works it out from the NPC's own stats as
+/// if it were a player's, which made the corsair conjurers' Aero tick for 26-28 on the player where retail's ticks
+/// were 2-7 (its hit, scaled to the recorded 7, was right; Bob's bundle of 2026-10-22 and his Chronofoil capture of
+/// 2026-10-21, both runs of Victory in Peril.) Aero's tick is 30 potency to the hit's 50, so the same scale gives 4.
+fn scale_npc_periodic_damage(periodic: &mut [PeriodicSpec], scale: f32) {
+    for spec in periodic.iter_mut() {
+        if matches!(spec.kind, PeriodicKind::Damage) && !spec.on_self {
+            spec.amount = ((spec.amount as f32 * scale).round() as u32).max(1);
+        }
+    }
+}
+
 fn scale_npc_heal(effects: &mut [TargetEffect], recorded: f32) {
     for effect in effects.iter_mut() {
         if let TargetEffectKind::Heal { unk1, amount } = &mut effect.0

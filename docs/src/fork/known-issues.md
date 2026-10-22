@@ -51,10 +51,12 @@ add one when something is found.
   quest battle 24's territory 249 is taken for a copy of Lower La Noscea and 36's 280 for Western La Noscea (their NPCs
   are in those drop-ins); 24's first two corsairs fight once hurt (retail: when they noticed the player); 36's second
   half starts with `warp_players` where retail used a loading screen to the same spot. Bob's runs of 24
-  (2026-10-22): the crash at talk 105 and the conjurer healing from afar are fixed (his second run); the fight going
-  on through the cutscene (the boss noticing the allies) and the second pair coming at him from 50 yalms are fixed
-  since, not yet retried in game, as is the cutscene waiting for him by the boss (it played 66 yalms away, his
-  third run). What starts the second pair and the cutscene on retail (coming close, or time) is a reading of two runs.
+  (2026-10-22): the crash, the healing from afar and the fight through the cutscene are fixed (his third run); the
+  distances that start each part, the conjurers' damage over time and the thaumaturges' Fire are fixed since, not yet
+  retried in game. Sequence 3 came 4 s after the first arrow in the lost run and 1.3 s before it in the won one, so
+  it isn't tied to their noticing you alone. Your own Ruin hit the corsairs for 46–50 where retail's was 38–43 (the
+  boss 47 on both), at the same level; why isn't known. The boss and some adds have actions without scripts (see
+  the battle's page).
 * Quest battles' opening scenes now use retail's flags and EventStart flags (the UI stayed up, no skip button);
   untested in game, and which of the two the skip button needs isn't known. Quest battles 18, 37, 38 and 39 have no
   recorded opening and use the most common flags. Without a Doubt takes emote 12

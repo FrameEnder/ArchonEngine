@@ -8,16 +8,18 @@
 --   0      director sequence 2 (sequence 1 is set before the opening cutscene). The boss (3970651) and four corsairs
 --          are there from the start: two archers (4167390/91) and, further off, an archer and a conjurer
 --          (4167378/79); none of them fights yet
---   the first two engaged (12.0 and 18.5 s in, a few seconds before the player's first hit: they noticed the player,
---          which Kawari can't time, so it's when one of them is hurt): sequence 3
---   both down, and you within 15-19 yalms of the other two (both runs: you'd walked over to them, 50 yalms from
---          where you fought the first pair): 4.2 and 5.3 s after the second fell, sequence 4, and those two come at
---          you (they're unaware until then: in the won run you stood 14.5 yalms off for 3.6 s before)
---   those two down and you over by the boss (both runs: you walked over and stood 13.7 and 16.4 yalms from it; 9.7
---          and 7.8 s after you came within 20 yalms, 12.5 and 9.8 s after the second pair fell): sequence 5 and the
---          cutscene (the director's scene 5, 0xF8402EFB); the
---          allied marauder (3970427, level 30) and conjurer (3970428) appear. Nothing fights during it: the boss's
---          first blow is 1 s after sequence 6 (both runs)
+--   you within about 26 yalms of the first two (the won run: sequence 3 as you came within 25.6 of the nearer, the
+--          first arrow 1.3 s later; the lost run: the first arrow as you came within 22-27), or one of them hurt: they
+--          come at you, sequence 3
+--   both down, and you within 26.7 yalms of the other two's conjurer (both runs: you walked over from where you'd
+--          fought the first pair, 50 yalms off; sequence 4 came 0.1-0.2 s after you were 26.6 and 25.4 yalms from it,
+--          not at 26.9-28.2, 4.2 and 5.3 s after the first pair fell): sequence 4, and those two come at you (they
+--          don't notice you on their own until then)
+--   those two down and you within 15 yalms of the boss (both runs: sequence 5 came 0.1-0.2 s after you were 13.8 and
+--          14.4 yalms from it, not at 15.7-16.4; the client then stops you where you stand, 13.1-13.3 off): sequence 5
+--          and the cutscene (the director's scene 5, 0xF8402EFB); the allied marauder (3970427, level 30) and conjurer
+--          (3970428) appear. Nothing fights during it: the boss's first blow is 1 s after sequence 6 (both runs)
+-- (Distances and times from the capture's own clock: the player's positions are in it, the NPCs' in the runs.)
 --   the cutscene over: sequence 6; the boss goes after the marauder, and three more corsairs come (two archers
 --          after the conjurer, a conjurer after you); battle talk 105, 106, 107, 108 every 5 s from 4 s in
 --   the boss at 55% (56.1% -> 54.9% and 55.1% -> 51.2%): sequence 7 and five more (two lancers, two thaumaturges
@@ -73,14 +75,14 @@ ACTION_CURE = 120
 ALLY_ENMITY = 100000
 
 -- Steps: { updates after the step before, kind, ... } (Battle:steps)
--- The first pair down: 4 s later (retail: 4.2 and 5.3 s) the second pair waits for you to come over (see onUpdate.)
+-- The first pair down: the second pair waits for you to come over (see onUpdate.)
 FIRST_PAIR_DOWN_STEPS = {
-    { 8, "call", function(director)
+    { 0, "call", function(director)
         second_pair_ready = true
     end },
 }
 SECOND_PAIR_DOWN_STEPS = {
-    { 18, "sequence", 5 },
+    { 0, "sequence", 5 },
     { 0, "call", function(director)
         director:play_scene(CUTSCENE_SCENE, CUTSCENE_FLAGS)
     end },
@@ -174,15 +176,13 @@ BATTLE:enemy(3970673, {
     heals = { { action = ACTION_CURE, targets = "allies", below = 50, every = 7 } },
 })
 
--- The first pair fights once one of them is hurt (Kawari can't tell when they'd notice you.)
+-- How close you come before each part starts (see the timing above; distances from the nearest of the group.)
+FIRST_PAIR_NOTICE_YALMS = 26
 local engaged = false
--- The second pair comes at you once the first is down and you're near them (or you hit one.) Retail: 14.5 and 18.4
--- yalms from the nearer one at sequence 4.
-SECOND_PAIR_NOTICE_YALMS = 20
+SECOND_PAIR_NOTICE_YALMS = 26.7
 second_pair_ready = false
 local second_engaged = false
--- The cutscene comes 9 s after you're within 20 yalms of the boss with the second pair down.
-CUTSCENE_NEAR_YALMS = 20
+CUTSCENE_NEAR_YALMS = 15
 cutscene_ready = false
 local cutscene_started = false
 
@@ -267,6 +267,9 @@ function onUpdate(director, health, player_health, info)
             if health[id] ~= nil and health[id] < 100 then
                 engaged = true
             end
+        end
+        if playerNear(info, FIRST_PAIR, FIRST_PAIR_NOTICE_YALMS) then
+            engaged = true
         end
         if engaged then
             director:set_sequence(3)

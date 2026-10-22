@@ -75,18 +75,30 @@ impl RotationState {
         if let Some(next) = self.next {
             return gcd_ready.then_some(next);
         }
+        // A kit with nothing on the GCD (NPC actions in no recast group, such as the corsair thaumaturges' Fire, 966)
+        // isn't woven between GCD actions it doesn't have: each action goes when its own cooldown allows, at most
+        // once per `pace`. Kept to the weaving rule, they never acted (Bob's bundle of 2026-10-22; retail cast Fire
+        // every 3.1 s.)
+        let no_gcd = !rotation
+            .actions
+            .iter()
+            .any(|entry| mechanics(entry.action).is_some_and(|action| action.gcd));
 
         for entry in &rotation.actions {
             let Some(action) = mechanics(entry.action) else {
                 continue;
             };
-            if action.gcd && !gcd_ready || !action.gcd && !can_weave {
+            if !no_gcd && (action.gcd && !gcd_ready || !action.gcd && !can_weave) {
                 continue;
             }
             // Its own cooldown: `every`, or the recast for abilities and for GCD actions with a longer one.
-            let cooldown = entry
-                .every
-                .or((!action.gcd || action.recast > rotation.pace).then_some(action.recast));
+            let cooldown = if no_gcd {
+                Some(entry.every.unwrap_or(action.recast.max(rotation.pace)))
+            } else {
+                entry
+                    .every
+                    .or((!action.gcd || action.recast > rotation.pace).then_some(action.recast))
+            };
             if let Some(cooldown) = cooldown
                 && self.used.get(&entry.action).is_some_and(|at| {
                     now.duration_since(*at) < Duration::from_secs_f32(cooldown.max(0.0))
@@ -309,6 +321,32 @@ mod tests {
         let used = simulate(&rotation, 10);
         assert!(used.len() >= 3, "{used:?}");
         assert!(used.iter().all(|(_, a)| *a == VORPAL_THRUST));
+    }
+
+    #[test]
+    fn a_kit_without_gcd_actions_still_acts() {
+        // Only an ability (Leg Sweep, 20 s recast) and a 3 s pace: it's used every time its recast allows, from the
+        // start, as the corsair thaumaturges' Fire (no recast group) is on retail.
+        let rotation = Rotation {
+            pace: 3.0,
+            actions: vec![RotationAction {
+                action: LEG_SWEEP,
+                ..Default::default()
+            }],
+        };
+        let used = simulate(&rotation, 45);
+        let times: Vec<f32> = used.iter().map(|(t, _)| *t).collect();
+        assert_eq!(times, vec![0.0, 20.0, 40.0], "{used:?}");
+        // With `every`, that instead.
+        let rotation = Rotation {
+            pace: 3.0,
+            actions: vec![RotationAction {
+                action: LEG_SWEEP,
+                every: Some(3.0),
+                ..Default::default()
+            }],
+        };
+        assert_eq!(simulate(&rotation, 10).len(), 4);
     }
 
     #[test]

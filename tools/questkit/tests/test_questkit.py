@@ -280,6 +280,14 @@ class BattleSimPlayerTest(unittest.TestCase):
         problems = battle_sim.compare(fixture, calls, battle_sim.SimResult(1, None))
         self.assertEqual(problems, ["talk 82: 13.0 s, retail 10.0 s"])
 
+    def test_positions(self):
+        """Positions are the last one recorded at or before the time, the origin before any (or without any.)"""
+        path = [[1.0, 10.0, 2.0, 30.0], [3.0, 11.0, 2.0, 31.0]]
+        self.assertEqual(battle_sim._position_then(path, 0.5), (0.0, 0.0, 0.0))
+        self.assertEqual(battle_sim._position_then(path, 2.9), (10.0, 2.0, 30.0))
+        self.assertEqual(battle_sim._position_then(path, 3.0), (11.0, 2.0, 31.0))
+        self.assertEqual(battle_sim._position_then(None, 5.0), (0.0, 0.0, 0.0))
+
 
 class CaptureTools(unittest.TestCase):
     def setUp(self):

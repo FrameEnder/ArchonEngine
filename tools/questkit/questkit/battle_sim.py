@@ -25,8 +25,12 @@ and the script hears `onActorDeath` for it. A director scene the script plays fi
 took on retail (`onSceneFinished`). Then the script's sequences, battle talk, spawns and win are matched to retail's,
 in order, each within `tolerance` seconds. It also checks that everything the script spawns is in a drop-in layer.
 
-What it doesn't simulate: positions (everyone stands at the origin, so "nearest" choices are arbitrary), enmity and
-who hits whom (the health curves are retail's whatever the script's targeting does), and losing. The player's health
+Positions: a fixture can hold retail's (`positions`: `{"player": [[t, x, y, z], ...], "<layout>": [...]}`, an NPC's
+times counted like its health), which the script sees in `info` as the server gives them, for steps that wait for the
+player to come close (Victory in Peril's second pair and cutscene). Without them everyone stands at the origin, so
+"nearest" choices are arbitrary and anything waiting for the player to come close happens at once.
+
+What it doesn't simulate: enmity and who hits whom (the health curves are retail's whatever the script's targeting does), and losing. The player's health
 follows retail's curve when the fixture has one (`player`, for lines said as the player's health drops), full otherwise.
 """
 
@@ -159,8 +163,12 @@ def save(fixture: dict, path: Path | None = None) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     npcs = ",\n".join(f'    "{k}": {json.dumps(v)}' for k, v in fixture["npcs"].items())
     events = ",\n".join(f"    {json.dumps(e)}" for e in fixture["events"])
-    head = {k: v for k, v in fixture.items() if k not in ("npcs", "events")}
-    text = json.dumps(head, indent=2)[:-2] + f',\n  "npcs": {{\n{npcs}\n  }},\n  "events": [\n{events}\n  ]\n}}\n'
+    head = {k: v for k, v in fixture.items() if k not in ("npcs", "events", "positions")}
+    text = json.dumps(head, indent=2)[:-2] + f',\n  "npcs": {{\n{npcs}\n  }},\n  "events": [\n{events}\n  ]'
+    if fixture.get("positions"):
+        positions = ",\n".join(f'    "{k}": {json.dumps(v)}' for k, v in fixture["positions"].items())
+        text += f',\n  "positions": {{\n{positions}\n  }}'
+    text += "\n}\n"
     json.loads(text)
     path.write_text(text)
     return path
@@ -185,6 +193,16 @@ def _health_then(curve: list, t: float) -> float:
             break
         value = pct
     return value
+
+
+def _position_then(path: list | None, t: float) -> tuple[float, float, float]:
+    """Where someone was at t: their last recorded position (the origin without any.)"""
+    position = (0.0, 0.0, 0.0)
+    for at, x, y, z in path or []:
+        if at > t:
+            break
+        position = (x, y, z)
+    return position
 
 
 def dropin_layouts() -> set[int]:
@@ -243,6 +261,7 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
     g = lua.globals()
 
     npcs = {int(k): v for k, v in fixture["npcs"].items()}
+    positions = fixture.get("positions", {})
     spawned: dict[int, float] = {}  # layout -> when the script spawned it
     alive: set[int] = set()
     dead: set[int] = set()
@@ -310,9 +329,11 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                 at = _health_then if fixture.get("npc_health") == "held" else _health_at
                 pct = at(spec["hp"], t - offset) if spec else 100.0
                 health[layout] = max(pct, 0.1)
-                info_table[layout] = lua.table_from({"hp": pct, "max_hp": 100, "x": 0, "y": 0, "z": 0})
+                x, y, z = _position_then(positions.get(str(layout)), t - offset)
+                info_table[layout] = lua.table_from({"hp": pct, "max_hp": 100, "x": x, "y": y, "z": z})
             player_pct = _health_then(fixture["player"], t) if fixture.get("player") else 100.0
-            info_table["player"] = lua.table_from({"hp": player_pct, "max_hp": 100, "x": 0, "y": 0, "z": 0})
+            x, y, z = _position_then(positions.get("player"), t)
+            info_table["player"] = lua.table_from({"hp": player_pct, "max_hp": 100, "x": x, "y": y, "z": z})
             g.onUpdate(director, lua.table_from(health), player_pct, lua.table_from(info_table))
             not_yet.clear()
             follow_calls(outside_update=False)

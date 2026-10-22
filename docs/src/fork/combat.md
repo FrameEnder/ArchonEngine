@@ -173,6 +173,10 @@ Enemies still compute damage like players do (stat × potency), which is far too
   missed, parried or critical as above), and a heal (Cure) is set to it ±5 %. Used for quest battle allies and
   enemies (Leia's Legacy, To Guard a Guardian), so they wear each other down, and heal, as fast as on retail.
 * NPCs hitting other NPCs without a recorded amount are not scaled.
+* An NPC's **damage over time** is scaled as its hit was (`scale_npc_periodic_damage`): the action script works the
+  tick out from the NPC's stats as if it were a player's, which made Victory in Peril's corsair conjurers' Aero tick
+  for 26–28 where retail's were 2–7 (the hit, scaled to 7, was right). Aero's tick is 30 potency to the hit's 50, so
+  the same scale gives about 4.
 * Drains (`heal_self` effect, e.g. Blood Drain) heal the attacker by what they took; the attacker's HP is sent after.
 
 Timeline fields the fork uses: `hitbox_radius` (reach includes it), `autoattack_action_id` (870/871/872 per kind),
@@ -374,6 +378,7 @@ Every tick (500 ms) the first ready entry is used:
 | `pace` | Seconds between the NPC's weaponskills and spells. Retail NPCs act far less often than players (allies use one every 3–12 s). |
 | GCD actions | Only once `pace` has passed; a combo step only right after its `ActionCombo`, within 15 s, when that step is in the rotation too (retail NPCs whose kit lacks it use the later step on its own: Underneath the Sultantree's stranger and Rage of Halone); one with a longer recast than `pace` waits for it. |
 | Abilities | Between two GCD actions only (never before the first), a second after the last one, one at a time; then their recast (or `every`). |
+| No GCD actions | A kit with nothing on the GCD (NPC actions in no recast group: Victory in Peril's thaumaturges' Fire 966, the corsairs' Fast Blade 717 and True Thrust 722, the blanga's Bloody Claw 739) uses each action as its `every`, or its recast and at least `pace`, allows. Kept to the weaving rule they never acted: there was no GCD action to weave after (Bob's bundle of 2026-10-22). |
 | `refresh` | Not again on the same target for that many seconds: a damage-over-time or debuff, re-applied as it wears off (timed per target, since players' statuses aren't visible here). |
 | `then` | The GCD action that comes next (a buff's follow-up). |
 | `target_hp_below`, `self_hp_below` | Only below that health %. |

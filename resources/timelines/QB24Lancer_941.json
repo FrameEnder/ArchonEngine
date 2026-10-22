@@ -4,9 +4,22 @@
     "recorded_amounts": {
         "870": {
             "npcs": 29
+        },
+        "722": {
+            "npcs": 38
         }
     },
     "timeline_always_plays": false,
     "timepoints": [],
-    "comment": "Victory in Peril's corsair lancers (quest battle 24): level 20, 371 HP. From Bob's Chronofoil capture of 2026-10-21 (two runs, `questkit chronofoil --battle 0.20` lost and `0.22` won, territory 249, duty 313): auto-attacks every 3 s, 29 on the allied marauder (median), 21 misses in 49; action 722 (14 uses) and 562 have no scripts and are left out. Hitbox not recorded."
+    "comment": "Victory in Peril's corsair lancers (quest battle 24): level 20, 371 HP. From Bob's Chronofoil capture of 2026-10-21 (two runs, `questkit chronofoil --battle 0.20` lost and `0.22` won, territory 249, duty 313): auto-attacks every 3 s, 29 on the allied marauder (median), 21 misses in 49; True Thrust (722) about every 9 s, 38; Groundburst (562, an area cast, 1-2 a run) has no script and is left out. Hitbox not recorded.",
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 722,
+                "every": 9.0,
+                "comment": "True Thrust: 14 uses in 2 runs (two lancers), mostly 8.6-9.1 s apart, 38 on the allied marauder (median)"
+            }
+        ]
+    }
 }

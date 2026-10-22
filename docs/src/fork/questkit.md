@@ -332,7 +332,13 @@ death animation), and `onSceneFinished` after as long as the client took on reta
 to the script's, in order, each within the fixture's tolerance (2 s). It also fails on an NPC the script spawns that
 no drop-in has, or that retail never had.
 
-It doesn't simulate positions, enmity or who hits whom (the health curves are retail's whatever the script's
+A fixture can also hold retail's **positions** (`positions`: `{"player": [[t, x, y, z], …], "<layout>": […]}`, an
+NPC's times counted like its health; written by hand: Victory in Peril's are the player's from the capture's
+`UpdatePositionHandlerInstance` and the NPCs' from the run's samples, on one clock), which the script sees in `info`
+as the server gives them, for steps that wait for the player to come close. Without them everyone stands at the
+origin, and anything waiting for the player to come close happens at once.
+
+It doesn't simulate enmity or who hits whom (the health curves are retail's whatever the script's
 targeting does), losing, or the NPCs' casts and yells (not compared). The player's health is retail's when the fixture
 has it (`player`, written by `--make` since 2026-10-21: for lines said as it drops), as the last value seen (it
 jumps, with hits and potions, so it isn't interpolated); full otherwise. `tolerances` (by label, e.g.

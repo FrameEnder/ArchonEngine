@@ -259,28 +259,36 @@ a quest's entering event, 0 for every other event (228 events across the capture
   drop-in (15 NPCs, display flags 0x40000); the player starts at (165.01, 14.1, 676.28), facing -2.727. Bob's
   Chronofoil capture of 2026-10-21, two runs (`--battle 0.20`, lost as he fell, and `0.22`, won; territory 249, duty
   313).
-* The boss (3970651) and four corsairs stand by; the first two fight once one of them is hurt (sequence 3: retail's
-  are when they noticed the player, which Kawari can't time). The second pair is unaware until the first is down
-  and 4 s have passed, and then waits for you to come within 20 yalms (or to hit one of them): sequence 4 and they
-  come at you. On retail both times you'd walked 50 yalms over to them by then (14.5 and 18.4 yalms from the nearer
-  at sequence 4, 4.2 and 5.3 s after the first pair fell; in the won run you'd stood there 3.6 s without them
-  noticing), so whether it's your coming close or the time that starts them can't be told from the runs; Bob
-  remembers having to go to them. Those down, the cutscene waits for you to come within 20 yalms of the boss, and
-  9 s after that comes sequence 5 (retail: you'd walked over and stood 13.7 and 16.4 yalms from it, 9.7 and 7.8 s
-  after coming within 20 yalms; Bob's run of 2026-10-22 had it play 66 yalms away, as it followed the second pair's
-  fall): the cutscene (scene 5, 0xF8402EFB) and the allied
-  marauder and conjurer (Cure below 55 %), held back (`holdBack`) until it ends. Nothing fights during it (retail:
-  the boss's first blow is 1 s after sequence 6): the boss is unaware until then, as it would otherwise take on the
-  allies appearing 13 yalms from it (Bob's bundle of 2026-10-22: it fought the marauder through the cutscene, reached
-  55 % and turned on him). After it sequence 6, the allies released, the boss on the marauder, three more corsairs and talks 105–108 every 5 s; the boss
+* The boss (3970651) and four corsairs stand by. Each of the first three parts starts when you come close, at
+  retail's distances (Bob's capture, both runs: the player's positions are in the capture, the NPCs' in the runs,
+  on one clock): the first pair when you're within 26 yalms of the nearer (or hurt one): sequence 3, they come at you
+  (the won run: sequence 3 as you came within 25.6, the first arrow 1.3 s later; the lost run: the first arrow as you
+  came within 22–27, sequence 3 4 s after it). The second pair, once the first is down, when you're within 26.7 yalms
+  of the nearer (its conjurer both times): sequence 4 came 0.1–0.2 s after you were 26.6 and 25.4 yalms from it and
+  not at 26.9–28.2, though 4.2 and 5.3 s after the first pair fell, so it's the distance; they don't notice you on
+  their own until then. The cutscene, once those two are down, when you're within 15 yalms of the boss: sequence 5
+  came 0.1–0.2 s after you were 13.8 and 14.4 yalms from it and not at 15.7–16.4 (Bob's X 26.1, Y 33.7, about 15 from
+  it); the client then stops you where you stand, 13.1–13.3 off. (Two earlier readings of these had the player's
+  clock 7.3 s off the NPCs' and gave a 9 s wait, which Bob's third run of 2026-10-22 showed wrong.) Sequence 5 brings
+  the cutscene (scene 5, 0xF8402EFB) and the allied marauder and conjurer (Cure below 55 %), held back (`holdBack`)
+  until it ends. Nothing fights during it (retail: the boss's first blow is 1 s after sequence 6): the boss is
+  unaware until then, as it would otherwise take on the allies appearing 13 yalms from it (Bob's bundle of
+  2026-10-22: it fought the marauder through the cutscene, reached 55 % and turned on him). After it sequence 6, the allies released, the boss on the marauder, three more corsairs and talks 105–108 every 5 s; the boss
   at 55 %: sequence 7, five more (after the marauder), the boss on you, 8 at 4.5 s and 109–111; at 25 %: 9 and 112,
   10 5.5 s later, 115, 113, 114. Its health at 0: 2 s later sequence 11, "Duty Complete" (scene 11, 0xF8402FFF) and
   114 if not said yet; the quest moves to 4. The corsair conjurers Cure their side: on retail 81–86 HP each, 5.5–7.7 s
   apart, below about 50 % (34 Cures in the two runs). The one in the second pair (4167379) only ever Cured itself and
   the archer beside it, never the first pair, so only those two are its targets; the third (3970673) Cures the boss
   and the adds.
-* Timelines `QB24*_<base>.json`. `questkit battle-sim 24` (the won run, NPC health held): within 2 s, sequence 3 within
-  5 s (`tolerances`; it's when you're noticed).
+* What everyone does to whom is retail's (`recorded_amounts`): the archers' 11–12, the boss's 12 and Heavy Swing's 19
+  on you, the conjurers' Stone 18 and Aero 7 with its damage over time 2–7 a tick (the tick is scaled as the hit is:
+  it was 26–28, Bob's "ghost damage"), the third wave's Fire 32 every 3 s (the thaumaturges never cast it before:
+  [Class rotations](combat.md#class-rotations-serverrotationrs)), Fast Blade 39 and True Thrust 38 on the allied
+  marauder. Not done: the boss's Fracture, Brutal Swing, Bloodbath, Foresight, Overpower and Barbaric Surge, the
+  thaumaturges' Groundburst and Spinning Kick, the marauder's Shield Bash (1–12 uses a run each; no action scripts).
+* Timelines `QB24*_<base>.json`. `questkit battle-sim 24` (the won run, NPC health held, retail's positions): every
+  step within 0.7 s, sequences 3–5 within 0.5 s. Against the lost run (not a fixture) sequences 4 and 5 are within
+  0.3 s and sequence 3 5.5 s early (see above).
 
 ### Quest battle 29 — Just Deserts (`content/questbattle/29.lua`)
 
