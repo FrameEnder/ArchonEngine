@@ -1,0 +1,42 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "872": {
+            "npcs": 21,
+            "players": 14
+        },
+        "53": {
+            "npcs": 55
+        },
+        "54": {
+            "npcs": 55
+        },
+        "56": {
+            "npcs": 51
+        }
+    },
+    "rotation": {
+        "pace": 4.7,
+        "actions": [
+            {
+                "action": 56,
+                "refresh": 17.8,
+                "comment": "Snap Punch: 59 uses in 4 runs"
+            },
+            {
+                "action": 54,
+                "refresh": 17.8,
+                "comment": "True Strike: 72 uses"
+            },
+            {
+                "action": 53,
+                "refresh": 17.8,
+                "comment": "Bootshine: 86 uses"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Feint and Strike's pugilists (quest battle 36): level 14, 216 HP. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334); median damage. Second Wind (57, 11 uses) has no script; Featherfoot (68) left out. Hitbox not recorded."
+}

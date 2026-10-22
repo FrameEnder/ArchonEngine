@@ -1,0 +1,27 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 8
+        },
+        "31": {
+            "npcs": 12
+        },
+        "120": {
+            "npcs": 36
+        }
+    },
+    "rotation": {
+        "pace": 15.0,
+        "actions": [
+            {
+                "action": 31,
+                "comment": "Heavy Swing: 8 uses in 4 runs"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Feint and Strike's allied elite 4103009 (quest battle 36): level 15, 1148 HP. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334): it takes the pugilists; Cure (120, the director's heals), 36. Actions 32-35 and 41 are left out. Hitbox not recorded."
+}

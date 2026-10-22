@@ -1,0 +1,26 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 12,
+            "npcs": 18
+        },
+        "31": {
+            "players": 18,
+            "npcs": 26
+        }
+    },
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 31,
+                "comment": "Heavy Swing: 23 uses in 2 runs, every 6.6-23.9 s (median 8.7)"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Victory in Peril's corsair boss (quest battle 24, drop-in layer QB_SubSea117_001), a marauder: level 15, 3190 HP. From Bob's Chronofoil capture of 2026-10-21 (two runs, `questkit chronofoil --battle 0.20` lost and `0.22` won, territory 249, duty 313): auto-attacks every 3 s and Heavy Swing every 8.7 s (median damage); actions 32, 33, 34, 39, 720 and 963 (2-6 uses each) have no action scripts and are left out. Hitbox not recorded."
+}

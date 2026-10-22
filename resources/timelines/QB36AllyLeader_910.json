@@ -1,0 +1,38 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 48
+        },
+        "31": {
+            "npcs": 74
+        },
+        "37": {
+            "npcs": 190
+        },
+        "46": {
+            "npcs": 70
+        },
+        "120": {
+            "npcs": 90,
+            "players": 92
+        }
+    },
+    "rotation": {
+        "pace": 22.0,
+        "actions": [
+            {
+                "action": 37,
+                "comment": "Maim: after Heavy Swing (its ActionCombo), 1 use"
+            },
+            {
+                "action": 31,
+                "comment": "Heavy Swing: 4 uses in 4 runs"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Feint and Strike's allied leader 4102995 (quest battle 36): level 26, 5128 HP. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334): it holds the boss; Cure (120, the director's heals) on its side, 90 (median, 46 uses). Actions 14, 32-35, 39 and 41 are left out (no scripts, or rare). Hitbox not recorded."
+}

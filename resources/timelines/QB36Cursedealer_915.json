@@ -1,0 +1,54 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "141": {
+            "npcs": 84,
+            "players": 51
+        },
+        "142": {
+            "npcs": 83,
+            "players": 55
+        },
+        "146": {
+            "players": 14.5
+        },
+        "156": {
+            "npcs": 47
+        }
+    },
+    "timepoints": [
+        {
+            "time": 0,
+            "data": {
+                "type": "action",
+                "action_id": 142
+            }
+        },
+        {
+            "time": 5,
+            "data": {
+                "type": "action",
+                "action_id": 141
+            }
+        },
+        {
+            "time": 10,
+            "data": {
+                "type": "action",
+                "action_id": 146
+            }
+        },
+        {
+            "time": 15,
+            "data": {
+                "type": "invulnerability",
+                "invulnerable": false
+            },
+            "comment": "Marks the end of the loop"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Feint and Strike's enemy thaumaturge (quest battle 36): level 15, 172 HP. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334): Blizzard (12 uses), Fire (8), Thunder (5); median damage. Hitbox not recorded."
+}

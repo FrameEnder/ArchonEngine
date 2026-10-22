@@ -1,0 +1,22 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "966": {
+            "npcs": 32
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 966,
+                "comment": "Fire: 38 uses in 2 runs, every 3.1 s (its only attack)"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Victory in Peril's corsair thaumaturges (quest battle 24): level 20, 289 HP. From Bob's Chronofoil capture of 2026-10-21 (two runs, `questkit chronofoil --battle 0.20` lost and `0.22` won, territory 249, duty 313): Fire (966) every 3.1 s from range, 32 on the allied marauder (median); actions 561 and 562 have no action scripts. Hitbox not recorded."
+}

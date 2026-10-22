@@ -1,0 +1,31 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 18
+        },
+        "31": {
+            "npcs": 27
+        },
+        "46": {
+            "npcs": 28
+        }
+    },
+    "rotation": {
+        "pace": 17.0,
+        "actions": [
+            {
+                "action": 46,
+                "comment": "Tomahawk: 4 uses in 4 runs"
+            },
+            {
+                "action": 31,
+                "comment": "Heavy Swing: 18 uses"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Feint and Strike's allied marauder 4102998 (quest battle 36): level 17, 3690 HP. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334): it takes the archers; median damage. Actions 32-35, 39 and 41 are left out (no scripts, or rare). Hitbox not recorded."
+}

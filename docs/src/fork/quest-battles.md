@@ -216,6 +216,44 @@ player is sent out.
   because Bob stood by the boss there), it stayed by Bob casting from the start, the boss walked over to it and
   everyone piled onto him. The ally now goes to the boss.
 
+### Quest battle 36 — Feint and Strike (`content/questbattle/36.lua`)
+
+* Territory 280, taken to be a copy of Western La Noscea (retail's positions are Western La Noscea's), so its 31 NPCs
+  are layer `QB_ManSea007_001` of the `sea_s1f4` drop-in, with retail's layout IDs, levels, HP, positions and display
+  flags (the five background pairs are 0x4020B). The player starts at (667.83, 8.27, 524.17), facing -2.74. Bob's
+  Chronofoil capture of 2026-10-21, four runs (`questkit chronofoil --battle 0.27`, `0.29`, `0.31`, the third lost as
+  he fell, and `0.33`, won; territory 280, duty 334). It's Duty, Honor, Country with Limsa Lominsa's numbers.
+* First half: the leader (4102995) holds the boss (4102991) and Cures his side below 70 %; the marauder takes the
+  archers, the two elites the pugilists (an elite falling only says its line, 152 or 153); five pairs fight each other
+  further off. Talks 144 and 145 at 5 and 10 s; the boss at 70 %: sequence 3 and six more (two archers, two
+  pugilists, a conjurer that Cures its side, a thaumaturge), talk 147 8 s later; at 30 % (or 40 % with two others
+  left) sequence 4 and 148; at 35 % after that Void Call (867) on itself, 4 s later sequence 5, 149 and the blanga
+  (Terror Eye, 740, 16.2 s after it appears, then every 15 s); 146 5 s after; at 10 % the marauder's 154.
+* The boss's health at 0: 7.8 s later (its death 2 s after, then 5.8 s) sequence 6, everyone leaves and the director's
+  cutscene plays (scene 6, 0xF8402EFB); then retail sends you through a loading screen to (658.91, 9.56, 489.72)
+  (`warp_players`), sequence 7, the gargoyle and the masked mage (passive until hit), talk 156 at 5 s, sequence 8 at
+  22 s and 157 5 s later; the gargoyle at 50 % 159, at 25 % sequence 9 and the level-50 conjurer ally (4103188), 10 s
+  later sequence 10 and 160, 158 5 s after; the mage at 40 % 161, 162 3 s later; the mage down: at once sequence 11,
+  "Duty Complete", scene 11 (0x2001), the quest moves to 3. Your falling loses it.
+* Timelines `QB36*_<base>.json`, with retail's recorded amounts. `questkit battle-sim 36` (the won run, NPC health held
+  between hits): every step within 2 s.
+
+### Quest battle 24 — Victory in Peril (`content/questbattle/24.lua`)
+
+* Territory 249, taken to be a copy of Lower La Noscea, so its NPCs are layer `QB_SubSea117_001` of the `sea_s1f2`
+  drop-in (15 NPCs, display flags 0x40000); the player starts at (165.01, 14.1, 676.28), facing -2.727. Bob's
+  Chronofoil capture of 2026-10-21, two runs (`--battle 0.20`, lost as he fell, and `0.22`, won; territory 249, duty
+  313).
+* The boss (3970651) and four corsairs stand by; the first two fight once one of them is hurt (sequence 3: retail's
+  are when they noticed the player, which Kawari can't time), both down: 2 s later sequence 4 and the other two come;
+  those down: 9 s later sequence 5, the cutscene (scene 5, 0xF8402EFB) and the allied marauder and conjurer (Cure
+  below 55 %); after it sequence 6, the boss on the marauder, three more corsairs and talks 105–108 every 5 s; the boss
+  at 55 %: sequence 7, five more (after the marauder), the boss on you, 8 at 4.5 s and 109–111; at 25 %: 9 and 112,
+  10 5.5 s later, 115, 113, 114. Its health at 0: 2 s later sequence 11, "Duty Complete" (scene 11, 0xF8402FFF) and
+  114 if not said yet; the quest moves to 4. The corsair conjurers Cure their side.
+* Timelines `QB24*_<base>.json`. `questkit battle-sim 24` (the won run, NPC health held): within 2 s, sequence 3 within
+  5 s (`tolerances`; it's when you're noticed).
+
 ### Quest battle 29 — Just Deserts (`content/questbattle/29.lua`)
 
 * Territory 272, taken to be a copy of Middle La Noscea as 252 is (retail's positions are Middle La Noscea's), so the

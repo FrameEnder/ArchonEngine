@@ -1,0 +1,31 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 60
+        },
+        "31": {
+            "npcs": 89
+        },
+        "37": {
+            "npcs": 134
+        }
+    },
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 37,
+                "comment": "Maim: 5 uses in 2 runs, every 15-105 s"
+            },
+            {
+                "action": 31,
+                "comment": "Heavy Swing: 12 uses in 2 runs, every 15-36 s"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Victory in Peril's allied marauder (quest battle 24): level 30, 3666 HP. From Bob's Chronofoil capture of 2026-10-21 (two runs, `questkit chronofoil --battle 0.20` lost and `0.22` won, territory 249, duty 313): auto-attacks every 3 s (60), Heavy Swing (89) and Maim (134) now and then (median damage on the enemies); actions 33, 34, 35, 41 and 47 (1-9 uses) are left out (no scripts, or Overpower used once). Hitbox not recorded."
+}

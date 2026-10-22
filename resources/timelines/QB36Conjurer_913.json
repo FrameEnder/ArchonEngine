@@ -1,0 +1,45 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 293
+        },
+        "121": {
+            "npcs": 112
+        },
+        "127": {
+            "npcs": 397
+        },
+        "132": {
+            "npcs": 115
+        }
+    },
+    "rotation": {
+        "pace": 6.0,
+        "actions": [
+            {
+                "action": 132,
+                "refresh": 18.0,
+                "comment": "Aero II: 1 use"
+            },
+            {
+                "action": 121,
+                "refresh": 18.0,
+                "comment": "Aero: 5 uses"
+            },
+            {
+                "action": 127,
+                "comment": "Stone II: 1 use"
+            },
+            {
+                "action": 119,
+                "comment": "Stone: 1 use"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Feint and Strike's late ally 4103188 (quest battle 36), a conjurer: level 50, 2589 HP. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334) (the won run): it takes the gargoyle, then the mage. Hitbox not recorded."
+}

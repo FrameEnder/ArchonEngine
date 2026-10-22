@@ -1,0 +1,46 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "attack_range": 10.0,
+    "recorded_amounts": {
+        "141": {
+            "npcs": 66
+        },
+        "146": {
+            "players": 14
+        }
+    },
+    "timepoints": [
+        {
+            "time": 0,
+            "data": {
+                "type": "action",
+                "action_id": 146
+            }
+        },
+        {
+            "time": 6,
+            "data": {
+                "type": "action",
+                "action_id": 146
+            }
+        },
+        {
+            "time": 12,
+            "data": {
+                "type": "action",
+                "action_id": 141
+            }
+        },
+        {
+            "time": 18,
+            "data": {
+                "type": "invulnerability",
+                "invulnerable": false
+            },
+            "comment": "Marks the end of the loop"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Feint and Strike's masked mage (quest battle 36): level 16, 3096 HP, spawned not hostile and standing by until hit. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334) (the won run): Fire on the late ally, Thunder on you. Hitbox not recorded."
+}

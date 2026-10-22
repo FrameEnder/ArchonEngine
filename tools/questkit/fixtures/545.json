@@ -1,0 +1,140 @@
+{
+ "quest": 545,
+ "script": "ManSea009_00545",
+ "source": "Bob's Chronofoil capture of the Limsa story (2026-10-21, ee0909d9); scenes and effects from Bob's Chronofoil capture of 2026-10-21",
+ "params": {
+  "ACTOR0": 1000972,
+  "ACTOR1": 1001029,
+  "RITEM0": 3760,
+  "ACTOR2": 1003355,
+  "ACTOR3": 1002694,
+  "POPRANGE0": 4146938,
+  "TERRITORYTYPE0": 198,
+  "POPRANGE1": 4146949,
+  "CUT_SCENE_01": 137,
+  "CUT_SCENE_02": 63,
+  "CUT_SCENE_03": 223
+ },
+ "steps": [
+  {
+   "talk": 1000972,
+   "layout": 1673081,
+   "what": "ACTOR0",
+   "scenes": [
+    {
+     "scene": 0,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    },
+    {
+     "scene": 1,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 1,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "talk": 1001029,
+   "layout": 4054953,
+   "what": "ACTOR1",
+   "scenes": [
+    {
+     "scene": 2,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    },
+    {
+     "scene": 3,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    },
+    {
+     "scene": 4,
+     "flags": "0xf8402efb",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "effects": [
+    {
+     "zone": 177
+    }
+   ],
+   "expect": {
+    "sequence": 255,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "talk": 1001029,
+   "layout": 4054953,
+   "what": "ACTOR1",
+   "scenes": [
+    {
+     "scene": 8,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "effects": [
+    {
+     "zone": 198
+    }
+   ],
+   "expect": {
+    "sequence": 255,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "talk": 1002694,
+   "layout": 4087076,
+   "what": "ACTOR3",
+   "scenes": [
+    {
+     "scene": 7,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "expect": {
+    "completed": true,
+    "notices": []
+   }
+  }
+ ]
+}

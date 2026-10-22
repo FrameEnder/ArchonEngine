@@ -1,0 +1,39 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 21
+        },
+        "31": {
+            "npcs": 32.5
+        },
+        "37": {
+            "npcs": 53
+        },
+        "41": {
+            "npcs": 25
+        }
+    },
+    "rotation": {
+        "pace": 12.0,
+        "actions": [
+            {
+                "action": 41,
+                "refresh": 32.0,
+                "comment": "Overpower: 11 uses in 4 runs"
+            },
+            {
+                "action": 37,
+                "comment": "Maim: after Heavy Swing (its ActionCombo), 6 uses"
+            },
+            {
+                "action": 31,
+                "comment": "Heavy Swing: 18 uses"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Feint and Strike's boss (quest battle 36, drop-in layer QB_ManSea007_001), a marauder: level 20, 3717 HP. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334): it fights the allied 4102995 the whole time; median damage on NPCs. Actions 32, 33, 34 and 35 have no action scripts and are left out; Void Call (867) is cast by the battle's script. Hitbox not recorded."
+}

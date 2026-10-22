@@ -1,0 +1,24 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 8
+        },
+        "31": {
+            "npcs": 11
+        }
+    },
+    "rotation": {
+        "pace": 15.0,
+        "actions": [
+            {
+                "action": 31,
+                "comment": "Heavy Swing: 14 uses in 4 runs"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Feint and Strike's allied elite 4103010 (quest battle 36): level 15, 925 HP. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334): it takes the pugilists. Actions 32-35 and 41 are left out. Hitbox not recorded."
+}

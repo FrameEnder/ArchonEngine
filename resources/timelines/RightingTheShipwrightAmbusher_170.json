@@ -1,0 +1,10 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "damage_to_players": {
+        "13": 12.3
+    },
+    "comment": "Righting the Shipwright's three ambushers (quest 415, drop-in layer QB_SubSea118_001): level 11, 217 HP. From Bob's Chronofoil capture of 2026-10-21: melee auto-attacks (870) for 12-13 against a level 13 arcanist (2 misses in 9); action 495 (twice) has no action script. Hitbox not recorded. BNpcBase 170 also spawns in the open world (19 spawn points in two drop-ins), which this timeline covers too."
+}

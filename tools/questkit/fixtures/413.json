@@ -1,0 +1,145 @@
+{
+ "quest": 413,
+ "script": "SubSea116_00413",
+ "source": "Bob's Chronofoil capture of the Limsa story (2026-10-21, ee0909d9); scenes and effects from Bob's Chronofoil capture of 2026-10-21",
+ "params": {
+  "ACTOR0": 1002238,
+  "ACTOR1": 1002237,
+  "ACTOR2": 1002240,
+  "ACTOR3": 1002463,
+  "ACTOR4": 1002464,
+  "ACTOR5": 1002465,
+  "EOBJECT0": 2000766,
+  "EVENT_ACTION_SEARCH": 1,
+  "EOBJECT1": 2000767,
+  "LOC_ACTOR1": 1002534,
+  "LOC_ACTOR2": 1002535,
+  "LOC_EOBJ1": 2000768
+ },
+ "steps": [
+  {
+   "talk": 1002238,
+   "layout": 3766680,
+   "what": "ACTOR0",
+   "scenes": [
+    {
+     "scene": 0,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "expect": {
+    "sequence": 1,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "talk": 1002237,
+   "layout": 3766655,
+   "what": "ACTOR1",
+   "scenes": [
+    {
+     "scene": 1,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 2,
+    "vars": "000000000000",
+    "notices": [
+     [
+      0,
+      []
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 1002240,
+   "layout": 3766692,
+   "what": "ACTOR2",
+   "scenes": [
+    {
+     "scene": 2,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 3,
+    "vars": "000000000000",
+    "notices": [
+     [
+      1,
+      []
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 1002463,
+   "layout": 3818489,
+   "what": "ACTOR3",
+   "scenes": [
+    {
+     "scene": 3,
+     "flags": "0xf8402fff",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "expect": {
+    "sequence": 255,
+    "vars": "000000000000",
+    "notices": [
+     [
+      2,
+      [
+       1,
+       1
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 1002237,
+   "layout": 3766655,
+   "what": "ACTOR1",
+   "scenes": [
+    {
+     "scene": 12,
+     "flags": "0x2000",
+     "results": [
+      1,
+      2146,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "expect": {
+    "completed": true,
+    "notices": []
+   }
+  }
+ ]
+}

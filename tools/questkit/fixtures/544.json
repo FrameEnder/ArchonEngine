@@ -1,0 +1,257 @@
+{
+ "quest": 544,
+ "script": "ManSea007_00544",
+ "source": "Bob's Chronofoil capture of the Limsa story (2026-10-21, ee0909d9); scenes and effects from Bob's Chronofoil capture of 2026-10-21",
+ "params": {
+  "ACTOR0": 1000972,
+  "ITEM0": 2000519,
+  "ACTOR1": 1003282,
+  "ACTOR2": 1003283,
+  "ACTOR3": 1003284,
+  "ACTOR4": 1003285,
+  "ACTOR5": 1003286,
+  "EOBJECT0": 2001739,
+  "EVENT_ACTION_SEARCH": 1,
+  "TERRITORYTYPE1": 138,
+  "TERRITORYTYPE0": 280,
+  "QUESTBATTLE0": 36,
+  "LOC_ACTOR0": 1005031,
+  "LOC_FACE0": 604,
+  "LOC_FACE1": 617,
+  "CUT_EVENT0": 207,
+  "CUT_EVENT1": 211,
+  "CUT_EVENT2": 136,
+  "CUT_SCENE_03": 210
+ },
+ "steps": [
+  {
+   "talk": 1000972,
+   "layout": 1673081,
+   "what": "ACTOR0",
+   "scenes": [
+    {
+     "scene": 0,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    },
+    {
+     "scene": 1,
+     "flags": "0xf8402efb",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 1,
+    "vars": "001000000000",
+    "notices": []
+   }
+  },
+  {
+   "talk": 1003282,
+   "layout": 4102426,
+   "what": "ACTOR1",
+   "scenes": [
+    {
+     "scene": 2,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    },
+    {
+     "scene": 3,
+     "flags": "0xf8402efb",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 2,
+    "vars": "000000000000",
+    "notices": [
+     [
+      0,
+      []
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 1003283,
+   "layout": 4102420,
+   "what": "ACTOR2",
+   "scenes": [
+    {
+     "scene": 4,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "effects": [
+    {
+     "zone": 280
+    }
+   ],
+   "expect": {
+    "sequence": 2,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "talk": 1003283,
+   "layout": 4102420,
+   "what": "ACTOR2",
+   "scenes": [
+    {
+     "scene": 4,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "effects": [
+    {
+     "zone": 280
+    }
+   ],
+   "expect": {
+    "sequence": 2,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "talk": 1003283,
+   "layout": 4102420,
+   "what": "ACTOR2",
+   "scenes": [
+    {
+     "scene": 4,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "effects": [
+    {
+     "zone": 280
+    }
+   ],
+   "expect": {
+    "sequence": 2,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "talk": 1003283,
+   "layout": 4102420,
+   "what": "ACTOR2",
+   "scenes": [
+    {
+     "scene": 4,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "effects": [
+    {
+     "zone": 280
+    }
+   ],
+   "expect": {
+    "sequence": 2,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "battle_won": 3,
+   "expect": {
+    "sequence": 3,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "enter_territory": 138,
+   "scenes": [
+    {
+     "scene": 10,
+     "flags": "0xf8402efb",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 255,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "talk": 1003282,
+   "layout": 4102426,
+   "what": "ACTOR1",
+   "scenes": [
+    {
+     "scene": 11,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    },
+    {
+     "scene": 12,
+     "flags": "0xf8402efb",
+     "results": [
+      1,
+      0,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "expect": {
+    "completed": true,
+    "notices": []
+   }
+  }
+ ]
+}

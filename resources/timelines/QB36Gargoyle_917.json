@@ -1,0 +1,18 @@
+{
+    "hitbox_radius": 2.3,
+    "autoattack_action_id": 870,
+    "damage_to_players": {
+        "15": 6
+    },
+    "recorded_amounts": {
+        "870": {
+            "players": 6
+        },
+        "619": {
+            "players": 5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Feint and Strike's gargoyle (quest battle 36): level 16, 1513 HP. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334) (the won run): it goes after you, 6 (median); Corrupted Tail (619) once. Hitbox as Duty, Honor, Country's gargoyle."
+}

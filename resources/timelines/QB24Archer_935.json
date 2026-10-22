@@ -1,0 +1,13 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 873,
+    "recorded_amounts": {
+        "873": {
+            "players": 11,
+            "npcs": 15
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Victory in Peril's corsair archers (quest battle 24): level 14, 263 HP. From Bob's Chronofoil capture of 2026-10-21 (two runs, `questkit chronofoil --battle 0.20` lost and `0.22` won, territory 249, duty 313): only auto-attacks (873) every 3 s, 11 on the player and 15 on the allies (median). Hitbox not recorded."
+}

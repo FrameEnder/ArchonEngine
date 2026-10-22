@@ -1,0 +1,127 @@
+{
+ "quest": 690,
+ "script": "ManSea008_00690",
+ "source": "Bob's Chronofoil capture of the Limsa story (2026-10-21, ee0909d9); scenes and effects from Bob's Chronofoil capture of 2026-10-21",
+ "params": {
+  "ACTOR0": 1003282,
+  "ACTOR1": 1000972,
+  "ACTOR2": 1003355,
+  "ITEM0": 2000523
+ },
+ "steps": [
+  {
+   "talk": 1003282,
+   "layout": 4102426,
+   "what": "ACTOR0",
+   "scenes": [
+    {
+     "scene": 0,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    },
+    {
+     "scene": 1,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 1,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "talk": 1000972,
+   "layout": 1673081,
+   "what": "ACTOR1",
+   "scenes": [
+    {
+     "scene": 2,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 2,
+    "vars": "000000000000",
+    "notices": [
+     [
+      0,
+      []
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 1003355,
+   "layout": 4146187,
+   "what": "ACTOR2",
+   "scenes": [
+    {
+     "scene": 3,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 255,
+    "vars": "001000000000",
+    "notices": [
+     [
+      1,
+      [
+       21002
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "talk": 1000972,
+   "layout": 1673081,
+   "what": "ACTOR1",
+   "scenes": [
+    {
+     "scene": 4,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    },
+    {
+     "scene": 5,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "expect": {
+    "completed": true,
+    "notices": []
+   }
+  }
+ ]
+}

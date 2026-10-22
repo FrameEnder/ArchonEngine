@@ -1,0 +1,15 @@
+{
+    "hitbox_radius": 1.44,
+    "autoattack_action_id": 870,
+    "damage_to_players": {
+        "15": 11
+    },
+    "recorded_amounts": {
+        "870": {
+            "players": 11
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Feint and Strike's blanga (quest battle 36): level 15, 829 HP, called by the boss's Void Call. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334) (the won run): it goes after you, 11 (median). Terror Eye (740, 3 uses) is cast by the battle's script. Hitbox as Duty, Honor, Country's blanga."
+}

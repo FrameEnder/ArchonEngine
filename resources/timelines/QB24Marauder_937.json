@@ -1,0 +1,12 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 30
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Victory in Peril's corsair marauder (quest battle 24): level 22, 1133 HP. From Bob's Chronofoil capture of 2026-10-21 (two runs, `questkit chronofoil --battle 0.20` lost and `0.22` won, territory 249, duty 313): auto-attacks every 3 s, 30 on the allied marauder (median); action 717 (21 uses, 39), 718 and 17 have no scripts or aren't its own and are left out. Hitbox not recorded."
+}

@@ -1,0 +1,54 @@
+{
+    "hitbox_radius": 0.45,
+    "autoattack_action_id": 873,
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "873": {
+            "npcs": 22,
+            "players": 15
+        },
+        "97": {
+            "npcs": 41,
+            "players": 28
+        },
+        "100": {
+            "npcs": 23,
+            "players": 15
+        },
+        "18190": {
+            "npcs": 33,
+            "players": 23
+        },
+        "103": {
+            "npcs": 44,
+            "players": 31
+        }
+    },
+    "rotation": {
+        "pace": 6.6,
+        "actions": [
+            {
+                "action": 101,
+                "then": 97,
+                "comment": "Raging Strikes: 20 uses in 4 runs"
+            },
+            {
+                "action": 100,
+                "refresh": 18.0,
+                "comment": "Venomous Bite: 62 uses"
+            },
+            {
+                "action": 18190,
+                "refresh": 7.6,
+                "comment": "Straight Shot: 50 uses"
+            },
+            {
+                "action": 97,
+                "comment": "Heavy Shot: 63 uses"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Feint and Strike's archers (quest battle 36): level 15, 344 HP. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334); median damage. Misery's End (103) 7 uses, left to its script's conditions. Hitbox as Duty, Honor, Country's bowmen."
+}
