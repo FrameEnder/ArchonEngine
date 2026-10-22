@@ -33,6 +33,10 @@ use kawari::ipc::zone::{
 
 use kawari::common::{CharacterMode, NETWORK_TIMEOUT, RECEIVE_BUFFER_SIZE};
 
+/// A quest battle's opening scene flags unless its script sets `OPENING_SCENE_FLAGS`: the most common on retail
+/// (quest battles 11, 12, 15, 35 and 36 in Bob's Chronofoil captures; 14, 24 and 29 have their own.)
+const QUEST_BATTLE_OPENING_FLAGS: u32 = 0xF841AEFB;
+
 /// How often a player's progress is saved while they play, besides when they log out.
 /// TeleportStart's value for a teleport the character can't afford (Sapphire's; retail sends 0 when they can.)
 const TELEPORT_INSUFFICIENT_GIL: u32 = 2;
@@ -4825,7 +4829,7 @@ async fn process_server_msg(
                     connection.send_stats().await;
                 }
             }
-            FromServer::PlayInitialCutscene(duration, settings) => {
+            FromServer::PlayInitialCutscene(duration, settings, opening_flags) => {
                 // Quest battles play the same opening scene, but without InstanceContent's parameters (as Sapphire does.)
                 let is_quest_battle = connection
                     .content_handler_id
@@ -4838,8 +4842,14 @@ async fn process_server_msg(
                         0, 0, 5, 14400, 0, 0, 0, 0, 0, duration, settings,
                     ]
                 };
-                lua_player.play_scene(
-                    1,
+                // Duties' openings (0x0C53A401) are retail's; a quest battle's opening is a cutscene with its own flags
+                // (`QUEST_BATTLE_OPENING_FLAGS` unless its script sets `OPENING_SCENE_FLAGS`): with the duties' ones
+                // the UI stayed up and there was no skip button.
+                let flags = if is_quest_battle {
+                    SceneFlags::from_bits_retain(
+                        opening_flags.unwrap_or(QUEST_BATTLE_OPENING_FLAGS),
+                    )
+                } else {
                     SceneFlags::NO_DEFAULT_CAMERA
                         | SceneFlags::CONDITION_CUTSCENE
                         | SceneFlags::HIDE_HOTBAR
@@ -4849,9 +4859,9 @@ async fn process_server_msg(
                         | SceneFlags::DISABLE_STEALTH
                         | SceneFlags::DISABLE_CANCEL_EMOTE
                         | SceneFlags::INVIS_AOE
-                        | SceneFlags::UNK1,
-                    params,
-                )
+                        | SceneFlags::UNK1
+                };
+                lua_player.play_scene(1, flags, params)
             }
             FromServer::FATEComplete(fate_id) => {
                 connection.record_fate_completion();

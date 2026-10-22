@@ -673,6 +673,17 @@ impl DirectorData {
         }
     }
 
+    /// The opening scene's flags, for a script that sets `OPENING_SCENE_FLAGS` (quest battles: retail's differ from
+    /// one to the next.)
+    pub fn opening_scene_flags(&self) -> Option<u32> {
+        self.lua
+            .0
+            .globals()
+            .get::<Option<u32>>("OPENING_SCENE_FLAGS")
+            .ok()
+            .flatten()
+    }
+
     /// Called when a player finishes one of the director's scenes, for scripts that define `onSceneFinished`.
     pub fn scene_finished(&mut self, scene: u16) {
         let Ok(func) = self.lua.0.globals().get::<Function>("onSceneFinished") else {
@@ -2004,6 +2015,7 @@ pub fn handle_director_messages(
                                 instance.content_settings.unwrap_or_default(),
                             )
                             .bits(),
+                            director.opening_scene_flags(),
                         ),
                         DestinationNetwork::ZoneClients,
                     );

@@ -21,6 +21,10 @@
 -- The lines come through the battle talk window under BNpcName 750 (the masked mage) with no portrait. The player
 -- was an arcanist (its carbuncle, BNpcBase 13498, is in the capture too.)
 
+-- The opening cutscene's scene flags, as retail sent them (Bob's Chronofoil capture of 2026-10-21; they differ
+-- from one quest battle to the next.)
+OPENING_SCENE_FLAGS = 0xF841AF0B
+
 -- Where retail puts the player and which way they face (the capture.)
 START_POSITION = { x = -25.52, y = 10.87, z = -439.72 }
 START_ROTATION = 2.49

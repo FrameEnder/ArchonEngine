@@ -278,8 +278,9 @@ pub enum FromServer {
     TeleportOffered(u32, TeleportQuery),
     /// Sync to this new max level, and item level if the content has its own (ContentFinderCondition.ItemLevelSync.)
     SyncMaxLevel(u8, Option<u16>),
-    /// Play the initial cutscene for instanced content.
-    PlayInitialCutscene(u32, u32),
+    /// Play the initial cutscene for instanced content: its duration, settings, and for a quest battle its scene
+    /// flags (`OPENING_SCENE_FLAGS` in its script, if it sets them.)
+    PlayInitialCutscene(u32, u32, Option<u32>),
     /// A FATE was completed. This is meant to track SHARED FATE completion and not much else yet.
     FATEComplete(u32),
     /// A FATE this player took part in was completed: give its rewards.

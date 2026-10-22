@@ -13,7 +13,9 @@
 --   both down, and you within 15-19 yalms of the other two (both runs: you'd walked over to them, 50 yalms from
 --          where you fought the first pair): 4.2 and 5.3 s after the second fell, sequence 4, and those two come at
 --          you (they're unaware until then: in the won run you stood 14.5 yalms off for 3.6 s before)
---   those two down: 7.8 and 10.5 s later sequence 5 and the cutscene (the director's scene 5, 0xF8402EFB); the
+--   those two down and you over by the boss (both runs: you walked over and stood 13.7 and 16.4 yalms from it; 9.7
+--          and 7.8 s after you came within 20 yalms, 12.5 and 9.8 s after the second pair fell): sequence 5 and the
+--          cutscene (the director's scene 5, 0xF8402EFB); the
 --          allied marauder (3970427, level 30) and conjurer (3970428) appear. Nothing fights during it: the boss's
 --          first blow is 1 s after sequence 6 (both runs)
 --   the cutscene over: sequence 6; the boss goes after the marauder, and three more corsairs come (two archers
@@ -30,6 +32,9 @@
 -- first), then the boss again; the allied conjurer on the boss, healing you, the marauder and itself (Cure at 7-53%,
 -- the most hurt 19 times in 31); the corsair conjurers heal their side. How hard everyone hits and heals is in their
 -- timelines' recorded_amounts (QB24*_<base>.json).
+
+-- The opening cutscene's scene flags, as retail sent them (Bob's Chronofoil capture of 2026-10-21, both runs); quest battles' differ.
+OPENING_SCENE_FLAGS = 0xF8412EFB
 
 -- Where retail puts the player and which way they face (the capture.)
 START_POSITION = { x = 165.01, y = 14.1, z = 676.28 }
@@ -176,6 +181,10 @@ local engaged = false
 SECOND_PAIR_NOTICE_YALMS = 20
 second_pair_ready = false
 local second_engaged = false
+-- The cutscene comes 9 s after you're within 20 yalms of the boss with the second pair down.
+CUTSCENE_NEAR_YALMS = 20
+cutscene_ready = false
+local cutscene_started = false
 
 local function playerNear(info, layouts, yalms)
     local player = info and info.player
@@ -196,8 +205,9 @@ end
 BATTLE:onCleared(FIRST_PAIR, function(director)
     BATTLE:steps(FIRST_PAIR_DOWN_STEPS)
 end)
+-- The second pair down: the cutscene waits for you to come over to the boss (see onUpdate.)
 BATTLE:onCleared(SECOND_PAIR, function(director)
-    BATTLE:steps(SECOND_PAIR_DOWN_STEPS)
+    cutscene_ready = true
 end)
 -- The allied marauder takes the last five as they come, then the boss again.
 BATTLE:onHealth(BNPC_BOSS, SEVENTH_PHASE_HEALTH, function(director)
@@ -279,6 +289,10 @@ function onUpdate(director, health, player_health, info)
             director:set_sequence(4)
             BATTLE:engage(director, SECOND_PAIR, nil, ALLY_ENMITY) -- the player
         end
+    end
+    if cutscene_ready and not cutscene_started and playerNear(info, { BNPC_BOSS }, CUTSCENE_NEAR_YALMS) then
+        cutscene_started = true
+        BATTLE:steps(SECOND_PAIR_DOWN_STEPS)
     end
     BATTLE:update(director, health, player_health, info)
 end

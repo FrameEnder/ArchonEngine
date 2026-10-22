@@ -13,6 +13,9 @@
 -- The battle talk window (DirectorPopupMessage) shows the content's own text by its ID, so these are the IDs retail
 -- sent; the speaker's name and portrait are numbers from the same packets.
 
+-- The opening cutscene's scene flags, as retail sent them (Bob's Chronofoil captures); quest battles' differ.
+OPENING_SCENE_FLAGS = 0xF8412FF7
+
 -- Where retail puts the player and which way they face: their SpawnPlayer in Bob's Chronofoil capture (2026-10-16).
 START_POSITION = { x = -178.11, y = -27.43, z = 292.18 }
 START_ROTATION = -1.288

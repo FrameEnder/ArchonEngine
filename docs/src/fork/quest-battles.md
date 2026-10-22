@@ -136,6 +136,15 @@ when it ends, EventStart 0x0d with scene 60000 and the fight starts (Kawari's `o
 then the finish scene, UpdateQuest, and DirectorVars with sequence `0xFE` and the byte after it `0x80`, then the
 player is sent out.
 
+The opening scene's flags differ from one quest battle to the next, always the same for one battle (Bob's Chronofoil
+captures, 14 openings of 9 battles): 0xF841AEFB for 11, 12, 15, 35 and 36 (Kawari's default,
+`QUEST_BATTLE_OPENING_FLAGS` in `main.rs`), 0xF8412FF7 for 14, 0xF8412EFB for 24, 0xF841AF0B for 29; a script with
+other flags sets `OPENING_SCENE_FLAGS`. They hide the UI (0x800) and the other characters; Kawari used to send the
+duties' opening flags (0x0C53A401, right for InstanceContent), and the UI stayed up with no skip button. Retail's
+EventStart also has its flags byte set to 1 for the content directors' entering (0x0f) and progress (0x0d) events and
+a quest's entering event, 0 for every other event (228 events across the captures); Kawari sends the same
+(`event_start_flags`). Which of the two the skip button needs isn't known.
+
 `!directorscene <scene> [flags]` plays any scene of the current director, which is how the victory fanfare scene
 (60001, from the client's generic director script) was found.
 
@@ -256,7 +265,10 @@ player is sent out.
   come at you. On retail both times you'd walked 50 yalms over to them by then (14.5 and 18.4 yalms from the nearer
   at sequence 4, 4.2 and 5.3 s after the first pair fell; in the won run you'd stood there 3.6 s without them
   noticing), so whether it's your coming close or the time that starts them can't be told from the runs; Bob
-  remembers having to go to them. Those down: 9 s later sequence 5, the cutscene (scene 5, 0xF8402EFB) and the allied
+  remembers having to go to them. Those down, the cutscene waits for you to come within 20 yalms of the boss, and
+  9 s after that comes sequence 5 (retail: you'd walked over and stood 13.7 and 16.4 yalms from it, 9.7 and 7.8 s
+  after coming within 20 yalms; Bob's run of 2026-10-22 had it play 66 yalms away, as it followed the second pair's
+  fall): the cutscene (scene 5, 0xF8402EFB) and the allied
   marauder and conjurer (Cure below 55 %), held back (`holdBack`) until it ends. Nothing fights during it (retail:
   the boss's first blow is 1 s after sequence 6): the boss is unaware until then, as it would otherwise take on the
   allies appearing 13 yalms from it (Bob's bundle of 2026-10-22: it fought the marauder through the cutscene, reached

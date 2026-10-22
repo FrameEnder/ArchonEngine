@@ -53,8 +53,11 @@ add one when something is found.
   half starts with `warp_players` where retail used a loading screen to the same spot. Bob's runs of 24
   (2026-10-22): the crash at talk 105 and the conjurer healing from afar are fixed (his second run); the fight going
   on through the cutscene (the boss noticing the allies) and the second pair coming at him from 50 yalms are fixed
-  since, not yet retried in game. What starts the second pair on retail (coming close, or time) is a reading of two
-  runs. Without a Doubt takes emote 12
+  since, not yet retried in game, as is the cutscene waiting for him by the boss (it played 66 yalms away, his
+  third run). What starts the second pair and the cutscene on retail (coming close, or time) is a reading of two runs.
+* Quest battles' opening scenes now use retail's flags and EventStart flags (the UI stayed up, no skip button);
+  untested in game, and which of the two the skip button needs isn't known. Quest battles 18, 37, 38 and 39 have no
+  recorded opening and use the most common flags. Without a Doubt takes emote 12
   as the right one (the only one seen). The Lominsan Envoy's Zanthael yes/no (scene 2) is taken as the way back into
   the Command room, and its ticketers' later flights land at the next city's arrival, both from the client script
   only; A Mizzenmast Repast's scene 5 and Feint and Strike's EOBJECT0 (empty scenes) aren't played. Righting the

@@ -6,7 +6,7 @@ use crate::{
     lua::LuaPlayer,
 };
 use kawari::{
-    common::{CharacterMode, HandlerId, ObjectTypeId},
+    common::{CharacterMode, HandlerId, HandlerType, ObjectTypeId},
     config::get_config,
     ipc::zone::{
         ActorControlCategory, EventResume, EventScene, EventStart, EventType, SceneFlags,
@@ -100,6 +100,7 @@ impl ZoneConnection {
                 handler_id: event_id,
                 event_type,
                 event_arg,
+                flags: event_start_flags(event_id, event_type),
                 ..Default::default()
             }));
             self.send_ipc_self(ipc).await;
@@ -204,5 +205,23 @@ impl ZoneConnection {
                 scene
             );
         }
+    }
+}
+
+/// EventStart's flags byte. Retail sets it to 1 for the content directors' (InstanceContent, PublicContent,
+/// QuestBattle) entering and progress events and a quest's entering event, 0 for every other event (Bob's Chronofoil
+/// captures of 2026-10-21 and the release captures: 228 such events, none otherwise). What it does isn't known; a
+/// quest battle's opening scene came without the UI hidden or a skip button while it was 0 (along with its scene
+/// flags, see `QUEST_BATTLE_OPENING_FLAGS`.)
+fn event_start_flags(event_id: HandlerId, event_type: EventType) -> u8 {
+    let entering = event_type == EventType::EnterTerritory;
+    let progress = event_type == EventType::GameProgress;
+    let handler = event_id.handler_type();
+    if (handler.is_content_director() && (entering || progress))
+        || (handler == HandlerType::Quest && entering)
+    {
+        1
+    } else {
+        0
     }
 }
