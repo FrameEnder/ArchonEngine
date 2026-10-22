@@ -60,7 +60,8 @@ add one when something is found.
   though, took 47 on both: retail's Ruin hit it harder than the corsairs with the same gear (47 to 41), which Kawari
   doesn't do (a lower defense for it, perhaps; not known). Damage *taken* doesn't depend on the player's gear in
   quest battles (recorded amounts). The boss and some adds have actions without scripts (see
-  the battle's page).
+  the battle's page). Adds still standing when a quest battle is won are stopped (`end_fight`); what retail does with
+  them isn't recorded (every capture's won battles had none left), so they stay where they are rather than vanish.
 * Quest battles' opening scenes now use retail's flags and EventStart flags (the UI stayed up, no skip button);
   untested in game, and which of the two the skip button needs isn't known. Quest battles 18, 37, 38 and 39 have no
   recorded opening and use the most common flags. Without a Doubt takes emote 12

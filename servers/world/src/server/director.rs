@@ -132,6 +132,8 @@ pub enum LuaDirectorTask {
         scene: u16,
         flags: u32,
     },
+    /// The fight is over: every NPC stops fighting (`npc_behavior::end_fight`.)
+    EndFight,
     /// Send the players of a won quest battle back (see `CompleteQuestBattle`'s `stay`.)
     LeaveQuestBattle,
     /// Move every player to a position in the same instance through a loading screen, as retail does after To Guard
@@ -415,6 +417,10 @@ impl UserData for LuaDirector {
                 Ok(())
             },
         );
+        methods.add_method_mut("end_fight", |_, this, _: ()| {
+            this.tasks.push(LuaDirectorTask::EndFight);
+            Ok(())
+        });
         methods.add_method_mut("say", |_, this, (layout_id, key): (u32, String)| {
             this.tasks.push(LuaDirectorTask::Say { layout_id, key });
             Ok(())
@@ -1363,6 +1369,8 @@ pub fn director_tick(
             } => {
                 let quest_id = instance.directors.first().unwrap().quest_battle_quest_id;
                 let mut network = network.lock();
+                // Won: no one fights on through "Duty Complete" and the closing scene.
+                crate::server::npc_behavior::end_fight(instance, &mut network);
                 network.send_to_instance(
                     ObjectId::default(),
                     instance,
@@ -1377,6 +1385,10 @@ pub fn director_tick(
                     ),
                     DestinationNetwork::ZoneClients,
                 );
+            }
+            LuaDirectorTask::EndFight => {
+                let mut network = network.lock();
+                crate::server::npc_behavior::end_fight(instance, &mut network);
             }
             LuaDirectorTask::PlayScene { scene, flags } => {
                 let mut network = network.lock();

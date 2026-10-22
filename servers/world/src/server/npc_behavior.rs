@@ -445,7 +445,11 @@ pub fn npc_behavior(
                 }
             }
 
-            // Go after whoever we hate the most (that's still around), sticking with our current target on a tie.
+            // Go after whoever we hate the most (that's still around), sticking with our current target on a tie. Once
+            // the fight is over no one does (a damage over time or a heal would start it again.)
+            if instance.fight_over {
+                enmity.clear();
+            }
             enmity.retain(|actor, _| enemies.iter().any(|(id, _, _)| id == actor));
             let current_actor = match current_target {
                 Some(NpcTarget::Actor(actor)) if *state == NpcState::Hate => Some(*actor),
@@ -494,6 +498,7 @@ pub fn npc_behavior(
                 .contains(CharacterDataFlag::GUARD);
             if *state == NpcState::Wander
                 && !*returning_home
+                && !instance.fight_over
                 && !instance.unaware_npcs.contains(&spawn.common.layout_id)
                 && (guard
                     || spawn
@@ -1135,6 +1140,79 @@ pub fn npc_behavior(
                 haters.get_mut(actor).unwrap().push(*id);
             }
         }
+    }
+}
+
+/// The fight is over (a quest battle won): every NPC stops fighting and stays out of it. Retail, the moment
+/// Victory in Peril's boss fell: the allies sheathed and left battle (ActorControl ToggleWeapon 0, SetBattle 0) and
+/// dropped their targets half a second later (ActorControlTarget SetTarget 0), and the player left battle (Bob's
+/// Chronofoil capture of 2026-10-21, the won run). Enemies still standing (none were in that run) stop the same way;
+/// left to it, the last two archers killed the allied conjurer and shot the player through the closing scene (Bob's
+/// bundle of 2026-10-22.)
+pub fn end_fight(instance: &mut Instance, network: &mut NetworkState) {
+    let mut npcs = Vec::new();
+    let mut players = Vec::new();
+    for (id, actor) in &mut instance.actors {
+        match actor {
+            NetworkedActor::Npc {
+                spawn,
+                state,
+                enmity,
+                navmesh_target,
+                navmesh_path,
+                cast,
+                ..
+            } => {
+                if *state == NpcState::Dead {
+                    continue;
+                }
+                enmity.clear();
+                *state = NpcState::natural_state_of(spawn);
+                *navmesh_target = None;
+                navmesh_path.clear();
+                *cast = None;
+                spawn.common.target_id = ObjectTypeId::default();
+                npcs.push(*id);
+            }
+            NetworkedActor::Player { .. } => players.push(*id),
+            _ => {}
+        }
+    }
+    instance.fight_over = true;
+    for id in npcs {
+        network.send_ac_in_range_instance(
+            instance,
+            id,
+            ActorControlCategory::ToggleWeapon {
+                shown: false,
+                unk_flag: 1,
+                unk2: 1,
+            },
+        );
+        network.send_ac_in_range_instance(
+            instance,
+            id,
+            ActorControlCategory::SetBattle { battle: false },
+        );
+        network.send_in_range_instance(
+            id,
+            instance,
+            FromServer::ActorControlTarget(
+                id,
+                ObjectTypeId::default(),
+                ActorControlCategory::SetTarget,
+            ),
+            DestinationNetwork::ZoneClients,
+        );
+    }
+    // Retail sent the player's as an ActorControl about themselves, to them too.
+    for id in players {
+        network.send_in_range_inclusive_instance(
+            id,
+            instance,
+            FromServer::ActorControl(id, ActorControlCategory::SetBattle { battle: false }),
+            DestinationNetwork::ZoneClients,
+        );
     }
 }
 

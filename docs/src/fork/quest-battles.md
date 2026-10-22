@@ -52,6 +52,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `fail_quest_battle()` | Loses: players go back where they entered, the quest stays on the same step to retry. Retail sets sequence `0xFE` first and sends them out about 6 s later. |
 | `set_hate(npc, target, amount)` | Gives NPC `npc` enmity on `target` (another NPC's layout ID, or the player when `nil`). Used to make allies and enemies fight each other. |
 | `use_action(npc, action, target)` | Makes an NPC use an action (with its cast bar and area aimed where the target stands). |
+| `end_fight()` | The fight is over: every NPC still standing forgets whom it hated, sheathes, leaves battle and drops its target, the players leave battle (retail's packets the moment Victory in Peril's boss fell: ActorControl ToggleWeapon 0 and SetBattle 0, ActorControlTarget SetTarget 0), and none takes anyone on again (`Instance::fight_over`: not hits, heals or damage over time, nor anyone coming close). `complete_quest_battle` does it too, so no one fights on through "Duty Complete" and the closing scene. |
 | `battle_talk(npc, name_id, text_id, icon, duration_ms, kind)` | The **battle talk window** (DirectorPopupMessage, opcode 162 on 7.57), as retail shows it: `text_id` is the content's text by ID (retail's IDs from a recording; one outside the content's range crashes the client), `name_id` the speaker's BNpcName, `icon` the portrait, 4000 ms unless given. It comes from `npc` if it's there. `kind` is the speaker's object kind, 2 (BattleNpc) unless given; 3 (EventNpc) makes `name_id` an ENpcResident, for a speaker who isn't in the fight (Victory in Peril's watcher). A name that isn't in the sheet `kind` points to crashes the client. A `talk` step passes its speaker's `kind`. |
 | `play_scene(scene, flags)` | Plays one of the director's scenes for every player (event type GameProgress), e.g. To Guard a Guardian's cutscene, scene 6 with flags `0xF8402EFB`. The script hears `onSceneFinished` when it's over. |
 | `despawn_bnpc(layout_id)` | Removes an NPC without it dying (no `onActorDeath`). |
@@ -275,7 +276,10 @@ a quest's entering event, 0 for every other event (228 events across the capture
   unaware until then, as it would otherwise take on the allies appearing 13 yalms from it (Bob's bundle of
   2026-10-22: it fought the marauder through the cutscene, reached 55 % and turned on him). After it sequence 6, the allies released, the boss on the marauder, three more corsairs and talks 105–108 every 5 s; the boss
   at 55 %: sequence 7, five more (after the marauder), the boss on you, 8 at 4.5 s and 109–111; at 25 %: 9 and 112,
-  10 5.5 s later, 115, 113, 114. Its health at 0: 2 s later sequence 11, "Duty Complete" (scene 11, 0xF8402FFF) and
+  10 5.5 s later, 115, 113, 114. Its health at 0: the fight ends at once (`end_fight`; retail: the allies sheathed
+  and left battle, and so did you, in the same packets as its death; the won run had no adds left, Bob's run of
+  2026-10-22 had two archers who went on to kill the allied conjurer and shoot him through the closing scene); 2 s
+  later sequence 11, "Duty Complete" (scene 11, 0xF8402FFF) and
   114 if not said yet; the quest moves to 4. The corsair conjurers Cure their side: on retail 81–86 HP each, 5.5–7.7 s
   apart, below about 50 % (34 Cures in the two runs). The one in the second pair (4167379) only ever Cured itself and
   the archer beside it, never the first pair, so only those two are its targets; the third (3970673) Cures the boss

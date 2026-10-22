@@ -27,8 +27,9 @@
 --          and 111 every 5 s from 3 s in
 --   the boss at 25% (25.2% -> 23.2% and 25.7% -> 20.8%): sequence 9 and the boss's 112; sequence 10 about 5.5 s
 --          later (6.1 and 4.9 s), 115 3 s after it and 113 6-7 s after that; 114 5 s later (the lost run)
---   the boss down (the won run, 2 s after its health reached 0, as its death animation ended): sequence 11, "Duty Complete", 114 (if not said yet) 3 s later, and the
---          quest battle's scene 11 (0xF8402FFF); the quest moves to sequence 4
+--   the boss down: at once the allies sheathe and leave battle, and so do you (the won run had no adds left; Kawari
+--          stops any still standing too); 2 s later (as its death animation ended) sequence 11, "Duty Complete", 114
+--          (if not said yet) 3 s later, and the quest battle's scene 11 (0xF8402FFF); the quest moves to sequence 4
 --   the player down (the lost run): sequence 0xFE, and out 6 s later
 -- Who goes after whom (both runs): the allied marauder on the boss, then the last five as they come (newest
 -- first), then the boss again; the allied conjurer on the boss, healing you, the marauder and itself (Cure at 7-53%,
@@ -307,6 +308,9 @@ function onActorDeath(director, layout_id, position)
     BATTLE:died(director, layout_id)
     if layout_id == BNPC_BOSS then
         over = true
+        -- The fight ends as it falls: everyone sheathes and leaves battle (retail, the same moment), adds still
+        -- standing too.
+        director:end_fight()
         BATTLE:clearSteps()
         BATTLE:steps(WON_STEPS)
     end

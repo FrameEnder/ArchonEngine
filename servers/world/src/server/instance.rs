@@ -155,6 +155,9 @@ pub struct Instance {
     /// Aggressive BNpcs (by layout ID) a director has told not to notice anyone who comes close: they fight only when
     /// hit or sent after someone (`director:set_notice`; Victory in Peril's boss through its cutscene.)
     pub unaware_npcs: std::collections::HashSet<u32>,
+    /// The fight here is over (a quest battle won, `npc_behavior::end_fight`): NPCs don't take anyone on again, whatever
+    /// hits or heals them.
+    pub fight_over: bool,
     /// List of running/preparing FATEs.
     pub fates: Vec<FateInstance>,
     /// List of FATEs that are able to spawn.
