@@ -165,13 +165,15 @@ pub enum LuaDirectorTask {
     /// Shows the battle talk window (DirectorPopupMessage), as retail does in quest battles: `text_id` is the
     /// content's text (InstanceContentTextData; one outside the content's range crashes the client, so use recorded
     /// IDs), `name_id` the speaker's BNpcName and `icon` the portrait. It comes from the BNpc at `layout_id` if
-    /// it's there.
+    /// it's there. `kind` is the speaker's ObjectKind: 2 (BattleNpc, `name_id` a BNpcName) or 3 (EventNpc, `name_id`
+    /// an ENpcResident); the client crashes on a name that isn't in the sheet `kind` points it to.
     BattleTalk {
         layout_id: u32,
         name_id: u32,
         text_id: u32,
         icon: u32,
         duration_ms: u32,
+        kind: u8,
     },
     /// Has an NPC yell a line from the NpcYell sheet: a speech bubble over them, and the line in chat.
     Yell {
@@ -426,12 +428,13 @@ impl UserData for LuaDirector {
             "battle_talk",
             |_,
              this,
-             (layout_id, name_id, text_id, icon, duration_ms): (
+             (layout_id, name_id, text_id, icon, duration_ms, kind): (
                 u32,
                 u32,
                 u32,
                 u32,
                 Option<u32>,
+                Option<u8>,
             )| {
                 this.tasks.push(LuaDirectorTask::BattleTalk {
                     layout_id,
@@ -440,6 +443,8 @@ impl UserData for LuaDirector {
                     icon,
                     // Retail shows every line for 4 seconds.
                     duration_ms: duration_ms.unwrap_or(4000),
+                    // A BattleNpc unless said otherwise.
+                    kind: kind.unwrap_or(BATTLE_TALK_KIND_BATTLE_NPC),
                 });
                 Ok(())
             },
@@ -1507,6 +1512,7 @@ pub fn director_tick(
                 text_id,
                 icon,
                 duration_ms,
+                kind,
             } => {
                 let actor_id = instance
                     .find_npc(*layout_id)
@@ -1522,7 +1528,7 @@ pub fn director_tick(
                     text_data_id: *text_id,
                     duration_msecs: *duration_ms,
                     icon: *icon,
-                    kind: 2,
+                    kind: *kind,
                     style: 0,
                     params_count: 0,
                     param1: 0,
@@ -2093,6 +2099,11 @@ pub fn handle_director_messages(
 }
 
 /// How often a duty's time left is re-sent (retail: every 300 s, Bob's Chronofoil captures.)
+/// The battle talk window's speaker kind for a BattleNpc (`name_id` a BNpcName); retail's quest battles send 2 for
+/// every speaker in the fight and 3 (EventNpc, an ENpcResident name) for one who isn't (Victory in Peril's watcher,
+/// Bob's Chronofoil capture of 2026-10-21.)
+const BATTLE_TALK_KIND_BATTLE_NPC: u8 = 2;
+
 pub const DUTY_CLOCK_RESYNC: Duration = Duration::from_secs(300);
 
 /// Re-sends a running duty's time left to its players every `DUTY_CLOCK_RESYNC`, as retail does.

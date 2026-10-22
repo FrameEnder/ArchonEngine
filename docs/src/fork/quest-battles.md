@@ -52,7 +52,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `fail_quest_battle()` | Loses: players go back where they entered, the quest stays on the same step to retry. Retail sets sequence `0xFE` first and sends them out about 6 s later. |
 | `set_hate(npc, target, amount)` | Gives NPC `npc` enmity on `target` (another NPC's layout ID, or the player when `nil`). Used to make allies and enemies fight each other. |
 | `use_action(npc, action, target)` | Makes an NPC use an action (with its cast bar and area aimed where the target stands). |
-| `battle_talk(npc, name_id, text_id, icon, duration_ms)` | The **battle talk window** (DirectorPopupMessage, opcode 162 on 7.57), as retail shows it: `text_id` is the content's text by ID (retail's IDs from a recording; one outside the content's range crashes the client), `name_id` the speaker's BNpcName, `icon` the portrait, 4000 ms unless given. It comes from `npc` if it's there. |
+| `battle_talk(npc, name_id, text_id, icon, duration_ms, kind)` | The **battle talk window** (DirectorPopupMessage, opcode 162 on 7.57), as retail shows it: `text_id` is the content's text by ID (retail's IDs from a recording; one outside the content's range crashes the client), `name_id` the speaker's BNpcName, `icon` the portrait, 4000 ms unless given. It comes from `npc` if it's there. `kind` is the speaker's object kind, 2 (BattleNpc) unless given; 3 (EventNpc) makes `name_id` an ENpcResident, for a speaker who isn't in the fight (Victory in Peril's watcher). A name that isn't in the sheet `kind` points to crashes the client. A `talk` step passes its speaker's `kind`. |
 | `play_scene(scene, flags)` | Plays one of the director's scenes for every player (event type GameProgress), e.g. To Guard a Guardian's cutscene, scene 6 with flags `0xF8402EFB`. The script hears `onSceneFinished` when it's over. |
 | `despawn_bnpc(layout_id)` | Removes an NPC without it dying (no `onActorDeath`). |
 | `warp_players(x, y, z, rotation)` | Moves every player in the instance through a loading screen to a position in it (PrepareZoning to the same territory, then ActorSetPos). |
@@ -89,6 +89,7 @@ BATTLE:onHealth(BNPC_BOSS, 75, function(director) BATTLE:spawn(director, WAVE_1)
 | `enemy(layout, role)` | `group` (a name or a list, e.g. `{ "lostwings", "adds" }`); `attacks`: whom it goes for first (an ally, or the player when `nil`) with `enmity` (300); `passive = true`: no one at first, it waits to be hit (To Guard a Guardian's masked mage); it can have `heals` too (the sincallers heal Quzal). |
 | heals | `{ action, targets (layout IDs, Battle.PLAYER, or "allies" for its whole side), below (%), every (s), say (a function) }`: heals whichever target is lowest under `below`. |
 | `spawn(director, layouts)` / `remove(director, layouts)` | Brings NPCs in as their roles say (placement, first target) / takes them out without dying. |
+| `holdBack(layouts)` / `release(director, layouts)` | Keeps allies out of the fight, spawned or not, until released (the tank then goes at once, the others `FOLLOW_DELAY` later): Victory in Peril's allies appear during a cutscene and wait for it to end. |
 | `change(director, name, changes)` | A new context: `changes = { [layout] = { focus = … } }` from now on (the boss gone, someone joining). |
 | `steps(list)` | Timed steps, one after another: `{ updates after the one before, kind, … }` with kinds `sequence`, `talk`, `say`, `yell`, `spawn`, `remove`, `action`, `change`, `call`. A step runs the update after its count is up. |
 | `onHealth(layout, percent, fn)`, `onCleared(group or list, fn)` | Phases: once an NPC's health reaches a mark (or it falls before it), once a group (or a list) that arrived has all fallen. |
@@ -123,7 +124,10 @@ BattleNpc and makes the packet 41 bytes; it's a plain `u8` now. OverlayPlugin re
 opcode 162, 40 bytes, the same fields; see [Outside sources](sources.md#overlayplugin)). The text IDs are the content's own (101–106 in Leia's
 Legacy, 161–181 in To Guard a Guardian, 126–131 in Chasing Shadows, 152–154 in Spirithold Broken), so they're copied
 from a recording or capture. A speaker who isn't in the battle (Spirithold Broken's masked mage) is sent with no actor
-and no portrait, only the BNpcName.
+and no portrait, only the BNpcName. Victory in Peril's watcher, who isn't a BNpc at all, came with kind 3, an
+EventNpc's actor ID (0x4000818f) and an ENpcResident name (1002702), the only talk of that battle not of kind 2; sent
+as a BattleNpc with that name, the client crashed (Bob's bundle of 2026-10-22). Kawari sends it with kind 3 and no
+actor.
 
 The retail flow around a quest battle, from the same recording: EventStart (type 0x0f) and the opening scene 1;
 when it ends, EventStart 0x0d with scene 60000 and the fight starts (Kawari's `onCommence`); on winning scene 60001,
@@ -247,10 +251,14 @@ player is sent out.
 * The boss (3970651) and four corsairs stand by; the first two fight once one of them is hurt (sequence 3: retail's
   are when they noticed the player, which Kawari can't time), both down: 2 s later sequence 4 and the other two come;
   those down: 9 s later sequence 5, the cutscene (scene 5, 0xF8402EFB) and the allied marauder and conjurer (Cure
-  below 55 %); after it sequence 6, the boss on the marauder, three more corsairs and talks 105–108 every 5 s; the boss
+  below 55 %), held back (`holdBack`) until it ends: nothing fights during it; after it sequence 6, the allies
+  released, the boss on the marauder, three more corsairs and talks 105–108 every 5 s; the boss
   at 55 %: sequence 7, five more (after the marauder), the boss on you, 8 at 4.5 s and 109–111; at 25 %: 9 and 112,
   10 5.5 s later, 115, 113, 114. Its health at 0: 2 s later sequence 11, "Duty Complete" (scene 11, 0xF8402FFF) and
-  114 if not said yet; the quest moves to 4. The corsair conjurers Cure their side.
+  114 if not said yet; the quest moves to 4. The corsair conjurers Cure their side: on retail 81–86 HP each, 5.5–7.7 s
+  apart, below about 50 % (34 Cures in the two runs). The one in the second pair (4167379) only ever Cured itself and
+  the archer beside it, never the first pair, so only those two are its targets; the third (3970673) Cures the boss
+  and the adds.
 * Timelines `QB24*_<base>.json`. `questkit battle-sim 24` (the won run, NPC health held): within 2 s, sequence 3 within
   5 s (`tolerances`; it's when you're noticed).
 

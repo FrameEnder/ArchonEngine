@@ -39,10 +39,12 @@ FIRST_PAIR = { 4167390, 4167391 }
 SECOND_PAIR = { 4167378, 4167379 }
 SECOND_WAVE = { 3970655, 3970671, 3970673 }
 THIRD_WAVE = { 4103658, 3970675, 3970686, 3970685, 3970684 }
+ALLIES = { BNPC_ALLY_MARAUDER, BNPC_ALLY_CONJURER }
 
 -- Who's talking, by name (BNpcName, or the ENpcResident for the one not in the fight) and portrait, as retail sent
--- them.
-SPEAKER_WATCHER = { layout = 0, name = 1002702, icon = 73237 }
+-- them. The watcher isn't in the fight, so retail names it as an EventNpc (kind 3; the client crashes looking an
+-- ENpcResident up as a BNpcName, Bob's bundle of 2026-10-22.)
+SPEAKER_WATCHER = { layout = 0, name = 1002702, icon = 73237, kind = 3 }
 SPEAKER_BOSS = { layout = BNPC_BOSS, name = 811, icon = 73238 }
 SPEAKER_MARAUDER = { layout = BNPC_ALLY_MARAUDER, name = 815, icon = 73239 }
 SPEAKER_CORSAIR = { layout = 3970684, name = 814, icon = 73240 }
@@ -78,11 +80,16 @@ SECOND_PAIR_DOWN_STEPS = {
     { 0, "call", function(director)
         director:play_scene(CUTSCENE_SCENE, CUTSCENE_FLAGS)
     end },
-    { 1, "spawn", { BNPC_ALLY_MARAUDER, BNPC_ALLY_CONJURER } },
+    -- They appear during the cutscene but wait for it to end (retail: nothing fights until sequence 6.)
+    { 0, "call", function(director)
+        BATTLE:holdBack(ALLIES)
+    end },
+    { 1, "spawn", ALLIES },
 }
 SIXTH_STEPS = {
     { 0, "sequence", 6 },
     { 0, "call", function(director)
+        BATTLE:release(director, ALLIES)
         director:set_hate(BNPC_BOSS, BNPC_ALLY_MARAUDER, ALLY_ENMITY)
     end },
     { 1, "spawn", SECOND_WAVE },
@@ -147,14 +154,18 @@ BATTLE:enemy(3970671, { group = "adds", attacks = BNPC_ALLY_CONJURER })
 for _, id in ipairs(THIRD_WAVE) do
     BATTLE:enemy(id, { group = { "third", "adds" }, attacks = BNPC_ALLY_MARAUDER })
 end
--- The corsair conjurers Cure their side (retail: 34 Cures, at 2-51%, mostly the most hurt.)
-for _, id in ipairs({ 4167379, 3970673 }) do
-    BATTLE:enemy(id, {
-        group = id == 4167379 and "second" or "adds",
-        passive = id == 4167379,
-        heals = { { action = ACTION_CURE, targets = "allies", below = 50, every = 7 } },
-    })
-end
+-- The corsair conjurers Cure their side (retail: 34 Cures of 81-86 HP, 5.5-7.7 s apart, at 2-51%, mostly the most
+-- hurt.) The first one only ever Cured itself and the archer beside it, never the first pair (it isn't fighting yet
+-- then); the second one the boss and the adds.
+BATTLE:enemy(4167379, {
+    group = "second",
+    passive = true,
+    heals = { { action = ACTION_CURE, targets = { 4167378, "self" }, below = 50, every = 7 } },
+})
+BATTLE:enemy(3970673, {
+    group = "adds",
+    heals = { { action = ACTION_CURE, targets = "allies", below = 50, every = 7 } },
+})
 
 -- The first pair fights once one of them is hurt (Kawari can't tell when they'd notice you.)
 local engaged = false
@@ -180,7 +191,8 @@ local said_last = false
 function sayLast(director)
     if not said_last then
         said_last = true
-        director:battle_talk(SPEAKER_WATCHER.layout, SPEAKER_WATCHER.name, 114, SPEAKER_WATCHER.icon)
+        director:battle_talk(SPEAKER_WATCHER.layout, SPEAKER_WATCHER.name, 114, SPEAKER_WATCHER.icon, nil,
+            SPEAKER_WATCHER.kind)
     end
 end
 

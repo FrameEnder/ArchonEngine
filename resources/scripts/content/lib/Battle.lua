@@ -213,8 +213,8 @@ function Battle:spawn(director, layouts)
                 director:set_hate(layout, role.attacks, role.enmity or Battle.STARTING_ENMITY) -- nil is the player
             end
         elseif role.role ~= "tank" and #self:withRole("ally", "tank") > 0 then
-            -- The tank goes in first; everyone else follows a moment later.
-            self.hold[layout] = self.updates + Battle.FOLLOW_DELAY
+            -- The tank goes in first; everyone else follows a moment later (or later still, if held: Battle:holdBack.)
+            self.hold[layout] = math.max(self.hold[layout] or 0, self.updates + Battle.FOLLOW_DELAY)
         end
         self:applyPlacement(director, layout)
     end
@@ -238,6 +238,28 @@ function Battle:spawn(director, layouts)
             if not placed_now then
                 self:applyPlacement(director, other)
             end
+        end
+    end
+    self:retarget(director)
+end
+
+-- Keeps allies out of the fight, spawned or not, until Battle:release (e.g. through a cutscene, as retail waits for
+-- it to end.)
+function Battle:holdBack(layouts)
+    for _, layout in ipairs(layouts) do
+        self.hold[layout] = math.huge
+    end
+end
+
+-- Lets allies held back fight: the tank at once, everyone else a moment later.
+function Battle:release(director, layouts)
+    local has_tank = #self:withRole("ally", "tank") > 0
+    for _, layout in ipairs(layouts) do
+        local role = self.roles[layout]
+        if role ~= nil and role.role ~= "tank" and has_tank then
+            self.hold[layout] = self.updates + Battle.FOLLOW_DELAY
+        else
+            self.hold[layout] = nil
         end
     end
     self:retarget(director)
@@ -532,7 +554,7 @@ function Battle:runStep(director, step)
     if kind == "sequence" then
         director:set_sequence(step[3])
     elseif kind == "talk" then
-        director:battle_talk(step[3].layout, step[3].name, step[4], step[3].icon)
+        director:battle_talk(step[3].layout, step[3].name, step[4], step[3].icon, nil, step[3].kind)
     elseif kind == "say" then
         director:say(step[3], step[4])
     elseif kind == "yell" then
