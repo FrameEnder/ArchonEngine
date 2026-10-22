@@ -27,3 +27,23 @@ where the work stands.
   MGP payouts), the director packets by opcode, and that obstacles run on timers.
 * **Missing**: packets inside the rounds (needs Recorder 2.2+ duty packets).
 * Not scheduled.
+
+## Sastasha with a Duty Finder party (Bob's Chronofoil capture of 2026-10-22)
+
+Five runs of Sastasha (territory 1036, ContentFinderCondition 4) with Duty Finder parties of real players, Bob on
+White Mage (runs 1–3), Dark Knight (4) and Gunbreaker (5): 8.1, 8.6, 13.0, 11.3 and 8.2 minutes (the first two with
+practised parties, the third with a new tank and side rooms explored, the last two with Bob tanking). For the party
+bots' stage 3 (Sastasha's route and rules) and loot:
+
+* **The Duty Finder**: ContentFinderUpdate twice as you queue, ContentFinderFound 9–249 s later (a second Found when
+  someone declined), ContentFinderCommencing (state 3, then 4 once you accept with ContentFinderAction), then the
+  duty's ZoneInit with UnkContentFinder2 (4, 0, …) and (4, 4, …); (4, 5, …) as you leave.
+* **The party**: see [Party Bots](party-bots.md#the-duty-finder-stage-2).
+* **Enemies**: 130–155 per run of 36–39 kinds, level 15; the bosses' HP 5869 (base 417), 4785 (416, 413) and 3828
+  (411); 16–19 different enemy actions per run, every boss's kit in every run.
+* **Coffers and loot**: 43 coffers spawned over the five runs (SpawnTreasure), 15 opened (OpenedTreasure; 5 by
+  Bob, OpenTreasure from his client); 278 LootMessage. The Need/Greed/Pass window and rolls are packets questkit doesn't
+  name yet: from the client opcode 766 (16 bytes, 15 times) and 769 (16 bytes, 4), from the server 807 (16, 18), 462
+  (16, 15) and 272 (88, 12), all only while coffers were open.
+* Not implemented yet: the route and rules for bots (stage 3), loot rolls. Upstream's Sastasha script
+  (`content/s1d1_re.lua`) runs the duty itself.

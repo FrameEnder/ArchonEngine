@@ -3009,6 +3009,10 @@ pub async fn server_main_loop(
                             &mut game_data,
                             &lua,
                         ) {
+                            // Alone through the Duty Finder: bots fill the party once they've loaded in.
+                            if actor_ids.len() == 1 {
+                                target_instance.pending_duty_bots.insert(actor_ids[0].1);
+                            }
                             for (client_id, actor_id) in &actor_ids {
                                 target_instance.insert_empty_actor(*actor_id);
 
@@ -3075,6 +3079,15 @@ pub async fn server_main_loop(
                 ) => {
                     let mut data = data.lock();
                     let mut network = network.lock();
+
+                    // Their bots stay behind (and go with the instance), and their party list empties.
+                    if party_bot::dismiss_party_bots(&mut data, &mut network, from_actor_id) > 0 {
+                        network.send_to(
+                            from_client_id,
+                            FromServer::BotParty(None),
+                            DestinationNetwork::ZoneClients,
+                        );
+                    }
 
                     remove_actor_from_instance(&mut data, &mut network, from_actor_id);
 

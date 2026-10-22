@@ -9,6 +9,9 @@ use kawari::{
         WaymarkPosition, WaymarkPreset,
     },
 };
+/// The made-up party ID of a player's bot party: their actor ID with this on top.
+const BOT_PARTY_ID_BASE: u64 = 0x00B1_0000_0000_0000;
+
 impl ZoneConnection {
     // A party event happened, so we need to inform our client.
     pub async fn send_party_update(
@@ -125,6 +128,57 @@ impl ZoneConnection {
 
         // Ensure our online status is updated, since that is affected by whether we're in a party etc.
         self.update_online_status().await;
+    }
+
+    /// The party list of this player and the bots that joined them in a duty, or (None) an empty one as they leave it.
+    /// As retail's Duty Finder parties (Bob's Chronofoil capture of five Sastasha runs, 2026-10-22): the PartyList,
+    /// then a PartyUpdate (JoinParty as the duty starts, DisbandingParty as it ends). It isn't a party the server
+    /// keeps (`party_id` stays 0), so party chat and invites are unaffected.
+    pub async fn send_bot_party(&mut self, members: Option<Vec<PartyMemberEntry>>) {
+        let me = PartyUpdateTargets {
+            execute_account_id: self.player_data.character.service_account_id as u64,
+            execute_content_id: self.player_data.character.content_id as u64,
+            execute_name: self.player_data.character.name.clone(),
+            target_account_id: self.player_data.character.service_account_id as u64,
+            target_content_id: self.player_data.character.content_id as u64,
+            target_name: self.player_data.character.name.clone(),
+        };
+        let (mut list, update_status, party_id) = match members {
+            Some(list) => (
+                list,
+                PartyUpdateStatus::JoinParty,
+                BOT_PARTY_ID_BASE | self.player_data.character.actor_id.0 as u64,
+            ),
+            None => (Vec::new(), PartyUpdateStatus::DisbandingParty, 0),
+        };
+        let member_count = list.len() as u8;
+        list.resize(PartyMemberEntry::NUM_ENTRIES, PartyMemberEntry::default());
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::PartyList {
+            members: list,
+            member_count,
+            leader_index: 0,
+            party_id,
+            party_chatchannel: ChatChannel {
+                channel_number: 0,
+                channel_type: ChatChannelType::Party,
+                world_id: self.config.world_id,
+            },
+        });
+        self.send_ipc_self(ipc).await;
+
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::PartyUpdate {
+            execute_account_id: me.execute_account_id,
+            target_account_id: me.target_account_id,
+            execute_content_id: me.execute_content_id,
+            target_content_id: me.target_content_id,
+            update_status,
+            execute_name: me.execute_name,
+            target_name: me.target_name,
+            unk1: 1,
+            unk2: 2,
+            unk3: member_count,
+        });
+        self.send_ipc_self(ipc).await;
     }
 
     pub fn party_member_entries(&self) -> Vec<PlayerEntry> {

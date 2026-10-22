@@ -14,9 +14,11 @@
 //!   (or the player) is attacking; the healer heals whoever is lowest when someone's below `HEAL_BELOW_PERCENT`, and
 //!   otherwise attacks too.
 //!
-//! What isn't done yet (stage 1): bots aren't in the party list (retail lists Duty Support members through its own
-//! packets, still to be recorded), don't follow you to another zone, don't avoid area attacks, use only single-target
-//! actions, and aren't level synced.
+//! Stage 2: entering a level-synced duty alone through the Duty Finder fills the party's other roles with bots at the
+//! duty's level, listed in the party list as retail lists a Duty Finder party (`fill_duty_party`, `party_list`).
+//!
+//! What isn't done yet: bots don't follow you to another zone, don't avoid area attacks, use only single-target
+//! actions, and don't know any dungeon's route or rules (stage 3).
 
 use std::{
     collections::{HashMap, HashSet},
@@ -32,7 +34,8 @@ use kawari::{
     },
     config::get_config,
     ipc::zone::{
-        BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DisplayFlag, ObjectKind, SpawnNpc,
+        BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DisplayFlag, ObjectKind,
+        PartyMemberEntry, SpawnNpc,
     },
 };
 use parking_lot::Mutex;
@@ -43,6 +46,7 @@ use physis::{
 
 use crate::{
     FromServer, GameData, ItemInfoQuery,
+    gamedata::PartyRoles,
     inventory::{Inventory, Item},
     server::{
         WorldServer,
@@ -597,10 +601,26 @@ pub fn spawn_party_bot(
     let classjob = game_data
         .find_combat_classjob(class_name)
         .ok_or_else(|| format!("No combat class or job is called \"{class_name}\"."))?;
+    spawn_bot(
+        data, game_data, usable, leader, classjob, BOT_LEVEL, as_chocobo,
+    )
+    .map(|(_, name)| name)
+}
+
+/// Spawns a bot of `classjob` at `level` next to the player `leader`, and has it join them. Returns its actor ID and
+/// its name and class abbreviation.
+fn spawn_bot(
+    data: &mut WorldServer,
+    game_data: &mut GameData,
+    usable: &HashMap<u32, String>,
+    leader: ObjectId,
+    classjob: u8,
+    level: u8,
+    as_chocobo: bool,
+) -> Result<(ObjectId, String), String> {
     let (role_column, parent, primary_stat) = game_data
         .classjob_role(classjob)
         .ok_or_else(|| format!("No ClassJob row {classjob}."))?;
-    let level = BOT_LEVEL;
 
     // Gear, worn on an inventory so the model helpers work on it.
     let gear = game_data.best_gear(classjob, level);
@@ -770,8 +790,166 @@ pub fn spawn_party_bot(
         "Party bot {name} ({abbreviation}, level {level}, {hp} HP) joined {leader}: gear {item_ids:?}, rotation {:?}, heal {heal:?}",
         actions.iter().map(|a| a.id).collect::<Vec<_>>()
     );
-    Ok(format!("{name} ({abbreviation})"))
+    Ok((actor_id, format!("{name} ({abbreviation})")))
 }
+
+/// The base classes Duty Finder bots are picked from (Gladiator, Pugilist, Marauder, Lancer, Archer, Conjurer,
+/// Thaumaturge, Arcanist, Rogue): the classes Kawari has action scripts for, levels 1-50. Each one's role is read from
+/// the ClassJob sheet.
+const DUTY_BOT_CLASSES: [u8; 9] = [1, 2, 3, 4, 5, 6, 7, 26, 29];
+
+/// The classes of the bots that fill a party of `roles` for a player on `player_classjob`: a role the player plays is
+/// theirs, the rest are bots, each of a random class of that role. A DPS player takes a melee or ranged place, their
+/// own kind first.
+pub fn duty_bot_classes(
+    game_data: &mut GameData,
+    roles: PartyRoles,
+    player_classjob: u8,
+) -> Vec<u8> {
+    let player_role = game_data
+        .classjob_role(player_classjob)
+        .map(|(role, _, _)| role)
+        .unwrap_or_default();
+    let [tanks, healers, melee, ranged] = roles_left(roles, player_role);
+
+    let mut by_role: HashMap<u8, Vec<u8>> = HashMap::new();
+    for classjob in DUTY_BOT_CLASSES {
+        if let Some((role, _, _)) = game_data.classjob_role(classjob) {
+            by_role.entry(role).or_default().push(classjob);
+        }
+    }
+    let mut classes = Vec::new();
+    for (role, count) in [
+        (ROLE_TANK, tanks),
+        (ROLE_HEALER, healers),
+        (ROLE_MELEE, melee),
+        (ROLE_RANGED, ranged),
+    ] {
+        for _ in 0..count {
+            if let Some(choices) = by_role.get(&role)
+                && let Some(classjob) = fastrand::choice(choices)
+            {
+                classes.push(*classjob);
+            }
+        }
+    }
+    // The party is never bigger than the duty allows (the player counts too.)
+    classes.truncate(roles.members.saturating_sub(1) as usize);
+    classes
+}
+
+/// How many tanks, healers, melee and ranged DPS a party of `roles` still needs once a player whose ClassJob Role is
+/// `player_role` has joined it.
+fn roles_left(roles: PartyRoles, player_role: u8) -> [u8; 4] {
+    let (mut tanks, mut healers, mut melee, mut ranged) =
+        (roles.tanks, roles.healers, roles.melee, roles.ranged);
+    match player_role {
+        ROLE_TANK => tanks = tanks.saturating_sub(1),
+        ROLE_HEALER => healers = healers.saturating_sub(1),
+        ROLE_MELEE if melee > 0 => melee -= 1,
+        ROLE_RANGED if ranged > 0 => ranged -= 1,
+        _ if melee > 0 => melee -= 1,
+        _ => ranged = ranged.saturating_sub(1),
+    }
+    [tanks, healers, melee, ranged]
+}
+
+/// Fills the party of a player who came into the duty `content_finder_condition` through the Duty Finder alone: bots
+/// for the roles they don't play, level synced to the duty (ClassJobLevelSync). Unsynced duties get none. Returns the
+/// bots' actor IDs.
+pub fn fill_duty_party(
+    data: &mut WorldServer,
+    game_data: &mut GameData,
+    usable: &HashMap<u32, String>,
+    leader: ObjectId,
+    content_finder_condition: u16,
+) -> Vec<ObjectId> {
+    let Some(level) = game_data.find_content_synced_level(content_finder_condition) else {
+        return Vec::new();
+    };
+    let Some(roles) = game_data.content_party_roles(content_finder_condition) else {
+        return Vec::new();
+    };
+    let Some(player_classjob) = data
+        .find_actor_instance(leader)
+        .and_then(|instance| instance.find_actor(leader))
+        .map(|actor| actor.get_common_spawn().class_job)
+    else {
+        return Vec::new();
+    };
+
+    let mut bots = Vec::new();
+    for classjob in duty_bot_classes(game_data, roles, player_classjob) {
+        match spawn_bot(data, game_data, usable, leader, classjob, level, true) {
+            Ok((actor_id, name)) => {
+                tracing::info!(
+                    "Duty Finder: {name} fills a place in {leader}'s party (level {level})"
+                );
+                bots.push(actor_id);
+            }
+            Err(error) => {
+                tracing::warn!("Duty Finder: couldn't add a bot of class {classjob}: {error}")
+            }
+        }
+    }
+    bots
+}
+
+/// The party list for a player and the bots that joined them, as retail lists a Duty Finder party (Bob's Chronofoil
+/// capture of five Sastasha runs, 2026-10-22): each member with their actor ID, class, level, HP and MP, the zone,
+/// `sync_positions` 1, no entity or parent ID. The player comes first and leads. The bots' account and content IDs
+/// are made up from their actor IDs (no one else has them.) None when the player has no bots.
+pub fn party_list(instance: &Instance, leader: ObjectId) -> Option<Vec<PartyMemberEntry>> {
+    let Some(NetworkedActor::Player { spawn: player, .. }) = instance.find_actor(leader) else {
+        return None;
+    };
+    let mut bots: Vec<(&ObjectId, &PartyBot)> = instance
+        .party_bots
+        .iter()
+        .filter(|(_, bot)| bot.leader == leader)
+        .collect();
+    if bots.is_empty() {
+        return None;
+    }
+    bots.sort_by_key(|(_, bot)| bot.order);
+
+    let entry = |common: &CommonSpawn, actor_id: ObjectId, account_id: u64, content_id: u64| {
+        PartyMemberEntry {
+            name: common.name.clone(),
+            account_id,
+            content_id,
+            actor_id,
+            health_points: common.health_points,
+            max_health_points: common.max_health_points,
+            resource_points: common.resource_points,
+            max_resource_points: common.max_resource_points,
+            home_world_id: player.home_world_id,
+            current_zone_id: instance.zone.id,
+            sync_positions: 1,
+            classjob_id: common.class_job,
+            unk2: 1,
+            classjob_level: common.level,
+            ..Default::default()
+        }
+    };
+    let mut list = vec![entry(
+        &player.common,
+        leader,
+        player.account_id,
+        player.content_id,
+    )];
+    for (actor_id, _) in bots {
+        if let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor(*actor_id) {
+            let made_up = BOT_ID_BASE | actor_id.0 as u64;
+            list.push(entry(&spawn.common, *actor_id, made_up, made_up));
+        }
+    }
+    list.truncate(PartyMemberEntry::NUM_ENTRIES);
+    Some(list)
+}
+
+/// Bots' made-up account and content IDs: their actor ID with this on top.
+const BOT_ID_BASE: u64 = 0x00B0_0000_0000_0000;
 
 /// Removes every bot that joined `leader` from their instance. Returns how many.
 pub fn dismiss_party_bots(
@@ -1257,6 +1435,27 @@ mod tests {
     }
 
     /// Up to ten bots behind one player all get their own spot, behind them and apart from each other.
+    #[test]
+    fn duty_finder_fills_the_other_roles() {
+        let light_party = PartyRoles {
+            members: 4,
+            tanks: 1,
+            healers: 1,
+            melee: 1,
+            ranged: 1,
+        };
+        assert_eq!(roles_left(light_party, ROLE_HEALER), [1, 0, 1, 1]);
+        assert_eq!(roles_left(light_party, ROLE_TANK), [0, 1, 1, 1]);
+        assert_eq!(roles_left(light_party, ROLE_RANGED), [1, 1, 1, 0]);
+        // A DPS takes the other kind's place when theirs is already filled.
+        let two_melee = PartyRoles {
+            melee: 2,
+            ranged: 0,
+            ..light_party
+        };
+        assert_eq!(roles_left(two_melee, ROLE_RANGED), [1, 1, 1, 0]);
+    }
+
     #[test]
     fn formation_spots_apart() {
         let here = Vec3A::new(10.0, 5.0, -3.0);

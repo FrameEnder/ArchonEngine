@@ -4224,6 +4224,7 @@ async fn process_server_msg(
                     .send_party_update(targets, update_status, party_info)
                     .await
             }
+            FromServer::BotParty(members) => connection.send_bot_party(members).await,
             FromServer::InviteCharacterResult(
                 content_id,
                 message_id,

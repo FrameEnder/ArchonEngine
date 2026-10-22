@@ -150,6 +150,8 @@ pub struct Instance {
     pub stuck_wanderers: std::collections::HashSet<ObjectId>,
     /// The party bots here, by actor ID (`server/party_bot.rs`.)
     pub party_bots: HashMap<ObjectId, crate::server::party_bot::PartyBot>,
+    /// Players who came in through the Duty Finder alone, whose party is filled with bots once they've loaded in.
+    pub pending_duty_bots: std::collections::HashSet<ObjectId>,
     /// List of running/preparing FATEs.
     pub fates: Vec<FateInstance>,
     /// List of FATEs that are able to spawn.

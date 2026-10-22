@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-22 | — | Combat (Aetherflow, Carbuncle's Away and following, leashing); travel (the teleport's warp type); known issues.
+| 2026-10-22 | — | Party bots: stage 2 (the Duty Finder fills the party); research notes (Sastasha with a Duty Finder party); known issues.
+| 2026-10-22 | `b38a00d` | Combat (Aetherflow, Carbuncle's Away and following, leashing); travel (the teleport's warp type); known issues.
 | 2026-10-21 | `1048fb0` | Quests: Rocks in a Hard Place (471); known issues.
 | 2026-10-21 | `7ee2cf0` | Quests: Without a Doubt to The Lominsan Envoy (412–415, 544–546, 689, 690); quest battles: 24, 36; known issues.
 | 2026-10-21 | `78469df` | Quests: Relighting the Torch's enemy in Western La Noscea's drop-in.
@@ -188,7 +189,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Fixes from Bob's 2026-10-22 bundles. Teleporting uses retail's warp type 4 (Return 7) with the character hidden, which within a zone left the player in the teleport animation (Moraby Drydocks). Carbuncle's "Away" dismisses it as retail does (it was an unknown client trigger); following its owner it walks on past the navmesh's edge instead of stepping back and forth there, and is put back beside an owner 50 yalms away. Arcanist/Summoner Aetherflow: Energy Drain fills it, Fester and Painflare spend it (the client wouldn't cast Fester without it). Enemies no longer give up the moment the player they're after is beyond their leash: only after 7 s without reaching them (a Qiqirn Eggdigger gave up each time it was hit). |
+| — | Party bots, stage 2: entering a level-synced duty alone through the Duty Finder fills the party's other roles (ContentMemberType, read at runtime: workspace icarus feature `ContentMemberType`) with bots of random base classes at the duty's synced level, listed in the party list as retail lists a Duty Finder party (Bob's Chronofoil capture of five Sastasha runs); leaving the duty dismisses them and empties the list. |
+| `b38a00d` | Fixes from Bob's 2026-10-22 bundles. Teleporting uses retail's warp type 4 (Return 7) with the character hidden, which within a zone left the player in the teleport animation (Moraby Drydocks). Carbuncle's "Away" dismisses it as retail does (it was an unknown client trigger); following its owner it walks on past the navmesh's edge instead of stepping back and forth there, and is put back beside an owner 50 yalms away. Arcanist/Summoner Aetherflow: Energy Drain fills it, Fester and Painflare spend it (the client wouldn't cast Fester without it). Enemies no longer give up the moment the player they're after is beyond their leash: only after 7 s without reaching them (a Qiqirn Eggdigger gave up each time it was hit). |
 
 ### 2026-10-21
 

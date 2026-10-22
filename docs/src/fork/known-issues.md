@@ -259,6 +259,10 @@ add one when something is found.
 
 ## Combat
 
+* **Duty Finder bots** (2026-10-22, untested in game): retail's Duty Support party list was never recorded, so bots
+  are listed as a Duty Finder party of players; whether the client takes an NPC's actor ID there (HP bars, targeting
+  from the list) is the first thing to check. Their HP in the list isn't updated by the server, no PartyMemberPositions
+  are sent for them, and they don't know Sastasha's route (the tank bot follows you).
 * **Carbuncle** (2026-10-22, untested in game): it isn't summoned again after zoning (retail resummons it as you load
   in), summoning again doesn't dismiss the one out, it doesn't fight, and pet actions other than Away (Heel, Place…)
   do nothing. The 50-yalm catch-up distance is a guess.

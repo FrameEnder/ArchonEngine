@@ -14,6 +14,7 @@ use icarus::Battalion::BattalionSheet;
 use icarus::ClassJob::ClassJobSheet;
 use icarus::ContentDirectorManagedSG::ContentDirectorManagedSGSheet;
 use icarus::ContentFinderCondition::ContentFinderConditionSheet;
+use icarus::ContentMemberType::ContentMemberTypeSheet;
 use icarus::CraftAction::CraftActionSheet;
 use icarus::CustomTalk::CustomTalkSheet;
 use icarus::DawnContent::DawnContentSheet;
@@ -120,6 +121,16 @@ pub struct EventItemInfo {
     pub action: u16,
 }
 
+/// One party's make-up in a duty (the ContentMemberType sheet.)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PartyRoles {
+    pub members: u8,
+    pub tanks: u8,
+    pub healers: u8,
+    pub melee: u8,
+    pub ranged: u8,
+}
+
 /// Convenient methods built on top of Physis to access data relevant to the server
 #[derive(Clone)]
 pub struct GameData {
@@ -153,6 +164,7 @@ pub struct GameData {
     pub enpc_base_sheet: ENpcBaseSheet,
     pub equip_slot_category_sheet: EquipSlotCategorySheet,
     pub content_finder_condition_sheet: ContentFinderConditionSheet,
+    pub content_member_type_sheet: ContentMemberTypeSheet,
     pub instance_content_sheet: InstanceContentSheet,
     pub ikd_route_sheet: IKDRouteSheet,
     pub npc_equip_sheet: NpcEquipSheet,
@@ -617,6 +629,9 @@ impl GameData {
         let instance_content_sheet =
             InstanceContentSheet::read_from(&mut resource_resolver, Language::None).unwrap();
 
+        let content_member_type_sheet =
+            ContentMemberTypeSheet::read_from(&mut resource_resolver, Language::None).unwrap();
+
         let ikd_route_sheet =
             IKDRouteSheet::read_from(&mut resource_resolver, config.world.language()).unwrap();
 
@@ -696,6 +711,7 @@ impl GameData {
             enpc_base_sheet,
             equip_slot_category_sheet,
             content_finder_condition_sheet,
+            content_member_type_sheet,
             instance_content_sheet,
             ikd_route_sheet,
             npc_equip_sheet,
@@ -2454,6 +2470,30 @@ impl GameData {
             .row(content_finder_row_id as u32)?;
 
         Some(content_finder_row.ItemLevelSync).filter(|x| *x != 0)
+    }
+
+    /// The roles one party of this duty is made of (ContentFinderCondition's ContentMemberType), for duties of a single
+    /// party of two to eight: Sastasha's is a tank, a healer and two DPS. None for alliances and solo duties.
+    pub fn content_party_roles(&mut self, content_finder_row_id: u16) -> Option<PartyRoles> {
+        let content_finder_row = self
+            .content_finder_condition_sheet
+            .row(content_finder_row_id as u32)?;
+        let member_type = self
+            .content_member_type_sheet
+            .row(content_finder_row.ContentMemberType as u32)?;
+        if member_type.PartyCount > 1
+            || member_type.AlliancePartyCount > 1
+            || !(2..=8).contains(&member_type.MembersPerParty)
+        {
+            return None;
+        }
+        Some(PartyRoles {
+            members: member_type.MembersPerParty,
+            tanks: member_type.TanksPerParty,
+            healers: member_type.HealersPerParty,
+            melee: member_type.MeleesPerParty,
+            ranged: member_type.RangedPerParty,
+        })
     }
 
     /// Returns the synced level for this content.

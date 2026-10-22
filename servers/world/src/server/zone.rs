@@ -16,7 +16,7 @@ use physis::{
 
 use crate::{
     ClientId, FromServer, GameData, StatusEffects, TerritoryNameKind, ToServer,
-    lua::{KawariLua, LuaZone},
+    lua::{KawariLua, KawariLuaState, LuaZone},
     server::{
         NetworkedActor, WorldServer,
         actor::{create_npc_common_spawn, field_enemy_base_hp, set_character_mode},
@@ -24,6 +24,7 @@ use crate::{
         instance::{Instance, QueuedTaskData, remove_actor_from_instance},
         job_gauge::JobGauge,
         network::{DestinationNetwork, NetworkState},
+        party_bot,
     },
     zone_connection::{BaseParameters, TeleportQuery},
 };
@@ -1291,6 +1292,35 @@ pub fn handle_zone_messages(
                 autoattack_timing: 0,
                 job_gauge: JobGauge::default(),
             };
+
+            // In through the Duty Finder alone: bots fill the party (`server/party_bot.rs`), and the client is told
+            // its party list.
+            if instance.pending_duty_bots.remove(from_actor_id) {
+                let content = instance.content_finder_condition_id;
+                let usable: HashMap<u32, String> = {
+                    let lua = lua.lock();
+                    let state = lua.0.app_data_ref::<KawariLuaState>().unwrap();
+                    state.action_scripts.clone()
+                };
+                let mut game_data = game_data.lock();
+                party_bot::fill_duty_party(
+                    &mut data,
+                    &mut game_data,
+                    &usable,
+                    *from_actor_id,
+                    content,
+                );
+                if let Some(instance) = data.find_actor_instance(*from_actor_id)
+                    && let Some(members) = party_bot::party_list(instance, *from_actor_id)
+                {
+                    let mut network = network.lock();
+                    network.send_to(
+                        *from_id,
+                        FromServer::BotParty(Some(members)),
+                        DestinationNetwork::ZoneClients,
+                    );
+                }
+            }
 
             true
         }

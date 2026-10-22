@@ -6,8 +6,36 @@ without other players. Delivered in stages; this page describes what exists and 
 | Stage | What | Status |
 |---|---|---|
 | 1 | `!spawn playernpc <class>`: a bot of any class joins you anywhere, follows, and fights by role | done (2026-10-21), untested in game |
-| 2 | The Duty Finder fills the roles your party lacks with bots (a tank, a healer, two DPS), level synced to the duty; unsynced duties get none; bots in the party list as retail lists Duty Support members | needs a retail Chronofoil capture of a Duty Support run (Sastasha) for the party list packets |
+| 2 | The Duty Finder fills the roles your party lacks with bots (a tank, a healer, two DPS), level synced to the duty; unsynced duties get none; bots in the party list | done (2026-10-22), untested in game: the party list as retail lists a Duty Finder party (Bob's capture of five Sastasha runs; no Duty Support run recorded) |
 | 3 | Dodging area attacks, killing adds first, following each dungeon's rules (Sastasha first) | to do |
+
+## The Duty Finder (stage 2)
+
+Entering a duty **alone** through the Duty Finder (or `!cf <id>`) fills the party with bots once you've loaded in
+(`party_bot::fill_duty_party`, called from the zone-loaded handler; `JoinContent` marks the player in
+`Instance::pending_duty_bots`):
+
+* **Only level-synced duties of one party** (ContentFinderCondition's ClassJobLevelSync, and its ContentMemberType of
+  one party of 2–8: `GameData::content_party_roles`). Unsynced duties, alliance raids and solo duties get no bots.
+* **The roles you don't play**: the duty's tanks, healers, melee and ranged DPS (ContentMemberType), less your own
+  place (a DPS takes a place of their own kind first). Sastasha: you as a healer get a tank and two DPS.
+* **Each bot is a random base class of its role** (Gladiator or Marauder; Conjurer; Pugilist, Lancer or Rogue;
+  Archer, Thaumaturge or Arcanist: the classes Kawari has scripts for), **at the duty's synced level**, with the best
+  gear its class could wear at that level and a player's stats for it.
+* **The party list** lists you first, as leader, then the bots: each with its actor ID, class, level, HP and MP, the
+  zone, `sync_positions` 1, no entity or parent ID, then a PartyUpdate JoinParty, as retail's Duty Finder parties were
+  listed (Bob's Chronofoil capture of 2026-10-22: five Sastasha runs; the PartyList as the duty's ZoneInit arrives,
+  4 members, 456 bytes each). The bots' account and content IDs are made up from their actor IDs, and the party ID too
+  (`0x00B1…` and the player's actor ID); the server keeps no party for it, so your `party_id` stays 0 and party chat
+  and invites work as before. Leaving the duty dismisses the bots and sends an empty list with DisbandingParty, as
+  retail does at the end.
+* A party of real players goes in as before, with no bots.
+
+What retail's Duty Finder parties showed (numbers only, the same capture): every member's level 18 in the list
+(Sastasha's enemies are 15), HP 351–652; the list's order is the order members joined (you first when you were
+first, last otherwise); PartyMemberPositions every 5 s; when a member leaves, a new list and PartyUpdate
+MemberLeftParty (6) to the rest; at the end DisbandingParty (3) with an empty list, then an empty one again in the
+city. No Duty Support run is recorded yet, so how retail lists Duty Support members is still unknown.
 
 ## Bots and battle NPCs are kept apart
 
@@ -94,8 +122,11 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
 ## Not done yet
 
 * In combat melee bots still crowd the same spot by their target (only following is in formation).
-* Bots aren't in the party list, don't follow you into another zone (they leave when you do), aren't level synced,
-  and stay down when they die (dismiss and spawn again).
+* Bots don't follow you into another zone (they leave when you do) and stay down when they die (dismiss and spawn
+  again). Bots from `!spawn playernpc` aren't in the party list or level synced (only the Duty Finder's are).
+* The party list doesn't follow the bots' HP (retail sends HP through the members' actors, which the client may or may
+  not take from an NPC), and PartyMemberPositions isn't sent for bots (no minimap dots).
+* Bots don't know a dungeon's route: the tank bot follows you, so you lead (stage 3).
 * No area attacks, buffs, role actions, mitigation, Raise, or dodging enemy area attacks.
 * Targets are picked by these simple rules, not by watching retail Duty Support members; their rotations, heal
   thresholds and pull timing are guesses to be checked against a recording.

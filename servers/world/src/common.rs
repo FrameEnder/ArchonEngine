@@ -163,6 +163,9 @@ pub enum FromServer {
         PartyUpdateStatus,
         Option<(u64, u32, ObjectId, Vec<PartyMemberEntry>)>,
     ),
+    /// The party list of a player and the bots that joined them in a duty (`server/party_bot.rs`), or None when they
+    /// leave: it isn't a party the server keeps.
+    BotParty(Option<Vec<PartyMemberEntry>>),
     /// Inform the client of the result of a social invite they have sent.
     InviteCharacterResult(u64, u16, InviteType, String),
     /// Inform the client they were in a party, and request that they inform us of their return.
