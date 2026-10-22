@@ -42,11 +42,11 @@ add one when something is found.
 * **The Gridanian Envoy** (507) and **Call of the Sea** (674) were written from Sapphire and the recording without the
   client's script: dump them in the Quest Lab to check the scene numbers. Envoy's arrival positions are Sapphire's.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
-* Limsa Lominsa's story now runs to The Lominsan Envoy (546), the end of its own part. Only the side quest 471 from
-  Bob's capture of 2026-10-21 is missing (no dump). Retail also marked quests 398 and 404 completed along with 397 and
-  402, as 464 with 543 (the scripts do it with `mark_quest_completed`); why (the sheet, presumably) isn't
-  known.
-* 412–415, 544–546, 689 and 690 and quest battles 24 and 36 (2026-10-21) are untested in game; they pass replay and
+* Limsa Lominsa's story now runs to The Lominsan Envoy (546), the end of its own part, with every side quest in Bob's
+  capture of 2026-10-21 (Rocks in a Hard Place, 471, from his dump of 2026-10-22). Retail also marked quests 398 and
+  404 completed along with 397 and 402, as 464 with 543 (the scripts do it with `mark_quest_completed`); why (the
+  sheet, presumably) isn't known.
+* 412–415, 471, 544–546, 689 and 690 and quest battles 24 and 36 (2026-10-21) are untested in game; they pass replay and
   battle-sim. Their NPCs' and objects' base IDs were matched to retail's layout IDs by the scenes they play. Guesses:
   quest battle 24's territory 249 is taken for a copy of Lower La Noscea and 36's 280 for Western La Noscea (their NPCs
   are in those drop-ins); 24's first two corsairs fight once hurt (retail: when they noticed the player); 36's second

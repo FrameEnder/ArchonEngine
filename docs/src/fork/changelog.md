@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-21 | — | Quests: Without a Doubt to The Lominsan Envoy (412–415, 544–546, 689, 690); quest battles: 24, 36; known issues.
+| 2026-10-21 | — | Quests: Rocks in a Hard Place (471); known issues.
+| 2026-10-21 | `7ee2cf0` | Quests: Without a Doubt to The Lominsan Envoy (412–415, 544–546, 689, 690); quest battles: 24, 36; known issues.
 | 2026-10-21 | `78469df` | Quests: Relighting the Torch's enemy in Western La Noscea's drop-in.
 | 2026-10-21 | `da7e82e` | `master` fast-forwarded, `upstream-7.57h1` retired (changelog, known issues, opcodes).
 | 2026-10-21 | `6da62d9` | Known issues (what CI runs where).
@@ -186,7 +187,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | The rest of Limsa Lominsa's story from Bob's dumps and his 2026-10-21 capture, with fixtures: Without a Doubt, Righting the Shipwright, Do Angry Pirates Dream, Victory in Peril, Men of the Blue Tattoos, Feint and Strike, High Society, A Mizzenmast Repast and The Lominsan Envoy (412, 415, 413, 414, 689, 544, 690, 545, 546). Quest battles 24 (Victory in Peril) and 36 (Feint and Strike) with their timelines and battle-sim fixtures; drop-in layers `QB_SubSea117_001` and `QB_SubSea118_001` (Righting the Shipwright's ambushers) in `sea_s1f2`, `QB_ManSea007_001` in `sea_s1f4`. |
+| — | Rocks in a Hard Place (471), Limsa Lominsa's side quest in Middle La Noscea, from Bob's dump of 2026-10-22 and his 2026-10-21 capture, with a fixture: the shovel, three rocks (ITEM0 used on each) and three piles of debris in any order. |
+| `7ee2cf0` | The rest of Limsa Lominsa's story from Bob's dumps and his 2026-10-21 capture, with fixtures: Without a Doubt, Righting the Shipwright, Do Angry Pirates Dream, Victory in Peril, Men of the Blue Tattoos, Feint and Strike, High Society, A Mizzenmast Repast and The Lominsan Envoy (412, 415, 413, 414, 689, 544, 690, 545, 546). Quest battles 24 (Victory in Peril) and 36 (Feint and Strike) with their timelines and battle-sim fixtures; drop-in layers `QB_SubSea117_001` and `QB_SubSea118_001` (Righting the Shipwright's ambushers) in `sea_s1f2`, `QB_ManSea007_001` in `sea_s1f4`. |
 | `78469df` | Relighting the Torch (403): its enemy (layer `QB_SubSea106_001`) moved from `sea_s1f2` (Lower La Noscea, 135) to `sea_s1f4` (Western La Noscea, 138), where the quest is; lighting the Iron Brazier logged "isn't in this zone's drop-ins" and nothing came out (Bob's 2026-10-21 bundle). |
 | `da7e82e` | `master` and `Latest-Quest` fast-forwarded to `upstream-7.57h1` with Bob's OK (397–406, the CI fix), and the `upstream-7.57h1` branch retired: new work goes on `Latest-Quest`. |
 | `6da62d9` | Known issues: CI's full Rust build runs only on `master`, pull requests and by hand. |
