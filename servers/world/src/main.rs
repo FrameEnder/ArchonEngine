@@ -3392,8 +3392,30 @@ async fn process_packet(
                                 .send_cwlinkshell_members(*linkshell_id, *sequence)
                                 .await;
                         }
-                        ClientZoneIpcData::OpenTreasure { .. } => {
-                            tracing::warn!("Opening treasure chests is unimplemented");
+                        ClientZoneIpcData::OpenTreasure { entity_id } => {
+                            connection
+                                .handle
+                                .send(ToServer::OpenTreasure(
+                                    connection.player_data.character.actor_id,
+                                    *entity_id,
+                                ))
+                                .await;
+                        }
+                        ClientZoneIpcData::LootRoll {
+                            treasure_id,
+                            slot,
+                            choice,
+                            ..
+                        } => {
+                            connection
+                                .handle
+                                .send(ToServer::LootRoll(
+                                    connection.player_data.character.actor_id,
+                                    *treasure_id,
+                                    *slot,
+                                    *choice,
+                                ))
+                                .await;
                         }
                         ClientZoneIpcData::CrossRealmListingsRequest1 { max_results, .. } => {
                             let results_aligned = max_results.div_ceil(4) * 4; // each packet holds 4
@@ -4624,6 +4646,7 @@ async fn process_server_msg(
                 database.commit_parties(parties);
             }
             FromServer::TreasureSpawn(treasure) => connection.spawn_treasure(treasure).await,
+            FromServer::LootWon(item_id) => connection.obtain_loot(item_id).await,
             FromServer::LinkshellDisbanded(linkshell_id, linkshell_name) => {
                 connection
                     .crossworld_linkshell_disbanded(linkshell_id, linkshell_name)

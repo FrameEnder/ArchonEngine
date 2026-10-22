@@ -126,7 +126,8 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
   again). Bots from `!spawn playernpc` aren't in the party list or level synced (only the Duty Finder's are).
 * The party list doesn't follow the bots' HP (retail sends HP through the members' actors, which the client may or may
   not take from an NPC), and PartyMemberPositions isn't sent for bots (no minimap dots).
-* Bots don't know a dungeon's route: the tank bot follows you, so you lead (stage 3).
+* Bots don't know a dungeon's route: the tank bot follows you, so you lead.
+* Bots roll for coffers' loot (see [Coffers and Loot](loot.md#party-bots)) but don't open coffers.
 * No area attacks, buffs, role actions, mitigation, Raise, or dodging enemy area attacks.
 * Targets are picked by these simple rules, not by watching retail Duty Support members; their rotations, heal
   thresholds and pull timing are guesses to be checked against a recording.

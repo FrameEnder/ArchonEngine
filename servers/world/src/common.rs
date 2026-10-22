@@ -220,6 +220,8 @@ pub enum FromServer {
     /// Whether the players stay afterwards (until `LeaveQuestBattle`), and the scene played before they leave, with its
     /// scene flags; and quest variables (index, value) set with the sequence.
     QuestBattleComplete(HandlerId, u32, u8, bool, u16, u32, Vec<(u8, u8)>),
+    /// The player won this item from a coffer (`server/loot.rs`): it goes in their inventory.
+    LootWon(u32),
     /// Send the player back from the won quest battle they stayed in.
     LeaveQuestBattle(HandlerId),
     /// The quest battle was lost, send them back to where they entered it.
@@ -403,6 +405,10 @@ pub enum ToServer {
     Warp(ClientId, ObjectId, u32),
     /// Warp with the specified aetheryte id.
     WarpAetheryte(ClientId, ObjectId, u32, bool, WarpType),
+    /// The player opens a coffer (`server/loot.rs`.)
+    OpenTreasure(ObjectId, ObjectId),
+    /// The player chooses for an item of an open coffer: the coffer, the item's slot, Need/Greed/Pass.
+    LootRoll(ObjectId, ObjectId, u32, u32),
     /// Ready to spawn the player (this happens during initrequest)
     ReadySpawnPlayer(ClientId, ObjectId, u16, Position, f32, Option<u8>),
     /// Ready to send the ZoneIn ACS

@@ -42,8 +42,8 @@ bots' stage 3 (Sastasha's route and rules) and loot:
 * **Enemies**: 130–155 per run of 36–39 kinds, level 15; the bosses' HP 5869 (base 417), 4785 (416, 413) and 3828
   (411); 16–19 different enemy actions per run, every boss's kit in every run.
 * **Coffers and loot**: 43 coffers spawned over the five runs (SpawnTreasure), 15 opened (OpenedTreasure; 5 by
-  Bob, OpenTreasure from his client); 278 LootMessage. The Need/Greed/Pass window and rolls are packets questkit doesn't
-  name yet: from the client opcode 766 (16 bytes, 15 times) and 769 (16 bytes, 4), from the server 807 (16, 18), 462
-  (16, 15) and 272 (88, 12), all only while coffers were open.
-* Not implemented yet: the route and rules for bots (stage 3), loot rolls. Upstream's Sastasha script
+  Bob, OpenTreasure from his client); 278 LootMessage. The Need/Greed/Pass packets are now known and done: see
+  [Coffers and Loot](loot.md). The client's 769 (16 bytes, 4 times: the Sastasha director's handler, 0, and an ID) came
+  once a run near its end, before the loot window was opened again; not known.
+* Not implemented yet: the route and rules for bots (stage 3). Upstream's Sastasha script
   (`content/s1d1_re.lua`) runs the duty itself.

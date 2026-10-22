@@ -52,6 +52,7 @@
   - [Marketboard](fork/marketboard.md)
   - [Retainers](fork/retainers.md)
   - [Party Bots](fork/party-bots.md)
+  - [Coffers and Loot](fork/loot.md)
   - [Fork Opcodes](fork/opcodes.md)
   - [Tools and Debug Commands](fork/tools.md)
   - [questkit and CI](fork/questkit.md)

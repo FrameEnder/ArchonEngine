@@ -2375,6 +2375,14 @@ impl GameData {
         new_items
     }
 
+    /// Whether one can only have one of this item (the Item sheet's IsUnique): a coffer's LootItem says so.
+    pub fn item_is_unique(&mut self, item_id: u32) -> bool {
+        self.item_sheet
+            .row(item_id)
+            .map(|row| row.IsUnique)
+            .unwrap_or_default()
+    }
+
     /// Returns the ClassJobCategory for this item.
     pub fn get_item_classjobcategory(&mut self, item_id: u32) -> u8 {
         let row = self.item_sheet.row(item_id).unwrap();

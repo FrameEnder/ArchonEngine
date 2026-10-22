@@ -19,7 +19,7 @@ use kawari::{
     ipc::zone::{
         ActorControlCategory, ActorControlSelf, ActorSetPos, ChatMessage, DutyFinderSetting,
         EventLogMessage, MapEffects, PrepareZoning, ServerZoneIpcData, ServerZoneIpcSegment,
-        WalkInEvent,
+        TreasureKind, WalkInEvent,
     },
 };
 use mlua::{Function, LuaSerdeExt, UserData, UserDataMethods, Value};
@@ -96,6 +96,11 @@ pub enum LuaDirectorTask {
         wall_id: u32,
         line_id: u32,
         place_name: u32,
+    },
+    /// What a coffer held on retail, one list of items per recorded opening (`server/loot.rs`.)
+    TreasureLoot {
+        base_id: u32,
+        openings: Vec<Vec<u32>>,
     },
     SpawnTreasure {
         id: u32,
@@ -333,6 +338,14 @@ impl UserData for LuaDirector {
             this.tasks.push(LuaDirectorTask::SpawnTreasure { id });
             Ok(())
         });
+        methods.add_method_mut(
+            "treasure_loot",
+            |_, this, (base_id, openings): (u32, Vec<Vec<u32>>)| {
+                this.tasks
+                    .push(LuaDirectorTask::TreasureLoot { base_id, openings });
+                Ok(())
+            },
+        );
         methods.add_method_mut("variant_vote_route", |_, this, npc_route: u32| {
             this.tasks
                 .push(LuaDirectorTask::VariantVoteRoute { npc_route });
@@ -1326,11 +1339,19 @@ pub fn director_tick(
                     tracing::warn!("Failed to find bnpc {bnpc_id} for SpawnBoss, it won't spawn!");
                 }
             }
+            LuaDirectorTask::TreasureLoot { base_id, openings } => {
+                instance.loot_pools.insert(*base_id, openings.clone());
+            }
             LuaDirectorTask::SpawnTreasure { id } => {
                 if let Some(mut treasure) = instance.zone.get_treasure(*id) {
                     treasure.handler_id = director_id;
+                    // A duty's coffer, closed (retail's: kind 2, event state 1; Bob's Chronofoil capture of Sastasha.)
+                    treasure.coffer_kind = TreasureKind::DungeonRaid;
+                    treasure.event_state = EventState::OFF;
 
-                    let actor_id = ObjectId(fastrand::u32(..));
+                    // The client opens it by the ID in its spawn, so that's its actor ID too (they were two random
+                    // numbers, and nothing could be opened.)
+                    let actor_id = treasure.entity_id;
                     instance.insert_treasure(actor_id, treasure);
                 } else {
                     tracing::warn!(
@@ -1792,6 +1813,8 @@ pub fn director_tick(
                     FromServer::PacketSegment(ipc, ObjectId::default()), // TODO: how do we just send it from the player?
                     DestinationNetwork::ZoneClients,
                 );
+                // Coffers' items still to be rolled for are decided now (retail did it as the duty ended.)
+                crate::server::loot::decide_all(&mut network, instance);
 
                 // TODO: mark duty as completed for each player
             }

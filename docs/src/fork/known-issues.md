@@ -220,6 +220,16 @@ add one when something is found.
   entries (retail: slot, status 0, source 0xE0000000), Arm's Length's Slow on attackers, and enemies' debuffs from
   Bob's captures (scan `enemy_statuses.csv`) aren't done.
 
+## Coffers and loot
+
+* Untested in game (2026-10-22): opening, the rolls, the winner's item, the coffer fading out. LootMessages name bots
+  by their actor ID; whether the client finds their names (they're in the party list) isn't known.
+* A Greed or Need on a unique item the player has already isn't refused (retail answers 8). LootItem's `bonus` (set
+  on retail's Aetherial Brass Wristlets, perhaps their random stats) is left at zero.
+* Only Sastasha's coffers have recorded contents; coffers 98 and 100 were never opened in the capture and hold one of
+  the others' items. A reopened coffer's SpawnTreasure (retail sends it again with its items when you come back in
+  range) isn't sent.
+
 ## Quest battles and directors
 
 * **Battle talk**: every quest battle uses the window (DirectorPopupMessage) with retail's text IDs, except Papalymo's

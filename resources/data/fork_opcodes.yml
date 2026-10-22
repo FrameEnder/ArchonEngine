@@ -33,6 +33,13 @@
 # Keep double quotes out of comments.
 
 ClientZoneIpcType:
+- name: LootRoll
+  comment: Need, Greed or Pass on one item of an open coffer - the coffer, the item's slot, the choice (1 need, 2 greed, 5 pass.)
+  # 766 on 2026.10.16 (Bob's Chronofoil capture of Sastasha, 2026-10-22: 15 rolls, each answered by LootRollResult.)
+  opcode: 766
+  size: 16
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On Kawari, open a coffer in a dungeon and press Greed on an item - the 16-byte packet starting with the coffer's ID.
 - name: EventReturnHandler16
   comment: A scene finished with up to 16 results, e.g. handing three kinds of items over in a quest's NPC trade (Surveying the Damage.)
   # 856 on 2026.09.15, 200 on 2026.10.06, 555 on 2026.10.16 (read from the game by its finder.)
@@ -161,6 +168,34 @@ ClientZoneIpcType:
       offset: 4
       width: 4
 ServerZoneIpcType:
+- name: LootList
+  comment: An opened coffer's loot, to the party - the coffer, how many items, the seconds left to roll (three times) and the items.
+  # 272 on 2026.10.16 (Bob's Chronofoil capture of Sastasha, 2026-10-22: 15 coffers, just before OpenedTreasure.)
+  opcode: 272
+  size: 88
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On retail with Chronofoil, open a coffer in a dungeon - the 88-byte packet starting with the coffer's ID, right before OpenedTreasure.
+- name: LootItem
+  comment: One item of an opened coffer's loot - the coffer, the item, the time left, its slot and whether it's unique; again when the player opens it themselves.
+  # 975 on 2026.10.16 (Bob's Chronofoil capture of Sastasha, 2026-10-22: one per item after LootList.)
+  opcode: 975
+  size: 56
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On retail with Chronofoil, open a coffer in a dungeon - the 56-byte packets right after LootList, one per item.
+- name: LootRollResult
+  comment: The answer to the player's LootRoll - the coffer, the slot, then 1 and the roll (need or greed), 4 (passed) or 8 (refused.)
+  # 462 on 2026.10.16 (Bob's Chronofoil capture of Sastasha, 2026-10-22: 15, one per LootRoll.)
+  opcode: 462
+  size: 16
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On retail with Chronofoil, press Greed on a coffer's item - the 16-byte packet starting with the coffer's ID right after.
+- name: LootResult
+  comment: Who won an item of a coffer - the coffer, the slot, the winner and their roll (0xE0000000 and 0 when everyone passed.)
+  # 807 on 2026.10.16 (Bob's Chronofoil capture of Sastasha, 2026-10-22: 18, after each item's last rolls.)
+  opcode: 807
+  size: 16
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On retail with Chronofoil, let a coffer's item be rolled for - the 16-byte packet starting with the coffer's ID after the rolls' LootMessages.
 - name: LootMessage
   comment: Loot - an item obtained directly (an enemy's drop), gil, need/greed rolls and their winners.
   # 936 on 2026.06.18, 135 on 2026.09.01, 351 on 2026.09.15, 190 on 2026.10.06 (Bob's Chronofoil captures.)

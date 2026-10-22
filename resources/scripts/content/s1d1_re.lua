@@ -130,12 +130,20 @@ function onSetup(director)
     director:hide_eobj(EOBJ_SECOND_RAMBADE_BOSS_WALL)
     director:hide_eobj(EOBJ_MISTBEARD_COVE_BOSS_WALL)
 
-    -- Random treasure coffers in the coral room
-    director:spawn_treasure(97)
+    -- What the coffers held on retail, one list per opening (item IDs; Bob's Chronofoil capture of five runs,
+    -- 2026-10-22.) A coffer without a recording (98, 100) holds one of these. See server/loot.rs.
+    director:treasure_loot(94, { { 3554, 4096 }, { 2684, 4096 }, { 2683, 4207 }, { 2679, 4096 } })
+    director:treasure_loot(95, { { 3034 }, { 3331 }, { 3035 } })
+    director:treasure_loot(99, { { 3555 } })
+    director:treasure_loot(101, { { 31422 } })
+    director:treasure_loot(93, { { 3786, 31424 }, { 31425 }, { 31426, 36374 } })
+
+    -- The coral room's coffer (retail: 98 in all five runs, never 97)
     director:spawn_treasure(98)
 
-    -- Treasure coffer in The Hole
+    -- The coffers in The Hole (retail: 99 and 101, both every run)
     director:spawn_treasure(99)
+    director:spawn_treasure(101)
 
     beginSequence0(director)
 end
@@ -263,7 +271,9 @@ function onActorDeath(director, bnpc_id, position)
         -- Update shortcut
         director:update_shortcut(SHORTCUT_AFTER_CATTERY)
     elseif bnpc_id == BNPC_CAPTAIN1 then
-        director:spawn_treasure(95) -- Treasure for this boss
+        -- Two coffers for this boss (retail: 95 and 100 together, every run)
+        director:spawn_treasure(95)
+        director:spawn_treasure(100)
         endBattleMusic(director)
         beginSequence3(director)
 
@@ -274,7 +284,7 @@ function onActorDeath(director, bnpc_id, position)
     elseif bnpc_id == BNPC_CAPTAINS_QUARTERS_REAVER then
         director:spawn_eobj(EOBJ_WAVERIDER_GATE_KEY, { x = position.x, y = position.y, z = position.z })
     elseif bnpc_id == BNPC_CAPTAIN2 then
-        director:spawn_treasure(96) -- Treasure for this boss
+        -- No coffer for this boss on retail (no 96 in five runs.)
         endBattleMusic(director)
         director:hide_eobj(EOBJ_RAMBADE_DOOR2)
 

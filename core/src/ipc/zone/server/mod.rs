@@ -1108,6 +1108,58 @@ pub enum ServerZoneIpcData {
         unk1: u32,
         unk2: u32,
     },
+    /// An opened coffer's loot, to the party (Bob's Chronofoil capture of Sastasha, 2026-10-22): how many items, the
+    /// seconds left to roll (300 on opening, three times) and the items.
+    LootList {
+        treasure_id: ObjectId,
+        count: u32,
+        time_left: [f32; 3],
+        items: [u32; 16],
+        unk: u32,
+    },
+    /// One item of an opened coffer (the same capture): sent after `LootList`, and again when the player opens the
+    /// coffer themselves (`opened` 1, the time left then.) `serial` counts the duty's loot from the first (retail's
+    /// started at 0x3e in one run); `bonus` was set only on Aetherial Brass Wristlets (random stats, perhaps.)
+    LootItem {
+        treasure_id: ObjectId,
+        item_id: u32,
+        unk1: u32,
+        time_left: f32,
+        time_total: [f32; 2],
+        /// 1 in every one seen.
+        unk2: u8,
+        unk3: u8,
+        slot: u8,
+        unique: u8,
+        unk4: u8,
+        /// 1, 1 in every one seen.
+        unk5: [u8; 2],
+        opened: u8,
+        unk6: u32,
+        serial: u32,
+        unk7: u32,
+        bonus: [u16; 4],
+        unk8: u32,
+    },
+    /// The answer to the player's `LootRoll` (the same capture): `result` 1 with the `roll` (need or greed), 4 passed,
+    /// 8 refused (a unique item they had already.)
+    LootRollResult {
+        treasure_id: ObjectId,
+        slot: u32,
+        result: u8,
+        roll: u8,
+        #[brw(pad_after = 4)]
+        unk: u16,
+    },
+    /// Who won an item of a coffer (the same capture): the winner and their roll, `ObjectId(0xE0000000)` and 0 when
+    /// everyone passed. Retail's three bytes after the slot held part of the winner's ID; zeros here.
+    LootResult {
+        treasure_id: ObjectId,
+        slot: u8,
+        unk: [u8; 3],
+        winner: ObjectId,
+        roll: u32,
+    },
     /// Who first attacked this actor (the packet's source): its "claim". Retail sends it to everyone nearby the
     /// moment an actor first takes a hostile action, just before that action's EffectResult (an enemy hit by a player,
     /// a player hit by an enemy), and sends it again cleared when the fight is over for it. The same ID is in
@@ -1665,6 +1717,76 @@ mod tests {
             cursor.into_inner(),
             [1, 0, 0, 0, 0, 0, 0, 0, 0x41, 0x54, 0x06, 0x10, 0, 0, 0, 0]
         );
+    }
+
+    /// A coffer's loot packets as retail sent them (Bob's Chronofoil capture of Sastasha, 2026-10-22; the coffer's
+    /// and the winner's IDs made up): its list of two items, the first item, a Greed roll of 33 answered, and the
+    /// winner with 44.
+    #[test]
+    fn loot_layouts() {
+        use binrw::BinWrite;
+
+        fn write(data: ServerZoneIpcData) -> Vec<u8> {
+            let mut cursor = std::io::Cursor::new(Vec::new());
+            data.write_le(&mut cursor).unwrap();
+            cursor.into_inner()
+        }
+        let coffer = ObjectId(0x4000_1234);
+        let mut items = [0; 16];
+        items[0] = 2684;
+        items[1] = 4096;
+        let list = write(ServerZoneIpcData::LootList {
+            treasure_id: coffer,
+            count: 2,
+            time_left: [300.0; 3],
+            items,
+            unk: 0,
+        });
+        assert_eq!(list.len(), 88);
+        assert_eq!(
+            &list[..28],
+            &hex("34120040 02000000 00009643 00009643 00009643 7c0a0000 00100000")[..]
+        );
+        let item = write(ServerZoneIpcData::LootItem {
+            treasure_id: coffer,
+            item_id: 2684,
+            unk1: 0,
+            time_left: 300.0,
+            time_total: [300.0; 2],
+            unk2: 1,
+            unk3: 0,
+            slot: 0,
+            unique: 1,
+            unk4: 0,
+            unk5: [1, 1],
+            opened: 0,
+            unk6: 0,
+            serial: 0x3e,
+            unk7: 0,
+            bonus: [0; 4],
+            unk8: 0,
+        });
+        assert_eq!(
+            item,
+            hex("34120040 7c0a0000 00000000 00009643 00009643 00009643 01000001 00010100 00000000 3e000000
+                 00000000 00000000 00000000 00000000")
+        );
+        let answer = write(ServerZoneIpcData::LootRollResult {
+            treasure_id: coffer,
+            slot: 0,
+            result: 1,
+            roll: 0x21,
+            unk: 0,
+        });
+        assert_eq!(answer, hex("34120040 00000000 01210000 00000000"));
+        let result = write(ServerZoneIpcData::LootResult {
+            treasure_id: coffer,
+            slot: 0,
+            unk: [0; 3],
+            winner: ObjectId(0x1000_0001),
+            roll: 44,
+        });
+        assert_eq!(result, hex("34120040 00000000 01000010 2c000000"));
     }
 
     fn hex(bytes: &str) -> Vec<u8> {

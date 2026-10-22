@@ -69,6 +69,7 @@ mod director;
 mod effect;
 mod instance;
 mod job_gauge;
+mod loot;
 mod modifiers;
 use job_gauge::CLASSJOB_WHITE_MAGE;
 mod linkshell;
@@ -607,6 +608,8 @@ fn server_logic_tick(
             party_bot::update(&network, &game_data, instance);
             // Pets left far behind (a teleport) go back beside their owner before they walk.
             pet::catch_up(&mut network.lock(), instance);
+            // Bots choose for coffers' items, and items whose time is up are decided.
+            loot::tick(&mut network.lock(), instance);
             let mut haters = HashMap::new();
             npc_behavior::npc_behavior(network.clone(), game_data.clone(), instance, &mut haters);
 
@@ -1788,6 +1791,8 @@ pub async fn server_main_loop(
         handled |= handle_director_messages(data.clone(), network.clone(), game_data.clone(), &msg);
         handled |= handle_party_messages(data.clone(), network.clone(), &msg);
         handled |= handle_linkshell_messages(network.clone(), &msg);
+        handled |=
+            loot::handle_loot_messages(data.clone(), network.clone(), game_data.clone(), &msg);
 
         if !handled {
             match msg {

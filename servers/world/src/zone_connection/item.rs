@@ -288,6 +288,27 @@ impl ZoneConnection {
         self.send_inventory().await;
     }
 
+    /// An item won from a coffer (`server/loot.rs`): the LootMessages went to the party already; retail then sent the
+    /// winner the item's slot (UpdateItem.)
+    pub async fn obtain_loot(&mut self, id: u32) {
+        let new_item = {
+            let mut game_data = self.game_data.lock();
+            game_data
+                .get_item_info(ItemInfoQuery::ById(id))
+                .map(|info| Item::new(&info, 1))
+        };
+        let Some(new_item) = new_item else {
+            return;
+        };
+        if !self.player_data.inventory.add_obtained_item(new_item) {
+            self.send_notice(ERR_INVENTORY_ADD_FAILED).await;
+            return;
+        }
+        self.send_inventory_ack(u32::MAX, INVENTORY_ACTION_ACK_GENERAL, 0)
+            .await;
+        self.send_inventory().await;
+    }
+
     pub async fn send_inventory_ack(&mut self, sequence: u32, action_type: u8, unk1: u8) {
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::InventoryActionAck {
             sequence,

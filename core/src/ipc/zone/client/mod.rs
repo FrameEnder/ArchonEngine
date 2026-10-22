@@ -545,6 +545,14 @@ pub enum ClientZoneIpcData {
         #[brw(pad_after = 4)] // empty
         entity_id: ObjectId,
     },
+    /// Need, Greed or Pass on one item of an open coffer (Bob's Chronofoil capture of Sastasha, 2026-10-22): `choice`
+    /// 1 need, 2 greed, 5 pass (greed and pass seen; need by the LootMessages' 1.)
+    LootRoll {
+        treasure_id: ObjectId,
+        slot: u32,
+        choice: u32,
+        unk: u32,
+    },
     CrossRealmListingsRequest1 {
         unk1: u32,
         unk2: u32,
