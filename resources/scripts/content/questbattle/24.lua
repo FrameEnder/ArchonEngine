@@ -10,9 +10,12 @@
 --          (4167378/79); none of them fights yet
 --   the first two engaged (12.0 and 18.5 s in, a few seconds before the player's first hit: they noticed the player,
 --          which Kawari can't time, so it's when one of them is hurt): sequence 3
---   both down: 2.2 and 3.3 s later sequence 4, and the other two come at you
+--   both down, and you within 15-19 yalms of the other two (both runs: you'd walked over to them, 50 yalms from
+--          where you fought the first pair): 4.2 and 5.3 s after the second fell, sequence 4, and those two come at
+--          you (they're unaware until then: in the won run you stood 14.5 yalms off for 3.6 s before)
 --   those two down: 7.8 and 10.5 s later sequence 5 and the cutscene (the director's scene 5, 0xF8402EFB); the
---          allied marauder (3970427, level 30) and conjurer (3970428) appear
+--          allied marauder (3970427, level 30) and conjurer (3970428) appear. Nothing fights during it: the boss's
+--          first blow is 1 s after sequence 6 (both runs)
 --   the cutscene over: sequence 6; the boss goes after the marauder, and three more corsairs come (two archers
 --          after the conjurer, a conjurer after you); battle talk 105, 106, 107, 108 every 5 s from 4 s in
 --   the boss at 55% (56.1% -> 54.9% and 55.1% -> 51.2%): sequence 7 and five more (two lancers, two thaumaturges
@@ -65,14 +68,10 @@ ACTION_CURE = 120
 ALLY_ENMITY = 100000
 
 -- Steps: { updates after the step before, kind, ... } (Battle:steps)
+-- The first pair down: 4 s later (retail: 4.2 and 5.3 s) the second pair waits for you to come over (see onUpdate.)
 FIRST_PAIR_DOWN_STEPS = {
-    { 4, "sequence", 4 },
-    { 0, "call", function(director)
-        for _, id in ipairs(SECOND_PAIR) do
-            if BATTLE.alive[id] then
-                director:set_hate(id, nil, ALLY_ENMITY) -- the player
-            end
-        end
+    { 8, "call", function(director)
+        second_pair_ready = true
     end },
 }
 SECOND_PAIR_DOWN_STEPS = {
@@ -90,7 +89,7 @@ SIXTH_STEPS = {
     { 0, "sequence", 6 },
     { 0, "call", function(director)
         BATTLE:release(director, ALLIES)
-        director:set_hate(BNPC_BOSS, BNPC_ALLY_MARAUDER, ALLY_ENMITY)
+        BATTLE:engage(director, { BNPC_BOSS }, BNPC_ALLY_MARAUDER, ALLY_ENMITY)
     end },
     { 1, "spawn", SECOND_WAVE },
     { 8, "talk", SPEAKER_WATCHER, 105 },
@@ -142,12 +141,14 @@ BATTLE:ally(BNPC_ALLY_CONJURER, {
         { action = ACTION_CURE, targets = { Battle.PLAYER, BNPC_ALLY_MARAUDER, "self" }, below = 55, every = 7 },
     },
 })
-BATTLE:enemy(BNPC_BOSS, { group = "boss", passive = true })
+-- The boss and the second pair don't notice anyone on their own: the boss waits out the cutscene (it would take on
+-- the allies appearing beside it), the second pair for the first to fall.
+BATTLE:enemy(BNPC_BOSS, { group = "boss", passive = true, unaware = true })
 for _, id in ipairs(FIRST_PAIR) do
     BATTLE:enemy(id, { group = "first", passive = true })
 end
 for _, id in ipairs(SECOND_PAIR) do
-    BATTLE:enemy(id, { group = "second", passive = true })
+    BATTLE:enemy(id, { group = "second", passive = true, unaware = true })
 end
 BATTLE:enemy(3970655, { group = "adds", attacks = BNPC_ALLY_CONJURER })
 BATTLE:enemy(3970671, { group = "adds", attacks = BNPC_ALLY_CONJURER })
@@ -160,6 +161,7 @@ end
 BATTLE:enemy(4167379, {
     group = "second",
     passive = true,
+    unaware = true,
     heals = { { action = ACTION_CURE, targets = { 4167378, "self" }, below = 50, every = 7 } },
 })
 BATTLE:enemy(3970673, {
@@ -169,6 +171,28 @@ BATTLE:enemy(3970673, {
 
 -- The first pair fights once one of them is hurt (Kawari can't tell when they'd notice you.)
 local engaged = false
+-- The second pair comes at you once the first is down and you're near them (or you hit one.) Retail: 14.5 and 18.4
+-- yalms from the nearer one at sequence 4.
+SECOND_PAIR_NOTICE_YALMS = 20
+second_pair_ready = false
+local second_engaged = false
+
+local function playerNear(info, layouts, yalms)
+    local player = info and info.player
+    if player == nil then
+        return false
+    end
+    for _, id in ipairs(layouts) do
+        local npc = info[id]
+        if npc ~= nil then
+            local dx, dy, dz = npc.x - player.x, npc.y - player.y, npc.z - player.z
+            if dx * dx + dy * dy + dz * dz <= yalms * yalms then
+                return true
+            end
+        end
+    end
+    return false
+end
 BATTLE:onCleared(FIRST_PAIR, function(director)
     BATTLE:steps(FIRST_PAIR_DOWN_STEPS)
 end)
@@ -241,6 +265,19 @@ function onUpdate(director, health, player_health, info)
                     director:set_hate(id, nil, ALLY_ENMITY)
                 end
             end
+        end
+    end
+    if second_pair_ready and not second_engaged then
+        local hurt = false
+        for _, id in ipairs(SECOND_PAIR) do
+            if health[id] ~= nil and health[id] < 100 then
+                hurt = true
+            end
+        end
+        if hurt or playerNear(info, SECOND_PAIR, SECOND_PAIR_NOTICE_YALMS) then
+            second_engaged = true
+            director:set_sequence(4)
+            BATTLE:engage(director, SECOND_PAIR, nil, ALLY_ENMITY) -- the player
         end
     end
     BATTLE:update(director, health, player_health, info)

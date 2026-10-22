@@ -116,7 +116,9 @@ end
 
 -- An NPC on the other side. role: group (e.g. "boss", "adds"; several groups can be given as a list), attacks (who
 -- it goes after first: an ally's layout ID, or nil for the player), enmity (how much), heals, range, passive (true:
--- it goes after no one until someone hits it, as To Guard a Guardian's masked mage stands by until attacked.)
+-- it goes after no one until someone hits it, as To Guard a Guardian's masked mage stands by until attacked),
+-- unaware (true: it doesn't notice anyone who comes close either, until Battle:engage; Victory in Peril's boss and
+-- second pair, who wait for the script.)
 -- `role` (tank, dps, support) matters for enemies too: whom their supports heal first, whom a tank protects.
 function Battle:enemy(layout, role)
     self.roles[layout] = merge({ side = "enemy", group = "adds" }, role)
@@ -212,6 +214,9 @@ function Battle:spawn(director, layouts)
             if not role.passive then
                 director:set_hate(layout, role.attacks, role.enmity or Battle.STARTING_ENMITY) -- nil is the player
             end
+            if role.unaware then
+                director:set_notice(layout, false)
+            end
         elseif role.role ~= "tank" and #self:withRole("ally", "tank") > 0 then
             -- The tank goes in first; everyone else follows a moment later (or later still, if held: Battle:holdBack.)
             self.hold[layout] = math.max(self.hold[layout] or 0, self.updates + Battle.FOLLOW_DELAY)
@@ -241,6 +246,19 @@ function Battle:spawn(director, layouts)
         end
     end
     self:retarget(director)
+end
+
+-- Sends enemies after someone (an ally's layout ID, or nil for the player), and lets unaware ones notice people again.
+function Battle:engage(director, layouts, target, enmity)
+    for _, layout in ipairs(layouts) do
+        if self.alive[layout] then
+            local role = self.roles[layout]
+            if role ~= nil and role.unaware then
+                director:set_notice(layout, true)
+            end
+            director:set_hate(layout, target, enmity or Battle.STARTING_ENMITY)
+        end
+    end
 end
 
 -- Keeps allies out of the fight, spawned or not, until Battle:release (e.g. through a cutscene, as retail waits for

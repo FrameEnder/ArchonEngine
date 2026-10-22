@@ -184,6 +184,12 @@ pub enum LuaDirectorTask {
     SetSequence {
         sequence: u8,
     },
+    /// Whether an aggressive BNpc notices whoever comes close (the default) or only fights when hit or sent after
+    /// someone.
+    SetNotice {
+        layout_id: u32,
+        notices: bool,
+    },
     /// How close (in yalms) a BNpc gets to its target before attacking: melee (3) or a caster's range (15.)
     SetAttackRange {
         layout_id: u32,
@@ -472,6 +478,14 @@ impl UserData for LuaDirector {
                     target,
                     amount: amount.unwrap_or(1),
                 });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "set_notice",
+            |_, this, (layout_id, notices): (u32, bool)| {
+                this.tasks
+                    .push(LuaDirectorTask::SetNotice { layout_id, notices });
                 Ok(())
             },
         );
@@ -1602,6 +1616,13 @@ pub fn director_tick(
                     FromServer::QuestBattleFailed,
                     DestinationNetwork::ZoneClients,
                 );
+            }
+            LuaDirectorTask::SetNotice { layout_id, notices } => {
+                if *notices {
+                    instance.unaware_npcs.remove(layout_id);
+                } else {
+                    instance.unaware_npcs.insert(*layout_id);
+                }
             }
             LuaDirectorTask::SetAttackRange { layout_id, yalms } => {
                 let Some((actor_id, _)) = instance.find_npc(*layout_id) else {

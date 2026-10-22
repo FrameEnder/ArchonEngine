@@ -56,6 +56,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `play_scene(scene, flags)` | Plays one of the director's scenes for every player (event type GameProgress), e.g. To Guard a Guardian's cutscene, scene 6 with flags `0xF8402EFB`. The script hears `onSceneFinished` when it's over. |
 | `despawn_bnpc(layout_id)` | Removes an NPC without it dying (no `onActorDeath`). |
 | `warp_players(x, y, z, rotation)` | Moves every player in the instance through a loading screen to a position in it (PrepareZoning to the same territory, then ActorSetPos). |
+| `set_notice(npc, notices)` | With `false`, an aggressive NPC no longer notices whoever comes close (players or allied NPCs, `AGGRO_RANGE`); it fights only when hit or sent after someone (`set_hate`). `true` restores it. Kept per layout ID for the instance (`Instance::unaware_npcs`). |
 | `set_attack_range(npc, yalms)` | How close the NPC gets to its target before attacking: melee (3) or a caster's distance. |
 | `keep_near(npc, anchors, yalms)` | Keeps the NPC within `yalms` of every anchor (one, or a list: NPC layout IDs, `"player"` or `nil` for the player): it heads back to the middle of them when it's further from any, whatever it's fighting (Papalymo near Yda and you). `yalms` `nil` stops it. |
 | `stand_behind(npc, tank, yalms)` | Has the NPC stand `yalms` behind the enemy `tank` (a layout ID) is fighting, out of its frontal cones and cleaves, as long as that keeps it near its anchors and its own target in reach. `yalms` `nil` stops it. |
@@ -89,6 +90,7 @@ BATTLE:onHealth(BNPC_BOSS, 75, function(director) BATTLE:spawn(director, WAVE_1)
 | `enemy(layout, role)` | `group` (a name or a list, e.g. `{ "lostwings", "adds" }`); `attacks`: whom it goes for first (an ally, or the player when `nil`) with `enmity` (300); `passive = true`: no one at first, it waits to be hit (To Guard a Guardian's masked mage); it can have `heals` too (the sincallers heal Quzal). |
 | heals | `{ action, targets (layout IDs, Battle.PLAYER, or "allies" for its whole side), below (%), every (s), say (a function) }`: heals whichever target is lowest under `below`. |
 | `spawn(director, layouts)` / `remove(director, layouts)` | Brings NPCs in as their roles say (placement, first target) / takes them out without dying. |
+| `enemy(…, { unaware = true })` / `engage(director, layouts, target, enmity)` | An enemy that doesn't notice anyone on its own (`set_notice(npc, false)` when it spawns) / sends enemies after someone (`nil`, the player) and lets unaware ones notice people again. |
 | `holdBack(layouts)` / `release(director, layouts)` | Keeps allies out of the fight, spawned or not, until released (the tank then goes at once, the others `FOLLOW_DELAY` later): Victory in Peril's allies appear during a cutscene and wait for it to end. |
 | `change(director, name, changes)` | A new context: `changes = { [layout] = { focus = … } }` from now on (the boss gone, someone joining). |
 | `steps(list)` | Timed steps, one after another: `{ updates after the one before, kind, … }` with kinds `sequence`, `talk`, `say`, `yell`, `spawn`, `remove`, `action`, `change`, `call`. A step runs the update after its count is up. |
@@ -249,10 +251,16 @@ player is sent out.
   Chronofoil capture of 2026-10-21, two runs (`--battle 0.20`, lost as he fell, and `0.22`, won; territory 249, duty
   313).
 * The boss (3970651) and four corsairs stand by; the first two fight once one of them is hurt (sequence 3: retail's
-  are when they noticed the player, which Kawari can't time), both down: 2 s later sequence 4 and the other two come;
-  those down: 9 s later sequence 5, the cutscene (scene 5, 0xF8402EFB) and the allied marauder and conjurer (Cure
-  below 55 %), held back (`holdBack`) until it ends: nothing fights during it; after it sequence 6, the allies
-  released, the boss on the marauder, three more corsairs and talks 105–108 every 5 s; the boss
+  are when they noticed the player, which Kawari can't time). The second pair is unaware until the first is down
+  and 4 s have passed, and then waits for you to come within 20 yalms (or to hit one of them): sequence 4 and they
+  come at you. On retail both times you'd walked 50 yalms over to them by then (14.5 and 18.4 yalms from the nearer
+  at sequence 4, 4.2 and 5.3 s after the first pair fell; in the won run you'd stood there 3.6 s without them
+  noticing), so whether it's your coming close or the time that starts them can't be told from the runs; Bob
+  remembers having to go to them. Those down: 9 s later sequence 5, the cutscene (scene 5, 0xF8402EFB) and the allied
+  marauder and conjurer (Cure below 55 %), held back (`holdBack`) until it ends. Nothing fights during it (retail:
+  the boss's first blow is 1 s after sequence 6): the boss is unaware until then, as it would otherwise take on the
+  allies appearing 13 yalms from it (Bob's bundle of 2026-10-22: it fought the marauder through the cutscene, reached
+  55 % and turned on him). After it sequence 6, the allies released, the boss on the marauder, three more corsairs and talks 105–108 every 5 s; the boss
   at 55 %: sequence 7, five more (after the marauder), the boss on you, 8 at 4.5 s and 109–111; at 25 %: 9 and 112,
   10 5.5 s later, 115, 113, 114. Its health at 0: 2 s later sequence 11, "Duty Complete" (scene 11, 0xF8402FFF) and
   114 if not said yet; the quest moves to 4. The corsair conjurers Cure their side: on retail 81–86 HP each, 5.5–7.7 s

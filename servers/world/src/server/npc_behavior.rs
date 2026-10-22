@@ -494,6 +494,7 @@ pub fn npc_behavior(
                 .contains(CharacterDataFlag::GUARD);
             if *state == NpcState::Wander
                 && !*returning_home
+                && !instance.unaware_npcs.contains(&spawn.common.layout_id)
                 && (guard
                     || spawn
                         .character_data_flags
