@@ -54,8 +54,12 @@ add one when something is found.
   (2026-10-22): the crash, the healing from afar and the fight through the cutscene are fixed (his third run); the
   distances that start each part, the conjurers' damage over time and the thaumaturges' Fire are fixed since, not yet
   retried in game. Sequence 3 came 4 s after the first arrow in the lost run and 1.3 s before it in the won one, so
-  it isn't tied to their noticing you alone. Your own Ruin hit the corsairs for 46–50 where retail's was 38–43 (the
-  boss 47 on both), at the same level; why isn't known. The boss and some adds have actions without scripts (see
+  it isn't tied to their noticing you alone. Your own Ruin hit the corsairs for 46–50 where retail's was 38–43: Bob's
+  gear (retail: Intelligence and attack magic potency 53, HP 223, defense 46, magic defense 82; Kawari 58, 245, 60,
+  99; PlayerStats in the capture and the bundle, both Arcanist 14), about what 9 % more Intelligence gives. The boss,
+  though, took 47 on both: retail's Ruin hit it harder than the corsairs with the same gear (47 to 41), which Kawari
+  doesn't do (a lower defense for it, perhaps; not known). Damage *taken* doesn't depend on the player's gear in
+  quest battles (recorded amounts). The boss and some adds have actions without scripts (see
   the battle's page).
 * Quest battles' opening scenes now use retail's flags and EventStart flags (the UI stayed up, no skip button);
   untested in game, and which of the two the skip button needs isn't known. Quest battles 18, 37, 38 and 39 have no

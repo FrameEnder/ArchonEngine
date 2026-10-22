@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-22 | — | Quest battles: Victory in Peril's distances, its third wave's actions; combat (NPC damage over time, rotations without GCD actions); questkit (battle-sim's positions); known issues.
+| 2026-10-22 | — | Known issues: Victory in Peril's damage gap is Bob's gear, but for the boss.
+| 2026-10-22 | `9786f78` | Quest battles: Victory in Peril's distances, its third wave's actions; combat (NPC damage over time, rotations without GCD actions); questkit (battle-sim's positions); known issues.
 | 2026-10-22 | `8fb63f6` | Quest battles: opening scenes' flags (per battle) and EventStart's flags byte; Victory in Peril's cutscene waits for you by the boss; known issues.
 | 2026-10-22 | `20d83cb` | Quest battles: Victory in Peril (24): the boss quiet through the cutscene, the second pair waits for you (`set_notice`, Battle.lua `unaware` / `engage`); known issues.
 | 2026-10-22 | `370430b` | Quest battles: Victory in Peril (24) waits for its cutscene, the watcher's battle talk as an EventNpc (`battle_talk`'s `kind`), its conjurers' Cures; the framework's `holdBack` / `release`; known issues.
