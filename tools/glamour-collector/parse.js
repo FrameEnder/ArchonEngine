@@ -1,10 +1,16 @@
-// Reads the glamour on the page: its title, who it's for, and each piece's slot, item and dyes.
+// Reads the glamour on an Eorzea Collection page: its title, who it fits, the classes it's for, and each piece's slot,
+// item and dyes. Matched to the site's markup as of 2026-10-23 (read from the Vampire Reverie page and twenty others):
 //
-// This first version doesn't know Eorzea Collection's markup (it was written without seeing the page's HTML), so it
-// reads the page by its visible text rather than class names: it looks for the slot labels (Head, Body, Hands...),
-// and takes each label's item and dyes from the text beside it. If a page comes out wrong, the popup's "Copy page
-// HTML" gives the gear section's HTML to send over, and this function gets matched to the real markup. Every entry
-// can also be corrected by hand in the popup.
+// * the title: `h1.title` (the page's other h1s are the menu's);
+// * rows of `.columns`, each a `span.subtitle` label ("Model", "Intended for", "Level to Equip", "Fits") and `.tag`
+//   chips; "Fits" reads "Any Gender", "Female" or "Male"; "Intended for" has an `img` whose alt is the job's
+//   abbreviation and title its name ("RDM" / "Red Mage"), or a group ("Tanks", "Caster DPS", "Gatherers"), or "ALL";
+// * a `.list.box` per slot: `.gear-icon-box-slot-name` (HEAD, BODY, HANDS, LEGS, FEET, EARRINGS, NECKLACE,
+//   BRACELETS, RING, FACE, WEAPON, OFFHAND), and a `.list-item` per piece with the name in `.list-item-title` and
+//   chips in `.list-item-description .tag`: a dye has a `has-text-dye-*` dot, "◯ Undyed" is no dye, and the rest are
+//   labels ("Optional", "Seasonal Item", "Online Store Exclusive").
+//
+// If the site changes, the panel's "Copy page HTML" copies the gear section to send over.
 
 const KAWARI_SLOT_NAMES = {
   head: "Head",
@@ -21,13 +27,10 @@ const KAWARI_SLOT_NAMES = {
   wrists: "Wrists",
   ring: "Ring",
   rings: "Ring",
-  "right ring": "Ring",
-  "left ring": "Ring",
+  face: "Face",
   weapon: "Weapon",
-  "main hand": "Weapon",
-  "off hand": "Off Hand",
-  "off-hand": "Off Hand",
   offhand: "Off Hand",
+  "off hand": "Off Hand",
 };
 
 function kawariCleanText(text) {
@@ -35,76 +38,78 @@ function kawariCleanText(text) {
 }
 
 function kawariTitle(doc) {
-  const h1 = doc.querySelector("h1");
-  if (h1 && kawariCleanText(h1.textContent)) return kawariCleanText(h1.textContent);
+  const title = doc.querySelector("h1.title");
+  if (title && kawariCleanText(title.textContent)) return kawariCleanText(title.textContent);
   const og = doc.querySelector('meta[property="og:title"]');
-  const title = kawariCleanText(og ? og.content : doc.title);
-  return title.replace(/\s*[|\-–]\s*Eorzea Collection.*$/i, "").trim() || "Glamour";
+  const text = kawariCleanText(og ? og.content : doc.title);
+  return text.replace(/\s*\|\s*Eorzea Collection.*$/i, "").trim() || "Glamour";
 }
 
-// "male", "female" or "any", from a label on the page saying so.
-function kawariGender(doc) {
-  const words = [];
-  for (const element of doc.querySelectorAll("a, span, li, div, p, small, strong")) {
-    if (element.children.length > 0) continue;
-    const text = kawariCleanText(element.textContent).toLowerCase();
-    if (text === "male" || text === "♂" || text === "female" || text === "♀") words.push(text);
+// The info row labelled `label` ("Fits", "Intended for"), outside the site's menus.
+function kawariInfoRow(doc, label) {
+  for (const subtitle of doc.querySelectorAll("span.subtitle")) {
+    if (subtitle.closest("nav, [class*=mega]")) continue;
+    if (kawariCleanText(subtitle.textContent).toLowerCase() !== label.toLowerCase()) continue;
+    const row = subtitle.closest(".columns");
+    if (row) return row;
   }
-  const male = words.some((word) => word === "male" || word === "♂");
-  const female = words.some((word) => word === "female" || word === "♀");
-  if (male && !female) return "male";
-  if (female && !male) return "female";
+  return null;
+}
+
+// "male", "female" or "any", from the "Fits" row.
+function kawariGender(doc) {
+  const row = kawariInfoRow(doc, "Fits");
+  if (!row) return "any";
+  const text = [...row.querySelectorAll(".tag, img")]
+    .map((element) => (element.tagName === "IMG" ? element.title || element.alt : element.textContent))
+    .join(" ")
+    .toLowerCase();
+  if (/\bfemale\b/.test(text)) return "female";
+  if (/\bmale\b/.test(text)) return "male";
   return "any";
 }
 
-// The pieces next to each slot label: the label's container (the nearest ancestor holding more than the label, and no
-// other slot's label) holds the item's name first and then its dyes.
-function kawariPieces(doc) {
-  const labels = [];
-  for (const element of doc.querySelectorAll("body *")) {
-    if (element.children.length > 0) continue;
-    const slot = KAWARI_SLOT_NAMES[kawariCleanText(element.textContent).toLowerCase().replace(/:$/, "")];
-    if (slot) labels.push({ element, slot });
+// The classes from the "Intended for" row: each icon's name ("Red Mage", "Tanks"), none for all classes.
+function kawariClasses(doc) {
+  const row = kawariInfoRow(doc, "Intended for");
+  if (!row) return [];
+  const classes = [];
+  const images = [...row.querySelectorAll("img")];
+  const names = images.length
+    ? images.map((image) => ({ alt: kawariCleanText(image.alt), name: kawariCleanText(image.title || image.alt) }))
+    : [...row.querySelectorAll(".tag")].map((tag) => ({ alt: "", name: kawariCleanText(tag.textContent) }));
+  for (const { alt, name } of names) {
+    if (!name || /^all$/i.test(alt) || /^all( classes)?$/i.test(name)) continue;
+    if (!classes.includes(name)) classes.push(name);
   }
-  const labelElements = new Set(labels.map((label) => label.element));
+  return classes;
+}
+
+// A piece's dyes: the chips with a dye's dot, and "Undyed"; not the labels.
+function kawariDyes(listItem) {
+  const dyes = [];
+  for (const chip of listItem.querySelectorAll(".list-item-description .tag")) {
+    const text = kawariCleanText(chip.textContent.replace(/[⬤◯●○]/g, ""));
+    if (chip.querySelector("[class*='has-text-dye']") || /^undyed$/i.test(text)) {
+      if (text) dyes.push(/^undyed$/i.test(text) ? "undyed" : text);
+    }
+  }
+  return dyes.slice(0, 2);
+}
+
+function kawariPieces(doc) {
   const pieces = [];
-  const seen = new Set();
-  for (const { element, slot } of labels) {
-    let container = element.parentElement;
-    for (let depth = 0; container && depth < 5; depth += 1, container = container.parentElement) {
-      const others = [...container.querySelectorAll("*")].filter(
-        (other) => labelElements.has(other) && other !== element,
-      );
-      if (others.length > 0) {
-        container = null;
-        break;
-      }
-      const texts = kawariTexts(container).filter((text) => text.element !== element);
-      if (texts.length > 0) {
-        const values = texts.map((text) => text.value);
-        const key = `${slot}:${values[0]}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          pieces.push({ slot, item: values[0], dyes: values.slice(1, 3) });
-        }
-        break;
-      }
+  for (const label of doc.querySelectorAll(".gear-icon-box-slot-name")) {
+    const slot = KAWARI_SLOT_NAMES[kawariCleanText(label.textContent).toLowerCase()];
+    const box = label.closest(".list.box");
+    if (!slot || !box) continue;
+    for (const listItem of box.querySelectorAll(".list-item")) {
+      const title = listItem.querySelector(".list-item-title");
+      const item = title ? kawariCleanText(title.textContent) : "";
+      if (item) pieces.push({ slot, item, dyes: kawariDyes(listItem) });
     }
   }
   return pieces;
-}
-
-// The visible text pieces inside an element, in order (each leaf element's text, or an image's alt text.)
-function kawariTexts(root) {
-  const texts = [];
-  for (const element of root.querySelectorAll("*")) {
-    if (element.children.length > 0 && element.tagName !== "A") continue;
-    let value = kawariCleanText(element.textContent);
-    if (!value && element.tagName === "IMG") value = kawariCleanText(element.alt || element.title);
-    if (!value || value.length > 80) continue;
-    texts.push({ element, value });
-  }
-  return texts;
 }
 
 function kawariParseGlamour(doc) {
@@ -113,23 +118,19 @@ function kawariParseGlamour(doc) {
     url: doc.location ? doc.location.href.split("#")[0] : "",
     title: kawariTitle(doc),
     gender: kawariGender(doc),
-    classes: [],
+    classes: kawariClasses(doc),
     pieces: kawariPieces(doc),
     added: new Date().toISOString(),
   };
 }
 
-// The gear section's HTML (or the page's main content), to send over when a page reads wrong.
+// The gear section's HTML (the info rows and every slot's box), to send over if the site changes.
 function kawariPageHtml(doc) {
-  const labels = [...doc.querySelectorAll("body *")].filter(
-    (element) =>
-      element.children.length === 0 &&
-      KAWARI_SLOT_NAMES[kawariCleanText(element.textContent).toLowerCase().replace(/:$/, "")],
-  );
-  let section = labels.length > 0 ? labels[0].parentElement : null;
-  while (section && labels.some((label) => !section.contains(label))) section = section.parentElement;
-  const root = section || doc.querySelector("main") || doc.body;
-  return root.outerHTML;
+  const parts = [kawariInfoRow(doc, "Fits"), kawariInfoRow(doc, "Intended for")].filter(Boolean);
+  const boxes = [...doc.querySelectorAll(".gear-icon-box-slot-name")].map((label) => label.closest(".list.box"));
+  parts.push(...boxes.filter(Boolean));
+  if (parts.length === 0) return (doc.querySelector("main") || doc.body).outerHTML;
+  return parts.map((part) => part.outerHTML).join("\n");
 }
 
 if (typeof module !== "undefined") {

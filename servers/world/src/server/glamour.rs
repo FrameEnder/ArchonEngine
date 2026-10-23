@@ -20,8 +20,10 @@
 //!
 //! The slot before the colon is optional (the item says where it goes); dyes come after `|`, by the game's names for
 //! them. Names may be written in `<...>`, as the extension exports them. `Class:` lists the classes or jobs (names or
-//! abbreviations, `|` between them) the glamour is for; a job and its base class count as one (a Black Mage glamour
-//! fits a Thaumaturge too, but a Scholar's doesn't fit a Summoner), and without the line it fits any class. Weapons are left out (bots keep their class's.)
+//! abbreviations, or role groups such as `Tanks` and `Caster DPS`, `|` between them) the glamour is for; a job and its
+//! base class count as one (a Black Mage glamour fits a Thaumaturge too, but a Scholar's doesn't fit a Summoner), and
+//! without the line (or with `All Classes`) it fits any class. Weapons and facewear are left out (bots keep their
+//! class's weapon.)
 
 use std::{collections::HashMap, path::Path, sync::Mutex, time::SystemTime};
 
@@ -84,8 +86,40 @@ const SLOTS: [&str; 14] = [
     "ring",
     "rings",
 ];
-const WEAPON_SLOTS: [&str; 5] = ["weapon", "main hand", "mainhand", "off hand", "offhand"];
+/// Lines left out: weapons (bots keep their class's) and facewear (not gear.)
+const SKIPPED_SLOTS: [&str; 8] = [
+    "weapon",
+    "main hand",
+    "mainhand",
+    "off hand",
+    "offhand",
+    "face",
+    "facewear",
+    "glasses",
+];
 const CLASS_LINES: [&str; 4] = ["class", "classes", "job", "jobs"];
+/// Class names meaning no restriction (Eorzea Collection's "All Classes".)
+const ANY_CLASS: [&str; 4] = ["all classes", "all", "any", "any class"];
+
+/// The role groups a combat class is in, by its ClassJob Role (1 tank, 2 melee, 3 ranged, 4 healer) and PrimaryStat
+/// (2, dexterity, for the physical ranged): the names Eorzea Collection's "Intended for" uses, and a few more.
+fn role_groups(role: u8, primary_stat: u8) -> &'static [&'static str] {
+    const DEXTERITY: u8 = 2;
+    match (role, primary_stat) {
+        (1, _) => &["tanks", "tank", "disciples of war"],
+        (2, _) => &["melee dps", "melee", "disciples of war"],
+        (3, DEXTERITY) => &["physical ranged dps", "physical ranged", "disciples of war"],
+        (3, _) => &[
+            "caster dps",
+            "casters",
+            "caster",
+            "magical ranged dps",
+            "disciples of magic",
+        ],
+        (4, _) => &["healers", "healer", "disciples of magic"],
+        _ => &[],
+    }
+}
 
 /// Lower case, one kind of apostrophe, single spaces: how names are matched.
 pub fn normalise(name: &str) -> String {
@@ -149,7 +183,7 @@ pub fn parse(text: &str) -> Vec<GlamourText> {
         let mut rest = line;
         if let Some((slot, after)) = line.split_once(':') {
             let slot = normalise(slot);
-            if WEAPON_SLOTS.contains(&slot.as_str()) {
+            if SKIPPED_SLOTS.contains(&slot.as_str()) {
                 continue;
             }
             if CLASS_LINES.contains(&slot.as_str()) {
@@ -171,11 +205,12 @@ pub fn parse(text: &str) -> Vec<GlamourText> {
 }
 
 /// Names to IDs: equippable items by name (with their EquipSlotCategory), dyes by name, and combat classes and jobs by
-/// name, English name and abbreviation (with their ClassJobParent.)
+/// name, English name and abbreviation, and role groups ("tanks", "caster dps") by name, each to its classes (ClassJob
+/// rows with their ClassJobParent.)
 pub struct Names {
     pub items: HashMap<String, (u32, u8)>,
     pub stains: HashMap<String, u8>,
-    pub classes: HashMap<String, (u8, u8)>,
+    pub classes: HashMap<String, Vec<(u8, u8)>>,
 }
 
 /// Matches each glamour's items, dyes and classes to the game's (`names`): returns the glamours, and what wasn't
@@ -184,19 +219,27 @@ pub fn resolve(texts: &[GlamourText], names: &Names) -> (Vec<Glamour>, Vec<Strin
     let mut glamours = Vec::new();
     let mut unknown = Vec::new();
     for text in texts {
+        let any_class = text
+            .classes
+            .iter()
+            .any(|class| ANY_CLASS.contains(&normalise(class).as_str()));
         let mut classes = Vec::new();
-        for class in &text.classes {
-            match names.classes.get(&normalise(class)) {
-                Some(&class) => {
-                    if !classes.contains(&class) {
-                        classes.push(class);
+        if !any_class {
+            for class in &text.classes {
+                match names.classes.get(&normalise(class)) {
+                    Some(found) => {
+                        for class in found {
+                            if !classes.contains(class) {
+                                classes.push(*class);
+                            }
+                        }
                     }
+                    None => unknown.push(format!("{}: class {class:?}", text.name)),
                 }
-                None => unknown.push(format!("{}: class {class:?}", text.name)),
             }
-        }
-        if !text.classes.is_empty() && classes.is_empty() {
-            continue;
+            if !text.classes.is_empty() && classes.is_empty() {
+                continue;
+            }
         }
         let mut pieces = Vec::new();
         for (item, dyes) in &text.pieces {
@@ -257,16 +300,20 @@ impl GameData {
                 }
             }
         }
-        let mut classes = HashMap::new();
+        let mut classes: HashMap<String, Vec<(u8, u8)>> = HashMap::new();
         for (id, row) in self.classjob_sheet.into_iter().flatten_subrows() {
             if row.Role == 0 || id > u8::MAX as u32 {
                 continue;
             }
+            let class = (id as u8, row.ClassJobParent);
             for name in [&row.Name, &row.NameEnglish, &row.Abbreviation] {
                 let name = normalise(&name.to_string());
                 if !name.is_empty() {
-                    classes.insert(name, (id as u8, row.ClassJobParent));
+                    classes.insert(name, vec![class]);
                 }
+            }
+            for group in role_groups(row.Role, row.PrimaryStat) {
+                classes.entry(group.to_string()).or_default().push(class);
             }
         }
         Names {
@@ -380,10 +427,11 @@ Legs: Waders | undyed
             ]),
             stains: HashMap::from([("soot black".to_string(), 2), ("wine red".to_string(), 30)]),
             classes: HashMap::from([
-                ("black mage".to_string(), (25, 7)),
-                ("blm".to_string(), (25, 7)),
-                ("thaumaturge".to_string(), (7, 7)),
-                ("scholar".to_string(), (28, 26)),
+                ("black mage".to_string(), vec![(25, 7)]),
+                ("blm".to_string(), vec![(25, 7)]),
+                ("thaumaturge".to_string(), vec![(7, 7)]),
+                ("scholar".to_string(), vec![(28, 26)]),
+                ("tanks".to_string(), vec![(1, 1), (19, 1), (32, 32)]),
             ]),
         }
     }
@@ -474,5 +522,30 @@ Head: <Circlet>
         assert!(pick(&glamours, Gender::Male, 1, 1).is_none());
         // A glamour for Thaumaturge fits its Black Mage too.
         assert!(fits_class((7, 7), 25, 7));
+    }
+
+    #[test]
+    fn role_groups_all_classes_and_facewear() {
+        let text = "== Knight (male)
+Class: <Tanks>
+Head: <Circlet>
+Face: <Circlet>
+
+== Anyone (ANY)
+Class: <All Classes>
+Hands: <Kote>
+";
+        let texts = parse(text);
+        assert_eq!(texts[0].pieces.len(), 1);
+        let (glamours, unknown) = resolve(&texts, &names());
+        assert!(unknown.is_empty());
+        assert_eq!(glamours[0].classes, vec![(1, 1), (19, 1), (32, 32)]);
+        assert!(glamours[1].classes.is_empty());
+        let knight = &glamours[..1];
+        assert!(pick(knight, Gender::Male, 19, 1).is_some());
+        assert!(pick(knight, Gender::Male, 32, 32).is_some());
+        assert!(pick(knight, Gender::Male, 25, 7).is_none());
+        assert!(role_groups(3, 2).contains(&"physical ranged dps"));
+        assert!(role_groups(3, 4).contains(&"caster dps"));
     }
 }

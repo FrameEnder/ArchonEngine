@@ -3,7 +3,20 @@
 // An entry: { id, url, title, gender: "any" | "male" | "female", classes: [names or abbreviations; empty: any class],
 // pieces: [{ slot, item, dyes: [..] }], added }.
 
-const KAWARI_SLOTS = ["Head", "Body", "Hands", "Legs", "Feet", "Ears", "Neck", "Wrists", "Ring", "Weapon", "Off Hand"];
+const KAWARI_SLOTS = [
+  "Head",
+  "Body",
+  "Hands",
+  "Legs",
+  "Feet",
+  "Ears",
+  "Neck",
+  "Wrists",
+  "Ring",
+  "Face",
+  "Weapon",
+  "Off Hand",
+];
 
 const KAWARI_HEADER = "# Lines starting with # are notes.";
 

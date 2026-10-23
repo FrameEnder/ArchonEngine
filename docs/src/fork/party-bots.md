@@ -162,10 +162,13 @@ Feet: <item name> | <dye>
 ```
 
 * The slot before the colon is optional (the item says where it goes); weapon lines are skipped (bots keep their
-  class's weapon). Names match whatever the case or spacing, and either kind of apostrophe, with or without the
+  class's weapon), and so are `Face:` lines (facewear isn't gear). Names match whatever the case or spacing, and either kind of apostrophe, with or without the
   `<...>` round them (the extension writes them); `undyed` means no dye.
 * `Class:` (or `Job:`) takes classes and jobs by name, English name or abbreviation (`Black Mage`, `BLM`), `|`
-  between them; several lines add up. A job and its base class count as one: a Black Mage glamour fits a Thaumaturge
+  between them; several lines add up. It also takes the role groups Eorzea Collection uses: `Tanks`, `Healers`,
+  `Melee DPS`, `Physical Ranged DPS` and `Caster DPS` (and `Disciples of War` / `Disciples of Magic`), worked out from
+  the ClassJob sheet's Role and PrimaryStat (dexterity marks the physical ranged); `All Classes` means any class.
+  Gatherer and crafter groups match no combat class, so those glamours are left out. A job and its base class count as one: a Black Mage glamour fits a Thaumaturge
   bot and a Thaumaturge glamour fits a Black Mage, but jobs sharing a base class don't fit each other (a Scholar
   glamour fits an Arcanist, not a Summoner). Without the line a glamour fits any class; one whose classes are all
   unknown is left out (and logged) rather than worn by every class.

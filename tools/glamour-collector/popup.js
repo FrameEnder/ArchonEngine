@@ -31,6 +31,45 @@ function bodyText(entry) {
   return kawariEntryText({ ...entry, classes: [] }).split("\n").slice(1).join("\n");
 }
 
+// The Class chips and dropdown in `container` for `names`; `change(names)` saves a new list.
+function showClasses(container, names, change) {
+  container.textContent = "";
+  for (const name of names) {
+    const chip = document.createElement("span");
+    chip.className = KAWARI_CLASS_NAMES.includes(name) ? "chip" : "chip unknown";
+    if (!KAWARI_CLASS_NAMES.includes(name)) chip.title = "Not a combat class or role: bots won't wear this glamour";
+    chip.textContent = name;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.title = `Remove ${name}`;
+    remove.addEventListener("click", () => change(names.filter((other) => other !== name)));
+    chip.appendChild(remove);
+    container.appendChild(chip);
+  }
+  const select = document.createElement("select");
+  const first = document.createElement("option");
+  first.value = "";
+  first.textContent = names.length ? "+ Add class…" : "Any class (+ add one…)";
+  select.appendChild(first);
+  for (const [group, members] of KAWARI_CLASS_GROUPS) {
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = group;
+    for (const member of members) {
+      const option = document.createElement("option");
+      option.value = member;
+      option.textContent = member;
+      option.disabled = names.includes(member);
+      optgroup.appendChild(option);
+    }
+    select.appendChild(optgroup);
+  }
+  select.addEventListener("change", () => {
+    if (select.value) change([...names, select.value]);
+  });
+  container.appendChild(select);
+}
+
 function render(entries) {
   list.textContent = "";
   showCounts(entries);
@@ -78,22 +117,19 @@ function render(entries) {
 
     row.append(link, gender, remove);
 
-    // The classes or jobs it's for (names or abbreviations, as the game writes them); empty: any class.
-    const classes = document.createElement("input");
-    classes.type = "text";
+    // The classes or jobs it's for, as chips (× removes one) and a dropdown to add one; none: any class.
+    const classes = document.createElement("div");
     classes.className = "classes";
-    classes.placeholder = "Class: any (or e.g. BLM, Scholar)";
-    classes.title = "Classes or jobs this glamour is for, separated by commas; empty for any class";
-    classes.value = (entry.classes || []).join(", ");
-    classes.addEventListener("change", async () => {
+    const setClasses = async (names) => {
       const all = await load();
       const stored = all.find((other) => other.id === entry.id);
       if (!stored) return;
-      stored.classes = kawariNames(classes.value);
-      classes.value = stored.classes.join(", ");
+      stored.classes = names;
       await save(all);
-      say(stored.classes.length ? `${stored.title}: ${stored.classes.join(", ")} only.` : `${stored.title}: any class.`);
-    });
+      showClasses(classes, names, setClasses);
+      say(names.length ? `${stored.title}: ${names.join(", ")} only.` : `${stored.title}: any class.`);
+    };
+    showClasses(classes, entry.classes || [], setClasses);
 
     const lines = document.createElement("textarea");
     lines.value = bodyText(entry);
@@ -110,7 +146,7 @@ function render(entries) {
       const edited = kawariParseEntryText(`${header}\n${lines.value}`, all[index]);
       all[index] = edited;
       await save(all);
-      classes.value = (edited.classes || []).join(", ");
+      showClasses(classes, edited.classes || [], setClasses);
       lines.value = bodyText(edited);
       warn.textContent = edited.pieces.length === 0 ? "No pieces: this glamour will be left out." : "";
       say(`Saved ${edited.title}.`);

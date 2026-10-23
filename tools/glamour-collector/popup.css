@@ -92,16 +92,33 @@ select.any {
   border-color: #c79a3b;
 }
 
-input.classes {
-  box-sizing: border-box;
-  width: 100%;
+div.classes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
   margin-top: 6px;
-  padding: 4px 5px;
-  border: 1px solid #4a5568;
-  border-radius: 4px;
-  background: #1d2330;
+}
+
+.chip {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 2px 4px 2px 8px;
+  border-radius: 10px;
+  background: #3a4458;
+}
+
+.chip.unknown {
+  background: #5a3a2a;
+}
+
+.chip button {
+  padding: 0 5px;
+  border-radius: 8px;
+  background: transparent;
   color: #e8ecf2;
-  font: inherit;
+  font-weight: 400;
 }
 
 textarea {

@@ -32,8 +32,10 @@ git; the list is the user's, in the browser's `chrome.storage.local`.
   the page and adds it (again on the same page reads it again, keeping the gender and classes chosen); *Copy page
   HTML* copies the gear section's HTML, for when a page reads wrong.
 * **The toolbar popup** lists the entries with male / female / ANY counts. Each has a gender choice (ANY, Male,
-  Female), a Class box (names or abbreviations, commas between; empty for any class), and its piece lines to edit
-  (`Slot: <item> | <dye> | <second dye>`). *Export glamours.txt* downloads the list, *Copy list* copies it.
+  Female), its classes as chips (× removes one) with a dropdown to add one (the role groups, then every combat job and
+  base class by role, from `classes.js`; none for any class; a chip the server won't match, such as "Gatherers", is
+  marked), and its piece lines to edit (`Slot: <item> | <dye> | <second dye>`). *Export glamours.txt* downloads the
+  list, *Copy list* copies it.
 
 An entry as exported:
 
@@ -45,11 +47,20 @@ Hands: <item> | <dye> | <undyed>
 Weapon: <item>
 ```
 
-The page reader (`parse.js`, `kawariParseGlamour`) was written without seeing the site's markup: it finds the slot
-labels (Head, Body, Hands, Legs, Feet, Earrings, Necklace, Bracelets, Ring, Weapon, Off Hand) by their text and takes
-the item and dyes from the text beside each, the title from the `h1` (or `og:title`), and the gender from a lone
-"Male" / "Female" label (otherwise ANY). It doesn't read a class from the page. `format.js` writes and reads the
-entries' text; `content.js` is the page's panel, `popup.js` the list.
+The page reader (`parse.js`, `kawariParseGlamour`) follows the site's markup as read on 2026-10-23 from 21 glamour
+pages through Claude in Chrome:
+
+| What | Where on the page |
+|---|---|
+| Title | `h1.title` (the page's other `h1`s are the menu's, which is where the first version's "Browse all" came from) |
+| Gender | The `.columns` row whose `span.subtitle` is "Fits": a `.tag` reading "Any Gender", "Female" or "Male" |
+| Classes | The row "Intended for": an `img` with the job's abbreviation as `alt` and its name as `title` ("RDM" / "Red Mage"), a group ("Tanks", "Caster DPS" with the tag "Disciples of Magic", "Gatherers" / "Disciples of the Land"), or "ALL" / "All Classes" |
+| Slots | A `.list.box` each, labelled `.gear-icon-box-slot-name`: HEAD, BODY, HANDS, LEGS, FEET, EARRINGS, NECKLACE, BRACELETS, RING, FACE, WEAPON, OFFHAND; a `.list-item` per piece |
+| Item | `.list-item-title` (the icon's `alt` repeats the name) |
+| Dyes | `.list-item-description .tag` chips with a `has-text-dye-*` dot, or "◯ Undyed"; the other chips are labels ("Optional", "Seasonal Item", "Online Store Exclusive"), which the first version took for dyes |
+
+Of 20 pages from the newest listing, 13 fit any gender, 6 female and 1 male; 9 were for all classes. `format.js`
+writes and reads the entries' text; `content.js` is the page's panel, `popup.js` the list.
 
 ## kawari-opcodescan (`tools/opcodescan`)
 

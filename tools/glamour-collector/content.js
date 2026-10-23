@@ -35,9 +35,10 @@
     const { entries = [] } = await chrome.storage.local.get("entries");
     const existing = entries.findIndex((other) => other.url === entry.url);
     if (existing >= 0) {
-      // Keep the gender chosen before, read the rest again.
+      // Keep the gender and classes chosen before (in the popup), read the gear again.
       entry.id = entries[existing].id;
       entry.gender = entries[existing].gender;
+      entry.classes = entries[existing].classes || entry.classes;
       entries[existing] = entry;
     } else {
       entries.push(entry);

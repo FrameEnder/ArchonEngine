@@ -5,8 +5,8 @@ A Chrome extension that collects Eorzea Collection glamours into a list for Kawa
 
 1. `chrome://extensions` → turn on Developer mode → Load unpacked → pick this folder.
 2. Open a glamour on ffxiv.eorzeacollection.com and press **Add to Kawari list** (bottom right).
-3. Click the extension's toolbar icon: set each entry's gender (ANY, Male, Female) and classes (empty for any), fix
-   any lines the page didn't read right, then **Export glamours.txt**.
+3. Click the extension's toolbar icon. The gender and classes come from the page's "Fits" and "Intended for"; change
+   the gender (ANY, Male, Female) or add classes from the dropdown (× removes one; none means any class), fix any
+   lines if needed, then **Export glamours.txt**.
 
-If a page reads wrong, press **Copy page HTML** on it and send the HTML over so the reader can be matched to the
-site's markup. The full description is in the fork's documentation, `docs/src/fork/tools.md`.
+If the site changes and pages read wrong, press **Copy page HTML** on one and send the HTML over. The full description is in the fork's documentation, `docs/src/fork/tools.md`.

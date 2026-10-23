@@ -235,9 +235,11 @@ add one when something is found.
 * The glamour list (`glamours.txt`) is untested in game (2026-10-23): whether the client shows an NPC's glamoured
   models and both dyes as a player's. Items limited to a race or a sex aren't checked, nor whether a glamour's items
   are ones its classes could wear.
-* The Glamour Collector's page reader (`tools/glamour-collector/parse.js`) was written without seeing Eorzea
-  Collection's markup (the site isn't reachable from the workspace), so it reads the page by its visible slot labels;
-  it needs checking against a real page's HTML (the panel's *Copy page HTML*). It doesn't read the glamour's class.
+* The Glamour Collector's page reader follows Eorzea Collection's markup as of 2026-10-23 (checked on 21 live pages,
+  not yet through the installed extension); a site change will need it matched again. A glamour listing more than
+  one job in "Intended for" wasn't seen, so whether those come as several icons is unknown.
+* The Class dropdown's job names are written into the extension (`tools/glamour-collector/classes.js`), not read
+  from the game's data like the server's names are.
 * The tank's spot across from the party and its keeping up with the player are untested in game.
 
 ## Sastasha
