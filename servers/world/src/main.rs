@@ -4860,7 +4860,7 @@ async fn process_server_msg(
                     lua_player.play_scene(scene, SceneFlags::from_bits_retain(flags), Vec::new());
                 }
             }
-            FromServer::PlayDirectorCutscene(cutscene_id, content_handler_id) => {
+            FromServer::PlayDirectorCutscene(cutscene_id, content_handler_id, params) => {
                 connection
                     .start_event(
                         ObjectTypeId {
@@ -4884,7 +4884,7 @@ async fn process_server_msg(
                             | SceneFlags::UNK1
                             | SceneFlags::DISABLE_STEALTH
                             | SceneFlags::INVIS_AOE,
-                        vec![cutscene_id, 1, 38, 1, 0],
+                        std::iter::once(cutscene_id).chain(params).collect(),
                     );
                 }
             }

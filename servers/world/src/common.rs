@@ -281,8 +281,9 @@ pub enum FromServer {
     FriendRemoved(u64, String),
     /// Inform the client that a new letter has arrived in their mailbox.
     NewLetterArrived,
-    /// Plays a cutscene from the instance director.
-    PlayDirectorCutscene(u32, HandlerId),
+    /// Plays a cutscene from the instance director: the cutscene, the director, and the scene's parameters after the
+    /// cutscene's ID (see `DEFAULT_CUTSCENE_PARAMS`).
+    PlayDirectorCutscene(u32, HandlerId, Vec<u32>),
     /// Plays one of the director's scenes, with these scene flags.
     PlayDirectorScene(HandlerId, u16, u32),
     /// Inform the client that another player has placed a piece of furniture.

@@ -108,8 +108,11 @@ pub enum LuaDirectorTask {
     VariantVoteRoute {
         npc_route: u32,
     },
+    /// Play a cutscene (scene 3 with its ID), with the scene's parameters after the ID: `DEFAULT_CUTSCENE_PARAMS`
+    /// unless the script gives its own.
     PlayCutscene {
         cutscene_id: u32,
+        params: Vec<u32>,
     },
     UpdateShortcut {
         poprange_id: u32,
@@ -253,6 +256,11 @@ pub struct ActorInfo {
     pub target_is_player: bool,
 }
 
+/// A director cutscene's scene parameters after its ID, unless the script gives its own: upstream's, as retail sent
+/// for Denn's arrival in Sastasha (175, then 1, 38, 1, 0). Retail sent other ones for his death (176: 1, 18, 0, 0), and
+/// with these the client went on to play his arrival's dialogue again after it (Bob's bundle of 2026-10-23.)
+pub const DEFAULT_CUTSCENE_PARAMS: [u32; 4] = [1, 38, 1, 0];
+
 // TODO: Maybe collapse into DirectorData?
 #[derive(Default, Debug)]
 pub struct LuaDirector {
@@ -364,11 +372,16 @@ impl UserData for LuaDirector {
                 .push(LuaDirectorTask::VariantVoteRoute { npc_route });
             Ok(())
         });
-        methods.add_method_mut("play_cutscene", |_, this, cutscene_id: u32| {
-            this.tasks
-                .push(LuaDirectorTask::PlayCutscene { cutscene_id });
-            Ok(())
-        });
+        methods.add_method_mut(
+            "play_cutscene",
+            |_, this, (cutscene_id, params): (u32, Option<Vec<u32>>)| {
+                this.tasks.push(LuaDirectorTask::PlayCutscene {
+                    cutscene_id,
+                    params: params.unwrap_or_else(|| DEFAULT_CUTSCENE_PARAMS.to_vec()),
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut("update_shortcut", |_, this, poprange_id: u32| {
             // Show the shortcut object because it's hidden by default
             this.tasks.push(LuaDirectorTask::ShowEObj {
@@ -1814,12 +1827,15 @@ pub fn director_tick(
                     actor.add_enmity(target_id, *amount);
                 }
             }
-            LuaDirectorTask::PlayCutscene { cutscene_id } => {
+            LuaDirectorTask::PlayCutscene {
+                cutscene_id,
+                params,
+            } => {
                 let mut network = network.lock();
                 network.send_to_instance(
                     ObjectId::default(),
                     instance,
-                    FromServer::PlayDirectorCutscene(*cutscene_id, director_id),
+                    FromServer::PlayDirectorCutscene(*cutscene_id, director_id, params.clone()),
                     DestinationNetwork::ZoneClients,
                 );
             }

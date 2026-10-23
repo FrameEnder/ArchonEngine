@@ -360,8 +360,9 @@ function onActorDeath(director, bnpc_id, position)
         -- Update shortcut
         director:update_shortcut(SHORTCUT_AFTER_DENN)
 
-        -- Play defeat cutscene
-        director:play_cutscene(176)
+        -- Play defeat cutscene, with retail's parameters for it (Bob's Chronofoil capture of 2026-10-23: 176, then
+        -- 1, 18, 0, 0); with the arrival's (1, 38, 1, 0) the client played Denn's arrival dialogue again after it.
+        director:play_cutscene(176, { 1, 18, 0, 0 })
 
         director:complete_duty()
     end

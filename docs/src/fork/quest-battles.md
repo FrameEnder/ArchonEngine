@@ -66,6 +66,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `play_action_timeline(npc, timeline_id)` | Plays an animation (ActionTimeline row) on the NPC (ActorControl 407), as Sastasha's second captain does (980) as he calls his men. |
 | `yell(npc, npc_yell_id)` | A speech bubble over the NPC: NpcYell row (e.g. 117/118 Yda's and Papalymo's in Chasing Shadows, 122/123 the golem's rumbles). The packet (NpcYell) is the actor, 4 bytes, the speaker's BNpcName (for a battle NPC; upstream's comment says ENpcResident), the NpcYell row, then four u32 parameters, 0 in every quest battle bubble on retail. |
 | `party_npc_yell(role, npc_yell_id, delay)` | The party NPC (Duty Support member) playing `role` (`"tank"`, `"healer"`, `"melee"`, `"ranged"`) yells an NpcYell line `delay` seconds from now (0 if left out), under its BNpcName; nobody of that role, nothing. For a duty's story lines: see [Party NPCs](party-npcs.md#talking). |
+| `play_cutscene(id, params)` | (upstream; `params` the fork's) Plays a duty's cutscene: the director's scene 3 with the cutscene's ID, then `params` (default 1, 38, 1, 0, retail's for Denn's arrival in Sastasha). Retail's differ per cutscene: Denn's death was 176 with 1, 18, 0, 0, and with the default ones the client played his arrival's dialogue again after it (Bob's bundle and Chronofoil capture of 2026-10-23). Take them from a capture. |
 
 ## The battle framework (`content/lib/Battle.lua`)
 
