@@ -29,6 +29,9 @@ add one when something is found.
   and the Lancer's 29772 doesn't heal it. Their chatter in fights is at random every 150–400 s of fighting, not
   whatever made retail's members speak.
 * The bots' diamond formation (also the Player NPCs') is measured with a healer player only.
+* How hard enemies hit them (2026-10-23) is the players' scale times retail's ratio for each member (a third for the
+  Marauder), untested in game. On retail the enemies stayed on the tank (the Lancer and Thaumaturge took 330 damage
+  each in 30 minutes); whether Kawari's enemies stray onto them more isn't checked.
 
 ## Party bots
 

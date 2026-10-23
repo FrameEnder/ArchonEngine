@@ -115,6 +115,11 @@ pub struct Member {
     /// ActorControlSelf 276's third value and 1525's second for its party slot.
     pub slot_member: u32,
     pub slot_resident: u32,
+    /// How much of an enemy's hit on a player it takes. In the capture the same enemies' attacks did a third to the
+    /// Marauder of what they did to Bob, a level 17 Conjurer (the median of 12 attacks seen on both: Sastasha's
+    /// pirates' 16 against 49, 14/45, 10/32, 15/47..., all 0.27-0.44), and about the same to the Lancer and the
+    /// Thaumaturge (33/49, 44/45, 54/45, 9-10/11).
+    pub damage_taken: f32,
     /// Statuses it spawned with (the tank's 3124.)
     pub statuses: &'static [u16],
     pub auto_attack: u32,
@@ -141,6 +146,7 @@ pub const MEMBERS: [Member; 3] = [
         hp: 411,
         slot_member: 10000,
         slot_resident: 1042776,
+        damage_taken: 0.31,
         statuses: &[3124],
         auto_attack: 17058,
         attack_range: 3.0,
@@ -183,6 +189,7 @@ pub const MEMBERS: [Member; 3] = [
         hp: 322,
         slot_member: 10001,
         slot_resident: 1042777,
+        damage_taken: 1.0,
         statuses: &[],
         auto_attack: 17059,
         attack_range: 3.0,
@@ -220,6 +227,7 @@ pub const MEMBERS: [Member; 3] = [
         hp: 293,
         slot_member: 10002,
         slot_resident: 1042778,
+        damage_taken: 1.0,
         statuses: &[],
         auto_attack: 0,
         attack_range: 8.0,

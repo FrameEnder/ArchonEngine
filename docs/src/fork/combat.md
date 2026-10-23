@@ -172,7 +172,13 @@ Enemies still compute damage like players do (stat × potency), which is far too
   says what that NPC's action did on retail to a player and to another NPC. The hit is scaled to it (then varied,
   missed, parried or critical as above), and a heal (Cure) is set to it ±5 %. Used for quest battle allies and
   enemies (Leia's Legacy, To Guard a Guardian), so they wear each other down, and heal, as fast as on retail.
-* NPCs hitting other NPCs without a recorded amount are not scaled.
+* **Party bots and party NPCs are hit as players are** (since 2026-10-23): an enemy's hit on one is scaled as a hit on
+  a player (its `players` recorded amount, or `npc_damage_scale`), with a player's defences for a bot
+  (`modifiers::apply_hit_on_player`) and, for a [Party NPC](party-npcs.md#taking-hits), its member's share of a
+  player's damage, or its timeline's `npcs` amount where that was recorded on the Duty Support members. Before, they
+  were hit like any NPC by another, unscaled: about eight times a player's damage, and Sastasha's Duty Support members
+  died to two enemies (Bob, 2026-10-23).
+* Other NPCs hitting other NPCs without a recorded amount are not scaled.
 * An NPC's **damage over time** is scaled as its hit was (`scale_npc_periodic_damage`): the action script works the
   tick out from the NPC's stats as if it were a player's, which made Victory in Peril's corsair conjurers' Aero tick
   for 26–28 where retail's were 2–7 (the hit, scaled to 7, was right). Aero's tick is 30 potency to the hit's 50, so

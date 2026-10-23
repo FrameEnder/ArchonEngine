@@ -539,11 +539,38 @@ pub fn execute_action(
 
         // Bring NPC damage against players to what retail does, see npc_damage_scale. Hits vary a little, and are
         // sometimes critical.
+        // Party bots and party NPCs are hit as players are (`hit_like_a_player`): an enemy's hit on them was worked out
+        // unscaled, like one NPC on another, about eight times what it does to a player, so Sastasha's Duty Support
+        // members died to two enemies (Bob, 2026-10-23).
+        let enemy_attacking = matches!(actor, NetworkedActor::Npc { .. })
+            && !instance.party_bots.contains_key(&from_actor_id);
+        let hit_like_a_player = |id: ObjectId| {
+            matches!(instance.find_actor(id), Some(NetworkedActor::Player { .. }))
+                || (enemy_attacking && instance.party_bots.contains_key(&id))
+        };
         let npc_hitting_player = matches!(actor, NetworkedActor::Npc { .. })
-            && matches!(
-                instance.find_actor(request.target.object_id),
-                Some(NetworkedActor::Player { .. })
-            );
+            && hit_like_a_player(request.target.object_id);
+        // What an enemy's action did to a party NPC on retail, when its timeline has it: its `npcs` amount, recorded on
+        // the Duty Support members (Sastasha's bosses), taken as it is. Otherwise a party NPC takes its share of a
+        // player's (`PartyBot::damage_taken`.)
+        let is_party_npc = |id: ObjectId| {
+            enemy_attacking
+                && instance
+                    .party_bots
+                    .get(&id)
+                    .is_some_and(|bot| bot.party_npc.is_some())
+        };
+        let member_recorded = |id: ObjectId| match actor {
+            NetworkedActor::Npc { timeline, .. } if is_party_npc(id) => {
+                timeline.recorded_amount(request.action_id, false)
+            }
+            _ => None,
+        };
+        let recorded_for = |id: ObjectId| match actor {
+            NetworkedActor::Npc { timeline, .. } => member_recorded(id)
+                .or_else(|| timeline.recorded_amount(request.action_id, hit_like_a_player(id))),
+            _ => None,
+        };
         // Area attacks land on everyone of the target's side inside them when the cast finishes (aimed where the
         // target was, and facing the way the enemy was, when it started casting), not just on its target: the
         // players, and in content the NPCs fighting beside them (retail's Terror Eye in Duty, Honor, Country hit the
@@ -587,7 +614,7 @@ pub fn execute_action(
                     && *id != from_actor_id
                     && area_side(other).is_some()
                     && area_side(other) == side
-                    && (hits_npcs || matches!(other, NetworkedActor::Player { .. }))
+                    && (hits_npcs || hit_like_a_player(*id))
                     && other.get_common_spawn().health_points > 0
                     && caught(other.position().0)
                 {
@@ -603,10 +630,6 @@ pub fn execute_action(
 
         // What retail's recording says this NPC's action does to this kind of target (Timeline::recorded_amounts):
         // allies and enemies in quest battles hurt and heal each other, and the player, as much as they did there.
-        let target_is_player = matches!(
-            instance.find_actor(request.target.object_id),
-            Some(NetworkedActor::Player { .. })
-        );
         let miss_percent = npc_miss_percent(
             instance
                 .find_actor(request.target.object_id)
@@ -614,12 +637,7 @@ pub fn execute_action(
                 .unwrap_or(common_spawn.level),
             common_spawn.level,
         );
-        let recorded = match actor {
-            NetworkedActor::Npc { timeline, .. } => {
-                timeline.recorded_amount(request.action_id, target_is_player)
-            }
-            _ => None,
-        };
+        let recorded = recorded_for(request.target.object_id);
 
         if let Some(recorded) = recorded
             && let Some(effects_builder) = &mut effects_builder
@@ -650,7 +668,7 @@ pub fn execute_action(
             let Some(bystander) = instance.find_actor(*id) else {
                 continue;
             };
-            let is_player = matches!(bystander, NetworkedActor::Player { .. });
+            let is_player = hit_like_a_player(*id);
             let damage: u32 = effects
                 .iter()
                 .filter_map(|effect| match effect.0 {
@@ -658,12 +676,7 @@ pub fn execute_action(
                     _ => None,
                 })
                 .sum();
-            let recorded = match actor {
-                NetworkedActor::Npc { timeline, .. } => {
-                    timeline.recorded_amount(request.action_id, is_player)
-                }
-                _ => None,
-            };
+            let recorded = recorded_for(*id);
             let scale = match recorded {
                 Some(recorded) if damage > 0 => Some(recorded / damage as f32),
                 _ if is_player => Some(npc_damage_scale(actor, common_spawn.level)),
@@ -717,25 +730,35 @@ pub fn execute_action(
                     );
                 }
                 NetworkedActor::Npc { .. } => {
-                    if let Some(target @ NetworkedActor::Player { .. }) = target {
-                        modifiers::apply_hit_on_player(
-                            &mut effects_builder.effects,
-                            &caster_statuses,
-                            &status_ids(target),
-                            target.get_common_spawn().class_job,
-                        );
-                    }
-                    for (id, effects) in &mut area_bystanders {
-                        if let Some(bystander @ NetworkedActor::Player { .. }) =
-                            instance.find_actor(*id)
-                        {
-                            modifiers::apply_hit_on_player(
-                                effects,
-                                &caster_statuses,
-                                &status_ids(bystander),
-                                bystander.get_common_spawn().class_job,
-                            );
+                    // A player's defences; a party bot's as a player's, a party NPC's as retail's member took hits
+                    // (`PartyBot::damage_taken`.)
+                    let defend = |effects: &mut Vec<TargetEffect>, id: ObjectId| {
+                        let Some(defender) = instance.find_actor(id) else {
+                            return;
+                        };
+                        let bot = enemy_attacking
+                            .then(|| instance.party_bots.get(&id))
+                            .flatten();
+                        match (defender, bot) {
+                            (_, Some(bot)) if bot.party_npc.is_some() => {
+                                if member_recorded(id).is_none() {
+                                    scale_damage(effects, bot.damage_taken())
+                                }
+                            }
+                            (NetworkedActor::Player { .. }, _) | (_, Some(_)) => {
+                                modifiers::apply_hit_on_player(
+                                    effects,
+                                    &caster_statuses,
+                                    &status_ids(defender),
+                                    defender.get_common_spawn().class_job,
+                                )
+                            }
+                            _ => {}
                         }
+                    };
+                    defend(&mut effects_builder.effects, request.target.object_id);
+                    for (id, effects) in &mut area_bystanders {
+                        defend(effects, *id);
                     }
                 }
                 _ => {}
@@ -2665,6 +2688,17 @@ fn scale_npc_heal(effects: &mut [TargetEffect], recorded: f32) {
 
 /// Rolls one enemy hit on a player: scaled to what retail does (see `npc_damage_scale`), with a little variance, and
 /// a chance to miss, be parried or be critical. Drains give back what they took.
+/// Multiplies an NPC hit's damage by `factor` (at least 1 a hit.)
+fn scale_damage(effects: &mut [TargetEffect], factor: f32) {
+    for effect in effects.iter_mut() {
+        if let TargetEffectKind::Damage { amount, .. } = &mut effect.0 {
+            *amount = (*amount as f32 * factor)
+                .round()
+                .clamp(1.0, u16::MAX as f32) as u16;
+        }
+    }
+}
+
 fn roll_npc_hit(effects: &mut Vec<TargetEffect>, scale: f32, miss_percent: u8) {
     let roll = fastrand::u8(..100);
     let missed = roll < miss_percent;

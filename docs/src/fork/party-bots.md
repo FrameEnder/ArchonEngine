@@ -231,6 +231,9 @@ The packet is 944 bytes (Kawari's `ExamineCharacterInformation`, whose two unkno
   ears, neck, wrists, two rings) the item of the highest item level whose ClassJobCategory includes the class and
   whose LevelEquip is at most the bot's level, rarity then the newest breaking ties; PvP gear left out; no off-hand with
   a two-handed weapon; two of a ring that isn't unique, otherwise the best two.
+* **Hit as a player is.** Enemies' hits on a bot are scaled as their hits on players, with a player's defences (its
+  class's and statuses'); until 2026-10-23 they were unscaled, NPC against NPC, about eight times as hard (see
+  [Combat](combat.md#enemy-damage-to-players)).
 * **A player's stats.** The same formulas as players' (`use_retail_formula`, `perform_calculations`, the gear's stats
   as high quality, `calculate_potencies`): its class's modifiers, its tribe, level 100 and that gear, so its HP, damage
   and healing are a player's. 10,000 MP.

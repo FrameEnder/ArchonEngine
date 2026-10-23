@@ -94,6 +94,18 @@ weaponskills and spells 24–27, the auto-attacks 3, the Marauder's 29764 76 and
 the Thaumaturge's 29312 277; Sastasha's trash has 905 HP. That's what "fighting like someone of the duty's level"
 looks like: steady, with a big hit every few GCDs, unlike a synced player's rotation.
 
+## Taking hits
+
+On retail the same enemies' attacks did about a third as much to the Marauder as to Bob (a level 17 Conjurer): the
+median of 12 attacks seen landing on both (Sastasha's pirates' auto-attacks 16 against 49, 14/45, 10/32, 15/47 and
+so on, all 0.27–0.44), and about the same to the Lancer and the Thaumaturge (33/49, 44/45, 54/45, 9–10/11). The tank
+took 8,106 damage in the run and the other two 330 each: enemies stayed on the tank, and Bob healed it 7,372. So an
+enemy's hit on a party NPC is the hit a player would take (scaled as enemies' hits on players are, see
+[Combat](combat.md#enemy-damage-to-players)) times its member's `damage_taken`: 0.31 for the Marauder, 1 for the
+others; where the enemy's timeline has an `npcs` amount recorded on the members (Sastasha's bosses), that instead.
+Until 2026-10-23 enemies hit them as one NPC hits another, unscaled, about eight times a player's damage (Bob: they
+died to two enemies).
+
 ## Talking
 
 Their lines are NpcYell packets from the member, under its BNpcName:

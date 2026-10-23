@@ -205,6 +205,15 @@ pub struct PartyBot {
 }
 
 impl PartyBot {
+    /// How much of a hit meant for a player a party NPC takes (its member's, recorded on retail); 1 for the bots, whose
+    /// defences are a player's (`modifiers::apply_hit_on_player`.)
+    pub fn damage_taken(&self) -> f32 {
+        self.party_npc
+            .as_ref()
+            .map(|state| state.member.damage_taken)
+            .unwrap_or(1.0)
+    }
+
     /// A bot of `role` for `leader`, fighting from `attack_range`, `order`th to join; nothing else set yet.
     pub fn new(leader: ObjectId, role: BotRole, attack_range: f32, order: usize) -> Self {
         let now = Instant::now();
