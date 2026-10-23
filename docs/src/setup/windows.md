@@ -24,6 +24,10 @@ Place the `oodle-network-shared.dll` from the Oodle zip you downloaded next to t
 
 {{#include hosts.md}}
 
+This file is located under `C:\Windows\System32\Drivers\etc\hosts` on Windows.
+
+Run `ipconfig /flushdns` if you get network issues while trying to launch. This ensures the modifications to your hosts file is actually used. If you get a version check failed message, it means the patch servers are unreachable.
+
 ## Running
 
 Run the server by double-clicking `kawari-run.exe`.

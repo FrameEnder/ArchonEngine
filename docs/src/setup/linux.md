@@ -20,6 +20,8 @@ Place the `oodle-network-shared.so` from the Oodle zip you downloaded next to th
 
 {{#include hosts.md}}
 
+This file is located at `/etc/hosts`.
+
 ## Running
 
 Run the server by executing `kawari-run` in your terminal emulator.
