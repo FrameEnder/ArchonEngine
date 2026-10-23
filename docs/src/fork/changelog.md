@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-23 | — | Party bots (only gear its race and sex may wear); known issues.
+| 2026-10-23 | — | `master` fast-forwarded to `Latest-Quest` with Bob's OK (changelog).
+| 2026-10-23 | `e03815c` | Party bots (only gear its race and sex may wear); known issues.
 | 2026-10-23 | `2ecfd79` | Party bots (hats Viera and Hrothgar can't show, keeping to the ground; retail's hat flags from 3,532 players); known issues.
 | 2026-10-23 | `c761919` | Party bots (healer bots raise); known issues.
 | 2026-10-23 | `74cae8a` | Party bots (when a bot dies: raised, or getting up after 30 s); known issues.
@@ -205,13 +206,14 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 ## Kawari (fork)
 
-Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`), and on 2026-10-19 (right after `5b5e91f`, and again right after `6bd4b19` and `511d7e1`), and on 2026-10-20 (right after `666a398`, and again right after `f6ff8ea` and `3851eba`), and on 2026-10-21 (right after `23a4b40`, bringing in the `upstream-7.57h1` work: upstream's 7.57h1 and everything since; and again right after `09088d6`, and right after `6da62d9`, when the `upstream-7.57h1` branch was retired: work goes on `Latest-Quest` again).
+Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `master` was fast-forwarded to `Latest-Quest` on 2026-10-17 with Bob's OK (the commit that says so, right after `ee5e162`), and again on 2026-10-18 (the commit that says so, right after `37e0762`), and on 2026-10-19 (right after `5b5e91f`, and again right after `6bd4b19` and `511d7e1`), and on 2026-10-20 (right after `666a398`, and again right after `f6ff8ea` and `3851eba`), and on 2026-10-21 (right after `23a4b40`, bringing in the `upstream-7.57h1` work: upstream's 7.57h1 and everything since; and again right after `09088d6`, and right after `6da62d9`, when the `upstream-7.57h1` branch was retired: work goes on `Latest-Quest` again), and on 2026-10-23 with Bob's OK (right after `e03815c`: the party bots, glamours and Kawari Web's glamour API).
 
 ### 2026-10-23
 
 | Commit | Change |
 |---|---|
-| — | From Bob's bundle of 2026-10-23 (a Viera in a Miqo'te loincloth, invisible): a bot's best gear and its glamour's pieces leave out what its race and sex may not wear (Item EquipRestriction, an EquipRaceCategory row; `GameData::wearable_restrictions`); its look is chosen first. Workspace icarus feature `EquipRaceCategory`. |
+| — | `master` fast-forwarded to `Latest-Quest` with Bob's OK. |
+| `e03815c` | From Bob's bundle of 2026-10-23 (a Viera in a Miqo'te loincloth, invisible): a bot's best gear and its glamour's pieces leave out what its race and sex may not wear (Item EquipRestriction, an EquipRaceCategory row; `GameData::wearable_restrictions`); its look is chosen first. Workspace icarus feature `EquipRaceCategory`. |
 | `2ecfd79` | From Bob's bundle of 2026-10-23. A Viera or Hrothgar bot whose head model has no file for its race and sex hides its hat (`HIDE_HEAD`) instead of showing a stand-in. Bots keep to the navmesh's floor where they walk straight (the tank walked 2 yalms under Sastasha's floor): each step is set on the floor under it (`Navmesh::ground_under`). |
 | `c761919` | Healer bots raise the dead of their party (the player and their other bots), in combat or out, before healing: their class's raise (Raise, Resurrection, Ascend, Egeiro by ID), on the nearest within its range not offered a revive already nor being raised by another bot (`party_bot::raise_the_fallen`). A bot casting stands still out of combat too. |
 | `74cae8a` | A dead party bot lies where it fell instead of fading out and despawning after 8 s like other NPCs (which is why raising one did nothing). Raised (status 148 from Raise and the like), it accepts after 2 s and gets up there with 20 % HP and MP, Weakness and status 418, as a raised player does (the ZoneIn raise animation for those near); not raised within 30 s, it gets up beside the one it follows at full HP and MP (`party_bot::tend_the_fallen`). |
