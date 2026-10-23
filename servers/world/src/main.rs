@@ -1209,6 +1209,17 @@ async fn process_packet(
                                     );
                                     connection.send_ipc_self(ipc).await;
                                 }
+                                // A duty's entrance asking for its Duty Support window: retail answered with the
+                                // duty (DawnContent) and 0, and the window opened (Bob's capture of 2026-10-23.)
+                                ClientTriggerCommand::OpenDutySupportFor { dawn_content_id } => {
+                                    let ipc = ServerZoneIpcSegment::new(
+                                        ServerZoneIpcData::DutySupportContent {
+                                            dawn_content_id,
+                                            unk: 0,
+                                        },
+                                    );
+                                    connection.send_ipc_self(ipc).await;
+                                }
                                 ClientTriggerCommand::OpenDutySupportWindow => {
                                     let mut available_content =
                                         Vec::with_capacity(DutySupportInformation::INDICE_COUNT);

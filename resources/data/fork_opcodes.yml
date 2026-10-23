@@ -205,6 +205,13 @@ ServerZoneIpcType:
   size: 32
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with Chronofoil, defeat an enemy that drops an item - the 32-byte packet starting 03000000 right after the kill's EXP.
+- name: DutySupportContent
+  comment: Eight bytes answering ClientTrigger 2650 (the Duty Support window asked for at a duty's entrance) - the DawnContent, then 0.
+  # 701 on 2026.10.16 (Bob's Chronofoil capture of 2026-10-23, at Sastasha's entrance: 200, 0, right after the trigger.)
+  opcode: 701
+  size: 8
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On retail with Chronofoil, talk to Sastasha's entrance and choose Duty Support - the 8-byte packet right after the client's ClientTrigger 2650.
 - name: RetainerStateNotice
   comment: Eight bytes sent before every RetainerState and after a retainer's containers (zeros; 0 then 1 before sending away a retainer whose market changed.)
   # 897 on 2026.09.15, 144 on 2026.10.06 (Bob's Chronofoil captures.)

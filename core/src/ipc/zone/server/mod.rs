@@ -700,6 +700,12 @@ pub enum ServerZoneIpcData {
         unk: u32,
         market_changed: u32,
     },
+    /// The answer to `OpenDutySupportFor`: the duty (DawnContent) the Duty Support window opens at, then 0 (Bob's
+    /// Chronofoil capture of 2026-10-23, at Sastasha's entrance: 200, 0.)
+    DutySupportContent {
+        dawn_content_id: u32,
+        unk: u32,
+    },
     /// A retainer is called or sent away at a summoning bell, or hired.
     RetainerState(RetainerState),
     /// The character's retainers for the marketboard's listings.

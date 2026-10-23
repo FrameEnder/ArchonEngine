@@ -554,6 +554,15 @@ pub enum ClientTriggerCommand {
     #[brw(magic = 2550u32)]
     OpenGoldSaucerMahjongTab,
 
+    /// The client asks for the Duty Support window for one duty, from its entrance (Sastasha's: CustomTalk 772,
+    /// CmnDefSdsEntrance). Answered with `ServerZoneIpcData::DutySupportContent` (Bob's Chronofoil capture of
+    /// 2026-10-23: 200, then the window opened.)
+    #[brw(magic = 2650u32)]
+    OpenDutySupportFor {
+        /// Index into the DawnContent Excel sheet.
+        dawn_content_id: u32,
+    },
+
     /// The client opens the Trust window.
     #[brw(magic = 2651u32)]
     OpenTrustWindow,

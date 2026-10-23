@@ -56,6 +56,7 @@ start and re-finds them after the next patch.
 | LootList | server → client | 272 | | 88 | An opened coffer's items and the time to roll. Same capture. |
 | LootItem | server → client | 975 | | 56 | One of a coffer's items: slot, unique, time left. Same capture. |
 | LootRollResult | server → client | 462 | | 16 | The answer to LootRoll: rolled (and the roll), passed or refused. Same capture. |
+| DutySupportContent | server → client | 701 | | 8 | The answer to ClientTrigger 2650 (a duty's entrance asking for its Duty Support window): the DawnContent, then 0. From Bob's capture of 2026-10-23 (Sastasha's entrance: 200, 0). See [Party NPCs](party-npcs.md#registering). |
 | LootResult | server → client | 807 | | 16 | Who won a coffer's item, with what roll (0xE0000000 when everyone passed). Same capture. |
 | ActionRequestGroundTargeted | client → server | 492 | 891 (09.15), 846 (10.06) | 24 | A ground-targeted action (Asylum...): the action, its type, the sequence, the rotation, where on the ground. Not yet seen on Kawari; the layout is from Bob's captures. Handled as an action on oneself for now. Finder. |
 | Achievements | server → client | 985 | 991 (10.06) | 552 | The completed achievements and the last five, the reply to client trigger 1001. Finder: its handler (HandleAchievementsPacket). See [Achievements](character-windows.md). |

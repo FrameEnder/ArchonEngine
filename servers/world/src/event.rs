@@ -302,6 +302,10 @@ pub fn dispatch_event(
         HandlerType::TopicSelect => generic_lua_event("events/generic/TopicSelect.lua"),
         HandlerType::PreHandler => generic_lua_event("events/generic/PreHandler.lua"),
         HandlerType::Description => Some(Box::new(DummyEventHandler::new())), // Same reason as DefaultTalk
+        // A duty's entrance (its InstanceContent's guide): one scene the client plays itself.
+        HandlerType::InstanceContentGuide => {
+            generic_lua_event("events/generic/InstanceContentGuide.lua")
+        }
         HandlerType::InclusionShop => Some(Box::new(InclusionShopEventHandler::new())),
         HandlerType::EventGimmickPathMove => {
             generic_lua_event("events/generic/GimmickPathMove.lua")

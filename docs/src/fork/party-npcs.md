@@ -15,6 +15,20 @@ chronofoil --battle 0.3` and the visit's packets, numbers only). Only Sastasha's
 
 ## Registering
 
+**At the duty's entrance** (Sastasha's, EObj 4374460 by its Duty Finder notice in Western La Noscea): it has two
+events, and retail played one scene for each, the client's script doing the rest (Bob's Chronofoil capture of
+2026-10-23):
+
+* its **InstanceContentGuide** (4 for Sastasha; `events/generic/InstanceContentGuide.lua`): scene 0 with
+  `HIDE_HOTBAR | NO_DEFAULT_CAMERA` (0x2001), back at once with no results, then the client's ShownActiveHelp 103;
+* its **CustomTalk** 772 (`CmnDefSdsEntrance`, `events/custom/007/CmnDefSdsEntrance_00772.lua`): scene 0 with 0x2001,
+  the client's menu; choosing Duty Support sends **ClientTrigger 2650** with the duty (DawnContent 200), which the
+  server answers with **DutySupportContent** (opcode 701 on 7.57h1: 200, 0), then the scene returns, the event
+  finishes and the Duty Support window opens (retail sent no DutySupportInformation then).
+
+Both had no handler in Kawari until 2026-10-23 (Bob's bundle: "isn't scripted yet", so nothing happened at the
+entrance); the window from the Duty Finder (ClientTrigger 2653) worked already.
+
 The Duty Support window's *Register* sends `ClientTrigger` 2654 (`RegisterDutySupport`): the DawnContent row (200
 for Sastasha in the capture), then the members chosen, one byte each (`0x00252624`: 36, 38, 37, DawnQuestMember
 rows), in party slot order. Upstream already queued the duty from the first word; the fork keeps the members
