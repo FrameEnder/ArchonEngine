@@ -3431,10 +3431,21 @@ async fn process_packet(
                             request_id,
                             kind,
                             category,
-                            ..
+                            flags,
+                            unk,
                         } => {
+                            let order = kawari_world::marketboard::search_order(
+                                *flags,
+                                unk.first().copied().unwrap_or_default(),
+                            );
                             connection
-                                .marketboard_search(*start_index, *request_id, *kind, *category)
+                                .marketboard_search(
+                                    *start_index,
+                                    *request_id,
+                                    *kind,
+                                    *category,
+                                    order,
+                                )
                                 .await;
                         }
                         ClientZoneIpcData::RequestPlayerRetainerInfo { .. } => {

@@ -57,6 +57,19 @@ applies the next time anyone looks, with no restart. `marketboard::price` and Ka
 `kawari_core/marketboard.py` `price` must stay the same formula; both are checked against the same examples
 (`marketboard::tests::bobs_prices`).
 
+## The order of a category's items
+
+* **Retail's order**: by the item's ItemSortCategory's `Param`, then its `SubcategorySort`, then its ID. In Bob's
+  Chronofoil captures of 2026-09-15 (8 categories browsed on the Items tab, 400-odd items) 7 categories came in exactly
+  that order; the eighth (74) had two of its sort categories the other way round. Kawari listed them by item ID until
+  2026-10-23 (`GameData::marketboard`; workspace icarus feature `ItemSortCategory`).
+* **By level** on the Weapons and Armor tabs: there the client sends `flags` 1 and a sort byte, 0x13 as the window
+  opened and 0x12 after Bob changed the sort (his bundle of 2026-10-23: categories 15 and 40, an Arcanist 17, so the
+  byte isn't his level). Kawari ignored it, so the list never changed. Now 0x13 lists the category by equip level then
+  item level, lowest first, and 0x12 highest first (`marketboard::search_order`, `ordered`); items of the same level
+  keep retail's order. Which byte is which way is a guess until a retail capture of the Weapons or Armor tab shows it.
+  The next byte was 6 on category 40 (an armor category) and 0 on 15: not known, ignored.
+
 ## Listings
 
 `marketboard_setting`: `listings_per_item` (50), `hq_listings` (10), `max_stack` (99), `tax_percent` (5).
@@ -95,7 +108,7 @@ these structs, except the leftovers in the page requests, which aren't kept.
 | Packet | Opcode (7.57) | Size | Layout |
 |---|---|---|---|
 | MarketBoardOpened (client, fork) | 683 | 8 | the next request ID u32 (0 on a new session, then one more than the last search's), u32; sent as the window opens, answered with an all-zero MarketBoardItems carrying that request ID |
-| RequestMarketBoardItems (client) | 921 | 136 | start index u32, request ID u8, kind u8 (0x0A first page, 0x0B the rest), **ItemSearchCategory** u8, flags u8 (1 on the Weapons and Armor tabs, 0 on Items and Housing: unknown), then 128 bytes the client doesn't clear (search text, old replies) |
+| RequestMarketBoardItems (client) | 921 | 136 | start index u32, request ID u8, kind u8 (0x0A first page, 0x0B the rest), **ItemSearchCategory** u8, flags u8 (1 on the Weapons and Armor tabs, 0 on Items and Housing), then 128 bytes: with flags 1 a sort byte (0x13, 0x12: see above) and a byte not known; otherwise what the client doesn't clear (search text, old replies) |
 | MarketBoardItems (server) | 960 | 176 | 20 × (item u32, count u32), next index u32 (0 = last page), error u32 (0; 0x70000001 on an empty reply), then the request's start index u32, request ID u8, kind u8, 2 padding |
 | UnkMarketBoardRequest1 (client: open an item) | 584 | 8 | item u32, then 0x0902 (unknown) |
 | MarketBoardHits (server) | 269 | 8 | 0, then how many listings (retail shows at most 100) |

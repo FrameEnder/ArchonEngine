@@ -55,14 +55,19 @@ impl ZoneConnection {
         request_id: u8,
         kind: u8,
         category: u8,
+        order: marketboard::SearchOrder,
     ) {
         let index = self.game_data.lock().marketboard();
         let settings = self.database.lock().marketboard_settings();
-        let ids = index
-            .by_category
-            .get(&(category as u16))
-            .cloned()
-            .unwrap_or_default();
+        let ids = marketboard::ordered(
+            index
+                .by_category
+                .get(&(category as u16))
+                .map(Vec::as_slice)
+                .unwrap_or_default(),
+            &index.items,
+            order,
+        );
         let start = (start_index as usize).min(ids.len());
         let end = (start + MARKETBOARD_ITEMS_PER_PAGE).min(ids.len());
         let items = ids[start..end]

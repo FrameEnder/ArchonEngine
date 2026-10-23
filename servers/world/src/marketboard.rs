@@ -6,7 +6,7 @@
 //! (seeded by the item), except that a listing someone bought is replaced by the next one. See
 //! docs/src/fork/marketboard.md.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use kawari::ipc::zone::{MarketBoardHistoryEntry, MarketBoardListing};
 
@@ -138,6 +138,47 @@ impl Default for Settings {
             tax_percent: 5,
         }
     }
+}
+
+/// How a search's page lists its category's items.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SearchOrder {
+    /// Retail's order for a category (`GameData::marketboard`.)
+    Category,
+    /// By the level to equip it, then its item level, lowest or highest first.
+    LevelUp,
+    LevelDown,
+}
+
+/// The order a search asks for. On the Weapons and Armor tabs the client sets the byte after the category (`flags`) to
+/// 1 and sends a sort in the next one: 0x13 when the window opened and 0x12 after Bob changed the sort to level (his
+/// bundle of 2026-10-23, an Arcanist 17, so it isn't his level). Which way each one goes isn't recorded on retail yet:
+/// 0x13 is taken as the window's first (lowest level first), 0x12 the other. Anything else, and the Items and Housing
+/// tabs (0, then whatever the client left there), keep the category's order.
+pub fn search_order(flags: u8, sort: u8) -> SearchOrder {
+    match (flags, sort) {
+        (1, 0x13) => SearchOrder::LevelUp,
+        (1, 0x12) => SearchOrder::LevelDown,
+        _ => SearchOrder::Category,
+    }
+}
+
+/// A category's items (in retail's order) as `order` lists them.
+pub fn ordered(ids: &[u32], items: &HashMap<u32, MarketItem>, order: SearchOrder) -> Vec<u32> {
+    let mut ids = ids.to_vec();
+    let level = |id: &u32| {
+        items
+            .get(id)
+            .map(|item| (item.level_equip, item.level_item))
+            .unwrap_or_default()
+    };
+    match order {
+        SearchOrder::Category => {}
+        // Stable, so items of the same level keep the category's order.
+        SearchOrder::LevelUp => ids.sort_by_key(level),
+        SearchOrder::LevelDown => ids.sort_by_key(|id| std::cmp::Reverse(level(id))),
+    }
+    ids
 }
 
 /// An item that's on the marketboard, with what its price and listings need.
@@ -421,6 +462,46 @@ mod tests {
             can_be_hq: true,
             stack_size: 999,
         }
+    }
+
+    #[test]
+    fn level_order() {
+        let low = MarketItem {
+            id: 3,
+            level_equip: 5,
+            level_item: 5,
+            ..sword()
+        };
+        let mid = MarketItem {
+            id: 1,
+            level_equip: 19,
+            level_item: 19,
+            ..sword()
+        };
+        let high = MarketItem {
+            id: 2,
+            level_equip: 50,
+            level_item: 130,
+            ..sword()
+        };
+        let items: HashMap<u32, MarketItem> = [(1, mid), (2, high), (3, low)].into();
+        let category = [2, 1, 3];
+        assert_eq!(search_order(1, 0x13), SearchOrder::LevelUp);
+        assert_eq!(search_order(1, 0x12), SearchOrder::LevelDown);
+        // The Items tab: 0, then the client's leftovers (retail: 0, 0, "wing").
+        assert_eq!(search_order(0, 0), SearchOrder::Category);
+        assert_eq!(
+            ordered(&category, &items, SearchOrder::LevelUp),
+            vec![3, 1, 2]
+        );
+        assert_eq!(
+            ordered(&category, &items, SearchOrder::LevelDown),
+            vec![2, 1, 3]
+        );
+        assert_eq!(
+            ordered(&category, &items, SearchOrder::Category),
+            vec![2, 1, 3]
+        );
     }
 
     #[test]

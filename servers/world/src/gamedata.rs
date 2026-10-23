@@ -48,6 +48,7 @@ use icarus::ItemAction::ItemActionSheet;
 use icarus::ItemLevel::ItemLevelRow;
 use icarus::ItemLevel::ItemLevelSheet;
 use icarus::ItemSearchCategory::ItemSearchCategorySheet;
+use icarus::ItemSortCategory::ItemSortCategorySheet;
 use icarus::Level::LevelSheet;
 use icarus::Map::MapSheet;
 use icarus::Mount::MountSheet;
@@ -197,7 +198,7 @@ pub struct GameData {
 #[derive(Debug, Default)]
 pub struct MarketIndex {
     pub items: HashMap<u32, crate::marketboard::MarketItem>,
-    /// Each ItemSearchCategory's items, by item ID (retail's order isn't known.)
+    /// Each ItemSearchCategory's items in retail's order (ItemSortCategory's Param, SubcategorySort, ID.)
     pub by_category: HashMap<u16, Vec<u32>>,
 }
 
@@ -1752,6 +1753,22 @@ impl GameData {
                     HashMap::new()
                 }
             };
+        // Retail lists a category's items by their ItemSortCategory's Param, then their SubcategorySort, then their ID
+        // (Bob's Chronofoil captures of 2026-09-15: 7 of the 8 categories browsed in exactly that order; the eighth
+        // has two sort categories the other way round.)
+        let sort_params: HashMap<u32, u8> =
+            match ItemSortCategorySheet::read_from(&mut self.resource, Language::None) {
+                Ok(sheet) => sheet
+                    .into_iter()
+                    .flatten_subrows()
+                    .map(|(id, row)| (id, row.Param))
+                    .collect(),
+                Err(err) => {
+                    tracing::warn!("Couldn't read the ItemSortCategory sheet: {err:?}");
+                    HashMap::new()
+                }
+            };
+        let mut sort_keys: HashMap<u32, (u8, u16)> = HashMap::new();
         let mut index = MarketIndex::default();
         for (id, row) in self.item_sheet.into_iter().flatten_subrows() {
             let category = row.ItemSearchCategory as u16;
@@ -1775,9 +1792,22 @@ impl GameData {
                 },
             );
             index.by_category.entry(category).or_default().push(id);
+            sort_keys.insert(
+                id,
+                (
+                    sort_params
+                        .get(&(row.ItemSortCategory as u32))
+                        .copied()
+                        .unwrap_or_default(),
+                    row.SubcategorySort,
+                ),
+            );
         }
         for items in index.by_category.values_mut() {
-            items.sort_unstable();
+            items.sort_unstable_by_key(|id| {
+                let (param, subcategory) = sort_keys.get(id).copied().unwrap_or_default();
+                (param, subcategory, *id)
+            });
         }
         tracing::info!(
             "Marketboard: {} items in {} categories",

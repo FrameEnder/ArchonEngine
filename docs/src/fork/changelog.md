@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-23 | — | Party NPCs (the registration's members).
+| 2026-10-23 | — | Marketboard (the order of a category's items).
+| 2026-10-23 | `887730e` | Party NPCs (the registration's members).
 | 2026-10-23 | `42f9acd` | Quest battles and directors (`play_cutscene`'s parameters).
 | 2026-10-23 | `0257b10` | Combat (party bots and NPCs hit as players are); party NPCs (taking hits); party bots; known issues.
 | 2026-10-23 | `26d8eab` | Party NPCs (the duty's entrance); fork opcodes (DutySupportContent).
@@ -218,7 +219,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | From Bob's bundle of 2026-10-23: the Duty Support members chosen are read from the registration's first word only, up to its first zero byte (`chosen_members`); his client's 0x6FFF in the third word was read as two more members, and a Player NPC joined beside the three party NPCs. |
+| — | From Bob's bundle of 2026-10-23 (the marketboard wouldn't sort by level) and his Chronofoil captures of 2026-09-15: a category's items come in retail's order (ItemSortCategory's Param, SubcategorySort, ID; 7 of 8 recorded categories exactly), and the Weapons and Armor tabs' sort byte (0x13, 0x12) lists them by level, lowest or highest first (`marketboard::search_order`, `ordered`; which way each goes is a guess). Workspace icarus feature `ItemSortCategory`. |
+| `887730e` | From Bob's bundle of 2026-10-23: the Duty Support members chosen are read from the registration's first word only, up to its first zero byte (`chosen_members`); his client's 0x6FFF in the third word was read as two more members, and a Player NPC joined beside the three party NPCs. |
 | `42f9acd` | From Bob's bundle of 2026-10-23 (Denn said his arrival dialogue again after his death cutscene) and his Chronofoil capture of the same day: a director cutscene's scene parameters come from the script (`director:play_cutscene(id, params)`, `PlayDirectorCutscene` carries them; default `DEFAULT_CUTSCENE_PARAMS`, 1, 38, 1, 0, as before), and Sastasha plays Denn's death (176) with retail's 1, 18, 0, 0. |
 | `0257b10` | From Bob's report of 2026-10-23 (Sastasha's Duty Support members died to two enemies) and his Chronofoil capture of the same day. Enemies' hits on party bots and party NPCs are scaled as their hits on players (`server/action.rs`: `players` recorded amounts or `npc_damage_scale`, then a player's defences for a bot, `PartyBot::damage_taken` for a party NPC: 0.31 for Sastasha's Marauder, 1 for the others; a boss's `npcs` amount, recorded on the members, taken as it is); they were unscaled, NPC against NPC, about eight times a player's damage. |
 | `26d8eab` | From Bob's bundle of 2026-10-23 (nothing at Sastasha's entrance: CustomTalk 772 and InstanceContentGuide 4 had no scripts) and his Chronofoil capture of the same day. Sastasha's entrance plays its two scenes as retail (`events/generic/InstanceContentGuide.lua`, a new handler type for it in `event.rs`; `events/custom/007/CmnDefSdsEntrance_00772.lua`), and ClientTrigger 2650 (`OpenDutySupportFor`, the Duty Support window asked for there) is answered as retail answered it: DutySupportContent, opcode 701, in `fork_opcodes.yml`. |
