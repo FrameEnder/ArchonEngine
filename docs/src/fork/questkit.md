@@ -71,9 +71,10 @@ state after it:
 | `{"emote": [emote, base], "layout": …}` | An emote used on this NPC (`onEmote`, after the server's Emote event starts); `fixture --chronofoil` writes it from retail's EventStart of type 2 |
 | `{"enter_territory": id}` | Zoned in (`onEnterTerritory`) |
 | `{"battle_won": sequence}` | A quest battle was won (the director sets the sequence) |
+| `{"duty_cleared": content}` | Leaving a duty the player cleared, its InstanceContent ID (`onDutyCleared`); `fixture --chronofoil` leaves it as a todo ("changed … outside an event") to fill in |
 | `"expect": {"sequence", "vars", "notices"}`, `{"completed": true}` or `{"accepted": false}` | The state after the step (`accepted: false`: the offer was turned down); `notices` is left out where the recording had no packets |
 | `"scenes": [{"scene", "flags", "params", "results", "yield", "error"}, …]` | Every scene retail played in the step, in order, with its flags (hex), parameters (when it had any) and the client's answer. The script must play the same scenes with the same flags and parameters, and each gets retail's answer (a fixture from Chronofoil) |
-| `"effects": [{"zone": id}, {"aetheryte": id}, {"unlock": id}]` | What retail did outside the quest while the event was open: zone changes (`change_territory`, a pop range, joining a quest battle), attunements, unlocks. With `scenes`, a step without `effects` must do none |
+| `"effects": [{"zone": id}, {"aetheryte": id}, {"unlock": id}, {"content": id}]` | What retail did outside the quest while the event was open: zone changes (`change_territory`, a pop range, joining a quest battle), attunements, unlocks (ActorControlSelf 41, `unlock`), duties unlocked (ActorControlSelf 131 with the InstanceContent ID, `unlock_content`). With `scenes`, a step without `effects` must do none |
 | `"spawns": [layout, …]` | The step must bring these out (`spawn_quest_bnpc`) |
 | `"results": {"scene": [..]}` | What the client answers a scene with, if not `[1, 0]`; `{"results": [..], "error": n}` also sets the scene's error code (`player.scene_error_code`), for yes/nos that answer through it; `"yield": true` sends it back through `onYield` as retail's client did (EventYieldHandler), even when the script has `onReturn` |
 | `"what"` | Which parameter the target is (for reading) |

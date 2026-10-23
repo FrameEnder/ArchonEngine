@@ -97,6 +97,8 @@ def _effect(task: Task, territory: int | None = None) -> dict | None:
             return {"zone": int(first)}
         if name == "unlock":
             return {"unlock": int(first)}
+        if name == "unlock_content":
+            return {"content": int(first)}
     return None
 
 
@@ -395,6 +397,17 @@ class Harness:
         first = self._call("onBNpcKill", base_id, layout_id, self.player)
         outcome = self._drive(first, {}, trace)
         outcome["finished"] = True  # kills aren't events
+        return outcome
+
+    def duty_cleared(self, content_id: int, trace: list | None = None) -> dict:
+        """Leaving a duty the player cleared (its InstanceContent ID): the server calls `onDutyCleared`."""
+        self._new_state(None)
+        trace = trace if trace is not None else []
+        if self.lua.globals().onDutyCleared is None:
+            raise HarnessError("the script has no onDutyCleared for the cleared duty")
+        first = self._call("onDutyCleared", content_id, self.player)
+        outcome = self._drive(first, {}, trace)
+        outcome["finished"] = True  # leaving a duty isn't the quest's event
         return outcome
 
     def battle_won(self, sequence: int) -> dict:

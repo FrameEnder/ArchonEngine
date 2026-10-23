@@ -516,6 +516,41 @@ impl ZoneConnection {
         lua_player.player_data = self.player_data.clone();
     }
 
+    /// The player is leaving a duty they cleared: every active quest hears of it (`onDutyCleared`), as retail moved
+    /// It's Probably Pirates (245) along as Bob left Sastasha (Chronofoil capture of 2026-10-23).
+    pub async fn on_duty_cleared(
+        &mut self,
+        lua_player: &mut LuaPlayer,
+        events: &mut Vec<(Box<dyn EventHandler>, Event)>,
+        content_id: u16,
+    ) {
+        let quest_ids: Vec<u16> = self
+            .player_data
+            .quest
+            .active
+            .0
+            .iter()
+            .map(|quest| quest.id)
+            .collect();
+        lua_player.player_data = self.player_data.clone();
+
+        for quest_id in quest_ids {
+            let handler_id = HandlerId::new(HandlerType::Quest, quest_id);
+            let Some(path) = quest_script_path(&self.game_data, handler_id) else {
+                continue;
+            };
+            let Some(handler) =
+                LuaEventHandler::new(handler_id, None, &path, self.game_data.clone())
+            else {
+                continue;
+            };
+            handler.on_duty_cleared(lua_player, content_id);
+        }
+
+        self.process_lua_player(lua_player, events).await;
+        lua_player.player_data = self.player_data.clone();
+    }
+
     /// Moves the EXP chain along for a kill that counts and returns its place in the chain (from 0), the window the
     /// next kill has (in seconds) and its bonus in percent; None for a kill that doesn't count.
     ///

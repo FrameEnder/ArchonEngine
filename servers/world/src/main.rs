@@ -228,6 +228,7 @@ async fn initial_setup(
                     called_retainer: None,
                     pending_retainer_appearance: None,
                     content_finder_condition_id: 0,
+                    duty_cleared: None,
                     pending_event_text: None,
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
                 };
@@ -4438,7 +4439,14 @@ async fn process_server_msg(
                     .target_sign_toggled(sign_id, from_actor_id, target_actor)
                     .await
             }
+            FromServer::DutyCleared(content_id) => connection.duty_cleared = Some(content_id),
             FromServer::LeaveContent => {
+                // Retail moved Sastasha's quest along as the player left the cleared duty (Bob's capture, 2026-10-23).
+                if let Some(content_id) = connection.duty_cleared.take() {
+                    connection
+                        .on_duty_cleared(lua_player, events, content_id)
+                        .await;
+                }
                 connection
                     .handle
                     .send(ToServer::LeaveContent(

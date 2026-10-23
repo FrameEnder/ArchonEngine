@@ -1,0 +1,98 @@
+{
+  "quest": 245,
+  "script": "ManSea203_00245",
+  "source": "Bob's Chronofoil capture of 2026-10-23 (700cc294); scenes and effects from Bob's Chronofoil capture of 2026-10-23",
+  "params": {
+    "ACTOR0": 1000972,
+    "ACTOR1": 1003621,
+    "ACTOR2": 1017075,
+    "ACTOR3": 1004472,
+    "INSTANCEDUNGEON0": 4,
+    "ACTOR4": 1004473,
+    "ACTOR5": 1004474,
+    "ACTOR6": 1004475,
+    "ACTOR7": 1004476,
+    "ACTOR8": 1004477,
+    "ACTOR9": 1004478,
+    "ACTOR10": 5010000,
+    "SEQ_0_ACTOR0_LQ": 90,
+    "LOC_ACTOR0": 1004471,
+    "LOC_ACTOR1": 1004479,
+    "LOC_ACTOR2": 1004480,
+    "LOC_ACTOR3": 1004481,
+    "UNLOCK_IMAGE_DUNGEON_SASTASHA": 74,
+    "SCREENIMAGE1": 1098,
+    "SCREENIMAGE2": 1097,
+    "UNLOCK_LFG_PARTY": 137,
+    "COLLECT_PARTY_UNLOCK": 3704,
+    "HOW_TO_000": 134,
+    "HOWTO_DUNGEON": 140,
+    "UNLOCK_ADD_NEW_CONTENT_TO_CF": 3702,
+    "ACTOR11": 6229214,
+    "QST_ACCEPT_CHECK": 66211,
+    "CONTENTSTUTORIAL_SDS_01": 2,
+    "SCREENIMAGE_BEGINNER_01": 381,
+    "REWARD_BEGINNER_01": 247,
+    "CONTENTSTUTORIAL_BEGINNER_01": 5
+  },
+  "steps": [
+    {
+      "talk": 1000972,
+      "layout": 1673081,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1003621,
+      "layout": 4203677,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1017075,
+      "layout": 6238941,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "effects": [
+        {"unlock": 247}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1004472,
+      "layout": 4082815,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "effects": [
+        {"content": 4}
+      ],
+      "expect": {"sequence": 4, "vars": "000000000000", "notices": [[2, []]]}
+    },
+    {
+      "duty_cleared": 4,
+      "territory": 1036,
+      "what": "leaving Sastasha (INSTANCEDUNGEON0) after clearing it",
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[3, []]]}
+    },
+    {
+      "talk": 1000972,
+      "layout": 1673081,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 21, "flags": "0xf8402efb", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

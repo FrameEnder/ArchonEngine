@@ -30,6 +30,12 @@ add one when something is found.
 
 ## Quests
 
+* **It's Probably Pirates** (245) passes replay but hasn't been played in Kawari yet. Its duty step moves on when the
+  player leaves Sastasha after its clear (`onDutyCleared`), by the exit or any other way out; retail's run only showed
+  the exit. Logging out inside the cleared duty forgets the clear, so the quest stays at sequence 4. The
+  sailors' and Yellowjacket's lines meanwhile (scenes 4, 6–20) are matched to them by order, unseen on retail. The
+  quest's other unlock parameters (UNLOCK_LFG_PARTY, COLLECT_PARTY_UNLOCK, UNLOCK_ADD_NEW_CONTENT_TO_CF, the screen
+  images) sent nothing on retail: the client shows them itself.
 * Gridania's Lancer and Archer **Close to Home** (85, 123) and Limsa Lominsa's Marauder one (108) come from their client
   scripts only, with fixtures adapted from 124's and 109's (no retail recording). Gridania's three still attune the
   simple way (no bar or nested aetheryte event, as 124's 2026-10-14 fixture showed).

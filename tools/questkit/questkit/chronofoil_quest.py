@@ -34,6 +34,7 @@ EVENT_TALK = 1
 EVENT_ENTER_TERRITORY = 15
 LEARN_TELEPORT = 509
 TOGGLE_UNLOCK = 41
+UNLOCK_INSTANCE_CONTENT = 131  # a duty unlocked (InstanceContent), e.g. Sastasha by It's Probably Pirates
 # A zone change this soon after the quest's event finished still belongs to it (joining a quest battle: EventFinish,
 # then PrepareZoning 0.1 s later.)
 AFTER_FINISH = 1.0
@@ -130,6 +131,8 @@ def quest_events(captures, tables: dict, quests=None) -> dict[int, list[Event]]:
                         add(open_events[-1], t, "aetheryte", aetheryte=first)
                     elif category == TOGGLE_UNLOCK:
                         add(open_events[-1], t, "unlock", unlock=first)
+                    elif category == UNLOCK_INSTANCE_CONTENT:
+                        add(open_events[-1], t, "content", content=first)
             except struct.error:
                 continue
     return flows

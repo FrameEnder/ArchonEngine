@@ -220,6 +220,8 @@ pub struct ZoneConnection {
     pub content_handler_id: Option<HandlerId>,
     /// The duty (ContentFinderCondition) the player is in, 0 out in the world.
     pub content_finder_condition_id: u16,
+    /// The InstanceContent the player cleared and hasn't left yet: quests hear of it as they leave (`onDutyCleared`).
+    pub duty_cleared: Option<u16>,
     /// The event action currently being cast by a quest, see `LuaTask::EventAction`.
     pub event_action_id: u32,
     /// A nested event whose packets a script started (`start_nested_event`) and hasn't finished yet.

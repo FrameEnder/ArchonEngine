@@ -214,6 +214,8 @@ pub enum FromServer {
     TargetSignToggled(u32, ObjectId, ObjectTypeId),
     /// Request the client to begin preparing to leave this content.
     LeaveContent,
+    /// The duty the player is in was cleared: its InstanceContent ID.
+    DutyCleared(u16),
     /// Request the client to finish their current event.
     FinishEvent,
     /// When a fish bites.

@@ -14,6 +14,7 @@ A fixture (tools/questkit/fixtures/<quest>.json) is made from a Kawari Recorder 
         {"emote": [12, 1002640], "layout": 3929260},  # an emote (its Emote row) on an NPC (base ID)
         {"enter_territory": 148, "expect": {...}},  # zoning in (quests that play a scene on arrival)
         {"battle_won": 4, "expect": {...}},         # a quest battle's director winning it
+        {"duty_cleared": 4, "expect": {...}},       # leaving a cleared duty (its InstanceContent ID)
         {"talk": 1000470, "results": {"24": [1, 0]}, "expect": {"completed": true}},
         {"talk": 1003987, "layout": 3969639, "expect": {...}}  # its layout ID too: the script's target.object_id
       ]
@@ -62,7 +63,7 @@ EVENT_ENTER_TERRITORY = 15
 EVENT_WITHIN_RANGE = 10
 EVENT_EMOTE = 2
 AFTER_FINISH = 1.0  # seconds after its event finished that a quest update still belongs to the step
-ACTIONS = ("talk", "emote", "kill", "range", "enter_territory", "battle_won")
+ACTIONS = ("talk", "emote", "kill", "range", "enter_territory", "battle_won", "duty_cleared")
 NOTICE_LEAD = 0.5  # notices arrive just before the quest change they go with
 
 
@@ -329,8 +330,8 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
                 step["notices"].append([data["notice"], data["args"]])
             else:
                 loose.append([data["notice"], data["args"]])  # e.g. a kill's, before its update
-        elif kind in ("zone", "aetheryte", "unlock") and step is not None:
-            value = data.get("territory", data.get("aetheryte", data.get("unlock")))
+        elif kind in ("zone", "aetheryte", "unlock", "content") and step is not None:
+            value = data.get("territory", data.get("aetheryte", data.get("unlock", data.get("content"))))
             step["effects"].append({kind: value})
             if kind == "zone" and value == step.get("_zone"):
                 # Moved within the territory the step happens in (PrepareZoning to the same one): replay needs to
@@ -368,7 +369,7 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
         if what:
             s["what"] = what
     # The order a step's keys read in.
-    order = ["talk", "emote", "layout", "territory", "kill", "range", "enter_territory", "battle_won", "todo", "what", "scenes", "effects",
+    order = ["talk", "emote", "layout", "territory", "kill", "range", "enter_territory", "battle_won", "duty_cleared", "todo", "what", "scenes", "effects",
              "spawns", "expect"]
     steps = [{k: s[k] for k in order if k in s} | {k: v for k, v in s.items() if k not in order} for s in steps]
     return {

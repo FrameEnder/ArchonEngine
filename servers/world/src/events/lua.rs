@@ -115,6 +115,29 @@ impl LuaEventHandler {
     }
 }
 
+impl LuaEventHandler {
+    /// Tells a quest script the player is leaving a duty they cleared, if it cares (by defining `onDutyCleared`). It
+    /// gets the InstanceContent ID, what a quest's INSTANCEDUNGEON parameters are (Sastasha is 4.)
+    pub fn on_duty_cleared(&self, player: &mut LuaPlayer, content_id: u16) {
+        let Ok(func) = self.lua.0.globals().get::<Function>("onDutyCleared") else {
+            return;
+        };
+
+        let result = self.lua.0.scope(|scope| {
+            let player = scope.create_userdata_ref_mut(player)?;
+            func.call::<()>((content_id, player))?;
+            Ok(())
+        });
+        if let Err(err) = result {
+            tracing::warn!(
+                "Error while calling onDutyCleared in {}: {:?}",
+                self.file_name,
+                err
+            );
+        }
+    }
+}
+
 #[async_trait]
 impl EventHandler for LuaEventHandler {
     async fn on_enter_territory(&self, _event: &Event, player: &mut LuaPlayer) {

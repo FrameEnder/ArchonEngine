@@ -1848,7 +1848,13 @@ pub fn director_tick(
                 // Coffers' items still to be rolled for are decided now (retail did it as the duty ended.)
                 crate::server::loot::decide_all(&mut network, instance);
 
-                // TODO: mark duty as completed for each player
+                // Their quests hear of it as they leave (quest 245 moves on then on retail).
+                network.send_to_instance(
+                    ObjectId::default(),
+                    instance,
+                    FromServer::DutyCleared(instance.content_id),
+                    DestinationNetwork::ZoneClients,
+                );
             }
             LuaDirectorTask::MapEffect { index, timeline_id } => {
                 let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::DirectorMapEffect {
