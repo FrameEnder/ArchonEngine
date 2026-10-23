@@ -77,6 +77,13 @@ it does every other NPC (before, it was gone before anyone could raise it). Then
   (spawned again there: clients forget it where it lay). Unlike a player returning to their home point, it gets no
   Weakness.
 
+**Healer bots raise** (`party_bot::raise_the_fallen`): a healer bot whose class has learnt a raise Kawari has a script
+for (Raise 125 for Conjurer and White Mage at 12; Resurrection 173, Ascend 3603 and Egeiro 24287 by ID, for when those
+classes are bots) casts it, in combat or out of it and before healing, on the nearest dead member of its party (the
+player it follows, or that player's other bots) within the raise's range (the Action sheet's, 30 yalms) that hasn't a
+revive offered already and isn't being raised by another bot. A player accepts it as from anyone; a bot accepts by
+itself. The bot stands still while it casts (Raise's 8 s), out of combat too.
+
 ## Bots kept as friends
 
 A bot sent a friend request is **kept**: `party-bot-friends.json` in the server's data folder (beside `world.db`,

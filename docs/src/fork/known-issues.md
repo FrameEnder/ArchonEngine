@@ -245,7 +245,8 @@ add one when something is found.
 * The tank's spot across from the party and its keeping up with the player are untested in game.
 * Raising a dead bot and its getting up by itself after 30 s are untested in game (2026-10-23): whether the client
   shows a bot raised by the ZoneIn raise animation as it shows a raised player, and that a bot spawned again beside
-  you stands (not dead). Bots don't raise anyone themselves yet (healer bots don't cast Raise).
+  you stands (not dead). Healer bots casting Raise (2026-10-23) is untested in game; they don't walk to someone dead out of range
+  (beyond 30 yalms), nor use Swiftcast (a role action, not in bots' kits) for it.
 * Bots of every race (2026-10-23) are untested in game. How CharaMakeType's menus are read is from the sheet's layout,
   not checked against the game's data: that `Customize` is the look's byte, that the face's and ears' options are
   their values (or icons, then counted), and that a hairstyle option is a CharaMakeCustomize row. A bot with a wrong

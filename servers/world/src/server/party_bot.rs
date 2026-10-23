@@ -193,6 +193,9 @@ pub struct PartyBot {
     pub dead_since: Option<Instant>,
     /// When it was first seen offered a revive (Raise), which it accepts a moment later.
     pub revive_seen: Option<Instant>,
+    /// Healers: their class's Raise and its range (`raise_action`), and whom they're raising until when.
+    pub raise_action: Option<(u32, f32)>,
+    pub raising: Option<(ObjectId, Instant)>,
 }
 
 /// Where the n-th bot following someone stands out of combat, relative to them: (degrees from straight behind, yalms
@@ -544,6 +547,19 @@ fn tank_pull_action(actions: &[ClassAction]) -> Option<u32> {
         .filter(|a| a.hostile && a.single_target && a.gcd && a.range as f32 >= TANK_PULL_RANGE)
         .max_by_key(|a| (a.range, a.level, a.id))
         .map(|a| a.id)
+}
+
+/// The actions that raise the dead: Raise (Conjurer and White Mage), Resurrection (Arcanist, Scholar, Summoner),
+/// Ascend (Astrologian) and Egeiro (Sage), by their Action sheet IDs.
+const RAISE_ACTIONS: [u32; 4] = [125, 173, 3603, 24287];
+
+/// A healer's raise, of those its class has learnt (and Kawari has a script for), with its range.
+fn raise_action(actions: &[ClassAction]) -> Option<(u32, f32)> {
+    actions
+        .iter()
+        .filter(|a| RAISE_ACTIONS.contains(&a.id))
+        .max_by_key(|a| (a.level, a.id))
+        .map(|a| (a.id, a.range as f32))
 }
 
 /// The healer's heal: its highest level single-target heal on the GCD.
@@ -1215,6 +1231,11 @@ fn spawn_bot(
     } else {
         None
     };
+    let raise = if role == BotRole::Healer {
+        raise_action(&actions)
+    } else {
+        None
+    };
     let (aoe_action, pull_action) = if role == BotRole::Tank {
         (tank_aoe_action(&actions), tank_pull_action(&actions))
     } else {
@@ -1352,6 +1373,8 @@ fn spawn_bot(
             glamour_name: worn_glamour.clone(),
             dead_since: None,
             revive_seen: None,
+            raise_action: raise,
+            raising: None,
         },
     );
 
@@ -2084,6 +2107,7 @@ pub fn update(
     }
 
     tend_the_fallen(network, instance, now);
+    raise_the_fallen(network, game_data, instance, now);
 
     let leaders: HashSet<ObjectId> = instance.party_bots.values().map(|bot| bot.leader).collect();
     for leader in leaders {
@@ -2145,6 +2169,86 @@ fn tend_the_fallen(network: &Arc<Mutex<NetworkState>>, instance: &mut Instance, 
             bot.revive_seen = None;
             get_up_beside(network, instance, id, leader);
         }
+    }
+}
+
+/// Healer bots raise the dead of their party (the one they follow, and that player's other bots), in combat or out of
+/// it, before healing: the nearest within their raise's range that hasn't a revive offered already and isn't being
+/// raised by another bot. A raised player accepts as from anyone; a bot accepts by itself (`tend_the_fallen`.)
+fn raise_the_fallen(
+    network: &Arc<Mutex<NetworkState>>,
+    game_data: &Arc<Mutex<GameData>>,
+    instance: &mut Instance,
+    now: Instant,
+) {
+    let is_dead = |instance: &Instance, id: ObjectId| {
+        instance.find_actor(id).is_some_and(|actor| {
+            let common = actor.get_common_spawn();
+            common.mode == CharacterMode::Dead || common.health_points == 0
+        })
+    };
+    let offered = |instance: &Instance, id: ObjectId| {
+        instance
+            .find_actor(id)
+            .and_then(|actor| actor.status_effects())
+            .is_some_and(|effects| effects.get(STATUS_REVIVE_OFFER).is_some())
+    };
+    let healers: Vec<(ObjectId, ObjectId, u32, f32)> = instance
+        .party_bots
+        .iter()
+        .filter_map(|(id, bot)| {
+            let (raise, range) = bot.raise_action?;
+            (now >= bot.next_heal && bot.raising.is_none_or(|(_, until)| until <= now))
+                .then_some((*id, bot.leader, raise, range))
+        })
+        .collect();
+    for (healer, leader, raise, range) in healers {
+        let Some(NetworkedActor::Npc { spawn, cast, .. }) = instance.find_actor(healer) else {
+            continue;
+        };
+        if spawn.common.health_points == 0 || cast.is_some_and(|cast| cast.until > now) {
+            continue;
+        }
+        let here = spawn.common.position.0;
+        let taken: Vec<ObjectId> = instance
+            .party_bots
+            .values()
+            .filter_map(|bot| bot.raising)
+            .filter(|(_, until)| *until > now)
+            .map(|(target, _)| target)
+            .collect();
+        let mut fallen: Vec<ObjectId> = vec![leader];
+        fallen.extend(
+            instance
+                .party_bots
+                .iter()
+                .filter(|(id, bot)| bot.leader == leader && **id != healer)
+                .map(|(id, _)| *id),
+        );
+        let target = fallen
+            .into_iter()
+            .filter(|id| is_dead(instance, *id) && !offered(instance, *id) && !taken.contains(id))
+            .filter_map(|id| {
+                let distance = instance.find_actor(id)?.position().0.distance(here);
+                (distance <= range.max(1.0)).then_some((id, distance))
+            })
+            .min_by(|a, b| a.1.total_cmp(&b.1))
+            .map(|(id, _)| id);
+        let Some(target) = target else {
+            continue;
+        };
+        npc_use_action(network, game_data, instance, healer, raise, target);
+        let cast = game_data
+            .lock()
+            .get_casttime(raise)
+            .map(|(_, ms)| ms)
+            .unwrap_or(0) as f32
+            / 1000.0;
+        if let Some(bot) = instance.party_bots.get_mut(&healer) {
+            bot.raising = Some((target, now + Duration::from_secs_f32(cast + 1.0)));
+            bot.next_heal = now + Duration::from_secs_f32(cast.max(BOT_PACE));
+        }
+        tracing::info!("Party bot {healer} raises {target} ({raise}, {cast} s)");
     }
 }
 
@@ -2415,6 +2519,11 @@ fn update_party(
         }
         let follow = follows(*bot_id);
         let casting = cast.is_some_and(|cast| cast.until > now);
+        // Out of combat it walks itself (below), so it stands still here while it casts (a Raise.)
+        if casting && engaged.is_empty() {
+            walks.push((*bot_id, bot.path.clone(), None, bot.reaimed));
+            continue;
+        }
 
         if engaged.is_empty() {
             // Out of combat: its spot in the formation behind the one it follows.
@@ -2893,6 +3002,22 @@ mod tests {
         for word in ["player", "chocobo", "partymember"] {
             assert_eq!(BotLook::from_word(word).map(BotLook::word), Some(word));
         }
+    }
+
+    #[test]
+    fn a_healer_finds_its_raise() {
+        let cure = ClassAction {
+            heals: true,
+            hostile: false,
+            ..action(120, 2, true, 0)
+        };
+        let raise = ClassAction {
+            hostile: false,
+            range: 30,
+            ..action(125, 12, true, 0)
+        };
+        assert_eq!(raise_action(&[cure, raise]), Some((125, 30.0)));
+        assert_eq!(raise_action(&[cure]), None);
     }
 
     fn action(id: u32, level: u8, gcd: bool, combo_from: u32) -> ClassAction {

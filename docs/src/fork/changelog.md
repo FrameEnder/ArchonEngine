@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-23 | — | Party bots (when a bot dies: raised, or getting up after 30 s); known issues.
+| 2026-10-23 | — | Party bots (healer bots raise); known issues.
+| 2026-10-23 | `74cae8a` | Party bots (when a bot dies: raised, or getting up after 30 s); known issues.
 | 2026-10-23 | `96fecb8` | Party bots (bots of every race, from the character creator's data); known issues.
 | 2026-10-23 | `9711ec7` | Party bots (bots kept as friends, tells to bots, the kick by name); known issues.
 | 2026-10-23 | `b91aa6e` | Party bots (the party invite by name); known issues.
@@ -208,7 +209,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | A dead party bot lies where it fell instead of fading out and despawning after 8 s like other NPCs (which is why raising one did nothing). Raised (status 148 from Raise and the like), it accepts after 2 s and gets up there with 20 % HP and MP, Weakness and status 418, as a raised player does (the ZoneIn raise animation for those near); not raised within 30 s, it gets up beside the one it follows at full HP and MP (`party_bot::tend_the_fallen`). |
+| — | Healer bots raise the dead of their party (the player and their other bots), in combat or out, before healing: their class's raise (Raise, Resurrection, Ascend, Egeiro by ID), on the nearest within its range not offered a revive already nor being raised by another bot (`party_bot::raise_the_fallen`). A bot casting stands still out of combat too. |
+| `74cae8a` | A dead party bot lies where it fell instead of fading out and despawning after 8 s like other NPCs (which is why raising one did nothing). Raised (status 148 from Raise and the like), it accepts after 2 s and gets up there with 20 % HP and MP, Weakness and status 418, as a raised player does (the ZoneIn raise animation for those near); not raised within 30 s, it gets up beside the one it follows at full HP and MP (`party_bot::tend_the_fallen`). |
 | `96fecb8` | Party bots of every race, clan and sex the character creator offers (Hrothgar and Viera of both sexes too, not only the first six races): CharaMakeType's rows at runtime, each with its own faces, hairstyles (through CharaMakeCustomize) and ears or tails (`GameData::creator_looks`); the first six races as before without the data. Workspace icarus features `CharaMakeType`, `CharaMakeCustomize`. |
 | `9711ec7` | Bots kept as friends: Add to Friend List on a bot keeps it (`party-bot-friends.json` in the data folder, `server/bot_friends.rs`: its content ID, name, class, look and glamour); kept bots are in the friend list, and Invite to Party on one that isn't with you calls it beside you, the same bot, in the party; removing it forgets it. Bots keep their own content ID (`PartyBot::content_id`). Tells to a bot (`ToServer::BotTell`): `dismiss`, `leave` (the party, still following), `help`; it answers by tell. Kicking finds the bot by name too, and is logged. |
 | `b91aa6e` | From Bob's bundle of 2026-10-23: inviting a bot did nothing, as the client's party invite from a character's menu carries only the name (content ID 0) and the bot was looked up by content ID only. A party invite to no character now always goes to the bots' code, which finds the bot by content ID or, with 0, by name. |
