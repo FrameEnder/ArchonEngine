@@ -72,8 +72,11 @@ Bots are characters to the client, so its menus on them work (`party_bot::handle
   JoinParty naming it (the leader executes, the bot is the target, as a real join is sent). `!spawn playernpc` bots
   start outside the party (`PartyBot::in_party`), the Duty Finder's inside. Refused (*That player is already in
   another party.*) while you're in a party of players (bots can't join one the server keeps), past eight, or when
-  it's already in. How it gets there: the invite's content ID is the bot's made-up one, which no character has, so
-  `send_social_invite` hands it to the server as `ToServer::BotPartyAction` rather than giving up.
+  it's already in. How it gets there: no character has the invite's content ID, so `send_social_invite` hands it
+  to the server as `ToServer::BotPartyAction` rather than giving up. The client's invite from a character's menu
+  carries **only the name** (content ID 0, world 63; Bob's bundle of 2026-10-23, where the first version, which
+  matched content IDs only, ignored it), so a bot is found by its made-up content ID or, with 0, by its name among
+  the inviter's bots; a friend request carries the content ID.
 * **Kick** a bot from the party list: it leaves and goes (dismissed); the list without it and MemberKicked naming it.
 * **Leave Party** or **Disband Party**: every bot in it goes, and the list empties (DisbandingParty).
 * **Promote** a bot to leader: ignored (a bot can't lead).

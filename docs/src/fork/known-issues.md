@@ -245,7 +245,8 @@ add one when something is found.
 * The tank's spot across from the party and its keeping up with the player are untested in game.
 * Bots shown as players work in game (Bob, 2026-10-23). Still to check: whether the party list now follows their HP,
   and what the client does with search info and the adventurer plate, which get no answer for a bot.
-* Inviting a bot to the party, kicking it, leaving the party and Examine on a bot are untested in game (2026-10-23).
+* Inviting a bot to the party (fixed after Bob's bundle: the client's invite names the bot, with no content ID), kicking
+  it, leaving the party and Examine on a bot are untested in game (2026-10-23).
   Examine on a real player shows only what their spawn has (no items or stats: those are on their own connection).
   Retail's packets on the inviter's side when someone accepts weren't in the captures (only Bob being invited), so a
   bot's acceptance is sent as Kawari sends a player's.

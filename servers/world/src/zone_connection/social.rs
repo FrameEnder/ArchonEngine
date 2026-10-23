@@ -200,8 +200,9 @@ impl ZoneConnection {
 
         let Some(recipient_info) = recipient_info else {
             // No such character: maybe one of the player's party bots (shown as players, with made-up content IDs),
-            // which the server answers for (`party_bot.rs`.)
-            if invite_type == InviteType::Party && content_id != 0 {
+            // which the server answers for (`party_bot.rs`.) The client's party invite from a character's menu
+            // carries only the name (content ID 0; Bob's bundle of 2026-10-23), so both go.
+            if invite_type == InviteType::Party {
                 self.handle
                     .send(ToServer::BotPartyAction(
                         self.player_data.character.actor_id,

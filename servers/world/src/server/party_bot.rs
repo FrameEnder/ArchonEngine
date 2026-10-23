@@ -1388,10 +1388,31 @@ pub fn bot_content_id(actor_id: ObjectId) -> u64 {
 
 /// The bot of `leader`'s with this made-up content ID.
 fn find_bot(instance: &Instance, leader: ObjectId, content_id: u64) -> Option<ObjectId> {
+    find_bot_by(instance, leader, content_id, "")
+}
+
+/// The bot of `leader`'s with this made-up content ID, or (content ID 0, as the client's party invite from a
+/// character's menu sends) this name.
+fn find_bot_by(
+    instance: &Instance,
+    leader: ObjectId,
+    content_id: u64,
+    name: &str,
+) -> Option<ObjectId> {
     instance
         .party_bots
         .iter()
-        .find(|(id, bot)| bot.leader == leader && bot_content_id(**id) == content_id)
+        .filter(|(_, bot)| bot.leader == leader)
+        .find(|(id, _)| {
+            if content_id != 0 {
+                bot_content_id(**id) == content_id
+            } else {
+                !name.is_empty()
+                    && instance
+                        .find_actor(**id)
+                        .is_some_and(|actor| actor.get_common_spawn().name == name)
+            }
+        })
         .map(|(id, _)| *id)
 }
 
@@ -1451,12 +1472,14 @@ pub fn handle_bot_party_messages(
             };
             match action {
                 BotPartyAction::Invite { content_id, name } => {
-                    let Some(bot) = find_bot(instance, leader, *content_id) else {
+                    let Some(bot) = find_bot_by(instance, leader, *content_id, name) else {
                         tracing::info!(
                             "{leader} invited {content_id:#x} ({name}): not a character or one of their bots"
                         );
                         return true;
                     };
+                    // The invite may name it only (content ID 0): the replies carry its own.
+                    let content_id = &bot_content_id(bot);
                     let members = instance
                         .party_bots
                         .values()
