@@ -1794,6 +1794,7 @@ pub async fn server_main_loop(
         handled |= handle_linkshell_messages(network.clone(), &msg);
         handled |=
             loot::handle_loot_messages(data.clone(), network.clone(), game_data.clone(), &msg);
+        handled |= party_bot::handle_bot_party_messages(data.clone(), network.clone(), &msg);
 
         if !handled {
             match msg {

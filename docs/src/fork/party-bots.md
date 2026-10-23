@@ -49,22 +49,74 @@ they're owned (`owner_id`, as pets are), not because of their kind.
 
 `!spawn playernpc <class>` in Say (any class's or job's name, without spaces or not, or its abbreviation, in the
 server's language or English: `whitemage`, `White Mage`, `WHM`, `paladin`, `ARC`). The bot appears beside you and its
-name and class are printed. `!spawn playernpc dismiss` sends all of yours away.
+name and class are printed; it follows you, and joins your party when you invite it (below).
+`!spawn playernpc dismiss` sends all of yours away. (It's a `!` debug command, not `//gm`: the client parses `//gm`
+itself and only sends commands it knows, and it has no `spawn`; see [Tools and Debug Commands](tools.md).)
 
-* `kind=player`, `kind=chocobo` or `kind=partymember` after the class picks how that one bot is shown (see
+Bots are **shown as other players**: the standard since Bob saw it work in game (2026-10-23). The older looks stay as
+a fallback:
+
+* `kind=chocobo` or `kind=partymember` after the class shows that one bot the old way (see
   [What a bot is](#what-a-bot-is)): `!spawn playernpc PLD kind=chocobo`.
 * `!spawn playernpc look <player|chocobo|partymember>` sets how bots are shown from then on, the Duty Finder's too,
-  until the server restarts (`party_bot::set_default_look`); bots already there keep theirs. The default is
-  `player`. If a bot shown as a player misbehaves in the client, `!spawn playernpc look chocobo` goes back to the
-  way that worked. (It's a `!` debug command, not `//gm`:
-the client parses `//gm` itself and only sends commands it knows, and it has no `spawn`; see
-[Tools and Debug Commands](tools.md).)
+  until the server restarts (`party_bot::set_default_look`); bots already there keep theirs.
 
 Code: `servers/world/src/server/party_bot.rs` (`spawn_party_bot`, `update`), the command in `server/chat.rs`.
 
+## Party, and examining a bot
+
+Bots are characters to the client, so its menus on them work (`party_bot::handle_bot_party_messages`):
+
+* **Invite to Party** on one of your bots (from its menu, or the party finder's): it accepts at once, as a player
+  would. You get the invite's result, then *invite accepted*, then the party list with it and a PartyUpdate
+  JoinParty naming it (the leader executes, the bot is the target, as a real join is sent). `!spawn playernpc` bots
+  start outside the party (`PartyBot::in_party`), the Duty Finder's inside. Refused (*That player is already in
+  another party.*) while you're in a party of players (bots can't join one the server keeps), past eight, or when
+  it's already in. How it gets there: the invite's content ID is the bot's made-up one, which no character has, so
+  `send_social_invite` hands it to the server as `ToServer::BotPartyAction` rather than giving up.
+* **Kick** a bot from the party list: it leaves and goes (dismissed); the list without it and MemberKicked naming it.
+* **Leave Party** or **Disband Party**: every bot in it goes, and the list empties (DisbandingParty).
+* **Promote** a bot to leader: ignored (a bot can't lead).
+* **Changing zone**: bots don't follow, so when they're dropped (`update`), a player who had them in the party gets
+  an empty list.
+
+A party of bots is none the server keeps (your `party_id` stays 0), and **Kawari's party code panicked on party 0**:
+`PartyMemberKick` and `PartyChangeLeader` unwrap the party (*Why are we trying to do party operations on an invalid
+party?*), so kicking a Duty Finder bot or making one leader would have stopped the server. With `party_id` 0 the
+connection now sends these four to the bots' code instead.
+
+**Examine** (the client's trigger 300, `ExamineCharacter`, with the target's actor ID) went nowhere: Kawari answered
+every Examine with a blank window named "test". The server now answers (`ToServer::ExamineCharacter`), from the one
+examined as retail does: for a bot its class, level, gear (each piece, the glamour over it, both dyes), average item
+level, look, models and stats; for a player what their spawn shows (class, level, title, models, look; their items
+and stats aren't on the server's side, so those are left empty). The layout (`party_bot::examine_bytes`), read from
+13 ExamineCharacterInformation packets in Bob's Chronofoil captures (2026-09 and 2026-10, numbers only), each matched
+with the same player's SpawnPlayer and the Item sheet:
+
+| Offset | What |
+|---|---|
+| 0 | 4, then 1 (once 0), the class, the level |
+| 6 | the title (u16) |
+| 8, 9 | Grand Company, its rank |
+| 10 | unknown (0, 2, 3, 5, 6) |
+| 16–24 | 0, 0xFF×8 or a value (a free company?) |
+| 32, 40 | the main and off-hand weapon models (u64, as in the spawn) |
+| 50 | unknown u16 (57 in most; 78, 407) |
+| 72 | the average item level (u16: 790 at level 100, 201 at 60, 7 at 23) |
+| 80 | 14 equipment slots of 40 bytes, in the equipment's order (main hand, off hand, head, body, hands, belt, legs, feet, ears, neck, wrists, right ring, left ring, soul crystal): the item (u32), its glamour's item (u32), the crafter's content ID (u64), 1 for high quality, a byte, five materia (u16 type, u16 grade: 16 and 11 in one), the two dyes |
+| 640 | the name (32 bytes) |
+| 672–704 | 0 in all 13 |
+| 704 | the look (26 bytes, as in the spawn) |
+| 732 | the ten gear models (u32 each) |
+| 772 | their second dyes (10 bytes) |
+| 782 | the two facewear IDs (u16 each: 460 in one) |
+| 816 | the stats, as PlayerStats' first 30 (strength to perception: a level 60 Dancer's 199, 800, 783, 189, 174, 218, HP 8863, MP 10000, …) |
+
+The packet is 944 bytes (Kawari's `ExamineCharacterInformation`, whose two unknown arrays are these two parts).
+
 ## What a bot is
 
-* **Shown as another player** (since 2026-10-23, the default; untested in game). To the server a bot is the same
+* **Shown as another player** (since 2026-10-23, the standard; Bob saw them as players in game the same day). To the server a bot is the same
   owned battle NPC as below (sub-kind 3), so its fighting, following and everything keyed to `party_bots` is
   unchanged, and enemies, pets and area attacks treat it as before; only what clients are sent differs. The actor
   holds `shown_as_player` (`ShownAsPlayer`: its account and content ID, the leader's world and content handler), and
@@ -220,7 +272,8 @@ Feet: <item name> | <dye>
 
 * In combat melee bots still crowd the same spot by their target (only following is in formation).
 * Bots don't follow you into another zone (they leave when you do) and stay down when they die (dismiss and spawn
-  again). Bots from `!spawn playernpc` aren't in the party list or level synced (only the Duty Finder's are).
+  again). Bots from `!spawn playernpc` aren't level synced (only the Duty Finder's are); they're in the party list
+  once invited.
 * The party list didn't follow chocobo-look bots' HP (retail sends HP through the members' actors, which the client
   may or may not take from an NPC); shown as players, with the list's content IDs, it may: to be checked in game.
   PartyMemberPositions isn't sent for bots (no minimap dots).

@@ -1,5 +1,5 @@
 //! Other social features, as well as invite sending and replies.
-use crate::{ToServer, ZoneConnection, common::roll_die};
+use crate::{BotPartyAction, ToServer, ZoneConnection, common::roll_die};
 use kawari::{
     common::{ObjectId, timestamp_secs},
     ipc::zone::{
@@ -199,6 +199,20 @@ impl ZoneConnection {
         }
 
         let Some(recipient_info) = recipient_info else {
+            // No such character: maybe one of the player's party bots (shown as players, with made-up content IDs),
+            // which the server answers for (`party_bot.rs`.)
+            if invite_type == InviteType::Party && content_id != 0 {
+                self.handle
+                    .send(ToServer::BotPartyAction(
+                        self.player_data.character.actor_id,
+                        BotPartyAction::Invite {
+                            content_id,
+                            name: character_name,
+                        },
+                    ))
+                    .await;
+                return;
+            }
             tracing::warn!(
                 "send_social_invite: Unable to find character details for {content_id}!"
             );

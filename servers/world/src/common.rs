@@ -166,6 +166,14 @@ pub enum FromServer {
     /// The party list of a player and the bots that joined them in a duty (`server/party_bot.rs`), or None when they
     /// leave: it isn't a party the server keeps.
     BotParty(Option<Vec<PartyMemberEntry>>),
+    /// A bot party changed: its list (None when it's gone), what happened and to whom.
+    BotPartyUpdate(
+        Option<Vec<PartyMemberEntry>>,
+        PartyUpdateStatus,
+        PartyUpdateTargets,
+    ),
+    /// A party bot accepted the player's invite: its account ID, content ID and name.
+    BotInviteAccepted(u64, u64, String),
     /// Inform the client of the result of a social invite they have sent.
     InviteCharacterResult(u64, u16, InviteType, String),
     /// Inform the client they were in a party, and request that they inform us of their return.
@@ -345,6 +353,19 @@ impl ClientHandle {
     }
 }
 
+/// What a player did to a party with bots in it, or to a bot (`ToServer::BotPartyAction`.)
+#[derive(Debug, Clone)]
+pub enum BotPartyAction {
+    /// Invited the character with this content ID and name (a bot's are made up.)
+    Invite { content_id: u64, name: String },
+    /// Removed the member with this content ID.
+    Kick { content_id: u64 },
+    /// Made the member with this content ID leader.
+    Promote { content_id: u64 },
+    /// Left the party, or disbanded it.
+    Leave,
+}
+
 #[derive(Debug)]
 pub enum ToServer {
     /// A new zone connection has started.
@@ -409,6 +430,11 @@ pub enum ToServer {
     OpenTreasure(ObjectId, ObjectId),
     /// The player chooses for an item of an open coffer: the coffer, the item's slot, Need/Greed/Pass.
     LootRoll(ObjectId, ObjectId, u32, u32),
+    /// The player does something to their party that concerns party bots (`server/party_bot.rs`): they're in no party
+    /// the server keeps (their `party_id` is 0), or they invite someone who isn't a character.
+    BotPartyAction(ObjectId, BotPartyAction),
+    /// The player examines someone: the examiner, the one examined.
+    ExamineCharacter(ObjectId, ObjectId),
     /// Ready to spawn the player (this happens during initrequest)
     ReadySpawnPlayer(ClientId, ObjectId, u16, Position, f32, Option<u8>),
     /// Ready to send the ZoneIn ACS

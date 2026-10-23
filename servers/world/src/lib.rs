@@ -45,7 +45,8 @@ pub use custom_ipc_connection::CustomIpcConnection;
 
 mod common;
 pub use common::{
-    CLIENT_QUEUE_SIZE, ClientHandle, ClientId, FromServer, MessageInfo, ServerHandle, ToServer,
+    BotPartyAction, CLIENT_QUEUE_SIZE, ClientHandle, ClientId, FromServer, MessageInfo,
+    PartyUpdateTargets, ServerHandle, ToServer,
 };
 
 mod navmesh;

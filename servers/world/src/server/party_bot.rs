@@ -29,13 +29,14 @@ use std::{
 use glam::Vec3A;
 use kawari::{
     common::{
-        HandlerId, JumpState, MoveAnimationState, MoveAnimationType, ObjectId, ObjectTypeId,
-        Position, Rotation, RotationAction,
+        HandlerId, JumpState, LogMessageType, MoveAnimationState, MoveAnimationType, ObjectId,
+        ObjectTypeId, Position, Rotation, RotationAction,
     },
     config::get_config,
     ipc::zone::{
-        BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DisplayFlag, ObjectKind, OnlineStatus,
-        PartyMemberEntry, PlayerSubKind, SpawnNpc, SpawnPlayer,
+        BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DisplayFlag, InviteType, ObjectKind,
+        OnlineStatus, PartyMemberEntry, PartyUpdateStatus, PlayerSubKind, ServerZoneIpcData,
+        ServerZoneIpcSegment, SpawnNpc, SpawnPlayer,
     },
 };
 use parking_lot::Mutex;
@@ -45,9 +46,9 @@ use physis::{
 };
 
 use crate::{
-    FromServer, GameData, ItemInfoQuery,
+    BotPartyAction, FromServer, GameData, ItemInfoQuery, PartyUpdateTargets, ToServer,
     gamedata::PartyRoles,
-    inventory::{Inventory, Item},
+    inventory::{EquippedStorage, Inventory, Item},
     server::{
         WorldServer,
         actor::{NetworkedActor, NpcState, NpcTarget},
@@ -171,6 +172,13 @@ pub struct PartyBot {
     pub path: std::collections::VecDeque<Vec3A>,
     /// When it last re-aimed its path at its moving spot.
     pub reaimed: Instant,
+    /// Whether it's in the leader's party list: the Duty Finder's are from the start, `!spawn playernpc`'s once
+    /// invited (Invite to Party on it.)
+    pub in_party: bool,
+    /// What it wears (its gear, with the glamour over it), in the equipment's own order, for Examine.
+    pub equipped: EquippedStorage,
+    /// Its gear's average item level, for Examine.
+    pub item_level: u16,
 }
 
 /// Where the n-th bot following someone stands out of combat, relative to them: (degrees from straight behind, yalms
@@ -578,6 +586,163 @@ fn wear_glamour(game_data: &mut GameData, wearing: &mut Inventory, glamour: &gla
     }
 }
 
+/// The average item level of what's worn, as the character window counts it: the twelve gear slots (not the belt or
+/// soul crystal), a two-handed weapon (no off hand) counted twice.
+fn average_item_level(equipped: &EquippedStorage) -> u16 {
+    let off_hand = if equipped.off_hand.item_id == 0 {
+        &equipped.main_hand
+    } else {
+        &equipped.off_hand
+    };
+    let slots = [
+        &equipped.main_hand,
+        off_hand,
+        &equipped.head,
+        &equipped.body,
+        &equipped.hands,
+        &equipped.legs,
+        &equipped.feet,
+        &equipped.ears,
+        &equipped.neck,
+        &equipped.wrists,
+        &equipped.right_ring,
+        &equipped.left_ring,
+    ];
+    let total: u32 = slots.iter().map(|item| item.item_level as u32).sum();
+    (total / slots.len() as u32) as u16
+}
+
+/// Retail's Examine window for a party bot (ExamineCharacterInformation), as `(the 640 bytes before the name, the
+/// 272 after)`. The layout is read from 13 of these in Bob's Chronofoil captures (2026-09 and 2026-10, numbers only),
+/// each matched against the same player's SpawnPlayer and the Item sheet:
+///
+/// * 0: 4 (always), 1 (once 0), the class, the level; 6: the title (u16); 8: Grand Company and its rank; 32 and 40:
+///   the main and off-hand weapon models (as in the spawn); 72: the average item level (u16: 790 at level 100, 7 at
+///   level 23).
+/// * 80: the 14 equipment slots in the equipment's own order (main hand, off hand, head, body, hands, belt, legs,
+///   feet, ears, neck, wrists, right ring, left ring, soul crystal), 40 bytes each: the item (u32), its glamour's item
+///   (u32), the crafter's content ID (u64), 1 for high quality (u8), a byte, five materia (u16 type, u16 grade),
+///   and the two dyes.
+/// * 640: the name (32 bytes, the struct's own field).
+/// * 704 (32 into the second part): the look (26 bytes, as in the spawn); 732: the ten gear models (u32 each); 772:
+///   their second dyes; 782: the two facewear IDs (u16); 816: the stats, as PlayerStats' first 30 (strength,
+///   dexterity, vitality, intelligence, mind, piety, HP, MP, TP, GP, CP, delay, tenacity, attack power, defence,
+///   direct hit, evasion, magic defence, critical hit, attack magic potency, healing magic potency, elemental bonus,
+///   determination, skill speed, spell speed, haste, then the crafting and gathering four).
+///
+/// Left 0, as a bot has none: its title (a player's is their spawn's), Grand Company, the free company (16–24, all 0xFF or a value in some), the
+/// byte at 10 and the u16 at 50 (57 in most, unknown), crafters and materia.
+pub fn examine_bytes(
+    common: &CommonSpawn,
+    title: u16,
+    equipped: Option<&EquippedStorage>,
+    item_level: u16,
+    stats: Option<&BaseParameters>,
+) -> ([u8; 640], [u8; 272]) {
+    let mut first = [0u8; 640];
+    let mut second = [0u8; 272];
+
+    first[0] = 4;
+    first[1] = 1;
+    first[2] = common.class_job;
+    first[3] = common.level;
+    put(&mut first, 32, &le_bytes(&common.main_weapon_model), 8);
+    put(&mut first, 40, &le_bytes(&common.sec_weapon_model), 8);
+    put(&mut first, 6, &title.to_le_bytes(), 2);
+    put(&mut first, 72, &item_level.to_le_bytes(), 2);
+
+    let nothing = EquippedStorage::default();
+    let e = equipped.unwrap_or(&nothing);
+    let slots = [
+        &e.main_hand,
+        &e.off_hand,
+        &e.head,
+        &e.body,
+        &e.hands,
+        &e.belt,
+        &e.legs,
+        &e.feet,
+        &e.ears,
+        &e.neck,
+        &e.wrists,
+        &e.right_ring,
+        &e.left_ring,
+        &e.soul_crystal,
+    ];
+    for (index, item) in slots.iter().enumerate() {
+        if item.item_id == 0 {
+            continue;
+        }
+        let at = 80 + index * 40;
+        first[at..at + 4].copy_from_slice(&item.item_id.to_le_bytes());
+        first[at + 4..at + 8].copy_from_slice(&item.glamour_id.to_le_bytes());
+        first[at + 38] = item.stains[0];
+        first[at + 39] = item.stains[1];
+    }
+
+    put(&mut second, 32, &le_bytes(&common.look), 26);
+    put(&mut second, 60, &le_bytes(&common.models), 40);
+    second[100..110].copy_from_slice(&common.second_model_stain_ids);
+    second[110..112].copy_from_slice(&common.glasses_ids[0].to_le_bytes());
+    second[112..114].copy_from_slice(&common.glasses_ids[1].to_le_bytes());
+    let Some(stats) = stats else {
+        return (first, second);
+    };
+    let values = [
+        stats.strength,
+        stats.dexterity,
+        stats.vitality,
+        stats.intelligence,
+        stats.mind,
+        stats.piety,
+        common.max_health_points,
+        common.max_resource_points as u32,
+        stats.tp,
+        stats.gp,
+        stats.cp,
+        stats.delay,
+        stats.tenacity,
+        stats.attack_power,
+        stats.defense,
+        stats.direct_hit_rate,
+        stats.evasion,
+        stats.magic_defense,
+        stats.critical_hit,
+        stats.attack_magic_potency,
+        stats.healing_magic_potency,
+        stats.elemental_bonus,
+        stats.determination,
+        stats.skill_speed,
+        stats.spell_speed,
+        stats.haste,
+        stats.craftmanship,
+        stats.control,
+        stats.gathering,
+        stats.perception,
+    ];
+    for (index, value) in values.iter().enumerate() {
+        let at = 144 + index * 4;
+        second[at..at + 4].copy_from_slice(&value.to_le_bytes());
+    }
+    (first, second)
+}
+
+/// `value` as binrw writes it, little-endian.
+fn le_bytes<T>(value: &T) -> Vec<u8>
+where
+    T: for<'a> binrw::BinWrite<Args<'a> = ()>,
+{
+    let mut cursor = std::io::Cursor::new(Vec::new());
+    let _ = value.write_le(&mut cursor);
+    cursor.into_inner()
+}
+
+/// Copies up to `max` of `bytes` into `into` at `at`.
+fn put(into: &mut [u8], at: usize, bytes: &[u8], max: usize) {
+    let count = bytes.len().min(max).min(into.len().saturating_sub(at));
+    into[at..at + count].copy_from_slice(&bytes[..count]);
+}
+
 /// A random player look: one of the first six races (whose faces and hairstyles 1-4 every tribe and sex has), either
 /// sex, random features and colours within the character creator's smallest ranges.
 fn random_look() -> CustomizeData {
@@ -814,7 +979,11 @@ pub fn spawn_party_bot(
     let classjob = game_data
         .find_combat_classjob(class_name)
         .ok_or_else(|| format!("No combat class or job is called \"{class_name}\"."))?;
-    spawn_bot(data, game_data, usable, leader, classjob, BOT_LEVEL, look).map(|(_, name)| name)
+    // It follows you at once, and joins your party list when you invite it.
+    spawn_bot(
+        data, game_data, usable, leader, classjob, BOT_LEVEL, look, false,
+    )
+    .map(|(_, name)| name)
 }
 
 /// Spawns a bot of `classjob` at `level` next to the player `leader`, and has it join them. Returns its actor ID and
@@ -827,6 +996,7 @@ fn spawn_bot(
     classjob: u8,
     level: u8,
     shown_look: BotLook,
+    in_party: bool,
 ) -> Result<(ObjectId, String), String> {
     // Shown as a player, it's an owned chocobo-kind NPC to the server, as the chocobo look is.
     let as_chocobo = shown_look != BotLook::PartyMember;
@@ -868,6 +1038,7 @@ fn spawn_bot(
         .iter()
         .find(|(slot, _)| *slot == MAIN_HAND)
         .map(|(_, id)| *id);
+    let item_level = average_item_level(&wearing.equipped);
 
     let look = random_look();
     let name = random_name();
@@ -1023,6 +1194,9 @@ fn spawn_bot(
             walking_itself: true,
             path: Default::default(),
             reaimed: Instant::now(),
+            in_party,
+            equipped: wearing.equipped,
+            item_level,
         },
     );
 
@@ -1134,6 +1308,7 @@ pub fn fill_duty_party(
             classjob,
             level,
             default_look(),
+            true,
         ) {
             Ok((actor_id, name)) => {
                 tracing::info!(
@@ -1152,7 +1327,8 @@ pub fn fill_duty_party(
 /// The party list for a player and the bots that joined them, as retail lists a Duty Finder party (Bob's Chronofoil
 /// capture of five Sastasha runs, 2026-10-22): each member with their actor ID, class, level, HP and MP, the zone,
 /// `sync_positions` 1, no entity or parent ID. The player comes first and leads. The bots' account and content IDs
-/// are made up from their actor IDs (no one else has them.) None when the player has no bots.
+/// are made up from their actor IDs (no one else has them.) None when the player has no bots in their party
+/// (`in_party`).
 pub fn party_list(instance: &Instance, leader: ObjectId) -> Option<Vec<PartyMemberEntry>> {
     let Some(NetworkedActor::Player { spawn: player, .. }) = instance.find_actor(leader) else {
         return None;
@@ -1160,7 +1336,7 @@ pub fn party_list(instance: &Instance, leader: ObjectId) -> Option<Vec<PartyMemb
     let mut bots: Vec<(&ObjectId, &PartyBot)> = instance
         .party_bots
         .iter()
-        .filter(|(_, bot)| bot.leader == leader)
+        .filter(|(_, bot)| bot.leader == leader && bot.in_party)
         .collect();
     if bots.is_empty() {
         return None;
@@ -1204,6 +1380,226 @@ pub fn party_list(instance: &Instance, leader: ObjectId) -> Option<Vec<PartyMemb
 
 /// Bots' made-up account and content IDs: their actor ID with this on top.
 const BOT_ID_BASE: u64 = 0x00B0_0000_0000_0000;
+
+/// A bot's made-up account and content ID (the party list's, and its SpawnPlayer's.)
+pub fn bot_content_id(actor_id: ObjectId) -> u64 {
+    BOT_ID_BASE | actor_id.0 as u64
+}
+
+/// The bot of `leader`'s with this made-up content ID.
+fn find_bot(instance: &Instance, leader: ObjectId, content_id: u64) -> Option<ObjectId> {
+    instance
+        .party_bots
+        .iter()
+        .find(|(id, bot)| bot.leader == leader && bot_content_id(**id) == content_id)
+        .map(|(id, _)| *id)
+}
+
+/// `leader` doing `what` to `bot`, as a party update names them: the leader executes, the bot is the target.
+fn bot_targets(instance: &Instance, leader: ObjectId, bot: ObjectId) -> PartyUpdateTargets {
+    let (execute_account_id, execute_content_id, execute_name) = match instance.find_actor(leader) {
+        Some(NetworkedActor::Player { spawn, .. }) => (
+            spawn.account_id,
+            spawn.content_id,
+            spawn.common.name.clone(),
+        ),
+        _ => (0, 0, String::new()),
+    };
+    let target_name = instance
+        .find_actor(bot)
+        .map(|actor| actor.get_common_spawn().name.clone())
+        .unwrap_or_default();
+    PartyUpdateTargets {
+        execute_account_id,
+        execute_content_id,
+        execute_name,
+        target_account_id: bot_content_id(bot),
+        target_content_id: bot_content_id(bot),
+        target_name,
+    }
+}
+
+/// A party has at most eight.
+const PARTY_SIZE: usize = 8;
+
+/// A player's party actions that concern bots (`ToServer::BotPartyAction`), and Examine (`ToServer::ExamineCharacter`).
+///
+/// * **Invite to Party** on one of your bots (`!spawn playernpc`'s follow you, but aren't in your party until then):
+///   it accepts at once, as a player would: the invite's result, the invite accepted, then the party list with it and
+///   a PartyUpdate JoinParty naming it. Not while you're in a party of players (the server keeps those; bots aren't
+///   in them), nor past eight.
+/// * **Kick** a bot: it leaves the party and goes (dismissed); the list without it, and MemberKicked naming it.
+/// * **Leave Party** or **Disband Party**: every bot in it goes, and the list empties (DisbandingParty).
+/// * **Promote** a bot to leader: refused (a bot can't lead); before, this panicked the server, as these went to
+///   the party code with `party_id` 0.
+pub fn handle_bot_party_messages(
+    data: Arc<Mutex<WorldServer>>,
+    network: Arc<Mutex<NetworkState>>,
+    msg: &ToServer,
+) -> bool {
+    match msg {
+        ToServer::BotPartyAction(leader, action) => {
+            let leader = *leader;
+            let mut data = data.lock();
+            let mut network = network.lock();
+            let in_players_party = network
+                .parties
+                .values()
+                .any(|party| party.members.iter().any(|m| m.actor_id == leader));
+            let Some(instance) = data.find_actor_instance_mut(leader) else {
+                return true;
+            };
+            match action {
+                BotPartyAction::Invite { content_id, name } => {
+                    let Some(bot) = find_bot(instance, leader, *content_id) else {
+                        tracing::info!(
+                            "{leader} invited {content_id:#x} ({name}): not a character or one of their bots"
+                        );
+                        return true;
+                    };
+                    let members = instance
+                        .party_bots
+                        .values()
+                        .filter(|other| other.leader == leader && other.in_party)
+                        .count();
+                    let refused = in_players_party
+                        || members + 1 >= PARTY_SIZE
+                        || instance.party_bots.get(&bot).is_some_and(|b| b.in_party);
+                    let message = if refused {
+                        LogMessageType::PlayerAlreadyInAnotherParty as u16
+                    } else {
+                        0
+                    };
+                    network.send_to_by_actor_id(
+                        leader,
+                        FromServer::InviteCharacterResult(
+                            *content_id,
+                            message,
+                            InviteType::Party,
+                            name.clone(),
+                        ),
+                        DestinationNetwork::ZoneClients,
+                    );
+                    if refused {
+                        tracing::info!(
+                            "{leader} invited their bot {name}: refused (in a party of players: {in_players_party}, {members} bots in it)"
+                        );
+                        return true;
+                    }
+                    if let Some(party_bot) = instance.party_bots.get_mut(&bot) {
+                        party_bot.in_party = true;
+                    }
+                    network.send_to_by_actor_id(
+                        leader,
+                        FromServer::BotInviteAccepted(*content_id, *content_id, name.clone()),
+                        DestinationNetwork::ZoneClients,
+                    );
+                    let targets = bot_targets(instance, leader, bot);
+                    network.send_to_by_actor_id(
+                        leader,
+                        FromServer::BotPartyUpdate(
+                            party_list(instance, leader),
+                            PartyUpdateStatus::JoinParty,
+                            targets,
+                        ),
+                        DestinationNetwork::ZoneClients,
+                    );
+                    tracing::info!("{leader}'s bot {name} joined their party");
+                }
+                BotPartyAction::Kick { content_id } => {
+                    let Some(bot) = find_bot(instance, leader, *content_id) else {
+                        return true;
+                    };
+                    let targets = bot_targets(instance, leader, bot);
+                    instance.party_bots.remove(&bot);
+                    network.remove_actor(instance, bot);
+                    network.send_to_by_actor_id(
+                        leader,
+                        FromServer::BotPartyUpdate(
+                            party_list(instance, leader),
+                            PartyUpdateStatus::MemberKicked,
+                            targets,
+                        ),
+                        DestinationNetwork::ZoneClients,
+                    );
+                }
+                BotPartyAction::Promote { content_id } => {
+                    tracing::info!(
+                        "{leader} tried to make {content_id:#x} leader: a bot can't lead"
+                    );
+                }
+                BotPartyAction::Leave => {
+                    let bots: Vec<ObjectId> = instance
+                        .party_bots
+                        .iter()
+                        .filter(|(_, bot)| bot.leader == leader && bot.in_party)
+                        .map(|(id, _)| *id)
+                        .collect();
+                    if bots.is_empty() {
+                        return true;
+                    }
+                    for bot in &bots {
+                        instance.party_bots.remove(bot);
+                        network.remove_actor(instance, *bot);
+                    }
+                    network.send_to_by_actor_id(
+                        leader,
+                        FromServer::BotParty(None),
+                        DestinationNetwork::ZoneClients,
+                    );
+                }
+            }
+            true
+        }
+        ToServer::ExamineCharacter(examiner, target) => {
+            let data = data.lock();
+            let mut network = network.lock();
+            let Some(instance) = data.find_actor_instance(*examiner) else {
+                return true;
+            };
+            let (first, second, name) = match (
+                instance.find_actor(*target),
+                instance.party_bots.get(target),
+            ) {
+                (
+                    Some(NetworkedActor::Npc {
+                        spawn, parameters, ..
+                    }),
+                    Some(bot),
+                ) => {
+                    let (first, second) = examine_bytes(
+                        &spawn.common,
+                        0,
+                        Some(&bot.equipped),
+                        bot.item_level,
+                        Some(parameters),
+                    );
+                    (first, second, spawn.common.name.clone())
+                }
+                // A player: what their spawn shows (their gear's items and stats aren't on the server's side.)
+                (Some(NetworkedActor::Player { spawn, .. }), _) => {
+                    let (first, second) =
+                        examine_bytes(&spawn.common, spawn.title_id, None, 0, None);
+                    (first, second, spawn.common.name.clone())
+                }
+                _ => return true,
+            };
+            let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ExamineCharacterInformation {
+                unk1: first,
+                name,
+                unk2: second,
+            });
+            // As retail's: from the one examined.
+            network.send_to_by_actor_id(
+                *examiner,
+                FromServer::PacketSegment(ipc, *target),
+                DestinationNetwork::ZoneClients,
+            );
+            true
+        }
+        _ => false,
+    }
+}
 
 /// Removes every bot that joined `leader` from their instance. Returns how many.
 pub fn dismiss_party_bots(
@@ -1255,11 +1651,25 @@ pub fn update(
         })
         .map(|(id, _)| *id)
         .collect();
+    let mut left_behind = HashSet::new();
     for id in gone {
-        instance.party_bots.remove(&id);
+        if let Some(bot) = instance.party_bots.remove(&id)
+            && bot.in_party
+            && !instance.actors.contains_key(&bot.leader)
+        {
+            left_behind.insert(bot.leader);
+        }
         if instance.actors.contains_key(&id) {
             network.lock().remove_actor(instance, id);
         }
+    }
+    // A player who left the zone without their bots (they don't follow): their party list empties.
+    for leader in left_behind {
+        network.lock().send_to_by_actor_id(
+            leader,
+            FromServer::BotParty(None),
+            DestinationNetwork::ZoneClients,
+        );
     }
 
     let leaders: HashSet<ObjectId> = instance.party_bots.values().map(|bot| bot.leader).collect();
@@ -1725,6 +2135,61 @@ fn tank_target(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn examine_laid_out_as_retail() {
+        let common = CommonSpawn {
+            class_job: 38,
+            level: 60,
+            glasses_ids: [460, 0],
+            max_health_points: 8863,
+            max_resource_points: 10000,
+            second_model_stain_ids: [0, 0, 0, 0x66, 6, 0, 0, 0, 0, 0],
+            ..Default::default()
+        };
+        let mut equipped = EquippedStorage::default();
+        equipped.main_hand.item_id = 27358;
+        equipped.head = Item {
+            item_id: 49700,
+            glamour_id: 14841,
+            stains: [6, 0x5f],
+            quantity: 1,
+            ..Default::default()
+        };
+        equipped.soul_crystal.item_id = 25217;
+        let stats = BaseParameters {
+            strength: 199,
+            dexterity: 800,
+            haste: 100,
+            ..Default::default()
+        };
+        let (first, second) = examine_bytes(&common, 886, Some(&equipped), 201, Some(&stats));
+        // The whole packet is these, the name (32 bytes) between: 640 + 32 + 272 = 944, as retail's.
+        assert_eq!(first.len() + 32 + second.len(), 944);
+        assert_eq!(&first[0..4], &[4, 1, 38, 60]);
+        assert_eq!(u16::from_le_bytes([first[6], first[7]]), 886);
+        assert_eq!(u16::from_le_bytes([first[72], first[73]]), 201);
+        let u32_at =
+            |bytes: &[u8], at: usize| u32::from_le_bytes(bytes[at..at + 4].try_into().unwrap());
+        // Slots of 40 bytes from 80: the main hand first, the head third, the soul crystal last.
+        assert_eq!(u32_at(&first, 80), 27358);
+        assert_eq!(u32_at(&first, 80 + 2 * 40), 49700);
+        assert_eq!(u32_at(&first, 80 + 2 * 40 + 4), 14841);
+        assert_eq!(&first[80 + 2 * 40 + 38..80 + 2 * 40 + 40], &[6, 0x5f]);
+        assert_eq!(u32_at(&first, 80 + 13 * 40), 25217);
+        // After the name: the dyes at 772 and facewear at 782 of the packet; the stats from 816.
+        assert_eq!(second[100 + 3], 0x66);
+        assert_eq!(u16::from_le_bytes([second[110], second[111]]), 460);
+        assert_eq!(u32_at(&second, 816 - 672), 199);
+        assert_eq!(u32_at(&second, 816 - 672 + 4), 800);
+        assert_eq!(u32_at(&second, 816 - 672 + 6 * 4), 8863);
+        assert_eq!(u32_at(&second, 816 - 672 + 25 * 4), 100);
+        // A player examined has no gear or stats on the server's side: those stay 0.
+        let (first, second) = examine_bytes(&common, 0, None, 0, None);
+        assert_eq!(u32_at(&first, 80), 0);
+        assert_eq!(u32_at(&second, 816 - 672), 0);
+        assert_eq!(bot_content_id(ObjectId(0x1234_5678)), 0x00B0_0000_1234_5678);
+    }
 
     #[test]
     fn a_bot_shown_as_a_player() {

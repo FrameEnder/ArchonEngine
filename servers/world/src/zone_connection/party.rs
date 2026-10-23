@@ -143,13 +143,29 @@ impl ZoneConnection {
             target_content_id: self.player_data.character.content_id as u64,
             target_name: self.player_data.character.name.clone(),
         };
-        let (mut list, update_status, party_id) = match members {
+        let update_status = if members.is_some() {
+            PartyUpdateStatus::JoinParty
+        } else {
+            PartyUpdateStatus::DisbandingParty
+        };
+        self.send_bot_party_update(members, update_status, me).await;
+    }
+
+    /// A change to this player's party of bots: the list (None: an empty one, the party is gone), then a
+    /// PartyUpdate of what happened (`update_status`) to whom (`targets`: a bot joining, a bot kicked.) As a real
+    /// party's are sent: the leader executes, the member joining or leaving is the target.
+    pub async fn send_bot_party_update(
+        &mut self,
+        members: Option<Vec<PartyMemberEntry>>,
+        update_status: PartyUpdateStatus,
+        me: PartyUpdateTargets,
+    ) {
+        let (mut list, party_id) = match members {
             Some(list) => (
                 list,
-                PartyUpdateStatus::JoinParty,
                 BOT_PARTY_ID_BASE | self.player_data.character.actor_id.0 as u64,
             ),
-            None => (Vec::new(), PartyUpdateStatus::DisbandingParty, 0),
+            None => (Vec::new(), 0),
         };
         let member_count = list.len() as u8;
         list.resize(PartyMemberEntry::NUM_ENTRIES, PartyMemberEntry::default());

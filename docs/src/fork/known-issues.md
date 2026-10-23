@@ -20,8 +20,8 @@ add one when something is found.
 
 ## Party bots
 
-* Stage 1 only (see [Party Bots](party-bots.md)): `!spawn playernpc` bots aren't in the party list (retail lists Duty
-  Support members through its own packets, not recorded yet), aren't level synced, don't follow you into another
+* Stage 1 only (see [Party Bots](party-bots.md)): `!spawn playernpc` bots are in the party list only once invited,
+  aren't level synced, don't follow you into another
   zone, stay down when they die, use single-target attacks and one heal only, and don't dodge area attacks. The Duty
   Finder doesn't fill roles with them yet. In combat melee bots still stand on the same spot by their target. Bots are
   spawned as retail's chocobo companions are (for their nameplates' names): whether the client treats them as your
@@ -243,10 +243,12 @@ add one when something is found.
   build with this commit's `kawari-questdump classes` for the class list, and this commit's `KAWARI_DATA` path for
   the bots to see the list Kawari Web writes.
 * The tank's spot across from the party and its keeping up with the player are untested in game.
-* Bots shown as players (the default since 2026-10-23) are untested in game. To check: that the client shows them
-  (model, gear, glamour, name), that their actions, HP and deaths show, whether the party list now follows their HP,
-  and what the client does with a player it can't examine (search info and the adventurer plate get no answer). If
-  it misbehaves, `!spawn playernpc look chocobo` brings back the spawn that worked.
+* Bots shown as players work in game (Bob, 2026-10-23). Still to check: whether the party list now follows their HP,
+  and what the client does with search info and the adventurer plate, which get no answer for a bot.
+* Inviting a bot to the party, kicking it, leaving the party and Examine on a bot are untested in game (2026-10-23).
+  Examine on a real player shows only what their spawn has (no items or stats: those are on their own connection).
+  Retail's packets on the inviter's side when someone accepts weren't in the captures (only Bob being invited), so a
+  bot's acceptance is sent as Kawari sends a player's.
 
 ## Sastasha
 

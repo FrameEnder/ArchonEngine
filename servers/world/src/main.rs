@@ -56,13 +56,13 @@ use kawari::packet::{ConnectionState, ConnectionType, SegmentData, parse_packet_
 use kawari_world::lua::{KawariLua, KawariLuaState, LuaPlayer};
 use kawari_world::retainer;
 use kawari_world::{
+    BotPartyAction, ChatConnectionChannels, ChatPlayerData, ClientHandle, ClientId, FromServer,
+    MessageInfo, PlayerData, ServerHandle, ToServer, WorldDatabase, server_main_loop,
+};
+use kawari_world::{
     CLIENT_QUEUE_SIZE, ChatConnection, CustomIpcConnection, Event, EventHandler, GameData,
     ObsfucationData, QUEST_BATTLE_SCENE_COMPLETE, QUEST_BATTLE_SCENE_FINISH,
     QUEST_BATTLE_SCENE_FINISH_FLAGS, Roulette, TeleportReason, ZoneConnection,
-};
-use kawari_world::{
-    ChatConnectionChannels, ChatPlayerData, ClientHandle, ClientId, FromServer, MessageInfo,
-    PlayerData, ServerHandle, ToServer, WorldDatabase, server_main_loop,
 };
 
 use mlua::Function;
@@ -1477,15 +1477,15 @@ async fn process_packet(
                                         ))
                                         .await;
                                 }
-                                ClientTriggerCommand::ExamineCharacter { .. } => {
-                                    let ipc = ServerZoneIpcSegment::new(
-                                        ServerZoneIpcData::ExamineCharacterInformation {
-                                            unk1: [0; 640],
-                                            name: "test".to_string(),
-                                            unk2: [0; 272],
-                                        },
-                                    );
-                                    connection.send_ipc_self(ipc).await;
+                                // Answered by the server, which has the one examined (`party_bot.rs`.)
+                                ClientTriggerCommand::ExamineCharacter { target_actor_id } => {
+                                    connection
+                                        .handle
+                                        .send(ToServer::ExamineCharacter(
+                                            connection.player_data.character.actor_id,
+                                            target_actor_id,
+                                        ))
+                                        .await;
                                 }
                                 ClientTriggerCommand::ToggleNoviceStatus => {
                                     if connection.player_data.search_info.online_status
@@ -3025,6 +3025,46 @@ async fn process_packet(
                                 .invite_reply(*inviter_content_id, *invite_type, *response)
                                 .await;
                         }
+                        // In no party the server keeps (`party_id` 0): a party of bots, or none. The party code
+                        // panics on party 0, so these go to the bots' instead (`party_bot.rs`.)
+                        ClientZoneIpcData::PartyDisband { .. }
+                        | ClientZoneIpcData::PartyLeave { .. }
+                            if connection.party_id == 0 =>
+                        {
+                            connection
+                                .handle
+                                .send(ToServer::BotPartyAction(
+                                    connection.player_data.character.actor_id,
+                                    BotPartyAction::Leave,
+                                ))
+                                .await;
+                        }
+                        ClientZoneIpcData::PartyMemberKick { content_id, .. }
+                            if connection.party_id == 0 =>
+                        {
+                            connection
+                                .handle
+                                .send(ToServer::BotPartyAction(
+                                    connection.player_data.character.actor_id,
+                                    BotPartyAction::Kick {
+                                        content_id: *content_id,
+                                    },
+                                ))
+                                .await;
+                        }
+                        ClientZoneIpcData::PartyChangeLeader { content_id, .. }
+                            if connection.party_id == 0 =>
+                        {
+                            connection
+                                .handle
+                                .send(ToServer::BotPartyAction(
+                                    connection.player_data.character.actor_id,
+                                    BotPartyAction::Promote {
+                                        content_id: *content_id,
+                                    },
+                                ))
+                                .await;
+                        }
                         ClientZoneIpcData::PartyDisband { .. } => {
                             tracing::info!("Client is disbanding their party!");
                             connection
@@ -4276,6 +4316,24 @@ async fn process_server_msg(
                     .await
             }
             FromServer::BotParty(members) => connection.send_bot_party(members).await,
+            FromServer::BotPartyUpdate(members, update_status, targets) => {
+                connection
+                    .send_bot_party_update(members, update_status, targets)
+                    .await
+            }
+            FromServer::BotInviteAccepted(account_id, content_id, name) => {
+                connection
+                    .send_invite_update(
+                        account_id,
+                        content_id,
+                        0,
+                        kawari::ipc::zone::InviteType::Party,
+                        None,
+                        name,
+                        Some(kawari::ipc::zone::InviteReply::Accepted),
+                    )
+                    .await
+            }
             FromServer::InviteCharacterResult(
                 content_id,
                 message_id,
