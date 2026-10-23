@@ -22,7 +22,7 @@ add one when something is found.
 
 * Stage 1 only (see [Party Bots](party-bots.md)): `!spawn playernpc` bots are in the party list only once invited,
   aren't level synced, don't follow you into another
-  zone, stay down when they die, use single-target attacks and one heal only, and don't dodge area attacks. The Duty
+  zone, use single-target attacks and one heal only, and don't dodge area attacks. The Duty
   Finder doesn't fill roles with them yet. In combat melee bots still stand on the same spot by their target. Bots are
   spawned as retail's chocobo companions are (for their nameplates' names): whether the client treats them as your
   chocobo anywhere else (the companion's bar, its commands) hasn't been checked. They run at NPCs' speed (6 yalms a
@@ -243,6 +243,9 @@ add one when something is found.
   build with this commit's `kawari-questdump classes` for the class list, and this commit's `KAWARI_DATA` path for
   the bots to see the list Kawari Web writes.
 * The tank's spot across from the party and its keeping up with the player are untested in game.
+* Raising a dead bot and its getting up by itself after 30 s are untested in game (2026-10-23): whether the client
+  shows a bot raised by the ZoneIn raise animation as it shows a raised player, and that a bot spawned again beside
+  you stands (not dead). Bots don't raise anyone themselves yet (healer bots don't cast Raise).
 * Bots of every race (2026-10-23) are untested in game. How CharaMakeType's menus are read is from the sheet's layout,
   not checked against the game's data: that `Customize` is the look's byte, that the face's and ears' options are
   their values (or icons, then counted), and that a hairstyle option is a CharaMakeCustomize row. A bot with a wrong

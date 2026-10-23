@@ -528,6 +528,11 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
     let intended_use = instance.zone.intended_use;
     let quest_spawned = instance.quest_spawned_npcs.remove(&actor_id);
 
+    // A party bot lies where it fell, as a player does, to be raised or to get up by itself (`party_bot.rs`.)
+    if instance.party_bots.contains_key(&actor_id) {
+        return;
+    }
+
     // Queue up despawn if this is an NPC
     if let Some(actor) = instance.find_actor_mut(actor_id)
         && let NetworkedActor::Npc {

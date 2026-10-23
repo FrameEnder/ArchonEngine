@@ -29,15 +29,15 @@ use std::{
 use glam::Vec3A;
 use kawari::{
     common::{
-        HandlerId, JumpState, LogMessageType, MoveAnimationState, MoveAnimationType, ObjectId,
-        ObjectTypeId, Position, Rotation, RotationAction,
+        CharacterMode, HandlerId, JumpState, LogMessageType, MoveAnimationState, MoveAnimationType,
+        ObjectId, ObjectTypeId, Position, Rotation, RotationAction,
     },
     config::get_config,
     ipc::chat::TellMessage,
     ipc::zone::{
-        BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DisplayFlag, InviteType, ObjectKind,
-        OnlineStatus, PartyMemberEntry, PartyUpdateStatus, PlayerSubKind, ServerZoneIpcData,
-        ServerZoneIpcSegment, SpawnNpc, SpawnPlayer,
+        ActorControlCategory, BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DisplayFlag,
+        InviteType, ObjectKind, OnlineStatus, PartyMemberEntry, PartyUpdateStatus, PlayerSubKind,
+        ServerZoneIpcData, ServerZoneIpcSegment, SpawnNpc, SpawnPlayer,
     },
 };
 use parking_lot::Mutex;
@@ -48,14 +48,16 @@ use physis::{
 };
 
 use crate::{
-    BotPartyAction, FromServer, GameData, ItemInfoQuery, PartyUpdateTargets, ToServer,
+    BotPartyAction, ClientId, FromServer, GameData, ItemInfoQuery, PartyUpdateTargets, ToServer,
     gamedata::PartyRoles,
     inventory::{EquippedStorage, Inventory, Item},
     lua::{KawariLua, KawariLuaState},
     server::{
         WorldServer,
-        actor::{NetworkedActor, NpcState, NpcTarget},
-        bot_friends, glamour,
+        actor::{NetworkedActor, NpcState, NpcTarget, set_character_mode, update_actor_hp_mp},
+        bot_friends,
+        effect::gain_effect_instance,
+        glamour,
         instance::Instance,
         network::{DestinationNetwork, NetworkState},
         npc_behavior::{BEHAVIOR_TICK_SECONDS, NPC_RUN_SPEED, npc_use_action},
@@ -187,6 +189,10 @@ pub struct PartyBot {
     pub content_id: u64,
     /// The glamour it wears, by name, to wear again when it's kept as a friend.
     pub glamour_name: Option<String>,
+    /// When it fell (it lies there, as a player does, until raised or it gets up by itself: `tend_the_fallen`.)
+    pub dead_since: Option<Instant>,
+    /// When it was first seen offered a revive (Raise), which it accepts a moment later.
+    pub revive_seen: Option<Instant>,
 }
 
 /// Where the n-th bot following someone stands out of combat, relative to them: (degrees from straight behind, yalms
@@ -1344,6 +1350,8 @@ fn spawn_bot(
             item_level,
             content_id,
             glamour_name: worn_glamour.clone(),
+            dead_since: None,
+            revive_seen: None,
         },
     );
 
@@ -2075,10 +2083,190 @@ pub fn update(
         );
     }
 
+    tend_the_fallen(network, instance, now);
+
     let leaders: HashSet<ObjectId> = instance.party_bots.values().map(|bot| bot.leader).collect();
     for leader in leaders {
         update_party(network, game_data, instance, leader, now);
     }
+}
+
+/// How long a bot takes to accept a Raise (a player's choice; this is a moment.)
+const RAISE_ACCEPT_DELAY: Duration = Duration::from_secs(2);
+/// How long a bot lies dead before it gets up by itself beside the one it follows.
+const GET_UP_AFTER: Duration = Duration::from_secs(30);
+/// Status: a revive offered by Raise (`EffectsBuilder::offer_revive`), Weakness and Brink of Death (100 s), and the
+/// 5 s status retail gives a raised player: as the server's `revive_in_place` gives a player.
+const STATUS_REVIVE_OFFER: u16 = 148;
+const STATUS_WEAKNESS: u16 = 43;
+const STATUS_BRINK_OF_DEATH: u16 = 44;
+const STATUS_RAISED: u16 = 418;
+const WEAKNESS_DURATION: f32 = 100.0;
+const RAISED_DURATION: f32 = 5.0;
+
+/// Dead bots: a bot lies where it fell, as a player does (`kill_actor` doesn't fade it out.) Raised (someone's Raise
+/// offered it a revive, status 148), it accepts after `RAISE_ACCEPT_DELAY` and gets up there as a raised player
+/// does: 20 % of its HP and MP, Weakness (Brink of Death if already weakened) and status 418, the raise's stand-up
+/// (ZoneIn with its raise animation, then its mode back to normal.) Not raised within `GET_UP_AFTER`, it gets up by
+/// itself beside the one it follows, at full HP and MP, as a player returning would, and carries on.
+fn tend_the_fallen(network: &Arc<Mutex<NetworkState>>, instance: &mut Instance, now: Instant) {
+    let ids: Vec<ObjectId> = instance.party_bots.keys().copied().collect();
+    for id in ids {
+        let Some(actor) = instance.find_actor(id) else {
+            continue;
+        };
+        let dead = actor.get_common_spawn().mode == CharacterMode::Dead
+            || actor.get_common_spawn().health_points == 0;
+        let offered = actor
+            .status_effects()
+            .is_some_and(|effects| effects.get(STATUS_REVIVE_OFFER).is_some());
+        let Some(bot) = instance.party_bots.get_mut(&id) else {
+            continue;
+        };
+        if !dead {
+            bot.dead_since = None;
+            bot.revive_seen = None;
+            continue;
+        }
+        let since = *bot.dead_since.get_or_insert(now);
+        if offered && bot.revive_seen.is_none() {
+            bot.revive_seen = Some(now);
+        }
+        let leader = bot.leader;
+        if bot
+            .revive_seen
+            .is_some_and(|seen| now.duration_since(seen) >= RAISE_ACCEPT_DELAY)
+        {
+            bot.dead_since = None;
+            bot.revive_seen = None;
+            raise_bot(network, instance, id);
+        } else if now.duration_since(since) >= GET_UP_AFTER {
+            bot.dead_since = None;
+            bot.revive_seen = None;
+            get_up_beside(network, instance, id, leader);
+        }
+    }
+}
+
+/// A bot raised where it lies (see `tend_the_fallen`.)
+fn raise_bot(network: &Arc<Mutex<NetworkState>>, instance: &mut Instance, id: ObjectId) {
+    let Some(actor) = instance.find_actor_mut(id) else {
+        return;
+    };
+    let weakened = actor
+        .status_effects()
+        .is_some_and(|effects| effects.get(STATUS_WEAKNESS).is_some());
+    if let Some(effects) = actor.status_effects_mut() {
+        effects.remove(STATUS_REVIVE_OFFER);
+        effects.remove(STATUS_WEAKNESS);
+    }
+    let common = actor.get_common_spawn_mut();
+    common.health_points = (common.max_health_points / 5).max(1);
+    common.resource_points = common.max_resource_points / 5;
+    stand_up(network, instance, id);
+    let penalty = if weakened {
+        STATUS_BRINK_OF_DEATH
+    } else {
+        STATUS_WEAKNESS
+    };
+    for (status, duration) in [
+        (penalty, WEAKNESS_DURATION),
+        (STATUS_RAISED, RAISED_DURATION),
+    ] {
+        gain_effect_instance(
+            network.clone(),
+            ClientId::default(),
+            instance,
+            id,
+            status,
+            0,
+            duration,
+            ObjectId(0xE000_0000),
+            true,
+        );
+    }
+    update_actor_hp_mp(network.clone(), instance, id);
+    tracing::info!("Party bot {id} was raised");
+}
+
+/// The raise's stand-up for everyone near (ZoneIn with its raise animation, as others see a raised player), then the
+/// bot's mode back to normal and its state to following.
+fn stand_up(network: &Arc<Mutex<NetworkState>>, instance: &mut Instance, id: ObjectId) {
+    let mut network = network.lock();
+    network.send_ac_in_range_inclusive_instance(
+        instance,
+        id,
+        ActorControlCategory::ZoneIn {
+            warp_finish_anim: 1,
+            raise_anim: 1,
+            unk1: 0,
+        },
+    );
+    set_character_mode(instance, &mut network, id, CharacterMode::Normal, 0, true);
+    if let Some(NetworkedActor::Npc {
+        state,
+        navmesh_path,
+        enmity,
+        ..
+    }) = instance.find_actor_mut(id)
+    {
+        *state = NpcState::Follow;
+        navmesh_path.clear();
+        enmity.clear();
+    }
+}
+
+/// A bot that wasn't raised gets up beside the one it follows (see `tend_the_fallen`): taken away from where it lay
+/// and spawned again there, alive, at full HP and MP.
+fn get_up_beside(
+    network: &Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    id: ObjectId,
+    leader: ObjectId,
+) {
+    let Some(spot) = instance.find_actor(leader).map(|actor| {
+        let mut position = actor.position();
+        let behind = actor.rotation() + std::f32::consts::PI;
+        position.0.x += FOLLOW_DISTANCE * behind.sin();
+        position.0.z += FOLLOW_DISTANCE * behind.cos();
+        (position, actor.rotation())
+    }) else {
+        return;
+    };
+    let Some(mut actor) = instance.actors.remove(&id) else {
+        return;
+    };
+    // Clients forget it where it lay; it's spawned for them again, standing, where it gets up.
+    network.lock().remove_actor(instance, id);
+    if let NetworkedActor::Npc {
+        spawn,
+        state,
+        navmesh_path,
+        enmity,
+        status_effects,
+        cast,
+        ..
+    } = &mut actor
+    {
+        spawn.common.mode = CharacterMode::Normal;
+        spawn.common.mode_arg = 0;
+        spawn.common.health_points = spawn.common.max_health_points;
+        spawn.common.resource_points = spawn.common.max_resource_points;
+        spawn.common.position = spot.0;
+        spawn.common.rotation = spot.1;
+        *state = NpcState::Follow;
+        navmesh_path.clear();
+        enmity.clear();
+        *cast = None;
+        status_effects.remove(STATUS_REVIVE_OFFER);
+    }
+    instance.actors.insert(id, actor);
+    if let Some(bot) = instance.party_bots.get_mut(&id) {
+        bot.path.clear();
+        bot.walking_itself = true;
+    }
+    update_actor_hp_mp(network.clone(), instance, id);
+    tracing::info!("Party bot {id} got up by itself beside {leader}");
 }
 
 fn health_percent(actor: &NetworkedActor) -> f32 {

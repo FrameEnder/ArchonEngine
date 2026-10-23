@@ -63,6 +63,20 @@ a fallback:
 
 Code: `servers/world/src/server/party_bot.rs` (`spawn_party_bot`, `update`), the command in `server/chat.rs`.
 
+## When a bot dies
+
+A dead bot **lies where it fell**, as a player does: `kill_actor` no longer fades it out and despawns it after 8 s as
+it does every other NPC (before, it was gone before anyone could raise it). Then (`party_bot::tend_the_fallen`):
+
+* **Raised** (anyone's Raise, Resurrection and the like, which offer the dead a revive, status 148): it accepts after
+  2 s and gets up there as a raised player does (the server's `revive_in_place`): 20 % of its HP and MP, Weakness
+  (43, 100 s; Brink of Death, 44, if already weakened) and status 418 (5 s), and for everyone near, the raise's
+  stand-up (ActorControl ZoneIn with its raise animation, as others see a raised player, then its mode back to
+  normal).
+* **Not raised within 30 s**: it gets up by itself beside the one it follows, at full HP and MP, and carries on
+  (spawned again there: clients forget it where it lay). Unlike a player returning to their home point, it gets no
+  Weakness.
+
 ## Bots kept as friends
 
 A bot sent a friend request is **kept**: `party-bot-friends.json` in the server's data folder (beside `world.db`,
@@ -301,8 +315,7 @@ Feet: <item name> | <dye>
 ## Not done yet
 
 * In combat melee bots still crowd the same spot by their target (only following is in formation).
-* Bots don't follow you into another zone (they leave when you do) and stay down when they die (dismiss and spawn
-  again). Bots from `!spawn playernpc` aren't level synced (only the Duty Finder's are); they're in the party list
+* Bots don't follow you into another zone (they leave when you do). Bots from `!spawn playernpc` aren't level synced (only the Duty Finder's are); they're in the party list
   once invited.
 * The party list didn't follow chocobo-look bots' HP (retail sends HP through the members' actors, which the client
   may or may not take from an NPC); shown as players, with the list's content IDs, it may: to be checked in game.
