@@ -104,9 +104,20 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
   steering it, and NPCs' walking pulled it back along its old path, so it went to and fro at its spot: Bob's
   2026-10-21 bundles and testing.) It regenerates 10 % of its HP every 3 s between fights.
 * **In combat**: anything with you or a bot on its enmity list is fighting the party.
-  * The **tank** goes for whatever is after someone else (the nearest first) and pulls it onto itself every 10 s
-    (50,000 enmity above the top of that enemy's list, as the quest battle framework's tanks do), otherwise keeps on
-    what it's fighting.
+  * The **tank** plays as the player tanks in Bob's Chronofoil capture of five Sastasha runs (2026-10-22) did; the
+    three runs by other players (Paladin, Marauder, Warrior) give the numbers:
+    * It answers each enemy that's after someone else after one of those tanks' reaction times (`TANK_REACTIONS`: 54
+      of them, 2.9 s the median, from an enemy hitting someone else to the tank's next action hitting it), the nearest
+      due first: it goes for it and takes it (50,000 enmity above the top of its list, as the quest battle framework's
+      tanks do). It used to take one every 10 s.
+    * With two or more enemies fighting the party within 5.5 yalms, its area enmity combo (Total Eclipse, Overpower:
+      `tank_aoe_action`) is its GCD, and keeps each enemy it reaches on it (`TANK_STANCE_ENMITY` above the rest); those
+      tanks made it their main attack then (Total Eclipse 74 times to 38 single-target hits, Overpower 62 to 43 and
+      117 to 37).
+    * An enemy it hasn't hit yet, 6–20 yalms away, gets its ranged attack (Shield Lob, Tomahawk: `tank_pull_action`),
+      as those tanks threw it from 6–21 yalms (14 the median) at enemies joining the fight.
+    * Otherwise it keeps on what it's fighting; its rotation fills the rest (it's told about the area attacks and
+      pulls, so it doesn't use another GCD at once).
   * **DPS** attack what the tank is attacking (the enemy most after a tank bot, or your target if you're the tank),
     else your target, else what they were on.
   * The **healer** heals whoever in the party is lowest when someone is below 60 % (its highest level single-target
@@ -127,7 +138,8 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
 * The party list doesn't follow the bots' HP (retail sends HP through the members' actors, which the client may or may
   not take from an NPC), and PartyMemberPositions isn't sent for bots (no minimap dots).
 * Bots don't know a dungeon's route: the tank bot follows you, so you lead.
-* Bots roll for coffers' loot (see [Coffers and Loot](loot.md#party-bots)) but don't open coffers.
+* Bots always pass on coffers' loot (see [Coffers and Loot](loot.md#party-bots)) and don't open coffers.
+* The tank doesn't Provoke (a role action, not in bots' kits), use mitigation, or pull packs before the player.
 * No area attacks, buffs, role actions, mitigation, Raise, or dodging enemy area attacks.
 * Targets are picked by these simple rules, not by watching retail Duty Support members; their rotations, heal
   thresholds and pull timing are guesses to be checked against a recording.

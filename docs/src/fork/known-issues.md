@@ -230,6 +230,13 @@ add one when something is found.
   the others' items. A reopened coffer's SpawnTreasure (retail sends it again with its items when you come back in
   range) isn't sent.
 
+## Sastasha
+
+* The second captain's gate fight and the clams' loop are untested in game (2026-10-23). Whether the four corsairs are
+  in Sastasha's layout as Kawari reads it isn't known (Bob's earlier Kawari run never spawned them); if not, the
+  server logs that it couldn't find them. ActorControl 503 and 11 (retail's, putting them on the enemy list) aren't
+  sent.
+
 ## Quest battles and directors
 
 * **Battle talk**: every quest battle uses the window (DirectorPopupMessage) with retail's text IDs, except Papalymo's

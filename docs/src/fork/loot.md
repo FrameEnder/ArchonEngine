@@ -64,9 +64,8 @@ coffer's items are decided it fades out (TreasureFadeOut, from the coffer).
 
 ## Party bots
 
-Each bot chooses for each item after one of the delays the other players took on retail (the 35 lots: half within 6
-s of the coffer opening, a quarter after 15 s, up to 249 s). They passed 33 times and greeded twice, and never needed:
-every one of them was far above Sastasha's level, as bots are. So a bot greeds 6 % of the time and otherwise passes,
-and you get most of the loot, as with a party of real players there.
+Each bot passes on every item, so the loot is the player's (Bob's call), after one of the delays the other players
+took on retail (the 35 lots: half within 6 s of the coffer opening, a quarter after 15 s, up to 249 s). Those players
+passed 33 times and greeded twice, and never needed.
 
 Bots don't open coffers themselves yet (retail's players opened the bosses' 1.5–2.2 s after they appeared).

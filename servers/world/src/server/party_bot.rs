@@ -73,8 +73,27 @@ const RANGED_STAY_WITHIN: f32 = 20.0;
 
 /// The healer heals someone below this much health (in %), the lowest first.
 const HEAL_BELOW_PERCENT: f32 = 60.0;
-/// The tank pulls an enemy off someone else at most this often.
-const PROVOKE_EVERY: Duration = Duration::from_secs(10);
+/// How long a player tank took to answer an enemy hitting someone else in the party (their next action hitting it), in
+/// seconds: the three other players' tank runs in Bob's Chronofoil capture of five Sastasha runs (2026-10-22), 54 times
+/// (median 2.9). The tank bot answers each loose enemy after one of these.
+const TANK_REACTIONS: [f32; 54] = [
+    0.1, 0.1, 0.4, 0.4, 0.8, 1.4, 1.5, 1.5, 1.5, 1.7, 1.9, 1.9, 1.9, 1.9, 2.0, 2.1, 2.1, 2.1, 2.1,
+    2.1, 2.2, 2.2, 2.5, 2.7, 2.8, 2.8, 2.8, 3.0, 3.2, 3.5, 4.5, 4.5, 4.8, 5.0, 5.1, 5.2, 5.6, 5.8,
+    5.8, 5.8, 6.5, 7.5, 8.9, 8.9, 9.2, 9.2, 9.6, 9.6, 12.1, 12.2, 13.0, 13.3, 13.4, 15.4,
+];
+/// The tank uses its area enmity combo (Total Eclipse, Overpower) when this many enemies fighting the party are within
+/// its reach: the same runs' tanks made it their main attack whenever two or more were close (Total Eclipse 74 times
+/// to 38 single-target hits; Overpower 62 to 43 and 117 to 37), and rarely with one.
+const TANK_AOE_ENEMIES: usize = 2;
+/// How far the tank's area attacks reach, in yalms (Total Eclipse's and Overpower's EffectRange, 5, and a little for
+/// the enemies' size.)
+const TANK_AOE_REACH: f32 = 5.5;
+/// The tank opens on an enemy further than this with its ranged attack (Shield Lob, Tomahawk; their Range is 20): the
+/// same runs' tanks threw it from 6-21 yalms (14 the median) at enemies just joining the fight.
+const TANK_PULL_FROM: f32 = 6.0;
+const TANK_PULL_RANGE: f32 = 20.0;
+/// How far ahead of an enemy's list the tank's area attack keeps it, its tank stance's share of enmity.
+const TANK_STANCE_ENMITY: u32 = 1_000;
 /// How much enmity a pull gives the tank on that enemy (more each time it's needed, as the top of its list grows.)
 const PROVOKE_ENMITY: u32 = 50_000;
 /// The pace of their weaponskills and spells, in seconds: a player's global cooldown.
@@ -130,7 +149,14 @@ pub struct PartyBot {
     /// Its single-target heal (healers), if it has one.
     pub heal_action: Option<u32>,
     pub next_heal: Instant,
-    pub next_provoke: Instant,
+    /// Tanks: their area enmity combo and ranged pull, and when the next of these (on the GCD) may go.
+    pub aoe_action: Option<u32>,
+    pub pull_action: Option<u32>,
+    pub next_special: Instant,
+    /// Tanks: enemies after someone else, and when the tank answers each (`TANK_REACTIONS`.)
+    pub answers: HashMap<ObjectId, Instant>,
+    /// Tanks: enemies it has already hit, so it pulls only fresh ones from range.
+    pub pulled: HashSet<ObjectId>,
     /// When it joined, among its party's bots: its place in the formation.
     pub order: usize,
     /// Out of combat it walks itself, along this path to its formation spot (`npc_behavior` leaves it alone then.)
@@ -191,6 +217,10 @@ struct ClassAction {
     hostile: bool,
     single_target: bool,
     heals: bool,
+    /// An area attack around the user (CastType 2.)
+    area: bool,
+    /// How far it reaches, in yalms (Range; -1 melee.)
+    range: i8,
     /// From its script: its potency, and for a damage over time how long it lasts.
     potency: u32,
     dot_seconds: Option<f32>,
@@ -375,6 +405,8 @@ impl GameData {
                 hostile: row.CanTargetHostile,
                 single_target: row.CastType <= 1,
                 heals: !row.CanTargetHostile && (row.CanTargetParty || row.CanTargetAlly),
+                area: row.CastType == 2,
+                range: row.Range,
                 potency,
                 dot_seconds,
             });
@@ -463,6 +495,26 @@ fn build_rotation(actions: &[ClassAction]) -> Rotation {
         pace: BOT_PACE,
         actions: entries,
     }
+}
+
+/// A tank's area enmity combo starter: its highest level hostile area weaponskill around itself on the GCD that
+/// doesn't follow another (Total Eclipse, Overpower.)
+fn tank_aoe_action(actions: &[ClassAction]) -> Option<u32> {
+    actions
+        .iter()
+        .filter(|a| a.hostile && a.area && a.gcd && a.combo_from == 0)
+        .max_by_key(|a| (a.level, a.id))
+        .map(|a| a.id)
+}
+
+/// A tank's ranged attack, for pulling: its single-target weaponskill on the GCD that reaches furthest (Shield Lob,
+/// Tomahawk.)
+fn tank_pull_action(actions: &[ClassAction]) -> Option<u32> {
+    actions
+        .iter()
+        .filter(|a| a.hostile && a.single_target && a.gcd && a.range as f32 >= TANK_PULL_RANGE)
+        .max_by_key(|a| (a.range, a.level, a.id))
+        .map(|a| a.id)
 }
 
 /// The healer's heal: its highest level single-target heal on the GCD.
@@ -677,6 +729,11 @@ fn spawn_bot(
     } else {
         None
     };
+    let (aoe_action, pull_action) = if role == BotRole::Tank {
+        (tank_aoe_action(&actions), tank_pull_action(&actions))
+    } else {
+        (None, None)
+    };
     let ranged = matches!(role_column, ROLE_RANGED | ROLE_HEALER);
     let autoattack = match role_column {
         ROLE_TANK | ROLE_MELEE => AUTO_ATTACK_MELEE,
@@ -773,7 +830,11 @@ fn spawn_bot(
             attack_range,
             heal_action: heal,
             next_heal: Instant::now(),
-            next_provoke: Instant::now(),
+            aoe_action,
+            pull_action,
+            next_special: Instant::now(),
+            answers: HashMap::new(),
+            pulled: HashSet::new(),
             order,
             walking_itself: true,
             path: Default::default(),
@@ -1132,6 +1193,8 @@ fn update_party(
 
     let mut heals = Vec::new();
     let mut provokes = Vec::new();
+    let mut specials: Vec<(ObjectId, u32, ObjectId, Vec<ObjectId>)> = Vec::new();
+    let mut tank_answers: Vec<(ObjectId, HashMap<ObjectId, Instant>)> = Vec::new();
     let mut walks = Vec::new();
     let mut fighting = Vec::new();
     let navmesh = &instance.navmesh;
@@ -1244,26 +1307,67 @@ fn update_party(
         };
         let target = match bot.role {
             BotRole::Tank => {
-                // Whatever is after someone else, the nearest first; then what it's on already.
+                // Each enemy after someone else is answered after a player tank's reaction time (`TANK_REACTIONS`):
+                // the tank goes for it and takes it (`provokes`), the nearest due first; otherwise it keeps on what
+                // it's fighting.
                 let position = spawn.common.position.0;
-                let loose = engaged
+                let loose: Vec<&Engaged> = engaged
                     .iter()
                     .filter(|enemy| enemy.after != Some(*bot_id))
+                    .collect();
+                let mut answers = bot.answers.clone();
+                answers.retain(|enemy, _| loose.iter().any(|loose| loose.id == *enemy));
+                for enemy in &loose {
+                    answers.entry(enemy.id).or_insert_with(|| {
+                        let delay = TANK_REACTIONS[fastrand::usize(..TANK_REACTIONS.len())];
+                        now + Duration::from_secs_f32(delay)
+                    });
+                }
+                let due = loose
+                    .iter()
+                    .filter(|enemy| answers.get(&enemy.id).is_some_and(|at| *at <= now))
                     .min_by(|a, b| {
                         a.position
                             .distance(position)
                             .total_cmp(&b.position.distance(position))
                     })
                     .map(|enemy| enemy.id);
-                if let Some(loose) = loose
-                    && now >= bot.next_provoke
-                {
-                    provokes.push((*bot_id, loose));
+                if let Some(due) = due {
+                    provokes.push((*bot_id, due));
+                    answers.remove(&due);
                 }
-                current
-                    .filter(|id| is_engaged(*id))
-                    .or(loose)
-                    .or_else(|| engaged.first().map(|enemy| enemy.id))
+                let target = due
+                    .or(current.filter(|id| is_engaged(*id)))
+                    .or_else(|| engaged.first().map(|enemy| enemy.id));
+
+                // Its GCD: the ranged pull on a fresh enemy out of reach, else the area combo with enough close.
+                if let Some(target) = target
+                    && now >= bot.next_special
+                    && !casting
+                {
+                    let distance = engaged
+                        .iter()
+                        .find(|enemy| enemy.id == target)
+                        .map(|enemy| enemy.position.distance(position))
+                        .unwrap_or(0.0);
+                    let close: Vec<ObjectId> = engaged
+                        .iter()
+                        .filter(|enemy| enemy.position.distance(position) <= TANK_AOE_REACH)
+                        .map(|enemy| enemy.id)
+                        .collect();
+                    if let Some(pull) = bot.pull_action
+                        && !bot.pulled.contains(&target)
+                        && (TANK_PULL_FROM..=TANK_PULL_RANGE).contains(&distance)
+                    {
+                        specials.push((*bot_id, pull, target, Vec::new()));
+                    } else if let Some(aoe) = bot.aoe_action
+                        && close.len() >= TANK_AOE_ENEMIES
+                    {
+                        specials.push((*bot_id, aoe, target, close));
+                    }
+                }
+                tank_answers.push((*bot_id, answers));
+                target
             }
             BotRole::Dps | BotRole::Healer => {
                 // What the tank (or the player) is attacking.
@@ -1323,14 +1427,48 @@ fn update_party(
             bot.path.clear();
         }
     }
+    for (bot_id, answers) in tank_answers {
+        if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
+            bot.answers = answers;
+        }
+    }
     for (bot_id, enemy) in provokes {
         if let Some(NetworkedActor::Npc { enmity, .. }) = instance.actors.get_mut(&enemy) {
             let top = enmity.values().copied().max().unwrap_or(0);
             let tank = enmity.entry(bot_id).or_insert(0);
             *tank = (*tank).max(top).saturating_add(PROVOKE_ENMITY);
         }
+    }
+    // Tanks' pulls and area attacks, on their GCD: the rotation is told, so it doesn't use another at once.
+    for (bot_id, action, target, close) in specials {
+        npc_use_action(network, game_data, instance, bot_id, action, target);
+        let mechanics = game_data.lock().get_action_mechanics(action);
+        if let Some(NetworkedActor::Npc {
+            rotation_state,
+            timeline,
+            ..
+        }) = instance.actors.get_mut(&bot_id)
+            && let Some(rotation) = &timeline.rotation
+        {
+            rotation_state.record(rotation, action, target, now, mechanics);
+        }
+        // Its tank stance: each enemy its area attack reaches is kept on it.
+        for enemy in &close {
+            if let Some(NetworkedActor::Npc { enmity, .. }) = instance.actors.get_mut(enemy) {
+                let top = enmity
+                    .iter()
+                    .filter(|(hated, _)| **hated != bot_id)
+                    .map(|(_, amount)| *amount)
+                    .max()
+                    .unwrap_or(0);
+                let tank = enmity.entry(bot_id).or_insert(0);
+                *tank = (*tank).max(top.saturating_add(TANK_STANCE_ENMITY));
+            }
+        }
         if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
-            bot.next_provoke = now + PROVOKE_EVERY;
+            bot.next_special = now + Duration::from_secs_f32(BOT_PACE);
+            bot.pulled.insert(target);
+            bot.pulled.extend(close.iter().copied());
         }
     }
     for (bot_id, heal, patient) in heals {
@@ -1380,9 +1518,30 @@ mod tests {
             hostile: true,
             single_target: true,
             heals: false,
+            area: false,
+            range: -1,
             potency: 0,
             dot_seconds: None,
         }
+    }
+
+    /// A gladiator tank's area combo is Total Eclipse (around itself, on the GCD, following nothing) and its pull Shield
+    /// Lob (its single-target GCD reaching 20); Prominence follows Total Eclipse, so it isn't the starter.
+    #[test]
+    fn tank_area_combo_and_pull() {
+        let mut total_eclipse = action(7381, 6, true, 0);
+        total_eclipse.area = true;
+        total_eclipse.single_target = false;
+        total_eclipse.range = 0;
+        let mut prominence = action(16457, 40, true, 7381);
+        prominence.area = true;
+        prominence.single_target = false;
+        let mut shield_lob = action(24, 15, true, 0);
+        shield_lob.range = 20;
+        let actions = [action(9, 1, true, 0), total_eclipse, prominence, shield_lob];
+        assert_eq!(tank_aoe_action(&actions), Some(7381));
+        assert_eq!(tank_pull_action(&actions), Some(24));
+        assert_eq!(tank_pull_action(&actions[..1]), None);
     }
 
     /// A gladiator's combo runs to its end (each step before the one it follows), abilities come first, and the

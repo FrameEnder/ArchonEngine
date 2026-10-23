@@ -1,4 +1,5 @@
 {
+    "comment": "Sastasha's giant clams: shut for 4 s, then open for 11 s, over and over, whether or not anyone is near (retail: 474 changes of their shells' state, 6 shut and 21 open, in Bob's Chronofoil capture of five runs, 2026-10-22, 4.0 s and 11.0 s the median). They never attack. The loop takes 16 s here (timelines run in whole seconds), shut 5 s.",
     "autoattack_action_id": 0,
     "timeline_always_plays": true,
     "timepoints": [
@@ -7,7 +8,7 @@
                 "type": "timeline_state",
                 "states": [1, 3, 5]
             },
-            "time": 12,
+            "time": 4,
             "comment": "Open mouth"
         },
         {
@@ -15,14 +16,14 @@
                 "type": "invulnerability",
                 "invulnerable": false
             },
-            "time": 12
+            "time": 4
         },
         {
             "data": {
                 "type": "timeline_state",
                 "states": [2, 3]
             },
-            "time": 24,
+            "time": 15,
             "comment": "Close mouth"
         },
         {
@@ -30,7 +31,7 @@
                 "type": "invulnerability",
                 "invulnerable": true
             },
-            "time": 24
+            "time": 15
         }
     ],
     "on_death": [

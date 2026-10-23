@@ -63,6 +63,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `stand_behind(npc, tank, yalms)` | Has the NPC stand `yalms` behind the enemy `tank` (a layout ID) is fighting, out of its frontal cones and cleaves, as long as that keeps it near its anchors and its own target in reach. `yalms` `nil` stops it. |
 | `say(npc, key)` | NPC says a line from the quest's text sheet by key, in `/say` under its BNpcName. |
 | `say_battle_talk(npc, number, name_id)` | Says the quest's n-th `*BATTLETALK*` line (key order) under BNpcName `name_id` (0 shows `???`), even if the speaker isn't present. The log names the key it used. |
+| `play_action_timeline(npc, timeline_id)` | Plays an animation (ActionTimeline row) on the NPC (ActorControl 407), as Sastasha's second captain does (980) as he calls his men. |
 | `yell(npc, npc_yell_id)` | A speech bubble over the NPC: NpcYell row (e.g. 117/118 Yda's and Papalymo's in Chasing Shadows, 122/123 the golem's rumbles). The packet (NpcYell) is the actor, 4 bytes, the speaker's BNpcName (for a battle NPC; upstream's comment says ENpcResident), the NpcYell row, then four u32 parameters, 0 in every quest battle bubble on retail. |
 
 ## The battle framework (`content/lib/Battle.lua`)

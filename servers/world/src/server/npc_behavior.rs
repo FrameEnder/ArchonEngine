@@ -750,8 +750,11 @@ pub fn npc_behavior(
                 can_take_action = false;
             }
 
-            // Only update the timeline on exact second marks
-            if can_take_action && (*timeline_position % 2) == 0 {
+            // Only update the timeline on exact second marks. A timeline that always plays (Sastasha's giant clams opening
+            // and closing) runs whether or not the NPC is fighting; its actions still need a target. Nothing read the
+            // flag before, so the clams never moved (Bob's bundle of 2026-10-23.)
+            if (can_take_action || timeline.timeline_always_plays) && (*timeline_position % 2) == 0
+            {
                 // TODO: something worth thinking about is whether to simplify timeline_always_play, and have it always play anyway but skip Action points?
 
                 // NOTE: the "+ 0.5" is a hack to ensure the last timepoint is always counted

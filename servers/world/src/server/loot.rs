@@ -107,10 +107,6 @@ const LOT_DELAYS: [f32; 35] = [
     6.5, 6.9, 7.5, 7.9, 9.1, 10.3, 12.6, 14.7, 63.3, 65.0, 73.0, 74.4, 80.5, 81.1, 212.1, 248.6,
 ];
 
-/// How often the other players greeded rather than passed, in percent: 2 of their 35 lots (they never needed.) The
-/// capture's players were all well above Sastasha's level, as bots are.
-const BOT_GREED_PERCENT: u32 = 6;
-
 /// One member's choice for an item.
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Choice {
@@ -645,11 +641,9 @@ pub fn tick(network: &mut NetworkState, instance: &mut Instance) {
         if instance.find_actor(bot).is_none() {
             continue;
         }
-        let choice = if fastrand::u32(..100) < BOT_GREED_PERCENT {
-            CHOICE_GREED
-        } else {
-            CHOICE_PASS
-        };
+        // Bots always pass, so the loot is the player's (Bob's call; retail's players passed 33 of their 35 lots in
+        // the capture, greeded the other two.)
+        let choice = CHOICE_PASS;
         choose(network, instance, bot, treasure_id, slot, choice);
     }
     for (treasure_id, slot) in expired {

@@ -182,6 +182,12 @@ pub enum LuaDirectorTask {
         duration_ms: u32,
         kind: u8,
     },
+    /// Plays an animation (ActionTimeline) on a BNpc, as retail's Sastasha captain does as he calls his men through the
+    /// gate (980.)
+    PlayActionTimeline {
+        layout_id: u32,
+        timeline_id: u32,
+    },
     /// Has an NPC yell a line from the NpcYell sheet: a speech bubble over them, and the line in chat.
     Yell {
         layout_id: u32,
@@ -470,6 +476,16 @@ impl UserData for LuaDirector {
                     duration_ms: duration_ms.unwrap_or(4000),
                     // A BattleNpc unless said otherwise.
                     kind: kind.unwrap_or(BATTLE_TALK_KIND_BATTLE_NPC),
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "play_action_timeline",
+            |_, this, (layout_id, timeline_id): (u32, u32)| {
+                this.tasks.push(LuaDirectorTask::PlayActionTimeline {
+                    layout_id,
+                    timeline_id,
                 });
                 Ok(())
             },
@@ -1598,6 +1614,22 @@ pub fn director_tick(
                     instance,
                     FromServer::PacketSegment(ipc, actor_id),
                     DestinationNetwork::ZoneClients,
+                );
+            }
+            LuaDirectorTask::PlayActionTimeline {
+                layout_id,
+                timeline_id,
+            } => {
+                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                    continue;
+                };
+                let mut network = network.lock();
+                network.send_ac_in_range_instance(
+                    instance,
+                    actor_id,
+                    ActorControlCategory::PlayActionTimeline {
+                        timeline_id: *timeline_id,
+                    },
                 );
             }
             LuaDirectorTask::Yell {

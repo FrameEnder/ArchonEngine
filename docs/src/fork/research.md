@@ -45,5 +45,15 @@ bots' stage 3 (Sastasha's route and rules) and loot:
   Bob, OpenTreasure from his client); 278 LootMessage. The Need/Greed/Pass packets are now known and done: see
   [Coffers and Loot](loot.md). The client's 769 (16 bytes, 4 times: the Sastasha director's handler, 0, and an ID) came
   once a run near its end, before the loot window was opened again; not known.
-* Not implemented yet: the route and rules for bots (stage 3). Upstream's Sastasha script
+* **Giant clams**: enemies (base 269, level 15, 319 HP) that never attack, in any run; each has a shell (EObj 2000222,
+  2000260–2000264, bound by the clam's gimmick ID) whose shared group state goes 6 (shut) for 4 s, 21 (open) for 11 s,
+  over and over, from the shell (ActorControl 409 with object type 0). Kawari's clam timeline does this now.
+* **The second captain** (4035056, the boss by the gate at map X 7.9, Y 16.2; Kawari's `BNPC_CAPTAIN2`): four
+  corsairs (4087815, 3988322, 4087814: base 414; 3988323: 415; 269 HP) stand behind the gate (2000235) from before his
+  fight. Below half his health he plays animation 980, the gate opens 0.6 s later (SetEventState 7, as `hide_eobj`
+  sends), each of the four goes on the party's enemy list (ActorControl 503, then 11), he yells 136 and they come.
+  The yell came 0.7–5 s after he went under 50 % in all five runs (30–49 % by then), 22–31 s into his fight; in one he
+  fell before they reached him. Kawari's script does this now.
+* **Tanks**: see [Party Bots](party-bots.md#how-it-fights).
+* Not implemented yet: bots' route through the dungeon. Upstream's Sastasha script
   (`content/s1d1_re.lua`) runs the duty itself.

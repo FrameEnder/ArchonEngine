@@ -179,6 +179,11 @@ Enemies still compute damage like players do (stat × potency), which is far too
   the same scale gives about 4.
 * Drains (`heal_self` effect, e.g. Blood Drain) heal the attacker by what they took; the attacker's HP is sent after.
 
+A timeline with `timeline_always_plays` (only Sastasha's giant clams have one) runs whether or not the NPC is
+fighting; its actions still need a target. Nothing read the flag before, so the clams never opened (Bob's bundle of
+2026-10-23). The clams' loop is retail's: shut for 4 s, open for 11 s (474 changes of their shells' state in Bob's
+capture of five runs; Kawari's whole-second timelines make it 16 s, shut 5); they never attack.
+
 Timeline fields the fork uses: `hitbox_radius` (reach includes it), `autoattack_action_id` (870/871/872 per kind),
 `attack_range` (default 5 yalms; Papalymo 10), `damage_to_players` (`{"level": damage}`), `recorded_amounts` (above),
 and `timepoints` (the

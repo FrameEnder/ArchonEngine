@@ -75,6 +75,15 @@ BNPC_CAPTAINS_QUARTERS_REAVER = 3282344
 BNPC_REAVER3 = 3978797
 BNPC_REAVER4 = 3988324
 BNPC_CAPTAIN2 = 4035056
+-- The four behind the gate by the second captain (base 414, three of them, and 415): on retail they stand behind it
+-- from the moment you come near and join his fight as he falls below half his health: he plays animation 980, the gate
+-- (2000235) opens 0.6 s later, he yells 136 and they come (all five of Bob's runs of 2026-10-22, the boss at 30-49 %
+-- by then, 0.7-5 s after 50 %; in one he fell before they reached him.)
+BNPC_GATE_CORSAIRS = { 4087815, 3988322, 4087814, 3988323 }
+EOBJ_CAPTAIN2_GATE = 2000235
+CAPTAIN2_GATE_HEALTH = 50
+CAPTAIN2_CALL_TIMELINE = 980
+CAPTAIN2_CALL_YELL = 136
 
 -- Sequence 5
 BNPC_DENN = 3978771
@@ -120,6 +129,9 @@ local chopper_defeated
 local seen_final_cutscene
 -- Whether Chopper was spawned
 local chopper_spawned
+-- The second captain's fight, and whether he has called his men through the gate yet
+captain2_fighting = false
+gate_opened = false
 
 function onSetup(director)
     coral_color = math.random(0, #EOBJ_CORAL_IDS - 1)
@@ -262,6 +274,21 @@ function onEventActionCast(director, actor_id, target)
     end
 end
 
+-- The second captain below half his health: he calls his men through the gate.
+function onUpdate(director, health)
+    if captain2_fighting and not gate_opened and health[BNPC_CAPTAIN2] ~= nil
+        and health[BNPC_CAPTAIN2] < CAPTAIN2_GATE_HEALTH then
+        gate_opened = true
+        director:play_action_timeline(BNPC_CAPTAIN2, CAPTAIN2_CALL_TIMELINE)
+        director:hide_eobj(EOBJ_CAPTAIN2_GATE)
+        director:yell(BNPC_CAPTAIN2, CAPTAIN2_CALL_YELL)
+        for _, id in ipairs(BNPC_GATE_CORSAIRS) do
+            director:set_notice(id, true)
+            director:set_hate(id, nil, 300) -- the player
+        end
+    end
+end
+
 function onActorDeath(director, bnpc_id, position)
     if bnpc_id == BNPC_CHOPPER then
         director:spawn_treasure(94) -- Treasure for this boss
@@ -398,6 +425,13 @@ function beginSequence4(director)
     -- Spawn captain and his goons *AGAIN*
     director:spawn_bnpc(BNPC_REAVER3)
     director:spawn_bnpc(BNPC_REAVER4)
+
+    -- His men behind the gate, who don't notice anyone through it until he calls them
+    for _, id in ipairs(BNPC_GATE_CORSAIRS) do
+        director:spawn_bnpc(id)
+        director:set_notice(id, false)
+    end
+    captain2_fighting = true
 
     -- TODO: spawn them dogs
 
