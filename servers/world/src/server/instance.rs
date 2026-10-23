@@ -152,6 +152,11 @@ pub struct Instance {
     pub party_bots: HashMap<ObjectId, crate::server::party_bot::PartyBot>,
     /// Players who came in through the Duty Finder alone, whose party is filled with bots once they've loaded in.
     pub pending_duty_bots: std::collections::HashSet<ObjectId>,
+    /// Players who registered through Duty Support, with the members they chose (DawnQuestMember, in party slot
+    /// order): their party NPCs come once they've loaded in (`server/party_npc.rs`.)
+    pub pending_duty_support: HashMap<ObjectId, Vec<u8>>,
+    /// Story lines the director queued for the party NPCs (`director:party_npc_yell`.)
+    pub party_npc_yells: Vec<crate::server::party_npc::QueuedYell>,
     /// Aggressive BNpcs (by layout ID) a director has told not to notice anyone who comes close: they fight only when
     /// hit or sent after someone (`director:set_notice`; Victory in Peril's boss through its cutscene.)
     pub unaware_npcs: std::collections::HashSet<u32>,

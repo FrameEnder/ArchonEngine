@@ -188,6 +188,13 @@ pub enum LuaDirectorTask {
         layout_id: u32,
         timeline_id: u32,
     },
+    /// Has the party NPC (Duty Support member) of a role ("tank", "healer", "melee", "ranged") yell a line from the
+    /// NpcYell sheet, `delay` seconds from now: the duty's story lines, at the moments retail's members said them.
+    PartyNpcYell {
+        role: String,
+        npc_yell_id: u32,
+        delay: f32,
+    },
     /// Has an NPC yell a line from the NpcYell sheet: a speech bubble over them, and the line in chat.
     Yell {
         layout_id: u32,
@@ -486,6 +493,17 @@ impl UserData for LuaDirector {
                 this.tasks.push(LuaDirectorTask::PlayActionTimeline {
                     layout_id,
                     timeline_id,
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "party_npc_yell",
+            |_, this, (role, npc_yell_id, delay): (String, u32, Option<f32>)| {
+                this.tasks.push(LuaDirectorTask::PartyNpcYell {
+                    role,
+                    npc_yell_id,
+                    delay: delay.unwrap_or(0.0),
                 });
                 Ok(())
             },
@@ -1632,6 +1650,13 @@ pub fn director_tick(
                     },
                 );
             }
+            LuaDirectorTask::PartyNpcYell {
+                role,
+                npc_yell_id,
+                delay,
+            } => {
+                crate::server::party_npc::queue_yell(instance, role, *npc_yell_id, *delay);
+            }
             LuaDirectorTask::Yell {
                 layout_id,
                 npc_yell_id,
@@ -1847,6 +1872,9 @@ pub fn director_tick(
                 );
                 // Coffers' items still to be rolled for are decided now (retail did it as the duty ended.)
                 crate::server::loot::decide_all(&mut network, instance);
+
+                // Retail took the Duty Support members away as the duty was cleared (`party_npc::dismiss`.)
+                crate::server::party_npc::dismiss(&mut network, instance);
 
                 // Their quests hear of it as they leave (quest 245 moves on then on retail).
                 network.send_to_instance(

@@ -61,6 +61,7 @@ use crate::{
         instance::Instance,
         network::{DestinationNetwork, NetworkState},
         npc_behavior::{BEHAVIOR_TICK_SECONDS, NPC_RUN_SPEED, npc_use_action},
+        party_npc,
         placement::Placement,
     },
     zone_connection::BaseParameters,
@@ -99,6 +100,8 @@ const TANK_AOE_REACH: f32 = 5.5;
 /// same runs' tanks threw it from 6-21 yalms (14 the median) at enemies just joining the fight.
 const TANK_PULL_FROM: f32 = 6.0;
 const TANK_PULL_RANGE: f32 = 20.0;
+/// A party NPC uses its attacks on a target this much further than its fighting distance (the target's hitbox.)
+const PARTY_NPC_REACH: f32 = 1.5;
 /// The tank keeps up with the player while fighting: further than this from them (they've run on ahead, pulling as they
 /// go, wall to wall), it goes after them, still pulling with its ranged attack and area combo on the way.
 const TANK_KEEP_UP: f32 = 15.0;
@@ -196,20 +199,115 @@ pub struct PartyBot {
     /// Healers: their class's Raise and its range (`raise_action`), and whom they're raising until when.
     pub raise_action: Option<(u32, f32)>,
     pub raising: Option<(ObjectId, Instant)>,
+    /// A party NPC (a Duty Support member, `party_npc.rs`): its recorded member and where it is in its kit. None for
+    /// the made-up bots (Player NPCs.)
+    pub party_npc: Option<party_npc::MemberState>,
 }
 
-/// Where the n-th bot following someone stands out of combat, relative to them: (degrees from straight behind, yalms
-/// away). Two behind on either side, then one straight behind further back, then out to the sides, so none stand on
-/// each other (or on the one they follow.)
-const FORMATION: [(f32, f32); 7] = [
-    (-35.0, 2.5),
-    (35.0, 2.5),
-    (0.0, 3.8),
-    (-75.0, 3.2),
-    (75.0, 3.2),
-    (-25.0, 5.0),
-    (25.0, 5.0),
-];
+impl PartyBot {
+    /// A bot of `role` for `leader`, fighting from `attack_range`, `order`th to join; nothing else set yet.
+    pub fn new(leader: ObjectId, role: BotRole, attack_range: f32, order: usize) -> Self {
+        let now = Instant::now();
+        Self {
+            leader,
+            role,
+            attack_range,
+            heal_action: None,
+            next_heal: now,
+            aoe_action: None,
+            pull_action: None,
+            next_special: now,
+            answers: HashMap::new(),
+            pulled: HashSet::new(),
+            order,
+            walking_itself: true,
+            path: Default::default(),
+            reaimed: now,
+            in_party: false,
+            equipped: EquippedStorage::default(),
+            item_level: 0,
+            content_id: 0,
+            glamour_name: None,
+            dead_since: None,
+            revive_seen: None,
+            raise_action: None,
+            raising: None,
+            party_npc: None,
+        }
+    }
+}
+
+/// Where a party stands out of combat around the player: retail's Duty Support members kept a sideways diamond around
+/// the player, the tank in front, the healer behind and the two damage dealers either side, the player in their own
+/// role's place (Bob's Chronofoil capture of 2026-10-23, Sastasha with Duty Support, the player a healer standing still:
+/// the tank 2.0 yalms straight ahead, the Lancer 1.0 ahead and 1.72 to one side, the Thaumaturge the same to the other,
+/// 183-185 samples each, all within a few hundredths.) The corners, as (yalms ahead, yalms to the melee side) of the
+/// diamond's middle: tank, healer, melee, ranged.
+const DIAMOND: [(f32, f32); 4] = [(1.0, 0.0), (-1.0, 0.0), (0.0, 1.72), (0.0, -1.72)];
+const CORNER_TANK: usize = 0;
+const CORNER_HEALER: usize = 1;
+const CORNER_MELEE: usize = 2;
+const CORNER_RANGED: usize = 3;
+/// More bots than the diamond has corners stand in rows of three behind it, this far apart.
+const EXTRA_ROW_BACK: f32 = 1.6;
+const EXTRA_SPACING: f32 = 1.6;
+
+/// The diamond's corners a role takes, first choice first: a damage dealer takes the other side when theirs is taken.
+fn corners_for(role: u8) -> &'static [usize] {
+    match role {
+        ROLE_TANK => &[CORNER_TANK],
+        ROLE_HEALER => &[CORNER_HEALER],
+        ROLE_RANGED => &[CORNER_RANGED, CORNER_MELEE],
+        _ => &[CORNER_MELEE, CORNER_RANGED],
+    }
+}
+
+/// Each bot's spot around a player of `player_role` (ClassJob Role), as (yalms ahead, yalms to the melee side) of the
+/// player: the player takes their role's corner of the diamond, the bots (role, in the order they joined) the rest;
+/// the rest stand in rows behind it.
+fn diamond_spots(player_role: u8, bots: &[(ObjectId, u8)]) -> HashMap<ObjectId, (f32, f32)> {
+    let mut taken = [false; 4];
+    let player_corner = corners_for(player_role)[0];
+    taken[player_corner] = true;
+    let (px, py) = DIAMOND[player_corner];
+    let mut spots = HashMap::new();
+    let mut extras = 0usize;
+    for (id, role) in bots {
+        let corner = corners_for(*role)
+            .iter()
+            .copied()
+            .find(|corner| !taken[*corner]);
+        let (ahead, side) = match corner {
+            Some(corner) => {
+                taken[corner] = true;
+                DIAMOND[corner]
+            }
+            None => {
+                let row = (extras / 3) as f32;
+                let column = (extras % 3) as f32 - 1.0;
+                extras += 1;
+                (
+                    DIAMOND[CORNER_HEALER].0 - EXTRA_ROW_BACK * (row + 1.0),
+                    column * EXTRA_SPACING,
+                )
+            }
+        };
+        spots.insert(*id, (ahead - px, side - py));
+    }
+    spots
+}
+
+/// The world position `ahead` yalms in front of someone at `position` facing `rotation` and `side` yalms to the melee
+/// side (the side retail's Lancer stood: +X when facing +Z.)
+fn spot_around(position: Vec3A, rotation: f32, ahead: f32, side: f32) -> Vec3A {
+    let (sin, cos) = rotation.sin_cos();
+    Vec3A::new(
+        position.x + ahead * sin + side * cos,
+        position.y,
+        position.z + ahead * cos - side * sin,
+    )
+}
+
 /// How often a walking bot re-aims its path at its moving formation spot.
 const REAIM_EVERY: Duration = Duration::from_millis(1000);
 
@@ -225,19 +323,6 @@ fn instance_navmesh_path(navmesh: &crate::navmesh::Navmesh, from: Vec3A, to: Vec
 const AT_SPOT: f32 = 0.6;
 /// The spot moved this far from where it was walking: it sets off for the new one.
 const SPOT_MOVED: f32 = 1.0;
-
-/// The formation spot `index` for someone at `position` facing `rotation`.
-fn formation_spot(position: Vec3A, rotation: f32, index: usize) -> Vec3A {
-    let (degrees, distance) = FORMATION[index % FORMATION.len()];
-    // Further rings for parties bigger than the formation.
-    let distance = distance + (index / FORMATION.len()) as f32 * 3.5;
-    let angle = rotation + std::f32::consts::PI + degrees.to_radians();
-    Vec3A::new(
-        position.x + distance * angle.sin(),
-        position.y,
-        position.z + distance * angle.cos(),
-    )
-}
 
 /// One of a class's actions, as far as a bot's rotation goes.
 #[derive(Debug, Clone, Copy)]
@@ -1043,7 +1128,7 @@ fn random_name() -> String {
 
 /// A player's stats for `classjob` of `tribe` at `level` wearing `items`, as `ZoneConnection::parameters_at` works
 /// them out for players.
-fn bot_parameters(
+pub(super) fn bot_parameters(
     game_data: &mut GameData,
     classjob: u8,
     tribe: u8,
@@ -1465,6 +1550,7 @@ fn spawn_bot(
             revive_seen: None,
             raise_action: raise,
             raising: None,
+            party_npc: None,
         },
     );
 
@@ -1493,12 +1579,26 @@ pub fn duty_bot_classes(
     game_data: &mut GameData,
     roles: PartyRoles,
     player_classjob: u8,
+    already: &[u8],
 ) -> Vec<u8> {
     let player_role = game_data
         .classjob_role(player_classjob)
         .map(|(role, _, _)| role)
         .unwrap_or_default();
-    let [tanks, healers, melee, ranged] = roles_left(roles, player_role);
+    let mut left = roles_left(roles, player_role);
+    // Roles party NPCs already play (Duty Support members, `party_npc.rs`.)
+    for role in already {
+        let place = match *role {
+            ROLE_TANK => 0,
+            ROLE_HEALER => 1,
+            ROLE_MELEE if left[2] > 0 => 2,
+            ROLE_RANGED if left[3] > 0 => 3,
+            _ if left[2] > 0 => 2,
+            _ => 3,
+        };
+        left[place] = left[place].saturating_sub(1);
+    }
+    let [tanks, healers, melee, ranged] = left;
 
     let mut by_role: HashMap<u8, Vec<u8>> = HashMap::new();
     for classjob in DUTY_BOT_CLASSES {
@@ -1521,8 +1621,8 @@ pub fn duty_bot_classes(
             }
         }
     }
-    // The party is never bigger than the duty allows (the player counts too.)
-    classes.truncate(roles.members.saturating_sub(1) as usize);
+    // The party is never bigger than the duty allows (the player and any party NPCs count too.)
+    classes.truncate(roles.members.saturating_sub(1 + already.len() as u8) as usize);
     classes
 }
 
@@ -1543,14 +1643,15 @@ fn roles_left(roles: PartyRoles, player_role: u8) -> [u8; 4] {
 }
 
 /// Fills the party of a player who came into the duty `content_finder_condition` through the Duty Finder alone: bots
-/// for the roles they don't play, level synced to the duty (ClassJobLevelSync). Unsynced duties get none. Returns the
-/// bots' actor IDs.
+/// for the roles they don't play (nor party NPCs, `already`: their ClassJob Roles), level synced to the duty
+/// (ClassJobLevelSync). Unsynced duties get none. Returns the bots' actor IDs.
 pub fn fill_duty_party(
     data: &mut WorldServer,
     game_data: &mut GameData,
     usable: &HashMap<u32, String>,
     leader: ObjectId,
     content_finder_condition: u16,
+    already: &[u8],
 ) -> Vec<ObjectId> {
     let Some(level) = game_data.find_content_synced_level(content_finder_condition) else {
         return Vec::new();
@@ -1567,7 +1668,7 @@ pub fn fill_duty_party(
     };
 
     let mut bots = Vec::new();
-    for classjob in duty_bot_classes(game_data, roles, player_classjob) {
+    for classjob in duty_bot_classes(game_data, roles, player_classjob, already) {
         match spawn_bot(
             data,
             game_data,
@@ -2198,6 +2299,7 @@ pub fn update(
 
     tend_the_fallen(network, instance, now);
     raise_the_fallen(network, game_data, instance, now);
+    party_npc::update_yells(network, game_data, instance, now);
 
     let leaders: HashSet<ObjectId> = instance.party_bots.values().map(|bot| bot.leader).collect();
     for leader in leaders {
@@ -2567,17 +2669,30 @@ fn update_party(
             tank.unwrap_or(leader)
         }
     };
-    let mut spots: HashMap<ObjectId, usize> = HashMap::new();
-    {
+    // Out of combat everyone keeps their place in the diamond around the player (`diamond_spots`), the player in
+    // their own role's corner.
+    let spots = {
         let mut by_order: Vec<&(ObjectId, PartyBot)> = bots.iter().collect();
         by_order.sort_by_key(|(_, bot)| bot.order);
-        let mut taken: HashMap<ObjectId, usize> = HashMap::new();
-        for (bot_id, _) in by_order {
-            let count = taken.entry(follows(*bot_id)).or_insert(0);
-            spots.insert(*bot_id, *count);
-            *count += 1;
-        }
-    }
+        let roles: Vec<(ObjectId, u8)> = by_order
+            .iter()
+            .map(|(id, bot)| {
+                let role = match bot.role {
+                    BotRole::Tank => ROLE_TANK,
+                    BotRole::Healer => ROLE_HEALER,
+                    BotRole::Dps if bot.attack_range > MELEE_RANGE => ROLE_RANGED,
+                    BotRole::Dps => ROLE_MELEE,
+                };
+                (*id, role)
+            })
+            .collect();
+        let player_role = game_data
+            .lock()
+            .classjob_role(leader_classjob)
+            .map(|(role, _, _)| role)
+            .unwrap_or(ROLE_MELEE);
+        diamond_spots(player_role, &roles)
+    };
 
     let mut heals = Vec::new();
     let mut provokes = Vec::new();
@@ -2586,6 +2701,10 @@ fn update_party(
     let mut repulls: Vec<(ObjectId, ObjectId)> = Vec::new();
     let mut walks = Vec::new();
     let mut fighting = Vec::new();
+    // Party NPCs: their kits' actions (actor, action, target), their states after this tick and their lines.
+    let mut kit_actions: Vec<(ObjectId, u32, ObjectId)> = Vec::new();
+    let mut npc_states: Vec<(ObjectId, party_npc::MemberState)> = Vec::new();
+    let mut lines: Vec<(ObjectId, u32)> = Vec::new();
     let navmesh = &instance.navmesh;
     for (bot_id, bot) in &bots {
         let Some(NetworkedActor::Npc {
@@ -2616,7 +2735,12 @@ fn update_party(
         }
 
         if engaged.is_empty() {
-            // Out of combat: its spot in the formation behind the one it follows.
+            if let Some(state) = &bot.party_npc {
+                let mut state = state.clone();
+                state.out_of_combat(now);
+                npc_states.push((*bot_id, state));
+            }
+            // Out of combat: its spot in the diamond around the player.
             enmity.clear();
             if *state != NpcState::Follow {
                 *state = NpcState::Follow;
@@ -2625,10 +2749,11 @@ fn update_party(
             }
             spawn.common.target_id = ObjectTypeId::default();
             *placement = Placement::default();
-            let Some((anchor, facing)) = where_is.get(&follow).copied() else {
+            let Some((anchor, facing)) = where_is.get(&leader).copied() else {
                 continue;
             };
-            let spot = formation_spot(anchor, facing, spots.get(bot_id).copied().unwrap_or(0));
+            let (ahead, side) = spots.get(bot_id).copied().unwrap_or((-2.0, 0.0));
+            let spot = spot_around(anchor, facing, ahead, side);
             let here = spawn.common.position.0;
             let flat = |a: Vec3A, b: Vec3A| Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length();
             // Out of combat the bot walks itself (`walking_itself`: NPCs' own walking leaves it alone), so nothing
@@ -2811,6 +2936,57 @@ fn update_party(
         } else {
             Placement::default()
         };
+
+        // A party NPC fights with its own kit (`party_npc::Kit`), and talks now and then.
+        if let Some(state) = &bot.party_npc {
+            let mut state = state.clone();
+            let here = spawn.common.position.0;
+            let distance = engaged
+                .iter()
+                .find(|enemy| enemy.id == target)
+                .map(|enemy| {
+                    Vec3A::new(enemy.position.x - here.x, 0.0, enemy.position.z - here.z).length()
+                })
+                .unwrap_or(f32::INFINITY);
+            let special = specials.iter().any(|(id, ..)| id == bot_id);
+            if special {
+                state.used_gcd(now);
+            } else if !casting {
+                let provoking = provokes
+                    .iter()
+                    .find(|(id, _)| id == bot_id)
+                    .map(|(_, enemy)| *enemy);
+                if let Some(enemy) = provoking
+                    && let Some(provoke) = state.provoke(now)
+                {
+                    kit_actions.push((*bot_id, provoke, enemy));
+                } else if let Some(defensive) = state.defensive(now, engaged.len()) {
+                    kit_actions.push((*bot_id, defensive, *bot_id));
+                } else if let Some((action, on_self)) = state.choose(
+                    now,
+                    distance <= bot.attack_range + PARTY_NPC_REACH,
+                    distance <= TANK_PULL_RANGE,
+                ) {
+                    kit_actions.push((*bot_id, action, if on_self { *bot_id } else { target }));
+                }
+            }
+            if let Some(line) = state.chatter(now) {
+                lines.push((*bot_id, line));
+            }
+            npc_states.push((*bot_id, state));
+        }
+    }
+
+    for (bot_id, state) in npc_states {
+        if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
+            bot.party_npc = Some(state);
+        }
+    }
+    for (bot_id, action, target) in kit_actions {
+        npc_use_action(network, game_data, instance, bot_id, action, target);
+    }
+    for (bot_id, line) in lines {
+        party_npc::yell(network, instance, bot_id, line);
     }
 
     for (bot_id, path, moved, reaimed) in walks {
@@ -3242,19 +3418,60 @@ mod tests {
     }
 
     #[test]
-    fn formation_spots_apart() {
-        let here = Vec3A::new(10.0, 5.0, -3.0);
-        let facing = 0.7;
-        let spots: Vec<Vec3A> = (0..10).map(|i| formation_spot(here, facing, i)).collect();
-        for (i, a) in spots.iter().enumerate() {
-            assert!(a.distance(here) >= 2.4, "spot {i} is on the player");
-            // Behind: the opposite way from where the player faces.
-            let ahead = Vec3A::new(facing.sin(), 0.0, facing.cos());
-            assert!((*a - here).dot(ahead) < 0.0, "spot {i} is in front");
-            for (j, b) in spots.iter().enumerate().skip(i + 1) {
-                assert!(a.distance(*b) >= 1.0, "spots {i} and {j} overlap");
+    fn the_diamond_as_retails_duty_support() {
+        // Bob's capture: the player a healer; the tank 2 yalms ahead, the Lancer and Thaumaturge 1 ahead, 1.72 aside.
+        let (tank, lancer, thaum) = (ObjectId(1), ObjectId(2), ObjectId(3));
+        let spots = diamond_spots(
+            ROLE_HEALER,
+            &[
+                (tank, ROLE_TANK),
+                (thaum, ROLE_RANGED),
+                (lancer, ROLE_MELEE),
+            ],
+        );
+        assert_eq!(spots[&tank], (2.0, 0.0));
+        assert_eq!(spots[&lancer], (1.0, 1.72));
+        assert_eq!(spots[&thaum], (1.0, -1.72));
+
+        // The player a tank: everyone behind them, the healer at the back.
+        let healer = ObjectId(4);
+        let spots = diamond_spots(
+            ROLE_TANK,
+            &[
+                (healer, ROLE_HEALER),
+                (lancer, ROLE_MELEE),
+                (thaum, ROLE_RANGED),
+            ],
+        );
+        assert_eq!(spots[&healer], (-2.0, 0.0));
+        assert_eq!(spots[&lancer], (-1.0, 1.72));
+        assert_eq!(spots[&thaum], (-1.0, -1.72));
+
+        // Two melee bots for a ranged player: the second takes the other side; more than the diamond stand behind.
+        let bots: Vec<(ObjectId, u8)> = (10..16).map(|i| (ObjectId(i), ROLE_MELEE)).collect();
+        let spots = diamond_spots(ROLE_RANGED, &bots);
+        assert_eq!(spots[&ObjectId(10)], (0.0, 3.44));
+        let all: Vec<(f32, f32)> = bots.iter().map(|(id, _)| spots[id]).collect();
+        for (i, a) in all.iter().enumerate() {
+            assert!(a.0.hypot(a.1) >= 1.5, "spot {i} is on the player");
+            for (j, b) in all.iter().enumerate().skip(i + 1) {
+                assert!(
+                    (a.0 - b.0).hypot(a.1 - b.1) >= 1.0,
+                    "spots {i} and {j} overlap"
+                );
             }
         }
+    }
+
+    #[test]
+    fn spots_turn_with_the_player() {
+        let here = Vec3A::new(10.0, 5.0, -3.0);
+        // Facing +Z: ahead is +Z, the melee side +X.
+        let spot = spot_around(here, 0.0, 2.0, 1.0);
+        assert!((spot - Vec3A::new(11.0, 5.0, -1.0)).length() < 1e-5);
+        // Facing +X (a quarter turn): ahead is +X, the melee side -Z.
+        let spot = spot_around(here, std::f32::consts::FRAC_PI_2, 2.0, 1.0);
+        assert!((spot - Vec3A::new(12.0, 5.0, -4.0)).length() < 1e-5);
     }
 
     #[test]

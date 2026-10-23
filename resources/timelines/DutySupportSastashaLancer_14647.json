@@ -1,0 +1,24 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 17059,
+    "recorded_amounts": {
+        "17059": {
+            "npcs": 3
+        },
+        "29304": {
+            "npcs": 26
+        },
+        "29305": {
+            "npcs": 27
+        },
+        "29306": {
+            "npcs": 26
+        },
+        "29772": {
+            "npcs": 275
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Sastasha's Duty Support Lancer (BNpcBase 14647, BNpcName 11327): level 15, 322 HP, 323 auto-attacks every 3.0 s. From Bob's Chronofoil capture of 2026-10-23 (700cc294, `questkit chronofoil --battle 0.3`: Sastasha with Duty Support, the player a level 17 Conjurer, 30 minutes): the median damage of each action to Sastasha's enemies. Its kit and timing are in `server/party_npc.rs`; hitbox not recorded."
+}

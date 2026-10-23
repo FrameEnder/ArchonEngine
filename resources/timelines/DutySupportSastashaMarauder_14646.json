@@ -1,0 +1,33 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 17058,
+    "recorded_amounts": {
+        "17058": {
+            "npcs": 3
+        },
+        "29291": {
+            "npcs": 24
+        },
+        "29294": {
+            "npcs": 23.5
+        },
+        "29295": {
+            "npcs": 24
+        },
+        "29299": {
+            "npcs": 25
+        },
+        "29300": {
+            "npcs": 24.5
+        },
+        "29764": {
+            "npcs": 76
+        },
+        "29765": {
+            "npcs": 128
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Sastasha's Duty Support Marauder (BNpcBase 14646, BNpcName 11326): level 15, 411 HP, 271 auto-attacks every 3.0 s. From Bob's Chronofoil capture of 2026-10-23 (700cc294, `questkit chronofoil --battle 0.3`: Sastasha with Duty Support, the player a level 17 Conjurer, 30 minutes): the median damage of each action to Sastasha's enemies. Its kit and timing are in `server/party_npc.rs`; hitbox not recorded."
+}

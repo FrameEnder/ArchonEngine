@@ -164,6 +164,8 @@ pub struct ZoneConnection {
 
     // TODO: support more than one content in the queue
     pub queued_content: Option<u16>,
+    /// The Duty Support members the player chose for `queued_content` (`RegisterDutySupport`), sent with JoinContent.
+    pub duty_support: Option<Vec<u8>>,
     pub duty_settings: Option<DutyFinderSetting>,
 
     pub conditions: Conditions,
@@ -429,6 +431,8 @@ impl ZoneConnection {
     ) {
         self.queued_content = Some(content_ids[0]);
         self.duty_settings = Some(settings);
+        // Through the Duty Finder unless `RegisterDutySupport` says otherwise after this.
+        self.duty_support = None;
 
         // update
         {

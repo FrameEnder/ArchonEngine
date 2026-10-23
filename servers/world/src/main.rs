@@ -182,6 +182,7 @@ async fn initial_setup(
                     gracefully_logged_out: false,
                     obsfucation_data: ObsfucationData::default(),
                     queued_content: None,
+                    duty_support: None,
                     duty_settings: None,
                     conditions: Conditions::default(),
                     queued_tasks: Vec::new(),
@@ -1876,7 +1877,10 @@ async fn process_packet(
                                 }
                                 ClientTriggerCommand::RegisterDutySupport {
                                     dawn_content_id,
-                                    ..
+                                    unk1,
+                                    unk2,
+                                    unk3,
+                                    unk4,
                                 } => {
                                     let content_finder_condition_id;
                                     {
@@ -1892,6 +1896,10 @@ async fn process_packet(
                                             DutyFinderSetting::default(),
                                         )
                                         .await;
+                                    // The members chosen, one byte each (Bob's capture: 0x00252624, 36, 38, 37.)
+                                    connection.duty_support = Some(kawari_world::chosen_members([
+                                        unk1, unk2, unk3, unk4,
+                                    ]));
                                 }
                                 ClientTriggerCommand::StartOrStopPerforming { perform_id } => {
                                     if perform_id == 0 {

@@ -24,7 +24,7 @@ use crate::{
         instance::{Instance, QueuedTaskData, remove_actor_from_instance},
         job_gauge::JobGauge,
         network::{DestinationNetwork, NetworkState},
-        party_bot,
+        party_bot, party_npc,
     },
     zone_connection::{BaseParameters, TeleportQuery},
 };
@@ -1294,21 +1294,35 @@ pub fn handle_zone_messages(
             };
 
             // In through the Duty Finder alone: bots fill the party (`server/party_bot.rs`), and the client is told
-            // its party list.
+            // its party list. Through Duty Support: the members chosen first (party NPCs, `server/party_npc.rs`),
+            // announced to the client as retail does, then bots for any role still missing.
             if instance.pending_duty_bots.remove(from_actor_id) {
                 let content = instance.content_finder_condition_id;
+                let chosen = instance.pending_duty_support.remove(from_actor_id);
                 let usable: HashMap<u32, String> = {
                     let lua = lua.lock();
                     let state = lua.0.app_data_ref::<KawariLuaState>().unwrap();
                     state.action_scripts.clone()
                 };
                 let mut game_data = game_data.lock();
+                let mut npc_roles = Vec::new();
+                if let Some(chosen) = chosen {
+                    let (_, roles) = party_npc::fill_duty_support(
+                        instance,
+                        &mut game_data,
+                        *from_actor_id,
+                        &chosen,
+                    );
+                    npc_roles = roles;
+                    party_npc::announce(&network, instance, *from_actor_id);
+                }
                 party_bot::fill_duty_party(
                     &mut data,
                     &mut game_data,
                     &usable,
                     *from_actor_id,
                     content,
+                    &npc_roles,
                 );
                 if let Some(instance) = data.find_actor_instance(*from_actor_id)
                     && let Some(members) = party_bot::party_list(instance, *from_actor_id)

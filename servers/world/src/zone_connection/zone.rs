@@ -628,6 +628,7 @@ impl ZoneConnection {
                 self.player_data.character.actor_id,
                 id,
                 settings,
+                self.duty_support.take(),
             ))
             .await;
     }

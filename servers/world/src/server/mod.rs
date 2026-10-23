@@ -78,10 +78,12 @@ mod linkshell;
 mod network;
 mod party;
 mod party_bot;
+mod party_npc;
 mod periodic;
 mod pet;
 pub use party::{Party, PartyMember};
 pub use party_bot::BOT_LEVEL;
+pub use party_npc::chosen_members;
 use periodic::periodic_tick;
 pub use rotation::{ActionMechanics, GCD_GROUP};
 mod fate;
@@ -2983,7 +2985,13 @@ pub async fn server_main_loop(
                     let mut network = network.lock();
                     network.to_remove_chat.push(from_id);
                 }
-                ToServer::JoinContent(from_id, from_actor_id, content_id, settings) => {
+                ToServer::JoinContent(
+                    from_id,
+                    from_actor_id,
+                    content_id,
+                    settings,
+                    duty_support,
+                ) => {
                     // For now, just send them to do the zone if they do anything
                     let zone_id;
                     {
@@ -3024,9 +3032,15 @@ pub async fn server_main_loop(
                             &mut game_data,
                             &lua,
                         ) {
-                            // Alone through the Duty Finder: bots fill the party once they've loaded in.
+                            // Alone through the Duty Finder: bots fill the party once they've loaded in; through Duty
+                            // Support, the members chosen (party NPCs) and bots for anyone not recorded.
                             if actor_ids.len() == 1 {
                                 target_instance.pending_duty_bots.insert(actor_ids[0].1);
+                                if let Some(members) = duty_support {
+                                    target_instance
+                                        .pending_duty_support
+                                        .insert(actor_ids[0].1, members);
+                                }
                             }
                             for (client_id, actor_id) in &actor_ids {
                                 target_instance.insert_empty_actor(*actor_id);

@@ -1,0 +1,18 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "29312": {
+            "npcs": 277
+        },
+        "29314": {
+            "npcs": 26
+        },
+        "29315": {
+            "npcs": 26
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Sastasha's Duty Support Thaumaturge (BNpcBase 14648, BNpcName 11328): level 15, 293 HP, no auto-attack (1.7 s casts). From Bob's Chronofoil capture of 2026-10-23 (700cc294, `questkit chronofoil --battle 0.3`: Sastasha with Duty Support, the player a level 17 Conjurer, 30 minutes): the median damage of each action to Sastasha's enemies. Its kit and timing are in `server/party_npc.rs`; hitbox not recorded."
+}

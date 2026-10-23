@@ -1,0 +1,43 @@
+{
+    "autoattack_action_id": 871,
+    "recorded_amounts": {
+        "871": {
+            "players": 36,
+            "npcs": 20
+        },
+        "722": {
+            "players": 41,
+            "npcs": 28
+        },
+        "834": {
+            "players": 37.5,
+            "npcs": 23
+        },
+        "556": {
+            "players": 114
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Denn (BNpcBase 417, Sastasha's last boss, 3978771): 5869 HP, his auto-attack 871 every 3.0 s. From Bob's Chronofoil captures of Sastasha: five Duty Finder runs (2026-10-22) and one with Duty Support (2026-10-23, 700cc294, whose fights ran longest: the Duty Support members took the hits other players would have). `players` is the median damage to players over all six runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded.",
+    "rotation": {
+        "pace": 7.0,
+        "actions": [
+            {
+                "action": 722,
+                "every": 15.5,
+                "comment": "16 uses"
+            },
+            {
+                "action": 834,
+                "every": 7.9,
+                "comment": "16 uses"
+            },
+            {
+                "action": 556,
+                "every": 46.5,
+                "comment": "6 uses, a 3.2 s cast; second in line so it first comes about 14 s in (retail: 18 s)"
+            }
+        ]
+    }
+}

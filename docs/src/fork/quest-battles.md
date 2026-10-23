@@ -65,6 +65,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `say_battle_talk(npc, number, name_id)` | Says the quest's n-th `*BATTLETALK*` line (key order) under BNpcName `name_id` (0 shows `???`), even if the speaker isn't present. The log names the key it used. |
 | `play_action_timeline(npc, timeline_id)` | Plays an animation (ActionTimeline row) on the NPC (ActorControl 407), as Sastasha's second captain does (980) as he calls his men. |
 | `yell(npc, npc_yell_id)` | A speech bubble over the NPC: NpcYell row (e.g. 117/118 Yda's and Papalymo's in Chasing Shadows, 122/123 the golem's rumbles). The packet (NpcYell) is the actor, 4 bytes, the speaker's BNpcName (for a battle NPC; upstream's comment says ENpcResident), the NpcYell row, then four u32 parameters, 0 in every quest battle bubble on retail. |
+| `party_npc_yell(role, npc_yell_id, delay)` | The party NPC (Duty Support member) playing `role` (`"tank"`, `"healer"`, `"melee"`, `"ranged"`) yells an NpcYell line `delay` seconds from now (0 if left out), under its BNpcName; nobody of that role, nothing. For a duty's story lines: see [Party NPCs](party-npcs.md#talking). |
 
 ## The battle framework (`content/lib/Battle.lua`)
 

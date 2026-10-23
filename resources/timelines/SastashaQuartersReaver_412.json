@@ -1,0 +1,26 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 56,
+            "npcs": 32
+        },
+        "31": {
+            "players": 88,
+            "npcs": 48
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The reaver behind the captain's quarters door (BNpcBase 412, 3282344): 1811 HP. From Bob's Chronofoil captures of Sastasha: five Duty Finder runs (2026-10-22) and one with Duty Support (2026-10-23, 700cc294, whose fights ran longest: the Duty Support members took the hits other players would have). `players` is the median damage to players over all six runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded.",
+    "rotation": {
+        "pace": 6.0,
+        "actions": [
+            {
+                "action": 31,
+                "every": 6.7,
+                "comment": "3 uses in 6 runs"
+            }
+        ]
+    }
+}

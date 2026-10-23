@@ -87,6 +87,30 @@ CAPTAIN2_CALL_YELL = 136
 
 -- Sequence 5
 BNPC_DENN = 3978771
+-- His adds come in two waves in the four corners of his arena, the first 47 s into his fight (three of them), the
+-- second 16 s later (all four, the first wave's again beside any still standing). Bob's Chronofoil captures: Sastasha
+-- with Duty Support (2026-10-23), whose Denn fight lasted 105 s, saw both (at 47.3 and 63.0 s after the tank's pull,
+-- Denn at 41 % and 28 %); of five Duty Finder runs (2026-10-22), two lasted long enough for one wave (four, 47 s after
+-- Denn appeared in one), three killed him first.
+BNPC_DENN_ADDS_FIRST = { 4064938, 4064937, 3978761 }
+BNPC_DENN_ADDS_SECOND = { 4064938, 4064937, 3978770, 3978761 }
+DENN_FIRST_WAVE = 47.3
+DENN_SECOND_WAVE = 63.0
+-- The director's onUpdate comes every server tick (0.5 s).
+UPDATES_PER_SECOND = 2
+
+-- The Duty Support members' story lines (NpcYell, `director:party_npc_yell(role, line, delay)`), when retail's said them
+-- (Bob's Chronofoil capture of 2026-10-23): the Lancer 43.6 s after the duty began, the tank as Chopper came, the
+-- Lancer 2 s after the first captain fled (his line 134), the Thaumaturge 2 s after the second (137), the tank 15.5 s
+-- after Denn's cutscene began. Nobody says them without Duty Support.
+PARTY_NPC_LINE_START = 14296
+PARTY_NPC_LINE_START_AFTER = 43.6
+PARTY_NPC_LINE_CHOPPER = 14298
+PARTY_NPC_LINE_CAPTAIN1 = 14300
+PARTY_NPC_LINE_CAPTAIN2 = 14302
+PARTY_NPC_LINE_DENN = 14303
+PARTY_NPC_LINE_DENN_AFTER = 15.5
+PARTY_NPC_LINE_AFTER_CAPTAIN = 2.0
 
 -- Shortcuts
 SHORTCUT_BEFORE_CATTERY = 11432969
@@ -132,6 +156,9 @@ local chopper_spawned
 -- The second captain's fight, and whether he has called his men through the gate yet
 captain2_fighting = false
 gate_opened = false
+-- Denn's fight: updates since he first went for someone (nil until then), and the waves of adds sent so far
+denn_updates = nil
+denn_waves = 0
 
 function onSetup(director)
     coral_color = math.random(0, #EOBJ_CORAL_IDS - 1)
@@ -158,6 +185,8 @@ function onSetup(director)
     director:spawn_treasure(101)
 
     beginSequence0(director)
+
+    director:party_npc_yell("melee", PARTY_NPC_LINE_START, PARTY_NPC_LINE_START_AFTER)
 end
 
 function setSequence(director, sequence)
@@ -186,6 +215,7 @@ function onGimmickAccessor(director, actor_id, id, params)
 
                 beginBattleMusic(director)
                 director:spawn_boss(BNPC_CHOPPER, EOBJ_CATTERY_BOSS_WALL, EOBJ_CATTERY_BOSS_LINE, PLACE_CATTERY)
+                director:party_npc_yell("tank", PARTY_NPC_LINE_CHOPPER)
             end
         else
             director:event_action(EVENT_ACTION_INTERACT, actor_id, id)
@@ -232,6 +262,7 @@ function onGimmickRect(director, target)
     if target == EVENT_RANGE_BOSS and not seen_final_cutscene then
         director:play_cutscene(175) -- Denn's cutscene
         seen_final_cutscene = true
+        director:party_npc_yell("tank", PARTY_NPC_LINE_DENN, PARTY_NPC_LINE_DENN_AFTER)
     end
 end
 
@@ -274,8 +305,9 @@ function onEventActionCast(director, actor_id, target)
     end
 end
 
--- The second captain below half his health: he calls his men through the gate.
-function onUpdate(director, health)
+-- The second captain below half his health: he calls his men through the gate. Denn's adds come in waves.
+function onUpdate(director, health, player_health, info)
+    updateDenn(director, health, info)
     if captain2_fighting and not gate_opened and health[BNPC_CAPTAIN2] ~= nil
         and health[BNPC_CAPTAIN2] < CAPTAIN2_GATE_HEALTH then
         gate_opened = true
@@ -303,6 +335,7 @@ function onActorDeath(director, bnpc_id, position)
         director:spawn_treasure(100)
         endBattleMusic(director)
         beginSequence3(director)
+        director:party_npc_yell("melee", PARTY_NPC_LINE_CAPTAIN1, PARTY_NPC_LINE_AFTER_CAPTAIN)
 
         -- Update shortcut
         director:update_shortcut(SHORTCUT_AFTER_CAPTAIN1)
@@ -314,6 +347,7 @@ function onActorDeath(director, bnpc_id, position)
         -- No coffer for this boss on retail (no 96 in five runs.)
         endBattleMusic(director)
         director:hide_eobj(EOBJ_RAMBADE_DOOR2)
+        director:party_npc_yell("ranged", PARTY_NPC_LINE_CAPTAIN2, PARTY_NPC_LINE_AFTER_CAPTAIN)
 
         beginSequence5(director)
 
@@ -330,6 +364,36 @@ function onActorDeath(director, bnpc_id, position)
         director:play_cutscene(176)
 
         director:complete_duty()
+    end
+end
+
+-- Denn's adds: counted from when he first goes for someone, a wave at DENN_FIRST_WAVE and one at DENN_SECOND_WAVE.
+function updateDenn(director, health, info)
+    if health[BNPC_DENN] == nil then
+        return
+    end
+    if denn_updates == nil then
+        if info ~= nil and info[BNPC_DENN] ~= nil and info[BNPC_DENN].target ~= nil then
+            denn_updates = 0
+        end
+        return
+    end
+    denn_updates = denn_updates + 1
+    local seconds = denn_updates / UPDATES_PER_SECOND
+    if denn_waves == 0 and seconds >= DENN_FIRST_WAVE then
+        denn_waves = 1
+        spawnDennAdds(director, BNPC_DENN_ADDS_FIRST)
+    elseif denn_waves == 1 and seconds >= DENN_SECOND_WAVE then
+        denn_waves = 2
+        spawnDennAdds(director, BNPC_DENN_ADDS_SECOND)
+    end
+end
+
+-- His adds go for the party at once.
+function spawnDennAdds(director, adds)
+    for _, id in ipairs(adds) do
+        director:spawn_bnpc(id)
+        director:set_hate(id, nil, 300) -- the player
     end
 end
 

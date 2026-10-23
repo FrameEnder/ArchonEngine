@@ -500,7 +500,8 @@ pub enum ToServer {
     /// The client returned online and we need to inform other party members.
     PartyMemberReturned(ObjectId, i32, u64),
     /// The client is requesting to join the following content.
-    JoinContent(ClientId, ObjectId, u16, DutyFinderSetting),
+    /// The Duty Support members chosen (DawnQuestMember, in party slot order), when registered through Duty Support.
+    JoinContent(ClientId, ObjectId, u16, DutyFinderSetting, Option<Vec<u8>>),
     /// The client started an event action during a quest event, which finishes casting after this many seconds.
     QuestEventAction(ClientId, ObjectId, u8),
     /// The client is entering a quest battle: the QuestBattle ID, and the territory it takes place in.

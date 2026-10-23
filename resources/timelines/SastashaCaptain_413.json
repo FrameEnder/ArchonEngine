@@ -1,0 +1,15 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 25,
+            "npcs": 14
+        },
+        "9": {
+            "npcs": 23
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The first captain (BNpcBase 413, 3988325): 4785 HP; once in six runs action 9 (left out of its rotation). From Bob's Chronofoil captures of Sastasha: five Duty Finder runs (2026-10-22) and one with Duty Support (2026-10-23, 700cc294, whose fights ran longest: the Duty Support members took the hits other players would have). `players` is the median damage to players over all six runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

@@ -18,6 +18,18 @@ add one when something is found.
   The fork's inventory operations (retainer entrust/withdraw/gil/market, `BASE_INVENTORY_ACTION` + 22..26) are
   assumed to keep their offsets from the new base (234), unchecked on 7.57h1.
 
+## Party NPCs (Duty Support)
+
+* Untested in game (2026-10-23). Whether the client builds its party list from ActorControlSelf 257, 276 and 1525
+  alone, as retail's capture suggests, is the first thing to check.
+* Only Sastasha's three members are recorded (Marauder, Lancer, Thaumaturge, for a healer player); any other member
+  chosen (Sastasha's healer, other duties' members) is a Player NPC of that role, listed in a Duty Finder party list
+  beside the party NPCs' slots.
+* The members' abilities that did no damage (26230, 29303, 29766, 29311, 29767, 25082, 25083) are only animations,
+  and the Lancer's 29772 doesn't heal it. Their chatter in fights is at random every 150–400 s of fighting, not
+  whatever made retail's members speak.
+* The bots' diamond formation (also the Player NPCs') is measured with a healer player only.
+
 ## Party bots
 
 * Stage 1 only (see [Party Bots](party-bots.md)): `!spawn playernpc` bots are in the party list only once invited,
@@ -276,6 +288,11 @@ add one when something is found.
 
 ## Sastasha
 
+* Bosses' timelines (Chopper, the quarters' reaver, both captains, Denn, Denn's adds) are from six runs' medians
+  (2026-10-22/23); their actions that did no damage (351, 1000) are only animations, and when the bosses first use
+  each action isn't recorded (Denn's 556 comes about 14 s in, retail's 18). Denn's adds come by time from his first
+  target (47 and 63 s), which fits the Duty Support run; retail's trigger isn't known (one Duty Finder run had its
+  wave 71 s after he appeared).
 * The second captain's gate fight and the clams' loop are untested in game (2026-10-23). Whether the four corsairs are
   in Sastasha's layout as Kawari reads it isn't known (Bob's earlier Kawari run never spawned them); if not, the
   server logs that it couldn't find them. ActorControl 503 and 11 (retail's, putting them on the enemy list) aren't
@@ -334,8 +351,8 @@ add one when something is found.
 
 ## Combat
 
-* **Duty Finder bots** (2026-10-22, untested in game): retail's Duty Support party list was never recorded, so bots
-  are listed as a Duty Finder party of players; whether the client takes an NPC's actor ID there (HP bars, targeting
+* **Duty Finder bots** (2026-10-22, untested in game): bots are listed as a Duty Finder party of players (retail's
+  Duty Support list, recorded on 2026-10-23, is for [Party NPCs](party-npcs.md)); whether the client takes an NPC's actor ID there (HP bars, targeting
   from the list) is the first thing to check. Their HP in the list isn't updated by the server, no PartyMemberPositions
   are sent for them, and they don't know Sastasha's route (the tank bot follows you).
 * **Carbuncle** (2026-10-22, untested in game): it isn't summoned again after zoning (retail resummons it as you load

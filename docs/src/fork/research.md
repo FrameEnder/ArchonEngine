@@ -28,6 +28,26 @@ where the work stands.
 * **Missing**: packets inside the rounds (needs Recorder 2.2+ duty packets).
 * Not scheduled.
 
+## Sastasha with Duty Support (Bob's Chronofoil capture of 2026-10-23)
+
+One 30-minute run (`700cc294`, visit 0.3) for It's Probably Pirates (245), Bob a level 17 Conjurer with the three
+Duty Support members, who took the hits other players would have and fought far longer than a Duty Finder party does,
+so it shows what the faster runs never got to:
+
+* **The members**: see [Party NPCs](party-npcs.md) (spawns, party slots, formation, kits, lines).
+* **The quest**: moved to its last step as Bob used the duty's exit after the clear (GimmickAccessor 5, DutyExit;
+  EventLogMessage from the director, the quest's notice 3, UpdateQuest, then PrepareZoning): see
+  [Quests](quests.md) (`onDutyCleared`).
+* **Denn's adds** (base 418, 315 HP, the arena's four corners: 4064938, 4064937, 3978761, 3978770): two waves, three
+  47.3 s after the tank pulled him (he was at 41 %), then all four 15.7 s later (28 %), each using 835 with no target
+  as it came, then 870 and 555 on whoever they reached. Of the five Duty Finder runs, two had one wave (four, 46.8 and
+  71.4 s after he appeared, he at 2 % in one) and three killed him first. Kawari's script sends them now.
+* **The bosses' kits**, across all six runs (uses, median gap): Chopper 351 (7, 14.8 s, a 2.7 s cast, no damage);
+  the quarters' reaver 31 (3, 6.7 s); the first captain 9 once; the second 9 (21, 8.6 s) and 1000 (7, 24.4 s, no
+  damage); Denn 722 (16, 15.5 s), 834 (16, 7.9 s), 556 (6, 46.5 s, a 3.2 s cast, 154 on Bob once). Their damage to
+  players and to the members are their timelines' `recorded_amounts` now (Chopper 63 and 36 a hit, Denn 36 and 20).
+* **Enemies**: the same 92 as the Duty Finder runs (none new), but more of the respawning base 942 (52 against 32–49).
+
 ## Sastasha with a Duty Finder party (Bob's Chronofoil capture of 2026-10-22)
 
 Five runs of Sastasha (territory 1036, ContentFinderCondition 4) with Duty Finder parties of real players, Bob on

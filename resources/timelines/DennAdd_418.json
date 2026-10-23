@@ -1,0 +1,25 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 14,
+            "npcs": 5
+        },
+        "555": {
+            "npcs": 6
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Denn's adds (BNpcBase 418, 3978761, 3978770, 4064937, 4064938): 315 HP; each used 835 once with no target as it came (left out). From Bob's Chronofoil captures of Sastasha: five Duty Finder runs (2026-10-22) and one with Duty Support (2026-10-23, 700cc294, whose fights ran longest: the Duty Support members took the hits other players would have). `players` is the median damage to players over all six runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded.",
+    "rotation": {
+        "pace": 6.0,
+        "actions": [
+            {
+                "action": 555,
+                "every": 12.1,
+                "comment": "5 uses, all in the Duty Support run (the Duty Finder parties killed Denn before his adds fought)"
+            }
+        ]
+    }
+}

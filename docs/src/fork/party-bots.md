@@ -35,7 +35,8 @@ What retail's Duty Finder parties showed (numbers only, the same capture): every
 (Sastasha's enemies are 15), HP 351–652; the list's order is the order members joined (you first when you were
 first, last otherwise); PartyMemberPositions every 5 s; when a member leaves, a new list and PartyUpdate
 MemberLeftParty (6) to the rest; at the end DisbandingParty (3) with an empty list, then an empty one again in the
-city. No Duty Support run is recorded yet, so how retail lists Duty Support members is still unknown.
+city. Retail lists Duty Support members another way (ActorControlSelf per party slot, no PartyList): see
+[Party NPCs](party-npcs.md#how-retail-spawned-and-listed-them).
 
 ## Bots and battle NPCs are kept apart
 
@@ -245,10 +246,12 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
 * **Movement.** Where the navmesh has no path (none around Summerford Farms' houses), a bot walks straight to where
   it's going, as NPCs in content do; out in the world other NPCs give up, and bots stood still while you walked off
   (Bob's 2026-10-21 bundle: 550 failed paths, both ends off the mesh).
-* **Out of combat** it follows the party's tank (you, if you're on a tank class; else a tank bot), or you; the tank bot
-  follows you. Each bot has **its own spot in a formation** behind the one it follows (`FORMATION`, by the order they
-  joined: 35° either side of straight behind at 2.5 yalms, straight behind at 3.8, out to the sides at 75°, then
-  further back; more than seven start another ring 3.5 yalms out), turned with the way they face. It walks to its spot
+* **Out of combat** each bot has **its own spot in a sideways diamond around you**, as retail's Duty Support members
+  kept (see [Party NPCs](party-npcs.md#out-of-combat-the-diamond)): the tank in front, the healer behind, the damage
+  dealers either side, you in your own role's corner (`diamond_spots`: with you a healer, the tank 2 yalms ahead and
+  the damage dealers 1 ahead and 1.72 aside), turned with the way you face; bots beyond the diamond's four corners stand
+  in rows of three behind it. (Until 2026-10-23 they stood in a formation behind the party's tank, `FORMATION`: 35°
+  either side of straight behind at 2.5 yalms, and so on.) It walks to its spot
   when it's more than 0.6 yalms off and stops there. Out of combat **the bot walks itself** (`PartyBot::walking_itself`):
   `party_bot::update` keeps its path, moves it along it at NPCs' running speed (6 yalms a second, 3 a tick) and sends
   the ActorMove, and NPCs' own walking (`npc_behavior`) leaves it alone until it fights, when that takes over to chase
