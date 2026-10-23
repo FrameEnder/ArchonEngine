@@ -116,6 +116,15 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
       117 to 37).
     * An enemy it hasn't hit yet, 6–20 yalms away, gets its ranged attack (Shield Lob, Tomahawk: `tank_pull_action`),
       as those tanks threw it from 6–21 yalms (14 the median) at enemies joining the fight.
+    * An enemy that turns on someone else counts as fresh again, so the tank throws its ranged attack at it when it's
+      6–20 yalms off; further, it runs at it until it's in range.
+    * It stands **across its target from the rest of the party** (`Placement::opposite`, 2.5 yalms beyond it), so the
+      enemy faces away from them and its cones and cleaves miss them. It moves round only when the party is less than
+      120° round from it, seen from the enemy (the capture's tanks were past that about half the time: 113° the median
+      over 313 hits).
+    * It **keeps up with the player** (unless the player is the tank): more than 15 yalms from them while fighting (the
+      player has run on ahead, pulling as they go, wall to wall), it goes after them, and keeps throwing its ranged
+      attack at whatever turns on someone and using its area combo on what comes along with it.
     * Otherwise it keeps on what it's fighting; its rotation fills the rest (it's told about the area attacks and
       pulls, so it doesn't use another GCD at once).
   * **DPS** attack what the tank is attacking (the enemy most after a tank bot, or your target if you're the tank),
@@ -129,6 +138,32 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
   weaponskills re-applied 2 s before they wear off (the duration in their script); and its filler: the highest level
   combo starter, or its strongest plain weaponskill or spell (the potency in its script), so Stone II replaces Stone.
   Single-target attacks only. Melee bots auto-attack (870), physical ranged ones too (872); casters don't.
+
+## Glamours
+
+Each bot can wear its own outfit over its gear: one picked at random, for its sex, from a list the server's owner
+writes (`servers/world/src/server/glamour.rs`). The list is **`glamours.txt` in the server's data folder**, beside
+`config.yaml` (Kawari Web's `KAWARI_DATA_DIR`, `~/.kawari` unless changed). It's kept out of git, as the item names in
+it are the game's. The server reads it the first time a bot joins and again whenever it changes, and logs how many
+glamours it read and any item or dye it couldn't find.
+
+```text
+# One glamour per block. A line starting "==" names it; end it with (male) or (female) for the sex it's for, or
+# neither for either. Then one line per piece: the item's name as the game spells it, then | and its dyes.
+== Seaside captain (female)
+Head: <item name>
+Body: <item name> | <dye>
+Hands: <item name> | <dye> | <second dye>
+Legs: <item name>
+Feet: <item name> | <dye>
+```
+
+* The slot before the colon is optional (the item says where it goes); weapon lines are skipped (bots keep their
+  class's weapon). Names match whatever the case or spacing, and either kind of apostrophe; `undyed` means no dye.
+* Names are looked up in the game's Item sheet (equippable items) and Stain sheet, in the server's language.
+* A piece goes in the slots its EquipSlotCategory fills, as the gear's glamour, and empties the slots it covers (a
+  long coat over the legs). Only the looks change; the bot's stats are its gear's.
+* Without the file, bots wear their gear's looks, as before.
 
 ## Not done yet
 

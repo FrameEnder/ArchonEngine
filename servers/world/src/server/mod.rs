@@ -67,6 +67,7 @@ mod actor;
 mod chat;
 mod director;
 mod effect;
+mod glamour;
 mod instance;
 mod job_gauge;
 mod loot;

@@ -51,6 +51,7 @@ use crate::{
     server::{
         WorldServer,
         actor::{NetworkedActor, NpcState, NpcTarget},
+        glamour,
         instance::Instance,
         network::{DestinationNetwork, NetworkState},
         npc_behavior::{BEHAVIOR_TICK_SECONDS, NPC_RUN_SPEED, npc_use_action},
@@ -92,6 +93,12 @@ const TANK_AOE_REACH: f32 = 5.5;
 /// same runs' tanks threw it from 6-21 yalms (14 the median) at enemies just joining the fight.
 const TANK_PULL_FROM: f32 = 6.0;
 const TANK_PULL_RANGE: f32 = 20.0;
+/// The tank keeps up with the player while fighting: further than this from them (they've run on ahead, pulling as they
+/// go, wall to wall), it goes after them, still pulling with its ranged attack and area combo on the way.
+const TANK_KEEP_UP: f32 = 15.0;
+/// How far beyond its target the tank stands, across from the party (`Placement::opposite`): the same runs' tanks
+/// stood 2.1 yalms from the middle of what they hit (the median.)
+const TANK_SPOT: f32 = 2.5;
 /// How far ahead of an enemy's list the tank's area attack keeps it, its tank stance's share of enmity.
 const TANK_STANCE_ENMITY: u32 = 1_000;
 /// How much enmity a pull gives the tank on that enemy (more each time it's needed, as the top of its list grows.)
@@ -526,6 +533,51 @@ fn heal_action(actions: &[ClassAction]) -> Option<u32> {
         .map(|a| a.id)
 }
 
+/// Puts a glamour's pieces over the gear's looks: each in the slot its EquipSlotCategory fills (as the gear's
+/// glamour, or as the item where the slot is empty), with its dyes, and the slots it covers (a coat over the legs)
+/// emptied. Only the models change; the bot's stats are its gear's.
+fn wear_glamour(game_data: &mut GameData, wearing: &mut Inventory, glamour: &glamour::Glamour) {
+    for piece in &glamour.pieces {
+        let Some(row) = game_data
+            .equip_slot_category_sheet
+            .row(piece.slot_category as u32)
+        else {
+            continue;
+        };
+        let equipped = &mut wearing.equipped;
+        let slots: [(i8, &mut Item); 10] = [
+            (row.Head, &mut equipped.head),
+            (row.Body, &mut equipped.body),
+            (row.Gloves, &mut equipped.hands),
+            (row.Legs, &mut equipped.legs),
+            (row.Feet, &mut equipped.feet),
+            (row.Ears, &mut equipped.ears),
+            (row.Neck, &mut equipped.neck),
+            (row.Wrists, &mut equipped.wrists),
+            (row.FingerL, &mut equipped.left_ring),
+            (row.FingerR, &mut equipped.right_ring),
+        ];
+        for (fills, item) in slots {
+            match fills {
+                1 => {
+                    if item.quantity == 0 {
+                        *item = Item {
+                            item_id: piece.item_id,
+                            quantity: 1,
+                            ..Default::default()
+                        };
+                    } else {
+                        item.glamour_id = piece.item_id;
+                    }
+                    item.stains = piece.stains;
+                }
+                -1 => *item = Item::default(),
+                _ => {}
+            }
+        }
+    }
+}
+
 /// A random player look: one of the first six races (whose faces and hairstyles 1-4 every tribe and sex has), either
 /// sex, random features and colours within the character creator's smallest ranges.
 fn random_look() -> CustomizeData {
@@ -711,6 +763,12 @@ fn spawn_bot(
 
     let look = random_look();
     let name = random_name();
+    // Its own look: one of the server's glamours for its sex, over its gear (`glamour.rs`; none without the list.)
+    let glamours = glamour::glamours(game_data);
+    let worn_glamour = glamour::pick(&glamours, look.gender).map(|glamour| {
+        wear_glamour(game_data, &mut wearing, glamour);
+        glamour.name.clone()
+    });
     let parameters = bot_parameters(
         game_data,
         classjob,
@@ -848,7 +906,7 @@ fn spawn_bot(
         .map(|row| row.Abbreviation.to_string())
         .unwrap_or_default();
     tracing::info!(
-        "Party bot {name} ({abbreviation}, level {level}, {hp} HP) joined {leader}: gear {item_ids:?}, rotation {:?}, heal {heal:?}",
+        "Party bot {name} ({abbreviation}, level {level}, {hp} HP) joined {leader}: gear {item_ids:?}, glamour {worn_glamour:?}, rotation {:?}, heal {heal:?}",
         actions.iter().map(|a| a.id).collect::<Vec<_>>()
     );
     Ok((actor_id, format!("{name} ({abbreviation})")))
@@ -1195,6 +1253,7 @@ fn update_party(
     let mut provokes = Vec::new();
     let mut specials: Vec<(ObjectId, u32, ObjectId, Vec<ObjectId>)> = Vec::new();
     let mut tank_answers: Vec<(ObjectId, HashMap<ObjectId, Instant>)> = Vec::new();
+    let mut repulls: Vec<(ObjectId, ObjectId)> = Vec::new();
     let mut walks = Vec::new();
     let mut fighting = Vec::new();
     let navmesh = &instance.navmesh;
@@ -1315,6 +1374,10 @@ fn update_party(
                     .iter()
                     .filter(|enemy| enemy.after != Some(*bot_id))
                     .collect();
+                // An enemy that's turned on someone else is one to pull again, from range if it's far.
+                for enemy in &loose {
+                    repulls.push((*bot_id, enemy.id));
+                }
                 let mut answers = bot.answers.clone();
                 answers.retain(|enemy, _| loose.iter().any(|loose| loose.id == *enemy));
                 for enemy in &loose {
@@ -1386,7 +1449,21 @@ fn update_party(
         enmity.clear();
         enmity.insert(target, 1);
         timeline.attack_range = bot.attack_range;
-        *placement = if bot.attack_range > MELEE_RANGE {
+        *placement = if bot.role == BotRole::Tank {
+            // Across its target from the rest of the party, so cones and cleaves miss them; and with the player when
+            // they've run on ahead (unless the player is the one it follows only because they're the tank.)
+            let party: Vec<ObjectId> = members.iter().copied().filter(|id| id != bot_id).collect();
+            Placement {
+                anchors: if leader_is_tank {
+                    Vec::new()
+                } else {
+                    vec![leader]
+                },
+                within: TANK_KEEP_UP,
+                opposite: Some((party, TANK_SPOT)),
+                ..Default::default()
+            }
+        } else if bot.attack_range > MELEE_RANGE {
             Placement {
                 anchors: vec![follow],
                 within: RANGED_STAY_WITHIN,
@@ -1430,6 +1507,11 @@ fn update_party(
     for (bot_id, answers) in tank_answers {
         if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
             bot.answers = answers;
+        }
+    }
+    for (bot_id, enemy) in repulls {
+        if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
+            bot.pulled.remove(&enemy);
         }
     }
     for (bot_id, enemy) in provokes {

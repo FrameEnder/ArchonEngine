@@ -28,3 +28,6 @@ __pycache__/
 
 # Opcodes the world server found for a newer game version, and fingerprints it recorded (docs/src/fork/opcodes.md)
 auto-opcodes/
+
+# The party bots' glamour list (docs/src/fork/party-bots.md): item names are the game's
+glamours.txt

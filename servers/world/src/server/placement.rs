@@ -19,11 +19,50 @@ pub struct Placement {
     pub within: f32,
     /// Stand behind the enemy this actor (usually the tank) is fighting, this many yalms beyond it.
     pub behind: Option<(ObjectId, f32)>,
+    /// A tank: stand on the far side of its own target from these (the party), this many yalms off it, so the
+    /// enemy faces away from them and its cones and cleaves miss them.
+    pub opposite: Option<(Vec<ObjectId>, f32)>,
 }
+
+/// A tank moves round to the far side only when the party is less than this far round from it (degrees, seen from
+/// the enemy: 180 is straight across.) Player tanks in Bob's Chronofoil capture of five Sastasha runs stood more than
+/// 120 round about half the time (313 hits: 113 the median.)
+pub const OPPOSITE_ENOUGH_DEGREES: f32 = 120.0;
 
 impl Placement {
     pub fn is_empty(&self) -> bool {
-        self.anchors.is_empty() && self.behind.is_none()
+        self.anchors.is_empty() && self.behind.is_none() && self.opposite.is_none()
+    }
+
+    /// A tank's spot across its target (at `target`) from the party, if it isn't far enough round already.
+    fn opposite_spot(
+        &self,
+        at: Vec3A,
+        positions: &HashMap<ObjectId, Vec3A>,
+        target: Vec3A,
+    ) -> Option<Vec3A> {
+        let (party, beyond) = self.opposite.as_ref()?;
+        let members: Vec<Vec3A> = party
+            .iter()
+            .filter_map(|id| positions.get(id).copied())
+            .collect();
+        if members.is_empty() {
+            return None;
+        }
+        let flat = |v: Vec3A| Vec3A::new(v.x, 0.0, v.z);
+        let centre = members.iter().copied().sum::<Vec3A>() / members.len() as f32;
+        let to_party = flat(centre - target).normalize_or_zero();
+        let to_tank = flat(at - target).normalize_or_zero();
+        if to_party == Vec3A::ZERO {
+            return None;
+        }
+        if to_tank != Vec3A::ZERO
+            && to_party.dot(to_tank).clamp(-1.0, 1.0).acos().to_degrees() >= OPPOSITE_ENOUGH_DEGREES
+        {
+            return None;
+        }
+        let spot = target - to_party * *beyond;
+        (Vec3A::distance(at, spot) > SPOT_TOLERANCE).then_some(spot)
     }
 
     /// Where the NPC at `at` has to go now, if anywhere: back to the middle of its anchors when it's strayed too far
@@ -48,6 +87,10 @@ impl Placement {
                 .any(|anchor| Vec3A::distance(at, *anchor) > self.within)
         {
             return Some(anchors.iter().copied().sum::<Vec3A>() / anchors.len() as f32);
+        }
+
+        if self.opposite.is_some() {
+            return self.opposite_spot(at, positions, own_target?);
         }
 
         let (tank, beyond) = self.behind?;
@@ -81,6 +124,39 @@ mod tests {
             (PLAYER, Vec3A::new(-3.0, 0.0, 0.0)),
         ]);
         (positions, HashMap::from([(TANK, ENEMY)]))
+    }
+
+    /// The tank goes round its target until the party is across from it, and stays put once it's far enough round.
+    #[test]
+    fn tank_across_from_the_party() {
+        let positions = HashMap::from([
+            (PLAYER, Vec3A::new(-3.0, 0.0, 0.0)),
+            (ObjectId(4), Vec3A::new(-3.0, 0.0, 2.0)),
+        ]);
+        let placement = Placement {
+            opposite: Some((vec![PLAYER, ObjectId(4)], 2.5)),
+            ..Default::default()
+        };
+        let enemy = Vec3A::new(5.0, 0.0, 0.0);
+        // On the party's side of the enemy: round to the far side, 2.5 yalms beyond it.
+        let spot = placement
+            .goal(
+                Vec3A::new(3.0, 0.0, 0.0),
+                &positions,
+                &HashMap::new(),
+                Some(enemy),
+                3.0,
+            )
+            .unwrap();
+        assert!(spot.x > enemy.x + 2.0, "{spot:?}");
+        // Already straight across from the party: no move.
+        let centre = Vec3A::new(-3.0, 0.0, 1.0);
+        let across = enemy + (enemy - centre).normalize() * 2.5;
+        assert!(
+            placement
+                .goal(across, &positions, &HashMap::new(), Some(enemy), 3.0)
+                .is_none()
+        );
     }
 
     #[test]

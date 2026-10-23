@@ -230,6 +230,12 @@ add one when something is found.
   the others' items. A reopened coffer's SpawnTreasure (retail sends it again with its items when you come back in
   range) isn't sent.
 
+## Party bots
+
+* The glamour list (`glamours.txt`) is untested in game (2026-10-23): whether the client shows an NPC's glamoured
+  models and both dyes as a player's. Items limited to a race or a sex aren't checked.
+* The tank's spot across from the party and its keeping up with the player are untested in game.
+
 ## Sastasha
 
 * The second captain's gate fight and the clams' loop are untested in game (2026-10-23). Whether the four corsairs are
