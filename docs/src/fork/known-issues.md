@@ -243,6 +243,8 @@ add one when something is found.
   build with this commit's `kawari-questdump classes` for the class list, and this commit's `KAWARI_DATA` path for
   the bots to see the list Kawari Web writes.
 * The tank's spot across from the party and its keeping up with the player are untested in game.
+* Leaving out gear and glamour pieces a bot's race or sex may not wear (EquipRaceCategory, 2026-10-23) is untested in
+  game.
 * Hiding a Viera's or Hrothgar's hat when its model has no file for their race (2026-10-23) is untested in game, as is
   whether a hat they can show always has its own model file (a shared one would be hidden wrongly). Bots keeping to
   the navmesh's floor where they walk straight is untested in game too; off the navmesh they still walk a straight

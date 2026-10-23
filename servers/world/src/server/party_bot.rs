@@ -302,7 +302,7 @@ impl GameData {
     /// The best gear `classjob` can wear at `level`: for each slot, the item of the highest item level it can equip
     /// (rarity, then the newest, breaking ties), PvP gear left out. Returns (EquipSlotCategory, item ID) pairs, a
     /// ring twice.
-    pub fn best_gear(&mut self, classjob: u8, level: u8) -> Vec<(u8, u32)> {
+    pub fn best_gear(&mut self, classjob: u8, level: u8, wearable: &HashSet<u8>) -> Vec<(u8, u32)> {
         let wears = self.classjob_categories_with(classjob);
         let mut best: HashMap<u8, (u16, u8, u32)> = HashMap::new();
         let mut second_ring: Option<(u16, u8, u32)> = None;
@@ -311,6 +311,7 @@ impl GameData {
             .into_iter()
             .flatten_subrows()
             .filter(|(_, row)| row.LevelEquip > 0 && row.EquipSlotCategory > 0)
+            .filter(|(_, row)| can_wear(wearable, row.EquipRestriction))
             .map(|(id, row)| {
                 (
                     id,
@@ -574,8 +575,24 @@ fn heal_action(actions: &[ClassAction]) -> Option<u32> {
 /// Puts a glamour's pieces over the gear's looks: each in the slot its EquipSlotCategory fills (as the gear's
 /// glamour, or as the item where the slot is empty), with its dyes, and the slots it covers (a coat over the legs)
 /// emptied. Only the models change; the bot's stats are its gear's.
-fn wear_glamour(game_data: &mut GameData, wearing: &mut Inventory, glamour: &glamour::Glamour) {
+fn wear_glamour(
+    game_data: &mut GameData,
+    wearing: &mut Inventory,
+    glamour: &glamour::Glamour,
+    wearable: &HashSet<u8>,
+) {
     for piece in &glamour.pieces {
+        // A piece only some races or one sex may wear (Miqo'te's own, say) is left out for the rest: there's no model
+        // of it for them, so it showed as nothing (Bob's 2026-10-23 bundle: a Viera in a Miqo'te loincloth). The slot
+        // keeps its own gear's look.
+        let restriction = game_data
+            .item_sheet
+            .row(piece.item_id)
+            .map(|row| row.EquipRestriction)
+            .unwrap_or(0);
+        if !can_wear(wearable, restriction) {
+            continue;
+        }
         let Some(row) = game_data
             .equip_slot_category_sheet
             .row(piece.slot_category as u32)
@@ -613,6 +630,50 @@ fn wear_glamour(game_data: &mut GameData, wearing: &mut Inventory, glamour: &gla
                 _ => {}
             }
         }
+    }
+}
+
+/// Whether an item with this EquipRestriction (an EquipRaceCategory row; 0 for none) may be worn by the race and sex
+/// whose wearable rows are `wearable` (`GameData::wearable_restrictions`). An empty set (the sheet couldn't be read)
+/// allows everything, as before.
+fn can_wear(wearable: &HashSet<u8>, restriction: u8) -> bool {
+    restriction == 0 || wearable.is_empty() || wearable.contains(&restriction)
+}
+
+impl GameData {
+    /// The EquipRaceCategory rows (items' EquipRestriction) this race and sex may wear: each row says which of the
+    /// races, and which sexes, may wear its items (all of them, one sex, or one race's own gear.)
+    pub fn wearable_restrictions(&mut self, race: Race, gender: Gender) -> HashSet<u8> {
+        let language = get_config().world.language();
+        let Ok(sheet) = icarus::EquipRaceCategory::EquipRaceCategorySheet::read_from(
+            &mut self.resource,
+            language,
+        ) else {
+            return HashSet::new();
+        };
+        sheet
+            .into_iter()
+            .flatten_subrows()
+            .filter(|(id, row)| {
+                let race_ok = match race {
+                    Race::Hyur => row.Hyur,
+                    Race::Elezen => row.Elezen,
+                    Race::Lalafell => row.Lalafell,
+                    Race::Miqote => row.Miqote,
+                    Race::Roegadyn => row.Roegadyn,
+                    Race::AuRa => row.AuRa,
+                    Race::Hrothgar => row.Hrothgar,
+                    Race::Viera => row.Viera,
+                    Race::Unknown => true,
+                };
+                let sex_ok = match gender {
+                    Gender::Male => row.Male,
+                    Gender::Female => row.Female,
+                };
+                *id <= u8::MAX as u32 && race_ok && sex_ok
+            })
+            .map(|(id, _)| id as u8)
+            .collect()
     }
 }
 
@@ -1170,8 +1231,17 @@ fn spawn_bot(
         .classjob_role(classjob)
         .ok_or_else(|| format!("No ClassJob row {classjob}."))?;
 
+    // A kept friend comes back as it was (`bot_friends`); a new one is made up. Chosen first: what it can wear depends
+    // on its race and sex.
+    let saved_look = identity.and_then(|saved| look_from_hex(&saved.look));
+    let look = match saved_look.clone() {
+        Some(look) => look,
+        None => random_look(game_data),
+    };
+    let wearable = game_data.wearable_restrictions(look.race, look.gender);
+
     // Gear, worn on an inventory so the model helpers work on it.
-    let gear = game_data.best_gear(classjob, level);
+    let gear = game_data.best_gear(classjob, level, &wearable);
     let mut wearing = Inventory::default();
     let mut rings = 0;
     for (slot, item_id) in &gear {
@@ -1206,12 +1276,6 @@ fn spawn_bot(
         .map(|(_, id)| *id);
     let item_level = average_item_level(&wearing.equipped);
 
-    // A kept friend comes back as it was (`bot_friends`); a new one is made up.
-    let saved_look = identity.and_then(|saved| look_from_hex(&saved.look));
-    let look = match saved_look.clone() {
-        Some(look) => look,
-        None => random_look(game_data),
-    };
     let name = identity
         .map(|saved| saved.name.clone())
         .unwrap_or_else(random_name);
@@ -1226,7 +1290,7 @@ fn spawn_bot(
         None => glamour::pick(&glamours, look.gender, classjob, parent),
     };
     let worn_glamour = chosen.map(|glamour| {
-        wear_glamour(game_data, &mut wearing, glamour);
+        wear_glamour(game_data, &mut wearing, glamour, &wearable);
         glamour.name.clone()
     });
     let parameters = bot_parameters(
@@ -3039,6 +3103,20 @@ mod tests {
             player_spawn(&hatless, &shown).common.display_flags,
             DisplayFlag::UNK1 | DisplayFlag::HIDE_HEAD
         );
+    }
+
+    #[test]
+    fn race_and_sex_gear() {
+        // A Viera woman's wearable rows, say: everyone's (1), women's (3) and Viera women's own (19).
+        let wearable = HashSet::from([1, 3, 19]);
+        assert!(can_wear(&wearable, 0));
+        assert!(can_wear(&wearable, 1));
+        assert!(can_wear(&wearable, 19));
+        // Men's, or another race's own (a Miqo'te loincloth): left out.
+        assert!(!can_wear(&wearable, 2));
+        assert!(!can_wear(&wearable, 11));
+        // Without the sheet, anything (as before.)
+        assert!(can_wear(&HashSet::new(), 11));
     }
 
     #[test]

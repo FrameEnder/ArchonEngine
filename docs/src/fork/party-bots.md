@@ -211,6 +211,11 @@ The packet is 944 bytes (Kawari's `ExamineCharacterInformation`, whose two unkno
   byte. Other features and colours are random within the creator's smallest ranges. Without the creator's data, the
   first six races and faces and hairstyles 1–4, as before. (Workspace icarus features `CharaMakeType`,
   `CharaMakeCustomize`.)
+* **Only gear its race and sex may wear.** Every item's EquipRestriction is a row of EquipRaceCategory, which says
+  which races and which sexes may wear it (everyone, one sex, or one race's own gear). A bot's best gear leaves out
+  what its race and sex may not wear (`GameData::wearable_restrictions`, `best_gear`), and so does its glamour: such a
+  piece is left out and the slot keeps its gear's look. There's no model of another race's gear for it, so it showed
+  as nothing (Bob's 2026-10-23 bundle: a Viera in a Miqo'te loincloth). The look is now chosen before the gear.
 * **Hats a race can't show are hidden.** Viera and Hrothgar wear their own hat models, and can't wear the rest; the
   client then shows a stand-in (Bob's 2026-10-23 bundle: a Viera Pugilist's glamour hat, model 13). A Viera or
   Hrothgar bot whose head model has no file for its race and sex
