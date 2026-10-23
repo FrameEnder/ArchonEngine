@@ -953,6 +953,21 @@ pub fn npc_behavior(
         }
     }
 
+    // Party bots keep to the ground: walking straight where there's no navmesh path, a line between two points went
+    // through a slope's rise, 2 yalms under the floor (Bob's Sastasha bundle of 2026-10-23); each step is set on the
+    // navmesh's floor under it, where there is one.
+    for (id, msg) in &mut actor_moves {
+        if let FromServer::ActorMove(_, position, ..) = msg
+            && instance.party_bots.contains_key(id)
+            && let Some(ground) = instance.navmesh.ground_under(position.0)
+        {
+            position.0.y = ground.y;
+            if let Some(actor) = instance.find_actor_mut(*id) {
+                actor.get_common_spawn_mut().position.0.y = ground.y;
+            }
+        }
+    }
+
     // inform clients of the NPCs new positions
     for (id, msg) in actor_moves {
         let mut network = network.lock();

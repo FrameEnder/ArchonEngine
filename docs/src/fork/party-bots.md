@@ -84,6 +84,12 @@ player it follows, or that player's other bots) within the raise's range (the Ac
 revive offered already and isn't being raised by another bot. A player accepts it as from anyone; a bot accepts by
 itself. The bot stands still while it casts (Raise's 8 s), out of combat too.
 
+**Keeping to the ground.** Where the navmesh has no path, a bot walks straight on (so it isn't left behind), and a
+straight line between two points went under a rise in the floor: in Bob's Sastasha bundle of 2026-10-23 the tank
+walked 2 yalms under the ground the player had just walked, its height falling evenly from 45.79 to 45.73 while the
+floor rose to 47.8. Each step of a bot's (walking itself out of combat, and NPC walking in combat) is now set on the
+navmesh's floor right under it, where there's one within 3 yalms (`Navmesh::ground_under`).
+
 ## Bots kept as friends
 
 A bot sent a friend request is **kept**: `party-bot-friends.json` in the server's data folder (beside `world.db`,
@@ -205,6 +211,14 @@ The packet is 944 bytes (Kawari's `ExamineCharacterInformation`, whose two unkno
   byte. Other features and colours are random within the creator's smallest ranges. Without the creator's data, the
   first six races and faces and hairstyles 1–4, as before. (Workspace icarus features `CharaMakeType`,
   `CharaMakeCustomize`.)
+* **Hats a race can't show are hidden.** Viera and Hrothgar wear their own hat models, and can't wear the rest; the
+  client then shows a stand-in (Bob's 2026-10-23 bundle: a Viera Pugilist's glamour hat, model 13). A Viera or
+  Hrothgar bot whose head model has no file for its race and sex
+  (`chara/equipment/e<model>/model/c<code>e<model>_met.mdl`, code 1501/1601 Hrothgar, 1701/1801 Viera) gets the
+  hide-headgear display flag (`HIDE_HEAD`, as the headgear button sets), kept in its player spawn. Retail doesn't do
+  this for players: in 3,532 players' spawns from Bob's Chronofoil captures, Viera and Hrothgar had their hat models
+  sent as anyone's, the flag set only when they hid it themselves (about a third), so the client hides what it can't
+  show itself.
 * **A made-up name:** two words built from syllables (not the game's text), within retail's 20 characters.
 * **Level 100** (`BOT_LEVEL`) with **the best gear its class can wear at that level**, found in the Item sheet at
   runtime (`GameData::best_gear`): for each slot (weapon or two-handed weapon, off-hand, head, body, hands, legs, feet,

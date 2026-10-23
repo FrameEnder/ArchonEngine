@@ -290,6 +290,40 @@ impl Navmesh {
         }
     }
 
+    /// The navmesh's floor right under (or over) `position`: the nearest navmesh point within 3 yalms up or down whose
+    /// spot is the same (a quarter yalm across), or None off the navmesh. For walking straight where there's no path,
+    /// so the walker keeps to the ground (a straight line between two points goes through a slope or a bridge's hump.)
+    pub fn ground_under(&self, position: Vec3A) -> Option<Vec3A> {
+        if !self.is_available() || self.navmesh_query.is_null() {
+            return None;
+        }
+        unsafe {
+            let mut filter = dtQueryFilter {
+                m_areaCost: [1.0; 64],
+                m_includeFlags: 0xffff,
+                m_excludeFlags: 0,
+            };
+            dtQueryFilter_dtQueryFilter(&mut filter);
+            let extents = [0.5, 3.0, 0.5];
+            let mut nearest_ref = 0;
+            let mut nearest_pt = [0.0; 3];
+            let status = dtNavMeshQuery_findNearestPoly(
+                self.navmesh_query,
+                &position.x,
+                extents.as_ptr(),
+                &filter,
+                &mut nearest_ref,
+                nearest_pt.as_mut_ptr(),
+            );
+            if status & DT_FAILURE != 0 || nearest_ref == 0 {
+                return None;
+            }
+            let point = Vec3A::from_array(nearest_pt);
+            let across = Vec3A::new(point.x - position.x, 0.0, point.z - position.z).length();
+            (across <= 0.25).then_some(point)
+        }
+    }
+
     pub fn is_available(&self) -> bool {
         // NOTE: There might be more checks desired here, but this suffices for now
         !self.navmesh.is_null()

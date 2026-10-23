@@ -934,6 +934,22 @@ fn look_from(creator: &[CreatorLook]) -> CustomizeData {
     }
 }
 
+/// Whether a hat (its model, `e<model>`) has a model for this look's race and sex, where that matters: Viera and
+/// Hrothgar, whose hats are their own models (`chara/equipment/e<model>/model/c<race code>e<model>_met.mdl`, the race
+/// code 1501/1601 for Hrothgar men and women, 1701/1801 for Viera), and which can't wear the rest. Every other race
+/// is shown some model of any hat (others' stand in), so for them it's always true.
+fn race_has_head_model(game_data: &mut GameData, look: &CustomizeData, model: u16) -> bool {
+    let code = match (look.race, look.gender) {
+        (Race::Hrothgar, Gender::Male) => 1501,
+        (Race::Hrothgar, Gender::Female) => 1601,
+        (Race::Viera, Gender::Male) => 1701,
+        (Race::Viera, Gender::Female) => 1801,
+        _ => return true,
+    };
+    let path = format!("chara/equipment/e{model:04}/model/c{code:04}e{model:04}_met.mdl");
+    game_data.resource.exists(&path)
+}
+
 /// A made-up first and last name, from syllables (not from the game's text.)
 fn random_name() -> String {
     const START: [&str; 16] = [
@@ -1077,7 +1093,7 @@ pub fn player_spawn(npc: &SpawnNpc, shown: &ShownAsPlayer) -> SpawnPlayer {
     common.name_id = 0;
     common.layout_id = 0;
     common.handler_id = shown.handler_id;
-    common.display_flags = DisplayFlag::UNK1;
+    common.display_flags = DisplayFlag::UNK1 | (npc.common.display_flags & DisplayFlag::HIDE_HEAD);
     SpawnPlayer {
         account_id: shown.account_id,
         content_id: shown.content_id,
@@ -1262,6 +1278,15 @@ fn spawn_bot(
     position.0.z += FOLLOW_DISTANCE * angle.cos();
 
     let hp = parameters.hp.max(1);
+    // Viera and Hrothgar can't show every hat: one with no model for theirs is hidden, as a player would with the
+    // headgear button, rather than shown as a stand-in (Bob's 2026-10-23 bundle: a Viera's glamour hat.)
+    let head_model = wearing.legacy_model_ids(game_data)[0].id;
+    let hide_head = head_model != 0 && !race_has_head_model(game_data, &look, head_model);
+    let shown_flags = if hide_head {
+        DisplayFlag::HIDE_HEAD
+    } else {
+        DisplayFlag::empty()
+    };
     let spawn = SpawnNpc {
         common: CommonSpawn {
             main_weapon_model: wearing.get_main_weapon_id(game_data),
@@ -1280,11 +1305,12 @@ fn spawn_bot(
                 BattleNpcSubKind::NpcPartyMember
             }),
             owner_id: leader,
-            display_flags: if as_chocobo {
-                DisplayFlag::empty()
-            } else {
-                DisplayFlag::UNK1
-            },
+            display_flags: shown_flags
+                | if as_chocobo {
+                    DisplayFlag::empty()
+                } else {
+                    DisplayFlag::UNK1
+                },
             battalion: 0,
             model_chara: 0,
             level,
@@ -2583,6 +2609,10 @@ fn update_party(
             }
             if flat(at, here) >= 0.05 {
                 let facing = f32::atan2(at.x - here.x, at.z - here.z);
+                // On the floor under it (a straight stretch where the navmesh stops goes through slopes.)
+                if let Some(ground) = instance.navmesh.ground_under(at) {
+                    at.y = ground.y;
+                }
                 spawn.common.position = Position(at);
                 spawn.common.rotation = facing;
                 walks.push((*bot_id, path, Some((at, facing)), reaimed));
@@ -3002,6 +3032,13 @@ mod tests {
         for word in ["player", "chocobo", "partymember"] {
             assert_eq!(BotLook::from_word(word).map(BotLook::word), Some(word));
         }
+        // A hat it can't show is hidden, as with the headgear button.
+        let mut hatless = npc.clone();
+        hatless.common.display_flags = DisplayFlag::HIDE_HEAD;
+        assert_eq!(
+            player_spawn(&hatless, &shown).common.display_flags,
+            DisplayFlag::UNK1 | DisplayFlag::HIDE_HEAD
+        );
     }
 
     #[test]

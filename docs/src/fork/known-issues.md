@@ -243,6 +243,10 @@ add one when something is found.
   build with this commit's `kawari-questdump classes` for the class list, and this commit's `KAWARI_DATA` path for
   the bots to see the list Kawari Web writes.
 * The tank's spot across from the party and its keeping up with the player are untested in game.
+* Hiding a Viera's or Hrothgar's hat when its model has no file for their race (2026-10-23) is untested in game, as is
+  whether a hat they can show always has its own model file (a shared one would be hidden wrongly). Bots keeping to
+  the navmesh's floor where they walk straight is untested in game too; off the navmesh they still walk a straight
+  line.
 * Raising a dead bot and its getting up by itself after 30 s are untested in game (2026-10-23): whether the client
   shows a bot raised by the ZoneIn raise animation as it shows a raised player, and that a bot spawned again beside
   you stands (not dead). Healer bots casting Raise (2026-10-23) is untested in game; they don't walk to someone dead out of range
