@@ -1,14 +1,16 @@
 //! Glamours for party bots: a list the server's owner writes, `glamours.txt` beside `config.yaml` (kept out of git,
-//! as the item names in it are the game's), each an outfit for one sex or either. The names are matched to items and
-//! dyes in the game's data (the Item and Stain sheets) when the file is read, which is again whenever it changes. A bot
-//! wears one of the outfits for its sex over its gear (`docs/src/fork/party-bots.md`, "Glamours").
+//! as the item names in it are the game's), each an outfit for one sex or either, and for some classes or any. The
+//! names are matched to items, dyes and classes in the game's data (the Item, Stain and ClassJob sheets) when the file
+//! is read, which is again whenever it changes. A bot wears one of the outfits for its sex and class over its gear
+//! (`docs/src/fork/party-bots.md`, "Glamours").
 //!
-//! The file:
+//! The file (`tools/glamour-collector`, the Chrome extension, writes it from Eorzea Collection's pages):
 //!
 //! ```text
 //! # Comments start with #. Each glamour starts with a line beginning "==": its name, then (male) or (female) for
-//! # the sex it's for (neither: either.)
+//! # the sex it's for ((ANY), (either) or neither: either.)
 //! == Seaside captain (female)
+//! Class: <Black Mage> | <SCH>
 //! Head: <item name>
 //! Body: <item name> | <dye>
 //! Hands: <item name> | <dye> | <second dye>
@@ -17,7 +19,9 @@
 //! ```
 //!
 //! The slot before the colon is optional (the item says where it goes); dyes come after `|`, by the game's names for
-//! them. Weapons are left out (bots keep their class's.)
+//! them. Names may be written in `<...>`, as the extension exports them. `Class:` lists the classes or jobs (names or
+//! abbreviations, `|` between them) the glamour is for; a job and its base class count as one (a Black Mage glamour
+//! fits a Thaumaturge too, but a Scholar's doesn't fit a Summoner), and without the line it fits any class. Weapons are left out (bots keep their class's.)
 
 use std::{collections::HashMap, path::Path, sync::Mutex, time::SystemTime};
 
@@ -36,11 +40,13 @@ pub enum Wearer {
     Either,
 }
 
-/// A glamour as written: its name, who it's for, and each piece's item and dyes by name.
+/// A glamour as written: its name, who it's for, the classes it's for (none: any) and each piece's item and dyes by
+/// name.
 #[derive(Debug, Clone, PartialEq)]
 pub struct GlamourText {
     pub name: String,
     pub wearer: Wearer,
+    pub classes: Vec<String>,
     pub pieces: Vec<(String, Vec<String>)>,
 }
 
@@ -56,6 +62,8 @@ pub struct Piece {
 pub struct Glamour {
     pub name: String,
     pub wearer: Wearer,
+    /// The classes and jobs it's for, each as (ClassJob row, its ClassJobParent) (empty: any class.)
+    pub classes: Vec<(u8, u8)>,
     pub pieces: Vec<Piece>,
 }
 
@@ -77,6 +85,7 @@ const SLOTS: [&str; 14] = [
     "rings",
 ];
 const WEAPON_SLOTS: [&str; 5] = ["weapon", "main hand", "mainhand", "off hand", "offhand"];
+const CLASS_LINES: [&str; 4] = ["class", "classes", "job", "jobs"];
 
 /// Lower case, one kind of apostrophe, single spaces: how names are matched.
 pub fn normalise(name: &str) -> String {
@@ -86,6 +95,24 @@ pub fn normalise(name: &str) -> String {
         .collect::<Vec<_>>()
         .join(" ")
         .to_lowercase()
+}
+
+/// A name as written, without spaces around it or the `<...>` the extension puts round it.
+fn unbracket(name: &str) -> &str {
+    let name = name.trim();
+    name.strip_prefix('<')
+        .and_then(|inner| inner.strip_suffix('>'))
+        .map(str::trim)
+        .unwrap_or(name)
+}
+
+/// The names between `|`, without brackets or empty ones.
+fn names(text: &str) -> Vec<String> {
+    text.split('|')
+        .map(unbracket)
+        .filter(|name| !name.is_empty())
+        .map(str::to_string)
+        .collect()
 }
 
 /// Reads the file's text into glamours by name (see the module's description.)
@@ -99,16 +126,19 @@ pub fn parse(text: &str) -> Vec<GlamourText> {
         if let Some(header) = line.strip_prefix("==") {
             let header = header.trim().trim_end_matches('=').trim();
             let lower = header.to_lowercase();
-            let (wearer, tag) = if lower.ends_with("(male)") {
-                (Wearer::Male, "(male)")
-            } else if lower.ends_with("(female)") {
-                (Wearer::Female, "(female)")
-            } else {
-                (Wearer::Either, "")
-            };
+            let (wearer, tag) = [
+                (Wearer::Male, "(male)"),
+                (Wearer::Female, "(female)"),
+                (Wearer::Either, "(any)"),
+                (Wearer::Either, "(either)"),
+            ]
+            .into_iter()
+            .find(|(_, tag)| lower.ends_with(tag))
+            .unwrap_or((Wearer::Either, ""));
             glamours.push(GlamourText {
                 name: header[..header.len() - tag.len()].trim().to_string(),
                 wearer,
+                classes: Vec::new(),
                 pieces: Vec::new(),
             });
             continue;
@@ -122,36 +152,52 @@ pub fn parse(text: &str) -> Vec<GlamourText> {
             if WEAPON_SLOTS.contains(&slot.as_str()) {
                 continue;
             }
+            if CLASS_LINES.contains(&slot.as_str()) {
+                glamour.classes.extend(names(after));
+                continue;
+            }
             if SLOTS.contains(&slot.as_str()) {
                 rest = after;
             }
         }
-        let mut parts = rest.split('|').map(str::trim);
-        let item = parts.next().unwrap_or_default().to_string();
-        if item.is_empty() {
+        let mut parts = names(rest).into_iter();
+        let Some(item) = parts.next() else {
             continue;
-        }
-        let dyes = parts
-            .filter(|dye| !dye.is_empty())
-            .map(str::to_string)
-            .collect();
-        glamour.pieces.push((item, dyes));
+        };
+        glamour.pieces.push((item, parts.collect()));
     }
     glamours.retain(|glamour| !glamour.pieces.is_empty());
     glamours
 }
 
-/// Names to IDs: equippable items by name (with their EquipSlotCategory) and dyes by name.
+/// Names to IDs: equippable items by name (with their EquipSlotCategory), dyes by name, and combat classes and jobs by
+/// name, English name and abbreviation (with their ClassJobParent.)
 pub struct Names {
     pub items: HashMap<String, (u32, u8)>,
     pub stains: HashMap<String, u8>,
+    pub classes: HashMap<String, (u8, u8)>,
 }
 
-/// Matches each piece's item and dyes to the game's (`names`): returns the glamours, and what wasn't found.
+/// Matches each glamour's items, dyes and classes to the game's (`names`): returns the glamours, and what wasn't
+/// found. A glamour whose classes are all unknown is left out (rather than worn by any class.)
 pub fn resolve(texts: &[GlamourText], names: &Names) -> (Vec<Glamour>, Vec<String>) {
     let mut glamours = Vec::new();
     let mut unknown = Vec::new();
     for text in texts {
+        let mut classes = Vec::new();
+        for class in &text.classes {
+            match names.classes.get(&normalise(class)) {
+                Some(&class) => {
+                    if !classes.contains(&class) {
+                        classes.push(class);
+                    }
+                }
+                None => unknown.push(format!("{}: class {class:?}", text.name)),
+            }
+        }
+        if !text.classes.is_empty() && classes.is_empty() {
+            continue;
+        }
         let mut pieces = Vec::new();
         for (item, dyes) in &text.pieces {
             let Some(&(item_id, slot_category)) = names.items.get(&normalise(item)) else {
@@ -179,6 +225,7 @@ pub fn resolve(texts: &[GlamourText], names: &Names) -> (Vec<Glamour>, Vec<Strin
             glamours.push(Glamour {
                 name: text.name.clone(),
                 wearer: text.wearer,
+                classes,
                 pieces,
             });
         }
@@ -187,8 +234,8 @@ pub fn resolve(texts: &[GlamourText], names: &Names) -> (Vec<Glamour>, Vec<Strin
 }
 
 impl GameData {
-    /// Every equippable item by its (normalised) name, with its EquipSlotCategory, and every dye by name. Where two
-    /// items share a name, the later row is kept.
+    /// Every equippable item by its (normalised) name, with its EquipSlotCategory, every dye by name, and every combat
+    /// class and job by name, English name and abbreviation. Where two items share a name, the later row is kept.
     pub fn glamour_names(&mut self) -> Names {
         let mut items = HashMap::new();
         for (id, row) in self.item_sheet.into_iter().flatten_subrows() {
@@ -210,7 +257,23 @@ impl GameData {
                 }
             }
         }
-        Names { items, stains }
+        let mut classes = HashMap::new();
+        for (id, row) in self.classjob_sheet.into_iter().flatten_subrows() {
+            if row.Role == 0 || id > u8::MAX as u32 {
+                continue;
+            }
+            for name in [&row.Name, &row.NameEnglish, &row.Abbreviation] {
+                let name = normalise(&name.to_string());
+                if !name.is_empty() {
+                    classes.insert(name, (id as u8, row.ClassJobParent));
+                }
+            }
+        }
+        Names {
+            items,
+            stains,
+            classes,
+        }
     }
 }
 
@@ -238,11 +301,12 @@ pub fn glamours(game_data: &mut GameData) -> Vec<Glamour> {
             let (glamours, unknown) = resolve(&texts, &names);
             let count = |wearer: Wearer| glamours.iter().filter(|g| g.wearer == wearer).count();
             tracing::info!(
-                "Party bot glamours: {} read from {GLAMOUR_FILE} ({} male, {} female, {} either)",
+                "Party bot glamours: {} read from {GLAMOUR_FILE} ({} male, {} female, {} either; {} for some classes only)",
                 glamours.len(),
                 count(Wearer::Male),
                 count(Wearer::Female),
-                count(Wearer::Either)
+                count(Wearer::Either),
+                glamours.iter().filter(|g| !g.classes.is_empty()).count()
             );
             for missing in &unknown {
                 tracing::warn!(
@@ -257,14 +321,30 @@ pub fn glamours(game_data: &mut GameData) -> Vec<Glamour> {
     glamours
 }
 
-/// One of the glamours for this sex (or either), at random.
-pub fn pick(glamours: &[Glamour], gender: Gender) -> Option<&Glamour> {
+/// Whether a glamour listed for `listed` (a ClassJob row and its parent) fits `classjob` (whose parent is `parent`):
+/// the same class, the job of a listed base class, or the base class of a listed job. Jobs sharing a base class
+/// (Scholar and Summoner) don't fit each other.
+fn fits_class(listed: (u8, u8), classjob: u8, parent: u8) -> bool {
+    let (id, listed_parent) = listed;
+    id == classjob || id == parent || listed_parent == classjob
+}
+
+/// One of the glamours for this sex (or either) and class (`classjob`, whose ClassJobParent is `parent`; or any), at
+/// random.
+pub fn pick(glamours: &[Glamour], gender: Gender, classjob: u8, parent: u8) -> Option<&Glamour> {
     let fits: Vec<&Glamour> = glamours
         .iter()
         .filter(|glamour| match glamour.wearer {
             Wearer::Either => true,
             Wearer::Male => gender == Gender::Male,
             Wearer::Female => gender == Gender::Female,
+        })
+        .filter(|glamour| {
+            glamour.classes.is_empty()
+                || glamour
+                    .classes
+                    .iter()
+                    .any(|&listed| fits_class(listed, classjob, parent))
         })
         .collect();
     (!fits.is_empty()).then(|| fits[fastrand::usize(..fits.len())])
@@ -287,6 +367,26 @@ Legs: Waders | undyed
 
 ==Nothing here (female)
 ";
+
+    fn names() -> Names {
+        Names {
+            items: HashMap::from([
+                ("tricorne".to_string(), (100, 3)),
+                ("long coat".to_string(), (200, 4)),
+                ("fishing cap".to_string(), (300, 3)),
+                ("waders".to_string(), (400, 7)),
+                ("circlet".to_string(), (500, 3)),
+                ("kote".to_string(), (600, 5)),
+            ]),
+            stains: HashMap::from([("soot black".to_string(), 2), ("wine red".to_string(), 30)]),
+            classes: HashMap::from([
+                ("black mage".to_string(), (25, 7)),
+                ("blm".to_string(), (25, 7)),
+                ("thaumaturge".to_string(), (7, 7)),
+                ("scholar".to_string(), (28, 26)),
+            ]),
+        }
+    }
 
     #[test]
     fn parses_the_list() {
@@ -311,16 +411,7 @@ Legs: Waders | undyed
 
     #[test]
     fn resolves_names_and_reports_the_rest() {
-        let names = Names {
-            items: HashMap::from([
-                ("tricorne".to_string(), (100, 3)),
-                ("long coat".to_string(), (200, 4)),
-                ("fishing cap".to_string(), (300, 3)),
-                ("waders".to_string(), (400, 7)),
-            ]),
-            stains: HashMap::from([("soot black".to_string(), 2), ("wine red".to_string(), 30)]),
-        };
-        let (glamours, unknown) = resolve(&parse(TEXT), &names);
+        let (glamours, unknown) = resolve(&parse(TEXT), &names());
         assert_eq!(glamours[0].pieces[0].stains, [2, 0]);
         assert_eq!(glamours[0].pieces[1].stains, [30, 0]);
         assert_eq!(glamours[1].pieces[1].stains, [0, 0]);
@@ -331,7 +422,57 @@ Legs: Waders | undyed
                 "Captain: item \"Boots\"".to_string()
             ]
         );
-        assert!(pick(&glamours, Gender::Male).is_some_and(|g| g.name == "Fisher"));
+        assert!(pick(&glamours, Gender::Male, 1, 1).is_some_and(|g| g.name == "Fisher"));
         assert_eq!(normalise("  Wine\u{2019}s   RED "), "wine's red");
+    }
+
+    #[test]
+    fn reads_the_collectors_export() {
+        let text = "# Lines starting with # are notes.
+
+== Vampire Reverie (ANY)
+Class: <BLM> | <Scholar>
+Head: <Circlet> | <Soot Black>
+Hands: <Kote> | <Soot Black> | <undyed>
+Weapon: <Rod>
+
+== Unknown class (male)
+Class: <Nobody>
+Head: <Circlet>
+";
+        let texts = parse(text);
+        assert_eq!(texts.len(), 2);
+        assert_eq!(texts[0].name, "Vampire Reverie");
+        assert_eq!(texts[0].wearer, Wearer::Either);
+        assert_eq!(
+            texts[0].classes,
+            vec!["BLM".to_string(), "Scholar".to_string()]
+        );
+        assert_eq!(
+            texts[0].pieces,
+            vec![
+                ("Circlet".to_string(), vec!["Soot Black".to_string()]),
+                (
+                    "Kote".to_string(),
+                    vec!["Soot Black".to_string(), "undyed".to_string()]
+                ),
+            ]
+        );
+
+        let (glamours, unknown) = resolve(&texts, &names());
+        assert_eq!(glamours.len(), 1);
+        assert_eq!(glamours[0].classes, vec![(25, 7), (28, 26)]);
+        assert_eq!(glamours[0].pieces[1].stains, [2, 0]);
+        assert_eq!(unknown, vec!["Unknown class: class \"Nobody\"".to_string()]);
+        // Black Mage and its Thaumaturge, Scholar and its Arcanist wear it; a Summoner (another Arcanist job) and a
+        // Gladiator don't.
+        assert!(pick(&glamours, Gender::Female, 25, 7).is_some());
+        assert!(pick(&glamours, Gender::Female, 7, 7).is_some());
+        assert!(pick(&glamours, Gender::Male, 28, 26).is_some());
+        assert!(pick(&glamours, Gender::Male, 26, 26).is_some());
+        assert!(pick(&glamours, Gender::Male, 27, 26).is_none());
+        assert!(pick(&glamours, Gender::Male, 1, 1).is_none());
+        // A glamour for Thaumaturge fits its Black Mage too.
+        assert!(fits_class((7, 7), 25, 7));
     }
 }

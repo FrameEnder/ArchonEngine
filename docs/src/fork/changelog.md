@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-23 | — | Party bots (the tank's spot and keeping up, glamours); known issues.
+| 2026-10-23 | — | Tools (the Glamour Collector, new); party bots (glamours by class, the collector's format); known issues.
+| 2026-10-23 | `dc9b78b` | Party bots (the tank's spot and keeping up, glamours); known issues.
 | 2026-10-23 | `b3faada` | Party bots (the tank), coffers and loot (bots pass), combat (timelines that always play), research notes (Sastasha's clams, the second captain's gate, tanks); known issues.
 | 2026-10-22 | `d652d94` | Coffers and Loot (new page); fork opcodes (five loot packets); research notes (Sastasha's loot packets); party bots; known issues.
 | 2026-10-22 | `9d4fcde` | Quest battles: the fight ends when it's won (`end_fight`); known issues.
@@ -198,7 +199,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | The tank bot stands across its target from the party (cones and cleaves miss them; it moves round when the party is under 120° round, as the capture's tanks were about half the time), keeps up with the player when they run on ahead (more than 15 yalms), and throws its ranged attack again at anything that turns on someone else. Party bot glamours: `glamours.txt` in the server's data folder (kept out of git), outfits by item and dye name for either sex, matched to the game's Item and Stain sheets at runtime (workspace icarus feature `Stain`), one per bot over its gear's looks. |
+| — | Glamour Collector (`tools/glamour-collector`), a Chrome extension: adds Eorzea Collection glamour pages to a list (title, gender, each slot's item and dyes, the weapon), each entry's gender (ANY, male, female), classes and lines editable in its popup, exported as `glamours.txt`. Party bot glamours take a `Class:` line (classes or jobs by name or abbreviation, matched to the ClassJob sheet; a job and its base class count as one), `(ANY)` / `(either)`, and names in `<...>`. |
+| `dc9b78b` | The tank bot stands across its target from the party (cones and cleaves miss them; it moves round when the party is under 120° round, as the capture's tanks were about half the time), keeps up with the player when they run on ahead (more than 15 yalms), and throws its ranged attack again at anything that turns on someone else. Party bot glamours: `glamours.txt` in the server's data folder (kept out of git), outfits by item and dye name for either sex, matched to the game's Item and Stain sheets at runtime (workspace icarus feature `Stain`), one per bot over its gear's looks. |
 | `b3faada` | From Bob's Sastasha run of 2026-10-23 and his capture of five retail runs. Bots always pass on loot. The tank bot plays as the capture's player tanks did: it answers each enemy after someone else after one of their reaction times (2.9 s the median; it was every 10 s), makes its area enmity combo (Total Eclipse, Overpower) its GCD with two or more enemies close and keeps them on it, and opens on fresh enemies 6–20 yalms off with its ranged attack (Shield Lob, Tomahawk). Timelines that always play run without a fight, so Sastasha's giant clams open and shut, on retail's 4 s shut, 11 s open. The second captain calls the four corsairs behind his gate below half his health, as on retail (animation 980, the gate, yell 136); director `play_action_timeline`. |
 
 ### 2026-10-22

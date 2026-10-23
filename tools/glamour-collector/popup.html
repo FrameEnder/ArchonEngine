@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <strong>Kawari glamour list</strong>
+      <span id="counts"></span>
+    </header>
+    <div id="actions">
+      <button type="button" id="export">Export glamours.txt</button>
+      <button type="button" id="copy">Copy list</button>
+      <button type="button" id="clear" class="quiet">Clear…</button>
+    </div>
+    <div id="status"></div>
+    <ul id="entries"></ul>
+    <p id="empty">Open a glamour on ffxiv.eorzeacollection.com and press “Add to Kawari list”.</p>
+    <script src="format.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

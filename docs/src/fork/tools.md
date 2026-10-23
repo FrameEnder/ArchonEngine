@@ -21,6 +21,36 @@ folder), or `--game <game folder>`. Full guide: [Quest Dumps](../scripting/quest
 
 Kawari Web runs it in a throwaway container from the active server image (Quest Lab, Progress, Shop → Manage).
 
+## Glamour Collector (`tools/glamour-collector`)
+
+A Chrome extension (Manifest V3, no build step) that collects Eorzea Collection glamours into a list and exports it
+as the party bots' `glamours.txt` ([Party bots → Glamours](party-bots.md#glamours)). Nothing of the site's is kept in
+git; the list is the user's, in the browser's `chrome.storage.local`.
+
+* **Install:** `chrome://extensions` → Developer mode → Load unpacked → the `tools/glamour-collector` folder.
+* **On a glamour page** (`ffxiv.eorzeacollection.com/glamour/…`) a panel bottom right: *Add to Kawari list* reads
+  the page and adds it (again on the same page reads it again, keeping the gender and classes chosen); *Copy page
+  HTML* copies the gear section's HTML, for when a page reads wrong.
+* **The toolbar popup** lists the entries with male / female / ANY counts. Each has a gender choice (ANY, Male,
+  Female), a Class box (names or abbreviations, commas between; empty for any class), and its piece lines to edit
+  (`Slot: <item> | <dye> | <second dye>`). *Export glamours.txt* downloads the list, *Copy list* copies it.
+
+An entry as exported:
+
+```text
+== Vampire Reverie (ANY)
+Class: <Black Mage>
+Head: <item> | <dye>
+Hands: <item> | <dye> | <undyed>
+Weapon: <item>
+```
+
+The page reader (`parse.js`, `kawariParseGlamour`) was written without seeing the site's markup: it finds the slot
+labels (Head, Body, Hands, Legs, Feet, Earrings, Necklace, Bracelets, Ring, Weapon, Off Hand) by their text and takes
+the item and dyes from the text beside each, the title from the `h1` (or `og:title`), and the gender from a lone
+"Male" / "Female" label (otherwise ANY). It doesn't read a class from the page. `format.js` writes and reads the
+entries' text; `content.js` is the page's panel, `popup.js` the list.
+
 ## kawari-opcodescan (`tools/opcodescan`)
 
 `cargo run --release -p kawari-opcodescan -- <game folder or ffxiv_dx11.exe> [command]`. Runs the same finders as

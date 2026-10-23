@@ -763,9 +763,10 @@ fn spawn_bot(
 
     let look = random_look();
     let name = random_name();
-    // Its own look: one of the server's glamours for its sex, over its gear (`glamour.rs`; none without the list.)
+    // Its own look: one of the server's glamours for its sex and class, over its gear (`glamour.rs`; none without the
+    // list.)
     let glamours = glamour::glamours(game_data);
-    let worn_glamour = glamour::pick(&glamours, look.gender).map(|glamour| {
+    let worn_glamour = glamour::pick(&glamours, look.gender, classjob, parent).map(|glamour| {
         wear_glamour(game_data, &mut wearing, glamour);
         glamour.name.clone()
     });

@@ -233,7 +233,11 @@ add one when something is found.
 ## Party bots
 
 * The glamour list (`glamours.txt`) is untested in game (2026-10-23): whether the client shows an NPC's glamoured
-  models and both dyes as a player's. Items limited to a race or a sex aren't checked.
+  models and both dyes as a player's. Items limited to a race or a sex aren't checked, nor whether a glamour's items
+  are ones its classes could wear.
+* The Glamour Collector's page reader (`tools/glamour-collector/parse.js`) was written without seeing Eorzea
+  Collection's markup (the site isn't reachable from the workspace), so it reads the page by its visible slot labels;
+  it needs checking against a real page's HTML (the panel's *Copy page HTML*). It doesn't read the glamour's class.
 * The tank's spot across from the party and its keeping up with the player are untested in game.
 
 ## Sastasha

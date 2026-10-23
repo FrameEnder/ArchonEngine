@@ -141,16 +141,19 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
 
 ## Glamours
 
-Each bot can wear its own outfit over its gear: one picked at random, for its sex, from a list the server's owner
-writes (`servers/world/src/server/glamour.rs`). The list is **`glamours.txt` in the server's data folder**, beside
+Each bot can wear its own outfit over its gear: one picked at random, for its sex and class, from a list the server's
+owner writes (`servers/world/src/server/glamour.rs`). The Chrome extension in `tools/glamour-collector` builds the list
+from Eorzea Collection's glamour pages ([Tools](tools.md#glamour-collector-toolsglamour-collector)). The list is **`glamours.txt` in the server's data folder**, beside
 `config.yaml` (Kawari Web's `KAWARI_DATA_DIR`, `~/.kawari` unless changed). It's kept out of git, as the item names in
 it are the game's. The server reads it the first time a bot joins and again whenever it changes, and logs how many
 glamours it read and any item or dye it couldn't find.
 
 ```text
 # One glamour per block. A line starting "==" names it; end it with (male) or (female) for the sex it's for, or
-# neither for either. Then one line per piece: the item's name as the game spells it, then | and its dyes.
+# (ANY), (either) or neither for either. An optional Class line lists the classes or jobs it's for. Then one line per
+# piece: the item's name as the game spells it, then | and its dyes.
 == Seaside captain (female)
+Class: <Black Mage> | <SCH>
 Head: <item name>
 Body: <item name> | <dye>
 Hands: <item name> | <dye> | <second dye>
@@ -159,8 +162,15 @@ Feet: <item name> | <dye>
 ```
 
 * The slot before the colon is optional (the item says where it goes); weapon lines are skipped (bots keep their
-  class's weapon). Names match whatever the case or spacing, and either kind of apostrophe; `undyed` means no dye.
-* Names are looked up in the game's Item sheet (equippable items) and Stain sheet, in the server's language.
+  class's weapon). Names match whatever the case or spacing, and either kind of apostrophe, with or without the
+  `<...>` round them (the extension writes them); `undyed` means no dye.
+* `Class:` (or `Job:`) takes classes and jobs by name, English name or abbreviation (`Black Mage`, `BLM`), `|`
+  between them; several lines add up. A job and its base class count as one: a Black Mage glamour fits a Thaumaturge
+  bot and a Thaumaturge glamour fits a Black Mage, but jobs sharing a base class don't fit each other (a Scholar
+  glamour fits an Arcanist, not a Summoner). Without the line a glamour fits any class; one whose classes are all
+  unknown is left out (and logged) rather than worn by every class.
+* Names are looked up in the game's Item sheet (equippable items), Stain sheet and ClassJob sheet (combat classes), in
+  the server's language.
 * A piece goes in the slots its EquipSlotCategory fills, as the gear's glamour, and empties the slots it covers (a
   long coat over the legs). Only the looks change; the bot's stats are its gear's.
 * Without the file, bots wear their gear's looks, as before.
