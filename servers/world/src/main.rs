@@ -480,6 +480,7 @@ async fn client_chat_loop(
             msg = internal_recv.recv() => match msg {
                 Some(msg) => match msg {
                     FromServer::TellMessageReceived(from_actor_id, message_info) => connection.tell_message_received(from_actor_id, message_info.clone()).await,
+                    FromServer::BotTellNotFound(name) => connection.send_tell_not_found(0, name).await,
                     FromServer::ChatDisconnected => {
                         tracing::info!("ChatConnection {:#?} received shutdown, disconnecting!", connection.id);
                         break;
@@ -3039,15 +3040,18 @@ async fn process_packet(
                                 ))
                                 .await;
                         }
-                        ClientZoneIpcData::PartyMemberKick { content_id, .. }
-                            if connection.party_id == 0 =>
-                        {
+                        ClientZoneIpcData::PartyMemberKick {
+                            content_id,
+                            character_name,
+                            ..
+                        } if connection.party_id == 0 => {
                             connection
                                 .handle
                                 .send(ToServer::BotPartyAction(
                                     connection.player_data.character.actor_id,
                                     BotPartyAction::Kick {
                                         content_id: *content_id,
+                                        name: character_name.clone(),
                                     },
                                 ))
                                 .await;
@@ -4321,13 +4325,13 @@ async fn process_server_msg(
                     .send_bot_party_update(members, update_status, targets)
                     .await
             }
-            FromServer::BotInviteAccepted(account_id, content_id, name) => {
+            FromServer::BotInviteAccepted(account_id, content_id, name, invite_type) => {
                 connection
                     .send_invite_update(
                         account_id,
                         content_id,
                         0,
-                        kawari::ipc::zone::InviteType::Party,
+                        invite_type,
                         None,
                         name,
                         Some(kawari::ipc::zone::InviteReply::Accepted),

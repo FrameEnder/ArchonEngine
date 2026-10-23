@@ -202,14 +202,23 @@ impl ZoneConnection {
             // No such character: maybe one of the player's party bots (shown as players, with made-up content IDs),
             // which the server answers for (`party_bot.rs`.) The client's party invite from a character's menu
             // carries only the name (content ID 0; Bob's bundle of 2026-10-23), so both go.
-            if invite_type == InviteType::Party {
+            // A friend request to a bot keeps it (`bot_friends.rs`).
+            let action = match invite_type {
+                InviteType::Party => Some(BotPartyAction::Invite {
+                    content_id,
+                    name: character_name.clone(),
+                }),
+                InviteType::FriendList => Some(BotPartyAction::Befriend {
+                    content_id,
+                    name: character_name.clone(),
+                }),
+                _ => None,
+            };
+            if let Some(action) = action {
                 self.handle
                     .send(ToServer::BotPartyAction(
                         self.player_data.character.actor_id,
-                        BotPartyAction::Invite {
-                            content_id,
-                            name: character_name,
-                        },
+                        action,
                     ))
                     .await;
                 return;

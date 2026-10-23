@@ -33,6 +33,7 @@ use kawari::{
         ObjectTypeId, Position, Rotation, RotationAction,
     },
     config::get_config,
+    ipc::chat::TellMessage,
     ipc::zone::{
         BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DisplayFlag, InviteType, ObjectKind,
         OnlineStatus, PartyMemberEntry, PartyUpdateStatus, PlayerSubKind, ServerZoneIpcData,
@@ -43,16 +44,18 @@ use parking_lot::Mutex;
 use physis::{
     race::{Gender, Race, Tribe},
     savedata::chardat::CustomizeData,
+    sestring::SeString,
 };
 
 use crate::{
     BotPartyAction, FromServer, GameData, ItemInfoQuery, PartyUpdateTargets, ToServer,
     gamedata::PartyRoles,
     inventory::{EquippedStorage, Inventory, Item},
+    lua::{KawariLua, KawariLuaState},
     server::{
         WorldServer,
         actor::{NetworkedActor, NpcState, NpcTarget},
-        glamour,
+        bot_friends, glamour,
         instance::Instance,
         network::{DestinationNetwork, NetworkState},
         npc_behavior::{BEHAVIOR_TICK_SECONDS, NPC_RUN_SPEED, npc_use_action},
@@ -179,6 +182,11 @@ pub struct PartyBot {
     pub equipped: EquippedStorage,
     /// Its gear's average item level, for Examine.
     pub item_level: u16,
+    /// Its made-up account and content ID (the party list's and its SpawnPlayer's): a kept friend's is the same each
+    /// time it's called (`bot_friends`), a new bot's comes from its actor ID.
+    pub content_id: u64,
+    /// The glamour it wears, by name, to wear again when it's kept as a friend.
+    pub glamour_name: Option<String>,
 }
 
 /// Where the n-th bot following someone stands out of combat, relative to them: (degrees from straight behind, yalms
@@ -981,7 +989,7 @@ pub fn spawn_party_bot(
         .ok_or_else(|| format!("No combat class or job is called \"{class_name}\"."))?;
     // It follows you at once, and joins your party list when you invite it.
     spawn_bot(
-        data, game_data, usable, leader, classjob, BOT_LEVEL, look, false,
+        data, game_data, usable, leader, classjob, BOT_LEVEL, look, false, None,
     )
     .map(|(_, name)| name)
 }
@@ -997,6 +1005,7 @@ fn spawn_bot(
     level: u8,
     shown_look: BotLook,
     in_party: bool,
+    identity: Option<&bot_friends::SavedBot>,
 ) -> Result<(ObjectId, String), String> {
     // Shown as a player, it's an owned chocobo-kind NPC to the server, as the chocobo look is.
     let as_chocobo = shown_look != BotLook::PartyMember;
@@ -1040,12 +1049,23 @@ fn spawn_bot(
         .map(|(_, id)| *id);
     let item_level = average_item_level(&wearing.equipped);
 
-    let look = random_look();
-    let name = random_name();
+    // A kept friend comes back as it was (`bot_friends`); a new one is made up.
+    let saved_look = identity.and_then(|saved| look_from_hex(&saved.look));
+    let look = saved_look.clone().unwrap_or_else(random_look);
+    let name = identity
+        .map(|saved| saved.name.clone())
+        .unwrap_or_else(random_name);
     // Its own look: one of the server's glamours for its sex and class, over its gear (`glamour.rs`; none without the
-    // list.)
+    // list); a kept friend's own again, if the list still has it.
     let glamours = glamour::glamours(game_data);
-    let worn_glamour = glamour::pick(&glamours, look.gender, classjob, parent).map(|glamour| {
+    let kept_glamour = identity
+        .and_then(|saved| saved.glamour.as_ref())
+        .and_then(|wanted| glamours.iter().find(|glamour| &glamour.name == wanted));
+    let chosen = match identity {
+        Some(_) => kept_glamour,
+        None => glamour::pick(&glamours, look.gender, classjob, parent),
+    };
+    let worn_glamour = chosen.map(|glamour| {
         wear_glamour(game_data, &mut wearing, glamour);
         glamour.name.clone()
     });
@@ -1148,12 +1168,15 @@ fn spawn_bot(
     } else {
         Instance::generate_actor_id()
     };
+    let content_id = identity
+        .map(|saved| saved.content_id)
+        .unwrap_or(BOT_ID_BASE | actor_id.0 as u64);
     // Shown as a player: the party list's made-up IDs (so the list's entry and the character are one), the leader's
     // world and content handler.
     let shown = match (shown_look, instance.find_actor(leader)) {
         (BotLook::Player, Some(NetworkedActor::Player { spawn, .. })) => Some(ShownAsPlayer {
-            account_id: BOT_ID_BASE | actor_id.0 as u64,
-            content_id: BOT_ID_BASE | actor_id.0 as u64,
+            account_id: content_id,
+            content_id,
             world_id: spawn.home_world_id,
             handler_id: spawn.common.handler_id,
         }),
@@ -1197,6 +1220,8 @@ fn spawn_bot(
             in_party,
             equipped: wearing.equipped,
             item_level,
+            content_id,
+            glamour_name: worn_glamour.clone(),
         },
     );
 
@@ -1309,6 +1334,7 @@ pub fn fill_duty_party(
             level,
             default_look(),
             true,
+            None,
         ) {
             Ok((actor_id, name)) => {
                 tracing::info!(
@@ -1368,10 +1394,14 @@ pub fn party_list(instance: &Instance, leader: ObjectId) -> Option<Vec<PartyMemb
         player.account_id,
         player.content_id,
     )];
-    for (actor_id, _) in bots {
+    for (actor_id, bot) in bots {
         if let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor(*actor_id) {
-            let made_up = BOT_ID_BASE | actor_id.0 as u64;
-            list.push(entry(&spawn.common, *actor_id, made_up, made_up));
+            list.push(entry(
+                &spawn.common,
+                *actor_id,
+                bot.content_id,
+                bot.content_id,
+            ));
         }
     }
     list.truncate(PartyMemberEntry::NUM_ENTRIES);
@@ -1382,13 +1412,30 @@ pub fn party_list(instance: &Instance, leader: ObjectId) -> Option<Vec<PartyMemb
 const BOT_ID_BASE: u64 = 0x00B0_0000_0000_0000;
 
 /// A bot's made-up account and content ID (the party list's, and its SpawnPlayer's.)
-pub fn bot_content_id(actor_id: ObjectId) -> u64 {
-    BOT_ID_BASE | actor_id.0 as u64
+pub fn bot_content_id(instance: &Instance, actor_id: ObjectId) -> u64 {
+    instance
+        .party_bots
+        .get(&actor_id)
+        .map(|bot| bot.content_id)
+        .unwrap_or(BOT_ID_BASE | actor_id.0 as u64)
 }
 
-/// The bot of `leader`'s with this made-up content ID.
-fn find_bot(instance: &Instance, leader: ObjectId, content_id: u64) -> Option<ObjectId> {
-    find_bot_by(instance, leader, content_id, "")
+/// A look saved as hex (`bot_friends::SavedBot::look`) read back.
+fn look_from_hex(text: &str) -> Option<CustomizeData> {
+    use binrw::BinRead;
+    let bytes: Vec<u8> = (0..text.len())
+        .step_by(2)
+        .map(|at| u8::from_str_radix(text.get(at..at + 2)?, 16).ok())
+        .collect::<Option<_>>()?;
+    CustomizeData::read_le(&mut std::io::Cursor::new(bytes)).ok()
+}
+
+/// A look as hex, to save.
+fn look_to_hex(look: &CustomizeData) -> String {
+    le_bytes(look)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
 }
 
 /// The bot of `leader`'s with this made-up content ID, or (content ID 0, as the client's party invite from a
@@ -1403,9 +1450,9 @@ fn find_bot_by(
         .party_bots
         .iter()
         .filter(|(_, bot)| bot.leader == leader)
-        .find(|(id, _)| {
+        .find(|(id, bot)| {
             if content_id != 0 {
-                bot_content_id(**id) == content_id
+                bot.content_id == content_id
             } else {
                 !name.is_empty()
                     && instance
@@ -1434,8 +1481,8 @@ fn bot_targets(instance: &Instance, leader: ObjectId, bot: ObjectId) -> PartyUpd
         execute_account_id,
         execute_content_id,
         execute_name,
-        target_account_id: bot_content_id(bot),
-        target_content_id: bot_content_id(bot),
+        target_account_id: bot_content_id(instance, bot),
+        target_content_id: bot_content_id(instance, bot),
         target_name,
     }
 }
@@ -1443,19 +1490,29 @@ fn bot_targets(instance: &Instance, leader: ObjectId, bot: ObjectId) -> PartyUpd
 /// A party has at most eight.
 const PARTY_SIZE: usize = 8;
 
-/// A player's party actions that concern bots (`ToServer::BotPartyAction`), and Examine (`ToServer::ExamineCharacter`).
+/// What a bot says back to a tell: `help`, `dismiss`, `leave` and anything else. These are Kawari's own words.
+const TELL_HELP: &str =
+    "Tell me: \"dismiss\" (I go), \"leave\" (I leave the party and keep following), \"help\".";
+
+/// A player's party actions that concern bots (`ToServer::BotPartyAction`), tells to bots (`ToServer::BotTell`),
+/// and Examine (`ToServer::ExamineCharacter`).
 ///
 /// * **Invite to Party** on one of your bots (`!spawn playernpc`'s follow you, but aren't in your party until then):
 ///   it accepts at once, as a player would: the invite's result, the invite accepted, then the party list with it and
 ///   a PartyUpdate JoinParty naming it. Not while you're in a party of players (the server keeps those; bots aren't
-///   in them), nor past eight.
+///   in them), nor past eight. On a bot kept as a friend (`bot_friends`) that isn't with you, from the friend list:
+///   it appears beside you (the same name, class, look and glamour, at the duty's synced level in a duty) and joins.
 /// * **Kick** a bot: it leaves the party and goes (dismissed); the list without it, and MemberKicked naming it.
 /// * **Leave Party** or **Disband Party**: every bot in it goes, and the list empties (DisbandingParty).
 /// * **Promote** a bot to leader: refused (a bot can't lead); before, this panicked the server, as these went to
 ///   the party code with `party_id` 0.
+/// * **Add to Friend List** on a bot: it's kept (`bot_friends`), and accepts at once.
+/// * **A tell** to a bot: `dismiss`, `leave` or `help`; it answers by tell.
 pub fn handle_bot_party_messages(
     data: Arc<Mutex<WorldServer>>,
     network: Arc<Mutex<NetworkState>>,
+    game_data: Arc<Mutex<GameData>>,
+    lua: Arc<Mutex<KawariLua>>,
     msg: &ToServer,
 ) -> bool {
     match msg {
@@ -1470,34 +1527,47 @@ pub fn handle_bot_party_messages(
             let Some(instance) = data.find_actor_instance_mut(leader) else {
                 return true;
             };
+            let leader_content_id = match instance.find_actor(leader) {
+                Some(NetworkedActor::Player { spawn, .. }) => spawn.content_id,
+                _ => 0,
+            };
             match action {
                 BotPartyAction::Invite { content_id, name } => {
-                    let Some(bot) = find_bot_by(instance, leader, *content_id, name) else {
-                        tracing::info!(
-                            "{leader} invited {content_id:#x} ({name}): not a character or one of their bots"
-                        );
-                        return true;
-                    };
-                    // The invite may name it only (content ID 0): the replies carry its own.
-                    let content_id = &bot_content_id(bot);
                     let members = instance
                         .party_bots
                         .values()
                         .filter(|other| other.leader == leader && other.in_party)
                         .count();
-                    let refused = in_players_party
-                        || members + 1 >= PARTY_SIZE
-                        || instance.party_bots.get(&bot).is_some_and(|b| b.in_party);
-                    let message = if refused {
-                        LogMessageType::PlayerAlreadyInAnotherParty as u16
-                    } else {
-                        0
+                    let full = members + 1 >= PARTY_SIZE;
+                    let here = find_bot_by(instance, leader, *content_id, name);
+                    // Not here: a bot kept as a friend is called (from the friend list.)
+                    let saved = match here {
+                        Some(_) => None,
+                        None => bot_friends::find(leader_content_id, *content_id, name),
                     };
+                    if here.is_none() && saved.is_none() {
+                        tracing::info!(
+                            "{leader} invited {content_id:#x} ({name}): not a character or one of their bots"
+                        );
+                        return true;
+                    }
+                    let already_in = here
+                        .and_then(|bot| instance.party_bots.get(&bot))
+                        .is_some_and(|bot| bot.in_party);
+                    let refused = in_players_party || full || already_in;
+                    let reply_id = here
+                        .map(|bot| bot_content_id(instance, bot))
+                        .or(saved.as_ref().map(|saved| saved.content_id))
+                        .unwrap_or(*content_id);
                     network.send_to_by_actor_id(
                         leader,
                         FromServer::InviteCharacterResult(
-                            *content_id,
-                            message,
+                            reply_id,
+                            if refused {
+                                LogMessageType::PlayerAlreadyInAnotherParty as u16
+                            } else {
+                                0
+                            },
                             InviteType::Party,
                             name.clone(),
                         ),
@@ -1505,16 +1575,64 @@ pub fn handle_bot_party_messages(
                     );
                     if refused {
                         tracing::info!(
-                            "{leader} invited their bot {name}: refused (in a party of players: {in_players_party}, {members} bots in it)"
+                            "{leader} invited their bot {name}: refused (in a party of players: {in_players_party}, {members} bots in it, already in: {already_in})"
                         );
                         return true;
                     }
-                    if let Some(party_bot) = instance.party_bots.get_mut(&bot) {
-                        party_bot.in_party = true;
-                    }
+                    let bot = match (here, saved) {
+                        (Some(bot), _) => {
+                            if let Some(party_bot) = instance.party_bots.get_mut(&bot) {
+                                party_bot.in_party = true;
+                            }
+                            bot
+                        }
+                        (None, Some(saved)) => {
+                            // Called from the friend list: it appears beside the player, in the party.
+                            let content = instance.content_finder_condition_id;
+                            let usable: HashMap<u32, String> = {
+                                let lua = lua.lock();
+                                let state = lua.0.app_data_ref::<KawariLuaState>().unwrap();
+                                state.action_scripts.clone()
+                            };
+                            let mut game_data = game_data.lock();
+                            let level = if content != 0 {
+                                game_data
+                                    .find_content_synced_level(content)
+                                    .unwrap_or(BOT_LEVEL)
+                            } else {
+                                BOT_LEVEL
+                            };
+                            match spawn_bot(
+                                &mut data,
+                                &mut game_data,
+                                &usable,
+                                leader,
+                                saved.classjob,
+                                level,
+                                default_look(),
+                                true,
+                                Some(&saved),
+                            ) {
+                                Ok((bot, _)) => bot,
+                                Err(error) => {
+                                    tracing::warn!("Couldn't call {}: {error}", saved.name);
+                                    return true;
+                                }
+                            }
+                        }
+                        (None, None) => return true,
+                    };
+                    let Some(instance) = data.find_actor_instance_mut(leader) else {
+                        return true;
+                    };
                     network.send_to_by_actor_id(
                         leader,
-                        FromServer::BotInviteAccepted(*content_id, *content_id, name.clone()),
+                        FromServer::BotInviteAccepted(
+                            reply_id,
+                            reply_id,
+                            name.clone(),
+                            InviteType::Party,
+                        ),
                         DestinationNetwork::ZoneClients,
                     );
                     let targets = bot_targets(instance, leader, bot);
@@ -1529,8 +1647,13 @@ pub fn handle_bot_party_messages(
                     );
                     tracing::info!("{leader}'s bot {name} joined their party");
                 }
-                BotPartyAction::Kick { content_id } => {
-                    let Some(bot) = find_bot(instance, leader, *content_id) else {
+                BotPartyAction::Kick { content_id, name } => {
+                    let Some(bot) = find_bot_by(instance, leader, *content_id, "")
+                        .or_else(|| find_bot_by(instance, leader, 0, name))
+                    else {
+                        tracing::info!(
+                            "{leader} kicked {content_id:#x} ({name}): none of their bots"
+                        );
                         return true;
                     };
                     let targets = bot_targets(instance, leader, bot);
@@ -1545,6 +1668,7 @@ pub fn handle_bot_party_messages(
                         ),
                         DestinationNetwork::ZoneClients,
                     );
+                    tracing::info!("{leader} kicked their bot {name}");
                 }
                 BotPartyAction::Promote { content_id } => {
                     tracing::info!(
@@ -1571,7 +1695,141 @@ pub fn handle_bot_party_messages(
                         DestinationNetwork::ZoneClients,
                     );
                 }
+                BotPartyAction::Befriend { content_id, name } => {
+                    let Some(bot) = find_bot_by(instance, leader, *content_id, name) else {
+                        tracing::info!(
+                            "{leader} sent {content_id:#x} ({name}) a friend request: none of their bots"
+                        );
+                        return true;
+                    };
+                    let (Some(party_bot), Some(actor)) =
+                        (instance.party_bots.get(&bot), instance.find_actor(bot))
+                    else {
+                        return true;
+                    };
+                    let common = actor.get_common_spawn();
+                    let saved = bot_friends::SavedBot {
+                        content_id: party_bot.content_id,
+                        name: common.name.clone(),
+                        classjob: common.class_job,
+                        look: look_to_hex(&common.look),
+                        glamour: party_bot.glamour_name.clone(),
+                        added: std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .map(|time| time.as_secs() as u32)
+                            .unwrap_or_default(),
+                    };
+                    let reply_id = saved.content_id;
+                    let new = bot_friends::add(leader_content_id, saved);
+                    network.send_to_by_actor_id(
+                        leader,
+                        FromServer::InviteCharacterResult(
+                            reply_id,
+                            0,
+                            InviteType::FriendList,
+                            name.clone(),
+                        ),
+                        DestinationNetwork::ZoneClients,
+                    );
+                    network.send_to_by_actor_id(
+                        leader,
+                        FromServer::BotInviteAccepted(
+                            reply_id,
+                            reply_id,
+                            name.clone(),
+                            InviteType::PendingFriendList,
+                        ),
+                        DestinationNetwork::ZoneClients,
+                    );
+                    tracing::info!(
+                        "{leader} kept their bot {name} as a friend (already: {})",
+                        !new
+                    );
+                }
             }
+            true
+        }
+        ToServer::BotTell(sender, recipient, text) => {
+            let sender = *sender;
+            let mut data = data.lock();
+            let mut network = network.lock();
+            let Some(instance) = data.find_actor_instance_mut(sender) else {
+                return true;
+            };
+            let Some(bot) = find_bot_by(instance, sender, 0, recipient) else {
+                network.send_to_by_actor_id(
+                    sender,
+                    FromServer::BotTellNotFound(recipient.clone()),
+                    DestinationNetwork::ChatClients,
+                );
+                return true;
+            };
+            let content_id = bot_content_id(instance, bot);
+            let command = text.trim().to_lowercase();
+            let reply = match command.as_str() {
+                "dismiss" => {
+                    let in_party = instance
+                        .party_bots
+                        .get(&bot)
+                        .is_some_and(|bot| bot.in_party);
+                    let targets = bot_targets(instance, sender, bot);
+                    instance.party_bots.remove(&bot);
+                    network.remove_actor(instance, bot);
+                    if in_party {
+                        network.send_to_by_actor_id(
+                            sender,
+                            FromServer::BotPartyUpdate(
+                                party_list(instance, sender),
+                                PartyUpdateStatus::MemberLeftParty,
+                                targets,
+                            ),
+                            DestinationNetwork::ZoneClients,
+                        );
+                    }
+                    "Goodbye!".to_string()
+                }
+                "leave" => {
+                    let was_in = instance
+                        .party_bots
+                        .get_mut(&bot)
+                        .map(|bot| std::mem::replace(&mut bot.in_party, false))
+                        .unwrap_or_default();
+                    if was_in {
+                        let targets = bot_targets(instance, sender, bot);
+                        network.send_to_by_actor_id(
+                            sender,
+                            FromServer::BotPartyUpdate(
+                                party_list(instance, sender),
+                                PartyUpdateStatus::MemberLeftParty,
+                                targets,
+                            ),
+                            DestinationNetwork::ZoneClients,
+                        );
+                        "I've left the party; I'll keep following you.".to_string()
+                    } else {
+                        "I'm not in your party.".to_string()
+                    }
+                }
+                _ => TELL_HELP.to_string(),
+            };
+            tracing::info!("{sender} told their bot {recipient}: {command:?}");
+            // The answer, as a tell from the bot (sent from it, as tells come from their sender.)
+            let world_id = get_config().world.world_id;
+            network.send_to_by_actor_id(
+                sender,
+                FromServer::TellMessageReceived(
+                    bot,
+                    TellMessage {
+                        sender_account_id: content_id,
+                        sender_content_id: content_id,
+                        sender_world_id: world_id,
+                        sender_name: recipient.clone(),
+                        message: SeString::from(reply.as_str()),
+                        ..Default::default()
+                    },
+                ),
+                DestinationNetwork::ChatClients,
+            );
             true
         }
         ToServer::ExamineCharacter(examiner, target) => {
@@ -2160,6 +2418,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn a_kept_friends_look_comes_back_the_same() {
+        let look = random_look();
+        let text = look_to_hex(&look);
+        assert_eq!(text.len(), 52);
+        assert_eq!(
+            look_from_hex(&text).map(|back| look_to_hex(&back)),
+            Some(text)
+        );
+        assert!(look_from_hex("zz").is_none());
+    }
+
+    #[test]
     fn examine_laid_out_as_retail() {
         let common = CommonSpawn {
             class_job: 38,
@@ -2211,7 +2481,10 @@ mod tests {
         let (first, second) = examine_bytes(&common, 0, None, 0, None);
         assert_eq!(u32_at(&first, 80), 0);
         assert_eq!(u32_at(&second, 816 - 672), 0);
-        assert_eq!(bot_content_id(ObjectId(0x1234_5678)), 0x00B0_0000_1234_5678);
+        assert_eq!(
+            bot_content_id(&Instance::default(), ObjectId(0x1234_5678)),
+            0x00B0_0000_1234_5678
+        );
     }
 
     #[test]

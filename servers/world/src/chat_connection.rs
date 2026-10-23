@@ -209,12 +209,34 @@ impl ChatConnection {
             return;
         }
 
+        // No such character: maybe one of the player's party bots, which the server answers for (`party_bot.rs`);
+        // it sends the error back if it's none of theirs either.
+        if recipient_ids.actor_id == ObjectId::default() && recipient_ids.content_id == 0 {
+            self.handle
+                .send(ToServer::BotTell(
+                    self.player_data.actor_id,
+                    tell_data.recipient_name.clone(),
+                    tell_data.message.to_string(),
+                ))
+                .await;
+            return;
+        }
+
+        self.send_tell_not_found(
+            recipient_ids.service_account_id as u64,
+            tell_data.recipient_name.clone(),
+        )
+        .await;
+    }
+
+    /// The tell's recipient doesn't exist or is offline.
+    pub async fn send_tell_not_found(&mut self, recipient_account_id: u64, recipient_name: String) {
         let ipc =
             ServerChatIpcSegment::new(ServerChatIpcData::TellNotFoundError(TellNotFoundError {
-                recipient_account_id: recipient_ids.service_account_id as u64,
+                recipient_account_id,
                 sender_account_id: self.player_data.account_id,
                 recipient_world_id: self.config.world_id,
-                recipient_name: tell_data.recipient_name.clone(),
+                recipient_name,
                 unk: 0x68, // No clue what this is, but it's often seen when receiving a tell error.
             }));
 

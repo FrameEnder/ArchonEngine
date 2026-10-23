@@ -172,8 +172,11 @@ pub enum FromServer {
         PartyUpdateStatus,
         PartyUpdateTargets,
     ),
-    /// A party bot accepted the player's invite: its account ID, content ID and name.
-    BotInviteAccepted(u64, u64, String),
+    /// A party bot accepted the player's invite (to the party, or a friend request): its account ID, content ID,
+    /// name, and the invite's kind.
+    BotInviteAccepted(u64, u64, String, InviteType),
+    /// A tell went to a name that's no character and none of the player's bots: that name.
+    BotTellNotFound(String),
     /// Inform the client of the result of a social invite they have sent.
     InviteCharacterResult(u64, u16, InviteType, String),
     /// Inform the client they were in a party, and request that they inform us of their return.
@@ -358,12 +361,14 @@ impl ClientHandle {
 pub enum BotPartyAction {
     /// Invited the character with this content ID and name (a bot's are made up.)
     Invite { content_id: u64, name: String },
-    /// Removed the member with this content ID.
-    Kick { content_id: u64 },
+    /// Removed the member with this content ID and name.
+    Kick { content_id: u64, name: String },
     /// Made the member with this content ID leader.
     Promote { content_id: u64 },
     /// Left the party, or disbanded it.
     Leave,
+    /// Sent a friend request to the character with this content ID and name.
+    Befriend { content_id: u64, name: String },
 }
 
 #[derive(Debug)]
@@ -435,6 +440,8 @@ pub enum ToServer {
     BotPartyAction(ObjectId, BotPartyAction),
     /// The player examines someone: the examiner, the one examined.
     ExamineCharacter(ObjectId, ObjectId),
+    /// A tell to a name no character has (maybe one of the player's party bots): the sender, the name, the text.
+    BotTell(ObjectId, String, String),
     /// Ready to spawn the player (this happens during initrequest)
     ReadySpawnPlayer(ClientId, ObjectId, u16, Position, f32, Option<u8>),
     /// Ready to send the ZoneIn ACS

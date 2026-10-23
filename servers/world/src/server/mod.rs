@@ -64,6 +64,7 @@ use super::{ClientId, FromServer, ToServer};
 
 mod action;
 mod actor;
+pub mod bot_friends;
 mod chat;
 mod director;
 mod effect;
@@ -80,6 +81,7 @@ mod party_bot;
 mod periodic;
 mod pet;
 pub use party::{Party, PartyMember};
+pub use party_bot::BOT_LEVEL;
 use periodic::periodic_tick;
 pub use rotation::{ActionMechanics, GCD_GROUP};
 mod fate;
@@ -1794,7 +1796,13 @@ pub async fn server_main_loop(
         handled |= handle_linkshell_messages(network.clone(), &msg);
         handled |=
             loot::handle_loot_messages(data.clone(), network.clone(), game_data.clone(), &msg);
-        handled |= party_bot::handle_bot_party_messages(data.clone(), network.clone(), &msg);
+        handled |= party_bot::handle_bot_party_messages(
+            data.clone(),
+            network.clone(),
+            game_data.clone(),
+            lua.clone(),
+            &msg,
+        );
 
         if !handled {
             match msg {

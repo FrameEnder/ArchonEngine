@@ -63,6 +63,21 @@ a fallback:
 
 Code: `servers/world/src/server/party_bot.rs` (`spawn_party_bot`, `update`), the command in `server/chat.rs`.
 
+## Bots kept as friends
+
+A bot sent a friend request is **kept**: `party-bot-friends.json` in the server's data folder (beside `world.db`,
+`/kawari/data` in Kawari Web's container; kept out of git), by your content ID: its made-up content ID, name, class,
+look (its 26 customize bytes as hex) and glamour (by name), and when (`server/bot_friends.rs`). A bot isn't a
+character, so there's no row for it in the database's friend table:
+
+* **The friend list** adds your kept bots after your other friends (`refresh_friend_list`), each online, in your
+  zone, at level 100, with the context menu, so the client offers *Invite to Party* on them.
+* **Invite to Party** on a kept bot that isn't with you **calls it**: it appears beside you, the same name, class,
+  look and glamour (if the glamour list still has it; otherwise none), at the duty's synced level when you're in one
+  (100 otherwise), already in the party, and the invite is accepted as for a bot that's there. Its content ID is the
+  same each time (`PartyBot::content_id`), so the friend list's entry, the party list's and the character are one.
+* **Remove from Friend List** forgets it (the file loses it; FriendRemoved to you).
+
 ## Party, and examining a bot
 
 Bots are characters to the client, so its menus on them work (`party_bot::handle_bot_party_messages`):
@@ -78,6 +93,13 @@ Bots are characters to the client, so its menus on them work (`party_bot::handle
   matched content IDs only, ignored it), so a bot is found by its made-up content ID or, with 0, by its name among
   the inviter's bots; a friend request carries the content ID.
 * **Kick** a bot from the party list: it leaves and goes (dismissed); the list without it and MemberKicked naming it.
+  The bot is found by the kick's content ID, or by its name (as the invite is) when the ID matches none.
+* **Add to Friend List** on a bot: it's kept as your friend (below) and accepts at once (the invite's result, then
+  *invite accepted*, of the pending-friend kind, as Kawari sends a player's acceptance).
+* **Send Tell** to a bot: it answers by tell. `dismiss`: it goes (and leaves the party, MemberLeftParty). `leave`: it
+  leaves the party and keeps following. Anything else: it lists these. The chat connection finds no character by
+  the name, so it hands the tell to the server (`ToServer::BotTell`), which answers as the bot (its tell is sent
+  from the bot's actor, with its made-up content ID), or with the usual *not found* when it's none of your bots.
 * **Leave Party** or **Disband Party**: every bot in it goes, and the list empties (DisbandingParty).
 * **Promote** a bot to leader: ignored (a bot can't lead).
 * **Changing zone**: bots don't follow, so when they're dropped (`update`), a player who had them in the party gets
