@@ -24,7 +24,7 @@ This file is located at `/etc/hosts`.
 
 ## Running
 
-Run the server by executing `kawari-run` in your terminal emulator.
+Run the server by executing `./kawari-run` in your terminal emulator.
 
 ## Logging in
 
