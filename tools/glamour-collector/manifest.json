@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Kawari Glamour Collector",
-  "version": "1.1.0",
-  "description": "Adds the Eorzea Collection glamour you're viewing to a list, for Kawari's party bots (glamours.txt).",
+  "version": "1.2.0",
+  "description": "Adds the Eorzea Collection glamour you're viewing to a list, and sends it to your Kawari Web for Kawari's party bots.",
   "permissions": ["storage"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
   "action": {
     "default_title": "Kawari glamour list",
     "default_popup": "popup.html"

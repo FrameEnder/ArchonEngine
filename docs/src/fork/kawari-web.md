@@ -1,6 +1,6 @@
 # Kawari Web
 
-Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.20.1** on the `UI-Redesign` branch, **2.18.1** on `master`) runs beside the server in its own container. Its
+Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.21.0** on the `UI-Redesign` branch, **2.18.1** on `master`) runs beside the server in its own container. Its
 README is the user guide (setup, pages, service, forges, builds); this page is about **how its features work** and
 how they depend on the fork. Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates).
 
@@ -12,7 +12,8 @@ how they depend on the fork. Code: `kawari_core/` (logic, no Flask) and `kawari_
 | `world.db` | read; writes only for logged-out characters (and `mail`, and the `marketboard_*` settings) | profiles, Progress, Quest Lab character setup, Shop gil and delivery, Marketboard prices |
 | `config.yaml` | read/write | Dashboard config editor, Diagnostics toggling `world.packet_capture` |
 | The active server image | runs throwaway containers | `kawari-questdump` (Quest Lab, Progress index, Shop item list) |
-| `<data>/quest-dumps/` | written by questdump | `quest-index.json`, `item-index.json`, `marketboard-categories.json`, per-quest dumps |
+| `<data>/quest-dumps/` | written by questdump | `quest-index.json`, `item-index.json`, `marketboard-categories.json`, `class-index.json`, per-quest dumps |
+| `<data>/data/glamours.txt` | read/write | Bot glamours (the party bots' list; the server reads it from `/kawari/data`) |
 | `<data>/captures/` | read | Diagnostics bundles |
 | The web app's own SQLite db | read/write | feed, notifications, settings, shop tables |
 
@@ -23,7 +24,7 @@ over the database, so direct edits only happen while the character is logged out
 
 Home, How to Connect, Feed (called Community in the top bar from 2.19.0) and profiles (character tile boards, private by default), Notifications, Settings,
 **Shop**, and the admin **Dashboard**: server control, config editor, database health/migrations, backups, accounts,
-Auracite import/export, branding, Quest Lab, Progress, Marketboard, Diagnostics, Updates (which fork/forge/commit the server is
+Auracite import/export, branding, Quest Lab, Progress, Marketboard, Bot glamours (2.21.0), Diagnostics, Updates (which fork/forge/commit the server is
 built from), container logs.
 
 ## Shop (2.12.0)
@@ -234,6 +235,36 @@ leaving out quest battle layers (`QB_*`). It measures what the build has, not ho
   its own prices, and how many have sold; a name search across every category; the latest sales.
 * The prices are computed with the same formula as the server (`price`); checked against the server's test examples.
   Without the tables (a server from before the marketboard) the page says to update and start the server once.
+
+## Bot glamours (Dashboard → Bot glamours)
+
+2.21.0, on `UI-Redesign`. The party bots' glamour list ([Party bots → Glamours](party-bots.md#glamours)) and the API
+the Glamour Collector extension uses ([Tools](tools.md#glamour-collector-toolsglamour-collector)):
+`kawari_web/glamours.py`.
+
+* **The list** is `glamours.txt` in `settings.db_dir`, the host folder mounted at `/kawari/data` (the world server
+  reads it from `$KAWARI_DATA`). It's written beside the old one and renamed over it, so the server never reads half
+  a file; the one it replaces goes to `<web>/glamour-backups/glamours-<date>-<time>.txt` (the newest 20), which the
+  page can restore. The server notices the new modification time, so no restart.
+* **The class list** is `class-index.json` in the quest dumps folder, written by `kawari-questdump classes` (the
+  page's *Read the class list from the game*, as a job like the other questdump steps): every ClassJob row with a Role
+  (`id`, `name`, `name_english`, `abbreviation`, `role`, `parent`, `primary_stat`), in UIPriority order. The API groups
+  it by role as Eorzea Collection does: Tanks (Role 1), Healers (4), Melee DPS (2), Physical Ranged DPS (3 with
+  PrimaryStat 2, dexterity) and Caster DPS (3 otherwise), each class by its English name.
+* **The API** takes the Companion sync token (Settings → Character sync), and only an administrator's (403
+  otherwise), since the list changes what every bot wears:
+
+| Call | Answer |
+|---|---|
+| `GET /api/glamours/ping` | `accepts: "glamours/1"`, whether the class list is there, the list's counts (`glamours`, `male`, `female`, `any`, `classes`) and modification time |
+| `GET /api/glamours/classes` | `roles`, `groups` (`[{name, classes: [names]}]`) and `classes` (`[{id, name, abbreviation, group, parent}]`); 404 before the class list is read |
+| `GET /api/glamours` | `text` (the file) and its counts |
+| `POST /api/glamours` | `{"text": "..."}` (or the text as the body, up to 2 MB) replaces the list; refused (400) without a single `==` header |
+
+The extension reaches Kawari Web wherever the browser can, on the LAN or over Tailscale: it asks Chrome for that
+address (an optional host permission), which also spares the API any CORS headers. Checked with Flask's test client
+(no token 401, a non-admin's 403, a list written with its backup) and with the extension in Chromium against a test
+server (connect, the dropdown from the class list, send, load).
 
 ## Diagnostics (Dashboard → Diagnostics)
 

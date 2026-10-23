@@ -18,10 +18,57 @@ header {
   color: #a9b3c4;
 }
 
-#actions {
+#actions,
+#actions-file,
+#server .buttons {
   display: flex;
   gap: 6px;
   margin-bottom: 6px;
+}
+
+#server {
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #262e3e;
+}
+
+#server summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#server-state {
+  color: #a9b3c4;
+  font-weight: 400;
+}
+
+#server label {
+  display: block;
+  margin-top: 6px;
+  color: #a9b3c4;
+}
+
+#server input {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 2px;
+  padding: 4px 5px;
+  border: 1px solid #4a5568;
+  border-radius: 4px;
+  background: #1d2330;
+  color: #e8ecf2;
+  font: inherit;
+}
+
+#server .buttons {
+  margin-top: 8px;
+}
+
+.hint {
+  margin: 0;
+  color: #a9b3c4;
+  font-size: 12px;
 }
 
 button {
@@ -50,6 +97,10 @@ button.quiet {
   color: #9fd49f;
 }
 
+#status.error {
+  color: #f08a7a;
+}
+
 ul {
   list-style: none;
   margin: 0;
@@ -71,7 +122,7 @@ li {
   align-items: center;
 }
 
-.row a {
+.row .title {
   flex: 1;
   overflow: hidden;
   color: #e8ecf2;

@@ -13,7 +13,7 @@ use std::{
 };
 
 use icarus::{
-    BNpcName::BNpcNameSheet, ClassJobCategory::ClassJobCategorySheet,
+    BNpcName::BNpcNameSheet, ClassJob::ClassJobSheet, ClassJobCategory::ClassJobCategorySheet,
     ContentFinderCondition::ContentFinderConditionSheet, ContentType::ContentTypeSheet,
     ENpcResident::ENpcResidentSheet, EObjName::EObjNameSheet, ExVersion::ExVersionSheet,
     Item::ItemSheet, ItemSearchCategory::ItemSearchCategorySheet,
@@ -40,6 +40,7 @@ USAGE:
     kawari-questdump index [--out DIR]
     kawari-questdump items [--out DIR]
     kawari-questdump content [--out DIR]
+    kawari-questdump classes [--out DIR]
     kawari-questdump disasm <FILE.luab> [--listing]
 
 QUEST can be a quest ID (3854 or 69390), a script ID (XxaFst034_03854) or the quest's name in quotes.
@@ -60,7 +61,9 @@ COMMANDS:
               territory, levels, expansion) and every open-world zone (TerritoryType: name, region, background
               folder, expansion), for Kawari Web's Misc Content progress (which duties the server has a script for,
               which zones have monster spawns.)
-    disasm    Print a readable listing of a compiled script you already have.
+    classes   Write class-index.json: every combat class and job (ClassJob: name, English name, abbreviation,
+              role, base class, main stat), for Kawari Web's glamour API (the Glamour Collector's Class list.)
+    disasm   Print a readable listing of a compiled script you already have.
 
 OPTIONS:
     --out DIR     Where to write the dumps (default: quest-dumps)
@@ -789,6 +792,37 @@ fn marketboard_categories(resolver: &mut ResourceResolver) -> Result<Vec<Value>,
 }
 
 /// The content index (`content`): duties and open-world zones, with the names the game gives them.
+/// class-index.json (format 1): every combat class and job, in the game's own order (UIPriority.)
+fn class_index(resolver: &mut ResourceResolver) -> Result<Value, String> {
+    let language = get_config().world.language();
+    let sheet = ClassJobSheet::read_from(resolver, language)
+        .map_err(|err| format!("couldn't read the ClassJob sheet: {err:?}"))?;
+    let mut classes: Vec<(u8, Value)> = sheet
+        .into_iter()
+        .flatten_subrows()
+        .filter(|(_, row)| row.Role != 0)
+        .map(|(id, row)| {
+            (
+                row.UIPriority,
+                serde_json::json!({
+                    "id": id,
+                    "name": row.Name.to_string(),
+                    "name_english": row.NameEnglish.to_string(),
+                    "abbreviation": row.Abbreviation.to_string(),
+                    "role": row.Role,
+                    "parent": row.ClassJobParent,
+                    "primary_stat": row.PrimaryStat,
+                }),
+            )
+        })
+        .collect();
+    classes.sort_by_key(|(priority, _)| *priority);
+    Ok(serde_json::json!({
+        "format": 1,
+        "classes": classes.into_iter().map(|(_, class)| class).collect::<Vec<_>>(),
+    }))
+}
+
 fn content_index(resolver: &mut ResourceResolver) -> Result<Value, String> {
     let language = get_config().world.language();
     let place_names: HashMap<u32, String> = PlaceNameSheet::read_from(resolver, language)
@@ -986,6 +1020,21 @@ fn run(args: &[String]) -> Result<(), String> {
                 "Wrote {} duties and {} zones to {}",
                 index["duties"].as_array().map_or(0, Vec::len),
                 index["zones"].as_array().map_or(0, Vec::len),
+                destination.display()
+            );
+            Ok(())
+        }
+        "classes" => {
+            let mut data = GameData::open(options.game.as_deref())?;
+            std::fs::create_dir_all(&options.out)
+                .map_err(|err| format!("couldn't create {}: {err}", options.out.display()))?;
+            let destination = options.out.join("class-index.json");
+            let index = class_index(&mut data.resolver)?;
+            std::fs::write(&destination, serde_json::to_string(&index).unwrap())
+                .map_err(|err| format!("couldn't write {}: {err}", destination.display()))?;
+            println!(
+                "Wrote {} classes and jobs to {}",
+                index["classes"].as_array().map_or(0, Vec::len),
                 destination.display()
             );
             Ok(())

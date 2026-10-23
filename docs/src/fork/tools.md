@@ -17,25 +17,35 @@ folder), or `--game <game folder>`. Full guide: [Quest Dumps](../scripting/quest
 | `disasm <file.luab>` | A listing from the built-in Lua 5.1 disassembler | Scripts you already have |
 | `index` | `quest-index.json` (format 2): every quest's name, level, genre, issuer, area, class restriction, prerequisites and how they combine, `main_scenario` (in ScenarioTree), `expansion_name`, journal `genre_name`/`category_name`/`section_name` | Kawari Web's quest search, prerequisite completion and Progress page |
 | `items` | `item-index.json`: every named item's `id`, `name`, `description`, `category` (ItemUICategory), `icon`, `stack_size`, `unique`, `untradable`, `search_category`, `rarity`, `level_equip`, `level_item`, `can_be_hq`, in the server's language; and `marketboard-categories.json` (every ItemSearchCategory with a tab: `id`, `name`, `tab`, `order`, `icon`, `class_job`) | Kawari Web's Shop item linking and Marketboard page |
+| `classes` | `class-index.json` (format 1): `classes`, every ClassJob with a Role (`id`, `name`, `name_english`, `abbreviation`, `role`, `parent`, `primary_stat`), in the game's UIPriority order | Kawari Web's glamour API (the Glamour Collector's Class dropdown) |
 | `content` | `content-index.json` (format 1): `expansions` and `content_types` (ID → name); `duties`, every ContentFinderCondition with a name and content type (`id`, `name`, `short_code`, `content_type`, `territory`, `territory_bg`, `intended_use`, `level`, `level_sync`, `item_level`, `ex_version`, `in_duty_finder`, `high_end`, `pvp`, `sort_key`); `zones`, every open-world TerritoryType (intended use 1) with a place name (`id`, `name`, `region`, `internal_name`, `bg`, `ex_version`) | Kawari Web's Progress → Misc Content |
 
 Kawari Web runs it in a throwaway container from the active server image (Quest Lab, Progress, Shop → Manage).
 
 ## Glamour Collector (`tools/glamour-collector`)
 
-A Chrome extension (Manifest V3, no build step) that collects Eorzea Collection glamours into a list and exports it
-as the party bots' `glamours.txt` ([Party bots → Glamours](party-bots.md#glamours)). Nothing of the site's is kept in
-git; the list is the user's, in the browser's `chrome.storage.local`.
+A Chrome extension (Manifest V3, no build step) that collects Eorzea Collection glamours into a list and sends it to
+Kawari Web, which writes the party bots' `glamours.txt` ([Party bots → Glamours](party-bots.md#glamours)), or exports
+the file. Nothing of the site's is kept in git; the list is the user's, in the browser's `chrome.storage.local`.
 
 * **Install:** `chrome://extensions` → Developer mode → Load unpacked → the `tools/glamour-collector` folder.
+* **Kawari Web** (1.2.0; the popup's top section): the address as the browser reaches it, on the LAN or the tailnet
+  (a bare `host:port` is taken as `http://`), and an administrator's sync token (Settings → Character sync).
+  *Connect* asks Chrome for that address (`optional_host_permissions`; only the address given is granted), pings
+  `GET /api/glamours/ping` and fetches the class list (`GET /api/glamours/classes`), kept as `classList` and fetched
+  again quietly each time the popup opens. *Send to Kawari Web* (pressed twice: "Replace the server's list with N?")
+  posts the whole list; *Load from Kawari Web* adds the server's glamours that aren't in the list (by title and
+  gender). *Forget* drops the address, token, class list and Chrome's permission. The API is described on the
+  [Kawari Web page](kawari-web.md#bot-glamours-dashboard--bot-glamours). `kawariweb.js` holds the calls.
 * **On a glamour page** (`ffxiv.eorzeacollection.com/glamour/…`) a panel bottom right: *Add to Kawari list* reads
   the page and adds it (again on the same page reads it again, keeping the gender and classes chosen); *Copy page
   HTML* copies the gear section's HTML, for when a page reads wrong.
 * **The toolbar popup** lists the entries with male / female / ANY counts. Each has a gender choice (ANY, Male,
-  Female), its classes as chips (× removes one) with a dropdown to add one (the role groups, then every combat job and
-  base class by role, from `classes.js`; none for any class; a chip the server won't match, such as "Gatherers", is
-  marked), and its piece lines to edit (`Slot: <item> | <dye> | <second dye>`). *Export glamours.txt* downloads the
-  list, *Copy list* copies it.
+  Female), its classes as chips (× removes one) with a dropdown to add one (the five role groups, then each role's
+  classes and jobs from the server's class list, read from the game install, so the extension holds no class names;
+  before connecting, only the role groups; none for any class; a chip the server's list doesn't have, such as
+  "Gatherers", is marked), and its piece lines to edit (`Slot: <item> | <dye> | <second dye>`). *Export
+  glamours.txt* downloads the list, *Copy list* copies it.
 
 An entry as exported:
 

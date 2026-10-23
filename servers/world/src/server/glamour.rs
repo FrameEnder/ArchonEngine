@@ -1,5 +1,5 @@
-//! Glamours for party bots: a list the server's owner writes, `glamours.txt` beside `config.yaml` (kept out of git,
-//! as the item names in it are the game's), each an outfit for one sex or either, and for some classes or any. The
+//! Glamours for party bots: a list the server's owner writes, `glamours.txt` in the server's data folder (beside the
+//! databases; kept out of git, as the item names in it are the game's; Kawari Web's glamour API writes it), each an outfit for one sex or either, and for some classes or any. The
 //! names are matched to items, dyes and classes in the game's data (the Item, Stain and ClassJob sheets) when the file
 //! is read, which is again whenever it changes. A bot wears one of the outfits for its sex and class over its gear
 //! (`docs/src/fork/party-bots.md`, "Glamours").
@@ -25,14 +25,23 @@
 //! without the line (or with `All Classes`) it fits any class. Weapons and facewear are left out (bots keep their
 //! class's weapon.)
 
-use std::{collections::HashMap, path::Path, sync::Mutex, time::SystemTime};
+use std::{collections::HashMap, path::PathBuf, sync::Mutex, time::SystemTime};
 
 use physis::race::Gender;
 
 use crate::GameData;
 
-/// Where the list is read from, relative to the server's working directory (where `config.yaml` is.)
+/// The list's file name: in the server's data folder, `$KAWARI_DATA` (`/kawari/data` in Kawari Web's container, the
+/// folder that's mounted from the host and kept, with the databases), or else the working directory.
 pub const GLAMOUR_FILE: &str = "glamours.txt";
+
+/// Where the list is read from (see `GLAMOUR_FILE`.)
+pub fn glamour_path() -> PathBuf {
+    match std::env::var_os("KAWARI_DATA") {
+        Some(dir) if !dir.is_empty() => PathBuf::from(dir).join(GLAMOUR_FILE),
+        _ => PathBuf::from(GLAMOUR_FILE),
+    }
+}
 
 /// Who a glamour is for.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -327,9 +336,11 @@ impl GameData {
 /// The glamours read, and the file's modification time they were read at.
 static LOADED: Mutex<Option<(Option<SystemTime>, Vec<Glamour>)>> = Mutex::new(None);
 
-/// The glamours from `GLAMOUR_FILE`, read again when the file has changed. None (and nothing logged) without the file.
+/// The glamours from `glamour_path()`, read again when the file has changed. None (and nothing logged) without the
+/// file.
 pub fn glamours(game_data: &mut GameData) -> Vec<Glamour> {
-    let path = Path::new(GLAMOUR_FILE);
+    let path = glamour_path();
+    let path = path.as_path();
     let modified = std::fs::metadata(path)
         .and_then(|meta| meta.modified())
         .ok();
@@ -348,8 +359,9 @@ pub fn glamours(game_data: &mut GameData) -> Vec<Glamour> {
             let (glamours, unknown) = resolve(&texts, &names);
             let count = |wearer: Wearer| glamours.iter().filter(|g| g.wearer == wearer).count();
             tracing::info!(
-                "Party bot glamours: {} read from {GLAMOUR_FILE} ({} male, {} female, {} either; {} for some classes only)",
+                "Party bot glamours: {} read from {} ({} male, {} female, {} either; {} for some classes only)",
                 glamours.len(),
+                path.display(),
                 count(Wearer::Male),
                 count(Wearer::Female),
                 count(Wearer::Either),

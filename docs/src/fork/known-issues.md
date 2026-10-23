@@ -238,8 +238,10 @@ add one when something is found.
 * The Glamour Collector's page reader follows Eorzea Collection's markup as of 2026-10-23 (checked on 21 live pages,
   not yet through the installed extension); a site change will need it matched again. A glamour listing more than
   one job in "Intended for" wasn't seen, so whether those come as several icons is unknown.
-* The Class dropdown's job names are written into the extension (`tools/glamour-collector/classes.js`), not read
-  from the game's data like the server's names are.
+* The glamour API (Kawari Web 2.21.0, `UI-Redesign` only) and the extension's Kawari Web connection were checked
+  against a test Kawari Web in the workspace, not yet on Bob's server over the LAN or Tailscale. The server needs a
+  build with this commit's `kawari-questdump classes` for the class list, and this commit's `KAWARI_DATA` path for
+  the bots to see the list Kawari Web writes.
 * The tank's spot across from the party and its keeping up with the player are untested in game.
 
 ## Sastasha

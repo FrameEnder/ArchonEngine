@@ -143,10 +143,14 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
 
 Each bot can wear its own outfit over its gear: one picked at random, for its sex and class, from a list the server's
 owner writes (`servers/world/src/server/glamour.rs`). The Chrome extension in `tools/glamour-collector` builds the list
-from Eorzea Collection's glamour pages ([Tools](tools.md#glamour-collector-toolsglamour-collector)). The list is **`glamours.txt` in the server's data folder**, beside
-`config.yaml` (Kawari Web's `KAWARI_DATA_DIR`, `~/.kawari` unless changed). It's kept out of git, as the item names in
-it are the game's. The server reads it the first time a bot joins and again whenever it changes, and logs how many
-glamours it read and any item or dye it couldn't find.
+from Eorzea Collection's glamour pages ([Tools](tools.md#glamour-collector-toolsglamour-collector)) and sends it to
+Kawari Web, which writes the file ([Kawari Web → Bot glamours](kawari-web.md#bot-glamours-dashboard--bot-glamours)).
+The list is **`glamours.txt` in the server's data folder**: `$KAWARI_DATA`, which in Kawari Web's container is
+`/kawari/data`, the folder mounted from the host with `world.db` and `login.db` (without `KAWARI_DATA`, the working
+directory). Before 2026-10-23's fix it was read from the working directory only, `/kawari` in the container, which
+isn't mounted, so a file put beside `config.yaml` was never seen. It's kept out of git, as the item names in it are
+the game's. The server reads it the first time a bot joins and again whenever it changes, and logs where it read it,
+how many glamours, and any item, dye or class it couldn't find.
 
 ```text
 # One glamour per block. A line starting "==" names it; end it with (male) or (female) for the sex it's for, or

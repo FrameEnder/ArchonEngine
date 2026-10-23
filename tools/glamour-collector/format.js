@@ -91,6 +91,33 @@ function kawariParseEntryText(text, fallback) {
   return entry;
 }
 
+// A whole list's text (glamours.txt, or what Kawari Web sends back) as entries.
+function kawariParseListText(text) {
+  const blocks = [];
+  for (const line of text.split("\n")) {
+    if (line.trim().startsWith("==")) blocks.push([line]);
+    else if (blocks.length) blocks[blocks.length - 1].push(line);
+  }
+  return blocks
+    .map((block, index) =>
+      kawariParseEntryText(block.join("\n"), {
+        id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 6)}`,
+        url: "",
+        title: "Glamour",
+        gender: "any",
+        added: new Date().toISOString(),
+      }),
+    )
+    .filter((entry) => entry.pieces.length > 0);
+}
+
 if (typeof module !== "undefined") {
-  module.exports = { KAWARI_SLOTS, kawariEntryText, kawariListText, kawariNames, kawariParseEntryText };
+  module.exports = {
+    KAWARI_SLOTS,
+    kawariEntryText,
+    kawariListText,
+    kawariNames,
+    kawariParseEntryText,
+    kawariParseListText,
+  };
 }
