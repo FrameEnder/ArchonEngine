@@ -31,7 +31,8 @@ entrance); the window from the Duty Finder (ClientTrigger 2653) worked already.
 
 The Duty Support window's *Register* sends `ClientTrigger` 2654 (`RegisterDutySupport`): the DawnContent row (200
 for Sastasha in the capture), then the members chosen, one byte each (`0x00252624`: 36, 38, 37, DawnQuestMember
-rows), in party slot order. Upstream already queued the duty from the first word; the fork keeps the members
+rows), in party slot order, up to the first zero byte. The words after it aren't members: Bob's client sent
+0x6FFF in the third, which Kawari took for members 255 and 111 until 2026-10-23, so a Player NPC joined for them. Upstream already queued the duty from the first word; the fork keeps the members
 (`ZoneConnection::duty_support`, cleared by any other registration) and sends them with `JoinContent`. When the player
 has loaded into the duty, `party_npc::fill_duty_support` spawns the recorded members they chose and the Duty Finder's
 bot filling (`party_bot::fill_duty_party`) takes any role still missing, so a member nobody has recorded yet (a tank's

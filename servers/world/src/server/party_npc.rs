@@ -256,13 +256,15 @@ pub fn member(dawn_quest_member: u8) -> Option<&'static Member> {
         .find(|member| member.dawn_quest_member == dawn_quest_member)
 }
 
-/// The members the client chose in its Duty Support registration: one byte each in its words after the DawnContent
-/// (`RegisterDutySupport`'s unk1..unk4), in party slot order. Retail's run sent 0x00252624: 36, 38, 37.
+/// The members the client chose in its Duty Support registration: one byte each in the word after the DawnContent
+/// (`RegisterDutySupport`'s unk1), in party slot order, up to the first 0. Retail's run sent 0x00252624: 36, 38, 37.
+/// The words after it aren't members: Bob's client sent 0x6FFF in the third (Kawari read it as members 255 and 111,
+/// and a Player NPC joined for them: his bundle of 2026-10-23.)
 pub fn chosen_members(words: [u32; 4]) -> Vec<u8> {
-    words
-        .iter()
-        .flat_map(|word| word.to_le_bytes())
-        .filter(|byte| *byte != 0)
+    words[0]
+        .to_le_bytes()
+        .into_iter()
+        .take_while(|byte| *byte != 0)
         .collect()
 }
 
@@ -793,6 +795,11 @@ mod tests {
     fn retails_registration() {
         // Bob's capture: RegisterDutySupport's first word after the DawnContent was 0x00252624.
         assert_eq!(chosen_members([0x0025_2624, 0, 0, 0]), vec![36, 38, 37]);
+        // Bob's Kawari client (his bundle of 2026-10-23): something else in the third word.
+        assert_eq!(
+            chosen_members([0x0025_2624, 0, 0x6FFF, 0]),
+            vec![36, 38, 37]
+        );
         assert_eq!(member(36).map(|m| m.base_id), Some(14646));
         assert!(member(39).is_none());
     }
