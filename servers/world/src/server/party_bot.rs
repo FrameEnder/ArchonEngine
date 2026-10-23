@@ -751,15 +751,134 @@ fn put(into: &mut [u8], at: usize, bytes: &[u8], max: usize) {
     into[at..at + count].copy_from_slice(&bytes[..count]);
 }
 
-/// A random player look: one of the first six races (whose faces and hairstyles 1-4 every tribe and sex has), either
-/// sex, random features and colours within the character creator's smallest ranges.
-fn random_look() -> CustomizeData {
-    let race = Race::from_repr(fastrand::u8(1..=6)).unwrap_or_default();
-    let tribe = Tribe::from_repr(race as u8 * 2 - fastrand::u8(0..=1)).unwrap_or_default();
-    let gender = if fastrand::bool() {
-        Gender::Male
-    } else {
-        Gender::Female
+/// The look's bytes the character creator sets by picking from a list that differs by race, clan and sex: the
+/// face, the hairstyle, and the ears or tail (CustomizeData's 5th, 6th and 22nd bytes, as CharaMakeType's menus
+/// number them).
+const CUSTOMIZE_FACE: u32 = 5;
+const CUSTOMIZE_HAIR: u32 = 6;
+const CUSTOMIZE_RACE_FEATURE: u32 = 22;
+
+/// One race, clan and sex the character creator offers (a CharaMakeType row), and its choices for the face,
+/// hairstyle and ears or tail.
+#[derive(Debug, Clone, PartialEq)]
+pub struct CreatorLook {
+    pub race: u8,
+    pub tribe: u8,
+    pub gender: u8,
+    pub faces: Vec<u8>,
+    pub hairstyles: Vec<u8>,
+    pub race_features: Vec<u8>,
+}
+
+impl GameData {
+    /// Every race, clan and sex the character creator offers, with the faces, hairstyles and ears or tails it lists
+    /// for each: CharaMakeType's rows, each menu's options for those three bytes (a menu's `Customize` is the byte it
+    /// sets), the hairstyles' through CharaMakeCustomize (a hairstyle option is a row of it, whose FeatureID is the
+    /// byte). A menu whose options aren't the byte's values (an icon's ID, over 255) counts 1 up to its number of
+    /// options. Empty if the sheets can't be read.
+    pub fn creator_looks(&mut self) -> Vec<CreatorLook> {
+        let language = get_config().world.language();
+        let Ok(types) =
+            icarus::CharaMakeType::CharaMakeTypeSheet::read_from(&mut self.resource, language)
+        else {
+            return Vec::new();
+        };
+        let customize = icarus::CharaMakeCustomize::CharaMakeCustomizeSheet::read_from(
+            &mut self.resource,
+            language,
+        )
+        .ok();
+        let mut looks = Vec::new();
+        for (_, row) in types.into_iter().flatten_subrows() {
+            if row.Race <= 0 || row.Tribe <= 0 || !(0..=1).contains(&row.Gender) {
+                continue;
+            }
+            let options = |byte: u32| -> Vec<u32> {
+                row.CharaMakeStruct
+                    .iter()
+                    .find(|menu| menu.Customize == byte && menu.SubMenuNum > 0)
+                    .map(|menu| {
+                        menu.SubMenuParam
+                            .iter()
+                            .take(menu.SubMenuNum as usize)
+                            .copied()
+                            .collect()
+                    })
+                    .unwrap_or_default()
+            };
+            let as_values = |params: Vec<u32>| -> Vec<u8> {
+                if !params.is_empty() && params.iter().all(|value| (1..=255).contains(value)) {
+                    params.iter().map(|value| *value as u8).collect()
+                } else {
+                    (1..=params.len().min(255) as u8).collect()
+                }
+            };
+            let hairstyles = match &customize {
+                Some(sheet) => options(CUSTOMIZE_HAIR)
+                    .iter()
+                    .filter_map(|id| sheet.row(*id))
+                    .map(|hair| hair.FeatureID)
+                    .filter(|feature| *feature != 0)
+                    .collect(),
+                None => Vec::new(),
+            };
+            looks.push(CreatorLook {
+                race: row.Race as u8,
+                tribe: row.Tribe as u8,
+                gender: row.Gender as u8,
+                faces: as_values(options(CUSTOMIZE_FACE)),
+                hairstyles,
+                race_features: as_values(options(CUSTOMIZE_RACE_FEATURE)),
+            });
+        }
+        looks
+    }
+}
+
+/// A random player look, of any race, clan and sex the character creator offers (`GameData::creator_looks`), with a
+/// face, hairstyle and ears or tail from its lists, and random features and colours within the creator's smallest
+/// ranges. Without the creator's data (or a list it lacks), the first six races and the choices every one of their
+/// clans and sexes has (faces and hairstyles 1-4).
+fn random_look(game_data: &mut GameData) -> CustomizeData {
+    look_from(&game_data.creator_looks())
+}
+
+/// A random look from the creator's races, clans and sexes (`random_look`.)
+fn look_from(creator: &[CreatorLook]) -> CustomizeData {
+    let pick = |values: &[u8], fallback: std::ops::RangeInclusive<u8>| -> u8 {
+        if values.is_empty() {
+            fastrand::u8(fallback)
+        } else {
+            values[fastrand::usize(..values.len())]
+        }
+    };
+    let (race, tribe, gender, face, hair, race_feature_type) = match creator
+        .get(fastrand::usize(..creator.len().max(1)))
+        .filter(|_| !creator.is_empty())
+    {
+        Some(look) => (
+            Race::from_repr(look.race).unwrap_or_default(),
+            Tribe::from_repr(look.tribe).unwrap_or_default(),
+            Gender::from_repr(look.gender).unwrap_or_default(),
+            pick(&look.faces, 1..=4),
+            pick(&look.hairstyles, 1..=4),
+            pick(&look.race_features, 1..=4),
+        ),
+        None => {
+            let race = Race::from_repr(fastrand::u8(1..=6)).unwrap_or_default();
+            (
+                race,
+                Tribe::from_repr(race as u8 * 2 - fastrand::u8(0..=1)).unwrap_or_default(),
+                if fastrand::bool() {
+                    Gender::Male
+                } else {
+                    Gender::Female
+                },
+                fastrand::u8(1..=4),
+                fastrand::u8(1..=4),
+                fastrand::u8(1..=4),
+            )
+        }
     };
     let eye_colour = fastrand::u8(0..=30);
     CustomizeData {
@@ -768,8 +887,8 @@ fn random_look() -> CustomizeData {
         age: 1,
         height: fastrand::u8(0..=100),
         tribe,
-        face: fastrand::u8(1..=4),
-        hair: fastrand::u8(1..=4),
+        face,
+        hair,
         enable_highlights: false,
         skin_tone: fastrand::u8(0..=20),
         right_eye_color: eye_colour,
@@ -785,7 +904,7 @@ fn random_look() -> CustomizeData {
         mouth: fastrand::u8(0..=3),
         lips_tone_fur_pattern: fastrand::u8(0..=10),
         race_feature_size: fastrand::u8(0..=100),
-        race_feature_type: fastrand::u8(1..=4),
+        race_feature_type,
         bust: fastrand::u8(0..=100),
         face_paint: 0,
         face_paint_color: 0,
@@ -1051,7 +1170,10 @@ fn spawn_bot(
 
     // A kept friend comes back as it was (`bot_friends`); a new one is made up.
     let saved_look = identity.and_then(|saved| look_from_hex(&saved.look));
-    let look = saved_look.clone().unwrap_or_else(random_look);
+    let look = match saved_look.clone() {
+        Some(look) => look,
+        None => random_look(game_data),
+    };
     let name = identity
         .map(|saved| saved.name.clone())
         .unwrap_or_else(random_name);
@@ -2418,8 +2540,60 @@ mod tests {
     use super::*;
 
     #[test]
+    fn every_race_the_creator_offers() {
+        // Two rows as CharaMakeType has them: a Hrothgar woman and a Viera man, with their own lists.
+        let creator = [
+            CreatorLook {
+                race: Race::Hrothgar as u8,
+                tribe: Tribe::Hellion as u8,
+                gender: Gender::Female as u8,
+                faces: vec![1, 2, 3, 4, 5],
+                hairstyles: vec![201, 202],
+                race_features: vec![1, 2, 3, 4],
+            },
+            CreatorLook {
+                race: Race::Viera as u8,
+                tribe: Tribe::Veena as u8,
+                gender: Gender::Male as u8,
+                faces: vec![1, 2, 3, 4],
+                hairstyles: vec![],
+                race_features: vec![1, 2],
+            },
+        ];
+        let mut seen = HashSet::new();
+        for _ in 0..200 {
+            let look = look_from(&creator);
+            seen.insert((look.race as u8, look.gender as u8));
+            match look.race {
+                Race::Hrothgar => {
+                    assert_eq!((look.tribe, look.gender), (Tribe::Hellion, Gender::Female));
+                    assert!((1..=5).contains(&look.face));
+                    assert!([201, 202].contains(&look.hair));
+                }
+                Race::Viera => {
+                    assert_eq!((look.tribe, look.gender), (Tribe::Veena, Gender::Male));
+                    // No hairstyle list: the safe 1-4.
+                    assert!((1..=4).contains(&look.hair));
+                    assert!((1..=2).contains(&look.race_feature_type));
+                }
+                other => panic!("{other:?} isn't in the creator's list"),
+            }
+        }
+        assert_eq!(seen.len(), 2);
+        // Without the creator's data: the first six races.
+        let look = look_from(&[]);
+        assert!((1..=6).contains(&(look.race as u8)));
+    }
+
+    #[test]
     fn a_kept_friends_look_comes_back_the_same() {
-        let look = random_look();
+        let look = CustomizeData {
+            race: Race::Viera,
+            tribe: Tribe::Rava,
+            gender: Gender::Male,
+            hair: 7,
+            ..Default::default()
+        };
         let text = look_to_hex(&look);
         assert_eq!(text.len(), 52);
         assert_eq!(

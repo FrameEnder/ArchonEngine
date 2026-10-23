@@ -176,9 +176,14 @@ The packet is 944 bytes (Kawari's `ExamineCharacterInformation`, whose two unkno
   0x40000, character data flags 0x2 and a BNpcName; spawned that way (`kind=partymember`) a bot's nameplate shows
   only "Lv100", since for that kind the client takes the name from the BNpcName. Player area attacks don't hit
   bots (they only hit `Enemy` NPCs).
-* **A random look.** One of the first six races (Hyur, Elezen, Lalafell, Miqo'te, Roegadyn, Au Ra) and either sex, its
-  face and hairstyle 1–4 (which every tribe and sex has) and random features and colours within small ranges. Hrothgar
-  and Viera are left out until their valid ranges are read from the character creator's data.
+* **A random look, of any race.** Each bot is one of the races, clans and sexes the character creator offers
+  (CharaMakeType's rows, read from the game at runtime: every race, Hrothgar and Viera of both sexes too), with a
+  face, hairstyle and ears or tail from that row's own lists (`GameData::creator_looks`): a menu's `Customize` is the
+  look's byte it sets (5 face, 6 hairstyle, 22 ears or tail), its options the values (an option over 255, an icon's
+  ID, counts 1 up to the number of options), and a hairstyle option is a CharaMakeCustomize row whose FeatureID is the
+  byte. Other features and colours are random within the creator's smallest ranges. Without the creator's data, the
+  first six races and faces and hairstyles 1–4, as before. (Workspace icarus features `CharaMakeType`,
+  `CharaMakeCustomize`.)
 * **A made-up name:** two words built from syllables (not the game's text), within retail's 20 characters.
 * **Level 100** (`BOT_LEVEL`) with **the best gear its class can wear at that level**, found in the Item sheet at
   runtime (`GameData::best_gear`): for each slot (weapon or two-handed weapon, off-hand, head, body, hands, legs, feet,

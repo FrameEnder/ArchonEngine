@@ -243,6 +243,10 @@ add one when something is found.
   build with this commit's `kawari-questdump classes` for the class list, and this commit's `KAWARI_DATA` path for
   the bots to see the list Kawari Web writes.
 * The tank's spot across from the party and its keeping up with the player are untested in game.
+* Bots of every race (2026-10-23) are untested in game. How CharaMakeType's menus are read is from the sheet's layout,
+  not checked against the game's data: that `Customize` is the look's byte, that the face's and ears' options are
+  their values (or icons, then counted), and that a hairstyle option is a CharaMakeCustomize row. A bot with a wrong
+  face or hairstyle (bald, or the default face) would show it.
 * Bots shown as players work in game (Bob, 2026-10-23). Still to check: whether the party list now follows their HP,
   and what the client does with search info and the adventurer plate, which get no answer for a bot.
 * Kicking a bot, leaving the party, Examine on a bot, tells to bots and bots kept as friends (the friend list's
