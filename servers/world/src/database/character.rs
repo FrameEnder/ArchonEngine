@@ -46,6 +46,17 @@ impl WorldDatabase {
         None
     }
 
+    /// Whether a character has this actor ID (a party bot shown as a player has none in the database.)
+    pub fn has_character_with_actor_id(&mut self, for_actor_id: ObjectId) -> bool {
+        use schema::character::dsl::*;
+
+        character
+            .filter(actor_id.eq(for_actor_id))
+            .select(content_id)
+            .first::<i64>(&mut self.connection)
+            .is_ok()
+    }
+
     pub fn find_actor_id(&mut self, for_content_id: u64) -> ObjectId {
         use schema::character::dsl::*;
 

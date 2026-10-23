@@ -3099,21 +3099,46 @@ async fn process_packet(
                             {
                                 let mut database = connection.database.lock();
                                 let mut game_data = connection.game_data.lock();
-                                search_info =
-                                    database.get_search_info(&mut game_data, *content_id as i64);
+                                // A party bot shown as a player has a made-up content ID and nothing in the
+                                // database, which the lookup would panic on.
+                                if database.find_character(Some(*content_id), None).is_none() {
+                                    tracing::info!(
+                                        "Search info asked for {content_id:#x}, no such character (a party bot?)"
+                                    );
+                                    search_info = None;
+                                } else {
+                                    search_info = Some(
+                                        database
+                                            .get_search_info(&mut game_data, *content_id as i64),
+                                    );
+                                }
                             }
 
-                            let ipc = ServerZoneIpcSegment::new(search_info);
-                            connection.send_ipc_self(ipc).await;
+                            if let Some(search_info) = search_info {
+                                let ipc = ServerZoneIpcSegment::new(search_info);
+                                connection.send_ipc_self(ipc).await;
+                            }
                         }
                         ClientZoneIpcData::RequestAdventurerPlate { actor_id, .. } => {
                             let ipc;
                             {
                                 let mut database = connection.database.lock();
                                 let mut game_data = connection.game_data.lock();
-                                ipc = database.lookup_adventurer_plate(&mut game_data, *actor_id);
+                                // As above: a party bot shown as a player has no character to look up.
+                                if database.has_character_with_actor_id(*actor_id) {
+                                    ipc = Some(
+                                        database.lookup_adventurer_plate(&mut game_data, *actor_id),
+                                    );
+                                } else {
+                                    tracing::info!(
+                                        "Adventurer plate asked for {actor_id}, no such character (a party bot?)"
+                                    );
+                                    ipc = None;
+                                }
                             }
-                            connection.send_ipc_self(ipc).await;
+                            if let Some(ipc) = ipc {
+                                connection.send_ipc_self(ipc).await;
+                            }
                         }
                         ClientZoneIpcData::SearchPlayers {
                             classjobs,

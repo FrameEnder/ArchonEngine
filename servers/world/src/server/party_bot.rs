@@ -29,13 +29,13 @@ use std::{
 use glam::Vec3A;
 use kawari::{
     common::{
-        JumpState, MoveAnimationState, MoveAnimationType, ObjectId, ObjectTypeId, Position,
-        Rotation, RotationAction,
+        HandlerId, JumpState, MoveAnimationState, MoveAnimationType, ObjectId, ObjectTypeId,
+        Position, Rotation, RotationAction,
     },
     config::get_config,
     ipc::zone::{
-        BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DisplayFlag, ObjectKind,
-        PartyMemberEntry, SpawnNpc,
+        BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DisplayFlag, ObjectKind, OnlineStatus,
+        PartyMemberEntry, PlayerSubKind, SpawnNpc, SpawnPlayer,
     },
 };
 use parking_lot::Mutex;
@@ -683,6 +683,109 @@ fn bot_parameters(
 
 /// Spawns a bot of the class called `class_name` next to the player `leader`, and has it join them. `usable` is every
 /// action the server has a script for (its path.) Returns the bot's name and class abbreviation, or why it couldn't.
+/// How a bot is shown to clients. The server treats it as the same owned battle NPC either way.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BotLook {
+    /// As another player: a SpawnPlayer like a Duty Finder member's on retail (`player_spawn`). The default, since
+    /// 2026-10-23; untested in game.
+    Player,
+    /// As retail spawns a chocobo companion (sub-kind 3, owned, the name in the spawn's text and no BNpcName,
+    /// character data flags 0x1, no display flags): its nameplate shows that name (Bob, in game, 2026-10-21).
+    Chocobo,
+    /// As retail's Trust members (sub-kind 9, display flags 0x40000): the nameplate shows only the level, as the
+    /// client takes the name from a BNpcName (Bob, in game, 2026-10-21).
+    PartyMember,
+}
+
+impl BotLook {
+    pub fn from_word(word: &str) -> Option<Self> {
+        match word.to_lowercase().as_str() {
+            "player" => Some(Self::Player),
+            "chocobo" => Some(Self::Chocobo),
+            "partymember" => Some(Self::PartyMember),
+            _ => None,
+        }
+    }
+
+    pub fn word(self) -> &'static str {
+        match self {
+            Self::Player => "player",
+            Self::Chocobo => "chocobo",
+            Self::PartyMember => "partymember",
+        }
+    }
+}
+
+/// How bots are shown when nothing says otherwise (`!spawn playernpc look <kind>` changes it until the server
+/// restarts): 0 player, 1 chocobo, 2 party member.
+static DEFAULT_LOOK: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(0);
+
+pub fn default_look() -> BotLook {
+    match DEFAULT_LOOK.load(std::sync::atomic::Ordering::Relaxed) {
+        1 => BotLook::Chocobo,
+        2 => BotLook::PartyMember,
+        _ => BotLook::Player,
+    }
+}
+
+pub fn set_default_look(look: BotLook) {
+    let value = match look {
+        BotLook::Player => 0,
+        BotLook::Chocobo => 1,
+        BotLook::PartyMember => 2,
+    };
+    DEFAULT_LOOK.store(value, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// What a bot shown as a player carries in its SpawnPlayer: its made-up account and content ID (the party list's),
+/// the leader's world, and the leader's content handler (a duty's, as retail's Duty Finder members have.)
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ShownAsPlayer {
+    pub account_id: u64,
+    pub content_id: u64,
+    pub world_id: u16,
+    pub handler_id: HandlerId,
+}
+
+/// A bot's SpawnPlayer, from its NPC spawn as it is now, laid out as retail's Duty Finder members' were (Bob's
+/// Chronofoil capture of five Sastasha runs, 2026-10-22: the other three members' SpawnPlayer, numbers only): object
+/// kind Player, no owner (0xE0000000), battalion 0, ModelChara 0, no BNpcName or base, the duty's content handler,
+/// display flags 0x40000 (with INVISIBLE, as they were spawned while the duty loaded; a bot is shown at once), and
+/// their own online status (a bot's is Party Member.) Titles, voices and the two unknown bytes after the GM rank are
+/// each player's own; a bot has none.
+pub fn player_spawn(npc: &SpawnNpc, shown: &ShownAsPlayer) -> SpawnPlayer {
+    let mut common = npc.common.clone();
+    common.object_kind = ObjectKind::Player(PlayerSubKind::Player);
+    common.owner_id = ObjectId::default();
+    common.battalion = 0;
+    common.model_chara = 0;
+    common.base_id = 0;
+    common.name_id = 0;
+    common.layout_id = 0;
+    common.handler_id = shown.handler_id;
+    common.display_flags = DisplayFlag::UNK1;
+    SpawnPlayer {
+        account_id: shown.account_id,
+        content_id: shown.content_id,
+        current_world_id: shown.world_id,
+        home_world_id: shown.world_id,
+        online_status: OnlineStatus::PartyMember,
+        common,
+        ..Default::default()
+    }
+}
+
+/// An actor ID in the range retail gives players (0x10000000-0x1FFFFFFF, as every player's in Bob's captures), free
+/// in this instance, for a bot shown as a player.
+fn player_like_actor_id(instance: &Instance) -> ObjectId {
+    loop {
+        let id = ObjectId(fastrand::u32(0x1000_0000..0x2000_0000));
+        if instance.find_actor(id).is_none() {
+            return id;
+        }
+    }
+}
+
 pub fn spawn_party_bot(
     data: &mut WorldServer,
     game_data: &mut GameData,
@@ -690,11 +793,17 @@ pub fn spawn_party_bot(
     leader: ObjectId,
     class_name: &str,
 ) -> Result<String, String> {
-    // Spawned as retail spawns a chocobo companion (sub-kind 3, owned, the name in the spawn's text and no BNpcName,
-    // character data flags 0x1, no display flags): its nameplate shows that name, which a party member's (sub-kind 9,
-    // as retail's Trust) doesn't (Bob tried both in game, 2026-10-21). `kind=partymember` spawns the sub-kind 9 way.
+    // `kind=player`, `kind=chocobo` or `kind=partymember` picks how this one is shown (see BotLook), otherwise the
+    // default (`!spawn playernpc look <kind>`).
     let words: Vec<&str> = class_name.split_whitespace().collect();
-    let as_chocobo = !words.contains(&"kind=partymember");
+    let mut look = default_look();
+    for word in &words {
+        if let Some(kind) = word.strip_prefix("kind=") {
+            look = BotLook::from_word(kind).ok_or_else(|| {
+                format!("No bot look \"{kind}\": player, chocobo or partymember.")
+            })?;
+        }
+    }
     let class_name = words
         .iter()
         .filter(|word| !word.starts_with("kind="))
@@ -705,10 +814,7 @@ pub fn spawn_party_bot(
     let classjob = game_data
         .find_combat_classjob(class_name)
         .ok_or_else(|| format!("No combat class or job is called \"{class_name}\"."))?;
-    spawn_bot(
-        data, game_data, usable, leader, classjob, BOT_LEVEL, as_chocobo,
-    )
-    .map(|(_, name)| name)
+    spawn_bot(data, game_data, usable, leader, classjob, BOT_LEVEL, look).map(|(_, name)| name)
 }
 
 /// Spawns a bot of `classjob` at `level` next to the player `leader`, and has it join them. Returns its actor ID and
@@ -720,8 +826,10 @@ fn spawn_bot(
     leader: ObjectId,
     classjob: u8,
     level: u8,
-    as_chocobo: bool,
+    shown_look: BotLook,
 ) -> Result<(ObjectId, String), String> {
+    // Shown as a player, it's an owned chocobo-kind NPC to the server, as the chocobo look is.
+    let as_chocobo = shown_look != BotLook::PartyMember;
     let (role_column, parent, primary_stat) = game_data
         .classjob_role(classjob)
         .ok_or_else(|| format!("No ClassJob row {classjob}."))?;
@@ -864,13 +972,29 @@ fn spawn_bot(
         .map(|bot| bot.order + 1)
         .max()
         .unwrap_or(0);
-    let actor_id = Instance::generate_actor_id();
+    let actor_id = if shown_look == BotLook::Player {
+        player_like_actor_id(instance)
+    } else {
+        Instance::generate_actor_id()
+    };
+    // Shown as a player: the party list's made-up IDs (so the list's entry and the character are one), the leader's
+    // world and content handler.
+    let shown = match (shown_look, instance.find_actor(leader)) {
+        (BotLook::Player, Some(NetworkedActor::Player { spawn, .. })) => Some(ShownAsPlayer {
+            account_id: BOT_ID_BASE | actor_id.0 as u64,
+            content_id: BOT_ID_BASE | actor_id.0 as u64,
+            world_id: spawn.home_world_id,
+            handler_id: spawn.common.handler_id,
+        }),
+        _ => None,
+    };
     let config = get_config();
     instance.insert_npc(actor_id, spawn, &config, game_data);
     if let Some(NetworkedActor::Npc {
         timeline,
         parameters: npc_parameters,
         state,
+        shown_as_player,
         ..
     }) = instance.find_actor_mut(actor_id)
     {
@@ -880,6 +1004,7 @@ fn spawn_bot(
         timeline.rotation = Some(rotation);
         *npc_parameters = parameters;
         *state = NpcState::Follow;
+        *shown_as_player = shown;
     }
     instance.party_bots.insert(
         actor_id,
@@ -907,7 +1032,8 @@ fn spawn_bot(
         .map(|row| row.Abbreviation.to_string())
         .unwrap_or_default();
     tracing::info!(
-        "Party bot {name} ({abbreviation}, level {level}, {hp} HP) joined {leader}: gear {item_ids:?}, glamour {worn_glamour:?}, rotation {:?}, heal {heal:?}",
+        "Party bot {name} ({abbreviation}, level {level}, {hp} HP) joined {leader} as {actor_id} (shown as {}): gear {item_ids:?}, glamour {worn_glamour:?}, rotation {:?}, heal {heal:?}",
+        shown_look.word(),
         actions.iter().map(|a| a.id).collect::<Vec<_>>()
     );
     Ok((actor_id, format!("{name} ({abbreviation})")))
@@ -1000,7 +1126,15 @@ pub fn fill_duty_party(
 
     let mut bots = Vec::new();
     for classjob in duty_bot_classes(game_data, roles, player_classjob) {
-        match spawn_bot(data, game_data, usable, leader, classjob, level, true) {
+        match spawn_bot(
+            data,
+            game_data,
+            usable,
+            leader,
+            classjob,
+            level,
+            default_look(),
+        ) {
             Ok((actor_id, name)) => {
                 tracing::info!(
                     "Duty Finder: {name} fills a place in {leader}'s party (level {level})"
@@ -1591,6 +1725,52 @@ fn tank_target(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_bot_shown_as_a_player() {
+        let npc = SpawnNpc {
+            common: CommonSpawn {
+                object_kind: ObjectKind::BattleNpc(BattleNpcSubKind::Chocobo),
+                owner_id: ObjectId(0x1000_0001),
+                name: "Rana Velis".to_string(),
+                level: 18,
+                class_job: 1,
+                health_points: 400,
+                max_health_points: 450,
+                battalion: 0,
+                ..Default::default()
+            },
+            character_data_flags: CharacterDataFlag::from_bits_retain(0x1),
+            ..Default::default()
+        };
+        let shown = ShownAsPlayer {
+            account_id: BOT_ID_BASE | 0x1234_5678,
+            content_id: BOT_ID_BASE | 0x1234_5678,
+            world_id: 40,
+            handler_id: HandlerId(0x8003_0004),
+        };
+        let spawn = player_spawn(&npc, &shown);
+        assert_eq!(
+            spawn.common.object_kind,
+            ObjectKind::Player(PlayerSubKind::Player)
+        );
+        assert_eq!(spawn.common.owner_id, ObjectId::default());
+        assert_eq!(spawn.common.display_flags, DisplayFlag::UNK1);
+        assert_eq!(spawn.common.handler_id, HandlerId(0x8003_0004));
+        assert_eq!(spawn.content_id, BOT_ID_BASE | 0x1234_5678);
+        assert_eq!((spawn.current_world_id, spawn.home_world_id), (40, 40));
+        assert_eq!(spawn.online_status, OnlineStatus::PartyMember);
+        // What the client sees of it is the NPC's as it is now.
+        assert_eq!(spawn.common.name, "Rana Velis");
+        assert_eq!(
+            (spawn.common.health_points, spawn.common.max_health_points),
+            (400, 450)
+        );
+        assert_eq!((spawn.common.level, spawn.common.class_job), (18, 1));
+        for word in ["player", "chocobo", "partymember"] {
+            assert_eq!(BotLook::from_word(word).map(BotLook::word), Some(word));
+        }
+    }
 
     fn action(id: u32, level: u8, gcd: bool, combo_from: u32) -> ClassAction {
         ClassAction {

@@ -12,6 +12,7 @@ use crate::{
         job_gauge::JobGauge,
         network::{DestinationNetwork, NetworkState},
         party::get_party_id_from_actor_id,
+        party_bot::ShownAsPlayer,
         placement::Placement,
         rotation::RotationState,
     },
@@ -148,6 +149,9 @@ pub enum NetworkedActor {
         /// Where it should stand beyond reaching its target: near its anchors, behind the tank's target (the
         /// director's `keep_near` and `stand_behind`.)
         placement: Placement,
+        /// A party bot shown to clients as another player (a SpawnPlayer, `party_bot::player_spawn`) rather than an
+        /// NPC; the server still treats it as this NPC. None for every other NPC.
+        shown_as_player: Option<ShownAsPlayer>,
     },
     Object {
         object: SpawnObject,

@@ -396,6 +396,7 @@ impl Instance {
                 cast: None,
                 rotation_state: Default::default(),
                 placement: Default::default(),
+                shown_as_player: None,
             },
         );
     }

@@ -182,7 +182,7 @@ fn process_debug_commands(
         "!spawn" if parts.get(1) == Some(&"playernpc") => {
             let class_name = parts[2..].join(" ");
             if class_name.is_empty() {
-                notify("Usage: !spawn playernpc <class> (e.g. whitemage, PLD), or !spawn playernpc dismiss".into());
+                notify("Usage: !spawn playernpc <class> [kind=player|chocobo|partymember] (e.g. whitemage, PLD), !spawn playernpc look <kind>, or !spawn playernpc dismiss".into());
                 return true;
             }
             if class_name == "dismiss" {
@@ -192,6 +192,26 @@ fn process_debug_commands(
                     party_bot::dismiss_party_bots(&mut data, &mut network, from_actor_id)
                 };
                 notify(format!("Dismissed {count} party bot(s)."));
+                return true;
+            }
+            // How bots are shown from now on (the Duty Finder's too), until the server restarts.
+            if parts.get(2) == Some(&"look") {
+                match parts
+                    .get(3)
+                    .and_then(|word| party_bot::BotLook::from_word(word))
+                {
+                    Some(look) => {
+                        party_bot::set_default_look(look);
+                        notify(format!(
+                            "Party bots are shown as {} from now on (bots already here keep their look).",
+                            look.word()
+                        ));
+                    }
+                    None => notify(format!(
+                        "Usage: !spawn playernpc look <player|chocobo|partymember> (now {})",
+                        party_bot::default_look().word()
+                    )),
+                }
                 return true;
             }
             let usable: HashMap<u32, String> = {

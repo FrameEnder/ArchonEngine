@@ -8,6 +8,7 @@ use crate::{
         actor::NetworkedActor,
         instance::Instance,
         party::{Party, get_party_id_from_actor_id},
+        party_bot,
     },
 };
 use kawari::{common::ObjectId, ipc::zone::ActorControlCategory};
@@ -63,6 +64,16 @@ impl NetworkState {
         let msg = match actor {
             NetworkedActor::Player { spawn, .. } => {
                 let mut spawn = spawn.clone();
+                spawn.common.spawn_index = spawn_index;
+                FromServer::ActorSpawn(object_id, SpawnKind::Player(spawn))
+            }
+            // A party bot shown as a player gets a player's spawn, made from its NPC spawn as it is now.
+            NetworkedActor::Npc {
+                spawn,
+                shown_as_player: Some(shown),
+                ..
+            } => {
+                let mut spawn = party_bot::player_spawn(spawn, shown);
                 spawn.common.spawn_index = spawn_index;
                 FromServer::ActorSpawn(object_id, SpawnKind::Player(spawn))
             }

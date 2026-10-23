@@ -243,6 +243,10 @@ add one when something is found.
   build with this commit's `kawari-questdump classes` for the class list, and this commit's `KAWARI_DATA` path for
   the bots to see the list Kawari Web writes.
 * The tank's spot across from the party and its keeping up with the player are untested in game.
+* Bots shown as players (the default since 2026-10-23) are untested in game. To check: that the client shows them
+  (model, gear, glamour, name), that their actions, HP and deaths show, whether the party list now follows their HP,
+  and what the client does with a player it can't examine (search info and the adventurer plate get no answer). If
+  it misbehaves, `!spawn playernpc look chocobo` brings back the spawn that worked.
 
 ## Sastasha
 

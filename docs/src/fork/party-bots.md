@@ -5,7 +5,7 @@ without other players. Delivered in stages; this page describes what exists and 
 
 | Stage | What | Status |
 |---|---|---|
-| 1 | `!spawn playernpc <class>`: a bot of any class joins you anywhere, follows, and fights by role | done (2026-10-21), untested in game |
+| 1 | `!spawn playernpc <class>`: a bot of any class joins you anywhere, follows, and fights by role; shown as another player (2026-10-23) | done (2026-10-21), untested in game |
 | 2 | The Duty Finder fills the roles your party lacks with bots (a tank, a healer, two DPS), level synced to the duty; unsynced duties get none; bots in the party list | done (2026-10-22), untested in game: the party list as retail lists a Duty Finder party (Bob's capture of five Sastasha runs; no Duty Support run recorded) |
 | 3 | Dodging area attacks, killing adds first, following each dungeon's rules (Sastasha first) | to do |
 
@@ -49,7 +49,14 @@ they're owned (`owner_id`, as pets are), not because of their kind.
 
 `!spawn playernpc <class>` in Say (any class's or job's name, without spaces or not, or its abbreviation, in the
 server's language or English: `whitemage`, `White Mage`, `WHM`, `paladin`, `ARC`). The bot appears beside you and its
-name and class are printed. `!spawn playernpc dismiss` sends all of yours away. (It's a `!` debug command, not `//gm`:
+name and class are printed. `!spawn playernpc dismiss` sends all of yours away.
+
+* `kind=player`, `kind=chocobo` or `kind=partymember` after the class picks how that one bot is shown (see
+  [What a bot is](#what-a-bot-is)): `!spawn playernpc PLD kind=chocobo`.
+* `!spawn playernpc look <player|chocobo|partymember>` sets how bots are shown from then on, the Duty Finder's too,
+  until the server restarts (`party_bot::set_default_look`); bots already there keep theirs. The default is
+  `player`. If a bot shown as a player misbehaves in the client, `!spawn playernpc look chocobo` goes back to the
+  way that worked. (It's a `!` debug command, not `//gm`:
 the client parses `//gm` itself and only sends commands it knows, and it has no `spawn`; see
 [Tools and Debug Commands](tools.md).)
 
@@ -57,7 +64,34 @@ Code: `servers/world/src/server/party_bot.rs` (`spawn_party_bot`, `update`), the
 
 ## What a bot is
 
-* **An NPC with a player's look**, spawned as retail spawns a **chocobo companion**: a battle NPC of sub-kind 3
+* **Shown as another player** (since 2026-10-23, the default; untested in game). To the server a bot is the same
+  owned battle NPC as below (sub-kind 3), so its fighting, following and everything keyed to `party_bots` is
+  unchanged, and enemies, pets and area attacks treat it as before; only what clients are sent differs. The actor
+  holds `shown_as_player` (`ShownAsPlayer`: its account and content ID, the leader's world and content handler), and
+  `NetworkState::spawn_existing_actor_message`, the one place an actor's spawn is made for a client, sends a
+  **SpawnPlayer** built from its NPC spawn as it is then (`party_bot::player_spawn`), laid out as retail's Duty Finder
+  members' are. From Bob's Chronofoil capture of five Sastasha runs (2026-10-22), the other three members'
+  SpawnPlayer, numbers only:
+
+  | Field | Retail's members | A bot's |
+  |---|---|---|
+  | Object kind | Player (1, sub-kind Player) | the same |
+  | Owner, tether | 0xE0000000 (none) | the same |
+  | Content handler | the duty's (`INSTANCE_CONTENT`, 4 in Sastasha) | the leader's (the duty's in a duty, none outside) |
+  | Display flags | 0x40000 with INVISIBLE (they spawned while the duty loaded), plus each one's own hide-head and visor | 0x40000 |
+  | Battalion, ModelChara, BNpcBase, BNpcName, layout ID | 0 | the same |
+  | Online status | each one's own (Party Leader, New Adventurer, Mentor) | Party Member (37) |
+  | Current and home world | each one's own (40, 65, 57; one on 57 from 405) | the leader's home world |
+  | Account and content ID | real ones | the party list's made-up ones (`0x00B0…` and the actor ID), so the list's entry and the character are one |
+  | Title, voice, the two bytes after the GM rank (1–3, 9–11) | each one's own | 0 |
+  | Level, class, HP, MP | synced (level 18), MP 10,000 | the bot's |
+
+  Its actor ID is drawn from 0x10000000–0x1FFFFFFF, the range every player's has in Bob's captures (NPCs' are
+  random), and not already used in the instance. A bot has no character in the database, so the client's requests
+  that look one up, *View Search Info* (`RequestSearchInfo`, by content ID) and *View Adventurer Plate*
+  (`RequestAdventurerPlate`, by actor ID), are now answered with nothing when there's no such character, rather than
+  panicking the connection as the lookups (`unwrap`) would have.
+* **Or an NPC with a player's look** (`kind=chocobo`, as before), spawned as retail spawns a **chocobo companion**: a battle NPC of sub-kind 3
   (`Chocobo`), owned by the player (`owner_id`), its name in the spawn's text and no BNpcName (`name_id` 0), character
   data flags 0x1, no display flags, battalion 0 (your side), ModelChara 0 (a human model built from its customize data
   and gear). Its nameplate then shows its name (Bob, in game, 2026-10-21). Retail's party-member NPCs (Trust, six in
@@ -187,8 +221,9 @@ Feet: <item name> | <dye>
 * In combat melee bots still crowd the same spot by their target (only following is in formation).
 * Bots don't follow you into another zone (they leave when you do) and stay down when they die (dismiss and spawn
   again). Bots from `!spawn playernpc` aren't in the party list or level synced (only the Duty Finder's are).
-* The party list doesn't follow the bots' HP (retail sends HP through the members' actors, which the client may or may
-  not take from an NPC), and PartyMemberPositions isn't sent for bots (no minimap dots).
+* The party list didn't follow chocobo-look bots' HP (retail sends HP through the members' actors, which the client
+  may or may not take from an NPC); shown as players, with the list's content IDs, it may: to be checked in game.
+  PartyMemberPositions isn't sent for bots (no minimap dots).
 * Bots don't know a dungeon's route: the tank bot follows you, so you lead.
 * Bots always pass on coffers' loot (see [Coffers and Loot](loot.md#party-bots)) and don't open coffers.
 * The tank doesn't Provoke (a role action, not in bots' kits), use mitigation, or pull packs before the player.
