@@ -175,8 +175,9 @@ pub const MEMBERS: [Member; 3] = [
             provoke: Some((25083, 30.0)),
             defensive: Some((25082, 3, 100.0)),
         },
-        // 13951 at its first fight (46 s in), then 13961, 13952 twice.
-        chatter: &[13951, 13952, 13961],
+        // 13951 at its first fight (46 s in), then 13961, 13952 twice; in the Tam-Tara Deepcroft (Bob's capture of
+        // 2026-10-24) 13953 three times and 13951.
+        chatter: &[13951, 13952, 13961, 13953],
         opens_with_first: true,
     },
     Member {
@@ -248,6 +249,28 @@ pub const MEMBERS: [Member; 3] = [
         opens_with_first: false,
     },
 ];
+
+/// The level the members come at in a duty (its ContentFinderCondition) and each one's HP there, by
+/// `dawn_quest_member`: retail's Sastasha members were level 15 (Bob's capture of 2026-10-23), the Tam-Tara
+/// Deepcroft's the same three at 16 with 443, 347 and 316 HP (his capture of 2026-10-24, 3ec702a8 visit 0.3.) A duty
+/// not here takes the member's own `level` and `hp`.
+pub const DUTY_LEVELS: [(u16, u8, [(u8, u32); 3]); 2] = [
+    (4, 15, [(36, 411), (37, 322), (38, 293)]),
+    (2, 16, [(36, 443), (37, 347), (38, 316)]),
+];
+
+/// A member's level and HP in the duty `content_finder_condition`.
+pub fn level_and_hp(member: &Member, content_finder_condition: u16) -> (u8, u32) {
+    DUTY_LEVELS
+        .iter()
+        .find(|(duty, _, _)| *duty == content_finder_condition)
+        .and_then(|(_, level, hps)| {
+            hps.iter()
+                .find(|(id, _)| *id == member.dawn_quest_member)
+                .map(|(_, hp)| (*level, *hp))
+        })
+        .unwrap_or((member.level, member.hp))
+}
 
 /// The recorded member the client means by `dawn_quest_member`, if it's one of them.
 pub fn member(dawn_quest_member: u8) -> Option<&'static Member> {
@@ -554,11 +577,12 @@ fn spawn_member(
         .get_npc_equip(npc_equip as u32)
         .unwrap_or_default();
     let (role_column, _, _) = game_data.classjob_role(member.classjob)?;
+    let (level, hp) = level_and_hp(member, instance.content_finder_condition_id);
 
     // Its stats: a player's of its class, race and level in the best gear it could wear then, with retail's HP.
     let wearable = game_data.wearable_restrictions(look.race, look.gender);
     let items: Vec<u32> = game_data
-        .best_gear(member.classjob, member.level, &wearable)
+        .best_gear(member.classjob, level, &wearable)
         .iter()
         .map(|(_, id)| *id)
         .collect();
@@ -566,11 +590,11 @@ fn spawn_member(
         game_data,
         member.classjob,
         look.tribe as u8,
-        member.level,
+        level,
         &items,
         None,
     )?;
-    parameters.hp = member.hp;
+    parameters.hp = hp;
 
     let leader_actor = instance.find_actor(leader)?;
     let (position, facing) = (leader_actor.position().0, leader_actor.rotation());
@@ -592,8 +616,8 @@ fn spawn_member(
                 .map(|actor| actor.get_common_spawn().handler_id)
                 .unwrap_or_default(),
             owner_id: leader,
-            max_health_points: member.hp,
-            health_points: member.hp,
+            max_health_points: hp,
+            health_points: hp,
             // Retail's: 3,000 MP, behavior 634 (the BNpcBase's), display flags 0x40000.
             max_resource_points: 3000,
             resource_points: 3000,
@@ -602,7 +626,7 @@ fn spawn_member(
             object_kind: ObjectKind::BattleNpc(BattleNpcSubKind::NpcPartyMember),
             battalion: 0,
             model_chara: 0,
-            level: member.level,
+            level,
             class_job: member.classjob,
             position: Position(position),
             rotation: facing,
@@ -662,7 +686,7 @@ fn spawn_member(
         member.name_id,
         member.base_id,
         member.classjob,
-        member.level
+        level
     );
     Some(actor_id)
 }
@@ -847,5 +871,15 @@ mod tests {
         let now = Instant::now();
         assert_eq!(state.chatter(now), None);
         assert_eq!(state.chatter(now + Duration::from_secs(3)), Some(13951));
+    }
+
+    #[test]
+    fn each_duty_has_its_level() {
+        // Sastasha (ContentFinderCondition 4) at 15, the Tam-Tara Deepcroft (2) at 16, as retail spawned them.
+        let tank = member(36).unwrap();
+        assert_eq!(level_and_hp(tank, 4), (15, 411));
+        assert_eq!(level_and_hp(tank, 2), (16, 443));
+        assert_eq!(level_and_hp(member(38).unwrap(), 2), (16, 316));
+        assert_eq!(level_and_hp(tank, 9999), (tank.level, tank.hp));
     }
 }

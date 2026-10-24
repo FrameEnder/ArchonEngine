@@ -1,0 +1,40 @@
+{
+    "autoattack_action_id": 0,
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "971": {
+            "players": 55,
+            "npcs": 30
+        },
+        "988": {
+            "players": 38,
+            "npcs": 22
+        },
+        "987": {
+            "players": 217
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 988,
+                "every": 26.1,
+                "comment": "12 uses: first 6-21 s in, then every 26 s"
+            },
+            {
+                "action": 987,
+                "every": 63.1,
+                "self_hp_below": 60.0,
+                "comment": "4 uses, a 4.7 s cast: first as it fell to 57-60 % (41-80 s in), then 63 s later"
+            },
+            {
+                "action": 971,
+                "comment": "86 uses, every 3.1 s (its only attack)"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The Tam-Tara Deepcroft's last boss (BNpcBase 76, 1332316): 6329 HP, level 16; it casts 971 (0.7 s) every 3.1 s and barely moves (at most 14 yalms in three runs), 988 every 26 s (damage and a small drain: 5-10 back on retail), 987 every 63 s (a 4.7 s cast, status 17 for 20 s on its target). From Bob's Chronofoil captures of the Tam-Tara Deepcroft (2026-10-24): one run with Duty Support (3ec702a8, visit 0.3) and two Duty Finder runs (cc26e0ea, visits 0.2 and 0.4), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

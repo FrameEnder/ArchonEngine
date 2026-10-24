@@ -97,6 +97,21 @@ pub enum LuaDirectorTask {
         line_id: u32,
         place_name: u32,
     },
+    /// A boss arena whose boss is spawned some other way (or later): sealed `wall_id` 15 s after the boss or one of
+    /// `triggers` (layout IDs) goes for someone, unsealed when the boss dies. The Tam-Tara Deepcroft's rooms seal as
+    /// their pack is pulled and open when the boss that pack calls dies.
+    BossRoom {
+        bnpc_id: u32,
+        wall_id: u32,
+        line_id: u32,
+        place_name: u32,
+        triggers: Vec<u32>,
+    },
+    /// Whether a BNpc takes damage (`director:set_invulnerable`.)
+    SetInvulnerable {
+        layout_id: u32,
+        invulnerable: bool,
+    },
     /// What a coffer held on retail, one list of items per recorded opening (`server/loot.rs`.)
     TreasureLoot {
         base_id: u32,
@@ -351,6 +366,37 @@ impl UserData for LuaDirector {
                     wall_id,
                     line_id,
                     place_name,
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "boss_room",
+            |_,
+             this,
+             (bnpc_id, wall_id, line_id, place_name, triggers): (
+                u32,
+                u32,
+                u32,
+                u32,
+                Option<Vec<u32>>,
+            )| {
+                this.tasks.push(LuaDirectorTask::BossRoom {
+                    bnpc_id,
+                    wall_id,
+                    line_id,
+                    place_name,
+                    triggers: triggers.unwrap_or_default(),
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "set_invulnerable",
+            |_, this, (layout_id, invulnerable): (u32, bool)| {
+                this.tasks.push(LuaDirectorTask::SetInvulnerable {
+                    layout_id,
+                    invulnerable,
                 });
                 Ok(())
             },
@@ -628,6 +674,8 @@ pub struct DirectorBoss {
     wall_id: u32,
     line_id: u32,
     place_name: u32,
+    /// Other BNpcs (layout IDs, 0 for none) whose pull seals the arena too.
+    triggers: [u32; 8],
 }
 
 #[derive(Debug, Default)]
@@ -934,8 +982,19 @@ impl DirectorData {
         });
     }
 
-    pub fn on_actor_aggro(&mut self, id: u32) {
-        if let Some(boss) = self.bosses.get_mut(&id)
+    /// `id` (a layout ID) went for `target`.
+    pub fn on_actor_aggro(&mut self, id: u32, target: ObjectId) {
+        let key = if self.bosses.contains_key(&id) {
+            Some(id)
+        } else if id != 0 {
+            self.bosses
+                .iter()
+                .find(|(_, boss)| boss.triggers.contains(&id))
+                .map(|(key, _)| *key)
+        } else {
+            None
+        };
+        if let Some(boss) = key.and_then(|key| self.bosses.get_mut(&key))
             && boss.state == DirectorBossState::Open
         {
             // TODO: is there times that are longer than 15 secs?
@@ -943,8 +1002,14 @@ impl DirectorData {
                 id: LogMessageType::BossRoomSealing as u32,
                 params: vec![boss.place_name, 15],
             });
+            // A boss room's boss may not be there yet: the wall's timer goes with whoever was pulled on.
+            let actor_id = if boss.actor_id == ObjectId::default() {
+                target
+            } else {
+                boss.actor_id
+            };
             self.tasks.push(LuaDirectorTask::SealBossWall {
-                actor_id: boss.actor_id,
+                actor_id,
                 id: boss.wall_id,
                 place_name: boss.place_name,
                 time_until: 15,
@@ -1380,10 +1445,50 @@ pub fn director_tick(
                             wall_id: *wall_id,
                             line_id: *line_id,
                             place_name: *place_name,
+                            triggers: [0; 8],
                         },
                     );
                 } else {
                     tracing::warn!("Failed to find bnpc {bnpc_id} for SpawnBoss, it won't spawn!");
+                }
+            }
+            LuaDirectorTask::BossRoom {
+                bnpc_id,
+                wall_id,
+                line_id,
+                place_name,
+                triggers,
+            } => {
+                let mut ids = [0; 8];
+                for (slot, id) in ids.iter_mut().zip(triggers) {
+                    *slot = *id;
+                }
+                bosses.insert(
+                    *bnpc_id,
+                    DirectorBoss {
+                        state: DirectorBossState::Open,
+                        actor_id: ObjectId::default(),
+                        wall_id: *wall_id,
+                        line_id: *line_id,
+                        place_name: *place_name,
+                        triggers: ids,
+                    },
+                );
+            }
+            LuaDirectorTask::SetInvulnerable {
+                layout_id,
+                invulnerable,
+            } => {
+                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                    tracing::warn!("Failed to find bnpc {layout_id} for SetInvulnerable!");
+                    continue;
+                };
+                if let Some(NetworkedActor::Npc {
+                    currently_invulnerable,
+                    ..
+                }) = instance.find_actor_mut(actor_id)
+                {
+                    *currently_invulnerable = *invulnerable;
                 }
             }
             LuaDirectorTask::TreasureLoot { base_id, openings } => {

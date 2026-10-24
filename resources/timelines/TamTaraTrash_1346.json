@@ -1,0 +1,26 @@
+{
+    "autoattack_action_id": 871,
+    "recorded_amounts": {
+        "871": {
+            "players": 17,
+            "npcs": 10
+        },
+        "722": {
+            "players": 23.5,
+            "npcs": 12.5
+        }
+    },
+    "rotation": {
+        "pace": 8.6,
+        "actions": [
+            {
+                "action": 722,
+                "every": 8.6,
+                "comment": "70 uses"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Tam-Tara Deepcroft trash (BNpcBase 1346): 980 HP, level 16; auto-attack 871 every 3.0 s, 722 every 8.6 s. From Bob's Chronofoil captures of the Tam-Tara Deepcroft (2026-10-24): one run with Duty Support (3ec702a8, visit 0.3) and two Duty Finder runs (cc26e0ea, visits 0.2 and 0.4), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

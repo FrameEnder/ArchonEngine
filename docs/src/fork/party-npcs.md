@@ -11,7 +11,10 @@ and action scripts `resources/scripts/actions/*/DutySupport_<id>.lua`.
 
 Everything here comes from Bob's Chronofoil capture of 2026-10-23 (`700cc294`, visit 0.3): Sastasha with Duty
 Support, 30 minutes, Bob a level 17 Conjurer, the three others a Marauder, a Lancer and a Thaumaturge (`questkit
-chronofoil --battle 0.3` and the visit's packets, numbers only). Only Sastasha's three are recorded.
+chronofoil --battle 0.3` and the visit's packets, numbers only). Only Sastasha's three are recorded. The Tam-Tara Deepcroft (his capture of 2026-10-24, `3ec702a8`
+visit 0.3) had the same three, registered the same way (DawnContent 201, members 36, 38, 37), listed with the same
+ActorControlSelf 276 and 1525 values, fighting with the same kits, at level 16 with 443, 347 and 316 HP: each duty's
+level and HP are in `party_npc::DUTY_LEVELS` (by ContentFinderCondition). See [Dungeons](dungeons.md).
 
 ## Registering
 
@@ -114,6 +117,8 @@ Their lines are NpcYell packets from the member, under its BNpcName:
 * **During fights**, now and then (10 lines in 30 minutes): the Marauder 13951 (2.7 s into its first fight), 13952,
   13961; the Lancer 13962, 13964; the Thaumaturge 13972, 13974. Kawari says one of each member's every 150–400 s of
   fighting, the Marauder's 13951 first.
+* **In the Tam-Tara Deepcroft** the Lancer said 14307 and 14309, the Thaumaturge 14311 and the tank 14312 (when, in
+  [Dungeons](dungeons.md)); the tank's chatter there was 13953 three times and 13951, so 13953 joined its lines.
 * **The duty's story lines**, from the director (`director:party_npc_yell(role, line, delay)`, the role "tank",
   "healer", "melee" or "ranged"; nobody of that role, no line): in Sastasha (`content/s1d1_re.lua`) the Lancer's 14296
   43.6 s after the duty began, the Marauder's 14298 as Chopper came, the Lancer's 14300 2 s after the first captain's
