@@ -28,6 +28,7 @@ Both importers read the same members (the server's `apply_extended`, Kawari Web'
 | `glamour.dresser`, `.plates`, `.armoire` (each if loaded) | `inventory.glamour` ([Glamour](glamour.md)) |
 | `active_quests` | `quest.active`: ID less 65536, sequence, the six variables (flags and the accepting class aren't kept) |
 | `completed_leves`, `completed_legacy_quests`, `unlocked_map_markers`, `gathering_log` | the `quest` table's bitmasks |
+| `adventurer_plate` (if loaded) | `volatile.adventurer_plate` (CharaCardData, 188 bytes), `adventurer_plate_saved` (its timestamp) and `volatile.portrait` (BannerData, 52 bytes): the client's own CharaCard, the same bytes it sends when it saves the plate (UpdateAdventurerPlate, SetAdventurerPlatePortrait) |
 | `companion` | the `buddy` row: name, rank, stars, EXP, skill points, stance (BuddyAction 3–7 only), favourite feed, colour, barding, skill lines ([Chocobo Companion](chocobo.md)) |
 
 Kawari Web puts the inventory members under *Inventory*, the quest members under *Quest progress*, and the companion
@@ -39,6 +40,17 @@ under a new *Chocobo companion* section (also allowed for Character sync, off by
 export writes it back as `kawari_extended`, with Kawari's current data for the members above (they may have changed
 in game since), so gear sets, hotbars, macros, achievements, retainers, logs and the raw blocks survive a Kawari →
 Auracite → Kawari round trip. The server deletes the row with the character.
+
+## Gear sets, hotbars, macros and the UI
+
+These never reach a server: the client keeps them in the game's user folder on the PC, in `FFXIV_CHR<content ID in
+16 hex digits>` (GEARSET.DAT, HOTBAR.DAT, MACRO.DAT, KEYBIND.DAT, ADDON.DAT, UISAVE.DAT…). The same character on Kawari
+has another content ID, so its folder starts empty: that's why an imported character had no gear sets (Bob,
+2026-10-24). The extended backup carries the folder's files (`config_files`: every top-level .DAT but ACQ.DAT, base64),
+which the importers keep, and the plugin's window restores them into another character's folder: armed with
+*Restore when I log out* while logged in to that character, it writes them a few seconds after the logout (the client
+writes its own files as it logs out), moving what was there to a `before-restore-<date>` folder; at the character
+select screen it restores at once. Log back in and the gear sets, hotbars, macros and layout are retail's.
 
 ## Not done
 

@@ -12,7 +12,11 @@ use crate::{
     glamour::{DRESSER_SLOTS, DresserItem, PLATES, Plate},
     inventory::{Inventory, Item, Storage},
 };
-use kawari::{common::Position, ipc::zone::GrandCompany};
+use kawari::{
+    common::Position,
+    constants::{ADVENTURER_PLATE_PORTRAIT_SIZE, ADVENTURER_PLATE_SIZE},
+    ipc::zone::GrandCompany,
+};
 
 #[derive(Deserialize)]
 struct NameValue {
@@ -71,6 +75,43 @@ struct Extended {
     gathering_log: Option<Vec<u8>>,
     glamour: Option<ExtendedGlamour>,
     companion: Option<ExtendedCompanion>,
+    adventurer_plate: Option<ExtendedAdventurerPlate>,
+}
+
+/// The adventurer plate as the client held it (CharaCard): the same bytes the client sends when it saves the plate.
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct ExtendedAdventurerPlate {
+    loaded: Option<bool>,
+    /// CharaCardData (188 bytes), base64.
+    chara_card: Option<String>,
+    /// BannerData, the portrait (52 bytes), base64.
+    banner: Option<String>,
+    timestamp: i64,
+}
+
+/// Standard base64 (with or without padding); None if it isn't.
+fn decode_base64(text: &str) -> Option<Vec<u8>> {
+    let mut out = Vec::with_capacity(text.len() * 3 / 4);
+    let (mut bits, mut count) = (0u32, 0u32);
+    for c in text.bytes().filter(|c| !c.is_ascii_whitespace()) {
+        let value = match c {
+            b'A'..=b'Z' => c - b'A',
+            b'a'..=b'z' => c - b'a' + 26,
+            b'0'..=b'9' => c - b'0' + 52,
+            b'+' => 62,
+            b'/' => 63,
+            b'=' => break,
+            _ => return None,
+        };
+        bits = (bits << 6) | value as u32;
+        count += 6;
+        if count >= 8 {
+            count -= 8;
+            out.push((bits >> count) as u8);
+        }
+    }
+    Some(out)
 }
 
 #[derive(Deserialize, Default)]
@@ -243,6 +284,26 @@ fn apply_extended(extended: &Extended, player_data: &mut PlayerData) {
     }
     if let Some(log) = &extended.gathering_log {
         player_data.quest.gathered_gathering_items.data = log.clone();
+    }
+
+    if let Some(plate) = &extended.adventurer_plate
+        && loaded(plate.loaded)
+    {
+        if let Some(card) = plate.chara_card.as_deref().and_then(decode_base64)
+            && card.len() == ADVENTURER_PLATE_SIZE
+        {
+            player_data.volatile.adventurer_plate.data = card;
+            player_data.volatile.adventurer_plate_saved = if plate.timestamp > 0 {
+                plate.timestamp
+            } else {
+                kawari::common::timestamp_secs() as i64
+            };
+        }
+        if let Some(banner) = plate.banner.as_deref().and_then(decode_base64)
+            && banner.len() == ADVENTURER_PLATE_PORTRAIT_SIZE
+        {
+            player_data.volatile.portrait.data = banner;
+        }
     }
 
     if let Some(companion) = &extended.companion {
@@ -723,6 +784,9 @@ mod tests {
         },
         "companion": { "name": "Test", "rank": 6, "stars": 1, "exp": 487338, "skill_points": 0, "stance": 6,
                        "favorite_feed": 2, "colour": 36, "barding": [101, 101, 101], "skill_lines": [0, 6, 0] },
+        "adventurer_plate": { "loaded": true, "timestamp": 1700000000,
+            "chara_card": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=",
+            "banner": "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg==" },
         "hotbars": null,
         "something_new": { "a": 1 }
     }"#;
@@ -765,6 +829,17 @@ mod tests {
         assert_eq!(player.buddy.active_command, 6);
         assert_eq!(player.buddy.barding.0, vec![101, 101, 101]);
         assert_eq!(player.buddy.levels.0, vec![0, 6, 0]);
+
+        assert_eq!(player.volatile.adventurer_plate.data, vec![1; 188]);
+        assert_eq!(player.volatile.adventurer_plate_saved, 1700000000);
+        assert_eq!(player.volatile.portrait.data, vec![2; 52]);
+    }
+
+    #[test]
+    fn base64() {
+        assert_eq!(decode_base64("aGVsbG8="), Some(b"hello".to_vec()));
+        assert_eq!(decode_base64("aGVsbG8"), Some(b"hello".to_vec()));
+        assert_eq!(decode_base64("a*"), None);
     }
 
     #[test]

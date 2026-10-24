@@ -41,6 +41,8 @@ built from), container logs.
   Character sync, not on by default). Sections the client hadn't loaded are left alone. The whole `kawari_extended`
   object is then stored in world.db's `auracite_extended` table (`store_extended`; skipped on a database without it).
   See [Auracite Backups](auracite.md) for the member-by-member mapping.
+* **The adventurer plate** (2.22.1): an extended backup's `adventurer_plate` goes with *Grand Company, title and
+  mentor status* into the volatile row's plate, its save time and the portrait, and the export writes it back.
 * **Inspect only** shows a backup's summary and, for an extended one, each section: in the backup or not, loaded or
   not, imported or only kept (`Dump.extended_report`), without writing anything.
 * **Export** adds `kawari_extended`: the stored object (`stored_extended`) with Kawari's own data written over the
