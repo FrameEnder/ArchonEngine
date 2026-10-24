@@ -11,6 +11,7 @@ use icarus::BNpcBase::BNpcBaseSheet;
 use icarus::BNpcCustomize::BNpcCustomizeSheet;
 use icarus::BaseParam::{BaseParamRow, BaseParamSheet};
 use icarus::Battalion::BattalionSheet;
+use icarus::BuddyEquip::BuddyEquipSheet;
 use icarus::Cabinet::CabinetSheet;
 use icarus::ClassJob::ClassJobSheet;
 use icarus::ContentDirectorManagedSG::ContentDirectorManagedSGSheet;
@@ -2442,6 +2443,23 @@ impl GameData {
             row.GatheringPointBonus,
             row.Type,
         )
+    }
+
+    /// A BuddyEquip row's models for the chocobo companion: head, body, legs (ModelTop, ModelBody, ModelLegs, each
+    /// model | variant << 16; Bob's capture of 2026-10-24 matched them in the companion's Equip.) None for row 0 or
+    /// one that doesn't exist.
+    pub fn get_buddy_equip_models(&mut self, id: u32) -> Option<[u32; 3]> {
+        if id == 0 {
+            return None;
+        }
+        let row = BuddyEquipSheet::read_from(&mut self.resource, get_config().world.language())
+            .ok()?
+            .row(id)?;
+        Some([
+            row.ModelTop as u32,
+            row.ModelBody as u32,
+            row.ModelLegs as u32,
+        ])
     }
 
     /// A gathering point's GatheringPointBase GatheringType: 0 mining, 1 quarrying, 2 logging, 3 harvesting.

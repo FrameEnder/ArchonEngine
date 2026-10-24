@@ -155,6 +155,7 @@ define_sql_array!(FavoriteAetherytes, u16);
 define_sql_array!(PartyMembers, i64, 8);
 define_sql_array!(GrandCompanyRanks, u8, 3);
 define_sql_array!(BuddyLevels, u8, 3);
+define_sql_array!(BuddyBarding, u8, 3);
 define_sql_array!(GlassesIds, u16, 2);
 define_sql_array!(SharedFates, u8, SHARED_FATES_SIZE);
 define_sql_array!(AchievementCounters, AchievementCounter);

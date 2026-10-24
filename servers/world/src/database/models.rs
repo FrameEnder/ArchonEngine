@@ -20,9 +20,9 @@ use kawari::{
 };
 
 use crate::{
-    AchievementCounters, ActiveQuests, Bitmask, BuddyLevels, CharaMake, ClassExperience,
-    ClassLevels, FavoriteAetherytes, GlassesIds, GrandCompanyRanks, PartyMembers, QuestBitmask,
-    SharedFates,
+    AchievementCounters, ActiveQuests, Bitmask, BuddyBarding, BuddyLevels, CharaMake,
+    ClassExperience, ClassLevels, FavoriteAetherytes, GlassesIds, GrandCompanyRanks, PartyMembers,
+    QuestBitmask, SharedFates,
 };
 
 #[derive(Insertable, Identifiable, Queryable, Selectable, AsChangeset, Debug, Default, Clone)]
@@ -462,4 +462,11 @@ pub struct Buddy {
     pub levels: BuddyLevels,
     pub exp: i32,
     pub color: i32,
+    /// Skill points to spend (PlayerSetup's companion_skill_points.)
+    pub skill_points: i32,
+    /// The BuddyAction it was last told (3 Follow, 4 Free, 5 Defender, 6 Attacker, 7 Healer Stance.)
+    pub active_command: i32,
+    pub favorite_feed: i32,
+    /// Its barding, as BuddyEquip rows: head, body, legs (0 for none.)
+    pub barding: BuddyBarding,
 }

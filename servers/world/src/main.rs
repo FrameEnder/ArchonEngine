@@ -971,6 +971,22 @@ async fn process_packet(
                                         companion_rank: connection.player_data.buddy.rank as u8,
                                         companion_stars: connection.player_data.buddy.stars as u8,
                                         companion_color: connection.player_data.buddy.color as u8,
+                                        companion_skill_points: connection
+                                            .player_data
+                                            .buddy
+                                            .skill_points
+                                            as u8,
+                                        companion_active_command: connection
+                                            .player_data
+                                            .buddy
+                                            .active_command
+                                            as u8,
+                                        companion_favorite_feed: connection
+                                            .player_data
+                                            .buddy
+                                            .favorite_feed
+                                            as u8,
+                                        buddy_equip_row_ids: connection.companion_profile().barding,
                                         completed_lovm_stages: 255, // TODO: placeholder to show them in the Duty Finder
                                         ..Default::default()
                                     }),
@@ -1090,6 +1106,8 @@ async fn process_packet(
                                     connection.send_ipc_self(ipc).await;
                                 }
                                 ClientTriggerCommand::FinishZoning => {
+                                    // The server needs the chocobo companion to bring it along or say it isn't out.
+                                    connection.send_companion().await;
                                     connection
                                         .handle
                                         .send(ToServer::ZoneIn(
@@ -1184,6 +1202,19 @@ async fn process_packet(
                                             party_id,
                                         ))
                                         .await;
+                                }
+                                // The chocobo companion's menu and window, and its saddlebag (zone_connection/companion.rs.)
+                                ClientTriggerCommand::WithdrawCompanion { unk1 } => {
+                                    connection.companion_command(unk1).await;
+                                }
+                                ClientTriggerCommand::SetCompanionBarding { slot, equip } => {
+                                    connection.set_companion_barding(slot, equip).await;
+                                }
+                                ClientTriggerCommand::LearnCompanionSkill { line } => {
+                                    connection.learn_companion_skill(line).await;
+                                }
+                                ClientTriggerCommand::OpenChocoboSaddlebag => {
+                                    connection.open_saddlebag().await;
                                 }
                                 ClientTriggerCommand::ShownActiveHelp { id } => {
                                     // Save this so it isn't shown again on next login
@@ -2336,6 +2367,15 @@ async fn process_packet(
                             ) =>
                         {
                             connection.retainer_item_operation(action).await;
+                        }
+                        ClientZoneIpcData::ItemOperation(action)
+                            if matches!(
+                                action.operation_type,
+                                ItemOperationKind::SaddlebagStore
+                                    | ItemOperationKind::SaddlebagTake
+                            ) =>
+                        {
+                            connection.saddlebag_item_operation(action).await;
                         }
                         ClientZoneIpcData::ItemOperation(action) => {
                             tracing::info!("Client is modifying inventory! {action:#?}");
@@ -4627,6 +4667,9 @@ async fn process_server_msg(
                     }
                     connection.event_finish(events).await;
                 }
+            }
+            FromServer::ItemUsedUp(item_id) => {
+                connection.item_used_up(item_id).await;
             }
             FromServer::EventItemUsed(item_id, target) => {
                 // A key item's quest event (type EventItem, its argument the item), when its quest is underway.

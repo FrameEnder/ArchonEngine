@@ -66,6 +66,8 @@ mod action;
 mod actor;
 pub mod bot_friends;
 mod chat;
+mod companion;
+pub use companion::{COMMAND_FOLLOW, COMMAND_HEALER, COMMAND_WITHDRAW, CompanionProfile};
 mod director;
 mod effect;
 mod glamour;
@@ -111,6 +113,8 @@ impl ClientState {
 #[derive(Default, Debug)]
 struct WorldServer {
     instances: Vec<Instance>,
+    /// Each player's chocobo companion (`companion.rs`), by their actor.
+    companions: HashMap<ObjectId, companion::Companion>,
     // TODO: Eventually remove these once we can reliably and ergonomically run misc. tasks on slower intervals!
     rested_exp_counter: i32,
     party_positions_counter: i32,
@@ -611,6 +615,8 @@ fn server_logic_tick(
         let party_positions_counter = data.party_positions_counter;
 
         data.cleanup_dead_instances();
+        // Chocobo companions: their time, leaving, and following their owner into fights.
+        companion::update(&mut data, &network);
 
         // Send a periodic update to all parties about where their members are in the world.
         // TODO: On retail this is sent once every 5 seconds, so sending this at a slower interval would be more ideal.
@@ -1822,6 +1828,12 @@ pub async fn server_main_loop(
         handled |= handle_linkshell_messages(network.clone(), &msg);
         handled |=
             loot::handle_loot_messages(data.clone(), network.clone(), game_data.clone(), &msg);
+        handled |= companion::handle_companion_messages(
+            data.clone(),
+            network.clone(),
+            game_data.clone(),
+            &msg,
+        );
         handled |= party_bot::handle_bot_party_messages(
             data.clone(),
             network.clone(),

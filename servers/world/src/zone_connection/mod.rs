@@ -41,6 +41,7 @@ use super::{
 mod achievement;
 mod actor;
 mod chat;
+mod companion;
 mod effect;
 mod event;
 mod friends;

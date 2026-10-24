@@ -19,6 +19,7 @@ use crate::{
     server::{
         WorldServer,
         actor::{NetworkedActor, bnpc_base_hp, create_npc_common_spawn, update_actor_hp_mp},
+        companion,
         effect::{gain_effect, gain_effect_instance, process_effects_list},
         first_attack,
         instance::{Instance, QueuedTaskData},
@@ -401,6 +402,21 @@ pub fn execute_action(
             let msg = FromServer::SetCurrentMount(common.current_mount);
             network.send_to_by_actor_id(from_actor_id, msg, DestinationNetwork::ZoneClients);
         }
+
+        // Riding one's own chocobo: others see its barding, and the companion, if it's out, goes in.
+        if request.action_id == companion::COMPANION_MOUNT as u32 {
+            if let Some((barding, color)) = companion::barding(&data, from_actor_id)
+                && let Some(instance) = data.find_actor_instance_mut(from_actor_id)
+                && let Some(actor) = instance.find_actor_mut(from_actor_id)
+            {
+                let common = actor.get_common_spawn_mut();
+                common.mount_head = barding[0];
+                common.mount_body = barding[1];
+                common.mount_feet = barding[2];
+                common.mount_color = color;
+            }
+            companion::mounted(&mut data, &mut network.lock(), from_actor_id);
+        }
     }
 
     // We need to set the ornament so new players see it
@@ -529,7 +545,18 @@ pub fn execute_action(
                 execute_item_action(game_data.clone(), lua.clone(), &request, &mut lua_player)
             }
             ActionType::Mount => {
-                execute_mount_action(network.clone(), from_actor_id, &request, actor, instance)
+                // One's own chocobo shows its barding and colour (the companion's.)
+                let barding = (request.action_id == companion::COMPANION_MOUNT as u32)
+                    .then(|| companion::mount_bytes(&data, from_actor_id))
+                    .flatten();
+                execute_mount_action(
+                    network.clone(),
+                    from_actor_id,
+                    &request,
+                    actor,
+                    instance,
+                    barding,
+                )
             }
             ActionType::Ornament => {
                 execute_ornament_action(network.clone(), from_actor_id, &request, actor, instance)
@@ -544,9 +571,12 @@ pub fn execute_action(
         // members died to two enemies (Bob, 2026-10-23).
         let enemy_attacking = matches!(actor, NetworkedActor::Npc { .. })
             && !instance.party_bots.contains_key(&from_actor_id);
+        // Chocobo companions too: they have about half their owner's HP (server/companion.rs.)
         let hit_like_a_player = |id: ObjectId| {
             matches!(instance.find_actor(id), Some(NetworkedActor::Player { .. }))
-                || (enemy_attacking && instance.party_bots.contains_key(&id))
+                || (enemy_attacking
+                    && (instance.party_bots.contains_key(&id)
+                        || companion::is_companion(instance, id)))
         };
         let npc_hitting_player = matches!(actor, NetworkedActor::Npc { .. })
             && hit_like_a_player(request.target.object_id);
@@ -767,6 +797,8 @@ pub fn execute_action(
     }
 
     // tell them the action results
+    // Gysahl Greens: the companion comes out after the ActionEffect, as retail's did.
+    let mut summon_companion = false;
     if let Some(mut effects_builder) = effects_builder {
         // Only set for area-of-effect actions, which are applied differently.
         let mut aoe_result: Option<AreaOfEffectResult> = None;
@@ -1115,69 +1147,8 @@ pub fn execute_action(
                             );
                         }
                         TargetEffectKind::SummonCompanion { .. } => {
-                            let Some(actor) = instance.find_actor(from_actor_id) else {
-                                continue;
-                            };
-
-                            let mut network = network.lock();
-                            network.send_to_by_actor_id(
-                                from_actor_id,
-                                FromServer::ActorControlSelf(
-                                    ActorControlCategory::CompanionUpdate {
-                                        summoned: true,
-                                        set_time_remaining: true,
-                                        time_remaining: 180000,
-                                        unk4: 0,
-                                        unk5: 18,
-                                        unk6: 29,
-                                    },
-                                ),
-                                DestinationNetwork::ZoneClients,
-                            );
-
-                            let companion_actor_id = ObjectId(fastrand::u32(..));
-
-                            let config = get_config();
-                            let mut game_data = game_data.lock();
-                            let base_npc = create_npc_common_spawn(
-                                &mut game_data,
-                                952,
-                                0,
-                                None,
-                                actor.get_common_spawn().level as u32,
-                            ); // TODO: hardcoded pet base id/name
-                            instance.insert_npc(
-                                companion_actor_id,
-                                SpawnNpc {
-                                    common: CommonSpawn {
-                                        name: "Test Companion".to_string(),
-                                        owner_id: from_actor_id,
-                                        object_kind: ObjectKind::BattleNpc(
-                                            BattleNpcSubKind::Chocobo,
-                                        ),
-                                        level: actor.get_common_spawn().level,
-                                        position: actor.position(),
-                                        rotation: actor.rotation(),
-                                        ..base_npc.common
-                                    },
-                                    ..base_npc
-                                },
-                                &config,
-                                &mut game_data,
-                            );
-
-                            // TODO: add to the party list
-
-                            network.send_to_by_actor_id(
-                                from_actor_id,
-                                FromServer::ActorControlSelf(
-                                    ActorControlCategory::UnkCompanionRelated {
-                                        unk1: companion_actor_id,
-                                        unk2: 4,
-                                    },
-                                ),
-                                DestinationNetwork::ZoneClients,
-                            );
+                            // Summoned once the action's results are out (server/companion.rs.)
+                            summon_companion = true;
                         }
                         _ => {}
                     }
@@ -1298,6 +1269,17 @@ pub fn execute_action(
                     DestinationNetwork::ZoneClients,
                 );
             }
+        }
+
+        if summon_companion {
+            if request.action_type == ActionType::Item {
+                network.lock().send_to_by_actor_id(
+                    from_actor_id,
+                    FromServer::ItemUsedUp(request.action_id),
+                    DestinationNetwork::ZoneClients,
+                );
+            }
+            companion::summon(&data, &network, &game_data, from_actor_id);
         }
 
         // EffectResult
@@ -2361,6 +2343,7 @@ pub fn execute_mount_action(
     request: &ActionRequest,
     actor: &NetworkedActor,
     instance: &Instance,
+    barding: Option<[u8; 14]>,
 ) -> Option<EffectsBuilder> {
     let mut network = network.lock();
 
@@ -2397,9 +2380,10 @@ pub fn execute_mount_action(
         DestinationNetwork::ZoneClients,
     );
 
+    // Retail's for the Company Chocobo: 1, its colour, its barding's three models (u16 model, u16 variant.)
     let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::Mount {
         id: request.action_id as u16,
-        unk1: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        unk1: barding.unwrap_or([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
     });
     network.send_in_range_inclusive_instance(
         from_actor_id,
