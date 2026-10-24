@@ -2,6 +2,7 @@ BASE_DIR = "resources/scripts/"
 
 dofile(BASE_DIR.."commands/Commands.lua")
 dofile(BASE_DIR.."items/Items.lua")
+dofile(BASE_DIR.."gathering/Actions.lua")
 
 function onCommandRequiredRankInsufficientError(player)
     player:send_message("You do not have permission to run this command.")

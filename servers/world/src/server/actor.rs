@@ -8,6 +8,7 @@ use crate::{
     ClientId, FromServer, GameData, StatusEffects,
     server::{
         WorldServer,
+        effect::send_effects_list,
         instance::{Instance, QueuedTaskData},
         job_gauge::JobGauge,
         network::{DestinationNetwork, NetworkState},
@@ -656,11 +657,20 @@ pub fn update_actor_hp_mp(
 
         let common_spawn = actor.get_common_spawn();
 
-        {
+        if crate::common::is_crafter(common_spawn.class_job) {
+            // UpdateHpMpTp has no CP: the client takes it from StatusEffectList only (7.57: 0x140B383A0 writes MP and
+            // GP, 0x140B38500 the class's own resource.)
+            send_effects_list(network.clone(), instance, target_actor_id);
+        } else {
+            // Its last field is GP (the client writes it to CharacterData.GatheringPoints); MP for anyone else.
             let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateHpMpTp {
                 hp: common_spawn.health_points,
                 mp: common_spawn.resource_points,
-                max_mp: common_spawn.max_resource_points,
+                max_mp: if crate::common::is_gatherer(common_spawn.class_job) {
+                    common_spawn.resource_points
+                } else {
+                    common_spawn.max_resource_points
+                },
             });
             let mut network = network.lock();
             network.send_in_range_inclusive_instance(

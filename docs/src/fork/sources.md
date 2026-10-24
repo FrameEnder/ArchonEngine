@@ -32,6 +32,8 @@ with a comment naming the source (see `CLAUDE.md`).
 | A packet's layout or opcode | A recording, then `kawari-opcodescan` | Bob's Chronofoil captures (sizes, every version since June), OverlayPlugin's packet structs, Machina, FFXIVOpcodes, Kawari upstream |
 | What a sheet column means | EXDSchema | XIVAPI's documentation |
 | A client structure (for the Recorder or Probe) | FFXIVClientStructs | |
+| Crafting rules (formulas, actions, conditions) | raphael-rs, then Teamcraft's simulator and Craftimizer (where they agree) | The client's craft event handler for packets and CP rules |
+| Gathering points, timed windows, boon and yield | A recording (`--dropin --gathering`) | GatherBuddy / GatherBuddy Reborn, Teamcraft's node data |
 
 ## The sources
 
@@ -126,6 +128,23 @@ Shadows' layout IDs, health and waves. It's from an older patch, so check it aga
 with **level, HP** and map coordinates, reported by Teamcraft's users from their packets. `gubal-bnpcs-index.json`
 links the two IDs. Useful for open-world enemies Bob hasn't recorded. The coordinates are map coordinates, not world
 positions.
+
+### Crafting simulators: raphael-rs, Teamcraft's simulator, Craftimizer
+
+[KonaeAkira/raphael-rs](https://github.com/KonaeAkira/raphael-rs) (a Rust solver kept current with the game),
+[ffxiv-teamcraft/simulator](https://github.com/ffxiv-teamcraft/simulator) and
+[WorkingRobot/Craftimizer](https://github.com/WorkingRobot/Craftimizer) (a Dalamud plugin, `Simulator/`): the crafting
+rules as players' tools model them, which [Crafting](crafting.md) follows where they agree. They work in floats
+(Kawari uses exact integers) and differ on condition chances and a few action details. Teamcraft's main repository
+also reads retail craft packets (`crafting-replay.service.ts`).
+
+### GatherBuddy and GatherBuddy Reborn
+
+[Ottermandias/GatherBuddy](https://github.com/Ottermandias/GatherBuddy) and
+[FFXIV-CombatReborn/GatherBuddyReborn](https://github.com/FFXIV-CombatReborn/GatherBuddyReborn) (Apache-2.0): node
+timers from the sheets, the gatherer's statuses, the boon and Bountiful Yield formulas, and GatherBuddy Reborn's
+crowd-collected `world_locations.json` (world positions of 2,116 points, no layout IDs). Used by
+[Gathering](gathering.md).
 
 ### The game's sheets: XIVAPI v2 and EXDSchema
 

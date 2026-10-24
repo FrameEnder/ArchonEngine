@@ -167,6 +167,11 @@ impl LuaPlayer {
         self.queued_tasks.push(LuaTask::FinishEvent {});
     }
 
+    /// Opens the gathering window of the node being talked to.
+    pub fn open_gathering_window(&mut self) {
+        self.queued_tasks.push(LuaTask::OpenGatheringWindow);
+    }
+
     fn unlock_classjob(&mut self, classjob_id: u8) {
         self.queued_tasks
             .push(LuaTask::UnlockClassJob { classjob_id });
@@ -1087,6 +1092,12 @@ impl UserData for LuaPlayer {
         });
         methods.add_method_mut("set_mp", |_, this, mp: u16| {
             this.set_mp(mp);
+            Ok(())
+        });
+        // A gatherer's action (resources/scripts/gathering/): what it does at the node is the connection's.
+        methods.add_method_mut("gathering_action", |_, this, action_id: u32| {
+            this.queued_tasks
+                .push(LuaTask::GatheringAction { action_id });
             Ok(())
         });
         methods.add_method("get_effect", |_, this, effect_id: u16| {

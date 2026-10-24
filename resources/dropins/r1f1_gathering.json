@@ -1,0 +1,136 @@
+{
+    "appends": "bg/ffxiv/roc_r1/fld/r1f1/level/planmap.lgb",
+    "layers": [
+        {
+            "name": "GATHERING_RETAIL",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 30366,
+                        "spawn_args": 50397188,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4314843,
+                    "position": {
+                        "x": 118.773,
+                        "y": 292.832,
+                        "z": -159.647
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30999,
+                        "spawn_args": 50331654,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4328861,
+                    "position": {
+                        "x": 293.629,
+                        "y": 315.542,
+                        "z": -438.015
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30508,
+                        "spawn_args": 33623300,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4889112,
+                    "position": {
+                        "x": 298.509,
+                        "y": 309.18,
+                        "z": -201.331
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30509,
+                        "spawn_args": 33623044,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4889113,
+                    "position": {
+                        "x": 325.903,
+                        "y": 306.105,
+                        "z": -278.151
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30510,
+                        "spawn_args": 33622788,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4889115,
+                    "position": {
+                        "x": 318.105,
+                        "y": 305.959,
+                        "z": -236.103
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 31046,
+                        "spawn_args": 33555460,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4891802,
+                    "position": {
+                        "x": 284.419,
+                        "y": 309.077,
+                        "z": -128.535
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30508,
+                        "spawn_args": 33557764,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4891808,
+                    "position": {
+                        "x": 291.659,
+                        "y": 305.774,
+                        "z": -206.607
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30509,
+                        "spawn_args": 33557508,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4891809,
+                    "position": {
+                        "x": 289.188,
+                        "y": 302.452,
+                        "z": -261.332
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30510,
+                        "spawn_args": 33557252,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4891810,
+                    "position": {
+                        "x": 334.432,
+                        "y": 307.186,
+                        "z": -252.24
+                    },
+                    "rotation": 0.0
+                }
+            ]
+        }
+    ]
+}

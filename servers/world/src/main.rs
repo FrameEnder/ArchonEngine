@@ -198,6 +198,8 @@ async fn initial_setup(
                     glamour_information: None,
                     event_handler_id: None,
                     recipe: None,
+                    craft: None,
+                    gathering: Default::default(),
                     is_party_leader: false,
                     synced_level: None,
                     synced_item_level: None,
@@ -1414,6 +1416,7 @@ async fn process_packet(
 
                                     // TODO: document in EXDSchema that 3 seems to mean levequest ones
                                     if point_type != 3 {
+                                        let remaining = connection.gathering.remaining(id, count);
                                         connection
                                             .actor_control_self(
                                                 ActorControlCategory::SetupGatheringPoint {
@@ -1421,7 +1424,7 @@ async fn process_packet(
                                                     base_id: base_id as u32,
                                                     level: level as u32,
                                                     count: count as u32,
-                                                    remaining_count: count as u32,
+                                                    remaining_count: remaining as u32,
                                                     unk1: 0,
                                                     gathering_point_bonus,
                                                 },

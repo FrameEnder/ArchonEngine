@@ -1,0 +1,556 @@
+{
+    "appends": "bg/ffxiv/sea_s1/fld/s1f2/level/planmap.lgb",
+    "layers": [
+        {
+            "name": "GATHERING_RETAIL",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 30080,
+                        "spawn_args": 50464004,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4001426,
+                    "position": {
+                        "x": 292.767,
+                        "y": 44.553,
+                        "z": 49.259
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30083,
+                        "spawn_args": 50333444,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4001428,
+                    "position": {
+                        "x": 205.615,
+                        "y": 57.093,
+                        "z": 14.755
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30084,
+                        "spawn_args": 50333188,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4001429,
+                    "position": {
+                        "x": 309.592,
+                        "y": 51.239,
+                        "z": -9.895
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30085,
+                        "spawn_args": 50463748,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4001430,
+                    "position": {
+                        "x": 232.837,
+                        "y": 36.16,
+                        "z": 70.404
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30516,
+                        "spawn_args": 50336004,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4092527,
+                    "position": {
+                        "x": 257.638,
+                        "y": 74.304,
+                        "z": -308.434
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30517,
+                        "spawn_args": 50335748,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4092529,
+                    "position": {
+                        "x": 209.852,
+                        "y": 78.215,
+                        "z": -262.625
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30518,
+                        "spawn_args": 50467332,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4092530,
+                    "position": {
+                        "x": 273.912,
+                        "y": 74.166,
+                        "z": -260.069
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30519,
+                        "spawn_args": 50467588,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4092531,
+                    "position": {
+                        "x": 229.408,
+                        "y": 75.563,
+                        "z": -337.301
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30519,
+                        "spawn_args": 50402052,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4103427,
+                    "position": {
+                        "x": 236.207,
+                        "y": 74.693,
+                        "z": -330.958
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30519,
+                        "spawn_args": 50336516,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4103429,
+                    "position": {
+                        "x": 232.32,
+                        "y": 74.771,
+                        "z": -333.886
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30516,
+                        "spawn_args": 50467076,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4103431,
+                    "position": {
+                        "x": 268.974,
+                        "y": 75.106,
+                        "z": -305.011
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30516,
+                        "spawn_args": 50401540,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4103432,
+                    "position": {
+                        "x": 263.051,
+                        "y": 76.165,
+                        "z": -301.025
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30518,
+                        "spawn_args": 50401796,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4103434,
+                    "position": {
+                        "x": 268.04,
+                        "y": 73.972,
+                        "z": -271.571
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30518,
+                        "spawn_args": 50336260,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4103435,
+                    "position": {
+                        "x": 284.597,
+                        "y": 74.835,
+                        "z": -259.984
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30517,
+                        "spawn_args": 50466820,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4103437,
+                    "position": {
+                        "x": 230.278,
+                        "y": 72.693,
+                        "z": -268.755
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30517,
+                        "spawn_args": 50401284,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4103439,
+                    "position": {
+                        "x": 202.359,
+                        "y": 73.963,
+                        "z": -280.897
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30080,
+                        "spawn_args": 50398468,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4105528,
+                    "position": {
+                        "x": 293.773,
+                        "y": 46.029,
+                        "z": 41.562
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30080,
+                        "spawn_args": 50332932,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4105529,
+                    "position": {
+                        "x": 265.13,
+                        "y": 41.353,
+                        "z": 63.669
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30085,
+                        "spawn_args": 50398212,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4105530,
+                    "position": {
+                        "x": 250.141,
+                        "y": 35.559,
+                        "z": 79.606
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30085,
+                        "spawn_args": 50332676,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4105531,
+                    "position": {
+                        "x": 220.451,
+                        "y": 36.305,
+                        "z": 71.415
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30083,
+                        "spawn_args": 50464516,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4105534,
+                    "position": {
+                        "x": 205.97,
+                        "y": 54.646,
+                        "z": 21.673
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30083,
+                        "spawn_args": 50398980,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4105536,
+                    "position": {
+                        "x": 211.836,
+                        "y": 51.359,
+                        "z": 32.973
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30084,
+                        "spawn_args": 50464260,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4105538,
+                    "position": {
+                        "x": 299.289,
+                        "y": 50.789,
+                        "z": -6.985
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30084,
+                        "spawn_args": 50398724,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4105540,
+                    "position": {
+                        "x": 312.362,
+                        "y": 47.5,
+                        "z": 28.188
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30528,
+                        "spawn_args": 50335492,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4316953,
+                    "position": {
+                        "x": 299.435,
+                        "y": 70.955,
+                        "z": -130.809
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30529,
+                        "spawn_args": 50335236,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4316954,
+                    "position": {
+                        "x": 311.207,
+                        "y": 68.517,
+                        "z": -118.067
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30530,
+                        "spawn_args": 50334980,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4316955,
+                    "position": {
+                        "x": 337.88,
+                        "y": 73.167,
+                        "z": -151.354
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30531,
+                        "spawn_args": 50334724,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4316956,
+                    "position": {
+                        "x": 310.565,
+                        "y": 73.884,
+                        "z": -160.15
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30528,
+                        "spawn_args": 50466564,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4317869,
+                    "position": {
+                        "x": 288.279,
+                        "y": 71.667,
+                        "z": -150.307
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30528,
+                        "spawn_args": 50401028,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4317870,
+                    "position": {
+                        "x": 275.188,
+                        "y": 72.16,
+                        "z": -169.542
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30531,
+                        "spawn_args": 50465796,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4317871,
+                    "position": {
+                        "x": 299.389,
+                        "y": 72.448,
+                        "z": -166.283
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30531,
+                        "spawn_args": 50400260,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4317872,
+                    "position": {
+                        "x": 295.482,
+                        "y": 73.612,
+                        "z": -182.794
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30529,
+                        "spawn_args": 50466308,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4317877,
+                    "position": {
+                        "x": 317.975,
+                        "y": 63.989,
+                        "z": -92.77
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30529,
+                        "spawn_args": 50400772,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4317878,
+                    "position": {
+                        "x": 319.534,
+                        "y": 61.692,
+                        "z": -77.709
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30530,
+                        "spawn_args": 50466052,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4317882,
+                    "position": {
+                        "x": 344.58,
+                        "y": 73.647,
+                        "z": -163.506
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 30530,
+                        "spawn_args": 50400516,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4317883,
+                    "position": {
+                        "x": 354.249,
+                        "y": 74.577,
+                        "z": -170.239
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 31032,
+                        "spawn_args": 50462726,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4656740,
+                    "position": {
+                        "x": 118.339,
+                        "y": 37.17,
+                        "z": 35.581
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 31032,
+                        "spawn_args": 50397190,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4671721,
+                    "position": {
+                        "x": 103.59,
+                        "y": 37.665,
+                        "z": -12.871
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 31032,
+                        "spawn_args": 50331654,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 4671722,
+                    "position": {
+                        "x": 116.904,
+                        "y": 37.65,
+                        "z": -0.597
+                    },
+                    "rotation": 0.0
+                }
+            ]
+        }
+    ]
+}

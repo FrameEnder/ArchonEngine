@@ -290,6 +290,9 @@ reads, chat left out), so `compare` and the rest can use it.
   `--one-spot` the A and B ranks). The LGB is the TerritoryType's `Bg` folder plus `planmap.lgb` (Central Thanalan:
   `bg/ffxiv/wil_w1/fld/w1f2/level/planmap.lgb`). Flying around a zone with Chronofoil running is enough; Central
   Thanalan's drop-in came out of two such sessions (see [Combat](combat.md#open-world-spawns)).
+* **`--dropin TERRITORY --gathering --appends <lgb>`** writes the territory's gathering points instead: every
+  SpawnObject of kind 6 seen there, each position with its layout ID, GatheringPoint and retail's `args1`
+  (`spawn_args`), leaving out those sent with no integrity (leve points). See [Gathering](gathering.md).
 * **`--battle N.V`** turns a visit into a battle run (`chronofoil_battle.py`), saved as `.json.gz` for `questkit
   battle` (or straight to a report with `--out x.md`). From the packets, with Kawari's struct layouts: actors from
   SpawnNpc/SpawnPlayer (BNpcBase and BNpcName, layout ID, HP, battalion, level, class, position; players other than

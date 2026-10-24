@@ -873,6 +873,15 @@ impl ZoneConnection {
                     // Reset information so it's not accidentally reused.
                     self.glamour_information = None;
                 }
+                LuaTask::OpenGatheringWindow => {
+                    if let Some(event) = events.last() {
+                        self.send_gathering_window(&event.1, true).await;
+                    }
+                }
+                LuaTask::GatheringAction { action_id } => {
+                    let event = events.last().map(|(_, event)| event);
+                    self.use_gathering_action(*action_id, player, event).await;
+                }
                 LuaTask::PlayScene {
                     scene,
                     scene_flags,

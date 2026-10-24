@@ -13,6 +13,10 @@ appeared, while it wasn't fighting: no target, cast or action of its own), and f
 `stationary` when it was seen idle for `IDLE_SECONDS` or more without moving and never seen idle and moving, and so
 are the unseen (or briefly seen) spots of a kind that never moved in two or more such sightings.
 
+`gathering_points`/`build_gathering` do the same for gathering points (SpawnObject of kind 6, which the client's
+layouts don't have): every position of every point, with retail's spawn arguments (`spawn_args`: integrity, the
+point's phase slot, which of its positions this is, how many it has.)
+
 Captures carry other players and chat, so the drop-in only has numbers.
 """
 
@@ -190,3 +194,47 @@ def build(seen: dict[int, list[dict]], appends: str, layer: str = "BNPCS_RETAIL"
 
 def write(dropin: dict, out: str | Path) -> None:
     Path(out).write_text(json.dumps(dropin, indent=4) + "\n")
+
+
+GATHERING_POINT = 6  # ObjectKind
+
+
+def gathering_points(captures, tables: dict, territory: int) -> dict[int, dict]:
+    """Every gathering point SpawnObject in the territory, by layout ID (the last sighting of each)."""
+    seen: dict[int, dict] = {}
+    for capture in captures:
+        names = Names(tables, capture.game_version)
+        zone = None
+        for segment in capture.segments(protocols=("zone",)):
+            if segment.dir != "out":
+                continue
+            name = names.name(segment)
+            data = segment.data
+            if name in ("InitZone", "ZoneInit"):
+                zone = struct.unpack_from("<H", data, 2)[0]
+            elif name == "SpawnObject" and zone == territory and len(data) >= 64 and data[1] == GATHERING_POINT:
+                base, _, layout = struct.unpack_from("<III", data, 4)
+                seen[layout] = {
+                    "base": base,
+                    "args1": struct.unpack_from("<I", data, 44)[0],
+                    "position": list(struct.unpack_from("<fff", data, 52)),
+                }
+    return seen
+
+
+def build_gathering(seen: dict[int, dict], appends: str, layer: str = "GATHERING_RETAIL") -> tuple[dict, dict]:
+    """The drop-in, and how many points were left out for each reason. Points sent with no integrity (levequest
+    points, a spearfishing spot) only appear for their leve or quest, so they're left out."""
+    objects, skipped = [], {}
+    for layout in sorted(seen):
+        point = seen[layout]
+        if point["args1"] & 0xFF == 0:
+            skipped["no integrity (leve or quest)"] = skipped.get("no integrity (leve or quest)", 0) + 1
+            continue
+        objects.append({
+            "data": {"base_id": point["base"], "spawn_args": point["args1"], "type": "gathering_point"},
+            "layout_id": layout,
+            "position": {axis: round(point["position"][i], 3) for i, axis in enumerate("xyz")},
+            "rotation": 0.0,
+        })
+    return {"appends": appends, "layers": [{"name": layer, "objects": objects}]}, skipped

@@ -118,6 +118,17 @@ pub struct Zone {
     pub cached_paths: HashMap<u32, ServerPathInstanceObject>,
     /// Layout IDs of the drop-ins' battle NPCs that stand where they are instead of wandering.
     pub stationary_npcs: HashSet<u32>,
+    /// The drop-ins' unspoiled, legendary and ephemeral gathering points, spawned while they're up
+    /// (`Instance::update_timed_gathering_points`.)
+    pub timed_gathering_points: Vec<TimedGatheringPoint>,
+}
+
+/// A gathering point that's only up at certain Eorzea times.
+#[derive(Debug, Clone)]
+pub struct TimedGatheringPoint {
+    pub spawn: SpawnObject,
+    /// When it's up, in Eorzea minutes of the day (start, end.)
+    pub windows: Vec<(u32, u32)>,
 }
 
 impl Zone {
@@ -712,28 +723,7 @@ impl Zone {
         }
 
         // Only dropins are checked for gathering points, because they strip that from retail LGBs.
-        for layer in &self.dropin_layers {
-            for object in &layer.objects {
-                if let DropInObjectData::GatheringPoint { base_id } = object.data {
-                    let spawn = SpawnObject {
-                        kind: ObjectKind::GatheringPoint,
-                        base_id,
-                        entity_id: ObjectId(fastrand::u32(..)),
-                        layout_id: object.layout_id,
-                        radius: 1.0,
-                        // Only the last value is needed to spawn the node.
-                        // First value is remaining count I believe, but it's immediately overwriten by an ActorControl so I don't see the point in setting it here?
-                        // Third value might be index?
-                        // If it's >3 then the node doesn't seme to spawn.
-                        args1: u32::from_le_bytes([0, 0, 0, 1]),
-                        position: object.position,
-                        ..Default::default()
-                    };
-                    self.cached_objects.insert(base_id, spawn);
-                    object_spawns.push((spawn, String::default()));
-                }
-            }
-        }
+        object_spawns.extend(self.gathering_point_spawns(game_data));
 
         // housing plot entrances
         for (i, plot) in self.cached_housing_plots.iter().enumerate() {
@@ -750,6 +740,89 @@ impl Zone {
         }
 
         object_spawns
+    }
+
+    /// The drop-ins' gathering points that are always up, and (in `timed_gathering_points`) the timed ones. As retail
+    /// (Bob's Chronofoil captures), every position of a point is sent; the client shows the one its phase table picks
+    /// (`args1`: integrity, phase slot, this position's index, how many positions; 7.57 `0x140E8E8F0`.) A layout in
+    /// two drop-ins is spawned once, from the one with retail's arguments; points without them get theirs worked out
+    /// here (positions in descending layout ID order, as retail numbered them, and a free phase slot.)
+    fn gathering_point_spawns(&mut self, game_data: &mut GameData) -> Vec<(SpawnObject, String)> {
+        let mut points: Vec<(u32, u32, Position, Option<u32>)> = Vec::new(); // layout, point, position, args
+        for layer in &self.dropin_layers {
+            for object in &layer.objects {
+                if let DropInObjectData::GatheringPoint {
+                    base_id,
+                    spawn_args,
+                } = object.data
+                {
+                    match points.iter_mut().find(|p| p.0 == object.layout_id) {
+                        Some(existing) => {
+                            if existing.3.is_none() {
+                                *existing =
+                                    (object.layout_id, base_id, object.position, spawn_args);
+                            }
+                        }
+                        None => {
+                            points.push((object.layout_id, base_id, object.position, spawn_args))
+                        }
+                    }
+                }
+            }
+        }
+
+        let used_slots: HashSet<u8> = points
+            .iter()
+            .filter_map(|p| p.3.map(|args| args.to_le_bytes()[1]))
+            .collect();
+        let mut free_slots = (1..crate::gathering::PHASE_SLOTS as u8)
+            .rev()
+            .filter(|slot| !used_slots.contains(slot));
+        let mut derived: HashMap<u32, (u8, Vec<u32>)> = HashMap::new(); // point -> slot, its layouts
+        for (layout, point, _, args) in &points {
+            if args.is_none() {
+                derived
+                    .entry(*point)
+                    .or_insert_with(|| (free_slots.next().unwrap_or(0), Vec::new()))
+                    .1
+                    .push(*layout);
+            }
+        }
+
+        let mut spawns = Vec::new();
+        self.timed_gathering_points.clear();
+        for (layout, point, position, args) in points {
+            let (_, _, count, _, point_type) = game_data.get_gathering_point(point);
+            // Levequest points only appear for their leve.
+            if point_type == 3 {
+                continue;
+            }
+            let args1 = args.unwrap_or_else(|| {
+                let (slot, mut layouts) = derived[&point].clone();
+                layouts.sort_unstable_by(|a, b| b.cmp(a));
+                let index = layouts.iter().position(|l| *l == layout).unwrap_or(0);
+                u32::from_le_bytes([count, slot, index as u8, layouts.len().min(3) as u8])
+            });
+            let spawn = SpawnObject {
+                kind: ObjectKind::GatheringPoint,
+                base_id: point,
+                entity_id: ObjectId(fastrand::u32(..)),
+                layout_id: layout,
+                radius: 1.0,
+                args1,
+                position,
+                ..Default::default()
+            };
+            let windows = game_data.get_gathering_point_windows(point);
+            if !windows.is_empty() {
+                self.timed_gathering_points
+                    .push(TimedGatheringPoint { spawn, windows });
+                continue;
+            }
+            self.cached_objects.insert(point, spawn);
+            spawns.push((spawn, String::default()));
+        }
+        spawns
     }
 
     /// Returns an SpawnObject for the given base ID.

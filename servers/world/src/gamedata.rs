@@ -28,10 +28,14 @@ use icarus::FateProgressUI::FateProgressUISheet;
 use icarus::FateShop::FateShopSheet;
 use icarus::FittingShopCategoryItem::FittingShopCategoryItemSheet;
 use icarus::GFATE::{GFATERow, GFATESheet};
+use icarus::GathererCrafterLvAdjustTable::GathererCrafterLvAdjustTableSheet;
+use icarus::GatheringExp::GatheringExpSheet;
 use icarus::GatheringItem::GatheringItemSheet;
 use icarus::GatheringItemLevelConvertTable::GatheringItemLevelConvertTableSheet;
 use icarus::GatheringPoint::GatheringPointSheet;
 use icarus::GatheringPointBase::GatheringPointBaseSheet;
+use icarus::GatheringPointTransient::GatheringPointTransientSheet;
+use icarus::GatheringRarePopTimeTable::GatheringRarePopTimeTableSheet;
 use icarus::GeneralAction::GeneralActionSheet;
 use icarus::GilShopItem::GilShopItemSheet;
 use icarus::GimmickAccessor::GimmickAccessorSheet;
@@ -64,6 +68,7 @@ use icarus::PublicContent::PublicContentSheet;
 use icarus::Quest::{QuestRow, QuestSheet};
 use icarus::QuestBattle::QuestBattleSheet;
 use icarus::Recipe::RecipeSheet;
+use icarus::RecipeLevelTable::RecipeLevelTableSheet;
 use icarus::SpecialShop::SpecialShopSheet;
 use icarus::SwitchTalkVariation::{SwitchTalkVariationRow, SwitchTalkVariationSheet};
 use icarus::TerritoryType::TerritoryTypeSheet;
@@ -378,11 +383,49 @@ pub struct Recipe {
     pub item_id: i32,
 }
 
+/// One of a recipe's ingredients.
+#[derive(Debug, Clone, Copy)]
+pub struct RecipeIngredient {
+    pub item_id: u32,
+    pub amount: u32,
+    /// The ingredient's LevelItem, which shares out the quality HQ ingredients bring.
+    pub item_level: u32,
+    pub can_be_hq: bool,
+}
+
+/// What a synthesis needs from a recipe: its Recipe row and its RecipeLevelTable row (for a level-adjusted recipe,
+/// the one GathererCrafterLvAdjustTable gives for the crafter's level.)
+#[derive(Debug, Clone)]
+pub struct RecipeInfo {
+    pub id: u32,
+    pub item_id: u32,
+    pub amount_result: u32,
+    /// The recipe level's ClassJobLevel.
+    pub class_job_level: u8,
+    pub max_progress: u32,
+    pub max_quality: u32,
+    pub max_durability: u32,
+    pub conditions_flag: u16,
+    pub progress_divider: u8,
+    pub quality_divider: u8,
+    pub progress_modifier: u8,
+    pub quality_modifier: u8,
+    pub material_quality_factor: u8,
+    pub can_hq: bool,
+    pub is_expert: bool,
+    pub exp_rewarded: bool,
+    /// The eight ingredient slots, in the sheet's order (crystals last); empty slots left out.
+    pub ingredients: Vec<RecipeIngredient>,
+}
+
 /// The Teleport action (Action sheet), whose general action has to be unlocked before Teleport can be used.
 const TELEPORT_ACTION_ID: u16 = 5;
 
 /// Cost type used by the Action sheet for MP.
 pub const ACTION_COST_TYPE_MP: u8 = 3;
+
+/// Cost type used by the Action sheet for GP (the Miner's and Botanist's actions.)
+pub const ACTION_COST_TYPE_GP: u8 = 7;
 
 /// Cast type used by the Action sheet for circular area-of-effect actions.
 pub const ACTION_CAST_TYPE_CIRCLE: u8 = 2;
@@ -409,10 +452,12 @@ pub struct ActionInfo {
 }
 
 impl ActionInfo {
-    /// Returns the MP cost of this action, if it costs MP.
+    /// Returns the resource cost of this action: MP (in the sheet in hundreds), or a gatherer's GP.
     pub fn mp_cost(&self) -> u16 {
         if self.primary_cost_type == ACTION_COST_TYPE_MP {
             self.primary_cost_value.saturating_mul(100)
+        } else if self.primary_cost_type == ACTION_COST_TYPE_GP {
+            self.primary_cost_value
         } else {
             0
         }
@@ -529,6 +574,11 @@ pub struct GatheringPointItem {
     pub item_id: i32,
     pub level: u8,
     pub hidden: bool,
+    /// The GatheringItemLevelConvertTable row, which is also the ItemLevel row with the item's base Gathering and
+    /// Perception (GatherBuddy Reborn's table matches ItemLevel's from row 151.)
+    pub level_row: u16,
+    /// The Perception it needs (GatheringItem.PerceptionReq.)
+    pub perception_required: u16,
 }
 
 impl GameData {
@@ -2399,10 +2449,67 @@ impl GameData {
                     .unwrap()
                     .GatheringItemLevel,
                 hidden: row.IsHidden,
+                level_row: row.GatheringItemLevel,
+                perception_required: row.PerceptionReq,
             };
         }
 
         new_items
+    }
+
+    /// An item level's base Gathering and Perception (ItemLevel), what the gathering formulas measure against.
+    pub fn gathering_base_stats(&mut self, level_row: u16) -> (u32, u32) {
+        self.item_level_sheet
+            .row(level_row as u32)
+            .map(|row| (row.Gathering as u32, row.Perception as u32))
+            .unwrap_or_default()
+    }
+
+    /// When a timed gathering point is up, in Eorzea minutes of the day (start, end): GatheringPointTransient's
+    /// ephemeral window, or GatheringRarePopTimeTable's for unspoiled and legendary points. Its Duration 160 is two
+    /// Eorzea hours and 300 three (GatherBuddy and Teamcraft read the column differently but agree on that.) Empty if
+    /// the point isn't timed.
+    pub fn get_gathering_point_windows(&mut self, id: u32) -> Vec<(u32, u32)> {
+        let Some(transient) =
+            GatheringPointTransientSheet::read_from(&mut self.resource, Language::None)
+                .ok()
+                .and_then(|sheet| sheet.row(id))
+        else {
+            return Vec::new();
+        };
+        let hhmm = |value: u16| (value as u32 / 100) * 60 + value as u32 % 100;
+
+        let mut windows = Vec::new();
+        if transient.EphemeralStartTime != u16::MAX
+            && transient.EphemeralStartTime != transient.EphemeralEndTime
+        {
+            let end = if transient.EphemeralEndTime == 0 {
+                1440
+            } else {
+                hhmm(transient.EphemeralEndTime)
+            };
+            windows.push((hhmm(transient.EphemeralStartTime), end % 1440));
+        }
+        if transient.GatheringRarePopTimeTable > 0
+            && let Some(table) =
+                GatheringRarePopTimeTableSheet::read_from(&mut self.resource, Language::None)
+                    .ok()
+                    .and_then(|sheet| sheet.row(transient.GatheringRarePopTimeTable as u32))
+        {
+            for (start, duration) in table.StartTime.iter().zip(table.Duration.iter()) {
+                if *start == u16::MAX || *duration == 0 {
+                    continue;
+                }
+                let minutes = match duration {
+                    160 => 120,
+                    300 => 180,
+                    other => *other as u32,
+                };
+                let start = hhmm(*start);
+                windows.push((start, (start + minutes) % 1440));
+            }
+        }
+        windows
     }
 
     /// Whether one can only have one of this item (the Item sheet's IsUnique): a coffer's LootItem says so.
@@ -2428,6 +2535,72 @@ impl GameData {
             id,
             item_id: row.ItemResult,
         }
+    }
+
+    /// A recipe's numbers for a crafter of `crafter_level`, or None if there's no such recipe.
+    pub fn get_recipe_info(&mut self, id: u32, crafter_level: u8) -> Option<RecipeInfo> {
+        let sheet = RecipeSheet::read_from(&mut self.resource, Language::None).ok()?;
+        let row = sheet.row(id)?;
+
+        let mut rlvl = row.RecipeLevelTable as u32;
+        let mut max_durability = None;
+        // Level-adjusted recipes: the crafter's level (up to MaxAdjustableJobLevel) picks the recipe level, and the
+        // durability is always 80 (raphael's `get_game_settings`.)
+        if row.MaxAdjustableJobLevel != 0 {
+            let adjust =
+                GathererCrafterLvAdjustTableSheet::read_from(&mut self.resource, Language::None)
+                    .ok()?;
+            let level = (crafter_level as u16).min(row.MaxAdjustableJobLevel);
+            rlvl = adjust.row(level as u32)?.RecipeLevel as u32;
+            max_durability = Some(80);
+        }
+        let levels = RecipeLevelTableSheet::read_from(&mut self.resource, Language::None).ok()?;
+        let level = levels.row(rlvl)?;
+
+        let mut ingredients = Vec::new();
+        for (item_id, amount) in row.Ingredient.iter().zip(row.AmountIngredient.iter()) {
+            if *item_id <= 0 || *amount == 0 {
+                continue;
+            }
+            let item = self.item_sheet.row(*item_id as u32);
+            ingredients.push(RecipeIngredient {
+                item_id: *item_id as u32,
+                amount: *amount as u32,
+                item_level: item.as_ref().map(|item| item.LevelItem as u32).unwrap_or(0),
+                can_be_hq: item.as_ref().map(|item| item.CanBeHq).unwrap_or(false),
+            });
+        }
+
+        // The client works the maxima out the same way when it opens the Synthesis window (7.57, 0x140EA7960.)
+        Some(RecipeInfo {
+            id,
+            item_id: row.ItemResult.max(0) as u32,
+            amount_result: row.AmountResult.max(1) as u32,
+            class_job_level: level.ClassJobLevel,
+            max_progress: level.Difficulty as u32 * row.DifficultyFactor as u32 / 100,
+            max_quality: (level.Quality as u64 * row.QualityFactor as u64 / 100) as u32,
+            max_durability: max_durability
+                .unwrap_or(level.Durability as u32 * row.DurabilityFactor as u32 / 100),
+            conditions_flag: level.ConditionsFlag,
+            progress_divider: level.ProgressDivider,
+            quality_divider: level.QualityDivider,
+            progress_modifier: level.ProgressModifier,
+            quality_modifier: level.QualityModifier,
+            material_quality_factor: row.MaterialQualityFactor,
+            can_hq: row.CanHq,
+            is_expert: row.IsExpert,
+            exp_rewarded: row.ExpRewarded,
+            ingredients,
+        })
+    }
+
+    /// GatheringExp's EXP for a level (0 if there's none.)
+    pub fn get_gathering_exp(&mut self, level: u32) -> i32 {
+        GatheringExpSheet::read_from(&mut self.resource, Language::None)
+            .ok()
+            .and_then(|sheet| sheet.row(level))
+            .map(|row| row.Exp)
+            .unwrap_or(0)
     }
 
     /// Returns a CraftAction's animation start/end.

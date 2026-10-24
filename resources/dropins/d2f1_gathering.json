@@ -1,0 +1,122 @@
+{
+    "appends": "bg/ex1/02_dra_d2/fld/d2f1/level/planmap.lgb",
+    "layers": [
+        {
+            "name": "GATHERING_RETAIL",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 31376,
+                        "spawn_args": 16777988,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 5921015,
+                    "position": {
+                        "x": 289.103,
+                        "y": -69.765,
+                        "z": 147.734
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 31377,
+                        "spawn_args": 50332164,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 5921017,
+                    "position": {
+                        "x": 274.327,
+                        "y": -73.44,
+                        "z": 180.976
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 31380,
+                        "spawn_args": 16780036,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 5921020,
+                    "position": {
+                        "x": 131.803,
+                        "y": -77.946,
+                        "z": 127.599
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 31440,
+                        "spawn_args": 16791812,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 5935955,
+                    "position": {
+                        "x": 166.124,
+                        "y": -59.993,
+                        "z": -148.728
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 31381,
+                        "spawn_args": 50465284,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 5935992,
+                    "position": {
+                        "x": 202.078,
+                        "y": -78.276,
+                        "z": 140.791
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 31381,
+                        "spawn_args": 50399748,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 5935993,
+                    "position": {
+                        "x": 175.223,
+                        "y": -74.29,
+                        "z": 95.819
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 31450,
+                        "spawn_args": 16791556,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 8601847,
+                    "position": {
+                        "x": 245.504,
+                        "y": -62.912,
+                        "z": 31.928
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 31451,
+                        "spawn_args": 16791300,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 8601848,
+                    "position": {
+                        "x": 51.449,
+                        "y": -60.485,
+                        "z": -33.933
+                    },
+                    "rotation": 0.0
+                }
+            ]
+        }
+    ]
+}

@@ -430,6 +430,9 @@ pub enum ToServer {
     GainEffect(ClientId, ObjectId, u16, u16, f32, ObjectId),
     /// The player loses an effect.
     LoseEffect(ClientId, ObjectId, u16, u16, ObjectId),
+    /// A crafter's CP and synthesis statuses (status, param) after a step: the statuses change without a gain or loss
+    /// message (the step's scene has the log lines), and an empty list takes them all off (`crafting.rs`.)
+    SetCraftingState(ClientId, ObjectId, u16, Vec<(u16, u16)>),
     /// Warp with the specified id.
     Warp(ClientId, ObjectId, u32),
     /// Warp with the specified aetheryte id.
@@ -517,6 +520,8 @@ pub enum ToServer {
     SetHP(ClientId, ObjectId, u32),
     /// Inform the server to update our MP to this value.
     SetMP(ClientId, ObjectId, u16),
+    /// Gives back this many resource points (MP, CP or GP), up to the maximum: a gatherer's GP for each gather.
+    RestoreResourcePoints(ObjectId, u16),
     /// A quest brings out the battle NPC at this layout ID (from the zone's drop-ins), already after this player.
     SpawnQuestBattleNpc(ClientId, ObjectId, u32),
     /// A player (the first ID) called a retainer at a summoning bell (its layout ID), standing at this position: they
@@ -643,6 +648,33 @@ impl ServerHandle {
 }
 
 /// Turns a Quest row ID into a "normal" one. For example: 65537 to 1.
+/// Whether a ClassJob row is a Disciple of the Hand (Carpenter to Culinarian), whose resource is CP.
+pub fn is_crafter(class_job: u8) -> bool {
+    (8..=15).contains(&class_job)
+}
+
+/// Whether a ClassJob row is a Disciple of the Land (Miner, Botanist, Fisher), whose resource is GP.
+pub fn is_gatherer(class_job: u8) -> bool {
+    (16..=18).contains(&class_job)
+}
+
+/// The most resource points (MP, CP or GP) someone of this class has with these parameters. The client keeps the
+/// three apart and StatusEffectList fills the one the class uses (7.57, `0x140B38500`: ClassJobCategory 32 GP, 33
+/// CP, else MP.)
+pub fn max_resource_points(
+    class_job: u8,
+    parameters: &crate::zone_connection::BaseParameters,
+) -> u16 {
+    let points = if is_crafter(class_job) {
+        parameters.cp
+    } else if is_gatherer(class_job) {
+        parameters.gp
+    } else {
+        parameters.mp
+    };
+    points.min(u16::MAX as u32) as u16
+}
+
 pub fn adjust_quest_id(quest_id: u32) -> u32 {
     quest_id.saturating_sub(QuestSheet::STARTING_ROW)
 }

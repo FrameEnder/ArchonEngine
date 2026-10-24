@@ -235,8 +235,14 @@ impl ZoneConnection {
             name: self.player_data.character.name.clone(),
             health_points: base_parameters.hp,
             max_health_points: base_parameters.hp,
-            resource_points: base_parameters.mp as u16,
-            max_resource_points: base_parameters.mp as u16,
+            resource_points: crate::common::max_resource_points(
+                self.player_data.classjob.current_class as u8,
+                &base_parameters,
+            ),
+            max_resource_points: crate::common::max_resource_points(
+                self.player_data.classjob.current_class as u8,
+                &base_parameters,
+            ),
             level: self.current_level(&game_data) as u8,
             object_kind: ObjectKind::Player(PlayerSubKind::Player),
             look,
@@ -273,6 +279,9 @@ impl ZoneConnection {
     }
 
     pub async fn spawn_object(&mut self, spawn: SpawnObject) {
+        if spawn.kind == ObjectKind::GatheringPoint {
+            self.gathering.saw_point(spawn.base_id, spawn.args1);
+        }
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::SpawnObject(spawn));
 
         self.send_ipc_from(spawn.entity_id, ipc).await;

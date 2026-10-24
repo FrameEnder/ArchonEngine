@@ -39,6 +39,11 @@ pub enum DropInObjectData {
     GatheringPoint {
         /// Index into the GatheringPoint Excel sheet.
         base_id: u32,
+        /// SpawnObject's args1 as retail sent it (Bob's Chronofoil captures): its bytes are the integrity, the point's
+        /// slot in the client's phase table, which of the point's positions this is, and how many it has. Without
+        /// it, the server works them out from the drop-ins.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        spawn_args: Option<u32>,
     },
     /// Represents a battle NPC.
     #[serde(rename = "battle_npc")]
@@ -113,7 +118,10 @@ mod tests {
                         layout_id: 4001271,
                         position: Position(Vec3A::from_array([-266.0561, 29.50931, -562.5141])),
                         rotation: 0.0,
-                        data: DropInObjectData::GatheringPoint { base_id: 30001 }
+                        data: DropInObjectData::GatheringPoint {
+                            base_id: 30001,
+                            spawn_args: None,
+                        }
                     }]
                 }]
             }

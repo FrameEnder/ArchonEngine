@@ -60,10 +60,16 @@ pub mod inventory;
 mod bitmask;
 pub use bitmask::{Bitmask, QuestBitmask};
 
+/// Disciples of the Hand: the rules of a synthesis.
+pub mod crafting;
+
+/// Disciples of the Land: the rules at a node.
+pub mod gathering;
+
 mod gamedata;
 pub use gamedata::{
-    ActionInfo, GameData, GatheringPointItem, ItemInfoQuery, ItemRow, Recipe, Roulette,
-    SyncedItemStats, TerritoryNameKind,
+    ActionInfo, GameData, GatheringPointItem, ItemInfoQuery, ItemRow, Recipe, RecipeInfo,
+    RecipeIngredient, Roulette, SyncedItemStats, TerritoryNameKind,
 };
 
 mod chara_make;

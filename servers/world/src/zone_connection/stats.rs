@@ -777,6 +777,10 @@ impl ZoneConnection {
             let items = self.equipped_item_stats(&mut game_data, sync_item_level);
             base_parameters.add_equipped_items(&items);
         }
+        // Crafters have 180 CP before their gear (Craftimizer's base stats, which it adds gear to.)
+        if crate::common::is_crafter(self.player_data.classjob.current_class as u8) {
+            base_parameters.cp += 180;
+        }
         base_parameters.calculate_potencies(&param_grow, Some(&modifiers));
         // Retail's PlayerStats has the weapon's delay here (2400 for a Maple Wand.)
         if let Some(weapon) = &weapon {

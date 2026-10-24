@@ -1,0 +1,66 @@
+{
+    "appends": "bg/ex3/01_nvt_n4/fld/n4f4/level/planmap.lgb",
+    "layers": [
+        {
+            "name": "GATHERING_RETAIL",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 32700,
+                        "spawn_args": 50334212,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 8044888,
+                    "position": {
+                        "x": 419.363,
+                        "y": 90.667,
+                        "z": -803.083
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 32678,
+                        "spawn_args": 50462726,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 8045008,
+                    "position": {
+                        "x": 257.891,
+                        "y": 38.982,
+                        "z": -419.947
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 32678,
+                        "spawn_args": 50397190,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 8045009,
+                    "position": {
+                        "x": 229.779,
+                        "y": 20.951,
+                        "z": -411.965
+                    },
+                    "rotation": 0.0
+                },
+                {
+                    "data": {
+                        "base_id": 32678,
+                        "spawn_args": 50331654,
+                        "type": "gathering_point"
+                    },
+                    "layout_id": 8045010,
+                    "position": {
+                        "x": 259.272,
+                        "y": 37.641,
+                        "z": -397.358
+                    },
+                    "rotation": 0.0
+                }
+            ]
+        }
+    ]
+}

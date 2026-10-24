@@ -438,6 +438,17 @@ const PLAYER_REGEN_INTERVAL: Duration = Duration::from_secs(3);
 const MP_REGEN_IN_COMBAT: u32 = 200;
 const MP_REGEN_OUT_OF_COMBAT: u32 = 600;
 
+/// GP a gatherer gets back every tick away from a node: 5, one more each with the Enhanced GP Regeneration traits at
+/// 70, 80 and 83 (Trait sheet Values 1/2/3; GatherBuddy Reborn's model. The traits' quests aren't checked.)
+fn gp_regen(level: u8) -> u16 {
+    match level {
+        83.. => 8,
+        80.. => 7,
+        70.. => 6,
+        _ => 5,
+    }
+}
+
 /// How often queued tasks (finished casts, event actions, despawns...) are checked, in milliseconds. Much finer than
 /// the logic tick, so a cast resolves when its cast bar ends rather than up to half a second later.
 const TASK_TICK_MILLISECONDS: u32 = 20;
@@ -1093,6 +1104,9 @@ fn server_logic_tick(
             // A running duty's time left is re-sent every 300 s, as retail.
             director::resync_duty_clock(&mut network.lock(), instance);
 
+            // Unspoiled, legendary and ephemeral gathering points come and go with the Eorzea time.
+            instance.update_timed_gathering_points(&mut network.lock(), timestamp_secs() as u64);
+
             // Out in the world the weather moves on at each 1400 s boundary, sent with retail's 20 s fade.
             let weather_window = timestamp_secs() / WEATHER_WINDOW_SECONDS;
             if weather_window != instance.weather_window
@@ -1216,8 +1230,18 @@ fn server_logic_tick(
                         updated = true;
                     }
 
-                    if spawn.common.resource_points != spawn.common.max_resource_points {
-                        let amount = MP_REGEN_OUT_OF_COMBAT as u16;
+                    // CP doesn't come back during a synthesis, nor GP over time at a node (retail; CP fills up
+                    // when a synthesis ends instead, `events/crafting.rs`.)
+                    let busy = matches!(
+                        spawn.common.mode,
+                        CharacterMode::Crafting | CharacterMode::Gathering
+                    );
+                    if spawn.common.resource_points != spawn.common.max_resource_points && !busy {
+                        let amount = if crate::common::is_gatherer(spawn.common.class_job) {
+                            gp_regen(spawn.common.level)
+                        } else {
+                            MP_REGEN_OUT_OF_COMBAT as u16
+                        };
                         spawn.common.resource_points = u16::clamp(
                             spawn.common.resource_points + amount,
                             0,
@@ -3195,6 +3219,21 @@ pub async fn server_main_loop(
 
                     update_actor_hp_mp(network.clone(), instance, from_actor_id);
                 }
+                ToServer::RestoreResourcePoints(from_actor_id, amount) => {
+                    let mut data = data.lock();
+                    let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
+                        continue;
+                    };
+                    let Some(actor) = instance.find_actor_mut(from_actor_id) else {
+                        continue;
+                    };
+                    let common = actor.get_common_spawn_mut();
+                    common.resource_points = common
+                        .resource_points
+                        .saturating_add(amount)
+                        .min(common.max_resource_points);
+                    update_actor_hp_mp(network.clone(), instance, from_actor_id);
+                }
                 ToServer::SpawnQuestBattleNpc(_from_id, from_actor_id, layout_id) => {
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
@@ -3296,7 +3335,8 @@ pub async fn server_main_loop(
                         let common = actor.get_common_spawn_mut();
                         common.level = level;
                         common.max_health_points = new_parameters.hp;
-                        common.max_resource_points = new_parameters.mp as u16;
+                        common.max_resource_points =
+                            crate::common::max_resource_points(class_job, &new_parameters);
                         // Syncing down cuts HP and MP to the new maximum (retail kept them as they were when the sync
                         // ended, rather than filling them up.)
                         common.health_points = common.health_points.min(common.max_health_points);

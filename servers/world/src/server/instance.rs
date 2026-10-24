@@ -123,6 +123,8 @@ pub const WEATHER_WINDOW_SECONDS: u32 = 1400;
 pub struct Instance {
     /// List of spawned actors.
     pub actors: HashMap<ObjectId, NetworkedActor>,
+    /// The timed gathering points that are up, by layout ID: their actor and the window they're up for.
+    pub timed_gathering_spawned: HashMap<u32, (ObjectId, u32)>,
     /// The navmesh data.
     pub navmesh: Navmesh,
     /// The zone data.
@@ -460,6 +462,45 @@ impl Instance {
                 job_gauge: JobGauge::default(),
             },
         );
+    }
+
+    /// Spawns the zone's timed gathering points whose window has opened and takes away those whose window has
+    /// closed. While one is up its args2 say so (bytes: up, up, the position shown, 0): the client shows unspoiled and
+    /// legendary points only with both flags and at that position, ephemeral ones only with them (7.57
+    /// `GatheringEventHandler.Setup` and `0x140E8E8F0`; Bob's Chronofoil captures had 01 01 nn 00 for the points that
+    /// were up.) Which position a window uses is picked from the point and the window, the same for everyone.
+    pub fn update_timed_gathering_points(&mut self, network: &mut NetworkState, unix_seconds: u64) {
+        if self.zone.timed_gathering_points.is_empty() {
+            return;
+        }
+        let minute = crate::gathering::eorzea_minute_of_day(unix_seconds);
+        for point in self.zone.timed_gathering_points.clone() {
+            let layout = point.spawn.layout_id;
+            let window = crate::gathering::window_start(&point.windows, minute);
+            let spawned = self.timed_gathering_spawned.get(&layout).copied();
+            if spawned.map(|(_, start)| start) == window {
+                continue;
+            }
+            if let Some((actor_id, _)) = spawned {
+                network.remove_actor(self, actor_id);
+                self.timed_gathering_spawned.remove(&layout);
+            }
+            let Some(start) = window else {
+                continue;
+            };
+            let args = point.spawn.args1.to_le_bytes();
+            let positions = args[3].max(1) as u32;
+            // The day's window number too, so the position changes from one day's window to the next.
+            let day = unix_seconds / 4200;
+            let shown =
+                ((point.spawn.base_id as u64 + start as u64 + day) % positions as u64) as u8;
+            let mut spawn = point.spawn;
+            spawn.entity_id = ObjectId(fastrand::u32(..));
+            spawn.args2 = u32::from_le_bytes([1, 1, shown, 0]);
+            self.insert_object(spawn.entity_id, spawn, String::default());
+            self.timed_gathering_spawned
+                .insert(layout, (spawn.entity_id, start));
+        }
     }
 
     pub fn insert_object(&mut self, actor_id: ObjectId, object: SpawnObject, layer_name: String) {

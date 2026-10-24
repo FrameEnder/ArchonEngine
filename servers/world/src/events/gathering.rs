@@ -1,16 +1,14 @@
 use async_trait::async_trait;
 use bitflags::bitflags;
 use kawari::{
-    common::{CharacterMode, ObjectTypeId, value_to_flag_byte_index_value_quests},
-    ipc::zone::{
-        ActorControlCategory, Condition, LiveEventType, SceneFlags, ServerZoneIpcData,
-        ServerZoneIpcSegment,
-    },
+    common::{CharacterMode, ObjectTypeId},
+    ipc::zone::{Condition, SceneFlags},
 };
 
-use crate::{Event, EventHandler, ItemInfoQuery, ZoneConnection, inventory::Item, lua::LuaPlayer};
+use crate::{Event, EventHandler, ZoneConnection, lua::LuaPlayer};
 
-/// For gathering events.
+/// For gathering events: the node's window (`ZoneConnection::send_gathering_window`), each gather and what's left
+/// (`zone_connection/gathering.rs`.)
 #[derive(Debug)]
 pub struct GatheringEventHandler {
     count: u8,
@@ -46,78 +44,9 @@ impl std::fmt::Debug for GatheringItemFlag {
 
 #[async_trait]
 impl EventHandler for GatheringEventHandler {
-    async fn on_talk(&self, event: &Event, _target_id: ObjectTypeId, player: &mut LuaPlayer) {
-        // TODO: figure out these params
-        player.play_scene(
-            0,
-            SceneFlags::NO_DEFAULT_CAMERA,
-            vec![
-                0,
-                event.id.event_id(),
-                2147485320,
-                u32::from_le_bytes([self.count, 0, self.count, 0]), // first: count, second: ??, third: remaining count, fourth: ??
-                24,
-                1310820,
-                67305316,
-                9437184,
-                108,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                65636,
-                67305316,
-                1638400,
-                29,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                32755,
-                0,
-                0,
-                1121910784,
-                32755,
-                2616352782,
-                1,
-                1114399744,
-                0,
-                0,
-                0,
-                33024,
-                0,
-                0,
-                0,
-                0,
-                0,
-            ],
-        );
+    async fn on_talk(&self, _event: &Event, _target_id: ObjectTypeId, player: &mut LuaPlayer) {
+        // The window needs the connection (what's left, the gatherer's stats), so it's sent from there.
+        player.open_gathering_window();
     }
 
     async fn on_yield(
@@ -129,123 +58,31 @@ impl EventHandler for GatheringEventHandler {
         results: &[i32],
         player: &mut LuaPlayer,
     ) {
-        // TODO: store this on begin gather
-        let items;
-        {
-            let mut game_data = connection.game_data.lock();
-            items = game_data.get_gathering_point_items(event.id.event_id());
-        }
+        let point = event.id.event_id();
+        let result = |i: usize| results.get(i).copied().unwrap_or_default();
 
-        if results[2] == 2 {
-            // gather
-            let item_index = results[1];
-            let gather_item_id = items[item_index as usize].item_id;
-
-            // plays the animation
+        if scene == 0 && result(2) == 2 {
+            // Gather the item in slot results[1], then the animation (scene 1), whose end brings us back below.
+            connection.gather(event, result(1).max(0) as usize).await;
             player.play_scene(1, SceneFlags::NO_DEFAULT_CAMERA, vec![2, 266]);
-
-            // Add item to their inventory
-            {
-                let mut game_data = connection.game_data.lock();
-
-                if let Some(item_info) =
-                    game_data.get_item_info(ItemInfoQuery::ById(gather_item_id as u32))
-                {
-                    connection
-                        .player_data
-                        .inventory
-                        .add_in_next_free_slot(Item::new(&item_info, 1));
-                }
-            }
-
-            connection.send_inventory().await;
-
-            if !player
-                .player_data
-                .quest
-                .gathered_gathering_items
-                .contains(items[item_index as usize].gathering_id as u32)
-            {
-                let (value, index) = value_to_flag_byte_index_value_quests(
-                    items[item_index as usize].gathering_id as u32,
-                );
-
-                connection.player_data.quest.gathered_gathering_items.data[index as usize] ^= value;
-
-                let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::RecordGatheringLog {
-                    index: index as u8,
-                    value: connection.player_data.quest.gathered_gathering_items.data
-                        [index as usize],
-                });
-                connection.send_ipc_self(ipc).await;
-
-                connection
-                    .actor_control_self(ActorControlCategory::LiveEvent {
-                        event: LiveEventType::RecordInGatheringLog {
-                            item_id: gather_item_id as u32,
-                        },
-                    })
-                    .await;
-
-                // Add EXP
-                // TODO: don't use placeholder EXP
-                // TODO: the first time EXP doesn't take into account bonus?
-                connection.add_exp_with_bonus(516, 0).await;
-            }
-
-            // Add EXP
-            // TODO: don't use placeholder EXP
-            connection.add_exp_with_bonus(96, 0).await;
-
-            // The item was added to your inventory.
-            connection
-                .actor_control_self(ActorControlCategory::LogMessage {
-                    log_message: 789,
-                    id: gather_item_id as u32,
-                })
-                .await;
-
             return;
         }
 
-        // quit
-        if scene == 0 && results[2] == 0 {
+        if scene == 0 && result(2) == 0 {
+            // Quit.
+            connection.leave_gathering_point().await;
             player.finish_event();
             return;
         }
 
-        let mut params = vec![
-            7,
-            event.id.event_id(),
-            2147485320,
-            u32::from_le_bytes([self.count, 0, self.count, 0]), // first: count, second: ??, third: remaining count, fourth: ??
-        ];
-
-        for item in items {
-            let mut flags = GatheringItemFlag::default();
-            if item.hidden {
-                flags.insert(GatheringItemFlag::HIDDEN);
-            }
-            if !player
-                .player_data
-                .quest
-                .gathered_gathering_items
-                .contains(item.gathering_id as u32)
-            {
-                flags.insert(GatheringItemFlag::NOT_GATHERED_YET);
-            }
-
-            params.append(&mut vec![
-                item.gathering_id as u32,
-                u32::from_le_bytes([0, 0, item.level, 0]), // first: ??, second: ??, third: displayed level, fourth: ??
-                u32::from_le_bytes([100, 0, 1, flags.0]), // first: gathering chance, second: HQ gathering chance, third: count, fourth: flag (see above)
-                0,
-                0,
-                0,
-            ]);
+        // After a gather: the window again, or, if that was the last attempt, the node goes and the window closes.
+        if connection.gathering.remaining(point, self.count) == 0 {
+            connection.leave_gathering_point().await;
+            connection.gathering_point_exhausted(point).await;
+            player.finish_event();
+            return;
         }
-
-        player.play_scene(0, SceneFlags::NO_DEFAULT_CAMERA, params);
+        connection.send_gathering_window(event, false).await;
     }
 
     fn condition(&self) -> Condition {

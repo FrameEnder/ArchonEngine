@@ -434,9 +434,43 @@ add one when something is found.
 * `!` debug commands are only recognised in zone chat (Say/Shout/Yell); in Party, Tell, Linkshell, Free Company or
   Novice Network chat they're posted as ordinary messages (upstream's behaviour).
 
+## Crafting
+
+* Untested in game (2026-10-24), and no retail synthesis has been recorded: the packets are the client's code's and
+  Teamcraft's reading of them. A Chronofoil capture of one normal synthesis, one expert one, a quit and a failure would
+  settle most of what follows.
+* Scene params 1–3 and 18 are 0; retail's order at the end (scene 4 or 6, what answers a failure) and the scene flags
+  are guesses.
+* Buff statuses carry their steps as the param with no time limit; whether retail shows them that way isn't known.
+  The client may want StateFlags bits for Quick Innovation and Trained Perfection being used up (unknown).
+* Condition chances are Craftimizer's (Teamcraft's differ); whether Heart and Soul, Quick Innovation and Careful
+  Observation change the condition is disputed (Kawari: only Careful Observation does).
+* EXP is a stand-in (GatheringExp of the recipe level, up to twice for full quality); retail's formula isn't known.
+* A quit or failure gives back each ingredient with an even chance; retail's rule isn't known.
+* Not done: quick synthesis, trial synthesis, collectables (collectability, CollectablesShop), food and potions, the
+  completed-recipe log (CraftingLog is still sent empty: which bit a recipe is isn't known), specialist and
+  Manipulation's quest unlock (the client greys those actions; the server doesn't check), crafting leves.
+
+## Gathering
+
+* Untested in game (2026-10-24), and no retail gathering has been recorded (Bob didn't gather in the captures): what
+  retail sends when a node is used up (Kawari: GatheringPointPhase for its slot and SetupGatheringPoint), when an
+  action is used at a node, and the window's unknown words (boon chance, perception needed, collectables) aren't known.
+* The gathering chance is a stand-in (Gathering against the item's base); EXP is a stand-in (GatheringExp of the
+  item's level, twice the first time). Node bonuses (GatheringPointBonus) aren't applied, nor shown.
+* GP is gear only (no base GP known; ParamGrow has none); the GP traits' quests aren't checked.
+* Points come from Bob's captures: 18 zones only (none in Western La Noscea, the Sea of Clouds, Mor Dhona and most of
+  Thanalan, nor Endwalker's and Dawntrail's zones). GatherBuddy Reborn's `world_locations.json` has 2,116 points'
+  positions but no layout IDs.
+* The Giving Land gives its status but no extra crystals (its yield isn't known); Revisit, Nymeia's Ward, Eureka
+  Moment's traits, collectables (Collect, Scour, Brazen, Meticulous, Scrutiny, Collector's Focus, Priming Touch),
+  folklore tomes, Truth being needed for unspoiled points, Lay of the Land, hidden items' chances and treasure maps
+  aren't done. Spearfishing and fishing are separate (upstream's fishing).
+* A used-up timed point stays visible (empty) until it despawns; each player sees their own phases and integrity.
+
 ## Systems (upstream gaps the fork hasn't touched)
 
-Crafting is a stub; gathering uses placeholder EXP; duty completion isn't saved per player; housing doesn't persist
+Duty completion isn't saved per player; housing doesn't persist
 furniture; market board, trade, retainers, blacklist and fellowships are placeholders. See `FORK_ROADMAP.md`.
 
 ## Kawari Web

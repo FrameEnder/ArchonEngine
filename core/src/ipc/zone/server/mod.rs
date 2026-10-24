@@ -706,6 +706,18 @@ pub enum ServerZoneIpcData {
         dawn_content_id: u32,
         unk: u32,
     },
+    /// The gathering points' phases: one byte per phase slot, picking which of a point's positions the client shows
+    /// (the phase modulo how many it has; QuestManager +0x7AC, read by 7.57 `0x140E8E8F0`.) Retail sends it once at
+    /// login, with values 0-5 that differ every time (Bob's Chronofoil captures: 42 logins.)
+    GatheringPointPhases {
+        phases: [u8; 160],
+    },
+    /// One slot of the gathering points' phases changes (7.57's handler writes the byte to QuestManager +0x7AC.)
+    GatheringPointPhase {
+        slot: u8,
+        #[brw(pad_after = 6)]
+        phase: u8,
+    },
     /// A retainer is called or sent away at a summoning bell, or hired.
     RetainerState(RetainerState),
     /// The character's retainers for the marketboard's listings.

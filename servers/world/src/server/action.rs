@@ -2273,7 +2273,8 @@ pub fn execute_normal_action(
                 let func: Function = lua.0.globals().get("doAction").unwrap();
 
                 effects_builder = Some(
-                    func.call::<EffectsBuilder>((connection_data, in_combo))
+                    // The action's ID too, for scripts registered for several (resources/scripts/gathering/.)
+                    func.call::<EffectsBuilder>((connection_data, in_combo, request.action_id))
                         .unwrap(),
                 );
 

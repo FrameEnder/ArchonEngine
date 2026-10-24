@@ -44,6 +44,8 @@ mod chat;
 mod effect;
 mod event;
 mod friends;
+mod gathering;
+pub use gathering::GatheringState;
 mod item;
 mod linkshell;
 mod lua;
@@ -181,6 +183,10 @@ pub struct ZoneConnection {
     /// Information about the current content.
     pub event_handler_id: Option<HandlerId>, // TODO: replace with a helper function
     pub recipe: Option<Recipe>,
+    /// The synthesis under way (`events/crafting.rs`.)
+    pub craft: Option<Box<crate::events::CraftSession>>,
+    /// The gathering points as this player sees them (`zone_connection/gathering.rs`.)
+    pub gathering: GatheringState,
     pub synced_level: Option<u8>,
     /// The item level the content syncs to, if it has its own (see `GameData::find_content_synced_item_level`.)
     pub synced_item_level: Option<u16>,
@@ -582,6 +588,9 @@ impl ZoneConnection {
             });
             self.send_ipc_self(ipc).await;
         }
+
+        // Which position each gathering point shows (retail sends it once at login.)
+        self.send_gathering_phases().await;
     }
 
     pub fn check_tele_sharing_eligibility(&mut self, aetheryte_id: u32) {

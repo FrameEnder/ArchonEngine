@@ -11,6 +11,12 @@ use physis::savedata::chardat::CustomizeData;
 
 #[derive(Clone, Debug)]
 pub enum LuaTask {
+    /// Opens the gathering window of the node being talked to (`ZoneConnection::send_gathering_window`.)
+    OpenGatheringWindow,
+    /// A gatherer's action was used (`ZoneConnection::use_gathering_action`.)
+    GatheringAction {
+        action_id: u32,
+    },
     ChangeTerritory {
         zone_id: u16,
         exit_position: Option<Position>,

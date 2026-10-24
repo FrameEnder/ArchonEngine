@@ -271,6 +271,15 @@ def _chronofoil(args) -> int:
             print("--dropin needs --appends: the LGB the drop-in adds to (TerritoryType's Bg folder + planmap.lgb)")
             return 1
         numbers = range(len(captures)) if args.which == "all" else [int(n) for n in args.which.split(",")]
+        if args.gathering:
+            points = chronofoil_dropin.gathering_points([captures[n] for n in numbers], tables, args.dropin)
+            dropin, skipped = chronofoil_dropin.build_gathering(points, args.appends)
+            out = args.out or f"dropin-gathering-{args.dropin}.json"
+            chronofoil_dropin.write(dropin, out)
+            objects = dropin["layers"][0]["objects"]
+            print(f"Wrote {len(objects)} gathering point positions "
+                  f"({len({o['data']['base_id'] for o in objects})} points) to {out}; left out: {skipped or 'nothing'}")
+            return 0
         seen = chronofoil_dropin.sightings([captures[n] for n in numbers], tables, args.dropin)
         dropin, skipped = chronofoil_dropin.build(seen, args.appends, exclude_bases=set(args.exclude_base),
                                                   one_spot=set(args.one_spot))
@@ -456,6 +465,8 @@ def main(argv=None) -> int:
                         "zone changes and unlocks")
     p.add_argument("--dropin", metavar="TERRITORY", type=int,
                    help="write the territory's battle NPCs (every spawn seen) as a drop-in; needs --appends")
+    p.add_argument("--gathering", action="store_true",
+                   help="with --dropin: the territory's gathering points instead of its battle NPCs")
     p.add_argument("--appends", help="the drop-in's LGB, e.g. bg/ffxiv/wil_w1/fld/w1f2/level/planmap.lgb")
     p.add_argument("--exclude-base", type=int, action="append", default=[],
                    help="leave out this BNpcBase (repeatable)")

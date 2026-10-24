@@ -73,8 +73,50 @@ pub fn handle_effect_messages(
 
             true
         }
+        ToServer::SetCraftingState(_from_id, from_actor_id, cp, statuses) => {
+            set_crafting_state(network.clone(), data.clone(), *from_actor_id, *cp, statuses);
+            true
+        }
         _ => false,
     }
+}
+
+/// A crafter's CP and synthesis statuses, sent in one StatusEffectList (the only packet with CP, see
+/// `update_actor_hp_mp`.) Statuses not in the list are taken off.
+fn set_crafting_state(
+    network: Arc<Mutex<NetworkState>>,
+    data: Arc<Mutex<WorldServer>>,
+    from_actor_id: ObjectId,
+    cp: u16,
+    statuses: &[(u16, u16)],
+) {
+    let mut data = data.lock();
+    let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
+        return;
+    };
+    let Some(actor) = instance.find_actor_mut(from_actor_id) else {
+        return;
+    };
+
+    let common = actor.get_common_spawn_mut();
+    common.resource_points = cp.min(common.max_resource_points);
+
+    if let Some(effects) = actor.status_effects_mut() {
+        for id in crate::crafting::CRAFTING_STATUSES {
+            match statuses.iter().find(|(status, _)| *status == id) {
+                Some((_, param)) => {
+                    if effects.get(id).map(|effect| effect.param) != Some(*param) {
+                        // Steps, not seconds: these never run out by time (duration 0.)
+                        effects.add(id, *param, 0.0, from_actor_id);
+                    }
+                }
+                None => effects.remove(id),
+            }
+        }
+        effects.reset_dirty();
+    }
+
+    send_effects_list(network, instance, from_actor_id);
 }
 
 pub fn send_effects_list(
