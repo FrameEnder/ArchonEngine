@@ -65,6 +65,7 @@ start and re-finds them after the next patch.
 | GlamourPlates | server → client | 400 | | 1440 | The 20 glamour plates. Same capture (vtable entry 0x1350). No finder. |
 | GlamourPlateUpdated | server → client | 621 | | 80 | One plate after it was saved. Same capture (vtable entry 0x1358). No finder. |
 | SaveGlamourPlate | client → server | 156 | | 248 | A glamour plate saved at the dresser. Same capture. No finder. |
+| EquipGearsetGlamour | client → server | 605 | | 128 | Equipping a gearset with a glamour plate linked: EquipGearset's layout with the plate's number (from 1) at byte 60, then 56 bytes. From Bob's Chronofoil captures of 2026-10-24. No finder. See [Glamour](glamour.md#applying-a-plate). |
 | ArmoireContents | server → client | 772 | | 136 | The armoire's bitmask (ClientTrigger 423). Same capture (vtable entry 0xEB8). No finder. |
 | ArmoireInfo | server → client | 445 | | 504 | Sent with it (ClientTrigger 427); 1 and zeros, meaning unknown. Same capture (vtable entry 0xEC0). No finder. |
 | EventReturnHandler128 | client → server | 866 | | 520 | A scene's return of up to 128 results (the craft's materials list). Same capture. Finder: the size it's sent with. See [Crafting](crafting.md#the-flow). |

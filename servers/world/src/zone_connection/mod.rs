@@ -53,6 +53,7 @@ mod linkshell;
 mod lua;
 mod mail;
 mod marketboard;
+mod mender;
 mod party;
 mod quest;
 mod retainer;

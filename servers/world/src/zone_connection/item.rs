@@ -2,7 +2,9 @@
 
 use crate::{
     ItemInfoQuery, ToServer, ZoneConnection,
-    inventory::{DesiredHousingInventoryPages, EQUIP_RESTRICTED, Item, Storage},
+    inventory::{
+        DesiredHousingInventoryPages, EQUIP_RESTRICTED, Item, Storage, get_next_free_slot,
+    },
 };
 use kawari::{
     common::{
@@ -530,6 +532,97 @@ impl ZoneConnection {
                 }
             }
         }
+    }
+
+    /// Equips a gearset from the client's EquipGearset (or EquipGearsetGlamour): each slot's item from where the client
+    /// says it is, then GearSetEquipped, the finish, the equipped container, the model and the stats.
+    pub async fn equip_gearset(
+        &mut self,
+        gearset_index: u32,
+        containers: &[ContainerType; 14],
+        indices: &[i16; 14],
+    ) {
+        // TODO: handle missing items, full inventory and such
+        for slot in 0..14 {
+            let from_slot = indices[slot];
+            let from_container = containers[slot];
+
+            if from_container == ContainerType::Equipped {
+                continue;
+            }
+
+            let mut from_item = Item::default();
+
+            if from_slot != -1
+                && let Some(the_item) = self
+                    .player_data
+                    .inventory
+                    .get_item(from_container, from_slot as u16)
+            {
+                from_item = the_item;
+            }
+
+            let equipped_item = self.player_data.inventory.equipped.get_slot(slot as u16);
+
+            if !from_item.is_empty_slot() && !equipped_item.is_empty_slot() {
+                // If there is something equipped and a replacement for it, we must swap.
+                self.swap_items(
+                    from_container,
+                    from_slot as u16,
+                    ContainerType::Equipped,
+                    slot as u16,
+                )
+                .await;
+            } else if !from_item.is_empty_slot() && equipped_item.is_empty_slot() {
+                // If there is nothing equipped but a new item in that slot, we just have to move it.
+                // TODO: be a little smarter about this maybe?
+                self.swap_items(
+                    from_container,
+                    from_slot as u16,
+                    ContainerType::Equipped,
+                    slot as u16,
+                )
+                .await;
+            } else if from_item.is_empty_slot() && !equipped_item.is_empty_slot() {
+                // If there is something equipped but the slot is empty in the gearset, we have to move it somewhere.
+                let target_container_type = ContainerType::from_equip_slot(slot as u8);
+
+                if let Some(target_container) = self
+                    .player_data
+                    .inventory
+                    .get_container(target_container_type)
+                    && let Some(free_slot) = get_next_free_slot(target_container)
+                {
+                    self.swap_items(
+                        ContainerType::Equipped,
+                        slot as u16,
+                        target_container_type,
+                        free_slot,
+                    )
+                    .await;
+                }
+            }
+        }
+
+        // Inform the client that the gearset was successfully equipped.
+        self.actor_control_self(ActorControlCategory::GearSetEquipped {
+            gearset_index: gearset_index,
+        })
+        .await;
+
+        // And that we're done modifying the inventory.
+        self.send_inventory_transaction_finish(ItemOperationKind::UnkGearSetEquipped, 3584)
+            .await;
+
+        // Retail also re-sends the equipped container
+        self.send_equipped_inventory().await;
+        self.inform_equip().await;
+
+        // Change class as needed.
+        self.change_class_based_on_weapon().await;
+
+        // Then finally, resend stats.
+        self.send_stats().await;
     }
 }
 

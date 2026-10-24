@@ -492,8 +492,27 @@ pub enum ClientTriggerCommand {
     },
 
     /// The client requests to repair and item at a mender.
+    /// Repairing one item at a mender (Merchant & Mender): its container, slot and item (Bob's Chronofoil capture of
+    /// 2026-10-24.)
     #[brw(magic = 1600u32)]
-    RepairItem { unk1: u32, unk2: u32, unk3: u32 },
+    RepairItem {
+        #[brw(pad_size_to = 4)] // ContainerType is u16
+        container: ContainerType,
+        slot: u32,
+        item_id: u32,
+    },
+
+    /// A mender's "repair all" for one group of the armoury chest: 0 the weapons (main and off hand), 1 head, body and
+    /// hands, 2 waist, legs and feet, 3 earrings and necklaces, 4 bracelets and rings (Bob's capture of 2026-10-24.)
+    #[brw(magic = 1601u32)]
+    RepairArmouryGroup { group: u32 },
+
+    /// A mender's "repair all" for one container (1000, the gear worn, in Bob's capture of 2026-10-24.)
+    #[brw(magic = 1602u32)]
+    RepairContainer {
+        #[brw(pad_size_to = 4)] // ContainerType is u16
+        container: ContainerType,
+    },
 
     /// A command for the chocobo companion (its context menu, the Companion window): a BuddyAction row, 2 Withdraw, 3
     /// Follow, 4 Free Stance, 5 Defender, 6 Attacker, 7 Healer Stance (Bob's Chronofoil capture of 2026-10-24.)
@@ -599,6 +618,19 @@ pub enum ClientTriggerCommand {
         #[bw(map = write_bool_as::<u32>)]
         open: bool,
     },
+
+    /// The character window's glamour plate list opened (1) or closed (0) to apply one; retail set condition 14 while it
+    /// was open (Bob's Chronofoil capture of 2026-10-24.)
+    #[brw(magic = 2357u32)]
+    ToggleGlamourPlateSelection {
+        #[br(map = read_bool_from::<u32>)]
+        #[bw(map = write_bool_as::<u32>)]
+        open: bool,
+    },
+
+    /// Applies a glamour plate (0–19) to the gear worn, from the character window (Bob's capture of 2026-10-24.)
+    #[brw(magic = 2358u32)]
+    ApplyGlamourPlate { plate: u32 },
 
     /// The client opens the Mahjong tab in the Gold Saucer window.
     #[brw(magic = 2550u32)]

@@ -782,6 +782,9 @@ pub enum ItemOperationKind {
     /// The same from the crystal bag (0x216 on 2026.09.15.)
     RetainerMarketListCrystal = BASE_INVENTORY_ACTION + 26,
     /// Seen while discarding.
+    /// Ends a mender's "repair all" (InventoryTransactionFinish; 0xF6 on 2026.10.16, Bob's Chronofoil capture of
+    /// 2026-10-24.)
+    Repair = BASE_INVENTORY_ACTION + 12,
     UnkDiscard = 0x90,
     /// Seen during trading (256 in 7.55)
     UnkTrading1 = 244,

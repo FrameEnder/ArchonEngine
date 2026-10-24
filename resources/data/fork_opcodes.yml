@@ -187,6 +187,14 @@ ClientZoneIpcType:
   size: 248
   found_on: 2026.10.16.0000.0000
   how_to_find: On Kawari at an inn's glamour dresser, open Glamour Plates, put an item on a plate and save it - the 248-byte packet starting with the plate's number.
+- name: EquipGearsetGlamour
+  comment: Equipping a gearset with a glamour plate linked - EquipGearset's 72 bytes with the plate's number (from 1) at byte 60, then 56 more.
+  # 605 on 2026.10.16 (Bob's Chronofoil captures of 2026-10-24: gearsets 11 and 17 with plates 9 and 12, each answered
+  # with GearSetEquipped and the plate's log lines.) Upstream's EquipGearset2 (1487) is the same size but an old opcode.
+  opcode: 605
+  size: 128
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On Kawari, link a glamour plate to a gearset (Gear Set List, right-click) and equip it - the 128-byte packet starting with the gearset's index.
 ServerZoneIpcType:
 - name: GlamourDresser
   comment: One page of the glamour dresser - the page, 400 item IDs (HQ + 1000000), their first and second stains.

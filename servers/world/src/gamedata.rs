@@ -54,6 +54,7 @@ use icarus::Item::ItemSheet;
 use icarus::ItemAction::ItemActionSheet;
 use icarus::ItemLevel::ItemLevelRow;
 use icarus::ItemLevel::ItemLevelSheet;
+use icarus::ItemRepairPrice::ItemRepairPriceSheet;
 use icarus::ItemSearchCategory::ItemSearchCategorySheet;
 use icarus::ItemSortCategory::ItemSortCategorySheet;
 use icarus::Level::LevelSheet;
@@ -1665,6 +1666,19 @@ impl GameData {
         let row = self.param_grow_sheet.row(level).unwrap();
 
         row.ExpToNext
+    }
+
+    /// What a mender charges to repair an item fully: ItemRepairPrice at the item's equip level, the whole of it for an
+    /// item at 0% (`crate::mender`.) None for an item that can't be repaired (no ItemRepair.)
+    pub fn repair_price(&mut self, item_id: u32) -> Option<u32> {
+        let row = self.item_sheet.row(item_id)?;
+        if row.ItemRepair == 0 {
+            return None;
+        }
+        let prices = ItemRepairPriceSheet::read_from(&mut self.resource, Language::None).ok()?;
+        prices
+            .row(row.LevelEquip as u32)
+            .map(|price| price.Unknown0 as u32)
     }
 
     /// Gets the short name for a given content finder condition.

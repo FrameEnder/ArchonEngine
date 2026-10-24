@@ -3,7 +3,9 @@
 
 use kawari::{
     common::ContainerType,
-    ipc::zone::{ActorControlCategory, ServerZoneIpcData, ServerZoneIpcSegment},
+    ipc::zone::{
+        ActorControlCategory, Condition, ItemInfo, ServerZoneIpcData, ServerZoneIpcSegment,
+    },
 };
 
 use crate::{
@@ -20,6 +22,15 @@ const LOG_STORED_IN_DRESSER: u32 = 4380;
 const LOG_RESTORED_FROM_DRESSER: u32 = 4383;
 const LOG_PLATE_SAVED: u32 = 4382;
 const LOG_ITEM_OBTAINED: u32 = 789;
+/// Applying a glamour plate: the plate's number (from 1), then one line per slot with the item worn and its glamour.
+const LOG_PLATE_APPLIED: u32 = 4364;
+const LOG_GLAMOUR_CAST: u32 = 4309;
+/// ActorControlSelf retail sent after a plate was applied, `[1]` (meaning unknown; 1800 is a dresser slot changing.)
+const PLATE_APPLIED: u32 = 1801;
+
+/// The equipped slot each of a plate's 12 slots dresses: main hand, off hand, head, body, hands, legs, feet, earrings,
+/// necklace, bracelets, right ring, left ring (no waist; retail's GlamourPlates against the gear it changed.)
+const PLATE_TO_EQUIPPED: [u16; 12] = [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12];
 
 /// ArmoireResult's results: done, and the item to store wasn't there (retail's first try of row 178.)
 const ARMOIRE_DONE: u32 = 0;
@@ -284,5 +295,87 @@ impl ZoneConnection {
         self.send_inventory_slot(placed.container, placed.slot)
             .await;
         self.log_message(LOG_ITEM_OBTAINED, item_id).await;
+    }
+
+    /// The character window's glamour plate list opened or closed (ClientTrigger 2357): retail set condition 14 while
+    /// it was open.
+    pub async fn toggle_glamour_plate_selection(&mut self, open: bool) {
+        self.conditions
+            .toggle_condition(Condition::Occupied39, open);
+        self.send_conditions().await;
+    }
+
+    /// Applies a glamour plate (0–19) to the gear worn (ClientTrigger 2358, or a gearset with the plate linked). Each of
+    /// the plate's slots that has an item glamours the piece worn there with it and its stains; an empty plate slot
+    /// leaves the piece as it is (retail kept the main hand's glamour under plates without one). Retail sent the slots
+    /// that changed, the stats, the model, LogMessage 4364 with the plate's number, a 4309 line for each slot with an
+    /// item (the piece worn, its glamour), then ActorControlSelf 1801 `[1]`.
+    pub async fn apply_glamour_plate(&mut self, plate: usize) {
+        let Some(glamours) = self
+            .player_data
+            .inventory
+            .glamour
+            .plates
+            .get(plate)
+            .copied()
+        else {
+            return;
+        };
+        let mut lines = Vec::new();
+        for (index, equip_slot) in PLATE_TO_EQUIPPED.iter().enumerate() {
+            let glamour_id = glamours.item_ids[index] % HQ_OFFSET;
+            if glamour_id == 0 {
+                continue;
+            }
+            let stains = [glamours.stain0[index], glamours.stain1[index]];
+            let Some(item) = self
+                .player_data
+                .inventory
+                .get_item_mut(ContainerType::Equipped, *equip_slot)
+            else {
+                continue;
+            };
+            if item.is_empty_slot() {
+                continue;
+            }
+            lines.push((item.item_id, glamour_id));
+            if item.glamour_id == glamour_id && item.stains == stains {
+                continue;
+            }
+            item.glamour_id = glamour_id;
+            item.stains = stains;
+            let item = *item;
+            let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateInventorySlot(ItemInfo {
+                sequence: self.player_data.shop_sequence,
+                container: ContainerType::Equipped,
+                slot: *equip_slot,
+                ..item.into()
+            }));
+            self.send_ipc_self(ipc).await;
+            self.player_data.shop_sequence += 1;
+        }
+        self.send_stats().await;
+        self.inform_equip().await;
+        self.log_message(LOG_PLATE_APPLIED, plate as u32 + 1).await;
+        for (item_id, glamour_id) in lines {
+            self.actor_control_self(ActorControlCategory::Unknown {
+                category: 517,
+                param1: LOG_GLAMOUR_CAST,
+                param2: item_id,
+                param3: glamour_id,
+                param4: 0,
+                param5: 0,
+            })
+            .await;
+        }
+        self.actor_control_self(ActorControlCategory::Unknown {
+            category: PLATE_APPLIED,
+            param1: 1,
+            param2: 0,
+            param3: 0,
+            param4: 0,
+            param5: 0,
+        })
+        .await;
     }
 }

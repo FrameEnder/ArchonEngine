@@ -189,6 +189,24 @@ pub enum ClientZoneIpcData {
         containers: [u32; 12],
         unk3: [u32; 31],
     },
+    /// Equipping a gearset that has a glamour plate linked (Bob's Chronofoil capture of 2026-10-24; the 72-byte
+    /// EquipGearset is a gearset without one): as EquipGearset, with the plate's number (1–20) where EquipGearset has a
+    /// zero byte. The last 56 bytes held nothing recognisable.
+    EquipGearsetGlamour {
+        /// Index into the list of gearsets that the client keeps on its side.
+        gearset_index: u32,
+        /// As EquipGearset's: weapon, off-hand, head, body, hands, waist, legs, feet, earrings, neck, wrist, rings, soul
+        /// crystal, 9999 when irrelevant.
+        containers: [ContainerType; 14],
+        indices: [i16; 14],
+        /// The linked glamour plate, counted from 1.
+        #[brw(pad_after = 5)]
+        glamour_plate: u8,
+        unk1: u16,
+        #[brw(pad_after = 2)]
+        unk2: u16,
+        unk3: [u8; 56],
+    },
     /// Sent as the marketboard's window opens, before any search; retail answers with an empty
     /// `ServerZoneIpcData::MarketBoardItems` whose request ID is this one.
     MarketBoardOpened {

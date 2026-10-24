@@ -12,7 +12,7 @@ use kawari::common::{
     calculate_max_level, in_housing_area,
 };
 use kawari::config::get_config;
-use kawari_world::inventory::{Item, MAX_LARGE_STORAGE, Storage, get_next_free_slot};
+use kawari_world::inventory::{Item, MAX_LARGE_STORAGE};
 use physis::equipment::EquipSlot;
 
 use kawari::ipc::chat::ClientChatIpcData;
@@ -1627,6 +1627,41 @@ async fn process_packet(
                                         connection.send_glamour_plates().await;
                                     }
                                 }
+                                ClientTriggerCommand::ToggleGlamourPlateSelection { open } => {
+                                    connection.toggle_glamour_plate_selection(open).await;
+                                }
+                                ClientTriggerCommand::ApplyGlamourPlate { plate } => {
+                                    connection.apply_glamour_plate(plate as usize).await;
+                                }
+                                ClientTriggerCommand::RepairItem {
+                                    container,
+                                    slot,
+                                    item_id,
+                                } => {
+                                    connection
+                                        .repair_item(container, slot as u16, item_id)
+                                        .await;
+                                }
+                                ClientTriggerCommand::RepairArmouryGroup { group } => {
+                                    connection.repair_armoury_group(group).await;
+                                }
+                                ClientTriggerCommand::RepairContainer { container } => {
+                                    connection.repair_container(container).await;
+                                }
+                                // Doman Mahjong's tab: retail answered ActorControlSelf 2001 `[0, 1500, 1500]` for a
+                                // character who hadn't played (Bob's capture of 2026-10-24), likely the starting rating.
+                                ClientTriggerCommand::OpenGoldSaucerMahjongTab => {
+                                    connection
+                                        .actor_control_self(ActorControlCategory::Unknown {
+                                            category: 2001,
+                                            param1: 0,
+                                            param2: 1500,
+                                            param3: 1500,
+                                            param4: 0,
+                                            param5: 0,
+                                        })
+                                        .await;
+                                }
                                 ClientTriggerCommand::StoreInGlamourDresser { container, slot } => {
                                     connection
                                         .store_in_glamour_dresser(container, slot as u16)
@@ -2815,105 +2850,27 @@ async fn process_packet(
                             indices,
                             ..
                         } => {
-                            // TODO: handle missing items, full inventory and such
-                            for slot in 0..14 {
-                                let from_slot = indices[slot];
-                                let from_container = containers[slot];
-
-                                if from_container == ContainerType::Equipped {
-                                    continue;
-                                }
-
-                                let mut from_item = Item::default();
-
-                                if from_slot != -1
-                                    && let Some(the_item) = connection
-                                        .player_data
-                                        .inventory
-                                        .get_item(from_container, from_slot as u16)
-                                {
-                                    from_item = the_item;
-                                }
-
-                                let equipped_item = connection
-                                    .player_data
-                                    .inventory
-                                    .equipped
-                                    .get_slot(slot as u16);
-
-                                if !from_item.is_empty_slot() && !equipped_item.is_empty_slot() {
-                                    // If there is something equipped and a replacement for it, we must swap.
-                                    connection
-                                        .swap_items(
-                                            from_container,
-                                            from_slot as u16,
-                                            ContainerType::Equipped,
-                                            slot as u16,
-                                        )
-                                        .await;
-                                } else if !from_item.is_empty_slot()
-                                    && equipped_item.is_empty_slot()
-                                {
-                                    // If there is nothing equipped but a new item in that slot, we just have to move it.
-                                    // TODO: be a little smarter about this maybe?
-                                    connection
-                                        .swap_items(
-                                            from_container,
-                                            from_slot as u16,
-                                            ContainerType::Equipped,
-                                            slot as u16,
-                                        )
-                                        .await;
-                                } else if from_item.is_empty_slot()
-                                    && !equipped_item.is_empty_slot()
-                                {
-                                    // If there is something equipped but the slot is empty in the gearset, we have to move it somewhere.
-                                    let target_container_type =
-                                        ContainerType::from_equip_slot(slot as u8);
-
-                                    if let Some(target_container) = connection
-                                        .player_data
-                                        .inventory
-                                        .get_container(target_container_type)
-                                        && let Some(free_slot) =
-                                            get_next_free_slot(target_container)
-                                    {
-                                        connection
-                                            .swap_items(
-                                                ContainerType::Equipped,
-                                                slot as u16,
-                                                target_container_type,
-                                                free_slot,
-                                            )
-                                            .await;
-                                    }
-                                }
+                            connection
+                                .equip_gearset(*gearset_index, containers, indices)
+                                .await;
+                        }
+                        // A gearset with a glamour plate linked: equipped, then the plate applied (Bob's capture of
+                        // 2026-10-24.)
+                        ClientZoneIpcData::EquipGearsetGlamour {
+                            gearset_index,
+                            containers,
+                            indices,
+                            glamour_plate,
+                            ..
+                        } => {
+                            connection
+                                .equip_gearset(*gearset_index, containers, indices)
+                                .await;
+                            if *glamour_plate > 0 {
+                                connection
+                                    .apply_glamour_plate(*glamour_plate as usize - 1)
+                                    .await;
                             }
-
-                            // Inform the client that the gearset was successfully equipped.
-                            connection
-                                .actor_control_self(ActorControlCategory::GearSetEquipped {
-                                    gearset_index: *gearset_index,
-                                })
-                                .await;
-
-                            // And that we're done modifying the inventory.
-                            connection
-                                .send_inventory_transaction_finish(
-                                    ItemOperationKind::UnkGearSetEquipped,
-                                    3584,
-                                )
-                                .await;
-
-                            // Retail also re-sends the equipped container
-                            connection.send_equipped_inventory().await;
-                            connection.inform_equip().await;
-
-                            // Change class as needed.
-                            connection.change_class_based_on_weapon().await;
-
-                            // Then finally, resend stats.
-                            connection.send_stats().await;
                         }
                         ClientZoneIpcData::EquipGearset2 { .. } => {
                             tracing::warn!("Bigger gearsets not supported yet!");

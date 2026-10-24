@@ -451,12 +451,16 @@ add one when something is found.
 ## Glamour dresser, plates and armoire
 
 * New and untested in game (2026-10-24): the dresser, plates and armoire follow Bob's retail capture.
-* Not done: applying a glamour plate to the gear worn, outfit sets, armoire items on plates, glamour prisms, dyeing a
-  dresser item. SaveGlamourPlate's last 124 bytes and its second 12 flags aren't understood; ArmoireInfo's meaning
+* Applying a glamour plate (character window, gearsets with a plate linked) and the mender's repairs follow Bob's
+  capture of 2026-10-24 and are untested in game. ActorControlSelf 1801 and the repair ones (90, 91, 93) are sent as
+  retail without being understood; 57 and 804 after a plate aren't sent.
+* Not done: outfit sets, armoire items on plates, glamour prisms, dyeing a dresser item, self-repair, materia
+  extraction. SaveGlamourPlate's last 124 bytes and its second 12 flags aren't understood; ArmoireInfo's meaning
   isn't known (it's sent as retail's 1 and zeros).
-* Gold Saucer tabs: ClientTrigger 1900 (answered on retail with opcode 661, 32 bytes, and ActorControlSelf 933 `[3]`),
-  2010 (opcode 410, 32 bytes) and 2550 (Mahjong: ActorControlSelf 2001 `[0, 1500, 1500]`) aren't answered; their
-  layouts aren't known. Nor is ClientTrigger 1011 (`[achievement]`, answered with ActorControlSelf 600
+* Gold Saucer tabs: the Chocobo tab (1900) isn't answered (opcode 661 is the racing chocobo, RaceChocoboManager's
+  layout, and Kawari has none; ActorControlSelf 933 `[3]` isn't understood), nor is 2010 (opcode 410, AgentId 0xB9,
+  layout partly read); GoldSaucerInformation for the General tab is sent as zeros. Mahjong's 2001 `[0, 1500, 1500]`
+  is sent. Nor is ClientTrigger 1011 (`[achievement]`, answered with ActorControlSelf 600
   `[achievement, 0, 0, 1]`), the free company's activity list (client opcode 708, paged), or CustomTalk 200
   (CmnDefMiniGame) at the Hourglass.
 

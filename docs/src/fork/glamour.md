@@ -37,8 +37,30 @@ A plate's slot that's set takes the item and stains of the dresser index it name
 dresser); a slot that isn't set comes back empty (retail: the off hand). The client sends ClientTrigger 830 after each
 change (below).
 
-Not done: applying a plate to the gear worn, outfit sets (MirageStoreSetItem), items from the armoire on a plate, and
+Not done: outfit sets (MirageStoreSetItem), items from the armoire on a plate, and
 glamour prisms (the capture showed a stack of item 21800 resent as an item was stored; no count changed that's known).
+
+## Applying a plate
+
+From Bob's Chronofoil capture of 2026-10-24 (Middle La Noscea: the character window's plate list, five plates, a
+gearset with plate 9 linked):
+
+| Client | Server |
+|---|---|
+| ClientTrigger 2356 `[0]` (the character window's plates) | GlamourPlates, as at the dresser |
+| ClientTrigger **2357** `[1]` / `[0]` (the plate list opens / closes to apply one) | condition 14 (`Occupied39`) on / off |
+| ClientTrigger **2358** `[plate]` (0–19) | the slots worn that changed (UpdateInventorySlot: the glamour, and the plate's stains on the item), PlayerStats, the model (Equip), LogMessage **4364** `[plate + 1]`, a **4309** line `[item worn, glamour]` for each plate slot with an item (ActorControlSelf 517 with three words), ActorControlSelf **1801** `[1]` |
+| **EquipGearsetGlamour** (client opcode 605, 128 bytes) | the gearset equipped as EquipGearset, then the plate applied as above |
+
+A plate's 12 slots dress main hand, off hand, head, body, hands, legs, feet, earrings, necklace, bracelets, right and
+left ring (no waist). A plate slot with no item leaves that piece's glamour as it was (retail kept the main hand's
+under three plates without one). Retail also sent ActorControlSelf 521 (item level), 57 and 804 (805 after the
+gearset), meaning unknown; Kawari sends its own stats.
+
+**Gearset links.** A gearset's linked plate lives with the gearset on the client (the Gear Set List's link and unlink
+sent nothing). Equipping a gearset with one sends **EquipGearsetGlamour**: EquipGearset's 72 bytes with the plate's
+number (from 1) at byte 60, where EquipGearset has 0, then 56 bytes that held nothing recognisable (upstream's
+EquipGearset2, 1487, is the same size with an old opcode).
 
 ## The armoire
 
@@ -53,6 +75,17 @@ Talking to it (CustomTalk 82) plays scene 0 with no parameters. Then:
 The item is the Cabinet sheet's (`GameData::get_cabinet_item`; workspace icarus feature `Cabinet`).
 
 ## Around them
+
+* **The Gold Saucer window** (same capture): the General tab (ClientTrigger 1850) gets GoldSaucerInformation (750,
+  40 bytes; retail's layout isn't worked out, Kawari sends zeros). The Chocobo tab (1900) got **opcode 661**, 32 bytes,
+  and ActorControlSelf 933 `[3]`: 661 fills RaceChocoboManager (FFXIVClientStructs; the 7.57 handler copies it):
+  u16 EXP, u16 EXP to next, u8 flags (stats from the mother, foul weather, female), u8 rank, u8 colour (Stain), u8
+  sessions available, u8 ?, u16 father's and u16 mother's pedigree/stars, i16 first and last name
+  (RacingChocoboName), five stat percentages, u8 hereditary and learned ability, u8 ?, then head, body and leg barding.
+  Kawari has no racing chocobos and sends nothing. The tab of ClientTrigger 2010 got **opcode 410** (32 bytes, for
+  AgentId 0xB9: a flag, a u16 rank, two Unix times, more small numbers; not sent). Doman Mahjong's tab (2550) got
+  ActorControlSelf **2001** `[0, 1500, 1500]`, which Kawari sends (likely the starting rating).
+* **The toy chest** sent nothing to the server in the capture: its mini games and lists are the client's.
 
 * **ClientTrigger 830** (`InventoryChanged`) comes after every inventory change (moves, the dresser, the armoire, an item
   used); retail answered with ActorControlSelf MapMarkerUpdateBegin (1) and MapMarkerUpdateEnd, and so does Kawari.

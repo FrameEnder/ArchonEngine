@@ -52,6 +52,7 @@
   - [Marketboard](fork/marketboard.md)
   - [Retainers](fork/retainers.md)
   - [Glamour Dresser, Plates and Armoire](fork/glamour.md)
+  - [Mender](fork/mender.md)
   - [Party Bots](fork/party-bots.md)
   - [Party NPCs (Duty Support)](fork/party-npcs.md)
   - [Dungeons](fork/dungeons.md)
