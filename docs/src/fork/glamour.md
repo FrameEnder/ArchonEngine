@@ -28,7 +28,7 @@ said the dresser wasn't unlocked). Then, as retail:
 | Client | Server |
 |---|---|
 | ClientTrigger 2350 (the dresser window) | **GlamourDresser** (opcode 436, 2408 bytes) twice: page 0 and 1, each `u32 page, u32 item[400], u8 stain0[400], u8 stain1[400]`, 4 bytes |
-| ClientTrigger 2356 `[1]` (Glamour Plates opens; `[0]` as it closes) | **GlamourPlates** (opcode 400, 1440 bytes): 20 × `{u32 item[12], u8 stain0[12], u8 stain1[12]}` |
+| ClientTrigger 2356 (always `[0]` on retail: the plate list opening at the dresser or in the character window, and before equipping a gear set linked to a plate) | **GlamourPlates** (opcode 400, 1440 bytes): 20 × `{u32 item[12], u8 stain0[12], u8 stain1[12]}` |
 | ClientTrigger 2351 `[container, slot]` (store an item) | the item out of its slot (UpdateInventorySlot), ActorControlSelf **1800** `[dresser index, item]`, LogMessage 4380 with the item |
 | ClientTrigger 2352 `[index]` (restore one) | ActorControlSelf 1800 `[index, 0]`, LogMessage 4383, InventoryActionAck (0xFFFFFFFF, 6), the item in the first free bag slot, LogMessage 789 |
 | **SaveGlamourPlate** (client opcode 156, 248 bytes): `u8 plate, u8 set[12], u8 ?[12], 3 bytes, u32 index[12], u32 container[12]`, then 124 bytes (9999s and 0xFFFFFFFFs, not understood) | **GlamourPlateUpdated** (opcode 621, 80 bytes): `u32 plate`, the plate, 4 bytes; LogMessage 4382 with the plate's number (1-based) |

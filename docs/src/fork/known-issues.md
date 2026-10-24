@@ -514,8 +514,6 @@ add one when something is found.
 
 ## Auracite backups
 
-* Bob's first extended backup (2026-10-24) didn't bring the glamour plates into Kawari while the dresser came; not
-  explained yet (needs the backup: was `glamour.plates_loaded` false?).
 * Gear sets, hotbars and macros come back only through the plugin's settings-file restore (they live on the PC);
   backups made before kawari-diagnostics `babddba` don't have the files, nor the adventurer plate.
 * Only the members in [Auracite Backups](auracite.md#what-each-importer-takes) are imported. Gear sets, retainers

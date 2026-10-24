@@ -1622,10 +1622,11 @@ async fn process_packet(
                                 ClientTriggerCommand::OpenGlamourDresser => {
                                     connection.send_glamour_dresser().await;
                                 }
-                                ClientTriggerCommand::ToggleGlamourPlatesWindow { open } => {
-                                    if open {
-                                        connection.send_glamour_plates().await;
-                                    }
+                                ClientTriggerCommand::ToggleGlamourPlatesWindow { .. } => {
+                                    // Retail answered every 2356 with the plates; the client always sent 0 (the plate
+                                    // list from the dresser or the character window, and before equipping a gear set
+                                    // linked to a plate; Bob's captures of 2026-10-24.)
+                                    connection.send_glamour_plates().await;
                                 }
                                 ClientTriggerCommand::ToggleGlamourPlateSelection { open } => {
                                     connection.toggle_glamour_plate_selection(open).await;

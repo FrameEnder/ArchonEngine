@@ -611,7 +611,9 @@ pub enum ClientTriggerCommand {
     #[brw(magic = 2352u32)]
     RestoreFromGlamourDresser { index: u32 },
 
-    /// Sent whenever the Glamour Plates window is opened or closed.
+    /// Asks for the glamour plates (GlamourPlates answers): as the plate list opens at the dresser or in the character
+    /// window, and before equipping a gear set linked to a plate. Retail's client always sent 0 (Bob's captures of
+    /// 2026-10-24), so `open` doesn't mean open.
     #[brw(magic = 2356u32)]
     ToggleGlamourPlatesWindow {
         #[br(map = read_bool_from::<u32>)]
