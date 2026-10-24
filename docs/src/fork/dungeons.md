@@ -59,7 +59,11 @@ door 3; 1, 1, 1, 4, 7 at the seal. The script sends the same.
 `spawn_boss`): it casts 971 every 3.1 s, 988 (a hit with a small drain) every 26 s, and 987 (a 4.7 s cast, status 17
 for 20 s on its target) first as it falls to 57-60 %, then 63 s later. Adds: one shield (125) at 79-80 %, a shield and
 three adds (126 ×2, 127) at 57-60 %, two shields and four adds at 28-29 % (all three runs). It took no damage while a
-shield stood (its HP held for the 10-15 s each one lived): `director:set_invulnerable` (new) while any 125 is alive.
+shield stood (its HP held for the 10-15 s each one lived): `director:set_invulnerable` (new) while any 125 is alive. Each shield is tethered to the boss: the line between them is no packet of its own but the shield's SpawnNpc, whose
+tether target is the boss and tether ID (Channeling row) 1, in all three runs; it goes when the shield dies, with no
+other packet (`director:spawn_tethered_bnpc`). Nothing else shows the shield on the boss: no status, VFX or director
+variable while one stands. No other tether was sent in the Tam-Tara Deepcroft (nor any ActorControl tether, category
+35).
 The shields never act nor move. Its death: the arena opens, cutscene 27 (1, 18, 0, 0), coffer 11, the duty complete.
 
 **Coffers** (`treasure_loot`): 16 held 3556 or 2679; 118 3330; 17 3555, or 3555 and 4310; 62 3033 or 3331; 11 31426,

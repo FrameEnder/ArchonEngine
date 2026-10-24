@@ -44,6 +44,9 @@ FINAL_WAVES = {
     { health = 30, adds = { 2029061, 2029067, 1334969, 1334970, 1334976, 2029118 } },
 }
 FINAL_SHIELDS = { 2029061, 2029064, 2029065, 2029067 }
+-- Each shield's spawn tethers it to the boss: Channeling row 1, the line the client draws between them, which goes
+-- when the shield dies (Bob's three runs: every shield's SpawnNpc had the boss as its tether target and tether 1.)
+TETHER_SHIELD = 1
 
 -- The gimmicks (EObj IDs)
 EOBJ_DOOR1 = 2000061 -- after the first room: opens the way (2001697)
@@ -118,6 +121,15 @@ gate_opened = false
 door3_opened = false
 final_started = false
 final_waves = 0
+
+function isShield(id)
+    for _, shield in ipairs(FINAL_SHIELDS) do
+        if shield == id then
+            return true
+        end
+    end
+    return false
+end
 shielded = false
 
 function setVars(director, vars)
@@ -189,7 +201,11 @@ function onUpdate(director, health, player_health, info)
         if wave ~= nil and health[BNPC_FINAL_BOSS] < wave.health then
             final_waves = final_waves + 1
             for _, id in ipairs(wave.adds) do
-                director:spawn_bnpc(id)
+                if isShield(id) then
+                    director:spawn_tethered_bnpc(id, BNPC_FINAL_BOSS, TETHER_SHIELD)
+                else
+                    director:spawn_bnpc(id)
+                end
                 director:set_hate(id, nil, 300) -- the player
             end
         end

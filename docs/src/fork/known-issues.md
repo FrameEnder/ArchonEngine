@@ -316,6 +316,8 @@ add one when something is found.
 * The timelines are by BNpcBase, so other places using bases 76, 82, 83, 125-127, 137, 567 or 1345-1388 (if any) get
   them too.
 * Coffers 15 and 119 were never opened on retail and hold one of the others' items.
+* The shields' tether to Galvanth comes with their spawn only (as retail's); a shield spawned before the boss would
+  have no tether (the script spawns them after it).
 
 ## Quest battles and directors
 

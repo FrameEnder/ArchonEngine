@@ -72,6 +72,13 @@ pub enum LuaDirectorTask {
     SpawnBattleNpc {
         id: u32,
     },
+    /// Spawn a BNpc (by layout ID) tethered to another (by layout ID): the line the client draws between them, a
+    /// Channeling row, comes with its spawn and goes when it dies (retail: Tam-Tara's shields to Galvanth.)
+    SpawnTetheredBattleNpc {
+        id: u32,
+        to: u32,
+        channeling: u16,
+    },
     /// Remove a BNpc (by layout ID) without it dying, e.g. the background fighters before a quest battle's cutscene.
     DespawnBattleNpc {
         layout_id: u32,
@@ -337,6 +344,14 @@ impl UserData for LuaDirector {
             this.tasks.push(LuaDirectorTask::SpawnBattleNpc { id });
             Ok(())
         });
+        methods.add_method_mut(
+            "spawn_tethered_bnpc",
+            |_, this, (id, to, channeling): (u32, u32, u16)| {
+                this.tasks
+                    .push(LuaDirectorTask::SpawnTetheredBattleNpc { id, to, channeling });
+                Ok(())
+            },
+        );
         methods.add_method_mut("despawn_bnpc", |_, this, layout_id: u32| {
             this.tasks
                 .push(LuaDirectorTask::DespawnBattleNpc { layout_id });
@@ -1363,6 +1378,29 @@ pub fn director_tick(
                     instance.insert_npc(ObjectId(fastrand::u32(..)), npc, &config, &mut game_data);
                 } else {
                     tracing::warn!("Failed to find bnpc {id} for SpawnBattleNpc, it won't spawn!");
+                }
+            }
+            LuaDirectorTask::SpawnTetheredBattleNpc { id, to, channeling } => {
+                if let Some(mut npc) = instance.zone.get_battle_npc(*id) {
+                    npc.common.handler_id = director_id;
+                    match instance.find_npc(*to) {
+                        Some((target, _)) => {
+                            // Retail's spawn carried the tether: its target and the Channeling row (Bob's Tam-Tara
+                            // captures of 2026-10-24: every shield, tether 1 to Galvanth.)
+                            npc.common.tether_target_id = target;
+                            npc.common.tether_id = *channeling;
+                        }
+                        None => tracing::warn!(
+                            "Bnpc {to}, which {id} is tethered to, isn't there; it spawns without the tether"
+                        ),
+                    }
+                    let config = get_config();
+                    let mut game_data = game_data.lock();
+                    instance.insert_npc(ObjectId(fastrand::u32(..)), npc, &config, &mut game_data);
+                } else {
+                    tracing::warn!(
+                        "Failed to find bnpc {id} for SpawnTetheredBattleNpc, it won't spawn!"
+                    );
                 }
             }
             LuaDirectorTask::DespawnBattleNpc { layout_id } => {
