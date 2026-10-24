@@ -3029,10 +3029,10 @@ impl GameData {
         row.IsEnemyTo.to_vec()
     }
 
-    /// Returns a ContentFinderCondition for a given roulette.
-    pub fn pick_roulette_duty(&mut self, roulette: Roulette) -> u32 {
-        let rows: Vec<u32> = self
-            .content_finder_condition_sheet
+    /// A roulette's duties: each ContentFinderCondition in it, its InstanceContent if it links to one, and its
+    /// required class level (`ZoneConnection::pick_roulette_duty` keeps those the character may enter.)
+    pub fn roulette_duties(&mut self, roulette: Roulette) -> Vec<(u32, Option<u16>, u8)> {
+        self.content_finder_condition_sheet
             .into_iter()
             .flatten_subrows()
             .filter(|(_, row)| match roulette {
@@ -3050,10 +3050,12 @@ impl GameData {
                 Roulette::CrystallineConflictCasual => row.CrystallineConflictCasualRoulette,
                 Roulette::CrystallineConflictRanked => row.CrystallineConflictRankedRoulette,
             })
-            .map(|(id, _)| id)
-            .collect();
-
-        fastrand::choice(rows).unwrap()
+            // ContentLinkType 1: Content is an InstanceContent row.
+            .map(|(id, row)| {
+                let content = (row.ContentLinkType == 1).then_some(row.Content);
+                (id, content, row.ClassJobLevelRequired)
+            })
+            .collect()
     }
 
     /// Returns the name ID for a given NpcYell.

@@ -11,6 +11,11 @@ without other players. Delivered in stages; this page describes what exists and 
 
 ## The Duty Finder (stage 2)
 
+**Roulettes** (QueueRoulette) roll only among the roulette's duties the queuing character, who is the party's leader,
+has unlocked (the dungeon, guildhest, trial and raid bitmasks `unlock_content` sets) and whose ClassJobLevelRequired
+their current class meets (`ZoneConnection::pick_roulette_duty`, `GameData::roulette_duties`). Before Bob's bundle of
+2026-10-24 it rolled any duty in the roulette. With none to roll, nothing is queued (logged).
+
 Entering a duty **alone** through the Duty Finder (or `!cf <id>`) fills the party with bots once you've loaded in
 (`party_bot::fill_duty_party`, called from the zone-loaded handler; `JoinContent` marks the player in
 `Instance::pending_duty_bots`):

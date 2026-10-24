@@ -345,3 +345,47 @@ impl ZoneConnection {
         }
     }
 }
+
+impl ZoneConnection {
+    /// Whether this character has unlocked an InstanceContent (the bitmasks `unlock_content` sets, with its offsets:
+    /// dungeons from 1, guildhests from 10001, trials from 20001, raids from 30001.) Other kinds count as unlocked.
+    pub fn has_unlocked_content(&self, game_data: &mut crate::GameData, content: u16) -> bool {
+        let content_data = &self.player_data.content;
+        match game_data.find_type_for_content(content) {
+            Some(kawari::common::InstanceContentType::Dungeon) => content
+                .checked_sub(1)
+                .is_some_and(|i| content_data.unlocked_dungeons.contains(i as u32)),
+            Some(kawari::common::InstanceContentType::Guildhests) => content
+                .checked_sub(10001)
+                .is_some_and(|i| content_data.unlocked_guildhests.contains(i as u32)),
+            Some(kawari::common::InstanceContentType::Trial) => content
+                .checked_sub(20001)
+                .is_some_and(|i| content_data.unlocked_trials.contains(i as u32)),
+            Some(kawari::common::InstanceContentType::Raid) => content
+                .checked_sub(30001)
+                .is_some_and(|i| content_data.unlocked_raids.contains(i as u32)),
+            _ => true,
+        }
+    }
+
+    /// A duty for a roulette among those this character (who queues, so the party's leader) has unlocked and is high
+    /// enough for on their current class; None if there are none.
+    pub fn pick_roulette_duty(
+        &self,
+        game_data: &mut crate::GameData,
+        roulette: crate::Roulette,
+    ) -> Option<u16> {
+        let level = self.current_level(game_data) as u8;
+        // Retail only rolls duties the party has unlocked and is high enough for (Bob, 2026-10-24: Kawari rolled any.)
+        let allowed: Vec<u16> = game_data
+            .roulette_duties(roulette)
+            .into_iter()
+            .filter(|(_, content, required)| {
+                *required <= level
+                    && content.is_none_or(|c| self.has_unlocked_content(game_data, c))
+            })
+            .map(|(id, _, _)| id as u16)
+            .collect();
+        fastrand::choice(allowed)
+    }
+}

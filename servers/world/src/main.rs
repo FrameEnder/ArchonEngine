@@ -2776,9 +2776,14 @@ async fn process_packet(
                             let duty_id;
                             {
                                 let mut game_data = connection.game_data.lock();
-                                // TODO: take into account whether these duties are unlocked
-                                duty_id = game_data.pick_roulette_duty(roulette) as u16;
+                                duty_id = connection.pick_roulette_duty(&mut game_data, roulette);
                             }
+                            let Some(duty_id) = duty_id else {
+                                tracing::info!(
+                                    "Roulette {roulette_id}: no duty in it is unlocked for this character at their level"
+                                );
+                                continue;
+                            };
 
                             connection
                                 .register_for_content(
