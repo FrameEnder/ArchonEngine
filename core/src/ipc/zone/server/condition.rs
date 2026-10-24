@@ -84,6 +84,8 @@ pub enum Condition {
     Unknown99 = 69,
     Unknown101 = 70,
     PilotingMech = 71,
+    /// Set with ExecutingCraftingAction during a synthesis (Bob's Chronofoil capture of 2026-10-24.)
+    Synthesizing = 73,
 }
 
 #[cfg(feature = "server")]

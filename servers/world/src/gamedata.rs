@@ -34,6 +34,7 @@ use icarus::GatheringItem::GatheringItemSheet;
 use icarus::GatheringItemLevelConvertTable::GatheringItemLevelConvertTableSheet;
 use icarus::GatheringPoint::GatheringPointSheet;
 use icarus::GatheringPointBase::GatheringPointBaseSheet;
+use icarus::GatheringPointBonus::GatheringPointBonusSheet;
 use icarus::GatheringPointTransient::GatheringPointTransientSheet;
 use icarus::GatheringRarePopTimeTable::GatheringRarePopTimeTableSheet;
 use icarus::GeneralAction::GeneralActionSheet;
@@ -579,6 +580,22 @@ pub struct GatheringPointItem {
     pub level_row: u16,
     /// The Perception it needs (GatheringItem.PerceptionReq.)
     pub perception_required: u16,
+    /// No Gatherer's Boon (the window shows 255): GatheringItem.Unknown2 isn't 0xFFFF (retail: every such item had
+    /// 255, Bob's capture of 2026-10-24.)
+    pub no_boon: bool,
+    /// The node's yield bonus applies to it (GatheringItem.Unknown5; retail gave the one item without it no bonus.)
+    pub bonus_yield: bool,
+}
+
+/// A gathering point's bonus (GatheringPointBonus): what it needs and what it gives.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct GatheringPointBonusInfo {
+    /// GatheringCondition: 14 Gathering, 15 Perception, 19 max GP at least `condition_value`.
+    pub condition: u8,
+    pub condition_value: u32,
+    /// GatheringPointBonusType: 14 and 17 yield, 18 and 19 integrity, 22 and 23 boon chance.
+    pub bonus_type: u8,
+    pub bonus_value: u16,
 }
 
 impl GameData {
@@ -2426,6 +2443,33 @@ impl GameData {
         )
     }
 
+    /// A gathering point's GatheringPointBase GatheringType: 0 mining, 1 quarrying, 2 logging, 3 harvesting.
+    pub fn get_gathering_type(&mut self, id: u32) -> u8 {
+        let Some(row) = self.gathering_point_sheet.row(id) else {
+            return 0;
+        };
+        self.gathering_point_base_sheet
+            .row(row.GatheringPointBase as u32)
+            .map(|base| base.GatheringType as u8)
+            .unwrap_or_default()
+    }
+
+    /// A GatheringPointBonus row (a point's `gathering_point_bonus`; 0 is none.)
+    pub fn get_gathering_point_bonus(&mut self, id: u16) -> Option<GatheringPointBonusInfo> {
+        if id == 0 {
+            return None;
+        }
+        let row = GatheringPointBonusSheet::read_from(&mut self.resource, Language::None)
+            .ok()?
+            .row(id as u32)?;
+        Some(GatheringPointBonusInfo {
+            condition: row.Condition,
+            condition_value: row.ConditionValue,
+            bonus_type: row.BonusType,
+            bonus_value: row.BonusValue,
+        })
+    }
+
     /// Returns the item list for a gathering point.
     pub fn get_gathering_point_items(&mut self, id: u32) -> [GatheringPointItem; 8] {
         let row = self.gathering_point_sheet.row(id).unwrap();
@@ -2451,14 +2495,33 @@ impl GameData {
                 hidden: row.IsHidden,
                 level_row: row.GatheringItemLevel,
                 perception_required: row.PerceptionReq,
+                no_boon: row.Unknown2 != u16::MAX,
+                bonus_yield: row.Unknown5,
             };
         }
 
         new_items
     }
 
-    /// An item level's base Gathering and Perception (ItemLevel), what the gathering formulas measure against.
+    /// An item level's base Gathering and Perception, what the gathering formulas measure against and the node's
+    /// window shows: GatherBuddy Reborn's table (`resources/data/gatherbuddy/`), which retail's window matched, and
+    /// ItemLevel's for a level it hasn't got.
     pub fn gathering_base_stats(&mut self, level_row: u16) -> (u32, u32) {
+        const TABLE: &str = include_str!("../../../resources/data/gatherbuddy/IlvConvertTable.csv");
+        let found = TABLE.lines().skip(1).find_map(|line| {
+            let mut fields = line
+                .split(',')
+                .map(|field| field.trim().parse::<u32>().ok());
+            match (fields.next()??, fields.next()??, fields.next()??) {
+                (level, gathering, perception) if level == level_row as u32 => {
+                    Some((gathering, perception))
+                }
+                _ => None,
+            }
+        });
+        if let Some(found) = found {
+            return found;
+        }
         self.item_level_sheet
             .row(level_row as u32)
             .map(|row| (row.Gathering as u32, row.Perception as u32))
@@ -2592,6 +2655,28 @@ impl GameData {
             exp_rewarded: row.ExpRewarded,
             ingredients,
         })
+    }
+
+    /// A class's row of a CraftAction, from its Carpenter's row (the sheet's CRP…CUL columns; ClassJob 8–15.)
+    pub fn craft_action_for_class(&mut self, base_id: u32, class_job: u8) -> u32 {
+        let language = get_config().world.language();
+        let Ok(sheet) = CraftActionSheet::read_from(&mut self.resource, language) else {
+            return base_id;
+        };
+        let Some(row) = sheet.row(base_id) else {
+            return base_id;
+        };
+        let id = match class_job {
+            9 => row.BSM,
+            10 => row.ARM,
+            11 => row.GSM,
+            12 => row.LTW,
+            13 => row.WVR,
+            14 => row.ALC,
+            15 => row.CUL,
+            _ => row.CRP,
+        };
+        if id > 0 { id as u32 } else { base_id }
     }
 
     /// GatheringExp's EXP for a level (0 if there's none.)

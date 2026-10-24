@@ -199,6 +199,7 @@ async fn initial_setup(
                     event_handler_id: None,
                     recipe: None,
                     craft: None,
+                    quick_synthesis: None,
                     gathering: Default::default(),
                     is_party_leader: false,
                     synced_level: None,
@@ -1460,17 +1461,11 @@ async fn process_packet(
                                             recipe = game_data.get_recipe(id);
                                         }
 
-                                        // TODO: wrong scene flags
-                                        connection
-                                            .event_scene(
-                                                event,
-                                                0,
-                                                SceneFlags::NO_DEFAULT_CAMERA,
-                                                vec![1, 0, recipe.item_id as u32, 0],
-                                            )
-                                            .await;
-
                                         connection.recipe = Some(recipe);
+                                        connection.quick_synthesis = None;
+                                        // Retail's start of a synthesis (Bob's capture, docs/src/fork/crafting.md.)
+                                        kawari_world::begin_synthesis(connection, event, 0)
+                                            .await;
                                     }
                                 }
                                 ClientTriggerCommand::RidePillionRequest {
@@ -2472,6 +2467,25 @@ async fn process_packet(
                             }
                         }
                         ClientZoneIpcData::EventReturnHandler16(handler) => {
+                            tracing::info!(message = "Event returned", handler_id = %handler.handler_id, error_code = handler.error_code, scene = handler.scene, params = ?&handler.params[..handler.num_results as usize]);
+                            lua_player.scene_error_code = handler.error_code;
+
+                            if let Some(event) = events.last() {
+                                event
+                                    .0
+                                    .on_return(
+                                        &event.1,
+                                        connection,
+                                        handler.scene,
+                                        &handler.params[..handler.num_results as usize],
+                                        lua_player,
+                                    )
+                                    .await;
+                            } else {
+                                tracing::warn!("There's no current event to return from!");
+                            }
+                        }
+                        ClientZoneIpcData::EventReturnHandler128(handler) => {
                             tracing::info!(message = "Event returned", handler_id = %handler.handler_id, error_code = handler.error_code, scene = handler.scene, params = ?&handler.params[..handler.num_results as usize]);
                             lua_player.scene_error_code = handler.error_code;
 

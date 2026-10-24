@@ -1,7 +1,7 @@
 # Crafting (Disciples of the Hand)
 
-A synthesis from the Crafting Log's *Synthesize* to the finished item or the materials given back, with every 7.x
-action, the conditions, buffs as statuses, HQ chance and HQ materials. Unlocking the classes is the quests' business
+A synthesis from the Crafting Log's *Synthesize* to the finished item or the materials lost, with every 7.x action,
+the conditions, buffs as statuses, HQ chance and HQ materials, *Synthesize again* and quick synthesis. Unlocking the classes is the quests' business
 (Bob's); this is what a crafter has once unlocked.
 
 Code: `servers/world/src/crafting.rs` (the rules of a step, no packets; unit tests), `servers/world/src/events/crafting.rs`
@@ -13,28 +13,45 @@ the statuses in one StatusEffectList).
 today's crafting tools agree on, read in their code: raphael-rs (723b17e, 2026-10-18, the solver Teamcraft and
 Craftimizer users compare against), Teamcraft's simulator (74e167a) and Craftimizer (1d4a2c6); the packets and the
 CP rules are the 7.57 client's (`ffxiv_dx11.exe` 2026.10.16, its craft event handler), and Teamcraft's packet reader
-agrees. **No retail synthesis has been recorded** (Bob's Chronofoil captures have none), so nothing here is checked
-against a retail packet yet. The research notes behind this page are in Bob's session scratchpad (`research/crafting.md`).
+agrees. **Bob's Chronofoil capture of 2026-10-24** (a level 71–72 Carpenter: syntheses of recipes 3812 and 31854,
+*Synthesize again*, a quick synthesis, a failure and quits) settled the packets, their order and the numbers: every
+gain, CP cost and HQ % of its steps came out of the rules below exactly. The research notes behind this page are in
+Bob's session scratchpad (`research/crafting.md`).
 
 ## The flow
 
-All scenes are scene 0 of handler 0x000A0001 (Craft), flags `NO_DEFAULT_CAMERA` (retail's unknown).
+All scenes are scene 0 of handler 0x000A0001 (Craft), flags `NO_DEFAULT_CAMERA`. "LiveEvent n" is ActorControl
+LiveEvent (category 300) with that event number. As retail sent it:
 
 | Step | Client | Server |
 |---|---|---|
-| Synthesize | ClientTrigger 700 `BeginCraft` (the recipe) | EventStart, scene `[1, 0, item, 0]` (upstream) |
-| Materials chosen | yield `[0, NQ×6, HQ×6]` (each slot's NQ and HQ amounts) | works out the recipe for the crafter's level, the start quality from the HQ materials, CP to full; LiveEvent StartCraft; scene `[2, recipe, start quality, start HQ %]` |
-| The stacks used | yield 1, 77 results: u32 command, item[30] (HQ = ID + 1,000,000), then u16 amount[30], container[30], slot[30], u32 count | takes them from the bags (crystals keep their slot), checking each against the bag; scene `[3, 0, 0, 0]` opens the Synthesis window |
-| An action | yield `[10, id]` for a CraftAction row, `[9, id]` for an Action row (the buffs) | the step (below); LiveEvent PlayAnimation for CraftAction rows (their AnimationStart/End); CP and statuses; the step's scene (EventScene64) |
-| Progress full | yield 11 (after the scene's StateFlags 0x4) | the item (HQ by the HQ chance; the crafter's signature), LogMessage 789, EXP, CP full and the statuses off, LiveEvent EndCraft, scene `[4, 0, 0, 0]` (back to the log) |
-| Durability gone | yield 12 (StateFlags 0x8) | scene 8 with the materials given back, then as below |
-| Quit | yield 7 | the same scene 8 |
-| After scene 8 | yield 3 | CP full, statuses off, EndCraft, scene `[4, …]` |
-| Leaving the log | yield 7 with no synthesis under way | the event finishes |
+| Synthesize | ClientTrigger 700 `BeginCraft` (the recipe) | EventStart; conditions 15 and 73 (`Synthesizing`) set, 16 off; SetMode 5; LiveEvent 38 and 39 (the main and off hand models, low and high halves); LiveEvent 8 StartCraft `[0, 136153, 1]` (0 from the log, 3 for *Synthesize again*, 4 for a quick synthesis; 136153 was the same every time, meaning unknown); scene `[1, 0, item, 0]`; StatusEffectList (CP full) |
+| Materials chosen | **EventReturnHandler16** `[0, NQ×6, HQ×6]` (a scene return, not a yield) | the recipe for the crafter's level, the start quality; scene `[2, recipe, start quality, start HQ %]` (`[12, recipe, how many, 0]` for a quick synthesis) |
+| The stacks used | **EventReturnHandler128** (opcode 866, 77 results): `[1, item[30] (HQ = ID + 1,000,000), amount[30], container[30], slot[30]` (u16 pairs)`, count]`; crystals' container is 255 | kept, not taken yet; LiveEvent 10 `[2]` (the condition's look: the condition + 1); CraftingActionPreviews; scene `[3, 0, 0, 0]` opens the Synthesis window |
+| An action | yield `[10, id]` for a CraftAction row, `[9, id]` for an Action row (the buffs; these also come as an ActionRequest) | LiveEvent 12 PlayAnimation (CraftAction rows); retail's ~2 s later: ActorControl GainEffect for each status gained or changed (`[2191, 6]` Muscle Memory, `[251, n]` Inner Quiet); LiveEvent 10 `[condition + 1]` when the condition changed; StatusEffectList (CP already taken); CraftingActionPreviews; the step's scene (EventScene64) |
+| Progress full | yield 11 (after StateFlags 0x4) | the materials taken; the item (HQ flag, the crafter's signature); LiveEvent 15 (NQ) or 16 (HQ, then 17); EventLogMessage 1158 and 1156 with the item (+1,000,000 if HQ); EXP; then (retail 1.5–3 s later) back to the log: condition 16 on, 15 and 73 off, LiveEvent 11, scene `[4, 0, 0, 0]`, StatusEffectList (CP full, no statuses) |
+| Durability gone | yield 12 (StateFlags 0x8) | LiveEvent 20; **every material lost**; EventLogMessage 1177 and 1160 (no params); scene 8 with 22 params, all 0 (nothing back) |
+| After scene 8 | yield 3 | back to the log, as above |
+| Synthesize again | yield `[4, recipe, 0, 0]` | the Synthesize row's sequence with StartCraft 3 |
+| Quick synthesis | yield `[5, recipe, how many, ?]`, then the return and the list (its command 13) | StartCraft 4 …; after the list: log 1150 with the item, LiveEvent 10 `[2]`, LiveEvent 21; per item (retail: one every ~2 s) log 1158, the item, LiveEvent 18 `[item, made so far]`, EXP; back to the log (retail after the client's ClientTrigger 712) |
+| Quit | yield 7 (from the log, or the synthesis' Quit) | scene `[6, 0, 0, 0]` |
+| After scene 6 | yield 8 | the materials lost if a synthesis was under way; StatusEffectList; conditions off; LiveEvent 38/39, 40 and 11; EventFinish (the whole log closes) |
 
 The client works the window's maxima out itself (7.57 `0x140EA7960`): progress `Difficulty × DifficultyFactor / 100`,
 quality and durability the same with their factors; level-adjusted recipes take the recipe level of
 GathererCrafterLvAdjustTable at the crafter's level (up to MaxAdjustableJobLevel) and durability 80 (raphael).
+
+### CraftingActionPreviews
+
+Opcode 347 (fork, 424 bytes; its handler found in the 10.16 client), before the window opens and with every step: 21
+entries of `{u32 action, u16 progress efficiency, u16 quality efficiency, u32 progress, u32 quality, u32 state}`, then
+4 bytes. The client shows them in the actions' tooltips. Order: Basic Synthesis, Rapid Synthesis, Muscle Memory,
+Careful Synthesis, Groundwork, Delicate Synthesis, Intensive Synthesis, Prudent Synthesis (progress), then Basic
+Touch, Hasty Touch, Standard Touch, Byregot's Blessing, Precise Touch, Prudent Touch, Advanced Touch, Reflect,
+Preparatory Touch, Delicate Synthesis, Trained Eye, Trained Finesse, Refined Touch (quality), each as the crafter's
+class' own CraftAction row (`GameData::craft_action_for_class`). Efficiency is the potency with 0x8000 when it differs
+from the action's usual one (a buff, a level trait) and 0x4000 for a halved Groundwork; progress and quality what the
+action would add now; state 0 usable, 1 level too low, 2 not enough CP, 3 not usable now (`Craft::previews`).
 
 ### A step's scene
 
@@ -46,16 +63,16 @@ EventScene64, 33 params (the client reads these; `0x140EA4FB6` and the functions
 | 1–3, 18 | unknown, 0 |
 | 4 | the action's row |
 | 5 | CP recovered (Tricks of the Trade; log 1174 and flytext) |
-| 6 | the step count (upstream's recorded step had 1 after the first action) |
-| 7, 8 | progress (capped at the maximum, as upstream's recording) and its change |
+| 6 | the step count + 1, not counted up any more once the synthesis is over (`Craft::display_step`; retail) |
+| 7, 8 | progress, capped at the maximum, and its change (not capped) |
 | 9, 10 | quality and its change |
 | 11 | HQ chance % |
 | 12, 13 | durability and its change (signed) |
-| 14 | the next step's condition (1-based: 1 Normal … 11 Robust) |
+| 14 | the next step's condition (1-based: 1 Normal … 11 Robust); 1 once the synthesis is over |
 | 15 | the condition the action was used under |
-| 16 | 150 when the next condition is Good (the tooltip's number), else 100 (upstream's recording under Normal) |
+| 16 | 150 when the next condition is Good, else 100 (retail) |
 | 17 | StateFlags: 0x2 not the first step, 0x4 done, 0x8 failed, 0x10 the action succeeded, 0x08000000 after Basic Touch (Standard Touch costs 18), 0x10000000 after Standard Touch's combo or Observe (Advanced Touch costs 18), 0x40000000 no more Careful Observation, 0x80000000 Heart and Soul used |
-| 19–25, 26–32 | up to seven statuses that ran out or were used up this step, and their params (the client logs them wearing off) |
+| 19–25, 26–32 | up to seven statuses that ran out or were used up this step, and their params: Inner Quiet's stacks, 0 for the rest (retail; the client logs them wearing off) |
 
 ### CP
 
@@ -112,10 +129,13 @@ Trained Perfection 3813 (Craftimizer's IDs), each with its steps left as its par
 
 ## EXP and materials
 
-* EXP (recipes with ExpRewarded) is a stand-in: GatheringExp for the recipe level's ClassJobLevel, plus as much again
-  in proportion to the quality reached. No source has retail's formula.
-* A quit or a failed synthesis gives back each ingredient (not the crystals) with an even chance, listed in scene 8
-  (params 4–9 the items, 10–15 NQ, 16–21 HQ amounts). Retail's rule isn't known.
+* EXP (recipes with ExpRewarded) is a stand-in fitted to the capture: 0.72356% of ParamGrow's ExpToNext at the recipe
+  level's ClassJobLevel, times `1 + 2.125 × quality / max quality`, less 4.1% a level for a recipe more than five
+  levels below the crafter (at least 5%). Retail gave 21,837 before rested EXP for a level 71 recipe at quality 0 and
+  68,250 at full quality, and a level 50 recipe at level 72 gave 923; the full-quality synthesis also brought a second
+  message of 102,372 (+350%), likely a first-time bonus, which isn't done.
+* The materials are taken when the synthesis ends (done, failed or quit), not when they're listed (retail). A failure
+  or a quit loses them all: retail's scene 8 listed nothing given back.
 
 ## Not done yet
 

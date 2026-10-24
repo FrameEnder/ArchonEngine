@@ -174,6 +174,9 @@ pub enum ClientZoneIpcData {
     EventReturnHandler2(EventReturnHandler<2>),
     EventReturnHandler8(EventReturnHandler<8>),
     EventReturnHandler16(EventReturnHandler<16>),
+    /// A scene finished with up to 128 results: the crafting event's list of the stacks a synthesis takes (77 results;
+    /// Bob's Chronofoil capture of 2026-10-24.)
+    EventReturnHandler128(EventReturnHandler<128>),
     /// Sent as the marketboard's window opens, before any search; retail answers with an empty
     /// `ServerZoneIpcData::MarketBoardItems` whose request ID is this one.
     MarketBoardOpened {

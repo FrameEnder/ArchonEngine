@@ -185,6 +185,8 @@ pub struct ZoneConnection {
     pub recipe: Option<Recipe>,
     /// The synthesis under way (`events/crafting.rs`.)
     pub craft: Option<Box<crate::events::CraftSession>>,
+    /// How many a quick synthesis being started makes, until its materials are chosen.
+    pub quick_synthesis: Option<u32>,
     /// The gathering points as this player sees them (`zone_connection/gathering.rs`.)
     pub gathering: GatheringState,
     pub synced_level: Option<u8>,

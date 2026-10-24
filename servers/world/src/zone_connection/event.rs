@@ -59,6 +59,9 @@ impl ZoneConnection {
 
             // Remove the condition given at the start of the event
             self.conditions.remove_condition(event.1.condition);
+            for extra in event.0.extra_conditions() {
+                self.conditions.remove_condition(extra);
+            }
             self.send_conditions().await;
 
             // sent event finish
@@ -132,6 +135,9 @@ impl ZoneConnection {
             let character_mode = handler.character_mode();
 
             self.conditions.toggle_condition(condition, true);
+            for extra in handler.extra_conditions() {
+                self.conditions.toggle_condition(extra, true);
+            }
             self.send_conditions().await;
 
             self.set_character_mode(character_mode, 0, true).await;

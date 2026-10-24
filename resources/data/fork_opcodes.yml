@@ -57,6 +57,19 @@ ClientZoneIpcType:
       offset: 13
       width: 4
       with: EventReturnHandler2
+- name: EventReturnHandler128
+  comment: A scene finished with up to 128 results, e.g. the crafting event's list of the stacks a synthesis takes (77 results.)
+  # 866 on 2026.10.16 (Bob's Chronofoil capture of 2026-10-24, five syntheses; the client's event-return sender writes it
+  # for 65 to 128 results, with the packet's size 0x218.)
+  opcode: 866
+  size: 520
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On Kawari, start a synthesis from the Crafting Log - the 520-byte packet right after the scene that answers the materials chosen.
+  find:
+  - immediate:
+      pattern: 40 80 FF 80 77 ?? C7 44 24 20 ?? ?? ?? ?? 48 8D 4C 24 48 48 C7 44 24 28 18 02 00 00
+      offset: 10
+      width: 4
 - name: SetAdventurerPlatePortrait
   comment: The client sets its adventurer plate's portrait (Portraits window), sent back in PortraitsInformation.
   # 107 on 2026.10.06; 431 on 2026.10.16 (read from the game by its finder.)
@@ -212,6 +225,26 @@ ServerZoneIpcType:
   size: 8
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with Chronofoil, talk to Sastasha's entrance and choose Duty Support - the 8-byte packet right after the client's ClientTrigger 2650.
+- name: CraftingActionPreviews
+  comment: What each of 21 progress and quality actions would do now (efficiency, progress, quality, usable), for the Synthesis window.
+  # 347 on 2026.10.16 (Bob's Chronofoil capture of 2026-10-24: before the window opens and with every step.)
+  opcode: 347
+  size: 424
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On retail with Chronofoil, start a synthesis - the 424-byte packet just before the scene that opens the Synthesis window.
+  find:
+  - handler:
+      pattern: BA 78 01 00 00 E8 ?? ?? ?? ?? 48 8B D3 48 8B C8 48 83 C4 20 5B E9
+- name: GatheringChainCount
+  comment: How many gathers in a row at a node have succeeded so far (1, 2, 3...; 0 as the node's window closes.)
+  # 618 on 2026.10.16 (Bob's Chronofoil capture of 2026-10-24; its handler stores the byte, HandleGatheringSuccessfulChainCountPacket.)
+  opcode: 618
+  size: 8
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On retail with Chronofoil, gather a node twice - the 8-byte packet holding 1 after the second gather.
+  find:
+  - handler:
+      pattern: 0F B6 01 88 05 ?? ?? ?? ?? C3
 - name: GatheringPointPhases
   comment: The gathering points' phases, one byte per phase slot (which of a point's positions the client shows), sent once at login.
   # 467 on 2026.06.18, 250 on 2026.09.01, 314 on 2026.09.15, 533 on 2026.10.06 (Bob's Chronofoil captures: the only
@@ -227,11 +260,12 @@ ServerZoneIpcType:
 - name: GatheringPointPhase
   comment: One gathering point phase slot changes - the slot, the phase.
   # 845 on 2026.10.16: the case of its handler (it writes one byte of QuestManager +0x7AC: index, value) in the zone
-  # dispatcher of ffxiv_dx11.exe. Its handler's code is the same as two others', so there's no finder.
+  # dispatcher of ffxiv_dx11.exe; Bob's Chronofoil capture of 2026-10-24 has it six times. Its handler's code is the
+  # same as two others', so there's no finder.
   opcode: 845
   size: 8
   found_on: 2026.10.16.0000.0000
-  how_to_find: On retail with Chronofoil, gather a node until it's used up - an 8-byte packet with a small slot number and 0-5 as it vanishes (not recorded yet.)
+  how_to_find: On retail with Chronofoil, use up three nodes of a group - the 8-byte packet (slot, 0-5) as the third closes, with ActorControlSelf 109 for the first.
 - name: RetainerStateNotice
   comment: Eight bytes sent before every RetainerState and after a retainer's containers (zeros; 0 then 1 before sending away a retainer whose market changed.)
   # 897 on 2026.09.15, 144 on 2026.10.06 (Bob's Chronofoil captures.)

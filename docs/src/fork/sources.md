@@ -144,7 +144,8 @@ also reads retail craft packets (`crafting-replay.service.ts`).
 [FFXIV-CombatReborn/GatherBuddyReborn](https://github.com/FFXIV-CombatReborn/GatherBuddyReborn) (Apache-2.0): node
 timers from the sheets, the gatherer's statuses, the boon and Bountiful Yield formulas, and GatherBuddy Reborn's
 crowd-collected `world_locations.json` (world positions of 2,116 points, no layout IDs). Used by
-[Gathering](gathering.md).
+[Gathering](gathering.md). Its `IlvConvertTable.csv` (each gathering item level's base Gathering and Perception, which
+retail's node window matched) ships in `resources/data/gatherbuddy/` with its licence notice.
 
 ### The game's sheets: XIVAPI v2 and EXDSchema
 

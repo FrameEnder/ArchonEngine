@@ -2,21 +2,34 @@ use async_trait::async_trait;
 use bitflags::bitflags;
 use kawari::{
     common::{CharacterMode, ObjectTypeId},
-    ipc::zone::{Condition, SceneFlags},
+    ipc::zone::{ActorControlCategory, Condition, LiveEventType, SceneFlags},
 };
 
 use crate::{Event, EventHandler, ZoneConnection, lua::LuaPlayer};
 
-/// For gathering events: the node's window (`ZoneConnection::send_gathering_window`), each gather and what's left
-/// (`zone_connection/gathering.rs`.)
+/// What the client sends from the node's window (scene 0's yields `[point, slot or action, what]`; Bob's capture of
+/// 2026-10-24.)
+const CLIENT_QUIT: i32 = 1;
+const CLIENT_GATHER: i32 = 2;
+const CLIENT_ACTION: i32 = 3;
+const CLIENT_AFTER_GATHER: i32 = 4;
+const CLIENT_AFTER_ACTION: i32 = 5;
+const CLIENT_OPENED: i32 = 6;
+const CLIENT_CLOSING: i32 = 11;
+
+/// For gathering events: the node's window and what's done there (`zone_connection/gathering.rs`.)
 #[derive(Debug)]
-pub struct GatheringEventHandler {
-    count: u8,
-}
+pub struct GatheringEventHandler {}
 
 impl GatheringEventHandler {
-    pub fn new(count: u8) -> Self {
-        Self { count }
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl Default for GatheringEventHandler {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -25,7 +38,9 @@ pub struct GatheringItemFlag(u8);
 
 bitflags! {
     impl GatheringItemFlag : u8 {
+        /// Sharp Vision is up.
         const GATHERING_CHANCE_BONUS = 1;
+        /// The node's boon bonus or a Gift is up.
         const BOON_CHANCE_BONUS = 2;
         const UNK1 = 4;
         const HIDDEN = 8;
@@ -61,32 +76,61 @@ impl EventHandler for GatheringEventHandler {
         let point = event.id.event_id();
         let result = |i: usize| results.get(i).copied().unwrap_or_default();
 
-        if scene == 0 && result(2) == 2 {
-            // Gather the item in slot results[1], then the animation (scene 1), whose end brings us back below.
-            connection.gather(event, result(1).max(0) as usize).await;
-            player.play_scene(1, SceneFlags::NO_DEFAULT_CAMERA, vec![2, 266]);
+        if scene == 1 {
+            // The gather's animation ended.
+            connection.finish_gather(event).await;
             return;
         }
 
-        if scene == 0 && result(2) == 0 {
-            // Quit.
-            connection.leave_gathering_point().await;
-            player.finish_event();
-            return;
+        match result(2) {
+            CLIENT_GATHER => match connection.gather(event, result(1).max(0) as usize).await {
+                Some(animation) => {
+                    player.play_scene(1, SceneFlags::NO_DEFAULT_CAMERA, animation.to_vec())
+                }
+                None => connection.refresh_gathering_window(event).await,
+            },
+            CLIENT_OPENED | CLIENT_AFTER_GATHER | CLIENT_AFTER_ACTION => {
+                connection.refresh_gathering_window(event).await;
+            }
+            CLIENT_ACTION => {
+                connection
+                    .request_gathering_action(result(1).max(0) as u32)
+                    .await;
+            }
+            CLIENT_CLOSING => {
+                connection.close_gathering_window(event).await;
+            }
+            CLIENT_QUIT => {
+                let used_up = connection.gathering_point_used_up(point);
+                connection.leave_gathering_point().await;
+                // Retail cleared the tool (LiveEvent 39 with nothing.)
+                connection
+                    .broadcast_actor_control(ActorControlCategory::LiveEvent {
+                        event: LiveEventType::SetOffHand {
+                            model_id: 0,
+                            unk1: 0,
+                            unk2: 0,
+                        },
+                    })
+                    .await;
+                if used_up {
+                    connection.gathering_point_exhausted(point).await;
+                }
+                player.finish_event();
+            }
+            _ => {
+                tracing::info!("Unknown gathering yield {results:?}");
+            }
         }
-
-        // After a gather: the window again, or, if that was the last attempt, the node goes and the window closes.
-        if connection.gathering.remaining(point, self.count) == 0 {
-            connection.leave_gathering_point().await;
-            connection.gathering_point_exhausted(point).await;
-            player.finish_event();
-            return;
-        }
-        connection.send_gathering_window(event, false).await;
     }
 
     fn condition(&self) -> Condition {
         Condition::ExecutingGatheringAction
+    }
+
+    /// Retail set 63 too while at a node (Kawari calls it WaitingToVisitOtherWorld.)
+    fn extra_conditions(&self) -> Vec<Condition> {
+        vec![Condition::WaitingToVisitOtherWorld]
     }
 
     fn character_mode(&self) -> CharacterMode {

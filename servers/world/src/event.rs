@@ -91,6 +91,11 @@ pub trait EventHandler: std::fmt::Debug + Send + Sync {
         Condition::OccupiedInQuestEvent
     }
 
+    /// Other conditions set while this handler's event runs (and unset when it finishes.)
+    fn extra_conditions(&self) -> Vec<Condition> {
+        Vec::new()
+    }
+
     /// CharacterMode to set (or unset) for this handler.
     fn character_mode(&self) -> CharacterMode {
         CharacterMode::Normal
@@ -227,15 +232,7 @@ pub fn dispatch_event(
                 generic_lua_event(&script_path)
             }
         }
-        HandlerType::GatheringPoint => {
-            let count;
-            {
-                let mut game_data = game_data.lock();
-                (_, _, count, _, _) = game_data.get_gathering_point(handler_id.event_id());
-            }
-
-            Some(Box::new(GatheringEventHandler::new(count)))
-        }
+        HandlerType::GatheringPoint => Some(Box::new(GatheringEventHandler::new())),
         HandlerType::Aetheryte => {
             let aetheryte_id = handler_id.event_id();
 

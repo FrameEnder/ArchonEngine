@@ -211,6 +211,76 @@ pub fn window_start(windows: &[(u32, u32)], minute: u32) -> Option<u32> {
         .map(|window| window.0)
 }
 
+/// The window's modes (scene 0's first param; Bob's capture of 2026-10-24.)
+pub const WINDOW_OPEN: u32 = 0;
+pub const WINDOW_GATHERED: u32 = 4;
+pub const WINDOW_AFTER_ACTION: u32 = 5;
+pub const WINDOW_REFRESH: u32 = 7;
+pub const WINDOW_USED_UP: u32 = 19;
+
+/// The window's third param: 0x80000680, 8 more for any node but a mining one, 0x20000 more for an unspoiled one (every
+/// node of the capture; a level 60 harvesting one had 0x798 once, unexplained.)
+pub fn window_flags(gathering_type: u8, point_type: u8) -> u32 {
+    let mut flags = 0x8000_0680;
+    if gathering_type != 0 {
+        flags |= 8;
+    }
+    if point_type == 2 {
+        flags |= 0x2_0000;
+    }
+    flags
+}
+
+/// Scene 1's params, the gathering animation: Miner 2 (3 with the boon), Botanist 5 (6); then 258 at a mining node,
+/// 266 at the others (retail.)
+pub fn gather_animation(gathering_type: u8, boon: bool) -> [u32; 2] {
+    let miner = gathering_type < 2;
+    let animation = match (miner, boon) {
+        (true, false) => 2,
+        (true, true) => 3,
+        (false, false) => 5,
+        (false, true) => 6,
+    };
+    [animation, if gathering_type == 0 { 258 } else { 266 }]
+}
+
+/// The EXP bonus of the gathering chain, by how many gathers in a row came before this one at the node: 5, 10, 20, then
+/// 50% from the fifth (retail, with rested EXP and the boon's 100% on top.)
+pub fn chain_bonus(chain: u32) -> u32 {
+    match chain {
+        0 => 0,
+        1 => 5,
+        2 => 10,
+        3 => 20,
+        _ => 50,
+    }
+}
+
+/// A gather's EXP before bonuses: 4.98% of GatheringExp at the gatherer's level (retail: a level 58 Miner got 241 for
+/// level 36–40 items, GatheringExp 4,845, 12 to 22 levels below made no difference.) Further below, a stand-in: 9.5% less
+/// a level, at least 5%.
+pub fn gather_exp(gathering_exp: i32, level: u8, item_level: u8) -> i32 {
+    let below = (level as i32 - item_level as i32 - 22).max(0) as f64;
+    let penalty = (1.0 - 0.095 * below).max(0.05);
+    (gathering_exp as f64 * 0.0498 * penalty).round() as i32
+}
+
+/// The first gather of an item (it goes in the gathering log) gives a fifth of GatheringExp more, with no bonus (retail:
+/// 968 at level 58.)
+pub fn first_gather_exp(gathering_exp: i32) -> i32 {
+    gathering_exp / 5
+}
+
+/// Whether a node's bonus is met (GatheringCondition 14 Gathering, 15 Perception, 19 max GP; the rest aren't handled.)
+pub fn bonus_met(condition: u8, value: u32, gathering: u32, perception: u32, max_gp: u32) -> bool {
+    match condition {
+        14 => gathering >= value,
+        15 => perception >= value,
+        19 => max_gp >= value,
+        _ => false,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -251,6 +321,18 @@ mod tests {
         assert!(window_holds((22 * 60, 60), 30));
         assert!(!window_holds((22 * 60, 60), 60));
         assert_eq!(window_start(&[(120, 240), (840, 960)], 900), Some(840));
+    }
+
+    #[test]
+    fn retail_numbers() {
+        // Bob's capture: level 58 (GatheringExp 4845) on level 40 items.
+        assert_eq!(gather_exp(4845, 58, 40), 241);
+        assert_eq!(first_gather_exp(4845), 969);
+        assert_eq!(window_flags(0, 1), 0x8000_0680);
+        assert_eq!(window_flags(3, 2), 0x8002_0688);
+        assert_eq!(gather_animation(0, true), [3, 258]);
+        assert_eq!(gather_animation(3, false), [5, 266]);
+        assert_eq!(chain_bonus(4), 50);
     }
 
     #[test]

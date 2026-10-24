@@ -436,28 +436,27 @@ add one when something is found.
 
 ## Crafting
 
-* Untested in game (2026-10-24), and no retail synthesis has been recorded: the packets are the client's code's and
-  Teamcraft's reading of them. A Chronofoil capture of one normal synthesis, one expert one, a quit and a failure would
-  settle most of what follows.
-* Scene params 1–3 and 18 are 0; retail's order at the end (scene 4 or 6, what answers a failure) and the scene flags
-  are guesses.
-* Buff statuses carry their steps as the param with no time limit; whether retail shows them that way isn't known.
-  The client may want StateFlags bits for Quick Innovation and Trained Perfection being used up (unknown).
+* Rewritten to Bob's retail capture of 2026-10-24 and untested in game since. Retail's pauses (the GainEffects ~2 s
+  after a step, back to the log 1.5–3 s after the item, a quick synthesis' items every ~2 s) are sent at once.
+* Scene params 1–3 and 18 were 0 on retail too; StartCraft's 136153 isn't understood.
+* EXP is a stand-in fitted to three retail numbers; the first-time bonus (retail's second message, +350%) isn't given.
 * Condition chances are Craftimizer's (Teamcraft's differ); whether Heart and Soul, Quick Innovation and Careful
   Observation change the condition is disputed (Kawari: only Careful Observation does).
-* EXP is a stand-in (GatheringExp of the recipe level, up to twice for full quality); retail's formula isn't known.
-* A quit or failure gives back each ingredient with an even chance; retail's rule isn't known.
-* Not done: quick synthesis, trial synthesis, collectables (collectability, CollectablesShop), food and potions, the
-  completed-recipe log (CraftingLog is still sent empty: which bit a recipe is isn't known), specialist and
-  Manipulation's quest unlock (the client greys those actions; the server doesn't check), crafting leves.
+* The buffs' Action rows also come as ActionRequests, which the action pipeline sees as unscripted actions (a warning).
+* Not done: trial synthesis, collectables (collectability, CollectablesShop), food and potions, the completed-recipe
+  log (CraftingLog is still sent empty: which bit a recipe is isn't known), specialist and Manipulation's quest unlock
+  (the client greys those actions; the server doesn't check), crafting leves, spiritbond on a synthesis.
 
 ## Gathering
 
-* Untested in game (2026-10-24), and no retail gathering has been recorded (Bob didn't gather in the captures): what
-  retail sends when a node is used up (Kawari: GatheringPointPhase for its slot and SetupGatheringPoint), when an
-  action is used at a node, and the window's unknown words (boon chance, perception needed, collectables) aren't known.
-* The gathering chance is a stand-in (Gathering against the item's base); EXP is a stand-in (GatheringExp of the
-  item's level, twice the first time). Node bonuses (GatheringPointBonus) aren't applied, nor shown.
+* Rewritten to Bob's retail capture of 2026-10-24 and untested in game since. Actions at a node go through the action
+  pipeline as if the client had sent an ActionRequest; whether the pipeline lets them through while at a node isn't
+  tested.
+* The window's slots keep the sheet's order (retail shuffles them per base); the "rare" flag (16) and the boon 255 of
+  some unspoiled items aren't worked out; a level 60 harvesting node once had flags 0x798.
+* The gathering chance is a stand-in (retail showed 100 everywhere); EXP below 22 levels under the gatherer and the
+  ranged node bonuses' upper ends aren't known; one returning point in the capture (ActorControlSelf 109 for 30631
+  where 30503 was expected) isn't explained.
 * GP is gear only (no base GP known; ParamGrow has none); the GP traits' quests aren't checked.
 * Points come from Bob's captures: 18 zones only (none in Western La Noscea, the Sea of Clouds, Mor Dhona and most of
   Thanalan, nor Endwalker's and Dawntrail's zones). GatherBuddy Reborn's `world_locations.json` has 2,116 points'

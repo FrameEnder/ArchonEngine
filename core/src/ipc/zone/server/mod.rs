@@ -712,6 +712,19 @@ pub enum ServerZoneIpcData {
     GatheringPointPhases {
         phases: [u8; 160],
     },
+    /// What each progress and quality action would do now, for the Synthesis window (Bob's Chronofoil capture of
+    /// 2026-10-24: before the window opens and after every step; 7.57's handler hands it to agent 0x178.)
+    CraftingActionPreviews {
+        actions: [CraftingActionPreview; 21],
+        #[brw(pad_after = 4)]
+        unk: u32,
+    },
+    /// How many gathers in a row at this node have succeeded so far (1, 2, 3…; 0 when the node's window closes. Bob's
+    /// Chronofoil capture of 2026-10-24; 7.57's HandleGatheringSuccessfulChainCountPacket.)
+    GatheringChainCount {
+        #[brw(pad_after = 4)]
+        count: u32,
+    },
     /// One slot of the gathering points' phases changes (7.57's handler writes the byte to QuestManager +0x7AC.)
     GatheringPointPhase {
         slot: u8,
@@ -1866,4 +1879,21 @@ mod tests {
             hex("18010000 0a020100 00000000 ffffffff ffffffff ffff0000")
         );
     }
+}
+
+/// One action's line in `CraftingActionPreviews`.
+#[binrw]
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct CraftingActionPreview {
+    /// The class's CraftAction row.
+    pub action_id: u32,
+    /// Its progress efficiency now (potency times the buffs, %), 0x8000 set when that isn't its usual potency.
+    pub progress_efficiency: u16,
+    /// The same for quality.
+    pub quality_efficiency: u16,
+    /// The progress and quality it would add now.
+    pub progress: u32,
+    pub quality: u32,
+    /// 0 usable, 1 not learnt yet, 2 not enough CP, 3 not usable now (first step only, needs Inner Quiet, a Good condition…).
+    pub state: u32,
 }

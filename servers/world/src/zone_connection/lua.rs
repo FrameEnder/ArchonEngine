@@ -875,7 +875,7 @@ impl ZoneConnection {
                 }
                 LuaTask::OpenGatheringWindow => {
                     if let Some(event) = events.last() {
-                        self.send_gathering_window(&event.1, true).await;
+                        self.open_gathering_point(&event.1).await;
                     }
                 }
                 LuaTask::GatheringAction { action_id } => {

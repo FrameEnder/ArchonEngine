@@ -208,6 +208,21 @@ impl CraftAction {
             .map(|(action, _)| *action)
     }
 
+    /// Its Carpenter's row (CraftAction, or the buffs' Action rows), from which each class's row is found.
+    pub fn base_id(self) -> u32 {
+        if let Some((_, ids)) = ACTION_IDS.iter().find(|(action, _)| *action == self) {
+            return ids[0];
+        }
+        if self == CraftAction::WasteNotII {
+            return 4639;
+        }
+        ACTION_RANGES
+            .iter()
+            .find(|(action, _)| *action == self)
+            .map(|(_, first)| *first)
+            .unwrap_or_default()
+    }
+
     /// The CP it costs before conditions and combos (the CraftAction sheet's Cost, the Action sheet's
     /// PrimaryCostValue: checked against both.)
     fn base_cp(self) -> i32 {
@@ -418,6 +433,57 @@ enum Combo {
     None,
     BasicTouch,
     AdvancedTouch,
+}
+
+/// The 21 actions the Synthesis window previews, in retail's order (Bob's Chronofoil capture of 2026-10-24.)
+pub const PREVIEW_PROGRESS: [CraftAction; 8] = [
+    CraftAction::BasicSynthesis,
+    CraftAction::RapidSynthesis,
+    CraftAction::MuscleMemory,
+    CraftAction::CarefulSynthesis,
+    CraftAction::Groundwork,
+    CraftAction::DelicateSynthesis,
+    CraftAction::IntensiveSynthesis,
+    CraftAction::PrudentSynthesis,
+];
+pub const PREVIEW_QUALITY: [CraftAction; 13] = [
+    CraftAction::BasicTouch,
+    CraftAction::HastyTouch,
+    CraftAction::StandardTouch,
+    CraftAction::ByregotsBlessing,
+    CraftAction::PreciseTouch,
+    CraftAction::PrudentTouch,
+    CraftAction::AdvancedTouch,
+    CraftAction::Reflect,
+    CraftAction::PreparatoryTouch,
+    CraftAction::DelicateSynthesis,
+    CraftAction::TrainedEye,
+    CraftAction::TrainedFinesse,
+    CraftAction::RefinedTouch,
+];
+
+/// One line of `Craft::previews`.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Preview {
+    pub action: CraftAction,
+    pub progress_efficiency: u16,
+    pub quality_efficiency: u16,
+    pub progress: u32,
+    pub quality: u32,
+    pub state: u32,
+}
+
+impl Default for Preview {
+    fn default() -> Self {
+        Self {
+            action: CraftAction::BasicSynthesis,
+            progress_efficiency: 0,
+            quality_efficiency: 0,
+            progress: 0,
+            quality: 0,
+            state: 0,
+        }
+    }
 }
 
 /// What one action did, for the step's scene.
@@ -831,10 +897,18 @@ impl Craft {
             _ => {}
         }
 
+        // A finished synthesis has no next condition: retail sent Normal.
+        if self.is_over() {
+            self.condition = CraftCondition::Normal;
+        }
+
+        // What ran out or was used up: retail listed Inner Quiet with its stacks, the others with 0 (Bob's Chronofoil
+        // capture of 2026-10-24.)
         let after = self.statuses();
         let worn_off = before
             .into_iter()
             .filter(|(id, _)| !after.iter().any(|(other, _)| other == id))
+            .map(|(id, param)| (id, if id == STATUS_INNER_QUIET { param } else { 0 }))
             .collect();
 
         Some(StepOutcome {
@@ -846,6 +920,174 @@ impl Craft {
             used_condition: used_condition as u8,
             worn_off,
         })
+    }
+
+    /// The step number the window shows: one more than the steps taken, except once the synthesis is over (retail
+    /// left it as it was for the finishing action: Bob's Chronofoil capture of 2026-10-24.)
+    pub fn display_step(&self) -> u32 {
+        if self.is_over() {
+            self.steps.max(1)
+        } else {
+            self.steps + 1
+        }
+    }
+
+    fn progress_buff(&self) -> i64 {
+        100 + if self.buffs.muscle_memory > 0 { 100 } else { 0 }
+            + if self.buffs.veneration > 0 { 50 } else { 0 }
+    }
+
+    fn quality_buff(&self) -> i64 {
+        100 + if self.buffs.great_strides > 0 { 100 } else { 0 }
+            + if self.buffs.innovation > 0 { 50 } else { 0 }
+    }
+
+    /// An action's progress potency as `use_action` uses it, and its potency before Groundwork's halving.
+    fn progress_potency(&self, action: CraftAction) -> Option<(i32, i32)> {
+        use CraftAction::*;
+        let level = self.settings.level;
+        let nominal = match action {
+            BasicSynthesis => {
+                if level >= 31 {
+                    120
+                } else {
+                    100
+                }
+            }
+            RapidSynthesis => {
+                if level >= 63 {
+                    500
+                } else {
+                    250
+                }
+            }
+            CarefulSynthesis => {
+                if level >= 82 {
+                    180
+                } else {
+                    150
+                }
+            }
+            Groundwork => {
+                if level >= 86 {
+                    360
+                } else {
+                    300
+                }
+            }
+            IntensiveSynthesis => 400,
+            PrudentSynthesis => 180,
+            MuscleMemory => 300,
+            DelicateSynthesis => {
+                if level >= 94 {
+                    150
+                } else {
+                    100
+                }
+            }
+            _ => return None,
+        };
+        let halved = action == Groundwork && self.durability < self.durability_cost(action);
+        Some((if halved { nominal / 2 } else { nominal }, nominal))
+    }
+
+    /// An action's quality potency (Byregot's with Inner Quiet), and its usual one.
+    fn quality_potency(&self, action: CraftAction) -> Option<(i32, i32)> {
+        use CraftAction::*;
+        let potency = match action {
+            BasicTouch | PrudentTouch | HastyTouch | TrainedFinesse | RefinedTouch
+            | DelicateSynthesis => 100,
+            StandardTouch => 125,
+            AdvancedTouch | DaringTouch | PreciseTouch => 150,
+            Reflect => 300,
+            PreparatoryTouch => 200,
+            ByregotsBlessing => return Some((100 + 20 * self.inner_quiet as i32, 100)),
+            _ => return None,
+        };
+        Some((potency, potency))
+    }
+
+    /// What the Synthesis window is told each of its 21 actions would do now (`CraftingActionPreviews`): progress
+    /// actions their progress, quality actions their quality (Delicate Synthesis once in each list), with the
+    /// efficiency (potency times buffs; 0x8000 when it isn't the usual potency, 0x4000 for a halved Groundwork) and
+    /// whether it can be used (0, 1 not learnt, 2 not enough CP, 3 not now). As retail sent it (Bob's Chronofoil
+    /// capture of 2026-10-24: the gains matched to the point.)
+    pub fn previews(&self) -> Vec<Preview> {
+        let mut previews = Vec::new();
+        for (action, quality_list) in PREVIEW_PROGRESS
+            .iter()
+            .map(|a| (*a, false))
+            .chain(PREVIEW_QUALITY.iter().map(|a| (*a, true)))
+        {
+            let mut preview = Preview {
+                action,
+                ..Default::default()
+            };
+            preview.state = if self.settings.level < action.level() {
+                1
+            } else if !self.usable_now(action) {
+                3
+            } else if self.cp < self.cp_cost(action) {
+                2
+            } else {
+                0
+            };
+            if preview.state == 0 {
+                if !quality_list {
+                    if let Some((potency, nominal)) = self.progress_potency(action) {
+                        let buff = self.progress_buff();
+                        let efficiency = (potency as i64 * buff / 100) as u16;
+                        preview.progress_efficiency = if potency != nominal {
+                            0x4000 | efficiency
+                        } else if efficiency as i32 != nominal {
+                            0x8000 | efficiency
+                        } else {
+                            efficiency
+                        };
+                        let condition = if self.condition == CraftCondition::Malleable {
+                            150
+                        } else {
+                            100
+                        };
+                        preview.progress =
+                            (self.settings.base_progress as i64 * potency as i64 * condition * buff
+                                / 1_000_000) as u32;
+                    }
+                } else if action == CraftAction::TrainedEye {
+                    preview.quality = (self.settings.max_quality - self.quality).max(0) as u32;
+                } else if let Some((potency, nominal)) = self.quality_potency(action) {
+                    let buff = self.quality_buff();
+                    let efficiency = (potency as i64 * buff / 100) as u16;
+                    preview.quality_efficiency = if efficiency as i32 != nominal {
+                        0x8000 | efficiency
+                    } else {
+                        efficiency
+                    };
+                    let condition = match self.condition {
+                        CraftCondition::Poor => 50,
+                        CraftCondition::Good => 150,
+                        CraftCondition::Excellent => 400,
+                        _ => 100,
+                    };
+                    let inner_quiet = 100 + 10 * self.inner_quiet as i64;
+                    preview.quality = (self.settings.base_quality as i64
+                        * potency as i64
+                        * condition
+                        * inner_quiet
+                        * buff
+                        / 100_000_000) as u32;
+                }
+            }
+            previews.push(preview);
+        }
+        previews
+    }
+
+    /// `can_use` without the CP and level checks.
+    fn usable_now(&self, action: CraftAction) -> bool {
+        let mut rich = self.clone();
+        rich.cp = i32::MAX / 2;
+        rich.can_use(action)
     }
 
     /// The statuses the crafter has now, each with its param: steps left, or Inner Quiet's stacks.
@@ -1040,7 +1282,7 @@ mod tests {
         let outcome = craft.use_action(CraftAction::Groundwork, &mut rng).unwrap();
         assert_eq!(outcome.progress_delta, 2394);
         assert_eq!(outcome.durability_delta, -20);
-        assert_eq!(outcome.worn_off, vec![(STATUS_MUSCLE_MEMORY, 4)]);
+        assert_eq!(outcome.worn_off, vec![(STATUS_MUSCLE_MEMORY, 0)]);
 
         // Basic Touch then Standard Touch at 18 CP, then Advanced Touch at 18.
         craft.use_action(CraftAction::BasicTouch, &mut rng).unwrap();
@@ -1145,6 +1387,127 @@ mod tests {
         }
         assert_eq!(craft.progress, 1999);
         assert!(!craft.is_complete());
+    }
+
+    /// Bob's synthesis of recipe 3812 on retail (Chronofoil capture of 2026-10-24): a level 71 Carpenter, base
+    /// progress 95 and quality 176 (recipe level 390: 597 progress, 3010 quality, 40 durability.) Every number below
+    /// is the scene's or the previews' as retail sent them.
+    #[test]
+    fn retail_synthesis() {
+        let mut rng = fastrand::Rng::with_seed(5);
+        let mut craft = Craft::new(
+            CraftSettings {
+                level: 71,
+                recipe_level: 71,
+                max_cp: 387,
+                base_progress: 95,
+                base_quality: 176,
+                max_progress: 597,
+                max_quality: 3010,
+                max_durability: 40,
+                conditions_flag: 0b1111,
+                is_expert: false,
+                can_hq: true,
+            },
+            0,
+        );
+        let previews: Vec<_> = craft
+            .previews()
+            .iter()
+            .map(|p| {
+                (
+                    p.progress_efficiency,
+                    p.quality_efficiency,
+                    p.progress,
+                    p.quality,
+                    p.state,
+                )
+            })
+            .collect();
+        assert_eq!(previews[0], (120, 0, 114, 0, 0)); // Basic Synthesis
+        assert_eq!(previews[1], (500, 0, 475, 0, 0)); // Rapid Synthesis
+        assert_eq!(previews[2], (300, 0, 285, 0, 0)); // Muscle Memory
+        assert_eq!(previews[3], (150, 0, 142, 0, 0)); // Careful Synthesis
+        assert_eq!(previews[4].4, 1); // Groundwork: level 72
+        assert_eq!(previews[8], (0, 100, 0, 176, 0)); // Basic Touch
+        assert_eq!(previews[10], (0, 125, 0, 220, 0)); // Standard Touch
+        assert_eq!(previews[11].4, 3); // Byregot's: no Inner Quiet
+        assert_eq!(previews[12].4, 3); // Precise Touch: not Good
+        assert_eq!(previews[15], (0, 300, 0, 528, 0)); // Reflect
+        assert_eq!(previews[16], (0, 200, 0, 352, 0)); // Preparatory Touch
+
+        let o = craft
+            .use_action(CraftAction::MuscleMemory, &mut rng)
+            .unwrap();
+        assert_eq!(
+            (craft.progress, o.progress_delta, craft.durability),
+            (285, 285, 30)
+        );
+        assert_eq!(craft.display_step(), 2);
+        assert_eq!(craft.previews()[0].progress_efficiency, 0x8000 | 240);
+        assert_eq!(craft.previews()[0].progress, 228);
+
+        let o = craft
+            .use_action(CraftAction::BasicSynthesis, &mut rng)
+            .unwrap();
+        assert_eq!((craft.progress, o.progress_delta), (513, 228));
+        assert_eq!(o.worn_off, vec![(STATUS_MUSCLE_MEMORY, 0)]);
+
+        craft.condition = CraftCondition::Good;
+        let o = craft
+            .use_action(CraftAction::PreciseTouch, &mut rng)
+            .unwrap();
+        assert_eq!(
+            (craft.quality, o.quality_delta, craft.hq_chance()),
+            (396, 396, 4)
+        );
+        craft.condition = CraftCondition::Normal;
+        craft.use_action(CraftAction::WasteNotII, &mut rng).unwrap();
+        craft
+            .use_action(CraftAction::MastersMend, &mut rng)
+            .unwrap();
+        assert_eq!(craft.durability, 40);
+        craft.condition = CraftCondition::Normal;
+        let o = craft
+            .use_action(CraftAction::PreparatoryTouch, &mut rng)
+            .unwrap();
+        assert_eq!((craft.quality, o.quality_delta), (818, 422));
+        craft.condition = CraftCondition::Normal;
+        craft
+            .use_action(CraftAction::GreatStrides, &mut rng)
+            .unwrap();
+        craft.condition = CraftCondition::Normal;
+        let o = craft
+            .use_action(CraftAction::PreparatoryTouch, &mut rng)
+            .unwrap();
+        assert_eq!(
+            (craft.quality, o.quality_delta, craft.hq_chance()),
+            (1803, 985, 18)
+        );
+        assert_eq!(o.worn_off, vec![(STATUS_GREAT_STRIDES, 0)]);
+        craft.condition = CraftCondition::Normal;
+        craft
+            .use_action(CraftAction::GreatStrides, &mut rng)
+            .unwrap();
+        craft.condition = CraftCondition::Normal;
+        let o = craft
+            .use_action(CraftAction::ByregotsBlessing, &mut rng)
+            .unwrap();
+        assert_eq!(
+            (craft.quality, o.quality_delta, craft.durability),
+            (3042, 1239, 15)
+        );
+        assert_eq!(craft.cp, 9);
+        assert_eq!(
+            o.worn_off,
+            vec![(STATUS_INNER_QUIET, 6), (STATUS_GREAT_STRIDES, 0)]
+        );
+        let o = craft
+            .use_action(CraftAction::BasicSynthesis, &mut rng)
+            .unwrap();
+        assert!(craft.is_complete());
+        assert_eq!((o.progress_delta, craft.display_step()), (114, 11));
+        assert_eq!(craft.state_flags(true), 0x16);
     }
 
     #[test]
