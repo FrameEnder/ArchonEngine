@@ -1,0 +1,8 @@
+{
+    "autoattack_action_id": 0,
+    "attack_range": 30.0,
+    "recorded_amounts": {},
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The last boss's add that shields it (BNpcBase 125: 2029061, 2029064, 2029065, 2029067): 516 HP, level 16; it never acted nor moved, and the boss took no damage while one stood (the director's `set_invulnerable`). From Bob's Chronofoil captures of the Tam-Tara Deepcroft (2026-10-24): one run with Duty Support (3ec702a8, visit 0.3) and two Duty Finder runs (cc26e0ea, visits 0.2 and 0.4), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

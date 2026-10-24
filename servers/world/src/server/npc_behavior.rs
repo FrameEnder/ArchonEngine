@@ -1150,7 +1150,7 @@ pub fn npc_behavior(
                     );
 
                     if let Some(director) = &mut instance.directors.first_mut() {
-                        director.on_actor_aggro(spawn.common.layout_id);
+                        director.on_actor_aggro(spawn.common.layout_id, *actor);
                     }
                 }
 

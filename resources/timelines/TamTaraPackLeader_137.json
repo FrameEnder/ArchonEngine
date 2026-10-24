@@ -1,0 +1,22 @@
+{
+    "autoattack_action_id": 0,
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "966": {
+            "players": 15,
+            "npcs": 7
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 966,
+                "comment": "every 3.1 s (its only attack)"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The leader of a Tam-Tara Deepcroft room's pack (BNpcBase 137): 516 HP, level 16, standing where it is (it never moved) casting 966 (0.7 s) every 3.1 s; its death calls the room's boss. From Bob's Chronofoil captures of the Tam-Tara Deepcroft (2026-10-24): one run with Duty Support (3ec702a8, visit 0.3) and two Duty Finder runs (cc26e0ea, visits 0.2 and 0.4), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

@@ -1,0 +1,26 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 6,
+            "npcs": 3
+        },
+        "341": {
+            "players": 8,
+            "npcs": 4
+        }
+    },
+    "rotation": {
+        "pace": 8.4,
+        "actions": [
+            {
+                "action": 341,
+                "every": 8.4,
+                "comment": "23 uses"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The last boss's adds (BNpcBase 126): 172 HP, level 16; auto-attack 870 every 3.0 s, 341 every 8.4 s. From Bob's Chronofoil captures of the Tam-Tara Deepcroft (2026-10-24): one run with Duty Support (3ec702a8, visit 0.3) and two Duty Finder runs (cc26e0ea, visits 0.2 and 0.4), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

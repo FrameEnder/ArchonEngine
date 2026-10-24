@@ -22,9 +22,10 @@ add one when something is found.
 
 * Untested in game (2026-10-23). Whether the client builds its party list from ActorControlSelf 257, 276 and 1525
   alone, as retail's capture suggests, is the first thing to check.
-* Only Sastasha's three members are recorded (Marauder, Lancer, Thaumaturge, for a healer player); any other member
-  chosen (Sastasha's healer, other duties' members) is a Player NPC of that role, listed in a Duty Finder party list
-  beside the party NPCs' slots.
+* Only Sastasha's and the Tam-Tara Deepcroft's three members are recorded (Marauder, Lancer, Thaumaturge, for a
+  healer player; the same three in both, at each duty's level, `party_npc::DUTY_LEVELS`); any other member chosen
+  (their healer, other duties' members) is a Player NPC of that role, listed in a Duty Finder party list beside the
+  party NPCs' slots. A duty not in `DUTY_LEVELS` gets them at Sastasha's level 15.
 * The members' abilities that did no damage (26230, 29303, 29766, 29311, 29767, 25082, 25083) are only animations,
   and the Lancer's 29772 doesn't heal it. Their chatter in fights is at random every 150–400 s of fighting, not
   whatever made retail's members speak.
@@ -302,6 +303,19 @@ add one when something is found.
   in Sastasha's layout as Kawari reads it isn't known (Bob's earlier Kawari run never spawned them); if not, the
   server logs that it couldn't find them. ActorControl 503 and 11 (retail's, putting them on the enemy list) aren't
   sent.
+
+## The Tam-Tara Deepcroft
+
+* Untested in game (2026-10-24). Scripted from three retail runs (see [Dungeons](dungeons.md)).
+* No shortcut (its pop ranges aren't known without the game's layout files); log 2008 near the key isn't sent.
+* The gate (2000060) opens through the generic GimmickAccessor prompt; the third room's pack is held unaware until
+  then. Whether players can hit it through the gate, and whether Kawari's NPCs path around the rooms' walls, isn't
+  checked.
+* The rooms' bosses' 912 and the last boss's statuses (208, 17) are only applied, not scripted; its drain gives back
+  a quarter of the hit (retail 5-10 of 22-40), against players all of it (action.rs's drain rule).
+* The timelines are by BNpcBase, so other places using bases 76, 82, 83, 125-127, 137, 567 or 1345-1388 (if any) get
+  them too.
+* Coffers 15 and 119 were never opened on retail and hold one of the others' items.
 
 ## Quest battles and directors
 

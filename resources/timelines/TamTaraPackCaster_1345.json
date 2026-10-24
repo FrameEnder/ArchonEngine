@@ -1,0 +1,22 @@
+{
+    "autoattack_action_id": 0,
+    "attack_range": 10.0,
+    "recorded_amounts": {
+        "967": {
+            "players": 21,
+            "npcs": 11
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 967,
+                "comment": "134 uses, every 3.1 s (its only attack)"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The Tam-Tara Deepcroft rooms' casters (BNpcBase 1345): 490 HP, level 16, casting 967 (0.7 s) every 3.1 s. From Bob's Chronofoil captures of the Tam-Tara Deepcroft (2026-10-24): one run with Duty Support (3ec702a8, visit 0.3) and two Duty Finder runs (cc26e0ea, visits 0.2 and 0.4), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}
