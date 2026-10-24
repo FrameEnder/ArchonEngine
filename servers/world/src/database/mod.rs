@@ -1,3 +1,4 @@
+mod auracite_extended;
 mod character;
 mod friends;
 mod linkshell;

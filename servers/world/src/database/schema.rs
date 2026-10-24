@@ -343,3 +343,12 @@ diesel::table! {
         hired_at -> BigInt,
     }
 }
+
+// An imported Auracite backup's `kawari_extended` object, kept whole (migration update-2026-10-24_auracite_extended.)
+diesel::table! {
+    auracite_extended (content_id) {
+        content_id -> BigInt,
+        data -> Text,
+        imported_at -> BigInt,
+    }
+}

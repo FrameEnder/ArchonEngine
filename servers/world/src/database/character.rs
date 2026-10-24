@@ -616,6 +616,7 @@ impl WorldDatabase {
         }
 
         self.delete_retainers(for_content_id);
+        self.delete_auracite_extended(for_content_id);
 
         {
             use schema::inventory::dsl::*;

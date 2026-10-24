@@ -512,6 +512,16 @@ add one when something is found.
 * ActorControl 36/267 and 54 after it appears aren't understood; retail's spawn display flag 0x20 is left out.
 * The premium saddlebag isn't offered; the saddlebag can be opened anywhere.
 
+## Auracite backups
+
+* Untested against a real Auracite (Kawari) backup (2026-10-24): the importers follow the plugin's `SCHEMA.md` and are
+  unit-tested on made-up values only.
+* Only the members in [Auracite Backups](auracite.md#what-each-importer-takes) are imported. Gear sets, retainers
+  (no appearance in the backup to hire them with), achievements, hotbars, macros, tribal reputation, logs and records
+  are only kept (`auracite_extended`) until Kawari has somewhere for them.
+* A quest's flags and accepting class aren't kept (Kawari's `PersistentQuest` has neither); the export writes them as 0.
+* Kawari Web's character snapshots and restores don't cover the `auracite_extended` row.
+
 ## Systems (upstream gaps the fork hasn't touched)
 
 Duty completion isn't saved per player; housing doesn't persist

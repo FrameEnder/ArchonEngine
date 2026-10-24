@@ -24,8 +24,30 @@ over the database, so direct edits only happen while the character is logged out
 
 Home, How to Connect, Feed (called Community in the top bar from 2.19.0) and profiles (character tile boards, private by default), Notifications, Settings,
 **Shop**, and the admin **Dashboard**: server control, config editor, database health/migrations, backups, accounts,
-Auracite import/export, branding, Quest Lab, Progress, Marketboard, Bot glamours (2.21.0), Diagnostics, Updates (which fork/forge/commit the server is
+Auracite import/inspect/export (extended backups from 2.22.0), branding, Quest Lab, Progress, Marketboard, Bot glamours (2.21.0), Diagnostics, Updates (which fork/forge/commit the server is
 built from), container logs.
+
+## Auracite backups (2.22.0)
+
+`kawari_core/auracite.py`; routes in `kawari_web/dashboard.py` (`/characters/import`, `/characters/inspect`,
+`/characters/<id>/export`) and the Character sync API (`kawari_web/syncapi.py`).
+
+* **Import** (Dashboard → Database) applies a backup to an existing character, section by section, after a snapshot.
+  From 2.22.0 it refuses a character who is logged in on a running server (the world server would save over it), as
+  the sync API already did.
+* **Extended backups** from Auracite (Kawari): crystals, key items, the saddlebag and the glamour dresser, plates and
+  armoire go with *Inventory*; quests in progress, completed levequests and legacy quests, map markers and the
+  gathering log with *Quest progress*; the chocobo companion is a new section, *Chocobo companion* (allowed for
+  Character sync, not on by default). Sections the client hadn't loaded are left alone. The whole `kawari_extended`
+  object is then stored in world.db's `auracite_extended` table (`store_extended`; skipped on a database without it).
+  See [Auracite Backups](auracite.md) for the member-by-member mapping.
+* **Inspect only** shows a backup's summary and, for an extended one, each section: in the backup or not, loaded or
+  not, imported or only kept (`Dump.extended_report`), without writing anything.
+* **Export** adds `kawari_extended`: the stored object (`stored_extended`) with Kawari's own data written over the
+  members it keeps, so exporting and importing again changes nothing and the rest survives.
+
+Character snapshots don't include the `auracite_extended` row (it isn't one of `chardata.CHARACTER_TABLES`, whose rows
+character creation fills from column defaults); a restore leaves it as it is.
 
 ## Shop (2.12.0)
 
