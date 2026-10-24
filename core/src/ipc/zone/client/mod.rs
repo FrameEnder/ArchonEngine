@@ -177,6 +177,18 @@ pub enum ClientZoneIpcData {
     /// A scene finished with up to 128 results: the crafting event's list of the stacks a synthesis takes (77 results;
     /// Bob's Chronofoil capture of 2026-10-24.)
     EventReturnHandler128(EventReturnHandler<128>),
+    /// A glamour plate saved at the glamour dresser (Bob's Chronofoil capture of 2026-10-24, answered with
+    /// `ServerZoneIpcData::GlamourPlateUpdated`): the plate (0–19), which of its 12 slots are set, then for each slot
+    /// the glamour dresser index its item comes from and that index's container (9999 for the dresser.)
+    SaveGlamourPlate {
+        plate: u8,
+        set: [u8; 12],
+        #[brw(pad_after = 3)]
+        unk1: [u8; 12],
+        indices: [u32; 12],
+        containers: [u32; 12],
+        unk3: [u32; 31],
+    },
     /// Sent as the marketboard's window opens, before any search; retail answers with an empty
     /// `ServerZoneIpcData::MarketBoardItems` whose request ID is this one.
     MarketBoardOpened {

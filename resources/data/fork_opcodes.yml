@@ -180,7 +180,52 @@ ClientZoneIpcType:
       pattern: C7 44 24 20 ?? ?? ?? ?? 48 C7 44 24 28 30 00 00 00 0F 10 00
       offset: 4
       width: 4
+- name: SaveGlamourPlate
+  comment: A glamour plate saved at the glamour dresser - the plate, which slots are set, and for each the dresser index and container (9999) its item comes from.
+  # 156 on 2026.10.16 (Bob's Chronofoil capture of 2026-10-24 in the Hourglass: the 248-byte packet answered by GlamourPlateUpdated.)
+  opcode: 156
+  size: 248
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On Kawari at an inn's glamour dresser, open Glamour Plates, put an item on a plate and save it - the 248-byte packet starting with the plate's number.
 ServerZoneIpcType:
+- name: GlamourDresser
+  comment: One page of the glamour dresser - the page, 400 item IDs (HQ + 1000000), their first and second stains.
+  # 436 on 2026.10.16 (Bob's Chronofoil capture of 2026-10-24: two 2408-byte pages answering ClientTrigger 2350.) Its
+  # zone dispatcher case calls the handler's vtable entry 0x1348; GlamourPlates and GlamourPlateUpdated are the next
+  # two (0x1350, 0x1358). No finder.
+  opcode: 436
+  size: 2408
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On retail with Chronofoil, open an inn's glamour dresser - the two 2408-byte packets.
+- name: GlamourPlates
+  comment: The 20 glamour plates (12 item IDs, 12 first and 12 second stains each), answering ClientTrigger 2356.
+  # 400 on 2026.10.16 (same capture). No finder.
+  opcode: 400
+  size: 1440
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On retail with Chronofoil, open Glamour Plates at a glamour dresser - the 1440-byte packet.
+- name: GlamourPlateUpdated
+  comment: One glamour plate after the client saved it - its index, then the plate.
+  # 621 on 2026.10.16 (same capture, after SaveGlamourPlate). No finder.
+  opcode: 621
+  size: 80
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On retail with Chronofoil, save a glamour plate - the 80-byte packet starting with its index.
+- name: ArmoireContents
+  comment: The armoire's contents, one bit per Cabinet row stored.
+  # 772 on 2026.10.16 (same capture: answering ClientTrigger 423, its bit for row 204 gone once that was withdrawn.)
+  # Its zone dispatcher case calls the handler's vtable entry 0xEB8, ArmoireInfo's is 0xEC0. No finder.
+  opcode: 772
+  size: 136
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On retail with Chronofoil, open an inn's armoire - the 136-byte packet.
+- name: ArmoireInfo
+  comment: Sent with ArmoireContents as the armoire opens (ClientTrigger 427) - 1 and zeros on retail, meaning unknown.
+  # 445 on 2026.10.16 (same capture). No finder.
+  opcode: 445
+  size: 504
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On retail with Chronofoil, open an inn's armoire - the 504-byte packet.
 - name: LootList
   comment: An opened coffer's loot, to the party - the coffer, how many items, the seconds left to roll (three times) and the items.
   # 272 on 2026.10.16 (Bob's Chronofoil capture of Sastasha, 2026-10-22: 15 coffers, just before OpenedTreasure.)

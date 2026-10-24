@@ -434,6 +434,18 @@ add one when something is found.
 * `!` debug commands are only recognised in zone chat (Say/Shout/Yell); in Party, Tell, Linkshell, Free Company or
   Novice Network chat they're posted as ordinary messages (upstream's behaviour).
 
+## Glamour dresser, plates and armoire
+
+* New and untested in game (2026-10-24): the dresser, plates and armoire follow Bob's retail capture.
+* Not done: applying a glamour plate to the gear worn, outfit sets, armoire items on plates, glamour prisms, dyeing a
+  dresser item. SaveGlamourPlate's last 124 bytes and its second 12 flags aren't understood; ArmoireInfo's meaning
+  isn't known (it's sent as retail's 1 and zeros).
+* Gold Saucer tabs: ClientTrigger 1900 (answered on retail with opcode 661, 32 bytes, and ActorControlSelf 933 `[3]`),
+  2010 (opcode 410, 32 bytes) and 2550 (Mahjong: ActorControlSelf 2001 `[0, 1500, 1500]`) aren't answered; their
+  layouts aren't known. Nor is ClientTrigger 1011 (`[achievement]`, answered with ActorControlSelf 600
+  `[achievement, 0, 0, 1]`), the free company's activity list (client opcode 708, paged), or CustomTalk 200
+  (CmnDefMiniGame) at the Hourglass.
+
 ## Crafting
 
 * Rewritten to Bob's retail capture of 2026-10-24 and untested in game since. Retail's pauses (the GainEffects ~2 s

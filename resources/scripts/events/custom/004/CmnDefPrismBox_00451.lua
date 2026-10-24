@@ -1,13 +1,14 @@
--- Unknown object/NPC
+-- The glamour dresser (CustomTalk 451, CmnDefPrismBox).
+--
+-- Retail (Bob's Chronofoil capture of 2026-10-24, the Hourglass): scene 0 with no parameters opens its menu; the
+-- client then asks for the dresser (ClientTrigger 2350) and the plates (2356), stores and restores items (2351, 2352)
+-- and saves plates (SaveGlamourPlate), all answered by the server (docs/src/fork/glamour.md), and returns from the
+-- scene when the menu closes.
 
--- TODO: actually implement this menu
-
--- Scenes
-SCENE_00000 = 00000 -- Cutscene 0, flags 247 ("HOW_TO_ID_2", according to Scripter) fades the screen to black for a while, then comes back after closing an invisible dialog box
+SCENE_MENU = 00000
 
 function onTalk(target, player)
-    -- You have not yet unlocked the glamour dresser.
-    player:play_scene(SCENE_00000, HIDE_HOTBAR, {0})
+    player:play_scene(SCENE_MENU, HIDE_HOTBAR, {})
 end
 
 function onReturn(scene, results, player)

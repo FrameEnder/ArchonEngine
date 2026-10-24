@@ -289,10 +289,7 @@ impl CraftingEventHandler {
                 };
             }
         }
-        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::CraftingActionPreviews {
-            actions,
-            unk: 0,
-        });
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::CraftingActionPreviews { actions });
         connection.send_ipc_self(ipc).await;
     }
 

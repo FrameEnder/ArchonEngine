@@ -1542,6 +1542,26 @@ async fn process_packet(
                                     // At a summoning bell (docs/src/fork/retainers.md.)
                                     match unk2 {
                                         2 => connection.send_retainer_list().await,
+                                        // The Mogpendium's window: retail answered with the Mogpendium packet, its
+                                        // second and third words 0x18 and 0x20 (Bob's Chronofoil capture of
+                                        // 2026-10-24). Nothing done this week.
+                                        24 => {
+                                            let ipc = ServerZoneIpcSegment::new(
+                                                ServerZoneIpcData::Mogpendium(
+                                                    kawari::ipc::zone::Mogpendium {
+                                                        unk2: 0x18,
+                                                        unk3: 0x20,
+                                                        id_or_seed: connection
+                                                            .player_data
+                                                            .character
+                                                            .content_id
+                                                            as u32,
+                                                        ..Default::default()
+                                                    },
+                                                ),
+                                            );
+                                            connection.send_ipc_self(ipc).await;
+                                        }
                                         3 => {
                                             connection
                                                 .send_one_retainer_info(retainer::join_id(
@@ -1566,6 +1586,49 @@ async fn process_packet(
                                 }
                                 ClientTriggerCommand::SetRetainerMarketPrice { slot, price } => {
                                     connection.set_retainer_market_price(slot, price);
+                                }
+                                // The glamour dresser, its plates and the armoire (docs/src/fork/glamour.md.)
+                                ClientTriggerCommand::OpenGlamourDresser => {
+                                    connection.send_glamour_dresser().await;
+                                }
+                                ClientTriggerCommand::ToggleGlamourPlatesWindow { open } => {
+                                    if open {
+                                        connection.send_glamour_plates().await;
+                                    }
+                                }
+                                ClientTriggerCommand::StoreInGlamourDresser { container, slot } => {
+                                    connection
+                                        .store_in_glamour_dresser(container, slot as u16)
+                                        .await;
+                                }
+                                ClientTriggerCommand::RestoreFromGlamourDresser { index } => {
+                                    connection.restore_from_glamour_dresser(index).await;
+                                }
+                                ClientTriggerCommand::OpenArmoire => {
+                                    connection.send_armoire().await;
+                                }
+                                ClientTriggerCommand::OpenArmoireInfo => {
+                                    connection.send_armoire_info().await;
+                                }
+                                ClientTriggerCommand::StoreInArmoire { cabinet_id } => {
+                                    connection.store_in_armoire(cabinet_id).await;
+                                }
+                                ClientTriggerCommand::WithdrawFromArmoire { cabinet_id } => {
+                                    connection.withdraw_from_armoire(cabinet_id).await;
+                                }
+                                // After every inventory change retail answered with an empty map marker update
+                                // (Bob's Chronofoil capture of 2026-10-24.)
+                                ClientTriggerCommand::InventoryChanged => {
+                                    connection
+                                        .actor_control_self(
+                                            ActorControlCategory::MapMarkerUpdateBegin { flags: 1 },
+                                        )
+                                        .await;
+                                    connection
+                                        .actor_control_self(
+                                            ActorControlCategory::MapMarkerUpdateEnd,
+                                        )
+                                        .await;
                                 }
                                 ClientTriggerCommand::RequestInventorySlot { container, slot } => {
                                     connection.send_inventory_slot(container, slot as u16).await;
@@ -3469,6 +3532,17 @@ async fn process_packet(
                         }
                         ClientZoneIpcData::RequestRetainerSaleHistory { retainer_id } => {
                             connection.send_retainer_sale_history(*retainer_id).await;
+                        }
+                        ClientZoneIpcData::SaveGlamourPlate {
+                            plate,
+                            set,
+                            indices,
+                            containers,
+                            ..
+                        } => {
+                            connection
+                                .save_glamour_plate(*plate, set, indices, containers)
+                                .await;
                         }
                         ClientZoneIpcData::MarketBoardOpened { request_id, .. } => {
                             connection.marketboard_opened(*request_id).await;

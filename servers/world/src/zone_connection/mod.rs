@@ -45,6 +45,7 @@ mod effect;
 mod event;
 mod friends;
 mod gathering;
+mod glamour;
 pub use gathering::GatheringState;
 mod item;
 mod linkshell;

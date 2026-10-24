@@ -62,6 +62,7 @@ pub use bitmask::{Bitmask, QuestBitmask};
 
 /// Disciples of the Hand: the rules of a synthesis.
 pub mod crafting;
+pub mod glamour;
 
 /// Disciples of the Land: the rules at a node.
 pub mod gathering;

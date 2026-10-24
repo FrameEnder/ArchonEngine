@@ -715,15 +715,46 @@ pub enum ServerZoneIpcData {
     /// What each progress and quality action would do now, for the Synthesis window (Bob's Chronofoil capture of
     /// 2026-10-24: before the window opens and after every step; 7.57's handler hands it to agent 0x178.)
     CraftingActionPreviews {
-        actions: [CraftingActionPreview; 21],
         #[brw(pad_after = 4)]
-        unk: u32,
+        actions: [CraftingActionPreview; 21],
     },
     /// How many gathers in a row at this node have succeeded so far (1, 2, 3…; 0 when the node's window closes. Bob's
     /// Chronofoil capture of 2026-10-24; 7.57's HandleGatheringSuccessfulChainCountPacket.)
     GatheringChainCount {
         #[brw(pad_after = 4)]
         count: u32,
+    },
+    /// One page of the glamour dresser (400 of its 800 items; the client asks with ClientTrigger 2350 and retail sent
+    /// pages 0 and 1. 7.57 copies them into MirageManager's PrismBoxItemIds and stains.) HQ items are their ID +
+    /// 1,000,000.
+    GlamourDresser {
+        page: u32,
+        item_ids: [u32; 400],
+        stain0: [u8; 400],
+        #[brw(pad_after = 4)]
+        stain1: [u8; 400],
+    },
+    /// The 20 glamour plates (the client asks with ClientTrigger 2356; MirageManager's GlamourPlates.)
+    GlamourPlates {
+        plates: [GlamourPlate; 20],
+    },
+    /// One glamour plate after the client saved it (`ClientZoneIpcData::SaveGlamourPlate`): its index, then the plate.
+    GlamourPlateUpdated {
+        index: u32,
+        #[brw(pad_after = 4)]
+        plate: GlamourPlate,
+    },
+    /// The armoire's contents: one bit per Cabinet row stored (row 204 is byte 25's bit 4; Bob's capture of
+    /// 2026-10-24, where it went to 0 once he'd withdrawn it.) The answer to ClientTrigger 423.
+    ArmoireContents {
+        stored: [u8; 136],
+    },
+    /// Sent with `ArmoireContents` (the answer to ClientTrigger 427): retail's was 1 and zeros, meaning unknown.
+    ArmoireInfo {
+        unk1: u32,
+        #[br(count = 500)]
+        #[bw(pad_size_to = 500)]
+        unk2: Vec<u8>,
     },
     /// One slot of the gathering points' phases changes (7.57's handler writes the byte to QuestManager +0x7AC.)
     GatheringPointPhase {
@@ -1879,6 +1910,16 @@ mod tests {
             hex("18010000 0a020100 00000000 ffffffff ffffffff ffff0000")
         );
     }
+}
+
+/// One glamour plate (7.57's MirageManager.GlamourPlate): an item and two stains for each of its 12 slots (main hand,
+/// off hand, head, body, hands, legs, feet, earrings, necklace, bracelets, right ring, left ring.)
+#[binrw]
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct GlamourPlate {
+    pub item_ids: [u32; 12],
+    pub stain0: [u8; 12],
+    pub stain1: [u8; 12],
 }
 
 /// One action's line in `CraftingActionPreviews`.

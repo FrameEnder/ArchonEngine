@@ -89,6 +89,9 @@ pub struct Inventory {
     pub currency: CurrencyStorage,
     pub crystals: CrystalsStorage,
     pub key_items: GenericStorage<MAX_NORMAL_STORAGE>,
+    /// The glamour dresser, glamour plates and armoire (`crate::glamour`); missing in inventories saved before them.
+    #[serde(default)]
+    pub glamour: crate::glamour::GlamourStorage,
     /// The retainer called at a summoning bell, if any: their containers (10000-12002) work like the player's own while
     /// they're out. Kept in the retainer table, not with the player's inventory.
     #[serde(skip)]
@@ -136,6 +139,7 @@ impl Default for Inventory {
             currency: CurrencyStorage::default(),
             crystals: CrystalsStorage::default(),
             key_items: GenericStorage::new(ContainerType::KeyItems),
+            glamour: Default::default(),
             retainer: None,
         }
     }

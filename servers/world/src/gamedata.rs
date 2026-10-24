@@ -11,6 +11,7 @@ use icarus::BNpcBase::BNpcBaseSheet;
 use icarus::BNpcCustomize::BNpcCustomizeSheet;
 use icarus::BaseParam::{BaseParamRow, BaseParamSheet};
 use icarus::Battalion::BattalionSheet;
+use icarus::Cabinet::CabinetSheet;
 use icarus::ClassJob::ClassJobSheet;
 use icarus::ContentDirectorManagedSG::ContentDirectorManagedSGSheet;
 use icarus::ContentFinderCondition::ContentFinderConditionSheet;
@@ -2452,6 +2453,15 @@ impl GameData {
             .row(row.GatheringPointBase as u32)
             .map(|base| base.GatheringType as u8)
             .unwrap_or_default()
+    }
+
+    /// The item a Cabinet row (the armoire's) is.
+    pub fn get_cabinet_item(&mut self, cabinet_id: u32) -> Option<u32> {
+        CabinetSheet::read_from(&mut self.resource, Language::None)
+            .ok()?
+            .row(cabinet_id)
+            .map(|row| row.Item)
+            .filter(|item| *item != 0)
     }
 
     /// A GatheringPointBonus row (a point's `gathering_point_bonus`; 0 is none.)

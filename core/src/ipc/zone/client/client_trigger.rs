@@ -186,6 +186,28 @@ pub enum ClientTriggerCommand {
         slot: u32,
     },
 
+    /// The armoire's window opens: answered with `ServerZoneIpcData::ArmoireContents` (Bob's Chronofoil capture of
+    /// 2026-10-24.)
+    #[brw(magic = 423u32)]
+    OpenArmoire,
+
+    /// An item goes into the armoire (its Cabinet row); answered with ActorControlSelf ArmoireResult.
+    #[brw(magic = 424u32)]
+    StoreInArmoire { cabinet_id: u32 },
+
+    /// An item comes out of the armoire (its Cabinet row) into the bags.
+    #[brw(magic = 425u32)]
+    WithdrawFromArmoire { cabinet_id: u32 },
+
+    /// Sent right after `OpenArmoire`: answered with `ServerZoneIpcData::ArmoireInfo`.
+    #[brw(magic = 427u32)]
+    OpenArmoireInfo,
+
+    /// Sent after every inventory change (moves, the glamour dresser, the armoire, a used item): retail answers with
+    /// ActorControlSelf MapMarkerUpdateBegin (1) and MapMarkerUpdateEnd, the quest markers that depend on items.
+    #[brw(magic = 830u32)]
+    InventoryChanged,
+
     /// The client requests materia melding from another player.
     #[brw(magic = 413u32)]
     RequestMateriaMeld { actor_id: ObjectId },
@@ -541,6 +563,23 @@ pub enum ClientTriggerCommand {
         #[bw(map = write_bool_as::<u32>)]
         decline: bool,
     },
+
+    /// The glamour dresser's window opens: answered with its two pages (`ServerZoneIpcData::GlamourDresser`; Bob's
+    /// Chronofoil capture of 2026-10-24.)
+    #[brw(magic = 2350u32)]
+    OpenGlamourDresser,
+
+    /// An item from the bags or the armoury chest goes into the glamour dresser.
+    #[brw(magic = 2351u32)]
+    StoreInGlamourDresser {
+        #[brw(pad_size_to = 4)] // ContainerType is u16
+        container: ContainerType,
+        slot: u32,
+    },
+
+    /// An item comes back out of the glamour dresser (its index) into the bags.
+    #[brw(magic = 2352u32)]
+    RestoreFromGlamourDresser { index: u32 },
 
     /// Sent whenever the Glamour Plates window is opened or closed.
     #[brw(magic = 2356u32)]

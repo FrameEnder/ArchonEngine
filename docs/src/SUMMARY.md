@@ -51,6 +51,7 @@
   - [Items That Teach Things](fork/items.md)
   - [Marketboard](fork/marketboard.md)
   - [Retainers](fork/retainers.md)
+  - [Glamour Dresser, Plates and Armoire](fork/glamour.md)
   - [Party Bots](fork/party-bots.md)
   - [Party NPCs (Duty Support)](fork/party-npcs.md)
   - [Coffers and Loot](fork/loot.md)

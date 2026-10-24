@@ -699,6 +699,15 @@ pub enum ActorControlCategory {
     #[brw(magic = 512u32)]
     MapMarkerUpdateEnd,
 
+    /// The result of storing in or withdrawing from the armoire (ClientTrigger 424 and 425): 0 done (3 when the item
+    /// wasn't there to store), the Cabinet row, 1 stored or 0 withdrawn (Bob's Chronofoil capture of 2026-10-24.)
+    #[brw(magic = 513u32)]
+    ArmoireResult {
+        result: u32,
+        cabinet_id: u32,
+        stored: u32,
+    },
+
     #[brw(magic = 516u32)]
     ToggleCutsceneSeen {
         id: u32, // Index to Cutscene sheet
@@ -757,6 +766,10 @@ pub enum ActorControlCategory {
     },
 
     /// The client marks `id` complete if `unk1` is 1, and takes `unk2` and `unk3` as its progress (current, max).
+    /// One glamour dresser slot changed: its index and the item now there (0 when restored; same capture.)
+    #[brw(magic = 1800u32)]
+    GlamourDresserSlot { index: u32, item_id: u32 },
+
     #[brw(magic = 600u32)]
     AchievementProgress {
         id: u32,
