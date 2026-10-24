@@ -196,6 +196,10 @@ pub enum LuaTask {
     UnlockBuddyEquip {
         id: u32,
     },
+    /// A Thavnairian Onion fed to the chocobo companion (`items/ThavnairianOnion.lua`.)
+    FeedCompanionOnion {
+        item_id: u32,
+    },
     UnlockBuddyEquipAll,
     ToggleChocoboTaxiStand {
         id: u32,

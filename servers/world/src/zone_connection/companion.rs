@@ -10,7 +10,10 @@ use kawari::{
 use crate::{
     ToServer, ZoneConnection,
     inventory::{PREMIUM_SADDLEBAG_PAGES, SADDLEBAG_PAGES},
-    server::{COMMAND_FOLLOW, COMMAND_HEALER, COMMAND_WITHDRAW, CompanionProfile},
+    server::{
+        COMMAND_FOLLOW, COMMAND_HEALER, COMMAND_WITHDRAW, CompanionProfile, MAX_RANK, eat_onion,
+        gain_exp,
+    },
 };
 
 /// Each skill line (Defender, Attacker, Healer) has ten skills (BuddySkill.)
@@ -42,7 +45,51 @@ impl ZoneConnection {
             models,
             barding,
             color: buddy.color.clamp(0, u8::MAX as i32) as u8,
+            levels: [0, 1, 2].map(|line| buddy.levels.0.get(line).copied().unwrap_or_default()),
         }
+    }
+
+    /// The companion gained EXP from a kill (`FromServer::CompanionExp`): it ranks up below rank 10 as its bar fills,
+    /// each rank bringing its skill points; from 10 its bar stops full until it eats a Thavnairian Onion.
+    pub async fn companion_gained_exp(&mut self, exp: u32) {
+        let buddy = &mut self.player_data.buddy;
+        let (rank, now, points) = gain_exp(
+            buddy.rank.clamp(0, MAX_RANK as i32) as u8,
+            buddy.exp.max(0) as u32,
+            exp,
+        );
+        if rank != buddy.rank as u8 {
+            tracing::info!("The companion reached rank {rank} (+{points} skill points)");
+        }
+        buddy.rank = rank as i32;
+        buddy.exp = now.min(i32::MAX as u32) as i32;
+        buddy.skill_points += points as i32;
+        self.send_companion().await;
+    }
+
+    /// A Thavnairian Onion fed to the companion (its item script): from rank 10, with its EXP bar full, it ranks up
+    /// and the onion is used up. Otherwise nothing happens and the onion is kept.
+    pub async fn feed_companion_onion(&mut self, item_id: u32) {
+        let buddy = &mut self.player_data.buddy;
+        let Some((rank, exp, points)) = eat_onion(
+            buddy.rank.clamp(0, MAX_RANK as i32) as u8,
+            buddy.exp.max(0) as u32,
+        ) else {
+            tracing::info!(
+                "The companion can't eat a Thavnairian Onion now (rank {}, EXP {})",
+                buddy.rank,
+                buddy.exp
+            );
+            return;
+        };
+        buddy.rank = rank as i32;
+        buddy.exp = exp as i32;
+        buddy.skill_points += points as i32;
+        tracing::info!(
+            "The companion ate a Thavnairian Onion: rank {rank} (+{points} skill points)"
+        );
+        self.item_used_up(item_id).await;
+        self.send_companion().await;
     }
 
     /// Tells the server what the companion is now.

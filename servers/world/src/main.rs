@@ -4671,6 +4671,9 @@ async fn process_server_msg(
             FromServer::ItemUsedUp(item_id) => {
                 connection.item_used_up(item_id).await;
             }
+            FromServer::CompanionExp(exp) => {
+                connection.companion_gained_exp(exp).await;
+            }
             FromServer::EventItemUsed(item_id, target) => {
                 // A key item's quest event (type EventItem, its argument the item), when its quest is underway.
                 let quest = connection

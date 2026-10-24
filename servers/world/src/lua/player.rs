@@ -980,6 +980,11 @@ impl UserData for LuaPlayer {
             this.queued_tasks.push(LuaTask::CheckAchievements);
             Ok(())
         });
+        methods.add_method_mut("feed_companion_onion", |_, this, item_id: u32| {
+            this.queued_tasks
+                .push(LuaTask::FeedCompanionOnion { item_id });
+            Ok(())
+        });
         methods.add_method_mut(
             "learn_from_item",
             |_, this, (kind, id, item_id): (String, u32, u32)| {

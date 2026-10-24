@@ -4,7 +4,7 @@ use icarus::Quest::QuestSheet;
 use mlua::Function;
 
 use crate::{
-    Event, EventHandler, ItemInfoQuery, LuaEventHandler, ZoneConnection,
+    Event, EventHandler, ItemInfoQuery, LuaEventHandler, ToServer, ZoneConnection,
     common::adjust_quest_id,
     event::quest_script_path,
     inventory::{Item, Storage},
@@ -479,6 +479,13 @@ impl ZoneConnection {
             self.add_kill_exp(exp, chain.map(|(_, _, bonus)| bonus).unwrap_or(0), actor_id)
                 .await;
         }
+        // Their chocobo companion, if it's out, gets as much (a stand-in; `server/companion.rs`.)
+        self.handle
+            .send(ToServer::CompanionKill(
+                self.player_data.character.actor_id,
+                exp.max(0) as u32,
+            ))
+            .await;
 
         let quest_ids: Vec<u16> = self
             .player_data

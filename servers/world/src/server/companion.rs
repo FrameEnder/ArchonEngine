@@ -5,7 +5,9 @@
 //! sent at login (PlayerSetup); the zone connection sends it here too (`ToServer::SetCompanion`), so the server can
 //! summon it in whichever instance its owner is. Every packet and number here is from Bob's Chronofoil capture of
 //! 2026-10-24 (e8158807, Middle La Noscea: summoning, riding, dismounting, barding, stances, skills, withdrawing),
-//! unless it says otherwise.
+//! unless it says otherwise. Its fighting, skill lines, ranks and EXP are from his capture of 2026-10-24 (8d85b18d,
+//! Lakeland: a level 88 companion with Attacker at 6 fighting beside him in Attacker and Free Stance), the BuddySkill,
+//! BuddyRank, Trait and Action sheets, and the Console Games Wiki's Chocobo Companion page for what no capture shows.
 
 use std::{
     sync::Arc,
@@ -13,23 +15,24 @@ use std::{
 };
 
 use kawari::{
-    common::{LegacyEquipmentModelId, ObjectId},
+    common::{LegacyEquipmentModelId, ObjectId, ObjectTypeId, ObjectTypeKind, RecordedAmount},
     config::get_config,
     ipc::zone::{
-        ActorControlCategory, BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DisplayFlag, Equip,
-        ObjectKind, ServerZoneIpcData, ServerZoneIpcSegment, SpawnNpc, StatusEffect,
-        StatusEffectList,
+        ActionRequest, ActionType, ActorControlCategory, BattleNpcSubKind, CharacterDataFlag,
+        CommonSpawn, DisplayFlag, Equip, ObjectKind, ServerZoneIpcData, ServerZoneIpcSegment,
+        SpawnNpc, StatusEffect, StatusEffectList,
     },
 };
 use parking_lot::Mutex;
 
 use crate::{
-    FromServer, GameData, ToServer,
+    ClientId, FromServer, GameData, ToServer,
     server::{
         WorldServer,
         actor::{NetworkedActor, NpcState, create_npc_common_spawn},
-        instance::Instance,
+        instance::{Instance, QueuedTaskData},
         network::{DestinationNetwork, NetworkState},
+        npc_behavior::npc_cast_bar_time,
     },
 };
 
@@ -48,15 +51,25 @@ pub const COMMAND_HEALER: u8 = 7;
 
 /// One Gysahl Greens: 30 minutes (retail's CompanionUpdate said 180,000 centiseconds after one.)
 const SUMMON_TIME: Duration = Duration::from_secs(30 * 60);
-/// Greens used while it's out add to its time, up to an hour. A guess: the capture used one at a time.
+/// Greens used while it's out add to its time, up to an hour (Bob, 2026-10-24: "it can stack up to an hour"; his
+/// capture: 140,971 cs left, one more Greens, 318,680.)
 const MAX_SUMMON_TIME: Duration = Duration::from_secs(60 * 60);
 /// Withdrawn, it leaves; retail took it away (SetupPet with no pet, then DeleteActor) 2 s later.
 const WITHDRAW_TIME: Duration = Duration::from_millis(2000);
 /// Retail sent ActorControl 36 and 54 for a companion 0.7-0.85 s after its spawn.
 const APPEAR_TIME: Duration = Duration::from_millis(800);
 
-/// Its HP is this much of its owner's: retail's was 36,330 by Bob's 69,756 (both level 90.)
-const HP_OF_OWNER: f32 = 36_330.0 / 69_756.0;
+/// Its HP by its level's ParamGrow HpModifier, before its skill lines' HP traits: retail's companions had 36,330 at
+/// level 90 (HpModifier 3,661) and 35,038 at level 88 (3,553), both with Attacker's +5% HP; it isn't a share of the
+/// owner's (Bob's level 88 White Mage had 35,118, his level 90 character 69,756.) 9.42 fits both within 0.3%.
+const HP_PER_HP_MODIFIER: f32 = 9.42;
+/// What one potency of its attacks does, per HpModifier of its level, before Strength traits: retail's level 88
+/// companion (HpModifier 3,553, Attacker at 6: +5% Strength) hit Lakeland's monsters for 1,743 with its auto-attack
+/// (49 hits, taken as potency 100), 2,664 with Choco Slash (150, 6 hits) and 2,251 with Choco Beak (130, 12 hits):
+/// 17.5 a potency. How it grows with level isn't recorded; HpModifier is a stand-in.
+const DAMAGE_PER_POTENCY_PER_HP_MODIFIER: f32 = 17.5 / 1.05 / 3553.0;
+/// Its auto-attack, as a potency for the scale above.
+const AUTO_ATTACK_POTENCY: f32 = 100.0;
 /// Its MP (retail's spawn, 7,000 of 7,000.)
 const MP: u16 = 7000;
 /// Its auto-attack (Action 871, the enemies' piercing one: another player's companion used it on a monster.)
@@ -68,10 +81,235 @@ const BODY_MODEL: u16 = 1;
 /// The colour (Stain) of a companion whose colour was never changed: Desert Yellow (retail's spawn.)
 const DEFAULT_STAIN: u8 = 36;
 
+/// The first of its skills comes this long after it starts fighting, then one every `SKILL_EVERY` (retail: 5.1-8.1 s
+/// into five fights, then 7.9-8.5 s apart, 9.5 once.)
+const FIRST_SKILL_AFTER: (f32, f32) = (5.0, 8.0);
+const SKILL_EVERY: (f32, f32) = (7.9, 8.5);
+/// How often it looks after its owner's and its own health in Healer and Free Stance (the Wiki: Choco Cure below 75%
+/// in Healer Stance, 50% in the others; Choco Regen when someone was hurt; Choco Surge whenever it can.)
+const HEAL_EVERY: f32 = 3.0;
+const HEALER_CURE_BELOW: f32 = 0.75;
+const FREE_CURE_BELOW: f32 = 0.5;
+/// Choco Regen and Choco Surge last this long (their Action descriptions.)
+const REGEN_TIME: Duration = Duration::from_secs(18);
+const SURGE_TIME: Duration = Duration::from_secs(30);
+/// Its healing spells' cast (their Action rows' Cast100ms: 15.)
+const HEAL_CAST: f32 = 1.5;
+
+/// The skill lines (BuddySkill: Defender, Attacker, Healer) and the active skills in each, by the level they come at;
+/// the levels between are traits (`TRAITS`.) Action rows 817-828.
+pub const LINE_DEFENDER: usize = 0;
+pub const LINE_ATTACKER: usize = 1;
+pub const LINE_HEALER: usize = 2;
+const SKILLS: [[(u8, u32); 4]; 3] = [
+    // Choco Drop, Choco Kick, Choco Guard, Choco Strike.
+    [(1, 820), (4, 819), (7, 818), (10, 817)],
+    // Choco Slash, Choco Beak, Choco Rush, Choco Blast.
+    [(1, 824), (4, 823), (7, 822), (10, 821)],
+    // Choco Regen, Choco Cure, Choco Surge, Choco Medica.
+    [(1, 828), (4, 827), (7, 826), (10, 825)],
+];
+const CHOCO_REGEN: u32 = 828;
+const CHOCO_CURE: u32 = 827;
+const CHOCO_SURGE: u32 = 826;
+const CHOCO_MEDICA: u32 = 825;
+/// Each skill's potency (the Action descriptions), for its damage or healing.
+const POTENCIES: [(u32, f32); 11] = [
+    (817, 150.0),
+    (819, 130.0),
+    (820, 150.0),
+    (821, 170.0),
+    (822, 130.0),
+    (823, 130.0),
+    (824, 150.0),
+    (825, 150.0),
+    (827, 300.0),
+    (871, AUTO_ATTACK_POTENCY),
+    (828, 25.0),
+];
+
+/// What a skill line's traits give, by line and the level they come at (BuddySkill's passive rows, Trait 71-88.)
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Trait {
+    Strength(u8),
+    Hp(u8),
+    Mind(u8),
+    Accuracy(u8),
+    Critical(u8),
+    AttackSpeed(u8),
+}
+const TRAITS: [[(u8, Trait); 6]; 3] = [
+    [
+        (2, Trait::Strength(5)),
+        (3, Trait::Hp(10)),
+        (5, Trait::Accuracy(5)),
+        (6, Trait::Critical(15)),
+        (8, Trait::Strength(5)),
+        (9, Trait::Hp(10)),
+    ],
+    [
+        (2, Trait::Strength(5)),
+        (3, Trait::Hp(5)),
+        (5, Trait::Accuracy(5)),
+        (6, Trait::Critical(15)),
+        (8, Trait::Strength(10)),
+        (9, Trait::AttackSpeed(10)),
+    ],
+    [
+        (2, Trait::Mind(10)),
+        (3, Trait::Hp(5)),
+        (5, Trait::Accuracy(5)),
+        (6, Trait::Critical(15)),
+        (8, Trait::Mind(15)),
+        (9, Trait::Hp(5)),
+    ],
+];
+
+/// What its traits add up to, in percent.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct TraitBonus {
+    pub strength: u32,
+    pub hp: u32,
+    pub mind: u32,
+}
+
+/// Its traits for these skill line levels (Defender, Attacker, Healer.)
+pub fn trait_bonus(levels: [u8; 3]) -> TraitBonus {
+    let mut bonus = TraitBonus::default();
+    for (line, traits) in TRAITS.iter().enumerate() {
+        for (level, gained) in traits {
+            if levels[line] < *level {
+                continue;
+            }
+            match gained {
+                Trait::Strength(percent) => bonus.strength += *percent as u32,
+                Trait::Hp(percent) => bonus.hp += *percent as u32,
+                Trait::Mind(percent) => bonus.mind += *percent as u32,
+                Trait::Accuracy(_) | Trait::Critical(_) | Trait::AttackSpeed(_) => {}
+            }
+        }
+    }
+    bonus
+}
+
+/// Its HP at a level whose ParamGrow HpModifier is `hp_modifier`, with these skill lines.
+pub fn companion_hp(hp_modifier: u32, levels: [u8; 3]) -> u32 {
+    let traits = trait_bonus(levels);
+    (hp_modifier as f32 * HP_PER_HP_MODIFIER * (100 + traits.hp) as f32 / 100.0).round() as u32
+}
+
+/// What its actions do at a level whose HpModifier is `hp_modifier`: each attack's damage, each heal's amount (its
+/// timeline's `recorded_amounts`, which the action pipeline scales its hits and heals to.)
+fn recorded_amounts(
+    hp_modifier: u32,
+    levels: [u8; 3],
+) -> std::collections::BTreeMap<u32, RecordedAmount> {
+    let traits = trait_bonus(levels);
+    let per_potency = hp_modifier as f32 * DAMAGE_PER_POTENCY_PER_HP_MODIFIER;
+    POTENCIES
+        .iter()
+        .filter(|(action, _)| *action != CHOCO_REGEN)
+        .map(|(action, potency)| {
+            let healing = matches!(*action, CHOCO_CURE | CHOCO_MEDICA);
+            // Healing isn't recorded: the same per potency, with Mind's traits instead of Strength's.
+            let bonus = if healing {
+                traits.mind
+            } else {
+                traits.strength
+            };
+            let amount = per_potency * potency * (100 + bonus) as f32 / 100.0;
+            (
+                *action,
+                RecordedAmount {
+                    players: healing.then_some(amount),
+                    npcs: Some(amount),
+                },
+            )
+        })
+        .collect()
+}
+
+/// The active skills a line has learnt at `level`.
+fn learnt(line: usize, level: u8) -> impl Iterator<Item = u32> {
+    SKILLS[line]
+        .iter()
+        .filter(move |(at, _)| level >= *at)
+        .map(|(_, action)| *action)
+}
+
+/// The attacks it picks from in a stance: Defender's or Attacker's learnt skills; in Free Stance each attacking line's
+/// latest (retail's Free Stance companion, Attacker at 6, used only Choco Beak, four times.)
+fn attacks_for(stance: u8, levels: [u8; 3]) -> Vec<u32> {
+    let attacking = |line: usize| learnt(line, levels[line]).filter(|action| *action != 818);
+    match stance {
+        COMMAND_DEFENDER => attacking(LINE_DEFENDER).collect(),
+        COMMAND_ATTACKER => attacking(LINE_ATTACKER).collect(),
+        COMMAND_FREE => [LINE_DEFENDER, LINE_ATTACKER]
+            .into_iter()
+            .filter_map(|line| attacking(line).last())
+            .collect(),
+        _ => Vec::new(),
+    }
+}
+
+/// Its auto-attack in a stance: none in Healer Stance (the Wiki), else Action 871.
+fn auto_attack_for(stance: u8) -> u32 {
+    if stance == COMMAND_HEALER {
+        0
+    } else {
+        AUTO_ATTACK
+    }
+}
+
+/// BuddyRank's ExpRequired: the EXP from each rank to the next (rank 0's 100 to rank 19's 3,620,000; 20 is the last.)
+const RANK_EXP: [u32; 21] = [
+    100, 4000, 38000, 82000, 158000, 294000, 490000, 700000, 940000, 1200000, 1458000, 1714000,
+    1967000, 2217000, 2463000, 2705000, 2942000, 3174000, 3400000, 3620000, 0,
+];
+pub const MAX_RANK: u8 = 20;
+/// From this rank on, it ranks up only by eating a Thavnairian Onion once its EXP bar is full (Bob; the Wiki.)
+pub const ONION_RANK: u8 = 10;
+
+/// The skill points a rank brings (the Wiki: the rank itself up to 10, 55 in all; 10 each to 16; then 11 to 14, 165
+/// at 20, enough for every skill of the three lines. Retail's rank 6 companion had used 21 = 1 + ... + 6.)
+pub fn skill_points_for_rank(rank: u8) -> u8 {
+    match rank {
+        0 => 0,
+        1..=10 => rank,
+        11..=16 => 10,
+        _ => rank - 6,
+    }
+}
+
+/// EXP gained: its rank and EXP after it, and the skill points the new ranks bring. Below rank 10 it ranks up as its
+/// bar fills; from 10 on the bar stops when full, for a Thavnairian Onion.
+pub fn gain_exp(rank: u8, exp: u32, gained: u32) -> (u8, u32, u8) {
+    let (mut rank, mut exp, mut points) = (rank.min(MAX_RANK), exp.saturating_add(gained), 0u8);
+    while rank < ONION_RANK && exp >= RANK_EXP[rank as usize] {
+        exp -= RANK_EXP[rank as usize];
+        rank += 1;
+        points = points.saturating_add(skill_points_for_rank(rank));
+    }
+    if rank >= ONION_RANK {
+        exp = exp.min(RANK_EXP[rank as usize]);
+    }
+    (rank, exp, points)
+}
+
+/// A Thavnairian Onion eaten: the next rank (from 10 to 20) and its points, if its EXP bar is full.
+pub fn eat_onion(rank: u8, exp: u32) -> Option<(u8, u32, u8)> {
+    if !(ONION_RANK..MAX_RANK).contains(&rank) || exp < RANK_EXP[rank as usize] {
+        return None;
+    }
+    Some((rank + 1, 0, skill_points_for_rank(rank + 1)))
+}
+
 /// Unnamed ActorControls retail sent (their numbers):
-/// 36 `[1, 18009]` and 54 `[1]` on the companion just after it appeared (54 is Sapphire's ToggleNameHidden);
+/// 36 `[1, 18009]` and 54 `[1]` on the companion just after it was summoned (54 is Sapphire's ToggleNameHidden);
+/// coming back with its owner at a zone-in, 267 `[0]` and 54 `[1]` instead (capture 8d85b18d);
 const AC_COMPANION_APPEARED: u32 = 36;
 const AC_COMPANION_APPEARED_ARG: u32 = 18009;
+const AC_COMPANION_CAME_ALONG: u32 = 267;
 const AC_NAME_SHOWN: u32 = 54;
 /// 272 `[0]` on the companion as its owner mounted it;
 const AC_COMPANION_MOUNTED: u32 = 272;
@@ -93,6 +331,8 @@ pub struct CompanionProfile {
     pub barding: [u8; 3],
     /// Its colour, a Stain row (0: never changed.)
     pub color: u8,
+    /// Its skill lines' levels: Defender, Attacker, Healer.
+    pub levels: [u8; 3],
 }
 
 impl CompanionProfile {
@@ -158,8 +398,16 @@ pub struct Companion {
     pub actor: Option<ObjectId>,
     /// Withdrawn: its actor, taken away at this time.
     leaving: Option<(ObjectId, Instant)>,
-    /// Just spawned: ActorControl 36 and 54 go out at this time.
-    appearing: Option<(ObjectId, Instant)>,
+    /// Just spawned: ActorControl 36 (or 267 coming along) and 54 go out at this time.
+    appearing: Option<(ObjectId, Instant, bool)>,
+    /// Fighting: its next skill's time.
+    next_skill: Option<Instant>,
+    /// When it next looks after health (Healer and Free Stance.)
+    next_heal_check: Option<Instant>,
+    /// Its Choco Regen on its owner and on itself, and its Choco Surge, until then.
+    regen_owner_until: Option<Instant>,
+    regen_self_until: Option<Instant>,
+    surge_until: Option<Instant>,
 }
 
 impl Companion {
@@ -245,15 +493,23 @@ fn send_status_list(
     );
 }
 
+/// The ParamGrow HpModifier of a level (its HP and damage scale with it.)
+fn hp_modifier(game_data: &mut GameData, level: u8) -> u32 {
+    game_data
+        .get_param_grow(level.max(1) as u32)
+        .map(|row| row.HpModifier as u32)
+        .unwrap_or(1)
+}
+
 /// The companion as retail spawned it: BNpcBase 952 with its name, owned by the player, of sub-kind Chocobo, at its
-/// owner's level with about half their HP, its barding and colour.
+/// owner's level with the HP of that level and its traits, its barding and colour.
 fn companion_spawn(
     game_data: &mut GameData,
     owner_id: ObjectId,
     owner: &CommonSpawn,
     profile: &CompanionProfile,
 ) -> SpawnNpc {
-    let hp = ((owner.max_health_points as f32 * HP_OF_OWNER) as u32).max(1);
+    let hp = companion_hp(hp_modifier(game_data, owner.level), profile.levels).max(1);
     let base = create_npc_common_spawn(
         game_data,
         COMPANION_BNPC_BASE,
@@ -300,6 +556,7 @@ fn spawn(
     game_data: &Arc<Mutex<GameData>>,
     owner: ObjectId,
     after_ride: bool,
+    came_along: bool,
 ) {
     let Some(companion) = data.companions.get(&owner).cloned() else {
         return;
@@ -315,9 +572,13 @@ fn spawn(
     };
 
     let actor_id = Instance::generate_actor_id();
-    let spawn = {
+    let (spawn, amounts) = {
         let mut game_data = game_data.lock();
-        companion_spawn(&mut game_data, owner, &owner_spawn, &companion.profile)
+        let modifier = hp_modifier(&mut game_data, owner_spawn.level);
+        (
+            companion_spawn(&mut game_data, owner, &owner_spawn, &companion.profile),
+            recorded_amounts(modifier, companion.profile.levels),
+        )
     };
 
     {
@@ -371,9 +632,10 @@ fn spawn(
         timeline, state, ..
     }) = instance.find_actor_mut(actor_id)
     {
-        timeline.autoattack_action_id = AUTO_ATTACK;
+        timeline.autoattack_action_id = auto_attack_for(companion.profile.stance());
         timeline.attack_range = ATTACK_RANGE;
         timeline.rotation = None;
+        timeline.recorded_amounts = amounts;
         *state = NpcState::Follow;
     }
 
@@ -381,7 +643,8 @@ fn spawn(
         return;
     };
     companion.actor = Some(actor_id);
-    companion.appearing = Some((actor_id, Instant::now() + APPEAR_TIME));
+    companion.appearing = Some((actor_id, Instant::now() + APPEAR_TIME, came_along));
+    companion.next_skill = None;
     if let Some(paused) = companion.paused.take() {
         companion.until = Some(Instant::now() + paused);
     }
@@ -436,7 +699,7 @@ pub(super) fn summon(
         send_update(&mut network.lock(), owner, companion, true);
         return;
     }
-    spawn(&mut data, network, game_data, owner, false);
+    spawn(&mut data, network, game_data, owner, false, false);
 }
 
 /// Takes the companion away (withdrawn, its time up, or fallen): on it ActorControl 258, the owner told it's gone
@@ -561,6 +824,9 @@ pub(super) fn handle_companion_messages(
                 || companion.profile.color != profile.color;
             let stance_changed = companion.profile.stance() != profile.stance();
             let points_changed = companion.profile.skill_points != profile.skill_points;
+            let levels_changed = companion.profile.levels != profile.levels;
+            let exp_changed =
+                companion.profile.exp != profile.exp || companion.profile.rank != profile.rank;
             companion.profile = profile.clone();
             let companion = companion.clone();
             let Some(actor_id) = companion.actor.filter(|_| companion.leaving.is_none()) else {
@@ -585,8 +851,26 @@ pub(super) fn handle_companion_messages(
                     enmity.clear();
                 }
             }
-            if points_changed {
+            if points_changed || exp_changed {
                 send_update(&mut network, *owner, &companion, false);
+            }
+            // Its auto-attack (none in Healer Stance), and what its new skills and traits make of its HP and hits.
+            if (stance_changed || levels_changed)
+                && let Some(instance) = data.find_actor_instance_mut(actor_id)
+                && let Some(NetworkedActor::Npc {
+                    timeline, spawn, ..
+                }) = instance.find_actor_mut(actor_id)
+            {
+                timeline.autoattack_action_id = auto_attack_for(profile.stance());
+                if levels_changed {
+                    let modifier = hp_modifier(&mut game_data.lock(), spawn.common.level);
+                    timeline.recorded_amounts = recorded_amounts(modifier, profile.levels);
+                    let hp = companion_hp(modifier, profile.levels).max(1);
+                    spawn.common.health_points = (spawn.common.health_points as u64 * hp as u64
+                        / spawn.common.max_health_points.max(1) as u64)
+                        as u32;
+                    spawn.common.max_health_points = hp;
+                }
             }
             if (barding_changed || points_changed)
                 && let Some(instance) = data.find_actor_instance_mut(actor_id)
@@ -623,6 +907,29 @@ pub(super) fn handle_companion_messages(
             }
             true
         }
+        ToServer::CompanionKill(owner, exp) => {
+            // Something its owner fought was defeated: with the companion out, it gets the EXP (a stand-in: as much as
+            // its owner's base EXP for it, from monsters around their level), and the owner sees its EXP again, as
+            // retail sent CompanionUpdate (no time) ~2 s after each kill, even with nothing gained.
+            let data = data.lock();
+            let Some(companion) = data.companions.get(owner) else {
+                return true;
+            };
+            if companion.actor.is_none() || companion.leaving.is_some() {
+                return true;
+            }
+            let mut network = network.lock();
+            if *exp > 0 {
+                network.send_to_by_actor_id(
+                    *owner,
+                    FromServer::CompanionExp(*exp),
+                    DestinationNetwork::ZoneClients,
+                );
+            } else {
+                send_update(&mut network, *owner, companion, false);
+            }
+            true
+        }
         ToServer::WithdrawCompanion(owner) => {
             let mut data = data.lock();
             withdraw(&mut data, &mut network.lock(), *owner);
@@ -634,7 +941,7 @@ pub(super) fn handle_companion_messages(
                 return false;
             };
             if companion.is_out() && companion.actor.is_none() && companion.paused.is_none() {
-                spawn(&mut data, &network, &game_data, *owner, false);
+                spawn(&mut data, &network, &game_data, *owner, false, true);
             } else if !companion.is_out() {
                 // Retail at zone-in with no companion out: 263 with 0, CompanionUpdate, SetPetParameters.
                 let companion = companion.clone();
@@ -665,7 +972,7 @@ pub(super) fn handle_companion_messages(
                 .get(owner)
                 .is_some_and(|companion| companion.paused.is_some_and(|left| !left.is_zero()))
             {
-                spawn(&mut data, &network, &game_data, *owner, true);
+                spawn(&mut data, &network, &game_data, *owner, true, false);
             }
             false
         }
@@ -717,7 +1024,7 @@ pub(super) fn update(data: &mut WorldServer, network: &Arc<Mutex<NetworkState>>)
             continue;
         }
 
-        if let Some((actor_id, at)) = companion.appearing
+        if let Some((actor_id, at, came_along)) = companion.appearing
             && now >= at
         {
             if let Some(companion) = data.companions.get_mut(&owner) {
@@ -725,11 +1032,12 @@ pub(super) fn update(data: &mut WorldServer, network: &Arc<Mutex<NetworkState>>)
             }
             if let Some(instance) = data.find_actor_instance(actor_id) {
                 let mut network = network.lock();
-                network.send_ac_in_range_instance(
-                    instance,
-                    actor_id,
-                    unknown(AC_COMPANION_APPEARED, 1, AC_COMPANION_APPEARED_ARG),
-                );
+                let appeared = if came_along {
+                    unknown(AC_COMPANION_CAME_ALONG, 0, 0)
+                } else {
+                    unknown(AC_COMPANION_APPEARED, 1, AC_COMPANION_APPEARED_ARG)
+                };
+                network.send_ac_in_range_instance(instance, actor_id, appeared);
                 network.send_ac_in_range_instance(instance, actor_id, unknown(AC_NAME_SHOWN, 1, 0));
             }
         }
@@ -754,6 +1062,201 @@ pub(super) fn update(data: &mut WorldServer, network: &Arc<Mutex<NetworkState>>)
         {
             assist(instance, owner, actor_id);
         }
+        fight(data, network, owner, actor_id, &companion, now);
+        look_after(data, network, owner, actor_id, &companion, now);
+    }
+}
+
+fn seconds_between(range: (f32, f32)) -> Duration {
+    Duration::from_secs_f32(range.0 + fastrand::f32() * (range.1 - range.0))
+}
+
+/// The companion uses one of its actions on `target`, through the action pipeline as other NPCs' do; with a cast, its
+/// ActorCast first.
+fn cast(
+    instance: &mut Instance,
+    network: &mut NetworkState,
+    actor_id: ObjectId,
+    action: u32,
+    target: ObjectId,
+    cast_time: f32,
+) {
+    let Some((rotation, position)) = instance
+        .find_actor(actor_id)
+        .map(|actor| (actor.rotation(), actor.position()))
+    else {
+        return;
+    };
+    let request = ActionRequest {
+        action_id: action,
+        action_type: ActionType::Action,
+        rotation1: rotation,
+        target: ObjectTypeId {
+            object_id: target,
+            object_type: ObjectTypeKind::None,
+        },
+        ..Default::default()
+    };
+    if cast_time > 0.0 {
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
+            spell_id: action as u16,
+            action_type: ActionType::Action,
+            omen_delay: 0,
+            action_id: action,
+            cast_time: npc_cast_bar_time(cast_time),
+            target,
+            rotation,
+            interruptible: false,
+            ballista_entity_id: ObjectId::default(),
+            position,
+        });
+        network.send_in_range_instance(
+            actor_id,
+            instance,
+            FromServer::PacketSegment(ipc, actor_id),
+            DestinationNetwork::ZoneClients,
+        );
+    }
+    instance.insert_task(
+        ClientId::default(),
+        actor_id,
+        Duration::from_secs_f32(cast_time),
+        QueuedTaskData::CastAction {
+            request,
+            interruptible: false,
+        },
+    );
+}
+
+/// In a fight, its skills: the first 5-8 s in, then one every ~8 s, picked at random from what its stance uses (retail:
+/// Choco Slash and Choco Beak in Attacker Stance, in no fixed order.)
+fn fight(
+    data: &mut WorldServer,
+    network: &Arc<Mutex<NetworkState>>,
+    owner: ObjectId,
+    actor_id: ObjectId,
+    companion: &Companion,
+    now: Instant,
+) {
+    let attacks = attacks_for(companion.profile.stance(), companion.profile.levels);
+    let Some(instance) = data.find_actor_instance_mut(actor_id) else {
+        return;
+    };
+    let target = match instance.find_actor(actor_id) {
+        Some(NetworkedActor::Npc { spawn, enmity, .. })
+            if !enmity.is_empty() && spawn.common.target_id.object_id.is_valid() =>
+        {
+            Some(spawn.common.target_id.object_id)
+        }
+        _ => None,
+    }
+    .filter(|target| {
+        instance
+            .find_actor(*target)
+            .is_some_and(|actor| actor.get_common_spawn().health_points > 0)
+    });
+    let next_skill = match (target, companion.next_skill) {
+        (None, _) => None,
+        _ if attacks.is_empty() => None,
+        (Some(_), None) => Some(now + seconds_between(FIRST_SKILL_AFTER)),
+        (Some(target), Some(at)) if now >= at => {
+            let action = attacks[fastrand::usize(..attacks.len())];
+            cast(instance, &mut network.lock(), actor_id, action, target, 0.0);
+            Some(now + seconds_between(SKILL_EVERY))
+        }
+        (Some(_), at) => at,
+    };
+    if let Some(companion) = data.companions.get_mut(&owner) {
+        companion.next_skill = next_skill;
+    }
+}
+
+/// In Healer and Free Stance with Healer skills learnt, it looks after its owner and itself every few seconds: Choco
+/// Medica when both are low, Choco Cure on whoever is (below 75% in Healer Stance, 50% in Free), Choco Regen on
+/// someone hurt without it, Choco Surge in Healer Stance whenever it's worn off and someone is hurt (the Wiki's
+/// account; no retail Healer Stance is recorded.)
+fn look_after(
+    data: &mut WorldServer,
+    network: &Arc<Mutex<NetworkState>>,
+    owner: ObjectId,
+    actor_id: ObjectId,
+    companion: &Companion,
+    now: Instant,
+) {
+    let stance = companion.profile.stance();
+    let level = companion.profile.levels[LINE_HEALER];
+    if level == 0 || !matches!(stance, COMMAND_HEALER | COMMAND_FREE) {
+        return;
+    }
+    if companion.next_heal_check.is_some_and(|at| now < at) {
+        return;
+    }
+    let Some(instance) = data.find_actor_instance_mut(actor_id) else {
+        return;
+    };
+    let health = |id: ObjectId| {
+        instance.find_actor(id).and_then(|actor| {
+            let spawn = actor.get_common_spawn();
+            (spawn.health_points > 0)
+                .then(|| spawn.health_points as f32 / spawn.max_health_points.max(1) as f32)
+        })
+    };
+    let (Some(owner_health), Some(own_health)) = (health(owner), health(actor_id)) else {
+        return;
+    };
+    let has = |action: u32| learnt(LINE_HEALER, level).any(|known| known == action);
+    let below = if stance == COMMAND_HEALER {
+        HEALER_CURE_BELOW
+    } else {
+        FREE_CURE_BELOW
+    };
+    let expired = |until: Option<Instant>| until.is_none_or(|until| now >= until);
+
+    let mut regen_owner_until = companion.regen_owner_until;
+    let mut regen_self_until = companion.regen_self_until;
+    let mut surge_until = companion.surge_until;
+    let choice = if has(CHOCO_MEDICA) && owner_health < below && own_health < below {
+        Some((CHOCO_MEDICA, actor_id))
+    } else if has(CHOCO_CURE) && owner_health.min(own_health) < below {
+        Some((
+            CHOCO_CURE,
+            if owner_health <= own_health {
+                owner
+            } else {
+                actor_id
+            },
+        ))
+    } else if stance == COMMAND_HEALER
+        && has(CHOCO_SURGE)
+        && expired(surge_until)
+        && owner_health.min(own_health) < 1.0
+    {
+        surge_until = Some(now + SURGE_TIME);
+        Some((CHOCO_SURGE, actor_id))
+    } else if has(CHOCO_REGEN) && owner_health < 1.0 && expired(regen_owner_until) {
+        regen_owner_until = Some(now + REGEN_TIME);
+        Some((CHOCO_REGEN, owner))
+    } else if has(CHOCO_REGEN) && own_health < 1.0 && expired(regen_self_until) {
+        regen_self_until = Some(now + REGEN_TIME);
+        Some((CHOCO_REGEN, actor_id))
+    } else {
+        None
+    };
+    if let Some((action, target)) = choice {
+        cast(
+            instance,
+            &mut network.lock(),
+            actor_id,
+            action,
+            target,
+            HEAL_CAST,
+        );
+    }
+    if let Some(companion) = data.companions.get_mut(&owner) {
+        companion.next_heal_check = Some(now + Duration::from_secs_f32(HEAL_EVERY.max(HEAL_CAST)));
+        companion.regen_owner_until = regen_owner_until;
+        companion.regen_self_until = regen_self_until;
+        companion.surge_until = surge_until;
     }
 }
 
@@ -789,5 +1292,81 @@ fn assist(instance: &mut Instance, owner: ObjectId, actor_id: ObjectId) {
         && enmity.is_empty()
     {
         enmity.insert(foe, 1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hp_matches_retail() {
+        // Bob's companions with Attacker at 4 and 6 (+5% HP): 36,330 at level 90, 35,038 at 88.
+        let hp_90 = companion_hp(3661, [0, 6, 0]) as f32;
+        let hp_88 = companion_hp(3553, [0, 6, 0]) as f32;
+        assert!((hp_90 / 36_330.0 - 1.0).abs() < 0.005, "{hp_90}");
+        assert!((hp_88 / 35_038.0 - 1.0).abs() < 0.005, "{hp_88}");
+    }
+
+    #[test]
+    fn damage_matches_retail() {
+        // Level 88 (HpModifier 3,553), Attacker at 6: 1,743 auto-attack, 2,664 Choco Slash, 2,251 Choco Beak.
+        let amounts = recorded_amounts(3553, [0, 6, 0]);
+        let npcs = |action| amounts[&action].npcs.unwrap();
+        assert!((npcs(871) - 1750.0).abs() < 20.0);
+        assert!((npcs(824) - 2625.0).abs() < 50.0);
+        assert!((npcs(823) - 2275.0).abs() < 50.0);
+    }
+
+    #[test]
+    fn traits() {
+        assert_eq!(
+            trait_bonus([0, 6, 0]),
+            TraitBonus {
+                strength: 5,
+                hp: 5,
+                mind: 0
+            }
+        );
+        assert_eq!(trait_bonus([10, 10, 10]).hp, 20 + 5 + 10);
+    }
+
+    #[test]
+    fn stances() {
+        assert_eq!(attacks_for(COMMAND_ATTACKER, [0, 6, 0]), vec![824, 823]);
+        // Free Stance: each attacking line's latest (retail used only Choco Beak.)
+        assert_eq!(attacks_for(COMMAND_FREE, [0, 6, 0]), vec![823]);
+        // Choco Guard isn't an attack.
+        assert_eq!(attacks_for(COMMAND_DEFENDER, [7, 0, 0]), vec![820, 819]);
+        assert!(attacks_for(COMMAND_HEALER, [10, 10, 10]).is_empty());
+    }
+
+    #[test]
+    fn ranks() {
+        // Retail's rank 6 companion had used 21 points (Attacker 1-6.)
+        assert_eq!((1..=6).map(skill_points_for_rank).sum::<u8>(), 21);
+        assert_eq!(
+            (1..=10)
+                .map(skill_points_for_rank)
+                .map(u32::from)
+                .sum::<u32>(),
+            55
+        );
+        assert_eq!(
+            (1..=20)
+                .map(skill_points_for_rank)
+                .map(u32::from)
+                .sum::<u32>(),
+            165
+        );
+        // Bob's: rank 6 with 487,338 of 490,000.
+        assert_eq!(gain_exp(6, 487_338, 3000), (7, 338, 7));
+        assert_eq!(gain_exp(0, 0, 4100), (2, 0, 3));
+        // From rank 10 the bar stops full, and only an onion moves it on.
+        assert_eq!(gain_exp(10, 1_457_000, 5000), (10, 1_458_000, 0));
+        assert_eq!(eat_onion(10, 1_457_999), None);
+        assert_eq!(eat_onion(10, 1_458_000), Some((11, 0, 10)));
+        assert_eq!(eat_onion(9, 1_200_000), None);
+        assert_eq!(eat_onion(20, 0), None);
     }
 }
