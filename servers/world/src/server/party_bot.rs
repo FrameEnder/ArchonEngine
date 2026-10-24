@@ -56,6 +56,7 @@ use crate::{
         WorldServer,
         actor::{NetworkedActor, NpcState, NpcTarget, set_character_mode, update_actor_hp_mp},
         bot_friends,
+        dodge::{self, DODGE_MARGIN, Danger},
         effect::gain_effect_instance,
         glamour,
         instance::Instance,
@@ -202,6 +203,8 @@ pub struct PartyBot {
     /// A party NPC (a Duty Support member, `party_npc.rs`): its recorded member and where it is in its kit. None for
     /// the made-up bots (Player NPCs.)
     pub party_npc: Option<party_npc::MemberState>,
+    /// Getting out of an enemy's area attack (`dodge.rs`.)
+    pub dodge: Option<dodge::Dodge>,
 }
 
 impl PartyBot {
@@ -242,6 +245,7 @@ impl PartyBot {
             raise_action: None,
             raising: None,
             party_npc: None,
+            dodge: None,
         }
     }
 }
@@ -354,6 +358,39 @@ struct ClassAction {
 
 /// What an action's script says about it, as far as choosing goes: its `POTENCY`, and its `DURATION` if it puts a
 /// damage over time on the target (`damage_over_time`.)
+/// A tick's run (at `NPC_RUN_SPEED`) from `here` along `path`, taking off the points it passes: where it got to and the
+/// way it faces, on the floor under it, or None if it didn't get anywhere.
+fn run_along(
+    navmesh: &crate::navmesh::Navmesh,
+    here: Vec3A,
+    path: &mut std::collections::VecDeque<Vec3A>,
+) -> Option<(Vec3A, f32)> {
+    let mut at = here;
+    let mut left = NPC_RUN_SPEED * BEHAVIOR_TICK_SECONDS;
+    while left > 0.0
+        && let Some(next) = path.front().copied()
+    {
+        let distance = at.distance(next);
+        if distance <= left {
+            at = next;
+            left -= distance;
+            path.pop_front();
+        } else {
+            at += (next - at) * (left / distance);
+            left = 0.0;
+        }
+    }
+    let flat = Vec3A::new(at.x - here.x, 0.0, at.z - here.z).length();
+    if flat < 0.05 {
+        return None;
+    }
+    let facing = f32::atan2(at.x - here.x, at.z - here.z);
+    if let Some(ground) = navmesh.ground_under(at) {
+        at.y = ground.y;
+    }
+    Some((at, facing))
+}
+
 pub fn script_facts(source: &str) -> (u32, Option<f32>) {
     let number = |name: &str| {
         source.lines().find_map(|line| {
@@ -1560,6 +1597,7 @@ fn spawn_bot(
             raise_action: raise,
             raising: None,
             party_npc: None,
+            dodge: None,
         },
     );
 
@@ -2714,6 +2752,9 @@ fn update_party(
     let mut kit_actions: Vec<(ObjectId, u32, ObjectId)> = Vec::new();
     let mut npc_states: Vec<(ObjectId, party_npc::MemberState)> = Vec::new();
     let mut lines: Vec<(ObjectId, u32)> = Vec::new();
+    // Enemies' area attacks being cast: everyone in one gets out of it (`dodge.rs`.)
+    let dangers: Vec<Danger> = dodge::dangers(instance, &mut game_data.lock(), now);
+    let mut dodges: Vec<(ObjectId, Option<dodge::Dodge>)> = Vec::new();
     let navmesh = &instance.navmesh;
     for (bot_id, bot) in &bots {
         let Some(NetworkedActor::Npc {
@@ -2737,6 +2778,99 @@ fn update_party(
         }
         let follow = follows(*bot_id);
         let casting = cast.is_some_and(|cast| cast.until > now);
+
+        // An enemy's area attack over it: out of it, after a moment (retail's Duty Support members, `dodge.rs`), to
+        // the nearest spot out of every one being cast, as near its target (or the player) as that allows; it waits
+        // there, still acting if what it's after is in reach, until a moment after the last has gone off.
+        let here = spawn.common.position.0;
+        let threats: Vec<&Danger> = dangers
+            .iter()
+            .filter(|danger| danger.catches(here, DODGE_MARGIN))
+            .collect();
+        let mut dodge = bot.dodge;
+        if !threats.is_empty() {
+            let until = threats
+                .iter()
+                .map(|danger| danger.until)
+                .max()
+                .unwrap_or(now);
+            let rather = match navmesh_target {
+                Some(NpcTarget::Actor(target)) => engaged
+                    .iter()
+                    .find(|enemy| enemy.id == *target)
+                    .map(|enemy| enemy.position),
+                _ => None,
+            }
+            .or_else(|| where_is.get(&leader).map(|(position, _)| *position))
+            .unwrap_or(here);
+            let walkable =
+                |point: Vec3A| !navmesh.is_available() || navmesh.ground_under(point).is_some();
+            let spot = dodge
+                .and_then(|dodge| dodge.to)
+                .filter(|to| {
+                    dangers
+                        .iter()
+                        .all(|danger| !danger.catches(*to, DODGE_MARGIN))
+                })
+                .or_else(|| dodge::safe_spot(here, rather, &dangers, walkable));
+            let distance = spot.map(|to| here.distance(to)).unwrap_or(0.0);
+            let entry = dodge.get_or_insert(dodge::Dodge {
+                to: None,
+                set_off: dodge::set_off_at(now, until, distance, NPC_RUN_SPEED, fastrand::f32()),
+                until,
+                holding: false,
+            });
+            entry.until = entry.until.max(until);
+            entry.to = spot;
+        }
+        let mut dodging = false;
+        if let Some(current) = dodge {
+            if threats.is_empty() && now >= current.until + dodge::LINGER {
+                // Over: back to fighting, from where it stands.
+                dodge = None;
+                navmesh_path.clear();
+                *navmesh_path_lerp = 0.0;
+                *last_position = None;
+            } else if now >= current.set_off {
+                dodging = true;
+                let flat = |a: Vec3A, b: Vec3A| Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length();
+                if let Some(to) = current.to
+                    && flat(here, to) > AT_SPOT
+                {
+                    // Running there (a player would let a cast go, or slide it.)
+                    let mut path = bot.path.clone();
+                    let mut reaimed = bot.reaimed;
+                    if path.back().is_none_or(|end| flat(*end, to) > AT_SPOT) {
+                        path = instance_navmesh_path(navmesh, here, to).into();
+                        if path.back().is_none_or(|end| flat(*end, to) > AT_SPOT) {
+                            path.push_back(to);
+                        }
+                        reaimed = now;
+                    }
+                    let moved = run_along(navmesh, here, &mut path);
+                    if let Some((at, facing)) = moved {
+                        spawn.common.position = Position(at);
+                        spawn.common.rotation = facing;
+                    }
+                    walks.push((*bot_id, path, moved, reaimed));
+                    dodges.push((
+                        *bot_id,
+                        Some(dodge::Dodge {
+                            holding: false,
+                            ..current
+                        }),
+                    ));
+                    continue;
+                }
+                // Out of it (or nowhere better to be): it stays put and keeps acting below.
+                walks.push((*bot_id, Default::default(), None, bot.reaimed));
+                dodge = Some(dodge::Dodge {
+                    holding: true,
+                    ..current
+                });
+            }
+        }
+        dodges.push((*bot_id, dodge));
         // Out of combat it walks itself (below), so it stands still here while it casts (a Raise.)
         if casting && engaged.is_empty() {
             walks.push((*bot_id, bot.path.clone(), None, bot.reaimed));
@@ -2819,7 +2953,7 @@ fn update_party(
             }
             continue;
         }
-        if bot.walking_itself {
+        if bot.walking_itself && !dodging {
             fighting.push(*bot_id);
         }
 
@@ -2986,6 +3120,11 @@ fn update_party(
         }
     }
 
+    for (bot_id, dodge) in dodges {
+        if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
+            bot.dodge = dodge;
+        }
+    }
     for (bot_id, state) in npc_states {
         if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
             bot.party_npc = Some(state);

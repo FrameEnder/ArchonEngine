@@ -72,6 +72,7 @@ pub use companion::{
     gain_exp,
 };
 mod director;
+mod dodge;
 mod effect;
 mod glamour;
 mod instance;
