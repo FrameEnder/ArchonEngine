@@ -1,0 +1,356 @@
+//! Party bots and party NPCs getting out of enemies' area attacks (`party_bot::update_party` moves them.)
+//!
+//! Retail's Duty Support members, in Bob's Chronofoil capture of the Tam-Tara Deepcroft (2026-10-24, 3ec702a8, visit
+//! 0.3, `questkit chronofoil --battle`): both times the last boss began its 4.7 s attack around itself (987), all
+//! three set off 1.0-1.4 s into the cast (the first samples showing them moving), ran straight out at run speed (about
+//! 1.9 yalms each 0.31 s sample), stopped just outside it (11.0 yalms from its middle, all three), waited there until
+//! it had gone off, and walked back in 1.3-1.5 s after it had (6.1-6.2 s into the cast). Single-target casts and its
+//! self-buff (430) moved nobody.
+
+use std::time::{Duration, Instant};
+
+use glam::{Vec2, Vec3A};
+
+use kawari::ipc::zone::CharacterDataFlag;
+
+use crate::{
+    GameData,
+    gamedata::AreaShape,
+    server::{actor::NetworkedActor, instance::Instance},
+};
+
+/// How far past an area attack's hit edge a dodger stops (retail's stood at 11.0 yalms from a circle they otherwise
+/// left as soon as they could; the hit edge's own grazing allowance is `PLAYER_HITBOX_RADIUS`, in `in_area`.)
+pub const DODGE_MARGIN: f32 = 0.5;
+/// When a dodger sets off after it notices an area attack starting: a moment like retail's (1.0-1.4 s into the cast
+/// in the capture, sampled every 0.31 s), or at once when waiting would leave too little time to get out.
+pub const REACTION_SECONDS: (f32, f32) = (0.8, 1.3);
+/// How long after the attack has gone off a dodger stays out before it goes back to fighting (retail: 1.3-1.5 s.)
+pub const LINGER: Duration = Duration::from_millis(1300);
+/// How far a dodger looks for a safe spot.
+const SEARCH_RADIUS: f32 = 40.0;
+const SEARCH_STEP: f32 = 0.5;
+const SEARCH_DIRECTIONS: usize = 24;
+/// Among the nearest safe spots (within this much of the very nearest), the one closest to where it would rather be.
+const NEAR_ENOUGH: f32 = 1.0;
+
+/// An enemy's area attack being cast: where it will land, and when.
+#[derive(Debug, Clone, Copy)]
+pub struct Danger {
+    pub shape: AreaShape,
+    pub caster: Vec3A,
+    /// Which way the caster faced as it started.
+    pub rotation: f32,
+    /// Where it was aimed (its target's position then.)
+    pub aimed_at: Vec3A,
+    pub caster_radius: f32,
+    /// When it goes off.
+    pub until: Instant,
+}
+
+impl Danger {
+    /// Whether it would catch someone at `point`, counting `margin` yalms past its hit edge.
+    pub fn catches(&self, point: Vec3A, margin: f32) -> bool {
+        super::action::in_area_with_reach(
+            self.shape,
+            self.caster,
+            self.rotation,
+            self.aimed_at,
+            point,
+            self.caster_radius,
+            super::action::PLAYER_HITBOX_RADIUS + margin,
+        )
+    }
+
+    /// The nearest points out of it from `from` (a little past `margin`), as the shape gives them: straight out of a
+    /// circle, out of a cone's far end or off its nearer side, off a line's nearer side or past its end.
+    fn exits(&self, from: Vec3A, margin: f32) -> Vec<Vec3A> {
+        let flat = |v: Vec3A| Vec2::new(v.x, v.z);
+        let lift = |v: Vec2| Vec3A::new(v.x, from.y, v.y);
+        let reach = super::action::PLAYER_HITBOX_RADIUS + margin + 0.05;
+        let here = flat(from);
+        let caster = flat(self.caster);
+        let forward = Vec2::new(self.rotation.sin(), self.rotation.cos());
+        let away = |centre: Vec2, distance: f32| {
+            let out = (here - centre).try_normalize().unwrap_or(-forward);
+            centre + out * distance
+        };
+        match self.shape {
+            AreaShape::Circle { radius, on_target } => {
+                if on_target {
+                    vec![lift(away(flat(self.aimed_at), radius + reach))]
+                } else {
+                    vec![lift(away(caster, radius + self.caster_radius + reach))]
+                }
+            }
+            AreaShape::Cone { radius, angle } => {
+                let mut exits = vec![lift(away(caster, radius + self.caster_radius + reach))];
+                // Off either side: rotate the offset to just past the cone's edge, keeping its distance.
+                let offset = here - caster;
+                let distance = offset.length().max(self.caster_radius + reach);
+                let half = angle.to_radians() / 2.0;
+                for side in [-1.0f32, 1.0] {
+                    let edge = half + (reach / distance).atan() + 0.05;
+                    let direction = Vec2::from_angle(side * edge).rotate(forward);
+                    exits.push(lift(caster + direction * distance));
+                }
+                exits
+            }
+            AreaShape::Line { length, width } => {
+                let offset = here - caster;
+                let along = offset.dot(forward);
+                let across = offset.perp_dot(forward);
+                let side = Vec2::new(forward.y, -forward.x); // perp_dot's positive side
+                let mut exits = Vec::new();
+                for sign in [-1.0f32, 1.0] {
+                    exits.push(lift(
+                        caster + forward * along + side * sign * (width / 2.0 + reach),
+                    ));
+                }
+                // Past its far end, or behind the caster.
+                exits.push(lift(
+                    caster + forward * (length + self.caster_radius + reach) + side * across,
+                ));
+                exits.push(lift(caster - forward * reach + side * across));
+                exits
+            }
+        }
+    }
+}
+
+/// Every area attack a hostile NPC is casting now.
+pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> Vec<Danger> {
+    instance
+        .actors
+        .values()
+        .filter_map(|actor| match actor {
+            NetworkedActor::Npc {
+                spawn,
+                cast: Some(cast),
+                timeline,
+                ..
+            } if spawn.common.health_points > 0
+                && spawn
+                    .character_data_flags
+                    .contains(CharacterDataFlag::HOSTILE)
+                && cast.until > now
+                && cast.action_id != 0 =>
+            {
+                let shape = game_data.get_action_info(cast.action_id)?.area_shape()?;
+                Some(Danger {
+                    shape,
+                    caster: spawn.common.position.0,
+                    rotation: cast.rotation,
+                    aimed_at: cast.target_position,
+                    caster_radius: timeline.hitbox_radius,
+                    until: cast.until,
+                })
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// A party bot getting out of area attacks: where to (None when nowhere safe was found: it stays), when it sets off,
+/// and when the last attack it's avoiding goes off.
+#[derive(Debug, Clone, Copy)]
+pub struct Dodge {
+    pub to: Option<Vec3A>,
+    pub set_off: Instant,
+    pub until: Instant,
+    /// Out of it and waiting: it stays put, but still acts (a caster or healer in reach keeps going.)
+    pub holding: bool,
+}
+
+/// Where someone at `from` should go to be out of every one of `dangers`: the nearest such spot, walkable, and among
+/// spots about as near, the one closest to `rather` (their place in the fight.) None if they're already out of all of
+/// them, or nowhere within `SEARCH_RADIUS` is.
+pub fn safe_spot(
+    from: Vec3A,
+    rather: Vec3A,
+    dangers: &[Danger],
+    walkable: impl Fn(Vec3A) -> bool,
+) -> Option<Vec3A> {
+    let safe = |point: Vec3A| {
+        dangers
+            .iter()
+            .all(|danger| !danger.catches(point, DODGE_MARGIN))
+    };
+    if safe(from) {
+        return None;
+    }
+    let flat_distance = |a: Vec3A, b: Vec3A| Vec2::new(a.x - b.x, a.z - b.z).length();
+
+    // The shapes' own exits, then rings around it, nearest first.
+    let mut candidates: Vec<Vec3A> = dangers
+        .iter()
+        .filter(|danger| danger.catches(from, DODGE_MARGIN))
+        .flat_map(|danger| danger.exits(from, DODGE_MARGIN))
+        .collect();
+    let mut ring = SEARCH_STEP;
+    while ring <= SEARCH_RADIUS {
+        for i in 0..SEARCH_DIRECTIONS {
+            let angle = i as f32 / SEARCH_DIRECTIONS as f32 * std::f32::consts::TAU;
+            candidates.push(from + Vec3A::new(angle.sin() * ring, 0.0, angle.cos() * ring));
+        }
+        ring += SEARCH_STEP;
+    }
+
+    let good: Vec<Vec3A> = candidates
+        .into_iter()
+        .filter(|point| safe(*point) && walkable(*point))
+        .collect();
+    let nearest = good
+        .iter()
+        .map(|point| flat_distance(from, *point))
+        .min_by(f32::total_cmp)?;
+    good.into_iter()
+        .filter(|point| flat_distance(from, *point) <= nearest + NEAR_ENOUGH)
+        .min_by(|a, b| flat_distance(*a, rather).total_cmp(&flat_distance(*b, rather)))
+}
+
+/// When to set off: `REACTION_SECONDS` after noticing (`roll` between 0 and 1 picks within it), or now if the attack
+/// goes off before it could get `distance` yalms at `speed` after waiting.
+pub fn set_off_at(now: Instant, until: Instant, distance: f32, speed: f32, roll: f32) -> Instant {
+    let (low, high) = REACTION_SECONDS;
+    let wait = Duration::from_secs_f32(low + (high - low) * roll.clamp(0.0, 1.0));
+    let run = Duration::from_secs_f32(distance / speed.max(0.1));
+    if now + wait + run > until {
+        now
+    } else {
+        now + wait
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn danger(shape: AreaShape) -> Danger {
+        Danger {
+            shape,
+            caster: Vec3A::ZERO,
+            rotation: 0.0, // facing +z
+            aimed_at: Vec3A::new(0.0, 0.0, 10.0),
+            caster_radius: 1.0,
+            until: Instant::now() + Duration::from_secs(4),
+        }
+    }
+
+    fn anywhere(_: Vec3A) -> bool {
+        true
+    }
+
+    fn flat(a: Vec3A) -> f32 {
+        Vec2::new(a.x, a.z).length()
+    }
+
+    /// Retail's dodge of the Tam-Tara Deepcroft's last boss: straight out of a circle around it, just past its edge.
+    #[test]
+    fn circle_around_the_caster() {
+        let circle = danger(AreaShape::Circle {
+            radius: 9.0,
+            on_target: false,
+        });
+        let from = Vec3A::new(3.0, 0.0, 0.0);
+        let spot = safe_spot(from, from, &[circle], anywhere).unwrap();
+        assert!(!circle.catches(spot, DODGE_MARGIN));
+        // Out along the way it stood: 9 + 1 (hitbox) + 0.5 + 0.5 and a hair.
+        assert!(spot.z.abs() < 0.3, "{spot:?}");
+        assert!((flat(spot) - 11.0).abs() < 0.2, "{spot:?}");
+        // Already out: nowhere to go.
+        assert!(safe_spot(Vec3A::new(12.0, 0.0, 0.0), from, &[circle], anywhere).is_none());
+    }
+
+    #[test]
+    fn circle_on_the_target() {
+        let circle = danger(AreaShape::Circle {
+            radius: 5.0,
+            on_target: true,
+        });
+        let from = Vec3A::new(0.0, 0.0, 8.0); // 2 short of the middle, towards the caster
+        let spot = safe_spot(from, from, &[circle], anywhere).unwrap();
+        assert!(!circle.catches(spot, DODGE_MARGIN));
+        assert!(spot.z < 5.0, "out the near side, {spot:?}");
+    }
+
+    #[test]
+    fn cone_sidesteps() {
+        let cone = danger(AreaShape::Cone {
+            radius: 8.0,
+            angle: 90.0,
+        });
+        // In front, a little to the right: off the right side is nearer than out of its far end.
+        let from = Vec3A::new(1.5, 0.0, 4.0);
+        let spot = safe_spot(from, from, &[cone], anywhere).unwrap();
+        assert!(!cone.catches(spot, DODGE_MARGIN));
+        assert!(Vec3A::distance(from, spot) < 4.0, "{spot:?}");
+        // Behind the caster is safe already.
+        assert!(safe_spot(Vec3A::new(0.0, 0.0, -3.0), from, &[cone], anywhere).is_none());
+    }
+
+    #[test]
+    fn line_steps_off_the_side() {
+        let line = danger(AreaShape::Line {
+            length: 20.0,
+            width: 4.0,
+        });
+        let from = Vec3A::new(0.5, 0.0, 10.0);
+        let spot = safe_spot(from, from, &[line], anywhere).unwrap();
+        assert!(!line.catches(spot, DODGE_MARGIN));
+        // Off the nearer side (+x): 2 + 0.5 + 0.5 from the middle, along the same spot.
+        assert!(spot.x > 2.9 && spot.x < 3.5, "{spot:?}");
+        assert!((spot.z - 10.0).abs() < 0.6, "{spot:?}");
+    }
+
+    /// Two at once: the spot is out of both, and of the nearest ones, the one by where it would rather be.
+    #[test]
+    fn out_of_everything_near_its_place() {
+        let circle = danger(AreaShape::Circle {
+            radius: 4.0,
+            on_target: false,
+        });
+        let line = Danger {
+            caster: Vec3A::new(-20.0, 0.0, 0.0),
+            rotation: std::f32::consts::FRAC_PI_2, // facing +x, through the middle
+            ..danger(AreaShape::Line {
+                length: 40.0,
+                width: 4.0,
+            })
+        };
+        let from = Vec3A::new(1.0, 0.0, 0.0);
+        let rather = Vec3A::new(0.0, 0.0, -20.0);
+        let spot = safe_spot(from, rather, &[circle, line], anywhere).unwrap();
+        assert!(!circle.catches(spot, DODGE_MARGIN) && !line.catches(spot, DODGE_MARGIN));
+        assert!(spot.z < 0.0, "towards where it would rather be, {spot:?}");
+    }
+
+    /// A wall (not walkable) on one side: it goes the other way.
+    #[test]
+    fn only_where_it_can_walk() {
+        let circle = danger(AreaShape::Circle {
+            radius: 4.0,
+            on_target: false,
+        });
+        let from = Vec3A::new(1.0, 0.0, 0.0);
+        let spot = safe_spot(from, from, &[circle], |point: Vec3A| point.x < 0.0).unwrap();
+        assert!(
+            spot.x < 0.0 && !circle.catches(spot, DODGE_MARGIN),
+            "{spot:?}"
+        );
+    }
+
+    #[test]
+    fn when_to_set_off() {
+        let now = Instant::now();
+        let until = now + Duration::from_secs_f32(4.7);
+        // Plenty of time: after the reaction.
+        let at = set_off_at(now, until, 8.0, 6.0, 0.5);
+        assert_eq!(at, now + Duration::from_secs_f32(1.05));
+        // A quick cast: at once.
+        assert_eq!(
+            set_off_at(now, now + Duration::from_secs(1), 8.0, 6.0, 0.5),
+            now
+        );
+    }
+}

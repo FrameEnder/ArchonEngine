@@ -294,6 +294,20 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
   * The **healer** heals whoever in the party is lowest when someone is below 60 % (its highest level single-target
     heal on the GCD, at most once a GCD), and otherwise attacks like a DPS.
   * Melee bots fight from 3 yalms, ranged bots and healers from 15 and stay within 20 of the one they follow.
+  * **Getting out of area attacks** (`server/dodge.rs`, 2026-10-24, Bob: "they should move out of an AOEs way to a
+    safe area as close as possible"): every bot, and every party NPC, standing in an area attack an enemy is casting
+    (circles on the caster or where it aimed, cones, lines and rectangles: the shapes `in_area` resolves hits with,
+    from the Action sheet's CastType, EffectRange, XAxisModifier and the omen's angle) sets off 0.8–1.3 s after it
+    notices (at once if waiting wouldn't leave it time to get out at running speed), as retail's Duty Support members
+    did ([Party NPCs](party-npcs.md#getting-out-of-area-attacks)). It runs to the nearest spot out of **every** area
+    attack being cast, half a yalm past their hit edge (`DODGE_MARGIN`, beyond the half yalm `in_area` already
+    counts): the shapes' own exits (straight out of a circle, off a cone's nearer side or out of its far end, off a
+    line's nearer side, past its end or behind the caster) and rings of points around it every half yalm out to 40,
+    keeping those on the navmesh; of the nearest (within a yalm of the very nearest), the one closest to its target
+    (or the player). It walks itself there (`PartyBot::dodge`), sliding its own cast if it has one going; once out it
+    holds that spot and still acts (NPCs' own acting runs for it, so casters and healers in reach keep going; melee
+    ones wait), and 1.3 s after the last attack it was avoiding has gone off (`LINGER`, retail's) it goes back to
+    fighting. Before this they stood in everything.
 * **Its rotation** (`build_rotation`, a heuristic until bots' rotations are recorded), run by the NPC class rotations
   (`server/rotation.rs`, a 2.5 s pace like a player's GCD): its abilities whenever they're ready; its combos, each step
   after the one it follows (highest level first, so a combo runs to its end); its damage over time spells and

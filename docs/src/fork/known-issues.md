@@ -30,6 +30,12 @@ add one when something is found.
   and the Lancer's 29772 doesn't heal it. Their chatter in fights is at random every 150–400 s of fighting, not
   whatever made retail's members speak.
 * The bots' diamond formation (also the Player NPCs') is measured with a healer player only.
+* Getting out of area attacks (2026-10-24, `server/dodge.rs`) is untested in game. Only shapes `in_area` knows are
+  dodged (circles, cones, lines and rectangles): donuts and crosses aren't read from the Action sheet yet, so nobody
+  steps into a donut's middle (the third Tam-Tara room boss's 912 may be one). Every area attack a hostile NPC casts
+  counts, even one that would do nothing to them; the margin past the hit edge (half a yalm) and the 0.8–1.3 s
+  reaction come from one fight (Tam-Tara's last boss, two casts). A bot's own cast isn't interrupted: it slides it.
+  The safe spot is checked only for standing on the navmesh, not for a path there that stays out of the area.
 * How hard enemies hit them (2026-10-23) is the players' scale times retail's ratio for each member (a third for the
   Marauder), untested in game. On retail the enemies stayed on the tank (the Lancer and Thaumaturge took 330 damage
   each in 30 minutes); whether Kawari's enemies stray onto them more isn't checked.
@@ -38,7 +44,7 @@ add one when something is found.
 
 * Stage 1 only (see [Party Bots](party-bots.md)): `!spawn playernpc` bots are in the party list only once invited,
   aren't level synced, don't follow you into another
-  zone, use single-target attacks and one heal only, and don't dodge area attacks. The Duty
+  zone, use single-target attacks and one heal only. The Duty
   Finder doesn't fill roles with them yet. In combat melee bots still stand on the same spot by their target. Bots are
   spawned as retail's chocobo companions are (for their nameplates' names): whether the client treats them as your
   chocobo anywhere else (the companion's bar, its commands) hasn't been checked. They run at NPCs' speed (6 yalms a

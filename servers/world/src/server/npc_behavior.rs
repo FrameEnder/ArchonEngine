@@ -336,10 +336,12 @@ pub fn npc_behavior(
 
     // mut pass
     for (id, actor) in &mut instance.actors {
+        // A bot walking itself is left alone, unless it's waiting out an area attack, where it still acts (it doesn't
+        // move: the const pass above leaves it alone.)
         if instance
             .party_bots
             .get(id)
-            .is_some_and(|bot| bot.walking_itself)
+            .is_some_and(|bot| bot.walking_itself && !bot.dodge.is_some_and(|dodge| dodge.holding))
         {
             continue;
         }
@@ -789,6 +791,7 @@ pub fn npc_behavior(
                                         .copied()
                                         .unwrap_or(spawn.common.position.0),
                                     rotation: spawn.common.rotation,
+                                    action_id: *action_id,
                                 });
                                 new_action_requests.push((*id, request, cast_time_seconds));
                             }
@@ -840,6 +843,7 @@ pub fn npc_behavior(
                                 .copied()
                                 .unwrap_or(spawn.common.position.0),
                             rotation: spawn.common.rotation,
+                            action_id,
                         });
                         let request = ActionRequest {
                             action_id,
@@ -891,6 +895,7 @@ pub fn npc_behavior(
                         .copied()
                         .unwrap_or(spawn.common.position.0),
                     rotation: spawn.common.rotation,
+                    action_id: timeline.autoattack_action_id,
                 });
                 new_action_requests.push((*id, request, cast_time_seconds));
             }
@@ -1325,6 +1330,7 @@ pub fn npc_use_action(
             until: Instant::now() + Duration::from_secs_f32(cast_time),
             target_position,
             rotation,
+            action_id,
         });
     }
 

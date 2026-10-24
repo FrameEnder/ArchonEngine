@@ -82,6 +82,8 @@ pub struct NpcCast {
     pub target_position: Vec3A,
     /// Which way it was facing.
     pub rotation: f32,
+    /// What it's casting (party bots get out of enemies' area attacks: `dodge.rs`.)
+    pub action_id: u32,
 }
 
 #[derive(Debug, Clone)]

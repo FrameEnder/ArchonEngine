@@ -98,6 +98,19 @@ weaponskills and spells 24–27, the auto-attacks 3, the Marauder's 29764 76 and
 the Thaumaturge's 29312 277; Sastasha's trash has 905 HP. That's what "fighting like someone of the duty's level"
 looks like: steady, with a big hit every few GCDs, unlike a synced player's rotation.
 
+## Getting out of area attacks
+
+Bob's Chronofoil capture of the Tam-Tara Deepcroft with Duty Support (2026-10-24, 3ec702a8, visit 0.3; `questkit
+chronofoil --battle`, positions about every 0.31 s): both times the last boss (BNpcBase 76) began 987, its 4.7 s
+attack around itself (cast on itself), all three members set off 1.0–1.4 s into the cast (the first samples showing
+them moving; at 1.0 s none had), ran straight out at running speed (about 1.9 yalms a sample, 6 a second), stopped at
+11.0 yalms from its middle (all three, both times: just outside, not at the room's edge) and waited there, then went
+back in 6.1–6.2 s into the cast, 1.3–1.5 s after it had gone off, to fight from where they had (4.8 yalms). Its
+self-buff 430 and the rooms' bosses' and trash's other casts (720, 911, 912) moved nobody; at the third room boss's
+second 912 the three bunched up on it (0.5–2.5 yalms), which looks like getting out of something around it (912's
+shape isn't known here: it hit nobody in any run). The bots and party NPCs dodge alike: see
+[Party Bots](party-bots.md#how-it-fights) (`server/dodge.rs`).
+
 ## Taking hits
 
 On retail the same enemies' attacks did about a third as much to the Marauder as to Bob (a level 17 Conjurer): the

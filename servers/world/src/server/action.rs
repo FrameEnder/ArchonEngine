@@ -59,7 +59,7 @@ const AOE_HITBOX_LENIENCY: f32 = 1.0;
 /// How far past the edge of an NPC's area attack a player still counts as caught: the player's own hitbox, half a yalm.
 /// It was `AOE_HITBOX_LENIENCY` (a whole yalm), and with the server seeing positions a fraction of a second late, players
 /// who had left a 6-yalm Terror Eye were hit at 6.6 and 6.7 yalms (2026-10-17 bundle).
-const PLAYER_HITBOX_RADIUS: f32 = 0.5;
+pub const PLAYER_HITBOX_RADIUS: f32 = 0.5;
 
 /// How much of their damage NPCs deal to players, in percent, for NPCs whose retail damage isn't recorded in their
 /// timeline (see `Timeline::damage_to_players`.)
@@ -2475,8 +2475,29 @@ pub fn in_area(
     point: Vec3A,
     caster_radius: f32,
 ) -> bool {
+    in_area_with_reach(
+        shape,
+        caster,
+        rotation,
+        aimed_at,
+        point,
+        caster_radius,
+        PLAYER_HITBOX_RADIUS,
+    )
+}
+
+/// `in_area` counting `reach` yalms past the shape's edge instead of the player's hitbox (party bots dodging keep a
+/// margin beyond it: `dodge.rs`.)
+pub fn in_area_with_reach(
+    shape: AreaShape,
+    caster: Vec3A,
+    rotation: f32,
+    aimed_at: Vec3A,
+    point: Vec3A,
+    caster_radius: f32,
+    reach: f32,
+) -> bool {
     let flat = |v: Vec3A| Vec2::new(v.x, v.z);
-    let reach = PLAYER_HITBOX_RADIUS;
     let offset = flat(point) - flat(caster);
     let distance = offset.length();
     // Facing `rotation` means looking along (sin, cos) on the ground, the same way NPCs turn to their targets.
