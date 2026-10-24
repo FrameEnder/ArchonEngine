@@ -30,7 +30,7 @@ add one when something is found.
   and the Lancer's 29772 doesn't heal it. Their chatter in fights is at random every 150–400 s of fighting, not
   whatever made retail's members speak.
 * The bots' diamond formation (also the Player NPCs') is measured with a healer player only.
-* Getting out of area attacks (2026-10-24, `server/dodge.rs`) is untested in game. Only shapes `in_area` knows are
+* Getting out of area attacks (2026-10-24, `server/dodge.rs`) is untested in game, and so is bracing when there's nowhere to go (which actions retail's members used then isn't recorded; party NPCs brace with the player classes' actions by their class and level, not their kits). Only shapes `in_area` knows are
   dodged (circles, cones, lines and rectangles): donuts and crosses aren't read from the Action sheet yet, so nobody
   steps into a donut's middle (the third Tam-Tara room boss's 912 may be one). Every area attack a hostile NPC casts
   counts, even one that would do nothing to them; the margin past the hit edge (half a yalm) and the 0.8–1.3 s

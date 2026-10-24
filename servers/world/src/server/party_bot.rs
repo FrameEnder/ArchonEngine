@@ -205,6 +205,10 @@ pub struct PartyBot {
     pub party_npc: Option<party_npc::MemberState>,
     /// Getting out of an enemy's area attack (`dodge.rs`.)
     pub dodge: Option<dodge::Dodge>,
+    /// The attack (when it goes off) it last braced for, having nowhere to go, so it braces once for each.
+    pub braced_for: Option<Instant>,
+    /// When each of its brace actions is ready again (their recast.)
+    pub brace_ready: HashMap<u32, Instant>,
 }
 
 impl PartyBot {
@@ -246,6 +250,8 @@ impl PartyBot {
             raising: None,
             party_npc: None,
             dodge: None,
+            braced_for: None,
+            brace_ready: HashMap::new(),
         }
     }
 }
@@ -334,6 +340,8 @@ fn instance_navmesh_path(navmesh: &crate::navmesh::Navmesh, from: Vec3A, to: Vec
 
 /// A bot this close to its formation spot is there.
 const AT_SPOT: f32 = 0.6;
+/// How many of the best safe spots a dodger looks for a navmesh path to before it gives up and braces instead.
+const DODGE_PATHS_TRIED: usize = 8;
 /// The spot moved this far from where it was walking: it sets off for the new one.
 const SPOT_MOVED: f32 = 1.0;
 
@@ -501,6 +509,32 @@ impl GameData {
         }
         gear.sort();
         gear
+    }
+
+    /// The brace actions (`dodge::BRACE_ACTIONS`) `classjob` has learnt by `level`, with their recast in seconds, in
+    /// that list's order.
+    pub fn brace_actions(&mut self, classjob: u8, level: u8) -> Vec<(u32, dodge::Brace, f32)> {
+        static CATEGORIES: std::sync::LazyLock<Mutex<HashMap<u8, HashSet<u8>>>> =
+            std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
+        let cached = CATEGORIES.lock().get(&classjob).cloned();
+        let categories = match cached {
+            Some(categories) => categories,
+            None => {
+                let categories = self.classjob_categories_with(classjob);
+                CATEGORIES.lock().insert(classjob, categories.clone());
+                categories
+            }
+        };
+        dodge::BRACE_ACTIONS
+            .iter()
+            .filter_map(|(id, brace)| {
+                let row = self.action_sheet.row(*id)?;
+                (row.ClassJobLevel > 0
+                    && row.ClassJobLevel <= level
+                    && categories.contains(&row.ClassJobCategory))
+                .then_some((*id, *brace, row.Recast100ms as f32 / 10.0))
+            })
+            .collect()
     }
 
     /// Every ClassJobCategory row that includes `classjob` (its column, after the row's name), reading the sheet once.
@@ -1598,6 +1632,8 @@ fn spawn_bot(
             raising: None,
             party_npc: None,
             dodge: None,
+            braced_for: None,
+            brace_ready: HashMap::new(),
         },
     );
 
@@ -2755,6 +2791,15 @@ fn update_party(
     // Enemies' area attacks being cast: everyone in one gets out of it (`dodge.rs`.)
     let dangers: Vec<Danger> = dodge::dangers(instance, &mut game_data.lock(), now);
     let mut dodges: Vec<(ObjectId, Option<dodge::Dodge>)> = Vec::new();
+    // The party where it stands (for bracing: who an attack catches, and who's most hurt.)
+    let allies: Vec<(ObjectId, Vec3A, f32)> = members
+        .iter()
+        .filter_map(|id| instance.find_actor(*id).map(|actor| (*id, actor)))
+        .filter(|(_, actor)| actor.get_common_spawn().health_points > 0)
+        .map(|(id, actor)| (id, actor.position().0, health_percent(actor)))
+        .collect();
+    // Braces used this tick: (member, the attack it's for, the action, its recast.)
+    let mut braces: Vec<(ObjectId, Instant, u32, f32)> = Vec::new();
     let navmesh = &instance.navmesh;
     for (bot_id, bot) in &bots {
         let Some(NetworkedActor::Npc {
@@ -2803,8 +2848,16 @@ fn update_party(
             }
             .or_else(|| where_is.get(&leader).map(|(position, _)| *position))
             .unwrap_or(here);
+            // Only somewhere on the map: on the navmesh, with a path there along it (Bob, 2026-10-24); without a
+            // navmesh nowhere is known to be, and it braces instead (below.)
+            let flat = |a: Vec3A, b: Vec3A| Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length();
             let walkable =
-                |point: Vec3A| !navmesh.is_available() || navmesh.ground_under(point).is_some();
+                |point: Vec3A| navmesh.is_available() && navmesh.ground_under(point).is_some();
+            let reachable = |to: Vec3A| {
+                instance_navmesh_path(navmesh, here, to)
+                    .last()
+                    .is_some_and(|end| flat(*end, to) <= AT_SPOT)
+            };
             let spot = dodge
                 .and_then(|dodge| dodge.to)
                 .filter(|to| {
@@ -2812,7 +2865,54 @@ fn update_party(
                         .iter()
                         .all(|danger| !danger.catches(*to, DODGE_MARGIN))
                 })
-                .or_else(|| dodge::safe_spot(here, rather, &dangers, walkable));
+                .or_else(|| {
+                    dodge::safe_spots(here, rather, &dangers, walkable)
+                        .into_iter()
+                        .take(DODGE_PATHS_TRIED)
+                        .find(|to| reachable(*to))
+                });
+            if spot.is_none() && bot.braced_for.is_none_or(|braced| braced < until) {
+                // Nowhere to go: it stays and shields what it can (`dodge::choose_brace`.)
+                let caught: Vec<&(ObjectId, Vec3A, f32)> = allies
+                    .iter()
+                    .filter(|(_, position, _)| {
+                        threats.iter().any(|danger| danger.catches(*position, 0.0))
+                    })
+                    .collect();
+                let classjob = spawn.common.class_job;
+                let level = spawn.common.level;
+                let ready: Vec<(u32, dodge::Brace, f32)> = game_data
+                    .lock()
+                    .brace_actions(classjob, level)
+                    .into_iter()
+                    .filter(|(id, ..)| bot.brace_ready.get(id).is_none_or(|at| *at <= now))
+                    .collect();
+                let kinds: Vec<(u32, dodge::Brace)> =
+                    ready.iter().map(|(id, brace, _)| (*id, *brace)).collect();
+                if let Some((action, brace)) = dodge::choose_brace(&kinds, caught.len(), true) {
+                    let caster = threats
+                        .iter()
+                        .min_by_key(|danger| danger.until)
+                        .map(|danger| danger.caster_id);
+                    let target = match brace {
+                        dodge::Brace::OnCaster => caster,
+                        dodge::Brace::OnAlly => caught
+                            .iter()
+                            .min_by(|a, b| a.2.total_cmp(&b.2))
+                            .map(|(id, ..)| *id),
+                        dodge::Brace::AroundSelf | dodge::Brace::OnSelf => Some(*bot_id),
+                    };
+                    let recast = ready
+                        .iter()
+                        .find(|(id, ..)| *id == action)
+                        .map(|(.., recast)| *recast)
+                        .unwrap_or(0.0);
+                    if let Some(target) = target {
+                        kit_actions.push((*bot_id, action, target));
+                        braces.push((*bot_id, until, action, recast));
+                    }
+                }
+            }
             let distance = spot.map(|to| here.distance(to)).unwrap_or(0.0);
             let entry = dodge.get_or_insert(dodge::Dodge {
                 to: None,
@@ -2841,10 +2941,8 @@ fn update_party(
                     let mut path = bot.path.clone();
                     let mut reaimed = bot.reaimed;
                     if path.back().is_none_or(|end| flat(*end, to) > AT_SPOT) {
+                        // Along the navmesh only, never straight off it (Bob, 2026-10-24.)
                         path = instance_navmesh_path(navmesh, here, to).into();
-                        if path.back().is_none_or(|end| flat(*end, to) > AT_SPOT) {
-                            path.push_back(to);
-                        }
                         reaimed = now;
                     }
                     let moved = run_along(navmesh, here, &mut path);
@@ -3123,6 +3221,13 @@ fn update_party(
     for (bot_id, dodge) in dodges {
         if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
             bot.dodge = dodge;
+        }
+    }
+    for (bot_id, until, action, recast) in braces {
+        if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
+            bot.braced_for = Some(until);
+            bot.brace_ready
+                .insert(action, now + Duration::from_secs_f32(recast.max(BOT_PACE)));
         }
     }
     for (bot_id, state) in npc_states {

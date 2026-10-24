@@ -313,6 +313,14 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
     holds that spot and still acts (NPCs' own acting runs for it, so casters and healers in reach keep going; melee
     ones wait), and 1.3 s after the last attack it was avoiding has gone off (`LINGER`, retail's) it goes back to
     fighting. Before this they stood in everything.
+    **Only on the map** (Bob, 2026-10-24): a spot counts only if it's on the navmesh and a navmesh path reaches it
+    (the best 8 are tried, `DODGE_PATHS_TRIED`), and the run follows that path, never a straight line off it; with no
+    navmesh, no spot counts. **Nowhere to go**: it stays and braces once for that attack (`dodge::choose_brace`),
+    shielding as many as it can: with two or more of the party caught, something for all of them (Reprisal, Feint or
+    Addle on the caster; else Temperance, Succor or Medica around itself); with one, that or a shield on the most hurt
+    one caught (Aquaveil, Divine Benison, Adloquium); else its own (Sheltron, Vengeance, Sentinel, Rampart). Only
+    actions its class has learnt by its level (`GameData::brace_actions`: the Action row's ClassJobCategory and
+    ClassJobLevel), each kept to its recast (`PartyBot::brace_ready`).
 * **Its rotation** (`build_rotation`, a heuristic until bots' rotations are recorded), run by the NPC class rotations
   (`server/rotation.rs`, a 2.5 s pace like a player's GCD): its abilities whenever they're ready; its combos, each step
   after the one it follows (highest level first, so a combo runs to its end); its damage over time spells and

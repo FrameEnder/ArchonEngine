@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 
 use glam::{Vec2, Vec3A};
 
-use kawari::ipc::zone::CharacterDataFlag;
+use kawari::{common::ObjectId, ipc::zone::CharacterDataFlag};
 
 use crate::{
     GameData,
@@ -38,6 +38,8 @@ const NEAR_ENOUGH: f32 = 1.0;
 #[derive(Debug, Clone, Copy)]
 pub struct Danger {
     pub shape: AreaShape,
+    /// Who's casting it (what Reprisal, Feint and Addle go on when there's no getting out.)
+    pub caster_id: ObjectId,
     pub caster: Vec3A,
     /// Which way the caster faced as it started.
     pub rotation: f32,
@@ -122,8 +124,8 @@ impl Danger {
 pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> Vec<Danger> {
     instance
         .actors
-        .values()
-        .filter_map(|actor| match actor {
+        .iter()
+        .filter_map(|(id, actor)| match actor {
             NetworkedActor::Npc {
                 spawn,
                 cast: Some(cast),
@@ -139,6 +141,7 @@ pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> V
                 let shape = game_data.get_action_info(cast.action_id)?.area_shape()?;
                 Some(Danger {
                     shape,
+                    caster_id: *id,
                     caster: spawn.common.position.0,
                     rotation: cast.rotation,
                     aimed_at: cast.target_position,
@@ -165,19 +168,34 @@ pub struct Dodge {
 /// Where someone at `from` should go to be out of every one of `dangers`: the nearest such spot, walkable, and among
 /// spots about as near, the one closest to `rather` (their place in the fight.) None if they're already out of all of
 /// them, or nowhere within `SEARCH_RADIUS` is.
+#[cfg(test)]
 pub fn safe_spot(
     from: Vec3A,
     rather: Vec3A,
     dangers: &[Danger],
     walkable: impl Fn(Vec3A) -> bool,
 ) -> Option<Vec3A> {
+    safe_spots(from, rather, dangers, walkable)
+        .into_iter()
+        .next()
+}
+
+/// The spots out of every one of `dangers` that `walkable` accepts, best first: the nearest ones (within `NEAR_ENOUGH`
+/// of the very nearest) by how close they are to `rather`, then the rest by distance. Empty if `from` is already safe
+/// or there's nowhere within `SEARCH_RADIUS`. The caller checks each can be reached (`party_bot`: a navmesh path to it.)
+pub fn safe_spots(
+    from: Vec3A,
+    rather: Vec3A,
+    dangers: &[Danger],
+    walkable: impl Fn(Vec3A) -> bool,
+) -> Vec<Vec3A> {
     let safe = |point: Vec3A| {
         dangers
             .iter()
             .all(|danger| !danger.catches(point, DODGE_MARGIN))
     };
     if safe(from) {
-        return None;
+        return Vec::new();
     }
     let flat_distance = |a: Vec3A, b: Vec3A| Vec2::new(a.x - b.x, a.z - b.z).length();
 
@@ -196,17 +214,77 @@ pub fn safe_spot(
         ring += SEARCH_STEP;
     }
 
-    let good: Vec<Vec3A> = candidates
+    let mut good: Vec<Vec3A> = candidates
         .into_iter()
         .filter(|point| safe(*point) && walkable(*point))
         .collect();
-    let nearest = good
+    good.sort_by(|a, b| flat_distance(from, *a).total_cmp(&flat_distance(from, *b)));
+    let Some(nearest) = good.first().map(|point| flat_distance(from, *point)) else {
+        return good;
+    };
+    let split = good
         .iter()
-        .map(|point| flat_distance(from, *point))
-        .min_by(f32::total_cmp)?;
-    good.into_iter()
-        .filter(|point| flat_distance(from, *point) <= nearest + NEAR_ENOUGH)
-        .min_by(|a, b| flat_distance(*a, rather).total_cmp(&flat_distance(*b, rather)))
+        .position(|point| flat_distance(from, *point) > nearest + NEAR_ENOUGH)
+        .unwrap_or(good.len());
+    good[..split].sort_by(|a, b| flat_distance(*a, rather).total_cmp(&flat_distance(*b, rather)));
+    good
+}
+
+/// What a party member does about an area attack it can't get out of (Bob, 2026-10-24: give up running and shield as
+/// much damage on as many allies as it can.)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Brace {
+    /// Lowers what the caster does to everyone (Reprisal, Feint, Addle), on the caster.
+    OnCaster,
+    /// Shields or heals everyone around it (Succor, Temperance, Medica).
+    AroundSelf,
+    /// Shields one ally: the most hurt one it catches (Adloquium, Divine Benison, Aquaveil).
+    OnAlly,
+    /// Its own (Sheltron, Vengeance, Sentinel, Rampart).
+    OnSelf,
+}
+
+/// The actions a party member braces with, by Action row, in the order it tries them within a kind (the stronger
+/// first.) Each has a script; whether a member has one is its class and level (`GameData::brace_actions`.)
+pub const BRACE_ACTIONS: [(u32, Brace); 13] = [
+    (7535, Brace::OnCaster),    // Reprisal (tanks)
+    (7549, Brace::OnCaster),    // Feint (melee)
+    (7560, Brace::OnCaster),    // Addle (casters)
+    (16536, Brace::AroundSelf), // Temperance
+    (186, Brace::AroundSelf),   // Succor
+    (124, Brace::AroundSelf),   // Medica
+    (25861, Brace::OnAlly),     // Aquaveil
+    (7432, Brace::OnAlly),      // Divine Benison
+    (185, Brace::OnAlly),       // Adloquium
+    (3542, Brace::OnSelf),      // Sheltron
+    (44, Brace::OnSelf),        // Vengeance
+    (17, Brace::OnSelf),        // Sentinel
+    (7531, Brace::OnSelf),      // Rampart
+];
+
+/// The brace that covers the most: with two or more allies caught, something for all of them (on the caster, then
+/// around itself); then a shield on one ally; then its own, if it's caught itself. `ready` are the actions it has and
+/// can use now, in `BRACE_ACTIONS`' order.
+pub fn choose_brace(
+    ready: &[(u32, Brace)],
+    allies_caught: usize,
+    self_caught: bool,
+) -> Option<(u32, Brace)> {
+    let first = |kind: Brace| ready.iter().copied().find(|(_, brace)| *brace == kind);
+    if allies_caught >= 2 {
+        if let Some(found) = first(Brace::OnCaster).or_else(|| first(Brace::AroundSelf)) {
+            return Some(found);
+        }
+    }
+    if allies_caught >= 1
+        && let Some(found) = first(Brace::OnCaster).or_else(|| first(Brace::OnAlly))
+    {
+        return Some(found);
+    }
+    if self_caught {
+        return first(Brace::OnSelf).or_else(|| first(Brace::OnCaster));
+    }
+    None
 }
 
 /// When to set off: `REACTION_SECONDS` after noticing (`roll` between 0 and 1 picks within it), or now if the attack
@@ -229,6 +307,7 @@ mod tests {
     fn danger(shape: AreaShape) -> Danger {
         Danger {
             shape,
+            caster_id: ObjectId::default(),
             caster: Vec3A::ZERO,
             rotation: 0.0, // facing +z
             aimed_at: Vec3A::new(0.0, 0.0, 10.0),
@@ -338,6 +417,41 @@ mod tests {
             spot.x < 0.0 && !circle.catches(spot, DODGE_MARGIN),
             "{spot:?}"
         );
+    }
+
+    #[test]
+    fn nowhere_to_go_gives_up() {
+        let danger = danger(AreaShape::Circle {
+            radius: 10.0,
+            on_target: false,
+        });
+        // Only the inside of the circle is on the map: no spot at all.
+        let inside = |point: Vec3A| flat(point) < 8.0;
+        assert!(safe_spots(Vec3A::new(0.0, 0.0, 2.0), Vec3A::ZERO, &[danger], inside).is_empty());
+    }
+
+    #[test]
+    fn braces_cover_the_most() {
+        let all = [
+            (7535, Brace::OnCaster),
+            (186, Brace::AroundSelf),
+            (185, Brace::OnAlly),
+            (7531, Brace::OnSelf),
+        ];
+        assert_eq!(choose_brace(&all, 3, true), Some((7535, Brace::OnCaster)));
+        assert_eq!(
+            choose_brace(&all[1..], 3, true),
+            Some((186, Brace::AroundSelf))
+        );
+        assert_eq!(
+            choose_brace(&all[1..], 1, false),
+            Some((185, Brace::OnAlly))
+        );
+        assert_eq!(
+            choose_brace(&all[3..], 1, true),
+            Some((7531, Brace::OnSelf))
+        );
+        assert_eq!(choose_brace(&all[3..], 0, false), None);
     }
 
     #[test]
