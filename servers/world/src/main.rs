@@ -1464,8 +1464,7 @@ async fn process_packet(
                                         connection.recipe = Some(recipe);
                                         connection.quick_synthesis = None;
                                         // Retail's start of a synthesis (Bob's capture, docs/src/fork/crafting.md.)
-                                        kawari_world::begin_synthesis(connection, event, 0)
-                                            .await;
+                                        kawari_world::begin_synthesis(connection, event, 0).await;
                                     }
                                 }
                                 ClientTriggerCommand::RidePillionRequest {
