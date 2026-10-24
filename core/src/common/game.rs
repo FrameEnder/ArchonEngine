@@ -762,6 +762,11 @@ pub enum ItemOperationKind {
     CombineStack = BASE_INVENTORY_ACTION + 11,
     /// The operation opcode/type when the server wants the client to equip the mannequin (character sheet/try on preview model?). Seen during login and probably elsewhere.
     EquipMannequin = BASE_INVENTORY_ACTION + 18,
+    /// Putting an item from the bags into the chocobo saddlebag (its window's context menu): the destination is all
+    /// zeros, the server picks it as for a retainer (Bob's Chronofoil capture of 2026-10-24.)
+    SaddlebagStore = BASE_INVENTORY_ACTION + 20,
+    /// Taking an item from the chocobo saddlebag into the bags, the server picking the slot (the same capture.)
+    SaddlebagTake = BASE_INVENTORY_ACTION + 21,
     /// Entrusting an item to a called retainer from their menu (0x132 on 2026.10.06, Bob's 2026-10-18 capture): the
     /// destination is all zeros, the server picks it (the same item's stack with room, else the first empty slot.)
     RetainerEntrust = BASE_INVENTORY_ACTION + 22,

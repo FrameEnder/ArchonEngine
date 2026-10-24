@@ -730,6 +730,8 @@ pub fn remove_actor_from_instance(
     network: &mut NetworkState,
     actor_id: ObjectId,
 ) {
+    // Their chocobo companion leaves with them (server/companion.rs.)
+    crate::server::companion::owner_left(data, network, actor_id);
     if let Some(current_instance) = data.find_actor_instance_mut(actor_id) {
         network.remove_actor(current_instance, actor_id);
         current_instance.last_enmity_lists.remove(&actor_id);

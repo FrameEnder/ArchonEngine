@@ -134,7 +134,15 @@ pub fn catch_up(network: &mut NetworkState, instance: &mut Instance) {
         .collect();
 
     for (owner, owner_position, owner_rotation) in owners {
-        for pet in owned_by(instance, owner) {
+        // A chocobo companion too.
+        let mut followers = owned_by(instance, owner);
+        followers.extend(instance.actors.iter().filter_map(|(id, actor)| {
+            matches!(actor, NetworkedActor::Npc { spawn, .. }
+                if spawn.common.owner_id == owner
+                    && spawn.common.object_kind == ObjectKind::BattleNpc(BattleNpcSubKind::Chocobo))
+            .then_some(*id)
+        }));
+        for pet in followers {
             let Some(NetworkedActor::Npc {
                 spawn,
                 state,

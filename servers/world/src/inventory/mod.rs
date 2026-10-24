@@ -63,6 +63,15 @@ const PLAYER_BAGS: [ContainerType; 4] = [
     ContainerType::Inventory3,
 ];
 
+/// The chocobo saddlebag's two pages, where its items go.
+pub const SADDLEBAG_PAGES: [ContainerType; 2] =
+    [ContainerType::SaddleBag1, ContainerType::SaddleBag2];
+/// The premium saddlebag's (not offered: sent empty, as retail did for an account without it.)
+pub const PREMIUM_SADDLEBAG_PAGES: [ContainerType; 2] = [
+    ContainerType::PremiumSaddleBag1,
+    ContainerType::PremiumSaddleBag2,
+];
+
 /// An item's HQ flag (`Item::item_flags`; ItemFlags.HighQuality in FFXIVClientStructs.)
 pub const ITEM_FLAG_HQ: u8 = 1;
 
@@ -89,6 +98,9 @@ pub struct Inventory {
     pub currency: CurrencyStorage,
     pub crystals: CrystalsStorage,
     pub key_items: GenericStorage<MAX_NORMAL_STORAGE>,
+    /// The chocobo saddlebag's two pages of 35 (4000, 4001): sent when it's opened (client trigger 444), not at login.
+    #[serde(default = "Inventory::empty_saddlebag")]
+    pub saddlebag: [GenericStorage<MAX_NORMAL_STORAGE>; 2],
     /// The retainer called at a summoning bell, if any: their containers (10000-12002) work like the player's own while
     /// they're out. Kept in the retainer table, not with the player's inventory.
     #[serde(skip)]
@@ -136,6 +148,7 @@ impl Default for Inventory {
             currency: CurrencyStorage::default(),
             crystals: CrystalsStorage::default(),
             key_items: GenericStorage::new(ContainerType::KeyItems),
+            saddlebag: Self::empty_saddlebag(),
             retainer: None,
         }
     }
@@ -391,6 +404,22 @@ impl Inventory {
         action: &ItemOperation,
     ) -> Option<[(ContainerType, u16); 2]> {
         self.retainer.as_ref()?;
+        let destinations: &[ContainerType] =
+            if action.operation_type == ItemOperationKind::RetainerEntrust {
+                &RETAINER_PAGES
+            } else {
+                &PLAYER_BAGS
+            };
+        self.transfer_to(action, destinations)
+    }
+
+    /// `src_stack` of an operation's source item (all of it when 0) onto the same item's stack with room in
+    /// `destinations`, else their first empty slot.
+    fn transfer_to(
+        &mut self,
+        action: &ItemOperation,
+        destinations: &[ContainerType],
+    ) -> Option<[(ContainerType, u16); 2]> {
         let source = self.get_item(action.src_storage_id, action.src_container_index)?;
         if source.is_empty_slot() {
             return None;
@@ -399,13 +428,6 @@ impl Inventory {
             0 => source.quantity,
             wanted => wanted.min(source.quantity),
         };
-        let destinations: &[ContainerType] =
-            if action.operation_type == ItemOperationKind::RetainerEntrust {
-                &RETAINER_PAGES
-            } else {
-                &PLAYER_BAGS
-            };
-
         // The same item's stack with room first, then the first empty slot.
         let mut chosen = None;
         if source.stack_size > 1 {
@@ -537,6 +559,11 @@ impl Inventory {
     /// Uses up one of an item from the bags (the first stack found), e.g. one that's been used. Returns false if they
     /// have none.
     pub fn use_up_one(&mut self, item_id: u32) -> bool {
+        self.use_up_one_at(item_id).is_some()
+    }
+
+    /// `use_up_one`, saying which slot it came from.
+    pub fn use_up_one_at(&mut self, item_id: u32) -> Option<(ContainerType, u16)> {
         for page in &mut self.pages {
             for index in 0..page.max_slots() as u16 {
                 let slot = page.get_slot_mut(index);
@@ -545,11 +572,32 @@ impl Inventory {
                     if slot.quantity == 0 {
                         *slot = Item::default();
                     }
-                    return true;
+                    return Some((page.kind, index));
                 }
             }
         }
-        false
+        None
+    }
+
+    fn empty_saddlebag() -> [GenericStorage<MAX_NORMAL_STORAGE>; 2] {
+        SADDLEBAG_PAGES.map(GenericStorage::new)
+    }
+
+    /// Into or out of the chocobo saddlebag from its window (`ItemOperationKind::SaddlebagStore` / `SaddlebagTake`),
+    /// the server picking the slot as for a retainer: onto the same item's stack if it has room, else the first empty
+    /// slot (Bob's Chronofoil capture of 2026-10-24: a Store went onto a stack of 37, then into a free slot.) Returns
+    /// the source and destination slots, or None if nothing moved.
+    pub fn transfer_with_saddlebag(
+        &mut self,
+        action: &ItemOperation,
+    ) -> Option<[(ContainerType, u16); 2]> {
+        let destinations: &[ContainerType] =
+            if action.operation_type == ItemOperationKind::SaddlebagStore {
+                &SADDLEBAG_PAGES
+            } else {
+                &PLAYER_BAGS
+            };
+        self.transfer_to(action, destinations)
     }
 
     pub fn add_in_next_free_slot(&mut self, item: Item) -> Option<ItemInfo> {
@@ -625,6 +673,8 @@ impl Inventory {
             ContainerType::ArmorySoulCrystal => Some(&mut self.armoury_soul_crystal),
             ContainerType::ArmoryWeapon => Some(&mut self.armoury_main_hand),
             ContainerType::KeyItems => Some(&mut self.key_items),
+            ContainerType::SaddleBag1 => Some(&mut self.saddlebag[0]),
+            ContainerType::SaddleBag2 => Some(&mut self.saddlebag[1]),
             _ => self
                 .retainer
                 .as_mut()
@@ -654,6 +704,8 @@ impl Inventory {
             ContainerType::ArmorySoulCrystal => Some(&self.armoury_soul_crystal),
             ContainerType::ArmoryWeapon => Some(&self.armoury_main_hand),
             ContainerType::KeyItems => Some(&self.key_items),
+            ContainerType::SaddleBag1 => Some(&self.saddlebag[0]),
+            ContainerType::SaddleBag2 => Some(&self.saddlebag[1]),
             _ => self
                 .retainer
                 .as_ref()

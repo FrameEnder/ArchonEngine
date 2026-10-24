@@ -473,9 +473,20 @@ pub enum ClientTriggerCommand {
     #[brw(magic = 1600u32)]
     RepairItem { unk1: u32, unk2: u32, unk3: u32 },
 
-    /// The client requests to withdraw their chocobo through the context menu.
+    /// A command for the chocobo companion (its context menu, the Companion window): a BuddyAction row, 2 Withdraw, 3
+    /// Follow, 4 Free Stance, 5 Defender, 6 Attacker, 7 Healer Stance (Bob's Chronofoil capture of 2026-10-24.)
     #[brw(magic = 1700u32)]
     WithdrawCompanion { unk1: u32 },
+
+    /// Puts barding on the chocobo companion (the Companion window): `slot` 0 head, 1 body, 2 legs, `equip` a BuddyEquip
+    /// row (Bob's Chronofoil capture of 2026-10-24.)
+    #[brw(magic = 1701u32)]
+    SetCompanionBarding { slot: u32, equip: u32 },
+
+    /// Learns the chocobo companion's next skill in one of its lines (the Companion window): `line` 0 Defender, 1
+    /// Attacker, 2 Healer (Bob's Chronofoil capture of 2026-10-24.)
+    #[brw(magic = 1702u32)]
+    LearnCompanionSkill { line: u32 },
 
     /// The client is performing a pet action.
     #[brw(magic = 1800u32)]

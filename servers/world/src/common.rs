@@ -244,6 +244,8 @@ pub enum FromServer {
     /// A key item's cast bar ended (an ActionRequest of type EventItem): the item, and what it was used on. The
     /// zone connection starts its quest's event (type EventItem.)
     EventItemUsed(u32, ObjectTypeId),
+    /// An item was used and is used up (Gysahl Greens): the zone connection takes one from the bags.
+    ItemUsedUp(u32),
     /// The player used an emote (its Emote row) on an actor: the zone connection starts the quest event that listens
     /// for it, if one does (type Emote.)
     EmotedAt(u32, ObjectTypeId),
@@ -433,6 +435,10 @@ pub enum ToServer {
     /// A crafter's CP and synthesis statuses (status, param) after a step: the statuses change without a gain or loss
     /// message (the step's scene has the log lines), and an empty list takes them all off (`crafting.rs`.)
     SetCraftingState(ClientId, ObjectId, u16, Vec<(u16, u16)>),
+    /// The player's chocobo companion as it is now (at zone-in and whenever it changes: its stance, barding, skills.)
+    SetCompanion(ObjectId, crate::server::CompanionProfile),
+    /// The player withdrew their companion (client trigger 1700 with Withdraw.)
+    WithdrawCompanion(ObjectId),
     /// Warp with the specified id.
     Warp(ClientId, ObjectId, u32),
     /// Warp with the specified aetheryte id.

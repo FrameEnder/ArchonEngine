@@ -255,6 +255,10 @@ diesel::table! {
         levels -> Text,
         exp -> Integer,
         color -> Integer,
+        skill_points -> Integer,
+        active_command -> Integer,
+        favorite_feed -> Integer,
+        barding -> Text,
     }
 }
 

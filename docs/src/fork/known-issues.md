@@ -468,6 +468,17 @@ add one when something is found.
   aren't done. Spearfishing and fishing are separate (upstream's fishing).
 * A used-up timed point stays visible (empty) until it despawns; each player sees their own phases and integrity.
 
+## Chocobo companion
+
+* Untested in game (2026-10-24). Only Bob's own companion's summoning, riding, barding, stances, skills and withdrawal
+  were captured; it didn't fight in the capture, so its combat is a stand-in: auto-attack 871 from 3 yalms, no
+  stance skills (Choco Strike, Choco Cure and the others aren't scripted), no healing in Healer Stance.
+* Companion EXP and rank-ups (from kills while out), the favourite feed and feeding, colouring (Thavnairian Onion
+  and fruits), naming, its party-list entry, Examine on it and pillion on one's own chocobo aren't done.
+* More Gysahl Greens while it's out add 30 minutes up to an hour (a guess); ActorControl 36 and 54 after it appears
+  aren't understood; retail's spawn display flag 0x20 is left out.
+* The premium saddlebag isn't offered; the saddlebag can be opened anywhere.
+
 ## Systems (upstream gaps the fork hasn't touched)
 
 Duty completion isn't saved per player; housing doesn't persist

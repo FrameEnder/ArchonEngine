@@ -56,6 +56,7 @@
   - [Coffers and Loot](fork/loot.md)
   - [Crafting](fork/crafting.md)
   - [Gathering](fork/gathering.md)
+  - [Chocobo Companion](fork/chocobo.md)
   - [Fork Opcodes](fork/opcodes.md)
   - [Tools and Debug Commands](fork/tools.md)
   - [questkit and CI](fork/questkit.md)
