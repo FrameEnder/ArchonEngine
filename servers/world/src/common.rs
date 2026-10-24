@@ -246,6 +246,8 @@ pub enum FromServer {
     EventItemUsed(u32, ObjectTypeId),
     /// An item was used and is used up (Gysahl Greens): the zone connection takes one from the bags.
     ItemUsedUp(u32),
+    /// The player's companion gained this much EXP from a kill: the zone connection ranks it up (`companion.rs`.)
+    CompanionExp(u32),
     /// The player used an emote (its Emote row) on an actor: the zone connection starts the quest event that listens
     /// for it, if one does (type Emote.)
     EmotedAt(u32, ObjectTypeId),
@@ -439,6 +441,9 @@ pub enum ToServer {
     SetCompanion(ObjectId, crate::server::CompanionProfile),
     /// The player withdrew their companion (client trigger 1700 with Withdraw.)
     WithdrawCompanion(ObjectId),
+    /// Something the player fought was defeated, worth this much of their EXP (0 for none): their companion, if it's
+    /// out, gets it (`FromServer::CompanionExp`.)
+    CompanionKill(ObjectId, u32),
     /// Warp with the specified id.
     Warp(ClientId, ObjectId, u32),
     /// Warp with the specified aetheryte id.

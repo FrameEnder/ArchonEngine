@@ -562,6 +562,9 @@ impl ZoneConnection {
                 LuaTask::LearnFromItem { kind, id, item_id } => {
                     self.learn_from_item(kind, *id, *item_id).await;
                 }
+                LuaTask::FeedCompanionOnion { item_id } => {
+                    self.feed_companion_onion(*item_id).await;
+                }
                 LuaTask::ToggleOrnamentAll => {
                     let max_ornament_id = ORNAMENT_BITMASK_SIZE as u32 * 8;
 

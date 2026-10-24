@@ -500,13 +500,16 @@ add one when something is found.
 
 ## Chocobo companion
 
-* Untested in game (2026-10-24). Only Bob's own companion's summoning, riding, barding, stances, skills and withdrawal
-  were captured; it didn't fight in the capture, so its combat is a stand-in: auto-attack 871 from 3 yalms, no
-  stance skills (Choco Strike, Choco Cure and the others aren't scripted), no healing in Healer Stance.
-* Companion EXP and rank-ups (from kills while out), the favourite feed and feeding, colouring (Thavnairian Onion
-  and fruits), naming, its party-list entry, Examine on it and pillion on one's own chocobo aren't done.
-* More Gysahl Greens while it's out add 30 minutes up to an hour (a guess); ActorControl 36 and 54 after it appears
-  aren't understood; retail's spawn display flag 0x20 is left out.
+* Untested in game (2026-10-24). Its fighting is from one capture at level 88 with Attacker at 6: how its HP and
+  damage grow with level (ParamGrow's HpModifier is the stand-in), its skills' timing in Defender Stance, and the
+  whole of Healer Stance (the Wiki's account) aren't recorded. Choco Guard does nothing (its status isn't known),
+  Choco Surge doesn't raise healing, Choco Regen's ticks aren't scaled, Choco Medica heals one target, the
+  Accuracy, Critical Hit and Attack Speed traits do nothing, and its attack range (3 yalms) is a guess.
+* Companion EXP from a kill is a stand-in: as much as its owner's base EXP for it (retail's monsters well below Bob
+  gave neither of them any). Retail's rank-up and onion packets aren't recorded (only CompanionUpdate is sent); the
+  Challenge Log's Bosom Buddies, chocobo raising at a stable, the favourite feed, colouring, naming, its party-list
+  entry, Examine on it and pillion on one's own chocobo aren't done.
+* ActorControl 36/267 and 54 after it appears aren't understood; retail's spawn display flag 0x20 is left out.
 * The premium saddlebag isn't offered; the saddlebag can be opened anywhere.
 
 ## Systems (upstream gaps the fork hasn't touched)

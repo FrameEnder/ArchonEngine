@@ -67,7 +67,10 @@ mod actor;
 pub mod bot_friends;
 mod chat;
 mod companion;
-pub use companion::{COMMAND_FOLLOW, COMMAND_HEALER, COMMAND_WITHDRAW, CompanionProfile};
+pub use companion::{
+    COMMAND_FOLLOW, COMMAND_HEALER, COMMAND_WITHDRAW, CompanionProfile, MAX_RANK, eat_onion,
+    gain_exp,
+};
 mod director;
 mod effect;
 mod glamour;

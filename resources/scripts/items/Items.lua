@@ -12,6 +12,7 @@ ITEM_ACTION_TYPE_MOUNT = 1322
 ITEM_ACTION_TYPE_FANTASIA = 1326 -- this is also used elsewhere, not sure what
 -- Items that teach an unlock link: emotes, hairstyles and many others.
 ITEM_ACTION_TYPE_UNLOCK_LINK = 2633
+ITEM_ACTION_TYPE_THAVNAIRIAN_ONION = 3292 -- the Thavnairian Onion's ItemAction (530)
 ITEM_ACTION_TYPE_TRIPLE_TRIAD_CARD = 3357
 ITEM_ACTION_TYPE_ORNAMENT = 20086
 ITEM_ACTION_TYPE_ORCHESTRION = 25183
@@ -58,6 +59,9 @@ function dispatchItem(player, id, action_type, action_data, additional_data, is_
         return runAction("items/Food.lua", action_data[2] + action_data[3] * 65536)
     elseif action_type == ITEM_ACTION_TYPE_GYSHAL_GREENS then
         return runAction("items/GyshalGreens.lua", additional_data)
+    elseif action_type == ITEM_ACTION_TYPE_THAVNAIRIAN_ONION then
+        player:feed_companion_onion(id)
+        return runAction("items/GenericNoEffect.lua", 0)
     -- Otherwise, check if our item belongs to the Seasonal Miscellany or Miscellany item categories and has a vfx or not. Examples of ones that do play vfx: DAM, peach confetti. Examples of ones that don't play vfx: Realm Reborn Red, Heavenscracker.
     -- TODO: This may not be the best way but this seems to work for now
     elseif is_misc and has_vfx then
