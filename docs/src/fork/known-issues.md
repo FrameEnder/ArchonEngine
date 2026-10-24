@@ -454,7 +454,8 @@ add one when something is found.
   tested.
 * The window's slots keep the sheet's order (retail shuffles them per base); the "rare" flag (16) and the boon 255 of
   some unspoiled items aren't worked out; a level 60 harvesting node once had flags 0x798.
-* The gathering chance is a stand-in (retail showed 100 everywhere); EXP below 22 levels under the gatherer and the
+* The gathering chance is fitted to two old (2013) measurements (retail showed 100 everywhere for Bob's high-level
+  gatherers); a capture of a low-level gatherer on items near its level would check it; EXP below 22 levels under the gatherer and the
   ranged node bonuses' upper ends aren't known; one returning point in the capture (ActorControlSelf 109 for 30631
   where 30503 was expected) isn't explained.
 * GP is gear only (no base GP known; ParamGrow has none); the GP traits' quests aren't checked.

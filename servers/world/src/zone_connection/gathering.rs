@@ -196,6 +196,7 @@ impl ZoneConnection {
         let node = self.gathering_node(point);
         let remaining = self.gathering.remaining(point, node.count);
         let parameters = self.base_parameters();
+        let level = self.current_level(&self.game_data.lock()) as u8;
         let visit = self.gathering.visit.unwrap_or_default();
 
         let mut params = vec![
@@ -239,6 +240,8 @@ impl ZoneConnection {
                     base_gathering,
                     parameters.perception,
                     item.perception_required as u32,
+                    level,
+                    item.level,
                     self.gathering_chance_bonus(),
                 )
             };
@@ -382,6 +385,8 @@ impl ZoneConnection {
             base_gathering,
             parameters.perception,
             item.perception_required as u32,
+            self.current_level(&self.game_data.lock()) as u8,
+            item.level,
             self.gathering_chance_bonus(),
         );
         let gathered = fastrand::u32(0..100) < chance;

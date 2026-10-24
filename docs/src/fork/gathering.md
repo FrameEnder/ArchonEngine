@@ -83,8 +83,11 @@ differently per base); Kawari keeps the sheet's order. The unknown words (`?`) l
 
 * **Base stats**: GatherBuddy Reborn's IlvConvertTable (`resources/data/gatherbuddy/`), by the item's level row:
   retail's window had these on every item (one Perception off by one), not ItemLevel's.
-* **Gathering chance**: 100 on every item of the capture; Kawari's stand-in is 100 with the item's base Gathering,
-  falling in proportion below it; Sharp Vision (+5/15/50) and Clear Vision (+15, next gather) on top.
+* **Gathering chance** (`gathering::gathering_chance`): retail showed 100 on every item of the capture (Bob's
+  gatherers were well above the items). No source has the formula, so it's fitted to the few numbers recorded: 100
+  with the item's base Gathering, 1.55 points less per percent short of it (BlueGartr's ARR discussion, 2013: 72% at
+  271 Gathering on a level 50 item, base 330), 7 points less per level the item is above the gatherer (same thread:
+  74/67/60% at 0/+1/+2); Sharp Vision (+5/15/50) and Clear Vision (+15, next gather) on top.
 * **Gatherer's Boon**: GatherBuddy Reborn's curve of Perception against the base (0 below 60%, 35% at 100%, 60% at
   150%; retail showed 59 and 60), + the node's bonus, Gift I 10%, Gift II 30%. 255 (none) for crystals and items whose
   GatheringItem.Unknown2 isn't 0xFFFF. +1 item, +1 more with Tidings.

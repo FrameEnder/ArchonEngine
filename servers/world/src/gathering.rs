@@ -158,22 +158,29 @@ pub fn bountiful_bonus(gathering: u32, base_gathering: u32) -> u32 {
     }
 }
 
-/// The gathering chance. A stand-in (no source has retail's formula): full with the item's base Gathering, falling
-/// in proportion below it; then Sharp Vision and Clear Vision on top. An item that needs more Perception than the
-/// gatherer has can't be gathered.
+/// The gathering chance. No source has retail's formula, so this is fitted to what's recorded: 100 with the item's
+/// base Gathering (retail's window showed 100 on every item Bob's level 58 and 60 gatherers saw, all above their base),
+/// and 1.55 points less for each percent of the base short of it (the only measured point: 72% at 271 Gathering on a
+/// level 50 item, base 330, 82%; BlueGartr's "Gathering Class Discussion for ARR", 2013); 7 points less for each level
+/// the item is above the gatherer (the same thread: 74, 67, 60% at 0, +1, +2 levels). Then Sharp Vision and Clear
+/// Vision on top. An item that needs more Perception than the gatherer has can't be gathered.
 pub fn gathering_chance(
     gathering: u32,
     base_gathering: u32,
     perception: u32,
     perception_required: u32,
+    level: u8,
+    item_level: u8,
     bonus: u32,
 ) -> u32 {
     if perception < perception_required {
         return 0;
     }
-    let base = (100 * gathering)
+    let ratio = (100 * gathering)
         .checked_div(base_gathering)
-        .map_or(100, |chance| chance.min(100));
+        .map_or(100, |ratio| ratio.min(100)) as i32;
+    let above = (item_level as i32 - level as i32).max(0);
+    let base = (100 - (155 * (100 - ratio)) / 100 - 7 * above).clamp(0, 100) as u32;
     (base + bonus).min(100)
 }
 
@@ -305,10 +312,12 @@ mod tests {
 
     #[test]
     fn chance() {
-        assert_eq!(gathering_chance(500, 500, 0, 0, 0), 100);
-        assert_eq!(gathering_chance(250, 500, 0, 0, 0), 50);
-        assert_eq!(gathering_chance(250, 500, 0, 0, 15), 65);
-        assert_eq!(gathering_chance(5000, 500, 10, 20, 50), 0);
+        assert_eq!(gathering_chance(500, 500, 0, 0, 50, 50, 0), 100);
+        // BlueGartr's 2013 point: 271 Gathering on a level 50 item (base 330): 72%.
+        assert_eq!(gathering_chance(271, 330, 0, 0, 50, 50, 0), 73);
+        assert_eq!(gathering_chance(250, 500, 0, 0, 50, 50, 15), 38);
+        assert_eq!(gathering_chance(500, 500, 0, 0, 48, 50, 0), 86);
+        assert_eq!(gathering_chance(5000, 500, 10, 20, 50, 50, 50), 0);
     }
 
     #[test]
