@@ -125,6 +125,15 @@ fn step_params(
     params
 }
 
+/// The item the synthesis under way makes.
+fn recipe_item(connection: &ZoneConnection) -> u32 {
+    connection
+        .craft
+        .as_ref()
+        .map(|session| session.recipe.item_id)
+        .unwrap_or_default()
+}
+
 /// The bag a materials list names (its u16 container): the bags by number, and 255 for the crystals (retail.)
 fn material_container(container: u32) -> Option<ContainerType> {
     match container {
@@ -294,6 +303,20 @@ impl CraftingEventHandler {
     }
 
     /// Takes the listed stacks out of the bags (once per synthesis made.)
+    /// A synthesis ended, done or failed: the gear wears and bonds by the item made's item level (retail sent the worn
+    /// pieces' slots after each synthesis; `crate::spiritbond`.)
+    async fn wear_gear(connection: &mut ZoneConnection, item_id: u32) {
+        let crafted_item_level = connection
+            .game_data
+            .lock()
+            .get_item_info(ItemInfoQuery::ById(item_id))
+            .map(|info| info.item_level)
+            .unwrap_or_default();
+        connection
+            .use_gear(crate::GearUse::Synthesis { crafted_item_level })
+            .await;
+    }
+
     fn take_materials(connection: &mut ZoneConnection, times: u32) {
         let Some(session) = connection.craft.as_ref() else {
             return;
@@ -604,6 +627,7 @@ impl CraftingEventHandler {
                 Self::take_materials(connection, 1);
                 Self::give_item(connection, recipe.item_id, recipe.amount_result, hq);
                 connection.send_inventory().await;
+                Self::wear_gear(connection, recipe.item_id).await;
                 live_event(
                     connection,
                     if hq {
@@ -638,6 +662,7 @@ impl CraftingEventHandler {
                 live_event(connection, LIVE_FAILED, 0, 0, 0).await;
                 Self::take_materials(connection, 1);
                 connection.send_inventory().await;
+                Self::wear_gear(connection, recipe_item(connection)).await;
                 log_message(connection, event, LOG_FAILED, Vec::new()).await;
                 log_message(connection, event, LOG_MATERIALS_LOST, Vec::new()).await;
                 let mut params = vec![0u32; 22];

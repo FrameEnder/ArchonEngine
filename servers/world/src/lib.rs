@@ -18,7 +18,9 @@ use diesel::sql_types::Text;
 use diesel::sqlite::Sqlite;
 use kawari::constants::{CLASSJOB_ARRAY_SIZE, SHARED_FATES_SIZE};
 use serde::{Deserialize, Serialize};
-pub use zone_connection::{ObsfucationData, PlayerData, TeleportReason, ZoneConnection};
+pub use zone_connection::{
+    GearUse, MaterializeRequest, ObsfucationData, PlayerData, TeleportReason, ZoneConnection,
+};
 
 mod database;
 
@@ -64,6 +66,7 @@ pub use bitmask::{Bitmask, QuestBitmask};
 pub mod crafting;
 pub mod glamour;
 pub mod mender;
+pub mod spiritbond;
 
 /// Disciples of the Land: the rules at a node.
 pub mod gathering;

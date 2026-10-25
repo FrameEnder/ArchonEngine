@@ -485,6 +485,19 @@ impl ZoneConnection {
             }
         }
 
+        // Every attempt wears the gear; one that gathered something bonds it too, ten times more at an unspoiled node
+        // (`crate::spiritbond`; retail sent the worn pieces' slots after each gather.)
+        let (_, _, _, _, point_type) = self
+            .game_data
+            .lock()
+            .get_gathering_point(event.id.event_id());
+        self.use_gear(crate::GearUse::Gather {
+            node_level: item.level,
+            rare: point_type == 2,
+            gathered: pending.amount > 0,
+        })
+        .await;
+
         self.send_gathering_window(event, gathering::WINDOW_GATHERED, pending.slot as u32)
             .await;
 

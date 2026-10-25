@@ -203,14 +203,14 @@ impl ZoneConnection {
         }
     }
 
-    fn quest_completed(&self, quest_id: u32) -> bool {
+    pub(crate) fn quest_completed(&self, quest_id: u32) -> bool {
         let completed = &self.player_data.quest.completed;
         let id = adjust_quest_id(quest_id);
         (id as usize / 8) < completed.data.len() && completed.contains(id)
     }
 
     /// The level of a class or job, if it has one.
-    fn level_for(&self, classjob_id: u16) -> Option<u16> {
+    pub(crate) fn level_for(&self, classjob_id: u16) -> Option<u16> {
         let index = self.game_data.lock().get_exp_array_index(classjob_id)?;
         self.player_data
             .classjob

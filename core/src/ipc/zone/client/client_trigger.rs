@@ -634,6 +634,19 @@ pub enum ClientTriggerCommand {
     #[brw(magic = 2358u32)]
     ApplyGlamourPlate { plate: u32 },
 
+    /// Starts a Materialize event (desynthesis 0x390000, materia extraction 0x390001, aetherial reduction 0x390002,
+    /// self-repair 0x390003) on an item. The client's EventHandler vfunc +0x8C8 sends it (2026.10.16): for the first
+    /// three `[container, slot, item]` (0x141A1B5C0; retail's desyntheses in Bob's capture of 2026-09-15 match); for
+    /// self-repair (0x141C53F80) `[(slot << 16) | 1, container, item]` for one item, `[2, container, 0]` for a
+    /// container and `[3, ?, 0]` for the third "repair all" (not seen on retail.)
+    #[brw(magic = 2800u32)]
+    Materialize {
+        handler_id: u32,
+        param1: u32,
+        param2: u32,
+        param3: u32,
+    },
+
     /// The client opens the Mahjong tab in the Gold Saucer window.
     #[brw(magic = 2550u32)]
     OpenGoldSaucerMahjongTab,

@@ -55,10 +55,12 @@ use icarus::ItemAction::ItemActionSheet;
 use icarus::ItemLevel::ItemLevelRow;
 use icarus::ItemLevel::ItemLevelSheet;
 use icarus::ItemRepairPrice::ItemRepairPriceSheet;
+use icarus::ItemRepairResource::ItemRepairResourceSheet;
 use icarus::ItemSearchCategory::ItemSearchCategorySheet;
 use icarus::ItemSortCategory::ItemSortCategorySheet;
 use icarus::Level::LevelSheet;
 use icarus::Map::MapSheet;
+use icarus::Materia::MateriaSheet;
 use icarus::Mount::MountSheet;
 use icarus::NpcEquip::NpcEquipSheet;
 use icarus::NpcYell::NpcYellSheet;
@@ -258,6 +260,14 @@ pub struct ItemRow {
     pub delay_ms: u16,
     /// The item's ItemUICategory.
     pub ui_category: u8,
+    /// The level to equip it (LevelEquip.)
+    pub equip_level: u8,
+    /// What extracting materia from it gives (Item.MaterializeType; 0: it can't be, `crate::spiritbond::gear_role`.)
+    pub materialize_type: u8,
+    /// The ItemRepairResource row of the Dark Matter that repairs it (0: it can't be repaired.)
+    pub item_repair: i32,
+    /// The class that repairs it (Item.ClassJobRepair.)
+    pub class_job_repair: u8,
 }
 
 /// ItemUICategory for materia.
@@ -862,6 +872,10 @@ impl GameData {
                 magic_damage: matched_row.DamageMag,
                 delay_ms: matched_row.Delayms,
                 ui_category: matched_row.ItemUICategory,
+                equip_level: matched_row.LevelEquip,
+                materialize_type: matched_row.MaterializeType,
+                item_repair: matched_row.ItemRepair,
+                class_job_repair: matched_row.ClassJobRepair,
                 equip_restrictions: self
                     .get_equipslot_restrictions(matched_row.EquipSlotCategory)
                     .unwrap(),
@@ -1679,6 +1693,35 @@ impl GameData {
         prices
             .row(row.LevelEquip as u32)
             .map(|price| price.Unknown0 as u32)
+    }
+
+    /// The materia item of a BaseParam at a grade (an index into the Materia sheet's Item column, 0 for I), if there is
+    /// one.
+    pub fn materia_item(&mut self, base_param: u8, grade: usize) -> Option<u32> {
+        let sheet = MateriaSheet::read_from(&mut self.resource, Language::None).ok()?;
+        (0..sheet.row_count()).find_map(|id| {
+            let row = sheet.row(id)?;
+            if row.BaseParam != base_param {
+                return None;
+            }
+            row.Item
+                .get(grade)
+                .copied()
+                .filter(|item| *item > 0)
+                .map(|item| item as u32)
+        })
+    }
+
+    /// The Dark Matter items by grade (ItemRepairResource rows 1 and up; index 0 is grade 1.)
+    pub fn dark_matter_items(&mut self) -> Vec<u32> {
+        let Ok(sheet) = ItemRepairResourceSheet::read_from(&mut self.resource, Language::None)
+        else {
+            return Vec::new();
+        };
+        (1..sheet.row_count())
+            .filter_map(|id| sheet.row(id).map(|row| row.Item))
+            .filter(|item| *item != 0)
+            .collect()
     }
 
     /// Gets the short name for a given content finder condition.

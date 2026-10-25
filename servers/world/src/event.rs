@@ -12,8 +12,8 @@ use kawari::{
 use crate::{
     ContentEventHandler, CraftingEventHandler, FateEventHandler, FishingEventHandler, GameData,
     GatheringEventHandler, GimmickAccessorEventHandler, GimmickBillEventHandler,
-    GimmickRectEventHandler, InclusionShopEventHandler, LuaEventHandler, ShopEventHandler,
-    SpecialShopEventHandler, ZoneConnection,
+    GimmickRectEventHandler, InclusionShopEventHandler, LuaEventHandler, MaterializeEventHandler,
+    ShopEventHandler, SpecialShopEventHandler, ZoneConnection,
 };
 
 use super::lua::LuaPlayer;
@@ -253,6 +253,7 @@ pub fn dispatch_event(
         // in SwitchTalk.
         HandlerType::DefaultTalk => Some(Box::new(DefaultTalkEventHandler {})),
         HandlerType::Craft => Some(Box::new(CraftingEventHandler::new())),
+        HandlerType::Materialize => Some(Box::new(MaterializeEventHandler)),
         HandlerType::GuildLeveAssignment => generic_lua_event("events/generic/Levemete.lua"),
         HandlerType::CustomTalk => {
             let script_name;

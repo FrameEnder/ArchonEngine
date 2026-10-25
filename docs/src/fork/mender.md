@@ -30,4 +30,5 @@ Workspace icarus feature `ItemRepairPrice`.
 
 ## Not done
 
-Self-repair (Dark Matter) and materia extraction at the mender's other tabs weren't in the capture.
+Self-repair (Dark Matter) and materia extraction weren't in the capture; Kawari's versions, from the client, are in
+[Spiritbond, Condition and Materia Extraction](spiritbond.md).

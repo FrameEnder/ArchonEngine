@@ -449,6 +449,15 @@ add one when something is found.
 * Learning something from an item has no log message of its own on Kawari; whether retail sends one (or the client
   prints it from the actor control) isn't known.
 
+## Spiritbond, condition and materia extraction
+
+* Materia extraction and self-repair follow retail's desynthesis flow (ClientTrigger 2800, EventStart type 0x19, scene
+  0, yield, return); neither was captured, so their result packets aren't sent and the flow is untested in game.
+* Combat spiritbond at duty/FATE completion is a stand-in fitted to the captures (`spiritbond::content_base`).
+* Quick synthesis doesn't wear gear per item; failed duties and FATEs don't wear or bond at all (retail: treasure
+  dungeons and FATEs still do); fishing, Reduced Durability Loss and the self-repair "repair all" mode 3 aren't done.
+* Gear for every class (MaterializeType 1, 7, 10) extracts materia of the player's current class's role (a guess).
+
 ## Character windows
 
 * **Hair highlights** of characters saved before `77d5315`, or imported from an Auracite dump (its plugin always
@@ -497,7 +506,7 @@ add one when something is found.
 * The buffs' Action rows also come as ActionRequests, which the action pipeline sees as unscripted actions (a warning).
 * Not done: trial synthesis, collectables (collectability, CollectablesShop), food and potions, the completed-recipe
   log (CraftingLog is still sent empty: which bit a recipe is isn't known), specialist and Manipulation's quest unlock
-  (the client greys those actions; the server doesn't check), crafting leves, spiritbond on a synthesis.
+  (the client greys those actions; the server doesn't check), crafting leves.
 
 ## Gathering
 

@@ -200,6 +200,7 @@ async fn initial_setup(
                     recipe: None,
                     craft: None,
                     quick_synthesis: None,
+                    materialize: None,
                     gathering: Default::default(),
                     is_party_leader: false,
                     synced_level: None,
@@ -1641,6 +1642,21 @@ async fn process_packet(
                                 } => {
                                     connection
                                         .repair_item(container, slot as u16, item_id)
+                                        .await;
+                                }
+                                ClientTriggerCommand::Materialize {
+                                    handler_id,
+                                    param1,
+                                    param2,
+                                    param3,
+                                } => {
+                                    connection
+                                        .begin_materialize(
+                                            handler_id,
+                                            [param1, param2, param3],
+                                            events,
+                                            lua_player,
+                                        )
                                         .await;
                                 }
                                 ClientTriggerCommand::RepairArmouryGroup { group } => {
@@ -4562,7 +4578,11 @@ async fn process_server_msg(
                     .target_sign_toggled(sign_id, from_actor_id, target_actor)
                     .await
             }
-            FromServer::DutyCleared(content_id) => connection.duty_cleared = Some(content_id),
+            FromServer::DutyCleared(content_id) => {
+                connection.duty_cleared = Some(content_id);
+                // Retail's wear and spiritbond came with the duty's completion (docs/src/fork/spiritbond.md.)
+                connection.wear_gear_for_content(content_id).await;
+            }
             FromServer::LeaveContent => {
                 // Retail moved Sastasha's quest along as the player left the cleared duty (Bob's capture, 2026-10-23).
                 if let Some(content_id) = connection.duty_cleared.take() {
@@ -5122,6 +5142,7 @@ async fn process_server_msg(
             }
             FromServer::FateReward(fate_id) => {
                 connection.give_fate_rewards(fate_id).await;
+                connection.wear_gear_for_fate(fate_id).await;
             }
             FromServer::CheckTeleportSharingEligibility(aetheryte_id) => {
                 connection.check_tele_sharing_eligibility(aetheryte_id);

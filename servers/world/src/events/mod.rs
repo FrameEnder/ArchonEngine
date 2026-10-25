@@ -27,3 +27,6 @@ pub use special_shop::*;
 
 mod fate;
 pub use fate::*;
+
+mod materialize;
+pub use materialize::*;

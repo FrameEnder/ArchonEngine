@@ -566,6 +566,16 @@ impl Inventory {
         self.use_up_one_at(item_id).is_some()
     }
 
+    /// How many of an item are in the bags.
+    pub fn count_in_bags(&self, item_id: u32) -> u32 {
+        self.pages
+            .iter()
+            .flat_map(|page| (0..page.max_slots() as u16).map(move |index| page.get_slot(index)))
+            .filter(|slot| slot.item_id == item_id)
+            .map(|slot| slot.quantity.max(0) as u32)
+            .sum()
+    }
+
     /// `use_up_one`, saying which slot it came from.
     pub fn use_up_one_at(&mut self, item_id: u32) -> Option<(ContainerType, u16)> {
         for page in &mut self.pages {

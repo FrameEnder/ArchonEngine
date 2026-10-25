@@ -58,6 +58,8 @@ mod party;
 mod quest;
 mod retainer;
 mod social;
+mod spiritbond;
+pub use spiritbond::{GearUse, MaterializeRequest};
 mod stats;
 pub use stats::BaseParameters;
 mod unlock;
@@ -190,6 +192,8 @@ pub struct ZoneConnection {
     pub craft: Option<Box<crate::events::CraftSession>>,
     /// How many a quick synthesis being started makes, until its materials are chosen.
     pub quick_synthesis: Option<u32>,
+    /// The materia extraction or self-repair under way (`zone_connection/spiritbond.rs`.)
+    pub materialize: Option<MaterializeRequest>,
     /// The gathering points as this player sees them (`zone_connection/gathering.rs`.)
     pub gathering: GatheringState,
     pub synced_level: Option<u8>,

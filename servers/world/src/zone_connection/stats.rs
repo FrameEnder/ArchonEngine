@@ -747,6 +747,8 @@ impl ZoneConnection {
         (0..equipped.max_slots())
             .map(|i| equipped.get_slot(i as u16))
             .filter(|item| item.quantity > 0)
+            // Gear at 0% condition gives no stats (the wiki's Gear Durability page.)
+            .filter(|item| item.condition > 0)
             .filter_map(|item| {
                 game_data.equipped_item_stats(
                     item.item_id,

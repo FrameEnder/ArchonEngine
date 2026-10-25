@@ -57,7 +57,7 @@ const ARMOIRE_SOURCES: [ContainerType; 16] = [
 ];
 
 impl ZoneConnection {
-    async fn log_message(&mut self, log_message: u32, id: u32) {
+    pub(crate) async fn log_message(&mut self, log_message: u32, id: u32) {
         self.actor_control_self(ActorControlCategory::LogMessage { log_message, id })
             .await;
     }

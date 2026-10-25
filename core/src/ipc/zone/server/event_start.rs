@@ -39,6 +39,10 @@ pub enum EventType {
     Housing = 22,
     Say = 23,
     TableGame = 24,
+    /// Desynthesis, materia extraction, aetherial reduction and self-repair (handlers 0x390000–0x390003): retail's
+    /// EventStart and EventFinish for a desynthesis (Bob's Chronofoil capture of 2026-09-15) and the client's own start
+    /// of the event (0x140B62200 on 2026.10.16, called with 0x19.)
+    Materialize = 25,
 }
 
 #[cfg(feature = "server")]
