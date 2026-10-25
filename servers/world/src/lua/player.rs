@@ -916,6 +916,10 @@ impl UserData for LuaPlayer {
             this.add_item(id, quantity, true);
             Ok(())
         });
+        methods.add_method_mut("take_handed_in_items", |_, this, ()| {
+            this.queued_tasks.push(LuaTask::TakeHandedInItems);
+            Ok(())
+        });
         methods.add_method_mut("unlock_content", |_, this, id: u16| {
             this.unlock_content(id);
             Ok(())

@@ -50,6 +50,8 @@ impl ZoneConnection {
     /// Finishes the current event, including resetting any conditions set during the start of said event.
     pub async fn event_finish(&mut self, events: &mut Vec<(Box<dyn EventHandler>, Event)>) {
         if let Some(event) = events.pop() {
+            // A trade window's items not taken by the event stay where they are.
+            self.player_data.inventory.handed_in.clear();
             let event_type = event.1.event_type;
             let event_arg = event.1.event_arg;
             let event_id = event.1.id;

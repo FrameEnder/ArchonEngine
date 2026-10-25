@@ -57,6 +57,18 @@ add one when something is found.
 
 ## Quests
 
+* **Into a Copper Hell** (660) relies on quest battle 44's director (another branch) to set sequence 5 when the
+  battle is won; without it the quest stays at 4 after the battle. Its duty step, like 245's, is forgotten if the
+  player logs out inside the cleared Copperbell Mines. EOBJECT0's empty scene 11 (seq 4) does nothing here.
+* **Absolutely Glamourous** (3018): retail only showed the offer (declined). The rest follows the client's script and
+  3017: where ITEM0 sits at sequence 2 (UI8BL), the notices (sent without the item icons, which aren't known), and
+  that Swyrgeim's scene 5 hands over ITEM1, are unverified.
+* **A Wild Rose by Any Other Name** (510) moves the player after cutscene 50 with `change_territory` to the recorded
+  spot (warp type Normal; retail's ActorSetPos used warp type 18). 510's ACTOR1 talk (scene 1) and 509's Tataru line
+  (scene 5) were not played on retail.
+* NPC trades of inventory items: the item stays in its bag until the script calls `take_handed_in_items()` (only Color
+  Your World, 699, so far; the other scripted trades hand over key items). A new quest that trades an inventory item
+  and forgets the call gives its reward for nothing.
 * **It's Probably Pirates** (245) passes replay but hasn't been played in Kawari yet. Its duty step moves on when the
   player leaves Sastasha after its clear (`onDutyCleared`), by the exit or any other way out; retail's run only showed
   the exit. Logging out inside the cleared duty forgets the clear, so the quest stays at sequence 4. The

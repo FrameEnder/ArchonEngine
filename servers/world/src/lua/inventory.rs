@@ -1,4 +1,4 @@
-use mlua::{UserData, UserDataFields};
+use mlua::{UserData, UserDataFields, UserDataMethods};
 
 use crate::inventory::{CurrencyStorage, EquippedStorage, GenericStorage, Inventory, Item};
 
@@ -29,6 +29,13 @@ impl UserData for Inventory {
             Ok(this.armoury_soul_crystal.clone())
         });
         fields.add_field_method_get("currency", |_, this| Ok(this.currency));
+    }
+
+    fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
+        // How many of an item are in the bags, NQ or HQ (what a quest's GetNumOfItems checks before an NPC trade.)
+        methods.add_method("count_in_bags", |_, this, item_id: u32| {
+            Ok(this.count_in_bags(item_id))
+        });
     }
 }
 

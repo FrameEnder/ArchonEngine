@@ -75,6 +75,8 @@ Player methods (`servers/world/src/lua/player.rs`), the ones quests use:
 | `event_action(id)` | Starts an event action (the progress bar: Searching, Aiding, Interacting…); the script gets `onEventActionCast(player)` when it completes, after the EventAction row's CastTime (read in the world server's language: the sheet has a Name column, and read without one it failed and every bar ended after a 2 s fallback, before the client's, until 2026-10-20). Directors' event actions (`begin_event_action`) take the same time. |
 | `spawn_quest_bnpc(layout_id)` | Brings out a battle NPC from the zone's drop-ins for this quest. |
 | `join_quest_battle(id, zone)` | Enters a quest battle (see [Quest battles](quest-battles.md)). |
+| `take_handed_in_items()` | Takes the items handed in through the current event's trade window out of the bags (see [NPC trades](#npc-trades)). |
+| `player.inventory:count_in_bags(item_id)` | How many of an item are in the four bags. |
 
 Callbacks a quest script can define:
 
@@ -114,6 +116,18 @@ fixture's steps by state. The table of what each quest sends is in each script's
 A trade scene opens the hand-over window. It returns `[1, …]` when the items were handed over and nothing when the
 window was closed. On `1`, play the "trade OK" scene, which returns `[1, chosen_item]` with the reward; then
 `finish_quest`. Never advance on a closed window.
+
+What the client sends for an inventory item (Color Your World, Bob's Chronofoil capture of 2026-10-25): an
+ItemOperation Move (`0xF1`, BASE_INVENTORY_ACTION 234 + 7) from the bag slot into **HandIn** (container 2005) slot 0,
+which the server acks (InventoryActionAck type 7). The bag slot stays as it was: retail only emptied it (an
+UpdateInventorySlot with quantity 0) with the reward, alongside the reward item, the EXP and the unlock. Kawari keeps
+such moves in `Inventory::handed_in` (bag, slot, item, count) without moving anything, forgets them when the event
+finishes, and a script takes them with `player:take_handed_in_items()` just before `finish_quest` (a move back out of
+HandIn drops the record). Before 2026-10-25 a move into HandIn emptied the source slot at once with nowhere to put
+it, so the item vanished on the server while the client still showed it. Key items (NPC_TRADE_INVENTORY_MODE_EVENT
+trades) live in the quest's variables, so their scripts clear the nibble instead. To pick between a trade scene and a
+"you don't have it" line, `player.inventory:count_in_bags(item_id)` counts an item across the four bags (call it
+through `pcall` and assume the item is there if it fails).
 
 ### Searching objects (event actions)
 
@@ -363,6 +377,13 @@ Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `
 | 245 | It's Probably Pirates | `002/ManSea203_00245` | client script (2026-10-23), Chronofoil capture (2026-10-23, Sastasha with Duty Support) | ACTOR0 (Baderon) offers it (scene 0, a yield, then cutscene 1), sequence 1; ACTOR1 (V'mellpa, scene 2, notice 0); ACTOR2 (the seasoned adventurer, scene 3, notice 1, unlocks REWARD_BEGINNER_01, 247); ACTOR3 (Yellowjacket, scene 5) unlocks Sastasha (`unlock_content(INSTANCEDUNGEON0)`), notice 2, sequence 4; leaving Sastasha cleared (`onDutyCleared`) sends notice 3, sequence 255; ACTOR0 rewards it (cutscene 21, a yield) and quest 675 is marked completed too. One line each meanwhile: ACTOR1 (4, 13), ACTOR2 (6), ACTOR4–9 (7–12, 14–19), ACTOR3 (20), matched to them by order. No variables. |
 | 676 | Call of the Forest | `006/SubSea150_00676` | client script (2026-10-24), Chronofoil capture (2026-10-24) | ACTOR0 (Baderon, Limsa Lominsa) offers it (scene 0, a yield; straight to 255); ACTOR1 (Mother Miounne, New Gridania) rewards it (scene 1, a yield). Needs It's Probably Pirates (245). |
 | 677 | Fire in the Gloom | `006/ManFst204_00677` | client script (2026-10-24), Chronofoil capture (2026-10-24, the Tam-Tara Deepcroft with Duty Support) | ACTOR0 (Mother Miounne) offers it (scene 0, a yield, then cutscene 1), sequence 1; ACTOR1 (the Gods' Quiver bow, Central Shroud) unlocks the Tam-Tara Deepcroft (scene 2: `unlock_content(INSTANCEDUNGEON0)`, InstanceContent 2), notice 0, sequence 2; leaving it cleared (`onDutyCleared`) sends notice 1, sequence 255; ACTOR0 rewards it (cutscene 14, a yield). One line each meanwhile: ACTOR2–6 (3–7 in sequence 1, 8–12 in 2), ACTOR1 (13). No variables. |
+| 678 | Call of the Desert | `006/SubFst103_00678` | client script (2026-10-25), Chronofoil capture (2026-10-25) | ACTOR0 (Mother Miounne, New Gridania) offers it (scene 0, a yield; straight to 255); ACTOR1 (Momodi, Ul'dah) rewards it (scene 1, a yield). |
+| 660 | Into a Copper Hell | `006/ManFst205_00660` | client script (2026-10-25), Sapphire, Chronofoil capture (2026-10-25: the Copperbell Mines three times, quest battle 44 declined once and entered four times) | Momodi offers it (scene 0, a yield, then cutscene 1), sequence 1; Painted Mesa (ACTOR1, scene 2, notice 0), 2; Stone Torch (ACTOR2) unlocks the Copperbell Mines (scene 3: `unlock_content(INSTANCEDUNGEON0)`, InstanceContent 3), notice 1, 3; leaving it cleared (`onDutyCleared`) sends notice 2, 4; Painted Mesa's YesNoQuestBattle (scene 10, a yield) enters QUESTBATTLE0 44 (`join_quest_battle(QUESTBATTLE0, TERRITORYTYPE0)`, territory 274); the battle's director sets 5 on a win; back in Ul'dah (130) the cutscene (12, `onEnterTerritory`) sets 255; Momodi rewards it (cutscene 13, a yield). Lines meanwhile: ACTOR1/3/4 in 2 (6, 4, 5), ACTOR2/3/4 in 3 (9, 7, 8); EOBJECT0's scene 11 is empty. No variables. |
+| 509 | The Scions of the Seventh Dawn | `005/ManFst206_00509` | client script (2026-10-25), Sapphire, Chronofoil capture (2026-10-25) | Momodi offers it (scene 0, a yield, then 1), sequence 1; Tataru in Vesper Bay (cutscene 2, notice 0), 255; ACTOR2 in the Waking Sands rewards it (scene 3, a yield), then the cutscenes (4, given the chosen item; UI8AH and UI8AL set to 1 as it starts), after which the player is moved within the Waking Sands to POPRANGE0 and the quest completes (retainers, UnlockLink 3, from the Quest sheet). Tataru's line in 255 (5). |
+| 510 | A Wild Rose by Any Other Name | `005/ManFst207_00510` | client script (2026-10-25), Sapphire, Chronofoil capture (2026-10-25) | Minfilia offers it (scene 0, a yield with a menu), then cutscene 50 accepts it; retail then moved the player within the Waking Sands to a recorded position (no pop range in the quest: `change_territory(212, …)`), sequence 1; Thancred (ACTOR2, scene 2, flags 0x6001) sends notice 0 `[1, 1]`, 255 (ACTOR1's scene 1 does the same, unseen on retail); Isembard rewards it (scene 3, a yield). |
+| 699 | Color Your World | `006/SubSea921_00699` | client script (2026-10-25), Sapphire, Chronofoil capture (2026-10-25) | Swyrgeim offers it (scene 0, a yield; straight to 255); with RITEM0 in the bags he asks for it (NpcTrade scene 1, a yield; scene 3 without it) and rewards it (2, a yield); the handed-in item leaves its bag only then (`take_handed_in_items`). Unlocks dyeing (UnlockLink 14). |
+| 3017 | If I Had a Glamour | `030/SubCts896_03017` | client script (2026-10-25), Chronofoil capture (2026-10-25) | Swyrgeim offers it (scene 0, a yield, then 1), sequence 1; Folclind gives ITEM0 (scene 2: notice 0 `[24401]`, UI8BH 1), 255; Swyrgeim takes it (event-item NpcTrade 4) and rewards it (5, a yield). Lines: Swyrgeim in 1 (3), Folclind in 255 (6). Unlocks glamours (UnlockLink 15). |
+| 3018 | Absolutely Glamourous | `030/SubCts897_03018` | client script (2026-10-25); Chronofoil capture (2026-10-25) of the offer only, declined | Swyrgeim offers it (scene 0, then 1), sequence 1; Folclind gives ITEM0 (scene 2, notice 0), 2, ITEM0 in UI8BL; Swyrgeim takes it (event-item NpcTrade 4) and gives ITEM1 (5: notice 1, UI8BH 1), 255; Goberin (ACTOR2) takes ITEM1 (NpcTrade 7) and rewards it (8, a yield). Lines: Swyrgeim in 1 and 255 (3, 9), Folclind in 2 (6). Everything after the offer is unverified. |
 
 Upstream's own scripts cover the three city openings and the Close to Home offers. Gridania's story from Close to
 Home to The Gridanian Envoy is complete; Call of the Sea starts the next part (Limsa Lominsa). Limsa Lominsa's runs from
