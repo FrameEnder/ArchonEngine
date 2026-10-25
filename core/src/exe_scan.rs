@@ -5,8 +5,8 @@
 //! Kawari Probe reads it in the running game (following calls back from a packet's handler to the case that calls it).
 
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::sync::OnceLock;
 use std::path::Path;
+use std::sync::OnceLock;
 
 /// The game's executable, laid out as it is in memory, so addresses (RVAs) can be used directly.
 pub struct Exe {
@@ -78,7 +78,8 @@ pub struct OpcodeCase {
 impl Exe {
     /// Reads the executable at `path`.
     pub fn open(path: &Path) -> Result<Self, String> {
-        let file = std::fs::read(path).map_err(|err| format!("can't read {}: {err}", path.display()))?;
+        let file =
+            std::fs::read(path).map_err(|err| format!("can't read {}: {err}", path.display()))?;
         Self::from_file_bytes(&file)
     }
 
@@ -110,7 +111,9 @@ impl Exe {
         if image_size == 0 || image_size > 1 << 30 {
             return Err(format!("unexpected image size {image_size}"));
         }
-        let headers_size = u32_at(optional_header + 60)?.min(file.len()).min(image_size);
+        let headers_size = u32_at(optional_header + 60)?
+            .min(file.len())
+            .min(image_size);
 
         let mut image = vec![0u8; image_size];
         image[..headers_size].copy_from_slice(&file[..headers_size]);
@@ -138,7 +141,10 @@ impl Exe {
                 to.copy_from_slice(from);
             }
             if name == b".text" {
-                text = Some((virtual_address, virtual_address + virtual_size.max(raw_size)));
+                text = Some((
+                    virtual_address,
+                    virtual_address + virtual_size.max(raw_size),
+                ));
             }
             section += 40;
         }
@@ -186,7 +192,9 @@ impl Exe {
     }
 
     pub fn u16_at(&self, rva: usize) -> Option<u16> {
-        self.image.get(rva..rva + 2).map(|b| u16::from_le_bytes([b[0], b[1]]))
+        self.image
+            .get(rva..rva + 2)
+            .map(|b| u16::from_le_bytes([b[0], b[1]]))
     }
 
     fn byte(&self, rva: usize) -> u8 {
@@ -259,7 +267,9 @@ impl Exe {
         let start = self.function_start(rva);
         let end = self.function_end(start);
         let needle = value.to_le_bytes();
-        self.image[start..end].windows(4).any(|window| window == needle)
+        self.image[start..end]
+            .windows(4)
+            .any(|window| window == needle)
     }
 
     fn function_end(&self, start: usize) -> usize {
@@ -520,7 +530,11 @@ pub fn find_opcode(exe: &Exe, opcode: &crate::opcodes::ForkOpcode) -> Result<u16
 }
 
 /// Checks a known opcode against its finders: Ok if a finder's candidates include it.
-pub fn check_opcode(exe: &Exe, opcode: &crate::opcodes::ForkOpcode, known: u16) -> Result<(), String> {
+pub fn check_opcode(
+    exe: &Exe,
+    opcode: &crate::opcodes::ForkOpcode,
+    known: u16,
+) -> Result<(), String> {
     let mut errors = Vec::new();
     for finder in opcode.finders {
         match finder_candidates(exe, finder) {
@@ -604,11 +618,20 @@ mod tests {
 
     #[test]
     fn patterns() {
-        assert_eq!(parse_pattern("48 8B ?? 05"), Some(vec![Some(0x48), Some(0x8B), None, Some(5)]));
+        assert_eq!(
+            parse_pattern("48 8B ?? 05"),
+            Some(vec![Some(0x48), Some(0x8B), None, Some(5)])
+        );
         assert_eq!(parse_pattern("48 zz"), None);
 
-        let exe = Exe::from_code(&[0x90, 0x48, 0x8B, 0x11, 0x05, 0x48, 0x8B, 0x22, 0x05], 0x1000);
-        assert_eq!(exe.find(&parse_pattern("48 8B ? 05").unwrap()), vec![0x1001, 0x1005]);
+        let exe = Exe::from_code(
+            &[0x90, 0x48, 0x8B, 0x11, 0x05, 0x48, 0x8B, 0x22, 0x05],
+            0x1000,
+        );
+        assert_eq!(
+            exe.find(&parse_pattern("48 8B ? 05").unwrap()),
+            vec![0x1001, 0x1005]
+        );
         assert_eq!(exe.find(&parse_pattern("8B 22").unwrap()), vec![0x1006]);
     }
 

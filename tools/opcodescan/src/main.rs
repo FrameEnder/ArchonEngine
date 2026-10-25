@@ -57,7 +57,9 @@ fn main() {
         }
     };
 
-    let hex = |text: &str| usize::from_str_radix(text.trim_start_matches("0x"), 16).expect("not a hex number");
+    let hex = |text: &str| {
+        usize::from_str_radix(text.trim_start_matches("0x"), 16).expect("not a hex number")
+    };
     match args.get(1).map(String::as_str) {
         None => scan(&exe, &path),
         Some("switches") => {
@@ -309,13 +311,22 @@ fn scan(exe: &Exe, path: &Path) {
         }
         if let (true, Some(known)) = (opcode.current, opcode.opcode) {
             match check_opcode(exe, opcode, known) {
-                Ok(()) => println!("{}::{}: {known}, confirmed by its finder", opcode.kind, opcode.name),
-                Err(err) => println!("{}::{}: {known}, but its finder disagrees: {err}", opcode.kind, opcode.name),
+                Ok(()) => println!(
+                    "{}::{}: {known}, confirmed by its finder",
+                    opcode.kind, opcode.name
+                ),
+                Err(err) => println!(
+                    "{}::{}: {known}, but its finder disagrees: {err}",
+                    opcode.kind, opcode.name
+                ),
             }
             continue;
         }
         match find_opcode(exe, opcode) {
-            Ok(read) => println!("{}::{}: {read} (read from the game)", opcode.kind, opcode.name),
+            Ok(read) => println!(
+                "{}::{}: {read} (read from the game)",
+                opcode.kind, opcode.name
+            ),
             Err(err) => println!("{}::{}: not found: {err}", opcode.kind, opcode.name),
         }
     }
@@ -352,7 +363,11 @@ fn check_handlers(exe: &Exe, switch_at: usize, kind: &str) {
             continue;
         };
         let cases = exe.opcode_cases(handler, 4);
-        let biggest = cases.iter().map(|case| case.switch_cases).max().unwrap_or(0);
+        let biggest = cases
+            .iter()
+            .map(|case| case.switch_cases)
+            .max()
+            .unwrap_or(0);
         let mut back: Vec<i64> = cases
             .iter()
             .filter(|case| case.switch_cases == biggest)

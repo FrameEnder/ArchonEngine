@@ -235,7 +235,10 @@ mod tests {
 
         // What the game would send: the real opcode.
         let at = crate::packet::PACKET_SEGMENT_HEADER_SIZE as usize + OPCODE_OFFSET_IN_IPC;
-        assert_eq!(u16::from_le_bytes([bytes[at], bytes[at + 1]]), fork.used_opcode);
+        assert_eq!(
+            u16::from_le_bytes([bytes[at], bytes[at + 1]]),
+            fork.used_opcode
+        );
         bytes[at..at + 2].copy_from_slice(&real.to_le_bytes());
 
         let read = PacketSegment::<ClientZoneIpcSegment>::read_le_args(
@@ -246,7 +249,10 @@ mod tests {
         let SegmentData::Ipc(ipc) = read.data else {
             panic!("not an IPC segment");
         };
-        assert!(matches!(ipc.data, ClientZoneIpcData::EventReturnHandler16(_)));
+        assert!(matches!(
+            ipc.data,
+            ClientZoneIpcData::EventReturnHandler16(_)
+        ));
     }
 
     #[test]
@@ -269,6 +275,9 @@ mod tests {
 
     #[test]
     fn kind_is_the_type_name() {
-        assert_eq!(kind_of::<crate::opcodes::ClientZoneIpcType>(), "ClientZoneIpcType");
+        assert_eq!(
+            kind_of::<crate::opcodes::ClientZoneIpcType>(),
+            "ClientZoneIpcType"
+        );
     }
 }
