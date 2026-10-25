@@ -62,6 +62,7 @@
   - [Gathering](fork/gathering.md)
   - [Chocobo Companion](fork/chocobo.md)
   - [Fork Opcodes](fork/opcodes.md)
+  - [Packet Layouts from the Client](fork/packet-layouts.md)
   - [Tools and Debug Commands](fork/tools.md)
   - [questkit and CI](fork/questkit.md)
   - [Kawari Web](fork/kawari-web.md)

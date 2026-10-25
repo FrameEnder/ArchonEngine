@@ -842,8 +842,11 @@ dependencies = [
 name = "kawari-opcodescan"
 version = "7.57.1"
 dependencies = [
+ "iced-x86",
  "kawari",
+ "quote",
  "serde_json",
+ "syn 2.0.119",
 ]
 
 [[package]]

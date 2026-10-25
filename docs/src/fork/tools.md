@@ -87,6 +87,7 @@ the server's startup scan (see [Opcodes](opcodes.md)), and explores the executab
 | `fingerprint <out.json> <opcodes.yml> <fork_opcodes.yml> <game version>` | Records every zone opcode's fingerprints from this executable, the opcode files being right for it (the fork's entries found on that version only); see [Every opcode after a game update](opcodes.md#every-opcode-after-a-game-update) |
 | `match <fingerprints.json>` | Finds the fingerprinted opcodes in this executable and prints `{list: {name: opcode, [candidates] or null}}` |
 | `paths <dispatcher RVA>` | Each opcode's case and where its path ends, as the matcher follows it |
+| `layouts <opcodes.yml> <fork_opcodes.yml> <game version> <core/src> <out folder> [<ClientStructs folder>]` | Maps each zone packet's fields from the client's handlers and builders and compares them with Kawari's structs; see [Packet Layouts from the Client](packet-layouts.md) |
 
 Keep the executable outside the repository.
 

@@ -573,10 +573,6 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
 
 ## Packet layouts (from retail captures)
 
-* **HaterList and EnmityList**: on retail the entries start straight after the 4-byte count (HaterList: 264 bytes, 32
-  entries of actor and enmity, then 4 bytes; EnmityList 72, 8 entries). Kawari's structs (`hater_list.rs`,
-  `enmity_list.rs`) put 4 bytes of padding there instead, and Kawari sends both: the client probably reads Kawari's
-  enemy list and enmity bars one field off.
 * **EffectResult / EffectResultBasic**: the HP is the packet's own actor's (retail sends each actor's result from that
   actor); the ID at 8, which Kawari calls `target_id`, is sometimes someone else (20 of 96 EffectResults in To Guard a
   Guardian).
@@ -587,6 +583,16 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
   retail); which bit does which isn't known (Kawari calls 0x008 `UNK2`, 0x200 has no name). They're copied as a pair.
 * **The gargoyle's wait** in To Guard a Guardian is 5 s after it appears, retail's time; Kawari has no "player has
   loaded in" trigger for scripts, so a slow load could let it set off early.
+
+## Packet layouts (from the client)
+
+Confident findings from `kawari-opcodescan layouts` on 2026.10.16 that haven't been acted on yet. The client reads
+bytes Kawari pads or calls `unk` in AcceptQuest/FinishQuest, Countdown, FriendRemoved, MarketBoardPurchase,
+ZoneInit, AoeEffect8, UnkClassRelated, ContentFinderCommencing and Mount. The table is in
+[Packet Layouts from the Client](packet-layouts.md#leads-confident-findings-worth-checking-next). Each needs the
+handler read or a recording before a struct changes.
+
+* 34 server and 5 client packets aren't mapped at all, mostly handlers reached through virtual calls.
 
 ## Packet sizes (from retail captures)
 
