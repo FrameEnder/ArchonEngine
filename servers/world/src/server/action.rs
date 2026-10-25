@@ -18,7 +18,10 @@ use crate::{
     },
     server::{
         WorldServer,
-        actor::{NetworkedActor, bnpc_base_hp, create_npc_common_spawn, update_actor_hp_mp},
+        actor::{
+            NetworkedActor, bnpc_base_hp, create_npc_common_spawn, update_actor_hp_mp,
+            update_actor_hp_mp_after_hit,
+        },
         companion,
         effect::{gain_effect, gain_effect_instance, process_effects_list},
         first_attack,
@@ -33,11 +36,11 @@ use crate::{
 use kawari::{
     common::{
         ANIMATION_LOCK_TIME, ActionCategory, COMBO_TIMEOUT, CharacterMode, ObjectId, ObjectTypeId,
-        ObjectTypeKind, STRIKING_DUMMY_NAME_ID,
+        ObjectTypeKind, Position, STRIKING_DUMMY_NAME_ID,
     },
     config::get_config,
     ipc::zone::{
-        ActionEffect, ActionRequest, ActionType, ActorControlCategory, ActorControlSelf,
+        ActionEffect, ActionRequest, ActionType, ActorControlCategory, ActorControlSelf, AoeEffect,
         BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DamageKind, DamageType, EffectEntry,
         EffectResult, ObjectKind, ServerZoneIpcData, ServerZoneIpcSegment, SpawnNpc, TargetEffect,
         TargetEffectKind,
@@ -52,6 +55,9 @@ const EFFECT_PRESENCE_OF_MIND: u16 = 157;
 
 /// Status effect: Thin Air. The next action costs no MP.
 const EFFECT_THIN_AIR: u16 = 1217;
+
+/// How many targets an area action's results can show (AoeEffect8); those beyond get flying text of their own.
+const MAX_AOE_PACKET_TARGETS: usize = 8;
 
 /// Extra leniency (in yalms) given to area-of-effect checks, to roughly account for target hitboxes.
 const AOE_HITBOX_LENIENCY: f32 = 1.0;
@@ -562,6 +568,9 @@ pub fn execute_action(
 
     let mut effects_builder;
     let common_spawn;
+    // An NPC's own animation lock and swing (see `Timeline::animation_locks`.)
+    let npc_animation_lock: Option<f32>;
+    let npc_auto_attack: bool;
     // Other players caught in an enemy's area attack, with what it does to each of them.
     let mut area_bystanders: Vec<(ObjectId, Vec<TargetEffect>)> = Vec::new();
     {
@@ -590,6 +599,22 @@ pub fn execute_action(
         }
 
         common_spawn = actor.get_common_spawn().clone();
+        // Retail's NPC auto-attacks lock for 0.1 s and swing one of three ways, like a player's (Bob's Copperbell Mines
+        // captures of 2026-10-25: 870 and 872, 0.1 every time, 0/1/2 a third each over 547); their other actions carry
+        // a lock of their own, the same every use (the timeline's `animation_locks`). Kawari sent 0.6 and swing 0.
+        (npc_animation_lock, npc_auto_attack) = match actor {
+            NetworkedActor::Npc { timeline, .. } => {
+                let auto = timeline.autoattack_action_id == request.action_id
+                    && request.action_type == ActionType::Action;
+                let lock = if auto {
+                    Some(ANIMATION_LOCK_AFTER_CAST)
+                } else {
+                    timeline.animation_locks.get(&request.action_id).copied()
+                };
+                (lock, auto)
+            }
+            _ => (None, false),
+        };
         lua_player.current_level = common_spawn.level;
         lua_player.is_player = matches!(actor, NetworkedActor::Player { .. });
         lua_player.hp = common_spawn.health_points;
@@ -1260,19 +1285,26 @@ pub fn execute_action(
                     }
                 }
 
-                update_actor_hp_mp(network.clone(), instance, request.target.object_id);
+                update_actor_hp_mp_after_hit(network.clone(), instance, request.target.object_id);
                 if from_actor_id != request.target.object_id {
                     // The caster's HP may have changed too, e.g. from a drain.
                     update_actor_hp_mp(network.clone(), instance, from_actor_id);
                 }
 
-                for (target_id, effects) in &area_bystanders {
+                // The packet shows the target (if the attack caught it) and the first others it caught; those
+                // beyond get flying text of their own.
+                let main_shown = usize::from(
+                    request.target.object_id != from_actor_id
+                        && !effects_builder.effects.is_empty(),
+                );
+                for (index, (target_id, effects)) in area_bystanders.iter().enumerate() {
                     hit_area_bystander(
                         network.clone(),
                         instance,
                         from_actor_id,
                         *target_id,
                         effects,
+                        main_shown + index >= MAX_AOE_PACKET_TARGETS,
                     );
                 }
             }
@@ -1282,32 +1314,60 @@ pub fn execute_action(
 
         // The ActionEffect's global sequence, which its results name, and who it showed effects on.
         let effect_sequence;
-        let mut shown_on: Vec<ObjectId> = Vec::new();
+        let shown_on: Vec<ObjectId>;
         {
             let mut network = network.lock();
 
             // ActionResult
             {
-                // Area-of-effect actions show their results on a single representative target (if any.)
-                // TODO: use the multi-target ActionEffect packets so every target gets flying text.
-                let (packet_targets, packet_effects) = match &aoe_result {
-                    Some(aoe) => (
-                        aoe.display_target
-                            .map(|object_id| ObjectTypeId {
-                                object_id,
-                                object_type: ObjectTypeKind::None,
-                            })
-                            .into_iter()
-                            .collect(),
-                        aoe.display_effects.clone(),
-                    ),
-                    None => (vec![request.target], effects_builder.effects.clone()),
+                let as_object = |object_id: ObjectId| ObjectTypeId {
+                    object_id,
+                    object_type: ObjectTypeKind::None,
                 };
-
-                // The packet only has room for 8 effects per target.
-                let mut effects = [TargetEffect::default(); 8];
-                let effect_count = packet_effects.len().min(effects.len());
-                effects[..effect_count].copy_from_slice(&packet_effects[..effect_count]);
+                // Everyone the action landed on, with what it did to each: an area action shows every one of them, as
+                // retail does (players' area actions and NPCs' area attacks alike), not one representative target with
+                // flying text on the rest.
+                let area_action = action_info
+                    .is_some_and(|info| info.area_shape().is_some() || info.is_area_of_effect());
+                let aimed_at_someone = request.target.object_id.is_valid()
+                    && request.target.object_id != ObjectId(0xE000_0000);
+                let shown: Vec<(ObjectTypeId, Vec<TargetEffect>)> = match &aoe_result {
+                    Some(aoe) => aoe
+                        .shown
+                        .iter()
+                        .map(|(id, effects)| (as_object(*id), effects.clone()))
+                        .collect(),
+                    None => {
+                        let mut shown = Vec::new();
+                        // An area attack that missed its target (or one cast on oneself, whose caster takes nothing)
+                        // shows only those it caught.
+                        if !area_action
+                            || (request.target.object_id != from_actor_id
+                                && !effects_builder.effects.is_empty())
+                        {
+                            shown.push((request.target, effects_builder.effects.clone()));
+                        }
+                        shown.extend(
+                            area_bystanders
+                                .iter()
+                                .map(|(id, effects)| (as_object(*id), effects.clone())),
+                        );
+                        shown
+                    }
+                };
+                // AoeEffect8 for an area action unless it was aimed at someone and landed on exactly one (retail, Bob's
+                // Copperbell Mines captures of 2026-10-25: area attacks that caught no one, several, or were aimed at
+                // the ground went as AoeEffect8, 172 of them; one aimed at someone that caught one, as ActionEffect1.)
+                let use_aoe_packet = area_action
+                    && !(shown.len() == 1 && aimed_at_someone)
+                    && shown.len() <= MAX_AOE_PACKET_TARGETS;
+                let effects_of = |effects: &[TargetEffect]| {
+                    // The packet only has room for 8 effects per target.
+                    let mut packed = [TargetEffect::default(); 8];
+                    let count = effects.len().min(packed.len());
+                    packed[..count].copy_from_slice(&effects[..count]);
+                    packed
+                };
 
                 let action_animation_id;
                 {
@@ -1326,41 +1386,88 @@ pub fn execute_action(
                     };
                 }
 
-                let ipc = ActionEffect {
-                    animation_target_id: request.target,
-                    targets: packet_targets.clone(),
-                    action_id: request.action_id,
-                    animation_lock: animation_lock(
-                        request.action_type,
-                        request.action_id,
-                        has_cast_time,
-                    ),
-                    rotation: common_spawn.rotation,
-                    spell_id: action_animation_id,
-                    // Auto-attacks swing one of three ways, picked at random (retail, Bob's Chronofoil captures: 0, 1
-                    // and 2 about a third each over 663; Kawari always sent 0.)
-                    animation_variation: if request.action_type == ActionType::Action
-                        && AUTO_ATTACK_ACTIONS.contains(&request.action_id)
-                    {
-                        fastrand::u8(0..3)
+                let animation_lock = npc_animation_lock.unwrap_or_else(|| {
+                    animation_lock(request.action_type, request.action_id, has_cast_time)
+                });
+                // Auto-attacks swing one of three ways, picked at random (retail, Bob's Chronofoil captures: 0, 1 and 2
+                // about a third each over 663; Kawari always sent 0.)
+                let animation_variation = if request.action_type == ActionType::Action
+                    && (AUTO_ATTACK_ACTIONS.contains(&request.action_id) || npc_auto_attack)
+                {
+                    fastrand::u8(0..3)
+                } else {
+                    0
+                };
+                let ipc = if use_aoe_packet {
+                    // Aimed at no one: the animation plays on no one, at the spot (retail: 0xE0000000 and the point.)
+                    let (animation_target_id, position) = if aimed_at_someone {
+                        (request.target, Position::default())
                     } else {
-                        0
-                    },
-                    source_sequence: request.sequence,
-                    effects,
-                    action_type: request.action_type,
-                    global_sequence: network.global_action_sequence,
-                    ..Default::default()
-                }
-                .package()
-                .unwrap();
+                        let aimed = data
+                            .lock()
+                            .find_actor_instance(from_actor_id)
+                            .and_then(|instance| match instance.find_actor(from_actor_id) {
+                                Some(NetworkedActor::Npc {
+                                    cast: Some(cast), ..
+                                }) => Some(Position(cast.target_position)),
+                                _ => None,
+                            })
+                            .unwrap_or(common_spawn.position);
+                        (as_object(ObjectId(0xE000_0000)), aimed)
+                    };
+                    AoeEffect {
+                        animation_target_id,
+                        action_id: request.action_id,
+                        global_sequence: network.global_action_sequence,
+                        animation_lock,
+                        source_sequence: request.sequence,
+                        rotation: common_spawn.rotation,
+                        spell_id: action_animation_id,
+                        animation_variation,
+                        action_type: request.action_type,
+                        effects: shown
+                            .iter()
+                            .map(|(_, effects)| effects_of(effects))
+                            .collect(),
+                        targets: shown.iter().map(|(target, _)| *target).collect(),
+                        position,
+                        ..Default::default()
+                    }
+                    .package()
+                    .unwrap()
+                } else {
+                    let (targets, effects) = match shown.first() {
+                        Some((target, effects)) => (vec![*target], effects.clone()),
+                        None => (vec![request.target], Vec::new()),
+                    };
+                    ActionEffect {
+                        animation_target_id: request.target,
+                        targets,
+                        action_id: request.action_id,
+                        animation_lock,
+                        rotation: common_spawn.rotation,
+                        spell_id: action_animation_id,
+                        animation_variation,
+                        source_sequence: request.sequence,
+                        effects: effects_of(&effects),
+                        action_type: request.action_type,
+                        global_sequence: network.global_action_sequence,
+                        ..Default::default()
+                    }
+                    .package()
+                    .unwrap()
+                };
                 effect_sequence = network.global_action_sequence;
-                if effect_count > 0 {
-                    shown_on = packet_targets
-                        .iter()
-                        .map(|target| target.object_id)
-                        .collect();
-                }
+                shown_on = shown
+                    .iter()
+                    .take(if use_aoe_packet {
+                        MAX_AOE_PACKET_TARGETS
+                    } else {
+                        1
+                    })
+                    .filter(|(_, effects)| !effects.is_empty())
+                    .map(|(target, _)| target.object_id)
+                    .collect();
                 network.global_action_sequence += 1;
 
                 let mut data = data.lock();
@@ -1580,6 +1687,25 @@ pub fn execute_action(
             }
         }
 
+        // An NPC that gained statuses (its target, or itself) has its StatusEffectList go out too, as retail sends for
+        // party NPCs and enemies on every change, gain and loss (Bob's Copperbell Mines capture with Duty Support,
+        // 2026-10-25: 618 lists from NPCs to 15 here). Without it their status icons (a damage over time on an enemy,
+        // a party NPC's buff) didn't show on its nameplate or the party list.
+        {
+            let mut data = data.lock();
+            if let Some(instance) = data.find_actor_instance_mut(from_actor_id) {
+                let mut changed = vec![request.target.object_id];
+                if from_actor_id != request.target.object_id {
+                    changed.push(from_actor_id);
+                }
+                for id in changed {
+                    if matches!(instance.find_actor(id), Some(NetworkedActor::Npc { .. })) {
+                        process_effects_list(network.clone(), instance, id);
+                    }
+                }
+            }
+        }
+
         // Over-time effects, MP, consumed buffs and job gauges.
         apply_caster_results(
             network.clone(),
@@ -1635,12 +1761,10 @@ pub fn execute_action(
 
 /// The outcome of an area-of-effect action.
 struct AreaOfEffectResult {
-    /// The target shown in the ActionEffect packet, if anyone was hit.
-    display_target: Option<ObjectId>,
-    /// The effects shown on `display_target`.
-    display_effects: Vec<TargetEffect>,
     /// Everyone who received the action's status effects (used for over-time effects.)
     status_targets: Vec<ObjectId>,
+    /// Everyone it landed on with what it did to each, in the order the packet shows them.
+    shown: Vec<(ObjectId, Vec<TargetEffect>)>,
 }
 
 /// Returns true if this actor is an enemy that is still alive.
@@ -1664,9 +1788,8 @@ fn apply_area_of_effect(
 ) -> AreaOfEffectResult {
     let Some(caster) = instance.find_actor(from_actor_id) else {
         return AreaOfEffectResult {
-            display_target: None,
-            display_effects: Vec::new(),
             status_targets: Vec::new(),
+            shown: Vec::new(),
         };
     };
     let caster_position = caster.position();
@@ -1737,6 +1860,8 @@ fn apply_area_of_effect(
     }
 
     let mut touched: Vec<ObjectId> = Vec::new();
+    // What each target took, for the packet.
+    let mut damage_taken: Vec<(ObjectId, bool)> = Vec::new();
 
     // Damage enemies
     if has_damage {
@@ -1780,8 +1905,8 @@ fn apply_area_of_effect(
                     common_spawn.health_points = common_spawn.health_points.saturating_sub(total);
                 }
 
-                // The ActionEffect packet only shows the first target, so show numbers on the others.
-                if index > 0 {
+                // The packet shows the first eight; the rest get numbers of their own.
+                if index >= MAX_AOE_PACKET_TARGETS {
                     let mut network = network.lock();
                     network.send_ac_in_range_inclusive_instance(
                         instance,
@@ -1800,6 +1925,7 @@ fn apply_area_of_effect(
                 interrupt_cast(network.clone(), instance, *target_id);
             }
 
+            damage_taken.push((*target_id, invulnerable));
             touched.push(*target_id);
         }
     }
@@ -1866,55 +1992,62 @@ fn apply_area_of_effect(
     }
 
     for target_id in touched {
-        update_actor_hp_mp(network.clone(), instance, target_id);
+        update_actor_hp_mp_after_hit(network.clone(), instance, target_id);
     }
 
-    // Pick who the ActionEffect packet shows: an enemy for damaging actions, otherwise someone healed.
-    let (display_target, display_is_hostile) = if has_damage && !hostiles.is_empty() {
-        (hostiles.first().copied(), true)
-    } else if (has_heal || !has_damage) && !friendlies.is_empty() {
-        (friendlies.first().copied(), false)
-    } else {
-        (None, false)
-    };
-
-    let display_target_invulnerable = display_target
-        .and_then(|id| instance.find_actor(id))
-        .is_some_and(|actor| {
-            matches!(
-                actor,
-                NetworkedActor::Npc {
-                    currently_invulnerable: true,
-                    ..
-                }
-            )
-        });
-
-    let display_effects = effects_builder
-        .effects
-        .iter()
-        .filter(|effect| match effect.0 {
-            TargetEffectKind::Damage { .. } | TargetEffectKind::InterruptAction => {
-                display_is_hostile
+    // Each target with what it took: an enemy its own damage (less for all but the first), or Invincible; an ally
+    // the heal; and the statuses on those they went to.
+    let mut shown: Vec<(ObjectId, Vec<TargetEffect>)> = Vec::new();
+    if has_damage {
+        let falloff = effects_builder.aoe_falloff_percent as u32;
+        for (index, (target_id, invulnerable)) in damage_taken.iter().enumerate() {
+            let effects = effects_builder
+                .effects
+                .iter()
+                .filter(|effect| !matches!(effect.0, TargetEffectKind::Heal { .. }))
+                .map(|effect| {
+                    let mut effect = *effect;
+                    match &mut effect.0 {
+                        TargetEffectKind::Damage { .. } if *invulnerable => {
+                            effect = TargetEffect(TargetEffectKind::Invincible {});
+                        }
+                        TargetEffectKind::Damage { amount, .. } if index > 0 => {
+                            *amount = (*amount as u32 * (100 - falloff) / 100) as u16;
+                        }
+                        _ => {}
+                    }
+                    effect
+                })
+                .collect();
+            shown.push((*target_id, effects));
+        }
+    }
+    if has_heal || !has_damage {
+        for target_id in &friendlies {
+            if shown.iter().any(|(id, _)| id == target_id) {
+                continue;
             }
-            TargetEffectKind::Heal { .. } => display_target.is_some() && !display_is_hostile,
-            TargetEffectKind::GainEffect { .. } => {
-                display_target.is_some() && display_is_hostile == has_damage
-            }
-            _ => true,
-        })
-        .map(|effect| match effect.0 {
-            TargetEffectKind::Damage { .. } if display_target_invulnerable => {
-                TargetEffect(TargetEffectKind::Invincible {})
-            }
-            _ => *effect,
-        })
-        .collect();
+            let effects = effects_builder
+                .effects
+                .iter()
+                .filter(|effect| {
+                    !matches!(
+                        effect.0,
+                        TargetEffectKind::Damage { .. } | TargetEffectKind::InterruptAction
+                    )
+                })
+                .filter(|effect| {
+                    !matches!(effect.0, TargetEffectKind::GainEffect { .. }) || !has_damage
+                })
+                .copied()
+                .collect();
+            shown.push((*target_id, effects));
+        }
+    }
 
     AreaOfEffectResult {
-        display_target,
-        display_effects,
         status_targets,
+        shown,
     }
 }
 
@@ -2930,6 +3063,7 @@ fn hit_area_bystander(
     from_actor_id: ObjectId,
     target_id: ObjectId,
     effects: &[TargetEffect],
+    flying_text: bool,
 ) {
     let damage: u32 = effects
         .iter()
@@ -2960,16 +3094,19 @@ fn hit_area_bystander(
         let mut network = network.lock();
         // Being hit interrupts searching something for a quest.
         instance.interrupt_event_action(&mut network, target_id);
-        network.send_ac_in_range_inclusive_instance(
-            instance,
-            target_id,
-            ActorControlCategory::DamageFlyingText {
-                unk1: 0,
-                amount: damage,
-                source_actor_id: from_actor_id,
-                unk4: 0,
-            },
-        );
+        // Shown in the area attack's packet otherwise (AoeEffect8.)
+        if flying_text {
+            network.send_ac_in_range_inclusive_instance(
+                instance,
+                target_id,
+                ActorControlCategory::DamageFlyingText {
+                    unk1: 0,
+                    amount: damage,
+                    source_actor_id: from_actor_id,
+                    unk4: 0,
+                },
+            );
+        }
     }
 
     if !missed {
@@ -2996,5 +3133,5 @@ fn hit_area_bystander(
         }
     }
 
-    update_actor_hp_mp(network, instance, target_id);
+    update_actor_hp_mp_after_hit(network, instance, target_id);
 }

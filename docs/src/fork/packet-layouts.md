@@ -155,7 +155,7 @@ Server packets:
 | FriendRemoved | u32 at 0x8, u8 at 0xc | padding, `unk1` |
 | MarketBoardPurchase | u32 at 0x4, bool at 0xc | padding |
 | ZoneInit | f32 at 0x1c | padding |
-| AoeEffect8 | f32 at 0x278 | inside an `unk` |
+| AoeEffect8 | f32 at 0x278 | padding after the packed position (retail: zero in every Copperbell Mines AoeEffect8). Since 2026-10-25 the struct mirrors ActionEffect's header, then `effects` per target slot and `targets` (a test against retail's Medica layout) |
 | UnkClassRelated | bool at 0x2, u8 at 0x3 | padding |
 | ContentFinderCommencing | u8 at 0x0 and 0x2, u32 at 0x8 | `unk1: [u8; 24]` |
 | Mount | u8 at 0x2 and 0x3, u32 at 0x4, 0x8 and 0xc | `unk1: [u8; 14]` |

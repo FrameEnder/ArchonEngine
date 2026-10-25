@@ -35,6 +35,11 @@ pub struct Timeline {
     /// further, since they're measured from the edge of its hitbox.
     #[serde(default)]
     pub hitbox_radius: f32,
+    /// The animation lock retail's ActionEffect carried for each of this NPC's actions, by action ID (the same every
+    /// use: Bob's Copperbell Mines captures, e.g. 2.1 for its bosses' attacks, 2.3 or 2.4 for some trash abilities, 1.1
+    /// for the helpers' markers). Its auto-attack is always 0.1; an action not here gets a player's lock.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub animation_locks: BTreeMap<u32, f32>,
     /// How this NPC fights with its class's actions, instead of (or as well as) fixed timepoints: see `Rotation`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rotation: Option<Rotation>,
@@ -194,6 +199,7 @@ mod tests {
                 damage_to_players: BTreeMap::default(),
                 recorded_amounts: BTreeMap::default(),
                 hitbox_radius: 0.0,
+                animation_locks: BTreeMap::default(),
                 rotation: None,
                 timepoints: vec![Timepoint {
                     time: 20,

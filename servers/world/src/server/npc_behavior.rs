@@ -1036,15 +1036,10 @@ pub fn npc_behavior(
     }
 
     for (id, request, cast_time) in new_action_requests {
-        // The client drops NPCs out of their battle stance after they act, so draw their weapon again half a second
-        // after this lands.
-        instance.insert_task(
-            ClientId::default(),
-            id,
-            Duration::from_secs_f32(cast_time + 0.5),
-            QueuedTaskData::DrawWeapon,
-        );
-
+        // No ToggleWeapon after each action: retail draws an NPC's weapon once as it takes someone on (94 ToggleWeapon
+        // in the Copperbell Mines' first stretch against Kawari's 523, Bob's captures of 2026-10-25). Kawari drew it
+        // again 0.5 s after every action, as NPCs had dropped out of their stance after acting (2026-10-13), probably from
+        // the lock (0.6) and swing (0) its NPC ActionEffects carried then, now retail's (`action.rs`.)
         if cast_time == 0.0 {
             instance.insert_task(
                 ClientId::default(),

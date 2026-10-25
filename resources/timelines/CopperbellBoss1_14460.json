@@ -121,5 +121,12 @@
             "comment": "Marks the end of the loop: 28545 again 83.2 s in"
         }
     ],
+    "animation_locks": {
+        "28543": 2.1,
+        "28545": 2.1,
+        "28546": 2.4,
+        "28547": 2.1,
+        "28549": 2.1
+    },
     "comment": "The Copperbell Mines' first boss (BNpcBase 14460, layout 9053767): 9970 HP, level 17, appears as the first door opens. Auto-attack 870; 28545 (4.7 s cast) every 81 s; 28543 (7.7 s, hitting nobody; its three helpers, BNpcBase 9020, cast 28544 with it), then 28549 twice (instant, hitting nobody), 28546 (3.7 s) and 28547 (4.7 s) every 37 s. The same times to a tenth of a second in all three runs. 28546 hit only the Duty Support members (its players amount is theirs). From Bob's Chronofoil captures of the Copperbell Mines (2026-10-25): one run with Duty Support (bd298651, visit 0.5) and two Duty Finder runs (69bea0b9, visits 0.1 and 0.3), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded. 28549 never caught anyone in the three runs: its amounts are a stand-in, 28546's (the boss's other area attack). Its leaps onto the helpers' spots are the director's (w1d1_re.lua, onActorCast)."
 }

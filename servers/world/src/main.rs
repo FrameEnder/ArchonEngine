@@ -6,10 +6,10 @@ use axum::Router;
 use axum::routing::get;
 use kawari::common::{
     BasicServiceAccountData, ClientLanguage, ContainerType, DEBUG_COMMAND_TRIGGER, FestivalId,
-    HandlerId, HandlerType, InstanceContentType, ItemOperationKind, LogMessageType, ObjectId,
-    ObjectTypeId, ObjectTypeKind, PlayerStateFlags1, PlayerStateFlags2, PlayerStateFlags3,
-    Position, QuestSpecialFlags, TAB_SHARED_FATE_COUNT, TerritoryIntendedUse, WarpType,
-    calculate_max_level, in_housing_area,
+    GimmickAccessorType, HandlerId, HandlerType, InstanceContentType, ItemOperationKind,
+    LogMessageType, ObjectId, ObjectTypeId, ObjectTypeKind, PlayerStateFlags1, PlayerStateFlags2,
+    PlayerStateFlags3, Position, QuestSpecialFlags, TAB_SHARED_FATE_COUNT, TerritoryIntendedUse,
+    WarpType, calculate_max_level, in_housing_area,
 };
 use kawari::config::get_config;
 use kawari_world::inventory::{Item, MAX_LARGE_STORAGE};
@@ -2576,8 +2576,31 @@ async fn process_packet(
                                 )
                                 .await
                             {
-                                // begin talk function if it exists
-                                if let Some(event) = events.last_mut() {
+                                // Something to pick up (a GimmickAccessor of the Interactable kind: a charge, a key, an
+                                // item lying about) asks nothing on retail: the event starts, its interaction runs and
+                                // the event finishes, with no scene (Bob's Copperbell Mines captures of 2026-10-25:
+                                // all eight kinds there). Kawari asked yes or no first.
+                                let pickup = handler_id.handler_type()
+                                    == HandlerType::GimmickAccessor
+                                    && matches!(
+                                        connection
+                                            .game_data
+                                            .lock()
+                                            .lookup_gimmick_accessor(handler_id.event_id()),
+                                        Some((GimmickAccessorType::Interactable, ..))
+                                    );
+                                if pickup {
+                                    connection
+                                        .handle
+                                        .send(ToServer::GimmickAccessor(
+                                            handler_id.event_id(),
+                                            connection.player_data.character.actor_id,
+                                            actor_id.object_id,
+                                            Vec::new(),
+                                        ))
+                                        .await;
+                                } else if let Some(event) = events.last_mut() {
+                                    // begin talk function if it exists
                                     event.0.on_talk(&event.1, *actor_id, lua_player).await;
                                 }
                             }
