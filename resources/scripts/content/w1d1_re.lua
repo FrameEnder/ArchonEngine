@@ -34,7 +34,7 @@ ITEM_DOOR = 2000442
 -- The gimmicks (EObj IDs; each a GimmickAccessor event, 0x000F00xx)
 EOBJ_CHARGE1 = 2000159 -- dropped by the last of the first pack (spawned where it fell)
 EOBJ_ROCK1 = 2000160 -- where the first charge is set
-EOBJ_DETONATOR1 = 2000161
+EOBJ_DETONATOR1 = 2000163 -- the lever (layout 4055428); the blast goes off on 2000161 (layout 2790162)
 EOBJ_ITEM_A = 2000169
 EOBJ_ITEM_B = 2000172
 EOBJ_DOOR1_SLOT = 2001536 -- where the first door's items are set

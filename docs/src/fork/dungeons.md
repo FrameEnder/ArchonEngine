@@ -103,18 +103,18 @@ first for the rocks, detonators, slots and doors), then the event finishes:
 |---|---|---|
 | 2000159 | The first charge | the last of the first pack (4021731-4021733, whichever falls last: a 1395 in two runs, a 1396 in one) drops it: log 2069 (its BNpcName, 2000441), the EObj spawned where it fell (layout 0); picked up: log 2031 (2000441), hidden, data 2 = 1 |
 | 2000160 | The first rock | with the charge: log 2059 (758), hidden, data 2 = 0 |
-| 2000161 | Its detonator | ActorControl 413 (8, 2) on it, 2001559 shown, 2000163 and 2000165 hidden; 10 s later 2000162 and 2000166 shown, 2001560 hidden: the way is clear |
+| 2000163 | Its lever (gimmick 79, layout 4055428; a yes/no prompt, 0 for yes) | ActorControl 413 (8, 2) on the charge set by the rock (2000161, layout 2790162), 2001559 shown, the lever (2000163) and 2000165 hidden; 10 s later 2000162 and 2000166 shown, 2001560 hidden: the way is clear |
 | 2000169, 2000172 | Items by the first door | log 2031 (2000442), hidden, data 3 + 1 |
 | 2001536 | The first door's slot | refused (log 2030) until both are held; then log 2060, hidden, data 3 = 0 |
 | 2000170 | The first door | refused (log 2029) until the slot is used; then it and 2000171 hidden, data 1 = 1, log 2061, and the first boss appears |
 | 2000178 | The second charge | shown as the first boss falls; as the first |
-| 2000173, 2000175 | The second rock and detonator | as the first: 413 (8, 2) on 2001529, 2001561 shown, 2000175 and 2000176 hidden; 10 s later 2000174 and 2000177 shown, 2001562 hidden |
+| 2000173, 2000175 | The second rock and its lever (gimmick 107) | as the first: 413 (8, 2) on 2001529, 2001561 shown, 2000175 and 2000176 hidden; 10 s later 2000174 and 2000177 shown, 2001562 hidden |
 | 2001531, 2000179 | Items dropped by the two gigas (1400: 2790234, 2790237) | log 2069 (1303, 2000442) as each falls, spawned where it fell; picked up as the others |
 | 2001537, 2000180 | The second slot and door | as the first; the door: 2000181 hidden, data 1 = 3, log 2065, the second boss appears |
 | 2001532, 2001533 | Items by the third door | the second shown as the second boss falls |
 | 2001538, 2001534 | The third slot and door | as the first; the door: 2001535 hidden, data 1 = 7, log 2062 |
 
-The refusals' logs are the gimmicks' own (`isGimmickFunctional`). The EObjs hidden at the start (state 7 in their
+The refusals' logs are the gimmicks' own (`isGimmickFunctional`). The first lever was scripted as 2000161, which nobody can use: saying yes to its prompt did nothing and the run was stuck there (Bob's bundle of 2026-10-25); the EObj each gimmick event came from in all three runs is the one in this table. The EObjs hidden at the start (state 7 in their
 first spawn) are hidden in `onSetup`. **Ambushes:** the two bigger gigas (1398 at layout 4023421, 1403 at 4023560) wait
 in a pile of rock (2000168, 2000185); someone coming within 19.4-22 yalms (all three runs) hides the pile and the gigas
 comes at them at once (it spawned and targeted the player in the same packet burst; ActorControl 36 (1, 158) and 54
