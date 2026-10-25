@@ -27,7 +27,7 @@ add one when something is found.
 
 * Untested in game (2026-10-23). Whether the client builds its party list from ActorControlSelf 257, 276 and 1525
   alone, as retail's capture suggests, is the first thing to check.
-* Only Sastasha's and the Tam-Tara Deepcroft's three members are recorded (Marauder, Lancer, Thaumaturge, for a
+* Only Sastasha's, the Tam-Tara Deepcroft's and the Copperbell Mines' three members are recorded (Marauder, Lancer, Thaumaturge, for a
   healer player; the same three in both, at each duty's level, `party_npc::DUTY_LEVELS`); any other member chosen
   (their healer, other duties' members) is a Player NPC of that role, listed in a Duty Finder party list beside the
   party NPCs' slots. A duty not in `DUTY_LEVELS` gets them at Sastasha's level 15.
@@ -351,7 +351,28 @@ add one when something is found.
 * The shields' tether to Galvanth comes with their spawn only (as retail's); a shield spawned before the boss would
   have no tether (the script spawns them after it).
 
+## The Copperbell Mines
+
+* Untested in game (2026-10-25). Scripted from three retail runs (see [Dungeons](dungeons.md#the-copperbell-mines)).
+  The script's name (`w1d1_re`, the ContentFinderCondition's ShortCode) and the drop-in's LGB
+  (`bg/ffxiv/wil_w1/dun/w1d1/level/planmap.lgb`) are guesses by analogy with Sastasha and the Tam-Tara Deepcroft: if
+  either is wrong the duty has no director script or no enemies.
+* The dropped items (2000159, 2001531, 2000179) are spawned with `spawn_eobj`, which needs them in the duty's layout
+  (retail spawned them with layout ID 0); if they aren't, the server logs it and the way stays shut.
+* The helpers (BNpcBase 9020) aren't spawned, so the first boss's 28544 and the last boss's 28761 never come; of the
+  second boss's six adds (one layout ID) one is spawned, casting 28465 on its own 19.5 s timer and never hiding.
+* The last hall's trigger is a box around where retail's started (z below 55, y below -50) checked against the first
+  player only (`info.player`).
+* Statuses 8, 18, 53, 203 (and the bosses' effects 46/112, 88/130) are only applied or nothing; the ambushers'
+  ActorControl 36/54, the shortcut and the end's log 9393 aren't sent.
+* The timelines are by BNpcBase (1395-1403, 1421, 14448, 14449, 14460, 14537).
+
 ## Quest battles and directors
+
+* **Into a Copper Hell (44)**: untested in game (2026-10-25). Territory 274's drop-in (`wil_w1t1`) appends a guessed LGB
+  for Ul'dah - Steps of Nald; if 274 loads other LGBs, the three adventurers won't spawn. Retail's last DirectorVars
+  (sequence 0xFE with its last data byte (9) at 0x80 as the closing cutscene ended) isn't sent that way; ActorControl 73 (1351,
+  1352) on the pugilist now and then isn't sent; statuses 71, 99 are only applied.
 
 * **Battle talk**: every quest battle uses the window (DirectorPopupMessage) with retail's text IDs, except Papalymo's
   line when he heals you in Chasing Shadows, still said in `/say`: retail's text ID for it hasn't been seen (he didn't

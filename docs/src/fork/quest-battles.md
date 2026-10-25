@@ -70,6 +70,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `yell(npc, npc_yell_id)` | A speech bubble over the NPC: NpcYell row (e.g. 117/118 Yda's and Papalymo's in Chasing Shadows, 122/123 the golem's rumbles). The packet (NpcYell) is the actor, 4 bytes, the speaker's BNpcName (for a battle NPC; upstream's comment says ENpcResident), the NpcYell row, then four u32 parameters, 0 in every quest battle bubble on retail. |
 | `party_npc_yell(role, npc_yell_id, delay)` | The party NPC (Duty Support member) playing `role` (`"tank"`, `"healer"`, `"melee"`, `"ranged"`) yells an NpcYell line `delay` seconds from now (0 if left out), under its BNpcName; nobody of that role, nothing. For a duty's story lines: see [Party NPCs](party-npcs.md#talking). |
 | `play_cutscene(id, params)` | (upstream; `params` the fork's) Plays a duty's cutscene: the director's scene 3 with the cutscene's ID, then `params` (default 1, 38, 1, 0, retail's for Denn's arrival in Sastasha). Retail's differ per cutscene: Denn's death was 176 with 1, 18, 0, 0, and with the default ones the client played his arrival's dialogue again after it (Bob's bundle and Chronofoil capture of 2026-10-23). Take them from a capture. |
+| `eobj_control(eobj, category, params)` | Sends an EObj (by EObj ID or layout ID) an ActorControl by category with up to four parameters, for the ones Kawari has no name for: the Copperbell Mines' blasts (413 with 8, 2) and last hall (409 with 64 and the director). `hide_eobj`, `show_eobj` and `delete_eobj` take a layout ID too, for EObjs sharing an ID (the EObj ID is tried first). |
 
 ## The battle framework (`content/lib/Battle.lua`)
 
@@ -156,6 +157,32 @@ a quest's entering event, 0 for every other event (228 events across the capture
 (60001, from the client's generic director script) was found.
 
 ## The battles
+
+### Quest battle 44 — Into a Copper Hell (`content/questbattle/44.lua`)
+
+* Quest 660 (ManFst205_00660) starts it with `player:join_quest_battle(QUESTBATTLE0, TERRITORYTYPE0)` (44, territory
+  274; ContentFinderCondition 338). Territory 274 is taken to be a copy of Ul'dah - Steps of Nald (130): the player's
+  spot (37.01, 4.0, -137.54, facing 2.879) and the three adventurers stand on its ground (y 4.0, by the Quicksand,
+  where the quest's Momodi is), so they're layer `QB_ManFst205_001` of a new `wil_w1t1` drop-in appending
+  `bg/ffxiv/wil_w1/twn/w1t1/level/planmap.lgb` (a guess at Steps of Nald's LGB; not checked against the game's
+  files): the pugilist (4094987, BNpcBase 960, level 11, 1844 HP), the gladiator (4094990, 961, level 10, 288 HP) and
+  the thaumaturge (4094992, 962, level 10, 134 HP), layout IDs, positions and display flags from the capture (Sapphire
+  has the same layout IDs and no script).
+* Bob's Chronofoil capture of 2026-10-25 (`4777fd0f`, `questkit chronofoil --battle 0.1/0.3/0.5/0.7`, duty 338): three
+  lost, one won, as a level 21 conjurer. Sequence 1 and the opening cutscene (scene 1, 0xF841AEFB), all three there
+  from the start; sequence 2 as the fight starts, the pugilist coming for you; its lines (battle talk under BNpcName
+  991, portrait 73230): 204 5.1 s in, 205 below 65 %, 206 below 50 %; below 35 % sequence 3 and 207, 5 s later
+  sequence 4 and the other two come (before that they fought only once hit: AC 106 state 0 and SetBattle on them);
+  208 below 20 %. The marks held in all four runs (65: 67.0 -> 61.5, 68.8 -> 59.4, 65.2 -> 59.8, 70.0 -> 64.5; 35:
+  38.0 -> 32.6, 35.0 -> 29.6, 38.0 -> 32.8, 40.1 -> 33.8). The pugilist heals itself (57) at 33-46 %.
+* Won (all three down): 2 s after the last one's health reached 0, sequence 5 and "Duty Complete" (60001), then the
+  battle's scene 5 (a cutscene, 0xF8402EFB, 76 s); as it ended, UpdateQuest put quest 660 at **sequence 5** and the
+  director's sequence went to 0xFE with its last data byte (9) at 0x80. The script does it with
+  `complete_quest_battle(5, false, 5, 0xF8402EFB)`, as the other battles move their quest; the quest's script
+  doesn't set the sequence itself. Lost (your health at 0): sequence 0xFE at once and out 5 s later.
+* Timelines `IntoACopperHell*_<base>.json` (rotations from the four runs' medians); the old kits' 10, 55 and 57 that
+  these NPCs use have NPC-only scripts (`QuestBattleNpc_000xx.lua`). `questkit battle-sim 44` (the won run): every
+  step within 1.2 s.
 
 ### Quest battle 38 — Duty, Honor, Country (`content/questbattle/38.lua`)
 

@@ -252,11 +252,13 @@ pub const MEMBERS: [Member; 3] = [
 
 /// The level the members come at in a duty (its ContentFinderCondition) and each one's HP there, by
 /// `dawn_quest_member`: retail's Sastasha members were level 15 (Bob's capture of 2026-10-23), the Tam-Tara
-/// Deepcroft's the same three at 16 with 443, 347 and 316 HP (his capture of 2026-10-24, 3ec702a8 visit 0.3.) A duty
-/// not here takes the member's own `level` and `hp`.
-pub const DUTY_LEVELS: [(u16, u8, [(u8, u32); 3]); 2] = [
+/// Deepcroft's the same three at 16 with 443, 347 and 316 HP (his capture of 2026-10-24, 3ec702a8 visit 0.3), the
+/// Copperbell Mines' at 17 with 476, 372 and 339 (his capture of 2026-10-25, bd298651 visit 0.5.) A duty not here
+/// takes the member's own `level` and `hp`.
+pub const DUTY_LEVELS: [(u16, u8, [(u8, u32); 3]); 3] = [
     (4, 15, [(36, 411), (37, 322), (38, 293)]),
     (2, 16, [(36, 443), (37, 347), (38, 316)]),
+    (3, 17, [(36, 476), (37, 372), (38, 339)]),
 ];
 
 /// A member's level and HP in the duty `content_finder_condition`.

@@ -265,6 +265,14 @@ pub enum LuaDirectorTask {
         index: u32,
         timeline_id: u32,
     },
+    /// Send an EObj (by EObj ID or layout ID) an ActorControl by its category and parameters, for the ones Kawari has
+    /// no name for: the Copperbell Mines' blasts (413 with 8, 2 on the charge as it goes off, Bob's captures of
+    /// 2026-10-25.)
+    EObjControl {
+        id: u32,
+        category: u32,
+        params: [u32; 4],
+    },
 }
 
 /// One actor's numbers for a director's `onUpdate` (see `DirectorData::update`.)
@@ -669,6 +677,21 @@ impl UserData for LuaDirector {
                 .push(LuaDirectorTask::MapEffect { index, timeline_id });
             Ok(())
         });
+        methods.add_method_mut(
+            "eobj_control",
+            |_, this, (id, category, params): (u32, u32, Option<Vec<u32>>)| {
+                let mut four = [0; 4];
+                for (slot, value) in four.iter_mut().zip(params.unwrap_or_default()) {
+                    *slot = value;
+                }
+                this.tasks.push(LuaDirectorTask::EObjControl {
+                    id,
+                    category,
+                    params: four,
+                });
+                Ok(())
+            },
+        );
     }
 }
 
@@ -1217,7 +1240,7 @@ pub fn director_tick(
     for task in &tasks {
         match task {
             LuaDirectorTask::HideEObj { base_id } => {
-                let Some(actor_id) = instance.find_object_by_eobj_id(*base_id) else {
+                let Some(actor_id) = instance.find_object_by_eobj_or_layout_id(*base_id) else {
                     tracing::warn!("Failed to find eobj {base_id} for HideEObj, it won't despawn!");
                     continue;
                 };
@@ -1239,7 +1262,7 @@ pub fn director_tick(
                 }
             }
             LuaDirectorTask::ShowEObj { base_id } => {
-                let Some(actor_id) = instance.find_object_by_eobj_id(*base_id) else {
+                let Some(actor_id) = instance.find_object_by_eobj_or_layout_id(*base_id) else {
                     tracing::warn!("Failed to find eobj {base_id} for ShowEObj, it won't despawn!");
                     continue;
                 };
@@ -1261,7 +1284,7 @@ pub fn director_tick(
                 }
             }
             LuaDirectorTask::DeleteEObj { base_id } => {
-                let Some(actor_id) = instance.find_object_by_eobj_id(*base_id) else {
+                let Some(actor_id) = instance.find_object_by_eobj_or_layout_id(*base_id) else {
                     tracing::warn!(
                         "Failed to find eobj {base_id} for DeleteEObj, it won't despawn!"
                     );
@@ -2057,6 +2080,29 @@ pub fn director_tick(
                     instance,
                     FromServer::PacketSegment(ipc, ObjectId::default()), // TODO: how do we just send it from the player?
                     DestinationNetwork::ZoneClients,
+                );
+            }
+            LuaDirectorTask::EObjControl {
+                id,
+                category,
+                params,
+            } => {
+                let Some(actor_id) = instance.find_object_by_eobj_or_layout_id(*id) else {
+                    tracing::warn!("Failed to find eobj {id} for EObjControl!");
+                    continue;
+                };
+                let mut network = network.lock();
+                network.send_ac_in_range_instance(
+                    instance,
+                    actor_id,
+                    ActorControlCategory::Unknown {
+                        category: *category,
+                        param1: params[0],
+                        param2: params[1],
+                        param3: params[2],
+                        param4: params[3],
+                        param5: 0,
+                    },
                 );
             }
         }

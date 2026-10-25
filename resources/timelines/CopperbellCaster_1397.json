@@ -1,0 +1,22 @@
+{
+    "autoattack_action_id": 0,
+    "attack_range": 10.0,
+    "recorded_amounts": {
+        "968": {
+            "players": 28,
+            "npcs": 15.5
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 968,
+                "comment": "70 uses, every 3.1 s (its only attack)"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Copperbell Mines casters (BNpcBase 1397): 1051 HP, level 17, casting 968 (0.7 s) every 3.1 s instead of auto-attacking. From Bob's Chronofoil captures of the Copperbell Mines (2026-10-25): one run with Duty Support (bd298651, visit 0.5) and two Duty Finder runs (69bea0b9, visits 0.1 and 0.3), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

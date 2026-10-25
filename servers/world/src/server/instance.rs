@@ -643,6 +643,22 @@ impl Instance {
         None
     }
 
+    /// Returns the actor ID (if any) of a spawned EObj by its EObj ID or, if none has that, its layout ID: some
+    /// duties' boss walls share their EObj ID with a line beside them (the Copperbell Mines' first two), so a script
+    /// tells them apart by layout ID.
+    pub fn find_object_by_eobj_or_layout_id(&self, id: u32) -> Option<ObjectId> {
+        self.find_object_by_eobj_id(id).or_else(|| {
+            self.actors
+                .iter()
+                .find_map(|(actor_id, actor)| match actor {
+                    NetworkedActor::Object { object, .. } if object.layout_id == id => {
+                        Some(*actor_id)
+                    }
+                    _ => None,
+                })
+        })
+    }
+
     /// Returns the actor ID (if any) of the spawned EObj by it's EObj ID and layer name.
     pub fn find_object_by_eobj_id_and_layer_name(
         &self,

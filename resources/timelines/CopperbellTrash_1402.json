@@ -1,0 +1,31 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 18.5,
+            "npcs": 9
+        },
+        "913": {
+            "players": 29,
+            "npcs": 12
+        }
+    },
+    "rotation": {
+        "pace": 9.6,
+        "actions": [
+            {
+                "action": 913,
+                "every": 19.2,
+                "comment": "24 uses, every 19.2 s"
+            },
+            {
+                "action": 914,
+                "every": 21.2,
+                "comment": "14 uses, every 21.2 s"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Copperbell Mines trash (BNpcBase 1402): 1051 HP, level 17; auto-attack 870 every 3.0 s, 913 every 19.2 s, 914 every 21.2 s (a 2.2 s cast, mostly hitting nobody; status 18 at 4-5 on whom it hit). From Bob's Chronofoil captures of the Copperbell Mines (2026-10-25): one run with Duty Support (bd298651, visit 0.5) and two Duty Finder runs (69bea0b9, visits 0.1 and 0.3), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

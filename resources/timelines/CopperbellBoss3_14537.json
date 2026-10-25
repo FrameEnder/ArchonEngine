@@ -1,0 +1,105 @@
+{
+    "autoattack_action_id": 6499,
+    "recorded_amounts": {
+        "6499": {
+            "players": 39,
+            "npcs": 21
+        },
+        "28762": {
+            "players": 125,
+            "npcs": 125
+        },
+        "28763": {
+            "players": 125,
+            "npcs": 125
+        },
+        "28764": {
+            "players": 128,
+            "npcs": 62
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 5,
+            "data": {
+                "type": "action",
+                "action_id": 28762
+            },
+            "comment": "5.1 s in (all three runs)"
+        },
+        {
+            "time": 19,
+            "data": {
+                "type": "action",
+                "action_id": 28760
+            },
+            "comment": "19.0-19.2 s in"
+        },
+        {
+            "time": 33,
+            "data": {
+                "type": "action",
+                "action_id": 28762
+            },
+            "comment": "33.1-33.3 s in"
+        },
+        {
+            "time": 45,
+            "data": {
+                "type": "action",
+                "action_id": 28764
+            },
+            "comment": "45.3-45.5 s in"
+        },
+        {
+            "time": 56,
+            "data": {
+                "type": "action",
+                "action_id": 28763
+            },
+            "comment": "55.6 s in"
+        },
+        {
+            "time": 67,
+            "data": {
+                "type": "action",
+                "action_id": 28760
+            },
+            "comment": "66.6 s in"
+        },
+        {
+            "time": 81,
+            "data": {
+                "type": "action",
+                "action_id": 28762
+            },
+            "comment": "80.8 s in"
+        },
+        {
+            "time": 93,
+            "data": {
+                "type": "action",
+                "action_id": 28764
+            },
+            "comment": "92.9 s in"
+        },
+        {
+            "time": 103,
+            "data": {
+                "type": "action",
+                "action_id": 28763
+            },
+            "comment": "103.3 s in"
+        },
+        {
+            "time": 114,
+            "data": {
+                "type": "invulnerability",
+                "invulnerable": false
+            },
+            "comment": "Marks the end of the loop (no run lasted longer)"
+        }
+    ],
+    "comment": "The Copperbell Mines' last boss (BNpcBase 14537, layout 9060676): 10582 HP, level 17, appears after its cutscene. Auto-attack 6499; 28762 (5.7 s), 28760 (5.7 s, no damage), 28764 (4.7 s), 28763 (3.7 s) in a 47.7 s round, the same in all three runs. Its five helpers (BNpcBase 9020) cast 28761 (5.7 s, 127 to a player) 22 s in and every 47.7 s; Kawari doesn't spawn them. From Bob's Chronofoil captures of the Copperbell Mines (2026-10-25): one run with Duty Support (bd298651, visit 0.5) and two Duty Finder runs (69bea0b9, visits 0.1 and 0.3), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

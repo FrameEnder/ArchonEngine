@@ -1,0 +1,42 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 3
+        },
+        "9": {
+            "players": 5
+        },
+        "11": {
+            "players": 8
+        }
+    },
+    "rotation": {
+        "pace": 7.5,
+        "actions": [
+            {
+                "action": 9,
+                "every": 17.2,
+                "comment": "17 uses, every 17.2 s"
+            },
+            {
+                "action": 11,
+                "every": 15.5,
+                "comment": "17 uses, every 15.5 s"
+            },
+            {
+                "action": 20,
+                "every": 70.6,
+                "comment": "6 uses, on itself, every 70.6 s"
+            },
+            {
+                "action": 10,
+                "every": 108.9,
+                "comment": "5 uses, on itself, every 108.9 s: status 71 (246)"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Into a Copper Hell's gladiator (BNpcBase 961, layout 4094990): 288 HP, level 10; auto-attack 870 every 3.0 s, Fast Blade and Savage Blade about every 16 s, Fight or Flight and 10 on itself. From Bob's Chronofoil capture of Into a Copper Hell (2026-10-25, 4777fd0f, visits 0.1, 0.3, 0.5 and 0.7), `questkit chronofoil --battle`; `players` is the median damage to Bob (a level 21 conjurer) over the four runs, `every` the median time between uses. Hitbox not recorded."
+}

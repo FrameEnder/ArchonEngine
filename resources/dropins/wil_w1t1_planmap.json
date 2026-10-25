@@ -1,0 +1,79 @@
+{
+    "appends": "bg/ffxiv/wil_w1/twn/w1t1/level/planmap.lgb",
+    "layers": [
+        {
+            "name": "QB_ManFst205_001",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 960,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1844,
+                        "level": 11,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 991,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262145
+                    },
+                    "layout_id": 4094987,
+                    "position": {
+                        "x": 39.388,
+                        "y": 4.0,
+                        "z": -148.223
+                    },
+                    "rotation": -0.0
+                },
+                {
+                    "data": {
+                        "base_id": 961,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 288,
+                        "level": 10,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 989,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262144
+                    },
+                    "layout_id": 4094990,
+                    "position": {
+                        "x": 37.366,
+                        "y": 3.983,
+                        "z": -153.063
+                    },
+                    "rotation": -0.2063
+                },
+                {
+                    "data": {
+                        "base_id": 962,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 134,
+                        "level": 10,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 990,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262144
+                    },
+                    "layout_id": 4094992,
+                    "position": {
+                        "x": 43.368,
+                        "y": 3.983,
+                        "z": -151.29
+                    },
+                    "rotation": -0.2199
+                }
+            ]
+        }
+    ]
+}
