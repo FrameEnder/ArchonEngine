@@ -516,15 +516,17 @@ const STATUS_RAISED: u16 = 418;
 const WEAKNESS_DURATION: f32 = 100.0;
 const RAISED_DURATION: f32 = 5.0;
 
-/// Brings a dead player back where they lie after they accepted a Raise, as retail (Bob's Chronofoil captures, 19
-/// raises): 20 % of their HP and MP, Weakness (or Brink of Death if already weakened) and status 418, through the same
-/// warp a revive uses (PrepareZoning with the raise's effect 181, warp type 5, to where they are.)
+/// Brings a dead player back after they accepted a Raise, as retail (Bob's Chronofoil captures, 19 raises): 20 % of
+/// their HP and MP, Weakness (or Brink of Death if already weakened) and status 418, through the same warp a revive
+/// uses (PrepareZoning with the raise's effect 181, warp type 5) to their raiser (`party_bot::raiser_position`; where
+/// they lie if the raiser has gone.)
 fn revive_in_place(
     network: Arc<Mutex<NetworkState>>,
     instance: &mut Instance,
     from_id: ClientId,
     actor_id: ObjectId,
 ) {
+    let beside = party_bot::raiser_position(instance, actor_id);
     let Some(actor) = instance.find_actor_mut(actor_id) else {
         return;
     };
@@ -538,7 +540,8 @@ fn revive_in_place(
     let common = actor.get_common_spawn_mut();
     common.health_points = (common.max_health_points / 5).max(1);
     common.resource_points = common.max_resource_points / 5;
-    let position = common.position;
+    let position = beside.unwrap_or(common.position);
+    common.position = position;
     let rotation = common.rotation;
 
     let penalty = if weakened {

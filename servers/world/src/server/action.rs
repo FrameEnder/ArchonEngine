@@ -719,6 +719,51 @@ pub fn execute_action(
             }
         }
 
+        // An area attack an NPC casts on itself (retail's invisible helpers marking the ground, as the Copperbell Mines'
+        // Kottos' three did with 28544, Bob's captures of 2026-10-25): it lands on everyone inside it its battalion is
+        // at war with, and not on itself. (Aimed at someone, the area above takes that one's side instead.)
+        if let Some(effects_builder) = &mut effects_builder
+            && let Some(shape) = action_info.and_then(|info| info.area_shape())
+            && let NetworkedActor::Npc { cast, timeline, .. } = actor
+            && request.target.object_id == from_actor_id
+            && effects_builder
+                .effects
+                .iter()
+                .any(|effect| matches!(effect.0, TargetEffectKind::Damage { .. }))
+        {
+            let (rotation, aimed_at) = match cast {
+                Some(cast) => (cast.rotation, cast.target_position),
+                None => (actor.rotation(), actor.position().0),
+            };
+            let enemies = game_data
+                .lock()
+                .get_battalion_enemies(common_spawn.battalion as u32);
+            let hits_npcs = timeline.recorded_amount(request.action_id, false).is_some();
+            for (id, other) in &instance.actors {
+                let other_spawn = other.get_common_spawn();
+                if *id != from_actor_id
+                    && area_side(other).is_some()
+                    && enemies
+                        .get(other_spawn.battalion as usize)
+                        .copied()
+                        .unwrap_or(false)
+                    && (hits_npcs || hit_like_a_player(*id))
+                    && other_spawn.health_points > 0
+                    && in_area(
+                        shape,
+                        actor.position().0,
+                        rotation,
+                        aimed_at,
+                        other.position().0,
+                        timeline.hitbox_radius,
+                    )
+                {
+                    area_bystanders.push((*id, effects_builder.effects.clone()));
+                }
+            }
+            effects_builder.effects.clear();
+        }
+
         // What retail's recording says this NPC's action does to this kind of target (Timeline::recorded_amounts):
         // allies and enemies in quest battles hurt and heal each other, and the player, as much as they did there.
         let miss_percent = npc_miss_percent(

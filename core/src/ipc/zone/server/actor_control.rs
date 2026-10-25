@@ -257,6 +257,12 @@ pub enum ActorControlCategory {
         action_timeline: u32,
     },
 
+    /// The next ActorMove puts the character there at once rather than walking it: the client's handler (2026.10.16,
+    /// case 0xEF) sets a flag in its MoveController. Retail sent it right before each ActorMove that landed Kottos'
+    /// jumps (Bob's Copperbell Mines captures of 2026-10-25.)
+    #[brw(magic = 239u32)]
+    SnapNextMove,
+
     #[brw(magic = 38u32)]
     ToggleInvisibility {
         #[br(map = read_bool_from::<u32>)]

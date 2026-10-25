@@ -69,8 +69,11 @@ pub enum LuaDirectorTask {
         id: u32,
         params: Vec<u32>,
     },
+    /// Spawn a BNpc by layout ID as this actor (`spawn_bnpc` returns it, so a script can tell apart several spawned
+    /// from one layout ID, like the Copperbell Mines' three helpers sharing 9054923.)
     SpawnBattleNpc {
         id: u32,
+        actor_id: ObjectId,
     },
     /// Spawn a BNpc (by layout ID) tethered to another (by layout ID): the line the client draws between them, a
     /// Channeling row, comes with its spawn and goes when it dies (retail: Tam-Tara's shields to Galvanth.)
@@ -281,7 +284,43 @@ pub enum LuaDirectorTask {
         action_timeline: u32,
         delay: f32,
     },
+    /// Put a BNpc (by actor ID, or layout ID) somewhere at once: an ActorSetPos from it to everyone, as retail moves
+    /// its invisible helpers before they cast (the Copperbell Mines' first boss's three markers.)
+    WarpBattleNpc {
+        who: u32,
+        position: Position,
+        rotation: f32,
+    },
+    /// A BNpc (by actor ID, or layout ID) jumps somewhere: ActorControl `SnapNextMove` then an ActorMove there, as
+    /// retail's Kottos leapt onto each marked spot in turn (`npc_behavior` picks up from where it lands.)
+    JumpBattleNpc {
+        who: u32,
+        position: Position,
+        rotation: f32,
+    },
+    /// Make a BNpc (by actor ID) use an action on another actor (by actor ID), or on itself if there's none.
+    ActorUseAction {
+        actor_id: u32,
+        action_id: u32,
+        target: Option<u32>,
+    },
+    /// A task for later (`director:delay`): it runs when its time comes, in a later tick.
+    Later {
+        at: Instant,
+        task: Box<LuaDirectorTask>,
+    },
 }
+
+/// A BNpc by actor ID, or failing that by layout ID.
+fn resolve_bnpc(instance: &Instance, who: u32) -> Option<ObjectId> {
+    match instance.find_actor(ObjectId(who)) {
+        Some(NetworkedActor::Npc { .. }) => Some(ObjectId(who)),
+        _ => instance.find_npc(who).map(|(id, _)| id),
+    }
+}
+
+/// Retail's speed byte on the ActorMove that lands a jump (Kottos', Bob's Copperbell Mines captures of 2026-10-25.)
+const JUMP_MOVE_SPEED: u8 = 90;
 
 /// A BNpc to bring into view (`LuaDirectorTask::AppearBattleNpc`.)
 #[derive(Debug, Clone, Copy)]
@@ -359,6 +398,8 @@ pub struct LuaDirector {
     pub data: [u8; 10],
     pub tasks: Vec<LuaDirectorTask>,
     pub bosses: HashMap<u32, DirectorBoss>,
+    /// From which task on (its index) the ones queued are delayed, and by how many seconds (`director:delay`.)
+    pub delays: Vec<(usize, f32)>,
 }
 
 impl UserData for LuaDirector {
@@ -411,8 +452,10 @@ impl UserData for LuaDirector {
             Ok(())
         });
         methods.add_method_mut("spawn_bnpc", |_, this, id: u32| {
-            this.tasks.push(LuaDirectorTask::SpawnBattleNpc { id });
-            Ok(())
+            let actor_id = ObjectId(fastrand::u32(1..0xE000_0000));
+            this.tasks
+                .push(LuaDirectorTask::SpawnBattleNpc { id, actor_id });
+            Ok(actor_id.0)
         });
         methods.add_method_mut(
             "spawn_tethered_bnpc",
@@ -739,6 +782,43 @@ impl UserData for LuaDirector {
                 .push(LuaDirectorTask::MapEffect { index, timeline_id });
             Ok(())
         });
+        methods.add_method_mut("delay", |_, this, seconds: f32| {
+            this.delays.push((this.tasks.len(), seconds.max(0.0)));
+            Ok(())
+        });
+        methods.add_method_mut(
+            "warp_bnpc",
+            |_, this, (who, x, y, z, rotation): (u32, f32, f32, f32, Option<f32>)| {
+                this.tasks.push(LuaDirectorTask::WarpBattleNpc {
+                    who,
+                    position: Position(glam::Vec3A::new(x, y, z)),
+                    rotation: rotation.unwrap_or(0.0),
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "jump_bnpc",
+            |_, this, (who, x, y, z, rotation): (u32, f32, f32, f32, Option<f32>)| {
+                this.tasks.push(LuaDirectorTask::JumpBattleNpc {
+                    who,
+                    position: Position(glam::Vec3A::new(x, y, z)),
+                    rotation: rotation.unwrap_or(0.0),
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "actor_use_action",
+            |_, this, (actor_id, action_id, target): (u32, u32, Option<u32>)| {
+                this.tasks.push(LuaDirectorTask::ActorUseAction {
+                    actor_id,
+                    action_id,
+                    target,
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut(
             "appear_bnpc",
             |_, this, (layout_id, action_timeline, delay): (u32, Option<u32>, Option<f32>)| {
@@ -1002,6 +1082,28 @@ impl DirectorData {
         }
     }
 
+    /// A BNpc (`layout_id`, as `actor_id`) began an action (`onActorCast`), for scripts that answer what a boss does:
+    /// the Copperbell Mines' Kottos' 28543 sets off its markers and its jumps.
+    pub fn on_actor_cast(&mut self, layout_id: u32, action_id: u32, actor_id: ObjectId) {
+        if self.lua.0.globals().get::<Function>("onActorCast").is_err() {
+            return;
+        }
+        let mut run_script = || {
+            let mut lua_director = self.create_lua_director();
+            let err = self.lua.0.scope(|scope| {
+                let data = scope.create_userdata_ref_mut(&mut lua_director)?;
+                let func: Function = self.lua.0.globals().get("onActorCast")?;
+                func.call::<()>((data, layout_id, action_id, actor_id.0))?;
+                Ok(())
+            });
+            self.apply_lua_director(lua_director);
+            err
+        };
+        if let Err(err) = run_script() {
+            tracing::warn!("Syntax error during onActorCast: {err:?}");
+        }
+    }
+
     pub fn on_actor_death(&mut self, bnpc_id: u32, position: Position) {
         if let Some(boss) = self.bosses.get(&bnpc_id) {
             self.unseal_boss_wall(boss.wall_id, boss.line_id, boss.place_name);
@@ -1055,6 +1157,7 @@ impl DirectorData {
             data: self.data,
             tasks: Vec::new(),
             bosses: self.bosses.clone(),
+            delays: Vec::new(),
         }
     }
 
@@ -1066,7 +1169,25 @@ impl DirectorData {
         if self.bosses != lua.bosses {
             self.bosses = lua.bosses;
         }
-        self.tasks.extend_from_slice(&lua.tasks);
+        // Tasks queued after `director:delay(seconds)` wait that long (until the next `delay`; 0 is at once.)
+        let now = Instant::now();
+        for (index, task) in lua.tasks.into_iter().enumerate() {
+            let delay = lua
+                .delays
+                .iter()
+                .rev()
+                .find(|(from, _)| *from <= index)
+                .map(|(_, seconds)| *seconds)
+                .unwrap_or(0.0);
+            if delay > 0.0 {
+                self.tasks.push(LuaDirectorTask::Later {
+                    at: now + Duration::from_secs_f32(delay),
+                    task: Box::new(task),
+                });
+            } else {
+                self.tasks.push(task);
+            }
+        }
     }
 
     /// Actually insert tasks to seal the boss wall.
@@ -1296,6 +1417,18 @@ pub fn director_tick(
         update_director(instance);
     }
 
+    // Tasks a script queued for later (`director:delay`) whose time has come.
+    if !instance.later_director_tasks.is_empty() {
+        let now = Instant::now();
+        let (due, later): (Vec<_>, Vec<_>) = std::mem::take(&mut instance.later_director_tasks)
+            .into_iter()
+            .partition(|(at, _)| *at <= now);
+        instance.later_director_tasks = later;
+        if let Some(director) = instance.directors.first_mut() {
+            director.tasks.extend(due.into_iter().map(|(_, task)| task));
+        }
+    }
+
     let tasks = if let Some(director) = &instance.directors.first() {
         director.tasks.clone()
     } else {
@@ -1466,12 +1599,12 @@ pub fn director_tick(
                     DestinationNetwork::ZoneClients,
                 );
             }
-            LuaDirectorTask::SpawnBattleNpc { id } => {
+            LuaDirectorTask::SpawnBattleNpc { id, actor_id } => {
                 if let Some(mut npc) = instance.zone.get_battle_npc(*id) {
                     npc.common.handler_id = director_id;
                     let config = get_config();
                     let mut game_data = game_data.lock();
-                    instance.insert_npc(ObjectId(fastrand::u32(..)), npc, &config, &mut game_data);
+                    instance.insert_npc(*actor_id, npc, &config, &mut game_data);
                 } else {
                     tracing::warn!("Failed to find bnpc {id} for SpawnBattleNpc, it won't spawn!");
                 }
@@ -1500,7 +1633,8 @@ pub fn director_tick(
                 }
             }
             LuaDirectorTask::DespawnBattleNpc { layout_id } => {
-                if let Some((actor_id, _)) = instance.find_npc(*layout_id) {
+                // An actor ID (from `spawn_bnpc`) or a layout ID.
+                if let Some(actor_id) = resolve_bnpc(instance, *layout_id) {
                     network.lock().remove_actor(instance, actor_id);
                 }
             }
@@ -2153,6 +2287,88 @@ pub fn director_tick(
                     instance,
                     FromServer::PacketSegment(ipc, ObjectId::default()), // TODO: how do we just send it from the player?
                     DestinationNetwork::ZoneClients,
+                );
+            }
+            LuaDirectorTask::Later { at, task } => {
+                instance.later_director_tasks.push((*at, (**task).clone()));
+            }
+            LuaDirectorTask::WarpBattleNpc {
+                who,
+                position,
+                rotation,
+            }
+            | LuaDirectorTask::JumpBattleNpc {
+                who,
+                position,
+                rotation,
+            } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to move!");
+                    continue;
+                };
+                if let Some(NetworkedActor::Npc {
+                    spawn,
+                    navmesh_path,
+                    navmesh_path_lerp,
+                    last_position,
+                    ..
+                }) = instance.find_actor_mut(actor_id)
+                {
+                    spawn.common.position = *position;
+                    spawn.common.rotation = *rotation;
+                    navmesh_path.clear();
+                    *navmesh_path_lerp = 0.0;
+                    *last_position = Some(position.0);
+                }
+                let mut network = network.lock();
+                if matches!(task, LuaDirectorTask::WarpBattleNpc { .. }) {
+                    let ipc =
+                        ServerZoneIpcSegment::new(ServerZoneIpcData::ActorSetPos(ActorSetPos {
+                            position: *position,
+                            rotation: *rotation,
+                            ..Default::default()
+                        }));
+                    network.send_to_instance(
+                        ObjectId::default(),
+                        instance,
+                        FromServer::PacketSegment(ipc, actor_id),
+                        DestinationNetwork::ZoneClients,
+                    );
+                } else {
+                    network.send_ac_in_range_instance(
+                        instance,
+                        actor_id,
+                        ActorControlCategory::SnapNextMove,
+                    );
+                    network.send_in_range_instance(
+                        actor_id,
+                        instance,
+                        FromServer::ActorMove(
+                            actor_id,
+                            *position,
+                            *rotation,
+                            kawari::common::MoveAnimationType::empty(),
+                            kawari::common::MoveAnimationState::None,
+                            kawari::common::JumpState::NoneOrFalling,
+                            Some(JUMP_MOVE_SPEED),
+                        ),
+                        DestinationNetwork::ZoneClients,
+                    );
+                }
+            }
+            LuaDirectorTask::ActorUseAction {
+                actor_id,
+                action_id,
+                target,
+            } => {
+                let actor_id = ObjectId(*actor_id);
+                if instance.find_actor(actor_id).is_none() {
+                    tracing::warn!("Failed to find actor {actor_id} for ActorUseAction!");
+                    continue;
+                }
+                let target_id = target.map(ObjectId).unwrap_or(actor_id);
+                crate::server::npc_behavior::npc_use_action(
+                    &network, &game_data, instance, actor_id, *action_id, target_id,
                 );
             }
             LuaDirectorTask::AppearBattleNpc {

@@ -1,0 +1,12 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "28544": {
+            "players": 44.5,
+            "npcs": 44.5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "BNpcBase 9020, the invisible helper retail used in several duties; here the Copperbell Mines' first boss's three (layout 9054923), which the director puts on Kottos' landing spots and has cast 28544 (w1d1_re.lua). 28544 never caught anyone in Bob's three runs (Chronofoil captures of 2026-10-25): its amounts are a stand-in, the boss's 28546's. No auto-attack, no timepoints: it acts only when the director says."
+}

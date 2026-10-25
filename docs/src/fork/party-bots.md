@@ -75,7 +75,7 @@ A dead bot **lies where it fell**, as a player does: `kill_actor` no longer fade
 it does every other NPC (before, it was gone before anyone could raise it). Then (`party_bot::tend_the_fallen`):
 
 * **Raised** (anyone's Raise, Resurrection and the like, which offer the dead a revive, status 148): it accepts after
-  2 s and gets up there as a raised player does (the server's `revive_in_place`): 20 % of its HP and MP, Weakness
+  2 s and gets up beside its raiser as a raised player does (`party_bot::raiser_position`, an ActorMove there first; the server's `revive_in_place`): 20 % of its HP and MP, Weakness
   (43, 100 s; Brink of Death, 44, if already weakened) and status 418 (5 s), and for everyone near, the raise's
   stand-up (ActorControl ZoneIn with its raise animation, as others see a raised player, then its mode back to
   normal).

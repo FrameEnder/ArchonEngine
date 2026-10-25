@@ -102,7 +102,9 @@ column, an EventRange in the layout; Sapphire's `movePlayerToEntrance`), where t
 `change_zone_warp_to_entrance`); the server log says which rect and facing it used ("Players come in facing").
 Not yet checked in game against 1.788 (no game data here; Bob's bundle of 2026-10-25).
 
-**The way through.** Retail's DirectorVars (sequence 1 throughout): data 1 is the progress (1 past the first door, 3
+**The way through.** Retail's DirectorVars (sequence 1 throughout): data 1 (the first byte after the flag and branch,
+`set_data(0, …)`; the script wrote each one byte higher, so the Duty Information window counted nothing, Bob's bundle
+of 2026-10-25) is the progress (1 past the first door, 3
 the second, 7 the third), data 2 whether the party holds a charge (item 2000441), data 3 how many of the doors' items
 (2000442) it holds. Every gimmick is a GimmickAccessor event (0x000F00xx) with a 2 s interaction (a yes/no prompt
 first for the rocks, detonators, slots and doors), then the event finishes:
@@ -133,6 +135,18 @@ does the same (`director:appear_bnpc(layout, 158)`, `ActorControlCategory::Appea
 INVISIBLE and nothing after it, the gigas had fought the party unseen (Bob's bundle of 2026-10-25). **The last hall:** the cutscene (scene 3 with 178, 1, 38, 1, 0) began as the first player
 came down past z 55 (52-56 in two runs; players waiting at 58-63 didn't start it), the boss 2.4 s later, and
 ActorControl 409 (64, the director) on EObj 4217260; there was no gimmick event.
+
+**Kottos' leaps** (the first boss, 14460; all three runs alike): three invisible helpers (BNpcBase 9020, all layout
+9054923, battalion 4) come with it and stand at the arena's middle (43, −9.27, −89.56). As Kottos begins 28543 (7.7 s,
+on no one, 0xE0000000) they're put (ActorSetPos, all in one tick) on three of four spots 7 yalms north, east, south and
+west of the middle: the first on north or south, the second on east or west, the third opposite the first (N-E-S,
+S-W-N, N-W-S in the runs). Each casts 28544 on itself there (8.7 s), 2 s apart. As each one goes off (9.0, 11.0 and
+13.0 s after 28543 began, hitting nobody in any run) Kottos lands on its spot: ActorControl 239 (`SnapNextMove`: the
+client's handler sets a flag in its MoveController so the next move is a snap) and an ActorMove there (speed byte 90,
+y −9.78), 9.1, 11.2 and 13.3 s in; 28549 (instant, hitting nobody) 1 s after the first two landings, and 28546 (3.7 s,
+on itself) 1 s after the third. The helpers go when it dies. Kawari: `onActorCast` in `w1d1_re.lua` with the new
+director methods (`spawn_bnpc`'s actor IDs, `warp_bnpc`, `actor_use_action`, `jump_bnpc`, `delay`); 28549's and
+28544's damage is a stand-in (28546's, 44.5) since nobody was caught by either (`CopperbellBoss1Helper_9020.json`).
 
 **The bosses** (`spawn_boss`: sealed 15 s after their pull, log 2012 (PlaceName, 15) then 2013; opened at their death,
 log 2014; the battle music, 37, at the first two's pulls and off at their deaths):

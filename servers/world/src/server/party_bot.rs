@@ -2503,8 +2503,46 @@ fn raise_the_fallen(
     }
 }
 
-/// A bot raised where it lies (see `tend_the_fallen`.)
+/// Where someone who accepts a Raise gets up: beside whoever raised them (the source of their revive offer), where
+/// that one stands as they accept. Retail warped the raised player onto their raiser (within a yalm) in each of 44
+/// raises in Bob's Chronofoil captures, however far off they had died (up to 21 yalms in combat); `None` if the
+/// raiser isn't here, when they get up where they lie.
+pub fn raiser_position(instance: &Instance, raised: ObjectId) -> Option<Position> {
+    let raiser = instance
+        .find_actor(raised)?
+        .status_effects()?
+        .get(STATUS_REVIVE_OFFER)?
+        .source_actor_id;
+    if raiser == raised {
+        return None;
+    }
+    instance.find_actor(raiser).map(|actor| actor.position())
+}
+
+/// A bot raised beside its raiser (see `tend_the_fallen`, `raiser_position`.)
 fn raise_bot(network: &Arc<Mutex<NetworkState>>, instance: &mut Instance, id: ObjectId) {
+    let beside = raiser_position(instance, id);
+    let Some(actor) = instance.find_actor_mut(id) else {
+        return;
+    };
+    if let Some(position) = beside {
+        let rotation = actor.rotation();
+        actor.get_common_spawn_mut().position = position;
+        network.lock().send_in_range_instance(
+            id,
+            instance,
+            FromServer::ActorMove(
+                id,
+                position,
+                rotation,
+                MoveAnimationType::empty(),
+                MoveAnimationState::None,
+                JumpState::NoneOrFalling,
+                Some((NPC_RUN_SPEED * 10.0) as u8),
+            ),
+            DestinationNetwork::ZoneClients,
+        );
+    }
     let Some(actor) = instance.find_actor_mut(id) else {
         return;
     };

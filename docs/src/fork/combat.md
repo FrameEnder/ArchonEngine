@@ -549,7 +549,9 @@ Second Wind, Bloodbath, True North, Addle, Leg Sweep, Sleep, Rescue, Esuna). How
   status's time left (`player:effect_time_left(id)`). The self-status effect (kind 15) carries 0x80 in its
   last byte, the target's EffectResult names the target, and ActorControl 20's source is left empty, as retail.
 * **Raise and Resurrection** offer the dead target a revive (status 148, param 8, 60 s; the effect's second byte 20).
-  Accepting it (client trigger 200 with 5) brings them back where they lie with 20 % of their HP and MP, Weakness
+  Accepting it (client trigger 200 with 5) brings them back beside their raiser (the revive offer's source, where they
+  stand as it's accepted: retail put the raised player within a yalm of the raiser in every one of 44 raises in Bob's
+  captures, up to 21 yalms from where they died; Kawari had them get up where they lay, Bob's bundle of 2026-10-25) with 20 % of their HP and MP, Weakness
   (43, 100 s; Brink of Death 44 if already weakened) and status 418 (5 s), through a warp with the raise's effect (181,
   warp type 5); returning to the starting point (8) gives full HP and MP and takes Weakness and Brink away. From
   Bob's captures (19 raises, 7 returns). Retail also lowers main stats by about 26 % under Weakness and 50 % under

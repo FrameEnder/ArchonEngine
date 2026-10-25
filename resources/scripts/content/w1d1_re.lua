@@ -164,8 +164,10 @@ final_started = false
 -- Things to do later: { at = os.time(), fn = function(director) }
 later = {}
 
+-- DirectorVars' data is 0-based (the first byte after the flag and branch): data 1 is `set_data(0, ...)`. Sent one
+-- higher, the Duty Information window counted nothing (Bob's bundle of 2026-10-25: the charge went to the items' byte.)
 function setData(director, index, value)
-    director:set_data(index, value)
+    director:set_data(index - 1, value)
 end
 
 function after(seconds, fn)
@@ -201,10 +203,76 @@ function bossIndex(layout_id)
     return nil
 end
 
+-- Kottos (the first boss)'s leaps, as retail played them in all three runs (Bob's Chronofoil captures of 2026-10-25):
+-- three invisible helpers (BNpcBase 9020, all layout 9054923) come with it. As it begins 28543 (7.7 s, no target)
+-- they're put on three of four spots 7 yalms north, east, south and west of the arena's middle (ActorSetPos) and each
+-- casts 28544 there (8.7 s), 2 s apart: the first on north or south, the second on east or west, the third opposite
+-- the first. As each one goes off, Kottos jumps onto its spot (ActorControl 239, then an ActorMove there), 9.1, 11.2
+-- and 13.3 s after 28543 began: 28549 (its timeline) on the first two landings, 28546 after the third.
+KOTTOS = 9053767
+KOTTOS_LEAP = 28543
+KOTTOS_HELPER = 9054923
+KOTTOS_MARK = 28544
+KOTTOS_MIDDLE = { x = 43.0, z = -89.56 }
+KOTTOS_SPOT_OFFSET = 7.0
+KOTTOS_HELPER_Y = -9.266 -- where the helpers stood
+KOTTOS_LANDING_Y = -9.78 -- where Kottos landed
+KOTTOS_MARK_EVERY = 2.0
+KOTTOS_JUMPS = { 9.1, 11.2, 13.3 }
+kottos_helpers = {}
+
+function kottosSpot(name, y)
+    local m, o = KOTTOS_MIDDLE, KOTTOS_SPOT_OFFSET
+    local spots = {
+        north = { x = m.x, z = m.z - o },
+        south = { x = m.x, z = m.z + o },
+        east = { x = m.x + o, z = m.z },
+        west = { x = m.x - o, z = m.z },
+    }
+    local spot = spots[name]
+    return { x = spot.x, y = y, z = spot.z }
+end
+
+function kottosLeaps(director)
+    local first = (math.random(2) == 1) and "north" or "south"
+    local middle = (math.random(2) == 1) and "east" or "west"
+    local last = (first == "north") and "south" or "north"
+    local order = { first, middle, last }
+    -- The helpers in the order retail used them: the last spawned first.
+    local helpers = { kottos_helpers[3], kottos_helpers[2], kottos_helpers[1] }
+    for i, name in ipairs(order) do
+        local spot = kottosSpot(name, KOTTOS_HELPER_Y)
+        director:warp_bnpc(helpers[i], spot.x, spot.y, spot.z, 0)
+    end
+    for i = 1, 3 do
+        director:delay((i - 1) * KOTTOS_MARK_EVERY)
+        director:actor_use_action(helpers[i], KOTTOS_MARK)
+    end
+    local from = { x = KOTTOS_MIDDLE.x, z = KOTTOS_MIDDLE.z + KOTTOS_SPOT_OFFSET / 3 }
+    for i, name in ipairs(order) do
+        local spot = kottosSpot(name, KOTTOS_LANDING_Y)
+        director:delay(KOTTOS_JUMPS[i])
+        director:jump_bnpc(KOTTOS, spot.x, spot.y, spot.z, math.atan(spot.x - from.x, spot.z - from.z))
+        from = spot
+    end
+    director:delay(0)
+end
+
+function onActorCast(director, layout_id, action_id, actor_id)
+    if layout_id == KOTTOS and action_id == KOTTOS_LEAP and #kottos_helpers == 3 then
+        kottosLeaps(director)
+    end
+end
+
 function spawnBoss(director, index)
     local boss = BOSSES[index]
     director:spawn_boss(boss.bnpc, boss.wall, boss.line, boss.place)
-    if index == 2 then
+    if index == 1 then
+        kottos_helpers = {}
+        for i = 1, 3 do
+            kottos_helpers[i] = director:spawn_bnpc(KOTTOS_HELPER)
+        end
+    elseif index == 2 then
         director:spawn_bnpc(BNPC_BOSS2_ADD)
     end
 end
@@ -307,7 +375,12 @@ function onActorDeath(director, bnpc_id, position)
     for _, layout in ipairs(AFTER_BOSS[index] or {}) do
         director:show_eobj(layout)
     end
-    if index == 2 then
+    if index == 1 then
+        for _, helper in ipairs(kottos_helpers) do
+            director:despawn_bnpc(helper)
+        end
+        kottos_helpers = {}
+    elseif index == 2 then
         director:despawn_bnpc(BNPC_BOSS2_ADD)
     elseif index == 3 then
         director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)

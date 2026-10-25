@@ -1021,6 +1021,20 @@ pub fn npc_behavior(
         network.send_in_range_instance(id, instance, msg, DestinationNetwork::ZoneClients);
     }
 
+    // A director that answers what a boss does hears of each action as it begins (`onActorCast`.)
+    let begun: Vec<(u32, u32, ObjectId)> = new_action_requests
+        .iter()
+        .filter_map(|(id, request, _)| {
+            let layout_id = instance.find_actor(*id)?.get_common_spawn().layout_id;
+            Some((layout_id, request.action_id, *id))
+        })
+        .collect();
+    if let Some(director) = instance.directors.first_mut() {
+        for (layout_id, action_id, id) in begun {
+            director.on_actor_cast(layout_id, action_id, id);
+        }
+    }
+
     for (id, request, cast_time) in new_action_requests {
         // The client drops NPCs out of their battle stance after they act, so draw their weapon again half a second
         // after this lands.
