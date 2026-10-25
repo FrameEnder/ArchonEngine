@@ -368,6 +368,9 @@ add one when something is found.
 * Not done from the audit of 2026-10-25: the Limit Break gauge (retail's ActorControlSelf 505, 116 in the first
   stretch; Kawari never fills it); ActorControl 13 (3, value), sent from the player every ~6 s (its handler isn't
   identified); the second gigas pair (2790237, 4023509) pulled 5 s apart where retail linked them.
+* Duty clear doesn't send retail's completion EXP and gil logs (9393 with 24200, 2163 with 2700), the director's
+  Unknown7 (0x40000007: (0, 1) and (1, 1) during the run, (0, 0) and (1, 0) at the clear), ActorControlSelf 130 (3, 1)
+  and 257 ×3, or UnkContentFinder2 (3, 4); the clear rewards need checking against the InstanceContent sheet.
 * The timelines are by BNpcBase (1395-1403, 1421, 14448, 14449, 14460, 14537, 9020).
 
 ## Quest battles and directors
@@ -428,6 +431,10 @@ add one when something is found.
 
 ## Combat
 
+* NPCs no longer redraw their weapon after every action (2026-10-25: retail never did; the redraw dated from the
+  old 0.6 s animation lock and swing 0, which now match retail). If NPCs drop their battle stance between attacks
+  again, look at the NPC ActionEffect.
+* Area results beyond eight targets fall back to flying text (only AoeEffect8 is laid out, not 16/24/32).
 * **Duty Finder bots** (2026-10-22, untested in game): bots are listed as a Duty Finder party of players (retail's
   Duty Support list, recorded on 2026-10-23, is for [Party NPCs](party-npcs.md)); whether the client takes an NPC's actor ID there (HP bars, targeting
   from the list) is the first thing to check. Their HP in the list isn't updated by the server, no PartyMemberPositions

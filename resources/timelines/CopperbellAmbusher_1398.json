@@ -22,5 +22,8 @@
     },
     "timeline_always_plays": false,
     "timepoints": [],
+    "animation_locks": {
+        "989": 2.1
+    },
     "comment": "Copperbell Mines' first ambushing gigas (BNpcBase 1398, layout 4023421): 2103 HP, level 17; auto-attack 870 every 3.0 s, 989 every 10.1 s (sometimes two targets). From Bob's Chronofoil captures of the Copperbell Mines (2026-10-25): one run with Duty Support (bd298651, visit 0.5) and two Duty Finder runs (69bea0b9, visits 0.1 and 0.3), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
 }

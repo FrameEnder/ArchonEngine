@@ -27,7 +27,13 @@ impl GimmickAccessorEventHandler {
 #[async_trait]
 impl EventHandler for GimmickAccessorEventHandler {
     async fn on_talk(&self, _event: &Event, _target_id: ObjectTypeId, player: &mut LuaPlayer) {
-        player.play_scene(Self::SCENE_BEGIN, SceneFlags::HIDE_HOTBAR, Vec::new());
+        // Retail's prompt (a rock, a lever, a slot, a door): flags 0x2001 (Bob's Copperbell Mines captures of
+        // 2026-10-25, every one.) Pickups never get here (see `StartTalkEvent` in main.rs.)
+        player.play_scene(
+            Self::SCENE_BEGIN,
+            SceneFlags::HIDE_HOTBAR | SceneFlags::NO_DEFAULT_CAMERA,
+            Vec::new(),
+        );
     }
 
     async fn on_return(

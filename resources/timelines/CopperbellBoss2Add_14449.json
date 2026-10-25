@@ -8,5 +8,9 @@
     },
     "timeline_always_plays": false,
     "timepoints": [],
+    "animation_locks": {
+        "28464": 2.6,
+        "28465": 2.1
+    },
     "comment": "The Copperbell Mines' second boss's helpers (BNpcBase 14449, all six with layout 9040086): 369 HP, level 17, never fought nor killed; no auto-attack, no timepoints. The director spawns all six, holds them and plays their round after each of the boss's 28463: 28464 (instant, hitting nobody) then 28465 (5.7 s, 121-127 to players) from their spots (w1d1_re.lua). From Bob's Chronofoil captures of the Copperbell Mines (2026-10-25): one run with Duty Support (bd298651, visit 0.5) and two Duty Finder runs (69bea0b9, visits 0.1 and 0.3), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members."
 }

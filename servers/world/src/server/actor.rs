@@ -670,7 +670,46 @@ fn credit_battle_npc_kill(
     credited
 }
 
-/// Updates other actors about this actor's HP and MP.
+/// Whether this is an enemy (not a party NPC, pet or chocobo): retail never sends one's UpdateHpMpTp. Its health reaches
+/// clients with the hits that change it (their EffectResultBasic), and its StatusEffectList otherwise (a damage over time
+/// tick: ActorControl 1541, then the list). Bob's Copperbell Mines capture with Duty Support (2026-10-25): 562
+/// UpdateHpMpTp, all the player's and the party NPCs', none from the 1,500 enemy results.
+fn is_enemy(actor: &NetworkedActor) -> bool {
+    matches!(actor, NetworkedActor::Npc { .. })
+        && actor.get_common_spawn().object_kind == ObjectKind::BattleNpc(BattleNpcSubKind::Enemy)
+}
+
+/// Updates others about this actor's HP and MP after a hit an ActionEffect shows: the same as `update_actor_hp_mp`, but
+/// nothing for an enemy, whose new health its EffectResultBasic carries as the hit lands (`action.rs`).
+pub fn update_actor_hp_mp_after_hit(
+    network: Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    target_actor_id: ObjectId,
+) {
+    if instance.find_actor(target_actor_id).is_some_and(is_enemy) {
+        kill_if_dead(network, instance, target_actor_id);
+    } else {
+        update_actor_hp_mp(network, instance, target_actor_id);
+    }
+}
+
+/// Starts this actor's death if its health ran out.
+fn kill_if_dead(
+    network: Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    target_actor_id: ObjectId,
+) {
+    if let Some(actor) = instance.find_actor(target_actor_id) {
+        let common_spawn = actor.get_common_spawn();
+        if common_spawn.health_points == 0 && common_spawn.mode != CharacterMode::Dead {
+            kill_actor(network, instance, target_actor_id);
+        }
+    }
+}
+
+/// Updates other actors about this actor's HP and MP: only when they changed since last time (Kawari sent the same
+/// numbers about every half second, 2,295 lists to retail's 562 in the same stretch of the Copperbell Mines), and for
+/// an enemy as its StatusEffectList (see `is_enemy`).
 pub fn update_actor_hp_mp(
     network: Arc<Mutex<NetworkState>>,
     instance: &mut Instance,
@@ -684,8 +723,16 @@ pub fn update_actor_hp_mp(
         };
 
         let common_spawn = actor.get_common_spawn();
+        let numbers = (
+            common_spawn.health_points,
+            common_spawn.resource_points,
+            common_spawn.max_resource_points,
+        );
+        let unchanged = instance.last_hp_mp.get(&target_actor_id) == Some(&numbers);
 
-        if crate::common::is_crafter(common_spawn.class_job) {
+        if unchanged {
+            // Nothing new to tell anyone.
+        } else if crate::common::is_crafter(common_spawn.class_job) || is_enemy(actor) {
             // UpdateHpMpTp has no CP: the client takes it from StatusEffectList only (7.57: 0x140B383A0 writes MP and
             // GP, 0x140B38500 the class's own resource.)
             send_effects_list(network.clone(), instance, target_actor_id);
@@ -712,6 +759,7 @@ pub fn update_actor_hp_mp(
         if common_spawn.health_points == 0 && common_spawn.mode != CharacterMode::Dead {
             send_kill_actor = true;
         }
+        instance.last_hp_mp.insert(target_actor_id, numbers);
     }
 
     if send_kill_actor {

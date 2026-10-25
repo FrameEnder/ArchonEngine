@@ -41,7 +41,9 @@ stand) with two, three and four casters (1345). Retail, in all three runs:
 The rooms' bosses cast 430 on themselves as each fight starts and every 33 s (status 208, 100, 30 s), 911 at 8 and
 18 s, and 912 (hitting nobody) at 22 s (`TamTaraMiniboss_567.json`'s timepoints).
 
-**The gimmicks** (GimmickAccessor events, 0x000F00xx; each a 2 s interaction, then the event finishes):
+**The gimmicks** (GimmickAccessor events, 0x000F00xx; each a 2 s interaction, then the event finishes; something to
+pick up, a GimmickAccessor of the Interactable kind, has no prompt, and a prompt is scene 1 with flags 0x2001, see the
+Copperbell Mines below):
 
 | EObj | What | Retail |
 |---|---|---|
@@ -124,7 +126,11 @@ first for the rocks, detonators, slots and doors), then the event finishes:
 | 2001532, 2001533 | Items by the third door | the second shown as the second boss falls |
 | 2001538, 2001534 | The third slot and door | as the first; the door: 2001535 hidden, data 1 = 7, log 2062 |
 
-The refusals' logs are the gimmicks' own (`isGimmickFunctional`). The first lever was scripted as 2000161, which nobody can use: saying yes to its prompt did nothing and the run was stuck there (Bob's bundle of 2026-10-25); the EObj each gimmick event came from in all three runs is the one in this table. The EObjs hidden at the start (state 7 in their
+Retail asked nothing for the pickups (the charges and the doors' items: EventStart, then 1.9 s later the log and
+EventFinish, no EventScene2) and showed scene 1 with flags 0x2001 (HIDE_HOTBAR and NO_DEFAULT_CAMERA) for the rocks,
+levers, slots and doors. Kawari asked yes or no for every one (flags 0x2000). Now a GimmickAccessor of the Interactable
+kind goes straight to the director as it's talked to (`StartTalkEvent` in `main.rs`), and the others show retail's
+flags (`GimmickAccessorEventHandler`); Sastasha's and the Tam-Tara Deepcroft's keys are pickups too. The refusals' logs are the gimmicks' own (`isGimmickFunctional`). The first lever was scripted as 2000161, which nobody can use: saying yes to its prompt did nothing and the run was stuck there (Bob's bundle of 2026-10-25); the EObj each gimmick event came from in all three runs is the one in this table. The EObjs hidden at the start (state 7 in their
 first spawn) are hidden in `onSetup`. **Ambushes:** the two bigger gigas (1398 at layout 4023421, 1403 at 4023560) wait
 in a pile of rock (2000168, 2000185); someone coming within 19.4-22 yalms (all three runs) hides the pile and the gigas
 comes at them at once (it spawned and targeted the player in the same packet burst, display flags 0x4002B with

@@ -90,8 +90,6 @@ pub enum QueuedTaskData {
     ResetCombo,
     /// An NPC leaves its battle stance, if it still has nothing to fight.
     SheatheWeapon,
-    /// An NPC goes back into its battle stance after acting, if it's still fighting.
-    DrawWeapon,
     /// Respawn a new mob.
     RespawnMob { layout_id: u32 },
     /// Ends a FATE.
@@ -169,6 +167,8 @@ pub struct Instance {
     /// NPCs a director holds (`director:hold_bnpc`): `npc_behavior` leaves them alone, so they do only what the
     /// director has them do (warps, jumps, actions), as retail's invisible boss helpers.
     pub held_npcs: std::collections::HashSet<ObjectId>,
+    /// The HP, MP and max MP last sent for each actor (`update_actor_hp_mp` sends only changes.)
+    pub last_hp_mp: HashMap<ObjectId, (u32, u16, u16)>,
     /// Director tasks queued for later (`director:delay`), and when they're due.
     pub later_director_tasks: Vec<(std::time::Instant, crate::server::director::LuaDirectorTask)>,
     /// The fight here is over (a quest battle won, `npc_behavior::end_fight`): NPCs don't take anyone on again, whatever
