@@ -485,6 +485,16 @@ impl Zone {
         None
     }
 
+    /// Any layout object by its instance ID, in the current layer set.
+    pub fn find_layout_object(&self, instance_id: u32) -> Option<&InstanceObject> {
+        self.layer_groups
+            .iter()
+            .flat_map(|layer_group| layer_group.chunks[0].layers.iter())
+            .filter(|layer| layer.header.has_layer_set(self.layer_set as u32))
+            .flat_map(|layer| layer.objects.iter())
+            .find(|object| object.instance_id == instance_id)
+    }
+
     pub fn find_pop_range(
         &self,
         instance_id: u32,
@@ -1201,8 +1211,32 @@ pub fn change_zone_warp_to_entrance(
         }
     }
 
+    // An InstanceContent's players face the way its entrance rect (an EventRange) does, as Sapphire does it: the
+    // entrance circle's own object faced 0 in the Copperbell Mines, where retail turned players to 1.788 in all three
+    // runs (Bob's captures and bundle of 2026-10-25).
+    let entrance_rect_rotation = target_instance
+        .content_handler_id()
+        .filter(|id| id.handler_type() == HandlerType::InstanceContent)
+        .and_then(|id| game_data.find_instance_content_entrance_rect(id.event_id()))
+        .and_then(|rect| {
+            let object = target_instance.zone.find_layout_object(rect);
+            if object.is_none() {
+                tracing::warn!("Entrance rect {rect} isn't in the zone's layout!");
+            }
+            object
+        })
+        .map(|rect| {
+            let (_, rotation, _) = Affine3A::from(rect.transform).to_scale_rotation_translation();
+            let facing = euler_to_direction(rotation.to_euler(EulerRot::XYZ));
+            tracing::info!(
+                "Players come in facing {facing} (entrance rect {})",
+                rect.instance_id
+            );
+            facing
+        });
+
     let exit_position;
-    let exit_rotation;
+    let mut exit_rotation;
     if let Some(destination_object) = destiation_object.or(target_instance.zone.find_entrance()) {
         let (_, rotation, _) =
             Affine3A::from(destination_object.transform).to_scale_rotation_translation();
@@ -1224,6 +1258,9 @@ pub fn change_zone_warp_to_entrance(
             exit_position = None;
             exit_rotation = None;
         }
+    }
+    if entrance_rect_rotation.is_some() {
+        exit_rotation = entrance_rect_rotation;
     }
 
     do_change_zone(

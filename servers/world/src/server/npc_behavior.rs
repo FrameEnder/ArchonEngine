@@ -1154,11 +1154,23 @@ pub fn npc_behavior(
             state,
             navmesh_target: current_target,
             spawn,
+            enmity,
             ..
         } = actor
         {
             if *state == NpcState::Dead || *state == NpcState::AoeTest {
                 continue;
+            }
+
+            // Everyone on its enmity list has it as a hater, whoever it's going for: retail's HaterList kept each
+            // enemy that had the player on its list, at 0-1 % while the tank held it (Bob's Copperbell Mines capture
+            // with Duty Support, 2026-10-25). Counted from its target only, an enemy left the player's list the
+            // moment the tank took it, and was always at 100 % while it was there.
+            for hated in enmity.keys() {
+                let list = haters.entry(*hated).or_default();
+                if !list.contains(id) {
+                    list.push(*id);
+                }
             }
 
             if let Some(current_target) = current_target
@@ -1205,8 +1217,10 @@ pub fn npc_behavior(
                     }
                 }
 
-                haters.entry(*actor).or_default();
-                haters.get_mut(actor).unwrap().push(*id);
+                let list = haters.entry(*actor).or_default();
+                if !list.contains(id) {
+                    list.push(*id);
+                }
             }
         }
     }

@@ -94,6 +94,14 @@ last bosses' helpers (14449, 9020) are `nonpop`. Every kind fought has a timelin
 28461-28465, 28543, 28545-28547, 28549, 28760, 28762-28764; the self-buffs (402: status 8 at 226; 421: 203 at 150; 400:
 53 at 50) go on the caster (`gain_effect_self`).
 
+**Coming in.** Retail turned players to 1.788 at the entrance (all three runs, about (-254.4, 23.8, -170.7));
+Kawari turned them to 0, the way the entrance circle's own layout object (2000182, bound to 4085080) faces, which is
+how every InstanceContent was entered (the Sastasha and Tam-Tara runs in Bob's bundles too; Tam-Tara's retail
+facing happens to be 0). Players now face the way the InstanceContent's entrance rect does (its LGBEventRange
+column, an EventRange in the layout; Sapphire's `movePlayerToEntrance`), where the duty has one (`zone.rs`,
+`change_zone_warp_to_entrance`); the server log says which rect and facing it used ("Players come in facing").
+Not yet checked in game against 1.788 (no game data here; Bob's bundle of 2026-10-25).
+
 **The way through.** Retail's DirectorVars (sequence 1 throughout): data 1 is the progress (1 past the first door, 3
 the second, 7 the third), data 2 whether the party holds a charge (item 2000441), data 3 how many of the doors' items
 (2000442) it holds. Every gimmick is a GimmickAccessor event (0x000F00xx) with a 2 s interaction (a yes/no prompt

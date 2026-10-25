@@ -3243,6 +3243,12 @@ impl GameData {
         Some(self.public_content_sheet.row(id)?.LGBPopRange).filter(|x| *x != 0)
     }
 
+    /// The InstanceContent's entrance rect (its LGBEventRange column, Sapphire's EntranceRect): the layout ID of the
+    /// EventRange whose rotation players face as they come in.
+    pub fn find_instance_content_entrance_rect(&mut self, id: u32) -> Option<u32> {
+        Some(self.instance_content_sheet.row(id)?.LGBEventRange).filter(|x| *x != 0)
+    }
+
     /// Returns the type of PublicContent this is.
     pub fn find_public_content_type(&mut self, id: u32) -> Option<PublicContentType> {
         PublicContentType::from_repr(self.public_content_sheet.row(id)?.Type)

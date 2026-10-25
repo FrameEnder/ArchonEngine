@@ -684,6 +684,19 @@ fn server_logic_tick(
                                 .collect()
                         })
                         .unwrap_or_default();
+                    // In the order they were last sent, newcomers after: retail's list kept its order as enemies
+                    // joined (the capture above), and the enemies here come in no particular order each tick.
+                    if let Some((last, _)) = instance.last_enmity_lists.get(id) {
+                        let place = |actor: &ObjectId| {
+                            last.list
+                                .iter()
+                                .position(|hater| hater.actor_id == *actor)
+                                .unwrap_or(usize::MAX)
+                        };
+                        list.sort_by_key(|hater| (place(&hater.actor_id), hater.actor_id.0));
+                    } else {
+                        list.sort_by_key(|hater| hater.actor_id.0);
+                    }
                     list.truncate(32);
                     HaterList {
                         count: list.len() as u32,
