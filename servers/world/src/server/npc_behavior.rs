@@ -90,6 +90,11 @@ const MIN_STEP: f32 = 0.05;
 /// A path that ends less than this much nearer (yalms, across the ground) to an NPC's spot than where it stands gets it
 /// no closer: it has arrived.
 const NO_CLOSER_MARGIN: f32 = 0.1;
+/// How long an open-world NPC leaves alone someone it couldn't get to (no navmesh path, or one that gets it no closer):
+/// the Brass Blade at Scorpion Crossing kept noticing a monster it couldn't reach, walked back to its post, noticed it
+/// again, and stepped between its post (off the navmesh) and the mesh's edge every half second (Bob's bundle of
+/// 2026-10-25.)
+const UNREACHABLE_FOR: Duration = Duration::from_secs(60);
 
 /// The distance between two points across the ground: the navmesh's heights are a little off the NPCs' (a quarter
 /// yalm on a flat test mesh), so a path to where it stands starts that far above it.
@@ -333,6 +338,10 @@ pub fn npc_behavior(
     let mut dropped_targets = Vec::new();
     // Idle NPCs that couldn't wander (off the navmesh, or no path to the spot): (actor, layout ID, where.)
     let mut cant_wander: Vec<(ObjectId, u32, Vec3A)> = Vec::new();
+    // (NPC, whom it couldn't get to) this tick (`UNREACHABLE_FOR`.)
+    let mut unreachable: Vec<(ObjectId, ObjectId)> = Vec::new();
+    let now = Instant::now();
+    instance.unreachable.retain(|_, until| *until > now);
 
     // mut pass
     for (id, actor) in &mut instance.actors {
@@ -452,7 +461,10 @@ pub fn npc_behavior(
             if instance.fight_over {
                 enmity.clear();
             }
-            enmity.retain(|actor, _| enemies.iter().any(|(id, _, _)| id == actor));
+            enmity.retain(|actor, _| {
+                enemies.iter().any(|(id, _, _)| id == actor)
+                    && !instance.unreachable.contains_key(&(*id, *actor))
+            });
             let current_actor = match current_target {
                 Some(NpcTarget::Actor(actor)) if *state == NpcState::Hate => Some(*actor),
                 _ => None,
@@ -516,6 +528,9 @@ pub fn npc_behavior(
                         continue;
                     }
                     if guard && levels.contains_key(target_id) {
+                        continue;
+                    }
+                    if instance.unreachable.contains_key(&(*id, *target_id)) {
                         continue;
                     }
                     if levels.get(target_id).is_some_and(|level| {
@@ -722,6 +737,20 @@ pub fn npc_behavior(
                         // Start the new path from where we actually are.
                         *last_position = Some(current_pos);
                         *current_path_lerp = 0.0;
+
+                        // Someone it can't get any nearer to, out in the world: it leaves them alone for a while
+                        // (`UNREACHABLE_FOR`) instead of noticing them again at once.
+                        let open_world_chase = matches!(current_target, NpcTarget::Actor(_))
+                            && !in_content
+                            && !party_bot
+                            && !following_owner;
+                        if open_world_chase
+                            && (!found_path || (no_closer && distance > timeline.attack_range))
+                            && let NpcTarget::Actor(actor) = current_target
+                        {
+                            unreachable.push((*id, *actor));
+                            reset_target = true;
+                        }
 
                         // Drop the current target if we can't path to them too
                         if !found_path && !arrived {
@@ -1090,6 +1119,10 @@ pub fn npc_behavior(
     // Nobody claims those that gave up a chase any more.
     for id in gave_up {
         first_attack::clear(&mut network.lock(), instance, id);
+    }
+
+    for pair in unreachable {
+        instance.unreachable.insert(pair, now + UNREACHABLE_FOR);
     }
 
     // Those that lost their target sheathe their weapon, unless they find another one in the meantime.

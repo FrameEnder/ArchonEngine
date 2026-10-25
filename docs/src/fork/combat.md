@@ -371,7 +371,11 @@ the west gate; layout 4057553, base 798, by the east one), battalion 0 (monsters
   spawn rotation (−1.462) at the end. Kawari: an NPC at a post (a guard, or a `stationary` spot) that loses its
   target walks back home still watching (it can pick up another monster on the way; leashed enemies run home ignoring
   everyone instead), and on arrival turns to the rotation it spawned with (`home_rotation`), one ActorMove. Out in
-  the world only. The nameplate shows while it's fighting, so the one that saw no monster showed none.
+  the world only. Someone it can't get to (no navmesh path, or a path whose end is no nearer than where it stands) it
+  leaves alone for a minute (`UNREACHABLE_FOR`, `Instance::unreachable`), dropped from its enmity and not noticed
+  again: the Brass Blade at Scorpion Crossing (layout 4057530, its post 0.63 yalms off the navmesh) noticed a monster
+  it couldn't reach, gave up, walked home, noticed it again and stepped between its post and the mesh's edge every
+  half second for five minutes (Bob's bundle of 2026-10-25). The nameplate shows while it's fighting, so the one that saw no monster showed none.
 * **Clicking one plays its line.** Retail answers the client's StartTalkEvent (DefaultTalk 1838 for base 798, 1839 for
   the Lalafell) with EventStart (Talk), then scene 0 with flags 0x2001 (HIDE_HOTBAR | NO_DEFAULT_CAMERA) and no
   parameters; the client shows the line and returns the scene (EventReturnHandler2), and the event finishes.
