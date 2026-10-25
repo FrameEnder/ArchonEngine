@@ -1,0 +1,101 @@
+{
+  "quest": 510,
+  "script": "ManFst207_00510",
+  "source": "Bob's Chronofoil captures of 2026-10-25; scenes and effects from Bob's Chronofoil capture of 2026-10-25",
+  "params": {
+    "ACTOR0": 1003783,
+    "ACTOR1": 1005015,
+    "ACTOR2": 1005119,
+    "ACTOR3": 1003929,
+    "CUT_MANFST20710": 82,
+    "SEQ_0_ACTOR0_NQ": 50
+  },
+  "steps": [
+    {
+      "talk": 1003783,
+      "layout": 4125415,
+      "what": "ACTOR0",
+      "territory": 212,
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 50,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "effects": [
+        {
+          "zone": 212
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1005119,
+      "layout": 4170096,
+      "what": "ACTOR2",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0x6001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            [
+              1,
+              1
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1003929,
+      "layout": 3967311,
+      "what": "ACTOR3",
+      "scenes": [
+        {
+          "scene": 3,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

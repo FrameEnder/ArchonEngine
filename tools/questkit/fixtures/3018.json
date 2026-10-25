@@ -1,0 +1,35 @@
+{
+  "quest": 3018,
+  "script": "SubCts897_03018",
+  "source": "Bob's Chronofoil captures of 2026-10-25; scenes and effects from Bob's Chronofoil capture of 2026-10-25",
+  "params": {
+    "ACTOR0": 1004990,
+    "ACTOR1": 1004096,
+    "ITEM0": 2002417,
+    "ITEM1": 2002407,
+    "ACTOR2": 1024586
+  },
+  "steps": [
+    {
+      "talk": 1004990,
+      "layout": 4201198,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "accepted": false,
+        "notices": []
+      }
+    }
+  ]
+}

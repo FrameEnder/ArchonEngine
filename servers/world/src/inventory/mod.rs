@@ -108,6 +108,11 @@ pub struct Inventory {
     /// they're out. Kept in the retainer table, not with the player's inventory.
     #[serde(skip)]
     pub retainer: Option<Box<crate::retainer::RetainerInventory>>,
+    /// Items the client put in an NPC's trade window (moved to HandIn, 2005) during the current event: their bag and
+    /// slot, the item and how many. The client only points at them; they stay in their bags until the event takes them
+    /// (`take_handed_in`), as retail took Color Your World's on its reward (Bob's Chronofoil capture of 2026-10-25.)
+    #[serde(skip)]
+    pub handed_in: Vec<(ContainerType, u16, u32, u32)>,
 }
 
 impl serialize::ToSql<Text, Sqlite> for Inventory {
@@ -154,6 +159,7 @@ impl Default for Inventory {
             glamour: Default::default(),
             saddlebag: Self::empty_saddlebag(),
             retainer: None,
+            handed_in: Vec::new(),
         }
     }
 }
@@ -278,6 +284,42 @@ impl Inventory {
     }
 
     pub fn process_action(&mut self, action: &ItemOperation) {
+        // An NPC trade window: the item is only pointed at (retail moved it into HandIn and left its bag slot alone
+        // until the reward took it; Bob's Chronofoil capture of 2026-10-25, Color Your World.)
+        if matches!(
+            action.operation_type,
+            ItemOperationKind::Move | ItemOperationKind::Exchange
+        ) {
+            if action.dst_storage_id == ContainerType::HandIn {
+                if let Some(item) = self.get_item(action.src_storage_id, action.src_container_index)
+                    && item.quantity > 0
+                {
+                    let amount = if action.src_stack > 0 {
+                        action.src_stack.min(item.quantity as u32)
+                    } else {
+                        item.quantity as u32
+                    };
+                    self.handed_in.retain(|(container, slot, ..)| {
+                        (*container, *slot) != (action.src_storage_id, action.src_container_index)
+                    });
+                    self.handed_in.push((
+                        action.src_storage_id,
+                        action.src_container_index,
+                        item.item_id,
+                        amount,
+                    ));
+                }
+                return;
+            }
+            if action.src_storage_id == ContainerType::HandIn {
+                // Taken back out of the trade window.
+                let index = action.src_container_index as usize;
+                if index < self.handed_in.len() {
+                    self.handed_in.remove(index);
+                }
+                return;
+            }
+        }
         match action.operation_type {
             ItemOperationKind::Discard => {
                 if let Some(src_item) =
@@ -396,6 +438,25 @@ impl Inventory {
                 );
             }
         }
+    }
+
+    /// Takes the items handed in through an NPC's trade window out of their bags (and forgets them); returns how many
+    /// stacks were taken. Each must still be the item that was handed in.
+    pub fn take_handed_in(&mut self) -> usize {
+        let mut taken = 0;
+        for (container, slot, item_id, amount) in std::mem::take(&mut self.handed_in) {
+            if let Some(item) = self.get_item_mut(container, slot)
+                && item.item_id == item_id
+                && item.quantity >= amount as i32
+            {
+                item.quantity -= amount as i32;
+                if item.quantity == 0 {
+                    *item = Item::default();
+                }
+                taken += 1;
+            }
+        }
+        taken
     }
 
     /// Entrusting to or withdrawing from the called retainer from their menu (`ItemOperationKind::RetainerEntrust` /
@@ -1181,6 +1242,33 @@ mod tests {
         assert_eq!(inventory.pages[0].get_slot(2).quantity, 0);
         assert_eq!(inventory.armoury_body.get_slot(0).item_id, 2990);
         assert_eq!(inventory.armoury_body.get_slot(0).quantity, 1);
+    }
+
+    /// An NPC trade (Color Your World on retail, 2026-10-25): moving the item into HandIn leaves it in its bag; the
+    /// event takes it at the reward.
+    #[test]
+    fn hand_in_is_taken_at_the_reward() {
+        let mut inventory = Inventory::default();
+        let mut dye = item(4745);
+        dye.quantity = 3;
+        inventory.add_in_slot(dye, &ContainerType::Inventory1, 5);
+
+        inventory.process_action(&ItemOperation {
+            operation_type: ItemOperationKind::Move,
+            src_storage_id: ContainerType::Inventory1,
+            src_container_index: 5,
+            src_stack: 1,
+            dst_storage_id: ContainerType::HandIn,
+            dst_container_index: 0,
+            ..Default::default()
+        });
+        assert_eq!(inventory.pages[1].get_slot(5).quantity, 3);
+
+        assert_eq!(inventory.take_handed_in(), 1);
+        assert_eq!(inventory.pages[1].get_slot(5).quantity, 2);
+        // Taken once only.
+        assert_eq!(inventory.take_handed_in(), 0);
+        assert_eq!(inventory.pages[1].get_slot(5).quantity, 2);
     }
 
     /// Entrusting an item to a called retainer and taking it back: the retail moves (type 0x203 on 2026.09.15) between

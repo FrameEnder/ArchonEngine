@@ -1,0 +1,68 @@
+{
+  "quest": 699,
+  "script": "SubSea921_00699",
+  "source": "Bob's Chronofoil captures of 2026-10-25; scenes and effects from Bob's Chronofoil capture of 2026-10-25",
+  "params": {
+    "ACTOR0": 1004990,
+    "RITEM0": 4745,
+    "HOW_TO_SENSYOKU": 95,
+    "LOC_GENERAL_ACTION": 15,
+    "UNLOCK_IMAGE_DYEING": 249
+  },
+  "steps": [
+    {
+      "talk": 1004990,
+      "layout": 4201198,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1004990,
+      "layout": 4201198,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 1,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 2,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

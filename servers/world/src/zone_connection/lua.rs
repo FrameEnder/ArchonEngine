@@ -298,6 +298,11 @@ impl ZoneConnection {
                 LuaTask::ToggleOrchestrion { id } => {
                     self.toggle_orchestrion(*id).await;
                 }
+                LuaTask::TakeHandedInItems => {
+                    if self.player_data.inventory.take_handed_in() > 0 {
+                        self.send_inventory().await;
+                    }
+                }
                 LuaTask::AddItem {
                     id,
                     quantity,

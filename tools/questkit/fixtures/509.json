@@ -1,0 +1,114 @@
+{
+  "quest": 509,
+  "script": "ManFst206_00509",
+  "source": "Bob's Chronofoil captures of 2026-10-25; scenes and effects from Bob's Chronofoil capture of 2026-10-25",
+  "params": {
+    "ACTOR0": 1001353,
+    "ACTOR1": 1004603,
+    "ACTOR2": 1005012,
+    "POPRANGE0": 4148347,
+    "CUT_MANFST20610": 80,
+    "CUT_MANFST20620": 81,
+    "CUT_MANFST20630": 161,
+    "UNLOCK_IMAGE_RETAINER": 19,
+    "HOWTO_RETAINER_EMPLOY": 52
+  },
+  "steps": [
+    {
+      "talk": 1001353,
+      "layout": 3146810,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1004603,
+      "layout": 4106017,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1005012,
+      "layout": 4147225,
+      "what": "ACTOR2",
+      "territory": 212,
+      "scenes": [
+        {
+          "scene": 3,
+          "flags": "0x2000",
+          "results": [
+            1,
+            5824,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 4,
+          "flags": "0xf8402efb",
+          "params": [
+            5824
+          ],
+          "results": [
+            5824,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "effects": [
+        {
+          "zone": 212
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

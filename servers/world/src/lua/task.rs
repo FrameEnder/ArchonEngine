@@ -89,6 +89,8 @@ pub enum LuaTask {
         quantity: i32,
         send_client_update: bool,
     },
+    /// Takes what was handed in through the NPC's trade window (`Inventory::take_handed_in`.)
+    TakeHandedInItems,
     UnlockContent {
         id: u16,
     },
