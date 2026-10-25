@@ -785,6 +785,21 @@ pub enum ActorControlCategory {
     #[brw(magic = 609u32)]
     ToggleWireframeRendering(),
 
+    /// The server refused an action the client asked for: the client prints the LogMessage and drops the request.
+    /// Retail (Bob's Chronofoil captures, 2026-06 to 2026-10, 18 of these): 563 "Invalid target." when the target had
+    /// died, 579 "Cannot execute at this time." (the caster had died, among others), 582 "Not yet ready." with
+    /// `elapsed` the recast group's elapsed time in hundredths of a second, 1952 for an item used where it can't be.
+    #[brw(magic = 700u32)]
+    ActionRejected {
+        /// Index into the LogMessage Excel sheet.
+        log_message: u32,
+        /// The request's action type (1 for an action, 2 for an item.)
+        action_type: u32,
+        action_id: u32,
+        /// 0, except with 582.
+        elapsed: u32,
+    },
+
     #[brw(magic = 801u32)]
     GearSetEquipped { gearset_index: u32 },
 

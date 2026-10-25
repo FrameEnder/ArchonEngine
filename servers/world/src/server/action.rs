@@ -127,8 +127,10 @@ pub fn handle_action_messages(
 
         let (category, cast_time);
         let recast;
+        let can_target_dead;
         {
             let mut game_data = game_data.lock();
+            can_target_dead = game_data.action_can_target_dead(request.action_id);
             // Not an action the Action sheet has (an ActionRequest the server doesn't handle yet): ignored, rather
             // than taking the server down.
             let Some(cast) = game_data.get_casttime(request.action_id) else {
@@ -151,6 +153,28 @@ pub fn handle_action_messages(
         let Some(actor) = instance.find_actor(*from_actor_id) else {
             return true;
         };
+
+        if request.action_type == ActionType::Action
+            && let NetworkedActor::Player { .. } = actor
+            && let Some(log_message) =
+                rejection(instance, *from_actor_id, actor, request, can_target_dead)
+        {
+            let ipc =
+                ServerZoneIpcSegment::new(ServerZoneIpcData::ActorControlSelf(ActorControlSelf {
+                    category: ActorControlCategory::ActionRejected {
+                        log_message,
+                        action_type: 1,
+                        action_id: request.action_id,
+                        elapsed: 0,
+                    },
+                }));
+            network.lock().send_to_by_actor_id(
+                *from_actor_id,
+                FromServer::PacketSegment(ipc, *from_actor_id),
+                DestinationNetwork::ZoneClients,
+            );
+            return true;
+        }
 
         let parameters = match actor {
             NetworkedActor::Player { parameters, .. } => parameters,
@@ -2108,6 +2132,61 @@ pub fn add_healing_enmity(instance: &mut Instance, healer: ObjectId, effective: 
 /// 2026-10-21: 3,677 of 6,180 results; a player's cast's comes about 0.57 s after its bar ends.)
 const EFFECT_RESULT_AFTER: Duration = Duration::from_millis(500);
 
+/// LogMessage 579, "Cannot execute at this time."
+const LOG_CANNOT_EXECUTE: u32 = 579;
+/// LogMessage 563, "Invalid target."
+const LOG_INVALID_TARGET: u32 = 563;
+
+/// Why the server refuses a player's action, as the LogMessage retail answers with (ActorControlSelf 700,
+/// `ActionRejected`), if it does. Only what retail was seen refusing (Bob's Chronofoil captures, 2026-06 to 2026-10,
+/// 42 sessions): a caster who has died (579, the one such case), and a target that has died (563: in 8 of 9 the
+/// target was killed 0-0.2 s before the request arrived, the 9th had gone) for an action that can't be used on the
+/// dead. Retail never
+/// refused for range, facing or line of sight in those captures (the client checks them, ActionManager
+/// .GetActionInRangeOrLoS, see the fork's combat page), so neither does Kawari.
+fn rejection(
+    instance: &Instance,
+    caster_id: ObjectId,
+    caster: &NetworkedActor,
+    request: &ActionRequest,
+    can_target_dead: bool,
+) -> Option<u32> {
+    let target_id = request.target.object_id;
+    // Only a character the server knows: layout objects and NPCs the client places itself aren't in the instance,
+    // and objects have no health.
+    let target_hp = if target_id.is_valid() && target_id != caster_id {
+        match instance.find_actor(target_id) {
+            Some(target @ (NetworkedActor::Player { .. } | NetworkedActor::Npc { .. })) => {
+                Some(target.get_common_spawn().health_points)
+            }
+            _ => None,
+        }
+    } else {
+        None
+    };
+    rejection_log_message(
+        caster.get_common_spawn().health_points,
+        target_hp,
+        can_target_dead,
+    )
+}
+
+/// `rejection` without the instance: the caster's health, the target's (`None`: no target, the caster itself, or not a
+/// character), and whether the action may be used on the dead.
+fn rejection_log_message(
+    caster_hp: u32,
+    target_hp: Option<u32>,
+    can_target_dead: bool,
+) -> Option<u32> {
+    if caster_hp == 0 {
+        Some(LOG_CANNOT_EXECUTE)
+    } else if target_hp == Some(0) && !can_target_dead {
+        Some(LOG_INVALID_TARGET)
+    } else {
+        None
+    }
+}
+
 /// Teleport and Return (General Action rows 5 and 6.)
 const TELEPORT_ACTION: u32 = 5;
 const RETURN_ACTION: u32 = 6;
@@ -2572,6 +2651,16 @@ pub fn in_area_with_reach(
 #[cfg(test)]
 mod combo_tests {
     use super::*;
+
+    /// What retail refused (ActorControlSelf 700): a dead caster, a dead target, but not Raise on a dead target.
+    #[test]
+    fn rejections() {
+        assert_eq!(rejection_log_message(0, None, false), Some(579));
+        assert_eq!(rejection_log_message(1000, Some(0), false), Some(563));
+        assert_eq!(rejection_log_message(1000, Some(0), true), None);
+        assert_eq!(rejection_log_message(1000, Some(5), false), None);
+        assert_eq!(rejection_log_message(1000, None, false), None);
+    }
 
     /// Fast Blade → Fight or Flight → Riot Blade: the ability in between doesn't touch the combo, the second
     /// weaponskill continues it, and an unrelated one starts over.

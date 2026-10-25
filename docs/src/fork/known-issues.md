@@ -244,6 +244,11 @@ add one when something is found.
 * Presence of Mind and slows don't change PlayerStats' haste (so the GCD's recast isn't shortened, only casts); item
   animation locks are 0.6 s. Haste isn't something the client works out: retail's PlayerStats sends 85 under Haste
   (status 1091) and 160 under Slow (9), numbers Status.ParamModifier (−10, 15) doesn't give.
+* Kawari doesn't keep recasts itself, so it never refuses an action that comes too early (retail answers 582 "Not
+  yet ready.", ActorControlSelf 700, with the elapsed time), and it acts on a request that arrives during a cast
+  straight away (a second cast task beside the first), where retail answered one 1.4 s after it arrived, with the
+  previous cast still on (Bob's Chronofoil captures). Black Mage's Astral Fire and Umbral Ice don't change MP costs,
+  and there's no Recitation to make Scholar's heals free.
 * Recasts of spells and weaponskills outside the GCD group (Drill, Gnashing Fang's own timer...) are sped up by Skill
   or Spell Speed as the client's GetAdjustedRecastTime does, but no retail capture has one to check the server's number
   against.

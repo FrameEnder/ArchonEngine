@@ -141,6 +141,31 @@ Applied after an action's script returns, by the server, so scripts only give th
   for Tetragrammaton (twice the recast, though their second-charge traits are level 88 and 98), 60 s for Swiftcast
   (its −20 s trait is level 94) and the plain recast for the rest (Chronofoil capture 0.1). Before 2026-10-25 Kawari
   sent Recast100ms × the row's MaxCharges (30 s for Divine Benison) and didn't apply traits.
+* **Refused actions** (ActorControlSelf **700**, `ActionRejected`: the LogMessage, the request's action type, the
+  action, and a fourth value): the client prints the message and drops the request. In Bob's Chronofoil captures (42
+  sessions, 2026-06 to 2026-10) retail refused 18 requests: 563 "Invalid target." nine times, eight of them for a
+  target killed 0–0.2 s before the request arrived (the ninth had gone); 579 "Cannot execute at this time." twice
+  (once the caster had just died, once something else changed their Condition); 582 "Not yet ready." three times
+  for a Glare III sent during the previous GCD's cast, with the recast group's elapsed time in hundredths of a second
+  as the fourth value (120, 151, 191); 1952 four times for an item used where it can't be. Kawari answers the first
+  two cases the same way (`rejection`, since 2026-10-25): a player's action while dead (579), and one aimed at a
+  character with no health left, unless the action may be used on the dead (563; Action.DeadTargetBehaviour, Raise).
+  Retail never refused for range, facing or line of sight, so Kawari doesn't either. What the client checks itself
+  before sending (ActionManager.GetActionInRangeOrLoS and GetActionRange, 2026.10.16 client):
+  * ground distance (x and z) at most Range + the caster's hitbox radius + the target's (in PvP, against a player, the
+    caster's radius isn't added), and a height difference at most the larger of Range and the target's radius
+    (except in zones with a flag the client reads), else 566 "Target is not in range.";
+  * Range is the Action row's; −1 is the weapon's reach (melee and ranged auto-attack distance), and Embrace, Fey
+    Union and Seraphic Veil (802, 7438, 16548) reach 30 yalms; under Briny Veil (status 433) it's cut by Range ×
+    stacks / 16;
+  * NeedToFaceTarget: the target within 45° either side of where the caster faces (unless closer than 0.06 yalms),
+    else 565; RequiresLineOfSight: a ray from 2 yalms up on the caster to 2 yalms up on the target, else 562 "Target
+    not in line of sight." Neither when the target is the caster.
+* **MP costs** as the client works them out (ActionManager.GetActionCost, 2026.10.16 client): PrimaryCostValue ×
+  ParamGrow.MpModifier of the caster's level / 100, and MpModifier is 10000 at every level, so the sheet's value × 100
+  at every level, as Kawari charges. The client's own exceptions: Cure II costs nothing under Freecure (155) and Fire
+  III under Firestarter (165), both done in the scripts; Adloquium, Succor, Indomitable, Excogitation and Concitation
+  under Recitation (1896); Black Mage's Astral Fire and Umbral Ice change fire and ice spells' costs (×2, or nothing).
 * **Auto-attacks** come every weapon delay × haste / 100 (2 s without a weapon); they were every 2 s for everyone.
   Retail: Paladin 2.27 s for a 2.24 weapon, Warrior 3.38–3.40 for 3.36, Monk 2.05 (2.56 × 0.8 with Greased Lightning),
   Bob's 2.41 for 2.4. As on retail (Bob's Chronofoil captures, 663 of his auto-attacks), a swing (`auto_attack_target`)

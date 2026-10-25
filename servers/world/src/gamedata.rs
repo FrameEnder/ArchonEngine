@@ -2932,6 +2932,13 @@ impl GameData {
         Some((row.CooldownGroup, row.Recast100ms, row.MaxCharges))
     }
 
+    /// Whether an action can be used on a dead target (Action.DeadTargetBehaviour isn't 0: Raise and the like.)
+    pub fn action_can_target_dead(&mut self, id: u32) -> bool {
+        self.action_sheet
+            .row(id)
+            .is_some_and(|row| row.DeadTargetBehaviour != 0)
+    }
+
     pub fn get_action_cooldown_group(&mut self, id: u32) -> u8 {
         let row = self.action_sheet.row(id).unwrap();
 
