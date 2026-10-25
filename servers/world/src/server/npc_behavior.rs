@@ -383,6 +383,19 @@ pub fn npc_behavior(
             // A called retainer stands where they appeared until they're sent away.
             && spawn.common.object_kind != ObjectKind::Retainer
         {
+            // Where the const pass just moved it: everything below goes from there. From where it stood a tick
+            // before, a Brass Blade at Scorpion Crossing that had reached its post (off the navmesh) still looked
+            // 0.63 yalms off it, planned the last step again from the mesh's edge, and walked edge, post, edge every
+            // half second, facing the same way, forever (Bob's bundle of 2026-10-25.)
+            for msg in &actor_moves {
+                if let (_, FromServer::ActorMove(msg_id, pos, rotation, ..)) = msg
+                    && *id == *msg_id
+                {
+                    spawn.common.position = *pos;
+                    spawn.common.rotation = *rotation;
+                }
+            }
+
             // NOTE: this is *intentional* as I believe in retail the timing of actions are dependent on when the actor spawned
             // This doesn't have an effect if you re-aggro them or whatever.
             *timeline_position += 1; // NOTE: change if the length of a server tick changes

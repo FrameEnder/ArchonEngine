@@ -375,7 +375,10 @@ the west gate; layout 4057553, base 798, by the east one), battalion 0 (monsters
   leaves alone for a minute (`UNREACHABLE_FOR`, `Instance::unreachable`), dropped from its enmity and not noticed
   again: the Brass Blade at Scorpion Crossing (layout 4057530, its post 0.63 yalms off the navmesh) noticed a monster
   it couldn't reach, gave up, walked home, noticed it again and stepped between its post and the mesh's edge every
-  half second for five minutes (Bob's bundle of 2026-10-25). The nameplate shows while it's fighting, so the one that saw no monster showed none.
+  half second for five minutes (Bob's bundle of 2026-10-25). Arriving is judged from where the movement pass put it
+  this tick (`npc_behavior`'s mut pass applies the const pass's ActorMoves first): judged from where it stood a tick
+  before, the same guard back at his post still looked 0.63 yalms off it, planned the last step again from the mesh's
+  edge and walked edge, post, edge every half second, facing −1.07 throughout (Bob's second bundle of 2026-10-25). The nameplate shows while it's fighting, so the one that saw no monster showed none.
 * **Clicking one plays its line.** Retail answers the client's StartTalkEvent (DefaultTalk 1838 for base 798, 1839 for
   the Lalafell) with EventStart (Talk), then scene 0 with flags 0x2001 (HIDE_HOTBAR | NO_DEFAULT_CAMERA) and no
   parameters; the client shows the line and returns the scene (EventReturnHandler2), and the event finishes.
