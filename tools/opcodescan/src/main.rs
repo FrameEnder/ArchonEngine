@@ -13,7 +13,11 @@
 //!     executable, for finding them in the next version (resources/data/opcode_fingerprints.json.)
 //! kawari-opcodescan <exe> match <fingerprints.json>
 //!     Finds the fingerprinted opcodes in this executable, and prints them as JSON: {list: {name: opcode, or a list
-//!     of candidates, or null}}.
+//!     of candidates, or null}}; client packets it builds with another size than this build has go to stderr.
+//! kawari-opcodescan <exe> suggest-finders <fingerprints.json> [other exe] [all]
+//!     Writes finders for the fork's opcodes that have none (every one with `all`), from this executable (the
+//!     fingerprints must have been recorded from it), checked to read each opcode here; with another executable (another
+//!     game version), also what each reads there. Prints them as fork_opcodes.yml `find:` entries.
 //! kawari-opcodescan <exe> check-handlers <switch table RVA in hex> <opcode list, e.g. ServerZoneIpcType>
 //!     Checks the handler method against every known opcode in the list: from each opcode's case in the switch to the
 //!     function it calls, and back again.
@@ -141,9 +145,98 @@ fn main() {
                     .insert(name, value);
             }
             println!("{}", serde_json::to_string_pretty(&out).unwrap());
+            // Client packets now built with another size than this build has: their layout changed.
+            let client: std::collections::BTreeMap<String, u16> = out
+                .get("ClientZoneIpcType")
+                .and_then(|list| list.as_object())
+                .map(|list| {
+                    list.iter()
+                        .filter_map(|(name, value)| Some((name.clone(), value.as_u64()? as u16)))
+                        .collect()
+                })
+                .unwrap_or_default();
+            let sizes: std::collections::BTreeMap<String, u32> = client
+                .keys()
+                .filter_map(|name| {
+                    kawari::opcodes::opcode_size("ClientZoneIpcType", name)
+                        .map(|size| (name.clone(), size as u32))
+                })
+                .collect();
+            for (name, old, new) in opcode_match::client_size_changes(&exe, &client, &sizes) {
+                eprintln!(
+                    "ClientZoneIpcType::{name}: built with {new:?} bytes here, {old} in this build"
+                );
+            }
+        }
+        Some("suggest-finders") => {
+            let text = std::fs::read_to_string(&args[2]).expect("can't read the fingerprints");
+            let prints: opcode_match::Fingerprints =
+                serde_json::from_str(&text).expect("not fingerprints");
+            let other = args
+                .get(3)
+                .filter(|arg| arg.as_str() != "all")
+                .map(|path| Exe::open(Path::new(path)).expect("can't read the other executable"));
+            let all = args.iter().any(|arg| arg == "all");
+            suggest_finders(&exe, &prints, other.as_ref(), all);
         }
         Some(other) => eprintln!("Unknown command {other}"),
     }
+}
+
+/// Finders for the fork's opcodes, from this executable's fingerprints (`kawari::finder_gen`.)
+fn suggest_finders(exe: &Exe, prints: &opcode_match::Fingerprints, other: Option<&Exe>, all: bool) {
+    use kawari::finder_gen::{suggest_handler, suggest_immediate, try_finder};
+    let (mut written, mut failed) = (0, 0);
+    for opcode in FORK_OPCODES {
+        if !all && !opcode.finders.is_empty() {
+            continue;
+        }
+        let Some(known) = opcode.opcode.filter(|_| opcode.current) else {
+            println!("# {}: not known on this version, skipped", opcode.name);
+            continue;
+        };
+        let suggestion = if opcode.kind.starts_with("Server") {
+            prints
+                .server
+                .iter()
+                .find(|print| print.name == opcode.name && print.opcode == known)
+                .and_then(|print| suggest_handler(exe, print.handler_at, known))
+        } else {
+            prints
+                .client
+                .iter()
+                .find(|print| print.name == opcode.name && print.opcode == known)
+                .and_then(|print| {
+                    print
+                        .sites
+                        .iter()
+                        .find_map(|site| suggest_immediate(exe, site.function_at, known))
+                })
+        };
+        let Some(suggestion) = suggestion else {
+            println!(
+                "# {} ({known}): no finder could be written (its code isn't unique)",
+                opcode.name
+            );
+            failed += 1;
+            continue;
+        };
+        written += 1;
+        let elsewhere = other.map(|other| match try_finder(other, &suggestion) {
+            Ok(read) => format!("reads {read:?} in the other executable"),
+            Err(err) => format!("in the other executable: {err}"),
+        });
+        println!(
+            "# {} ({known}), at 0x{:X}{}",
+            opcode.name,
+            suggestion.at,
+            elsewhere
+                .map(|text| format!("; {text}"))
+                .unwrap_or_default()
+        );
+        print!("{}", suggestion.yaml());
+    }
+    println!("# {written} written, {failed} without");
 }
 
 fn scan(exe: &Exe, path: &Path) {

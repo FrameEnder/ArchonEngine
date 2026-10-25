@@ -8,8 +8,13 @@ add one when something is found.
 * Automatic opcodes after a game update ([Fork Opcodes](opcodes.md#every-opcode-after-a-game-update)) haven't run on a
   live update yet, only against Bob's 10.06 and 10.16 executables. About 16 server packets come from candidate lists
   (the notices, EventResume2/4/8, InitResponse and PingSyncReply, the inventory and market packets): a wrong pick shows
-  as that packet doing nothing. 14 client packets aren't found and wait to be learnt by size. `BASE_INVENTORY_ACTION`,
-  the mail result codes and other constants aren't found automatically.
+  as that packet doing nothing (10.16 → 10.06 also leaves three Crossworld linkshell packets among 12 candidates). 14
+  client packets aren't found and wait to be learnt by size. `BASE_INVENTORY_ACTION`, the mail result codes and the
+  scrambler tables aren't found automatically (no pattern found for them).
+* Four fork opcodes have no finder, because their code is the same as other packets': RequestPlayerRetainerInfo,
+  GatheringPointPhase, ItemMarketBoardInfo and ItemMarketBoardSummary. After a patch only the fingerprints find them
+  (the two ItemMarketBoards as a pair of candidates).
+* Size-change warnings cover client packets only; a server packet whose layout changed in a patch isn't noticed.
 
 * The merged server only takes a 7.57h1 client (2026.10.16.0000.0000). All the fork's opcodes are found for it (see
   [Fork Opcodes](opcodes.md#finding-them-on-757h1)), but only MarketBoardOpened and MarketBoardPurchaseHandler have

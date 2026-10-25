@@ -43,6 +43,10 @@ struct Result {
     guessed: BTreeMap<String, BTreeMap<String, (u16, Vec<u16>)>>,
     /// Not found: list → names.
     not_found: BTreeMap<String, Vec<String>>,
+    /// Client packets the new executable builds with another size than the server's: name → (the server's, the
+    /// game's.) Their layout changed: the opcode works, the contents need looking at.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    size_changed: BTreeMap<String, (u32, Vec<u32>)>,
 }
 
 fn game_version(game: &Path) -> String {
@@ -179,7 +183,24 @@ fn adapt(game_path: &str, supported: &str, shipped: &Path) -> Option<Result> {
         prints_path.display()
     );
     let found = opcode_match::match_fingerprints(&exe, &prints);
-    let result = apply(&version, game, &prints, &found);
+    let mut result = apply(&version, game, &prints, &found);
+
+    // Client packets built with another size now: their layout changed (Bob: less downtime on patch days, so say so
+    // at startup instead of finding out from a broken packet in game.)
+    if let Some(client) = result.opcodes.get("ClientZoneIpcType") {
+        let known_sizes: BTreeMap<String, u32> = sizes()
+            .into_iter()
+            .filter(|((kind, _), _)| *kind == "ClientZoneIpcType")
+            .map(|((_, name), size)| (name.to_string(), size as u32))
+            .collect();
+        for (name, old, new) in opcode_match::client_size_changes(&exe, client, &known_sizes) {
+            tracing::warn!(
+                "ClientZoneIpcType::{name}: the game now sends it with {new:?} bytes, not {old}: its layout changed, and reading it may go wrong until it's updated."
+            );
+            result.size_changed.insert(name, (old, new));
+        }
+        write_result(&version, &result);
+    }
 
     let exact: usize = result.opcodes.values().map(BTreeMap::len).sum();
     let guessed: usize = result.guessed.values().map(BTreeMap::len).sum();
@@ -239,6 +260,7 @@ fn apply(
         opcodes: BTreeMap::new(),
         guessed: BTreeMap::new(),
         not_found: BTreeMap::new(),
+        size_changed: BTreeMap::new(),
     };
     let sizes = sizes();
 
@@ -301,17 +323,22 @@ fn apply(
         remap::set_table(kind, &pairs);
     }
 
+    write_result(version, &result);
+    result
+}
+
+/// Writes a version's result to `auto-opcodes/<version>.json`.
+fn write_result(version: &str, result: &Result) {
     let path = Path::new(FOLDER).join(format!("{version}.json"));
     let written = std::fs::create_dir_all(FOLDER).and_then(|_| {
         std::fs::write(
             &path,
-            serde_json::to_string_pretty(&result).unwrap_or_default(),
+            serde_json::to_string_pretty(result).unwrap_or_default(),
         )
     });
     if let Err(err) = written {
         tracing::warn!("Couldn't write {}: {err}", path.display());
     }
-    result
 }
 
 fn record_fingerprints(exe_path: &Path, version: &str, shipped: &Path) {

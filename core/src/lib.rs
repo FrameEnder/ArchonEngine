@@ -7,6 +7,9 @@ pub mod exe_scan;
 /// Finding every opcode again after a game update.
 pub mod opcode_match;
 
+/// Writing fork-opcode finders from an executable whose opcodes are known.
+pub mod finder_gen;
+
 pub mod common;
 
 /// Config management.
