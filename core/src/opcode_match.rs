@@ -1285,6 +1285,40 @@ fn client_sites(code: &Code) -> Vec<(usize, u16, u32)> {
     sites
 }
 
+/// The sizes each client opcode is sent with in this executable (data only, without headers), from every function
+/// that builds a packet (writes an opcode, then its size with the 16-byte IPC header): opcode → sizes.
+pub fn client_sizes(exe: &Exe) -> BTreeMap<u16, std::collections::BTreeSet<u32>> {
+    let code = Code::new(exe);
+    let mut sizes: BTreeMap<u16, std::collections::BTreeSet<u32>> = BTreeMap::new();
+    for (_, opcode, with_header) in client_sites(&code) {
+        if let Some(size) = with_header.checked_sub(16) {
+            sizes.entry(opcode).or_default().insert(size);
+        }
+    }
+    sizes
+}
+
+/// Client packets whose size changed: (name, size the server has, sizes this executable builds it with), for each
+/// one of `opcodes` (name → its opcode in this executable) that is built here only with other sizes. A new size
+/// means the packet's layout changed with the update, which no opcode table fixes.
+pub fn client_size_changes(
+    exe: &Exe,
+    opcodes: &BTreeMap<String, u16>,
+    known_sizes: &BTreeMap<String, u32>,
+) -> Vec<(String, u32, Vec<u32>)> {
+    let built = client_sizes(exe);
+    let mut changes = Vec::new();
+    for (name, opcode) in opcodes {
+        let (Some(known), Some(sizes)) = (known_sizes.get(name), built.get(opcode)) else {
+            continue;
+        };
+        if !sizes.contains(known) {
+            changes.push((name.clone(), *known, sizes.iter().copied().collect()));
+        }
+    }
+    changes
+}
+
 // --- recording ----------------------------------------------------------------------------------------------------
 
 /// Records the fingerprints of `known` (server lists end in Server..., client ones in Client...) in `exe`, the game
@@ -1731,8 +1765,10 @@ fn match_server(code: &Code, prints: &Fingerprints, found: &mut BTreeMap<(String
                 ends_of.insert(end_print, *end);
             }
         }
-        // Only exact ends count here: the ends of one shared handler are often a few bytes apart in one compare
-        // tree, running on into each other, so how alike they are says little (10.16 to 10.06's inventory packets.)
+        // Only exact ends count here: the ends of one shared handler are often a few bytes apart in one compare tree,
+        // running on into each other, so how alike they are says little (10.16 to 10.06's inventory packets.) Nor does
+        // their order: a compare tree is laid out by the opcodes' values, which change (tried: it swapped the two
+        // InventoryTransactions between 10.06 and 10.16.)
         let leftover: Vec<u16> = new_ends
             .iter()
             .filter(|(end, _)| !used.contains(*end))
@@ -1949,6 +1985,54 @@ fn winner(votes: &BTreeMap<u16, usize>) -> Option<u16> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The shipped fingerprints (`resources/data/opcode_fingerprints.json`) are what finds every opcode after the next
+    /// game update, so on the version they were recorded on they must have every fork opcode known there, at the same
+    /// opcode, and no packet at an opcode it no longer has (re-record them with `kawari-opcodescan <exe> fingerprint`
+    /// when an opcode is added or corrected.)
+    #[test]
+    fn shipped_fingerprints_cover_every_opcode() {
+        let prints: Fingerprints = serde_json::from_str(include_str!(
+            "../../resources/data/opcode_fingerprints.json"
+        ))
+        .expect("the shipped fingerprints don't parse");
+        let printed = |kind: &str, name: &str| {
+            prints
+                .server
+                .iter()
+                .map(|print| (&print.kind, &print.name, print.opcode))
+                .chain(
+                    prints
+                        .client
+                        .iter()
+                        .map(|print| (&print.kind, &print.name, print.opcode)),
+                )
+                .find(|(k, n, _)| *k == kind && *n == name)
+                .map(|(_, _, opcode)| opcode)
+        };
+        for (kind, name, opcode) in crate::opcodes::KNOWN_OPCODES {
+            if let Some(printed) = printed(kind, name) {
+                assert_eq!(
+                    printed, *opcode,
+                    "{kind}::{name} is fingerprinted as {printed} but is {opcode} now: re-record the fingerprints"
+                );
+            }
+        }
+        if prints.game_version != crate::constants::SUPPORTED_GAME_VERSION {
+            return; // recorded on another version: nothing to compare the fork's opcodes with
+        }
+        for fork in crate::opcodes::FORK_OPCODES {
+            if !fork.current || !fork.kind.contains("Zone") {
+                continue;
+            }
+            assert!(
+                printed(fork.kind, fork.name).is_some(),
+                "{}::{} has no fingerprint: record them again (kawari-opcodescan <exe> fingerprint ...)",
+                fork.kind,
+                fork.name
+            );
+        }
+    }
 
     #[test]
     fn similarity_is_difflibs() {

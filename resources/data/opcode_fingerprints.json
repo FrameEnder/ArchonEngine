@@ -2093,12 +2093,152 @@
     },
     {
       "kind": "ServerZoneIpcType",
+      "name": "GlamourDresser",
+      "opcode": 436,
+      "case": "de23b881b1d3a48510e705ae",
+      "case_group": 1,
+      "handler_at": 11857472,
+      "end": "de23b881b1d3a48510e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "GlamourPlates",
+      "opcode": 400,
+      "case": "de23b881b1d3a48510e705ae",
+      "case_group": 1,
+      "handler_at": 11857536,
+      "end": "de23b881b1d3a48510e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "GlamourPlateUpdated",
+      "opcode": 621,
+      "case": "de23b8813cc2ed0e10e705ae",
+      "case_group": 1,
+      "handler_at": 11857600,
+      "end": "de23b8813cc2ed0e10e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "ArmoireContents",
+      "opcode": 772,
+      "case": "de23b8818aec4a9810e705ae",
+      "case_group": 1,
+      "handler_at": 11846768,
+      "end": "de23b8818aec4a9810e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "ArmoireInfo",
+      "opcode": 445,
+      "case": "de23b8818aec4a9810e705ae",
+      "case_group": 1,
+      "handler_at": 11846800,
+      "end": "de23b8818aec4a9810e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "LootList",
+      "opcode": 272,
+      "case": "59326ac09f570377e8e7870d10e705ae",
+      "case_group": 1,
+      "handler_at": 11844512,
+      "end": "59326ac09f570377e8e7870d10e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "LootItem",
+      "opcode": 975,
+      "case": "59326ac09f570377ab7bb08010e705ae",
+      "case_group": 1,
+      "handler_at": 11843968,
+      "end": "59326ac09f570377ab7bb08010e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "LootRollResult",
+      "opcode": 462,
+      "case": "59326ac09f570377ab7bb08010e705ae",
+      "case_group": 1,
+      "handler_at": 11844000,
+      "end": "59326ac09f570377ab7bb08010e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "LootResult",
+      "opcode": 807,
+      "case": "de23b8818aec4a9810e705ae",
+      "case_group": 1,
+      "handler_at": 11846528,
+      "end": "de23b8818aec4a9810e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
       "name": "LootMessage",
       "opcode": 154,
       "case": "59326ac09f570377d935fd1810e705ae",
       "case_group": 1,
       "handler_at": 11844496,
       "end": "59326ac09f570377d935fd1810e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "DutySupportContent",
+      "opcode": 701,
+      "case": "de23b881b1d3a48510e705ae",
+      "case_group": 1,
+      "handler_at": 11859440,
+      "end": "de23b881b1d3a48510e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "CraftingActionPreviews",
+      "opcode": 347,
+      "case": "de23b88149d5ac9410e705ae",
+      "case_group": 1,
+      "handler_at": 11847264,
+      "end": "de23b88149d5ac9410e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "GatheringChainCount",
+      "opcode": 618,
+      "case": "de23b8812e94612510e705ae",
+      "case_group": 1,
+      "handler_at": 11872896,
+      "end": "de23b8812e94612510e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "GatheringPointPhases",
+      "opcode": 309,
+      "case": "de23b881ab46665410e705ae",
+      "case_group": 1,
+      "handler_at": 11872912,
+      "end": "de23b881ab46665410e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "GatheringPointPhase",
+      "opcode": 845,
+      "case": "de23b881135768ef10e705ae",
+      "case_group": 1,
+      "handler_at": 11873024,
+      "end": "de23b881135768ef10e705ae",
       "end_group": 1
     },
     {
@@ -2174,21 +2314,21 @@
     {
       "kind": "ServerZoneIpcType",
       "name": "EventNotice2",
-      "opcode": 467,
+      "opcode": 834,
       "case": "b2c8306d5f4671427558f345573cfaea7871f1bf10e705ae",
       "case_group": 5,
       "handler_at": 11746992,
       "end": "b2c8306d5f4671427558f345573cfaea7871f1bf10e705ae",
       "end_group": 5,
       "sub": {
-        "end": "70a8801cc9d74a6738bcb8996cea595cc5e35ac9",
-        "group": 2
+        "end": "c9d74a6738bcb8996cea595cc5e35ac9",
+        "group": 3
       }
     },
     {
       "kind": "ServerZoneIpcType",
       "name": "EventNotice4",
-      "opcode": 561,
+      "opcode": 467,
       "case": "b2c8306d5f4671427558f345573cfaea7871f1bf10e705ae",
       "case_group": 5,
       "handler_at": 11746992,
@@ -3640,12 +3780,44 @@
     },
     {
       "kind": "ClientZoneIpcType",
+      "name": "LootRoll",
+      "opcode": 766,
+      "size": 16,
+      "sites": [
+        {
+          "function": "978c081778cc1514d62d7435be0956d2aa68e5cf9244c86cefa6278dd7820a2ad9d1cd48a5ad3a4d85db2e92788377629db707e3547b89479f2fda84b980f42385013536227569ce0a9f8835526a6968a8198fdebba65348c888332adcf7b719a03dd78cba825ee306cab7e059cba91ceb2895fe98f9ae70135c6024526a696884210a03ed4586b10a71e725647426c110e705ae0a71e725a05510ec03e8a228c92406098d27e48f063bb6ce98f9ae7018dda92064172c8f0fb72149526a6968b46944c921a108f21604fdaf647426c110e705ae8d27e48fc9240609063bb6ce98f9ae7089de0de7c888332a18dda9204c0fe83fd63adc3c980e1c9adcf7b7192fd04b14d31de427f71a2a26b980f423526a6968a4b50ff10dc574e8b7d18bd4191b1a49f20e3e0c424c0f50fd63e36ddba9f6f698f9ae70ccc692cca05510ec3bd4e8a948e0d1d4b46944c906ac1bb31604fdaf647426c1d61664e4647426c10b8cade310e705ae3bd4e8a9d61664e4a05510ec614a0149c9240609377212a2030ca063526a6968c48cf808526a696835714b055e2f8f8e8eb9909ef2a90fffb1fef054ba34e736526a6968034004c3526a6968a8198fde87862c633eb15156ba3b6243089b08a13eb15156842d13d6526a696801346e0f68a94ea5526a6968deef4a4f526a6968ab4d437171a61bfe88c8f2ffc54d871c63fabe593eb1515610e705ae8604bcad98f9ae70e6c9b4ce3eb151563f433efece3cc1adfa2b7f8771a61bfec9bdc27a9e3cbd1ee08e8f83089b08a10c0de0000919c35fb7ec389f3eb15156c3cc78e29f273c46526a6968ad3adcf081122a679dbdf9f7c54d871c573e64ad3eb15156d19dee05a8198fdebace4e508770573dde4d4c55a9f3ca9b9c94f6da4a6a565df9b8e4d2a3169c4c036d85814f050f43573590e416dda95bc7805af285292cf2f61251ee9b5995623a55a51f2650d263526a696871a61bfec54d871c10e705aec54d871cf2a4fa2a526a6968c54d871c8ab5b5de863c96ae3eb15156d461f8217ee332d88035de5b059ac6cb346a2ef023df9fdbf8e251f17f203b7ada4de962c45d7d389483a6fcf4a5b7fefd3aab7e39e2f9bc7ae6b6f894154272d461f821e39dbb7a385d515953b94de3dafbf238cd5211e2403100f494425101403100f4c98bf6fd403100f4afef06f90bbb314e24e1ba130bbb314e5373b10f403100f4c75ad0e1401baea2fbe865ed522b19129ee9959233f7784910e705aee9928eded461f821fbe32e513eb1515623c3359fda6a6f71ff9d8a24a23c2b0344dacbe2e7796cc16cea595c0f88fa3bb2279b1ac5e35ac9",
+          "function_at": 12831200
+        },
+        {
+          "function": "7328eba7a05510ec6452280f7f67eab4be0956d2d9d1cd48a5ad3a4d85db2e9278837762af28b44fd31de427e6c9b4cee9c92ee93eb151567bf4394a9e3cbd1e0c0de000b947bab56b9510b78b8b67bff601eef3e2bfb59f6b876b7771a61bfec922c59b089b08a13eb15156d461f821fbe32e513eb151568f5053dae4f86c4e7be7b9c569d9543b6cea595cc5e35ac9",
+          "function_at": 12834144
+        },
+        {
+          "function": "7328eba7a05510ec6452280f7f67eab4be0956d2d9d1cd48a5ad3a4d85db2e9278837762af28b44fd31de427e6c9b4cee9c92ee93eb151567bf4394a9e3cbd1e0c0de000b947bab56b9510b78b8b67bff601eef3e2bfb59f6b876b7771a61bfec922c59b089b08a13eb15156d461f821fbe32e513eb151568f5053dae4f86c4e7be7b9c569d9543b6cea595cc5e35ac9",
+          "function_at": 12834992
+        }
+      ]
+    },
+    {
+      "kind": "ClientZoneIpcType",
       "name": "EventReturnHandler16",
       "opcode": 555,
       "size": 72,
       "sites": [
         {
           "function": "4ab04a1b9f795c9d78cc1514efa6278dd7820a2a61a1e659d9d1cd48a5ad3a4d85db2e92007f814137a09a0c3c576be46137c26e2f43e1d098f9ae70d980f64d0c40a0f6fcb95b96a08dcedd017c5e5753f9ff0a1f9a623e089c019fe873b0950c40a0f62a687bf842b5dbd6526a6968747e0c5ef2a90fffe6c9b4ce3eb151561f9699a781f71e11089b08a1f01a6d74d45e338fc567918e51e7054db875e55e3a7d1e7fadbe567da8e46ed6634df58da1a210f08947b8ee719e7ddd10e705aee6c9b4ce3eb1515651e7054d3a7d1e7fa8e46ed6a1a210f0ceb05514f2a90fffe33705285fdf8481089b08a180d549516b9510b710e705ae13ed96d2f2a90fff1f9699a780d54951089b08a156a009bfc567918e10e705ae747e0c5ef2a90fff1f9699a780d54951089b08a1f01a6d74808a17afc567918eadbe567d10e705aeb35d2146f2a90fff1f9699a70c0de000089b08a1f01a6d74d45e338fc567918ecbc27dc7adbe567d43ee89548947b8ee719e7ddd10e705ae359ef776f2a90fff1f9699a780d54951089b08a1f01a6d747c066b4fc567918ecbc27dc7adbe567d43ee89548947b8eec73ed167719e7ddd97c2a534e4271c1a736ab587aee396e9eb96c114da78e97a95b8524910e705aee1cadb96f2a90fff80d54951e551cddcf45a51cf4c6718a7dcf7b71911c2081b1f9699a7f01a6d747782909b96bea09eac0ea5908aa7196db9978c035f76c1febe5921f03bb512cdf0737823a914c45e9fb47bd0d2d2472db1a8504300c5b2bebc051b8daf3d58ff98f9ae70089b08a110e705aed8c382d6f2a90fff80d54951e551cddcf45a51cf1c1edde1dcf7b71911c2081b1f9699a7f01a6d747782909b96bea09eac0ea5908aa7196db9978c035f76c1febe5921f03bb512cdf0737823a914c45e9fb47bd0d2d2472db1a8504300c5b2bebc051b8daf3d58ff98f9ae70089b08a110e705ae7d67a6e880d54951f45a51cfe551cddc79803d02dcf7b71911c2081b1f9699a7f01a6d747782909b96bea09eac0ea5908aa7196db9978c035f76c1febe5921f03bb512cdf0737823a914c45e9fb47bd0d2d2472db1a8504300c5b2bebc051b8daf3d58ff98f9ae701f9699a71e32349bf01a6d74bd3d03a9cbc27dc7605686da43ee895448ad4bc9c73ed167ebc6cefa97c2a534570c03e9736ab587fa25871ae27c4c09b2ab6af5dd1982c54f8e74ebae68bfeb71a61bfeb947bab59e3cbd1e3eb151565f2a479b23c3359fa290859643ddf122fbe32e513eb15156c3b8281cda6a6f71ff9d8a24a23c2b03b2279b1ac5e35ac9",
+          "function_at": 11743616
+        }
+      ]
+    },
+    {
+      "kind": "ClientZoneIpcType",
+      "name": "EventReturnHandler128",
+      "opcode": 866,
+      "size": 520,
+      "sites": [
+        {
+          "function": "4ab04a1b9f795c9d78cc1514efa6278dd7820a2a61a1e659d9d1cd48a5ad3a4d85db2e92007f814137a09a0c3c576be46137c26e2f43e1d098f9ae70d980f64d0c40a0f6fcb95b96a08dcedd017c5e5753f9ff0a1f9a623e089c019fe873b0950c40a0f62a687bf842b5dbd6526a6968747e0c5ef2a90fffe6c9b4ce3eb151561f9699a781f71e11089b08a1f01a6d74d45e338fc567918e51e7054db875e55e3a7d1e7fadbe567da8e46ed6634df58da1a210f08947b8ee719e7ddd10e705aee6c9b4ce3eb1515651e7054d3a7d1e7fa8e46ed6a1a210f0ceb05514f2a90fffe33705285fdf8481089b08a180d549516b9510b710e705ae13ed96d2f2a90fff1f9699a780d54951089b08a156a009bfc567918e10e705ae747e0c5ef2a90fff1f9699a780d54951089b08a1f01a6d74808a17afc567918eadbe567d10e705aeb35d2146f2a90fff1f9699a780d54951089b08a1f01a6d74d45e338fc567918ecbc27dc7adbe567d43ee89548947b8ee719e7ddd10e705ae359ef776f2a90fff1f9699a780d54951089b08a1f01a6d747c066b4fc567918ecbc27dc7adbe567d43ee89548947b8eec73ed167719e7ddd97c2a534e4271c1a736ab587aee396e9eb96c114da78e97a95b8524910e705aee1cadb96f2a90fff80d54951e551cddcf45a51cf4c6718a7dcf7b71911c2081b1f9699a7f01a6d747782909b96bea09eac0ea5908aa7196db9978c035f76c1febe5921f03bb512cdf0737823a914c45e9fb47bd0d2d2472db1a8504300c5b2bebc051b8daf3d58ff98f9ae70089b08a110e705aed8c382d6f2a90fff0c0de000e551cddcf45a51cf1c1edde1dcf7b71911c2081b1f9699a7f01a6d747782909b96bea09eac0ea5908aa7196db9978c035f76c1febe5921f03bb512cdf0737823a914c45e9fb47bd0d2d2472db1a8504300c5b2bebc051b8daf3d58ff98f9ae70089b08a110e705ae7d67a6e880d54951f45a51cfe551cddc79803d02dcf7b71911c2081b1f9699a7f01a6d747782909b96bea09eac0ea5908aa7196db9978c035f76c1febe5921f03bb512cdf0737823a914c45e9fb47bd0d2d2472db1a8504300c5b2bebc051b8daf3d58ff98f9ae701f9699a71e32349bf01a6d74bd3d03a9cbc27dc7605686da43ee895448ad4bc9c73ed167ebc6cefa97c2a534570c03e9736ab587fa25871ae27c4c09b2ab6af5dd1982c54f8e74ebae68bfeb71a61bfeb947bab59e3cbd1e3eb151565f2a479b23c3359fa290859643ddf122fbe32e513eb15156c3b8281cda6a6f71ff9d8a24a23c2b03b2279b1ac5e35ac9",
           "function_at": 11743616
         }
       ]
@@ -3747,6 +3919,30 @@
         {
           "function": "d9d1cd48a5ad3a4d85db2e9278837762e6c9b4ce3eb1515681062916526a6968f6917724089b08a197dda934089b08a13442fb443eb1515681062916526a6968089b08a13eb15156ce211c03131445f9e6c9b4ce0c0de000957f1ea70d4bfbaa67e55d075e8aa86861d83c6559421761371837d43eb1515671a61bfeb947bab59e3cbd1e089b08a13eb15156d461f821fbe32e513eb15156da6a6f71c5e35ac9",
           "function_at": 8917056
+        }
+      ]
+    },
+    {
+      "kind": "ClientZoneIpcType",
+      "name": "SaveGlamourPlate",
+      "opcode": 156,
+      "size": 248,
+      "sites": [
+        {
+          "function": "37c87ca9a05510ec78cc1514edc44690d9d1cd48a5ad3a4d85db2e92007f8141293016f012a729b3e6c9b4ce55cef9f5d6632ff39955f7e93bb0b0a104f1bf96657410b01e8eaf9a0d4bfbaa0c0de0002645af79f45a51cff182c59ab5b2e6d86120178a3bb0b0a1124969c9b562ecfa502fbd69e361edba25e56afdfc5ba1893bb0b0a19284420ef24e665d0d4bfbaa5e8aa8683bb0b0a14e93596e9298e82c0d4bfbaa2645af79c9ebf4366120178a3bb0b0a1228bcb05988df216502fbd696071dbab3bb0b0a11be488425d35016034a09a78db6564f8b2e60e3b3bb0b0a1a892fecb3687cdbbdb6564f8ca84ad1c86cada2f3eb1515671a61bfeb947bab59e3cbd1e089b08a13eb1515643ddf122fbe32e513eb15156da6a6f71b2279b1ac5e35ac9",
+          "function_at": 9003520
+        }
+      ]
+    },
+    {
+      "kind": "ClientZoneIpcType",
+      "name": "EquipGearsetGlamour",
+      "opcode": 605,
+      "size": 128,
+      "sites": [
+        {
+          "function": "78cc1514338ed356d62d7435be0956d2aa68e5cfefa6278dd7820a2aedc44690b276cddf3eb151561dd7a805a5ad3a4d85db2e92007f8141af28b44fc65344914254309e9a5c4d315dcbe621e573e9b8dc2417a010ff08c042c016276bc1667a8ca540f13eb15156842d13d6526a6968a5ad3a4ddac4cf16526a6968dac4cf16526a6968b5f746d8a8d6601dcdfa8e0723ee3c6f3eb15156e2c8a0b484e3742c3f433efe3eb151568db4c4d48106291698f9ae70b0469d7b10e705aea5ad3a4d81062916526a6968d466a24098f9ae70e6c9b4ce3eb1515681062916526a6968f6917724089b08a12145dd64089b08a16270f35d3eb1515657bcbe0810e705ae3eb151566270f35d089b08a13eb1515681062916526a6968c54d871ccd857082526a6968630ac280cdfa8e079e60b411089b08a13eb15156842d13d698f9ae7071a61bfe87862c639e3cbd1e278ee2cf3eb15156842d13d698f9ae709e3cbd1e87862c63afb7234c3eb15156fd5ff8965bd013909e3cbd1e85ba21809e60b411f80edaaa23ee3c6f3eb1515657bcbe0810e705aec7fb355312e96af5526a696885ba2180e6c9b4ce3eb15156089b08a1f6917724e266c87cf59b78f4089b08a1dc4a9aaedeb52a9e822e64ab7d82b45a585187b7091b7d36526a6968648b360a87862c633eb15156842d13d6526a69683dd7a4c2cb8dbca69a5fb30aa7c1344727cc55195bd013905ef8478c1951ad3e560dd61e71a61bfed399892ecdfa8e07a8198fdef41264de23ee3c6fae5a40cedd00d544c613f7713eb1515615bd8f7e142e1f2b81062916526a6968f6917724089b08a107cd2a0ca8198fde297734fe767c796a3eb15156f84deab5f0a85b16526a696872058eb7526a6968fecd7580ac69c81df2a90fff637a4c7e98f9ae7057e16688526a69687fd15f2087862c633eb1515681062916526a6968f581a325169dda6e38ae4cc5089b08a1a69faae257e1668898f9ae708baef18ba8198fde089b08a13eb1515610e705ae7fd15f2087862c633eb15156089b08a18106291698f9ae70a8198fde3eb1515610e705aebe1ce4a6169dda6e7bd04c1681062916d468b35fa8198fde089b08a13eb1515610e705ae78945f448bca838b98f9ae7057e16688526a69687fd15f2087862c633eb1515681062916526a6968f581a325169dda6e38ae4cc5089b08a1a69faae257e1668898f9ae708baef18b3442fb44089b08a13eb1515610e705ae7fd15f2087862c633eb15156089b08a18106291698f9ae703442fb443eb1515610e705aebe1ce4a6169dda6e7bd04c16810629163442fb44d468b35f089b08a13eb1515610e705ae063df92b2e69246a98f9ae70e9928ede10e705ae401baea29644a2885bd013903eb151564f15da215e4869dc5bd01390a422200922f7ed098c89f71423ee3c6f3eb15156f0a85b169644a2885e4869dc5bd01390063878afbaaf60fe320f2bb59644a288063878afe4996eeeef9bb03805a04e2698f9ae705bd01390b93172b1a8198fde6b528741027e25607aced79b38363c5ab44fe2db1eb615002f02afbf0583bc9fa03dd78c71a61bfe1edd3fee8eb9909ecafde1c323ee3c6f9104b93ecea8eed73eb1515675ce9860d5d8312dac69c81d2dcb0f2f61755cb5027e256081062916526a696819ad08cc",
+          "function_at": 8893808
         }
       ]
     }

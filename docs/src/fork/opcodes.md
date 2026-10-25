@@ -27,8 +27,11 @@ upstream's [Opcodes](../opcodes.md) page.
   it probably is.
 
 Since upstream's 7.57h1 (2026.10.16, merged on the `upstream-7.57h1` branch, in `master` since 2026-10-21) every entry is found on 2026.10.16 (see
-[Finding them on 7.57h1](#finding-them-on-757h1) below). Ten have finders, so the startup scan checks them on each
-start and re-finds them after the next patch.
+[Finding them on 7.57h1](#finding-them-on-757h1) below). 34 of the 38 have finders (2026-10-25; 14 before), so the startup scan checks them on each start and re-finds them
+after the next patch, and every one is in the shipped fingerprints. The four without can't have one: their code is
+the same as other packets' (RequestPlayerRetainerInfo, a request without arguments; GatheringPointPhase; the two
+ItemMarketBoards, which share a handler); after a patch only the fingerprints find them (the ItemMarketBoards as a
+pair of candidates).
 
 ## Current entries (game 2026.10.16, patch 7.57h1)
 
@@ -41,35 +44,35 @@ start and re-finds them after the next patch.
 | UpdateAdventurerPlate | client → server | 350 | 795 (10.06) | 200 | The client saves its adventurer plate (CharaCardData). Finder: the sender writing the opcode, then the 216-byte size. See [Adventurer Plate](character-windows.md#adventurer-plate). |
 | MarketBoardOpened | client → server | 319 | 156 (09.15), 683 (10.06) | 8 | The marketboard window opened; answered with an empty search result. Seen in Bob's 2026-10-20 bundle as the window opened. Finder. |
 | MarketBoardPurchaseHandler | client → server | 245 | 765 (09.15), 258 (10.06) | 40 | Buying a marketboard listing. Seen in Bob's 2026-10-20 bundle (his purchases); FFXIVOpcodes' 7.57h agrees. Finder. See [Marketboard](marketboard.md). |
-| MarketBoardPurchase | server → client | 353 | 665 (09.15), 610 (10.06) | 16 | A purchase went through: item and quantity. |
+| MarketBoardPurchase | server → client | 353 | 665 (09.15), 610 (10.06) | 16 | A purchase went through: item and quantity. Finder (written by `suggest-finders`; it reads 610 on 10.06). |
 | RequestPlayerRetainerInfo | client → server | 348 | 580 (09.15), 818 (10.06) | 8 | Asks for the character's retainers as a retainer's sale list opens. See [Retainers](retainers.md). |
-| RequestRetainerSaleHistory | client → server | 372 | 243 (09.15), 274 (10.06) | 8 | Asks for a retainer's sale history (their ID). |
+| RequestRetainerSaleHistory | client → server | 372 | 243 (09.15), 274 (10.06) | 8 | Asks for a retainer's sale history (their ID). Finder (written by `suggest-finders`; it reads 274 on 10.06). |
 | SetRetainerAppearance | client → server | 463 | 670 (10.06) | 32 | The new retainer's voice and CustomizeData from the vocate's editor. Finder. |
-| RetainerStateNotice | server → client | 987 | 897 (09.15), 144 (10.06) | 8 | Before every RetainerState and after a retainer's containers. |
-| RetainerState | server → client | 735 | 908 (09.15), 249 (10.06) | 56 | A retainer called (4), sent away (3) or hired (1). |
-| PlayerRetainerInfo | server → client | 715 | 599 (09.15), 712 (10.06) | 480 | The character's retainers for the marketboard. |
+| RetainerStateNotice | server → client | 987 | 897 (09.15), 144 (10.06) | 8 | Before every RetainerState and after a retainer's containers. Finder (written by `suggest-finders`; it reads 144 on 10.06). |
+| RetainerState | server → client | 735 | 908 (09.15), 249 (10.06) | 56 | A retainer called (4), sent away (3) or hired (1). Finder (written by `suggest-finders`; it reads 249 on 10.06). |
+| PlayerRetainerInfo | server → client | 715 | 599 (09.15), 712 (10.06) | 480 | The character's retainers for the marketboard. Finder (written by `suggest-finders`; it reads 712 on 10.06). |
 | ItemMarketBoardInfo | server → client | 471 | 313 (09.15), 387 (10.06) | 32 | The asking price of an item a retainer has on the market. |
 | ItemMarketBoardSummary | server → client | 290 | 442 (09.15), 303 (10.06) | 8 | How many items a retainer has on the market. |
-| RetainerSaleHistory | server → client | 551 | 161 (09.15), 832 (10.06) | 1048 | A retainer's sale history. |
-| LootMessage | server → client | 154 | 351 (09.15), 190 (10.06) | 32 | Loot: kind 3 an item obtained directly (an enemy's drop), 9 gil, 0/1 need/greed rolls and winners. See [Combat](combat.md#defeating-enemies). |
-| LootRoll | client → server | 766 | | 16 | Need, Greed or Pass on a coffer's item: the coffer, the slot, 1/2/5. From Bob's Sastasha capture (2026-10-22). See [Coffers and Loot](loot.md). |
-| LootList | server → client | 272 | | 88 | An opened coffer's items and the time to roll. Same capture. |
-| LootItem | server → client | 975 | | 56 | One of a coffer's items: slot, unique, time left. Same capture. |
-| LootRollResult | server → client | 462 | | 16 | The answer to LootRoll: rolled (and the roll), passed or refused. Same capture. |
-| DutySupportContent | server → client | 701 | | 8 | The answer to ClientTrigger 2650 (a duty's entrance asking for its Duty Support window): the DawnContent, then 0. From Bob's capture of 2026-10-23 (Sastasha's entrance: 200, 0). See [Party NPCs](party-npcs.md#registering). |
+| RetainerSaleHistory | server → client | 551 | 161 (09.15), 832 (10.06) | 1048 | A retainer's sale history. Finder (written by `suggest-finders`; it reads 832 on 10.06). |
+| LootMessage | server → client | 154 | 351 (09.15), 190 (10.06) | 32 | Loot: kind 3 an item obtained directly (an enemy's drop), 9 gil, 0/1 need/greed rolls and winners. See [Combat](combat.md#defeating-enemies). Finder (written by `suggest-finders`; it reads 190 on 10.06). |
+| LootRoll | client → server | 766 | | 16 | Need, Greed or Pass on a coffer's item: the coffer, the slot, 1/2/5. From Bob's Sastasha capture (2026-10-22). See [Coffers and Loot](loot.md). Finder (written by `suggest-finders`; it reads 231 on 10.06). |
+| LootList | server → client | 272 | | 88 | An opened coffer's items and the time to roll. Same capture. Finder (written by `suggest-finders`; it reads 271 on 10.06). |
+| LootItem | server → client | 975 | | 56 | One of a coffer's items: slot, unique, time left. Same capture. Finder (written by `suggest-finders`; it reads 334 on 10.06). |
+| LootRollResult | server → client | 462 | | 16 | The answer to LootRoll: rolled (and the roll), passed or refused. Same capture. Finder (written by `suggest-finders`; it reads 285 on 10.06). |
+| DutySupportContent | server → client | 701 | | 8 | The answer to ClientTrigger 2650 (a duty's entrance asking for its Duty Support window): the DawnContent, then 0. From Bob's capture of 2026-10-23 (Sastasha's entrance: 200, 0). See [Party NPCs](party-npcs.md#registering). Finder (written by `suggest-finders`; it reads 976 on 10.06). |
 | GatheringPointPhases | server → client | 309 | 467 (06.18), 250 (09.01), 314 (09.15), 533 (10.06) | 160 | The gathering points' phase table, once at login: which position of each point the client shows. From Bob's captures (every login) and its handler in the 10.16 client. Finder: its handler. See [Gathering](gathering.md#where-the-points-are). |
 | GatheringPointPhase | server → client | 845 | | 8 | One phase slot changes (slot, phase): a used-up point comes back at another position. From its handler in the 10.16 client and Bob's capture of 2026-10-24 (with ActorControlSelf 109 as a third point is used up). No finder (its handler's code is the same as two others'). See [Gathering](gathering.md#integrity-and-moving-on). |
 | GatheringChainCount | server → client | 618 | | 8 | The gathering chain at a node (u32): after each gather from the second in a row, and 0 as the window closes. From Bob's capture of 2026-10-24. Finder: its handler. See [Gathering](gathering.md#at-the-node). |
 | CraftingActionPreviews | server → client | 347 | | 424 | What each crafting action would do now (21 entries: action, efficiencies, progress, quality, state), before the Synthesis window opens and with every step. Same capture. Finder: its handler. See [Crafting](crafting.md#craftingactionpreviews). |
-| GlamourDresser | server → client | 436 | | 2408 | One page of the glamour dresser (page, 400 items, their stains), twice as it opens. From Bob's capture of 2026-10-24 (the Hourglass) and its dispatcher case in the 10.16 client (vtable entry 0x1348). No finder. See [Glamour](glamour.md). |
-| GlamourPlates | server → client | 400 | | 1440 | The 20 glamour plates. Same capture (vtable entry 0x1350). No finder. |
-| GlamourPlateUpdated | server → client | 621 | | 80 | One plate after it was saved. Same capture (vtable entry 0x1358). No finder. |
-| SaveGlamourPlate | client → server | 156 | | 248 | A glamour plate saved at the dresser. Same capture. No finder. |
-| EquipGearsetGlamour | client → server | 605 | | 128 | Equipping a gearset with a glamour plate linked: EquipGearset's layout with the plate's number (from 1) at byte 60, then 56 bytes. From Bob's Chronofoil captures of 2026-10-24. No finder. See [Glamour](glamour.md#applying-a-plate). |
-| ArmoireContents | server → client | 772 | | 136 | The armoire's bitmask (ClientTrigger 423). Same capture (vtable entry 0xEB8). No finder. |
-| ArmoireInfo | server → client | 445 | | 504 | Sent with it (ClientTrigger 427); 1 and zeros, meaning unknown. Same capture (vtable entry 0xEC0). No finder. |
+| GlamourDresser | server → client | 436 | | 2408 | One page of the glamour dresser (page, 400 items, their stains), twice as it opens. From Bob's capture of 2026-10-24 (the Hourglass) and its dispatcher case in the 10.16 client (vtable entry 0x1348). Finder (written by `suggest-finders`; it reads 202 on 10.06). See [Glamour](glamour.md). |
+| GlamourPlates | server → client | 400 | | 1440 | The 20 glamour plates. Same capture (vtable entry 0x1350). Finder (written by `suggest-finders`; it reads 649 on 10.06). |
+| GlamourPlateUpdated | server → client | 621 | | 80 | One plate after it was saved. Same capture (vtable entry 0x1358). Finder (written by `suggest-finders`; it reads 868 on 10.06). |
+| SaveGlamourPlate | client → server | 156 | | 248 | A glamour plate saved at the dresser. Same capture. Finder (written by `suggest-finders`; it reads 716 on 10.06). |
+| EquipGearsetGlamour | client → server | 605 | | 128 | Equipping a gearset with a glamour plate linked: EquipGearset's layout with the plate's number (from 1) at byte 60, then 56 bytes. From Bob's Chronofoil captures of 2026-10-24. Finder (written by `suggest-finders`; it reads 265 on 10.06). See [Glamour](glamour.md#applying-a-plate). |
+| ArmoireContents | server → client | 772 | | 136 | The armoire's bitmask (ClientTrigger 423). Same capture (vtable entry 0xEB8). Finder (written by `suggest-finders`; it reads 681 on 10.06). |
+| ArmoireInfo | server → client | 445 | | 504 | Sent with it (ClientTrigger 427); 1 and zeros, meaning unknown. Same capture (vtable entry 0xEC0). Finder (written by `suggest-finders`; it reads 948 on 10.06). |
 | EventReturnHandler128 | client → server | 866 | | 520 | A scene's return of up to 128 results (the craft's materials list). Same capture. Finder: the size it's sent with. See [Crafting](crafting.md#the-flow). |
-| LootResult | server → client | 807 | | 16 | Who won a coffer's item, with what roll (0xE0000000 when everyone passed). Same capture. |
+| LootResult | server → client | 807 | | 16 | Who won a coffer's item, with what roll (0xE0000000 when everyone passed). Same capture. Finder (written by `suggest-finders`; it reads 521 on 10.06). |
 | ActionRequestGroundTargeted | client → server | 492 | 891 (09.15), 846 (10.06) | 24 | A ground-targeted action (Asylum...): the action, its type, the sequence, the rotation, where on the ground. Not yet seen on Kawari; the layout is from Bob's captures. Handled as an action on oneself for now. Finder. |
 | Achievements | server → client | 985 | 991 (10.06) | 552 | The completed achievements and the last five, the reply to client trigger 1001. Finder: its handler (HandleAchievementsPacket). See [Achievements](character-windows.md). |
 
@@ -138,20 +141,62 @@ others (the retainer requests, and the server packets other than the notices and
 2. Server packets: record the same action on retail with the Kawari Recorder (Quest packets tab keeps the opcode and
    first 48 bytes of packets addressed to quests/directors) on the same game version.
 3. Try candidates live with `!rawpacket` / `!rawsweep`.
-4. Write a finder so the next patch finds it automatically, and test it with `kawari-opcodescan`.
+4. Write a finder so the next patch finds it automatically: add the opcode to `fork_opcodes.yml`, record fingerprints
+   (below), then `kawari-opcodescan <game exe> suggest-finders resources/data/opcode_fingerprints.json [older exe]`
+   writes it (next section). Run `cargo test -p kawari opcode_match` before committing: it fails while a fork opcode
+   is missing from the fingerprints or fingerprinted with another number.
+
+## Writing finders automatically
+
+`core/src/finder_gen.rs`, `kawari-opcodescan <exe> suggest-finders <fingerprints.json> [other exe] [all]`. From an
+executable whose opcodes are known (the fingerprints must be from that version), it writes a `find:` entry for each
+fork opcode without one (every one with `all`) and prints it as YAML to paste:
+
+* **Client packets** (`immediate`): the function that writes the opcode (from the fingerprint) is cut into pieces
+  around the opcode's `mov`; addresses, jumps' and calls' targets and numbers over 0x1000 are masked, and the
+  shortest run of bytes that is unique in `.text` (with at least 8 unmasked) and still holds the opcode is kept, with
+  the opcode's offset and width. Functions up to 6,000 instructions (some build the packet late in a long function).
+* **Server packets** (`handler`): the handler the dispatcher's case calls; a pattern in it, or, when the handler only
+  passes the packet on (and looks like many others), in the functions it calls (two levels, 16 functions).
+* Each one is checked to read the right opcode on this executable, with exactly one match. With an older (or newer)
+  executable it also says what each reads there (`# reads N on <other>`), which is the check that it survives a patch:
+  compare that with a capture or with fingerprint matching (`match`).
+
+Packets whose code is the same as another packet's can't have a finder (`# no finder` with why): see the four in
+[Current entries](#current-entries-game-20261016-patch-757h1). The 20 written on 2026-10-25 (from 10.16) each read on
+10.06 what fingerprint matching (10.16 → 10.06) finds, exactly, and the loot and retainer ones what the 10.06 captures
+show.
 
 ## After a game patch
 
-1. **Nothing, to start with:** update the game and start the server. If the game is newer than
-   `SUPPORTED_GAME_VERSION`, the world server finds every zone opcode for it by itself
-   ([below](#every-opcode-after-a-game-update)), and the patch server lets that version in.
-2. When upstream releases their update, merge it (their `opcodes.yml`, constants and scrambler data).
-3. Save the fork's opcodes the server found in `fork_opcodes.yml` (`auto-opcodes/<version>.json` has them; the log
-   also says what to save for those with finders), and set `found_on`. Then record new fingerprints
-   (`kawari-opcodescan <game> fingerprint resources/data/opcode_fingerprints.json resources/data/opcodes.yml
-   resources/data/fork_opcodes.yml <version>`); the server also records them by itself into `auto-opcodes/` when it
-   runs on the supported version.
-4. Anything not found stays switched off (or outstanding) until found by hand.
+What happens on patch day, end to end (the server needs nothing from anyone until step 4):
+
+1. **Update the game, start the server.** The world server compares the install's version with
+   `SUPPORTED_GAME_VERSION`:
+   * newer: it finds every zone opcode from the new `ffxiv_dx11.exe` with the fingerprints (about three seconds;
+     [below](#every-opcode-after-a-game-update)), writes `auto-opcodes/<version>.json` and the new version's
+     fingerprints, and the patch server lets that version in;
+   * then the fork's finders run on the same executable (34 of 38 fork opcodes), and each one that reads something
+     other than the opcode in use is logged with the value to save; the fingerprints' answer and the finder's are two
+     independent methods, so when they agree the opcode is right;
+   * client packets the game now sends with **another size** are warned about (`ClientZoneIpcType::X: the game now
+     sends it with [..] bytes, not N`) and listed under `size_changed` in `auto-opcodes/<version>.json`: their layout
+     changed and their reading needs a look even though the opcode is found.
+2. **Read the log and `auto-opcodes/<version>.json`.** Candidates (packets the client handles the same way) are
+   assigned in order; a wrong one shows as that packet doing nothing (try the others with `!rawpacket`). Client
+   packets not found are learnt by size the first time they arrive.
+3. **Play.** Packets not found go out as `0xFFFE` (ignored by the game), so a feature is off rather than broken.
+4. **When upstream releases their update,** merge it (their `opcodes.yml`, constants and scrambler data), then:
+   * save the fork's opcodes in `fork_opcodes.yml` from `auto-opcodes/<version>.json` and the finders' log lines, and
+     set `found_on`;
+   * record new fingerprints: `kawari-opcodescan <game> fingerprint resources/data/opcode_fingerprints.json
+     resources/data/opcodes.yml resources/data/fork_opcodes.yml <version>` (the server also records them into
+     `auto-opcodes/` when it runs on the supported version);
+   * re-check the finders: `kawari-opcodescan <game> suggest-finders resources/data/opcode_fingerprints.json <old exe>
+     all` shows each one still reads its opcode, and writes one for any new fork opcode;
+   * `cargo test -p kawari opcode_match` (the fingerprints cover every fork opcode with the same numbers).
+5. Anything still not found stays switched off (or outstanding) until found by hand
+   ([Finding a new one](#finding-a-new-one)), and the constants under **Not covered** below are checked by hand.
 
 ## Every opcode after a game update
 
@@ -195,7 +240,10 @@ code was and the packets' names: nothing of the game itself. For each packet:
 
 What comes back for each packet is an opcode, a list of candidates the client's code doesn't tell apart, or nothing.
 
-**Tested** on Bob's 2026.10.06 and 2026.10.16 executables against both versions' known opcodes, in both directions:
+**Tested** on Bob's 2026.10.06 (`ffxiv_dx11.exe`, built 2026-10-05) and 2026.10.16 (`ffxiv_dx11_1.exe`, built
+2026-10-15, the supported version) executables against both versions' known opcodes, in both directions. The
+fingerprints were re-recorded on 10.16 on 2026-10-25 (225 server, 116 client packets, now every fork opcode); the
+10.16 → 10.06 run with them gives the same numbers, and every fork opcode found there agrees with the finders:
 
 | | Server packets (211) | Client packets (112) |
 |---|---|---|
@@ -205,7 +253,8 @@ What comes back for each packet is an opcode, a list of candidates the client's 
 The candidates: the notices (EventNotice2/4, five opcodes the client handles identically), EventResume2/4/8 (eight),
 InitResponse and PingSyncReply (21: they end in the dispatcher's default case, so they're handled before it), the
 three inventory packets (UpdateItem, ContainerInfo, CurrencyCrystalInfo), the two InventoryTransactions, the two
-ItemMarketBoards, Mogpendium, SearchFellowshipsResults. The client packets not found are built differently (not
+ItemMarketBoards, Mogpendium, SearchFellowshipsResults, and in the 10.16 → 10.06 direction three Crossworld linkshell
+packets (12 opcodes with the same handling). The client packets not found are built differently (not
 `opcode` then `size` next to each other) or by code shared with another packet (EventYield/EventReturnHandler16).
 
 **At startup** (`auto_opcodes::adapt_to_game`, before the fork finders):
@@ -226,8 +275,12 @@ ItemMarketBoards, Mogpendium, SearchFellowshipsResults. The client packets not f
   patch server accepts a game version with a result there (and expansions no newer than the install's) as current.
 * When the game *is* `SUPPORTED_GAME_VERSION` and the shipped fingerprints are for another version, its fingerprints
   are recorded instead.
+* **Size changes:** every client packet's size is read from the new executable (`opcode_match::client_sizes`, the
+  `size + 16` written next to the opcode) and compared with `opcodes.yml`'s; differences are warned about and saved
+  as `size_changed`. `kawari-opcodescan <new exe> match <fingerprints>` prints them too. (Server packets' sizes aren't
+  in the client's code in the same way, so they aren't checked.)
 
 **Not covered:** a patch also changes `BASE_INVENTORY_ACTION`, the mail result codes and the scrambler tables in
-`constants.yml`. Obfuscation is off by default (`enable_packet_obsfucation`), so the scrambler isn't needed to play;
+`constants.yml`; no pattern that finds them in the client was found (2026-10-25). Obfuscation is off by default (`enable_packet_obsfucation`), so the scrambler isn't needed to play;
 item moves and mail need upstream's (or a hand-found) value. Content patches can also change bitmask sizes and packet
 layouts, which no opcode table fixes.

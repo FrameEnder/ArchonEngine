@@ -40,6 +40,13 @@ ClientZoneIpcType:
   size: 16
   found_on: 2026.10.16.0000.0000
   how_to_find: On Kawari, open a coffer in a dungeon and press Greed on an item - the 16-byte packet starting with the coffer's ID.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 231 on 2026.10.06, which a capture or the fingerprints agree with.
+  - immediate:
+      pattern: C7 44 24 38 ?? ?? ?? ?? 48 C7 44 24 40 20 00 00 00
+      offset: 4
+      width: 4
 - name: EventReturnHandler16
   comment: A scene finished with up to 16 results, e.g. handing three kinds of items over in a quest's NPC trade (Surveying the Damage.)
   # 856 on 2026.09.15, 200 on 2026.10.06, 555 on 2026.10.16 (read from the game by its finder.)
@@ -148,6 +155,13 @@ ClientZoneIpcType:
   size: 8
   found_on: 2026.10.16.0000.0000
   how_to_find: Call a retainer at a summoning bell and open their sale history. The server warns about an unknown 8-byte packet holding the retainer's ID.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 274 on 2026.10.06, which a capture or the fingerprints agree with.
+  - immediate:
+      pattern: 48 8B 8B ?? ?? ?? ?? 48 8D 54 24 20 48 89 4C 24 40 45 33 C9 48 8B C8 C7 44 24 20 ?? ?? ?? ??
+      offset: 27
+      width: 4
 - name: ActionRequestGroundTargeted
   comment: The client uses a ground-targeted action (Asylum, Sacred Soil...) - the action and where on the ground.
   # 490 on 2026.06.18, 212 on 2026.09.01, 891 on 2026.09.15 (Bob's Chronofoil captures, all Asylum); 846 on 2026.10.06
@@ -187,6 +201,13 @@ ClientZoneIpcType:
   size: 248
   found_on: 2026.10.16.0000.0000
   how_to_find: On Kawari at an inn's glamour dresser, open Glamour Plates, put an item on a plate and save it - the 248-byte packet starting with the plate's number.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 716 on 2026.10.06, which a capture or the fingerprints agree with.
+  - immediate:
+      pattern: C7 44 24 20 ?? ?? ?? ?? 0F 10 48 10
+      offset: 4
+      width: 4
 - name: EquipGearsetGlamour
   comment: Equipping a gearset with a glamour plate linked - EquipGearset's 72 bytes with the plate's number (from 1) at byte 60, then 56 more.
   # 605 on 2026.10.16 (Bob's Chronofoil captures of 2026-10-24: gearsets 11 and 17 with plates 9 and 12, each answered
@@ -195,45 +216,77 @@ ClientZoneIpcType:
   size: 128
   found_on: 2026.10.16.0000.0000
   how_to_find: On Kawari, link a glamour plate to a gearset (Gear Set List, right-click) and equip it - the 128-byte packet starting with the gearset's index.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 265 on 2026.10.06, which a capture or the fingerprints agree with.
+  - immediate:
+      pattern: C7 45 B0 ?? ?? ?? ?? 0F 10 4D 88 48 C7 45 B8 90 00 00 00
+      offset: 3
+      width: 4
 ServerZoneIpcType:
 - name: GlamourDresser
   comment: One page of the glamour dresser - the page, 400 item IDs (HQ + 1000000), their first and second stains.
   # 436 on 2026.10.16 (Bob's Chronofoil capture of 2026-10-24: two 2408-byte pages answering ClientTrigger 2350.) Its
   # zone dispatcher case calls the handler's vtable entry 0x1348; GlamourPlates and GlamourPlateUpdated are the next
-  # two (0x1350, 0x1358). No finder.
+  # two (0x1350, 0x1358). Finder below.
   opcode: 436
   size: 2408
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with Chronofoil, open an inn's glamour dresser - the two 2408-byte packets.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 202 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 40 53 48 83 EC 20 0F B6 02 4C 8D 92 D4 07 00 00
 - name: GlamourPlates
   comment: The 20 glamour plates (12 item IDs, 12 first and 12 second stains each), answering ClientTrigger 2356.
-  # 400 on 2026.10.16 (same capture). No finder.
+  # 400 on 2026.10.16 (same capture). Finder below.
   opcode: 400
   size: 1440
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with Chronofoil, open Glamour Plates at a glamour dresser - the 1440-byte packet.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 649 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 40 53 48 83 EC 20 48 8B D9 41 B8 A0 05 00 00
 - name: GlamourPlateUpdated
   comment: One glamour plate after the client saved it - its index, then the plate.
-  # 621 on 2026.10.16 (same capture, after SaveGlamourPlate). No finder.
+  # 621 on 2026.10.16 (same capture, after SaveGlamourPlate). Finder below.
   opcode: 621
   size: 80
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with Chronofoil, save a glamour plate - the 80-byte packet starting with its index.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 868 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 40 53 48 83 EC 20 48 8B D9 E8 ?? ?? ?? ?? 84 C0 74 ?? E8 ?? ?? ?? ?? 0F B6 13
 - name: ArmoireContents
   comment: The armoire's contents, one bit per Cabinet row stored.
   # 772 on 2026.10.16 (same capture: answering ClientTrigger 423, its bit for row 204 gone once that was withdrawn.)
-  # Its zone dispatcher case calls the handler's vtable entry 0xEB8, ArmoireInfo's is 0xEC0. No finder.
+  # Its zone dispatcher case calls the handler's vtable entry 0xEB8, ArmoireInfo's is 0xEC0. Finder below.
   opcode: 772
   size: 136
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with Chronofoil, open an inn's armoire - the 136-byte packet.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 681 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 48 83 EC 28 45 33 C0 66 0F 1F 84 00 00 00 00 00
 - name: ArmoireInfo
   comment: Sent with ArmoireContents as the armoire opens (ClientTrigger 427) - 1 and zeros on retail, meaning unknown.
-  # 445 on 2026.10.16 (same capture). No finder.
+  # 445 on 2026.10.16 (same capture). Finder below.
   opcode: 445
   size: 504
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with Chronofoil, open an inn's armoire - the 504-byte packet.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 948 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 48 83 EC 28 80 3A 00 75
 - name: LootList
   comment: An opened coffer's loot, to the party - the coffer, how many items, the seconds left to roll (three times) and the items.
   # 272 on 2026.10.16 (Bob's Chronofoil capture of Sastasha, 2026-10-22: 15 coffers, just before OpenedTreasure.)
@@ -241,6 +294,11 @@ ServerZoneIpcType:
   size: 88
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with Chronofoil, open a coffer in a dungeon - the 88-byte packet starting with the coffer's ID, right before OpenedTreasure.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 271 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 40 53 48 83 EC 20 48 8B DA 48 8D 0D ?? ?? ?? ?? 8B 12 E8 ?? ?? ?? ?? 48 85 C0 74 ?? 48 8B D3
 - name: LootItem
   comment: One item of an opened coffer's loot - the coffer, the item, the time left, its slot and whether it's unique; again when the player opens it themselves.
   # 975 on 2026.10.16 (Bob's Chronofoil capture of Sastasha, 2026-10-22: one per item after LootList.)
@@ -248,6 +306,11 @@ ServerZoneIpcType:
   size: 56
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with Chronofoil, open a coffer in a dungeon - the 56-byte packets right after LootList, one per item.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 334 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 48 89 74 24 18 57 48 81 EC 90 00 00 00 48 8B F2 48 8B F9 8B 12
 - name: LootRollResult
   comment: The answer to the player's LootRoll - the coffer, the slot, then 1 and the roll (need or greed), 4 (passed) or 8 (refused.)
   # 462 on 2026.10.16 (Bob's Chronofoil capture of Sastasha, 2026-10-22: 15, one per LootRoll.)
@@ -255,6 +318,11 @@ ServerZoneIpcType:
   size: 16
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with Chronofoil, press Greed on a coffer's item - the 16-byte packet starting with the coffer's ID right after.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 285 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 40 53 48 83 EC 30 0F B6 42 08
 - name: LootResult
   comment: Who won an item of a coffer - the coffer, the slot, the winner and their roll (0xE0000000 and 0 when everyone passed.)
   # 807 on 2026.10.16 (Bob's Chronofoil capture of Sastasha, 2026-10-22: 18, after each item's last rolls.)
@@ -262,6 +330,11 @@ ServerZoneIpcType:
   size: 16
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with Chronofoil, let a coffer's item be rolled for - the 16-byte packet starting with the coffer's ID after the rolls' LootMessages.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 521 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 48 89 5C 24 08 57 48 83 EC 20 44 8B 12
 - name: LootMessage
   comment: Loot - an item obtained directly (an enemy's drop), gil, need/greed rolls and their winners.
   # 936 on 2026.06.18, 135 on 2026.09.01, 351 on 2026.09.15, 190 on 2026.10.06 (Bob's Chronofoil captures.)
@@ -271,6 +344,11 @@ ServerZoneIpcType:
   size: 32
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with Chronofoil, defeat an enemy that drops an item - the 32-byte packet starting 03000000 right after the kill's EXP.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 190 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 4C 8B DC 55 41 56 49 8D 6B A1 48 81 EC A8 00 00 00
 - name: DutySupportContent
   comment: Eight bytes answering ClientTrigger 2650 (the Duty Support window asked for at a duty's entrance) - the DawnContent, then 0.
   # 701 on 2026.10.16 (Bob's Chronofoil capture of 2026-10-23, at Sastasha's entrance: 200, 0, right after the trigger.)
@@ -278,6 +356,11 @@ ServerZoneIpcType:
   size: 8
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with Chronofoil, talk to Sastasha's entrance and choose Duty Support - the 8-byte packet right after the client's ClientTrigger 2650.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 976 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 40 53 48 81 EC 90 00 00 00 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 80 00 00 00 33 C0
 - name: CraftingActionPreviews
   comment: What each of 21 progress and quality actions would do now (efficiency, progress, quality, usable), for the Synthesis window.
   # 347 on 2026.10.16 (Bob's Chronofoil capture of 2026-10-24: before the window opens and with every step.)
@@ -328,6 +411,11 @@ ServerZoneIpcType:
   size: 8
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with Chronofoil, call a retainer - the 8-byte packet right before RetainerState.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 144 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 48 83 EC 28 48 8B 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B C8 48 8B 10 FF 52 40 80 88 ?? ?? ?? ?? 04
 - name: RetainerState
   comment: A retainer is called (state 4), sent away (state 3) or hired (state 1) - their ID and name.
   # 908 on 2026.09.15 (Bob's Chronofoil captures, FFXIVOpcodes' RetainerState there); 249 on 2026.10.06, seen in Bob's
@@ -338,6 +426,11 @@ ServerZoneIpcType:
   size: 56
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with the Kawari Recorder or Chronofoil, call a retainer at a summoning bell - the 56-byte packet with their ID and name, right after choosing them.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 249 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 40 55 53 57 48 8D 6C 24 B9 48 81 EC E0 00 00 00 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 37 48 8B 0D
 - name: PlayerRetainerInfo
   comment: The character's retainers for the marketboard's listings, the reply to RequestPlayerRetainerInfo.
   # 599 on 2026.09.15, 712 on 2026.10.06 (Bob's Chronofoil captures.)
@@ -347,6 +440,11 @@ ServerZoneIpcType:
   size: 480
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with the Kawari Recorder or Chronofoil, call a retainer and open Sell items in your inventory - the 480-byte reply.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 712 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 40 53 48 83 EC 20 48 8B 0D ?? ?? ?? ?? 48 8B DA E8 ?? ?? ?? ?? 48 85 C0 74 ?? 4C 8B 00 48 8B C8 41 FF 90 18 01 00 00 48 8B C8 BA 0B 00 00 00 E8 ?? ?? ?? ?? 48 85 C0 74 ?? 41 B8 0A 00 00 00
 - name: ItemMarketBoardInfo
   comment: The asking price of one item a retainer has on the market, sent with their containers as they're called.
   # 313 on 2026.09.15, 387 on 2026.10.06 (Bob's Chronofoil captures.)
@@ -374,6 +472,11 @@ ServerZoneIpcType:
   size: 1048
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with the Kawari Recorder or Chronofoil, call a retainer and open their sale history - the 1048-byte reply.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 832 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 40 53 56 57 41 57 48 83 EC 38 48 8B F1
 - name: MarketBoardPurchase
   comment: A marketboard purchase went through - the item and how many, after the gil and inventory updates.
   # 665 on 2026.09.15 (Bob's Chronofoil captures); 610 on 2026.10.06 is FFXIVOpcodes' (7.57), not yet seen working.
@@ -383,6 +486,11 @@ ServerZoneIpcType:
   size: 16
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with the Kawari Recorder or Chronofoil, buy something on the marketboard - the 16-byte packet after the inventory updates (item ID, then quantity.)
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 610 on 2026.10.06, which a capture or the fingerprints agree with.
+  - handler:
+      pattern: 40 55 56 41 56 48 8B EC 48 83 EC 70 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 F0 48 8B 0D ?? ?? ?? ?? 48 8B F2 E8 ?? ?? ?? ?? 4C 8B F0 48 85 C0 0F 84 ?? ?? ?? ?? 48 8B 10
 - name: EventNotice2
   comment: A notice from an event with up to 2 arguments, e.g. a quest's progress pop-up as an enemy is defeated.
   # 386 on 2026.10.06; 834 on 2026.10.16 (one of the five notice opcodes (467, 561, 834, 927, 928) - see below; Bob's
