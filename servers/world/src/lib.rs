@@ -69,6 +69,9 @@ pub mod mender;
 pub mod gathering;
 
 mod gamedata;
+
+/// Rules the client works out itself, ported from its code (`tools/clientlogic`).
+pub mod client_rules;
 pub use gamedata::{
     ActionInfo, GameData, GatheringPointItem, ItemInfoQuery, ItemRow, Recipe, RecipeInfo,
     RecipeIngredient, Roulette, SyncedItemStats, TerritoryNameKind,

@@ -242,7 +242,11 @@ add one when something is found.
 * Over-time ticks aren't summed per target or put on the target's own phase, aren't scaled by Spell Speed and never
   crit; Lucid Dreaming's MP tick sends no packet.
 * Presence of Mind and slows don't change PlayerStats' haste (so the GCD's recast isn't shortened, only casts); item
-  animation locks are 0.6 s.
+  animation locks are 0.6 s. Haste isn't something the client works out: retail's PlayerStats sends 85 under Haste
+  (status 1091) and 160 under Slow (9), numbers Status.ParamModifier (−10, 15) doesn't give.
+* Recasts of spells and weaponskills outside the GCD group (Drill, Gnashing Fang's own timer...) are sped up by Skill
+  or Spell Speed as the client's GetAdjustedRecastTime does, but no retail capture has one to check the server's number
+  against.
 * Raise: Weakness and Brink of Death don't lower stats; status 418 isn't taken away on the first action; the stand-up
   doesn't wait the 3 s retail does; Weakness doesn't survive a death.
 * Statuses: Temperance's healing bonus, the 5 s party auras (Temperance 1873, Asylum 1912, the bard songs), fixed status slots (retail

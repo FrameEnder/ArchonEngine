@@ -606,6 +606,23 @@ impl BaseParameters {
     }
 }
 
+impl BaseParameters {
+    /// A recast after speed and haste, in milliseconds: like a cast time (Skill Speed for weaponskills, Spell Speed for
+    /// spells), but never under 1.5 s (the client's recast adjustment, called by
+    /// `Client::Game::ActionManager::GetAdjustedRecastTime` for actions with at most one charge; read on the
+    /// 2026.10.16 client and Bob's build of 2026-10-20.) Other kinds of action keep their recast.
+    pub fn get_adjusted_recast_time(&self, action_category: ActionCategory, recast: u32) -> i32 {
+        if !matches!(
+            action_category,
+            ActionCategory::Spell | ActionCategory::Weaponskill
+        ) {
+            return recast as i32;
+        }
+        self.get_adjusted_cast_time(action_category, recast)
+            .max(crate::client_rules::MIN_ADJUSTED_RECAST_MS)
+    }
+}
+
 impl UserData for BaseParameters {
     fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("calc_physical_damage", |_, this, potency: u32| {
@@ -1197,6 +1214,29 @@ mod tests {
         assert_eq!(
             stat.get_adjusted_cast_time(ActionCategory::Spell, 2000),
             1974
+        );
+    }
+
+    // The client's 1.5 s floor on sped-up recasts, and abilities untouched.
+    #[test]
+    fn test_recast_floor() {
+        let mut stat = BaseParameters::default();
+        stat.level_modifier = 2780;
+        stat.base_speed = 420;
+        stat.spell_speed = 420;
+        stat.haste = 50;
+        assert_eq!(
+            stat.get_adjusted_recast_time(ActionCategory::Spell, 2500),
+            1500
+        );
+        stat.haste = 100;
+        assert_eq!(
+            stat.get_adjusted_recast_time(ActionCategory::Spell, 2500),
+            2500
+        );
+        assert_eq!(
+            stat.get_adjusted_recast_time(ActionCategory::Ability, 60000),
+            60000
         );
     }
 

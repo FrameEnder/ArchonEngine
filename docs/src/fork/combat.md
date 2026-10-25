@@ -121,10 +121,26 @@ Applied after an action's script returns, by the server, so scripts only give th
   again, the result 0.5 s later, and moving in the last half second doesn't interrupt them (slidecasting,
   `SLIDECAST_WINDOW_MS`).
 * **Recast** (ActorControlSelf 17, `SetCooldownTimerMax`: CooldownGroup − 1, the action, the recast in 10 ms units)
-  is sent with every action a player uses, as retail does with the cast bar or the effect: for the GCD (group 58)
-  Recast100ms sped up like a cast time (`1000 − floor(130 × (speed − BaseSpeed) / LevelModifier)` per mille, then
-  haste), otherwise Recast100ms × charges. Exact for 5,394 of 6,043 retail GCDs (the misses: one synced Spell Speed
-  where retail is 1 lower, and an action sending the 2.5 s group timer.)
+  is sent with every action a player uses, as retail does with the cast bar or the effect. It's worked out as the
+  client does (`client_rules.rs`, ported from ActionManager.GetAdjustedRecastTime and GetMaxCharges of the 2026.10.16
+  client, unchanged in the 2026-10-20 build):
+  * Recast100ms × 100, plus the learnt traits' Value × 100 (Enhanced Swiftcast's −20 s from its level; 19 actions);
+  * for a spell or weaponskill with at most one charge at the player's level, sped up like a cast time
+    (`1000 − floor(130 × (speed − BaseSpeed) / LevelModifier)` per mille, then haste), never under 1.5 s;
+  * otherwise × the action's charges at the highest level: the timer (RecastDetail.Total) is the whole charge gauge,
+    which the client's GetRecastTimeForGroup cuts down while the extra charges aren't learnt. Charges are 1 when the
+    row's MaxCharges is 0, else the Value of the first learnt trait of the action's chain (Essential Dignity: Enhanced
+    Essential Dignity II, then I), else MaxCharges (38 actions have a chain).
+
+  A trait is learnt when its ClassJobCategory has the class, its Level is set and reached, and its Quest (none has one)
+  is done. The action → trait tables are compiled into the client's code, not in a sheet:
+  `python3 tools/clientlogic/clientlogic.py <ffxiv_dx11.exe> --rust` reads them (finding the two functions by
+  signature and following their compare chains), for re-checking after a game update.
+  Checked against retail: 5,394 of 6,043 GCDs exact (the misses: one synced Spell Speed where retail is 1 lower, and
+  an action sending the 2.5 s group timer); a white mage synced to 80 (real 86) got 60 s for Divine Benison and 120 s
+  for Tetragrammaton (twice the recast, though their second-charge traits are level 88 and 98), 60 s for Swiftcast
+  (its −20 s trait is level 94) and the plain recast for the rest (Chronofoil capture 0.1). Before 2026-10-25 Kawari
+  sent Recast100ms × the row's MaxCharges (30 s for Divine Benison) and didn't apply traits.
 * **Auto-attacks** come every weapon delay × haste / 100 (2 s without a weapon); they were every 2 s for everyone.
   Retail: Paladin 2.27 s for a 2.24 weapon, Warrior 3.38–3.40 for 3.36, Monk 2.05 (2.56 × 0.8 with Greased Lightning),
   Bob's 2.41 for 2.4. As on retail (Bob's Chronofoil captures, 663 of his auto-attacks), a swing (`auto_attack_target`)

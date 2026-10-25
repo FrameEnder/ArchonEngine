@@ -201,12 +201,49 @@ pub fn handle_action_messages(
             && cooldown_group > 0
             && recast_100ms > 0
         {
-            let recast_ms = if cooldown_group == crate::server::GCD_GROUP {
-                parameters
-                    .get_adjusted_cast_time(category, recast_100ms as u32 * 100)
-                    .max(0) as u32
+            // As the client works it out (`client_rules`, ActionManager.GetAdjustedRecastTime and GetMaxCharges): the
+            // row's recast plus its learnt traits' (Enhanced Swiftcast's -20 s...), sped up by speed and haste for a
+            // weaponskill or spell with one charge at the player's level (never under 1.5 s); otherwise times its
+            // charges at the highest level (RecastDetail.Total is the whole gauge, which the client's
+            // GetRecastTimeForGroup cuts down while the extra charges aren't learnt): retail sent 60 s for Divine
+            // Benison and 120 s for Tetragrammaton to a white mage synced to 80, below their level 88 and 98 charge
+            // traits (Chronofoil capture 0.1). Every trait in the client's tables has no quest.
+            let common = actor.get_common_spawn();
+            let (class_job, level) = (common.class_job, common.level);
+            let (charges, gauge_charges, trait_ms) = {
+                let mut game_data = game_data.lock();
+                let no_quest = |_: u32| true;
+                (
+                    crate::client_rules::max_charges(
+                        &mut game_data,
+                        request.action_id,
+                        max_charges,
+                        class_job,
+                        level,
+                        &no_quest,
+                    ),
+                    crate::client_rules::max_charges(
+                        &mut game_data,
+                        request.action_id,
+                        max_charges,
+                        class_job,
+                        u8::MAX,
+                        &no_quest,
+                    ),
+                    crate::client_rules::recast_trait_ms(
+                        &mut game_data,
+                        request.action_id,
+                        class_job,
+                        level,
+                        &no_quest,
+                    ),
+                )
+            };
+            let recast = (recast_100ms as i32 * 100 + trait_ms).max(0) as u32;
+            let recast_ms = if crate::client_rules::recast_uses_speed(category, charges) {
+                parameters.get_adjusted_recast_time(category, recast).max(0) as u32
             } else {
-                recast_100ms as u32 * 100 * max_charges.max(1) as u32
+                recast * gauge_charges.max(1) as u32
             };
             let ipc =
                 ServerZoneIpcSegment::new(ServerZoneIpcData::ActorControlSelf(ActorControlSelf {
