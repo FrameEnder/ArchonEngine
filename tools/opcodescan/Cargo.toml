@@ -9,3 +9,6 @@ workspace = true
 [dependencies]
 kawari = { path = "../../core" }
 serde_json = { workspace = true }
+iced-x86 = { version = "1.21", default-features = false, features = ["std", "decoder", "instr_info"] }
+syn = { version = "2", default-features = false, features = ["full", "parsing", "printing", "clone-impls"] }
+quote = { version = "1", default-features = false }

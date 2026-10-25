@@ -17,8 +17,17 @@
 //! kawari-opcodescan <exe> check-handlers <switch table RVA in hex> <opcode list, e.g. ServerZoneIpcType>
 //!     Checks the handler method against every known opcode in the list: from each opcode's case in the switch to the
 //!     function it calls, and back again.
+//! kawari-opcodescan <exe> layouts <opcodes.yml> <fork_opcodes.yml> <game version> <core/src> <out folder>
+//!         [<ClientStructs folder>]
+//!     Reads every known zone packet's layout from the client's code (what its handler reads, what the code that
+//!     builds a client packet writes), compares it with Kawari's structs (read from core's source), and writes
+//!     layouts.json and layouts.md into the out folder (docs/src/fork/packet-layouts.md.)
 
 use std::path::{Path, PathBuf};
+
+mod clientstructs;
+mod kawari_structs;
+mod layouts;
 
 use kawari::exe_scan::{Exe, check_opcode, find_opcode};
 use kawari::opcode_match;
@@ -141,6 +150,58 @@ fn main() {
                     .insert(name, value);
             }
             println!("{}", serde_json::to_string_pretty(&out).unwrap());
+        }
+        Some("layouts") => {
+            let read = |path: &String| {
+                std::fs::read_to_string(path).unwrap_or_else(|err| panic!("{path}: {err}"))
+            };
+            let known = opcode_match::known_from_yaml(&read(&args[2]), &read(&args[3]), &args[4])
+                .expect("couldn't read the opcodes");
+            let kawari =
+                kawari_structs::read(Path::new(&args[5])).expect("couldn't read core's source");
+            let names = args.get(7).map(|dir| {
+                clientstructs::ClientStructs::read(Path::new(dir))
+                    .expect("couldn't read ClientStructs")
+            });
+            let found =
+                layouts::layouts(&exe, &known, names.as_ref()).expect("couldn't read the layouts");
+            let findings = layouts::compare(&found, &kawari);
+            let out = PathBuf::from(&args[6]);
+            std::fs::create_dir_all(&out).expect("couldn't make the out folder");
+            std::fs::write(
+                out.join("layouts.json"),
+                serde_json::to_string_pretty(&layouts::to_json(&found, &findings, &args[4]))
+                    .unwrap(),
+            )
+            .expect("couldn't write layouts.json");
+            std::fs::write(
+                out.join("layouts.md"),
+                layouts::to_markdown(&found, &findings, &args[4], &kawari),
+            )
+            .expect("couldn't write layouts.md");
+            for kind in ["server", "client"] {
+                let of_kind: Vec<&layouts::PacketLayout> =
+                    found.iter().filter(|l| l.kind == kind).collect();
+                let count = |c: &str| of_kind.iter().filter(|l| l.confidence() == c).count();
+                println!(
+                    "{kind} packets: {} mapped ({} high, {} medium, {} low/shared, {} nothing found)",
+                    of_kind.len(),
+                    count("high"),
+                    count("medium"),
+                    count("low"),
+                    count("none")
+                );
+            }
+            for list in ["ServerZoneIpcData", "ClientZoneIpcData"] {
+                let (complete, all) = kawari.complete(list);
+                println!("{list}: {complete} of {all} Kawari variants laid out to the end");
+            }
+            println!(
+                "{} findings ({} confident); written to {}",
+                findings.len(),
+                findings.iter().filter(|f| f.confident).count(),
+                out.display()
+            );
         }
         Some(other) => eprintln!("Unknown command {other}"),
     }

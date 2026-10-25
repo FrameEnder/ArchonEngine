@@ -449,12 +449,12 @@ impl ZoneConnection {
         {
             let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ContentFinderUpdate {
                 state1: 1,
-                unk1: [0; 6],
+                language_flags: 0,
                 classjob_id: self.player_data.classjob.current_class as u8, // TODO: store what they registered with, because it can change
-                unk2: [0; 4],
+                roulette_id: 0,
+                began_queue: 0,
                 duty_settings: settings,
-                content_ids,
-                unk3: [0; 10],
+                content_ids: content_ids.map(u32::from),
             });
             self.send_ipc_self(ipc).await;
         }
@@ -462,7 +462,8 @@ impl ZoneConnection {
         // found
         {
             let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ContentFinderFound {
-                unk1: [3, 0, 0, 0, 0, 0, 0, 0],
+                queue_state: 3,
+                unk1: [0; 7],
                 duty_settings: settings,
                 unk2: [0; 12],
                 content_id: content_ids[0],

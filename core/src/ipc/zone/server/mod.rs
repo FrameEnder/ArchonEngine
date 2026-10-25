@@ -379,7 +379,10 @@ pub enum ServerZoneIpcData {
         /// Unknown, seems to always be 0x00000200.
         unk2: u32,
     },
+    /// The client's handler (ClientStructs' `PacketDispatcher.HandleQueueUpdatePacket`, `QueueUpdatePacket`) reads
+    /// every field below; the layout is from what it reads (`kawari-opcodescan layouts`, 2026.10.16).
     ContentFinderUpdate {
+        /// The queue's state (ContentsFinderQueueState):
         /// 0 = Nothing happens
         /// 1 = Reserving server
         /// 2 = again? ^
@@ -389,15 +392,24 @@ pub enum ServerZoneIpcData {
         state1: u8,
         /// The class you registered with. Index into the ClassJob Excel sheet.
         classjob_id: u8,
-        unk1: [u8; 6],
+        /// The languages queued for (the client reads one byte.)
+        #[brw(pad_after = 5)]
+        language_flags: u8,
         duty_settings: DutyFinderSetting,
-        unk2: [u8; 4],
-        /// The content IDs you registered for. Index into the ContentFinderCondition Excel sheet.
-        content_ids: [u16; 5],
-        unk3: [u8; 10],
+        /// The roulette queued for (0 for none.)
+        #[brw(pad_after = 2)]
+        roulette_id: u8,
+        /// Whether the queue has just begun (the client reads it as a bool.)
+        began_queue: u8,
+        /// The content IDs you registered for. Index into the ContentFinderCondition Excel sheet. The client reads each
+        /// as a u32 (they were u16s here, so a second duty landed in the first one's upper half.)
+        content_ids: [u32; 5],
     },
     ContentFinderFound {
-        unk1: [u8; 8],
+        /// The queue's state (ContentsFinderQueueState; `ContentsFinderNotificationPacket.QueueState`): 3 when a duty has
+        /// popped.
+        queue_state: u8,
+        unk1: [u8; 7],
         duty_settings: DutyFinderSetting,
         unk2: [u8; 12],
         /// The content ID that popped. Index into the ContentFinderCondition Excel sheet.

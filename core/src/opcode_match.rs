@@ -1415,6 +1415,113 @@ pub fn fingerprint(
     })
 }
 
+// --- where packets are handled (kawari-opcodescan layouts) --------------------------------------------------------
+
+/// A known server packet's case in the client's zone dispatcher.
+#[derive(Debug, Clone)]
+pub struct ServerSite {
+    pub name: String,
+    pub opcode: u16,
+    pub size: u32,
+    /// Where the dispatcher sends its opcode, the packet (its IPC header) still in `PacketSites::packet`.
+    pub case: usize,
+    /// How many opcodes share that case (more than one: what's read there is read for all of them.)
+    pub case_group: usize,
+    /// Where its path ends further in (following calls), where it doesn't share it with others.
+    pub end: usize,
+}
+
+/// A known client packet's opcode write in the function that builds it.
+#[derive(Debug, Clone)]
+pub struct ClientSite {
+    pub name: String,
+    pub opcode: u16,
+    pub size: u32,
+    /// The `mov [base+x], opcode` (the client's packet header: opcode, then the size with the header at +8; the
+    /// packet's data from +0x20.)
+    pub site: usize,
+    pub function: usize,
+}
+
+/// Where the known zone packets are handled (server) and built (client) in an executable.
+#[derive(Debug, Clone)]
+pub struct PacketSites {
+    pub dispatcher: usize,
+    /// The register the dispatcher holds the packet (its IPC header) in.
+    pub packet: Register,
+    pub server: Vec<ServerSite>,
+    pub client: Vec<ClientSite>,
+}
+
+/// Finds where each of `known` is handled or built in `exe` (the dispatcher is chosen as `fingerprint` does.)
+pub fn packet_sites(exe: &Exe, known: &[KnownOpcode]) -> Result<PacketSites, String> {
+    let code = Code::new(exe);
+    let server_known: Vec<&KnownOpcode> = known
+        .iter()
+        .filter(|k| k.kind == "ServerZoneIpcType")
+        .collect();
+    let mut chosen = None;
+    for dispatcher in dispatchers(exe) {
+        let Some(paths) = server_paths(&code, dispatcher) else {
+            continue;
+        };
+        let distinct: HashSet<usize> = server_known
+            .iter()
+            .filter_map(|k| paths.case.get(&k.opcode))
+            .copied()
+            .collect();
+        let biggest = groups(&paths.case)
+            .values()
+            .map(Vec::len)
+            .max()
+            .unwrap_or(0);
+        if distinct.len() * 2 > server_known.len() && biggest < SERVER_OPCODES.len() / 2 {
+            chosen = Some((dispatcher, paths));
+            break;
+        }
+    }
+    let (dispatcher, paths) = chosen.ok_or("no zone dispatcher found")?;
+    let packet = packet_register(&code, dispatcher).ok_or("the dispatcher reads no opcode")?;
+    let case_groups = groups(&paths.case);
+    let server = server_known
+        .iter()
+        .filter_map(|k| {
+            let case = *paths.case.get(&k.opcode)?;
+            Some(ServerSite {
+                name: k.name.clone(),
+                opcode: k.opcode,
+                size: k.size,
+                case,
+                case_group: case_groups[&case].len(),
+                end: paths.end[&k.opcode],
+            })
+        })
+        .collect();
+    let sites = client_sites(&code);
+    let client = known
+        .iter()
+        .filter(|k| k.kind == "ClientZoneIpcType")
+        .flat_map(|k| {
+            sites
+                .iter()
+                .filter(move |(_, opcode, size)| *opcode == k.opcode && *size == k.size + 16)
+                .map(move |(site, _, _)| ClientSite {
+                    name: k.name.clone(),
+                    opcode: k.opcode,
+                    size: k.size,
+                    site: *site,
+                    function: exe.function_start(*site),
+                })
+        })
+        .collect();
+    Ok(PacketSites {
+        dispatcher,
+        packet,
+        server,
+        client,
+    })
+}
+
 // --- matching -----------------------------------------------------------------------------------------------------
 
 /// The closest of `candidates` to `print`, if it's close enough and clearly the closest.
