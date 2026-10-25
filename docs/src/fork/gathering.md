@@ -24,7 +24,7 @@ action, the EXP and how used-up points come back. The research notes are in Bob'
 The client's layouts have no gathering points, so the server sends them (drop-ins). Bob's captures saw 1,014 point
 spawns in 21 zones; without the leve points (sent with no integrity, they appear for their leve) that's 643 positions
 of 305 points in 18 zones; with Bob's flight through Mor Dhona and the Shrouds (2026-10-25, merged with the older
-captures) it's 887 positions of 390 points in 20 zones: Middle La Noscea, Lower La Noscea, Eastern La Noscea
+captures) and Coerthas Central Highlands (the same day) it's 933 positions of 405 points in 20 zones: Middle La Noscea, Lower La Noscea, Eastern La Noscea
 (s1f1–s1f3), Central Thanalan (w1f2), Central, East, South and North Shroud (f1f1–f1f4), Mor Dhona (l1f1), Coerthas Central Highlands (r1f1), Coerthas Western Highlands (r2f1), The
 Dravanian Forelands, Hinterlands, Churning Mists (d2f1–d2f3), Azys Lla (a2f2), and Lakeland, Kholusia, Amh
 Araeng, Il Mheg and The Tempest (n4f1–n4f4, n4f6). `questkit chronofoil <captures> --dropin <territory> --gathering

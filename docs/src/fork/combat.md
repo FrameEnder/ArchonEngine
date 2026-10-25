@@ -284,9 +284,14 @@ the LGB they add to): retail's LGBs don't have them.
 | Southern Thanalan (146) | `wil_w1f4_planmap.json`, layer `BNPCS_RETAIL` (448) | the same: `--dropin 146 --appends bg/ffxiv/wil_w1/fld/w1f4/level/planmap.lgb` |
 | Northern Thanalan (147) | `wil_w1f5_planmap.json`, layer `BNPCS_RETAIL` (99) | the same: `--dropin 147 --appends bg/ffxiv/wil_w1/fld/w1f5/level/planmap.lgb` (a short visit: 21 kinds) |
 | Mor Dhona (156) | `lak_l1f1_planmap.json`, layer `BNPCS_RETAIL` (173) | Bob's Chronofoil capture of 2026-10-25 (flying around Mor Dhona and the Shrouds) with all the older ones: `--dropin 156 --appends bg/ffxiv/lak_l1/fld/l1f1/level/planmap.lgb --exclude-base 3208` (the S rank), plus six spots only the older captures had. Until then Mor Dhona's spawns were in `roc_r1f1_planmap.json`, appended to Coerthas Central Highlands' LGB (`roc_r1/fld/r1f1` is territory 155; Mor Dhona's Bg is `lak_l1/fld/l1f1`): Mor Dhona had none and Coerthas had Mor Dhona's |
+| Coerthas Central Highlands (155) | `roc_r1f1_planmap.json`, layer `BNPCS_RETAIL` (378) | Bob's Chronofoil capture of 2026-10-25 (half an hour flying around it) with all the older ones: `--dropin 155 --appends bg/ffxiv/roc_r1/fld/r1f1/level/planmap.lgb` |
 | East Shroud (152) | `fst_f1f2_planmap.json` (450) | the same capture with the older ones: `--dropin 152 --appends bg/ffxiv/fst_f1/fld/f1f2/level/planmap.lgb` |
 | South Shroud (153) | `fst_f1f3_planmap.json` (397) | the same, `f1f3` |
 | North Shroud (154) | `fst_f1f4_planmap.json` (445) | the same, `f1f4` |
+
+Every zone's drop-in was checked against all 64 of Bob's captures (2026-10-25): its `appends` is the territory's own
+`Bg`, and every spawn point in its retail layer was seen in that territory; the only spots no capture shows are the
+quest battles' `QB_*` layers (spawned by their quests) and upstream's Central Shroud layer, `LVD_kakashi`.
 | Middle La Noscea (134) | `sea_s1f1_planmap.json`, layer `BNPCS_RETAIL` (376), and quest battle 35's `QB_ManSea005_001` (8, `nonpop`) | Bob's Chronofoil capture of 2026-10-21 (flying through every La Noscea zone, an hour) with all the older ones: `--dropin 134 --appends bg/ffxiv/sea_s1/fld/s1f1/level/planmap.lgb` (with upstream's gathering points, `s1f1_planlive.json`) |
 | Lower La Noscea (135) | `sea_s1f2_planmap.json` (400) | the same, `s1f2` |
 | Eastern La Noscea (137) | `sea_s1f3_planmap.json` (241) | the same, `s1f3` |
