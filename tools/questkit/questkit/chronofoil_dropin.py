@@ -182,12 +182,10 @@ def build(seen: dict[int, list[dict]], appends: str, layer: str = "BNPCS_RETAIL"
             if last["flags"] & GUARD:
                 data["character_data_flags"] = GUARD
                 data["behavior"] = last["behavior"]
-            # Without INVISIBLE (0x20): retail spawned some (the Copperbell Mines' ambushing gigas) invisible and showed
-            # them 0.6-0.9 s later with ActorControl 36 (1, 158) and 54 (1), which Kawari doesn't send; spawned with it
-            # they stayed invisible while they fought (Bob's bundle of 2026-10-25.)
-            display = last["display"] & ~0x20
-            if display:
-                data["display_flags"] = display
+            # As retail spawned them, INVISIBLE (0x20) and all: a script brings those into view as retail did
+            # (`director:appear_bnpc`, ActorControl 36 and 54; the Copperbell Mines' ambushing gigas.)
+            if last["display"]:
+                data["display_flags"] = last["display"]
             objects.append({
                 "data": data, "layout_id": layout,
                 "position": {axis: round(best["position"][i], 3) for i, axis in enumerate("xyz")},

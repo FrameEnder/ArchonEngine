@@ -110,12 +110,15 @@ AC_FINAL_STAGE = 409
 AC_FINAL_STAGE_PARAMS = { 64, 0x80030003 }
 
 -- The ambushes: two bigger gigas (BNpcBase 1398, 1403) waiting in a pile of rock until someone comes within about 20
--- yalms (19.4-22 in Bob's three runs), when the pile goes and the gigas comes at them.
+-- yalms (19.4-22 in Bob's three runs), when the pile goes and the gigas comes at them. Retail spawned it hidden (its
+-- display flags, in the drop-in) and going for the player at once, then 0.6-0.9 s later brought it into view, fading
+-- in and playing ActionTimeline 158, and made it targetable (all six ambushes).
 AMBUSHES = {
     { bnpc = 4023421, rocks = 2790172, x = -74.4, y = -6.0, z = -165.4 },
     { bnpc = 4023560, rocks = 2790295, x = -54.6, y = -37.9, z = 97.9 },
 }
 AMBUSH_RANGE = 22
+AMBUSH_TIMELINE = 158
 
 -- Who drops what: the first pack's last (by layout ID, with its BNpcName for the log), and the two gigas.
 FIRST_PACK = { [4021731] = 631, [4021732] = 629, [4021733] = 629 }
@@ -252,6 +255,7 @@ function onUpdate(director, health, player_health, info)
                 director:hide_eobj(ambush.rocks)
                 director:spawn_bnpc(ambush.bnpc)
                 director:set_hate(ambush.bnpc, nil, 300) -- the player
+                director:appear_bnpc(ambush.bnpc, AMBUSH_TIMELINE)
             end
         end
     end

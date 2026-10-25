@@ -245,6 +245,18 @@ pub enum ActorControlCategory {
         target: ObjectId,
     },
 
+    /// Brings an NPC spawned hidden (display flag INVISIBLE) into view, as retail does with the Copperbell Mines'
+    /// ambushing gigas 0.6-0.9 s after their spawn, with 158 (Bob's Chronofoil captures of 2026-10-25). From the client's
+    /// ActorControl handler (2026.10.16, case 0x24): it flags the object for an update (UpdateFlags 0x80), fades it in
+    /// over a second when `fade_in` is set, and plays `action_timeline` (ActionTimeline) on it when it isn't 0.
+    #[brw(magic = 36u32)]
+    Appear {
+        #[br(map = read_bool_from::<u32>)]
+        #[bw(map = write_bool_as::<u32>)]
+        fade_in: bool,
+        action_timeline: u32,
+    },
+
     #[brw(magic = 38u32)]
     ToggleInvisibility {
         #[br(map = read_bool_from::<u32>)]
@@ -276,6 +288,15 @@ pub enum ActorControlCategory {
 
     #[brw(magic = 50u32)]
     SetTarget,
+
+    /// Whether an object can be targeted: the client's handler (2026.10.16, case 0x36) sets TargetableStatus' first
+    /// bit and IsTargetable to it. Retail sent it (1) right after `Appear` (Bob's captures of 2026-10-25.)
+    #[brw(magic = 54u32)]
+    SetTargetable {
+        #[br(map = read_bool_from::<u32>)]
+        #[bw(map = write_bool_as::<u32>)]
+        targetable: bool,
+    },
 
     #[brw(magic = 58u32)]
     SetSoftTarget,
@@ -1284,4 +1305,53 @@ pub struct ActorControlTarget {
     #[brw(pad_size_to = 24)] // take into account categories without params
     pub category: ActorControlCategory,
     pub target: ObjectTypeId,
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::Cursor;
+
+    use binrw::{BinRead, BinWrite};
+
+    use super::*;
+
+    /// Retail's two ActorControls bringing an ambushing gigas into view, byte for byte (Bob's Copperbell Mines captures
+    /// of 2026-10-25.)
+    #[test]
+    fn appear_and_set_targetable_match_retail() {
+        let retail = [
+            (
+                "24000000010000009e000000000000000000000000000000",
+                ActorControlCategory::Appear {
+                    fade_in: true,
+                    action_timeline: 158,
+                },
+            ),
+            (
+                "360000000100000000000000000000000000000000000000",
+                ActorControlCategory::SetTargetable { targetable: true },
+            ),
+        ];
+        for (hex, category) in retail {
+            let mut written = Cursor::new(Vec::new());
+            ActorControl {
+                category: category.clone(),
+            }
+            .write_le(&mut written)
+            .unwrap();
+            let written: String = written
+                .into_inner()
+                .iter()
+                .map(|b| format!("{b:02x}"))
+                .collect();
+            assert_eq!(written, hex);
+
+            let bytes: Vec<u8> = (0..hex.len())
+                .step_by(2)
+                .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
+                .collect();
+            let read = ActorControl::read_le(&mut Cursor::new(bytes)).unwrap();
+            assert_eq!(format!("{:?}", read.category), format!("{category:?}"));
+        }
+    }
 }

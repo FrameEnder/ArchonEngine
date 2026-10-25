@@ -241,7 +241,7 @@
                         "name_id": 97,
                         "nonpop": true,
                         "type": "battle_npc",
-                        "display_flags": 262155
+                        "display_flags": 262187
                     },
                     "layout_id": 4023421,
                     "position": {
@@ -554,7 +554,7 @@
                         "name_id": 1302,
                         "nonpop": true,
                         "type": "battle_npc",
-                        "display_flags": 262155
+                        "display_flags": 262187
                     },
                     "layout_id": 4023560,
                     "position": {

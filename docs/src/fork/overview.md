@@ -67,6 +67,11 @@ patch updates are merged from).
 * **Keep upstream merges easy.** Fork additions should be additive (new scripts, new modules, `fork_opcodes.yml`
   instead of editing `opcodes.yml`).
 * **Changes are minimal and focused**, and every change lists the files it touched.
+* **Play it out as retail did, and build what's missing as a system.** When a mechanic needs something Kawari doesn't
+  have yet (a packet, an ActorControl, a timing), implement it the way retail does, as a reusable piece later content
+  can call (a director method, a named `ActorControlCategory`), rather than working around it in one script: later
+  content is built on what earlier content established (Bob, 2026-10-25). The Copperbell Mines' ambushes are the
+  example: `director:appear_bnpc` instead of spawning the gigas without its hidden flag.
 
 ## Keeping these pages current
 

@@ -28,6 +28,8 @@ when no code changes.
   saying where they came from.
 * Fork opcodes go in `resources/data/fork_opcodes.yml`, never upstream's `opcodes.yml`.
 * Minimal, focused changes; list every changed file when reporting.
+* Play mechanics out as retail did: when something is missing (a packet, an ActorControl, a timing), build it the way
+  retail does, as a reusable piece later content can use, not a workaround in one script (`overview.md`).
 * Work on `Latest-Quest`; merge to `master` only with Bob's OK. Palace of the Dead work goes on `Deep-Dungeon`.
 * Don't run `cargo fmt` on the workspace (it reformats upstream files); `rustfmt --check --edition 2024` the files
   you changed.

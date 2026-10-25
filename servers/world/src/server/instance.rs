@@ -164,6 +164,8 @@ pub struct Instance {
     pub unaware_npcs: std::collections::HashSet<u32>,
     /// Open-world NPCs and whom they couldn't get to, until when they leave them alone (`npc_behavior`.)
     pub unreachable: HashMap<(ObjectId, ObjectId), std::time::Instant>,
+    /// NPCs a director spawned hidden that come into view a little later (`director:appear_bnpc`.)
+    pub pending_appearances: Vec<crate::server::director::PendingAppearance>,
     /// The fight here is over (a quest battle won, `npc_behavior::end_fight`): NPCs don't take anyone on again, whatever
     /// hits or heals them.
     pub fight_over: bool,

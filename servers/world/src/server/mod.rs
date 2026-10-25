@@ -636,6 +636,8 @@ fn server_logic_tick(
             pet::catch_up(&mut network.lock(), instance);
             // Bots choose for coffers' items, and items whose time is up are decided.
             loot::tick(&mut network.lock(), instance);
+            // BNpcs a director spawned hidden come into view.
+            director::update_appearances(&mut network.lock(), instance, std::time::Instant::now());
             let mut haters = HashMap::new();
             npc_behavior::npc_behavior(network.clone(), game_data.clone(), instance, &mut haters);
 

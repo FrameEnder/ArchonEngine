@@ -17,9 +17,9 @@ use kawari::{
     config::get_config,
     ipc::chat::ChatChannelType,
     ipc::zone::{
-        ActorControlCategory, ActorControlSelf, ActorSetPos, ChatMessage, DutyFinderSetting,
-        EventLogMessage, MapEffects, PrepareZoning, ServerZoneIpcData, ServerZoneIpcSegment,
-        TreasureKind, WalkInEvent,
+        ActorControlCategory, ActorControlSelf, ActorSetPos, ChatMessage, DisplayFlag,
+        DutyFinderSetting, EventLogMessage, MapEffects, PrepareZoning, ServerZoneIpcData,
+        ServerZoneIpcSegment, TreasureKind, WalkInEvent,
     },
 };
 use mlua::{Function, LuaSerdeExt, UserData, UserDataMethods, Value};
@@ -273,6 +273,68 @@ pub enum LuaDirectorTask {
         category: u32,
         params: [u32; 4],
     },
+    /// Bring a BNpc spawned hidden (its display flags have INVISIBLE, as retail's spawn had) into view `delay` seconds
+    /// from now: ActorControl `Appear` (a fade-in, and `action_timeline` played on it) then `SetTargetable`, as retail
+    /// did for the Copperbell Mines' ambushing gigas (158, 0.6-0.9 s after their spawn; Bob's captures of 2026-10-25.)
+    AppearBattleNpc {
+        layout_id: u32,
+        action_timeline: u32,
+        delay: f32,
+    },
+}
+
+/// A BNpc to bring into view (`LuaDirectorTask::AppearBattleNpc`.)
+#[derive(Debug, Clone, Copy)]
+pub struct PendingAppearance {
+    pub at: std::time::Instant,
+    pub layout_id: u32,
+    pub action_timeline: u32,
+}
+
+/// How long after its spawn retail brought an ambushing gigas into view: 0.58-0.94 s in six ambushes (Bob's Copperbell
+/// Mines captures of 2026-10-25.)
+pub const DEFAULT_APPEAR_DELAY: f32 = 0.75;
+
+/// Brings the BNpcs whose time has come into view: `Appear` and `SetTargetable` to everyone around, and INVISIBLE
+/// dropped from their spawn, so whoever sees them spawn later sees them at once.
+pub fn update_appearances(
+    network: &mut NetworkState,
+    instance: &mut Instance,
+    now: std::time::Instant,
+) {
+    if instance.pending_appearances.is_empty() {
+        return;
+    }
+    let (due, later): (Vec<PendingAppearance>, Vec<PendingAppearance>) =
+        std::mem::take(&mut instance.pending_appearances)
+            .into_iter()
+            .partition(|pending| pending.at <= now);
+    instance.pending_appearances = later;
+    for pending in due {
+        let Some((actor_id, _)) = instance.find_npc(pending.layout_id) else {
+            tracing::warn!(
+                "Failed to find bnpc {} to bring into view!",
+                pending.layout_id
+            );
+            continue;
+        };
+        if let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor_mut(actor_id) {
+            spawn.common.display_flags.remove(DisplayFlag::INVISIBLE);
+        }
+        network.send_ac_in_range_instance(
+            instance,
+            actor_id,
+            ActorControlCategory::Appear {
+                fade_in: true,
+                action_timeline: pending.action_timeline,
+            },
+        );
+        network.send_ac_in_range_instance(
+            instance,
+            actor_id,
+            ActorControlCategory::SetTargetable { targetable: true },
+        );
+    }
 }
 
 /// One actor's numbers for a director's `onUpdate` (see `DirectorData::update`.)
@@ -677,6 +739,17 @@ impl UserData for LuaDirector {
                 .push(LuaDirectorTask::MapEffect { index, timeline_id });
             Ok(())
         });
+        methods.add_method_mut(
+            "appear_bnpc",
+            |_, this, (layout_id, action_timeline, delay): (u32, Option<u32>, Option<f32>)| {
+                this.tasks.push(LuaDirectorTask::AppearBattleNpc {
+                    layout_id,
+                    action_timeline: action_timeline.unwrap_or(0),
+                    delay: delay.unwrap_or(DEFAULT_APPEAR_DELAY),
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut(
             "eobj_control",
             |_, this, (id, category, params): (u32, u32, Option<Vec<u32>>)| {
@@ -2081,6 +2154,17 @@ pub fn director_tick(
                     FromServer::PacketSegment(ipc, ObjectId::default()), // TODO: how do we just send it from the player?
                     DestinationNetwork::ZoneClients,
                 );
+            }
+            LuaDirectorTask::AppearBattleNpc {
+                layout_id,
+                action_timeline,
+                delay,
+            } => {
+                instance.pending_appearances.push(PendingAppearance {
+                    at: std::time::Instant::now() + Duration::from_secs_f32(delay.max(0.0)),
+                    layout_id: *layout_id,
+                    action_timeline: *action_timeline,
+                });
             }
             LuaDirectorTask::EObjControl {
                 id,
