@@ -353,19 +353,22 @@ add one when something is found.
 
 ## The Copperbell Mines
 
-* Untested in game (2026-10-25). Scripted from three retail runs (see [Dungeons](dungeons.md#the-copperbell-mines)).
-  The script's name (`w1d1_re`, the ContentFinderCondition's ShortCode) and the drop-in's LGB
-  (`bg/ffxiv/wil_w1/dun/w1d1/level/planmap.lgb`) are guesses by analogy with Sastasha and the Tam-Tara Deepcroft: if
-  either is wrong the duty has no director script or no enemies.
+* Played through in game by Bob (2026-10-25, bundles); the fixes since (Kottos' leaps, the second and last bosses'
+  helpers, the ambushes' appearing, the Duty Information counts, the entrance facing) are untested in game.
 * The dropped items (2000159, 2001531, 2000179) are spawned with `spawn_eobj`, which needs them in the duty's layout
   (retail spawned them with layout ID 0); if they aren't, the server logs it and the way stays shut.
-* The helpers (BNpcBase 9020) aren't spawned, so the first boss's 28544 and the last boss's 28761 never come; of the
-  second boss's six adds (one layout ID) one is spawned, casting 28465 on its own 19.5 s timer and never hiding.
+* 28462's and 28760's effect (`kk 00 1b 00 00 00 00 80` then the action ID, `kk` per target: probably a knockback or
+  draw-in) isn't decoded or sent. Retail's helpers' SetTarget on the player isn't sent. 28544's and 28549's damage
+  are stand-ins (28546's): nobody was caught by them in Bob's three runs.
+* The second boss's 14449 helpers are hostile (display flags 0x60008): held, they don't move or fight back, but
+  players and bots may still be able to target and hit them.
 * The last hall's trigger is a box around where retail's started (z below 55, y below -50) checked against the first
   player only (`info.player`).
-* Statuses 8, 18, 53, 203 (and the bosses' effects 46/112, 88/130) are only applied or nothing; the ambushers'
-  ActorControl 36/54, the shortcut and the end's log 9393 aren't sent.
-* The timelines are by BNpcBase (1395-1403, 1421, 14448, 14449, 14460, 14537).
+* Statuses 8, 18, 53, 203 are only applied or nothing; the shortcut and the end's log 9393 aren't sent.
+* Not done from the audit of 2026-10-25: the Limit Break gauge (retail's ActorControlSelf 505, 116 in the first
+  stretch; Kawari never fills it); ActorControl 13 (3, value), sent from the player every ~6 s (its handler isn't
+  identified); the second gigas pair (2790237, 4023509) pulled 5 s apart where retail linked them.
+* The timelines are by BNpcBase (1395-1403, 1421, 14448, 14449, 14460, 14537, 9020).
 
 ## Quest battles and directors
 
