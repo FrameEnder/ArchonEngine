@@ -1,0 +1,46 @@
+{
+    "autoattack_action_id": 0,
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "141": {
+            "players": 13
+        },
+        "142": {
+            "players": 13.5
+        },
+        "144": {
+            "players": 8
+        },
+        "146": {
+            "players": 4
+        }
+    },
+    "rotation": {
+        "pace": 4.0,
+        "actions": [
+            {
+                "action": 141,
+                "every": 8.1,
+                "comment": "15 uses, every 8.1 s (1.7 s casts)"
+            },
+            {
+                "action": 146,
+                "every": 9.6,
+                "comment": "17 uses, every 9.6 s"
+            },
+            {
+                "action": 142,
+                "every": 34.3,
+                "comment": "8 uses, every 34.3 s"
+            },
+            {
+                "action": 144,
+                "every": 40.0,
+                "comment": "3 uses in four runs"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Into a Copper Hell's thaumaturge (BNpcBase 962, layout 4094992): 134 HP, level 10, casting Fire, Blizzard II, Blizzard and Thunder instead of auto-attacking. From Bob's Chronofoil capture of Into a Copper Hell (2026-10-25, 4777fd0f, visits 0.1, 0.3, 0.5 and 0.7), `questkit chronofoil --battle`; `players` is the median damage to Bob (a level 21 conjurer) over the four runs, `every` the median time between uses. Hitbox not recorded."
+}

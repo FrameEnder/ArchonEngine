@@ -1,0 +1,31 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 34,
+            "npcs": 21
+        },
+        "989": {
+            "players": 48,
+            "npcs": 30.5
+        }
+    },
+    "rotation": {
+        "pace": 10.1,
+        "actions": [
+            {
+                "action": 989,
+                "every": 12.1,
+                "comment": "6 uses, every 12.1 s"
+            },
+            {
+                "action": 421,
+                "every": 60.0,
+                "comment": "once a fight, on itself: status 203 (150) for 30 s"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Copperbell Mines' second ambushing gigas (BNpcBase 1403, layout 4023560): 2103 HP, level 17; auto-attack 870 every 3.0 s, 989 every 12.1 s, 421 on itself once a fight (status 203 at 150). From Bob's Chronofoil captures of the Copperbell Mines (2026-10-25): one run with Duty Support (bd298651, visit 0.5) and two Duty Finder runs (69bea0b9, visits 0.1 and 0.3), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

@@ -1,0 +1,26 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "872": {
+            "players": 30,
+            "npcs": 16
+        },
+        "677": {
+            "players": 38,
+            "npcs": 38
+        }
+    },
+    "rotation": {
+        "pace": 30.0,
+        "actions": [
+            {
+                "action": 677,
+                "every": 30.0,
+                "comment": "once in three runs"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Copperbell Mines gigas (BNpcBase 1400, the ones that drop the doors' items): 1051 HP, level 17; auto-attack 872 every 3.0 s, 677 once in three runs (a 2.7 s cast, 38 to a Duty Support member; the players' amount is that too). From Bob's Chronofoil captures of the Copperbell Mines (2026-10-25): one run with Duty Support (bd298651, visit 0.5) and two Duty Finder runs (69bea0b9, visits 0.1 and 0.3), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

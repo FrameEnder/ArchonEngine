@@ -1,0 +1,51 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "872": {
+            "players": 7
+        },
+        "53": {
+            "players": 14.5
+        },
+        "54": {
+            "players": 16
+        },
+        "56": {
+            "players": 14
+        }
+    },
+    "rotation": {
+        "pace": 6.0,
+        "actions": [
+            {
+                "action": 53,
+                "every": 22.4,
+                "comment": "29 uses, every 22.4 s"
+            },
+            {
+                "action": 54,
+                "every": 19.8,
+                "comment": "27 uses, every 19.8 s"
+            },
+            {
+                "action": 56,
+                "every": 17.8,
+                "comment": "27 uses, every 17.8 s"
+            },
+            {
+                "action": 55,
+                "every": 93.4,
+                "comment": "5 uses, on itself, every 93.4 s: status 99 (12)"
+            },
+            {
+                "action": 57,
+                "every": 120.3,
+                "self_hp_below": 50,
+                "comment": "5 uses, on itself at 33-46 % HP, healing 51-78"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Into a Copper Hell's pugilist (BNpcBase 960, layout 4094987): 1844 HP, level 11; auto-attack 872 every 3.0 s, Bootshine, True Strike and Snap Punch about every 20 s each, 55 and Second Wind (57) on itself. From Bob's Chronofoil capture of Into a Copper Hell (2026-10-25, 4777fd0f, visits 0.1, 0.3, 0.5 and 0.7), `questkit chronofoil --battle`; `players` is the median damage to Bob (a level 21 conjurer) over the four runs, `every` the median time between uses. Hitbox not recorded."
+}
