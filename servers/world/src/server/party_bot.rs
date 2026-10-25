@@ -842,32 +842,6 @@ impl GameData {
     }
 }
 
-/// The average item level of what's worn, as the character window counts it: the twelve gear slots (not the belt or
-/// soul crystal), a two-handed weapon (no off hand) counted twice.
-fn average_item_level(equipped: &EquippedStorage) -> u16 {
-    let off_hand = if equipped.off_hand.item_id == 0 {
-        &equipped.main_hand
-    } else {
-        &equipped.off_hand
-    };
-    let slots = [
-        &equipped.main_hand,
-        off_hand,
-        &equipped.head,
-        &equipped.body,
-        &equipped.hands,
-        &equipped.legs,
-        &equipped.feet,
-        &equipped.ears,
-        &equipped.neck,
-        &equipped.wrists,
-        &equipped.right_ring,
-        &equipped.left_ring,
-    ];
-    let total: u32 = slots.iter().map(|item| item.item_level as u32).sum();
-    (total / slots.len() as u32) as u16
-}
-
 /// Retail's Examine window for a party bot (ExamineCharacterInformation), as `(the 640 bytes before the name, the
 /// 272 after)`. The layout is read from 13 of these in Bob's Chronofoil captures (2026-09 and 2026-10, numbers only),
 /// each matched against the same player's SpawnPlayer and the Item sheet:
@@ -1439,7 +1413,9 @@ fn spawn_bot(
         .iter()
         .find(|(slot, _)| *slot == MAIN_HAND)
         .map(|(_, id)| *id);
-    let item_level = average_item_level(&wearing.equipped);
+    // As retail counts it (`EquippedStorage::calculate_item_level`): a one-handed weapon without a shield counts once
+    // (Bob's Chronofoil captures: a Gladiator's 5 with nine pieces on, where counting it twice gave 6.)
+    let item_level = wearing.equipped.calculate_item_level(game_data);
 
     let name = identity
         .map(|saved| saved.name.clone())

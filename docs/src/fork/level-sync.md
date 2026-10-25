@@ -17,6 +17,10 @@ FATE syncs (a level 87 White Mage synced to 18 and 50) and about 60 duty entries
   level = the synced level, class level = the real one, synced level), SetItemLevel (unchanged), actor controls 257 and
   260, then **FateLevelSynced** (2362) with the FATE.
 * The item level is ParamGrow[synced level].ItemLevelSync (18 → 18, 50 → 130).
+* SetItemLevel (ActorControlSelf 521) stays the uncapped average under sync: 509 synced to 18, 31, 36, 50 and 80 in
+  27 syncs (Bob's Chronofoil captures), as Kawari sends it (`EquippedStorage::calculate_item_level`, which matched
+  the first SetItemLevel of all 41 sessions). Other players' Examine window shows the capped average (see
+  [Party bots](party-bots.md)).
 * **Unsyncing** happened when the FATE ended, every time in the captures: the same packets unsynced, FateLevelSynced
   with **0**, and current HP **kept** (not refilled). Kawari unsyncs when the FATE the player synced to ends
   (`FromServer::FATEComplete(fate)`), or when they ask, or change zones.

@@ -160,7 +160,7 @@ with the same player's SpawnPlayer and the Item sheet:
 | 16–24 | 0, 0xFF×8 or a value (a free company?) |
 | 32, 40 | the main and off-hand weapon models (u64, as in the spawn) |
 | 50 | unknown u16 (57 in most; 78, 407) |
-| 72 | the average item level (u16: 790 at level 100, 201 at 60, 7 at 23) |
+| 72 | the average item level (u16: 790 at level 100, 201 at 60, 7 at 23): the twelve gear slots' item levels each capped at ParamGrow[level].ItemLevelSync, a two-handed weapon counted twice, / 12, for the 6 examined players below level 100 (the cap lowered 4 of them: 215 → 201 at level 60); the 2 at level 100 weren't capped (790 and 775, above level 100's 690). Kawari's bots: `EquippedStorage::calculate_item_level`, uncapped (their gear is their level's); it counted a one-handed weapon without a shield twice before 2026-10-25 |
 | 80 | 14 equipment slots of 40 bytes, in the equipment's order (main hand, off hand, head, body, hands, belt, legs, feet, ears, neck, wrists, right ring, left ring, soul crystal): the item (u32), its glamour's item (u32), the crafter's content ID (u64), 1 for high quality, a byte, five materia (u16 type, u16 grade: 16 and 11 in one), the two dyes |
 | 640 | the name (32 bytes) |
 | 672–704 | 0 in all 13 |

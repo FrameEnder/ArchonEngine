@@ -29,6 +29,10 @@ pub const EQUIP_RESTRICTED: i8 = -1;
 
 impl EquippedStorage {
     /// Calculates the player's item level.
+    /// The average item level the server sends (ActorControlSelf 521, SetItemLevel). Checked against retail: right
+    /// for the first one of all 41 of Bob's Chronofoil sessions (2026-06 to 2026-10), from 3 to 509, also under level
+    /// sync (retail sends the uncapped average to the player then; the Examine window's is capped, see the fork's
+    /// combat page.)
     pub fn calculate_item_level(&self, game_data: &mut GameData) -> u16 {
         const DIVISOR: u16 = 12;
 
