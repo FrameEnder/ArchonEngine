@@ -117,8 +117,10 @@ first for the rocks, detonators, slots and doors), then the event finishes:
 The refusals' logs are the gimmicks' own (`isGimmickFunctional`). The first lever was scripted as 2000161, which nobody can use: saying yes to its prompt did nothing and the run was stuck there (Bob's bundle of 2026-10-25); the EObj each gimmick event came from in all three runs is the one in this table. The EObjs hidden at the start (state 7 in their
 first spawn) are hidden in `onSetup`. **Ambushes:** the two bigger gigas (1398 at layout 4023421, 1403 at 4023560) wait
 in a pile of rock (2000168, 2000185); someone coming within 19.4-22 yalms (all three runs) hides the pile and the gigas
-comes at them at once (it spawned and targeted the player in the same packet burst; ActorControl 36 (1, 158) and 54
-(1) on it, not sent here). **The last hall:** the cutscene (scene 3 with 178, 1, 38, 1, 0) began as the first player
+comes at them at once (it spawned and targeted the player in the same packet burst). Retail spawned it with display flags
+0x4002B, INVISIBLE (0x20) among them, and showed it 0.6-0.9 s later with ActorControl 36 (1, 158) and 54 (1) (all six
+ambushes); Kawari doesn't send those, so its drop-in leaves INVISIBLE out (0x4000B): with it the gigas fought the party
+unseen (Bob's bundle of 2026-10-25). `questkit chronofoil --dropin` now leaves 0x20 out of every drop-in's flags. **The last hall:** the cutscene (scene 3 with 178, 1, 38, 1, 0) began as the first player
 came down past z 55 (52-56 in two runs; players waiting at 58-63 didn't start it), the boss 2.4 s later, and
 ActorControl 409 (64, the director) on EObj 4217260; there was no gimmick event.
 
