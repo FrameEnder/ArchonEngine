@@ -240,7 +240,7 @@ the rest share "Other duties". A duty is **scripted** when the active build has 
 code>.lua` (what `server/mod.rs` loads when the duty starts) and **has spawns** when a drop-in whose `appends` LGB is
 in the duty territory's level folder (TerritoryType `Bg` without its last part) has battle NPCs, nonpop ones included
 since directors spawn them; done = both, started = one. A zone has spawns the same way, counting each map once and
-leaving out quest battle layers (`QB_*`). It measures what the build has, not how complete a script is.
+leaving out quest battle layers (`QB_*`); PvP maps listed as open world (a `Bg` under `/pvp/`: Wolves' Den Pier) have no monsters and aren't listed (2.22.2). It measures what the build has, not how complete a script is.
 
 ## Marketboard (Dashboard → Marketboard)
 

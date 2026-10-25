@@ -553,7 +553,7 @@ add one when something is found.
   ranged node bonuses' upper ends aren't known; one returning point in the capture (ActorControlSelf 109 for 30631
   where 30503 was expected) isn't explained.
 * GP is gear only (no base GP known; ParamGrow has none); the GP traits' quests aren't checked.
-* Points come from Bob's captures: 18 zones only (none in Western La Noscea, the Sea of Clouds, Mor Dhona and most of
+* Points come from Bob's captures: 20 zones only (none in Western La Noscea, the Sea of Clouds and most of
   Thanalan, nor Endwalker's and Dawntrail's zones). GatherBuddy Reborn's `world_locations.json` has 2,116 points'
   positions but no layout IDs.
 * The Giving Land gives its status but no extra crystals (its yield isn't known); Revisit, Nymeia's Ward, Eureka
