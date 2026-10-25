@@ -55,6 +55,7 @@
   - [Glamour Dresser, Plates and Armoire](fork/glamour.md)
   - [Mender](fork/mender.md)
   - [Spiritbond, Condition and Materia Extraction](fork/spiritbond.md)
+  - [Settings Backup](fork/settings-backup.md)
   - [Party Bots](fork/party-bots.md)
   - [Party NPCs (Duty Support)](fork/party-npcs.md)
   - [Dungeons](fork/dungeons.md)

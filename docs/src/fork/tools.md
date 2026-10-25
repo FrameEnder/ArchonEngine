@@ -91,6 +91,11 @@ the server's startup scan (see [Opcodes](opcodes.md)), and explores the executab
 
 Keep the executable outside the repository.
 
+## sdbrelay (`tools/sdbrelay`)
+
+A TCP relay that records the game's settings backup (the save data bank, its own connection, which Chronofoil
+doesn't record) on retail: see [Settings Backup](settings-backup.md#recording-it).
+
 ## Packet capture
 
 `packet_capture: true` in the world config (`world.packet_capture`, directory `packet_capture_dir`, default

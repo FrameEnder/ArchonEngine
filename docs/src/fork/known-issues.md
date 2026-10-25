@@ -553,6 +553,14 @@ add one when something is found.
 * A quest's flags and accepting class aren't kept (Kawari's `PersistentQuest` has neither); the export writes them as 0.
 * Kawari Web's character snapshots and restores don't cover the `auracite_extended` row.
 
+## Settings backup
+
+* The game's Server Backup (client settings and character configuration) isn't served: it uses its own TCP
+  connection (`SaveDataBankHost`/`SaveDataBankPort`, default config-dl.ffxiv.com:55000), which Bob's Chronofoil
+  captures of 2026-10-24/25 don't include. Its protocol is unknown until it's recorded with `tools/sdbrelay`
+  ([Settings Backup](settings-backup.md)); until then gear sets, hotbars and macros come back through Auracite
+  (Kawari)'s settings-file restore.
+
 ## Systems (upstream gaps the fork hasn't touched)
 
 Duty completion isn't saved per player; housing doesn't persist
