@@ -165,6 +165,10 @@ pub enum TimepointData {
     Action {
         /// Index into the Action Excel sheet.
         action_id: u32,
+        /// A lock-on marker (Lockon sheet row) put over the target as the cast begins, as retail marks a tank-buster's
+        /// target (218 on the Copperbell Mines' three bosses' busters: ActorControl 34 from the target.)
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        lockon: Option<u32>,
     },
     /// Animates timelines for the gimmick this actor is bound to, such as Giant Clams.
     #[serde(rename = "timeline_state")]
@@ -197,10 +201,36 @@ mod tests {
                 rotation: None,
                 timepoints: vec![Timepoint {
                     time: 20,
-                    data: TimepointData::Action { action_id: 872 }
+                    data: TimepointData::Action {
+                        action_id: 872,
+                        lockon: None
+                    }
                 }]
             }
         );
+    }
+
+    /// Every timeline in resources/timelines reads, and the Copperbell Mines' last boss marks its tank-buster's target.
+    #[test]
+    fn every_timeline_reads() {
+        for entry in std::fs::read_dir("../resources/timelines")
+            .unwrap()
+            .flatten()
+        {
+            let json = std::fs::read_to_string(entry.path()).unwrap();
+            let timeline: Result<Timeline, _> = serde_json::from_str(&json);
+            assert!(timeline.is_ok(), "{:?}: {:?}", entry.path(), timeline.err());
+        }
+        let json =
+            std::fs::read_to_string("../resources/timelines/CopperbellBoss3_14537.json").unwrap();
+        let timeline: Timeline = serde_json::from_str(&json).unwrap();
+        assert!(timeline.timepoints.iter().any(|point| matches!(
+            point.data,
+            TimepointData::Action {
+                action_id: 28764,
+                lockon: Some(218)
+            }
+        )));
     }
 
     #[test]

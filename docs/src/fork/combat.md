@@ -234,7 +234,10 @@ capture of five runs; Kawari's whole-second timelines make it 16 s, shut 5); the
 Timeline fields the fork uses: `hitbox_radius` (reach includes it), `autoattack_action_id` (870/871/872 per kind),
 `attack_range` (default 5 yalms; Papalymo 10), `damage_to_players` (`{"level": damage}`), `recorded_amounts` (above),
 and `timepoints` (the
-skills an enemy uses in turn). A trailing no-op timepoint keeps the real ones evenly spaced because the loop hits its
+skills an enemy uses in turn). An action timepoint can carry `lockon` (a Lockon row): the marker goes over the target as
+the cast begins (ActorControl 34 from the target, `ShowLockonVfx`), as retail marked the Copperbell bosses' tank-busters
+(218 on 28545, 28461 and 28764, every cast in Bob's three runs). An NPC that dies mid-cast has its cast cut off for
+everyone (ActorControl 15 with 540, 1, the action, 1; `actor::kill_actor`), as retail. A trailing no-op timepoint keeps the real ones evenly spaced because the loop hits its
 last point half as often. Sprites, roselets and floating eyes cast their spell instead of auto-attacking.
 
 ### Reading NPC-on-NPC damage from a recording

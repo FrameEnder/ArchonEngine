@@ -146,7 +146,7 @@ client's handler sets a flag in its MoveController so the next move is a snap) a
 y −9.78), 9.1, 11.2 and 13.3 s in; 28549 (instant, hitting nobody) 1 s after the first two landings, and 28546 (3.7 s,
 on itself) 1 s after the third. The helpers go when it dies. Kawari: `onActorCast` in `w1d1_re.lua` with the new
 director methods (`spawn_bnpc`'s actor IDs, `warp_bnpc`, `actor_use_action`, `jump_bnpc`, `delay`); 28549's and
-28544's damage is a stand-in (28546's, 44.5) since nobody was caught by either (`CopperbellBoss1Helper_9020.json`).
+28544's damage is a stand-in (28546's, 44.5) since nobody was caught by either (`CopperbellHelper_9020.json`).
 
 **The bosses** (`spawn_boss`: sealed 15 s after their pull, log 2012 (PlaceName, 15) then 2013; opened at their death,
 log 2014; the battle music, 37, at the first two's pulls and off at their deaths):
@@ -154,8 +154,8 @@ log 2014; the battle music, 37, at the first two's pulls and off at their deaths
 | Boss | PlaceName | Wall / line (layout IDs) | Retail |
 |---|---|---|---|
 | 14460 (9053767, 9970 HP) | 679 | 9085524 / 9085538, and 9085522 hidden at its death | 28545 (4.7 s) at 2 s and every 81 s; 28543 (7.7 s, hitting nobody, with its three helpers' 28544) then 28549 twice, 28546 (3.7 s) and 28547 (4.7 s) every 37 s, the same to a tenth of a second in all three runs. Coffer 52 |
-| 14448 (9040077, 11383 HP) | 680 | 9089361 / 9089385, and 9089366 | 28462 (3.7 s) at 3 s, 28463 on itself (2.7 s) at 10 s and every 16.5-18 s (29.4 with Duty Support), each followed 8.6 s later by its six adds' 28465 (5.7 s, 121-127); 28461 once. Coffers 53 and 59 |
-| 14537 (9060676, 10582 HP) | 681 | 9082207 / 9082214 | 28762, 28760, 28764, 28763 in a 47.7 s round from 5 s; its five helpers' 28761 (127) at 22 s and every 47.7 s. Cutscene 179 (1, 18, 0, 0), coffer 51, the duty complete |
+| 14448 (9040077, 11383 HP) | 680 | 9089361 / 9089385, and 9089366 | 28462 (3.7 s) at 3 s, 28463 on itself (2.7 s) at 10 s and every 16.5-18 s (29.4 with Duty Support), each followed 8.6 s later by its six adds' 28465 (5.7 s, 121-127; see below); 28461 once (lock-on 218 on the tank). Coffers 53 and 59 |
+| 14537 (9060676, 10582 HP) | 681 | 9082207 / 9082214 | 28762, 28760, 28764, 28763 in a 47.7 s round from 5 s; its five helpers' 28761 (127) at 22 s and every 47.7 s (see below); lock-on 218 on the tank at each 28764. Cutscene 179 (1, 18, 0, 0), coffer 51, the duty complete |
 
 The walls share their EObj ID with a line (2001526 for the first boss's, 2007457 the second's, and 2002735 is a line
 of both the second's and the third's), so the script names them by layout ID: `hide_eobj`, `show_eobj`,
@@ -172,8 +172,39 @@ lines: the Thaumaturge's 14315 40.3 s in, the tank's 14318 6.8 s after the first
 after the second blast clears the way, the Thaumaturge's 14322 as the second boss is pulled, the Lancer's 14324 29.4 s
 after the last boss's cutscene begins. Chatter: 13962, 13964, 13972, 13974, 13953, all already among their lines.
 
-**Not here:** the helpers (9020: three for the first boss, five for the last, all with one layout ID each, untargetable
-lvl 1) and five of the second boss's six adds (one layout ID, 9040086, so one spot): one add is spawned with the boss,
-its 28465 every 19.5 s from 19 s (the adds' cycle on retail followed the boss's 28463). Retail's adds showed and hid
-(ActorControl 239) each cycle; the one here stays. The shortcut, the ambushers' ActorControl 36/54, the end's log 9393
-(24200), what 28462 and 28760's effects (46/112, 88/130) and statuses 8, 18, 53, 203 do.
+**The second boss's lines** (14448; all three runs alike): its six helpers (BNpcBase 14449, all layout 9040086, 369
+HP, never fought nor killed) come with it. Each 28463 (2.7 s, on itself) lands 3.0 s after it begins; 1.0 s later the
+boss grows (ActorControl 48, ModelScale 16, then 17, 18: the client's handler sets ModelContainer.ModelScaleId and
+multiplies the base scale by the row's) and the six are put on its middle (ActorSetPos to (27, −37.96, 114)); they use
+28464 (instant, an AoeEffect8 on no one) facing the way they'll cast, 0.6 s later leap to their spots (ActorControl
+239 and an ActorMove, speed 0), and 4.0 s after that cast 28465 (5.7 s, a line, 121-127 to whom it caught) facing
+outward. Two stand on a diagonal, (14.27, 126.73) facing −0.785 and (39.72, 101.24) facing 2.356, or (39.72, 126.73)
+facing 0.785 and (14.27, 101.24) facing −2.356; four in a row at z 113.97 (x 45.0, 32.97 facing east, 20.98, 8.99
+facing west) or a column at x 26.99 (z 131.98, 119.98 facing north, 107.99, 95.99 facing south). Each round picks the
+diagonal and row-or-column at random (A+row, B+row, B+column in the Duty Support run, A+column, B+row in the Duty
+Finder runs). They set their target on the player 1.3 s after the leap (not sent here). With the boss they go (no
+ActorControl 417 for these). 28462 (3.7 s) is cast on no one at a point on the ground near a player (Kawari aims it
+where its target stands).
+
+**The last boss's lines** (14537; all three runs): its five helpers (9020, all layout 9060684) come with it. Before
+each 28760 (5.7 s, on no one) it walks to the arena's middle (−100.41, −57.79, 6.67), and as it begins they're put
+(ActorSetPos) facing the middle: four 14 yalms out, on an axis (north-south or east-west) and each end of it turned 60
+degrees the same way, and one 7 yalms out across the axis on the side the turn leaves open (0, 60, 180, 240 with 270;
+90, 150, 270, 330 with 0; 0, 300, 180, 120 with 90, in degrees from north: Duty Support's two rounds and both Duty
+Finder runs). 3.0 s later they cast 28761 (5.7 s, a line, 127 to the one player caught); 1.1 s after 28760 lands the
+boss gets ActorControl 239 and an ActorMove where it stands, and goes back to its target. As it dies, each helper gets
+ActorControl 417 with no one (0xE0000000; Kottos' three too) and they go.
+
+**28462's and 28760's effect** (what Kawari can't yet send): on whom they reach, two effect entries, `kk 00 1b 00 00 00
+00 80` then the action ID (`2e 6f`, `58 70`), where the first byte is different for each target (0x42, 0x6B, 0x70, 0x82
+in the runs) and isn't a known effect kind; no damage. Probably a knockback or a draw-in whose kind is the first byte;
+not decoded (it needs the client's ActionEffect handler, or a sheet). The scripts send no effect.
+
+**Death mid-cast.** A boss that dies casting: ActorControl 15 (CancelCast) with 540, 1, the action, 1, then the death
+animation (the second boss, 28462). Kawari: `kill_actor` cancels an NPC's pending casts and sends it so.
+
+The helpers are held (`director:hold_bnpc`): `npc_behavior` leaves them alone, so they don't notice, chase or follow a
+timeline; they only do what the script has them do. Damage of 28544 and 28549 (Kottos', nobody caught) is a stand-in.
+
+**Not here:** the helpers' SetTarget on the player, the shortcut, the end's log 9393 (24200), what 28462's and 28760's
+effects are, statuses 8, 18, 53, 203, and ActorControl 15 (0, 1, 28764, 0) just before 28764 lands.

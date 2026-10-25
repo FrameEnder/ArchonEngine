@@ -181,6 +181,10 @@ pub fn npc_behavior(
 
     // const pass
     for (id, actor) in &instance.actors {
+        // A director's helper does only what it's told (`director:hold_bnpc`.)
+        if instance.held_npcs.contains(id) {
+            continue;
+        }
         // A party bot out of combat walks itself (server/party_bot.rs.)
         if instance
             .party_bots
@@ -334,6 +338,8 @@ pub fn npc_behavior(
 
     let mut newly_acquired_targets = Vec::new();
     let mut new_action_requests = Vec::new();
+    // Lock-on markers to put over targets as casts begin: (target, Lockon row.)
+    let mut new_lockons: Vec<(ObjectId, u32)> = Vec::new();
     let mut new_timeline_states = Vec::new();
     let mut dropped_targets = Vec::new();
     // Idle NPCs that couldn't wander (off the navmesh, or no path to the spot): (actor, layout ID, where.)
@@ -345,6 +351,11 @@ pub fn npc_behavior(
 
     // mut pass
     for (id, actor) in &mut instance.actors {
+        // A director's helper does only what it's told: it neither moves, notices, fights nor follows a timeline
+        // (`director:hold_bnpc`; retail's boss helpers stood where they were put and only cast.)
+        if instance.held_npcs.contains(id) {
+            continue;
+        }
         // A bot walking itself is left alone, unless it's waiting out an area attack, where it still acts (it doesn't
         // move: the const pass above leaves it alone.)
         if instance
@@ -807,8 +818,11 @@ pub fn npc_behavior(
                     timeline_position_seconds as f32 % (timeline.duration() as f32 + 0.5);
                 for timepoint in timeline.points_at(real_timeline_position as i32) {
                     match &timepoint.data {
-                        TimepointData::Action { action_id, .. } => {
+                        TimepointData::Action { action_id, lockon } => {
                             if spawn.common.target_id.object_id.is_valid() && can_take_action {
+                                if let Some(lockon) = lockon {
+                                    new_lockons.push((spawn.common.target_id.object_id, *lockon));
+                                }
                                 let (category, cast_time);
                                 {
                                     let mut game_data = game_data.lock();
@@ -1021,6 +1035,16 @@ pub fn npc_behavior(
         network.send_in_range_instance(id, instance, msg, DestinationNetwork::ZoneClients);
     }
 
+    // The lock-on markers, from their targets to everyone around (retail: ActorControl 34 from the tank, the moment the
+    // boss's cast began.)
+    for (target, lockon) in new_lockons {
+        network.lock().send_ac_in_range_inclusive_instance(
+            instance,
+            target,
+            ActorControlCategory::ShowLockonVfx { id: lockon, target },
+        );
+    }
+
     // A director that answers what a boss does hears of each action as it begins (`onActorCast`.)
     let begun: Vec<(u32, u32, ObjectId)> = new_action_requests
         .iter()
@@ -1172,7 +1196,10 @@ pub fn npc_behavior(
             ..
         } = actor
         {
-            if *state == NpcState::Dead || *state == NpcState::AoeTest {
+            if *state == NpcState::Dead
+                || *state == NpcState::AoeTest
+                || instance.held_npcs.contains(id)
+            {
                 continue;
             }
 

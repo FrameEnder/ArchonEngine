@@ -1,0 +1,16 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "28544": {
+            "players": 44.5,
+            "npcs": 44.5
+        },
+        "28761": {
+            "players": 127,
+            "npcs": 127
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "BNpcBase 9020, the invisible helper retail used in several duties. In the Copperbell Mines: the first boss's three (layout 9054923), which the director puts on Kottos' landing spots to cast 28544, and the last boss's five (layout 9060684), which it puts round the arena to cast 28761 (w1d1_re.lua). 28544 never caught anyone in Bob's three runs (Chronofoil captures of 2026-10-25): its amounts are a stand-in, the first boss's 28546's. 28761 hit one player for 127 (the Duty Support run). No auto-attack, no timepoints: it acts only when the director says."
+}

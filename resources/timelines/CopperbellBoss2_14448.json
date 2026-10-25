@@ -32,7 +32,8 @@
             "time": 14,
             "data": {
                 "type": "action",
-                "action_id": 28461
+                "action_id": 28461,
+                "lockon": 218
             },
             "comment": "14.4 s in, Duty Support only"
         },
@@ -69,5 +70,5 @@
             "comment": "Marks the end of the loop"
         }
     ],
-    "comment": "The Copperbell Mines' second boss (BNpcBase 14448, layout 9040077): 11383 HP, level 17, appears as the second door opens with its adds (BNpcBase 14449). Auto-attack 872; 28462 (3.7 s) at 3 s and every 35-41 s; 28463 on itself (2.7 s) at 10 s and every 16.5-18 s in the Duty Finder runs (29.4 s with Duty Support), each followed 8.6 s later by the adds' 28465; 28461 (4.7 s) once (52 to a Duty Support member; the players' amount is that). From Bob's Chronofoil captures of the Copperbell Mines (2026-10-25): one run with Duty Support (bd298651, visit 0.5) and two Duty Finder runs (69bea0b9, visits 0.1 and 0.3), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+    "comment": "The Copperbell Mines' second boss (BNpcBase 14448, layout 9040077): 11383 HP, level 17, appears as the second door opens with its adds (BNpcBase 14449). Auto-attack 872; 28462 (3.7 s) at 3 s and every 35-41 s; 28463 on itself (2.7 s) at 10 s and every 16.5-18 s in the Duty Finder runs (29.4 s with Duty Support), each followed 8.6 s later by the adds' 28465; 28461 (4.7 s) once (52 to a Duty Support member; the players' amount is that). From Bob's Chronofoil captures of the Copperbell Mines (2026-10-25): one run with Duty Support (bd298651, visit 0.5) and two Duty Finder runs (69bea0b9, visits 0.1 and 0.3), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded. Lock-on 218 over the target as 28461 begins (ActorControl 34, every cast in the three runs)."
 }

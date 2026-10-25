@@ -7,15 +7,6 @@
         }
     },
     "timeline_always_plays": false,
-    "timepoints": [
-        {
-            "time": 19,
-            "data": {
-                "type": "action",
-                "action_id": 28465
-            },
-            "comment": "18.8-19.1 s after the boss's pull in the Duty Finder runs; then every 16.5-29.4 s"
-        }
-    ],
-    "comment": "The Copperbell Mines' second boss's adds (BNpcBase 14449, all six with layout 9040086): 369 HP, level 17, no auto-attack; 28465 (5.7 s, 121-127 to players) 8.6 s after each of the boss's 28463, and 28464 (instant, hitting nobody). Kawari spawns one (see dungeons.md); its 28465 comes 19 s in and every 19.5 s. From Bob's Chronofoil captures of the Copperbell Mines (2026-10-25): one run with Duty Support (bd298651, visit 0.5) and two Duty Finder runs (69bea0b9, visits 0.1 and 0.3), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+    "timepoints": [],
+    "comment": "The Copperbell Mines' second boss's helpers (BNpcBase 14449, all six with layout 9040086): 369 HP, level 17, never fought nor killed; no auto-attack, no timepoints. The director spawns all six, holds them and plays their round after each of the boss's 28463: 28464 (instant, hitting nobody) then 28465 (5.7 s, 121-127 to players) from their spots (w1d1_re.lua). From Bob's Chronofoil captures of the Copperbell Mines (2026-10-25): one run with Duty Support (bd298651, visit 0.5) and two Duty Finder runs (69bea0b9, visits 0.1 and 0.3), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members."
 }

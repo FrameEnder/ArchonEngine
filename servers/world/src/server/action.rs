@@ -2067,6 +2067,7 @@ pub fn cancel_action(
         unk1: 538,
         unk2: 1,
         action_id,
+        unk3: 0,
     });
 
     let mut network = network.lock();
@@ -2096,6 +2097,7 @@ fn interrupt_cast(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
                 unk1: 538,
                 unk2: 1,
                 action_id,
+                unk3: 0,
             },
         );
     }

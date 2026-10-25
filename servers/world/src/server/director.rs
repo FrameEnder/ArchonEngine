@@ -298,11 +298,35 @@ pub enum LuaDirectorTask {
         position: Position,
         rotation: f32,
     },
+    /// A BNpc (by actor ID, or layout ID) runs somewhere: one ActorMove there, which the client walks it along, as
+    /// retail's last Copperbell boss went to the arena's middle for 28760.
+    MoveBattleNpc {
+        who: u32,
+        position: Position,
+        rotation: f32,
+    },
     /// Make a BNpc (by actor ID) use an action on another actor (by actor ID), or on itself if there's none.
     ActorUseAction {
         actor_id: u32,
         action_id: u32,
         target: Option<u32>,
+    },
+    /// Draw a BNpc (by actor ID, or layout ID) at another ModelScale row (ActorControl `SetModelScale`), as retail grew
+    /// the Copperbell Mines' second boss each round.
+    SetModelScale {
+        who: u32,
+        model_scale_id: u32,
+    },
+    /// Let a helper go as its boss falls: ActorControl 417 with no one (0xE0000000) from it, as retail sent each of
+    /// Kottos' and the last boss's helpers the moment their boss died.
+    ReleaseBattleNpc {
+        who: u32,
+    },
+    /// Hold a BNpc (by actor ID, or layout ID): `npc_behavior` leaves it alone, so it does only what the director has it
+    /// do, as retail's boss helpers (`Instance::held_npcs`); `false` lets it go back to its own ways.
+    HoldBattleNpc {
+        who: u32,
+        held: bool,
     },
     /// A task for later (`director:delay`): it runs when its time comes, in a later tick.
     Later {
@@ -801,6 +825,38 @@ impl UserData for LuaDirector {
             "jump_bnpc",
             |_, this, (who, x, y, z, rotation): (u32, f32, f32, f32, Option<f32>)| {
                 this.tasks.push(LuaDirectorTask::JumpBattleNpc {
+                    who,
+                    position: Position(glam::Vec3A::new(x, y, z)),
+                    rotation: rotation.unwrap_or(0.0),
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "set_model_scale",
+            |_, this, (who, model_scale_id): (u32, u32)| {
+                this.tasks.push(LuaDirectorTask::SetModelScale {
+                    who,
+                    model_scale_id,
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut("release_bnpc", |_, this, who: u32| {
+            this.tasks.push(LuaDirectorTask::ReleaseBattleNpc { who });
+            Ok(())
+        });
+        methods.add_method_mut("hold_bnpc", |_, this, (who, held): (u32, Option<bool>)| {
+            this.tasks.push(LuaDirectorTask::HoldBattleNpc {
+                who,
+                held: held.unwrap_or(true),
+            });
+            Ok(())
+        });
+        methods.add_method_mut(
+            "move_bnpc",
+            |_, this, (who, x, y, z, rotation): (u32, f32, f32, f32, Option<f32>)| {
+                this.tasks.push(LuaDirectorTask::MoveBattleNpc {
                     who,
                     position: Position(glam::Vec3A::new(x, y, z)),
                     rotation: rotation.unwrap_or(0.0),
@@ -2301,6 +2357,11 @@ pub fn director_tick(
                 who,
                 position,
                 rotation,
+            }
+            | LuaDirectorTask::MoveBattleNpc {
+                who,
+                position,
+                rotation,
             } => {
                 let Some(actor_id) = resolve_bnpc(instance, *who) else {
                     tracing::warn!("Failed to find bnpc {who} to move!");
@@ -2335,11 +2396,13 @@ pub fn director_tick(
                         DestinationNetwork::ZoneClients,
                     );
                 } else {
-                    network.send_ac_in_range_instance(
-                        instance,
-                        actor_id,
-                        ActorControlCategory::SnapNextMove,
-                    );
+                    if matches!(task, LuaDirectorTask::JumpBattleNpc { .. }) {
+                        network.send_ac_in_range_instance(
+                            instance,
+                            actor_id,
+                            ActorControlCategory::SnapNextMove,
+                        );
+                    }
                     network.send_in_range_instance(
                         actor_id,
                         instance,
@@ -2354,6 +2417,48 @@ pub fn director_tick(
                         ),
                         DestinationNetwork::ZoneClients,
                     );
+                }
+            }
+            LuaDirectorTask::SetModelScale {
+                who,
+                model_scale_id,
+            } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} for SetModelScale!");
+                    continue;
+                };
+                if let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor_mut(actor_id) {
+                    spawn.common.model_scale_id = *model_scale_id as u8;
+                }
+                network.lock().send_ac_in_range_instance(
+                    instance,
+                    actor_id,
+                    ActorControlCategory::SetModelScale {
+                        model_scale_id: *model_scale_id,
+                    },
+                );
+            }
+            LuaDirectorTask::ReleaseBattleNpc { who } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    continue;
+                };
+                network.lock().send_ac_in_range_instance(
+                    instance,
+                    actor_id,
+                    ActorControlCategory::SetCompanionOwnerId {
+                        new_id: ObjectId(0xE000_0000),
+                    },
+                );
+            }
+            LuaDirectorTask::HoldBattleNpc { who, held } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to hold!");
+                    continue;
+                };
+                if *held {
+                    instance.held_npcs.insert(actor_id);
+                } else {
+                    instance.held_npcs.remove(&actor_id);
                 }
             }
             LuaDirectorTask::ActorUseAction {

@@ -88,8 +88,6 @@ BOSSES = {
     { bnpc = 9040077, wall = 9089361, line = 9089385, place = 680, other_line = 9089366, music = true },
     { bnpc = 9060676, wall = 9082207, line = 9082214, place = 681 },
 }
--- The second boss's adds (BNpcBase 14449, all six with layout 9040086 on retail): one here, see dungeons.md.
-BNPC_BOSS2_ADD = 9040086
 BGM_BATTLE = 37
 
 -- Shown as the first and second bosses fall (by layout ID)
@@ -258,9 +256,140 @@ function kottosLeaps(director)
     director:delay(0)
 end
 
+-- The second boss (14448)'s six helpers (BNpcBase 14449, all layout 9040086; never fought, never killed), as retail
+-- played them in all three runs: as the boss's 28463 (2.7 s, on itself) lands, the boss grows a size (ActorControl 48:
+-- ModelScale 16, 17, 18 in the three rounds) and its six helpers are put on its middle (ActorSetPos), each use 28464
+-- (instant, hitting nobody) facing the way it will cast, leap to their spots (ActorControl 239 and an ActorMove) and
+-- cast 28465 (5.7 s, a line, 121-127 to the players caught) facing outward. Two stand on a diagonal (one of two) and
+-- four in a row or a column 12 yalms apart through the middle (each round picks both at random: in the runs A+row,
+-- B+row, B+column, A+column). Times from 28463's cast beginning: 4.0 s (grow, put on the middle), 4.1 (28464), 4.7
+-- (leap), 8.7 (28465).
+BOSS2 = 9040077
+BOSS2_GROW = 28463
+BOSS2_HELPER = 9040086
+BOSS2_TURN = 28464
+BOSS2_LINE = 28465
+BOSS2_MIDDLE = { x = 27.0, y = -37.958, z = 114.0 }
+BOSS2_Y = -37.98 -- where the helpers landed
+BOSS2_FIRST_SCALE = 16
+BOSS2_DIAGONALS = {
+    { { x = 14.27, z = 126.73, r = -0.785 }, { x = 39.72, z = 101.24, r = 2.356 } },
+    { { x = 39.72, z = 126.73, r = 0.785 }, { x = 14.27, z = 101.24, r = -2.356 } },
+}
+BOSS2_LINES = {
+    { { x = 45.0, z = 113.97, r = 1.571 }, { x = 32.97, z = 113.97, r = 1.571 },
+      { x = 20.98, z = 113.97, r = -1.571 }, { x = 8.99, z = 113.97, r = -1.571 } }, -- a row
+    { { x = 26.99, z = 131.98, r = 0.0 }, { x = 26.99, z = 119.98, r = 0.0 },
+      { x = 26.99, z = 107.99, r = 3.142 }, { x = 26.99, z = 95.99, r = 3.142 } }, -- a column
+}
+boss2_helpers = {}
+boss2_rounds = 0
+
+function boss2Lines(director)
+    boss2_rounds = boss2_rounds + 1
+    local spots = {}
+    for _, spot in ipairs(BOSS2_DIAGONALS[math.random(2)]) do
+        table.insert(spots, spot)
+    end
+    for _, spot in ipairs(BOSS2_LINES[math.random(2)]) do
+        table.insert(spots, spot)
+    end
+    local m = BOSS2_MIDDLE
+    director:delay(4.0)
+    director:set_model_scale(BOSS2, BOSS2_FIRST_SCALE + boss2_rounds - 1)
+    for i, helper in ipairs(boss2_helpers) do
+        director:warp_bnpc(helper, m.x, m.y, m.z, spots[i].r)
+    end
+    director:delay(4.1)
+    for _, helper in ipairs(boss2_helpers) do
+        director:actor_use_action(helper, BOSS2_TURN)
+    end
+    director:delay(4.7)
+    for i, helper in ipairs(boss2_helpers) do
+        director:jump_bnpc(helper, spots[i].x, BOSS2_Y, spots[i].z, spots[i].r)
+    end
+    director:delay(8.7)
+    for _, helper in ipairs(boss2_helpers) do
+        director:actor_use_action(helper, BOSS2_LINE)
+    end
+    director:delay(0)
+end
+
+-- The last boss (14537)'s five helpers (BNpcBase 9020, all layout 9060684), as retail played them in all three runs: as
+-- the boss begins 28760 (5.7 s, on no one, at the arena's middle, where it walks first) they're put (ActorSetPos) on
+-- five spots facing the middle: four 14 yalms out, at an axis (north-south or east-west) and each of its ends turned
+-- 60 degrees the same way, and one 7 yalms out across the axis, on the side the turn leaves open (in the runs: 0, 60,
+-- 180, 240 with 270; 90, 150, 270, 330 with 0; 0, 300, 180, 120 with 90, degrees from north). 3.0 s later they cast
+-- 28761 (5.7 s, a line through the middle, 127 to the player caught). 1.1 s after 28760 lands the boss gets ActorControl
+-- 239 where it stands, and goes back to its target.
+BOSS3 = 9060676
+BOSS3_PULL = 28760
+BOSS3_HELPER = 9060684
+BOSS3_LINE = 28761
+BOSS3_MIDDLE = { x = -100.41, y = -57.79, z = 6.67 }
+BOSS3_HELPER_Y = -58.27
+BOSS3_OUTER = 14.0
+BOSS3_INNER = 7.0
+BOSS3_LINE_AFTER = 3.0
+BOSS3_SETTLE_AFTER = 7.1
+boss3_helpers = {}
+
+function boss3Spot(degrees, distance)
+    local angle = math.rad(degrees)
+    local x = BOSS3_MIDDLE.x + distance * math.sin(angle)
+    local z = BOSS3_MIDDLE.z + distance * math.cos(angle)
+    -- Facing the middle
+    return { x = x, z = z, r = math.atan(BOSS3_MIDDLE.x - x, BOSS3_MIDDLE.z - z) }
+end
+
+function boss3Lines(director)
+    local axis = (math.random(2) == 1) and 0 or 90
+    local turn = (math.random(2) == 1) and 60 or -60
+    local spots = { boss3Spot(axis - 1.5 * turn, BOSS3_INNER) }
+    for _, degrees in ipairs({ axis, axis + turn, axis + 180, axis + 180 + turn }) do
+        table.insert(spots, boss3Spot(degrees, BOSS3_OUTER))
+    end
+    local m = BOSS3_MIDDLE
+    director:move_bnpc(BOSS3, m.x, m.y, m.z, 0)
+    for i, helper in ipairs(boss3_helpers) do
+        director:warp_bnpc(helper, spots[i].x, BOSS3_HELPER_Y, spots[i].z, spots[i].r)
+    end
+    director:delay(BOSS3_LINE_AFTER)
+    for _, helper in ipairs(boss3_helpers) do
+        director:actor_use_action(helper, BOSS3_LINE)
+    end
+    director:delay(BOSS3_SETTLE_AFTER)
+    director:jump_bnpc(BOSS3, m.x, m.y, m.z, 0)
+    director:delay(0)
+end
+
+function spawnHelpers(director, layout, count)
+    local helpers = {}
+    for i = 1, count do
+        helpers[i] = director:spawn_bnpc(layout)
+        director:hold_bnpc(helpers[i])
+    end
+    return helpers
+end
+
+-- The helpers go with their boss: retail let Kottos' and the last boss's go (ActorControl 417 with no one) the moment
+-- it fell; the second boss's simply went.
+function dismissHelpers(director, helpers, release)
+    for _, helper in ipairs(helpers) do
+        if release then
+            director:release_bnpc(helper)
+        end
+        director:despawn_bnpc(helper)
+    end
+end
+
 function onActorCast(director, layout_id, action_id, actor_id)
     if layout_id == KOTTOS and action_id == KOTTOS_LEAP and #kottos_helpers == 3 then
         kottosLeaps(director)
+    elseif layout_id == BOSS2 and action_id == BOSS2_GROW and #boss2_helpers == 6 then
+        boss2Lines(director)
+    elseif layout_id == BOSS3 and action_id == BOSS3_PULL and #boss3_helpers == 5 then
+        boss3Lines(director)
     end
 end
 
@@ -268,12 +397,12 @@ function spawnBoss(director, index)
     local boss = BOSSES[index]
     director:spawn_boss(boss.bnpc, boss.wall, boss.line, boss.place)
     if index == 1 then
-        kottos_helpers = {}
-        for i = 1, 3 do
-            kottos_helpers[i] = director:spawn_bnpc(KOTTOS_HELPER)
-        end
+        kottos_helpers = spawnHelpers(director, KOTTOS_HELPER, 3)
     elseif index == 2 then
-        director:spawn_bnpc(BNPC_BOSS2_ADD)
+        boss2_helpers = spawnHelpers(director, BOSS2_HELPER, 6)
+        boss2_rounds = 0
+    elseif index == 3 then
+        boss3_helpers = spawnHelpers(director, BOSS3_HELPER, 5)
     end
 end
 
@@ -376,13 +505,14 @@ function onActorDeath(director, bnpc_id, position)
         director:show_eobj(layout)
     end
     if index == 1 then
-        for _, helper in ipairs(kottos_helpers) do
-            director:despawn_bnpc(helper)
-        end
+        dismissHelpers(director, kottos_helpers, true)
         kottos_helpers = {}
     elseif index == 2 then
-        director:despawn_bnpc(BNPC_BOSS2_ADD)
+        dismissHelpers(director, boss2_helpers, false)
+        boss2_helpers = {}
     elseif index == 3 then
+        dismissHelpers(director, boss3_helpers, true)
+        boss3_helpers = {}
         director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
         director:complete_duty()
     end

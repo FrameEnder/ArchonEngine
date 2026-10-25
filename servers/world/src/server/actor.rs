@@ -413,7 +413,33 @@ pub fn set_shared_group_timeline_state(
 
 // Sends the ActorControls to inform the actor that they're dead.
 pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, actor_id: ObjectId) {
+    // An NPC that dies mid-cast: the cast is cut off, and everyone sees its bar go (retail: ActorControl 15 with 540, 1,
+    // the action, 1, just before the death animation; the Copperbell Mines' second boss, Bob's captures of 2026-10-25.)
+    let cancelled = if matches!(
+        instance.find_actor(actor_id),
+        Some(NetworkedActor::Npc { .. })
+    ) {
+        instance.cancel_actor_casts(actor_id)
+    } else {
+        Vec::new()
+    };
+    if let Some(NetworkedActor::Npc { cast, .. }) = instance.find_actor_mut(actor_id) {
+        *cast = None;
+    }
+
     let mut network = network.lock();
+    for action_id in cancelled {
+        network.send_ac_in_range_inclusive_instance(
+            instance,
+            actor_id,
+            ActorControlCategory::CancelCast {
+                unk1: 540,
+                unk2: 1,
+                action_id,
+                unk3: 1,
+            },
+        );
+    }
 
     // First, set their state (otherwise they can still walk)
     set_character_mode(

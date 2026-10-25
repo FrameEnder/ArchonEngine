@@ -181,10 +181,14 @@ pub enum ActorControlCategory {
 
     #[brw(magic = 15u32)]
     CancelCast {
+        /// 538 when interrupted, 540 when the caster died mid-cast (retail's bosses, Bob's Copperbell Mines captures of
+        /// 2026-10-25), 0 for 28764's tank-buster ending.
         unk1: u32,
         unk2: u32,
         /// Action ID of the cast being cancelled.
         action_id: u32,
+        /// 1 when the caster died mid-cast (retail), otherwise 0.
+        unk3: u32,
     },
 
     /// Sets the current value of the cooldown timer.
@@ -291,6 +295,12 @@ pub enum ActorControlCategory {
         amount: u32,
         rested_exp: u32,
     },
+
+    /// Changes a character's size: the ModelScale row it's drawn at (the client's handler, 2026.10.16 case 0x30, sets
+    /// ModelContainer.ModelScaleId and multiplies its base scale by the row's). Retail grew the Copperbell Mines'
+    /// second boss each round (16, 17, 18; Bob's captures of 2026-10-25.)
+    #[brw(magic = 48u32)]
+    SetModelScale { model_scale_id: u32 },
 
     #[brw(magic = 50u32)]
     SetTarget,

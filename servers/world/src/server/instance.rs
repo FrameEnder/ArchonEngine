@@ -166,6 +166,9 @@ pub struct Instance {
     pub unreachable: HashMap<(ObjectId, ObjectId), std::time::Instant>,
     /// NPCs a director spawned hidden that come into view a little later (`director:appear_bnpc`.)
     pub pending_appearances: Vec<crate::server::director::PendingAppearance>,
+    /// NPCs a director holds (`director:hold_bnpc`): `npc_behavior` leaves them alone, so they do only what the
+    /// director has them do (warps, jumps, actions), as retail's invisible boss helpers.
+    pub held_npcs: std::collections::HashSet<ObjectId>,
     /// Director tasks queued for later (`director:delay`), and when they're due.
     pub later_director_tasks: Vec<(std::time::Instant, crate::server::director::LuaDirectorTask)>,
     /// The fight here is over (a quest battle won, `npc_behavior::end_fight`): NPCs don't take anyone on again, whatever
