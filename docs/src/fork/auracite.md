@@ -24,7 +24,7 @@ Both importers read the same members (the server's `apply_extended`, Kawari Web'
 | `kawari_extended` | Kawari |
 |---|---|
 | `crystals`, `key_items` | inventory (crystals keep their slot's item ID when empty) |
-| `saddlebag` (if loaded) | `inventory.saddlebag`, both pages |
+| `saddlebag` (if loaded) | `inventory.saddlebag`, both pages (Kawari Web makes them first on an inventory saved before Kawari had a saddlebag: from 2.22.3; before, it dropped the saddlebag there) |
 | `glamour.dresser`, `.plates`, `.armoire` (each if loaded) | `inventory.glamour` ([Glamour](glamour.md)) |
 | `active_quests` | `quest.active`: ID less 65536, sequence, the six variables (flags and the accepting class aren't kept) |
 | `completed_leves`, `completed_legacy_quests`, `unlocked_map_markers`, `gathering_log` | the `quest` table's bitmasks |

@@ -62,6 +62,14 @@ sent nothing). Equipping a gearset with one sends **EquipGearsetGlamour**: Equip
 number (from 1) at byte 60, where EquipGearset has 0, then 56 bytes that held nothing recognisable (upstream's
 EquipGearset2, 1487, is the same size with an old opcode).
 
+**When the client's bags are out of date.** EquipGearset names, for each of the 14 slots, the container and slot the
+client thinks the piece is in (`Invalid`, -1 for none; `Equipped` for one already worn). Kawari used to read a named
+slot that it had empty as "nothing for this slot" and took off what was worn. Now it leaves that slot as it is, logs
+a warning and sends the slot as it really is (UpdateInventorySlot), so the client's view catches up and the next try
+works. Lira Ormont's gear sets "sometimes" not working (2026-10-26) are most likely that: crafts had left her bags
+out of step with the client's ([Crafting](crafting.md)). Not confirmed: the one EquipGearset in her bundle (index 254,
+a crafter set) went through.
+
 ## The armoire
 
 Talking to it (CustomTalk 82) plays scene 0 with no parameters. Then:

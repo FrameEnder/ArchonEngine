@@ -124,9 +124,80 @@ impl serialize::ToSql<Text, Sqlite> for Inventory {
 
 impl deserialize::FromSql<Text, Sqlite> for Inventory {
     fn from_sql(mut bytes: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
-        Ok(serde_json::from_str(bytes.read_text())
-            .ok()
-            .unwrap_or_default())
+        Ok(Inventory::from_json_lenient(bytes.read_text()))
+    }
+}
+
+/// Lays `saved` over `base`: objects key by key and arrays index by index, so whatever `saved` lacks (a field added
+/// after it was written, a container's `kind`) comes from `base`.
+fn overlay_json(base: &mut serde_json::Value, saved: serde_json::Value) {
+    use serde_json::Value;
+    match (base, saved) {
+        (Value::Object(base), Value::Object(saved)) => {
+            for (key, value) in saved {
+                match base.get_mut(&key) {
+                    Some(slot) => overlay_json(slot, value),
+                    None => {
+                        base.insert(key, value);
+                    }
+                }
+            }
+        }
+        (Value::Array(base), Value::Array(saved)) => {
+            for (i, value) in saved.into_iter().enumerate() {
+                match base.get_mut(i) {
+                    Some(slot) => overlay_json(slot, value),
+                    None => base.push(value),
+                }
+            }
+        }
+        (base, saved) => *base = saved,
+    }
+}
+
+impl Inventory {
+    /// Reads a saved inventory. One that doesn't parse as it stands (written by an older build or another tool) is laid
+    /// over an empty inventory, then field by field, keeping every field that still reads, rather than replaced by an
+    /// empty inventory that the next save would write over everything the character had.
+    pub fn from_json_lenient(text: &str) -> Self {
+        let error = match serde_json::from_str(text) {
+            Ok(inventory) => return inventory,
+            Err(error) => error,
+        };
+        let empty = serde_json::to_value(Inventory::default()).unwrap();
+        let saved: serde_json::Value = match serde_json::from_str(text) {
+            Ok(serde_json::Value::Object(saved)) => serde_json::Value::Object(saved),
+            _ => {
+                tracing::error!("A saved inventory isn't a JSON object ({error}); starting empty.");
+                return Inventory::default();
+            }
+        };
+
+        let mut whole = empty.clone();
+        overlay_json(&mut whole, saved.clone());
+        if let Ok(inventory) = serde_json::from_value(whole) {
+            tracing::warn!(
+                "A saved inventory didn't read as it stood ({error}); filled in what it lacked."
+            );
+            return inventory;
+        }
+
+        let mut kept = empty;
+        let serde_json::Value::Object(fields) = saved else {
+            unreachable!()
+        };
+        for (key, value) in fields {
+            let mut trial = kept.clone();
+            overlay_json(&mut trial[&key], value);
+            if serde_json::from_value::<Inventory>(trial.clone()).is_ok() {
+                kept = trial;
+            } else {
+                tracing::error!(
+                    "A saved inventory's {key} doesn't read ({error}); it starts empty."
+                );
+            }
+        }
+        serde_json::from_value(kept).unwrap_or_default()
     }
 }
 
@@ -896,6 +967,7 @@ impl Inventory {
 
         Self::prepare_items_in_container(&mut inventory.equipped, data);
         Self::prepare_items_in_container(&mut inventory.armoury_main_hand, data);
+        Self::prepare_items_in_container(&mut inventory.armoury_head, data);
         Self::prepare_items_in_container(&mut inventory.armoury_body, data);
         Self::prepare_items_in_container(&mut inventory.armoury_hands, data);
         Self::prepare_items_in_container(&mut inventory.armoury_legs, data);
@@ -906,6 +978,9 @@ impl Inventory {
         Self::prepare_items_in_container(&mut inventory.armoury_bracelet, data);
         Self::prepare_items_in_container(&mut inventory.armoury_rings, data);
         Self::prepare_items_in_container(&mut inventory.key_items, data);
+        for page in inventory.saddlebag.iter_mut() {
+            Self::prepare_items_in_container(page, data);
+        }
         // Skip soul crystals
     }
 
@@ -1220,6 +1295,31 @@ mod tests {
             item_id,
             ..Default::default()
         }
+    }
+
+    /// A saved inventory that doesn't read as it stands keeps what does read instead of coming back empty.
+    #[test]
+    fn lenient_inventory_keeps_what_reads() {
+        let mut inventory = Inventory::default();
+        inventory.add_in_slot(item(5057), &ContainerType::Inventory1, 21);
+        inventory.add_in_slot(item(52254), &ContainerType::SaddleBag1, 0);
+        let mut doc = serde_json::to_value(&inventory).unwrap();
+
+        // Pages saved without their kind (as Kawari Web's template wrote them): filled in.
+        for page in doc["pages"].as_array_mut().unwrap() {
+            page.as_object_mut().unwrap().remove("kind");
+        }
+        let read = Inventory::from_json_lenient(&doc.to_string());
+        assert_eq!(read.pages[1].get_slot(21).item_id, 5057);
+        assert_eq!(read.pages[1].kind, ContainerType::Inventory1);
+        assert_eq!(read.saddlebag[0].get_slot(0).item_id, 52254);
+
+        // A field that can't read at all starts empty; the rest stays.
+        doc["key_items"] = serde_json::json!("broken");
+        let read = Inventory::from_json_lenient(&doc.to_string());
+        assert_eq!(read.pages[1].get_slot(21).item_id, 5057);
+        assert_eq!(read.saddlebag[0].get_slot(0).item_id, 52254);
+        assert_eq!(read.key_items.kind, ContainerType::KeyItems);
     }
 
     /// Equipping a body piece from the main inventory, like Bob did on 2026-10-13 (see kawari-diagnostics.)

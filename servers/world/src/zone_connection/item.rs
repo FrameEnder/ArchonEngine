@@ -564,6 +564,17 @@ impl ZoneConnection {
 
             let equipped_item = self.player_data.inventory.equipped.get_slot(slot as u16);
 
+            if from_slot != -1 && from_item.is_empty_slot() {
+                // The client names an item where the server has none: its view of that bag is out of date. Leave this
+                // piece as it is (rather than take off what's worn) and tell the client what's really in the slot.
+                tracing::warn!(
+                    "Gear set {gearset_index} wants {from_container:?} {from_slot} for slot {slot}, which is empty here."
+                );
+                self.send_inventory_slot(from_container, from_slot as u16)
+                    .await;
+                continue;
+            }
+
             if !from_item.is_empty_slot() && !equipped_item.is_empty_slot() {
                 // If there is something equipped and a replacement for it, we must swap.
                 self.swap_items(

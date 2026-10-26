@@ -61,6 +61,17 @@ folders count as one (add `-2`, `-3`… for more on the same day). `database::mi
 * **Gear swapped from the main inventory** goes to the Armoury Chest, as the client expects (they used to disagree,
   and the piece was lost on next login).
 
+## Reading a saved inventory
+
+The inventory is one JSON document (`inventory.contents`). Upstream read it with `serde_json::from_str(...)
+.unwrap_or_default()`: a document that didn't parse as it stood (a container without its `kind`, a field of the wrong
+shape, written by an older build or by another tool) came back as an **empty inventory**, silently, and the next
+autosave wrote that over everything the character had. `Inventory::from_json_lenient` (`inventory/mod.rs`) reads it
+as it stands when it can; otherwise it lays the document over an empty inventory (objects key by key, arrays index by
+index, so only what's missing comes from the empty one) and, if that still doesn't read, takes it field by field,
+keeping every field that reads and logging an error naming the ones that don't. A missing field with a serde default
+(the saddlebag, the glamour dresser) never needed this.
+
 ## Editing a character from outside
 
 The server keeps a logged-in character in memory and saves over the database every 30 s and at logout. So anything

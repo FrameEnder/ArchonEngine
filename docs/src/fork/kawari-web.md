@@ -41,6 +41,16 @@ built from), container logs.
   Character sync, not on by default). Sections the client hadn't loaded are left alone. The whole `kawari_extended`
   object is then stored in world.db's `auracite_extended` table (`store_extended`; skipped on a database without it).
   See [Auracite Backups](auracite.md) for the member-by-member mapping.
+* **The saddlebag on an older character** (2.22.3): `Dump.inventory` makes the two saddlebag pages (35 slots,
+  kinds `SaddleBag1`/`SaddleBag2`) when the stored inventory has none, then fills them. Before, it filled only pages
+  already there, and an inventory saved before the world server had a saddlebag has no `saddlebag` key, so the
+  backup's saddlebag was dropped without a word (Lira Ormont, bundle 20261026-095541: her backup held 15 stacks).
+  Characters imported before 2.22.3 get it by importing the backup again, logged out.
+* **Blank inventories** (2.22.3, `chardata._blank_inventory`, used for new characters from another character's
+  shape): the saddlebag's pages are emptied and the glamour dresser, plates and armoire cleared (both were copied
+  from the other character), and the bags' pages keep their `kind`. The bundled `inventory_template.json` now has
+  the bags' kinds and the saddlebag; without the kinds the world server couldn't read it as it stood (it now fills
+  in what a saved inventory lacks, [Saving](saving.md#reading-a-saved-inventory)).
 * **The adventurer plate** (2.22.1): an extended backup's `adventurer_plate` goes with *Grand Company, title and
   mentor status* into the volatile row's plate, its save time and the portrait, and the export writes it back.
 * **Inspect only** shows a backup's summary and, for an extended one, each section: in the backup or not, loaded or

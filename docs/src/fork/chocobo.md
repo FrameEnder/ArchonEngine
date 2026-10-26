@@ -130,6 +130,15 @@ two of its own: **SaddlebagStore** (BASE + 20, 0xFE on 2026.10.16) from the bags
 0xFF), where the server picks the slot as for a retainer (onto the same item's stack if it has room, else the first
 empty slot) and sends both slots, then the acknowledgement. Moves within the saddlebag were acknowledged only.
 
+Retail's reply to 444 (Bob's Chronofoil capture e8158807, 2026-10-16) is the same shape: each container's
+UpdateItems and its ContainerInfo share one item sequence (0x23b for 4000 with 4 items, 0x23c for 4001 with 12), then
+4100 and 4101 empty. When a saddlebag "doesn't open", look at what's in it: Lira Ormont's of 2026-10-26 answered
+every 444 with four empty ContainerInfo, since her saddlebag had never been filled (Kawari Web's importer before
+2.22.3, [Kawari Web](kawari-web.md#auracite-backups-2220)); an empty saddlebag shows nothing, which reads as not opening.
+
+The saddlebag is kept in the inventory (`Inventory::saddlebag`, missing in inventories saved before it: read as two
+empty pages), and its items get their sheet data at login like the bags' (`prepare_player_inventory`).
+
 ## Not done yet
 
 See [Known Issues](known-issues.md#chocobo-companion).
