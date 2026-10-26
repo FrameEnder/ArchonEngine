@@ -257,14 +257,17 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
 * **Out of combat** each bot has **its own spot in a sideways diamond around you**, as retail's Duty Support members
   kept (see [Party NPCs](party-npcs.md#out-of-combat-the-diamond)): the tank in front, the healer behind, the damage
   dealers either side, you in your own role's corner (`diamond_spots`: with you a healer, the tank 2 yalms ahead and
-  the damage dealers 1 ahead and 1.72 aside), turned with the way you face; bots beyond the diamond's four corners stand
+  the damage dealers 1 ahead and 1.72 aside), turned with the way you face as you move: turning on the spot leaves it
+  where it was (`FORMATION_MOVED`: the facing is taken only while you've moved 0.1 yalms since the last tick,
+  `Instance::formation_facings`; it used to turn with you, so the bots reshuffled every time you looked round, Bob
+  2026-10-26); bots beyond the diamond's four corners stand
   in rows of three behind it. (Until 2026-10-23 they stood in a formation behind the party's tank, `FORMATION`: 35°
   either side of straight behind at 2.5 yalms, and so on.) It walks to its spot
   when it's more than 0.6 yalms off and stops there. Out of combat **the bot walks itself** (`PartyBot::walking_itself`):
   `party_bot::update` keeps its path, moves it along it at NPCs' running speed (6 yalms a second, 3 a tick) and sends
   the ActorMove, and NPCs' own walking (`npc_behavior`) leaves it alone until it fights, when that takes over to chase
   its target. While you move it **walks with you**: its path is re-aimed at where its spot is now, from where it
-  stands (the navmesh, straight on where that stops), at most once a second (`REAIM_EVERY`) and only when the spot has
+  stands (the navmesh, straight on where that stops), every tick (`REAIM_EVERY`, half a second; once a second until 2026-10-26) and only when the spot has
   moved a yalm from the path's end. (The first build had every bot walk to within 2.5 yalms of the same person, so
   they ended up on top of each other; the next threw its path away each time the spot moved a yalm, which is every
   tick while you run, so bots only set off once you stopped; the one after left both its own code and NPCs' walking
@@ -274,7 +277,8 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
   * The **tank** plays as the player tanks in Bob's Chronofoil capture of five Sastasha runs (2026-10-22) did; the
     three runs by other players (Paladin, Marauder, Warrior) give the numbers:
     * It answers each enemy that's after someone else after one of those tanks' reaction times (`TANK_REACTIONS`: 54
-      of them, 2.9 s the median, from an enemy hitting someone else to the tank's next action hitting it), the nearest
+      of them, 2.9 s the median, from an enemy hitting someone else to the tank's next action hitting it), a little
+      quicker since 2026-10-26 (each scaled by `TANK_REACTION_SCALE`, 0.6: 1.7 s the median, Bob found the bots slow), the nearest
       due first: it goes for it and takes it (50,000 enmity above the top of its list, as the quest battle framework's
       tanks do). It used to take one every 10 s.
     * With two or more enemies fighting the party within 5.5 yalms, its area enmity combo (Total Eclipse, Overpower:
@@ -302,8 +306,8 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
   * **Getting out of area attacks** (`server/dodge.rs`, 2026-10-24, Bob: "they should move out of an AOEs way to a
     safe area as close as possible"): every bot, and every party NPC, standing in an area attack an enemy is casting
     (circles on the caster or where it aimed, cones, lines and rectangles: the shapes `in_area` resolves hits with,
-    from the Action sheet's CastType, EffectRange, XAxisModifier and the omen's angle) sets off 0.8–1.3 s after it
-    notices (at once if waiting wouldn't leave it time to get out at running speed), as retail's Duty Support members
+    from the Action sheet's CastType, EffectRange, XAxisModifier and the omen's angle) sets off 0.5–0.9 s after it
+    notices (0.8–1.3 s, retail's, until 2026-10-26: Bob found the bots slow) (at once if waiting wouldn't leave it time to get out at running speed), as retail's Duty Support members
     did ([Party NPCs](party-npcs.md#getting-out-of-area-attacks)). It runs to the nearest spot out of **every** area
     attack being cast, half a yalm past their hit edge (`DODGE_MARGIN`, beyond the half yalm `in_area` already
     counts): the shapes' own exits (straight out of a circle, off a cone's nearer side or out of its far end, off a

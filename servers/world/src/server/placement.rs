@@ -29,6 +29,12 @@ pub struct Placement {
 /// 120 round about half the time (313 hits: 113 the median.)
 pub const OPPOSITE_ENOUGH_DEGREES: f32 = 120.0;
 
+/// How far inside `within` an NPC that strayed comes back to, and how far inside it a chase stops: the room between
+/// the two keeps it from going back and forth at the edge. Sent back to the middle of its anchors and let chase to its
+/// target again, a ranged party NPC ran up, attacked, walked back two steps and ran up again (Bob's Copperbell Mines
+/// bundles of 2026-10-25.)
+pub const RETURN_MARGIN: f32 = 3.0;
+
 impl Placement {
     pub fn is_empty(&self) -> bool {
         self.anchors.is_empty() && self.behind.is_none() && self.opposite.is_none()
@@ -65,6 +71,54 @@ impl Placement {
         (Vec3A::distance(at, spot) > SPOT_TOLERANCE).then_some(spot)
     }
 
+    /// The nearest point from `at` towards `middle` that's `RETURN_MARGIN` inside `within` of every anchor (the middle
+    /// itself when none is, anchors far apart.)
+    fn back_within(&self, at: Vec3A, middle: Vec3A, anchors: &[Vec3A]) -> Vec3A {
+        let limit = (self.within - RETURN_MARGIN).max(0.0);
+        let inside = |point: Vec3A| {
+            anchors
+                .iter()
+                .all(|anchor| point.distance(*anchor) <= limit)
+        };
+        if !inside(middle) {
+            return middle;
+        }
+        // The share of the way from `at` to the middle, the least that's inside.
+        let (mut out, mut ok) = (0.0_f32, 1.0_f32);
+        for _ in 0..20 {
+            let mid = (out + ok) / 2.0;
+            if inside(at.lerp(middle, mid)) {
+                ok = mid;
+            } else {
+                out = mid;
+            }
+        }
+        at.lerp(middle, ok)
+    }
+
+    /// Where a chase after a target at `target` should stop, so it doesn't take the NPC further than `RETURN_MARGIN`
+    /// inside `within` of an anchor (it would only be sent back, and come again): the target itself if it's near
+    /// enough, else the nearest point towards it that is.
+    pub fn chase_goal(&self, target: Vec3A, positions: &HashMap<ObjectId, Vec3A>) -> Vec3A {
+        let anchors: Vec<Vec3A> = self
+            .anchors
+            .iter()
+            .filter_map(|anchor| positions.get(anchor).copied())
+            .collect();
+        if anchors.is_empty() || self.within <= 0.0 {
+            return target;
+        }
+        let limit = (self.within - RETURN_MARGIN).max(0.0);
+        if anchors
+            .iter()
+            .all(|anchor| target.distance(*anchor) <= limit)
+        {
+            return target;
+        }
+        let middle = anchors.iter().copied().sum::<Vec3A>() / anchors.len() as f32;
+        self.back_within(target, middle, &anchors)
+    }
+
     /// Where the NPC at `at` has to go now, if anywhere: back to the middle of its anchors when it's strayed too far
     /// from any of them, else to its spot behind the tank's target, as long as that spot keeps it near its anchors and
     /// its own target (at `own_target`, `reach` yalms) is in reach from there.
@@ -86,7 +140,8 @@ impl Placement {
                 .iter()
                 .any(|anchor| Vec3A::distance(at, *anchor) > self.within)
         {
-            return Some(anchors.iter().copied().sum::<Vec3A>() / anchors.len() as f32);
+            let middle = anchors.iter().copied().sum::<Vec3A>() / anchors.len() as f32;
+            return Some(self.back_within(at, middle, &anchors));
         }
 
         if self.opposite.is_some() {
@@ -190,9 +245,19 @@ mod tests {
             within: 10.0,
             ..Default::default()
         };
-        // Too far from the player (and the tank): back to the middle of them.
-        let goal = placement.goal(Vec3A::new(20.0, 0.0, 0.0), &positions, &targets, None, 15.0);
-        assert_eq!(goal, Some(Vec3A::new(-1.5, 0.0, 0.0)));
+        // Too far from the player (and the tank): back towards the middle of them, until it's `RETURN_MARGIN`
+        // inside the limit of both (7 yalms from the player, at -3.)
+        let goal = placement
+            .goal(Vec3A::new(20.0, 0.0, 0.0), &positions, &targets, None, 15.0)
+            .unwrap();
+        assert!((goal.x - 4.0).abs() < 0.01, "{goal}");
+        // A chase stops there too, rather than run off to be sent back.
+        let chase = placement.chase_goal(Vec3A::new(20.0, 0.0, 0.0), &positions);
+        assert!((chase.x - 4.0).abs() < 0.01, "{chase}");
+        assert_eq!(
+            placement.chase_goal(Vec3A::new(3.0, 0.0, 0.0), &positions),
+            Vec3A::new(3.0, 0.0, 0.0)
+        );
         // Close enough to both: stays.
         assert_eq!(
             placement.goal(Vec3A::new(2.0, 0.0, 0.0), &positions, &targets, None, 15.0),

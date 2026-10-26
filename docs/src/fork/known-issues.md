@@ -38,8 +38,8 @@ add one when something is found.
 * Getting out of area attacks (2026-10-24, `server/dodge.rs`) is untested in game, and so is bracing when there's nowhere to go (which actions retail's members used then isn't recorded; party NPCs brace with the player classes' actions by their class and level, not their kits). Only shapes `in_area` knows are
   dodged (circles, cones, lines and rectangles): donuts and crosses aren't read from the Action sheet yet, so nobody
   steps into a donut's middle (the third Tam-Tara room boss's 912 may be one). Every area attack a hostile NPC casts
-  counts, even one that would do nothing to them; the margin past the hit edge (half a yalm) and the 0.8–1.3 s
-  reaction come from one fight (Tam-Tara's last boss, two casts). A bot's own cast isn't interrupted: it slides it.
+  counts, even one that would do nothing to them; the margin past the hit edge (half a yalm) and the reaction
+  (0.8–1.3 s, quickened to 0.5–0.9 s on Bob's request) come from one fight (Tam-Tara's last boss, two casts). A bot's own cast isn't interrupted: it slides it.
   The safe spot is checked only for standing on the navmesh, not for a path there that stays out of the area.
 * How hard enemies hit them (2026-10-23) is the players' scale times retail's ratio for each member (a third for the
   Marauder), untested in game. On retail the enemies stayed on the tank (the Lancer and Thaumaturge took 330 damage

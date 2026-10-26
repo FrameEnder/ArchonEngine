@@ -90,6 +90,9 @@ const TANK_REACTIONS: [f32; 54] = [
     2.1, 2.2, 2.2, 2.5, 2.7, 2.8, 2.8, 2.8, 3.0, 3.2, 3.5, 4.5, 4.5, 4.8, 5.0, 5.1, 5.2, 5.6, 5.8,
     5.8, 5.8, 6.5, 7.5, 8.9, 8.9, 9.2, 9.2, 9.6, 9.6, 12.1, 12.2, 13.0, 13.3, 13.4, 15.4,
 ];
+/// The tank bot answers a little quicker than those players: each reaction time is scaled by this (Bob found the bots
+/// slow to react, 2026-10-26; median 1.7 s instead of 2.9.)
+const TANK_REACTION_SCALE: f32 = 0.6;
 /// The tank uses its area enmity combo (Total Eclipse, Overpower) when this many enemies fighting the party are within
 /// its reach: the same runs' tanks made it their main attack whenever two or more were close (Total Eclipse 74 times
 /// to 38 single-target hits; Overpower 62 to 43 and 117 to 37), and rarely with one.
@@ -327,8 +330,13 @@ fn spot_around(position: Vec3A, rotation: f32, ahead: f32, side: f32) -> Vec3A {
     )
 }
 
-/// How often a walking bot re-aims its path at its moving formation spot.
-const REAIM_EVERY: Duration = Duration::from_millis(1000);
+/// How often a walking bot re-aims its path at its moving formation spot: every tick (it was every second, and the
+/// bots set off late after the player, Bob 2026-10-26.)
+const REAIM_EVERY: Duration = Duration::from_millis(500);
+/// The leader has moved when they're this far (yalms, across the ground) from where they stood last tick: then the
+/// formation turns to face their way. Turning on the spot leaves it as it was, as retail's Duty Support kept their
+/// places while the player looked about (Bob, 2026-10-26.)
+const FORMATION_MOVED: f32 = 0.1;
 
 /// A path from `from` to `to` on the navmesh (straight there where it has none: bots walk on regardless.)
 fn instance_navmesh_path(navmesh: &crate::navmesh::Navmesh, from: Vec3A, to: Vec3A) -> Vec<Vec3A> {
@@ -2759,6 +2767,19 @@ fn update_party(
                 .map(|actor| (*id, (actor.position().0, actor.rotation())))
         })
         .collect();
+    // The way the formation faces: the leader's, taken only as they move (`FORMATION_MOVED`).
+    let formation_facing = where_is.get(&leader).copied().map(|(position, rotation)| {
+        let entry = instance
+            .formation_facings
+            .entry(leader)
+            .or_insert((position, rotation));
+        let moved = Vec3A::new(position.x - entry.0.x, 0.0, position.z - entry.0.z).length();
+        if moved > FORMATION_MOVED {
+            entry.1 = rotation;
+        }
+        entry.0 = position;
+        entry.1
+    });
     let follows = |bot_id: ObjectId| {
         if Some(bot_id) == tank {
             leader
@@ -3004,9 +3025,10 @@ fn update_party(
             }
             spawn.common.target_id = ObjectTypeId::default();
             *placement = Placement::default();
-            let Some((anchor, facing)) = where_is.get(&leader).copied() else {
+            let Some((anchor, _)) = where_is.get(&leader).copied() else {
                 continue;
             };
+            let facing = formation_facing.unwrap_or_default();
             let (ahead, side) = spots.get(bot_id).copied().unwrap_or((-2.0, 0.0));
             let spot = spot_around(anchor, facing, ahead, side);
             let here = spawn.common.position.0;
@@ -3101,7 +3123,8 @@ fn update_party(
                 answers.retain(|enemy, _| loose.iter().any(|loose| loose.id == *enemy));
                 for enemy in &loose {
                     answers.entry(enemy.id).or_insert_with(|| {
-                        let delay = TANK_REACTIONS[fastrand::usize(..TANK_REACTIONS.len())];
+                        let delay = TANK_REACTIONS[fastrand::usize(..TANK_REACTIONS.len())]
+                            * TANK_REACTION_SCALE;
                         now + Duration::from_secs_f32(delay)
                     });
                 }

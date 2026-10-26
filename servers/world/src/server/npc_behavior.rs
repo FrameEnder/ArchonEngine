@@ -706,7 +706,15 @@ pub fn npc_behavior(
                     let following_owner = spawn.common.owner_id.is_valid()
                         && matches!(current_target, NpcTarget::Actor(actor) if *actor == spawn.common.owner_id);
                     if needs_repath {
-                        let goal = strayed_to.unwrap_or(target_pos);
+                        // A chase goes no further than its placement lets it stay (`Placement::chase_goal`.)
+                        let chase_to = if matches!(current_target, NpcTarget::Actor(_))
+                            && !placement.is_empty()
+                        {
+                            placement.chase_goal(target_pos, &positions)
+                        } else {
+                            target_pos
+                        };
+                        let goal = strayed_to.unwrap_or(chase_to);
                         let gap = if following_owner {
                             f32::INFINITY
                         } else {

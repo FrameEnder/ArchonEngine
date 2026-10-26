@@ -1627,13 +1627,24 @@ pub async fn server_main_loop(
                                 let data = data.lock();
                                 if let Some(instance) = data.find_actor_instance(task.from_actor_id)
                                 {
+                                    // The health as it is now, as the hit lands: taken when the action went off, a
+                                    // result landing after other hits (half a second on) put back what they'd taken,
+                                    // and the next took it off again (Bob's Copperbell Mines bundles of 2026-10-25:
+                                    // 169 times in one run, the enemies' bars losing, gaining and losing health.)
+                                    let mut segment = segment.clone();
+                                    if let ServerZoneIpcData::EffectResultBasic {
+                                        target_id,
+                                        current_hp,
+                                        ..
+                                    } = &mut segment.data
+                                        && let Some(target) = instance.find_actor(*target_id)
+                                    {
+                                        *current_hp = target.get_common_spawn().health_points;
+                                    }
                                     network.send_in_range_inclusive_instance(
                                         task.from_actor_id,
                                         instance,
-                                        FromServer::PacketSegment(
-                                            segment.clone(),
-                                            task.from_actor_id,
-                                        ),
+                                        FromServer::PacketSegment(segment, task.from_actor_id),
                                         DestinationNetwork::ZoneClients,
                                     );
                                 }

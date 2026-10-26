@@ -22,9 +22,10 @@ use crate::{
 /// How far past an area attack's hit edge a dodger stops (retail's stood at 11.0 yalms from a circle they otherwise
 /// left as soon as they could; the hit edge's own grazing allowance is `PLAYER_HITBOX_RADIUS`, in `in_area`.)
 pub const DODGE_MARGIN: f32 = 0.5;
-/// When a dodger sets off after it notices an area attack starting: a moment like retail's (1.0-1.4 s into the cast
-/// in the capture, sampled every 0.31 s), or at once when waiting would leave too little time to get out.
-pub const REACTION_SECONDS: (f32, f32) = (0.8, 1.3);
+/// When a dodger sets off after it notices an area attack starting: a moment, a little quicker than retail's (1.0-1.4 s
+/// into the cast in the capture, sampled every 0.31 s; Bob found the bots slow to react, 2026-10-26), or at once when
+/// waiting would leave too little time to get out.
+pub const REACTION_SECONDS: (f32, f32) = (0.5, 0.9);
 /// How long after the attack has gone off a dodger stays out before it goes back to fighting (retail: 1.3-1.5 s.)
 pub const LINGER: Duration = Duration::from_millis(1300);
 /// How far a dodger looks for a safe spot.
@@ -460,7 +461,7 @@ mod tests {
         let until = now + Duration::from_secs_f32(4.7);
         // Plenty of time: after the reaction.
         let at = set_off_at(now, until, 8.0, 6.0, 0.5);
-        assert_eq!(at, now + Duration::from_secs_f32(1.05));
+        assert_eq!(at, now + Duration::from_secs_f32(0.7));
         // A quick cast: at once.
         assert_eq!(
             set_off_at(now, now + Duration::from_secs(1), 8.0, 6.0, 0.5),

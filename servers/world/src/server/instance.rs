@@ -170,6 +170,9 @@ pub struct Instance {
     /// The HP, MP and max MP last sent for each actor (`update_actor_hp_mp` sends only changes.)
     pub last_hp_mp: HashMap<ObjectId, (u32, u16, u16)>,
     /// Director tasks queued for later (`director:delay`), and when they're due.
+    /// Each bot party's leader: where they stood last tick and the way their formation faces (`party_bot`: it turns
+    /// with them only as they move.)
+    pub formation_facings: HashMap<ObjectId, (glam::Vec3A, f32)>,
     pub later_director_tasks: Vec<(std::time::Instant, crate::server::director::LuaDirectorTask)>,
     /// The fight here is over (a quest battle won, `npc_behavior::end_fight`): NPCs don't take anyone on again, whatever
     /// hits or heals them.
