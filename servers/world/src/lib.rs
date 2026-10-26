@@ -52,6 +52,7 @@ pub use common::{
 };
 
 pub mod collision;
+pub mod layer_filters;
 mod navmesh;
 pub use navmesh::{Navmesh, NavmeshParams, NavmeshTile};
 

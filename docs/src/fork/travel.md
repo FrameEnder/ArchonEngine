@@ -76,6 +76,25 @@ The opening takes place in a separate copy of New Gridania (territory 183) with 
 move players out of 183 at login, or to drop the guards' boundaries once the opening is done, were rolled back with
 the first quest engine (`3fb25fe`); only the Close to Home move remains.
 
+## Layer filters (the Waking Sands)
+
+A zone's layout (its LVB) can list several layer filters (physis' "layer sets": an ID, a territory and a duty), and
+each of its layers shows only under some of them (a Match or NoMatch list of keys; FFXIVClientStructs'
+`FileLayerGroupLayerFilter`, `LayoutManager.LayerFilterKey`). Where the story changes a place, retail's server tells
+the client which filter to use, by quest progress: ZoneInit's `transition_territory_filter_key` as you come in, and
+ActorSetPos' as a quest's cutscene moves you within the zone. In the Waking Sands (Bob's Chronofoil capture afe32479
+visit 0.10, 2026-10-25) it was 90338 at The Scions of the Seventh Dawn's last step and after it was done, and 90339 in
+the ActorSetPos as A Wild Rose by Any Other Name (510) was accepted, and after; every other zone in the captures had 0.
+Kawari sent 0, and the client showed the people of every visit to the Waking Sands at once (Bob's screenshot of
+2026-10-26: Thancred, Biggs, Wedge, Cid, Yda, Papalymo, Arenvald, Iliud and a row of soldiers in the hall).
+
+Kawari reads the key from `resources/data/layer_filters.json` (`layer_filters.rs`: per territory, the last entry whose
+quest has been accepted or completed; an entry without a quest is the default), puts it in ZoneInit, and fills it in
+any ActorSetPos to the player that has none (`ZoneConnection::send_ipc_from`). Retail picks it on its own servers, so
+each part of the story's key has to come from a capture of it; a zone with more than one filter logs them and which
+of its layers each shows, with their event NPCs, the first time it's loaded (`log_layer_filters`), which is how the
+rest can be matched to the story. `transition_territory_filter_key` was thought to choose ambient sound.
+
 ## Weather
 
 Kawari forecasts weather like the client (WeatherRate's chances against a roll for each 8 Eorzean hour window,

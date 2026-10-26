@@ -199,6 +199,11 @@ impl Zone {
                     break;
                 }
             }
+            log_layer_filters(
+                id,
+                &lvb.sections[0].layer_sets.layer_sets,
+                &zone.layer_groups,
+            );
 
             let mut search_dirs: Vec<String> = get_config()
                 .filesystem
@@ -1827,5 +1832,67 @@ pub fn handle_zone_messages(
             true
         }
         _ => false,
+    }
+}
+
+/// Logs a zone's layer filters (its LVB's layer sets) and which of its layers each one shows, with their event NPCs,
+/// once per zone, when it has more than one: where the story changes a place (the Waking Sands), retail's server picks
+/// the filter by quest progress (`layer_filters`), and this is what tells which key goes with which part of the story.
+fn log_layer_filters(
+    territory: u16,
+    layer_sets: &[physis::scn::ScnLayerSet],
+    layer_groups: &[Lgb],
+) {
+    static LOGGED: std::sync::Mutex<Option<HashSet<u16>>> = std::sync::Mutex::new(None);
+    if layer_sets.len() < 2 {
+        return;
+    }
+    if let Ok(mut logged) = LOGGED.lock()
+        && !logged.get_or_insert_with(HashSet::new).insert(territory)
+    {
+        return;
+    }
+    let sets: Vec<String> = layer_sets
+        .iter()
+        .map(|set| {
+            format!(
+                "{} (territory {}, duty {})",
+                set.id, set.territory_type_id, set.content_finder_condition_id
+            )
+        })
+        .collect();
+    tracing::info!(
+        "Zone {territory}'s layer filters: {}; the key sent is `layer_filters`'",
+        sets.join(", ")
+    );
+    for lgb in layer_groups {
+        for chunk in &lgb.chunks {
+            for layer in &chunk.layers {
+                let filter = &layer.header.layer_set_referenced_list;
+                if matches!(
+                    filter.referenced_type,
+                    physis::layer::LayerSetReferencedType::All
+                ) {
+                    continue;
+                }
+                let npcs: Vec<u32> = layer
+                    .objects
+                    .iter()
+                    .filter_map(|object| match &object.data {
+                        LayerEntryData::EventNPC(npc) => Some(npc.parent_data.parent_data.base_id),
+                        _ => None,
+                    })
+                    .collect();
+                tracing::info!(
+                    "  layer {} ({}): {:?} {:?}, {} objects, event NPCs {:?}",
+                    layer.header.layer_id,
+                    layer.header.name.value,
+                    filter.referenced_type,
+                    filter.layer_set_ids,
+                    layer.objects.len(),
+                    npcs
+                );
+            }
+        }
     }
 }

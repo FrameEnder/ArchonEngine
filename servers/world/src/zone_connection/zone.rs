@@ -238,6 +238,8 @@ impl ZoneConnection {
 
             let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ZoneInit(ZoneInit {
                 territory_type: new_zone_id,
+                // Which of the zone's layer filters to show, by the story (`layer_filters`.)
+                transition_territory_filter_key: self.layer_filter_key(new_zone_id),
                 weather_id: weather_id as u8,
                 flags,
                 content_finder_condition_id,

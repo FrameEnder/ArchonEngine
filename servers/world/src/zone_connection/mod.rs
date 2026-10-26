@@ -283,6 +283,19 @@ impl ZoneConnection {
     }
 
     /// Sends an IPC segment to the player, where the source actor is also the player.
+    /// The layer filter the client is shown `territory` with, for this character's quest progress (`layer_filters`.)
+    pub fn layer_filter_key(&self, territory: u16) -> u32 {
+        let quests = &self.player_data.quest;
+        crate::layer_filters::filter_key(territory, |quest| {
+            quests.completed.contains(quest)
+                || quests
+                    .active
+                    .0
+                    .iter()
+                    .any(|active| active.id as u32 == quest)
+        })
+    }
+
     pub async fn send_ipc_self(&mut self, ipc: ServerZoneIpcSegment) {
         // What the client now believes each slot holds (`shown_items`.)
         if let ServerZoneIpcData::UpdateItem(info) | ServerZoneIpcData::UpdateInventorySlot(info) =
@@ -306,7 +319,17 @@ impl ZoneConnection {
     }
 
     /// Sends an IPC segment to the player, where the source actor can be specified.
-    pub async fn send_ipc_from(&mut self, source_actor: ObjectId, ipc: ServerZoneIpcSegment) {
+    pub async fn send_ipc_from(&mut self, source_actor: ObjectId, mut ipc: ServerZoneIpcSegment) {
+        // Moved within a zone the story changes (a quest's cutscene ending in the Waking Sands): the layer filter for
+        // where the story is now, as retail's ActorSetPos carried (`layer_filters`; 0 showed every stage at once.)
+        if let ServerZoneIpcData::ActorSetPos(set_pos) = &mut ipc.data
+            && set_pos.transition_territory_filter_key == 0
+            && (source_actor == ObjectId::default()
+                || source_actor == self.player_data.character.actor_id)
+        {
+            set_pos.transition_territory_filter_key =
+                self.layer_filter_key(self.player_data.volatile.zone_id as u16);
+        }
         let segment = PacketSegment {
             source_actor: if source_actor == ObjectId::default() {
                 self.player_data.character.actor_id

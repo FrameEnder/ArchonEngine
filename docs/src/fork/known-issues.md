@@ -59,6 +59,12 @@ add one when something is found.
 
 ## Quests
 
+* **The Waking Sands' layer filter** (2026-10-26) is known for The Scions of the Seventh Dawn (90338) and from A Wild
+  Rose by Any Other Name on (90339) only; later visits get 90339 until their keys are recorded (a capture of retail
+  there, or the zone's filter log matched to the story). Other zones with several layer filters send 0, as before.
+  The server's own event objects there still follow the first filter for the territory, not the key. Untested in
+  game.
+
 * **Into a Copper Hell** (660) relies on quest battle 44's director (another branch) to set sequence 5 when the
   battle is won; without it the quest stays at 4 after the battle. Its duty step, like 245's, is forgotten if the
   player logs out inside the cleared Copperbell Mines. EOBJECT0's empty scene 11 (seq 4) does nothing here.

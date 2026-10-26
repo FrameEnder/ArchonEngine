@@ -1,0 +1,9 @@
+{
+    "comment": "Which of a zone's layer filters (its LVB's layer sets, by ID) the client is told to show (ZoneInit's and ActorSetPos' transition_territory_filter_key), by quest progress. Retail's server picks it; the client's layout shows a layer only if its filter list has (or, for some, hasn't) that key, and with 0 in a zone like these every stage of the story stands there at once (Bob's Waking Sands screenshot, 2026-10-26). For each territory, the last entry whose quest has been accepted or completed applies (an entry without one is the default). Recorded: Bob's Chronofoil capture afe32479 visit 0.10 (2026-10-25), the Waking Sands during The Scions of the Seventh Dawn (509): 90338 in ZoneInit at its last step and in the ActorSetPos after it was completed; 90339 in the ActorSetPos as A Wild Rose by Any Other Name (510) was accepted, and after.",
+    "territories": {
+        "212": [
+            { "key": 90338 },
+            { "key": 90339, "quest": 510 }
+        ]
+    }
+}
