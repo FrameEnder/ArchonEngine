@@ -32,7 +32,10 @@ impl ZoneConnection {
             let inventory = &self.player_data.inventory;
 
             main_weapon_id = inventory.get_main_weapon_id(&mut game_data);
-            sub_weapon_id = inventory.get_sub_weapon_id(&mut game_data);
+            sub_weapon_id = inventory.get_shown_sub_weapon_id(
+                &mut game_data,
+                self.player_data.classjob.current_class as u8,
+            );
             model_ids = inventory.legacy_model_ids(&mut game_data);
             second_model_stain_ids = inventory.second_model_stain_ids();
         }

@@ -328,7 +328,9 @@ impl WorldDatabase {
                 customize: customize.chara_make.customize,
                 model_main_weapon: inventory.contents.get_main_weapon_id(game_data).into(),
                 model_sub_weapon: <WeaponModelId as Into<u64>>::into(
-                    inventory.contents.get_sub_weapon_id(game_data),
+                    inventory
+                        .contents
+                        .get_shown_sub_weapon_id(game_data, classjob.current_class as u8),
                 ) as i32,
                 model_ids: inventory
                     .contents

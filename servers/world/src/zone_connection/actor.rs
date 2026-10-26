@@ -248,7 +248,10 @@ impl ZoneConnection {
             look,
             display_flags,
             main_weapon_model: inventory.get_main_weapon_id(&mut game_data),
-            sec_weapon_model: inventory.get_sub_weapon_id(&mut game_data),
+            sec_weapon_model: inventory.get_shown_sub_weapon_id(
+                &mut game_data,
+                self.player_data.classjob.current_class as u8,
+            ),
             models: inventory.legacy_model_ids(&mut game_data),
             second_model_stain_ids: inventory.second_model_stain_ids(),
             position: self.player_data.volatile.position,

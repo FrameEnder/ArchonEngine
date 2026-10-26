@@ -730,6 +730,16 @@ pub enum ServerZoneIpcData {
         #[brw(pad_after = 4)]
         actions: [CraftingActionPreview; 21],
     },
+    /// A recipe made for the first time: one byte of the completed recipes bitmask (`CraftingLog`'s), which the
+    /// client stores as is (7.57's handler at 0x140B52C90; Bob's Chronofoil capture of 2026-10-24: recipe 3812 sent
+    /// index 476, value 0x08.)
+    RecordCraftingLog {
+        /// Index into the bitmask.
+        index: u16,
+        /// The byte's new value.
+        #[brw(pad_after = 5)] // unused
+        value: u8,
+    },
     /// How many gathers in a row at this node have succeeded so far (1, 2, 3…; 0 when the node's window closes. Bob's
     /// Chronofoil capture of 2026-10-24; 7.57's HandleGatheringSuccessfulChainCountPacket.)
     GatheringChainCount {

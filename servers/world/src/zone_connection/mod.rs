@@ -594,7 +594,7 @@ impl ZoneConnection {
         // crafting log
         {
             let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::CraftingLog {
-                bitmask: Vec::default(),
+                bitmask: self.player_data.quest.completed_recipes.data.clone(),
             });
             self.send_ipc_self(ipc).await;
         }

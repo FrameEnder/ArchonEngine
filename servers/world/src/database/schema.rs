@@ -44,6 +44,7 @@ diesel::table! {
         completed_levequests -> Text,
         gathered_gathering_items -> Text,
         shared_fates -> Text,
+        completed_recipes -> Text,
     }
 }
 

@@ -25,15 +25,15 @@ LiveEvent (category 300) with that event number. As retail sent it:
 
 | Step | Client | Server |
 |---|---|---|
-| Synthesize | ClientTrigger 700 `BeginCraft` (the recipe) | EventStart; conditions 15 and 73 (`Synthesizing`) set, 16 off; SetMode 5; LiveEvent 38 and 39 (the main and off hand models, low and high halves); LiveEvent 8 StartCraft `[0, 136153, 1]` (0 from the log, 3 for *Synthesize again*, 4 for a quick synthesis; 136153 was the same every time, meaning unknown); scene `[1, 0, item, 0]`; StatusEffectList (CP full) |
+| Synthesize | ClientTrigger 700 `BeginCraft` (the recipe) | EventStart; conditions 15 and 73 (`Synthesizing`) set, 16 off; SetMode 5; LiveEvent 38 and 39 (the main and off hand models, low and high halves; 39 is always 0, see [The tools](#the-tools)); LiveEvent 8 StartCraft `[0, 136153, 1]` (0 from the log, 3 for *Synthesize again*, 4 for a quick synthesis; 136153 was the same every time, meaning unknown); scene `[1, 0, item, 0]`; StatusEffectList (CP full) |
 | Materials chosen | **EventReturnHandler16** `[0, NQ×6, HQ×6]` (a scene return, not a yield) | the recipe for the crafter's level, the start quality; scene `[2, recipe, start quality, start HQ %]` (`[12, recipe, how many, 0]` for a quick synthesis) |
 | The stacks used | **EventReturnHandler128** (opcode 866, 77 results): `[1, item[30] (HQ = ID + 1,000,000), amount[30], container[30], slot[30]` (u16 pairs)`, count]`; crystals' container is 255 | kept, not taken yet; LiveEvent 10 `[2]` (the condition's look: the condition + 1); CraftingActionPreviews; scene `[3, 0, 0, 0]` opens the Synthesis window |
 | An action | yield `[10, id]` for a CraftAction row, `[9, id]` for an Action row (the buffs; these also come as an ActionRequest) | LiveEvent 12 PlayAnimation (CraftAction rows); retail's ~2 s later: ActorControl GainEffect for each status gained or changed (`[2191, 6]` Muscle Memory, `[251, n]` Inner Quiet); LiveEvent 10 `[condition + 1]` when the condition changed; StatusEffectList (CP already taken); CraftingActionPreviews; the step's scene (EventScene64) |
-| Progress full | yield 11 (after StateFlags 0x4) | the materials taken; the item (HQ flag, the crafter's signature); LiveEvent 15 (NQ) or 16 (HQ, then 17); EventLogMessage 1158 and 1156 with the item (+1,000,000 if HQ); EXP; then (retail 1.5–3 s later) back to the log: condition 16 on, 15 and 73 off, LiveEvent 11, scene `[4, 0, 0, 0]`, StatusEffectList (CP full, no statuses) |
+| Progress full | yield 11 (after StateFlags 0x4) | the materials taken and the item (HQ flag, the crafter's signature), sent slot by slot (see [The inventory](#the-inventory)); LiveEvent 15 (NQ) or 16 (HQ, then 17); EventLogMessage 1158 and 1156 with the item (+1,000,000 if HQ); the first time for this recipe, RecordCraftingLog and log 1178 with the item (see [The Crafting Log](#the-crafting-log)); EXP; then (retail 1.5–3 s later) back to the log: condition 16 on, 15 and 73 off, LiveEvent 11, scene `[4, 0, 0, 0]`, StatusEffectList (CP full, no statuses) |
 | Durability gone | yield 12 (StateFlags 0x8) | LiveEvent 20; **every material lost**; EventLogMessage 1177 and 1160 (no params); scene 8 with 22 params, all 0 (nothing back) |
 | After scene 8 | yield 3 | back to the log, as above |
 | Synthesize again | yield `[4, recipe, 0, 0]` | the Synthesize row's sequence with StartCraft 3 |
-| Quick synthesis | yield `[5, recipe, how many, ?]`, then the return and the list (its command 13) | StartCraft 4 …; after the list: log 1150 with the item, LiveEvent 10 `[2]`, LiveEvent 21; per item (retail: one every ~2 s) log 1158, the item, LiveEvent 18 `[item, made so far]`, EXP; back to the log (retail after the client's ClientTrigger 712) |
+| Quick synthesis | yield `[5, recipe, how many, ?]`, then the return and the list (its command 13) | StartCraft 4 …; after the list: log 1150 with the item, LiveEvent 10 `[2]`, LiveEvent 21; per item (retail: one every ~2 s) log 1158, the materials' and the item's slots, LiveEvent 18 `[item, made so far]`, EXP; back to the log (retail after the client's ClientTrigger 712) |
 | Quit | yield 7 (from the log, or the synthesis' Quit) | scene `[6, 0, 0, 0]` |
 | After scene 6 | yield 8 | the materials lost if a synthesis was under way; StatusEffectList; conditions off; LiveEvent 38/39, 40 and 11; EventFinish (the whole log closes) |
 
@@ -52,6 +52,42 @@ Preparatory Touch, Delicate Synthesis, Trained Eye, Trained Finesse, Refined Tou
 class' own CraftAction row (`GameData::craft_action_for_class`). Efficiency is the potency with 0x8000 when it differs
 from the action's usual one (a buff, a level trait) and 0x4000 for a halved Groundwork; progress and quality what the
 action would add now; state 0 usable, 1 level too low, 2 not enough CP, 3 not usable now (`Craft::previews`).
+
+### The tools
+
+Retail's Equip, spawn and LiveEvent 39 carry **no sub weapon** for a Disciple of the Hand or Land: 106 of 106
+Equip packets of classes 8–18 in Bob's Chronofoil captures have an empty off hand, a secondary tool equipped or not,
+and LiveEvent 39 was 0 in every synthesis. The client puts the crafting station (the Carpenter's workbench, the
+Blacksmith's anvil…) out itself while synthesizing; the main hand's Item row has it as its sub model, which Kawari
+used to send as the off hand, so the station stood next to the crafter all the time and twice while synthesizing (Bob's
+2026-10-26 bundle). `Inventory::get_shown_sub_weapon_id(classjob)` is what the others see (Equip, spawn, the lobby,
+LiveEvent 39): empty for classes 8 (Carpenter) to 18 (Fisher), `get_sub_weapon_id` otherwise.
+
+### The inventory
+
+Retail sends what a synthesis changed slot by slot (Bob's Chronofoil capture of 2026-10-24, the first synthesis of
+recipe 3812): **UpdateInventorySlot** for each material stack, then each crystal slot, **InventoryActionAck**
+`[0xFFFFFFFF, 6]`, then UpdateInventorySlot for the item made (with its signature), then the worn gear's slots
+(`crate::spiritbond`). Kawari does the same (`send_synthesis_slots`; a failure or a quit sends the materials' slots).
+
+Kawari used to resend the whole inventory instead (ItemInfo and ContainerInfo for every bag). The client doesn't take
+that as a replacement of the slots it already has (Bob's 2026-10-26 bundles): a material stack the server emptied was
+still in the client's bags, so the next synthesis listed it again (the server's warning *The materials list has 1 of
+27689 in Inventory1 21, which isn't there!*), and the item made, which the server had put in that slot, never showed.
+An emptied slot now goes as an UpdateInventorySlot of an empty item, as the item moves' do (`zone_connection/item.rs`).
+Retail's capture had no stack emptied by a synthesis, so that part isn't retail's verified packet.
+
+### The Crafting Log
+
+The client keeps a **completed recipes** bitmask (801 bytes, by recipe ID, the quests' bit order: byte ID / 8, bit
+`0x80 >> ID % 8`); *Quick Synthesis* is offered only for a recipe in it. It comes whole at login (**CraftingLog**) and
+one byte at a time when a recipe is made for the first time: **RecordCraftingLog** (fork opcode 520 on 2026.10.16,
+8 bytes: `u16 index, u8 the byte's new value`, 5 unused; its handler, 7.57 `0x140B52C90` next to
+HandleCompletedRecipesPacket, stores the byte as is). Retail sent `[476, 0x08]` after recipe 3812's first synthesis,
+after logs 1158 and 1156, then EventLogMessage **1178** with the item (NQ ID); the next yield was a quick synthesis
+of 3812. Kawari keeps the bitmask in the `quest` table (`completed_recipes`, migration
+`update-2026-10-26_completed_recipes`; characters from before have `[]`, read as nothing made) and sends both packets
+(`record_in_crafting_log`). Recipes made before this was saved need making once more.
 
 ### A step's scene
 

@@ -27,7 +27,7 @@ upstream's [Opcodes](../opcodes.md) page.
   it probably is.
 
 Since upstream's 7.57h1 (2026.10.16, merged on the `upstream-7.57h1` branch, in `master` since 2026-10-21) every entry is found on 2026.10.16 (see
-[Finding them on 7.57h1](#finding-them-on-757h1) below). 34 of the 38 have finders (2026-10-25; 14 before), so the startup scan checks them on each start and re-finds them
+[Finding them on 7.57h1](#finding-them-on-757h1) below). 35 of the 39 have finders (2026-10-26; 14 before 2026-10-25), so the startup scan checks them on each start and re-finds them
 after the next patch, and every one is in the shipped fingerprints. The four without can't have one: their code is
 the same as other packets' (RequestPlayerRetainerInfo, a request without arguments; GatheringPointPhase; the two
 ItemMarketBoards, which share a handler); after a patch only the fingerprints find them (the ItemMarketBoards as a
@@ -64,6 +64,7 @@ pair of candidates).
 | GatheringPointPhase | server → client | 845 | | 8 | One phase slot changes (slot, phase): a used-up point comes back at another position. From its handler in the 10.16 client and Bob's capture of 2026-10-24 (with ActorControlSelf 109 as a third point is used up). No finder (its handler's code is the same as two others'). See [Gathering](gathering.md#integrity-and-moving-on). |
 | GatheringChainCount | server → client | 618 | | 8 | The gathering chain at a node (u32): after each gather from the second in a row, and 0 as the window closes. From Bob's capture of 2026-10-24. Finder: its handler. See [Gathering](gathering.md#at-the-node). |
 | CraftingActionPreviews | server → client | 347 | | 424 | What each crafting action would do now (21 entries: action, efficiencies, progress, quality, state), before the Synthesis window opens and with every step. Same capture. Finder: its handler. See [Crafting](crafting.md#craftingactionpreviews). |
+| RecordCraftingLog | server → client | 520 | | 8 | A recipe made for the first time: one byte of the completed recipes bitmask (u16 index, u8 new value). From Bob's capture of 2026-10-24 (recipe 3812: `[476, 0x08]`). Finder: its handler (2026-10-26). See [Crafting](crafting.md#the-crafting-log). |
 | GlamourDresser | server → client | 436 | | 2408 | One page of the glamour dresser (page, 400 items, their stains), twice as it opens. From Bob's capture of 2026-10-24 (the Hourglass) and its dispatcher case in the 10.16 client (vtable entry 0x1348). Finder (written by `suggest-finders`; it reads 202 on 10.06). See [Glamour](glamour.md). |
 | GlamourPlates | server → client | 400 | | 1440 | The 20 glamour plates. Same capture (vtable entry 0x1350). Finder (written by `suggest-finders`; it reads 649 on 10.06). |
 | GlamourPlateUpdated | server → client | 621 | | 80 | One plate after it was saved. Same capture (vtable entry 0x1358). Finder (written by `suggest-finders`; it reads 868 on 10.06). |
@@ -176,7 +177,7 @@ What happens on patch day, end to end (the server needs nothing from anyone unti
    * newer: it finds every zone opcode from the new `ffxiv_dx11.exe` with the fingerprints (about three seconds;
      [below](#every-opcode-after-a-game-update)), writes `auto-opcodes/<version>.json` and the new version's
      fingerprints, and the patch server lets that version in;
-   * then the fork's finders run on the same executable (34 of 38 fork opcodes), and each one that reads something
+   * then the fork's finders run on the same executable (35 of 39 fork opcodes), and each one that reads something
      other than the opcode in use is logged with the value to save; the fingerprints' answer and the finder's are two
      independent methods, so when they agree the opcode is right;
    * client packets the game now sends with **another size** are warned about (`ClientZoneIpcType::X: the game now
