@@ -24,7 +24,7 @@ Both importers read the same members (the server's `apply_extended`, Kawari Web'
 | `kawari_extended` | Kawari |
 |---|---|
 | `crystals`, `key_items` | inventory (crystals keep their slot's item ID when empty) |
-| `saddlebag` (if loaded) | `inventory.saddlebag`, both pages (Kawari Web makes them first on an inventory saved before Kawari had a saddlebag: from 2.22.3; before, it dropped the saddlebag there) |
+| `saddlebag` (if loaded) | `inventory.saddlebag`, both pages (Kawari Web makes them first on an inventory saved before Kawari had a saddlebag: from 2.22.3; before, it dropped the saddlebag there). From 1.8.1.3002 it is the saddlebag as last seen this session (`SaddlebagWatch`: every second while the InventoryBuddy window is open or the pages hold items), with `saddlebag_seen_at`; not seen, it's left out. Before, it was read at backup whenever the client called the container loaded, which it does with nothing in it until opened, so a backup could record a full saddlebag as empty (Kawari Web 2.22.4 keeps the server's then) |
 | `glamour.dresser`, `.plates`, `.armoire` (each if loaded) | `inventory.glamour` ([Glamour](glamour.md)) |
 | `active_quests` | `quest.active`: ID less 65536, sequence, the six variables (flags and the accepting class aren't kept) |
 | `completed_leves`, `completed_legacy_quests`, `unlocked_map_markers`, `gathering_log` | the `quest` table's bitmasks |

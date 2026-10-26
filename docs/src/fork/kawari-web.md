@@ -46,6 +46,13 @@ built from), container logs.
   already there, and an inventory saved before the world server had a saddlebag has no `saddlebag` key, so the
   backup's saddlebag was dropped without a word (Lira Ormont, bundle 20261026-095541: her backup held 15 stacks).
   Characters imported before 2.22.3 get it by importing the backup again, logged out.
+* **An empty saddlebag doesn't empty a full one** (2.22.4): a backup without `saddlebag_seen_at` (Auracite (Kawari)
+  before 1.8.1.3002) whose saddlebag pages hold nothing leaves the server's saddlebag as it is when that holds
+  items, with the note "saddlebag kept". Those plugins read the saddlebag whenever the client said it was loaded,
+  and the client says so with nothing in it until the saddlebag has been opened that session: Lira Ormont's backup
+  d9b52e55 (2026-10-24 21:05 UTC) has `saddlebag_loaded: true` and two empty pages, 40 minutes after 06ffbf5d held
+  15 stacks, and importing it emptied her saddlebag (bundle 20261026-144730). A backup with `saddlebag_seen_at` is
+  taken as it stands, empty or not.
 * **Blank inventories** (2.22.3, `chardata._blank_inventory`, used for new characters from another character's
   shape): the saddlebag's pages are emptied and the glamour dresser, plates and armoire cleared (both were copied
   from the other character), and the bags' pages keep their `kind`. The bundled `inventory_template.json` now has
