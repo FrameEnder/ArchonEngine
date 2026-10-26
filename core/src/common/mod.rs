@@ -23,7 +23,9 @@ mod dropin;
 pub use dropin::*;
 
 mod timeline;
-pub use timeline::{RecordedAmount, Rotation, RotationAction, Timeline, Timepoint, TimepointData};
+pub use timeline::{
+    RecordedAmount, Rotation, RotationAction, Timeline, Timepoint, TimepointData, TimepointTarget,
+};
 
 use crate::constants::{GRIDANIA_POS_START, LIMSA_POS_START, ULDAH_POS_START};
 

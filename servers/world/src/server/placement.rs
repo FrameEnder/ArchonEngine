@@ -145,7 +145,13 @@ impl Placement {
         }
 
         if self.opposite.is_some() {
-            return self.opposite_spot(at, positions, own_target?);
+            // Only a spot that keeps it near its anchors: a tank sent round to one beyond its limit from the player,
+            // then back inside it, then round again, circled through its target every second and the enemy turned
+            // with it, its cones and areas aimed wherever it had turned (Kottos, Bob's bundle of 2026-10-26.)
+            let limit = (self.within - RETURN_MARGIN).max(0.0);
+            return self
+                .opposite_spot(at, positions, own_target?)
+                .filter(|spot| anchors.iter().all(|anchor| spot.distance(*anchor) <= limit));
         }
 
         let (tank, beyond) = self.behind?;

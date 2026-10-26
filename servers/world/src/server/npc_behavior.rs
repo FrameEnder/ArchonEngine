@@ -10,7 +10,7 @@ use kawari::{
     common::{
         AUTO_ATTACK_RATE, JumpState, MOB_WANDER_JITTER, MOB_WANDER_TIME, MoveAnimationState,
         MoveAnimationType, ObjectId, ObjectTypeId, ObjectTypeKind, Position,
-        STRIKING_DUMMY_NAME_ID, TimepointData,
+        STRIKING_DUMMY_NAME_ID, TimepointData, TimepointTarget,
     },
     ipc::zone::{
         ActionRequest, ActionType, ActorControlCategory, BattleNpcSubKind, CharacterDataFlag,
@@ -179,8 +179,15 @@ pub fn npc_behavior(
         MAX_OFF_MESH_GAP
     };
 
+    let busy_now = Instant::now();
+    instance.busy_npcs.retain(|_, until| *until > busy_now);
+
     // const pass
     for (id, actor) in &instance.actors {
+        // Kept busy by its director (`director:busy_bnpc`): it stays as it is.
+        if instance.busy_npcs.contains_key(id) {
+            continue;
+        }
         // A director's helper does only what it's told (`director:hold_bnpc`.)
         if instance.held_npcs.contains(id) {
             continue;
@@ -373,6 +380,7 @@ pub fn npc_behavior(
             spawn,
             last_position,
             timeline_position,
+            timeline_checked,
             timeline,
             enmity,
             autoattack_timing,
@@ -410,6 +418,16 @@ pub fn npc_behavior(
             // NOTE: this is *intentional* as I believe in retail the timing of actions are dependent on when the actor spawned
             // This doesn't have an effect if you re-aggro them or whatever.
             *timeline_position += 1; // NOTE: change if the length of a server tick changes
+            // A pull-relative timeline starts when the fight does, and again at the next one.
+            if timeline.from_pull && *state != NpcState::Hate {
+                *timeline_position = 0;
+                *timeline_checked = 0;
+            }
+
+            // Kept busy by its director: its timeline counts on (above), but it does nothing of its own.
+            if instance.busy_npcs.contains_key(id) {
+                continue;
+            }
 
             // Enemies stand still (and keep their target) while they cast.
             // (The cast stays recorded afterwards, for the action to land where it was aimed.)
@@ -816,7 +834,99 @@ pub fn npc_behavior(
             // Only update the timeline on exact second marks. A timeline that always plays (Sastasha's giant clams opening
             // and closing) runs whether or not the NPC is fighting; its actions still need a target. Nothing read the
             // flag before, so the clams never moved (Bob's bundle of 2026-10-23.)
-            if (can_take_action || timeline.timeline_always_plays) && (*timeline_position % 2) == 0
+            // A pull-relative timeline (`Timeline::from_pull`): every point due since it last looked, to the half
+            // second, on whom it says, whether in reach or not.
+            let mut used_timeline = false;
+            if timeline.from_pull
+                && *state == NpcState::Hate
+                && spawn.common.target_id.object_id.is_valid()
+            {
+                let from = *timeline_checked as f32 * BEHAVIOR_TICK_SECONDS;
+                let to = *timeline_position as f32 * BEHAVIOR_TICK_SECONDS;
+                *timeline_checked = *timeline_position;
+                let due: Vec<TimepointData> = timeline
+                    .points_between(from, to)
+                    .into_iter()
+                    .map(|point| point.data.clone())
+                    .collect();
+                for data in due {
+                    match data {
+                        TimepointData::Action {
+                            action_id,
+                            lockon,
+                            target,
+                        } => {
+                            let fighting = spawn.common.target_id.object_id;
+                            let on = match target {
+                                TimepointTarget::Target => fighting,
+                                TimepointTarget::Itself | TimepointTarget::Nobody => *id,
+                                TimepointTarget::Other => {
+                                    let others: Vec<ObjectId> = enmity
+                                        .keys()
+                                        .copied()
+                                        .filter(|other| *other != fighting)
+                                        .collect();
+                                    fastrand::choice(&others).copied().unwrap_or(fighting)
+                                }
+                            };
+                            if let Some(lockon) = lockon {
+                                new_lockons.push((on, lockon));
+                            }
+                            let cast_time_seconds = {
+                                let mut game_data = game_data.lock();
+                                game_data
+                                    .get_casttime(action_id)
+                                    .map(|(category, cast_time)| {
+                                        parameters.get_adjusted_cast_time(category, cast_time)
+                                    })
+                                    .unwrap_or(0) as f32
+                                    / 1000.0
+                            };
+                            // It faces whom it casts on as it begins (and keeps that facing, its area's, until it
+                            // lands.)
+                            let at = positions
+                                .get(&on)
+                                .copied()
+                                .unwrap_or(spawn.common.position.0);
+                            if on != *id {
+                                let here = spawn.common.position.0;
+                                if flat_distance(here, at) >= MIN_STEP {
+                                    spawn.common.rotation =
+                                        f32::atan2(at.x - here.x, at.z - here.z);
+                                }
+                            }
+                            let request = ActionRequest {
+                                action_id,
+                                action_type: ActionType::Action,
+                                rotation1: spawn.common.rotation,
+                                target: ObjectTypeId {
+                                    object_id: on,
+                                    object_type: ObjectTypeKind::None,
+                                },
+                                ..Default::default()
+                            };
+                            *cast = Some(NpcCast {
+                                until: Instant::now() + Duration::from_secs_f32(cast_time_seconds),
+                                target_position: at,
+                                rotation: spawn.common.rotation,
+                                action_id,
+                            });
+                            new_action_requests.push((*id, request, cast_time_seconds));
+                            used_timeline = true;
+                        }
+                        TimepointData::TimelineState { states } => {
+                            new_timeline_states.push((spawn.gimmick_id, states));
+                        }
+                        TimepointData::Invulnerability { invulnerable } => {
+                            *currently_invulnerable = invulnerable;
+                        }
+                    }
+                }
+            }
+
+            if !timeline.from_pull
+                && (can_take_action || timeline.timeline_always_plays)
+                && (*timeline_position % 2) == 0
             {
                 // TODO: something worth thinking about is whether to simplify timeline_always_play, and have it always play anyway but skip Action points?
 
@@ -826,7 +936,9 @@ pub fn npc_behavior(
                     timeline_position_seconds as f32 % (timeline.duration() as f32 + 0.5);
                 for timepoint in timeline.points_at(real_timeline_position as i32) {
                     match &timepoint.data {
-                        TimepointData::Action { action_id, lockon } => {
+                        TimepointData::Action {
+                            action_id, lockon, ..
+                        } => {
                             if spawn.common.target_id.object_id.is_valid() && can_take_action {
                                 if let Some(lockon) = lockon {
                                     new_lockons.push((spawn.common.target_id.object_id, *lockon));
@@ -873,8 +985,9 @@ pub fn npc_behavior(
             }
 
             // Its class rotation, checked every tick (it keeps its own pace.)
-            let mut used_rotation = false;
+            let mut used_rotation = used_timeline;
             if can_take_action
+                && !used_timeline
                 && let Some(rotation) = &timeline.rotation
                 && spawn.common.target_id.object_id.is_valid()
             {
@@ -926,8 +1039,12 @@ pub fn npc_behavior(
             if *state == NpcState::Hate {
                 *autoattack_timing += 1;
             }
+            // Not as it begins a cast: the auto-attack's own (instant) cast record took the cast's place, so the NPC
+            // swung, walked and turned through its cast bar and its area went off facing wherever it turned (Kottos,
+            // Bob's bundle of 2026-10-26.)
             if can_take_action
                 && !used_rotation
+                && cast.is_none_or(|cast| cast.until <= Instant::now())
                 && spawn.common.target_id.object_id.is_valid()
                 && timeline.autoattack_action_id != 0
                 && *autoattack_timing >= NPC_AUTO_ATTACK_TICKS

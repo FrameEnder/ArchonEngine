@@ -154,6 +154,23 @@ on itself) 1 s after the third. The helpers go when it dies. Kawari: `onActorCas
 director methods (`spawn_bnpc`'s actor IDs, `warp_bnpc`, `actor_use_action`, `jump_bnpc`, `delay`); 28549's and
 28544's damage is a stand-in (28546's, 44.5) since nobody was caught by either (`CopperbellHelper_9020.json`).
 
+**Kottos' schedule** counts from its pull, the same to a tenth of a second in all three runs however long it had
+stood before (5.2–10.0 s after it appeared): auto-attack 870 at 3.0 s and every 3.0 s when it isn't busy; 28545 (4.7 s,
+the tank, lock-on 218) at 5.2; 28543 at 15.3 (its leaps above; no auto-attack or walking from then until 28546 lands);
+28546 (3.7 s, round itself) at 29.6; 28547 (4.7 s, on someone other than its target at random: a lancer, a healer, a
+ninja) at 39.1; 28543, 28546 and 28547 again 37 s later (52.3, 66.6, 76.0); then 28545 at 86.2 and 28543 at 99.4, so
+from 86.2 the round repeats every 81 s with 13.2 s between its 28545 and 28543 (the first round's were 10.1 apart;
+past 81 s only the Duty Support run, 101 s, shows it). Kawari: `CopperbellBoss1_14460.json` with `from_pull` (new:
+the timeline counts from the pull to the half second, each point fires when due whether its target is in reach or
+not, a point can repeat on its own `every`, and an action can go on its target, `other`, `itself` or `nobody`); 28549
+is the director's, 1 s after each of the first two landings; `busy_bnpc` keeps it from acting on its own from 28543
+to 28546. Before (Bob's bundle of 2026-10-26) its timeline counted from its spawn and only fired when it was in reach,
+so it opened with 28543 and leapt nowhere (28549 came on its own); it swung its auto-attack as it began a cast, which
+replaced the cast's record, so it walked and turned through its cast bars and its areas went off facing wherever it
+had turned, not where they were drawn; its tank bot circled through it (sent round to a spot beyond its limit from the
+player and back, every second), turning it; and the first marker's area panicked the server (an EObj asked for its
+CommonSpawn).
+
 **The bosses** (`spawn_boss`: sealed 15 s after their pull, log 2012 (PlaceName, 15) then 2013; opened at their death,
 log 2014; the battle music, 37, at the first two's pulls and off at their deaths):
 

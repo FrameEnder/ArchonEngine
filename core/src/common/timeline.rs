@@ -13,6 +13,12 @@ pub struct Timeline {
     pub timeline_always_plays: bool,
     /// The timeline points.
     pub timepoints: Vec<Timepoint>,
+    /// The points' times count from the NPC's pull (its first target), to the half second, and each action is used
+    /// when due whether its target is in reach or not, as retail's bosses keep their schedule: the Copperbell Mines'
+    /// Kottos cast at 5.2, 15.3, 29.6 and 39.1 s from its pull in all three of Bob's runs, however long it stood
+    /// before. Otherwise they count from its spawn in whole seconds, used only when in reach (upstream's.)
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub from_pull: bool,
     /// A series of actions (to play in sequence) on death.
     #[serde(default)]
     pub on_death: Vec<TimepointData>,
@@ -143,7 +149,7 @@ impl Timeline {
     pub fn duration(&self) -> i32 {
         let mut duration = 0;
         for point in &self.timepoints {
-            duration = duration.max(point.time);
+            duration = duration.max(point.time as i32);
         }
 
         duration
@@ -151,15 +157,55 @@ impl Timeline {
 
     /// Returns all points happening at the specified time, if any.
     pub fn points_at(&self, point: i32) -> Vec<&Timepoint> {
-        self.timepoints.iter().filter(|x| x.time == point).collect()
+        self.timepoints
+            .iter()
+            .filter(|x| x.time == point as f32)
+            .collect()
+    }
+
+    /// A `from_pull` timeline's points due in the tick from `from` up to (not including) `to` seconds after the pull:
+    /// each at its `time`, then every `every` seconds after it if it repeats.
+    pub fn points_between(&self, from: f32, to: f32) -> Vec<&Timepoint> {
+        self.timepoints
+            .iter()
+            .filter(|point| match point.every {
+                Some(every) if every > 0.0 => {
+                    let since = (from - point.time).max(0.0);
+                    let next = point.time + (since / every).ceil() * every;
+                    next >= from && next < to
+                }
+                _ => point.time >= from && point.time < to,
+            })
+            .collect()
     }
 }
 
 /// Represents a point on the timeline.
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
 pub struct Timepoint {
-    pub time: i32,
+    /// Seconds: from the NPC's spawn (whole), or from its pull with `Timeline::from_pull` (to the half second.)
+    pub time: f32,
+    /// With `Timeline::from_pull`: it comes again every this many seconds after `time` (Kottos' 28545 every 81 s,
+    /// its 28543, 28546 and 28547 every 37), each point keeping its own period.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub every: Option<f32>,
     pub data: TimepointData,
+}
+
+/// Whom a timeline's action is used on.
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone, Copy, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum TimepointTarget {
+    /// Its target (the one it's fighting.)
+    #[default]
+    Target,
+    /// Someone else on its enmity list, at random (Kottos' 28547: a healer, a ninja, a lancer in the three runs,
+    /// never the one it was fighting.) Its target when there's no one else.
+    Other,
+    /// Itself (an area around it, cast on itself: Kottos' 28546.)
+    Itself,
+    /// No one (0xE0000000), cast where it stands: Kottos' 28543.
+    Nobody,
 }
 
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
@@ -174,6 +220,9 @@ pub enum TimepointData {
         /// target (218 on the Copperbell Mines' three bosses' busters: ActorControl 34 from the target.)
         #[serde(default, skip_serializing_if = "Option::is_none")]
         lockon: Option<u32>,
+        /// Whom it's used on (its target unless said.)
+        #[serde(default, skip_serializing_if = "is_default_target")]
+        target: TimepointTarget,
     },
     /// Animates timelines for the gimmick this actor is bound to, such as Giant Clams.
     #[serde(rename = "timeline_state")]
@@ -181,6 +230,10 @@ pub enum TimepointData {
     /// Changes the invulnerability state of this NPC.
     #[serde(rename = "invulnerability")]
     Invulnerability { invulnerable: bool },
+}
+
+fn is_default_target(target: &TimepointTarget) -> bool {
+    *target == TimepointTarget::Target
 }
 
 #[cfg(test)]
@@ -205,11 +258,14 @@ mod tests {
                 hitbox_radius: 0.0,
                 animation_locks: BTreeMap::default(),
                 rotation: None,
+                from_pull: false,
                 timepoints: vec![Timepoint {
-                    time: 20,
+                    time: 20.0,
+                    every: None,
                     data: TimepointData::Action {
                         action_id: 872,
-                        lockon: None
+                        lockon: None,
+                        target: TimepointTarget::Target,
                     }
                 }]
             }
@@ -234,9 +290,71 @@ mod tests {
             point.data,
             TimepointData::Action {
                 action_id: 28764,
-                lockon: Some(218)
+                lockon: Some(218),
+                ..
             }
         )));
+    }
+
+    /// Kottos' timeline gives retail's schedule: the ticks its casts begin in, from its pull (Bob's three Copperbell
+    /// Mines runs: 5.2, 15.3, 29.6, 39.1, 52.3, 66.6, 76.0, 86.2, 99.4.)
+    #[test]
+    fn kottos_schedule() {
+        let json =
+            std::fs::read_to_string("../resources/timelines/CopperbellBoss1_14460.json").unwrap();
+        let timeline: Timeline = serde_json::from_str(&json).unwrap();
+        assert!(timeline.from_pull);
+        let mut casts = Vec::new();
+        for tick in 0..200 {
+            let from = tick as f32 * 0.5;
+            for point in timeline.points_between(from, from + 0.5) {
+                if let TimepointData::Action { action_id, .. } = point.data {
+                    casts.push((from, action_id));
+                }
+            }
+        }
+        assert_eq!(
+            casts,
+            vec![
+                (5.0, 28545),
+                (15.0, 28543),
+                (29.5, 28546),
+                (39.0, 28547),
+                (52.0, 28543),
+                (66.5, 28546),
+                (76.0, 28547),
+                (86.0, 28545),
+                (99.0, 28543),
+            ]
+        );
+    }
+
+    /// A pull-relative timeline's points come at their time, then every `every` seconds after it.
+    #[test]
+    fn points_every_so_often() {
+        let timeline: Timeline = serde_json::from_str(
+            r#"{"autoattack_action_id": 870, "timeline_always_plays": false, "from_pull": true, "timepoints": [
+                {"time": 5.2, "every": 81, "data": {"type": "action", "action_id": 28545}},
+                {"time": 15.3, "every": 37, "data": {"type": "action", "action_id": 28543, "target": "nobody"}}
+            ]}"#,
+        )
+        .unwrap();
+        let due = |from: f32| -> Vec<u32> {
+            timeline
+                .points_between(from, from + 0.5)
+                .iter()
+                .filter_map(|point| match point.data {
+                    TimepointData::Action { action_id, .. } => Some(action_id),
+                    _ => None,
+                })
+                .collect()
+        };
+        assert_eq!(due(5.0), vec![28545]);
+        assert_eq!(due(5.5), Vec::<u32>::new());
+        assert_eq!(due(15.0), vec![28543]);
+        assert_eq!(due(52.0), vec![28543]);
+        assert_eq!(due(86.0), vec![28545]);
+        assert_eq!(due(0.0), Vec::<u32>::new());
     }
 
     #[test]

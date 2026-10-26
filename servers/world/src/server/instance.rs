@@ -173,6 +173,9 @@ pub struct Instance {
     /// Each bot party's leader: where they stood last tick and the way their formation faces (`party_bot`: it turns
     /// with them only as they move.)
     pub formation_facings: HashMap<ObjectId, (glam::Vec3A, f32)>,
+    /// NPCs a director keeps busy until when (`director:busy_bnpc`): they don't move or act on their own, though their
+    /// timelines go on.
+    pub busy_npcs: HashMap<ObjectId, std::time::Instant>,
     pub later_director_tasks: Vec<(std::time::Instant, crate::server::director::LuaDirectorTask)>,
     /// The fight here is over (a quest battle won, `npc_behavior::end_fight`): NPCs don't take anyone on again, whatever
     /// hits or heals them.
@@ -402,6 +405,7 @@ impl Instance {
                 spawn,
                 timeline,
                 timeline_position: 0,
+                timeline_checked: 0,
                 enmity: HashMap::new(),
                 autoattack_timing: 0,
                 currently_invulnerable: false,

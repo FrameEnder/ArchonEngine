@@ -765,9 +765,13 @@ pub fn execute_action(
                 .get_battalion_enemies(common_spawn.battalion as u32);
             let hits_npcs = timeline.recorded_amount(request.action_id, false).is_some();
             for (id, other) in &instance.actors {
+                // Only characters: EObjs and coffers have no CommonSpawn (asking one for it panicked the server as
+                // Kottos' first marker went off, Bob's bundle of 2026-10-26.)
+                if area_side(other).is_none() {
+                    continue;
+                }
                 let other_spawn = other.get_common_spawn();
                 if *id != from_actor_id
-                    && area_side(other).is_some()
                     && enemies
                         .get(other_spawn.battalion as usize)
                         .copied()

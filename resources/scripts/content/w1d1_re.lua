@@ -205,8 +205,11 @@ end
 -- three invisible helpers (BNpcBase 9020, all layout 9054923) come with it. As it begins 28543 (7.7 s, no target)
 -- they're put on three of four spots 7 yalms north, east, south and west of the arena's middle (ActorSetPos) and each
 -- casts 28544 there (8.7 s), 2 s apart: the first on north or south, the second on east or west, the third opposite
--- the first. As each one goes off, Kottos jumps onto its spot (ActorControl 239, then an ActorMove there), 9.1, 11.2
--- and 13.3 s after 28543 began: 28549 (its timeline) on the first two landings, 28546 after the third.
+-- the first. As each one goes off, Kottos jumps onto its spot (ActorControl 239, then an ActorMove there, facing the
+-- way it leapt), 9.1, 11.2 and 13.3 s after 28543 began, and uses 28549 (instant, round itself) 1.0 s after the first
+-- two landings (10.1 and 12.2 s); its timeline's 28546 comes 1.0 s after the third (14.3 s). From 28543 until then it
+-- does nothing else: no auto-attacks, no walking (`busy_bnpc`), as on retail (its first auto-attack after came as
+-- 28546 landed.)
 KOTTOS = 9053767
 KOTTOS_LEAP = 28543
 KOTTOS_HELPER = 9054923
@@ -217,6 +220,9 @@ KOTTOS_HELPER_Y = -9.266 -- where the helpers stood
 KOTTOS_LANDING_Y = -9.78 -- where Kottos landed
 KOTTOS_MARK_EVERY = 2.0
 KOTTOS_JUMPS = { 9.1, 11.2, 13.3 }
+KOTTOS_SLAM = 28549
+KOTTOS_SLAMS = { 10.1, 12.2 }
+KOTTOS_BUSY = 14.2 -- until its timeline's 28546 (14.3 s after 28543)
 kottos_helpers = {}
 
 function kottosSpot(name, y)
@@ -231,7 +237,7 @@ function kottosSpot(name, y)
     return { x = spot.x, y = y, z = spot.z }
 end
 
-function kottosLeaps(director)
+function kottosLeaps(director, kottos)
     local first = (math.random(2) == 1) and "north" or "south"
     local middle = (math.random(2) == 1) and "east" or "west"
     local last = (first == "north") and "south" or "north"
@@ -246,12 +252,16 @@ function kottosLeaps(director)
         director:delay((i - 1) * KOTTOS_MARK_EVERY)
         director:actor_use_action(helpers[i], KOTTOS_MARK)
     end
-    local from = { x = KOTTOS_MIDDLE.x, z = KOTTOS_MIDDLE.z + KOTTOS_SPOT_OFFSET / 3 }
+    director:delay(0)
+    director:busy_bnpc(kottos, KOTTOS_BUSY)
     for i, name in ipairs(order) do
         local spot = kottosSpot(name, KOTTOS_LANDING_Y)
         director:delay(KOTTOS_JUMPS[i])
-        director:jump_bnpc(KOTTOS, spot.x, spot.y, spot.z, math.atan(spot.x - from.x, spot.z - from.z))
-        from = spot
+        director:jump_bnpc(kottos, spot.x, spot.y, spot.z) -- facing the way it leapt
+        if KOTTOS_SLAMS[i] ~= nil then
+            director:delay(KOTTOS_SLAMS[i])
+            director:actor_use_action(kottos, KOTTOS_SLAM)
+        end
     end
     director:delay(0)
 end
@@ -385,7 +395,7 @@ end
 
 function onActorCast(director, layout_id, action_id, actor_id)
     if layout_id == KOTTOS and action_id == KOTTOS_LEAP and #kottos_helpers == 3 then
-        kottosLeaps(director)
+        kottosLeaps(director, actor_id)
     elseif layout_id == BOSS2 and action_id == BOSS2_GROW and #boss2_helpers == 6 then
         boss2Lines(director)
     elseif layout_id == BOSS3 and action_id == BOSS3_PULL and #boss3_helpers == 5 then

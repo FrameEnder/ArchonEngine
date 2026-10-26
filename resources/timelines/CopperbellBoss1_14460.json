@@ -25,101 +25,131 @@
     "timeline_always_plays": false,
     "timepoints": [
         {
-            "time": 2,
+            "time": 5.0,
             "data": {
                 "type": "action",
                 "action_id": 28545,
                 "lockon": 218
             },
-            "comment": "2.1 s in (all three runs)"
+            "comment": "28545 (4.7 s) on its target, the tank, 5.2 s after the pull in all three runs; lock-on 218 over it"
         },
         {
-            "time": 12,
+            "time": 15.0,
             "data": {
                 "type": "action",
-                "action_id": 28543
+                "action_id": 28543,
+                "target": "nobody"
             },
-            "comment": "12.3 s in"
+            "comment": "28543 (7.7 s, on no one) 15.3 s in: its helpers' markers, its three leaps and 28549 on the first two landings follow (the director, w1d1_re.lua onActorCast)"
         },
         {
-            "time": 22,
+            "time": 29.5,
             "data": {
                 "type": "action",
-                "action_id": 28549
+                "action_id": 28546,
+                "target": "itself"
             },
-            "comment": "22.4 s in"
+            "comment": "28546 (3.7 s, round itself) 29.6 s in, 1 s after its third landing"
         },
         {
-            "time": 24,
+            "time": 39.0,
             "data": {
                 "type": "action",
-                "action_id": 28549
+                "action_id": 28547,
+                "target": "other"
             },
-            "comment": "24.4 s in"
+            "comment": "28547 (4.7 s) 39.1-39.2 s in, on someone other than its target at random (a lancer, a healer, a ninja in the three runs)"
         },
         {
-            "time": 27,
+            "time": 52.0,
             "data": {
                 "type": "action",
-                "action_id": 28546
+                "action_id": 28543,
+                "target": "nobody"
             },
-            "comment": "26.6 s in"
+            "comment": "28543 again 52.3 s in (37.0 s after the first)"
         },
         {
-            "time": 36,
+            "time": 66.5,
             "data": {
                 "type": "action",
-                "action_id": 28547
+                "action_id": 28546,
+                "target": "itself"
             },
-            "comment": "36.0-36.2 s in"
+            "comment": "28546 66.6 s in"
         },
         {
-            "time": 49,
+            "time": 76.0,
             "data": {
                 "type": "action",
-                "action_id": 28543
+                "action_id": 28547,
+                "target": "other"
             },
-            "comment": "49.3 s in"
+            "comment": "28547 76.0 s in"
         },
         {
-            "time": 59,
+            "time": 86.0,
+            "every": 81,
             "data": {
                 "type": "action",
-                "action_id": 28549
+                "action_id": 28545,
+                "lockon": 218
             },
-            "comment": "59.4 s in"
+            "comment": "From here every 81 s: 28545 86.2 s in (the Duty Support run, the only one that lasted), then 28543 99.4 s in (13.2 s after it; the first round's 28543 came 10.1 s after its 28545), and the rest as the first round, 37 s apart"
         },
         {
-            "time": 61,
+            "time": 99.0,
+            "every": 81,
             "data": {
                 "type": "action",
-                "action_id": 28549
-            },
-            "comment": "61.4 s in"
+                "action_id": 28543,
+                "target": "nobody"
+            }
         },
         {
-            "time": 64,
+            "time": 113.5,
+            "every": 81,
             "data": {
                 "type": "action",
-                "action_id": 28546
-            },
-            "comment": "63.6 s in"
+                "action_id": 28546,
+                "target": "itself"
+            }
         },
         {
-            "time": 73,
+            "time": 123.0,
+            "every": 81,
             "data": {
                 "type": "action",
-                "action_id": 28547
-            },
-            "comment": "73.0 s in"
+                "action_id": 28547,
+                "target": "other"
+            }
         },
         {
-            "time": 81,
+            "time": 136.0,
+            "every": 81,
             "data": {
-                "type": "invulnerability",
-                "invulnerable": false
-            },
-            "comment": "Marks the end of the loop: 28545 again 83.2 s in"
+                "type": "action",
+                "action_id": 28543,
+                "target": "nobody"
+            }
+        },
+        {
+            "time": 150.5,
+            "every": 81,
+            "data": {
+                "type": "action",
+                "action_id": 28546,
+                "target": "itself"
+            }
+        },
+        {
+            "time": 160.0,
+            "every": 81,
+            "data": {
+                "type": "action",
+                "action_id": 28547,
+                "target": "other"
+            }
         }
     ],
     "animation_locks": {
@@ -129,5 +159,6 @@
         "28547": 2.1,
         "28549": 2.1
     },
-        "comment": "The Copperbell Mines' first boss (BNpcBase 14460, layout 9053767): 9970 HP, level 17, appears as the first door opens. Auto-attack 870; 28545 (4.7 s cast) every 81 s; 28543 (7.7 s, hitting nobody; its three helpers, BNpcBase 9020, cast 28544 with it), then 28549 twice (instant, hitting nobody), 28546 (3.7 s) and 28547 (4.7 s) every 37 s. The same times to a tenth of a second in all three runs. 28546 hit only the Duty Support members (its players amount is theirs). From Bob's Chronofoil captures of the Copperbell Mines (2026-10-25): one run with Duty Support (bd298651, visit 0.5) and two Duty Finder runs (69bea0b9, visits 0.1 and 0.3), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded. 28549 never caught anyone in the three runs: its amounts are a stand-in, 28546's (the boss's other area attack). Its leaps onto the helpers' spots are the director's (w1d1_re.lua, onActorCast). Lock-on 218 over the target as 28545 begins (ActorControl 34, every cast in the three runs)."
+    "from_pull": true,
+    "comment": "The Copperbell Mines' first boss, Kottos (BNpcBase 14460, layout 9053767): 9970 HP, level 17, appears as the first door opens. Its schedule counts from its pull (`from_pull`), to the tenth of a second the same in all three of Bob's runs (Chronofoil captures of 2026-10-25: bd298651 visit 0.5 with Duty Support, 69bea0b9 visits 0.1 and 0.3 in the Duty Finder), however long after its spawn it was pulled (5.2-10.0 s): auto-attack 870 at 3.0 s and every 3.0 s while it isn't busy; 28545 at 5.2 s, 28543 at 15.3 s (then its leaps: the director; no auto-attacks from 28543 until 28546 lands), 28546 at 29.6 s, 28547 at 39.1 s, 28543, 28546 and 28547 again 37 s later; then from 86.2 s every 81 s: 28545, 28543 13.2 s after it (99.4 s in), and so on. Past 81 s only the Duty Support run (101 s) shows it. Times here are the tick (0.5 s) the cast begins in. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members. 28549 and its helpers' 28544 never caught anyone: their amounts are stand-ins, 28546's."
 }

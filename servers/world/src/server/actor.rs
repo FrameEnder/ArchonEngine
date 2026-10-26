@@ -127,6 +127,9 @@ pub enum NetworkedActor {
         timeline: Timeline,
         /// In half-seconds (the current server logic tick.)
         timeline_position: i64,
+        /// A `from_pull` timeline: up to which of its ticks (`timeline_position`) its points have been looked at, so a
+        /// point due while it was busy casting comes once it's done rather than never.
+        timeline_checked: i64,
         /// How much this NPC hates each actor (damage dealt to it, and so on.) It goes after whoever it hates most.
         enmity: HashMap<ObjectId, u32>,
         /// In half-seconds since it last auto-attacked (or picked up its target.)

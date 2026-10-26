@@ -296,7 +296,8 @@ pub enum LuaDirectorTask {
     JumpBattleNpc {
         who: u32,
         position: Position,
-        rotation: f32,
+        /// Facing as it lands; `None` faces the way it leapt (retail's Kottos did, on all three of each round.)
+        rotation: Option<f32>,
     },
     /// A BNpc (by actor ID, or layout ID) runs somewhere: one ActorMove there, which the client walks it along, as
     /// retail's last Copperbell boss went to the arena's middle for 28760.
@@ -324,6 +325,13 @@ pub enum LuaDirectorTask {
     },
     /// Hold a BNpc (by actor ID, or layout ID): `npc_behavior` leaves it alone, so it does only what the director has it
     /// do, as retail's boss helpers (`Instance::held_npcs`); `false` lets it go back to its own ways.
+    /// Keep a BNpc (actor ID or layout ID) busy for `seconds`: it doesn't move, turn or act on its own (no
+    /// auto-attacks), but its timeline goes on counting, as retail's Kottos did nothing of its own from 28543 to its
+    /// third landing (`Instance::busy_npcs`.)
+    BusyBattleNpc {
+        who: u32,
+        seconds: f32,
+    },
     HoldBattleNpc {
         who: u32,
         held: bool,
@@ -827,11 +835,16 @@ impl UserData for LuaDirector {
                 this.tasks.push(LuaDirectorTask::JumpBattleNpc {
                     who,
                     position: Position(glam::Vec3A::new(x, y, z)),
-                    rotation: rotation.unwrap_or(0.0),
+                    rotation,
                 });
                 Ok(())
             },
         );
+        methods.add_method_mut("busy_bnpc", |_, this, (who, seconds): (u32, f32)| {
+            this.tasks
+                .push(LuaDirectorTask::BusyBattleNpc { who, seconds });
+            Ok(())
+        });
         methods.add_method_mut(
             "set_model_scale",
             |_, this, (who, model_scale_id): (u32, u32)| {
@@ -1478,7 +1491,9 @@ pub fn director_tick(
         let now = Instant::now();
         let (due, later): (Vec<_>, Vec<_>) = std::mem::take(&mut instance.later_director_tasks)
             .into_iter()
-            .partition(|(at, _)| *at <= now);
+            // Within a quarter second (half a tick) counts as due now, so a step comes in the tick nearest its time
+            // rather than always the one after (Kottos' markers 2 s apart went out 2.5 and 1.5 s apart.)
+            .partition(|(at, _)| *at <= now + Duration::from_millis(250));
         instance.later_director_tasks = later;
         if let Some(director) = instance.directors.first_mut() {
             director.tasks.extend(due.into_iter().map(|(_, task)| task));
@@ -2348,24 +2363,34 @@ pub fn director_tick(
             LuaDirectorTask::Later { at, task } => {
                 instance.later_director_tasks.push((*at, (**task).clone()));
             }
-            LuaDirectorTask::WarpBattleNpc {
-                who,
-                position,
-                rotation,
-            }
-            | LuaDirectorTask::JumpBattleNpc {
-                who,
-                position,
-                rotation,
-            }
-            | LuaDirectorTask::MoveBattleNpc {
-                who,
-                position,
-                rotation,
-            } => {
+            LuaDirectorTask::WarpBattleNpc { who, position, .. }
+            | LuaDirectorTask::JumpBattleNpc { who, position, .. }
+            | LuaDirectorTask::MoveBattleNpc { who, position, .. } => {
                 let Some(actor_id) = resolve_bnpc(instance, *who) else {
                     tracing::warn!("Failed to find bnpc {who} to move!");
                     continue;
+                };
+                let rotation = &match task {
+                    LuaDirectorTask::WarpBattleNpc { rotation, .. }
+                    | LuaDirectorTask::MoveBattleNpc { rotation, .. } => *rotation,
+                    LuaDirectorTask::JumpBattleNpc { rotation, .. } => {
+                        rotation.unwrap_or_else(|| {
+                            // The way it leapt.
+                            let from = instance
+                                .find_actor(actor_id)
+                                .map(|actor| actor.position().0)
+                                .unwrap_or(position.0);
+                            if (position.0 - from).length() < 0.05 {
+                                instance
+                                    .find_actor(actor_id)
+                                    .map(|actor| actor.rotation())
+                                    .unwrap_or(0.0)
+                            } else {
+                                f32::atan2(position.0.x - from.x, position.0.z - from.z)
+                            }
+                        })
+                    }
+                    _ => unreachable!(),
                 };
                 if let Some(NetworkedActor::Npc {
                     spawn,
@@ -2448,6 +2473,16 @@ pub fn director_tick(
                     ActorControlCategory::SetCompanionOwnerId {
                         new_id: ObjectId(0xE000_0000),
                     },
+                );
+            }
+            LuaDirectorTask::BusyBattleNpc { who, seconds } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to keep busy!");
+                    continue;
+                };
+                instance.busy_npcs.insert(
+                    actor_id,
+                    Instant::now() + Duration::from_secs_f32(seconds.max(0.0)),
                 );
             }
             LuaDirectorTask::HoldBattleNpc { who, held } => {
