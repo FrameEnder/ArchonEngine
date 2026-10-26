@@ -309,6 +309,11 @@ server (connect, the dropdown from the class list, send, load).
 
 ## Diagnostics (Dashboard → Diagnostics)
 
+**Who the bundle is about** (2.22.5): the README lists the chosen characters with whoever the window's captures were
+played by first (the content ID in each capture's PlayerSetup), marked "played in this window", and
+`characters.json` has `played_in_window`; before, they were in the database's order, so Bob's bundles read as Lira
+Ormont's while he played Y'kolia Vhuh.
+
 Commits one bundle to the private `kawari-diagnostics` repository (fine-grained token, Contents read/write): recent
 server log, packet captures (toggle here), chosen characters' saved quest state and position, Kawari Probe snapshots
 (`POST /api/diag/snapshot` with the character-sync token), build and redacted config.
