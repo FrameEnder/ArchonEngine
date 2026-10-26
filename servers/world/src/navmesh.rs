@@ -65,6 +65,9 @@ unsafe impl Sync for Navmesh {}
 /// Ixali they were after). Content passes no limit (see `calculate_path`).
 pub const MAX_OFF_MESH_GAP: f32 = 15.0;
 
+/// How far (half-sizes across, up, across, in yalms) a path's ends look for the navmesh, nearest first.
+const PATH_END_SEARCH: [[f32; 3]; 3] = [[2.0, 4.0, 2.0], [6.0, 8.0, 6.0], [15.0, 15.0, 15.0]];
+
 /// How many random spots `find_wander_position` tries for one within its radius.
 const WANDER_TRIES: usize = 4;
 
@@ -216,24 +219,30 @@ impl Navmesh {
         position: Vec3A,
         filter: &dtQueryFilter,
     ) -> (dtPolyRef, Vec3A) {
-        let extents = [2.0, 4.0, 2.0];
-
-        unsafe {
-            let mut nearest_ref = 0;
-            let mut nearest_pt = [0.0; 3];
-            assert!(
-                dtNavMeshQuery_findNearestPoly(
-                    query,
-                    &position.x,
-                    extents.as_ptr(),
-                    filter,
-                    &mut nearest_ref,
-                    nearest_pt.as_mut_ptr()
-                ) == DT_SUCCESS
-            );
-
-            (nearest_ref, Vec3A::from_array(nearest_pt))
+        // The nearest navmesh first, then further afield: someone standing by a wall, or at a cliff's edge, is off
+        // the navmesh (it keeps an NPC's width from walls and drops), and with nothing within 2 yalms the path failed
+        // and the walker went straight there instead, through the air or up the wall (Bob's Sastasha bundle of
+        // 2026-10-26: 40 paths from or to "poly 0" in a minute.)
+        for extents in PATH_END_SEARCH {
+            unsafe {
+                let mut nearest_ref = 0;
+                let mut nearest_pt = [0.0; 3];
+                assert!(
+                    dtNavMeshQuery_findNearestPoly(
+                        query,
+                        &position.x,
+                        extents.as_ptr(),
+                        filter,
+                        &mut nearest_ref,
+                        nearest_pt.as_mut_ptr()
+                    ) == DT_SUCCESS
+                );
+                if nearest_ref != 0 {
+                    return (nearest_ref, Vec3A::from_array(nearest_pt));
+                }
+            }
         }
+        (0, position)
     }
 
     /// A random spot on the navmesh near `position`, or None when `position` isn't on the navmesh.

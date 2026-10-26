@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     f32::consts::PI,
     sync::Arc,
     time::{Duration, Instant},
@@ -101,6 +101,9 @@ const UNREACHABLE_FOR: Duration = Duration::from_secs(60);
 fn flat_distance(a: Vec3A, b: Vec3A) -> f32 {
     Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length()
 }
+/// How far an open-world enemy steps down off a ledge (yalms; a guess): it doesn't throw itself off a cliff after
+/// someone, as retail's keep to their navmesh. Bots, pets and everyone in duties go down as far as a player would.
+const OPEN_WORLD_MAX_DROP: f32 = 3.0;
 /// How many NPCs that can't wander an instance logs (the rest are only counted.)
 const STUCK_WANDERERS_LOGGED: usize = 5;
 
@@ -181,6 +184,8 @@ pub fn npc_behavior(
 
     let busy_now = Instant::now();
     instance.busy_npcs.retain(|_, until| *until > busy_now);
+    // NPCs whose step a wall or a drop cut short this tick: their path goes on from where they stopped.
+    let mut walled: HashSet<ObjectId> = HashSet::new();
 
     // const pass
     for (id, actor) in &instance.actors {
@@ -292,11 +297,28 @@ pub fn npc_behavior(
                     rotate(current_position, next_position)
                 };
 
-                let position = Position(Vec3A::lerp(
-                    current_position,
-                    next_position,
-                    *current_path_lerp,
-                ));
+                let along = Vec3A::lerp(current_position, next_position, *current_path_lerp);
+                // Walked as a player walks, on the zone's collision: on the floor (not the straight line between
+                // two corners of its path, through a hill or over a dip), stopped by walls (not up them), and
+                // down off a ledge rather than through the air (Bob's Sastasha bundle of 2026-10-26.)
+                let position = match &instance.collision {
+                    Some(collision) => {
+                        let goes_anywhere = instance.party_bots.contains_key(id)
+                            || spawn.common.owner_id.is_valid()
+                            || in_content;
+                        let max_drop = if goes_anywhere {
+                            f32::INFINITY
+                        } else {
+                            OPEN_WORLD_MAX_DROP
+                        };
+                        let walk = collision.walk(spawn.common.position.0, along, max_drop);
+                        if walk.blocked {
+                            walled.insert(*id);
+                        }
+                        Position(walk.at)
+                    }
+                    None => Position(along),
+                };
                 // Not moved yet (a new path's first tick): nothing to send. Retail's first ActorMove of a walk is
                 // already a step; one that only turns it where it stands makes the client play a step on the
                 // spot, the "looping walk" of Bob's 2026-10-20 bundle.
@@ -415,6 +437,10 @@ pub fn npc_behavior(
                     spawn.common.position = *pos;
                     spawn.common.rotation = *rotation;
                 }
+            }
+            if walled.contains(id) {
+                *last_position = Some(spawn.common.position.0);
+                *current_path_lerp = 0.0;
             }
 
             // NOTE: this is *intentional* as I believe in retail the timing of actions are dependent on when the actor spawned
@@ -1167,8 +1193,10 @@ pub fn npc_behavior(
     // Party bots keep to the ground: walking straight where there's no navmesh path, a line between two points went
     // through a slope's rise, 2 yalms under the floor (Bob's Sastasha bundle of 2026-10-23); each step is set on the
     // navmesh's floor under it, where there is one.
+    // (With the zone's collision they're on its floor already.)
     for (id, msg) in &mut actor_moves {
         if let FromServer::ActorMove(_, position, ..) = msg
+            && instance.collision.is_none()
             && instance.party_bots.contains_key(id)
             && let Some(ground) = instance.navmesh.ground_under(position.0)
         {

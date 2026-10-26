@@ -93,8 +93,17 @@ itself. The bot stands still while it casts (Raise's 8 s), out of combat too.
 **Keeping to the ground.** Where the navmesh has no path, a bot walks straight on (so it isn't left behind), and a
 straight line between two points went under a rise in the floor: in Bob's Sastasha bundle of 2026-10-23 the tank
 walked 2 yalms under the ground the player had just walked, its height falling evenly from 45.79 to 45.73 while the
-floor rose to 47.8. Each step of a bot's (walking itself out of combat, and NPC walking in combat) is now set on the
+floor rose to 47.8. Each step of a bot's (walking itself out of combat, and NPC walking in combat) was then set on the
 navmesh's floor right under it, where there's one within 3 yalms (`Navmesh::ground_under`).
+
+**Walking as a player walks** (2026-10-26). Where the navmesh's floor wasn't under them, that still left bots in the
+air, under the floor and going up walls: in Bob's Sastasha bundle of 2026-10-26 he dropped 30 yalms off a ledge (y 24
+to −6); one bot stayed on it, going 3 yalms up and down the cliff face every half second, and two came down a straight
+line through the air, 3 yalms a tick, with no ground anywhere near. Now every step a bot takes goes over the zone's
+collision, the meshes the player stands on ([Combat: walking on the collision](combat.md#walking-on-the-collision)):
+on the floor, up a step no higher than a player's, along walls rather than through them, and down off a ledge after
+the player, landing on the floor below. Until a zone's collision has been made (with its navmesh, the first time the
+zone is entered on a build with it), they keep to the navmesh's floor as before.
 
 ## Bots kept as friends
 

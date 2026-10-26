@@ -7,7 +7,7 @@ use glam::{Affine3A, Vec3A};
 use icarus::RecastNavimesh::RecastNavimeshSheet;
 use icarus::TerritoryType::TerritoryTypeSheet;
 use kawari::config::get_config;
-use kawari_world::{Navmesh, NavmeshParams, NavmeshTile};
+use kawari_world::{Navmesh, NavmeshParams, NavmeshTile, collision::Collision};
 use physis::{
     Language,
     layer::{Layer, LayerEntryData, ModelCollisionType, TriggerBoxShape},
@@ -22,8 +22,9 @@ use recastnavigation_sys::{
     rcAllocContourSet, rcAllocHeightfield, rcAllocPolyMesh, rcAllocPolyMeshDetail,
     rcBuildCompactHeightfield, rcBuildContours, rcBuildContoursFlags_RC_CONTOUR_TESS_WALL_EDGES,
     rcBuildDistanceField, rcBuildPolyMesh, rcBuildPolyMeshDetail, rcBuildRegions, rcCalcGridSize,
-    rcContext, rcCreateHeightfield, rcErodeWalkableArea, rcFilterLowHangingWalkableObstacles,
-    rcFilterWalkableLowHeightSpans, rcHeightfield, rcMarkWalkableTriangles, rcRasterizeTriangles,
+    rcCreateHeightfield, rcErodeWalkableArea, rcFilterLedgeSpans,
+    rcFilterLowHangingWalkableObstacles, rcFilterWalkableLowHeightSpans, rcHeightfield,
+    rcMarkWalkableTriangles, rcRasterizeTriangles,
 };
 
 fn main() {
@@ -78,12 +79,6 @@ fn main() {
         context = CreateContext(true);
     }
 
-    // Determine how many tiles are needed to cover the area.
-    let mut min_x = 0f32;
-    let mut min_z = 0f32;
-    let mut max_x = 0f32;
-    let mut max_z = 0f32;
-
     let scene = &lvb.sections[0];
 
     let Pcb::List(pcblist) = resolver
@@ -95,24 +90,74 @@ fn main() {
     else {
         panic!("list.pcb isn't a list?!");
     };
-    min_x = min_x.min(pcblist.bounds.min[0]);
-    min_z = min_z.min(pcblist.bounds.min[2]);
 
-    max_x = max_x.max(pcblist.bounds.max[0]);
-    max_z = max_z.max(pcblist.bounds.max[2]);
+    // Every collision mesh in the zone, as a player meets it: the terrain's plates, then the layers' bg parts,
+    // collision boxes and shared groups.
+    let mut geometry = Geometry::default();
+    for entry in &pcblist.entries {
+        add_plate(
+            entry,
+            &scene.general.bg_path.value,
+            &mut resolver,
+            &mut geometry,
+        );
+    }
 
-    // TODO: take into account SGBs in bounds checking
+    for path in &scene.lgb_paths {
+        let lgb = resolver.parsed::<Lgb>(path);
+        let lgb = match lgb {
+            Ok(lgb) => lgb,
+            Err(e) => {
+                tracing::error!(
+                    "Failed to parse {path}: {e}, this is most likely a bug in Physis and should be reported somewhere!"
+                );
+                continue;
+            }
+        };
+
+        for chunk in &lgb.chunks {
+            for layer in &chunk.layers {
+                // Exclude festival objects which *usually* don't have collision, but this is to exclude non-Global festivals that include non-existent SGBs.
+                if layer.header.festival_id != 0 {
+                    continue;
+                }
+
+                let transform = Affine3A::default();
+                walk_layer(&mut resolver, layer, &transform, &mut geometry);
+            }
+        }
+    }
+    tracing::info!(
+        "{} collision triangles from {} vertices",
+        geometry.triangles.len(),
+        geometry.vertices.len()
+    );
+
+    // The area to cover: the geometry's own bounds, all of it (list.pcb's leave out shared groups' meshes; and the
+    // heights were cut at 100 yalms up and down, so anything higher or lower had no navmesh.)
+    let (mut min_bounds, mut max_bounds) = ([f32::MAX; 3], [f32::MIN; 3]);
+    for v in &geometry.vertices {
+        for axis in 0..3 {
+            min_bounds[axis] = min_bounds[axis].min(v[axis]);
+            max_bounds[axis] = max_bounds[axis].max(v[axis]);
+        }
+    }
+    if geometry.vertices.is_empty() {
+        min_bounds = pcblist.bounds.min;
+        max_bounds = pcblist.bounds.max;
+    }
+    let min_x = min_bounds[0];
+    let min_z = min_bounds[2];
+    let min_y = min_bounds[1] - 1.0;
+    let max_y = max_bounds[1] + navimesh_row.AgentHeight + 1.0;
+    min_bounds[1] = min_y;
+    max_bounds[1] = max_y;
 
     let tile_origin_x = min_x;
     let tile_origin_y = min_z;
 
     let mut size_x: i32 = 0;
     let mut size_z: i32 = 0;
-
-    let min_y = -100.0;
-    let max_y = 100.0;
-    let min_bounds = [min_x, min_y, min_z];
-    let max_bounds = [max_x, max_y, max_z];
 
     let cell_size = navimesh_row.CellSize;
     let cell_height = navimesh_row.CellHeight;
@@ -134,10 +179,42 @@ fn main() {
     let walkable_radius = (navimesh_row.AgentRadius / cell_size).ceil() as i32;
     let border_size = walkable_radius + 3;
     let tile_cell_size = tile_size as f32 * cell_size;
+    let max_slope = navimesh_row.AgentMaxSlope;
+    // Recast counts climbs in cell heights (it was in cell sizes.)
+    let walkable_climb = (navimesh_row.AgentMaxClimb / cell_height).floor() as i32;
+    let walkable_height = (navimesh_row.AgentHeight / cell_height).ceil() as i32;
+
+    // Each tile's triangles (those over it, border included), so a tile only rasterizes what's on it.
+    let border = border_size as f32 * cell_size;
+    let tile_of = |value: f32, origin: f32, count: i32| {
+        (((value - origin) / tile_cell_size).floor() as i32).clamp(0, count - 1)
+    };
+    let mut tile_triangles: Vec<Vec<i32>> = vec![Vec::new(); (tile_width * tile_height) as usize];
+    for tri in &geometry.triangles {
+        let (mut lo, mut hi) = ([f32::MAX; 2], [f32::MIN; 2]);
+        for i in tri {
+            let v = geometry.vertices[*i as usize];
+            lo = [lo[0].min(v[0]), lo[1].min(v[2])];
+            hi = [hi[0].max(v[0]), hi[1].max(v[2])];
+        }
+        for z in tile_of(lo[1] - border, min_z, tile_height)
+            ..=tile_of(hi[1] + border, min_z, tile_height)
+        {
+            for x in tile_of(lo[0] - border, min_x, tile_width)
+                ..=tile_of(hi[0] + border, min_x, tile_width)
+            {
+                tile_triangles[(z * tile_width + x) as usize].extend(tri.iter().map(|i| *i as i32));
+            }
+        }
+    }
 
     let mut tiles = Vec::new();
     for z in 0..tile_height {
         for x in 0..tile_width {
+            let indices = &tile_triangles[(z * tile_width + x) as usize];
+            if indices.is_empty() {
+                continue;
+            }
             // Step 1: Create a heightfield
             unsafe {
                 let min_bounds = [
@@ -168,54 +245,31 @@ fn main() {
                     cell_height
                 ));
 
-                tiles.push(Tile { x, z, height_field });
-            }
-        }
-    }
-
-    let max_slope = navimesh_row.AgentMaxSlope;
-    let walkable_climb = (navimesh_row.AgentMaxClimb / cell_size).floor() as i32;
-    for entry in pcblist.entries {
-        add_plate(
-            &entry,
-            &scene.general.bg_path.value,
-            &mut resolver,
-            context,
-            &tiles,
-            max_slope,
-            walkable_climb, // In VX units
-        );
-    }
-
-    for path in &scene.lgb_paths {
-        let lgb = resolver.parsed::<Lgb>(path);
-        let lgb = match lgb {
-            Ok(lgb) => lgb,
-            Err(e) => {
-                tracing::error!(
-                    "Failed to parse {path}: {e}, this is most likely a bug in Physis and should be reported somewhere!"
-                );
-                continue;
-            }
-        };
-
-        for chunk in &lgb.chunks {
-            for layer in &chunk.layers {
-                // Exclude festival objects which *usually* don't have collision, but this is to exclude non-Global festivals that include non-existent SGBs.
-                if layer.header.festival_id != 0 {
-                    continue;
-                }
-
-                let transform = Affine3A::default();
-                walk_layer(
-                    &mut resolver,
-                    layer,
-                    &transform,
+                // Step 2: insert the tile's geometry into the heightfield
+                let ntris = indices.len() as i32 / 3;
+                let mut tri_area_ids: Vec<u8> = vec![0; ntris as usize];
+                let vertices = geometry.vertices.as_ptr() as *const f32;
+                rcMarkWalkableTriangles(
                     context,
-                    &tiles,
                     max_slope,
-                    walkable_climb, // In VX units
+                    vertices,
+                    geometry.vertices.len() as i32,
+                    indices.as_ptr(),
+                    ntris,
+                    tri_area_ids.as_mut_ptr(),
                 );
+                assert!(rcRasterizeTriangles(
+                    context,
+                    vertices,
+                    geometry.vertices.len() as i32,
+                    indices.as_ptr(),
+                    tri_area_ids.as_ptr(),
+                    ntris,
+                    height_field,
+                    walkable_climb,
+                ));
+
+                tiles.push(Tile { x, z, height_field });
             }
         }
     }
@@ -225,11 +279,10 @@ fn main() {
 
     for tile in tiles {
         unsafe {
-            let walkable_height = (navimesh_row.AgentHeight / cell_height).ceil() as i32;
-
             // Step 2b: Some easy filtering
             rcFilterLowHangingWalkableObstacles(context, walkable_climb, tile.height_field);
-            // TODO: rcFilterLedgeSpans();
+            // No navmesh along a drop deeper than a step (a cliff's edge): Recast's usual filtering.
+            rcFilterLedgeSpans(context, walkable_height, walkable_climb, tile.height_field);
             rcFilterWalkableLowHeightSpans(context, walkable_height, tile.height_field);
 
             // Step 3: Build a compact heightfield out of the normal heightfield
@@ -387,7 +440,36 @@ fn main() {
 
     let path = PathBuf::from(&destination_path);
     std::fs::create_dir_all(path.parent().unwrap()).unwrap(); // create directory structure
-    std::fs::write(destination_path, &serialized_navmesh).unwrap();
+    write_whole(&path, &serialized_navmesh);
+
+    // The collision NPCs walk on (kawari_world::collision), written last: the world server waits for it.
+    let collision = Collision::build(
+        geometry.vertices,
+        geometry.triangles,
+        navimesh_row.AgentMaxClimb,
+        navimesh_row.AgentRadius,
+        navimesh_row.AgentMaxSlope,
+    );
+    write_whole(
+        &kawari_world::collision::path_for(&path),
+        &collision.to_bytes(),
+    );
+    tracing::info!("Wrote {destination_path} and its collision");
+}
+
+/// Writes `bytes` to `path` whole: to a temporary file first, then renamed, so the world server never reads half.
+fn write_whole(path: &std::path::Path, bytes: &[u8]) {
+    let mut temporary = path.as_os_str().to_owned();
+    temporary.push(".part");
+    std::fs::write(&temporary, bytes).unwrap();
+    std::fs::rename(&temporary, path).unwrap();
+}
+
+/// The zone's collision triangles, in world space.
+#[derive(Default)]
+struct Geometry {
+    vertices: Vec<[f32; 3]>,
+    triangles: Vec<[u32; 3]>,
 }
 
 /// Represents the heightfield of a tile.
@@ -399,66 +481,28 @@ struct Tile {
 }
 
 /// Walk each node, add it's collision model to the scene.
-fn walk_node(
-    node: &Node,
-    transform: &Affine3A,
-    context: *mut rcContext,
-    tiles: &[Tile],
-    max_slope: f32,
-    walkable_climb: i32,
-) {
+fn walk_node(node: &Node, transform: &Affine3A, geometry: &mut Geometry) {
     if !node.vertices.is_empty() {
-        let mut indices = Vec::new();
-        for polygon in &node.polygons {
-            let mut vec: Vec<u32> = Vec::from(&polygon.vertex_indices)
-                .iter()
-                .map(|x| *x as u32)
-                .collect();
-            assert!(vec.len() == 3);
-            indices.append(&mut vec);
-        }
-
-        // Step 2: insert geoemtry into heightfield
-        let tile_indices: Vec<i32> = indices.iter().map(|x| *x as i32).collect();
-        let ntris = tile_indices.len() as i32 / 3;
-        let mut tri_area_ids: Vec<u8> = vec![0; ntris as usize];
-
-        // transform the vertices on the CPU
-        let mut tile_vertices: Vec<[f32; 3]> = Vec::new();
+        let first = geometry.vertices.len() as u32;
         for vertex in &node.vertices {
             let transformed = transform.transform_point3(Vec3A::from_slice(vertex).into());
-            tile_vertices.push([transformed.x, transformed.y, transformed.z]);
+            geometry
+                .vertices
+                .push([transformed.x, transformed.y, transformed.z]);
         }
-
-        for tile in tiles {
-            unsafe {
-                // mark areas as walkable
-                rcMarkWalkableTriangles(
-                    context,
-                    max_slope,
-                    std::mem::transmute::<*const [f32; 3], *const f32>(tile_vertices.as_ptr()),
-                    tile_vertices.len() as i32,
-                    tile_indices.as_ptr(),
-                    ntris,
-                    tri_area_ids.as_mut_ptr(),
-                );
-
-                assert!(rcRasterizeTriangles(
-                    context,
-                    std::mem::transmute::<*const [f32; 3], *const f32>(tile_vertices.as_ptr()),
-                    tile_vertices.len() as i32,
-                    tile_indices.as_ptr(),
-                    tri_area_ids.as_ptr(),
-                    ntris,
-                    tile.height_field,
-                    walkable_climb,
-                ));
-            }
+        for polygon in &node.polygons {
+            let indices = &polygon.vertex_indices;
+            assert!(indices.len() == 3);
+            geometry.triangles.push([
+                first + indices[0] as u32,
+                first + indices[1] as u32,
+                first + indices[2] as u32,
+            ]);
         }
     }
 
     for child in &node.children {
-        walk_node(child, transform, context, tiles, max_slope, walkable_climb);
+        walk_node(child, transform, geometry);
     }
 }
 
@@ -466,10 +510,7 @@ fn add_plate(
     entry: &ListEntry,
     tera_path: &str,
     sqpack_resource: &mut ResourceResolver,
-    context: *mut rcContext,
-    tiles: &[Tile],
-    max_slope: f32,
-    walkable_climb: i32,
+    geometry: &mut Geometry,
 ) {
     let pcb_path = format!("{}/collision/tr{:04}.pcb", tera_path, entry.mesh_id,);
     let Ok(file) = sqpack_resource.parsed::<Pcb>(&pcb_path) else {
@@ -480,7 +521,7 @@ fn add_plate(
         panic!("Mesh pcb isn't a mesh?!");
     };
     let transform = Affine3A::default();
-    walk_node(&mdl, &transform, context, tiles, max_slope, walkable_climb);
+    walk_node(&mdl, &transform, geometry);
 }
 
 /// Walk each layer, add it's collision model to the scene.
@@ -488,10 +529,7 @@ fn walk_layer(
     resolver: &mut ResourceResolver,
     layer: &Layer,
     transform: &Affine3A,
-    context: *mut rcContext,
-    tiles: &[Tile],
-    max_slope: f32,
-    walkable_climb: i32,
+    geometry: &mut Geometry,
 ) {
     for object in &layer.objects {
         let child_transform: Affine3A = transform * Affine3A::from(object.transform);
@@ -508,14 +546,7 @@ fn walk_layer(
                         panic!("Mesh pcb isn't a mesh?!");
                     };
 
-                    walk_node(
-                        &pcb,
-                        &child_transform,
-                        context,
-                        tiles,
-                        max_slope,
-                        walkable_climb,
-                    );
+                    walk_node(&pcb, &child_transform, geometry);
                 }
             }
             LayerEntryData::CollisionBox(collision_box) => {
@@ -531,14 +562,7 @@ fn walk_layer(
                         panic!("Mesh pcb isn't a mesh?!");
                     };
 
-                    walk_node(
-                        &pcb,
-                        &child_transform,
-                        context,
-                        tiles,
-                        max_slope,
-                        walkable_climb,
-                    );
+                    walk_node(&pcb, &child_transform, geometry);
                 } else {
                     match collision_box.parent_data.trigger_box_shape {
                         TriggerBoxShape::None => unreachable!(),
@@ -609,14 +633,7 @@ fn walk_layer(
                                 panic!("This can never happen!!");
                             };
 
-                            walk_node(
-                                &mesh,
-                                &child_transform,
-                                context,
-                                tiles,
-                                max_slope,
-                                walkable_climb,
-                            );
+                            walk_node(&mesh, &child_transform, geometry);
                         }
                         TriggerBoxShape::Sphere => {
                             tracing::warn!("Sphere collision is not yet supported!")
@@ -639,15 +656,7 @@ fn walk_layer(
                     Ok(sgb) => {
                         for group in &sgb.sections[0].layer_groups {
                             for layer in &group.layers {
-                                walk_layer(
-                                    resolver,
-                                    layer,
-                                    &child_transform,
-                                    context,
-                                    tiles,
-                                    max_slope,
-                                    walkable_climb,
-                                );
+                                walk_layer(resolver, layer, &child_transform, geometry);
                             }
                         }
                     }

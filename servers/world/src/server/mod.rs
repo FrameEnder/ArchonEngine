@@ -91,6 +91,13 @@ pub use party::{Party, PartyMember};
 pub use party_bot::BOT_LEVEL;
 pub use party_npc::chosen_members;
 use periodic::periodic_tick;
+
+/// The navmeshes being made (their paths), so each zone's is made once however many instances of it are up.
+fn navmesh_generations() -> parking_lot::MutexGuard<'static, std::collections::HashSet<String>> {
+    static GENERATING: std::sync::OnceLock<Mutex<std::collections::HashSet<String>>> =
+        std::sync::OnceLock::new();
+    GENERATING.get_or_init(Default::default).lock()
+}
 pub use rotation::{ActionMechanics, GCD_GROUP};
 mod fate;
 mod first_attack;
@@ -1312,6 +1319,12 @@ fn server_logic_tick(
             // generate navmesh if necessary
             match &instance.generate_navmesh {
                 NavmeshGenerationStep::None => {}
+                // Another instance of the zone is already having it made: wait for that one.
+                NavmeshGenerationStep::Needed(nvm_path)
+                    if !navmesh_generations().insert(nvm_path.clone()) =>
+                {
+                    instance.generate_navmesh = NavmeshGenerationStep::Started(nvm_path.clone());
+                }
                 NavmeshGenerationStep::Needed(nvm_path) => {
                     tracing::info!(
                         "Missing navmesh {nvm_path:?}, we are going to generate it in the background now..."
@@ -1335,12 +1348,17 @@ fn server_logic_tick(
                             tracing::error!(
                                 "Unable to run kawari-navimesh due to the following error: {err}"
                             );
+                            navmesh_generations().remove(nvm_path);
                             instance.generate_navmesh = NavmeshGenerationStep::None;
                         }
                     }
                 }
                 NavmeshGenerationStep::Started(nvm_path) => {
-                    if let Ok(nvm_bytes) = std::fs::read(nvm_path) {
+                    // kawari-navimesh writes the collision last, so the navmesh beside it is the new one.
+                    let collision_path = crate::collision::path_for(std::path::Path::new(nvm_path));
+                    if collision_path.exists()
+                        && let Ok(nvm_bytes) = std::fs::read(nvm_path)
+                    {
                         if let Some(navmesh) = Navmesh::from_existing(&nvm_bytes) {
                             instance.navmesh = navmesh;
 
@@ -1350,6 +1368,10 @@ fn server_logic_tick(
                                 "Failed to read {nvm_path:?}, monsters will not function correctly!"
                             );
                         }
+                        instance.collision = crate::collision::Collision::load_shared(
+                            std::path::Path::new(nvm_path),
+                        );
+                        navmesh_generations().remove(nvm_path);
                         instance.generate_navmesh = NavmeshGenerationStep::None;
                     }
                 }

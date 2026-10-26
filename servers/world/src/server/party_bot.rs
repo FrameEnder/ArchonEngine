@@ -20,6 +20,7 @@
 //! What isn't done yet: bots don't follow you to another zone, don't avoid area attacks, use only single-target
 //! actions, and don't know any dungeon's route or rules (stage 3).
 
+use crate::collision::Collision;
 use std::{
     collections::{HashMap, HashSet},
     sync::Arc,
@@ -378,6 +379,7 @@ struct ClassAction {
 /// way it faces, on the floor under it, or None if it didn't get anywhere.
 fn run_along(
     navmesh: &crate::navmesh::Navmesh,
+    collision: Option<&Collision>,
     here: Vec3A,
     path: &mut std::collections::VecDeque<Vec3A>,
 ) -> Option<(Vec3A, f32)> {
@@ -396,15 +398,30 @@ fn run_along(
             left = 0.0;
         }
     }
+    let facing = f32::atan2(at.x - here.x, at.z - here.z);
+    let at = walk_like_a_player(navmesh, collision, here, at);
     let flat = Vec3A::new(at.x - here.x, 0.0, at.z - here.z).length();
     if flat < 0.05 {
         return None;
     }
-    let facing = f32::atan2(at.x - here.x, at.z - here.z);
-    if let Some(ground) = navmesh.ground_under(at) {
-        at.y = ground.y;
-    }
     Some((at, facing))
+}
+
+/// A bot's step from `here` to `to` as a player would take it: on the zone's collision (the floor under it, stopped by
+/// walls, down off ledges after the player), or, until the zone has one, on the navmesh's floor under it.
+fn walk_like_a_player(
+    navmesh: &crate::navmesh::Navmesh,
+    collision: Option<&Collision>,
+    here: Vec3A,
+    mut to: Vec3A,
+) -> Vec3A {
+    if let Some(collision) = collision {
+        return collision.walk(here, to, f32::INFINITY).at;
+    }
+    if let Some(ground) = navmesh.ground_under(to) {
+        to.y = ground.y;
+    }
+    to
 }
 
 pub fn script_facts(source: &str) -> (u32, Option<f32>) {
@@ -2835,6 +2852,7 @@ fn update_party(
         .collect();
     // Braces used this tick: (member, the attack it's for, the action, its recast.)
     let mut braces: Vec<(ObjectId, Instant, u32, f32)> = Vec::new();
+    let collision = instance.collision.clone();
     let navmesh = &instance.navmesh;
     for (bot_id, bot) in &bots {
         let Some(NetworkedActor::Npc {
@@ -2980,7 +2998,7 @@ fn update_party(
                         path = instance_navmesh_path(navmesh, here, to).into();
                         reaimed = now;
                     }
-                    let moved = run_along(navmesh, here, &mut path);
+                    let moved = run_along(navmesh, collision.as_deref(), here, &mut path);
                     if let Some((at, facing)) = moved {
                         spawn.common.position = Position(at);
                         spawn.common.rotation = facing;
@@ -3073,12 +3091,11 @@ fn update_party(
                     left = 0.0;
                 }
             }
+            let facing = f32::atan2(at.x - here.x, at.z - here.z);
+            // On the floor, as a player walks (a straight stretch where the navmesh stops went through slopes,
+            // through the air off a ledge, and up cliffs: Bob's Sastasha bundle of 2026-10-26.)
+            at = walk_like_a_player(&instance.navmesh, collision.as_deref(), here, at);
             if flat(at, here) >= 0.05 {
-                let facing = f32::atan2(at.x - here.x, at.z - here.z);
-                // On the floor under it (a straight stretch where the navmesh stops goes through slopes.)
-                if let Some(ground) = instance.navmesh.ground_under(at) {
-                    at.y = ground.y;
-                }
                 spawn.common.position = Position(at);
                 spawn.common.rotation = facing;
                 walks.push((*bot_id, path, Some((at, facing)), reaimed));

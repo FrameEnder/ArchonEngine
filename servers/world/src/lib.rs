@@ -51,6 +51,7 @@ pub use common::{
     PartyUpdateTargets, ServerHandle, ToServer,
 };
 
+pub mod collision;
 mod navmesh;
 pub use navmesh::{Navmesh, NavmeshParams, NavmeshTile};
 

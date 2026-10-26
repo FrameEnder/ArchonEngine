@@ -302,9 +302,7 @@ add one when something is found.
 * Leaving out gear and glamour pieces a bot's race or sex may not wear (EquipRaceCategory, 2026-10-23) is untested in
   game.
 * Hiding a Viera's or Hrothgar's hat when its model has no file for their race (2026-10-23) is untested in game, as is
-  whether a hat they can show always has its own model file (a shared one would be hidden wrongly). Bots keeping to
-  the navmesh's floor where they walk straight is untested in game too; off the navmesh they still walk a straight
-  line.
+  whether a hat they can show always has its own model file (a shared one would be hidden wrongly).
 * Raising a dead bot and its getting up by itself after 30 s are untested in game (2026-10-23): whether the client
   shows a bot raised by the ZoneIn raise animation as it shows a raised player, and that a bot spawned again beside
   you stands (not dead). Healer bots casting Raise (2026-10-23) is untested in game; they don't walk to someone dead out of range
@@ -428,6 +426,25 @@ add one when something is found.
   in the one run it came between 24.2 % and 22.1 %, also 15 s after the second pair, so it might be timed. The blanga
   never went after the player on retail, so its hits on a player use the generic damage. Kawari ends the battle once
   everything is down (Sapphire's rule); on retail the blanga happened to fall last.
+
+## Walking on the collision (2026-10-26)
+
+* Untested in game: it was checked on made-up geometry (slopes, steps, walls, a ledge, a bridge) only, since the
+  workspace has no game files. The first entry into each zone on this build makes its navmesh and collision again
+  (`kawari-navimesh`, in the background; open-world zones take a while), and until then NPCs keep to the navmesh's
+  floor as before.
+* The collision is all of a zone's collision meshes as they load, as the navmesh's is: a collision box that a
+  layer switches off later (or on) is still there (or not), for NPCs as for the navmesh. Bg parts whose collision
+  isn't a "replace" mesh (`ModelCollisionType::Replace`) and sphere, cylinder and plane collision boxes aren't in
+  either.
+* An NPC already inside a wall or a rock (left there by earlier straight walking, or spawned in one) can be boxed in:
+  every way out goes into the far side of it.
+* A ledge's drop is instant (it's on the floor below the next tick, and the client glides it down over the half
+  second), not a fall at a player's speed.
+* `OPEN_WORLD_MAX_DROP` (3 yalms) is a guess; and how retail's Duty Support members follow a player who jumps off a
+  ledge (down after them, or round by the path) isn't recorded.
+* The generator's other changes (the heights the navmesh covers taken from the geometry, the climb in cell heights,
+  ledges filtered) change every navmesh made again; paths that worked could differ.
 
 ## Combat
 

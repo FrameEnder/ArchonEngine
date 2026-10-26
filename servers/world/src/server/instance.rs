@@ -125,6 +125,8 @@ pub struct Instance {
     pub timed_gathering_spawned: HashMap<u32, (ObjectId, u32)>,
     /// The navmesh data.
     pub navmesh: Navmesh,
+    /// The zone's collision, which NPCs walk on as players do (`collision`; written with the navmesh.)
+    pub collision: Option<Arc<crate::collision::Collision>>,
     /// The zone data.
     pub zone: Zone,
     /// The zone's current weather.
@@ -245,6 +247,16 @@ impl Instance {
                     tracing::warn!(
                         "Failed to read {nvm_path:?}, monsters will not function correctly!"
                     );
+                }
+                instance.collision = crate::collision::Collision::load_shared(&nvm_path);
+                // A navmesh made before the collision was written with it: made again (both), keeping this one
+                // until then. NPCs keep to the navmesh's floor meanwhile.
+                if instance.collision.is_none() && config.world.generate_navmesh {
+                    tracing::info!(
+                        "{nvm_path:?} has no collision yet, so it's made again with one"
+                    );
+                    instance.generate_navmesh =
+                        NavmeshGenerationStep::Needed(nvm_path.to_str().unwrap().to_string());
                 }
             } else if config.world.generate_navmesh {
                 instance.generate_navmesh =
