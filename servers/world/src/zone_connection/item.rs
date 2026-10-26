@@ -52,6 +52,12 @@ impl ZoneConnection {
     }
 
     pub async fn send_inventory(&mut self) {
+        // After the first time, only what changed, slot by slot (`send_changed_slots`.)
+        if self.inventory_shown {
+            self.send_changed_slots().await;
+            return;
+        }
+        self.inventory_shown = true;
         for (container_type, container) in (&self.player_data.inventory.clone()).into_iter() {
             self.send_container(container, container_type).await;
         }
@@ -67,6 +73,64 @@ impl ZoneConnection {
                 num_items: 0,
                 container: container_type,
                 ..Default::default()
+            }));
+            self.send_ipc_self(ipc).await;
+            self.player_data.item_sequence += 1;
+        }
+    }
+
+    /// The inventory again, as retail updates it once the client has it: an UpdateInventorySlot for each slot whose
+    /// item changed, an empty one for each slot emptied (Bob's Chronofoil capture of a synthesis: the materials',
+    /// crystals' and the made item's slots, one each). The whole inventory resent (UpdateItem and ContainerInfo, as at
+    /// login) didn't take on the client for the slots it already had: a stack used up stayed in its bags and the item
+    /// made in its place never showed, and the next synthesis and gear set named what wasn't there (Bob's Lira Ormont
+    /// bundles of 2026-10-26). Gathering, shops, quests' rewards and the other callers of `send_inventory` all go
+    /// through here.
+    pub async fn send_changed_slots(&mut self) {
+        let inventory = self.player_data.inventory.clone();
+        let mut current: std::collections::HashMap<(ContainerType, u16), ItemInfo> =
+            std::collections::HashMap::new();
+        for (container_type, container) in (&inventory).into_iter() {
+            for slot in 0..container.max_slots() as u16 {
+                let item = container.get_slot(slot);
+                if item.is_empty_slot() {
+                    continue;
+                }
+                current.insert(
+                    (container_type, slot),
+                    ItemInfo {
+                        sequence: 0,
+                        container: container_type,
+                        slot,
+                        ..(*item).into()
+                    },
+                );
+            }
+        }
+        let mut changed: Vec<(ContainerType, u16)> = current
+            .iter()
+            .filter(|(key, info)| self.shown_items.get(key) != Some(*info))
+            .map(|(key, _)| *key)
+            .collect();
+        changed.extend(
+            self.shown_items
+                .keys()
+                .filter(|key| !current.contains_key(key))
+                .copied(),
+        );
+        changed.sort_by_key(|(container, slot)| (*container as u16, *slot));
+        for (container, slot) in changed {
+            let info = current
+                .get(&(container, slot))
+                .cloned()
+                .unwrap_or(ItemInfo {
+                    container,
+                    slot,
+                    ..Default::default()
+                });
+            let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateInventorySlot(ItemInfo {
+                sequence: self.player_data.item_sequence,
+                ..info
             }));
             self.send_ipc_self(ipc).await;
             self.player_data.item_sequence += 1;

@@ -196,6 +196,14 @@ pub struct ZoneConnection {
     pub materialize: Option<MaterializeRequest>,
     /// The gathering points as this player sees them (`zone_connection/gathering.rs`.)
     pub gathering: GatheringState,
+    /// What the client has been told each inventory slot holds (every UpdateItem and UpdateInventorySlot sent, its
+    /// sequence left out), and whether the whole inventory has gone once (`send_inventory`): after that a resend goes
+    /// slot by slot, only what changed.
+    pub shown_items: std::collections::HashMap<
+        (kawari::common::ContainerType, u16),
+        kawari::ipc::zone::ItemInfo,
+    >,
+    pub inventory_shown: bool,
     pub synced_level: Option<u8>,
     /// The item level the content syncs to, if it has its own (see `GameData::find_content_synced_item_level`.)
     pub synced_item_level: Option<u16>,
@@ -276,6 +284,23 @@ impl ZoneConnection {
 
     /// Sends an IPC segment to the player, where the source actor is also the player.
     pub async fn send_ipc_self(&mut self, ipc: ServerZoneIpcSegment) {
+        // What the client now believes each slot holds (`shown_items`.)
+        if let ServerZoneIpcData::UpdateItem(info) | ServerZoneIpcData::UpdateInventorySlot(info) =
+            &ipc.data
+        {
+            let key = (info.container, info.slot);
+            if info.item_id == 0 || info.quantity == 0 {
+                self.shown_items.remove(&key);
+            } else {
+                self.shown_items.insert(
+                    key,
+                    kawari::ipc::zone::ItemInfo {
+                        sequence: 0,
+                        ..info.clone()
+                    },
+                );
+            }
+        }
         // This is meant to protect against stack-smashing in nested futures
         Box::pin(self.send_ipc_from(self.player_data.character.actor_id, ipc)).await;
     }

@@ -3,7 +3,7 @@ use binrw::binrw;
 use crate::common::ContainerType;
 
 #[binrw]
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct ItemInfo {
     /// Starts from zero and increases by one for each of these packets during this gameplay session
     #[brw(pad_after = 4)] // unused

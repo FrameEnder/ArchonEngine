@@ -176,3 +176,12 @@ Trained Perfection 3813 (Craftimizer's IDs), each with its steps left as its par
 ## Not done yet
 
 See [Known Issues](known-issues.md#crafting).
+
+## Every other inventory change
+
+What the client is told about each slot is kept (`ZoneConnection::shown_items`, from every UpdateItem and
+UpdateInventorySlot sent). The whole inventory goes once, at login (UpdateItem and ContainerInfo); after that
+`send_inventory` sends only the slots that changed, an UpdateInventorySlot each, and an empty one for each slot emptied
+(`send_changed_slots`), as retail updates the bags. The whole inventory resent didn't take on the client for slots it
+already had (Bob's Lira Ormont bundles of 2026-10-26), so gathering, shops, quest rewards and every other caller had
+the same drift as crafting.

@@ -548,8 +548,10 @@ add one when something is found.
 * Condition chances are Craftimizer's (Teamcraft's differ); whether Heart and Soul, Quick Innovation and Careful
   Observation change the condition is disputed (Kawari: only Careful Observation does).
 * The buffs' Action rows also come as ActionRequests, which the action pipeline sees as unscripted actions (a warning).
-* Not done: trial synthesis, collectables (collectability, CollectablesShop), food and potions, the completed-recipe
-  log (CraftingLog is still sent empty: which bit a recipe is isn't known), specialist and Manipulation's quest unlock
+* An emptied material stack goes as an UpdateInventorySlot of an empty item (as item moves do); retail's capture had
+  no stack emptied by a synthesis.
+* Recipes made before 2026-10-26 aren't in the Crafting Log (Quick Synthesis) until made again.
+* Not done: trial synthesis, collectables (collectability, CollectablesShop), food and potions, specialist and Manipulation's quest unlock
   (the client greys those actions; the server doesn't check), crafting leves.
 
 ## Gathering
