@@ -219,6 +219,8 @@ pub struct MarketIndex {
     pub items: HashMap<u32, crate::marketboard::MarketItem>,
     /// Each ItemSearchCategory's items in retail's order (ItemSortCategory's Param, SubcategorySort, ID.)
     pub by_category: HashMap<u16, Vec<u32>>,
+    /// The ClassJobCategory rows that include each ClassJob, for the search's Class/Job filter.
+    pub classjob_categories: HashMap<u8, HashSet<u8>>,
 }
 
 impl Default for GameData {
@@ -2000,6 +2002,7 @@ impl GameData {
                     rarity: row.Rarity,
                     level_equip: row.LevelEquip,
                     level_item: row.LevelItem,
+                    classjob_category: row.ClassJobCategory,
                     can_be_hq: row.CanBeHq,
                     stack_size: row.StackSize,
                 },
@@ -2022,6 +2025,7 @@ impl GameData {
                 (param, subcategory, *id)
             });
         }
+        index.classjob_categories = self.classjob_category_rows();
         tracing::info!(
             "Marketboard: {} items in {} categories",
             index.items.len(),
@@ -2033,6 +2037,34 @@ impl GameData {
             self.marketboard = Some(index.clone());
         }
         index
+    }
+
+    /// Each ClassJob's ClassJobCategory rows: the ones whose column for it (after the row's name) is set.
+    fn classjob_category_rows(&mut self) -> HashMap<u8, HashSet<u8>> {
+        let language = get_config().world.language();
+        let Ok(sheet) = self
+            .resource
+            .read_excel_sheet_header("ClassJobCategory")
+            .and_then(|exh| {
+                self.resource
+                    .read_excel_sheet(&exh, "ClassJobCategory", language)
+            })
+        else {
+            tracing::warn!("Couldn't read the ClassJobCategory sheet");
+            return HashMap::new();
+        };
+        let mut rows: HashMap<u8, HashSet<u8>> = HashMap::new();
+        for category in 0..=u8::MAX {
+            let Some(row) = sheet.row(category as u32) else {
+                continue;
+            };
+            for (column, value) in row.columns.iter().enumerate().skip(1) {
+                if value.into_bool().copied().unwrap_or(false) {
+                    rows.entry((column - 1) as u8).or_default().insert(category);
+                }
+            }
+        }
+        rows
     }
 
     /// The style a pair of glasses (Glasses sheet row) unlocks, which is what the unlock bitmask counts.

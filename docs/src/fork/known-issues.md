@@ -215,8 +215,9 @@ add one when something is found.
 
 ## Marketboard
 
-* The Weapons and Armor tabs' sort (2026-10-23): which of the client's sort bytes (0x13, 0x12) is lowest level first
-  is a guess, and the byte after it (6 on an armor category) isn't known; no retail capture has browsed those tabs.
+* The Weapons and Armor tabs' level filter (2026-10-26) keeps items one can equip at or below the level; whether
+  retail does the same (or that level exactly) isn't recorded, as no retail capture has browsed those tabs. The search
+  box's text isn't used.
 * The purchase opcodes (MarketBoardPurchaseHandler 258, MarketBoardPurchase 610) are FFXIVOpcodes', not yet seen
   working on Kawari; the first purchase tells. They have no finders for the startup scan.
 * Only Gridania's marketboard object has a script (`CmnDefMarketBoardGridania_00039`); whether the other cities'

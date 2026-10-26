@@ -3557,17 +3557,14 @@ async fn process_packet(
                             flags,
                             unk,
                         } => {
-                            let order = kawari_world::marketboard::search_order(
-                                *flags,
-                                unk.first().copied().unwrap_or_default(),
-                            );
+                            let filter = kawari_world::marketboard::search_filter(*flags, unk);
                             connection
                                 .marketboard_search(
                                     *start_index,
                                     *request_id,
                                     *kind,
                                     *category,
-                                    order,
+                                    filter,
                                 )
                                 .await;
                         }

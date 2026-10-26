@@ -63,12 +63,24 @@ applies the next time anyone looks, with no restart. `marketboard::price` and Ka
   Chronofoil captures of 2026-09-15 (8 categories browsed on the Items tab, 400-odd items) 7 categories came in exactly
   that order; the eighth (74) had two of its sort categories the other way round. Kawari listed them by item ID until
   2026-10-23 (`GameData::marketboard`; workspace icarus feature `ItemSortCategory`).
-* **By level** on the Weapons and Armor tabs: there the client sends `flags` 1 and a sort byte, 0x13 as the window
-  opened and 0x12 after Bob changed the sort (his bundle of 2026-10-23: categories 15 and 40, an Arcanist 17, so the
-  byte isn't his level). Kawari ignored it, so the list never changed. Now 0x13 lists the category by equip level then
-  item level, lowest first, and 0x12 highest first (`marketboard::search_order`, `ordered`); items of the same level
-  keep retail's order. Which byte is which way is a guess until a retail capture of the Weapons or Armor tab shows it.
-  The next byte was 6 on category 40 (an armor category) and 0 on 15: not known, ignored.
+
+## The Weapons and Armor tabs' filters
+
+On those tabs the window has a level box and a Class/Job dropdown, both set to the player's own when it opens, and the
+search shows only what they allow. The client sends them in every page's request: `flags` 1, then the level, then
+the ClassJob (0 for any). Bob's bundles: 2026-10-23, 18 and later 19 as his Arcanist levelled, class 0 on the weapon
+categories and 6 once he was a Conjurer; 2026-10-26, a Conjurer 21 on category 37, 21 with the dropdown at 6, 37 and
+24. (Until 2026-10-26 Kawari read the level as a sort order, 0x13 and 0x12, and listed every item of the category.)
+
+Kawari keeps the category's items (still in retail's order) whose `LevelEquip` is at most the level and whose
+`ClassJobCategory` row includes the ClassJob (`marketboard::search_filter`, `filtered`; the rows each ClassJob is in
+come from the ClassJobCategory sheet's columns, read with the index, `GameData::classjob_category_rows`). Level 0 or
+class 0 doesn't filter. The Items and Housing tabs send `flags` 0 and are never filtered. Whether retail keeps items
+*at or below* the level, rather than exactly it or a range, isn't recorded: no retail capture has browsed these tabs.
+
+The text after the two bytes ("Acolyte's" on 2026-10-26, "Beetle Glue" on the Items tab the same morning, carried
+into categories it doesn't belong to) is the search box's, which the client doesn't clear between searches; Kawari
+doesn't filter by it.
 
 ## Listings
 
@@ -108,7 +120,7 @@ these structs, except the leftovers in the page requests, which aren't kept.
 | Packet | Opcode (7.57) | Size | Layout |
 |---|---|---|---|
 | MarketBoardOpened (client, fork) | 683 | 8 | the next request ID u32 (0 on a new session, then one more than the last search's), u32; sent as the window opens, answered with an all-zero MarketBoardItems carrying that request ID |
-| RequestMarketBoardItems (client) | 921 | 136 | start index u32, request ID u8, kind u8 (0x0A first page, 0x0B the rest), **ItemSearchCategory** u8, flags u8 (1 on the Weapons and Armor tabs, 0 on Items and Housing), then 128 bytes: with flags 1 a sort byte (0x13, 0x12: see above) and a byte not known; otherwise what the client doesn't clear (search text, old replies) |
+| RequestMarketBoardItems (client) | 921 | 136 | start index u32, request ID u8, kind u8 (0x0A first page, 0x0B the rest), **ItemSearchCategory** u8, flags u8 (1 on the Weapons and Armor tabs, 0 on Items and Housing), then 128 bytes: with flags 1 the level filter u8 and the Class/Job filter u8 (see above); then what the client doesn't clear (search text, old replies) |
 | MarketBoardItems (server) | 960 | 176 | 20 × (item u32, count u32), next index u32 (0 = last page), error u32 (0; 0x70000001 on an empty reply), then the request's start index u32, request ID u8, kind u8, 2 padding |
 | UnkMarketBoardRequest1 (client: open an item) | 584 | 8 | item u32, then 0x0902 (unknown) |
 | MarketBoardHits (server) | 269 | 8 | 0, then how many listings (retail shows at most 100) |

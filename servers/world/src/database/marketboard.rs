@@ -195,6 +195,7 @@ mod tests {
             rarity: 2,
             level_equip: 50,
             level_item: 130,
+            classjob_category: 0,
             can_be_hq: true,
             stack_size: 1,
         }

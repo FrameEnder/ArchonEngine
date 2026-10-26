@@ -140,45 +140,50 @@ impl Default for Settings {
     }
 }
 
-/// How a search's page lists its category's items.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum SearchOrder {
-    /// Retail's order for a category (`GameData::marketboard`.)
-    Category,
-    /// By the level to equip it, then its item level, lowest or highest first.
-    LevelUp,
-    LevelDown,
+/// What a Weapons or Armor search keeps of its category's items: the window's level and Class/Job filters.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct SearchFilter {
+    /// Items one can equip at this level or below (0: any level.)
+    pub level: u8,
+    /// Items this ClassJob can equip (0: any.)
+    pub classjob: u8,
 }
 
-/// The order a search asks for. On the Weapons and Armor tabs the client sets the byte after the category (`flags`) to
-/// 1 and sends a sort in the next one: 0x13 when the window opened and 0x12 after Bob changed the sort to level (his
-/// bundle of 2026-10-23, an Arcanist 17, so it isn't his level). Which way each one goes isn't recorded on retail yet:
-/// 0x13 is taken as the window's first (lowest level first), 0x12 the other. Anything else, and the Items and Housing
-/// tabs (0, then whatever the client left there), keep the category's order.
-pub fn search_order(flags: u8, sort: u8) -> SearchOrder {
-    match (flags, sort) {
-        (1, 0x13) => SearchOrder::LevelUp,
-        (1, 0x12) => SearchOrder::LevelDown,
-        _ => SearchOrder::Category,
+/// The filter a search asks for. On the Weapons and Armor tabs the client sets the byte after the category (`flags`) to
+/// 1 and sends the window's level in the next one and its Class/Job dropdown in the one after: Bob's bundles of
+/// 2026-10-23 (18, then 19 as his Arcanist levelled; class 0 on the weapon categories, 6 once he was a Conjurer) and
+/// 2026-10-26 (21, and 6, 37, 24 as he changed the dropdown). The Items and Housing tabs send 0 and have no filters;
+/// what follows is search text and leftovers of earlier replies, which the client doesn't clear.
+pub fn search_filter(flags: u8, data: &[u8]) -> SearchFilter {
+    if flags != 1 {
+        return SearchFilter::default();
+    }
+    SearchFilter {
+        level: data.first().copied().unwrap_or_default(),
+        classjob: data.get(1).copied().unwrap_or_default(),
     }
 }
 
-/// A category's items (in retail's order) as `order` lists them.
-pub fn ordered(ids: &[u32], items: &HashMap<u32, MarketItem>, order: SearchOrder) -> Vec<u32> {
-    let mut ids = ids.to_vec();
-    let level = |id: &u32| {
-        items
-            .get(id)
-            .map(|item| (item.level_equip, item.level_item))
-            .unwrap_or_default()
-    };
-    match order {
-        SearchOrder::Category => {}
-        // Stable, so items of the same level keep the category's order.
-        SearchOrder::LevelUp => ids.sort_by_key(level),
-        SearchOrder::LevelDown => ids.sort_by_key(|id| std::cmp::Reverse(level(id))),
-    }
-    ids
+/// A category's items (in retail's order) that `filter` keeps. `classjob_categories` are the ClassJobCategory rows that
+/// include the filter's ClassJob.
+pub fn filtered(
+    ids: &[u32],
+    items: &HashMap<u32, MarketItem>,
+    filter: SearchFilter,
+    classjob_categories: Option<&HashSet<u8>>,
+) -> Vec<u32> {
+    ids.iter()
+        .copied()
+        .filter(|id| {
+            let Some(item) = items.get(id) else {
+                return false;
+            };
+            (filter.level == 0 || item.level_equip <= filter.level)
+                && (filter.classjob == 0
+                    || classjob_categories
+                        .is_some_and(|categories| categories.contains(&item.classjob_category)))
+        })
+        .collect()
 }
 
 /// An item that's on the marketboard, with what its price and listings need.
@@ -192,6 +197,8 @@ pub struct MarketItem {
     pub rarity: u8,
     pub level_equip: u8,
     pub level_item: u16,
+    /// Who can equip it (a ClassJobCategory row.)
+    pub classjob_category: u8,
     pub can_be_hq: bool,
     pub stack_size: u32,
 }
@@ -446,6 +453,7 @@ mod tests {
             rarity: 2, // green
             level_equip: 50,
             level_item: 130,
+            classjob_category: 0,
             can_be_hq: true,
             stack_size: 1,
         }
@@ -459,47 +467,58 @@ mod tests {
             rarity: 1,
             level_equip: 1,
             level_item: 20,
+            classjob_category: 0,
             can_be_hq: true,
             stack_size: 999,
         }
     }
 
     #[test]
-    fn level_order() {
+    fn level_and_class_filter() {
         let low = MarketItem {
             id: 3,
             level_equip: 5,
-            level_item: 5,
+            classjob_category: 2, // say, gladiators'
             ..sword()
         };
         let mid = MarketItem {
             id: 1,
-            level_equip: 19,
-            level_item: 19,
+            level_equip: 21,
+            classjob_category: 7, // say, conjurers'
             ..sword()
         };
         let high = MarketItem {
             id: 2,
             level_equip: 50,
-            level_item: 130,
+            classjob_category: 7,
             ..sword()
         };
         let items: HashMap<u32, MarketItem> = [(1, mid), (2, high), (3, low)].into();
         let category = [2, 1, 3];
-        assert_eq!(search_order(1, 0x13), SearchOrder::LevelUp);
-        assert_eq!(search_order(1, 0x12), SearchOrder::LevelDown);
-        // The Items tab: 0, then the client's leftovers (retail: 0, 0, "wing").
-        assert_eq!(search_order(0, 0), SearchOrder::Category);
+        // Bob's Conjurer 21 on the Armor tab (2026-10-26): flags 1, then 21, 6, then text.
+        let filter = search_filter(1, &[21, 6, b'A', 0]);
         assert_eq!(
-            ordered(&category, &items, SearchOrder::LevelUp),
-            vec![3, 1, 2]
+            filter,
+            SearchFilter {
+                level: 21,
+                classjob: 6
+            }
         );
+        let conjurer: HashSet<u8> = [1, 7].into();
         assert_eq!(
-            ordered(&category, &items, SearchOrder::LevelDown),
-            vec![2, 1, 3]
+            filtered(&category, &items, filter, Some(&conjurer)),
+            vec![1]
         );
+        // Any class.
+        let any_class = SearchFilter {
+            classjob: 0,
+            ..filter
+        };
+        assert_eq!(filtered(&category, &items, any_class, None), vec![1, 3]);
+        // The Items tab has no filters, whatever the client left in the bytes.
+        assert_eq!(search_filter(0, &[21, 6]), SearchFilter::default());
         assert_eq!(
-            ordered(&category, &items, SearchOrder::Category),
+            filtered(&category, &items, SearchFilter::default(), None),
             vec![2, 1, 3]
         );
     }

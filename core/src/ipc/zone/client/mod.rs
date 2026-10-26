@@ -554,9 +554,9 @@ pub enum ClientZoneIpcData {
         /// 1 on the Weapons and Armor tabs, 0 on Items and Housing (Bob's 2026-10-17 session; always 0 in his
         /// 2026-09-15 captures, which only browsed Items.)
         flags: u8,
-        /// With `flags` 1, the first byte is the list's sort (0x13 as the window opened, 0x12 after Bob changed it to
-        /// level: his bundle of 2026-10-23; see `marketboard::search_order` in the world server); otherwise search
-        /// text and leftovers of earlier replies (the client doesn't clear it.)
+        /// With `flags` 1, the window's level filter, then its Class/Job filter (a ClassJob, 0 for any): Bob's
+        /// bundles of 2026-10-23 and 2026-10-26, see `marketboard::search_filter` in the world server. Then search text
+        /// and leftovers of earlier replies (the client doesn't clear them.)
         #[br(count = 128)]
         #[brw(pad_size_to = 128)]
         unk: Vec<u8>,

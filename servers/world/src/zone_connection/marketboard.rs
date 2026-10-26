@@ -48,25 +48,27 @@ impl ZoneConnection {
         self.send_ipc_self(ipc).await;
     }
 
-    /// A page of a search: the items of an ItemSearchCategory, with how many listings each has.
+    /// A page of a search: the items of an ItemSearchCategory that the window's filters keep, with how many listings
+    /// each has.
     pub async fn marketboard_search(
         &mut self,
         start_index: u32,
         request_id: u8,
         kind: u8,
         category: u8,
-        order: marketboard::SearchOrder,
+        filter: marketboard::SearchFilter,
     ) {
         let index = self.game_data.lock().marketboard();
         let settings = self.database.lock().marketboard_settings();
-        let ids = marketboard::ordered(
+        let ids = marketboard::filtered(
             index
                 .by_category
                 .get(&(category as u16))
                 .map(Vec::as_slice)
                 .unwrap_or_default(),
             &index.items,
-            order,
+            filter,
+            index.classjob_categories.get(&filter.classjob),
         );
         let start = (start_index as usize).min(ids.len());
         let end = (start + MARKETBOARD_ITEMS_PER_PAGE).min(ids.len());
