@@ -21,6 +21,11 @@ use kawari::{
     },
 };
 
+/// The unlock link for retainers, and the quest that gives it: The Scions of the Seventh Dawn (its Quest row's
+/// UnlockLink, `docs/src/fork/quests.md`.)
+pub const RETAINER_UNLOCK_LINK: u32 = 3;
+pub const RETAINER_UNLOCK_QUEST: u32 = 509;
+
 impl ZoneConnection {
     /// What the client is sent for one of our active quests.
     fn active_quest_entry(quest: &PersistentQuest) -> ActiveQuest {
@@ -330,6 +335,34 @@ impl ZoneConnection {
             self.grant_quest_unlocks(quest + QuestSheet::STARTING_ROW, false)
                 .await;
         }
+        // And the retainers' approval only with the quest that gives it: characters given it otherwise (an unlock-all,
+        // an import) before finishing The Scions of the Seventh Dawn lose it until they do (Bob, 2026-10-26.) Their
+        // retainers stay; the bell answers that they haven't approval yet.
+        if self
+            .player_data
+            .unlock
+            .unlocks
+            .contains(RETAINER_UNLOCK_LINK)
+            && !self
+                .player_data
+                .quest
+                .completed
+                .contains(RETAINER_UNLOCK_QUEST)
+        {
+            tracing::info!(
+                "{} has the retainers' unlock without having finished quest {RETAINER_UNLOCK_QUEST}: taken back",
+                self.player_data.character.name
+            );
+            self.player_data.unlock.unlocks.clear(RETAINER_UNLOCK_LINK);
+        }
+    }
+
+    /// Whether the character may hire and call retainers (the unlock The Scions of the Seventh Dawn gives.)
+    pub fn retainers_unlocked(&self) -> bool {
+        self.player_data
+            .unlock
+            .unlocks
+            .contains(RETAINER_UNLOCK_LINK)
     }
 
     pub async fn finish_all_quests(&mut self) {

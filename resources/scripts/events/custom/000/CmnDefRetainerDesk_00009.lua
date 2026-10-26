@@ -41,6 +41,12 @@ YIELD_RELEASE = 9
 CONDITION_CREATING_CHARACTER = 31
 
 function onTalk(target, player)
+    -- Without approval to hire retainers (before The Scions of the Seventh Dawn), the vocate says so: scene 3,
+    -- "You cannot hire a retainer" (its name in the Scripter tables; retail's vocate wasn't recorded before it.)
+    if not player:retainers_unlocked() then
+        player:play_scene(SCENE_00003, HIDE_HOTBAR, {})
+        return
+    end
     player:play_scene(SCENE_GREETING, HIDE_HOTBAR, {})
 end
 

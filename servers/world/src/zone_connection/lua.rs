@@ -29,6 +29,10 @@ use kawari::{
 const SUMMONING_BELL_SCENE_LIST: u16 = 0;
 /// "You have not yet hired a retainer."
 const SUMMONING_BELL_SCENE_NO_RETAINER: u16 = 1001;
+/// "You have not yet received approval to hire retainers.": retail's answer before The Scions of the Seventh Dawn
+/// (Bob's Chronofoil capture fef41136, 2026-10-06: a new character, 25 quests done, at the Gridanian inn's bell;
+/// scene 1000, flags 0x2000, no arguments, and EventFinish once it returned.)
+const SUMMONING_BELL_SCENE_NO_APPROVAL: u16 = 1000;
 
 impl ZoneConnection {
     pub async fn process_lua_player(
@@ -475,9 +479,11 @@ impl ZoneConnection {
                         .await;
                 }
                 LuaTask::OpenSummoningBell => {
-                    // Retail plays scene 1000 without approval to hire retainers (An Ill-Conceived Venture); Kawari
-                    // doesn't check that, so it's 1001 (no retainer yet) or the list.
-                    let scene = if self.has_retainers() {
+                    // Without approval (the unlock The Scions of the Seventh Dawn gives), scene 1000; then 1001 with
+                    // no retainer yet, or the list.
+                    let scene = if !self.retainers_unlocked() {
+                        SUMMONING_BELL_SCENE_NO_APPROVAL
+                    } else if self.has_retainers() {
                         SUMMONING_BELL_SCENE_LIST
                     } else {
                         SUMMONING_BELL_SCENE_NO_RETAINER

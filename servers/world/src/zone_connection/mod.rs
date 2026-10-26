@@ -56,6 +56,7 @@ mod marketboard;
 mod mender;
 mod party;
 mod quest;
+pub use quest::RETAINER_UNLOCK_LINK;
 mod retainer;
 mod social;
 mod spiritbond;

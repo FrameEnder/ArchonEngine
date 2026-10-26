@@ -1218,6 +1218,14 @@ impl UserData for LuaPlayer {
         methods.add_method("has_aetheryte", |_, this, aetheryte_id: u32| {
             Ok(this.has_aetheryte(aetheryte_id))
         });
+        // Whether the character has approval to hire retainers (The Scions of the Seventh Dawn's unlock.)
+        methods.add_method("retainers_unlocked", |_, this, _: ()| {
+            Ok(this
+                .player_data
+                .unlock
+                .unlocks
+                .contains(crate::zone_connection::RETAINER_UNLOCK_LINK))
+        });
         methods.add_method_mut("join_content", |_, this, id: u32| {
             this.join_content(id);
             Ok(())
