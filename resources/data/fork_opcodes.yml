@@ -371,6 +371,17 @@ ServerZoneIpcType:
   find:
   - handler:
       pattern: BA 78 01 00 00 E8 ?? ?? ?? ?? 48 8B D3 48 8B C8 48 83 C4 20 5B E9
+- name: RecordCraftingLog
+  comment: A recipe made for the first time - one byte of the completed recipes bitmask (index u16, the byte's new value u8), as RecordGatheringLog is for the gathering log.
+  # 520 on 2026.10.16 (Bob's Chronofoil capture of 2026-10-24: recipe 3812's first synthesis sent [476, 0x08]; its handler,
+  # at 0x140B52C90 next to HandleCompletedRecipesPacket, stores the byte at that index of QuestManager's completed recipes.)
+  opcode: 520
+  size: 8
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On retail with Chronofoil, make a recipe for the first time - the 8-byte packet after the two synthesis log messages.
+  find:
+  - handler:
+      pattern: 0F B7 11 4C 8D 05 ?? ?? ?? ?? 0F B6 41 02 42 88 04 02 C3
 - name: GatheringChainCount
   comment: How many gathers in a row at a node have succeeded so far (1, 2, 3...; 0 as the node's window closes.)
   # 618 on 2026.10.16 (Bob's Chronofoil capture of 2026-10-24; its handler stores the byte, HandleGatheringSuccessfulChainCountPacket.)

@@ -20,6 +20,11 @@ use serde::{Deserialize, Serialize};
 use kawari::ipc::zone::ItemOperation;
 
 mod buyback;
+
+/// The Disciples of the Hand and of the Land: Carpenter (8) to Fisher (18) (the ClassJob sheet's order.)
+pub const CLASSJOB_FIRST_HAND_OR_LAND: u8 = 8;
+pub const CLASSJOB_LAST_HAND_OR_LAND: u8 = 18;
+
 pub use buyback::BuyBackList;
 
 mod equipped;
@@ -681,15 +686,24 @@ impl Inventory {
     /// Adds an item where it belongs: crystals to the crystal bag, anything else to the next free slot. Returns false
     /// if there wasn't room.
     pub fn add_obtained_item(&mut self, item: Item) -> bool {
+        self.add_obtained_item_at(item).is_some()
+    }
+
+    /// `add_obtained_item`, saying which slot it went into (for sending only that slot, as retail does.)
+    pub fn add_obtained_item_at(&mut self, item: Item) -> Option<(ContainerType, u16)> {
         if let Some(kind) = CrystalKind::from_repr(item.item_id) {
             let slot = self.crystals.get_item_for_id(kind);
             if slot.quantity + item.quantity > item.stack_size as i32 {
-                return false;
+                return None;
             }
             slot.quantity += item.quantity;
-            return true;
+            return Some((
+                ContainerType::Crystals,
+                CrystalsStorage::get_slot_for_id(kind),
+            ));
         }
-        self.add_in_next_free_slot(item).is_some()
+        self.add_in_next_free_slot(item)
+            .map(|info| (info.container, info.slot))
     }
 
     /// Uses up one of an item from the bags (the first stack found), e.g. one that's been used. Returns false if they
@@ -869,6 +883,18 @@ impl Inventory {
         model.stains = self.equipped.main_hand.stains;
 
         model
+    }
+
+    /// The off-hand model as others see it for a player of `classjob`: none at all for a crafter or gatherer (classes
+    /// 8-18), as retail's Equip sent in all 106 for those classes in Bob's Chronofoil captures, whatever was in the
+    /// off-hand; the client shows a crafter's tools and station itself while it synthesizes. Sent as their tools'
+    /// models, a Carpenter's saw's sub model is its workbench, which stood beside them all the time, and a second one
+    /// came with each synthesis (Bob's bundle of 2026-10-26.)
+    pub fn get_shown_sub_weapon_id(&self, game_data: &mut GameData, classjob: u8) -> WeaponModelId {
+        if (CLASSJOB_FIRST_HAND_OR_LAND..=CLASSJOB_LAST_HAND_OR_LAND).contains(&classjob) {
+            return WeaponModelId::default();
+        }
+        self.get_sub_weapon_id(game_data)
     }
 
     /// Returns the model ID for the equipped sub weapon.

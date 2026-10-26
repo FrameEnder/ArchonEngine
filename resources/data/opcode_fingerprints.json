@@ -2213,6 +2213,16 @@
     },
     {
       "kind": "ServerZoneIpcType",
+      "name": "RecordCraftingLog",
+      "opcode": 520,
+      "case": "de23b8817106511e10e705ae",
+      "case_group": 1,
+      "handler_at": 11873424,
+      "end": "de23b8817106511e10e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
       "name": "GatheringChainCount",
       "opcode": 618,
       "case": "de23b8812e94612510e705ae",

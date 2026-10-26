@@ -6,7 +6,8 @@
 
 use async_trait::async_trait;
 use kawari::{
-    common::{CharacterMode, ContainerType},
+    common::{CharacterMode, ContainerType, INVENTORY_ACTION_ACK_SHOP},
+    constants::COMPLETED_RECIPES_BITMASK_SIZE,
     ipc::zone::{
         ActorControlCategory, Condition, CraftingActionPreview, EventLogMessage, LiveEventType,
         SceneFlags, ServerZoneIpcData, ServerZoneIpcSegment,
@@ -59,6 +60,7 @@ const LOG_ITEM_MADE: u32 = 1158; // the item
 const LOG_QUICK_SYNTHESIS_STARTED: u32 = 1150; // the item
 const LOG_FAILED: u32 = 1177;
 const LOG_MATERIALS_LOST: u32 = 1160;
+const LOG_RECORDED_IN_LOG: u32 = 1178; // the item (NQ); a recipe's first synthesis
 
 /// A synthesis in progress, kept on the connection.
 #[derive(Debug)]
@@ -194,14 +196,17 @@ async fn send_state(connection: &mut ZoneConnection, cp: i32, statuses: Vec<(u16
         .await;
 }
 
-/// The crafter's tools as LiveEvent 38 and 39 show them (the weapon models' two halves.)
+/// The crafter's tools as LiveEvent 38 and 39 show them (the weapon models' two halves.) Retail's off hand was always
+/// empty (39 with 0, a secondary tool equipped or not: Bob's Chronofoil capture of 2026-10-24); the client brings the
+/// station itself, and with the main hand's sub model (the workbench) sent too there were two.
 async fn show_tools(connection: &mut ZoneConnection) {
     let (main, sub) = {
         let mut game_data = connection.game_data.lock();
         let inventory = &connection.player_data.inventory;
+        let classjob = connection.player_data.classjob.current_class as u8;
         (
             u64::from(inventory.get_main_weapon_id(&mut game_data)),
-            u64::from(inventory.get_sub_weapon_id(&mut game_data)),
+            u64::from(inventory.get_shown_sub_weapon_id(&mut game_data, classjob)),
         )
     };
     connection
@@ -317,11 +322,13 @@ impl CraftingEventHandler {
             .await;
     }
 
-    fn take_materials(connection: &mut ZoneConnection, times: u32) {
+    /// Returns the slots it changed.
+    fn take_materials(connection: &mut ZoneConnection, times: u32) -> Vec<(ContainerType, u16)> {
         let Some(session) = connection.craft.as_ref() else {
-            return;
+            return Vec::new();
         };
         let materials = session.materials.clone();
+        let mut changed = Vec::new();
         for _ in 0..times {
             for (container, slot, item_id, hq, amount) in &materials {
                 let Some(stack) = connection
@@ -345,24 +352,85 @@ impl CraftingEventHandler {
                 if stack.quantity == 0 && *container != ContainerType::Crystals {
                     *stack = Item::default();
                 }
+                if !changed.contains(&(*container, *slot)) {
+                    changed.push((*container, *slot));
+                }
             }
+        }
+        changed
+    }
+
+    /// Sends the slots a synthesis changed, one UpdateInventorySlot each, as retail did (Bob's Chronofoil capture of
+    /// 2026-10-24: the materials' and crystals' slots, InventoryActionAck 6, then the made item's slot.) An emptied
+    /// slot goes as an empty item: the client doesn't apply a whole-inventory resend (ItemInfo and ContainerInfo) to
+    /// the slots it already has, so with that an emptied stack stayed in its bags (Bob's 2026-10-26 bundles.)
+    async fn send_slots(connection: &mut ZoneConnection, slots: &[(ContainerType, u16)]) {
+        for (container, slot) in slots {
+            connection.send_inventory_slot(*container, *slot).await;
+            connection.player_data.item_sequence += 1;
         }
     }
 
-    /// Gives the made item: HQ or not, with the crafter's signature.
-    fn give_item(connection: &mut ZoneConnection, item_id: u32, amount: u32, hq: bool) {
+    /// A recipe's first synthesis marks it done in the Crafting Log (which a quick synthesis needs): the byte of the
+    /// completed recipes bitmask (RecordCraftingLog) and LogMessage 1178 with the item, as retail sent them after the
+    /// synthesis' messages.
+    async fn record_in_crafting_log(
+        connection: &mut ZoneConnection,
+        event: &Event,
+        recipe: &RecipeInfo,
+    ) {
+        let (_, index) = kawari::common::value_to_flag_byte_index_value_quests(recipe.id);
+        let completed = &mut connection.player_data.quest.completed_recipes;
+        // Saved before recipes were (the column's default, `[]`): as long as the client's bitmask, all unset.
+        if completed.data.len() < COMPLETED_RECIPES_BITMASK_SIZE {
+            completed.data.resize(COMPLETED_RECIPES_BITMASK_SIZE, 0);
+        }
+        if (index as usize) >= completed.data.len() || completed.contains(recipe.id) {
+            return;
+        }
+        completed.set(recipe.id);
+        let Some(value) = completed.data.get(index as usize).copied() else {
+            return;
+        };
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::RecordCraftingLog { index, value });
+        connection.send_ipc_self(ipc).await;
+        log_message(connection, event, LOG_RECORDED_IN_LOG, vec![recipe.item_id]).await;
+    }
+
+    /// Gives the made item: HQ or not, with the crafter's signature. Returns the slot it went into.
+    fn give_item(
+        connection: &mut ZoneConnection,
+        item_id: u32,
+        amount: u32,
+        hq: bool,
+    ) -> Option<(ContainerType, u16)> {
         let info = connection
             .game_data
             .lock()
-            .get_item_info(ItemInfoQuery::ById(item_id));
-        if let Some(info) = info {
-            let mut item = Item::new(&info, amount as i32);
-            if hq {
-                item.item_flags |= ITEM_FLAG_HQ;
-            }
-            item.crafter_content_id = connection.player_data.character.content_id as u64;
-            connection.player_data.inventory.add_obtained_item(item);
+            .get_item_info(ItemInfoQuery::ById(item_id))?;
+        let mut item = Item::new(&info, amount as i32);
+        if hq {
+            item.item_flags |= ITEM_FLAG_HQ;
         }
+        item.crafter_content_id = connection.player_data.character.content_id as u64;
+        let slot = connection.player_data.inventory.add_obtained_item_at(item);
+        if slot.is_none() {
+            tracing::warn!("No room for the {item_id} just made!");
+        }
+        slot
+    }
+
+    /// The materials taken, the ack, then the item made (retail's order.)
+    async fn send_synthesis_slots(
+        connection: &mut ZoneConnection,
+        taken: &[(ContainerType, u16)],
+        made: Option<(ContainerType, u16)>,
+    ) {
+        Self::send_slots(connection, taken).await;
+        connection
+            .send_inventory_ack(u32::MAX, INVENTORY_ACTION_ACK_SHOP, 0)
+            .await;
+        Self::send_slots(connection, made.as_slice()).await;
     }
 
     /// The EXP for a synthesis. A stand-in fitted to the capture: 0.72 % of the recipe level's ExpToNext (21,837
@@ -541,16 +609,16 @@ impl CraftingEventHandler {
                 live_event(connection, LIVE_QUICK_START, 0, 0, 0).await;
                 let level = connection.current_level(&connection.game_data.lock()) as u8;
                 for made in 1..=count {
-                    Self::take_materials(connection, 1);
-                    Self::give_item(connection, item_id, amount, false);
+                    let taken = Self::take_materials(connection, 1);
+                    let slot = Self::give_item(connection, item_id, amount, false);
                     log_message(connection, event, LOG_ITEM_MADE, vec![item_id]).await;
+                    Self::send_synthesis_slots(connection, &taken, slot).await;
                     live_event(connection, LIVE_QUICK_RESULT, item_id, made, 0).await;
                     let exp = Self::synthesis_exp(connection, &recipe, 0, max_quality, level);
                     if exp > 0 {
                         connection.add_exp_with_bonus(exp, 0).await;
                     }
                 }
-                connection.send_inventory().await;
                 Self::back_to_log(connection, player).await;
             }
             CLIENT_ACTION | CLIENT_CRAFT_ACTION => {
@@ -624,9 +692,9 @@ impl CraftingEventHandler {
                 let max_quality = session.craft.settings.max_quality;
                 let level = session.craft.settings.level;
 
-                Self::take_materials(connection, 1);
-                Self::give_item(connection, recipe.item_id, recipe.amount_result, hq);
-                connection.send_inventory().await;
+                let taken = Self::take_materials(connection, 1);
+                let slot = Self::give_item(connection, recipe.item_id, recipe.amount_result, hq);
+                Self::send_synthesis_slots(connection, &taken, slot).await;
                 Self::wear_gear(connection, recipe.item_id).await;
                 live_event(
                     connection,
@@ -647,6 +715,7 @@ impl CraftingEventHandler {
                 };
                 log_message(connection, event, LOG_ITEM_MADE, vec![shown_id]).await;
                 log_message(connection, event, LOG_SYNTHESIS_DONE, vec![shown_id]).await;
+                Self::record_in_crafting_log(connection, event, &recipe).await;
                 let exp = Self::synthesis_exp(connection, &recipe, quality, max_quality, level);
                 if exp > 0 {
                     connection.add_exp_with_bonus(exp, 0).await;
@@ -660,8 +729,8 @@ impl CraftingEventHandler {
             CLIENT_FAILED => {
                 // Every material is lost (retail: the stacks emptied, scene 8 listing nothing back.)
                 live_event(connection, LIVE_FAILED, 0, 0, 0).await;
-                Self::take_materials(connection, 1);
-                connection.send_inventory().await;
+                let taken = Self::take_materials(connection, 1);
+                Self::send_slots(connection, &taken).await;
                 Self::wear_gear(connection, recipe_item(connection)).await;
                 log_message(connection, event, LOG_FAILED, Vec::new()).await;
                 log_message(connection, event, LOG_MATERIALS_LOST, Vec::new()).await;
@@ -690,8 +759,8 @@ impl CraftingEventHandler {
             CLIENT_QUIT_DONE => {
                 // Quitting a synthesis loses its materials (retail.)
                 if connection.craft.is_some() {
-                    Self::take_materials(connection, 1);
-                    connection.send_inventory().await;
+                    let taken = Self::take_materials(connection, 1);
+                    Self::send_slots(connection, &taken).await;
                 }
                 let cp = connection.base_parameters().cp as i32;
                 connection.craft = None;
