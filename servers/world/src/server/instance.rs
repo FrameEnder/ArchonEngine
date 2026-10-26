@@ -406,6 +406,8 @@ impl Instance {
                 timeline,
                 timeline_position: 0,
                 timeline_checked: 0,
+                timeline_anchor: None,
+                timeline_hp_done: 0,
                 enmity: HashMap::new(),
                 autoattack_timing: 0,
                 currently_invulnerable: false,

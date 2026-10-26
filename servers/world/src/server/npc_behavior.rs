@@ -381,6 +381,8 @@ pub fn npc_behavior(
             last_position,
             timeline_position,
             timeline_checked,
+            timeline_anchor,
+            timeline_hp_done,
             timeline,
             enmity,
             autoattack_timing,
@@ -422,6 +424,8 @@ pub fn npc_behavior(
             if timeline.from_pull && *state != NpcState::Hate {
                 *timeline_position = 0;
                 *timeline_checked = 0;
+                *timeline_anchor = None;
+                *timeline_hp_done = 0;
             }
 
             // Kept busy by its director: its timeline counts on (above), but it does nothing of its own.
@@ -844,12 +848,33 @@ pub fn npc_behavior(
                 let from = *timeline_checked as f32 * BEHAVIOR_TICK_SECONDS;
                 let to = *timeline_position as f32 * BEHAVIOR_TICK_SECONDS;
                 *timeline_checked = *timeline_position;
-                let due: Vec<TimepointData> = timeline
-                    .points_between(from, to)
-                    .into_iter()
-                    .map(|point| point.data.clone())
-                    .collect();
-                for data in due {
+                // A health threshold crossed comes first, and only one a tick (it's a cast); one that restarts the
+                // clock takes the timed points' place this tick.
+                let hp = health_percent.get(id).copied().unwrap_or(100.0);
+                let crossed = timeline
+                    .timepoints
+                    .iter()
+                    .enumerate()
+                    .find(|(index, point)| {
+                        point.hp_below.is_some_and(|below| hp <= below)
+                            && *timeline_hp_done & (1 << index) == 0
+                    });
+                let due: Vec<(TimepointData, bool)> = if let Some((index, point)) = crossed {
+                    *timeline_hp_done |= 1 << index;
+                    vec![(point.data.clone(), point.restarts)]
+                } else {
+                    timeline
+                        .points_between_after(from, to, *timeline_anchor)
+                        .into_iter()
+                        .map(|point| (point.data.clone(), point.restarts))
+                        .collect()
+                };
+                for (data, restarts) in due {
+                    if restarts && let TimepointData::Action { action_id, .. } = &data {
+                        *timeline_anchor = Some(*action_id);
+                        *timeline_position = 0;
+                        *timeline_checked = 0;
+                    }
                     match data {
                         TimepointData::Action {
                             action_id,

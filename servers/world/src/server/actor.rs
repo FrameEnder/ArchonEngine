@@ -130,6 +130,10 @@ pub enum NetworkedActor {
         /// A `from_pull` timeline: up to which of its ticks (`timeline_position`) its points have been looked at, so a
         /// point due while it was busy casting comes once it's done rather than never.
         timeline_checked: i64,
+        /// A `from_pull` timeline: the action whose last use its clock counts from (`Timepoint::after`; `None` the
+        /// pull), and which of its `hp_below` points have come (bits, by their place in the timeline.)
+        timeline_anchor: Option<u32>,
+        timeline_hp_done: u64,
         /// How much this NPC hates each actor (damage dealt to it, and so on.) It goes after whoever it hates most.
         enmity: HashMap<ObjectId, u32>,
         /// In half-seconds since it last auto-attacked (or picked up its target.)

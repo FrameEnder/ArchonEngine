@@ -166,8 +166,14 @@ impl Timeline {
     /// A `from_pull` timeline's points due in the tick from `from` up to (not including) `to` seconds after the pull:
     /// each at its `time`, then every `every` seconds after it if it repeats.
     pub fn points_between(&self, from: f32, to: f32) -> Vec<&Timepoint> {
+        self.points_between_after(from, to, None)
+    }
+
+    /// `points_between` for the clock started by `anchor` (an action with `restarts`; `None` is the pull.)
+    pub fn points_between_after(&self, from: f32, to: f32, anchor: Option<u32>) -> Vec<&Timepoint> {
         self.timepoints
             .iter()
+            .filter(|point| point.hp_below.is_none() && point.after == anchor)
             .filter(|point| match point.every {
                 Some(every) if every > 0.0 => {
                     let since = (from - point.time).max(0.0);
@@ -189,6 +195,19 @@ pub struct Timepoint {
     /// its 28543, 28546 and 28547 every 37), each point keeping its own period.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub every: Option<f32>,
+    /// With `Timeline::from_pull`: its time counts from the last use of this action (one with `restarts`) instead of
+    /// the pull, and it only comes while that's the last such: the Copperbell Mines' second boss's 28462 came 22.3 s
+    /// after each of its 28463s, and its opening 28461 never once a 28463 had come first (Bob's three runs.)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub after: Option<u32>,
+    /// With `Timeline::from_pull`: instead of a time, it comes once, as soon as the NPC's health is at or below this
+    /// percentage (not mid-cast): the second boss's 28463 at 80, 50 and 25 % (75.5-76.9, 42.6-49.8 and 14.8-24.6 % as
+    /// it began, in the three runs, its timing different in each.)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hp_below: Option<f32>,
+    /// Its use starts the clock again for the points `after` it (see `after`.)
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub restarts: bool,
     pub data: TimepointData,
 }
 
@@ -262,6 +281,9 @@ mod tests {
                 timepoints: vec![Timepoint {
                     time: 20.0,
                     every: None,
+                    after: None,
+                    hp_below: None,
+                    restarts: false,
                     data: TimepointData::Action {
                         action_id: 872,
                         lockon: None,
@@ -326,6 +348,48 @@ mod tests {
                 (86.0, 28545),
                 (99.0, 28543),
             ]
+        );
+    }
+
+    /// The second boss's points after the pull only while no 28463 has come, and its 28462 22 s after each.
+    #[test]
+    fn second_boss_restarts() {
+        let json =
+            std::fs::read_to_string("../resources/timelines/CopperbellBoss2_14448.json").unwrap();
+        let timeline: Timeline = serde_json::from_str(&json).unwrap();
+        let actions = |points: Vec<&Timepoint>| -> Vec<u32> {
+            points
+                .iter()
+                .filter_map(|point| match point.data {
+                    TimepointData::Action { action_id, .. } => Some(action_id),
+                    _ => None,
+                })
+                .collect()
+        };
+        assert_eq!(
+            actions(timeline.points_between_after(6.0, 6.5, None)),
+            vec![28462]
+        );
+        assert_eq!(
+            actions(timeline.points_between_after(17.5, 18.0, None)),
+            vec![28461]
+        );
+        assert!(
+            timeline
+                .points_between_after(17.5, 18.0, Some(28463))
+                .is_empty()
+        );
+        assert_eq!(
+            actions(timeline.points_between_after(22.0, 22.5, Some(28463))),
+            vec![28462]
+        );
+        assert_eq!(
+            timeline
+                .timepoints
+                .iter()
+                .filter(|point| point.hp_below.is_some() && point.restarts)
+                .count(),
+            3
         );
     }
 
