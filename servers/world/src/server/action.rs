@@ -2838,6 +2838,26 @@ pub fn in_area_with_reach(
                 && along <= length + caster_radius + reach
                 && across <= width / 2.0 + reach
         }
+        AreaShape::Donut {
+            radius,
+            hole,
+            on_target,
+        } => {
+            // The ring as the client draws it: its outer edge as a circle's, the hole that share of it.
+            let (from_middle, outer) = if on_target {
+                (flat(point).distance(flat(aimed_at)), radius)
+            } else {
+                (distance, radius + caster_radius)
+            };
+            from_middle <= outer + reach && from_middle + reach >= outer * hole
+        }
+        AreaShape::Cross { length, width } => {
+            let along = offset.dot(forward).abs();
+            let across = offset.perp_dot(forward).abs();
+            let arm = length + caster_radius + reach;
+            let half = width / 2.0 + reach;
+            (along <= arm && across <= half) || (across <= arm && along <= half)
+        }
     }
 }
 

@@ -1297,10 +1297,15 @@ pub fn npc_behavior(
                     game_data
                         .get_action_info(request.action_id)
                         .and_then(|info| info.area_shape()),
-                    Some(AreaShape::Circle {
-                        on_target: true,
-                        ..
-                    })
+                    Some(
+                        AreaShape::Circle {
+                            on_target: true,
+                            ..
+                        } | AreaShape::Donut {
+                            on_target: true,
+                            ..
+                        }
+                    )
                 )
             };
             let position;

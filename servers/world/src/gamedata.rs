@@ -61,6 +61,8 @@ use icarus::ItemSortCategory::ItemSortCategorySheet;
 use icarus::Level::LevelSheet;
 use icarus::Map::MapSheet;
 use icarus::Materia::MateriaSheet;
+use icarus::ModelChara::ModelCharaSheet;
+use icarus::ModelSkeleton::ModelSkeletonSheet;
 use icarus::Mount::MountSheet;
 use icarus::NpcEquip::NpcEquipSheet;
 use icarus::NpcYell::NpcYellSheet;
@@ -169,6 +171,12 @@ pub struct GameData {
     pub base_param_sheet: BaseParamSheet,
     /// Statuses Esuna can remove (Status.CanDispel), read the first time it's needed.
     dispellable_statuses: Option<std::collections::HashSet<u16>>,
+    /// Read the first time they're needed: the omens (areas' markers), and the models' sizes (hitboxes.)
+    omen_sheet: Option<OmenSheet>,
+    model_chara_sheet: Option<ModelCharaSheet>,
+    model_skeleton_sheet: Option<ModelSkeletonSheet>,
+    /// Which of `HITBOX_FORMULAS` matches what Kawari Recorder measured on retail (None: none does), found once.
+    hitbox_formula: Option<Option<usize>>,
     /// Actions some other action continues from (another row's ActionCombo), filled in on first use.
     combo_starters: Option<std::collections::HashSet<u16>>,
     pub classjob_sheet: ClassJobSheet,
@@ -463,6 +471,8 @@ pub struct ActionInfo {
     pub x_axis_modifier: u8,
     /// How wide a cone area-of-effect is, in degrees, from its omen (e.g. "gl_fan090" is 90 degrees.)
     pub cone_angle: f32,
+    /// A donut's hole, as a share of its outer radius, from its omen ("gl_sircle_4010bf": 10 of 40.)
+    pub donut_hole: f32,
 }
 
 impl ActionInfo {
@@ -485,6 +495,10 @@ impl ActionInfo {
     /// The shape this action covers on the ground, if it isn't single-target.
     pub fn area_shape(&self) -> Option<AreaShape> {
         let range = self.effect_range as f32;
+        // Every area the client draws a marker (omen) for, sized as it draws it: the Action sheet's CastType and
+        // EffectRange (XAxisModifier the width), and the omen's own file for a cone's angle and a donut's hole. One
+        // shape for hitting, for drawing and for the bots' dodging (Bob, 2026-10-26: bots stood inside what he saw
+        // and weren't hit, and a donut hit nobody, since Kawari had no donuts.)
         match self.cast_type {
             _ if self.effect_range == 0 => None,
             // A circle, centered on the target (or where it was aimed) if the action has a range, else the caster.
@@ -497,6 +511,11 @@ impl ActionInfo {
                 radius: range,
                 on_target: false,
             }),
+            // A circle placed on the ground (where it was aimed.)
+            7 => Some(AreaShape::Circle {
+                radius: range,
+                on_target: true,
+            }),
             // Cones in front of the caster.
             3 | 13 => Some(AreaShape::Cone {
                 radius: range,
@@ -504,6 +523,17 @@ impl ActionInfo {
             }),
             // Lines and rectangles in front of the caster.
             4 | 8 | 12 => Some(AreaShape::Line {
+                length: range,
+                width: (self.x_axis_modifier as f32).max(1.0),
+            }),
+            // A donut: a ring around the caster (or its target, with a range), safe in the hole.
+            10 => Some(AreaShape::Donut {
+                radius: range,
+                hole: self.donut_hole,
+                on_target: self.range > 0,
+            }),
+            // A cross: two lines through the caster, its way and across it.
+            11 => Some(AreaShape::Cross {
                 length: range,
                 width: (self.x_axis_modifier as f32).max(1.0),
             }),
@@ -515,10 +545,56 @@ impl ActionInfo {
 /// The area an action covers, see `ActionInfo::area_shape`.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AreaShape {
-    Circle { radius: f32, on_target: bool },
-    Cone { radius: f32, angle: f32 },
-    Line { length: f32, width: f32 },
+    Circle {
+        radius: f32,
+        on_target: bool,
+    },
+    Cone {
+        radius: f32,
+        angle: f32,
+    },
+    Line {
+        length: f32,
+        width: f32,
+    },
+    /// `hole` is the share of the outer radius that's safe.
+    Donut {
+        radius: f32,
+        hole: f32,
+        on_target: bool,
+    },
+    /// Arms `length` long each way along the caster's facing and across it.
+    Cross {
+        length: f32,
+        width: f32,
+    },
 }
+
+/// A donut whose omen doesn't say how big its hole is: half (a guess; none of Bob's recordings has one yet.)
+const DEFAULT_DONUT_HOLE: f32 = 0.5;
+
+/// Reads a donut's hole from its omen's path, e.g. "gl_sircle_4010bf": 40 across, a hole of 10 (a quarter.)
+fn donut_hole_from_omen(path: &str) -> Option<f32> {
+    let start = path.find("sircle_")? + 7;
+    let digits: String = path[start..]
+        .chars()
+        .take_while(|c| c.is_ascii_digit())
+        .collect();
+    if digits.len() != 4 {
+        return None;
+    }
+    let outer: f32 = digits[..2].parse().ok()?;
+    let inner: f32 = digits[2..].parse().ok()?;
+    (outer > 0.0 && inner < outer).then_some(inner / outer)
+}
+
+/// The ways a battle NPC's hitbox might come from its model, tried against retail's (`check_hitbox_formulas`.)
+const HITBOX_FORMULAS: [&str; 4] = [
+    "ModelChara.Radius x BNpcBase.Scale",
+    "ModelSkeleton.Radius x BNpcBase.Scale",
+    "ModelChara.Radius",
+    "ModelSkeleton.Radius",
+];
 
 /// Cones without an angle in their omen are 90 degrees wide, the most common.
 const DEFAULT_CONE_ANGLE: f32 = 90.0;
@@ -786,6 +862,10 @@ impl GameData {
             gimmick_rect_sheet,
             base_param_sheet,
             dispellable_statuses: None,
+            omen_sheet: None,
+            model_chara_sheet: None,
+            model_skeleton_sheet: None,
+            hitbox_formula: None,
             combo_starters: None,
             classjob_sheet,
             battalion_sheet,
@@ -2992,15 +3072,32 @@ impl GameData {
     pub fn get_action_info(&mut self, id: u32) -> Option<ActionInfo> {
         let row = self.action_sheet.row(id)?;
 
-        // Only cones need their omen, for their angle.
-        let cone_angle = if matches!(row.CastType, 3 | 13) {
-            OmenSheet::read_from(&mut self.resource, Language::None)
-                .ok()
+        // Only cones and donuts need their omen: a cone's angle, a donut's hole.
+        let omen_path = if matches!(row.CastType, 3 | 10 | 13) {
+            if self.omen_sheet.is_none() {
+                self.omen_sheet = OmenSheet::read_from(&mut self.resource, Language::None).ok();
+            }
+            self.omen_sheet
+                .as_ref()
                 .and_then(|sheet| sheet.row(row.Omen as u32))
-                .and_then(|omen| cone_angle_from_omen(&omen.Path.to_string()))
-                .unwrap_or(DEFAULT_CONE_ANGLE)
+                .map(|omen| omen.Path.to_string())
         } else {
-            DEFAULT_CONE_ANGLE
+            None
+        };
+        let cone_angle = omen_path
+            .as_deref()
+            .and_then(cone_angle_from_omen)
+            .unwrap_or(DEFAULT_CONE_ANGLE);
+        let donut_hole = match omen_path.as_deref().and_then(donut_hole_from_omen) {
+            Some(hole) => hole,
+            None => {
+                if row.CastType == 10 {
+                    tracing::warn!(
+                        "Donut {id}'s omen ({omen_path:?}) doesn't say how big its hole is: taking half"
+                    );
+                }
+                DEFAULT_DONUT_HOLE
+            }
         };
 
         Some(ActionInfo {
@@ -3012,7 +3109,116 @@ impl GameData {
             primary_cost_value: row.PrimaryCostValue,
             x_axis_modifier: row.XAxisModifier,
             cone_angle,
+            donut_hole,
         })
+    }
+
+    /// A battle NPC's hitbox radius (yalms), from its model as the client sizes it, for one without a recorded one
+    /// (its timeline's `hitbox_radius`, which Kawari Recorder read on retail.) The formula is whichever of
+    /// `HITBOX_FORMULAS` gives the recorded hitboxes (`check_hitbox_formulas`, once); None if none does.
+    pub fn npc_hitbox_radius(&mut self, base_id: u32) -> Option<f32> {
+        if self.hitbox_formula.is_none() {
+            self.hitbox_formula = Some(self.check_hitbox_formulas());
+        }
+        let formula = self.hitbox_formula.flatten()?;
+        self.hitbox_candidates(base_id)[formula].filter(|radius| *radius > 0.0)
+    }
+
+    /// What each of `HITBOX_FORMULAS` gives for this BNpcBase.
+    fn hitbox_candidates(&mut self, base_id: u32) -> [Option<f32>; HITBOX_FORMULAS.len()] {
+        let Some(base) = self.bnpc_base_sheet.row(base_id) else {
+            return [None; HITBOX_FORMULAS.len()];
+        };
+        if self.model_chara_sheet.is_none() {
+            self.model_chara_sheet =
+                ModelCharaSheet::read_from(&mut self.resource, Language::None).ok();
+        }
+        if self.model_skeleton_sheet.is_none() {
+            self.model_skeleton_sheet =
+                ModelSkeletonSheet::read_from(&mut self.resource, Language::None).ok();
+        }
+        let scale = if base.Scale > 0.0 { base.Scale } else { 1.0 };
+        let chara = self
+            .model_chara_sheet
+            .as_ref()
+            .and_then(|sheet| sheet.row(base.ModelChara as u32));
+        let chara_radius = chara.as_ref().map(|row| row.Radius);
+        let skeleton_radius = chara.as_ref().and_then(|row| {
+            self.model_skeleton_sheet
+                .as_ref()
+                .and_then(|sheet| sheet.row(row.Model as u32))
+                .map(|skeleton| skeleton.Radius)
+        });
+        [
+            chara_radius.map(|radius| radius * scale),
+            skeleton_radius.map(|radius| radius * scale),
+            chara_radius,
+            skeleton_radius,
+        ]
+    }
+
+    /// Which of `HITBOX_FORMULAS` gives the hitboxes Kawari Recorder measured on retail (the timelines'
+    /// `hitbox_radius`, by the BNpcBase in their name): the one that matches most of them, if it matches most. Logged,
+    /// so a bundle shows it.
+    fn check_hitbox_formulas(&mut self) -> Option<usize> {
+        let mut recorded = Vec::new();
+        let config = kawari::config::get_config();
+        let mut dirs: Vec<String> = config
+            .filesystem
+            .additional_resource_paths
+            .iter()
+            .map(|path| format!("{path}/timelines/"))
+            .collect();
+        dirs.push("resources/timelines/".to_string());
+        for dir in dirs {
+            let Ok(entries) = std::fs::read_dir(&dir) else {
+                continue;
+            };
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                let Some(base_id) = name
+                    .strip_suffix(".json")
+                    .and_then(|stem| stem.rsplit('_').next())
+                    .and_then(|id| id.parse::<u32>().ok())
+                else {
+                    continue;
+                };
+                let radius = std::fs::read_to_string(entry.path())
+                    .ok()
+                    .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
+                    .and_then(|json| json.get("hitbox_radius").and_then(|value| value.as_f64()));
+                if let Some(radius) = radius.filter(|radius| *radius > 0.0) {
+                    recorded.push((base_id, radius as f32));
+                }
+            }
+        }
+        let mut matched = [0usize; HITBOX_FORMULAS.len()];
+        for (base_id, radius) in &recorded {
+            for (index, candidate) in self.hitbox_candidates(*base_id).iter().enumerate() {
+                if candidate.is_some_and(|candidate| (candidate - radius).abs() <= 0.06) {
+                    matched[index] += 1;
+                }
+            }
+        }
+        let best = (0..HITBOX_FORMULAS.len()).max_by_key(|index| matched[*index]);
+        let summary: Vec<String> = HITBOX_FORMULAS
+            .iter()
+            .zip(matched)
+            .map(|(formula, count)| format!("{formula} {count}/{}", recorded.len()))
+            .collect();
+        let chosen = best.filter(|index| matched[*index] * 2 > recorded.len());
+        match chosen {
+            Some(index) => tracing::info!(
+                "Hitboxes from the game data: {} (matches with retail's: {})",
+                HITBOX_FORMULAS[index],
+                summary.join(", ")
+            ),
+            None => tracing::warn!(
+                "No hitbox formula matches retail's (matches: {}): NPCs without a recorded hitbox have none",
+                summary.join(", ")
+            ),
+        }
+        chosen
     }
 
     /// Checks if this zone is associated with a ContentFinderCondition.
@@ -3466,7 +3672,15 @@ impl Resource for SqPackResourceSpy {
 
 #[cfg(test)]
 mod area_tests {
-    use super::{cone_angle_from_omen, scale_by_item_level, sync_cap};
+    use super::{cone_angle_from_omen, donut_hole_from_omen, scale_by_item_level, sync_cap};
+
+    #[test]
+    fn donut_holes() {
+        assert_eq!(donut_hole_from_omen("gl_sircle_4010bf"), Some(0.25));
+        assert_eq!(donut_hole_from_omen("er_gl_sircle_2003bp"), Some(0.15));
+        assert_eq!(donut_hole_from_omen("gl_circle_5003bf"), None);
+        assert_eq!(donut_hole_from_omen("gl_sircle_1bf"), None);
+    }
 
     #[test]
     fn cone_angles() {

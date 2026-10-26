@@ -117,6 +117,48 @@ impl Danger {
                 exits.push(lift(caster - forward * reach + side * across));
                 exits
             }
+            AreaShape::Donut {
+                radius,
+                hole,
+                on_target,
+            } => {
+                // Into the hole (where it's safe), or out past the ring.
+                let (centre, outer) = if on_target {
+                    (flat(self.aimed_at), radius)
+                } else {
+                    (caster, radius + self.caster_radius)
+                };
+                let mut exits = vec![lift(away(centre, outer + reach))];
+                let inside = outer * hole - reach;
+                if inside > 0.0 {
+                    exits.push(lift(away(centre, inside * 0.5)));
+                    exits.push(lift(centre));
+                }
+                exits
+            }
+            AreaShape::Cross { length, width } => {
+                // Off the nearer arm's side, into a corner between the arms.
+                let offset = here - caster;
+                let along = offset.dot(forward);
+                let across = offset.perp_dot(forward);
+                let side = Vec2::new(forward.y, -forward.x);
+                let out = width / 2.0 + reach;
+                let arm = length + self.caster_radius + reach;
+                let corner = |a: f32, b: f32| caster + forward * a + side * b;
+                let sign = |v: f32| if v < 0.0 { -1.0 } else { 1.0 };
+                vec![
+                    lift(corner(
+                        along.abs().max(out) * sign(along),
+                        out * sign(across),
+                    )),
+                    lift(corner(
+                        out * sign(along),
+                        across.abs().max(out) * sign(across),
+                    )),
+                    lift(corner(arm * sign(along), across)),
+                    lift(corner(along, arm * sign(across))),
+                ]
+            }
         }
     }
 }
@@ -340,6 +382,43 @@ mod tests {
         assert!((flat(spot) - 11.0).abs() < 0.2, "{spot:?}");
         // Already out: nowhere to go.
         assert!(safe_spot(Vec3A::new(12.0, 0.0, 0.0), from, &[circle], anywhere).is_none());
+    }
+
+    /// A donut 20 across with a hole a quarter of it, around a caster with a 1-yalm hitbox: someone in the ring goes
+    /// into the hole (nearer than out past it), and someone in the hole stays.
+    #[test]
+    fn donut_into_the_hole() {
+        let donut = danger(AreaShape::Donut {
+            radius: 20.0,
+            hole: 0.25,
+            on_target: false,
+        });
+        // The ring runs from 5.25 (a quarter of 21) to 21 out; the hole's edge less a body and the margin is 4.25.
+        assert!(donut.catches(Vec3A::new(8.0, 0.0, 0.0), DODGE_MARGIN));
+        assert!(!donut.catches(Vec3A::new(3.0, 0.0, 0.0), DODGE_MARGIN));
+        assert!(!donut.catches(Vec3A::new(23.0, 0.0, 0.0), DODGE_MARGIN));
+        let spot = safe_spot(Vec3A::new(8.0, 0.0, 0.0), Vec3A::ZERO, &[donut], anywhere).unwrap();
+        assert!(flat(spot) < 4.3, "{spot:?}");
+        assert!(safe_spot(Vec3A::new(2.0, 0.0, 0.0), Vec3A::ZERO, &[donut], anywhere).is_none());
+    }
+
+    /// A cross 10 yalms each way, 4 wide: off the arm into a corner between them.
+    #[test]
+    fn cross_into_a_corner() {
+        let cross = danger(AreaShape::Cross {
+            length: 10.0,
+            width: 4.0,
+        });
+        // On the arm ahead (facing +z), and on the one across.
+        assert!(cross.catches(Vec3A::new(0.5, 0.0, 6.0), DODGE_MARGIN));
+        assert!(cross.catches(Vec3A::new(-6.0, 0.0, 0.5), DODGE_MARGIN));
+        assert!(!cross.catches(Vec3A::new(5.0, 0.0, 5.0), DODGE_MARGIN));
+        let spot = safe_spot(Vec3A::new(0.5, 0.0, 6.0), Vec3A::ZERO, &[cross], anywhere).unwrap();
+        assert!(!cross.catches(spot, DODGE_MARGIN));
+        assert!(
+            (spot - Vec3A::new(0.5, 0.0, 6.0)).length() < 3.5,
+            "{spot:?}"
+        );
     }
 
     #[test]

@@ -383,6 +383,16 @@ impl Instance {
             }
         }
 
+        // Its hitbox, which its areas reach out from: retail's (recorded), else its model's as the client sizes it. With
+        // none, the Copperbell Mines' bosses' areas were a giant's hitbox smaller than the client drew them, and bots
+        // dodged to spots still inside what Bob saw (Bob, 2026-10-26.)
+        let mut timeline: kawari::common::Timeline = timeline;
+        if timeline.hitbox_radius <= 0.0
+            && let Some(radius) = game_data.npc_hitbox_radius(spawn.common.base_id)
+        {
+            timeline.hitbox_radius = radius;
+        }
+
         // TODO: does classjob/tribe even apply to NPCs?
         let modifiers = game_data
             .get_class_job_modifiers(spawn.common.class_job as u32)
