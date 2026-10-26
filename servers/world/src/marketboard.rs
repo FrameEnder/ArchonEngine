@@ -143,6 +143,8 @@ impl Default for Settings {
 /// What a Weapons or Armor search keeps of its category's items: the window's level and Class/Job filters.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct SearchFilter {
+    /// A Weapons or Armor tab's search (`flags` 1): listed highest level first, with the filters below.
+    pub gear: bool,
     /// Items one can equip at this level or below (0: any level.)
     pub level: u8,
     /// Items this ClassJob can equip (0: any.)
@@ -150,40 +152,76 @@ pub struct SearchFilter {
 }
 
 /// The filter a search asks for. On the Weapons and Armor tabs the client sets the byte after the category (`flags`) to
-/// 1 and sends the window's level in the next one and its Class/Job dropdown in the one after: Bob's bundles of
-/// 2026-10-23 (18, then 19 as his Arcanist levelled; class 0 on the weapon categories, 6 once he was a Conjurer) and
-/// 2026-10-26 (21, and 6, 37, 24 as he changed the dropdown). The Items and Housing tabs send 0 and have no filters;
-/// what follows is search text and leftovers of earlier replies, which the client doesn't clear.
+/// 1 and sends the window's level in the next one and its Class/Job dropdown in the one after (Bob's bundles of
+/// 2026-10-23 and 2026-10-26; retail's the same, his Chronofoil capture b23b91ef). The Items and Housing tabs send 0
+/// and have no filters; what follows is search text and leftovers of earlier replies, which the client doesn't clear.
 pub fn search_filter(flags: u8, data: &[u8]) -> SearchFilter {
     if flags != 1 {
         return SearchFilter::default();
     }
     SearchFilter {
+        gear: true,
         level: data.first().copied().unwrap_or_default(),
         classjob: data.get(1).copied().unwrap_or_default(),
     }
 }
 
-/// A category's items (in retail's order) that `filter` keeps. `classjob_categories` are the ClassJobCategory rows that
-/// include the filter's ClassJob.
-pub fn filtered(
+/// A category's items (in retail's order, `GameData::marketboard`) as a search lists them before filtering: a gear
+/// search puts them highest equip level first, then highest item level, keeping the category's order otherwise
+/// (retail, capture b23b91ef: every item of 12 searches in that order.)
+pub fn search_list(
     ids: &[u32],
     items: &HashMap<u32, MarketItem>,
     filter: SearchFilter,
-    classjob_categories: Option<&HashSet<u8>>,
 ) -> Vec<u32> {
-    ids.iter()
-        .copied()
-        .filter(|id| {
-            let Some(item) = items.get(id) else {
-                return false;
-            };
-            (filter.level == 0 || item.level_equip <= filter.level)
-                && (filter.classjob == 0
-                    || classjob_categories
-                        .is_some_and(|categories| categories.contains(&item.classjob_category)))
-        })
-        .collect()
+    let mut ids = ids.to_vec();
+    if filter.gear {
+        let level = |id: &u32| {
+            items
+                .get(id)
+                .map(|item| (item.level_equip, item.level_item))
+                .unwrap_or_default()
+        };
+        ids.sort_by_key(|id| std::cmp::Reverse(level(id)));
+    }
+    ids
+}
+
+/// One page of a search: up to `MARKETBOARD_ITEMS_PER_PAGE` of `list`'s items from `start` on that `filter` keeps,
+/// and where the next page starts (0 if there's none). As on retail, both are places in the whole list, not in what the
+/// filter kept: the next page starts at the next item it keeps (capture b23b91ef: the first page of level 25 armor for a
+/// Conjurer ended at 528 of 652, and each of 26 pages' start and next matched.) `classjob_categories` are the
+/// ClassJobCategory rows that include the filter's ClassJob.
+pub fn search_page(
+    list: &[u32],
+    items: &HashMap<u32, MarketItem>,
+    filter: SearchFilter,
+    classjob_categories: Option<&HashSet<u8>>,
+    start: usize,
+) -> (Vec<u32>, u32) {
+    let keeps = |id: &u32| {
+        let Some(item) = items.get(id) else {
+            return false;
+        };
+        (filter.level == 0 || item.level_equip <= filter.level)
+            && (filter.classjob == 0
+                || classjob_categories
+                    .is_some_and(|categories| categories.contains(&item.classjob_category)))
+    };
+    let mut page = Vec::new();
+    let mut at = start.min(list.len());
+    while at < list.len() && page.len() < kawari::ipc::zone::MARKETBOARD_ITEMS_PER_PAGE {
+        if keeps(&list[at]) {
+            page.push(list[at]);
+        }
+        at += 1;
+    }
+    let next = list[at..]
+        .iter()
+        .position(keeps)
+        .map(|offset| (at + offset) as u32)
+        .unwrap_or_default();
+    (page, next)
 }
 
 /// An item that's on the marketboard, with what its price and listings need.
@@ -475,52 +513,84 @@ mod tests {
 
     #[test]
     fn level_and_class_filter() {
-        let low = MarketItem {
-            id: 3,
-            level_equip: 5,
-            classjob_category: 2, // say, gladiators'
+        let item = |id, level_equip, level_item, classjob_category| MarketItem {
+            id,
+            level_equip,
+            level_item,
+            classjob_category,
             ..sword()
         };
-        let mid = MarketItem {
-            id: 1,
-            level_equip: 21,
-            classjob_category: 7, // say, conjurers'
-            ..sword()
-        };
-        let high = MarketItem {
-            id: 2,
-            level_equip: 50,
-            classjob_category: 7,
-            ..sword()
-        };
-        let items: HashMap<u32, MarketItem> = [(1, mid), (2, high), (3, low)].into();
-        let category = [2, 1, 3];
+        let items: HashMap<u32, MarketItem> = [
+            (1, item(1, 21, 21, 7)), // conjurers'
+            (2, item(2, 50, 130, 7)),
+            (3, item(3, 5, 5, 2)), // gladiators'
+            (4, item(4, 1, 5, 1)), // anyone's
+            (5, item(5, 1, 1, 1)),
+            (6, item(6, 5, 5, 1)),
+        ]
+        .into();
+        let category = [2, 5, 1, 3, 4, 6];
         // Bob's Conjurer 21 on the Armor tab (2026-10-26): flags 1, then 21, 6, then text.
         let filter = search_filter(1, &[21, 6, b'A', 0]);
         assert_eq!(
             filter,
             SearchFilter {
+                gear: true,
                 level: 21,
                 classjob: 6
             }
         );
+        // Highest equip level first, then item level; ties keep the category's order.
+        let list = search_list(&category, &items, filter);
+        assert_eq!(list, vec![2, 1, 3, 6, 4, 5]);
         let conjurer: HashSet<u8> = [1, 7].into();
+        // The page skips what the filter doesn't keep; the next page starts at the next item it keeps (here, none.)
         assert_eq!(
-            filtered(&category, &items, filter, Some(&conjurer)),
-            vec![1]
+            search_page(&list, &items, filter, Some(&conjurer), 0),
+            (vec![1, 6, 4, 5], 0)
         );
         // Any class.
         let any_class = SearchFilter {
             classjob: 0,
             ..filter
         };
-        assert_eq!(filtered(&category, &items, any_class, None), vec![1, 3]);
-        // The Items tab has no filters, whatever the client left in the bytes.
+        assert_eq!(
+            search_page(&list, &items, any_class, None, 0),
+            (vec![1, 3, 6, 4, 5], 0)
+        );
+        // The Items tab: no filters or sorting, whatever the client left in the bytes.
         assert_eq!(search_filter(0, &[21, 6]), SearchFilter::default());
         assert_eq!(
-            filtered(&category, &items, SearchFilter::default(), None),
-            vec![2, 1, 3]
+            search_list(&category, &items, SearchFilter::default()),
+            category.to_vec()
         );
+    }
+
+    #[test]
+    fn search_pages() {
+        // 45 items anyone can equip at level 1, after 10 of level 60: pages of 20 start where the last one stopped.
+        let mut items = HashMap::new();
+        for id in 1..=55 {
+            let level = if id <= 10 { 60 } else { 1 };
+            items.insert(
+                id,
+                MarketItem {
+                    id,
+                    level_equip: level,
+                    level_item: level as u16,
+                    classjob_category: 1,
+                    ..sword()
+                },
+            );
+        }
+        let list: Vec<u32> = (1..=55).collect();
+        let filter = search_filter(1, &[25, 0]);
+        let (first, next) = search_page(&list, &items, filter, None, 0);
+        assert_eq!((first.len(), first[0], next), (20, 11, 30));
+        let (second, next) = search_page(&list, &items, filter, None, 30);
+        assert_eq!((second.len(), second[0], next), (20, 31, 50));
+        let (last, next) = search_page(&list, &items, filter, None, 50);
+        assert_eq!((last.len(), next), (5, 0));
     }
 
     #[test]

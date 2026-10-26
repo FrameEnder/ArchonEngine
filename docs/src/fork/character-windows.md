@@ -96,6 +96,29 @@ Everything else (the other counters, hunting log, dungeons, PvP, beast tribes, G
 can be given by hand with `!achievement <id>`. `!achievement clear <id>` takes one away, `!achievement check` runs the check (for
 characters that met requirements before this existed). The sheet is read once, the first time it's needed.
 
+## Achievement Certificates (Jonathas)
+
+Not built yet: Kawari's `CmnDefAchievementReward_00107.lua` plays the greeting (scene 0) and nothing else. What retail
+did (Bob's Chronofoil capture b23b91ef, 2026-10-26, his first visit):
+
+1. Talking (CustomTalk 0x000B006B, EventStart type 1) played **scene 2** (flags 0x2000, no parameters): handing out
+   the certificates owed. Its return had no results.
+2. The server then sent, for two items, InventoryActionAck (sequence 0xFFFFFFFF, type 6) and **ActorControlSelf 378**
+   (`PlayerCurrency`): 21172 (Achievement Certificate) and 21173 (no name), max 65000, count 1, then 1. Retail sends
+   the same pair at login with count 0. So certificates aren't an inventory item: the client counts them from 378.
+   21173 counts up with 21172 and is probably the total ever given (what tells how many are still owed).
+3. EventLogMessage2: log message 750 with 1 and the item (21172).
+4. **Scene 1** (flags 0x2000, one parameter, 1): his menu. It returned `[2, 0x001B0155]`: the second choice, and
+   the SpecialShop event to open.
+5. The shop opened nested in his event (EventStart for 0x001B0155 with the same actor, type 7: Nest, what `start_event(..., EVENT_TYPE_NEST, 0)` sends), **scene 0** with flags
+   0x2001 and five parameters (`0xF8380000, 248, 0, 0, 1`, not understood). Closing it returned `[1]`; the server
+   finished the shop event and played scene 1 again.
+6. Leaving the menu returned `[1]`; EventFinish.
+
+What decides how many certificates are owed isn't recorded (the wiki says one per 50 achievement points), nor what
+scene 1's parameter means (1 here, after the first certificate). The client's script
+(`game_script/custom/001/CmnDefAchievementReward_00107.luab`, `kawari-questdump extract`) would tell both.
+
 ## Portraits
 
 **What the client does.** Client trigger **3200** (Kawari's `OpenPortraitsWindow`) asks for the **adventurer plate's

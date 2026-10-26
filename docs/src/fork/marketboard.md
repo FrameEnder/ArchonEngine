@@ -68,19 +68,34 @@ applies the next time anyone looks, with no restart. `marketboard::price` and Ka
 
 On those tabs the window has a level box and a Class/Job dropdown, both set to the player's own when it opens, and the
 search shows only what they allow. The client sends them in every page's request: `flags` 1, then the level, then
-the ClassJob (0 for any). Bob's bundles: 2026-10-23, 18 and later 19 as his Arcanist levelled, class 0 on the weapon
-categories and 6 once he was a Conjurer; 2026-10-26, a Conjurer 21 on category 37, 21 with the dropdown at 6, 37 and
-24. (Until 2026-10-26 Kawari read the level as a sort order, 0x13 and 0x12, and listed every item of the category.)
+the ClassJob (0 for any). Bob's bundles: 2026-10-23, 18 and later 19 as his Arcanist levelled; 2026-10-26, a
+Conjurer 21 on category 37 with the dropdown at 6, 37 and 24. (Until 2026-10-26 Kawari read the level as a sort order,
+0x13 and 0x12, and listed every item of the category.)
 
-Kawari keeps the category's items (still in retail's order) whose `LevelEquip` is at most the level and whose
-`ClassJobCategory` row includes the ClassJob (`marketboard::search_filter`, `filtered`; the rows each ClassJob is in
-come from the ClassJobCategory sheet's columns, read with the index, `GameData::classjob_category_rows`). Level 0 or
-class 0 doesn't filter. The Items and Housing tabs send `flags` 0 and are never filtered. Whether retail keeps items
-*at or below* the level, rather than exactly it or a range, isn't recorded: no retail capture has browsed these tabs.
+**Retail** (Bob's Chronofoil capture b23b91ef, 2026-10-26: 12 searches, a weapon category at levels 24, 25 and 26 and
+category 37 at 25 and 27 with the dropdown at 6, 32 and 24; 26 pages, every item and every next index matched by
+Kawari's rules below):
+
+* It keeps the items whose `LevelEquip` is **at most** the level (26 adds the level 26 weapon, 24 drops the 25) and
+  whose ClassJobCategory row includes the ClassJob. On the weapon category the class was 0.
+* It lists them **highest equip level first, then highest item level**, then the category's own order (`SubcategorySort`,
+  then ID, within the same ItemSortCategory).
+* A page's start and next index are places in that whole sorted category, not in what was kept: the next page starts
+  at the next item kept. Level 25 armor for a Conjurer: the first page's next was 528 (of 652 tradable items; 508 are
+  above level 25), then 548, 568... The client asks for five pages (100 items) and stops, even with more left.
+* A search started a second after the one before came back empty with `error` 0x70000001 (rid 6): retail's limit on
+  searching quickly, it seems. Kawari doesn't refuse.
+
+Kawari does the same (`marketboard::search_filter`, `search_list`, `search_page`; the rows each ClassJob is in come from
+the ClassJobCategory sheet's columns, read with the index, `GameData::classjob_category_rows`). Level 0 or class 0
+doesn't filter. The Items and Housing tabs send `flags` 0: no filters, the category's order.
 
 The text after the two bytes ("Acolyte's" on 2026-10-26, "Beetle Glue" on the Items tab the same morning, carried
 into categories it doesn't belong to) is the search box's, which the client doesn't clear between searches; Kawari
 doesn't filter by it.
+
+In retail's replies an item's count is a u16; the u16 after it was set for a few items (1 for 38, 2 for 2 and 5 for 1 of
+the 1,577 items in all of Bob's captures), with any count, 0 included. Not known; Kawari sends 0.
 
 ## Listings
 

@@ -616,6 +616,9 @@ pub enum ActorControlCategory {
     #[brw(magic = 343u32)]
     SetCaughtSpearfishBitmask { index: u32, value: u32 },
 
+    /// A currency the client counts outside the inventory, such as Achievement Certificates. Retail sends it for each
+    /// of them at login with the count held, and again when the count changes (Bob's Chronofoil capture b23b91ef: two
+    /// items, 0 at login, 1 each after Jonathas gave a certificate; see docs/src/fork/character-windows.md.)
     #[brw(magic = 378u32)]
     PlayerCurrency {
         unk1: u32,
@@ -623,6 +626,10 @@ pub enum ActorControlCategory {
         item_id: u32,
         /// Max number of held currency.
         max_count: u32,
+        /// How many are held now.
+        count: u32,
+        /// 1 every time on retail.
+        unk2: u32,
     },
 
     #[brw(magic = 384u32)]

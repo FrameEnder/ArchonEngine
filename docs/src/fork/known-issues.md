@@ -213,11 +213,17 @@ add one when something is found.
   scripted, and only the Sun Midge Swarm's drop is in `Drops.lua`. Not tested in game yet.
 * Ovjang (the hunt mark) stands at one of its spawn points; retail moves it between them.
 
+## Achievement Certificates
+
+* Jonathas (Old Gridania) only greets: retail hands out the certificates owed (scene 2, ActorControlSelf 378 with the
+  count), then a menu (scene 1) that opens his SpecialShop (0x001B0155) nested. Kawari doesn't count certificates or
+  send 378 (the struct now has the count). How many are owed and what scene 1's parameter is need the client's script
+  (`character-windows.md`).
+
 ## Marketboard
 
-* The Weapons and Armor tabs' level filter (2026-10-26) keeps items one can equip at or below the level; whether
-  retail does the same (or that level exactly) isn't recorded, as no retail capture has browsed those tabs. The search
-  box's text isn't used.
+* Retail refuses a search started a second after the last (error 0x70000001); Kawari answers every one. The u16
+  after each item's count in a search reply is unknown (sent as 0). The search box's text isn't used.
 * The purchase opcodes (MarketBoardPurchaseHandler 258, MarketBoardPurchase 610) are FFXIVOpcodes', not yet seen
   working on Kawari; the first purchase tells. They have no finders for the startup scan.
 * Only Gridania's marketboard object has a script (`CmnDefMarketBoardGridania_00039`); whether the other cities'

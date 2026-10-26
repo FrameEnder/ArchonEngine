@@ -5,9 +5,9 @@
 use kawari::{
     common::ContainerType,
     ipc::zone::{
-        ItemInfo, MARKETBOARD_HISTORY_ENTRIES, MARKETBOARD_ITEMS_PER_PAGE,
-        MARKETBOARD_LISTINGS_PER_PAGE, MarketBoardHistory, MarketBoardItem, MarketBoardListing,
-        MarketBoardPurchase, ServerZoneIpcData, ServerZoneIpcSegment,
+        ItemInfo, MARKETBOARD_HISTORY_ENTRIES, MARKETBOARD_LISTINGS_PER_PAGE, MarketBoardHistory,
+        MarketBoardItem, MarketBoardListing, MarketBoardPurchase, ServerZoneIpcData,
+        ServerZoneIpcSegment,
     },
 };
 
@@ -60,7 +60,7 @@ impl ZoneConnection {
     ) {
         let index = self.game_data.lock().marketboard();
         let settings = self.database.lock().marketboard_settings();
-        let ids = marketboard::filtered(
+        let list = marketboard::search_list(
             index
                 .by_category
                 .get(&(category as u16))
@@ -68,11 +68,15 @@ impl ZoneConnection {
                 .unwrap_or_default(),
             &index.items,
             filter,
-            index.classjob_categories.get(&filter.classjob),
         );
-        let start = (start_index as usize).min(ids.len());
-        let end = (start + MARKETBOARD_ITEMS_PER_PAGE).min(ids.len());
-        let items = ids[start..end]
+        let (page, next_index) = marketboard::search_page(
+            &list,
+            &index.items,
+            filter,
+            index.classjob_categories.get(&filter.classjob),
+            start_index as usize,
+        );
+        let items = page
             .iter()
             .map(|id| {
                 let (nq, hq) = index
@@ -88,7 +92,7 @@ impl ZoneConnection {
             .collect();
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::MarketBoardItems {
             items,
-            next_index: if end < ids.len() { end as u32 } else { 0 },
+            next_index,
             error: 0,
             start_index,
             request_id,
