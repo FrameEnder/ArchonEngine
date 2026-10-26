@@ -431,6 +431,7 @@ add one when something is found.
 
 ## Combat
 
+* ClientTrigger 441 is unknown: it came twice just before an EquipGearset (Lira Ormont, 2026-10-26); retail's meaning wasn't checked.
 * NPCs no longer redraw their weapon after every action (2026-10-25: retail never did; the redraw dated from the
   old 0.6 s animation lock and swing 0, which now match retail). If NPCs drop their battle stance between attacks
   again, look at the NPC ActionEffect.
