@@ -121,6 +121,7 @@ struct ExtendedQuest {
     id: u32,
     sequence: u8,
     variables: Vec<u8>,
+    accepting_class_job: u8,
 }
 
 #[derive(Deserialize, Default)]
@@ -269,6 +270,7 @@ fn apply_extended(extended: &Extended, player_data: &mut PlayerData) {
                     id: id as u16,
                     sequence: quest.sequence,
                     variables,
+                    accept_class_job: quest.accepting_class_job,
                 })
             })
             .collect();

@@ -95,6 +95,12 @@ each part of the story's key has to come from a capture of it; a zone with more 
 of its layers each shows, with their event NPCs, the first time it's loaded (`log_layer_filters`), which is how the
 rest can be matched to the story. `transition_territory_filter_key` was thought to choose ambient sound.
 
+**Where else** (every ZoneInit and ActorSetPos in Bob's 54 Chronofoil captures, 2026-06 to 2026-10, 110 zones): in A
+Realm Reborn only the Waking Sands; later, territory 351 (247671, then 251230 in later captures), 433 (119936), 844
+(254682), 857 (242178, 246488), 878 (243293, 244188, 244190, 244391, 251232 across visits) and 1165 (276017 as it's
+entered, then 276018 to 276022 in turn within one visit, an event moving on). Which quest each goes with isn't
+recorded, so they aren't in `layer_filters.json` yet. Every other zone, cities and inns among them, had 0.
+
 ## Weather
 
 Kawari forecasts weather like the client (WeatherRate's chances against a roll for each 8 Eorzean hour window,

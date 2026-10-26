@@ -248,6 +248,29 @@ def _battle(args) -> int:
     return 0
 
 
+def _fields(args) -> int:
+    from . import fields
+
+    retail, used = fields.retail_stats(args.retail, all_versions=args.all_versions)
+    if not used:
+        print("No Chronofoil captures of Kawari's game version found (--all-versions takes any)")
+        return 1
+    kawari, files = fields.kawari_stats(args.kawari)
+    if not files:
+        print("No Kawari captures found")
+        return 1
+    text = (f"# What retail sends that Kawari doesn't\n\nRetail: {len(used)} captures ({', '.join(used)}). "
+            f"Kawari: {files} captures.\n\n"
+            + fields.report(retail, kawari, args.share, args.min_count,
+                            set(args.packets.split(",")) if args.packets else None))
+    if args.out:
+        Path(args.out).write_text(text)
+        print(f"Wrote {args.out}")
+    else:
+        print(text)
+    return 0
+
+
 def _chronofoil(args) -> int:
     from . import chronofoil
 
@@ -476,6 +499,20 @@ def main(argv=None) -> int:
     p.add_argument("--save-opcodes", action="store_true",
                    help="save Kawari's current opcodes for its game version (before merging a new patch)")
     p.set_defaults(run=_chronofoil)
+
+    p = commands.add_parser("fields", help="what retail sends that Kawari doesn't: packets it never sends, and bytes "
+                                           "retail fills in that Kawari always sends as zero")
+    p.add_argument("--retail", nargs="+", required=True, help="Chronofoil captures or folders")
+    p.add_argument("--kawari", nargs="+", required=True,
+                   help="Kawari packet captures (.jsonl, .jsonl.gz) or folders of them, e.g. bundles")
+    p.add_argument("--share", type=float, default=0.1,
+                   help="report bytes retail set in at least this share of its packets (default 0.1)")
+    p.add_argument("--min-count", type=int, default=3, help="leave out packets retail sent fewer times than this")
+    p.add_argument("--packets", help="only these packets (comma-separated names)")
+    p.add_argument("--all-versions", action="store_true",
+                   help="use captures of every game version (older layouts can differ)")
+    p.add_argument("--out", help="write the report to this file")
+    p.set_defaults(run=_fields)
 
     p = commands.add_parser("battle-sim", help="run quest battle scripts against what the same battles did on retail")
     p.add_argument("battles", nargs="*", help="only these quest battles")

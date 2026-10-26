@@ -397,3 +397,9 @@ workflow. Upstream's own CI (`.forgejo/workflows/main.yml`) is for Codeberg and 
 * A new kind of step: add it to `harness.py` (what the server does), `replay.py` (the step) and `fixtures.py`
   (recording it), with a test.
 * A new packet the tools should understand: `capture.py` reads Kawari's `decoded` text, `recording.py` the raw bytes.
+
+## fields
+
+`questkit fields --retail <Chronofoil> --kawari <Kawari captures>` lists what retail sends that Kawari doesn't: packets
+it never sends, and bytes retail fills in that Kawari always sends as zero, with retail's values
+(`questkit/fields.py`). What it found is tracked in [What Retail Sends That Kawari Doesn't](unfilled-fields.md).

@@ -657,7 +657,8 @@ impl ZoneConnection {
                     .unwrap_or(self.current_level(&game_data)),
                 synced_level: self.synced_level.unwrap_or_default() as u16,
                 current_exp: self.current_exp(&game_data),
-                ..Default::default()
+                // Retail fills it here too (604800 at most, a full bar), not only in UpdateRestedExp.
+                rested_exp: self.player_data.classjob.rested_exp as u32,
             }));
         }
         self.send_ipc_self(ipc).await;

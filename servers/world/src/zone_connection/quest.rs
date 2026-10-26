@@ -27,6 +27,7 @@ impl ZoneConnection {
         ActiveQuest {
             id: quest.id,
             sequence: quest.sequence,
+            accept_class_job: quest.accept_class_job,
             bitflags: quest.variables,
             ..Default::default()
         }
@@ -146,6 +147,7 @@ impl ZoneConnection {
             id: adjusted_id as u16,
             sequence: 0xFF,
             variables: [0; 6],
+            accept_class_job: self.player_data.classjob.current_class as u8,
         });
         let slot = self.player_data.quest.active.0.len() - 1;
         self.send_quest_update(slot).await;

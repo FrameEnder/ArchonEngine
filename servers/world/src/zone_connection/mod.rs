@@ -88,6 +88,10 @@ pub struct PersistentQuest {
     /// The quest's variables (UI8A through UI8F), which the quest script and the client track objectives with.
     #[serde(default)]
     pub variables: [u8; 6],
+    /// The class/job it was accepted as: retail's active quest list carries it (every quest in Bob's captures), and
+    /// the client's quest scripts can branch on it; Kawari sent 0 (`questkit fields`, 2026-10-26).
+    #[serde(default)]
+    pub accept_class_job: u8,
 }
 
 /// Persistent player data.
