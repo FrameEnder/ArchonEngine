@@ -588,6 +588,13 @@ fn donut_hole_from_omen(path: &str) -> Option<f32> {
     (outer > 0.0 && inner < outer).then_some(inner / outer)
 }
 
+/// Unlock links retail granted as these quests were finished (ActorControlSelf ToggleUnlock right before FinishQuest,
+/// Bob's Chronofoil capture afe32479, 2026-10-25), by quest (short ID): The Scions of the Seventh Dawn's retainers,
+/// Color Your World's dyeing, If I Had a Glamour's glamours.
+const RECORDED_QUEST_UNLOCKS: [(u32, u32); 3] = [(509, 3), (699, 14), (3017, 15)];
+/// The first Quest row (quest 1's), as event IDs count them.
+const QUEST_ROW_START: u32 = 65536;
+
 /// The ways a battle NPC's hitbox might come from its model, tried against retail's (`check_hitbox_formulas`.)
 const HITBOX_FORMULAS: [&str; 4] = [
     "ModelChara.Radius x BNpcBase.Scale",
@@ -2471,7 +2478,8 @@ impl GameData {
         let Some(row) = self.quest_sheet.row(quest_id) else {
             return Vec::new();
         };
-        row.QuestParams
+        let mut links: Vec<u32> = row
+            .QuestParams
             .iter()
             .filter(|variable| {
                 let name = variable.ScriptInstruction.to_string();
@@ -2481,7 +2489,66 @@ impl GameData {
             })
             .map(|variable| variable.ScriptArg)
             .filter(|link| *link != 0)
-            .collect()
+            .collect();
+
+        // What it rewards gets unlocked with it: its general actions (the sheet's GeneralActionReward, and the ones its
+        // script names, LOC_GENERAL_ACTION*), its action and its emote, by their own UnlockLink. Color Your World (699,
+        // general action 15) unlocked dyeing and If I Had a Glamour (3017, 22 and 25) glamours on retail, ToggleUnlock
+        // 14 and 15 (Bob's Chronofoil capture afe32479, 2026-10-25); with only REWARD_* read, neither did here (Bob,
+        // 2026-10-26.)
+        let mut general_actions: Vec<u32> = row
+            .GeneralActionReward
+            .iter()
+            .map(|id| *id as u32)
+            .collect();
+        general_actions.extend(
+            row.QuestParams
+                .iter()
+                .filter(|variable| {
+                    variable
+                        .ScriptInstruction
+                        .to_string()
+                        .starts_with("LOC_GENERAL_ACTION")
+                })
+                .map(|variable| variable.ScriptArg),
+        );
+        // Its system rewards, taken as unlock links (The Scions of the Seventh Dawn's retainers, link 3 on retail, has
+        // no REWARD_* variable; which column carries it isn't checked against the sheet yet, so what retail sent is
+        // also recorded below.)
+        links.extend(row.SystemReward.iter().map(|link| *link as u32));
+        links.extend(
+            RECORDED_QUEST_UNLOCKS
+                .iter()
+                .filter(|(quest, _)| *quest + QUEST_ROW_START == quest_id)
+                .map(|(_, link)| *link),
+        );
+        let action = row.ActionReward as u32;
+        let emote = row.EmoteReward as u32;
+        let language = get_config().world.language();
+        if general_actions.iter().any(|id| *id != 0)
+            && let Ok(sheet) = GeneralActionSheet::read_from(&mut self.resource, language)
+        {
+            for id in general_actions.into_iter().filter(|id| *id != 0) {
+                if let Some(general_action) = sheet.row(id) {
+                    links.push(general_action.UnlockLink as u32);
+                }
+            }
+        }
+        if action != 0
+            && let Some(action_row) = self.action_sheet.row(action)
+        {
+            links.push(action_row.UnlockLink);
+        }
+        if emote != 0
+            && let Ok(sheet) = EmoteSheet::read_from(&mut self.resource, language)
+            && let Some(emote_row) = sheet.row(emote)
+        {
+            links.push(emote_row.UnlockLink);
+        }
+        links.retain(|link| *link != 0);
+        links.sort_unstable();
+        links.dedup();
+        links
     }
 
     /// Returns a list of variable name and value pairs for this CustomTalk.

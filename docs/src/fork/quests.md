@@ -430,3 +430,14 @@ levequests, Close to Home's `REWARD_DESION = 1` is Return (Sapphire's ManWil002 
 too). `REWARD_GIL…`/`REWARD_EXP…` are amounts and are skipped. The server sets them at `finish_quest` (with actor
 control ToggleUnlock) and, at login, for every quest already finished (`check_quest_unlocks`). Scripts can still
 unlock something mid-quest with `player:unlock(id)`, as Close to Home does for Return when attuning.
+
+Not every unlock is a `REWARD…` parameter (2026-10-26). Retail's ToggleUnlock right before FinishQuest (Bob's
+Chronofoil capture afe32479): The Scions of the Seventh Dawn **3** (retainers), Color Your World **14** (dyeing), If I
+Had a Glamour **15** (glamours); none has a `REWARD…` parameter, so none unlocked anything here and the bell answered
+"no approval" after The Scions of the Seventh Dawn (Bob, 2026-10-26). A quest now also grants the unlock links of
+what it rewards: its general actions (GeneralActionReward, and the ones its script names, `LOC_GENERAL_ACTION*`:
+Color Your World's 15, If I Had a Glamour's 22 and 25), its ActionReward and EmoteReward (each row's UnlockLink), its
+SystemReward (taken as unlock links), and what retail was recorded granting (`RECORDED_QUEST_UNLOCKS`: the three
+above, so they hold whichever column is theirs). Each link granted is logged ("Quest … unlocks unlock link …"), which
+tells from a bundle which sources are right. Characters who finished them before get them at their next login.
+If I Had a Glamour's LogMessage 789 (ActorControlSelf 517, with the item 13258) isn't sent.

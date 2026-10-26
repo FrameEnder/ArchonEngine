@@ -238,7 +238,8 @@ add one when something is found.
 * The vocate's menu choices other than hiring and letting go (5 and 8 on retail) end the visit; hiring's yield 3 is
   answered with one 0, not retail's eight zeros on resume opcode 329 (upstream's EventResume8 is 513: which is right
   for 2026.10.06 isn't settled.)
-* Approval to hire retainers (2026-10-26) comes with The Scions of the Seventh Dawn's unlock link 3. Whether retail
+* Approval to hire retainers (2026-10-26) comes with The Scions of the Seventh Dawn's unlock link 3 (granted from
+  `RECORDED_QUEST_UNLOCKS` since its Quest row has no `REWARD…` parameter; until then the bell refused everyone). Whether retail
   also wants An Ill-Conceived Venture finished first (the vocate's own quest, which Kawari doesn't have) isn't
   recorded: no capture has a bell or vocate between the two. The vocate's answer before it (scene 3) is a guess from
   its scene's name.

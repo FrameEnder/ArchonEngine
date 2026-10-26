@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-26 | — | `master` fast-forwarded to `Latest-Quest` with Bob's OK (changelog).
+| 2026-10-26 | — | Quests (unlock links from what a quest rewards: dyeing, glamours, retainers); known issues; Kawari Web's `main` fast-forwarded.
+| 2026-10-26 | `31693e1` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (changelog).
 | 2026-10-26 | `4e8b4e7` | Retainers (locked until The Scions of the Seventh Dawn: the bell's scene 1000); known issues.
 | 2026-10-26 | `53d86a0` | What retail sends that Kawari doesn't (new page; `questkit fields`); quests (the accepting class sent); travel (the other zones with layer filters).
 | 2026-10-26 | `8eca6bb` | Kawari Web (2.22.5: a bundle lists who was playing first).
@@ -257,7 +258,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | `master` fast-forwarded to `Latest-Quest` with Bob's OK. |
+| — | Bob (2026-10-26): Color Your World and If I Had a Glamour unlocked nothing, and the bell said "no approval" after The Scions of the Seventh Dawn. Retail sent ToggleUnlock 14, 15 and 3 as they finished (capture afe32479); Kawari only read `REWARD…` parameters, which none of them has. `get_quest_unlock_links` adds the unlock links of a quest's general actions (GeneralActionReward and `LOC_GENERAL_ACTION*`), ActionReward and EmoteReward, its SystemReward, and `RECORDED_QUEST_UNLOCKS` (509 → 3, 699 → 14, 3017 → 15). Kawari Web: `main` fast-forwarded to `UI-Redesign` (2.22.5) with Bob's OK. Docs: `quests.md`, `known-issues.md`.
+| `31693e1` | `master` fast-forwarded to `Latest-Quest` with Bob's OK. |
 | `4e8b4e7` | Bob (2026-10-26): retainers locked until The Scions of the Seventh Dawn. From his capture fef41136 (2026-10-06, a new character at the Gridanian inn's bell): scene 1000, "no approval to hire retainers", then EventFinish. The bell plays it without unlock link 3 (`SUMMONING_BELL_SCENE_NO_APPROVAL`, `retainers_unlocked`); the vocate plays scene 3 (`player:retainers_unlocked()`); at login a character holding the unlock without the quest loses it (`check_quest_unlocks`, `RETAINER_UNLOCK_LINK`, `RETAINER_UNLOCK_QUEST`). Docs: `retainers.md`, `known-issues.md`.
 | `53d86a0` | Bob (2026-10-26): story dialogue and cutscenes depend on class, race, starting city and more, so track every data point retail sends that Kawari doesn't. **`questkit fields`** (`tools/questkit/questkit/fields.py`): packets retail sends that Kawari never did, and bytes retail fills that Kawari always sends as zero, with retail's values; packets with other players' data left out. First run against Bob's twelve October captures and the bundles' 344 captures, findings in the new page `unfilled-fields.md`. Fixed from it: each active quest's **accepting class/job** (`PersistentQuest::accept_class_job`, kept from acceptance and read from Auracite (Kawari) backups' `accepting_class_job`; it was always 0), and UpdateClassInfo's **rested EXP**. Layer filter keys across all 54 captures: only the Waking Sands in A Realm Reborn, six later zones (`travel.md`). Docs: `unfilled-fields.md`, `SUMMARY.md`, `travel.md`, `questkit.md`.
 | `8eca6bb` | Kawari Web 2.22.5: a diagnostics bundle's characters are listed with whoever the window's captures were played by first, marked (`_played_in`, `played_in_window`); Bob's read as Lira Ormont's, the database's first. Docs: `kawari-web.md`.
