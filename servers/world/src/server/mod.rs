@@ -1560,6 +1560,20 @@ pub async fn server_main_loop(
                                     );
                                 }
                             }
+                            QueuedTaskData::LeapTo { target } => {
+                                let mut data = data.lock();
+                                if let Some(instance) =
+                                    data.find_actor_instance_mut(task.from_actor_id)
+                                {
+                                    let mut network = network.lock();
+                                    npc_behavior::leap_to(
+                                        &mut network,
+                                        instance,
+                                        task.from_actor_id,
+                                        *target,
+                                    );
+                                }
+                            }
                             QueuedTaskData::SendDefeated { actor_id, killer } => {
                                 let mut network = network.lock();
                                 let mut data = data.lock();

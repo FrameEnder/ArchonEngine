@@ -171,6 +171,19 @@ had turned, not where they were drawn; its tank bot circled through it (sent rou
 player and back, every second), turning it; and the first marker's area panicked the server (an EObj asked for its
 CommonSpawn).
 
+**Which way Kottos' attacks go** (from the three runs, ActorCast rotations and who was hit; the names from the
+[Console Games Wiki](https://ffxiv.consolegameswiki.com/wiki/Copperbell_Mines)): 28545 (Grand Slam) is the
+tankbuster on its target. 28546 (Colossal Slam), cast on itself, is a large cone the way it faces as it begins, and it
+faced its target, the tank: −1.94 with the tank at −1.94 and 1.04 with the tank at 0.97 (Duty Support run), hitting
+the tank 8.7–10.5 yalms off and nobody beside or behind it; in the Duty Finder runs the players stood out of it.
+28547 (Catapult) hits only the one it's thrown at, someone other than its target at random: the Marauder standing at
+the same spot (5.0 yalms, 0.03 rad apart) wasn't hit, twice. Kawari's 28546 kept the facing its third leap had left
+it (exactly −45° or 135°), so it went the same way every time and caught nobody, and the bots never had to get out
+of it (Bob's bundle of 2026-10-26: "his cone AOE doesn't target anyone and only goes in one spot"). Now a timeline
+action on `itself` faces its target as it begins (`npc_behavior`), and every NPC hit goes out facing the way its cast
+was aimed (`action.rs`), not the way it turned in the tick its cast ended (its Catapult's hit swung back to the tank
+there).
+
 **The bosses** (`spawn_boss`: sealed 15 s after their pull, log 2012 (PlaceName, 15) then 2013; opened at their death,
 log 2014; the battle music, 37, at the first two's pulls and off at their deaths):
 

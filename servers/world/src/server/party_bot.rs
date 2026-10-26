@@ -3093,7 +3093,7 @@ fn update_party(
             }
             let facing = f32::atan2(at.x - here.x, at.z - here.z);
             // On the floor, as a player walks (a straight stretch where the navmesh stops went through slopes,
-            // through the air off a ledge, and up cliffs: Bob's Sastasha bundle of 2026-10-26.)
+            // through the air off a ledge, and up cliffs: Bob's Copperbell Mines bundle of 2026-10-26.)
             at = walk_like_a_player(&instance.navmesh, collision.as_deref(), here, at);
             if flat(at, here) >= 0.05 {
                 spawn.common.position = Position(at);

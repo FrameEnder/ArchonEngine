@@ -104,6 +104,19 @@ fn flat_distance(a: Vec3A, b: Vec3A) -> f32 {
 /// How far an open-world enemy steps down off a ledge (yalms; a guess): it doesn't throw itself off a cliff after
 /// someone, as retail's keep to their navmesh. Bots, pets and everyone in duties go down as far as a player would.
 const OPEN_WORLD_MAX_DROP: f32 = 3.0;
+/// NPC actions that leap their user to its target, and how long after the hit it lands (seconds). Retail's Duty Support
+/// Marauder opens a pull with 29291 from about 10 yalms off: the hit (a 1.1 s lock), then 0.58 s later ActorControl
+/// 239 (`SnapNextMove`) and an ActorMove (speed 60) to beside its target, three times out of three in Bob's Copperbell
+/// Mines capture (bd298651 visit 0.5, 2026-10-25). Kawari sent the hit and left him where he was, so the client played
+/// the leap and put him back: "he jumps to the enemy and teleports back" (Bob, 2026-10-26.)
+pub const NPC_LEAPS: [(u32, f32); 1] = [(29291, 0.58)];
+/// How far short of its target's middle a leap lands (yalms; retail's Marauder landed 1.1, 2.1 and 2.4 short.)
+const LEAP_SHORT_OF: f32 = 2.0;
+/// The landing's ActorMove speed byte (retail's.)
+const LEAP_MOVE_SPEED: u8 = 60;
+/// How long after its cast ends an NPC keeps the facing it cast with (seconds): its hit goes out the tick after, and
+/// turning back to its target in between swung Kottos' Catapult the tank's way (Bob's bundle of 2026-10-26.)
+const KEEP_CAST_FACING: f32 = 0.6;
 /// How many NPCs that can't wander an instance logs (the rest are only counted.)
 const STUCK_WANDERERS_LOGGED: usize = 5;
 
@@ -220,7 +233,15 @@ pub fn npc_behavior(
             ..
         } = actor
             && let Some(current_target) = current_target
-            && !cast.is_some_and(|cast| cast.until > Instant::now())
+            && !cast.is_some_and(|cast| {
+                // (An auto-attack's swing doesn't hold it.)
+                let keep = if cast.action_id == timeline.autoattack_action_id {
+                    0.0
+                } else {
+                    KEEP_CAST_FACING
+                };
+                cast.until + Duration::from_secs_f32(keep) > Instant::now()
+            })
             // Stunned, asleep or bound: it doesn't move.
             && !modifiers::is_rooted(status_effects)
             && *state != NpcState::Dead
@@ -300,7 +321,7 @@ pub fn npc_behavior(
                 let along = Vec3A::lerp(current_position, next_position, *current_path_lerp);
                 // Walked as a player walks, on the zone's collision: on the floor (not the straight line between
                 // two corners of its path, through a hill or over a dip), stopped by walls (not up them), and
-                // down off a ledge rather than through the air (Bob's Sastasha bundle of 2026-10-26.)
+                // down off a ledge rather than through the air (Bob's Copperbell Mines bundle of 2026-10-26.)
                 let position = match &instance.collision {
                     Some(collision) => {
                         let goes_anywhere = instance.party_bots.contains_key(id)
@@ -939,11 +960,20 @@ pub fn npc_behavior(
                                 .get(&on)
                                 .copied()
                                 .unwrap_or(spawn.common.position.0);
-                            if on != *id {
+                            // An attack around or in front of itself goes the way it faces: its target's (retail's
+                            // Kottos began each Colossal Slam, 28546, facing the tank, -1.94 with the tank at -1.94 and
+                            // 1.04 at 0.97, Bob's capture of 2026-10-25. Kawari left it facing wherever its last leap
+                            // had, so the cone always went the same way and caught nobody, Bob's bundle of 2026-10-26.)
+                            let facing = match target {
+                                TimepointTarget::Itself => positions.get(&fighting).copied(),
+                                _ if on != *id => Some(at),
+                                _ => None,
+                            };
+                            if let Some(facing) = facing {
                                 let here = spawn.common.position.0;
-                                if flat_distance(here, at) >= MIN_STEP {
+                                if flat_distance(here, facing) >= MIN_STEP {
                                     spawn.common.rotation =
-                                        f32::atan2(at.x - here.x, at.z - here.z);
+                                        f32::atan2(facing.x - here.x, facing.z - here.z);
                                 }
                             }
                             let request = ActionRequest {
@@ -1238,6 +1268,13 @@ pub fn npc_behavior(
     }
 
     for (id, request, cast_time) in new_action_requests {
+        queue_leap(
+            instance,
+            id,
+            request.action_id,
+            request.target.object_id,
+            cast_time,
+        );
         // No ToggleWeapon after each action: retail draws an NPC's weapon once as it takes someone on (94 ToggleWeapon
         // in the Copperbell Mines' first stretch against Kawari's 523, Bob's captures of 2026-10-25). Kawari drew it
         // again 0.5 s after every action, as NPCs had dropped out of their stance after acting (2026-10-13), probably from
@@ -1560,6 +1597,97 @@ mod notice_tests {
     }
 }
 
+/// If `action_id` is a leap (`NPC_LEAPS`), lands `actor_id` beside `target_id` when retail's would.
+pub fn queue_leap(
+    instance: &mut Instance,
+    actor_id: ObjectId,
+    action_id: u32,
+    target_id: ObjectId,
+    cast_time: f32,
+) {
+    if let Some((_, after)) = NPC_LEAPS.iter().find(|(leap, _)| *leap == action_id)
+        && target_id != actor_id
+        && target_id.is_valid()
+    {
+        instance.insert_task(
+            ClientId::default(),
+            actor_id,
+            Duration::from_secs_f32(cast_time + after),
+            QueuedTaskData::LeapTo { target: target_id },
+        );
+    }
+}
+
+/// An NPC's leap lands: `SnapNextMove`, then an ActorMove to `LEAP_SHORT_OF` yalms short of `target_id` (on the floor
+/// there), facing it, as retail's Duty Support Marauder's 29291 (see `NPC_LEAPS`.) Its path starts again from there.
+pub fn leap_to(
+    network: &mut NetworkState,
+    instance: &mut Instance,
+    actor_id: ObjectId,
+    target_id: ObjectId,
+) {
+    let Some(target) = instance
+        .find_actor(target_id)
+        .map(|actor| actor.position().0)
+    else {
+        return;
+    };
+    let collision = instance.collision.clone();
+    let landing;
+    let rotation;
+    {
+        let Some(NetworkedActor::Npc {
+            spawn,
+            navmesh_path,
+            navmesh_path_lerp,
+            last_position,
+            ..
+        }) = instance.find_actor_mut(actor_id)
+        else {
+            return;
+        };
+        if spawn.common.health_points == 0 {
+            return;
+        }
+        let here = spawn.common.position.0;
+        let way = Vec3A::new(target.x - here.x, 0.0, target.z - here.z);
+        let distance = way.length();
+        if distance <= LEAP_SHORT_OF {
+            return;
+        }
+        rotation = f32::atan2(way.x, way.z);
+        let mut spot = here + way * ((distance - LEAP_SHORT_OF) / distance);
+        spot.y = target.y;
+        landing = match &collision {
+            Some(collision) => collision.settle(spot),
+            None => spot,
+        };
+        spawn.common.position = Position(landing);
+        spawn.common.rotation = rotation;
+        navmesh_path.clear();
+        *navmesh_path_lerp = 0.0;
+        *last_position = Some(landing);
+    }
+    if let Some(bot) = instance.party_bots.get_mut(&actor_id) {
+        bot.path.clear();
+    }
+    network.send_ac_in_range_instance(instance, actor_id, ActorControlCategory::SnapNextMove);
+    network.send_in_range_instance(
+        actor_id,
+        instance,
+        FromServer::ActorMove(
+            actor_id,
+            Position(landing),
+            rotation,
+            MoveAnimationType::empty(),
+            MoveAnimationState::None,
+            JumpState::NoneOrFalling,
+            Some(LEAP_MOVE_SPEED),
+        ),
+        DestinationNetwork::ZoneClients,
+    );
+}
+
 /// Has the NPC `actor_id` use `action_id` on `target_id` now, as a director's `use_action` does (and party bots'
 /// heals): it stands still while it casts (its area lands where it was aimed now), shows its cast bar, and the action
 /// lands when the cast ends.
@@ -1631,6 +1759,7 @@ pub fn npc_use_action(
         );
     }
 
+    queue_leap(instance, actor_id, action_id, target_id, cast_time);
     instance.insert_task(
         ClientId::default(),
         actor_id,

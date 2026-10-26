@@ -96,6 +96,8 @@ pub enum QueuedTaskData {
     EndFate { fate_id: u32 },
     /// Terminates a director.
     TerminateDirector { handler_id: HandlerId },
+    /// An NPC's leap lands it beside `target` (`npc_behavior::NPC_LEAPS`.)
+    LeapTo { target: ObjectId },
 }
 
 #[derive(Debug, Clone)]

@@ -571,6 +571,9 @@ pub fn execute_action(
     // An NPC's own animation lock and swing (see `Timeline::animation_locks`.)
     let npc_animation_lock: Option<f32>;
     let npc_auto_attack: bool;
+    // Which way an NPC faced as it began casting this: its hit goes out that way (it turned back to its target in the
+    // tick the cast ended, and Kottos' Catapult swung the tank's way, Bob's bundle of 2026-10-26.)
+    let npc_cast_rotation: Option<f32>;
     // Other players caught in an enemy's area attack, with what it does to each of them.
     let mut area_bystanders: Vec<(ObjectId, Vec<TargetEffect>)> = Vec::new();
     {
@@ -599,6 +602,12 @@ pub fn execute_action(
         }
 
         common_spawn = actor.get_common_spawn().clone();
+        npc_cast_rotation = match actor {
+            NetworkedActor::Npc {
+                cast: Some(cast), ..
+            } if cast.action_id == request.action_id => Some(cast.rotation),
+            _ => None,
+        };
         // Retail's NPC auto-attacks lock for 0.1 s and swing one of three ways, like a player's (Bob's Copperbell Mines
         // captures of 2026-10-25: 870 and 872, 0.1 every time, 0/1/2 a third each over 547); their other actions carry
         // a lock of their own, the same every use (the timeline's `animation_locks`). Kawari sent 0.6 and swing 0.
@@ -1425,7 +1434,7 @@ pub fn execute_action(
                         global_sequence: network.global_action_sequence,
                         animation_lock,
                         source_sequence: request.sequence,
-                        rotation: common_spawn.rotation,
+                        rotation: npc_cast_rotation.unwrap_or(common_spawn.rotation),
                         spell_id: action_animation_id,
                         animation_variation,
                         action_type: request.action_type,
@@ -1449,7 +1458,7 @@ pub fn execute_action(
                         targets,
                         action_id: request.action_id,
                         animation_lock,
-                        rotation: common_spawn.rotation,
+                        rotation: npc_cast_rotation.unwrap_or(common_spawn.rotation),
                         spell_id: action_animation_id,
                         animation_variation,
                         source_sequence: request.sequence,

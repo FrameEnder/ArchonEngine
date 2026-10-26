@@ -93,6 +93,14 @@ which are NPC-only actions (not the players'):
 | Lancer | 17059, every 3.0 s | 2.67 s | 29305, 29306 | every 11 s (first 9 s in): 26230, 29305, 29311 on itself, 29772, 29767 on itself | each fight opens with 29304 |
 | Thaumaturge | none | 3.07 s (1.7 s casts) | 29314, 29315 | 29312 every 9 s (first 13 s in) | |
 
+**The Marauder's leap** (29291, a pack's opener): it's used from about 10 yalms off, and the Marauder lands beside
+the enemy. In Bob's Copperbell Mines capture (bd298651 visit 0.5, 2026-10-25), three times out of three: the hit
+(ActionEffect1, a 1.1 s lock), then 0.58 s later ActorControl 239 (`SnapNextMove`) and an ActorMove (speed byte 60)
+1.1–2.4 yalms short of the enemy, facing it; it fought from there. Kawari sent the hit only, so the client played the
+leap and put him back where the server had him (Bob, 2026-10-26: "he jumps to the enemy and teleports back").
+`npc_behavior::NPC_LEAPS` lists the leaps (any NPC's: a kit's, a timeline's or a director's `use_action`), and
+`leap_to` lands them, 2 yalms short (`LEAP_SHORT_OF`), on the floor.
+
 Damage to Sastasha's enemies (medians, the timelines' `recorded_amounts`, which scale the action scripts' hits): the
 weaponskills and spells 24–27, the auto-attacks 3, the Marauder's 29764 76 and 29765 128, the Lancer's 29772 275,
 the Thaumaturge's 29312 277; Sastasha's trash has 905 HP. That's what "fighting like someone of the duty's level"

@@ -3,7 +3,7 @@
 //! floor a player stands on, stop at the walls a player stops at, and drop off a ledge as a player does.
 //!
 //! The navmesh alone left them in the air and under the floor: between two corners of a path, and wherever there's no
-//! path at all (they walk straight there), nothing said where the ground was. Bob's Sastasha bundle of 2026-10-26:
+//! path at all (they walk straight there), nothing said where the ground was. Bob's Copperbell Mines bundle of 2026-10-26:
 //! he dropped 30 yalms off a ledge; one bot stayed on it, going 3 yalms up and down the cliff, and two came down a
 //! straight line through the air, 3 yalms every half second.
 //!
