@@ -65,6 +65,8 @@ pub struct Collision {
     owners: Arc<[u32]>,
     /// Which gimmicks are gone here (by index into `gimmicks`.)
     gone: Vec<bool>,
+    /// Which gimmicks the director has put up here (shown: a boss room sealed), which nobody gets through.
+    sealed: Vec<bool>,
 }
 
 /// Where a walk got to, and whether something stopped it before the end.
@@ -72,9 +74,12 @@ pub struct Collision {
 pub struct Walk {
     pub at: Vec3A,
     pub blocked: bool,
-    /// When a gimmick that's standing stopped it (a closed door, a sealed boss room's wall): its event object's
-    /// layout ID. A player can't go through that either.
+    /// When a gimmick stopped it (a door, a barrier, a boss room's wall): its event object's layout ID.
     pub gimmick: Option<u32>,
+    /// Whether that gimmick is one the director put up (`set_gimmick_sealed`: a boss room sealed), which a player
+    /// can't get through either. Other gimmicks standing can be ones players walk through (Bob's Copperbell Mines
+    /// bundle of 2026-10-27: 9288834 by the first lift, never hidden, held the bots until they were put beside him.)
+    pub sealed: bool,
 }
 
 /// Why a step can't be taken.
@@ -141,6 +146,7 @@ impl Collision {
             rows,
             vertices: vertices.into(),
             gone: vec![false; gimmicks.len()],
+            sealed: vec![false; gimmicks.len()],
             gimmicks: gimmicks.into(),
             owners: owners.into(),
             ..Default::default()
@@ -305,6 +311,7 @@ impl Collision {
             refs: refs.into(),
             floors: Arc::new([]),
             gone: vec![false; gimmicks.len()],
+            sealed: vec![false; gimmicks.len()],
             gimmicks: gimmicks.into(),
             owners: owners.into(),
         };
@@ -437,6 +444,44 @@ impl Collision {
         changed
     }
 
+    /// Marks the gimmick of the event object with this layout ID as put up by the director (`sealed`) or not.
+    pub fn set_gimmick_sealed(&mut self, layout_id: u32, sealed: bool) {
+        if let Some(index) = self.gimmicks.iter().position(|g| *g == layout_id) {
+            self.sealed[index] = sealed;
+        }
+    }
+
+    fn is_sealed(&self, layout_id: u32) -> bool {
+        self.gimmicks
+            .iter()
+            .position(|g| *g == layout_id)
+            .is_some_and(|index| self.sealed[index])
+    }
+
+    /// The floor a body stands on at (x, z) between `top` and `bottom`: the highest floor there, or, where that's a
+    /// drop deeper than a step (or there's none), the highest floor under the body's edge, `radius` out: a body as wide
+    /// as a player's doesn't fall through a gap narrower than itself. Bob's Copperbell Mines bundle of 2026-10-27: in
+    /// Kottos' arena the bots dropped through the metal grating's holes onto the floor 2 yalms below, one step at a
+    /// time, where he walked across it.
+    fn body_floor(&self, x: f32, z: f32, top: f32, bottom: f32) -> Option<f32> {
+        let centre = self.floor(x, z, top, bottom);
+        let mut edge: Option<f32> = None;
+        for k in 0..8 {
+            let angle = k as f32 * std::f32::consts::FRAC_PI_4;
+            let (px, pz) = (x + self.radius * angle.cos(), z + self.radius * angle.sin());
+            if let Some(y) = self.floor(px, pz, top, bottom)
+                && edge.is_none_or(|best| y > best)
+            {
+                edge = Some(y);
+            }
+        }
+        match (centre, edge) {
+            (Some(centre), Some(edge)) if edge - centre > self.climb => Some(edge),
+            (None, edge) => edge,
+            (centre, _) => centre,
+        }
+    }
+
     /// The first thing a straight line from `from` to `to` goes into: its surface's facing across the ground, and
     /// its gimmick's layout ID if it's one.
     fn hit(&self, from: Vec3A, to: Vec3A) -> Option<(Vec3A, Option<u32>)> {
@@ -482,7 +527,7 @@ impl Collision {
     /// it), as they'd land there. Off the collision it stays as it is.
     pub fn settle(&self, position: Vec3A) -> Vec3A {
         let (x, y, z) = (position.x, position.y, position.z);
-        let below = self.floor(x, z, y + self.climb, y - SETTLE_DEPTH);
+        let below = self.body_floor(x, z, y + self.climb, y - SETTLE_DEPTH);
         let above = self.floor(x, z, y + SETTLE_RISE, y + self.climb);
         // The nearer of the two: a little under a floor is on it, well under one is over the floor below.
         let floor = match (below, above) {
@@ -505,7 +550,7 @@ impl Collision {
                 return Err(Stop::Wall(facing, gimmick));
             }
         }
-        match self.floor(next.x, next.z, at.y + self.climb, at.y - max_drop) {
+        match self.body_floor(next.x, next.z, at.y + self.climb, at.y - max_drop) {
             Some(y) => Ok(Vec3A::new(next.x, y, next.z)),
             None => Err(Stop::NoFloor),
         }
@@ -523,6 +568,7 @@ impl Collision {
                 at,
                 blocked: false,
                 gimmick: None,
+                sealed: false,
             };
         }
         let steps = (distance / SUBSTEP).ceil().max(1.0);
@@ -542,6 +588,7 @@ impl Collision {
                                 at,
                                 blocked: true,
                                 gimmick,
+                                sealed: gimmick.is_some_and(|layout_id| self.is_sealed(layout_id)),
                             };
                         }
                     }
@@ -551,6 +598,7 @@ impl Collision {
                         at,
                         blocked: true,
                         gimmick: None,
+                        sealed: false,
                     };
                 }
             }
@@ -559,6 +607,7 @@ impl Collision {
             at,
             blocked: false,
             gimmick: None,
+            sealed: false,
         }
     }
 
@@ -763,10 +812,10 @@ mod tests {
         assert!(!walk.blocked);
         assert_eq!(walk.at.y, -6.0);
         assert!((walk.at.x - 8.0).abs() < 1e-3);
-        // Not allowed to drop that far: it stops at the edge.
+        // Not allowed to drop that far: it stops at the edge (its body over it by no more than its radius.)
         let walk = c.walk(Vec3A::new(0.0, 24.0, 0.0), Vec3A::new(8.0, -6.0, 0.0), 4.0);
         assert!(
-            walk.blocked && walk.at.x <= 5.0 && walk.at.y == 24.0,
+            walk.blocked && walk.at.x <= 5.0 + c.radius && walk.at.y == 24.0,
             "{walk:?}"
         );
         // Back up, it can't climb the cliff.
@@ -829,5 +878,44 @@ mod tests {
         // Shown again, it stands again.
         assert!(c.set_gimmick_gone(4100000, false));
         assert!(c.walk(Vec3A::ZERO, Vec3A::new(8.0, 0.0, 0.0), 50.0).blocked);
+    }
+
+    #[test]
+    fn a_body_does_not_fall_through_a_grating() {
+        // A grating at y = 0 with a gap 0.4 wide across it at x = 4..4.4 (narrower than a body, 0.8 across), over a
+        // floor 2 below.
+        let c = world(|v, t| {
+            floor_quad(v, t, -10.0, -10.0, 4.0, 10.0, 0.0);
+            floor_quad(v, t, 4.4, -10.0, 20.0, 10.0, 0.0);
+            floor_quad(v, t, -10.0, -10.0, 20.0, 10.0, -2.0);
+        });
+        let walk = c.walk(Vec3A::ZERO, Vec3A::new(10.0, 0.0, 0.0), f32::INFINITY);
+        assert!(!walk.blocked);
+        assert_eq!(walk.at.y, 0.0, "{walk:?}");
+        // Put right over the gap, it stays on the grating.
+        assert_eq!(c.settle(Vec3A::new(4.2, 0.1, 0.0)).y, 0.0);
+        // A real edge still drops it, once it's past by more than its radius.
+        let walk = c.walk(
+            Vec3A::new(15.0, 0.0, 0.0),
+            Vec3A::new(25.0, 0.0, 0.0),
+            f32::INFINITY,
+        );
+        assert!(walk.at.y <= 0.0);
+    }
+
+    #[test]
+    fn only_a_sealed_gimmick_says_so() {
+        let (mut v, mut t) = (Vec::new(), Vec::new());
+        floor_quad(&mut v, &mut t, -10.0, -10.0, 10.0, 10.0, 0.0);
+        let floor = t.len();
+        wall_x(&mut v, &mut t, 3.0, -10.0, 10.0, 0.0, 4.0);
+        let mut owners = vec![0; floor];
+        owners.resize(t.len(), 77);
+        let mut c = Collision::build(v, t, owners, 0.75, 0.4, 55.0);
+        let walk = c.walk(Vec3A::ZERO, Vec3A::new(8.0, 0.0, 0.0), 50.0);
+        assert_eq!((walk.gimmick, walk.sealed), (Some(77), false));
+        c.set_gimmick_sealed(77, true);
+        let walk = c.walk(Vec3A::ZERO, Vec3A::new(8.0, 0.0, 0.0), 50.0);
+        assert_eq!((walk.gimmick, walk.sealed), (Some(77), true));
     }
 }

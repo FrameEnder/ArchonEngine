@@ -430,8 +430,10 @@ const CATCH_UP_AFTER: Duration = Duration::from_secs(3);
 /// walls, down off ledges after the player), or, until the zone has one, on the navmesh's floor under it.
 /// Whether it was stopped is returned too. Held up `WALL_PATIENCE` or longer, it goes on to `to` anyway when `to` is
 /// walkable ground (on the navmesh, or a floor of the collision within a step of its feet: the wall is one players
-/// don't have), on the floor there; elsewhere a wall still stops it (a cliff it would go up.) A gimmick that's
-/// standing (a closed door, a sealed boss room's wall: `Walk::gimmick`) always stops it, as it stops a player.
+/// don't have), on the floor there; elsewhere a wall still stops it (a cliff it would go up.) A gimmick the director
+/// put up (a sealed boss room's wall: `Walk::sealed`) always stops it, as it stops a player; another one standing
+/// stops it as any wall does (Bob's Copperbell Mines bundle of 2026-10-27: one by the first lift that he walked through,
+/// never hidden, held all three until they were put beside him.)
 fn walk_like_a_player(
     navmesh: &crate::navmesh::Navmesh,
     collision: Option<&Collision>,
@@ -445,13 +447,22 @@ fn walk_like_a_player(
         let patience_ran_out = walled_for >= WALL_PATIENCE
             && walled_for < WALL_PATIENCE + Duration::from_secs_f32(BEHAVIOR_TICK_SECONDS);
         if walk.blocked && walled_for >= WALL_PATIENCE {
-            if let Some(gimmick) = walk.gimmick {
+            if let Some(gimmick) = walk.gimmick
+                && walk.sealed
+            {
                 if patience_ran_out {
                     tracing::info!(
-                        "Party bot at {here}: held up by the gimmick of event object {gimmick} (layout ID), standing; it waits, as a player would"
+                        "Party bot at {here}: held up by the gimmick of event object {gimmick} (layout ID), put up by the director; it waits, as a player would"
                     );
                 }
                 return (walk.at, true);
+            }
+            if let Some(gimmick) = walk.gimmick
+                && patience_ran_out
+            {
+                tracing::info!(
+                    "Party bot at {here}: held up by the gimmick of event object {gimmick} (layout ID), which the director hasn't touched; on past it"
+                );
             }
             let ground = navmesh.ground_under(to).map(|ground| ground.y).or_else(|| {
                 collision.floor(
@@ -826,6 +837,10 @@ fn wear_glamour(
     glamour: &glamour::Glamour,
     wearable: &HashSet<u8>,
 ) {
+    // Which pieces went on, and which were left out and why, for the log (Bob's 2026-10-27 bundle: an Elezen bot's
+    // feet showed nothing in "keeper of the lilacs", and nothing said which piece it was.)
+    let mut worn = Vec::new();
+    let mut left_out = Vec::new();
     for piece in &glamour.pieces {
         // A piece only some races or one sex may wear (Miqo'te's own, say) is left out for the rest: there's no model
         // of it for them, so it showed as nothing (Bob's 2026-10-23 bundle: a Viera in a Miqo'te loincloth). The slot
@@ -836,14 +851,31 @@ fn wear_glamour(
             .map(|row| row.EquipRestriction)
             .unwrap_or(0);
         if !can_wear(wearable, restriction) {
+            left_out.push(format!(
+                "{} (EquipRestriction {restriction})",
+                piece.item_id
+            ));
             continue;
         }
         let Some(row) = game_data
             .equip_slot_category_sheet
             .row(piece.slot_category as u32)
         else {
+            left_out.push(format!(
+                "{} (no EquipSlotCategory {})",
+                piece.item_id, piece.slot_category
+            ));
             continue;
         };
+        let model = game_data
+            .item_sheet
+            .row(piece.item_id)
+            .map(|row| row.ModelMain)
+            .unwrap_or(0);
+        worn.push(format!(
+            "{} (EquipSlotCategory {}, model {:#x}, stains {:?})",
+            piece.item_id, piece.slot_category, model, piece.stains
+        ));
         let equipped = &mut wearing.equipped;
         let slots: [(i8, &mut Item); 10] = [
             (row.Head, &mut equipped.head),
@@ -876,6 +908,16 @@ fn wear_glamour(
             }
         }
     }
+    tracing::info!(
+        "Party bot glamour \"{}\": wears {}; left out {}",
+        glamour.name,
+        worn.join(", "),
+        if left_out.is_empty() {
+            "nothing".to_string()
+        } else {
+            left_out.join(", ")
+        }
+    );
 }
 
 /// Whether an item with this EquipRestriction (an EquipRaceCategory row; 0 for none) may be worn by the race and sex

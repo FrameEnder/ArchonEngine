@@ -1562,8 +1562,8 @@ pub fn director_tick(
                 {
                     object.event_state = state;
                     let layout_id = object.layout_id;
-                    // A boss room's wall sealing it: in the collision again.
-                    instance.set_gimmick_gone(layout_id, false);
+                    // A boss room's wall sealing it: in the collision again, for everyone.
+                    instance.seal_gimmick(layout_id);
                 }
             }
             LuaDirectorTask::DeleteEObj { base_id } => {

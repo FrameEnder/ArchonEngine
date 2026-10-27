@@ -132,6 +132,9 @@ pub struct Instance {
     /// The event objects (layout IDs) hidden or removed here, whose gimmicks (their shared groups' collision) are
     /// gone with them: see `set_gimmick_gone`.
     pub gimmicks_gone: HashSet<u32>,
+    /// The event objects (layout IDs) the director has shown here, whose gimmicks nobody gets through (a boss room
+    /// sealed): see `seal_gimmick`.
+    pub gimmicks_sealed: HashSet<u32>,
     /// The zone data.
     pub zone: Zone,
     /// The zone's current weather.
@@ -569,16 +572,41 @@ impl Instance {
         if known {
             return;
         }
+        if gone {
+            self.gimmicks_sealed.remove(&layout_id);
+        }
         if let Some(collision) = &self.collision
             && collision.has_gimmick(layout_id)
         {
             let mut ours = (**collision).clone();
             ours.set_gimmick_gone(layout_id, gone);
+            if gone {
+                ours.set_gimmick_sealed(layout_id, false);
+            }
             self.collision = Some(Arc::new(ours));
             tracing::info!(
                 "The gimmick of event object {layout_id} (layout ID) is {} this instance's collision",
                 if gone { "gone from" } else { "back in" }
             );
+        }
+    }
+
+    /// An event object (by layout ID) the director shows here (a boss room's wall going up): its gimmick is back in the
+    /// collision, and nobody gets through it (no `WALL_PATIENCE` way past for bots, as there's none for players.)
+    pub fn seal_gimmick(&mut self, layout_id: u32) {
+        if layout_id == 0 {
+            return;
+        }
+        self.set_gimmick_gone(layout_id, false);
+        if !self.gimmicks_sealed.insert(layout_id) {
+            return;
+        }
+        if let Some(collision) = &self.collision
+            && collision.has_gimmick(layout_id)
+        {
+            let mut ours = (**collision).clone();
+            ours.set_gimmick_sealed(layout_id, true);
+            self.collision = Some(Arc::new(ours));
         }
     }
 
@@ -593,12 +621,15 @@ impl Instance {
             .copied()
             .filter(|layout_id| collision.has_gimmick(*layout_id))
             .collect();
-        if gone.is_empty() {
+        if gone.is_empty() && self.gimmicks_sealed.is_empty() {
             return;
         }
         let mut ours = (**collision).clone();
         for layout_id in &gone {
             ours.set_gimmick_gone(*layout_id, true);
+        }
+        for layout_id in &self.gimmicks_sealed {
+            ours.set_gimmick_sealed(*layout_id, true);
         }
         self.collision = Some(Arc::new(ours));
         tracing::info!(

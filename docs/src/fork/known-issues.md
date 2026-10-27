@@ -235,6 +235,9 @@ add one when something is found.
 * Unsolved Mystery's ambushers (BNpcBase 166, timeline `UnsolvedMysteryAmbusher_166`): one used action 426 on itself
   (status 204) about 2 s before it fell in Bob's capture b8432613; when and why isn't known (one use), so they never
   do. Their True Thrust's pace (8.8 s) is from three uses.
+* An Elezen bot's feet showed nothing in the glamour "keeper of the lilacs" (feet model 410, variant 1); the race
+  rules (EquipRestriction) allowed it, so the cause is still open: the next bundle's `Party bot glamour` line names
+  the piece. A glamour line whose name matches two items takes the later row, which may be the wrong one.
 * The teleport crash of 2026-10-27 is put down to the retainer slots sent after dismissal ([Retainers](retainers.md));
   it was the one thing out of the ordinary in the packets before it, but the crash itself (inside the game) wasn't
   traced to that packet. If it comes back, its bundle and Dalamud crash log are wanted.

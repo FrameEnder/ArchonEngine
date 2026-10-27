@@ -131,6 +131,27 @@ gone doesn't. The server logs each (`The gimmick of event object … is gone fro
 navmesh tool how many it found. The collision file is version 2, so every zone's navmesh and collision are made again
 the first time it's entered on this build.
 
+**Only the director's gimmicks are walls for good** (same day, Bob's next Copperbell Mines run): a gimmick standing that
+the director never touched (9288834, by the first lift) held all three bots until they were put beside him, though he
+walked through it: some shared groups an event object controls aren't solid for players at all (a lift's, a door's
+in its open state). Now only a gimmick the director has put up (`show_eobj`: a boss room sealing; `Walk::sealed`,
+`Instance::seal_gimmick`) stops a bot for good; any other standing gimmick is a wall like the rest, with the
+`WALL_PATIENCE` way past it, and the log says so (`held up by the gimmick of event object …, which the director hasn't
+touched; on past it`).
+
+**Through the grating** (same run): in Kottos' arena the bots dropped through the metal grating onto the floor 2
+yalms below, one step at a time, where Bob walked across it (y −9.93 to −11.95 between two ticks). The collision asked
+for the floor at the walker's centre only, and the grating's holes let that through. Now a walker stands on the highest
+floor under its body's edge (`radius` out, eight ways round) where the floor at its centre is more than a step below
+(or missing): a body as wide as a player's doesn't fall through a gap narrower than itself; at a real ledge it goes
+over once its centre is past the edge by its radius (`Collision::body_floor`, also used to settle a bot that's put
+somewhere).
+
+**What a glamour put on** (same day): each bot's glamour now logs the pieces it wears (item, EquipSlotCategory, model,
+stains) and the ones it left out and why (`Party bot glamour "…": wears …; left out …`). Bob's Elezen Pugilist in
+"keeper of the lilacs" showed no feet (feet model 0x19A, variant 1 in his SpawnPlayer); which piece that was isn't in
+the bundle.
+
 **Catching up** (2026-10-27): out of combat, a bot more than 25 yalms (any way, `CATCH_UP_DISTANCE`) from the one it
 follows for 3 s (`CATCH_UP_AFTER`) is put beside them, in its formation spot on their floor (or where they stand):
 ActorSetPos, then ActorControl ZoneIn with the warp-in effect, and a log line (`Party bot …: … yalms behind … put
