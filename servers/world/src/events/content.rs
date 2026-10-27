@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use kawari::{
-    common::HandlerType,
+    common::{HandlerType, ObjectTypeId},
     ipc::zone::{EventType, SceneFlags},
 };
 
@@ -16,6 +16,10 @@ pub const QUEST_BATTLE_SCENE_FINISH: u16 = 6;
 /// HIDE_HOTBAR | NO_DEFAULT_CAMERA, as retail plays the last scene of Chasing Shadows, To Guard a Guardian and Leia's
 /// Legacy. Spirithold Broken's is a cutscene (0xF8402EFB). From Bob's Chronofoil captures, 2026-10-14 and 16.
 pub const QUEST_BATTLE_SCENE_FINISH_FLAGS: u32 = 0x2001;
+/// A quest battle's answer to talking to someone in it (an event NPC the director brought out, whose handler is the
+/// battle): the client's script logs EVENT_QIB_NOT_TALK, "now isn't the time" (Like Mother, Like Daughter's
+/// ClsCnj005Btl_00440 has it, for Sylphie standing by.) Without a scene the event never ended.
+pub const QUEST_BATTLE_SCENE_NOT_TALK: u16 = 10001;
 
 /// For content director events.
 /// This is mostly a dummy struct, most of the logic exists in the global server state.
@@ -36,6 +40,17 @@ impl ContentEventHandler {
 
 #[async_trait]
 impl EventHandler for ContentEventHandler {
+    async fn on_talk(&self, event: &Event, _target_id: ObjectTypeId, player: &mut LuaPlayer) {
+        if event.id.handler_type() == HandlerType::QuestBattle {
+            // Its flags weren't seen on retail (no one talked to her in Bob's runs); a message scene's.
+            player.play_scene(
+                QUEST_BATTLE_SCENE_NOT_TALK,
+                SceneFlags::HIDE_HOTBAR | SceneFlags::NO_DEFAULT_CAMERA,
+                Vec::new(),
+            );
+        }
+    }
+
     async fn on_return(
         &self,
         event: &Event,

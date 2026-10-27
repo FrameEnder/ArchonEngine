@@ -199,8 +199,13 @@ a quest's entering event, 0 for every other event (228 events across the capture
   elementals heal too. The director keeps its own timers beside `Battle:steps` (whose steps run one after another).
 * Timelines `QB56*` (bases 1682-1693); action scripts `QB56Add_00440`, `QB56Add_01119`, `QB56Sprite_01118`,
   `QB56Sprite_00313` (their statuses' durations guessed). `questkit battle-sim 56` checks both runs (`56.json`,
-  `56-lost.json`): every step within 1 s. The battle's client script (`game_script/quest/004/ClsCnj005Btl_00440.luab`
-  by the naming the other two follow) hasn't been dumped.
+  `56-lost.json`): every step within 1 s.
+* The client's battle script (`game_script/quest/004/ClsCnj005Btl_00440.luab`, Bob's dump of 2026-10-27) has scenes 1
+  (a short wait) and 7 (nothing, the end), OnSequence001/002 (the objective and its message), and scene 10001: a log
+  message, EVENT_QIB_NOT_TALK, for talking to someone in the battle. Sylphie's spawn carries the battle as its
+  handler (retail's, 0x80060038), so clicking her starts the battle's event: Kawari's content events had no answer to
+  a talk, so it would never have ended; a quest battle now plays 10001 for it (`QUEST_BATTLE_SCENE_NOT_TALK`, flags a
+  message scene's, unseen on retail) and finishes.
 
 ### Quest battle 54 — Trial by Wind (`content/questbattle/54.lua`)
 
