@@ -235,6 +235,11 @@ add one when something is found.
 * Unsolved Mystery's ambushers (BNpcBase 166, timeline `UnsolvedMysteryAmbusher_166`): one used action 426 on itself
   (status 204) about 2 s before it fell in Bob's capture b8432613; when and why isn't known (one use), so they never
   do. Their True Thrust's pace (8.8 s) is from three uses.
+* The teleport crash of 2026-10-27 is put down to the retainer slots sent after dismissal ([Retainers](retainers.md));
+  it was the one thing out of the ordinary in the packets before it, but the crash itself (inside the game) wasn't
+  traced to that packet. If it comes back, its bundle and Dalamud crash log are wanted.
+* Glamour plates: the second dye's bit (4) is a guess (only the first dye was seen), and what retail sends back for a
+  dyed save beyond the plate isn't recorded (Kawari takes one dye and sends its slot.)
 * Dressed to Deceive (574): which of each person's two later scenes is for being dressed isn't recorded (retail was
   played wearing the attire and played the first, 3, 6, 9, 12, 15); the other (4, 7, …) is taken as not dressed,
   with no progress. Amalj'aa Wrong Places' (622) other lines go by the order of the client's IsAcceptEvent.

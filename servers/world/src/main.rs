@@ -3576,14 +3576,32 @@ async fn process_packet(
                         }
                         ClientZoneIpcData::SaveGlamourPlate {
                             plate,
-                            set,
+                            changed,
+                            what,
                             indices,
-                            containers,
-                            ..
+                            dye0_containers,
+                            dye0_slots,
+                            dye1_containers,
+                            dye1_slots,
+                            stain0,
+                            stain1,
                         } => {
-                            connection
-                                .save_glamour_plate(*plate, set, indices, containers)
-                                .await;
+                            let slots = std::array::from_fn(|slot| {
+                                kawari_world::glamour::PlateSlotChange {
+                                    changed: changed[slot] != 0,
+                                    what: what[slot],
+                                    index: indices[slot],
+                                    stain0: stain0[slot],
+                                    stain1: stain1[slot],
+                                }
+                            });
+                            let dyes = std::array::from_fn(|slot| {
+                                [
+                                    (dye0_containers[slot], dye0_slots[slot]),
+                                    (dye1_containers[slot], dye1_slots[slot]),
+                                ]
+                            });
+                            connection.save_glamour_plate(*plate, &slots, &dyes).await;
                         }
                         ClientZoneIpcData::MarketBoardOpened { request_id, .. } => {
                             connection.marketboard_opened(*request_id).await;

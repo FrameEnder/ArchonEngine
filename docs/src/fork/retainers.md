@@ -104,6 +104,13 @@ goes home.
 While a retainer is out their containers are `Inventory::retainer`, so the usual item operations work on them; the
 player's own inventory save leaves them out.
 
+**Dismissed, their slots are forgotten.** What the client was told each slot holds (`shown_items`, which the next
+inventory update compares against) kept the retainer's slots after they went home, so the next update (the gil a
+teleport took) sent their six slots to the client as emptied: UpdateInventorySlot for RetainerPage1 with no retainer
+called. Bob's client crashed loading Eastern Thanalan on that teleport (2026-10-27; an access violation in the game,
+null pointer, during the zone's load, the retainer dismissed two minutes before). Now dismissing forgets their slots,
+and an update never sends a retainer's slots while none is called.
+
 ## Packets
 
 | Packet | 2026.09.15 | 2026.10.06 | Size | Layout |

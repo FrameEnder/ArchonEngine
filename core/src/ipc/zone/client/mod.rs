@@ -178,16 +178,23 @@ pub enum ClientZoneIpcData {
     /// Bob's Chronofoil capture of 2026-10-24.)
     EventReturnHandler128(EventReturnHandler<128>),
     /// A glamour plate saved at the glamour dresser (Bob's Chronofoil capture of 2026-10-24, answered with
-    /// `ServerZoneIpcData::GlamourPlateUpdated`): the plate (0–19), which of its 12 slots are set, then for each slot
-    /// the glamour dresser index its item comes from and that index's container (9999 for the dresser.)
+    /// `ServerZoneIpcData::GlamourPlateUpdated`; the dyes from Bob's bundles of 2026-10-27): the plate (0–19), then for
+    /// each of its 12 slots whether the client changed it, what changed (bits: 1 the item, 2 the first dye, 4 the
+    /// second), the glamour dresser index of its item, and for each dye the bag and slot of the dye used (9999 and
+    /// 0xFFFF for none) and the stain it gives (0xFF for none.) A slot not changed keeps what the plate had.
     SaveGlamourPlate {
         plate: u8,
-        set: [u8; 12],
+        changed: [u8; 12],
         #[brw(pad_after = 3)]
-        unk1: [u8; 12],
+        what: [u8; 12],
         indices: [u32; 12],
-        containers: [u32; 12],
-        unk3: [u32; 31],
+        dye0_containers: [u32; 12],
+        dye0_slots: [u16; 12],
+        dye1_containers: [u32; 12],
+        dye1_slots: [u16; 12],
+        stain0: [u8; 12],
+        #[brw(pad_after = 4)]
+        stain1: [u8; 12],
     },
     /// Equipping a gearset that has a glamour plate linked (Bob's Chronofoil capture of 2026-10-24; the 72-byte
     /// EquipGearset is a gearset without one): as EquipGearset, with the plate's number (1–20) where EquipGearset has a
@@ -817,6 +824,46 @@ mod tests {
     #[test]
     fn client_zone_ipc_sizes() {
         test_opcodes::<ClientZoneIpcSegment>();
+    }
+    /// Bob's first SaveGlamourPlate of 2026-10-27 (his bundles): plate 1, five pieces from the dresser, the body and
+    /// legs dyed in the plate with the dye in the fourth bag's slot 29 (stains 1 and 6.)
+    #[test]
+    fn read_save_glamour_plate_with_dyes() {
+        use binrw::BinRead;
+        const HEX: &str = "14009c000000000000000000ae05e16a000000010101010100000000000000010301030100000000000000000000000000000000050000001d0000002e0000003b0000003d00000000000000000000000000000000000000000000000f2700000f2700000f270000030000000f270000030000000f2700000f2700000f2700000f2700000f2700000f270000ffffffffffff1d00ffff1d00ffffffffffffffffffffffff0f2700000f2700000f2700000f2700000f2700000f2700000f2700000f2700000f2700000f2700000f2700000f270000ffffffffffffffffffffffffffffffffffffffffffffffffffffff01ff06ffffffffffffffffffffffffffffffffffff00000000";
+        let bytes: Vec<u8> = (0..HEX.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&HEX[i..i + 2], 16).unwrap())
+            .collect();
+        let size = bytes.len() as u32;
+        let segment =
+            ClientZoneIpcSegment::read_le_args(&mut std::io::Cursor::new(&bytes), (&size,))
+                .unwrap();
+        let ClientZoneIpcData::SaveGlamourPlate {
+            plate,
+            changed,
+            what,
+            indices,
+            dye0_containers,
+            dye0_slots,
+            dye1_containers,
+            stain0,
+            stain1,
+            ..
+        } = segment.data
+        else {
+            panic!("not a SaveGlamourPlate: {:?}", segment.data);
+        };
+        assert_eq!(plate, 0);
+        assert_eq!(changed, [0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0]);
+        assert_eq!(what, [0, 0, 1, 3, 1, 3, 1, 0, 0, 0, 0, 0]);
+        assert_eq!(indices, [0, 0, 5, 29, 46, 59, 61, 0, 0, 0, 0, 0]);
+        assert_eq!((dye0_containers[3], dye0_slots[3]), (3, 29));
+        assert_eq!((dye0_containers[5], dye0_slots[5]), (3, 29));
+        assert_eq!((dye0_containers[2], dye0_slots[2]), (9999, 0xFFFF));
+        assert_eq!(dye1_containers, [9999; 12]);
+        assert_eq!((stain0[3], stain0[5], stain0[2]), (1, 6, 0xFF));
+        assert_eq!(stain1, [0xFF; 12]);
     }
 }
 

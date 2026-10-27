@@ -276,6 +276,11 @@ impl ZoneConnection {
     pub async fn release_called_retainer(&mut self) {
         self.save_called_retainer();
         self.player_data.inventory.retainer = None;
+        // Their containers are gone from the client with them: nothing of theirs is "shown" any more, or the next
+        // update would send their slots as emptied (UpdateInventorySlot for a retainer container nobody has called:
+        // Bob's client crashed on the teleport after a retainer, 2026-10-27.)
+        self.shown_items
+            .retain(|(container, _), _| !crate::retainer::is_retainer_container(*container));
         if let Some(called) = self.called_retainer.take() {
             self.handle
                 .send(ToServer::DespawnRetainer(

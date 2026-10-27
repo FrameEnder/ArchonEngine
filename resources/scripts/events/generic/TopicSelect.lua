@@ -10,8 +10,9 @@ end
 
 function onReturn(scene, results, player)
     -- first result is the selected topic
+    -- (none when the shop it led to closes and its event returns here: Bob's bundle of 2026-10-27)
     local selected_topic = results[1]
-    if selected_topic == -1 then
+    if selected_topic == nil or selected_topic == -1 then
         player:finish_event()
         return
     end

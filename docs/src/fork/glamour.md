@@ -31,13 +31,21 @@ said the dresser wasn't unlocked). Then, as retail:
 | ClientTrigger 2356 (always `[0]` on retail: the plate list opening at the dresser or in the character window, and before equipping a gear set linked to a plate) | **GlamourPlates** (opcode 400, 1440 bytes): 20 × `{u32 item[12], u8 stain0[12], u8 stain1[12]}` |
 | ClientTrigger 2351 `[container, slot]` (store an item) | the item out of its slot (UpdateInventorySlot), ActorControlSelf **1800** `[dresser index, item]`, LogMessage 4380 with the item |
 | ClientTrigger 2352 `[index]` (restore one) | ActorControlSelf 1800 `[index, 0]`, LogMessage 4383, InventoryActionAck (0xFFFFFFFF, 6), the item in the first free bag slot, LogMessage 789 |
-| **SaveGlamourPlate** (client opcode 156, 248 bytes): `u8 plate, u8 set[12], u8 ?[12], 3 bytes, u32 index[12], u32 container[12]`, then 124 bytes (9999s and 0xFFFFFFFFs, not understood) | **GlamourPlateUpdated** (opcode 621, 80 bytes): `u32 plate`, the plate, 4 bytes; LogMessage 4382 with the plate's number (1-based) |
+| **SaveGlamourPlate** (client opcode 156, 248 bytes): `u8 plate, u8 changed[12], u8 what[12], 3 bytes, u32 dresser index[12]`, then the dyes: `u32 dye0 bag[12], u16 dye0 slot[12], u32 dye1 bag[12], u16 dye1 slot[12], u8 stain0[12], u8 stain1[12], 4 bytes` | the dyes used taken from their bag slots (UpdateInventorySlot each), then **GlamourPlateUpdated** (opcode 621, 80 bytes): `u32 plate`, the plate, 4 bytes; LogMessage 4382 with the plate's number (1-based) |
 
-A plate's slot that's set takes the item and stains of the dresser index it names when its container is 9999 (the
-dresser); a slot that isn't set comes back empty (retail: the off hand). The client sends ClientTrigger 830 after each
-change (below).
+The client sends only the slots it **changed** (Bob's bundles of 2026-10-27: his second save of plate 1 named just the
+two pieces he'd dyed; the server used to empty every other slot, which left the plate empty.) A slot not changed keeps
+what the plate had. For a changed slot, **what** says what changed (bits): 1 its item, from the dresser index it
+names, with that item's stains; 2 its first dye, 4 its second (bit 4 taken by analogy: only 3, item and first dye, was
+seen). A dye names the bag (0–3; 9999 for none) and slot (0xFFFF) of the dye the client used, and the stain it gives
+(0xFF for none); one of that dye is taken. A changed slot with neither its item nor a dye changed is emptied. Bob's
+first save: head, hands and feet from the dresser (what 1), body and legs from the dresser dyed in the plate (what 3,
+stains 1 and 6, both with the dye in the fourth bag's slot 29); the server used to read the dye's bag (3) as the item's
+source and leave both pieces out, so they showed until the plate was reloaded. The client sends ClientTrigger 830 after
+each change (below).
 
-Not done: outfit sets (MirageStoreSetItem), items from the armoire on a plate, and
+Not done: what retail answers a dyed save with beyond the plate (no capture of one; Kawari sends the dye's slot), outfit
+sets (MirageStoreSetItem), items from the armoire on a plate, and
 glamour prisms (the capture showed a stack of item 21800 resent as an item was stored; no count changed that's known).
 
 ## Applying a plate

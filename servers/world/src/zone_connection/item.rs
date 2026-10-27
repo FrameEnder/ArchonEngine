@@ -112,10 +112,16 @@ impl ZoneConnection {
             .filter(|(key, info)| self.shown_items.get(key) != Some(*info))
             .map(|(key, _)| *key)
             .collect();
+        // A retainer's containers only while one is called: the client has none otherwise, and an UpdateInventorySlot
+        // for one crashed it (Bob's teleport of 2026-10-27, the retainer dismissed 2 minutes before.)
+        let retainer_out = inventory.retainer.is_some();
         changed.extend(
             self.shown_items
                 .keys()
                 .filter(|key| !current.contains_key(key))
+                .filter(|(container, _)| {
+                    retainer_out || !crate::retainer::is_retainer_container(*container)
+                })
                 .copied(),
         );
         changed.sort_by_key(|(container, slot)| (*container as u16, *slot));

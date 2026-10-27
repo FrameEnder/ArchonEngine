@@ -10,9 +10,24 @@ use kawari::{
 
 use crate::{
     ItemInfoQuery, ZoneConnection,
-    glamour::{DRESSER_PAGE, DRESSER_SLOTS, DresserItem, HQ_OFFSET},
+    glamour::{
+        CHANGE_DYE0, CHANGE_DYE1, DRESSER_PAGE, DRESSER_SLOTS, DresserItem, HQ_OFFSET,
+        NO_CONTAINER, PlateSlotChange,
+    },
     inventory::Item,
 };
+
+/// A bag by its number in SaveGlamourPlate (the dyes come from the four bags: 3 was the fourth, Bob's bundles of
+/// 2026-10-27.)
+fn bag(container: u32) -> Option<ContainerType> {
+    match container {
+        0 => Some(ContainerType::Inventory0),
+        1 => Some(ContainerType::Inventory1),
+        2 => Some(ContainerType::Inventory2),
+        3 => Some(ContainerType::Inventory3),
+        _ => None,
+    }
+}
 
 /// An item's HQ flag (`Item::item_flags`.)
 const ITEM_FLAG_HQ: u8 = 1;
@@ -174,22 +189,66 @@ impl ZoneConnection {
         self.send_ipc_self(ipc).await;
     }
 
-    /// A glamour plate saved (SaveGlamourPlate): GlamourPlateUpdated and LogMessage 4382 with its number.
+    /// A glamour plate saved (SaveGlamourPlate): the slots it changed (`GlamourStorage::save_plate`), one of each dye
+    /// it used taken from its bag slot (the slot sent again), then GlamourPlateUpdated and LogMessage 4382 with its
+    /// number. `dyes` is, for each slot, the bag and slot of its first and second dye (`NO_CONTAINER` for none.)
     pub async fn save_glamour_plate(
         &mut self,
         plate: u8,
-        set: &[u8; 12],
-        indices: &[u32; 12],
-        containers: &[u32; 12],
+        slots: &[PlateSlotChange; 12],
+        dyes: &[[(u32, u16); 2]; 12],
     ) {
-        let Some(saved) =
-            self.player_data
-                .inventory
-                .glamour
-                .save_plate(plate as usize, set, indices, containers)
+        let Some(saved) = self
+            .player_data
+            .inventory
+            .glamour
+            .save_plate(plate as usize, slots)
         else {
             return;
         };
+        for (slot, change) in slots.iter().enumerate() {
+            for (channel, bit) in [CHANGE_DYE0, CHANGE_DYE1].into_iter().enumerate() {
+                let (container, dye_slot) = dyes[slot][channel];
+                if !change.changed || change.what & bit == 0 || container == NO_CONTAINER {
+                    continue;
+                }
+                let Some(container) = bag(container) else {
+                    tracing::warn!(
+                        "Glamour plate {plate}: slot {slot}'s dye is in container {container}, not a bag; not taken"
+                    );
+                    continue;
+                };
+                let taken = self
+                    .player_data
+                    .inventory
+                    .get_item_mut(container, dye_slot)
+                    .filter(|item| item.quantity > 0)
+                    .map(|item| {
+                        let dye = item.item_id;
+                        item.quantity -= 1;
+                        if item.quantity == 0 {
+                            *item = Item::default();
+                        }
+                        dye
+                    });
+                match taken {
+                    Some(dye) => {
+                        tracing::info!(
+                            "Glamour plate {plate}: slot {slot} dyed (stain {}) with item {dye} from {container} slot {dye_slot}, one used",
+                            if channel == 0 {
+                                change.stain0
+                            } else {
+                                change.stain1
+                            }
+                        );
+                        self.send_inventory_slot(container, dye_slot).await;
+                    }
+                    None => tracing::warn!(
+                        "Glamour plate {plate}: slot {slot}'s dye at {container} slot {dye_slot} isn't there"
+                    ),
+                }
+            }
+        }
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::GlamourPlateUpdated {
             index: plate as u32,
             plate: saved.into(),

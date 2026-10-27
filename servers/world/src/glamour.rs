@@ -14,8 +14,14 @@ pub const DRESSER_PAGE: usize = 400;
 pub const PLATES: usize = 20;
 /// The armoire's bitmask (ArmoireContents): one bit per Cabinet row.
 pub const ARMOIRE_BYTES: usize = 136;
-/// The container a glamour plate's slot names when its item comes from the dresser (SaveGlamourPlate; retail.)
-pub const DRESSER_CONTAINER: u32 = 9999;
+/// The container a SaveGlamourPlate slot names for a dye it doesn't use (retail.)
+pub const NO_CONTAINER: u32 = 9999;
+/// What a SaveGlamourPlate slot changes (bits): its item (from the dresser), its first dye, its second.
+pub const CHANGE_ITEM: u8 = 1;
+pub const CHANGE_DYE0: u8 = 2;
+pub const CHANGE_DYE1: u8 = 4;
+/// A stain a SaveGlamourPlate slot doesn't give.
+pub const NO_STAIN: u8 = 0xFF;
 /// HQ items are their ID plus this in the dresser and on plates (retail: 1026447 for an HQ 26447.)
 pub const HQ_OFFSET: u32 = 1_000_000;
 
@@ -33,6 +39,17 @@ pub struct Plate {
     pub item_ids: [u32; 12],
     pub stain0: [u8; 12],
     pub stain1: [u8; 12],
+}
+
+/// One slot of a SaveGlamourPlate: whether the client changed it, what (`CHANGE_*`), the dresser index of its item and
+/// the stains its dyes give (`NO_STAIN` for none.)
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct PlateSlotChange {
+    pub changed: bool,
+    pub what: u8,
+    pub index: u32,
+    pub stain0: u8,
+    pub stain1: u8,
 }
 
 impl From<Plate> for GlamourPlate {
@@ -123,28 +140,38 @@ impl GlamourStorage {
         plates
     }
 
-    /// Saves a plate from SaveGlamourPlate: each slot that's set takes the dresser item at its index (with that item's
-    /// stains); a slot that isn't set, or whose item doesn't come from the dresser, is left empty (retail: the off hand,
-    /// not set, came back 0.) Returns the plate, or None for a plate number out of range.
-    pub fn save_plate(
-        &mut self,
-        index: usize,
-        set: &[u8; 12],
-        indices: &[u32; 12],
-        containers: &[u32; 12],
-    ) -> Option<Plate> {
+    /// Saves a plate from SaveGlamourPlate. A slot the client didn't change keeps what the plate had (Bob's bundles of
+    /// 2026-10-27: his second save named only the two pieces he dyed, and the server emptied the rest.) A changed slot
+    /// takes the dresser item at its index with that item's stains when its item changed, keeps its item when only a
+    /// dye did, and is emptied when neither did (taken off the plate); then each dye it names gives its stain. Returns
+    /// the plate, or None for a plate number out of range.
+    pub fn save_plate(&mut self, index: usize, slots: &[PlateSlotChange; 12]) -> Option<Plate> {
         if index >= PLATES {
             return None;
         }
-        let mut plate = Plate::default();
-        for slot in 0..12 {
-            if set[slot] == 0 || containers[slot] != DRESSER_CONTAINER {
+        let mut plate = self.plates.get(index).copied().unwrap_or_default();
+        for (slot, change) in slots.iter().enumerate() {
+            if !change.changed {
                 continue;
             }
-            if let Some(item) = self.dresser_item(indices[slot] as usize) {
+            if change.what & CHANGE_ITEM != 0 {
+                let item = self.dresser_item(change.index as usize).unwrap_or_default();
                 plate.item_ids[slot] = item.item_id;
                 plate.stain0[slot] = item.stain0;
                 plate.stain1[slot] = item.stain1;
+            } else if change.what & (CHANGE_DYE0 | CHANGE_DYE1) == 0 {
+                plate.item_ids[slot] = 0;
+                plate.stain0[slot] = 0;
+                plate.stain1[slot] = 0;
+            }
+            if plate.item_ids[slot] == 0 {
+                continue;
+            }
+            if change.what & CHANGE_DYE0 != 0 && change.stain0 != NO_STAIN {
+                plate.stain0[slot] = change.stain0;
+            }
+            if change.what & CHANGE_DYE1 != 0 && change.stain1 != NO_STAIN {
+                plate.stain1[slot] = change.stain1;
             }
         }
         if self.plates.len() <= index {
@@ -227,24 +254,77 @@ mod tests {
             stain1: 0,
         };
         // Retail's save of plate 10 (index 9): main hand from 331, the off hand not set, the body from 420.
-        let mut set = [0; 12];
-        set[0] = 1;
-        set[3] = 1;
-        let mut indices = [0; 12];
-        indices[0] = 331;
-        indices[3] = 420;
-        let containers = [DRESSER_CONTAINER; 12];
-        let plate = storage.save_plate(9, &set, &indices, &containers).unwrap();
+        let mut slots = [PlateSlotChange::default(); 12];
+        for (slot, index) in [(0, 331), (3, 420)] {
+            slots[slot] = PlateSlotChange {
+                changed: true,
+                what: CHANGE_ITEM,
+                index,
+                stain0: NO_STAIN,
+                stain1: NO_STAIN,
+            };
+        }
+        let plate = storage.save_plate(9, &slots).unwrap();
         assert_eq!(plate.item_ids[0], 17825);
         assert_eq!(plate.item_ids[1], 0);
         assert_eq!(plate.item_ids[3], 48994);
         assert_eq!(plate.stain0[3], 6);
         assert_eq!(storage.plates().len(), PLATES);
-        assert!(
-            storage
-                .save_plate(20, &set, &indices, &containers)
-                .is_none()
+        assert!(storage.save_plate(20, &slots).is_none());
+    }
+
+    #[test]
+    fn plate_saved_again_with_dyes() {
+        // Bob's bundles of 2026-10-27: plate 1 saved with five pieces, the body and legs dyed in the plate (stains 1 and
+        // 6, what = 3); then saved again naming only those two. Everything stays, with the stains.
+        let mut storage = GlamourStorage::default();
+        storage.dresser = vec![item(0); 62];
+        for (index, id) in [
+            (5, 9298),
+            (29, 28590),
+            (46, 10034),
+            (59, 52628),
+            (61, 28591),
+        ] {
+            storage.dresser[index] = item(id);
+        }
+        let change = |index: u32, what: u8, stain0: u8| PlateSlotChange {
+            changed: true,
+            what,
+            index,
+            stain0,
+            stain1: NO_STAIN,
+        };
+        let mut first = [PlateSlotChange::default(); 12];
+        first[2] = change(5, CHANGE_ITEM, NO_STAIN);
+        first[3] = change(29, CHANGE_ITEM | CHANGE_DYE0, 1);
+        first[4] = change(46, CHANGE_ITEM, NO_STAIN);
+        first[5] = change(59, CHANGE_ITEM | CHANGE_DYE0, 6);
+        first[6] = change(61, CHANGE_ITEM, NO_STAIN);
+        let plate = storage.save_plate(0, &first).unwrap();
+        assert_eq!(
+            plate.item_ids,
+            [0, 0, 9298, 28590, 10034, 52628, 28591, 0, 0, 0, 0, 0]
         );
+        assert_eq!(
+            (plate.stain0[3], plate.stain0[5], plate.stain1[3]),
+            (1, 6, 0)
+        );
+
+        let mut second = [PlateSlotChange::default(); 12];
+        second[3] = first[3];
+        second[5] = first[5];
+        assert_eq!(storage.save_plate(0, &second).unwrap(), plate);
+        assert_eq!(storage.plates()[0], plate.into());
+
+        // Only a dye changed: the item stays and takes the new stain. Changed with neither: off the plate.
+        let mut third = [PlateSlotChange::default(); 12];
+        third[3] = change(0, CHANGE_DYE0, 9);
+        third[6] = change(0, 0, NO_STAIN);
+        let plate = storage.save_plate(0, &third).unwrap();
+        assert_eq!((plate.item_ids[3], plate.stain0[3]), (28590, 9));
+        assert_eq!(plate.item_ids[6], 0);
+        assert_eq!(plate.item_ids[2], 9298);
     }
 
     #[test]
