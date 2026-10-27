@@ -147,6 +147,9 @@ add one when something is found.
 * Quest-spawned enemies take what brought them out from the current event's target (2026-10-27). For 3853's goobbue
   retail named the EVENTRANGE; whether Kawari's range events carry the range's layout ID as their target isn't
   checked. 307's layer doesn't set display flags 0x40003 as retail's spawns had.
+* A search broken off (the bar interrupted) ends the event; retail plays the object's `..._EVENTACTIONNO` scene (one
+  less than `..._EVENTACTIONOK`: Trial by Earth's 99) and no quest script here does (`questkit clientcheck` lists
+  them as client scenes never played).
 * Trial by Earth's tainted earth sprite cast Stone once in its only recorded fight: how often it casts is a guess
   (every 3 s), and its hitbox isn't recorded. Way of the Conjurer's fixture has some of the layout IDs Bob fought,
   not necessarily the ones that died.

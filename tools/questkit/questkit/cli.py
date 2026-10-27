@@ -399,6 +399,23 @@ def _battle_sim(args) -> int:
     return 0 if results and all(r.ok for r in results) else 1
 
 
+def _clientcheck(args) -> int:
+    from . import clientcheck
+
+    checks, missing = clientcheck.collect(Path(args.dumps))
+    if not checks and not missing:
+        print(f"No client scripts in {args.dumps} for the server's scripts: run kawari-questdump scripts custom "
+              f"--server resources/scripts --out {args.dumps} (and opening, or dump for quests)")
+        return 1
+    text = clientcheck.report(checks, missing, show_all=args.all)
+    if args.out:
+        Path(args.out).write_text(text)
+        print(f"Wrote {args.out}: {len(checks)} scripts, {sum(c.issues for c in checks)} need a look")
+    else:
+        print(text, end="")
+    return 0
+
+
 def _lint(args) -> int:
     from . import lint
 
@@ -522,6 +539,13 @@ def main(argv=None) -> int:
     p.add_argument("--source", help="where the run came from, kept in the fixture")
     p.add_argument("--force", action="store_true", help="replace an existing fixture")
     p.set_defaults(run=_battle_sim)
+
+    p = commands.add_parser("clientcheck", help="check the server's event scripts against the client's (scenes, "
+                                                "constants, parameters): kawari-questdump scripts' output")
+    p.add_argument("dumps", help="kawari-questdump's output folder (scripts custom/opening, dump for quests)")
+    p.add_argument("--out", help="write the report to this file (keep it out of the repository)")
+    p.add_argument("--all", action="store_true", help="list every script checked, not just the ones with findings")
+    p.set_defaults(run=_clientcheck)
 
     p = commands.add_parser("lint", help="find what fails silently in game: unscripted NPC actions, quest battle "
                                          "NPCs without timelines, checked scripts without fixtures")

@@ -22,6 +22,8 @@ perf.data*
 
 # Dumps of the game's quest data and scripts (kawari-questdump), these are Square Enix's files
 quest-dumps/
+client-scripts/
+client-check.md
 
 # Python (tools/questkit)
 __pycache__/

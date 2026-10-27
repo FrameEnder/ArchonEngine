@@ -1260,3 +1260,62 @@ class LintTest(unittest.TestCase):
         report = lint.run()
         self.assertTrue(report.ok, lint.format_report(report))
         self.assertIn(870, lint.scripted_actions())
+
+
+class ClientCheckTest(unittest.TestCase):
+    """questkit clientcheck against a made-up client listing laid out as kawari-questdump writes them."""
+
+    LISTING = """; scenes: Npc:OnScene00000, Npc:OnScene00001, Npc:OnScene00002
+== Npc:OnScene00000  [function 0.0.1]
+== Npc:OnScene00001  [function 0.0.2]
+== Npc:OnScene00002  [function 0.0.3]
+== <main>/<anonymous 1>  [function 0.1]
+      4  SETTABLE   R0["MAIN_MENU_RESULT_MENU"] = 1
+      6  SETTABLE   R0["MAIN_MENU_RESULT_SPECIALSHOP"] = 2
+"""
+
+    def _setup(self, root: Path, lua: str) -> Path:
+        from questkit import clientcheck  # noqa: F401
+
+        scripts = root / "scripts"
+        (scripts / "events" / "custom" / "001").mkdir(parents=True)
+        (scripts / "events" / "custom" / "001" / "Npc_00107.lua").write_text(lua)
+        dumps = root / "dumps" / "custom"
+        (dumps / "001").mkdir(parents=True)
+        (dumps / "001" / "Npc_00107.txt").write_text(self.LISTING)
+        (dumps / "001" / "Npc_00107.json").write_text(json.dumps({"params": [{"name": "ACTOR0", "value": 10}]}))
+        (dumps / "index.json").write_text(json.dumps([{
+            "name": "Npc_00107", "handler_id": 720896 + 107, "path": "001/Npc_00107.luab",
+            "server_script": "events/custom/001/Npc_00107.lua", "on_server": True, "found": True}]))
+        return scripts
+
+    def test_agrees(self):
+        from questkit import clientcheck
+
+        lua = ("SCENE_GREETING = 00000\nSCENE_MENU = 00001\nSCENE_GIVE = 00002\nMAIN_MENU_RESULT_SPECIALSHOP = 2\n"
+               "function onTalk(target, player) player:play_scene(SCENE_MENU, HIDE_HOTBAR, {0}) end\n"
+               "-- 255 is Kawari's, not a scene\nSCENE_RETURNED_FROM_NEST = 255\nlocal x = ACTOR0\n")
+        with tempfile.TemporaryDirectory() as tmp:
+            scripts = self._setup(Path(tmp), lua)
+            checks, missing = clientcheck.collect(Path(tmp) / "dumps", scripts)
+        self.assertEqual(missing, [])
+        self.assertEqual(len(checks), 1)
+        self.assertFalse(checks[0].issues, checks[0])
+        self.assertEqual(checks[0].played, [0, 1, 2])
+
+    def test_finds_what_disagrees(self):
+        from questkit import clientcheck
+
+        lua = ("SCENE_GREETING = 00000\nSCENE_SHOP = 00010\nMAIN_MENU_RESULT_SPECIALSHOP = 3\n"
+               "-- TODO: how is his shop menu brought up?\nlocal x = ACTOR1\n")
+        with tempfile.TemporaryDirectory() as tmp:
+            scripts = self._setup(Path(tmp), lua)
+            checks, _ = clientcheck.collect(Path(tmp) / "dumps", scripts)
+            text = clientcheck.report(checks, [])
+        check = checks[0]
+        self.assertEqual(check.unknown_scenes, [10])
+        self.assertEqual(check.unplayed, [1, 2])
+        self.assertEqual(check.constant_mismatches, [("MAIN_MENU_RESULT_SPECIALSHOP", 3.0, 2.0)])
+        self.assertEqual(check.unknown_params, ["ACTOR1"])
+        self.assertEqual(len(check.notes), 1)
+        self.assertIn("needs a look", text)

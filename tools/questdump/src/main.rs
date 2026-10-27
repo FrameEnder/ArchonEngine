@@ -6,6 +6,7 @@
 //! The scripts are Square Enix's game files, so keep the dumps to yourself (the default folder is gitignored.)
 
 mod luab;
+mod scripts;
 
 use std::{
     collections::HashMap,
@@ -37,6 +38,7 @@ USAGE:
     kawari-questdump dump <QUEST>... [--out DIR] [--listing]
     kawari-questdump chain <QUEST> <COUNT> [--out DIR] [--listing]
     kawari-questdump extract <GAME PATH>... [--out DIR]
+    kawari-questdump scripts <custom|opening> [--server DIR] [--out DIR] [--listing]
     kawari-questdump index [--out DIR]
     kawari-questdump items [--out DIR]
     kawari-questdump content [--out DIR]
@@ -50,6 +52,11 @@ COMMANDS:
     chain     Dump the COUNT quests that follow QUEST in the same journal genre (e.g. the main story.)
     extract   Copy any game file out as-is (e.g. game_script/opening/OpeningGridania.luab.) A game_script file
               can also be given by its name alone (e.g. ManFst005Btl.luab) when its folder isn't known.
+    scripts   Copy out every client script of a kind the sheets name: custom (CustomTalk: NPC conversations, menus
+              and the shops they open) or opening (the city openings), each with its listing and its sheet row
+              (handler ID, Lua parameters), into <out>/<kind>/, plus index.json. With --server (the server's
+              resources/scripts folder), only the scripts the server has one of the same name for. For checking the
+              server's scripts against the client's: `questkit clientcheck`.
     index     Write quest-index.json: every quest's name, level, prerequisites, issuer, area, expansion, journal
               section and whether it's main scenario, for tools that need the whole quest graph (Kawari Web
               uses it to search, to unlock prerequisites and for its quest progress page.)
@@ -68,6 +75,7 @@ COMMANDS:
 OPTIONS:
     --out DIR     Where to write the dumps (default: quest-dumps)
     --listing     Include every instruction, not just each function's summary.
+    --server DIR  With scripts: the server's resources/scripts folder, to dump only what it has scripts for.
     --game DIR    The game's \"game\" folder (the one containing sqpack.) By default it's found the same way
                   the server finds it: config.yaml in the current directory, or auto-detection.";
 
@@ -75,6 +83,7 @@ struct Options {
     out: PathBuf,
     listing: bool,
     game: Option<String>,
+    server: Option<PathBuf>,
     positional: Vec<String>,
 }
 
@@ -83,6 +92,7 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
         out: PathBuf::from("quest-dumps"),
         listing: false,
         game: None,
+        server: None,
         positional: Vec::new(),
     };
     let mut iter = args.iter();
@@ -92,6 +102,11 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
                 options.out = PathBuf::from(iter.next().ok_or("--out needs a directory")?);
             }
             "--listing" => options.listing = true,
+            "--server" => {
+                options.server = Some(PathBuf::from(
+                    iter.next().ok_or("--server needs a directory")?,
+                ));
+            }
             "--game" => {
                 options.game = Some(iter.next().ok_or("--game needs a directory")?.clone());
             }
@@ -986,6 +1001,13 @@ fn run(args: &[String]) -> Result<(), String> {
                 return Err("none of those files exist".to_string());
             }
             Ok(())
+        }
+        "scripts" => {
+            let [folder] = options.positional.as_slice() else {
+                return Err(USAGE.to_string());
+            };
+            let mut data = GameData::open(options.game.as_deref())?;
+            scripts::dump(&mut data, folder, options.server.as_deref(), &options)
         }
         "items" => {
             let mut data = GameData::open(options.game.as_deref())?;
