@@ -185,6 +185,8 @@ pub struct PartyBot {
     pub path: std::collections::VecDeque<Vec3A>,
     /// When it last re-aimed its path at its moving spot.
     pub reaimed: Instant,
+    /// Since when the zone's collision has stopped it on its way (`walk_like_a_player`), if it has.
+    pub walled_since: Option<Instant>,
     /// Whether it's in the leader's party list: the Duty Finder's are from the start, `!spawn playernpc`'s once
     /// invited (Invite to Party on it.)
     pub in_party: bool,
@@ -243,6 +245,7 @@ impl PartyBot {
             walking_itself: true,
             path: Default::default(),
             reaimed: now,
+            walled_since: None,
             in_party: false,
             equipped: EquippedStorage::default(),
             item_level: 0,
@@ -382,7 +385,8 @@ fn run_along(
     collision: Option<&Collision>,
     here: Vec3A,
     path: &mut std::collections::VecDeque<Vec3A>,
-) -> Option<(Vec3A, f32)> {
+    walled_for: Duration,
+) -> (Option<(Vec3A, f32)>, bool) {
     let mut at = here;
     let mut left = NPC_RUN_SPEED * BEHAVIOR_TICK_SECONDS;
     while left > 0.0
@@ -399,29 +403,47 @@ fn run_along(
         }
     }
     let facing = f32::atan2(at.x - here.x, at.z - here.z);
-    let at = walk_like_a_player(navmesh, collision, here, at);
+    let (at, blocked) = walk_like_a_player(navmesh, collision, here, at, walled_for);
     let flat = Vec3A::new(at.x - here.x, 0.0, at.z - here.z).length();
     if flat < 0.05 {
-        return None;
+        return (None, blocked);
     }
-    Some((at, facing))
+    (Some((at, facing)), blocked)
 }
+
+/// How long the zone's collision may hold a bot up on its navmesh path before it goes on anyway: something in the
+/// collision that isn't there for players. Bob's Copperbell Mines bundle of 2026-10-27: the three bots never left the
+/// entrance, stopped a yalm or two in by the zone's collision while he walked off, most likely the duty's entrance
+/// barrier (in the collision kawari-navimesh writes, gone for players once the duty starts.)
+const WALL_PATIENCE: Duration = Duration::from_secs(2);
 
 /// A bot's step from `here` to `to` as a player would take it: on the zone's collision (the floor under it, stopped by
 /// walls, down off ledges after the player), or, until the zone has one, on the navmesh's floor under it.
+/// Whether it was stopped is returned too. Held up `WALL_PATIENCE` or longer, it goes on to `to` anyway when `to` is on
+/// the navmesh (walkable ground: the wall is one players don't have), on the floor there; off the navmesh a wall
+/// still stops it (a cliff it would go up.)
 fn walk_like_a_player(
     navmesh: &crate::navmesh::Navmesh,
     collision: Option<&Collision>,
     here: Vec3A,
     mut to: Vec3A,
-) -> Vec3A {
+    walled_for: Duration,
+) -> (Vec3A, bool) {
     if let Some(collision) = collision {
-        return collision.walk(here, to, f32::INFINITY).at;
+        let walk = collision.walk(here, to, f32::INFINITY);
+        if walk.blocked
+            && walled_for >= WALL_PATIENCE
+            && let Some(ground) = navmesh.ground_under(to)
+        {
+            let settled = collision.settle(Vec3A::new(to.x, ground.y, to.z));
+            return (settled, false);
+        }
+        return (walk.at, walk.blocked);
     }
     if let Some(ground) = navmesh.ground_under(to) {
         to.y = ground.y;
     }
-    to
+    (to, false)
 }
 
 pub fn script_facts(source: &str) -> (u32, Option<f32>) {
@@ -1622,6 +1644,7 @@ fn spawn_bot(
             walking_itself: true,
             path: Default::default(),
             reaimed: Instant::now(),
+            walled_since: None,
             in_party,
             equipped: wearing.equipped,
             item_level,
@@ -2835,6 +2858,8 @@ fn update_party(
     let mut tank_answers: Vec<(ObjectId, HashMap<ObjectId, Instant>)> = Vec::new();
     let mut repulls: Vec<(ObjectId, ObjectId)> = Vec::new();
     let mut walks = Vec::new();
+    // Whether the zone's collision stopped each walking bot this tick, and since when (`walk_like_a_player`.)
+    let mut walled: Vec<(ObjectId, Option<Instant>)> = Vec::new();
     let mut fighting = Vec::new();
     // Party NPCs: their kits' actions (actor, action, target), their states after this tick and their lines.
     let mut kit_actions: Vec<(ObjectId, u32, ObjectId)> = Vec::new();
@@ -2998,7 +3023,13 @@ fn update_party(
                         path = instance_navmesh_path(navmesh, here, to).into();
                         reaimed = now;
                     }
-                    let moved = run_along(navmesh, collision.as_deref(), here, &mut path);
+                    let walled_for = bot
+                        .walled_since
+                        .map(|since| now.duration_since(since))
+                        .unwrap_or_default();
+                    let (moved, blocked) =
+                        run_along(navmesh, collision.as_deref(), here, &mut path, walled_for);
+                    walled.push((*bot_id, blocked.then(|| bot.walled_since.unwrap_or(now))));
                     if let Some((at, facing)) = moved {
                         spawn.common.position = Position(at);
                         spawn.common.rotation = facing;
@@ -3061,6 +3092,7 @@ fn update_party(
             let mut path = bot.path.clone();
             if flat(here, spot) <= AT_SPOT && path.is_empty() {
                 walks.push((*bot_id, path, None, bot.reaimed));
+                walled.push((*bot_id, None));
                 continue;
             }
             // Its path, re-aimed at where its spot is now (from where it stands) at most every `REAIM_EVERY`, and
@@ -3094,7 +3126,29 @@ fn update_party(
             let facing = f32::atan2(at.x - here.x, at.z - here.z);
             // On the floor, as a player walks (a straight stretch where the navmesh stops went through slopes,
             // through the air off a ledge, and up cliffs: Bob's Copperbell Mines bundle of 2026-10-26.)
-            at = walk_like_a_player(&instance.navmesh, collision.as_deref(), here, at);
+            let walled_for = bot
+                .walled_since
+                .map(|since| now.duration_since(since))
+                .unwrap_or_default();
+            let blocked;
+            (at, blocked) = walk_like_a_player(
+                &instance.navmesh,
+                collision.as_deref(),
+                here,
+                at,
+                walled_for,
+            );
+            if !blocked
+                && bot
+                    .walled_since
+                    .is_some_and(|since| now.duration_since(since) >= WALL_PATIENCE)
+            {
+                tracing::info!(
+                    "Party bot {bot_id}: the zone's collision held it up at {here} on its way to {spot} for {:.1} s; on along the navmesh",
+                    walled_for.as_secs_f32()
+                );
+            }
+            walled.push((*bot_id, blocked.then(|| bot.walled_since.unwrap_or(now))));
             if flat(at, here) >= 0.05 {
                 spawn.common.position = Position(at);
                 spawn.common.rotation = facing;
@@ -3296,6 +3350,11 @@ fn update_party(
         party_npc::yell(network, instance, bot_id, line);
     }
 
+    for (bot_id, since) in walled {
+        if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
+            bot.walled_since = since;
+        }
+    }
     for (bot_id, path, moved, reaimed) in walks {
         if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
             bot.path = path;

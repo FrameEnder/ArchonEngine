@@ -105,6 +105,14 @@ on the floor, up a step no higher than a player's, along walls rather than throu
 the player, landing on the floor below. Until a zone's collision has been made (with its navmesh, the first time the
 zone is entered on a build with it), they keep to the navmesh's floor as before.
 
+**Held up by a wall players don't have** (2026-10-27): in Bob's Copperbell Mines bundle of that day the three bots
+never left the entrance. Each moved a yalm or two and stopped against something in the collision while he walked 40
+yalms off, most likely the duty's entrance barrier, which is in the meshes `kawari-navimesh` reads but gone for
+players once the duty starts (the bundle is the first run since the zone's navmesh was made again with its
+collision). A bot the collision has stopped for `WALL_PATIENCE` (2 s) now goes on to where it was going when that's
+on the navmesh (walkable ground), on the floor there, and the server logs it (`Party bot …: the zone's collision held
+it up at … for … s`); off the navmesh a wall still stops it, so it doesn't go up the cliff after a player on a ledge.
+
 ## Bots kept as friends
 
 A bot sent a friend request is **kept**: `party-bot-friends.json` in the server's data folder (beside `world.db`,

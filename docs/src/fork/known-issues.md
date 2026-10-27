@@ -499,6 +499,11 @@ add one when something is found.
   layer switches off later (or on) is still there (or not), for NPCs as for the navmesh. Bg parts whose collision
   isn't a "replace" mesh (`ModelCollisionType::Replace`) and sphere, cylinder and plane collision boxes aren't in
   either.
+* Something in the collision blocks where players walk: in the Copperbell Mines (2026-10-27) the bots stopped a
+  yalm or two from the entrance, most likely at the duty's entrance barrier, which the collision (and the navmesh)
+  keeps after the duty starts; bots now go on along the navmesh after 2 s held up (`WALL_PATIENCE`), but the
+  barrier itself is still in both: enemies' paths and the navmesh's are unchanged, and a bot is held 2 s at it. Which
+  object it is needs the zone's `.nvm.col` (or its LGB) looked at; the server's log line gives where.
 * An NPC already inside a wall or a rock (left there by earlier straight walking, or spawned in one) can be boxed in:
   every way out goes into the far side of it.
 * A ledge's drop is instant (it's on the floor below the next tick, and the client glides it down over the half
