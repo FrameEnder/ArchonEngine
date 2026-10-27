@@ -113,6 +113,13 @@ collision). A bot the collision has stopped for `WALL_PATIENCE` (2 s) now goes o
 on the navmesh (walkable ground), on the floor there, and the server logs it (`Party bot …: the zone's collision held
 it up at … for … s`); off the navmesh a wall still stops it, so it doesn't go up the cliff after a player on a ledge.
 
+**Catching up** (2026-10-27): out of combat, a bot more than 25 yalms (any way, `CATCH_UP_DISTANCE`) from the one it
+follows for 3 s (`CATCH_UP_AFTER`) is put beside them, in its formation spot on their floor (or where they stand):
+ActorSetPos, then ActorControl ZoneIn with the warp-in effect, and a log line (`Party bot …: … yalms behind … put
+beside them`). Bob's next Copperbell Mines run (same day) got the bots past the entrance and then left them at the top
+of the first lift, which goes 30 yalms down: there's no walking after a lift. How retail's Duty Support members come
+down one isn't recorded (with the party, or after it), so the 25 yalms and 3 s are guesses.
+
 ## Bots kept as friends
 
 A bot sent a friend request is **kept**: `party-bot-friends.json` in the server's data folder (beside `world.db`,

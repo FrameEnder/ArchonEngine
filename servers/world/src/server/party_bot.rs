@@ -187,6 +187,8 @@ pub struct PartyBot {
     pub reaimed: Instant,
     /// Since when the zone's collision has stopped it on its way (`walk_like_a_player`), if it has.
     pub walled_since: Option<Instant>,
+    /// Since when it has been too far from the one it follows to walk after them (`CATCH_UP_DISTANCE`), if it has.
+    pub far_since: Option<Instant>,
     /// Whether it's in the leader's party list: the Duty Finder's are from the start, `!spawn playernpc`'s once
     /// invited (Invite to Party on it.)
     pub in_party: bool,
@@ -246,6 +248,7 @@ impl PartyBot {
             path: Default::default(),
             reaimed: now,
             walled_since: None,
+            far_since: None,
             in_party: false,
             equipped: EquippedStorage::default(),
             item_level: 0,
@@ -416,6 +419,12 @@ fn run_along(
 /// entrance, stopped a yalm or two in by the zone's collision while he walked off, most likely the duty's entrance
 /// barrier (in the collision kawari-navimesh writes, gone for players once the duty starts.)
 const WALL_PATIENCE: Duration = Duration::from_secs(2);
+/// A bot this far (yalms, any way) from the one it follows, out of combat, for `CATCH_UP_AFTER`, is put beside them:
+/// where it can't walk after them (the Copperbell Mines' lift went 30 yalms down and left the bots at the top, Bob's
+/// bundle of 2026-10-27.) Retail's Duty Support members are always with the party; how they come down a lift isn't
+/// recorded.
+const CATCH_UP_DISTANCE: f32 = 25.0;
+const CATCH_UP_AFTER: Duration = Duration::from_secs(3);
 
 /// A bot's step from `here` to `to` as a player would take it: on the zone's collision (the floor under it, stopped by
 /// walls, down off ledges after the player), or, until the zone has one, on the navmesh's floor under it.
@@ -1645,6 +1654,7 @@ fn spawn_bot(
             path: Default::default(),
             reaimed: Instant::now(),
             walled_since: None,
+            far_since: None,
             in_party,
             equipped: wearing.equipped,
             item_level,
@@ -2860,6 +2870,9 @@ fn update_party(
     let mut walks = Vec::new();
     // Whether the zone's collision stopped each walking bot this tick, and since when (`walk_like_a_player`.)
     let mut walled: Vec<(ObjectId, Option<Instant>)> = Vec::new();
+    // Since when each walking bot has been too far behind, and those put beside the one they follow this tick.
+    let mut far: Vec<(ObjectId, Option<Instant>)> = Vec::new();
+    let mut catch_ups: Vec<(ObjectId, Vec3A, f32)> = Vec::new();
     let mut fighting = Vec::new();
     // Party NPCs: their kits' actions (actor, action, target), their states after this tick and their lines.
     let mut kit_actions: Vec<(ObjectId, u32, ObjectId)> = Vec::new();
@@ -3093,8 +3106,37 @@ fn update_party(
             if flat(here, spot) <= AT_SPOT && path.is_empty() {
                 walks.push((*bot_id, path, None, bot.reaimed));
                 walled.push((*bot_id, None));
+                far.push((*bot_id, None));
                 continue;
             }
+            // Too far behind to walk after them (a lift, a drop it won't take): beside them, after a moment.
+            let far_since =
+                (here.distance(anchor) > CATCH_UP_DISTANCE).then(|| bot.far_since.unwrap_or(now));
+            if far_since.is_some_and(|since| now.duration_since(since) >= CATCH_UP_AFTER) {
+                let to = match collision.as_deref() {
+                    Some(collision) => collision.settle(spot),
+                    None => instance.navmesh.ground_under(spot).unwrap_or(spot),
+                };
+                // On the player's floor: the spot's settled floor if it's near theirs, else where they stand.
+                let to = if (to.y - anchor.y).abs() <= 2.0 {
+                    to
+                } else {
+                    anchor
+                };
+                tracing::info!(
+                    "Party bot {bot_id}: {:.0} yalms behind {leader} out of combat for {:.1} s; put beside them at {to}",
+                    here.distance(anchor),
+                    now.duration_since(far_since.unwrap_or(now)).as_secs_f32()
+                );
+                spawn.common.position = Position(to);
+                spawn.common.rotation = facing;
+                catch_ups.push((*bot_id, to, facing));
+                walks.push((*bot_id, Default::default(), None, now));
+                walled.push((*bot_id, None));
+                far.push((*bot_id, None));
+                continue;
+            }
+            far.push((*bot_id, far_since));
             // Its path, re-aimed at where its spot is now (from where it stands) at most every `REAIM_EVERY`, and
             // only when the spot has moved off the path's end.
             let drifted = path.back().is_none_or(|end| flat(*end, spot) > SPOT_MOVED);
@@ -3354,6 +3396,37 @@ fn update_party(
         if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
             bot.walled_since = since;
         }
+    }
+    for (bot_id, since) in far {
+        if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
+            bot.far_since = since;
+        }
+    }
+    // Put there at once (ActorSetPos, as the director's `warp_bnpc`), with the warp-in effect a zoning player shows.
+    for (bot_id, position, rotation) in catch_ups {
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorSetPos(
+            kawari::ipc::zone::ActorSetPos {
+                position: Position(position),
+                rotation,
+                ..Default::default()
+            },
+        ));
+        let mut network = network.lock();
+        network.send_to_instance(
+            ObjectId::default(),
+            instance,
+            FromServer::PacketSegment(ipc, bot_id),
+            DestinationNetwork::ZoneClients,
+        );
+        network.send_ac_in_range_inclusive_instance(
+            instance,
+            bot_id,
+            ActorControlCategory::ZoneIn {
+                warp_finish_anim: 1,
+                raise_anim: 0,
+                unk1: 0,
+            },
+        );
     }
     for (bot_id, path, moved, reaimed) in walks {
         if let Some(bot) = instance.party_bots.get_mut(&bot_id) {

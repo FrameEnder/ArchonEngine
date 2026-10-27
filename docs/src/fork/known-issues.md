@@ -504,6 +504,8 @@ add one when something is found.
   keeps after the duty starts; bots now go on along the navmesh after 2 s held up (`WALL_PATIENCE`), but the
   barrier itself is still in both: enemies' paths and the navmesh's are unchanged, and a bot is held 2 s at it. Which
   object it is needs the zone's `.nvm.col` (or its LGB) looked at; the server's log line gives where.
+* Bots don't ride lifts: they're put beside the player once 25 yalms behind for 3 s (`CATCH_UP_DISTANCE`,
+  `CATCH_UP_AFTER`, guesses), not carried down with them. Retail's Duty Support on a lift isn't recorded.
 * An NPC already inside a wall or a rock (left there by earlier straight walking, or spawned in one) can be boxed in:
   every way out goes into the far side of it.
 * A ledge's drop is instant (it's on the floor below the next tick, and the client glides it down over the half
