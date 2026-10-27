@@ -428,9 +428,10 @@ const CATCH_UP_AFTER: Duration = Duration::from_secs(3);
 
 /// A bot's step from `here` to `to` as a player would take it: on the zone's collision (the floor under it, stopped by
 /// walls, down off ledges after the player), or, until the zone has one, on the navmesh's floor under it.
-/// Whether it was stopped is returned too. Held up `WALL_PATIENCE` or longer, it goes on to `to` anyway when `to` is on
-/// the navmesh (walkable ground: the wall is one players don't have), on the floor there; off the navmesh a wall
-/// still stops it (a cliff it would go up.)
+/// Whether it was stopped is returned too. Held up `WALL_PATIENCE` or longer, it goes on to `to` anyway when `to` is
+/// walkable ground (on the navmesh, or a floor of the collision within a step of its feet: the wall is one players
+/// don't have), on the floor there; elsewhere a wall still stops it (a cliff it would go up.) A gimmick that's
+/// standing (a closed door, a sealed boss room's wall: `Walk::gimmick`) always stops it, as it stops a player.
 fn walk_like_a_player(
     navmesh: &crate::navmesh::Navmesh,
     collision: Option<&Collision>,
@@ -440,12 +441,35 @@ fn walk_like_a_player(
 ) -> (Vec3A, bool) {
     if let Some(collision) = collision {
         let walk = collision.walk(here, to, f32::INFINITY);
-        if walk.blocked
-            && walled_for >= WALL_PATIENCE
-            && let Some(ground) = navmesh.ground_under(to)
-        {
-            let settled = collision.settle(Vec3A::new(to.x, ground.y, to.z));
-            return (settled, false);
+        // Said once, as its patience runs out, for the bundles.
+        let patience_ran_out = walled_for >= WALL_PATIENCE
+            && walled_for < WALL_PATIENCE + Duration::from_secs_f32(BEHAVIOR_TICK_SECONDS);
+        if walk.blocked && walled_for >= WALL_PATIENCE {
+            if let Some(gimmick) = walk.gimmick {
+                if patience_ran_out {
+                    tracing::info!(
+                        "Party bot at {here}: held up by the gimmick of event object {gimmick} (layout ID), standing; it waits, as a player would"
+                    );
+                }
+                return (walk.at, true);
+            }
+            let ground = navmesh.ground_under(to).map(|ground| ground.y).or_else(|| {
+                collision.floor(
+                    to.x,
+                    to.z,
+                    here.y + collision.climb,
+                    here.y - collision.climb,
+                )
+            });
+            if let Some(y) = ground {
+                let settled = collision.settle(Vec3A::new(to.x, y, to.z));
+                return (settled, false);
+            }
+            if patience_ran_out {
+                tracing::info!(
+                    "Party bot at {here}: held up by the zone's collision, and no ground on the navmesh or the collision at {to} to go on to"
+                );
+            }
         }
         return (walk.at, walk.blocked);
     }

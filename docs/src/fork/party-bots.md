@@ -112,6 +112,24 @@ players once the duty starts (the bundle is the first run since the zone's navme
 collision). A bot the collision has stopped for `WALL_PATIENCE` (2 s) now goes on to where it was going when that's
 on the navmesh (walkable ground), on the floor there, and the server logs it (`Party bot …: the zone's collision held
 it up at … for … s`); off the navmesh a wall still stops it, so it doesn't go up the cliff after a player on a ledge.
+Since 2026-10-27 (Bob's Tam-Tara Deepcroft bundles) a floor of the collision within a step of its feet counts as
+walkable too, for where the navmesh has a hole, and a gimmick that's standing (below) never lets it through: it waits
+there, as a player would (`Party bot at …: held up by the gimmick of event object …`).
+
+**Gimmicks: barriers, doors and boss-room walls** (2026-10-27): in Bob's two Tam-Tara Deepcroft bundles of that day
+the bots stopped short of the first room and the first orb for 42 and 81 s while he walked on, against "something I
+was able to cross just fine". The `WALL_PATIENCE` way through didn't help: the next step had no navmesh under it. The
+navmesh and the collision were built from every shared group in the zone's layout, including those an event object
+controls (its LGB EventObject's `bound_instance_id`): the duty's entrance barrier (the Copperbell Mines' hold-up), the
+barriers the first two orbs take away (2001697, 2001698) and the rooms' walls, which the director hides at the start
+(`hide_eobj`), as the client takes them away for players with the object. Now `kawari-navimesh` tags those triangles
+with the event object's layout ID and leaves them out of the navmesh (which went round, or stopped at, them for good),
+and each instance takes an object's gimmick out of its own collision as the object is hidden or removed
+(`hide_eobj`, `delete_eobj`, the entrance circle at the duty's start, or hidden from the start) and puts it back when
+it's shown (`show_eobj`: a boss room sealing). A standing one stops bots and enemies as it stops players; one that's
+gone doesn't. The server logs each (`The gimmick of event object … is gone from this instance's collision`), and the
+navmesh tool how many it found. The collision file is version 2, so every zone's navmesh and collision are made again
+the first time it's entered on this build.
 
 **Catching up** (2026-10-27): out of combat, a bot more than 25 yalms (any way, `CATCH_UP_DISTANCE`) from the one it
 follows for 3 s (`CATCH_UP_AFTER`) is put beside them, in its formation spot on their floor (or where they stand):

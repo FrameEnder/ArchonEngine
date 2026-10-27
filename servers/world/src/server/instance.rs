@@ -23,8 +23,8 @@ use crate::{
 };
 use kawari::{
     common::{
-        CharacterMode, DistanceRange, ENTRANCE_CIRCLE_IDS, FateState, HandlerId, HandlerType,
-        MAXIMUM_FATES, MOB_WANDER_TIME, ObjectId, Position, timestamp_secs,
+        CharacterMode, DistanceRange, ENTRANCE_CIRCLE_IDS, EventState, FateState, HandlerId,
+        HandlerType, MAXIMUM_FATES, MOB_WANDER_TIME, ObjectId, Position, timestamp_secs,
     },
     config::{Config, get_config},
     ipc::zone::{
@@ -129,6 +129,9 @@ pub struct Instance {
     pub navmesh: Navmesh,
     /// The zone's collision, which NPCs walk on as players do (`collision`; written with the navmesh.)
     pub collision: Option<Arc<crate::collision::Collision>>,
+    /// The event objects (layout IDs) hidden or removed here, whose gimmicks (their shared groups' collision) are
+    /// gone with them: see `set_gimmick_gone`.
+    pub gimmicks_gone: HashSet<u32>,
     /// The zone data.
     pub zone: Zone,
     /// The zone's current weather.
@@ -272,7 +275,12 @@ impl Instance {
 
         // Load initial event objects into instance
         for (object, layer_name) in instance.zone.get_event_objects(game_data, explorer_mode) {
+            let hidden = object.event_state.contains(EventState::OFF);
+            let layout_id = object.layout_id;
             instance.insert_object(object.entity_id, object, layer_name);
+            if hidden {
+                instance.set_gimmick_gone(layout_id, true);
+            }
         }
 
         // Load initial NPCs into instance
@@ -543,6 +551,60 @@ impl Instance {
             self.timed_gathering_spawned
                 .insert(layout, (spawn.entity_id, start));
         }
+    }
+
+    /// An event object (by layout ID) hidden or removed here (`gone`), or shown again: the shared groups it controls
+    /// (a barrier, a door, a boss room's wall) go or come back with it in this instance's collision, as the client
+    /// takes them away for players. Bob's bundles of 2026-10-27: the Copperbell Mines' entrance barrier and the
+    /// Tam-Tara Deepcroft's barriers held the bots up long after they were gone for him.
+    pub fn set_gimmick_gone(&mut self, layout_id: u32, gone: bool) {
+        if layout_id == 0 {
+            return;
+        }
+        let known = if gone {
+            !self.gimmicks_gone.insert(layout_id)
+        } else {
+            !self.gimmicks_gone.remove(&layout_id)
+        };
+        if known {
+            return;
+        }
+        if let Some(collision) = &self.collision
+            && collision.has_gimmick(layout_id)
+        {
+            let mut ours = (**collision).clone();
+            ours.set_gimmick_gone(layout_id, gone);
+            self.collision = Some(Arc::new(ours));
+            tracing::info!(
+                "The gimmick of event object {layout_id} (layout ID) is {} this instance's collision",
+                if gone { "gone from" } else { "back in" }
+            );
+        }
+    }
+
+    /// A collision just loaded: the gimmicks already gone here go from it too.
+    pub fn collision_loaded(&mut self) {
+        let Some(collision) = &self.collision else {
+            return;
+        };
+        let gone: Vec<u32> = self
+            .gimmicks_gone
+            .iter()
+            .copied()
+            .filter(|layout_id| collision.has_gimmick(*layout_id))
+            .collect();
+        if gone.is_empty() {
+            return;
+        }
+        let mut ours = (**collision).clone();
+        for layout_id in &gone {
+            ours.set_gimmick_gone(*layout_id, true);
+        }
+        self.collision = Some(Arc::new(ours));
+        tracing::info!(
+            "The gimmicks of {} hidden event objects are gone from this instance's collision",
+            gone.len()
+        );
     }
 
     pub fn insert_object(&mut self, actor_id: ObjectId, object: SpawnObject, layer_name: String) {

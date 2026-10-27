@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     path::PathBuf,
     ptr::{null, null_mut},
 };
@@ -94,6 +95,45 @@ fn main() {
     // Every collision mesh in the zone, as a player meets it: the terrain's plates, then the layers' bg parts,
     // collision boxes and shared groups.
     let mut geometry = Geometry::default();
+    let lgbs: Vec<(String, Lgb)> = scene
+        .lgb_paths
+        .iter()
+        .filter_map(|path| match resolver.parsed::<Lgb>(path) {
+            Ok(lgb) => Some((path.clone(), lgb)),
+            Err(e) => {
+                tracing::error!(
+                    "Failed to parse {path}: {e}, this is most likely a bug in Physis and should be reported somewhere!"
+                );
+                None
+            }
+        })
+        .collect();
+    // The shared groups an event object controls (its bound instance: a barrier, a door, a boss room's wall), by
+    // their instance ID: the object's layout ID. They're there for players only while the object is (the client
+    // takes them away when the server hides it), so their triangles carry it (kawari_world::collision's gimmicks)
+    // and the navmesh is built without them.
+    let mut bound: HashMap<u32, u32> = HashMap::new();
+    for (_, lgb) in &lgbs {
+        for chunk in &lgb.chunks {
+            for layer in &chunk.layers {
+                for object in &layer.objects {
+                    if let LayerEntryData::EventObject(eobj) = &object.data
+                        && eobj.bound_instance_id != 0
+                    {
+                        bound.insert(eobj.bound_instance_id, object.instance_id);
+                    }
+                }
+            }
+        }
+    }
+    // Which layers are this territory's (its LVB layer set), as the world server spawns from: counted only, to see
+    // how much collision comes from the others.
+    let layer_set = scene
+        .layer_sets
+        .layer_sets
+        .iter()
+        .find(|set| set.territory_type_id == zone_id)
+        .map(|set| set.id);
     for entry in &pcblist.entries {
         add_plate(
             entry,
@@ -103,18 +143,8 @@ fn main() {
         );
     }
 
-    for path in &scene.lgb_paths {
-        let lgb = resolver.parsed::<Lgb>(path);
-        let lgb = match lgb {
-            Ok(lgb) => lgb,
-            Err(e) => {
-                tracing::error!(
-                    "Failed to parse {path}: {e}, this is most likely a bug in Physis and should be reported somewhere!"
-                );
-                continue;
-            }
-        };
-
+    let mut outside_layer_set = 0;
+    for (_, lgb) in &lgbs {
         for chunk in &lgb.chunks {
             for layer in &chunk.layers {
                 // Exclude festival objects which *usually* don't have collision, but this is to exclude non-Global festivals that include non-existent SGBs.
@@ -122,15 +152,29 @@ fn main() {
                     continue;
                 }
 
+                let before = geometry.triangles.len();
                 let transform = Affine3A::default();
-                walk_layer(&mut resolver, layer, &transform, &mut geometry);
+                walk_layer(&mut resolver, layer, &transform, &bound, 0, &mut geometry);
+                if layer_set.is_some_and(|id| !layer.header.has_layer_set(id as u32)) {
+                    outside_layer_set += geometry.triangles.len() - before;
+                }
             }
         }
     }
+    let gimmick_triangles = geometry.owners.iter().filter(|owner| **owner != 0).count();
+    let mut gimmicks: Vec<u32> = geometry
+        .owners
+        .iter()
+        .copied()
+        .filter(|owner| *owner != 0)
+        .collect();
+    gimmicks.sort_unstable();
+    gimmicks.dedup();
     tracing::info!(
-        "{} collision triangles from {} vertices",
+        "{} collision triangles from {} vertices; {gimmick_triangles} of them the gimmicks of {} event objects {gimmicks:?} (left out of the navmesh); {outside_layer_set} from layers outside the territory's layer set {layer_set:?}",
         geometry.triangles.len(),
-        geometry.vertices.len()
+        geometry.vertices.len(),
+        gimmicks.len()
     );
 
     // The area to cover: the geometry's own bounds, all of it (list.pcb's leave out shared groups' meshes; and the
@@ -190,7 +234,11 @@ fn main() {
         (((value - origin) / tile_cell_size).floor() as i32).clamp(0, count - 1)
     };
     let mut tile_triangles: Vec<Vec<i32>> = vec![Vec::new(); (tile_width * tile_height) as usize];
-    for tri in &geometry.triangles {
+    for (tri, owner) in geometry.triangles.iter().zip(&geometry.owners) {
+        // Gimmicks come and go: the navmesh goes through them (the collision stops walkers while they stand.)
+        if *owner != 0 {
+            continue;
+        }
         let (mut lo, mut hi) = ([f32::MAX; 2], [f32::MIN; 2]);
         for i in tri {
             let v = geometry.vertices[*i as usize];
@@ -446,6 +494,7 @@ fn main() {
     let collision = Collision::build(
         geometry.vertices,
         geometry.triangles,
+        geometry.owners,
         navimesh_row.AgentMaxClimb,
         navimesh_row.AgentRadius,
         navimesh_row.AgentMaxSlope,
@@ -470,6 +519,8 @@ fn write_whole(path: &std::path::Path, bytes: &[u8]) {
 struct Geometry {
     vertices: Vec<[f32; 3]>,
     triangles: Vec<[u32; 3]>,
+    /// For each triangle, the layout ID of the event object whose gimmick it belongs to, or 0.
+    owners: Vec<u32>,
 }
 
 /// Represents the heightfield of a tile.
@@ -480,8 +531,8 @@ struct Tile {
     height_field: *mut rcHeightfield,
 }
 
-/// Walk each node, add it's collision model to the scene.
-fn walk_node(node: &Node, transform: &Affine3A, geometry: &mut Geometry) {
+/// Walk each node, add it's collision model to the scene (as `owner`'s gimmick, if it isn't 0.)
+fn walk_node(node: &Node, transform: &Affine3A, owner: u32, geometry: &mut Geometry) {
     if !node.vertices.is_empty() {
         let first = geometry.vertices.len() as u32;
         for vertex in &node.vertices {
@@ -498,11 +549,12 @@ fn walk_node(node: &Node, transform: &Affine3A, geometry: &mut Geometry) {
                 first + indices[1] as u32,
                 first + indices[2] as u32,
             ]);
+            geometry.owners.push(owner);
         }
     }
 
     for child in &node.children {
-        walk_node(child, transform, geometry);
+        walk_node(child, transform, owner, geometry);
     }
 }
 
@@ -521,18 +573,26 @@ fn add_plate(
         panic!("Mesh pcb isn't a mesh?!");
     };
     let transform = Affine3A::default();
-    walk_node(&mdl, &transform, geometry);
+    walk_node(&mdl, &transform, 0, geometry);
 }
 
-/// Walk each layer, add it's collision model to the scene.
+/// Walk each layer, add it's collision model to the scene. `bound` names the shared groups event objects control
+/// (see `main`); `owner` is the gimmick a shared group's layers belong to (0 at the top.)
 fn walk_layer(
     resolver: &mut ResourceResolver,
     layer: &Layer,
     transform: &Affine3A,
+    bound: &HashMap<u32, u32>,
+    owner: u32,
     geometry: &mut Geometry,
 ) {
     for object in &layer.objects {
         let child_transform: Affine3A = transform * Affine3A::from(object.transform);
+        let owner = if owner != 0 {
+            owner
+        } else {
+            bound.get(&object.instance_id).copied().unwrap_or(0)
+        };
 
         match &object.data {
             LayerEntryData::BgPart(bg_part) => {
@@ -546,7 +606,7 @@ fn walk_layer(
                         panic!("Mesh pcb isn't a mesh?!");
                     };
 
-                    walk_node(&pcb, &child_transform, geometry);
+                    walk_node(&pcb, &child_transform, owner, geometry);
                 }
             }
             LayerEntryData::CollisionBox(collision_box) => {
@@ -562,7 +622,7 @@ fn walk_layer(
                         panic!("Mesh pcb isn't a mesh?!");
                     };
 
-                    walk_node(&pcb, &child_transform, geometry);
+                    walk_node(&pcb, &child_transform, owner, geometry);
                 } else {
                     match collision_box.parent_data.trigger_box_shape {
                         TriggerBoxShape::None => unreachable!(),
@@ -633,7 +693,7 @@ fn walk_layer(
                                 panic!("This can never happen!!");
                             };
 
-                            walk_node(&mesh, &child_transform, geometry);
+                            walk_node(&mesh, &child_transform, owner, geometry);
                         }
                         TriggerBoxShape::Sphere => {
                             tracing::warn!("Sphere collision is not yet supported!")
@@ -656,7 +716,14 @@ fn walk_layer(
                     Ok(sgb) => {
                         for group in &sgb.sections[0].layer_groups {
                             for layer in &group.layers {
-                                walk_layer(resolver, layer, &child_transform, geometry);
+                                walk_layer(
+                                    resolver,
+                                    layer,
+                                    &child_transform,
+                                    bound,
+                                    owner,
+                                    geometry,
+                                );
                             }
                         }
                     }

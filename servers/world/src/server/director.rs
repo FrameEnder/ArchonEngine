@@ -1536,6 +1536,9 @@ pub fn director_tick(
                     instance.find_actor_mut(actor_id)
                 {
                     object.event_state = state;
+                    let layout_id = object.layout_id;
+                    // Its barrier or door goes from the collision with it, as for players.
+                    instance.set_gimmick_gone(layout_id, true);
                 }
             }
             LuaDirectorTask::ShowEObj { base_id } => {
@@ -1558,6 +1561,9 @@ pub fn director_tick(
                     instance.find_actor_mut(actor_id)
                 {
                     object.event_state = state;
+                    let layout_id = object.layout_id;
+                    // A boss room's wall sealing it: in the collision again.
+                    instance.set_gimmick_gone(layout_id, false);
                 }
             }
             LuaDirectorTask::DeleteEObj { base_id } => {
@@ -1568,6 +1574,10 @@ pub fn director_tick(
                     continue;
                 };
 
+                if let Some(NetworkedActor::Object { object, .. }) = instance.find_actor(actor_id) {
+                    let layout_id = object.layout_id;
+                    instance.set_gimmick_gone(layout_id, true);
+                }
                 let mut network = network.lock();
                 network.remove_actor(instance, actor_id);
             }
@@ -2838,6 +2848,9 @@ pub fn handle_director_messages(
                 {
                     object.event_state = state;
                     object.not_targetable = true;
+                    // The entrance's barrier goes with it (the Copperbell Mines' held the bots up.)
+                    let layout_id = object.layout_id;
+                    instance.set_gimmick_gone(layout_id, true);
                 }
             }
 

@@ -8,6 +8,14 @@
 //! straight line through the air, 3 yalms every half second.
 //!
 //! `kawari-navimesh` writes it next to the navmesh (`<navmesh>.col`); the world server reads it with the navmesh.
+//!
+//! **Gimmicks.** The shared groups an event object controls (its LGB `bound_instance_id`: a duty's entrance barrier,
+//! the Tam-Tara Deepcroft's barriers and boss-room walls) are there for players only while the object is: the client
+//! takes them away with it when the server hides it (SetEventState). Their triangles carry the object's layout ID, and
+//! each instance switches them off as its director hides the object (`Instance::set_gimmick_gone`), so bots and
+//! enemies walk where players walk. The navmesh is built without them (they'd cut it for good.) Bob's bundles of
+//! 2026-10-27: the Copperbell Mines' bots held up at the entrance, the Tam-Tara Deepcroft's for 42 and 81 s at the
+//! first room while he walked on.
 
 use std::sync::{Arc, Mutex, OnceLock, Weak};
 use std::{collections::HashMap, path::Path};
@@ -16,7 +24,7 @@ use glam::Vec3A;
 
 /// The file's first bytes, and the layout's version.
 const MAGIC: &[u8; 4] = b"KCOL";
-const VERSION: u32 = 1;
+const VERSION: u32 = 2;
 
 /// The grid the triangles are filed in (yalms a side.)
 const CELL: f32 = 2.0;
@@ -30,8 +38,9 @@ const SETTLE_DEPTH: f32 = 200.0;
 /// little under it.)
 const SETTLE_RISE: f32 = 3.0;
 
-/// The collision, ready to ask where the floor is and what's in the way.
-#[derive(Debug, Default)]
+/// The collision, ready to ask where the floor is and what's in the way. Cloning it is cheap (the triangles are
+/// shared): each instance keeps its own copy of which gimmicks are gone.
+#[derive(Debug, Default, Clone)]
 pub struct Collision {
     /// How high a step a walker can take (yalms; the zone's RecastNavimesh AgentMaxClimb, which retail's navmeshes
     /// are built for.)
@@ -43,13 +52,19 @@ pub struct Collision {
     origin: [f32; 2],
     columns: u32,
     rows: u32,
-    vertices: Vec<[f32; 3]>,
-    triangles: Vec<[u32; 3]>,
+    vertices: Arc<[[f32; 3]]>,
+    triangles: Arc<[[u32; 3]]>,
     /// For each cell (row by row), where its triangles start in `refs`; one more at the end.
-    offsets: Vec<u32>,
-    refs: Vec<u32>,
+    offsets: Arc<[u32]>,
+    refs: Arc<[u32]>,
     /// Whether each triangle can be stood on (not steeper than `floor_cos`.)
-    floors: Vec<bool>,
+    floors: Arc<[bool]>,
+    /// The gimmicks: the layout ID of the event object each belongs to.
+    gimmicks: Arc<[u32]>,
+    /// For each triangle, its gimmick (an index into `gimmicks`, plus one), or 0 for the zone's own.
+    owners: Arc<[u32]>,
+    /// Which gimmicks are gone here (by index into `gimmicks`.)
+    gone: Vec<bool>,
 }
 
 /// Where a walk got to, and whether something stopped it before the end.
@@ -57,32 +72,53 @@ pub struct Collision {
 pub struct Walk {
     pub at: Vec3A,
     pub blocked: bool,
+    /// When a gimmick that's standing stopped it (a closed door, a sealed boss room's wall): its event object's
+    /// layout ID. A player can't go through that either.
+    pub gimmick: Option<u32>,
 }
 
 /// Why a step can't be taken.
 enum Stop {
-    /// A wall, facing this way across the ground.
-    Wall(Vec3A),
+    /// A wall, facing this way across the ground, and the gimmick it belongs to (its layout ID), if it does.
+    Wall(Vec3A, Option<u32>),
     /// No floor to stand on: a step too high, a drop too deep, or nothing there at all.
     NoFloor,
 }
 
 impl Collision {
-    /// Files `triangles` (indices into `vertices`) in a grid. `max_slope` is in degrees.
+    /// Files `triangles` (indices into `vertices`) in a grid. `max_slope` is in degrees. `owners` is, for each
+    /// triangle, the layout ID of the event object whose gimmick it belongs to, or 0 (missing ones are 0.)
     pub fn build(
         vertices: Vec<[f32; 3]>,
         triangles: Vec<[u32; 3]>,
+        owners: Vec<u32>,
         climb: f32,
         radius: f32,
         max_slope: f32,
     ) -> Self {
-        let triangles: Vec<[u32; 3]> = triangles
+        let mut gimmicks: Vec<u32> = Vec::new();
+        let (triangles, owners): (Vec<[u32; 3]>, Vec<u32>) = triangles
             .into_iter()
-            .filter(|tri| {
+            .enumerate()
+            .filter(|(_, tri)| {
                 tri.iter().all(|i| (*i as usize) < vertices.len())
                     && normal(&vertices, tri).length_squared() > 1e-12
             })
-            .collect();
+            .map(|(index, tri)| {
+                let layout = owners.get(index).copied().unwrap_or(0);
+                if layout == 0 {
+                    return (tri, 0);
+                }
+                let gimmick = match gimmicks.iter().position(|g| *g == layout) {
+                    Some(at) => at,
+                    None => {
+                        gimmicks.push(layout);
+                        gimmicks.len() - 1
+                    }
+                };
+                (tri, gimmick as u32 + 1)
+            })
+            .unzip();
         let (mut min, mut max) = ([f32::MAX; 2], [f32::MIN; 2]);
         for tri in &triangles {
             for i in tri {
@@ -103,7 +139,10 @@ impl Collision {
             origin: min,
             columns,
             rows,
-            vertices,
+            vertices: vertices.into(),
+            gone: vec![false; gimmicks.len()],
+            gimmicks: gimmicks.into(),
+            owners: owners.into(),
             ..Default::default()
         };
 
@@ -129,9 +168,9 @@ impl Collision {
                 next[cell] += 1;
             }
         }
-        collision.triangles = triangles;
-        collision.offsets = offsets;
-        collision.refs = refs;
+        collision.triangles = triangles.into();
+        collision.offsets = offsets.into();
+        collision.refs = refs.into();
         collision.find_floors();
         collision
     }
@@ -144,7 +183,8 @@ impl Collision {
                 let n = normal(&self.vertices, tri).normalize_or_zero();
                 n.y.abs() >= self.floor_cos
             })
-            .collect();
+            .collect::<Vec<_>>()
+            .into();
     }
 
     /// The file's bytes (little-endian.)
@@ -171,17 +211,21 @@ impl Collision {
         ] {
             out.extend_from_slice(&value.to_le_bytes());
         }
-        for v in &self.vertices {
+        for v in self.vertices.iter() {
             for c in v {
                 out.extend_from_slice(&c.to_le_bytes());
             }
         }
-        for tri in &self.triangles {
+        for tri in self.triangles.iter() {
             for i in tri {
                 out.extend_from_slice(&i.to_le_bytes());
             }
         }
-        for value in self.offsets.iter().chain(&self.refs) {
+        for value in self.offsets.iter().chain(self.refs.iter()) {
+            out.extend_from_slice(&value.to_le_bytes());
+        }
+        out.extend_from_slice(&(self.gimmicks.len() as u32).to_le_bytes());
+        for value in self.gimmicks.iter().chain(self.owners.iter()) {
             out.extend_from_slice(&value.to_le_bytes());
         }
         out
@@ -235,6 +279,19 @@ impl Collision {
         {
             return None;
         }
+        let gimmick_count = r.u32()? as usize;
+        let mut gimmicks = Vec::with_capacity(gimmick_count);
+        for _ in 0..gimmick_count {
+            gimmicks.push(r.u32()?);
+        }
+        let mut owners = Vec::with_capacity(triangle_count);
+        for _ in 0..triangle_count {
+            let owner = r.u32()?;
+            if owner as usize > gimmick_count {
+                return None;
+            }
+            owners.push(owner);
+        }
         let mut collision = Self {
             climb,
             radius,
@@ -242,11 +299,14 @@ impl Collision {
             origin,
             columns,
             rows,
-            vertices,
-            triangles,
-            offsets,
-            refs,
-            floors: Vec::new(),
+            vertices: vertices.into(),
+            triangles: triangles.into(),
+            offsets: offsets.into(),
+            refs: refs.into(),
+            floors: Arc::new([]),
+            gone: vec![false; gimmicks.len()],
+            gimmicks: gimmicks.into(),
+            owners: owners.into(),
         };
         collision.find_floors();
         Some(collision)
@@ -268,8 +328,10 @@ impl Collision {
             return None;
         };
         tracing::info!(
-            "Loaded the collision from {path:?} ({} triangles)",
-            collision.triangles.len()
+            "Loaded the collision from {path:?} ({} triangles, {} of them the gimmicks of {} event objects)",
+            collision.triangles.len(),
+            collision.owners.iter().filter(|owner| **owner != 0).count(),
+            collision.gimmicks.len()
         );
         let collision = Arc::new(collision);
         loaded.insert(key, Arc::downgrade(&collision));
@@ -332,7 +394,7 @@ impl Collision {
         let cell = self.cells_over(&[x, z, x, z]).next()?;
         let mut best: Option<f32> = None;
         for index in self.cell_triangles(cell) {
-            if !self.floors[*index as usize] {
+            if !self.floors[*index as usize] || self.is_gone(*index) {
                 continue;
             }
             let [a, b, c] = self.triangle(*index);
@@ -347,8 +409,37 @@ impl Collision {
         best
     }
 
-    /// The first thing a straight line from `from` to `to` goes into: its surface's facing across the ground.
-    fn hit(&self, from: Vec3A, to: Vec3A) -> Option<Vec3A> {
+    /// Whether triangle `index` belongs to a gimmick that's gone here.
+    fn is_gone(&self, index: u32) -> bool {
+        let owner = self.owners.get(index as usize).copied().unwrap_or(0);
+        owner != 0 && self.gone.get(owner as usize - 1).copied().unwrap_or(false)
+    }
+
+    /// The layout ID of triangle `index`'s gimmick, if it belongs to one.
+    fn gimmick_of(&self, index: u32) -> Option<u32> {
+        let owner = self.owners.get(index as usize).copied().unwrap_or(0);
+        (owner != 0).then(|| self.gimmicks[owner as usize - 1])
+    }
+
+    /// Whether the event object with this layout ID has a gimmick here.
+    pub fn has_gimmick(&self, layout_id: u32) -> bool {
+        self.gimmicks.contains(&layout_id)
+    }
+
+    /// Takes the gimmick of the event object with this layout ID away (`gone`), or puts it back. Whether that
+    /// changed anything.
+    pub fn set_gimmick_gone(&mut self, layout_id: u32, gone: bool) -> bool {
+        let Some(index) = self.gimmicks.iter().position(|g| *g == layout_id) else {
+            return false;
+        };
+        let changed = self.gone[index] != gone;
+        self.gone[index] = gone;
+        changed
+    }
+
+    /// The first thing a straight line from `from` to `to` goes into: its surface's facing across the ground, and
+    /// its gimmick's layout ID if it's one.
+    fn hit(&self, from: Vec3A, to: Vec3A) -> Option<(Vec3A, Option<u32>)> {
         let b = [
             from.x.min(to.x),
             from.z.min(to.z),
@@ -363,6 +454,9 @@ impl Collision {
                     continue;
                 }
                 seen.push(*index);
+                if self.is_gone(*index) {
+                    continue;
+                }
                 let [a, b, c] = self.triangle(*index);
                 if let Some(t) = segment_hits(from, to, a, b, c)
                     && nearest.is_none_or(|(best, _)| t < best)
@@ -376,11 +470,12 @@ impl Collision {
         let across = Vec3A::new(n.x, 0.0, n.z).normalize_or_zero();
         // Facing back at the walker, whichever way the mesh was wound.
         let way = Vec3A::new(to.x - from.x, 0.0, to.z - from.z);
-        Some(if across.dot(way) > 0.0 {
+        let facing = if across.dot(way) > 0.0 {
             -across
         } else {
             across
-        })
+        };
+        Some((facing, self.gimmick_of(index)))
     }
 
     /// Where someone put at `position` stands: on the floor under them (or just over them, if they're a little under
@@ -406,8 +501,8 @@ impl Collision {
         let ahead = way.normalize_or_zero() * self.radius;
         for height in WALL_HEIGHTS {
             let up = Vec3A::new(0.0, self.climb + height, 0.0);
-            if let Some(facing) = self.hit(at + up, next + ahead + up) {
-                return Err(Stop::Wall(facing));
+            if let Some((facing, gimmick)) = self.hit(at + up, next + ahead + up) {
+                return Err(Stop::Wall(facing, gimmick));
             }
         }
         match self.floor(next.x, next.z, at.y + self.climb, at.y - max_drop) {
@@ -424,27 +519,47 @@ impl Collision {
         let way = Vec3A::new(to.x - at.x, 0.0, to.z - at.z);
         let distance = way.length();
         if distance < 1e-4 {
-            return Walk { at, blocked: false };
+            return Walk {
+                at,
+                blocked: false,
+                gimmick: None,
+            };
         }
         let steps = (distance / SUBSTEP).ceil().max(1.0);
         let each = way / steps;
         for _ in 0..steps as usize {
             match self.step(at, each, max_drop) {
                 Ok(next) => at = next,
-                Err(Stop::Wall(facing)) => {
+                Err(Stop::Wall(facing, gimmick)) => {
                     // Along the wall: what's left of the step once the part into it is taken off.
                     let along = each - facing * each.dot(facing);
                     match (along.length() > each.length() * 0.2)
                         .then(|| self.step(at, along, max_drop))
                     {
                         Some(Ok(next)) => at = next,
-                        _ => return Walk { at, blocked: true },
+                        _ => {
+                            return Walk {
+                                at,
+                                blocked: true,
+                                gimmick,
+                            };
+                        }
                     }
                 }
-                Err(Stop::NoFloor) => return Walk { at, blocked: true },
+                Err(Stop::NoFloor) => {
+                    return Walk {
+                        at,
+                        blocked: true,
+                        gimmick: None,
+                    };
+                }
             }
         }
-        Walk { at, blocked: false }
+        Walk {
+            at,
+            blocked: false,
+            gimmick: None,
+        }
     }
 
     pub fn triangle_count(&self) -> usize {
@@ -472,6 +587,18 @@ impl<'a> Reader<'a> {
     fn f32(&mut self) -> Option<f32> {
         Some(f32::from_le_bytes(self.take(4)?.try_into().ok()?))
     }
+}
+
+/// Whether the collision file at `path` is one this build reads (its first bytes say so; read cheaply, to wait for a
+/// new one while an older one is being replaced.)
+pub fn is_current(path: &Path) -> bool {
+    use std::io::Read;
+    let mut head = [0u8; 8];
+    std::fs::File::open(path)
+        .and_then(|mut file| file.read_exact(&mut head))
+        .is_ok()
+        && &head[..4] == MAGIC
+        && head[4..] == VERSION.to_le_bytes()
 }
 
 /// Where the collision file for a navmesh at `nvm_path` goes.
@@ -561,11 +688,12 @@ mod tests {
     fn world(build: impl FnOnce(&mut Vec<[f32; 3]>, &mut Vec<[u32; 3]>)) -> Collision {
         let (mut v, mut t) = (Vec::new(), Vec::new());
         build(&mut v, &mut t);
-        let collision = Collision::build(v, t, 0.75, 0.4, 55.0);
+        let collision = Collision::build(v, t, Vec::new(), 0.75, 0.4, 55.0);
         // The file reads back as it was written.
         let again = Collision::from_bytes(&collision.to_bytes()).unwrap();
         assert_eq!(again.triangles, collision.triangles);
         assert_eq!(again.refs, collision.refs);
+        assert_eq!(again.owners, collision.owners);
         again
     }
 
@@ -666,5 +794,40 @@ mod tests {
         assert_eq!(c.settle(Vec3A::new(0.0, 10.2, 0.0)).y, 10.0);
         // Off the collision it stays.
         assert_eq!(c.settle(Vec3A::new(50.0, 3.0, 0.0)).y, 3.0);
+    }
+
+    #[test]
+    fn a_gimmick_stops_walkers_until_it_is_gone() {
+        // A barrier (event object 4100000's gimmick) across the floor at x = 3.
+        let (mut v, mut t) = (Vec::new(), Vec::new());
+        floor_quad(&mut v, &mut t, -10.0, -10.0, 10.0, 10.0, 0.0);
+        let floor = t.len();
+        wall_x(&mut v, &mut t, 3.0, -10.0, 10.0, 0.0, 4.0);
+        let mut owners = vec![0; floor];
+        owners.resize(t.len(), 4100000);
+        let built = Collision::build(v, t, owners, 0.75, 0.4, 55.0);
+        let mut c = Collision::from_bytes(&built.to_bytes()).unwrap();
+        assert_eq!(c.owners, built.owners);
+        assert!(c.has_gimmick(4100000) && !c.has_gimmick(1));
+
+        let walk = c.walk(Vec3A::ZERO, Vec3A::new(8.0, 0.0, 0.0), 50.0);
+        assert!(walk.blocked && walk.at.x < 3.0, "{walk:?}");
+        assert_eq!(walk.gimmick, Some(4100000));
+
+        // Hidden in this instance: gone for its walkers, still there for another instance's.
+        let other = c.clone();
+        assert!(c.set_gimmick_gone(4100000, true));
+        assert!(!c.set_gimmick_gone(4100000, true));
+        let walk = c.walk(Vec3A::ZERO, Vec3A::new(8.0, 0.0, 0.0), 50.0);
+        assert!(!walk.blocked && (walk.at.x - 8.0).abs() < 1e-3, "{walk:?}");
+        assert!(
+            other
+                .walk(Vec3A::ZERO, Vec3A::new(8.0, 0.0, 0.0), 50.0)
+                .blocked
+        );
+
+        // Shown again, it stands again.
+        assert!(c.set_gimmick_gone(4100000, false));
+        assert!(c.walk(Vec3A::ZERO, Vec3A::new(8.0, 0.0, 0.0), 50.0).blocked);
     }
 }

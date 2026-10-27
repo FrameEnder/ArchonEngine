@@ -511,11 +511,14 @@ add one when something is found.
   layer switches off later (or on) is still there (or not), for NPCs as for the navmesh. Bg parts whose collision
   isn't a "replace" mesh (`ModelCollisionType::Replace`) and sphere, cylinder and plane collision boxes aren't in
   either.
-* Something in the collision blocks where players walk: in the Copperbell Mines (2026-10-27) the bots stopped a
-  yalm or two from the entrance, most likely at the duty's entrance barrier, which the collision (and the navmesh)
-  keeps after the duty starts; bots now go on along the navmesh after 2 s held up (`WALL_PATIENCE`), but the
-  barrier itself is still in both: enemies' paths and the navmesh's are unchanged, and a bot is held 2 s at it. Which
-  object it is needs the zone's `.nvm.col` (or its LGB) looked at; the server's log line gives where.
+* Gimmicks (an event object's bound shared groups) go from the collision when the server hides the object, not
+  when a shared group's own timeline plays (a door swinging open on retail while its object stays): such a door's
+  collision stays shut. An event object the server doesn't spawn (pop type other than 1) leaves its gimmick standing.
+  Untested in game: whether the Copperbell Mines' entrance barrier and Tam-Tara Deepcroft's hold-ups were gimmicks is
+  what the next runs' logs say (the navmesh tool's count, `The gimmick of event object …` and `held up by the gimmick`
+  lines, or `held up by the zone's collision, and no ground` when it was something else).
+* The navmesh tool builds from every layer of the zone's LGBs, the world server spawns from those in the territory's
+  layer set only; the tool now logs how many collision triangles come from the others, to see whether that matters.
 * Bots don't ride lifts: they're put beside the player once 25 yalms behind for 3 s (`CATCH_UP_DISTANCE`,
   `CATCH_UP_AFTER`, guesses), not carried down with them. Retail's Duty Support on a lift isn't recorded.
 * An NPC already inside a wall or a rock (left there by earlier straight walking, or spawned in one) can be boxed in:

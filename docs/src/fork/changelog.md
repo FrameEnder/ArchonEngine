@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-27 | — | Quests (A Proper Burial, For the Children); combat (Eastern Thanalan's quest layers); known issues.
+| 2026-10-27 | — | Party bots (gimmicks: barriers, doors and boss-room walls come and go from the collision with their event objects); combat; known issues.
+| 2026-10-27 | `1fdaa4b` | Quests (A Proper Burial, For the Children); combat (Eastern Thanalan's quest layers); known issues.
 | 2026-10-27 | `77d44e3` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (changelog).
 | 2026-10-27 | `a206948` | Quests (Unsolved Mystery, What Poor People Think); combat (Eastern Thanalan's quest layer); known issues.
 | 2026-10-27 | `08b4849` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (changelog).
@@ -283,7 +284,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | A Proper Burial (620) and For the Children (621), the next two Eastern Thanalan quests of Bob's Chronofoil capture b8432613 (2026-10-27), from their client scripts: 620's key item used on the gravesite (event type 8), the embalmed corpse's search and the talks in between, with Marques' and Ourcen's other lines matched by the client's IsAcceptEvent; 621's EVENTRANGE0 bringing out a zombie and a zombie mage (new Eastern Thanalan drop-in layer `QB_SubWil113_001`, timelines `Zombie_18` and `ZombieMage_19`), their kills in UI8AL and Ourcen's rescue bar (EVENT_ACTION_RESCUE_UNDER_MIDDLE); fixtures 620 and 621. |
+| — | Bob's two Tam-Tara Deepcroft bundles (2026-10-27): the bots held up 42 and 81 s short of the first room and orb, by something he crossed. The navmesh and collision had every shared group an event object controls (its LGB `bound_instance_id`: entrance barriers, the orbs' barriers, boss-room walls), gone for players when the server hides the object. `kawari-navimesh` now tags them with the object's layout ID and leaves them out of the navmesh; the collision (file version 2, so every zone is made again) keeps them as gimmicks, which each instance takes away as the object is hidden or removed and puts back when it's shown (`Instance::set_gimmick_gone`). A standing gimmick stops bots for good (no `WALL_PATIENCE` way through); elsewhere the way through also takes a collision floor where the navmesh has none. New log lines for what held a bot up, and the tool's counts. |
+| `1fdaa4b` | A Proper Burial (620) and For the Children (621), the next two Eastern Thanalan quests of Bob's Chronofoil capture b8432613 (2026-10-27), from their client scripts: 620's key item used on the gravesite (event type 8), the embalmed corpse's search and the talks in between, with Marques' and Ourcen's other lines matched by the client's IsAcceptEvent; 621's EVENTRANGE0 bringing out a zombie and a zombie mage (new Eastern Thanalan drop-in layer `QB_SubWil113_001`, timelines `Zombie_18` and `ZombieMage_19`), their kills in UI8AL and Ourcen's rescue bar (EVENT_ACTION_RESCUE_UNDER_MIDDLE); fixtures 620 and 621. |
 | `77d44e3` | `master` fast-forwarded to `Latest-Quest` with Bob's OK. |
 | `a206948` | Unsolved Mystery (618) and What Poor People Think (619), the first two Eastern Thanalan quests of Bob's Chronofoil capture b8432613 (2026-10-27), from their client scripts: 618's three ripe corpses (each a scene, the gathering bar, a scene; its own nibble, BitFlag8, UI8AH and UI8CH, notice 0 `[n, 3, 26024]`), EVENTRANGE0 bringing out two ambushers (new Eastern Thanalan drop-in layer `QB_SubWil110_001`, timeline `UnsolvedMysteryAmbusher_166`) with scene 10, and Isembard's trade and reward; 619's trade with Ungust, the three paupers (0x6001, UI8AL, BitFlag8, notice 1 `[n, 3]`), Ungust again and the reward; fixtures 618 and 619. |
 | `08b4849` | `master` fast-forwarded to `Latest-Quest` with Bob's OK. |
