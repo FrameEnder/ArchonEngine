@@ -428,6 +428,6 @@ For every server script with a client script there it reports, worst first:
   `FIXME` and "not sure" lines;
 * and which server scripts had no client script in the dumps.
 
-Kawari's scene 255 (returning from a nested event) isn't counted. `client-scripts/` and `client-check.md` are gitignored, as `quest-dumps/` is: the dumps are Square Enix's files; the report has only scene numbers, constant and parameter names and the server's own lines. Its first run
+Kawari Web does the same from its dashboard, with no source tree: Quest Lab → Script Check (2.23.0; see [Kawari Web](kawari-web.md)). Kawari's scene 255 (returning from a nested event) isn't counted. `client-scripts/` and `client-check.md` are gitignored, as `quest-dumps/` is: the dumps are Square Enix's files; the report has only scene numbers, constant and parameter names and the server's own lines. Its first run
 (2026-10-27, Jonathas and the six Conjurer quest dumps) found Trial by Earth's scene 99 never played: the
 `SEQ_2_EOBJECT0_EVENTACTIONNO` scene retail plays when a search's bar is broken off (see Known issues).

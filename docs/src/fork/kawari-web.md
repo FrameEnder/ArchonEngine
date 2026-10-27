@@ -243,6 +243,18 @@ never started); a zip bundle of dumps, scripts and `Global.lua` with a manifest.
 `questkit triage` reads `quest_test` and filters its timeline to that quest; `questkit compare` checks the bundle's
 capture against a retail recording.
 
+
+**Script Check** (2.23.0, `kawari_web/questlab.py` `script_check`, `kawari_core/clientcheck.py`): Quest Lab's check for
+the scripts that aren't quests. *Dump and check* runs `kawari-questdump scripts custom` and `scripts opening` (the
+second may fail without stopping the job) with `--server /kawari/resources/scripts` in Quest Lab's throwaway container
+(the image keeps the build, resources included, in `/kawari`), into `<data>/quest-dumps/client-scripts/`, emptied first.
+The page checks the active build's `resources/scripts` against it with `kawari_core/clientcheck.py`, a copy of the
+fork's `tools/questkit/questkit/clientcheck.py` taking the scripts folder as an argument (keep the two the same), and
+shows the scripts that need a look, those worth reading, those without a client script and those that agree; the
+report (`/dashboard/quests/script-check/report.md`) and a bundle (`.../bundle`: the report, `client-scripts/`, the
+server's scripts under `fork-scripts/`) download from it. It needs a build whose `kawari-questdump` has `scripts`
+(fork commit `cf9c620`; the page reads the binary's usage text to tell). Named Script Check because Overview's
+`client_check` endpoint already re-reads the client's version.
 ## Quest progress (Dashboard → Progress)
 
 Every quest from A Realm Reborn to Dawntrail from the quest index (format 2), Main Scenario when in ScenarioTree,
