@@ -31,6 +31,24 @@ bags (`Inventory::use_up_one`), as retail does. If it's already known nothing ha
 Before this, only minions and orchestrion rolls were handled, by toggling (using the item again un-learned it) and
 without using the item up; mounts, unlock links, cards, accessories, barding and facewear did nothing.
 
+## Casting an item
+
+An item is cast through its ItemAction's own action: ItemAction `Type` is an Action row, whose Cast100ms is the cast
+and whose ID the cast bar (ActorCast's spell ID) shows (`server/action.rs`). Retail's Vesper Bay Aetheryte Ticket (item
+30362, ItemAction type 9994) cast 9994 for 5 s, then its ActionEffect named the item with animation 9994 (Bob's
+Chronofoil capture b8432613, five uses). The server used to look the item's own ID up as an Action row, which is some
+unrelated action's.
+
+## Aetheryte tickets
+
+ItemAction type **9994** (`items/TeleportTicket.lua`): after the cast, one ticket is used up (its slot sent again) and the
+player teleports (`player:teleport_by_ticket(item, territory, pop range)`): PrepareZoning with warp type **6**
+(`WarpType::Ticket`, hidden and faded as a teleport, flags 0x0A), into the territory at the pop range, and the
+landing's ZoneIn carries a teleport's 110. Where each ticket goes is retail's landing, by item: the Vesper Bay ticket
+went to Western Thanalan (140), pop range 8366917 (ZoneInit's, just outside Vesper Bay's gates) all five times. Other
+tickets say in chat that where they go isn't known. Retail also sent an InventoryTransaction for the ticket; Kawari
+sends the slot only.
+
 ## Selling to NPCs, wear and repair
 
 * **Sell price** (`ItemRow::sell_price`): PriceLow, and for materia (ItemUICategory 58) a tenth more rounded up in

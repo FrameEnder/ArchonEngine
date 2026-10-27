@@ -1482,7 +1482,9 @@ pub enum WarpType {
     Translate = 3,
     Teleport = 4,
     Unk5 = 5,
-    Unk6 = 6,
+    /// An item's teleport: an aetheryte ticket (retail's Vesper Bay Aetheryte Ticket, Bob's Chronofoil capture
+    /// b8432613: hidden, the screen faded, as a teleport.)
+    Ticket = 6,
     Return = 7,
     Resurrection = 8,
     /// `WARP_TYPE_RENTAL_CHOCOBO` from Lua.

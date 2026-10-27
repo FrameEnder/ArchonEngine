@@ -235,6 +235,9 @@ add one when something is found.
 * Unsolved Mystery's ambushers (BNpcBase 166, timeline `UnsolvedMysteryAmbusher_166`): one used action 426 on itself
   (status 204) about 2 s before it fell in Bob's capture b8432613; when and why isn't known (one use), so they never
   do. Their True Thrust's pace (8.8 s) is from three uses.
+* Aetheryte tickets: only the Vesper Bay ticket's landing is recorded (the destination isn't read from its ItemAction
+  Data, whose meaning isn't known). Item casts now come from the ItemAction's action; items with a cast there that
+  retail uses instantly would now show one (none known).
 * An Elezen bot's feet showed nothing in the glamour "keeper of the lilacs" (feet model 410, variant 1); the race
   rules (EquipRestriction) allowed it, so the cause is still open: the next bundle's `Party bot glamour` line names
   the piece. A glamour line whose name matches two items takes the later row, which may be the wrong one.

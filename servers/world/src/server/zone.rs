@@ -1041,7 +1041,7 @@ impl Zone {
 /// teleport animation after landing (Bentbranch, 2026-10-16 bundle; Moraby Drydocks, 2026-10-22 bundle.)
 fn warp_appearance(warp_type: WarpType, same_zone: bool) -> (u8, PrepareZoningFlag) {
     match warp_type {
-        WarpType::Teleport | WarpType::Return => {
+        WarpType::Teleport | WarpType::Return | WarpType::Ticket => {
             let mut flags = PrepareZoningFlag::UNK2;
             if !same_zone {
                 flags |= PrepareZoningFlag::PRESERVE_COMPANION;
@@ -1601,7 +1601,7 @@ pub fn handle_zone_messages(
 
             true
         }
-        ToServer::WarpPopRange(from_id, from_actor_id, territory_id, pop_range_id) => {
+        ToServer::WarpPopRange(from_id, from_actor_id, territory_id, pop_range_id, warp_type) => {
             let mut data = data.lock();
             let mut network = network.lock();
             let mut game_data = game_data.lock();
@@ -1616,7 +1616,7 @@ pub fn handle_zone_messages(
                 *pop_range_id,
                 *from_actor_id,
                 *from_id,
-                WarpType::Normal,
+                *warp_type,
                 0,
             );
 

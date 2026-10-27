@@ -947,7 +947,16 @@ impl ZoneConnection {
                             self.player_data.character.actor_id,
                             *territory_id,
                             *pop_range_id,
+                            WarpType::Normal,
                         ))
+                        .await;
+                }
+                LuaTask::TeleportByTicket {
+                    item_id,
+                    territory_id,
+                    pop_range_id,
+                } => {
+                    self.teleport_by_ticket(*item_id, *territory_id, *pop_range_id)
                         .await;
                 }
                 LuaTask::RemoveCooldowns => {

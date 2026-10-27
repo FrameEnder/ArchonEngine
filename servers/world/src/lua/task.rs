@@ -324,6 +324,13 @@ pub enum LuaTask {
         territory_id: u16,
         pop_range_id: u32,
     },
+    /// An aetheryte ticket used (`ZoneConnection::teleport_by_ticket`): one used up, then off to the pop range as a
+    /// teleport.
+    TeleportByTicket {
+        item_id: u32,
+        territory_id: u16,
+        pop_range_id: u32,
+    },
     RemoveCooldowns,
     ToggleHowTo {
         value: bool,

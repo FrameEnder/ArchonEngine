@@ -17,6 +17,8 @@ ITEM_ACTION_TYPE_TRIPLE_TRIAD_CARD = 3357
 ITEM_ACTION_TYPE_ORNAMENT = 20086
 ITEM_ACTION_TYPE_ORCHESTRION = 25183
 ITEM_ACTION_TYPE_FACEWEAR = 37312
+-- Aetheryte tickets (the Vesper Bay Aetheryte Ticket's ItemAction; also the Action its 5 s cast is.)
+ITEM_ACTION_TYPE_TELEPORT_TICKET = 9994
 -- Also an unlock link (the client checks it the same way as 2633.)
 ITEM_ACTION_TYPE_UNLOCK_LINK_2 = 43141
 
@@ -59,6 +61,8 @@ function dispatchItem(player, id, action_type, action_data, additional_data, is_
         return runAction("items/Food.lua", action_data[2] + action_data[3] * 65536)
     elseif action_type == ITEM_ACTION_TYPE_GYSHAL_GREENS then
         return runAction("items/GyshalGreens.lua", additional_data)
+    elseif action_type == ITEM_ACTION_TYPE_TELEPORT_TICKET then
+        return runAction("items/TeleportTicket.lua", id)
     elseif action_type == ITEM_ACTION_TYPE_THAVNAIRIAN_ONION then
         player:feed_companion_onion(id)
         return runAction("items/GenericNoEffect.lua", 0)

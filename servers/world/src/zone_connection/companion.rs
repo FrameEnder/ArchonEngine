@@ -193,6 +193,27 @@ impl ZoneConnection {
         self.player_data.item_sequence += 1;
     }
 
+    /// An aetheryte ticket used: as retail (Bob's Chronofoil capture b8432613, five uses of the Vesper Bay ticket), its
+    /// slot one fewer, then PrepareZoning (warp type 6, hidden, faded as a teleport) to the pop range, and the landing's
+    /// ZoneIn with a teleport's 110.
+    pub async fn teleport_by_ticket(&mut self, item_id: u32, territory_id: u16, pop_range_id: u32) {
+        if self.player_data.inventory.count_in_bags(item_id) == 0 {
+            tracing::warn!("Aetheryte ticket {item_id} used, but there's none in the bags");
+            return;
+        }
+        self.item_used_up(item_id).await;
+        self.teleport_reason = crate::zone_connection::TeleportReason::Aetheryte;
+        self.handle
+            .send(crate::ToServer::WarpPopRange(
+                self.id,
+                self.player_data.character.actor_id,
+                territory_id,
+                pop_range_id,
+                kawari::common::WarpType::Ticket,
+            ))
+            .await;
+    }
+
     /// An item used up (Gysahl Greens): one fewer in the bags, and the slot sent again.
     pub async fn item_used_up(&mut self, item_id: u32) {
         if let Some((container, slot)) = self.player_data.inventory.use_up_one_at(item_id) {

@@ -134,12 +134,25 @@ pub fn handle_action_messages(
         let (category, cast_time);
         let recast;
         let can_target_dead;
+        let cast_action;
         {
             let mut game_data = game_data.lock();
             can_target_dead = game_data.action_can_target_dead(request.action_id);
+            // An item is used through its ItemAction's own action (its type: an Action row), whose cast it has and
+            // whose ID the cast bar shows: retail's Vesper Bay Aetheryte Ticket (item 30362) cast action 9994 for 5 s
+            // (Bob's Chronofoil capture b8432613); the item's ID read as an Action row gave some unrelated action's.
+            cast_action = if request.action_type == ActionType::Item {
+                game_data
+                    .lookup_item_action_data(request.action_id)
+                    .map(|(action, _, _)| action as u32)
+                    .filter(|action| *action != 0)
+                    .unwrap_or(request.action_id)
+            } else {
+                request.action_id
+            };
             // Not an action the Action sheet has (an ActionRequest the server doesn't handle yet): ignored, rather
             // than taking the server down.
-            let Some(cast) = game_data.get_casttime(request.action_id) else {
+            let Some(cast) = game_data.get_casttime(cast_action) else {
                 tracing::warn!(
                     "No Action row for {:?} {}, ignoring the request",
                     request.action_type,
@@ -202,7 +215,7 @@ pub fn handle_action_messages(
 
         if adjusted_cast_time > 0 {
             let actor_cast = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
-                spell_id: request.action_id as u16,
+                spell_id: cast_action as u16,
                 action_id: request.action_id,
                 action_type: request.action_type,
                 omen_delay: 0,

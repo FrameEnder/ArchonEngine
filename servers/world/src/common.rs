@@ -565,7 +565,7 @@ pub enum ToServer {
     /// The client begins fishing.
     Fish(ClientId, ObjectId),
     /// Warp to a specified pop range in a new territory.
-    WarpPopRange(ClientId, ObjectId, u16, u32),
+    WarpPopRange(ClientId, ObjectId, u16, u32, WarpType),
     /// Request the global server state to reload its Lua state.
     ReloadScripts,
     /// The client dismounted.
