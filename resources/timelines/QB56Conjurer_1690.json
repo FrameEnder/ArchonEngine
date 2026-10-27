@@ -1,0 +1,33 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 92.0
+        },
+        "121": {
+            "npcs": 31.0
+        },
+        "120": {
+            "npcs": 249.0,
+            "players": 249.0
+        }
+    },
+    "rotation": {
+        "pace": 5.0,
+        "actions": [
+            {
+                "action": 121,
+                "refresh": 18.0,
+                "comment": "Aero"
+            },
+            {
+                "action": 119,
+                "comment": "Stone, about every 10 s between the heals"
+            }
+        ]
+    },
+    "comment": "Quest battle 56's conjurer on your side (BNpcBase 1690, ClassJob 6), level 25-27. From Bob's Chronofoil capture b23b91ef (2026-10-26, two runs of Like Mother, Like Daughter's quest battle 56, `questkit chronofoil --battle 0.29` lost and `0.31` won, territory 291, duty 356): Stone (119) 92, Aero (121) 31 (medians), Cure (120, the director's heals) 249, on whoever of the side was lowest, at 11-74 % (median 21-32 %). They never moved. Hitbox not recorded."
+}

@@ -1,0 +1,31 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 10.0,
+    "recorded_amounts": {
+        "1120": {
+            "npcs": 64.5
+        },
+        "120": {
+            "npcs": 281.0,
+            "players": 283.0
+        }
+    },
+    "rotation": {
+        "pace": 6.0,
+        "actions": [
+            {
+                "action": 1016,
+                "every": 22.8,
+                "comment": "2 uses, 2.2 s cast, 4-5 caught"
+            },
+            {
+                "action": 1120,
+                "every": 18.5,
+                "comment": "2 uses, 64.5"
+            }
+        ]
+    },
+    "comment": "Quest battle 56's water sprite on your side (layout 4249119, BNpcName 56), level 25, 1782 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, two runs of Like Mother, Like Daughter's quest battle 56, `questkit chronofoil --battle 0.29` lost and `0.31` won, territory 291, duty 356): Cure (120, the director's heals) 281, 1120 every 18.5 s and 1016 every 22.8 s. Hitbox not recorded."
+}

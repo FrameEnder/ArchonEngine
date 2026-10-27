@@ -1,0 +1,25 @@
+{
+    "autoattack_action_id": 872,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "recorded_amounts": {
+        "872": {
+            "npcs": 60.0,
+            "players": 49.0
+        },
+        "373": {
+            "npcs": 79.0
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 373,
+                "every": 8.1,
+                "comment": "19 uses in 2 runs, 8.1 s apart (median)"
+            }
+        ]
+    },
+    "comment": "Quest battle 56's 1685 (layout 4249106, BNpcName 1921), level 24, 255 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, two runs of Like Mother, Like Daughter's quest battle 56, `questkit chronofoil --battle 0.29` lost and `0.31` won, territory 291, duty 356): auto-attacks (872) every 3.0 s, 60 (median; 6 misses in 44), and 373 every 8.1 s, 79. Hitbox not recorded."
+}

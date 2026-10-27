@@ -213,6 +213,9 @@ Enemies still compute damage like players do (stat × potency), which is far too
   says what that NPC's action did on retail to a player and to another NPC. The hit is scaled to it (then varied,
   missed, parried or critical as above), and a heal (Cure) is set to it ±5 %. Used for quest battle allies and
   enemies (Leia's Legacy, To Guard a Guardian), so they wear each other down, and heal, as fast as on retail.
+  `players_by_level` (`{"<level>": avg}`) is for a kind met at several levels (2026-10-27): the tainted earth sprite
+  (BNpcBase 294) hit for 7 at level 5 in Trial by Earth and 21 at level 20 in Sylphie's Trials; the NPC's own level's
+  comes first, then `players`, then the nearest level's (`Timeline::recorded_amount_at`).
 * **Party bots and party NPCs are hit as players are** (since 2026-10-23): an enemy's hit on one is scaled as a hit on
   a player (its `players` recorded amount, or `npc_damage_scale`), with a player's defences for a bot
   (`modifiers::apply_hit_on_player`) and, for a [Party NPC](party-npcs.md#taking-hits), its member's share of a

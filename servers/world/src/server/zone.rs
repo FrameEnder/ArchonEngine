@@ -920,7 +920,7 @@ impl Zone {
                         npc_spawns.push(spawn);
                     }
                 }
-                if let DropInObjectData::EventNpc { base_id } = object.data {
+                if let DropInObjectData::EventNpc { base_id, nonpop } = object.data {
                     let (model_chara, customize, equip, behavior) =
                         game_data.find_enpc(base_id).unwrap();
 
@@ -941,7 +941,9 @@ impl Zone {
                     };
 
                     self.cached_npcs.insert(object.layout_id, spawn.clone());
-                    npc_spawns.push(spawn);
+                    if !nonpop {
+                        npc_spawns.push(spawn);
+                    }
                 }
             }
         }

@@ -223,6 +223,7 @@ fn recorded_amounts(
                 RecordedAmount {
                     players: healing.then_some(amount),
                     npcs: Some(amount),
+                    ..Default::default()
                 },
             )
         })

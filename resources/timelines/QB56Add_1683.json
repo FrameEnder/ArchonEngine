@@ -1,0 +1,79 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 0,
+            "data": {
+                "type": "action",
+                "action_id": 970
+            }
+        },
+        {
+            "time": 3,
+            "data": {
+                "type": "action",
+                "action_id": 970
+            }
+        },
+        {
+            "time": 6,
+            "data": {
+                "type": "action",
+                "action_id": 416,
+                "target": "itself"
+            }
+        },
+        {
+            "time": 9,
+            "data": {
+                "type": "action",
+                "action_id": 970
+            }
+        },
+        {
+            "time": 12,
+            "data": {
+                "type": "action",
+                "action_id": 970
+            }
+        },
+        {
+            "time": 15,
+            "data": {
+                "type": "action",
+                "action_id": 970
+            }
+        },
+        {
+            "time": 18,
+            "data": {
+                "type": "action",
+                "action_id": 970
+            }
+        },
+        {
+            "time": 21,
+            "data": {
+                "type": "action",
+                "action_id": 970
+            }
+        },
+        {
+            "time": 24,
+            "data": {
+                "type": "invulnerability",
+                "invulnerable": false
+            },
+            "comment": "Marks the end of the loop: 416 again 24.5 s after the last (median)"
+        }
+    ],
+    "attack_range": 10.0,
+    "recorded_amounts": {
+        "970": {
+            "npcs": 76.0,
+            "players": 60.5
+        }
+    },
+    "comment": "Quest battle 56's first wave (BNpcBase 1683, BNpcName 1919), level 25, 427 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, two runs of Like Mother, Like Daughter's quest battle 56, `questkit chronofoil --battle 0.29` lost and `0.31` won, territory 291, duty 356): Stone (970, 0.7 s cast) every 3.1 s on its own conjurer, 76 (median of 80; 60 on you, two), and 416 (2.2 s) on itself 6 s in and every 24.5 s. Hitbox not recorded."
+}

@@ -106,6 +106,11 @@ pub struct RecordedAmount {
     /// The average amount against other NPCs.
     #[serde(default)]
     pub npcs: Option<f32>,
+    /// The average against players by the NPC's level, for a kind met at several levels: the tainted earth sprite
+    /// (BNpcBase 294) hit for 7 at level 5 in Trial by Earth and 20 at level 20 in Sylphie's Trials (Bob's Chronofoil
+    /// capture b23b91ef). Its level's comes first, then `players`, then the nearest level's.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub players_by_level: BTreeMap<u8, f32>,
 }
 
 impl Timeline {
@@ -117,6 +122,24 @@ impl Timeline {
         } else {
             recorded.npcs
         }
+    }
+
+    /// `recorded_amount` for an NPC of `level`: against players, its level's `players_by_level` when there is one.
+    pub fn recorded_amount_at(&self, action_id: u32, to_player: bool, level: u8) -> Option<f32> {
+        let recorded = self.recorded_amounts.get(&action_id)?;
+        if !to_player {
+            return recorded.npcs;
+        }
+        if let Some(amount) = recorded.players_by_level.get(&level) {
+            return Some(*amount);
+        }
+        recorded.players.or_else(|| {
+            recorded
+                .players_by_level
+                .iter()
+                .min_by_key(|(recorded, _)| (**recorded as i32 - level as i32).abs())
+                .map(|(_, amount)| *amount)
+        })
     }
 
     /// The average auto-attack damage this NPC does to players at `level`, if it's known.
@@ -258,6 +281,22 @@ fn is_default_target(target: &TimepointTarget) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn recorded_amount_by_level() {
+        // The tainted earth sprite: 7 at level 5 (Trial by Earth), 21 at level 20 (Sylphie's Trials.)
+        let timeline: Timeline = serde_json::from_str(
+            r#"{"autoattack_action_id": 0, "timeline_always_plays": false, "timepoints": [],
+                "recorded_amounts": {"970": {"players": 7.0, "npcs": 3.0, "players_by_level": {"5": 7.0, "20": 21.0}},
+                                     "971": {"players_by_level": {"15": 16.0, "20": 20.0}}}}"#,
+        )
+        .unwrap();
+        assert_eq!(timeline.recorded_amount_at(970, true, 20), Some(21.0));
+        assert_eq!(timeline.recorded_amount_at(970, true, 12), Some(7.0)); // not recorded: `players`
+        assert_eq!(timeline.recorded_amount_at(970, false, 20), Some(3.0));
+        assert_eq!(timeline.recorded_amount_at(971, true, 18), Some(20.0)); // no `players`: the nearest level's
+        assert_eq!(timeline.recorded_amount_at(1, true, 20), None);
+    }
 
     #[test]
     fn test_simple_example() {

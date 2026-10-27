@@ -110,6 +110,11 @@ pub enum DropInObjectData {
     EventNpc {
         /// Index into the ENpcBase and ENpcResident sheet.
         base_id: u32,
+        /// If true, it doesn't appear by itself: a director brings it out (`spawn_bnpc` with its layout ID), as Like
+        /// Mother, Like Daughter's quest battle has Sylphie standing by (an event NPC, layout 4249177, in retail's
+        /// spawns; Bob's Chronofoil capture b23b91ef.)
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        nonpop: bool,
     },
     /// Represents a path for a battle NPC to follow.
     #[serde(rename = "server_path")]

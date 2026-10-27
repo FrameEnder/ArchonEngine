@@ -311,6 +311,7 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
         g.onCommence(director)
         follow_calls()
         t = 0.0
+        player_fell = [False]
         while t <= end:
             clock[0] = t
             for due in [d for d in scenes_due if d[0] <= t]:
@@ -342,6 +343,13 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                 x, y, z = _position_then(positions.get(str(layout)), t - offset)
                 info_table[layout] = lua.table_from({"hp": pct, "max_hp": 100, "x": x, "y": y, "z": z})
             player_pct = _health_then(fixture["player"], t) if fixture.get("player") else 100.0
+            # The player falling, as the server tells the director (a lost run: Like Mother, Like Daughter's kept
+            # spawning after retail's run had ended.)
+            if player_pct <= 0 and not player_fell[0]:
+                player_fell[0] = True
+                if g.onPlayerDeath is not None:
+                    g.onPlayerDeath(director)
+                follow_calls()
             x, y, z = _position_then(positions.get("player"), t)
             info_table["player"] = lua.table_from({"hp": player_pct, "max_hp": 100, "x": x, "y": y, "z": z})
             g.onUpdate(director, lua.table_from(health), player_pct, lua.table_from(info_table))

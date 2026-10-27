@@ -153,6 +153,12 @@ add one when something is found.
 * Trial by Earth's tainted earth sprite cast Stone once in its only recorded fight: how often it casts is a guess
   (every 3 s), and its hitbox isn't recorded. Way of the Conjurer's fixture has some of the layout IDs Bob fought,
   not necessarily the ones that died.
+* Like Mother, Like Daughter's quest battle (56): territory 291 is taken to have the South Shroud's Bg; the 80 % / 40 s
+  and 65 % marks are from two runs (the 65 % from one: the lost run never got there); what brings the 1686 when the
+  elementals haven't come is read as a 35 s timer from two spawns; the elementals' and the 1686's statuses (199, 17,
+  9) last guessed times and do nothing; 1684's 863 has no effect scripted here; whom a conjurer heals is "the lowest
+  below 40 %", retail's were at 11-74 %. Sylphie's own Battle talks come from her as an event NPC (kind 3); her
+  standing there is a drop-in `event_npc` with `nonpop`, untested in game.
 * Humanoid battle NPCs take their looks from BNpcBase's BNpcCustomize and NpcEquip, and for Trial by Wind's conjurer
   (base 1661) those gave a different person than retail drew (a Miqo'te, face 201, mouth 128: odd values); why isn't
   known (the row, the sheet's columns, or retail drawing him from elsewhere). The battle layers carry retail's

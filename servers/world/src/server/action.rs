@@ -753,8 +753,13 @@ pub fn execute_action(
             _ => None,
         };
         let recorded_for = |id: ObjectId| match actor {
-            NetworkedActor::Npc { timeline, .. } => member_recorded(id)
-                .or_else(|| timeline.recorded_amount(request.action_id, hit_like_a_player(id))),
+            NetworkedActor::Npc { timeline, .. } => member_recorded(id).or_else(|| {
+                timeline.recorded_amount_at(
+                    request.action_id,
+                    hit_like_a_player(id),
+                    common_spawn.level,
+                )
+            }),
             _ => None,
         };
         // Area attacks land on everyone of the target's side inside them when the cast finishes (aimed where the

@@ -1,0 +1,29 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "121": {
+            "npcs": 33.0
+        },
+        "120": {
+            "npcs": 278.0,
+            "players": 274.0
+        }
+    },
+    "rotation": {
+        "pace": 6.0,
+        "actions": [
+            {
+                "action": 1118,
+                "every": 12.6,
+                "comment": "2 uses, 3.7 s cast"
+            },
+            {
+                "action": 121
+            }
+        ]
+    },
+    "comment": "Quest battle 56's wind sprite on your side (layout 4249117, BNpcName 115), level 25, 1782 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, two runs of Like Mother, Like Daughter's quest battle 56, `questkit chronofoil --battle 0.29` lost and `0.31` won, territory 291, duty 356): Cure (120, the director's heals) 278, 1118 every 12.6 s, Aero (121) 33. Hitbox not recorded."
+}

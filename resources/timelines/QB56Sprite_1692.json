@@ -1,0 +1,19 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 23.0,
+            "every": 34.5,
+            "data": {
+                "type": "action",
+                "action_id": 313,
+                "target": "itself"
+            },
+            "comment": "313 on itself 23.3 s after it arrived, then 34.5 s later (the won run)"
+        }
+    ],
+    "attack_range": 15.0,
+    "comment": "Quest battle 56's sprite on your side (layout 4249116, BNpcName 117), level 25, 1782 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, two runs of Like Mother, Like Daughter's quest battle 56, `questkit chronofoil --battle 0.29` lost and `0.31` won, territory 291, duty 356): only 313, on itself . Hitbox not recorded.",
+    "from_pull": true
+}

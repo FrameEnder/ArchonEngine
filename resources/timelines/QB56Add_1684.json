@@ -1,0 +1,31 @@
+{
+    "autoattack_action_id": 872,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "recorded_amounts": {
+        "872": {
+            "npcs": 107.0,
+            "players": 91.0
+        },
+        "440": {
+            "npcs": 322.0,
+            "players": 267.0
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 440,
+                "every": 21.2,
+                "comment": "11 uses in 2 runs, 21.2 s apart (median), 2.2 s cast, 1-4 caught"
+            },
+            {
+                "action": 863,
+                "every": 21.5,
+                "comment": "7 uses, 2.7 s cast, no damage seen"
+            }
+        ]
+    },
+    "comment": "Quest battle 56's 1684s (layouts 4249097 and 4250514, BNpcName 1920), level 25, 891 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, two runs of Like Mother, Like Daughter's quest battle 56, `questkit chronofoil --battle 0.29` lost and `0.31` won, territory 291, duty 356): auto-attacks (872) every 3.0 s, 107 on the conjurers (median; 6 misses in 40), 440 about every 21 s (322 on an NPC, 267 on you) and 863 about every 21.5 s. Hitbox not recorded."
+}

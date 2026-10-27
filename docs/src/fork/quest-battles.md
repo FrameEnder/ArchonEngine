@@ -173,6 +173,35 @@ a quest's entering event, 0 for every other event (228 events across the capture
 
 ## The battles
 
+### Quest battle 56 — Like Mother, Like Daughter (`content/questbattle/56.lua`)
+
+* Quest 440 (ClsCnj005_00440) enters it from Sylphie (scene 11; territory 291, duty 356). Territory 291 is taken to be
+  a copy of the South Shroud (retail's spots against the drop-ins'), so its NPCs are layer `QB_ClsCnj005_001` of
+  `fst_f1f3`, with retail's layout IDs, levels, HP, positions, display flags and the start spot (33.69, 3.11, 34.99,
+  facing 0.795) from Bob's Chronofoil capture b23b91ef (2026-10-26, `--battle 0.29` lost doing nothing, `0.31` won;
+  a level 26 conjurer): the target (4250414, base 1682, 2138 HP, never acts: held), three conjurers on your side
+  (Wulfiue 4249072, Nolanel 4249073, Joacin 4249074; bases 1688-1690, ClassJob 6, with retail's `appearance`),
+  Sylphie standing by (4249177, an **event NPC** in retail's spawns: drop-in event NPCs can be `nonpop` now, and the
+  director brings her out with `spawn_bnpc`), the waves (bases 1683-1687) and three elementals that join you
+  (bases 1691-1693).
+* The flow, by both runs (seconds from the fight starting): sequence 2, the target, the conjurers and three 1683s,
+  each on its own conjurer; Sylphie's battle talk 103 and 104 at 5 and 10 s (ENpcResident 1006738, kind 3, no
+  portrait), the conjurers' yells 996, 997, 998 at 15, 20, 25 s. Sequence 3 when the target is at 80 % (84 → 78, 37.9
+  s in) or at 40 s if it isn't (the lost run, untouched, 40.1 s): a 1685 on Nolanel and a 1684 on Joacin; her 105 5 s
+  later and 106 15 s later. Sequence 4 when it's at 65 % after that (69 → 62): the elementals and a second 1684 (on
+  Wulfiue), her 107 10 s later; sequence 5 6 s after 4, sequence 6 15 s after 5, a 1687 5.3 s after that and her 108
+  10 s after it. In the lost run sequence 4 never came, and a 1686 came 35 s after sequence 3 and again 35 s later.
+  Each conjurer has last words as he falls (battle talk 110 Wulfiue, 109 Nolanel, 111 Joacin, under their BNpcNames);
+  it goes on without them. The target at 0: sequence 7 and "Duty Complete" at once, then the battle's scene 7
+  (0x2001); the quest moves to sequence 4. Your health at 0: sequence 0xFE.
+* The conjurers stand where they are, heal whoever of the side (you included) is lowest below 40 % about every 6 s
+  (retail's heals were at 11-74 %, median 21-32 %) and fight their own 1683, then the target, then the rest; the
+  elementals heal too. The director keeps its own timers beside `Battle:steps` (whose steps run one after another).
+* Timelines `QB56*` (bases 1682-1693); action scripts `QB56Add_00440`, `QB56Add_01119`, `QB56Sprite_01118`,
+  `QB56Sprite_00313` (their statuses' durations guessed). `questkit battle-sim 56` checks both runs (`56.json`,
+  `56-lost.json`): every step within 1 s. The battle's client script (`game_script/quest/004/ClsCnj005Btl_00440.luab`
+  by the naming the other two follow) hasn't been dumped.
+
 ### Quest battle 54 — Trial by Wind (`content/questbattle/54.lua`)
 
 * Quest 91 (ClsCnj002_00091) enters it from the corrupted air (scene 8, YesNoQuestBattle; territory 289, duty 349).

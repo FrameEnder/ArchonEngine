@@ -1,0 +1,57 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 0,
+            "data": {
+                "type": "action",
+                "action_id": 970
+            }
+        },
+        {
+            "time": 6,
+            "data": {
+                "type": "action",
+                "action_id": 970
+            }
+        },
+        {
+            "time": 11,
+            "data": {
+                "type": "action",
+                "action_id": 416,
+                "target": "itself"
+            }
+        },
+        {
+            "time": 14,
+            "data": {
+                "type": "action",
+                "action_id": 970
+            }
+        },
+        {
+            "time": 20,
+            "data": {
+                "type": "action",
+                "action_id": 970
+            }
+        },
+        {
+            "time": 26,
+            "data": {
+                "type": "invulnerability",
+                "invulnerable": false
+            },
+            "comment": "Marks the end of the loop"
+        }
+    ],
+    "attack_range": 10.0,
+    "recorded_amounts": {
+        "970": {
+            "npcs": 196.0
+        }
+    },
+    "comment": "Quest battle 56's last arrival (layout 4249132, BNpcName 1923), level 26, 1923 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, two runs of Like Mother, Like Daughter's quest battle 56, `questkit chronofoil --battle 0.29` lost and `0.31` won, territory 291, duty 356): Stone (970) every 5.75 s, 196 on the conjurers (median of 5), 416 on itself 10.7 s in. Seen for 32 s only. Hitbox not recorded."
+}

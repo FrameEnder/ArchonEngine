@@ -1,0 +1,33 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "127": {
+            "npcs": 207.5
+        },
+        "119": {
+            "npcs": 144.0
+        }
+    },
+    "rotation": {
+        "pace": 5.0,
+        "actions": [
+            {
+                "action": 1119,
+                "every": 60.0,
+                "comment": "once, 15 s in (3.7 s cast)"
+            },
+            {
+                "action": 127,
+                "comment": "4 uses, 9.9 s apart"
+            },
+            {
+                "action": 119,
+                "comment": "3 uses, 9.2 s apart"
+            }
+        ]
+    },
+    "comment": "Quest battle 56's 1686 (layout 4249109, BNpcName 113), level 25, 594 HP: only in the lost run, while the sprites hadn't come. From Bob's Chronofoil capture b23b91ef (2026-10-26, two runs of Like Mother, Like Daughter's quest battle 56, `questkit chronofoil --battle 0.29` lost and `0.31` won, territory 291, duty 356): 127 and 119 (1.2 s casts) on the conjurers, 207 and 144 (median), 1119 once. Range and hitbox not recorded."
+}

@@ -1,0 +1,31 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 0,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 3,
+            "data": {
+                "type": "invulnerability",
+                "invulnerable": false
+            },
+            "comment": "Marks the end of the loop"
+        }
+    ],
+    "attack_range": 10.0,
+    "recorded_amounts": {
+        "969": {
+            "players": 20.0,
+            "players_by_level": {
+                "20": 20.0
+            }
+        }
+    },
+    "comment": "Sylphie's Trials' ENEMY1, a tainted wind sprite (BNpcBase 299, drop-in layer QB_ClsCnj004_001 of the Central Shroud), level 20, 619 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, one fight of 24 s): Aero (969, 0.7 s cast) on him every 3.08 s, 20 (median of four; two misses), no auto-attack. Hitbox not recorded."
+}

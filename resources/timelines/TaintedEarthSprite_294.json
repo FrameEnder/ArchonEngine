@@ -21,8 +21,12 @@
     "attack_range": 10.0,
     "recorded_amounts": {
         "970": {
-            "players": 7.0
+            "players": 7.0,
+            "players_by_level": {
+                "5": 7.0,
+                "20": 21.0
+            }
         }
     },
-    "comment": "Trial by Earth's ENEMY0 (drop-in layer QB_ClsCnj001_001), level 5, 136 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, one fight of 7 s): it cast Stone (970, 0.7 s cast) on him once, for 7, and never auto-attacked. How often it casts isn't recorded; every 3 s as the floating eye's Stone. Hitbox not recorded."
+    "comment": "Trial by Earth's ENEMY0 (drop-in layer QB_ClsCnj001_001), level 5, 136 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, one fight of 7 s): it cast Stone (970, 0.7 s cast) on him once, for 7, and never auto-attacked. How often it casts isn't recorded; every 3 s as the floating eye's Stone. Hitbox not recorded. Sylphie's Trials' ENEMY0 (level 20, 619 HP, the Central Shroud's QB_ClsCnj004_001) is the same kind: Stone every 3.08 s (five gaps, 3.07-3.11, which confirms the 3 s), 21 (median of five; one miss), so the hit is by level (players_by_level)."
 }
