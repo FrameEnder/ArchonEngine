@@ -191,6 +191,9 @@ a quest's entering event, 0 for every other event (228 events across the capture
   (BNpcName 1419, no portrait) 3 and 8 s after that. The target at 0: sequence 6 and every enemy still standing gone
   with it; a second later "Duty Complete" (60001) and sequence 7, then the battle's scene 7 (0xF8402EFB); the quest
   moves to sequence 5.
+* The client's battle script (`game_script/quest/000/ClsCnj002Btl_00091.luab`) has scene 1 (a short wait, no
+  cutscene) and 7 (the closing cutscene), and OnSequence001/002 (the objective and its message); the script plays
+  those two and nothing else.
 * Timelines `WindSprite_1659`, `TrialByWindTarget_1662`, `TrialByWindConjurer_1661`, `TrialByWindAdd_1660`; action
   scripts `Aero_00969` and `TrialByWindAdd_00416`. `questkit battle-sim 54`: every step within 1.3 s.
 
@@ -215,6 +218,8 @@ a quest's entering event, 0 for every other event (228 events across the capture
   didn't). All down: sequence 6, a second later "Duty Complete" and sequence 7, then scene 7 (0xF8402FFF); the
   quest moves to sequence 7. Lost when your health reaches 0 (sequence 0xFE); two lancers fell in the lost run and
   it went on.
+* The client's battle script (`game_script/quest/000/ClsCnj003Btl_00092.luab`) has scene 1 (the opening cutscene,
+  CUT_SCENE_01) and 7 (the closing one, CUT_SCENE_02), and OnSequence001/002; the script plays those two only.
 * Timelines `QB16Lancer_1423`, `QB16Archer_1422`, `QB16Yellowjacket_298`, `QB16WaterSprite_1681`; action scripts
   `QB16Yellowjacket_00321`, `QB16WaterSprite_01016`, `QB16WaterSprite_01120`. `questkit battle-sim 16` checks both
   runs (`16.json` won, `16-lost.json`): every step within 0.6 s.
@@ -566,10 +571,11 @@ a quest's entering event, 0 for every other event (228 events across the capture
    name and AI settings), the waves and what preceded each, every NPC's targets with which explanations fit each change
    (counted), its actions and intervals, heals with how hurt the target was, and who never acted. The Duties tab has
    the director's sequence/variable changes; the Monsters tab the enemies' HP and skills.
-2. Dump the battle's client script. Its file name isn't known (`<quest script>Btl.luab` was a guess that found
-   nothing for Trial by Wind and Trial by Water), so search for what it should mention:
-   `kawari-questdump search ClsCnj003` (Kawari Web: Quest Lab → Scripts that mention) copies out every client script
-   naming it, under its real name when its strings give it.
+2. Dump the battle's client script. It sits beside its quest's: `game_script/quest/<NNN>/<class>Btl_<number>.luab`
+   (Trial by Water's quest is `ClsCnj003_00092`, its battle `ClsCnj003Btl_00092.luab`; Bob's search of 2026-10-27).
+   When that isn't it, `kawari-questdump search ClsCnj003` (Kawari Web: Quest Lab → Scripts that mention) copies out
+   every client script that mentions the quest, under its real name. A battle script has the director's
+   `OnSequenceNNN` (the duty objective, a message) and its own scenes: check the director script plays only those.
 3. Add the NPCs to the territory drop-in as a `QB_…` layer.
 4. Write `content/questbattle/<id>.lua` with the callbacks above; keep a timing table in its header (seconds from the
    fight starting, the director's scene 60000, not from entering).

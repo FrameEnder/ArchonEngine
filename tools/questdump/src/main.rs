@@ -55,9 +55,10 @@ COMMANDS:
               can also be given by its name alone (e.g. OpeningGridania.luab) when its folder isn't known.
     search    Copy out every client script (any game_script folder) whose contents mention one of the TEXTs, case
               aside (e.g. ClsCnj003 finds Trial by Water's quest script and whatever else names it, as its quest
-              battle's.) The index only keeps hashes of names, so each file is named from its own strings (the
-              \"<name> loaded\" it prints, checked against the hash, with a _NNNNN number tried after it) or, failing
-              that, by its hash; search-results.txt lists what was found and where.
+              battle's, game_script/quest/000/ClsCnj003Btl_00092.luab.) The index only keeps hashes of names, so
+              each file is named from its own strings (the \"<name> loaded\" it prints or the table it fills,
+              checked against the hash, with a _NNNNN number tried after it) or, failing that, by its hash;
+              search-results.txt lists what was found and where.
     scripts   Copy out every client script of a kind the sheets name: custom (CustomTalk: NPC conversations, menus
               and the shops they open) or opening (the city openings), each with its listing and its sheet row
               (handler ID, Lua parameters), into <out>/<kind>/, plus index.json. With --server (the server's
@@ -665,19 +666,35 @@ fn chunk_strings(function: &luab::Function, found: &mut Vec<String>) {
     }
 }
 
-/// A game_script file's real name, from its own strings: the "<name> loaded" its main chunk prints (quest scripts
-/// print their class table's name, ClsCnj003, though the file is ClsCnj003_00092.luab, so a _NNNNN after it is
-/// tried too), or any other identifier-like string, whichever hashes to the index's name hash.
+/// A game_script file's real name, from its own strings, whichever hashes to the index's name hash: the
+/// "<name> loaded" a quest script's main chunk prints, or the names its top-level chunk uses (a quest battle's
+/// script sets its functions on ClsCnj003Btl and prints nothing), each as it is and with a _NNNNN after it (the
+/// files are ClsCnj003_00092.luab and ClsCnj003Btl_00092.luab); failing those, any identifier-like string.
 fn recover_name(bytes: &[u8], name_hash: u32) -> Option<String> {
     let chunk = luab::parse(bytes).ok()?;
+    let identifier = |text: &String| {
+        !text.is_empty()
+            && text.len() <= 64
+            && text.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+    };
     let mut strings = Vec::new();
     chunk_strings(&chunk.main, &mut strings);
-    let loaded: Vec<String> = strings
+    let mut bases: Vec<String> = strings
         .iter()
         .filter_map(|text| text.strip_suffix(" loaded").map(str::to_string))
         .collect();
+    for top in &chunk.main.protos {
+        for constant in &top.constants {
+            if let luab::Constant::String(text) = constant
+                && identifier(text)
+                && !bases.contains(text)
+            {
+                bases.push(text.clone());
+            }
+        }
+    }
     let matches = |name: &str| SqPackIndex::calculate_partial_hash(name) == name_hash;
-    for base in &loaded {
+    for base in &bases {
         let name = format!("{base}.luab");
         if matches(&name) {
             return Some(name);
@@ -691,11 +708,7 @@ fn recover_name(bytes: &[u8], name_hash: u32) -> Option<String> {
     }
     strings
         .iter()
-        .filter(|text| {
-            !text.is_empty()
-                && text.len() <= 64
-                && text.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
-        })
+        .filter(|text| identifier(text))
         .map(|text| format!("{text}.luab"))
         .find(|name| matches(name))
 }
