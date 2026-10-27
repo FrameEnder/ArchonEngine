@@ -1,0 +1,28 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 0,
+            "data": {
+                "type": "action",
+                "action_id": 971
+            }
+        },
+        {
+            "time": 3,
+            "data": {
+                "type": "invulnerability",
+                "invulnerable": false
+            },
+            "comment": "Marks the end of the loop"
+        }
+    ],
+    "attack_range": 10.0,
+    "recorded_amounts": {
+        "971": {
+            "players": 16.0
+        }
+    },
+    "comment": "Trial by Water's ENEMY0 (drop-in layer QB_ClsCnj003_001), level 15, 478 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, one fight of 28 s): Water (971, 0.7 s cast) on him every 3.07 s, for 15-16 (one miss), and no auto-attack. Hitbox not recorded."
+}

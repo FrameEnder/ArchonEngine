@@ -1,0 +1,156 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 5,
+            "data": {
+                "type": "action",
+                "action_id": 416,
+                "target": "itself"
+            },
+            "comment": "416 (2.2 s cast) on itself 5 s after it appeared: status 57 (param 50)"
+        },
+        {
+            "time": 9,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 12,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 15,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 18,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 21,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 24,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 27,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 30,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 33,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 36,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 39,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 42,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 45,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 48,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 51,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 54,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 57,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 60,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 63,
+            "data": {
+                "type": "invulnerability",
+                "invulnerable": false
+            },
+            "comment": "Marks the end of the loop (the fight was over 15 s after it appeared)"
+        }
+    ],
+    "attack_range": 10.0,
+    "recorded_amounts": {
+        "969": {
+            "players": 8.0
+        }
+    },
+    "comment": "Trial by Wind's last arrival (quest battle 54, layout 4248516, BNpcName 1910), level 10, 172 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, one run of Trial by Wind's quest battle 54, `questkit chronofoil --battle 0.11`): 416 on itself 5 s after it appeared, then 969 on you 3.4 s after that (a miss; the wind sprites' 969 did 7-11). Seen for 15 s only, so what comes after is a guess: 969 every 3 s as the wind sprites. Status 57 from 416 needs an action script (not written: its duration wasn't recorded). Hitbox not recorded."
+}

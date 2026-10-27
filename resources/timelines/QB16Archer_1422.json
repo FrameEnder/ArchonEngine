@@ -1,0 +1,48 @@
+{
+    "autoattack_action_id": 873,
+    "attack_range": 25.0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "recorded_amounts": {
+        "873": {
+            "npcs": 39.0
+        },
+        "97": {
+            "npcs": 31.0
+        },
+        "100": {
+            "npcs": 19.5
+        },
+        "18190": {
+            "npcs": 29.0
+        },
+        "103": {
+            "npcs": 38.0
+        }
+    },
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 101,
+                "then": 97,
+                "comment": "Raging Strikes: 2 uses in 2 runs"
+            },
+            {
+                "action": 100,
+                "refresh": 18.0,
+                "comment": "Venomous Bite: 9 uses"
+            },
+            {
+                "action": 18190,
+                "refresh": 7.6,
+                "comment": "Straight Shot: 8 uses"
+            },
+            {
+                "action": 97,
+                "comment": "Heavy Shot: 7 uses"
+            }
+        ]
+    },
+    "comment": "Trial by Water's Wood Wailer archer on your side (quest battle 16, layout 3914511), level 15, 995 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, two runs of Trial by Water's quest battle 16, `questkit chronofoil --battle 0.18` lost and `0.20` won, territory 234, duty 300): auto-attacks (873) every 6.0 s, 39 (median), and about one weaponskill every 8 s (16 a run); median damage on the yellowjackets. Misery's End (103, 7 uses) left out, as for Feint and Strike's archers. Range as theirs; hitbox not recorded."
+}

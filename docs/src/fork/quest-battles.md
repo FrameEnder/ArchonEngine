@@ -60,7 +60,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `complete_quest_battle(quest_sequence, stay, finish_scene, finish_flags, variables)` | Wins: the quest moves to `quest_sequence` (with `variables`, a table of quest variable index 0–5 to value, in the same journal update: Lurkers in the Grotto's UI8BH, `{ [1] = 0x10 }`, as retail sets it; replay reads the battle script's `QUEST_VARS_AFTER_WIN` for its `battle_won` step), "Duty Complete" and the victory fanfare (60001) play, then `finish_scene` (default 6, `QUEST_BATTLE_SCENE_FINISH`; retail plays 6 in Chasing Shadows and Leia's Legacy, 11 in To Guard a Guardian, 9 in Spirithold Broken) with `finish_flags` (default 0x2001, HIDE_HOTBAR and NO_DEFAULT_CAMERA, as retail plays all of them but Spirithold Broken's, a cutscene with 0xF8402EFB), and the players go back when it ends. With `stay = true` the players remain (for closing lines) until `leave_quest_battle()`. |
 | `leave_quest_battle()` | Sends the players back where they entered. |
 | `fail_quest_battle()` | Loses: players go back where they entered, the quest stays on the same step to retry. Retail sets sequence `0xFE` first and sends them out about 6 s later. |
-| `set_hate(npc, target, amount)` | Gives NPC `npc` enmity on `target` (another NPC's layout ID, or the player when `nil`). Used to make allies and enemies fight each other. |
+| `set_hate(npc, target, amount)` | Gives NPC `npc` (a layout ID, or since 2026-10-27 an actor ID from `spawn_bnpc` for one of several sharing a layout ID, as Trial by Wind's two 4248510 wind sprites) enmity on `target` (another NPC's layout ID, or the player when `nil`). Used to make allies and enemies fight each other. |
 | `use_action(npc, action, target)` | Makes an NPC use an action (with its cast bar and area aimed where the target stands). |
 | `end_fight()` | The fight is over: every NPC still standing forgets whom it hated, sheathes, leaves battle and drops its target, the players leave battle (retail's packets the moment Victory in Peril's boss fell: ActorControl ToggleWeapon 0 and SetBattle 0, ActorControlTarget SetTarget 0), and none takes anyone on again (`Instance::fight_over`: not hits, heals or damage over time, nor anyone coming close). `complete_quest_battle` does it too, so no one fights on through "Duty Complete" and the closing scene. |
 | `battle_talk(npc, name_id, text_id, icon, duration_ms, kind)` | The **battle talk window** (DirectorPopupMessage, opcode 162 on 7.57), as retail shows it: `text_id` is the content's text by ID (retail's IDs from a recording; one outside the content's range crashes the client), `name_id` the speaker's BNpcName, `icon` the portrait, 4000 ms unless given. It comes from `npc` if it's there. `kind` is the speaker's object kind, 2 (BattleNpc) unless given; 3 (EventNpc) makes `name_id` an ENpcResident, for a speaker who isn't in the fight (Victory in Peril's watcher). A name that isn't in the sheet `kind` points to crashes the client. A `talk` step passes its speaker's `kind`. |
@@ -157,7 +157,8 @@ player is sent out.
 
 The opening scene's flags differ from one quest battle to the next, always the same for one battle (Bob's Chronofoil
 captures, 14 openings of 9 battles): 0xF841AEFB for 11, 12, 15, 35 and 36 (Kawari's default,
-`QUEST_BATTLE_OPENING_FLAGS` in `main.rs`), 0xF8412FF7 for 14, 0xF8412EFB for 24, 0xF841AF0B for 29; a script with
+`QUEST_BATTLE_OPENING_FLAGS` in `main.rs`), 0xF8412FF7 for 14, 0xF8412EFB for 24, 0xF841AF0B for 29, 0xF841AFFF for 16 (two openings, 2026-10-26), and 54's is
+no cutscene at all (0x2001, over in 0.1 s); a script with
 other flags sets `OPENING_SCENE_FLAGS`. They hide the UI (0x800) and the other characters; Kawari used to send the
 duties' opening flags (0x0C53A401, right for InstanceContent), and the UI stayed up with no skip button. Retail's
 EventStart also has its flags byte set to 1 for the content directors' entering (0x0f) and progress (0x0d) events and
@@ -168,6 +169,55 @@ a quest's entering event, 0 for every other event (228 events across the capture
 (60001, from the client's generic director script) was found.
 
 ## The battles
+
+### Quest battle 54 — Trial by Wind (`content/questbattle/54.lua`)
+
+* Quest 91 (ClsCnj002_00091) enters it from the corrupted air (scene 8, YesNoQuestBattle; territory 289, duty 349).
+  Territory 289 is a copy of the East Shroud: retail's spots in it are the East Shroud's, a few yalms from where the
+  quest's own honeybee swarm comes out, so its NPCs are layer `QB_ClsCnj002_002` of the `fst_f1f2` drop-in (taken
+  from the positions, not checked against the game's TerritoryType sheet): the thing you're there to destroy
+  (4261180, BNpcBase 1662, BNpcName 1420, level 10, 768 HP), wind sprites (base 1659, level 8, 31 HP), the conjurer
+  who comes to help (4248519, base 1661, BNpcName 1419, level 15, 638 HP) and a last arrival (4248516, base 1660,
+  BNpcName 1910, level 10, 172 HP); layout IDs, positions, display flags and the start spot (-509.7, 6.58, 39.45,
+  facing -3.021) from Bob's Chronofoil capture b23b91ef (2026-10-26, `questkit chronofoil --battle 0.11`, one run,
+  won, a level 14 conjurer).
+* The flow: sequence 1, the opening scene 1 with 0x2001 (no cutscene, over at once), then the fight (sequence 2) with
+  the target and one wind sprite; the target never acts or moves (the script holds it, `hold_bnpc`), the wind sprites
+  stay where they appear and cast Aero (969) every 3.1 s. The target's health brings the rest: at 75 % (78 → 71)
+  sequence 3 and three more wind sprites, one of them **a second spawn of 4248510's layout ID** while the first
+  still stands (`spawn_bnpc` again, its actor ID given enmity with `set_hate`, which takes actor IDs since); at 40 %
+  (46 → 39) sequence 4 and the conjurer (Aero every 6 s, the nearest wind sprite, then the target); at 25 %
+  (31 → 24) sequence 5 and 4248516 (416 on itself 5 s later: status 57, then 969); his battle talk 107 and 108
+  (BNpcName 1419, no portrait) 3 and 8 s after that. The target at 0: sequence 6 and every enemy still standing gone
+  with it; a second later "Duty Complete" (60001) and sequence 7, then the battle's scene 7 (0xF8402EFB); the quest
+  moves to sequence 5.
+* Timelines `WindSprite_1659`, `TrialByWindTarget_1662`, `TrialByWindConjurer_1661`, `TrialByWindAdd_1660`; action
+  scripts `Aero_00969` and `TrialByWindAdd_00416`. `questkit battle-sim 54`: every step within 1.3 s.
+
+### Quest battle 16 — Trial by Water (`content/questbattle/16.lua`)
+
+* Quest 92 (ClsCnj003_00092) enters it from the Gods' Quiver bow (scene 17) or EVENTRANGE0 (scene 34) (territory
+  234, duty 300). Territory 234 is taken to be a copy of the East Shroud too (retail's spots against the drop-ins'),
+  so its NPCs are layer `QB_ClsCnj003_002` of `fst_f1f2`: three Wood Wailer lancers (3905949, 4263914, 4263915;
+  base 1423, level 15, 1244 HP) and an archer (3914511, base 1422, 995 HP) on your side; three waves of
+  yellowjackets (base 298, level 15, 606 HP) and water sprites (base 1681, level 14, 146 HP). Layout IDs (Sapphire's
+  INIT_POP_* too), positions, display flags and the start spot (-51.95, -9.75, 232.86, facing -3.142) from Bob's
+  Chronofoil capture b23b91ef (2026-10-26, `--battle 0.18` lost doing nothing, `0.20` won; a level 19 conjurer).
+* The flow, the same in both runs: sequence 1 and the opening cutscene (0xF841AFFF), sequence 2 as the fight starts
+  with everyone there; 5.1 s in, battle talk 127 (BNpcName 628, no portrait, from no actor) and sequence 3. Each
+  yellowjacket goes for its own lancer (the same pairs in both runs: 3905949 gets 3875540, 3905948 and 4263934;
+  4263914 gets 3879109, 4263917, 4263935; 4263915 gets 3905947, 4263918, 4263936), and for you once he's down; the
+  water sprites come for you (1120, then 1016 round itself). The lancers fight theirs and then help the nearest; the
+  archer shoots 3905949's. **The waves come when one enemy is left standing**, not by time: 30.4 and 49.1 s in for
+  the second (sequence 4, three yellowjackets and a sprite), 72.5 and 108.7 s for the third (sequence 5, three and two
+  sprites), each with the archer's line (128, 129, BNpcName 621) 5 s later. Each lancer yells once as his health
+  drops to 43 % (NpcYell 967 for 4263914, 966 for the others, half a second after the hit; 43.0 % yelled, 43.2 %
+  didn't). All down: sequence 6, a second later "Duty Complete" and sequence 7, then scene 7 (0xF8402FFF); the
+  quest moves to sequence 7. Lost when your health reaches 0 (sequence 0xFE); two lancers fell in the lost run and
+  it went on.
+* Timelines `QB16Lancer_1423`, `QB16Archer_1422`, `QB16Yellowjacket_298`, `QB16WaterSprite_1681`; action scripts
+  `QB16Yellowjacket_00321`, `QB16WaterSprite_01016`, `QB16WaterSprite_01120`. `questkit battle-sim 16` checks both
+  runs (`16.json` won, `16-lost.json`): every step within 0.6 s.
 
 ### Quest battle 44 — Into a Copper Hell (`content/questbattle/44.lua`)
 

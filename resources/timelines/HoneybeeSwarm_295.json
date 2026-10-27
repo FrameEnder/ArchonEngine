@@ -1,0 +1,9 @@
+{
+    "autoattack_action_id": 872,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "damage_to_players": {
+        "8": 9.0
+    },
+    "comment": "Trial by Wind's ENEMY0 (drop-in layer QB_ClsCnj002_001), level 8, 143 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, one fight of 16 s): one auto-attack (872) on him for 9 before it died. Hitbox not recorded."
+}

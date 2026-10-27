@@ -2261,7 +2261,8 @@ pub fn director_tick(
                     );
                     continue;
                 };
-                let Some((actor_id, _)) = instance.find_npc(*layout_id) else {
+                // An actor ID (from `spawn_bnpc`, for one of several sharing a layout ID) or a layout ID.
+                let Some(actor_id) = resolve_bnpc(instance, *layout_id) else {
                     tracing::warn!("Failed to find bnpc {layout_id} for SetHate!");
                     continue;
                 };

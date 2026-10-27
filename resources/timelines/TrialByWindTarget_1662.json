@@ -1,0 +1,6 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Trial by Wind's target (quest battle 54, layout 4261180, BNpcName 1420), level 10, 768 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, one run): it never acted or moved in 45 s; the director holds it (54.lua). Hitbox not recorded."
+}

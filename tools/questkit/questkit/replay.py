@@ -33,7 +33,7 @@ class QuestResult:
 
 
 def describe(step: dict) -> str:
-    for key in ("talk", "event_item", "emote", "kill", "range", "enter_territory", "battle_won", "duty_cleared", "todo"):
+    for key in ("talk", "event_item", "emote", "action", "kill", "range", "enter_territory", "battle_won", "duty_cleared", "todo"):
         if key in step:
             value = step[key]
             what = f" ({step['what']})" if step.get("what") else ""
@@ -73,6 +73,9 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
             elif "emote" in step:
                 emote, base_id = step["emote"][0], step["emote"][1]
                 outcome = harness.emote(emote, base_id, results, trace, step.get("layout"))
+            elif "action" in step:
+                action, base_id = step["action"][0], step["action"][1]
+                outcome = harness.action(action, base_id, results, trace, step.get("layout"))
             elif "kill" in step:
                 outcome = harness.kill(step["kill"][0], step["kill"][1], trace)
             elif "range" in step:
@@ -84,7 +87,7 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
             elif "duty_cleared" in step:
                 outcome = harness.duty_cleared(step["duty_cleared"], trace)
             else:
-                problems.append("a step needs one of talk, event_item, emote, kill, range, enter_territory, "
+                problems.append("a step needs one of talk, event_item, emote, action, kill, range, enter_territory, "
                                 "battle_won or duty_cleared")
         except HarnessError as error:
             problems.append(str(error))

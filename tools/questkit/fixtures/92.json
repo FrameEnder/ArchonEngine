@@ -1,0 +1,180 @@
+{
+  "quest": 92,
+  "script": "ClsCnj003_00092",
+  "source": "Bob's Chronofoil capture b23b91ef (2026-10-26)",
+  "params": {
+    "ACTOR0": 1000692,
+    "ITEM0": 2000121,
+    "EOBJECT0": 2000889,
+    "ENEMY0": 3799227,
+    "ACTOR1": 1000561,
+    "ACTOR2": 1000619,
+    "ACTOR3": 1003001,
+    "ACTION0": 120,
+    "ACTOR4": 1003000,
+    "ACTOR5": 1003057,
+    "ACTOR6": 1001213,
+    "ACTOR7": 1002960,
+    "EOBJECT1": 2001838,
+    "EVENT_ACTION_SEARCH": 1,
+    "ACTOR8": 1006154,
+    "ACTOR9": 1006155,
+    "ACTOR10": 1006156,
+    "ACTOR11": 1006152,
+    "ACTOR12": 1006153,
+    "ACTOR13": 1006157,
+    "ACTOR14": 1006158,
+    "ACTOR15": 1006159,
+    "ACTOR16": 1006160,
+    "ACTOR17": 1006161,
+    "EVENTRANGE0": 4195892,
+    "ACTOR18": 1003006,
+    "TERRITORYTYPE0": 234,
+    "QUESTBATTLE0": 16,
+    "LOC_FACE1": 611,
+    "LOC_FACE2": 620,
+    "LOC_FACE3": 612,
+    "NQ_POINT_001": 8,
+    "NQ_POINT_002": 9,
+    "LOC_ACTOR0": 1000569,
+    "LOC_ACTOR1": 1000693,
+    "LOC_POS_ACTOR0": 1170797,
+    "LOC_ACTION0": 995,
+    "LOC_WS": 134,
+    "LOC_VFX": 241
+  },
+  "steps": [
+    {
+      "talk": 1000692,
+      "layout": 1170796,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []}
+    },
+    {
+      "talk": 2000889,
+      "layout": 3799225,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 1, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []}
+    },
+    {
+      "event_item": [2000121, 2000889],
+      "layout": 3799225,
+      "what": "ITEM0 on EOBJECT0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []},
+      "spawns": [3799227]
+    },
+    {
+      "kill": [297, 3799227],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1000561,
+      "layout": 1146495,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 7, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1000619,
+      "layout": 2339934,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 8, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 4, "vars": "000000000000", "notices": [[2, []]]}
+    },
+    {
+      "talk": 1003001,
+      "layout": 3854494,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 9, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 4, "vars": "000000000000", "notices": []}
+    },
+    {
+      "action": [120, 1003001],
+      "layout": 3854494,
+      "what": "ACTION0 on ACTOR3",
+      "scenes": [
+        {"scene": 10, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 5, "vars": "000000000000", "notices": [[3, []]]}
+    },
+    {
+      "talk": 1003057,
+      "layout": 3891735,
+      "what": "ACTOR5",
+      "scenes": [
+        {"scene": 14, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 6, "vars": "000000000000", "notices": [[4, []]]}
+    },
+    {
+      "talk": 1001213,
+      "layout": 3816986,
+      "what": "ACTOR6",
+      "scenes": [
+        {"scene": 17, "flags": "0x2000", "results": [0, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 6, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1001213,
+      "layout": 3816986,
+      "what": "ACTOR6",
+      "scenes": [
+        {"scene": 17, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 234}
+      ],
+      "expect": {"sequence": 6, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1001213,
+      "layout": 3816986,
+      "what": "ACTOR6",
+      "scenes": [
+        {"scene": 17, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 234}
+      ],
+      "expect": {"sequence": 6, "vars": "000000000000", "notices": []}
+    },
+    {
+      "battle_won": 7,
+      "expect": {"sequence": 7, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1003006,
+      "layout": 3859524,
+      "what": "ACTOR18",
+      "scenes": [
+        {"scene": 35, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[6, []]]}
+    },
+    {
+      "talk": 1000692,
+      "layout": 1170796,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 36, "flags": "0xf8402efb", "results": [1, 5824, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

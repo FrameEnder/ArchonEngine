@@ -1,0 +1,29 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 0,
+            "data": {
+                "type": "action",
+                "action_id": 969
+            }
+        },
+        {
+            "time": 3,
+            "data": {
+                "type": "invulnerability",
+                "invulnerable": false
+            },
+            "comment": "Marks the end of the loop"
+        }
+    ],
+    "attack_range": 10.0,
+    "recorded_amounts": {
+        "969": {
+            "players": 8.0,
+            "npcs": 8.0
+        }
+    },
+    "comment": "Trial by Wind's wind sprites (quest battle 54, drop-in layer QB_ClsCnj002_002), level 8, 31 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, one run of Trial by Wind's quest battle 54, `questkit chronofoil --battle 0.11`): 969 (0.7 s cast) every 3.1 s on its target from where it appeared (about 9 yalms off), 7-11 (median 8), 5 misses in 35, no auto-attack; one went for the conjurer once he hit it, for 7 and 9. Hitbox not recorded."
+}

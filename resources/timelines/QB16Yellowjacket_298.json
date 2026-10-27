@@ -1,0 +1,26 @@
+{
+    "autoattack_action_id": 872,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "recorded_amounts": {
+        "872": {
+            "npcs": 25.0,
+            "players": 20.0
+        },
+        "321": {
+            "npcs": 33.0,
+            "players": 26.0
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 321,
+                "every": 7.9,
+                "comment": "79 uses in 2 runs (nine yellowjackets), 7.9 s apart"
+            }
+        ]
+    },
+    "comment": "Trial by Water's yellowjackets (quest battle 16, drop-in layer QB_ClsCnj003_002), level 15, 606 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, two runs of Trial by Water's quest battle 16, `questkit chronofoil --battle 0.18` lost and `0.20` won, territory 234, duty 300): auto-attacks (872) every 3.0 s, 25 on the Wood Wailers (median; 17 misses in 203), and 321 every 7.9 s, 33. Each goes for its own lancer, and for you once he's down. Hitbox not recorded."
+}

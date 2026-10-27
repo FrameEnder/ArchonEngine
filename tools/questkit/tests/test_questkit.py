@@ -1248,6 +1248,22 @@ end
                                                                                     [50.0, 0.0]]})
         self.assertEqual(fixture["npcs"]["33"]["death"], 40.0)  # its health reached 0 before its Defeated
 
+    def test_fixture_onsetup_sequence_and_repeated_layout(self):
+        # Trial by Wind: sequence 1 0.4 s before the fight starts (the script's onSetup), and a layout ID spawned a
+        # second time while the first is still standing.
+        run = {
+            "Actors": {"2": {"Kind": "battle npc", "LayoutId": 22, "MaxHp": 30, "Seen": 15.0},
+                       "1": {"Kind": "battle npc", "LayoutId": 22, "MaxHp": 30, "Seen": 0.5}},
+            "Samples": [],
+            "Actions": [],
+            "Events": [{"S": 0.7, "Kind": "sequence", "Text": "0x80060036 sequence 1"},
+                       {"S": 1.1, "Kind": "scene", "Text": "event 0x80060036 scene 60000 flags 0x40000"},
+                       {"S": 1.1, "Kind": "sequence", "Text": "0x80060036 sequence 2"}],
+        }
+        fixture = battle_sim.fixture_from_run(run, 9999)
+        self.assertEqual(fixture["events"], [[0.0, "sequence", 2], [13.9, "spawn", 22]])
+        self.assertIsNone(fixture["npcs"]["22"]["spawn"])
+
 
 class LintTest(unittest.TestCase):
     def test_timeline_actions(self):

@@ -181,6 +181,24 @@ sequence (`GameData::quest_listens_for_emote`), starts that quest's event (type 
 calls `onEmote(emote, target, player)`, with `BASE_ID` the NPC's base ID. questkit's fixtures replay it as an
 `emote: [emote, base ID]` step.
 
+### Actions on an NPC (ActionResult events)
+
+Some steps want one of your actions used on an NPC (Trial by Water: Cure, ACTION0, on the wounded Wood Wailer). On
+retail (Bob's Chronofoil capture b23b91ef, 2026-10-26) the client sends an ordinary ActionRequest for the action with
+the NPC (an event NPC, which the server has no actor for) as its target; the cast runs as usual; the ActionEffect
+lands on the NPC; about a second later the server starts the quest's event on it: EventStart with **type 18
+(ActionResult) and the action as its argument**, the quest's scene (10 there), EventFinish. The Quest sheet says
+which NPC takes which: a listener with `QuestUInt8A` 18 in that sequence (`ActorSpawnSeq`).
+
+Kawari: a cast whose target isn't one of the server's actors (`action::targets_event_object`) ends in
+`use_action_on_event_object` (`server/mod.rs`'s CastAction): the ActionEffect on the NPC, with no effects and a 0.1 s
+animation lock, then `FromServer::ActionOnEventObject(action, target)` to the caster's connection. `main.rs` looks up
+the target's base ID and, if no event is running and an active quest listens for actions on it in its current
+sequence (`GameData::quest_listens_for_action`, a listener of type 18), starts that quest's event (type
+ActionResult, the action as its argument) and calls `onActionResult(action, target, player)`, with `BASE_ID` the
+NPC's base ID. Before 2026-10-27 an action on an event NPC did nothing past its cast. questkit's fixtures replay it as
+an `action: [action, base ID]` step.
+
 ### Quest-spawned enemies
 
 `player:spawn_quest_bnpc(layout_id)` (`ToServer::SpawnQuestBattleNpc`, handled in `server/mod.rs`):
@@ -391,6 +409,8 @@ Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `
 | 3018 | Absolutely Glamourous | `030/SubCts897_03018` | client script (2026-10-25); Chronofoil capture (2026-10-25) of the offer only, declined | Swyrgeim offers it (scene 0, then 1), sequence 1; Folclind gives ITEM0 (scene 2, notice 0), 2, ITEM0 in UI8BL; Swyrgeim takes it (event-item NpcTrade 4) and gives ITEM1 (5: notice 1, UI8BH 1), 255; Goberin (ACTOR2) takes ITEM1 (NpcTrade 7) and rewards it (8, a yield). Lines: Swyrgeim in 1 and 255 (3, 9), Folclind in 2 (6). Everything after the offer is unverified. |
 | 22 | Way of the Conjurer | `000/ClsCnj000_00022` | client script, Chronofoil capture b23b91ef (2026-10-26) | Madelle offers it (scene 0, a yield), sequence 1; E-Sumi-Yan's cutscene (scene 1, 0xF8482EFB) ends on a yes/no: yes is sequence 2 and notice 0. Three each of ENEMY0–2 (UI8AL, UI8BH, UI8BL; notice 1–3 with [count, 3]; UI8AH counts the kinds done), then 255 with the variables cleared. E-Sumi-Yan's reward (scene 2) gives the Hunting Log (SystemReward 21). |
 | 48 | Trial by Earth | `000/ClsCnj001_00048` | client script, Chronofoil capture b23b91ef (2026-10-26) | E-Sumi-Yan offers it (scene 0), sequence 1; ACTOR1 in the North Shroud (scene 1), notice 0, sequence 2; searching EOBJECT0 (scene 2, the bar, scene 100) brings out ENEMY0, a tainted earth sprite (drop-in layer `QB_ClsCnj001_001`, timeline `TaintedEarthSprite_294`); its kill is notice 1 and sequence 3; ACTOR1's cutscene (scene 3, 0xF8402FFF), notice 2, 255; E-Sumi-Yan's reward (scene 4). |
+| 91 | Trial by Wind | `000/ClsCnj002_00091` | client script, Chronofoil capture b23b91ef (2026-10-26) | E-Sumi-Yan offers it (scene 0, a yield), scene 1 accepts: sequence 1; Wulfiue in the East Shroud (scene 2), notice 0, sequence 2; searching EOBJECT0 (scene 3, the bar, scene 4) brings out ENEMY0, a honeybee swarm (layer `QB_ClsCnj002_001`, timeline `HoneybeeSwarm_295`); its kill is notice 1 and sequence 3; Wulfiue (scene 6), notice 2, sequence 4; the corrupted air (scene 7, the bar, scene 8: YesNoQuestBattle) enters quest battle 54, won: sequence 5; Wulfiue (scene 9), notice 4, 255; E-Sumi-Yan's reward (scene 10, 0xF8402EFB) unlocks the Armoury System. |
+| 92 | Trial by Water | `000/ClsCnj003_00092` | client script, Chronofoil capture b23b91ef (2026-10-26) | E-Sumi-Yan offers it (scene 0, a yield; the client accepts it in it): sequence 1 with ITEM0 (UI8BH); the corrupted water (scene 1 opens the key item window), ITEM0 on it (event type 8, scene 2) brings out ENEMY0, a tainted water sprite (layer `QB_ClsCnj003_001`, timeline `TaintedWaterSprite_297`), whose kill takes the item: notice 0, sequence 2; Joacin (scene 7, 0xF8402EFB), notice 1; Aniud (scene 8), notice 2; the wounded Wood Wailer (scene 9), then Cure on him (an ActionResult event, scene 10): notice 3, sequence 5; the harried healer (scene 14), notice 4, sequence 6; the Gods' Quiver bow (scene 17) or EVENTRANGE0 (scene 34) enters quest battle 16, won: sequence 7; Sylphie (scene 35), notice 6, 255; E-Sumi-Yan's reward (scene 36, 0xF8402EFB). The other NPCs' lines (13, 15, 18, 20, 21) play; the client's empty scenes don't. |
 
 Upstream's own scripts cover the three city openings and the Close to Home offers. Gridania's story from Close to
 Home to The Gridanian Envoy is complete; Call of the Sea starts the next part (Limsa Lominsa). Limsa Lominsa's runs from

@@ -62,6 +62,16 @@ pub trait EventHandler: std::fmt::Debug + Send + Sync {
     ) {
     }
 
+    /// An action (its Action row) was used on the event's NPC or object (an ActionResult event.)
+    async fn on_action_result(
+        &self,
+        event: &Event,
+        action: u32,
+        target_id: ObjectTypeId,
+        player: &mut LuaPlayer,
+    ) {
+    }
+
     async fn on_yield(
         &self,
         event: &Event,

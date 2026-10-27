@@ -244,6 +244,9 @@ pub enum FromServer {
     /// A key item's cast bar ended (an ActionRequest of type EventItem): the item, and what it was used on. The
     /// zone connection starts its quest's event (type EventItem.)
     EventItemUsed(u32, ObjectTypeId),
+    /// An action (its Action row) landed on an event NPC or object the server doesn't have as an actor: a quest that
+    /// listens for it starts its event (type ActionResult.)
+    ActionOnEventObject(u32, ObjectTypeId),
     /// An item was used and is used up (Gysahl Greens): the zone connection takes one from the bags.
     ItemUsedUp(u32),
     /// The player's companion gained this much EXP from a kill: the zone connection ranks it up (`companion.rs`.)

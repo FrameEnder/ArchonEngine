@@ -1,0 +1,21 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 12.0,
+    "recorded_amounts": {
+        "121": {
+            "npcs": 14.0
+        }
+    },
+    "rotation": {
+        "pace": 6.0,
+        "actions": [
+            {
+                "action": 121,
+                "comment": "Aero: 2 uses 6.0 s apart on the same wind sprite"
+            }
+        ]
+    },
+    "comment": "Trial by Wind's conjurer on your side (quest battle 54, layout 4248519, BNpcName 1419), level 15, 638 HP. From Bob's Chronofoil capture b23b91ef (2026-10-26, one run of Trial by Wind's quest battle 54, `questkit chronofoil --battle 0.11`): Aero (121) every 6.0 s, cast from about 12 yalms, 11 and 17 (median 14), nothing else. Hitbox not recorded."
+}

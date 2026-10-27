@@ -2601,12 +2601,29 @@ impl GameData {
     /// sequence: a listener of event type 2 (Emote) in the Quest sheet, as kawari-questdump lists them.
     pub fn quest_listens_for_emote(&mut self, quest_id: u32, base_id: u32, sequence: u8) -> bool {
         const EMOTE: u8 = 2; // EventType::Emote
+        self.quest_listens_for(quest_id, base_id, sequence, EMOTE)
+    }
+
+    /// Whether the quest listens for an action used on this NPC or object in this sequence (a listener of event type
+    /// ActionResult, 18: Trial by Water's wounded Wood Wailer in sequence 4.)
+    pub fn quest_listens_for_action(&mut self, quest_id: u32, base_id: u32, sequence: u8) -> bool {
+        const ACTION_RESULT: u8 = 18; // EventType::ActionResult
+        self.quest_listens_for(quest_id, base_id, sequence, ACTION_RESULT)
+    }
+
+    fn quest_listens_for(
+        &mut self,
+        quest_id: u32,
+        base_id: u32,
+        sequence: u8,
+        event_type: u8,
+    ) -> bool {
         let Some(row) = self.quest_sheet.row(quest_id) else {
             return false;
         };
         row.QuestListenerParams.iter().any(|listener| {
             listener.Listener == base_id
-                && listener.QuestUInt8A == EMOTE
+                && listener.QuestUInt8A == event_type
                 && listener.ActorSpawnSeq == sequence
         })
     }

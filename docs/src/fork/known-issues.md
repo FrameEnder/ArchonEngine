@@ -153,6 +153,18 @@ add one when something is found.
 * Trial by Earth's tainted earth sprite cast Stone once in its only recorded fight: how often it casts is a guess
   (every 3 s), and its hitbox isn't recorded. Way of the Conjurer's fixture has some of the layout IDs Bob fought,
   not necessarily the ones that died.
+* Trial by Wind's and Trial by Water's quest battles (54, 16): territories 289 and 234 are taken to have the East
+  Shroud's Bg from retail's positions (their NPCs are in `fst_f1f2`); if their NPCs don't appear, that's why. 54 has
+  one run: its health marks (75/40/25 %), the conjurer's target order and its last arrival's kit (416, then 969 every
+  3 s) come from it alone, and 416's status 57 lasts a guessed 30 s (unscripted). In 16 the lancers' 43 % yell line
+  rests on five hits (43.0 % yelled, 43.2 % didn't), whom a lancer helps after his own yellowjacket falls (the
+  nearest) is a guess, and the archer's Misery's End (103) is left out; the waves' "one enemy left" held in both
+  runs.
+* Trial by Water (92): the NPCs' lines are placed by the client script's text keys (the healer 13/14/21, the wounded
+  Wood Wailer 9/15/20, Sylphie 18); which of the empty scenes (3, 4, 6, 11, 12, 16, 19, 22-33) belong to ACTOR4,
+  ACTOR8-17 and EOBJECT1 isn't known, so those NPCs play nothing (as they'd show). ACTOR5, ACTOR6 and ACTOR18's
+  layout IDs (3891735, 3816986, 3859524) are matched to them by their scenes, not by the game's LGB. The Cure's heal
+  on the Wood Wailer isn't in Kawari's ActionEffect (retail's carried one).
 * The mildewed goobbue's timeline (`MildewedGoobbue_355`) has no hitbox (none recorded) and casts on the lightning
   sprite's spacing, not retail's ~3.1 s.
 * Monster timelines are keyed by BNpcBase, so 503's marshlights (base 187, name 901) fight as the coblyns that share

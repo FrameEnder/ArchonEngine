@@ -68,6 +68,7 @@ state after it:
 | `{"kill": [base, layout]}` | A battle NPC with this BNpcBase and layout ID died (`onBNpcKill`) |
 | `{"event_item": [item, base], "layout": …}` | A key item used on this NPC or object (`onEventItem`, after the server's EventItem event starts) |
 | `{"range": arg}` | Walked into an event range (`onEnterTrigger`) |
+| `{"action": [action, base], "layout": …}` | An action (its Action row) used on this NPC or object, which the quest listens for (`onActionResult`, after the server's ActionResult event starts): Trial by Water's Cure on the wounded Wood Wailer |
 | `{"emote": [emote, base], "layout": …}` | An emote used on this NPC (`onEmote`, after the server's Emote event starts); `fixture --chronofoil` writes it from retail's EventStart of type 2 |
 | `{"enter_territory": id}` | Zoned in (`onEnterTerritory`) |
 | `{"battle_won": sequence}` | A quest battle was won (the director sets the sequence) |
@@ -335,6 +336,13 @@ NPC's health from retail's curve, counted from when the *script* spawned it (a w
 death animation), and `onSceneFinished` after as long as the client took on retail. Retail's events are then matched
 to the script's, in order, each within the fixture's tolerance (2 s). It also fails on an NPC the script spawns that
 no drop-in has, or that retail never had.
+
+`--make` leaves out a sequence set before the fight that another replaces by the time it starts (the script's
+`onSetup`: Trial by Wind's sequence 1 came 0.4 s before scene 60000, inside the second it used to keep), and when
+retail spawned one layout ID twice (Trial by Wind's 4248510, a second wind sprite while the first still stood) the
+first is the NPC and the second only a spawn event; before 2026-10-27 the second overwrote the first, so the first
+looked late. A second run of the same battle goes beside it as `<id>-lost.json` (`--make` writes `<id>.json`;
+rename it), and `battle-sim <id>` runs both.
 
 A fixture can also hold retail's **positions** (`positions`: `{"player": [[t, x, y, z], …], "<layout>": […]}`, an
 NPC's times counted like its health; written by hand: Victory in Peril's are the player's from the capture's

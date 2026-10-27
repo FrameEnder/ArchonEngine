@@ -427,6 +427,67 @@ pub fn use_event_item(
 /// What retail's ActionEffect for a key item's use locks (0.1 s, Bob's 2026-10-18 capture.)
 const EVENT_ITEM_ANIMATION_LOCK: f32 = 0.1;
 
+/// Whether an action is aimed at something the server doesn't have as an actor: an event NPC or object the client
+/// places itself (the wounded Wood Wailer Trial by Water has you heal.)
+pub fn targets_event_object(
+    instance: &Instance,
+    from_actor_id: ObjectId,
+    request: &ActionRequest,
+) -> bool {
+    let target = request.target.object_id;
+    request.action_type == ActionType::Action
+        && target.is_valid()
+        && target != from_actor_id
+        && instance.find_actor(target).is_none()
+}
+
+/// An action's cast on an event NPC or object ended. As retail (Bob's Chronofoil capture b23b91ef, Cure on Trial by
+/// Water's wounded Wood Wailer): the ActionEffect on it (0.1 s lock; retail's carried a heal Kawari doesn't show),
+/// then, about a second later, the quest's event of type ActionResult with the action as its argument, which the zone
+/// connection starts if a quest listens for it (`FromServer::ActionOnEventObject`.)
+pub fn use_action_on_event_object(
+    network: Arc<Mutex<NetworkState>>,
+    data: Arc<Mutex<WorldServer>>,
+    from_id: ClientId,
+    from_actor_id: ObjectId,
+    request: &ActionRequest,
+) {
+    let data = data.lock();
+    let Some(instance) = data.find_actor_instance(from_actor_id) else {
+        return;
+    };
+    let Some(actor) = instance.find_actor(from_actor_id) else {
+        return;
+    };
+    let mut network = network.lock();
+    let ipc = ActionEffect {
+        animation_target_id: request.target,
+        targets: vec![request.target],
+        action_id: request.action_id,
+        animation_lock: EVENT_ITEM_ANIMATION_LOCK,
+        rotation: actor.rotation(),
+        spell_id: request.action_id as u16,
+        source_sequence: request.sequence,
+        action_type: ActionType::Action,
+        global_sequence: network.global_action_sequence,
+        ..Default::default()
+    }
+    .package()
+    .unwrap();
+    network.global_action_sequence += 1;
+    network.send_in_range_inclusive_instance(
+        from_actor_id,
+        instance,
+        FromServer::PacketSegment(ipc, from_actor_id),
+        DestinationNetwork::ZoneClients,
+    );
+    network.send_to(
+        from_id,
+        FromServer::ActionOnEventObject(request.action_id, request.target),
+        DestinationNetwork::ZoneClients,
+    );
+}
+
 /// Executes an action, and returns a list of Tasks that must be executed by the client.
 pub fn execute_action(
     network: Arc<Mutex<NetworkState>>,

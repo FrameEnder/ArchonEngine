@@ -376,6 +376,18 @@ class Harness:
         first = self._call("onEmote", emote, target, self.player)
         return self._drive(first, results or {}, trace)
 
+    def action(self, action: int, base_id: int, results: dict | None = None, trace: list | None = None,
+               layout: int | None = None) -> dict:
+        """An action used on an NPC or object the quest listens to for actions (the server's ActionResult event,
+        `onActionResult(action, target, player)`.)"""
+        self._new_state(base_id)
+        trace = trace if trace is not None else []
+        if self.lua.globals().onActionResult is None:
+            raise HarnessError("the script has no onActionResult for the action")
+        target = self.lua.table_from({"object_id": layout}) if layout is not None else None
+        first = self._call("onActionResult", action, target, self.player)
+        return self._drive(first, results or {}, trace)
+
     def enter_range(self, arg: int, results: dict | None = None, trace: list | None = None) -> dict:
         self._new_state(None)
         trace = trace if trace is not None else []

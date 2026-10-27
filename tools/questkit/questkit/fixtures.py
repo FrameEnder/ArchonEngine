@@ -12,6 +12,7 @@ A fixture (tools/questkit/fixtures/<quest>.json) is made from a Kawari Recorder 
         {"kill": [12, 3838969], "expect": {...}},
         {"range": 3842570},                         # walking into an event range
         {"emote": [12, 1002640], "layout": 3929260},  # an emote (its Emote row) on an NPC (base ID)
+        {"action": [120, 1003001], "layout": 3854494},  # an action (its Action row) used on an NPC (base ID)
         {"enter_territory": 148, "expect": {...}},  # zoning in (quests that play a scene on arrival)
         {"battle_won": 4, "expect": {...}},         # a quest battle's director winning it
         {"duty_cleared": 4, "expect": {...}},       # leaving a cleared duty (its InstanceContent ID)
@@ -369,7 +370,7 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
         if what:
             s["what"] = what
     # The order a step's keys read in.
-    order = ["talk", "emote", "layout", "territory", "kill", "range", "enter_territory", "battle_won", "duty_cleared", "todo", "what", "scenes", "effects",
+    order = ["talk", "event_item", "emote", "action", "layout", "territory", "kill", "range", "enter_territory", "battle_won", "duty_cleared", "todo", "what", "scenes", "effects",
              "spawns", "expect"]
     steps = [{k: s[k] for k in order if k in s} | {k: v for k, v in s.items() if k not in order} for s in steps]
     return {

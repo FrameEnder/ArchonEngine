@@ -106,7 +106,9 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
                 player.append(point)
 
     npcs, events = {}, []
-    for key, actor in actors.items():
+    # By when each was seen: a layout ID retail spawned twice (Trial by Wind's 4248510) is the first one's NPC, and the
+    # second only a spawn event.
+    for key, actor in sorted(actors.items(), key=lambda item: item[1]["Seen"]):
         curve = sorted(curves[key])
         before = [p for p in curve if p[0] < 0]
         curve = before[-1:] + [p for p in curve if p[0] >= 0]  # only how it stood when the fight started
@@ -121,6 +123,10 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
         zero = next((p[0] for p in compact if p[1] <= 0), None)
         if zero is not None and (death is None or zero < death):
             death = zero
+        if str(actor["LayoutId"]) in npcs:
+            if spawn > 1.0:
+                events.append([spawn, "spawn", actor["LayoutId"]])
+            continue
         npcs[str(actor["LayoutId"])] = {
             "spawn": spawn if spawn > 1.0 else None,
             "death": death,
@@ -130,9 +136,13 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
             events.append([spawn, "spawn", actor["LayoutId"]])
 
     last_sequence = None
-    for t, text in _director_events(run, "sequence"):
+    sequences = _director_events(run, "sequence")
+    for n, (t, text) in enumerate(sequences):
         sequence = _number_after(text, "sequence")
-        if t < commence - 1.0 or sequence in DONE_SEQUENCES or sequence == last_sequence:
+        # One set before the fight and replaced by the time it starts is the script's onSetup (Trial by Wind's
+        # sequence 1, 0.4 s before scene 60000 and sequence 2.)
+        replaced = t < commence and any(t < later <= commence for later, _ in sequences[n + 1:])
+        if t < commence - 1.0 or replaced or sequence in DONE_SEQUENCES or sequence == last_sequence:
             last_sequence = sequence if t >= commence - 1.0 else last_sequence
             continue
         last_sequence = sequence
