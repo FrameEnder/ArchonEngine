@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-27 | — | Party bots (glamour pieces with no model for the bot's race left out); known issues.
+| 2026-10-27 | — | Party bots (the race rules read at last: EquipRaceCategory is in no language); known issues.
+| 2026-10-27 | `dfd9515` | Party bots (glamour pieces with no model for the bot's race left out; reverted by the next commit); known issues.
 | 2026-10-27 | `54091a7` | Quests (Life, Materia and Everything, Lord of the Inferno); quest battles (45; `complete_quest_battle` without the fanfare); questkit (battle-sim: no "won" without it); known issues.
 | 2026-10-27 | `1549d08` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (changelog).
 | 2026-10-27 | `a17fe58` | Items (casting through the ItemAction's action; aetheryte tickets: Vesper Bay); known issues.
@@ -291,7 +292,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | Bob's Fenkara Fenyn bundle (2026-10-27): a Hyur Highlander bot's legs ("honeycrisp", item 3303, a loincloth with a Miqo'te model) showed nothing though the race rules allowed them. A glamour's body, hands, legs and feet pieces now need a model for the bot's race or one the client falls back to (`model_codes`, `race_has_gear_model`: its own body's, then the one it's built on, down to the Midlander man's), or they're left out and logged. Test: the chains. |
+| — | Bob's Fenkara Fenyn bundle (2026-10-27): a Hyur Highlander bot's legs ("honeycrisp", item 3303) showed nothing. Item 3303 is EquipRestriction 11 (Miqo'te women only, by XIVAPI), so the race rules should have left it out, and they were never read: EquipRaceCategory (and CharaMakeCustomize) have no text, so their files are in no language, and read in the server's they weren't found; an empty set allows everything. Both are read in no language now (`wearable_restrictions`, `creator_looks`), with a warning when EquipRaceCategory can't be read. `dfd9515`'s model check is reverted (its fallback chains were a guess, and this was the cause). |
+| `dfd9515` | The same bundle, first try: glamour pieces with no model file for the bot's race (or one it falls back to) left out. Reverted by the next commit. |
 | `54091a7` | Life, Materia and Everything (272) and Lord of the Inferno (343), the next two MSQ quests of Bob's Chronofoil capture b8432613 (2026-10-27), from their client scripts and ManFst209Btl: 272's two NPC trades and Mutamix's cutscene; 343's sergeants, the destination's bar and YesNoQuestBattle, the Bowl of Embers unlocked and cleared (`onDutyCleared`; its director isn't built yet), Thancred, the reward and cutscene and the move in the Waking Sands. Quest battle 45 (`content/questbattle/45.lua`): new Eastern Thanalan drop-in layer `QB_ManFst209_001` (26 NPCs and the scout), timelines `QB45*`, action `QB45Amaljaa_00490`; the waves by adds left, counted as a death animation ends, the second 30 s after sequence 3, won 55 s after the third with no "Duty Complete" (new sixth argument to `complete_quest_battle`, `fanfare`; `FromServer::QuestBattleComplete` carries it). Fixtures 272, 343; battle-sim 45 (won) and 45-lost-8/10/12. |
 | `1549d08` | `master` fast-forwarded to `Latest-Quest` with Bob's OK. |
 | `a17fe58` | Bob's Vesper Bay Aetheryte Ticket bundle (2026-10-27; "Unhandled item type: 9994"), from his Chronofoil capture b8432613's five uses: items now cast through their ItemAction's action (9994, 5 s, its ID on the cast bar), and ItemAction type 9994 (`items/TeleportTicket.lua`) uses one up and teleports by `player:teleport_by_ticket` (PrepareZoning warp type 6, `WarpType::Ticket`, faded as a teleport; ZoneIn's 110) to retail's landing, Western Thanalan's pop range 8366917; `ToServer::WarpPopRange` takes its warp type. |

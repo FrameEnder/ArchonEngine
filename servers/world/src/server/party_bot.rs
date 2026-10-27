@@ -836,7 +836,6 @@ fn wear_glamour(
     wearing: &mut Inventory,
     glamour: &glamour::Glamour,
     wearable: &HashSet<u8>,
-    look: &CustomizeData,
 ) {
     // Which pieces went on, and which were left out and why, for the log (Bob's 2026-10-27 bundle: an Elezen bot's
     // feet showed nothing in "keeper of the lilacs", and nothing said which piece it was.)
@@ -873,16 +872,6 @@ fn wear_glamour(
             .row(piece.item_id)
             .map(|row| row.ModelMain)
             .unwrap_or(0);
-        // A piece the sheet lets anyone wear can still have a model only for some races (Bob's 2026-10-27 bundle: a
-        // Hyur woman's legs showed nothing in a loincloth with a Miqo'te model.) The client shows nothing where
-        // neither the race's model nor one it falls back to exists, so that piece is left out too.
-        if !race_has_gear_model(game_data, look, piece.slot_category, model as u16) {
-            left_out.push(format!(
-                "{} (no model {:#x} for this race)",
-                piece.item_id, model
-            ));
-            continue;
-        }
         worn.push(format!(
             "{} (EquipSlotCategory {}, model {:#x}, stains {:?})",
             piece.item_id, piece.slot_category, model, piece.stains
@@ -942,11 +931,23 @@ impl GameData {
     /// The EquipRaceCategory rows (items' EquipRestriction) this race and sex may wear: each row says which of the
     /// races, and which sexes, may wear its items (all of them, one sex, or one race's own gear.)
     pub fn wearable_restrictions(&mut self, race: Race, gender: Gender) -> HashSet<u8> {
+        // A sheet with no text is in no language (its file has no `_en`): read with the server's, it wasn't found, so
+        // every bot could wear anything (Bob's 2026-10-27 bundle: a Hyur woman in Miqo'te women's legs, item 3303,
+        // EquipRestriction 11.)
         let language = get_config().world.language();
         let Ok(sheet) = icarus::EquipRaceCategory::EquipRaceCategorySheet::read_from(
             &mut self.resource,
             language,
-        ) else {
+        )
+        .or_else(|_| {
+            icarus::EquipRaceCategory::EquipRaceCategorySheet::read_from(
+                &mut self.resource,
+                physis::Language::None,
+            )
+        }) else {
+            tracing::warn!(
+                "Party bots: EquipRaceCategory couldn't be read, so they may wear any race's gear"
+            );
             return HashSet::new();
         };
         sheet
@@ -1138,10 +1139,17 @@ impl GameData {
         else {
             return Vec::new();
         };
+        // No text in it, so in no language (as EquipRaceCategory, see `wearable_restrictions`.)
         let customize = icarus::CharaMakeCustomize::CharaMakeCustomizeSheet::read_from(
             &mut self.resource,
             language,
         )
+        .or_else(|_| {
+            icarus::CharaMakeCustomize::CharaMakeCustomizeSheet::read_from(
+                &mut self.resource,
+                physis::Language::None,
+            )
+        })
         .ok();
         let mut looks = Vec::new();
         for (_, row) in types.into_iter().flatten_subrows() {
@@ -1281,62 +1289,6 @@ fn race_has_head_model(game_data: &mut GameData, look: &CustomizeData, model: u1
     };
     let path = format!("chara/equipment/e{model:04}/model/c{code:04}e{model:04}_met.mdl");
     game_data.resource.exists(&path)
-}
-
-/// The models (`c<code>`) a race and sex's gear is drawn from, its own first, then those the client falls back to
-/// when an item has no model of its own for it (each race's body built on another's: a Highlander woman's on a
-/// Midlander woman's, a Roegadyn's on a Highlander's, and so on, down to the Midlander man's). Lalafell have only
-/// their own. The chains for Hrothgar and Viera are a guess, on the generous side (a piece is left out only where
-/// none of them has a model.)
-fn model_codes(look: &CustomizeData) -> &'static [u16] {
-    match (look.race, look.gender) {
-        (Race::Hyur, Gender::Male) if look.tribe == Tribe::Highlander => &[301, 101],
-        (Race::Hyur, Gender::Male) => &[101],
-        (Race::Hyur, Gender::Female) if look.tribe == Tribe::Highlander => &[401, 201, 101],
-        (Race::Hyur, Gender::Female) => &[201, 101],
-        (Race::Elezen, Gender::Male) => &[501, 101],
-        (Race::Elezen, Gender::Female) => &[601, 201, 101],
-        (Race::Miqote, Gender::Male) => &[701, 101],
-        (Race::Miqote, Gender::Female) => &[801, 201, 101],
-        (Race::Roegadyn, Gender::Male) => &[901, 301, 101],
-        (Race::Roegadyn, Gender::Female) => &[1001, 401, 201, 101],
-        (Race::Lalafell, Gender::Male) => &[1101],
-        (Race::Lalafell, Gender::Female) => &[1201, 1101],
-        (Race::AuRa, Gender::Male) => &[1301, 101],
-        (Race::AuRa, Gender::Female) => &[1401, 201, 101],
-        (Race::Hrothgar, Gender::Male) => &[1501, 901, 301, 101],
-        (Race::Hrothgar, Gender::Female) => &[1601, 1001, 401, 201, 101],
-        (Race::Viera, Gender::Male) => &[1701, 701, 501, 101],
-        (Race::Viera, Gender::Female) => &[1801, 801, 601, 201, 101],
-        _ => &[],
-    }
-}
-
-/// Whether a body, hands, legs or feet piece (by its EquipSlotCategory; its model, `e<model>`) has a model this look
-/// is shown (`chara/equipment/e<model>/model/c<code>e<model>_<slot>.mdl`, for one of `model_codes`). Hats are
-/// `race_has_head_model`'s; anything else (accessories, a coat's category) is taken to have one.
-fn race_has_gear_model(
-    game_data: &mut GameData,
-    look: &CustomizeData,
-    slot_category: u8,
-    model: u16,
-) -> bool {
-    let suffix = match slot_category {
-        4 => "top",
-        5 => "glv",
-        7 => "dwn",
-        8 => "sho",
-        _ => return true,
-    };
-    let codes = model_codes(look);
-    if model == 0 || codes.is_empty() {
-        return true;
-    }
-    codes.iter().any(|code| {
-        game_data.resource.exists(&format!(
-            "chara/equipment/e{model:04}/model/c{code:04}e{model:04}_{suffix}.mdl"
-        ))
-    })
 }
 
 /// A made-up first and last name, from syllables (not from the game's text.)
@@ -1620,7 +1572,7 @@ fn spawn_bot(
         None => glamour::pick(&glamours, look.gender, classjob, parent),
     };
     let worn_glamour = chosen.map(|glamour| {
-        wear_glamour(game_data, &mut wearing, glamour, &wearable, &look);
+        wear_glamour(game_data, &mut wearing, glamour, &wearable);
         glamour.name.clone()
     });
     let parameters = bot_parameters(
@@ -4061,24 +4013,5 @@ mod tests {
             assert!(name.len() <= 20, "{name}");
             assert_eq!(name.split(' ').count(), 2, "{name}");
         }
-    }
-
-    /// A Highlander woman's gear is drawn from her own models or a Midlander's, never a Miqo'te's (Bob's 2026-10-27
-    /// bundle); a Miqo'te woman's from hers first.
-    #[test]
-    fn model_codes_fall_back_by_race() {
-        let look = |race, tribe, gender| CustomizeData {
-            race,
-            tribe,
-            gender,
-            ..Default::default()
-        };
-        let highlander = look(Race::Hyur, Tribe::Highlander, Gender::Female);
-        assert_eq!(model_codes(&highlander), &[401, 201, 101]);
-        assert!(!model_codes(&highlander).contains(&801));
-        let miqote = look(Race::Miqote, Tribe::Seeker, Gender::Female);
-        assert_eq!(model_codes(&miqote)[0], 801);
-        let lalafell = look(Race::Lalafell, Tribe::Plainsfolk, Gender::Male);
-        assert_eq!(model_codes(&lalafell), &[1101]);
     }
 }
