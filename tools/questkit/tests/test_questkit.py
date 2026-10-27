@@ -1292,8 +1292,10 @@ class ClientCheckTest(unittest.TestCase):
     def test_agrees(self):
         from questkit import clientcheck
 
-        lua = ("SCENE_GREETING = 00000\nSCENE_MENU = 00001\nSCENE_GIVE = 00002\nMAIN_MENU_RESULT_SPECIALSHOP = 2\n"
+        lua = ("SCENE_GREETING = 00000\nSCENE_MENU = 00001\nSCENE_GIVE = 00002\nSCENE_UNUSED = 00009\n"
+               "MAIN_MENU_RESULT_SPECIALSHOP = 2\n"
                "function onTalk(target, player) player:play_scene(SCENE_MENU, HIDE_HOTBAR, {0}) end\n"
+               "function more(player) play(player, SCENE_GREETING) play(player, SCENE_GIVE) end\n"
                "-- 255 is Kawari's, not a scene\nSCENE_RETURNED_FROM_NEST = 255\nlocal x = ACTOR0\n")
         with tempfile.TemporaryDirectory() as tmp:
             scripts = self._setup(Path(tmp), lua)
@@ -1307,6 +1309,7 @@ class ClientCheckTest(unittest.TestCase):
         from questkit import clientcheck
 
         lua = ("SCENE_GREETING = 00000\nSCENE_SHOP = 00010\nMAIN_MENU_RESULT_SPECIALSHOP = 3\n"
+               "function onTalk(target, player) play(player, SCENE_GREETING) play(player, SCENE_SHOP) end\n"
                "-- TODO: how is his shop menu brought up?\nlocal x = ACTOR1\n")
         with tempfile.TemporaryDirectory() as tmp:
             scripts = self._setup(Path(tmp), lua)

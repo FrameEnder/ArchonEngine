@@ -217,6 +217,12 @@ add one when something is found.
   scripted, and only the Sun Midge Swarm's drop is in `Drops.lua`. Not tested in game yet.
 * Ovjang (the hunt mark) stands at one of its spawn points; retail moves it between them.
 
+## NPC conversations (Script Check)
+
+* 34 of the 94 NPC and opening scripts leave client scenes unplayed (Script Check's "worth reading", 2026-10-27):
+  mostly systems not built (Grand Company officer 1-10, retainer vocate 5-55, Wondrous Tails, Free Company, Triple
+  Triad tournaments, the bicolor gemstone vendors' shops); see [questkit](questkit.md#clientcheck).
+
 ## Hunting Log
 
 * Built 2026-10-27 ([Hunting Log](hunting-log.md)): finishing a rank, the Grand Companies' logs, party kills and 543's

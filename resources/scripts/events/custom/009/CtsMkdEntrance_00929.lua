@@ -1,15 +1,16 @@
 -- Jeffroy at the Phantom Village
 
--- Scenes
-SCENE_MENU = 00001
-SCENE_MENU_AGAIN = 00001 -- Unsure when this is used?
+-- Scenes (the client's script: 0 turns to the player, then the menu; 1 is the menu alone.) Until 2026-10-27 this
+-- played 1, so he never turned to face you.
+SCENE_MENU = 00000
+SCENE_MENU_AGAIN = 00001
 
 function onTalk(target, player)
     player:play_scene(SCENE_MENU, 0, {0})
 end
 
 function onReturn(scene, results, player)
-    if scene == SCENE_MENU then
+    if scene == SCENE_MENU or scene == SCENE_MENU_AGAIN then
         if #results == 2 then
             -- TODO: why does it pass a help menu as the second param?
             local contentIndex = results[1]

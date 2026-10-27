@@ -418,8 +418,8 @@ python3 tools/questkit clientcheck client-scripts --out client-check.md
 Quest dumps (`kawari-questdump dump`'s `<script>/<script>.txt` and `quest.json`) in the same folder are checked too.
 For every server script with a client script there it reports, worst first:
 
-* **scenes the server plays that the client doesn't have** (a constant `SCENE*`, a number or a constant passed to
-  `play_scene`, or one of the sheet's `SEQ_*` scene parameters);
+* **scenes the server plays that the client doesn't have** (a constant `SCENE*` the script uses, not only defines;
+  a number or a constant passed to `play_scene`; or one of the sheet's `SEQ_*` scene parameters);
 * **constants named as the client's but with another value** (the client sets them in its script's second chunk,
   `SETTABLE R0["MAIN_MENU_RESULT_SPECIALSHOP"] = 2`);
 * **names that look like the sheet's parameters** (an upper-case name with a number: `ACTOR0`, `SEQ_1_EOBJECT2`) that
@@ -431,3 +431,12 @@ For every server script with a client script there it reports, worst first:
 Kawari Web does the same from its dashboard, with no source tree: Quest Lab → Script Check (2.23.0; see [Kawari Web](kawari-web.md)). Kawari's scene 255 (returning from a nested event) isn't counted. `client-scripts/` and `client-check.md` are gitignored, as `quest-dumps/` is: the dumps are Square Enix's files; the report has only scene numbers, constant and parameter names and the server's own lines. Its first run
 (2026-10-27, Jonathas and the six Conjurer quest dumps) found Trial by Earth's scene 99 never played: the
 `SEQ_2_EOBJECT0_EVENTACTIONNO` scene retail plays when a search's bar is broken off (see Known issues).
+
+The first full run (Bob's Script Check bundle of 2026-10-27, build `fde463d`: 94 NPC and opening scripts) found two
+that play a scene the client doesn't have: Berkoeya Loetahlsyn (`RegSeaPvpColosseum_00102`) played 1, and the client
+has only 0; and `RegYok6Tuliyollal_00864`, which only defined a `SCENE_00001` it never played (counted as played until
+then, so the check now counts only constants used). `CtsMkdEntrance_00929` played the client's menu-again scene (1)
+on the first talk, so Jeffroy never turned to the player: it plays 0 now. What's left are client scenes the server
+never plays, mostly systems not built (the Grand Company officer, the retainer vocate's other menus, Wondrous Tails,
+Free Companies, the Triple Triad tournaments); the openings' scene 30 is played by the first quests, not the opening
+script.
