@@ -16,6 +16,14 @@ visit 0.3) had the same three, registered the same way (DawnContent 201, members
 ActorControlSelf 276 and 1525 values, fighting with the same kits, at level 16 with 443, 347 and 316 HP: each duty's
 level and HP are in `party_npc::DUTY_LEVELS` (by ContentFinderCondition). See [Dungeons](dungeons.md).
 
+**The trials' three** (the Bowl of Embers, Bob's capture b8432613 of 2026-10-27, visit 0.16): registered under
+DawnContent 203 as members 40, 42, 41, the same Marauder, Lancer and Thaumaturge but other DawnQuestMember rows with
+BNpcBases 14650-14652, BNpcNames 11330-11332 and ActorControlSelf 276/1525 values 10004-10006 and 1042780-1042782
+(slots 0-2: the Marauder, the Thaumaturge, the Lancer), at level 20 with 618, 469 and 428 HP, fighting with the same
+kits and pet IDs (1, 9, 5): `party_npc::TRIAL_MEMBERS`, their timelines `TrialSupport*_<base>.json` (what each action
+did to Ifrit and the Nail). Retail spawned them a step ahead of the player in a wedge (the Marauder 2 yalms ahead, the
+other two 1 ahead and 1.72 to each side); Kawari spawns them on the player, as in the dungeons.
+
 ## Registering
 
 **At the duty's entrance** (Sastasha's, EObj 4374460 by its Duty Finder notice in Western La Noscea): it has two

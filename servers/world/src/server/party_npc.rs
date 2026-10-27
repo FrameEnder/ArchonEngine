@@ -250,15 +250,53 @@ pub const MEMBERS: [Member; 3] = [
     },
 ];
 
+/// The trials' three (DawnQuestMember 40, 41, 42; the Bowl of Embers with Duty Support in Bob's Chronofoil capture
+/// b8432613 of 2026-10-27, registered as 40, 42, 41 under DawnContent 203): the same Marauder, Lancer and Thaumaturge
+/// with BNpcBases and names of their own (14650-14652, 11330-11332) and their own ActorControlSelf 276 and 1525 values,
+/// fighting with the same kits. Their level and HP there are in `DUTY_LEVELS`.
+pub const TRIAL_MEMBERS: [Member; 3] = [
+    Member {
+        dawn_quest_member: 40,
+        base_id: 14650,
+        name_id: 11330,
+        slot_member: 10004,
+        slot_resident: 1042780,
+        // 13952 in both of the capture's attempts at Ifrit (15.6 and 34.6 s into the fight.)
+        chatter: &[13952],
+        opens_with_first: false,
+        ..MEMBERS[0]
+    },
+    Member {
+        dawn_quest_member: 41,
+        base_id: 14651,
+        name_id: 11331,
+        slot_member: 10005,
+        slot_resident: 1042781,
+        chatter: &[],
+        ..MEMBERS[1]
+    },
+    Member {
+        dawn_quest_member: 42,
+        base_id: 14652,
+        name_id: 11332,
+        slot_member: 10006,
+        slot_resident: 1042782,
+        chatter: &[],
+        ..MEMBERS[2]
+    },
+];
+
 /// The level the members come at in a duty (its ContentFinderCondition) and each one's HP there, by
 /// `dawn_quest_member`: retail's Sastasha members were level 15 (Bob's capture of 2026-10-23), the Tam-Tara
 /// Deepcroft's the same three at 16 with 443, 347 and 316 HP (his capture of 2026-10-24, 3ec702a8 visit 0.3), the
 /// Copperbell Mines' at 17 with 476, 372 and 339 (his capture of 2026-10-25, bd298651 visit 0.5.) A duty not here
 /// takes the member's own `level` and `hp`.
-pub const DUTY_LEVELS: [(u16, u8, [(u8, u32); 3]); 3] = [
+pub const DUTY_LEVELS: [(u16, u8, [(u8, u32); 3]); 4] = [
     (4, 15, [(36, 411), (37, 322), (38, 293)]),
     (2, 16, [(36, 443), (37, 347), (38, 316)]),
     (3, 17, [(36, 476), (37, 372), (38, 339)]),
+    // The Bowl of Embers (Bob's capture b8432613 of 2026-10-27, visit 0.16): the trials' three at 20.
+    (56, 20, [(40, 618), (41, 469), (42, 428)]),
 ];
 
 /// A member's level and HP in the duty `content_finder_condition`.
@@ -278,6 +316,7 @@ pub fn level_and_hp(member: &Member, content_finder_condition: u16) -> (u8, u32)
 pub fn member(dawn_quest_member: u8) -> Option<&'static Member> {
     MEMBERS
         .iter()
+        .chain(TRIAL_MEMBERS.iter())
         .find(|member| member.dawn_quest_member == dawn_quest_member)
 }
 
@@ -828,6 +867,15 @@ mod tests {
         );
         assert_eq!(member(36).map(|m| m.base_id), Some(14646));
         assert!(member(39).is_none());
+        // The Bowl of Embers' registration (Bob's capture b8432613): 40, 42, 41, the trials' three, at 20 there.
+        assert_eq!(chosen_members([0x0029_2a28, 0, 0, 0]), vec![40, 42, 41]);
+        let marauder = member(40).unwrap();
+        assert_eq!((marauder.base_id, marauder.classjob), (14650, 3));
+        assert_eq!(level_and_hp(marauder, 56), (20, 618));
+        assert_eq!(
+            member(42).map(|m| (m.base_id, m.slot_member)),
+            Some((14652, 10006))
+        );
     }
 
     #[test]

@@ -1,0 +1,80 @@
+{
+    "appends": "bg/ffxiv/wil_w1/fld/w1fa/level/planmap.lgb",
+    "layers": [
+        {
+            "name": "BNPCS_RETAIL",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 207,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 12885,
+                        "level": 20,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 0,
+                        "name_id": 1185,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262144
+                    },
+                    "layout_id": 4126276,
+                    "position": {
+                        "x": 15.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "rotation": -1.5709
+                },
+                {
+                    "data": {
+                        "base_id": 208,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1652,
+                        "level": 20,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 0,
+                        "name_id": 1186,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262187
+                    },
+                    "layout_id": 4126281,
+                    "position": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "rotation": -0.0
+                },
+                {
+                    "data": {
+                        "base_id": 401,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 413,
+                        "level": 20,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 0,
+                        "name_id": 1185,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "stationary": true,
+                        "display_flags": 262152
+                    },
+                    "layout_id": 4126284,
+                    "position": {
+                        "x": 36.3,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "rotation": -0.0
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,21 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 17059,
+    "recorded_amounts": {
+        "17059": {
+            "npcs": 1.5
+        },
+        "29305": {
+            "npcs": 18
+        },
+        "29306": {
+            "npcs": 19
+        },
+        "29772": {
+            "npcs": 193
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The trials' Duty Support Lancer (BNpcBase 14651, BNpcName 11331, DawnQuestMember 41): level 20, 469 HP in the Bowl of Embers, auto-attacks every 3.0 s. From Bob's Chronofoil capture b8432613 of 2026-10-27 (visit 0.16, `questkit chronofoil --battle 0.16`: the Bowl of Embers with Duty Support, two attempts at Ifrit, the player a level 22 Conjurer synced to 20): the median damage of each action to Ifrit and the Infernal Nail. Its kit and timing are Sastasha's members' (`server/party_npc.rs`, `TRIAL_MEMBERS`); hitbox not recorded. Retail's Lancer also used 29308 (18.5, 14 times) here, which isn't in its kit nor scripted."
+}

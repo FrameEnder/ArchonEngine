@@ -1,0 +1,30 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 17058,
+    "recorded_amounts": {
+        "17058": {
+            "npcs": 1
+        },
+        "29291": {
+            "npcs": 17
+        },
+        "29294": {
+            "npcs": 17
+        },
+        "29299": {
+            "npcs": 17
+        },
+        "29300": {
+            "npcs": 18
+        },
+        "29764": {
+            "npcs": 54
+        },
+        "29765": {
+            "npcs": 88
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The trials' Duty Support Marauder (BNpcBase 14650, BNpcName 11330, DawnQuestMember 40): level 20, 618 HP in the Bowl of Embers, auto-attacks every 3.0 s. From Bob's Chronofoil capture b8432613 of 2026-10-27 (visit 0.16, `questkit chronofoil --battle 0.16`: the Bowl of Embers with Duty Support, two attempts at Ifrit, the player a level 22 Conjurer synced to 20): the median damage of each action to Ifrit and the Infernal Nail. Its kit and timing are Sastasha's members' (`server/party_npc.rs`, `TRIAL_MEMBERS`); hitbox not recorded."
+}

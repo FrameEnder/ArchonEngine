@@ -11,6 +11,7 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | Sastasha | 4 | 1036 | `content/s1d1_re.lua` (upstream's, with the fork's changes) | five Duty Finder runs (2026-10-22), one with Duty Support (2026-10-23) |
 | The Tam-Tara Deepcroft | 2 | 1037 | `content/f1d1_re.lua` | one run with Duty Support and two Duty Finder runs (2026-10-24) |
 | The Copperbell Mines | 3 | 1038 | `content/w1d1_re.lua` | one run with Duty Support and two Duty Finder runs (2026-10-25) |
+| The Bowl of Embers (Ifrit) | 56 | 1045 | `content/w1fa_re.lua` | one run with Duty Support, two attempts (2026-10-27) |
 
 ## The Tam-Tara Deepcroft
 
@@ -244,3 +245,56 @@ timeline; they only do what the script has them do. Damage of 28544 and 28549 (K
 
 **Not here:** the helpers' SetTarget on the player, the shortcut, the end's log 9393 (24200), what 28462's and 28760's
 effects are, statuses 8, 18, 53, 203, and ActorControl 15 (0, 1, 28764, 0) just before 28764 lands.
+
+## The Bowl of Embers
+
+From Bob's Chronofoil capture b8432613 of 2026-10-27, visit 0.16 (6.3 minutes with Duty Support, during Lord of the
+Inferno, quest 343, which unlocks it; Bob a level 22 Conjurer): two attempts at Ifrit, the first a wipe with the
+Infernal Nail standing, the second won. Read with `questkit chronofoil --battle 0.16` and the visit's packets (numbers
+only), with Cactbot's ifrit-nm timeline (see [Sources](sources.md)) for the loops neither attempt finished. The
+ContentFinderCondition's ShortCode (`w1fa_re`) and territory 1045's LGB (`bg/ffxiv/wil_w1/fld/w1fa/level/`) are
+XIVAPI's (2026-10-27).
+
+**Enemies** (drop-in `w1fa_re_planmap.json`, all `nonpop`: the director spawns them): Ifrit (BNpcBase 207, layout
+4126276, level 20, 12885 HP) at (15, 0, 0) facing west; the Infernal Nail (208, 4126281, 1652 HP) in the middle,
+spawned hidden and brought into view; his helpers (401, all layout 4126284, hidden; retail spawned twenty with him,
+Kawari nine, the most that cast at once).
+
+**Ifrit** (`IfritBowlOfEmbers_207.json`, `from_pull`; both attempts alike to a few tenths): his auto-attack 872 every
+3.0 s; from the pull Incinerate (453, a 10-yalm cone, on the tank) at 7.2 s, Vulcan Burst (454, 16 yalms round him, a
+knockback that did 1) at 15.0 s and every 41.6 s, Incinerate 7.9, 20.5 and 33.6 s after each. Below 80 % (79.9 and
+79.5 % as he spoke) his line 2601 (battle talk under BNpcName 1185, no portrait, 5 s) and a new phase: Incinerate 1.2
+s on, Eruption (455) 7.0, Vulcan Burst 13.6, then Incinerate and Eruption every 16.5 s from 20.5 and 26.3. Below 50 %
+his line 2602 and the next: ActionTimeline 1398 (summoning) 4.0-4.3 s on, the Nail 7.8-8.2 s on (Appear 142 and
+targetable 0.7 s later), Incinerate at 8.9, Vulcan Burst at 16.7, Incinerate at 24.6. The Nail's health at 0: status
+775 on him (9.8 s), his line 2603, ActionTimeline 140; 2.6 s later ActorSetPos to the middle facing north and 141; 3.4
+s after the Nail Hellfire (458, 1.7 s, 30 yalms round: 230 to the player, 166-183 to the Lancer and Thaumaturge, 74 to
+the Marauder); 775 gone with his line 2604 9.8 s after the Nail; no auto-attack for 10.8 s. Then from Hellfire's cast
+Incinerate 7.6 s on, Eruption 14.4, Radiant Plume (456) 23.0 and 31.4, every 32.2 s. At 0 his line 2605, the duty
+complete (the director's 0x40000003, then 0x40000007 (0, 0) and (1, 0)) and the closing cutscene (scene 3: 87, 1, 18,
+0, 0). The director begins each phase (`restart_timeline`), as his phases follow his lines and the Nail, not times.
+
+**His helpers:** each Eruption (455, cast on himself, 1.9 s) is a helper's 733 (2.7 s, 8 yalms round, 185-227 to the
+player) under someone of the party 0.1 s on: the Lancer, the Thaumaturge or the Marauder in all nine (never the player,
+which may be chance; Kawari picks anyone of the party). Radiant Plume (456) is four helpers' 734 (2.7 s, 8 yalms round)
+8 yalms from the middle (north, south, east, west), then the next one eight 20 yalms out (those and the diagonals),
+in turn (181-227 to the player). Retail aimed them at the ground (TargetArea, the helpers never moved); Kawari puts a
+helper there and has it cast on itself.
+
+**Not killing the Nail:** the first attempt wiped 20 s after it appeared (the Marauder had fallen to Incinerate and
+Ifrit turned on the player). Cactbot has Hellfire 44.3 s after the 50 % line whatever happens; Kawari does Hellfire
+then too, the Nail gone (what retail's does to the party then isn't recorded).
+
+**The Duty Support members' lines** (NpcYell): at the pull the Thaumaturge's 14326 (first attempt) or the Lancer's
+14327 (the second), the Thaumaturge's 13693 0.3 s before the Nail appears (both), and her 13981 as Ifrit fell below 4 %;
+the Marauder's chatter 13952. See [Party NPCs](party-npcs.md) for the members (40-42).
+
+**The wipe** (`server/wipe.rs`, any InstanceContent): every player down (the members were still standing) and 1.0 s
+later the director's PartyWipe (0x40000005); 4.1 s after the fall 0x80000029, 0x40000013, the time left (0x4000000F,
+3489), everyone sent back to the start alive (PrepareZoning to the same territory with warp type 25, `Event`, the
+character hidden, flags 2; ActorSetPos with the same warp type; SetMode normal), 0x40000011, the duty's enemies and
+the party's NPCs spawned again where they began and the entrance circle shown again; 11.3 s after the fall
+DutyRecommence (0x40000006: the time left, 0, 2) and the entrance circle hidden. Kawari sends the same, gets the
+party's NPCs up beside their player 6.1 s after the fall (once the player has arrived), drops what the script had
+queued and calls its `onPartyWipe` (Ifrit, the Nail and the helpers taken away and Ifrit brought back) and
+`onDutyRecommence`. Before, nothing happened until the player chose to return, and the fight went on without them.

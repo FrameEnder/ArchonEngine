@@ -335,6 +335,13 @@ pub enum LuaDirectorTask {
         who: u32,
         seconds: f32,
     },
+    /// Starts a `from_pull` timeline's clock again from now for its points `after` this (an action's ID, as a point
+    /// with `restarts` does, or any number the timeline's points use for a phase): a phase the director begins
+    /// (Ifrit's at 80 % and 50 %, and after his Hellfire, in the Bowl of Embers.)
+    RestartTimeline {
+        who: u32,
+        anchor: u32,
+    },
     HoldBattleNpc {
         who: u32,
         held: bool,
@@ -850,6 +857,11 @@ impl UserData for LuaDirector {
                 .push(LuaDirectorTask::BusyBattleNpc { who, seconds });
             Ok(())
         });
+        methods.add_method_mut("restart_timeline", |_, this, (who, anchor): (u32, u32)| {
+            this.tasks
+                .push(LuaDirectorTask::RestartTimeline { who, anchor });
+            Ok(())
+        });
         methods.add_method_mut(
             "set_model_scale",
             |_, this, (who, model_scale_id): (u32, u32)| {
@@ -1122,6 +1134,27 @@ impl DirectorData {
         };
         if let Err(err) = run_script() {
             tracing::warn!("Syntax error during onEventActionCast: {err:?}");
+        }
+    }
+
+    /// Calls the script's `name(director)`, if it has it (`onPartyWipe`, `onDutyRecommence`: `server/wipe.rs`.)
+    pub fn call_hook(&mut self, name: &str) {
+        if self.lua.0.globals().get::<Function>(name).is_err() {
+            return;
+        }
+        let mut run_script = || {
+            let mut lua_director = self.create_lua_director();
+            let err = self.lua.0.scope(|scope| {
+                let data = scope.create_userdata_ref_mut(&mut lua_director)?;
+                let func: Function = self.lua.0.globals().get(name)?;
+                func.call::<()>(data)?;
+                Ok(())
+            });
+            self.apply_lua_director(lua_director);
+            err
+        };
+        if let Err(err) = run_script() {
+            tracing::warn!("Syntax error during {name}: {err:?}");
         }
     }
 
@@ -1470,6 +1503,30 @@ fn update_director(instance: &mut Instance) {
             target_layout: layout_of.get(&target).copied(),
             target_is_player: players.contains(&target),
         });
+    }
+    // The party's NPCs (Duty Support members and bots, which have no layout ID) as "party1", "party2"...: whom an
+    // attack on the party can fall on (Ifrit's Eruption, under one of them.)
+    let mut party: Vec<ObjectId> = instance.party_bots.keys().copied().collect();
+    party.sort_by_key(|id| id.0);
+    for (index, id) in party.iter().enumerate() {
+        let Some(actor) = instance.find_actor(*id) else {
+            continue;
+        };
+        let common = actor.get_common_spawn();
+        if common.health_points == 0 {
+            continue;
+        }
+        let target = common.target_id.object_id;
+        info.insert(
+            format!("party{}", index + 1),
+            ActorInfo {
+                hp: common.health_points,
+                max_hp: common.max_health_points,
+                position: common.position.0,
+                target_layout: layout_of.get(&target).copied(),
+                target_is_player: players.contains(&target),
+            },
+        );
     }
     if let Some(director) = instance.directors.first_mut() {
         director.update(&npc_health, player_health, &info);
@@ -2502,6 +2559,23 @@ pub fn director_tick(
                     actor_id,
                     Instant::now() + Duration::from_secs_f32(seconds.max(0.0)),
                 );
+            }
+            LuaDirectorTask::RestartTimeline { who, anchor } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to restart its timeline!");
+                    continue;
+                };
+                if let Some(NetworkedActor::Npc {
+                    timeline_anchor,
+                    timeline_position,
+                    timeline_checked,
+                    ..
+                }) = instance.find_actor_mut(actor_id)
+                {
+                    *timeline_anchor = Some(*anchor);
+                    *timeline_position = 0;
+                    *timeline_checked = 0;
+                }
             }
             LuaDirectorTask::HoldBattleNpc { who, held } => {
                 let Some(actor_id) = resolve_bnpc(instance, *who) else {

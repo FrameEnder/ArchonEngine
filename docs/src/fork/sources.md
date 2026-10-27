@@ -154,6 +154,11 @@ retail's node window matched) ships in `resources/data/gatherbuddy/` with its li
 the same sheets from the game install, so XIVAPI is for a quick look or an older patch. EXDSchema is the reference
 whenever a column's meaning is in doubt.
 
+The workspace's shell reaches XIVAPI v2 (`curl "https://v2.xivapi.com/api/sheet/<Sheet>/<row>?fields=A,B.C"`), which is
+how a session without the game install looks up a sheet: the Bowl of Embers' ShortCode (`w1fa_re`) and territory, the
+Action rows of Ifrit's attacks (cast times, shapes, ranges), and item 3303's EquipRestriction (11, Miqo'te women) in
+Bob's glamour bundle, all 2026-10-27. Numbers only go in the code, with a comment saying where they came from.
+
 ### FFXIVClientStructs, Machina and FFXIVOpcodes
 
 * [aers/FFXIVClientStructs](https://github.com/aers/FFXIVClientStructs): the client's memory layouts. Kawari Recorder

@@ -2754,7 +2754,7 @@ fn stand_up(network: &Arc<Mutex<NetworkState>>, instance: &mut Instance, id: Obj
 
 /// A bot that wasn't raised gets up beside the one it follows (see `tend_the_fallen`): taken away from where it lay
 /// and spawned again there, alive, at full HP and MP.
-fn get_up_beside(
+pub(super) fn get_up_beside(
     network: &Arc<Mutex<NetworkState>>,
     instance: &mut Instance,
     id: ObjectId,

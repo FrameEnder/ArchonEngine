@@ -259,9 +259,8 @@ add one when something is found.
   same bases in Eastern Thanalan's open world are level 17 and never fought in the capture: the zombie's auto-attack is
   scaled from level 13, the mage's Thunder isn't (13 for every level). The zombie's Heartstopper (866, once, on no one)
   isn't modelled.
-* Lord of the Inferno (343): the Bowl of Embers (InstanceContent 20001, Ifrit) has no director yet, so sequence 4
-  can't be cleared. Its notice 3 is sent as the player leaves the cleared duty (`onDutyCleared`); retail sent it in
-  the duty as it was won. Its others' lines in sequences 2-4 go by the order of the client's IsAcceptEvent (retail
+* Lord of the Inferno (343): its notice 3 is sent as the player leaves the cleared Bowl of Embers (`onDutyCleared`);
+  retail sent it in the duty as it was won. Its others' lines in sequences 2-4 go by the order of the client's IsAcceptEvent (retail
   played none).
 
 ## Central Thanalan
@@ -463,6 +462,23 @@ add one when something is found.
   Unknown7 (0x40000007: (0, 1) and (1, 1) during the run, (0, 0) and (1, 0) at the clear), ActorControlSelf 130 (3, 1)
   and 257 ×3, or UnkContentFinder2 (3, 4); the clear rewards need checking against the InstanceContent sheet.
 * The timelines are by BNpcBase (1395-1403, 1421, 14448, 14449, 14460, 14537, 9020).
+
+## The Bowl of Embers
+
+* Untested in game (2026-10-27), as is the party wipe (`server/wipe.rs`), which now plays out in every InstanceContent
+  (the dungeons too) when every player is down. In a dungeon it sends the party back to the start but leaves the
+  enemies as they are (they lose their targets and go home); retail's dungeon wipes weren't checked.
+* What happens when the Nail isn't killed is Cactbot's (Hellfire 44.3 s after the 50 % line); the first attempt wiped
+  before. Hellfire's damage then is the killed-Nail one. Vulcan Burst's knockback isn't sent (its effect isn't
+  decoded), only its 1 damage.
+* Ifrit's hitbox (3.5) is a guess from the members' distances. Eruption goes under anyone of the party (retail's nine
+  were never on the player). Retail's helpers cast at a point on the ground; Kawari's are put there and cast on
+  themselves. Kawari spawns nine helpers where retail spawned twenty. BNpcBase 401's timeline (`IfritHelper_401`)
+  applies to any 401 elsewhere.
+* The members spawn on the player (retail's a step ahead in a wedge); the Thaumaturge's and Lancer's pull lines are
+  taken as first attempt and later ones (one of each seen). Status 775 (Ifrit's during Hellfire) is only applied, with
+  `set_invulnerable`; whether retail makes him untargetable then isn't recorded. Retail's 0x40000007 (0, 1) at 15 % and
+  the clear's logs aren't sent.
 
 ## Quest battles and directors
 

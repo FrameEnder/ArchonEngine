@@ -1,0 +1,18 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "29312": {
+            "npcs": 205
+        },
+        "29314": {
+            "npcs": 18
+        },
+        "29315": {
+            "npcs": 18
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The trials' Duty Support Thaumaturge (BNpcBase 14652, BNpcName 11332, DawnQuestMember 42): level 20, 428 HP in the Bowl of Embers, no auto-attack (1.7 s casts). From Bob's Chronofoil capture b8432613 of 2026-10-27 (visit 0.16, `questkit chronofoil --battle 0.16`: the Bowl of Embers with Duty Support, two attempts at Ifrit, the player a level 22 Conjurer synced to 20): the median damage of each action to Ifrit and the Infernal Nail. Its kit and timing are Sastasha's members' (`server/party_npc.rs`, `TRIAL_MEMBERS`); hitbox not recorded."
+}

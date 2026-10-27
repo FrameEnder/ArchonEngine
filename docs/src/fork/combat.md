@@ -239,7 +239,8 @@ its spawn; each point fires when due, in reach or not, and may repeat every `eve
 `target` is `target` (default), `other` (someone else on its enmity list at random), `itself` or `nobody`; a point
 with `hp_below` comes once as its health falls to that percentage instead of at a time, one with `restarts` starts the
 clock again as it's used, and one `after` an action counts from that action's last use and comes only while it's the
-last to restart the clock: Kottos and the Copperbell Mines' other two bosses),
+last to restart the clock: Kottos and the Copperbell Mines' other two bosses; the director can start a phase itself,
+`restart_timeline`, as Ifrit's),
 `hitbox_radius` (reach includes it), `autoattack_action_id` (870/871/872 per kind),
 `attack_range` (default 5 yalms; Papalymo 10), `damage_to_players` (`{"level": damage}`), `recorded_amounts` (above),
 and `timepoints` (the

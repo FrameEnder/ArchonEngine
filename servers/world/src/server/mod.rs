@@ -109,6 +109,7 @@ mod placement;
 mod rotation;
 mod social;
 mod spawn_allocator;
+mod wipe;
 mod zone;
 
 #[derive(Default, Debug, Clone)]
@@ -537,6 +538,48 @@ const STATUS_BRINK_OF_DEATH: u16 = 44;
 const STATUS_RAISED: u16 = 418;
 const WEAKNESS_DURATION: f32 = 100.0;
 const RAISED_DURATION: f32 = 5.0;
+
+/// Sends a player back to the duty's starting point, alive with full HP and MP and no Weakness or Brink of Death (as
+/// retail): `prepare` (its warp type and look) then the warp to the entrance. A dead player's Return, and everyone after
+/// a party wipe (`wipe.rs`).
+fn return_to_start(
+    network: &Arc<Mutex<NetworkState>>,
+    game_data: &Arc<Mutex<GameData>>,
+    instance: &mut Instance,
+    from_id: ClientId,
+    actor_id: ObjectId,
+    prepare: PrepareZoning,
+) {
+    if let Some(actor) = instance.find_actor_mut(actor_id) {
+        let common = actor.get_common_spawn_mut();
+        common.health_points = common.max_health_points;
+        common.resource_points = common.max_resource_points;
+        if let Some(effects) = actor.status_effects_mut() {
+            effects.remove(STATUS_REVIVE_OFFER);
+            effects.remove(STATUS_WEAKNESS);
+            effects.remove(STATUS_BRINK_OF_DEATH);
+        }
+    }
+    update_actor_hp_mp(network.clone(), instance, actor_id);
+
+    let mut network = network.lock();
+    let mut game_data = game_data.lock();
+    let warp_type = prepare.warp_type;
+    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::PrepareZoning(prepare));
+    network.send_to_by_actor_id(
+        actor_id,
+        FromServer::PacketSegment(ipc, actor_id),
+        DestinationNetwork::ZoneClients,
+    );
+    change_zone_warp_to_entrance(
+        &mut network,
+        &mut game_data,
+        instance,
+        false,
+        from_id,
+        warp_type,
+    );
+}
 
 /// Brings a dead player back after they accepted a Raise, as retail (Bob's Chronofoil captures, 19 raises): 20 % of
 /// their HP and MP, Weakness (or Brink of Death if already weakened) and status 418, through the same warp a revive
@@ -1393,6 +1436,9 @@ fn server_logic_tick(
                     }
                 }
             }
+
+            // Every player down in a duty: the party wipe (`wipe.rs`.)
+            wipe::wipe_tick(network.clone(), instance, game_data.clone());
 
             // Process any director tasks for this instance.
             director_tick(network.clone(), instance, game_data.clone());
@@ -2917,24 +2963,13 @@ pub async fn server_main_loop(
                                 data.find_actor_instance_mut(from_actor_id)
                             {
                                 // Otherwise back to the starting point.
-                                if let Some(actor) = instance.find_actor_mut(from_actor_id) {
-                                    // Full HP and MP, and no Weakness or Brink of Death (retail.)
-                                    let common = actor.get_common_spawn_mut();
-                                    common.health_points = common.max_health_points;
-                                    common.resource_points = common.max_resource_points;
-                                    if let Some(effects) = actor.status_effects_mut() {
-                                        effects.remove(STATUS_REVIVE_OFFER);
-                                        effects.remove(STATUS_WEAKNESS);
-                                        effects.remove(STATUS_BRINK_OF_DEATH);
-                                    }
-                                }
-                                update_actor_hp_mp(network.clone(), instance, from_actor_id);
-
-                                let mut network = network.lock();
-                                let mut game_data = game_data.lock();
-
-                                let ipc = ServerZoneIpcSegment::new(
-                                    ServerZoneIpcData::PrepareZoning(PrepareZoning {
+                                return_to_start(
+                                    &network,
+                                    &game_data,
+                                    instance,
+                                    from_id,
+                                    from_actor_id,
+                                    PrepareZoning {
                                         territory_type_id: instance.zone.id,
                                         warp_type: WarpType::Resurrection,
                                         vfx_id: 113,
@@ -2942,22 +2977,7 @@ pub async fn server_main_loop(
                                         fade_out_delay: 1,
                                         flags: PrepareZoningFlag::UNK2,
                                         ..Default::default()
-                                    }),
-                                );
-
-                                network.send_to_by_actor_id(
-                                    from_actor_id,
-                                    FromServer::PacketSegment(ipc, from_actor_id),
-                                    DestinationNetwork::ZoneClients,
-                                );
-
-                                change_zone_warp_to_entrance(
-                                    &mut network,
-                                    &mut game_data,
-                                    instance,
-                                    false,
-                                    from_id,
-                                    WarpType::Resurrection,
+                                    },
                                 );
                             }
                         }

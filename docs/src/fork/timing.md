@@ -25,7 +25,8 @@ counting "updates", auto-attack timers) are half-second steps.
   the end of their bar and keep a half-second window (`task.point > now + 500 ms`).
 * **Duty clock**: once a duty's countdown starts its time left is re-sent every 300 s (`resync_duty_clock`), as
   retail. Retail's wipe: PartyWipe (0x40000005), 3 s later 0x8000000D, 0x80000029, 0x40000013, then 0x4000000F (time
-  left) and 0x40000011, and DutyRecommence (0x40000006) 10.2 s after the wipe (not done).
+  left) and 0x40000011, and DutyRecommence (0x40000006) 10.2 s after the wipe. Kawari plays it out as the Bowl of
+  Embers' wipe did (`server/wipe.rs`, [Dungeons](dungeons.md#the-bowl-of-embers)).
 * NPC casts keep an `NpcCast` record (also where an area attack was aimed); interrupting a cast clears it.
 
 ## Event actions (progress bars)

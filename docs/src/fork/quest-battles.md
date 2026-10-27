@@ -39,10 +39,12 @@ Callbacks:
 |---|---|
 | `onSetup(director)` | The instance was created. |
 | `onCommence(director)` | The player is in: spawn NPCs, set the first sequence, start the chatter. |
-| `onUpdate(director, health, player_health, info)` | Every logic tick (500 ms). `health` maps each living NPC's layout ID to its health %, `player_health` the player's; `info` has everyone's real numbers and position (`info[layout] = { hp, max_hp, x, y, z }`, `info.player` the same), for highest-HP and nearest choices. Waves, thresholds and timed steps live here. |
+| `onUpdate(director, health, player_health, info)` | Every logic tick (500 ms). `health` maps each living NPC's layout ID to its health %, `player_health` the player's; `info` has everyone's real numbers and position (`info[layout] = { hp, max_hp, x, y, z }`, `info.player` the same, and the party's NPCs, which have no layout ID, as `info.party1`, `info.party2`...), for highest-HP and nearest choices. Waves, thresholds and timed steps live here. |
 | `onActorCast(director, layout_id, action_id, actor_id)` | An NPC began an action from its timeline or rotation (its cast bar, or an instant one). Optional. For scripts that answer what a boss does: the Copperbell Mines' Kottos' 28543 sets off its markers and leaps. |
 | `onActorDeath(director, layout_id, position)` | An NPC died. Optional (the server skips it when a script, or a FATE's, doesn't define it). |
 | `onPlayerDeath(director)` | The player fell. |
+| `onPartyWipe(director)` | A duty's party wipe (every player down, `server/wipe.rs`), as everyone is sent back to the start: reset the fight (the Bowl of Embers takes Ifrit away and brings him back). Whatever the script had `delay`ed is dropped first. Optional. |
+| `onDutyRecommence(director)` | The duty begins again after a wipe (DutyRecommence). Optional. |
 | `onSceneFinished(director, scene)` | A player finished one of the director's own scenes (`play_scene`), e.g. a cutscene halfway through. Optional. |
 
 Director methods (`servers/world/src/server/director.rs`), the ones the fork added:
@@ -54,6 +56,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `warp_bnpc(npc, x, y, z, rotation)` | Puts an NPC (actor ID or layout ID) somewhere at once: an ActorSetPos from it, as retail moves its helpers before they cast. |
 | `jump_bnpc(npc, x, y, z, rotation)` | An NPC (actor ID or layout ID) leaps somewhere: ActorControl `SnapNextMove` (239) then an ActorMove there (speed byte 90), as retail's Kottos landed each leap; it carries on from where it lands. Without `rotation` it faces the way it leapt (retail's Kottos did). |
 | `busy_bnpc(npc, seconds)` | Keeps an NPC (actor ID or layout ID) from moving, turning or acting on its own for that long, its timeline still counting (`Instance::busy_npcs`): Kottos from its 28543 to its 28546, through its leaps. |
+| `restart_timeline(npc, anchor)` | Starts a `from_pull` timeline's clock again from now for its points `after` `anchor` (an action's ID, as a point with `restarts` does, or any number the timeline uses for a phase), so the director begins a boss's phase: Ifrit's at 80 % and 50 % (his lines' text IDs, 2601 and 2602) and after Hellfire (458). |
 | `move_bnpc(npc, x, y, z, rotation)` | One ActorMove there (no snap), which the client walks the NPC along: the last Copperbell boss going to the middle for 28760. |
 | `hold_bnpc(npc, held)` | Holds an NPC (actor ID or layout ID; `held` defaults to true): `npc_behavior` leaves it alone (no noticing, chasing, timeline or enmity on players), so it does only what the director has it do, as retail's boss helpers (`Instance::held_npcs`). |
 | `release_bnpc(npc)` | ActorControl 417 with no one (0xE0000000) from the NPC, as retail let each boss helper go the moment its boss died. |
