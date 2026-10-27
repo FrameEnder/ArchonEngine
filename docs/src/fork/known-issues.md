@@ -238,9 +238,11 @@ add one when something is found.
 * Aetheryte tickets: only the Vesper Bay ticket's landing is recorded (the destination isn't read from its ItemAction
   Data, whose meaning isn't known). Item casts now come from the ItemAction's action; items with a cast there that
   retail uses instantly would now show one (none known).
-* An Elezen bot's feet showed nothing in the glamour "keeper of the lilacs" (feet model 410, variant 1); the race
-  rules (EquipRestriction) allowed it, so the cause is still open: the next bundle's `Party bot glamour` line names
-  the piece. A glamour line whose name matches two items takes the later row, which may be the wrong one.
+* An Elezen bot's feet showed nothing in the glamour "keeper of the lilacs" (feet model 410, variant 1) and a Hyur
+  woman's legs in "honeycrisp" (item 3303, model 0x59); the race rules allowed both. Pieces with no model for the
+  bot's race (nor one it falls back to) are now left out of glamours; the fallback chains (`model_codes`) are from
+  how the races' bodies are built, not read from the client, and Hrothgar's and Viera's are a guess. Not yet seen in
+  game. A glamour line whose name matches two items takes the later row, which may be the wrong one.
 * The teleport crash of 2026-10-27 is put down to the retainer slots sent after dismissal ([Retainers](retainers.md));
   it was the one thing out of the ordinary in the packets before it, but the crash itself (inside the game) wasn't
   traced to that packet. If it comes back, its bundle and Dalamud crash log are wanted.

@@ -285,6 +285,13 @@ The packet is 944 bytes (Kawari's `ExamineCharacterInformation`, whose two unkno
   what its race and sex may not wear (`GameData::wearable_restrictions`, `best_gear`), and so does its glamour: such a
   piece is left out and the slot keeps its gear's look. There's no model of another race's gear for it, so it showed
   as nothing (Bob's 2026-10-23 bundle: a Viera in a Miqo'te loincloth). The look is now chosen before the gear.
+* **Only glamour pieces with a model for its race.** The sheet can let anyone wear a piece that has a model only for
+  some races (Bob's 2026-10-27 bundle: a Hyur Highlander woman in "honeycrisp" with legs item 3303, model 0x59,
+  showed no legs; the race rules allowed it). The client draws a race's gear from its own model or, where the item
+  has none, from the one its body is built on, down to the Midlander man's (a Highlander woman: 0401, 0201, 0101; a
+  Roegadyn man: 0901, 0301, 0101; Lalafell only their own; `model_codes`). A body, hands, legs or feet piece with no
+  `chara/equipment/e<model>/model/c<code>e<model>_<top|glv|dwn|sho>.mdl` for any of them is left out of the glamour
+  (`race_has_gear_model`; logged as "no model … for this race") and the slot keeps its gear's look.
 * **Hats a race can't show are hidden.** Viera and Hrothgar wear their own hat models, and can't wear the rest; the
   client then shows a stand-in (Bob's 2026-10-23 bundle: a Viera Pugilist's glamour hat, model 13). A Viera or
   Hrothgar bot whose head model has no file for its race and sex
