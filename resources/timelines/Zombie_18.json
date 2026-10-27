@@ -1,0 +1,10 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 871,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "damage_to_players": {
+        "13": 10.5
+    },
+    "comment": "For the Children's zombie (quest 621, drop-in layer QB_SubWil113_001): BNpcBase 18, level 13, 268 HP. From Bob's Chronofoil capture b8432613 of 2026-10-27, against a level 26 conjurer: auto-attacks (871) about every 3 s for 10-11 (1 miss in 3); it also used Heartstopper (866) once, on no one, which isn't modelled. Hitbox not recorded. BNpcBase 18 also spawns in Eastern Thanalan at level 17 (369 HP), which never fought in the capture; this timeline covers it too, scaled from level 13."
+}

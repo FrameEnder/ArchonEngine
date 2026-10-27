@@ -1,0 +1,93 @@
+{
+  "quest": 620,
+  "script": "SubWil112_00620",
+  "source": "scenes and effects from Bob's Chronofoil capture of 2026-10-27",
+  "params": {
+    "ACTOR0": 1003929,
+    "ITEM0": 2000517,
+    "ACTOR1": 1005136,
+    "EOBJECT0": 2001657,
+    "EOBJECT1": 2001658,
+    "EVENT_ACTION_SEARCH": 1,
+    "ACTOR2": 1003968,
+    "ACTOR3": 1003969,
+    "LOC_ACTOR0": 1005015,
+    "LOC_ACTOR1": 1003932,
+    "LOC_POS_ACTOR1": 3967322
+  },
+  "steps": [
+    {
+      "talk": 1003929,
+      "layout": 3967311,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []}
+    },
+    {
+      "talk": 1005136,
+      "layout": 4175947,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "001000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 2001657,
+      "layout": 4101645,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "001000000000", "notices": []}
+    },
+    {
+      "event_item": [2000517, 2001657],
+      "layout": 4101645,
+      "what": "ITEM0 on EOBJECT0",
+      "scenes": [
+        {"scene": 3, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 2001658,
+      "layout": 4101646,
+      "what": "EOBJECT1",
+      "scenes": [
+        {"scene": 5, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 6, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 4, "vars": "000000000000", "notices": [[2, []]]}
+    },
+    {
+      "talk": 1005136,
+      "layout": 4175947,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 9, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 5, "vars": "000000000000", "notices": [[3, []]]}
+    },
+    {
+      "talk": 1003969,
+      "layout": 4101683,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 12, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[4, []]]}
+    },
+    {
+      "talk": 1003929,
+      "layout": 3967311,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 16, "flags": "0xf8402efb", "results": [1, 5825, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

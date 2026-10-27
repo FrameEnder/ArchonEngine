@@ -238,6 +238,12 @@ add one when something is found.
 * What Poor People Think's three paupers walk off and fade in their scenes (the client's WalkOut and Transparency);
   whether the server should take them away afterwards (they're the quest's listeners from sequence 2) isn't known, so
   it leaves them, as the client shows them.
+* A Proper Burial's other lines (Marques' scenes 4, 7, 13 and 17, Ourcen's 18) go by the order in which the client's
+  IsAcceptEvent offers each sequence's NPCs; retail played none of them, so which line goes with which isn't checked.
+* For the Children's zombie and zombie mage (timelines `Zombie_18`, `ZombieMage_19`) were only seen at level 13. The
+  same bases in Eastern Thanalan's open world are level 17 and never fought in the capture: the zombie's auto-attack is
+  scaled from level 13, the mage's Thunder isn't (13 for every level). The zombie's Heartstopper (866, once, on no one)
+  isn't modelled.
 
 ## Central Thanalan
 

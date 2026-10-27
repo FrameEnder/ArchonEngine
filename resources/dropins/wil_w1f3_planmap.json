@@ -8262,6 +8262,57 @@
                     "rotation": -1.6452
                 }
             ]
+        },
+        {
+            "name": "QB_SubWil113_001",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 18,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 268,
+                        "level": 13,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1218,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147
+                    },
+                    "layout_id": 4102012,
+                    "position": {
+                        "x": -420.504,
+                        "y": -0.415,
+                        "z": -280.639
+                    },
+                    "rotation": 1.3867
+                },
+                {
+                    "data": {
+                        "base_id": 19,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 268,
+                        "level": 13,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1219,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147
+                    },
+                    "layout_id": 4102013,
+                    "position": {
+                        "x": -419.307,
+                        "y": -0.206,
+                        "z": -278.424
+                    },
+                    "rotation": 2.6103
+                }
+            ]
         }
     ]
 }

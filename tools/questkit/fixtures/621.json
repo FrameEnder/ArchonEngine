@@ -1,0 +1,79 @@
+{
+  "quest": 621,
+  "script": "SubWil113_00621",
+  "source": "scenes and effects from Bob's Chronofoil capture of 2026-10-27",
+  "params": {
+    "ACTOR0": 1003929,
+    "ACTOR1": 1003976,
+    "ACTOR2": 1003971,
+    "ACTOR3": 1003972,
+    "ACTOR4": 1003973,
+    "ACTOR5": 1003974,
+    "EVENTRANGE0": 4102016,
+    "ACTOR6": 1003975,
+    "EVENT_ACTION_RESCUE_UNDER_MIDDLE": 35,
+    "ENEMY0": 4102012,
+    "ENEMY1": 4102013,
+    "EOBJECT0": 2001868,
+    "EVENT_ACTION_SEARCH": 1
+  },
+  "steps": [
+    {
+      "talk": 1003929,
+      "layout": 3967311,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1003976,
+      "layout": 4102003,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "range": 4102016,
+      "scenes": [
+        {"scene": 7, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "what": "EVENTRANGE0",
+      "spawns": [4102012, 4102013],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [18, 4102012],
+      "what": "ENEMY0",
+      "expect": {"sequence": 2, "vars": "010000000000", "notices": []}
+    },
+    {
+      "kill": [19, 4102013],
+      "what": "ENEMY1",
+      "expect": {"sequence": 2, "vars": "020000000000", "notices": []}
+    },
+    {
+      "talk": 1003975,
+      "layout": 4102002,
+      "what": "ACTOR6",
+      "scenes": [
+        {"scene": 8, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 9, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[1, [1, 1]]]}
+    },
+    {
+      "talk": 1003929,
+      "layout": 3967311,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 17, "flags": "0x2000", "results": [1, 5824, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}
