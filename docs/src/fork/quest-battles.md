@@ -60,7 +60,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `set_model_scale(npc, row)` | Draws an NPC at another ModelScale row (ActorControl 48, `SetModelScale`), as retail grew the second Copperbell boss (16, 17, 18). |
 | `actor_use_action(actor_id, action, target_actor_id)` | `use_action` by actor IDs; with no target the NPC casts on itself, as retail's helpers do (an area attack cast on oneself lands on everyone inside it the caster's battalion is at war with, `action.rs`). |
 | `set_sequence(n)` | Sets the director's sequence and sends DirectorVars (its first byte is the sequence). The client's own battle script reacts to it (e.g. `OnSequence001` sets the duty objective). `0xFE` = lost, shows "Duty Failed". |
-| `complete_quest_battle(quest_sequence, stay, finish_scene, finish_flags, variables)` | Wins: the quest moves to `quest_sequence` (with `variables`, a table of quest variable index 0–5 to value, in the same journal update: Lurkers in the Grotto's UI8BH, `{ [1] = 0x10 }`, as retail sets it; replay reads the battle script's `QUEST_VARS_AFTER_WIN` for its `battle_won` step), "Duty Complete" and the victory fanfare (60001) play, then `finish_scene` (default 6, `QUEST_BATTLE_SCENE_FINISH`; retail plays 6 in Chasing Shadows and Leia's Legacy, 11 in To Guard a Guardian, 9 in Spirithold Broken) with `finish_flags` (default 0x2001, HIDE_HOTBAR and NO_DEFAULT_CAMERA, as retail plays all of them but Spirithold Broken's, a cutscene with 0xF8402EFB), and the players go back when it ends. With `stay = true` the players remain (for closing lines) until `leave_quest_battle()`. |
+| `complete_quest_battle(quest_sequence, stay, finish_scene, finish_flags, variables)` | Wins: the quest moves to `quest_sequence` (with `variables`, a table of quest variable index 0–5 to value, in the same journal update: Lurkers in the Grotto's UI8BH, `{ [1] = 0x10 }`, as retail sets it; replay reads the battle script's `QUEST_VARS_AFTER_WIN` for its `battle_won` step), "Duty Complete" and the victory fanfare (60001) play (unless `fanfare`, the sixth argument, is `false`: Lord of the Inferno's battle goes straight into its cutscene, as retail's), then `finish_scene` (default 6, `QUEST_BATTLE_SCENE_FINISH`; retail plays 6 in Chasing Shadows and Leia's Legacy, 11 in To Guard a Guardian, 9 in Spirithold Broken) with `finish_flags` (default 0x2001, HIDE_HOTBAR and NO_DEFAULT_CAMERA, as retail plays all of them but Spirithold Broken's, a cutscene with 0xF8402EFB), and the players go back when it ends. With `stay = true` the players remain (for closing lines) until `leave_quest_battle()`. |
 | `leave_quest_battle()` | Sends the players back where they entered. |
 | `fail_quest_battle()` | Loses: players go back where they entered, the quest stays on the same step to retry. Retail sets sequence `0xFE` first and sends them out about 6 s later. |
 | `set_hate(npc, target, amount)` | Gives NPC `npc` (a layout ID, or since 2026-10-27 an actor ID from `spawn_bnpc` for one of several sharing a layout ID, as Trial by Wind's two 4248510 wind sprites) enmity on `target` (another NPC's layout ID, or the player when `nil`). Used to make allies and enemies fight each other. |
@@ -239,6 +239,39 @@ a quest's entering event, 0 for every other event (228 events across the capture
   capture (the drop-in's recorded ClassJob, weapons, gear and customize), and character data flags 3, as retail's.
 * Timelines `WindSprite_1659`, `TrialByWindTarget_1662`, `TrialByWindConjurer_1661`, `TrialByWindAdd_1660`; action
   scripts `Aero_00969` and `TrialByWindAdd_00416`. `questkit battle-sim 54`: every step within 1.3 s.
+
+### Quest battle 45 — Lord of the Inferno (`content/questbattle/45.lua`)
+
+* Quest 343 (ManFst209_00343) enters it from the destination in Eastern Thanalan (EOBJECT0, scene 8; territory 275).
+  Territory 275 is taken to be a copy of Eastern Thanalan (145; retail's spots stand on its ground), so its NPCs are
+  layer `QB_ManFst209_001` of `wil_w1f3`, from `questkit chronofoil --dropin 275`: four Immortal Flames on your side
+  (the lead gladiator 4098749, BNpcBase 963, level 26, 6730 HP; a second gladiator 4098743, 964; a pugilist 4098744,
+  965; a thaumaturge 4098745, 966; with retail's `appearance`), the Amalj'aa leader (4098741, 967, 11360 HP), three
+  waves of lancers (968), soldiers (969) and javeliniers (970), and the scout (4100860, an event NPC, ENpcResident
+  1004668, there from the start). Start spot (-334.77, -12.09, -238.7, facing 2.229) and opening flags (0xF841AEFB,
+  scene 1) from Bob's Chronofoil capture b8432613 (2026-10-27, `--battle 0.8`, `0.10`, `0.12` lost, `0.14` won; a
+  level 24 conjurer).
+* The flow (seconds from the fight starting): sequence 2 with the allies, the leader (on the lead) and the first wave
+  (the lancers and two soldiers on the pugilist, two soldiers on the lead); battle talk 202 (the scout, kind 3,
+  portrait 73225) at 5 s and 203 (the lead, BNpcName 993, 73226) at 10 s. **Sequence 3 when five of the first wave's
+  nine are left** (four down in all four runs), 2 s after the fourth's health reached 0, as its death animation
+  ended (the director counts deaths 4 updates late); sequence 4 30 s after it (three runs): the second wave (four
+  soldiers on the thaumaturge, a javelinier on you), 204 at once, 205 10 s later. **Sequence 5 when two adds are
+  left** (at three, 8 s before, it didn't come): the third wave (three lancers and three soldiers on the second
+  gladiator, a javelinier on you), 206 10 s later, 207 15 s. **55 s after sequence 5 it's won**, whatever is still
+  standing (the leader at 84 %, six adds): sequence 7 and, with no "Duty Complete", the battle's scene 7 (0xF8402EFB);
+  the second gladiator's 210 (BNpcName 994, 73228); the quest moves to 3. Retail's NPCs fought on through the cutscene
+  (the second gladiator fell 3 s into it); Kawari's stop (`end_fight`). An ally falling says its last words (the
+  pugilist 209, BNpcName 1007, 73229; the thaumaturge 208, 1005, 73227) and the battle goes on. Your health at 0:
+  sequence 0xFE (all three losses).
+* The allies: the lead on the leader (3 yalms), the others on the adds (nearest), the thaumaturge from 25 yalms;
+  Cure (120) on whoever of the side is lowest below 40 % about every 6 s from the lead, the second gladiator and the
+  thaumaturge (retail's medians 31-41 %), the pugilist's Second Wind (57) on itself below 35 %.
+* The client's battle script (ManFst209Btl_00343) has scenes 1 (the opening cutscene), 7 (the closing one) and 10001
+  (the won't-talk message), and OnSequence001/002; the script plays 1 and 7.
+* Timelines `QB45*` (bases 963-970); action script `QB45Amaljaa_00490` (the Amalj'aa's 490, potency 100). The
+  Flames' 14 and 718 and the Amalj'aa's 426 (on themselves) aren't modelled. `questkit battle-sim 45` checks all four
+  runs (`45.json` won, `45-lost-8/10/12.json`): every step within 1.4 s.
 
 ### Quest battle 16 — Trial by Water (`content/questbattle/16.lua`)
 

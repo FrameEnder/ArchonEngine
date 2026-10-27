@@ -4852,6 +4852,7 @@ async fn process_server_msg(
                 finish_scene,
                 finish_flags,
                 variables,
+                fanfare,
             ) => {
                 // The quest moves on straight away, the scenes are just the victory fanfare. Its variables change
                 // in the same journal update, as retail sends it.
@@ -4876,11 +4877,23 @@ async fn process_server_msg(
                     )
                     .await;
                 if events.last_mut().is_some() {
-                    lua_player.play_scene(
-                        QUEST_BATTLE_SCENE_COMPLETE,
-                        SceneFlags::from_bits_retain(0x40000),
-                        Vec::new(),
-                    );
+                    if fanfare {
+                        lua_player.play_scene(
+                            QUEST_BATTLE_SCENE_COMPLETE,
+                            SceneFlags::from_bits_retain(0x40000),
+                            Vec::new(),
+                        );
+                    } else if stay {
+                        // No fanfare and staying: nothing to play until the director sends them back.
+                        lua_player.finish_event();
+                    } else {
+                        // Straight into the finish scene (ContentEventHandler sends them back when it ends.)
+                        lua_player.play_scene(
+                            finish_scene,
+                            SceneFlags::from_bits_retain(finish_flags),
+                            Vec::new(),
+                        );
+                    }
                 }
             }
             FromServer::LeaveQuestBattle(handler_id) => {

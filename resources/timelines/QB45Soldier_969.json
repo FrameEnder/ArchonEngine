@@ -1,0 +1,26 @@
+{
+    "autoattack_action_id": 873,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "recorded_amounts": {
+        "873": {
+            "npcs": 23.0,
+            "players": 23.0
+        },
+        "490": {
+            "npcs": 81.0,
+            "players": 81.0
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 490,
+                "every": 11.9,
+                "comment": "129 uses, every 11.9 s (median), 81"
+            }
+        ]
+    },
+    "comment": "Quest battle 45's Amalj'aa soldiers (BNpcBase 969, BNpcName 251), level 20, 247 HP. From Bob's Chronofoil capture b8432613 (2026-10-27, four runs of Lord of the Inferno's quest battle 45, `questkit chronofoil --battle 0.8/0.10/0.12` lost and `0.14` won, territory 275, duty 339; a level 24 conjurer): auto-attacks (873) every 3.0 s, 23 (median of 446, 90 misses), and 490 about every 12 s, 81. 426 on itself about every 45 s left out. Hitbox not recorded."
+}

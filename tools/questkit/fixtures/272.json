@@ -1,0 +1,37 @@
+{
+  "quest": 272,
+  "script": "ManFst208_00272",
+  "source": "scenes and effects from Bob's Chronofoil capture of 2026-10-27",
+  "params": {"ACTOR0": 1005116, "ITEM0": 2000461, "ACTOR1": 1001425, "ITEM1": 2000462, "CUT_MANFST20810": 83},
+  "steps": [
+    {
+      "talk": 1005116,
+      "layout": 4170055,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []}
+    },
+    {
+      "talk": 1001425,
+      "layout": 2465082,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 1, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 2, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000100000000", "notices": [[0, [30412]]]}
+    },
+    {
+      "talk": 1005116,
+      "layout": 4170055,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 4, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

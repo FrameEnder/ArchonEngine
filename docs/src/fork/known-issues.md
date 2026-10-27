@@ -258,6 +258,10 @@ add one when something is found.
   same bases in Eastern Thanalan's open world are level 17 and never fought in the capture: the zombie's auto-attack is
   scaled from level 13, the mage's Thunder isn't (13 for every level). The zombie's Heartstopper (866, once, on no one)
   isn't modelled.
+* Lord of the Inferno (343): the Bowl of Embers (InstanceContent 20001, Ifrit) has no director yet, so sequence 4
+  can't be cleared. Its notice 3 is sent as the player leaves the cleared duty (`onDutyCleared`); retail sent it in
+  the duty as it was won. Its others' lines in sequences 2-4 go by the order of the client's IsAcceptEvent (retail
+  played none).
 
 ## Central Thanalan
 
@@ -509,6 +513,9 @@ add one when something is found.
 * The new quest battles' timelines (which skills, how often) are loops fitted to how many times the recording saw
   each skill used.
 * Retail sends the player out of a lost battle; the delays are copied from recordings, not from known rules.
+* Lord of the Inferno's battle (45): the 55 s from the third wave to the win is from the one won run; the second
+  wave's 30 s from three. Retail's NPCs fought on through the closing cutscene, Kawari's stop. The Flames' 14 and 718
+  and the Amalj'aa's 426 aren't modelled.
 * Underneath the Sultantree: the stranger's Flash, Sentinel and Sword Oath (seen on retail, none of them damage) have
   no action scripts and aren't in his rotation. The third pair of lesser blangas comes at 23 % of the blanga's health;
   in the one run it came between 24.2 % and 22.1 %, also 15 s after the second pair, so it might be timed. The blanga

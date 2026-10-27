@@ -1,0 +1,46 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "141": {
+            "npcs": 63.0
+        },
+        "142": {
+            "npcs": 62.0
+        },
+        "156": {
+            "npcs": 34.0
+        },
+        "148": {
+            "npcs": 16.0
+        }
+    },
+    "rotation": {
+        "pace": 4.0,
+        "actions": [
+            {
+                "action": 148,
+                "every": 37.3,
+                "comment": "Thunder II: 5 uses, every 37 s, 16"
+            },
+            {
+                "action": 156,
+                "every": 22.8,
+                "comment": "Scathe: 6 uses, every 23 s, 34"
+            },
+            {
+                "action": 142,
+                "every": 13.1,
+                "comment": "Blizzard: 9 uses, every 13 s, 62"
+            },
+            {
+                "action": 141,
+                "every": 8.1,
+                "comment": "Fire: 27 uses, every 8.1 s, 63"
+            }
+        ]
+    },
+    "comment": "Quest battle 45's Amalj'aa leader (BNpcBase 967, BNpcName 992), level 24, 11360 HP. From Bob's Chronofoil capture b8432613 (2026-10-27, four runs of Lord of the Inferno's quest battle 45, `questkit chronofoil --battle 0.8/0.10/0.12` lost and `0.14` won, territory 275, duty 339; a level 24 conjurer): a thaumaturge on the lead gladiator the whole fight, standing where it appeared: Fire (141) 63, Blizzard (142) 62, Scathe (156) 34, Thunder II (148) 16; Blizzard II (146, 21 uses) left out as it hit next to nothing. Never fell below 84 %. Hitbox not recorded."
+}

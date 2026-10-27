@@ -158,6 +158,9 @@ pub enum LuaDirectorTask {
         /// Quest variables (index 0-5, value) set in the same journal update as the sequence (Lurkers in the Grotto's
         /// ITEM0, UI8BH, as retail sets it on winning.)
         variables: Vec<(u8, u8)>,
+        /// Whether "Duty Complete" and its fanfare (`QUEST_BATTLE_SCENE_COMPLETE`) play before the finish scene.
+        /// Retail skips them when the battle ends on a timer into a cutscene (Lord of the Inferno's: scene 7 at once.)
+        fanfare: bool,
     },
     /// Play one of the director's scenes for every player (e.g. a cutscene halfway through a quest battle), with
     /// these scene flags. The script's `onSceneFinished(director, scene)` is called when a player finishes it.
@@ -608,12 +611,13 @@ impl UserData for LuaDirector {
             "complete_quest_battle",
             |_,
              this,
-             (sequence, stay, finish_scene, finish_flags, variables): (
+             (sequence, stay, finish_scene, finish_flags, variables, fanfare): (
                 u8,
                 Option<bool>,
                 Option<u16>,
                 Option<u32>,
                 Option<mlua::Table>,
+                Option<bool>,
             )| {
                 // `variables` is a table of quest variable index (0-5) to value, e.g. { [1] = 0x10 }.
                 let mut set = Vec::new();
@@ -629,6 +633,7 @@ impl UserData for LuaDirector {
                     finish_scene: finish_scene.unwrap_or(QUEST_BATTLE_SCENE_FINISH),
                     finish_flags: finish_flags.unwrap_or(QUEST_BATTLE_SCENE_FINISH_FLAGS),
                     variables: set,
+                    fanfare: fanfare.unwrap_or(true),
                 });
                 Ok(())
             },
@@ -1888,6 +1893,7 @@ pub fn director_tick(
                 finish_scene,
                 finish_flags,
                 variables,
+                fanfare,
             } => {
                 let quest_id = instance.directors.first().unwrap().quest_battle_quest_id;
                 let mut network = network.lock();
@@ -1904,6 +1910,7 @@ pub fn director_tick(
                         *finish_scene,
                         *finish_flags,
                         variables.clone(),
+                        *fanfare,
                     ),
                     DestinationNetwork::ZoneClients,
                 );

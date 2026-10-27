@@ -1,0 +1,44 @@
+{
+    "autoattack_action_id": 872,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 3.0,
+    "recorded_amounts": {
+        "872": {
+            "npcs": 24.0
+        },
+        "53": {
+            "npcs": 64.0
+        },
+        "54": {
+            "npcs": 63.0
+        },
+        "56": {
+            "npcs": 56.0
+        },
+        "57": {
+            "npcs": 157.5
+        }
+    },
+    "rotation": {
+        "pace": 6.8,
+        "actions": [
+            {
+                "action": 56,
+                "every": 17.8,
+                "comment": "Snap Punch: 11 uses, every 17.8 s (median), 56"
+            },
+            {
+                "action": 54,
+                "every": 20.4,
+                "comment": "True Strike: 11 uses, every 20.4 s, 63"
+            },
+            {
+                "action": 53,
+                "every": 20.4,
+                "comment": "Bootshine: 11 uses, every 20.4 s, 64"
+            }
+        ]
+    },
+    "comment": "Quest battle 45's pugilist (BNpcBase 965, BNpcName 1007), level 20, 1961 HP, on your side. From Bob's Chronofoil capture b8432613 (2026-10-27, four runs of Lord of the Inferno's quest battle 45, `questkit chronofoil --battle 0.8/0.10/0.12` lost and `0.14` won, territory 275, duty 339; a level 24 conjurer): auto-attacks (872) every 3.0 s, 24 (median of 79); Bootshine, True Strike and Snap Punch about every 20 s each; Second Wind (57, the director's heal) on itself for 157. Touch of Death (68, three) left out. Hitbox not recorded."
+}

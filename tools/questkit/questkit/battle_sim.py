@@ -376,7 +376,8 @@ def script_events(calls: list[tuple]) -> list[list]:
             events.append([t, "talk", int(args[2])])
         elif name == "spawn_bnpc" and args:
             events.append([t, "spawn", int(args[0])])
-        elif name == "complete_quest_battle":
+        elif name == "complete_quest_battle" and not (len(args) >= 6 and args[5] is False):
+            # "won" is "Duty Complete" (scene 60001), which a battle won without the fanfare doesn't play.
             events.append([t, "won"])
     return events
 

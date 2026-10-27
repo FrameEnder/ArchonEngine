@@ -1,0 +1,29 @@
+{
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 3.0,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 26.0
+        },
+        "9": {
+            "npcs": 40.0
+        },
+        "120": {
+            "npcs": 88.0,
+            "players": 88.0
+        }
+    },
+    "rotation": {
+        "pace": 4.5,
+        "actions": [
+            {
+                "action": 9,
+                "every": 45.0,
+                "comment": "Fast Blade: 3 uses in 4 runs, 40 on an enemy"
+            }
+        ]
+    },
+    "comment": "Quest battle 45's second gladiator (BNpcBase 964, BNpcName 994), level 22, 5916 HP, on your side. From Bob's Chronofoil capture b8432613 (2026-10-27, four runs of Lord of the Inferno's quest battle 45, `questkit chronofoil --battle 0.8/0.10/0.12` lost and `0.14` won, territory 275, duty 339; a level 24 conjurer): auto-attacks (870) every 4.5 s, 26 (median of 123); Fast Blade (9) 40; Cure (120, the director's heals) 88. Hitbox not recorded."
+}

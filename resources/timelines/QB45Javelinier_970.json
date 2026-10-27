@@ -1,0 +1,25 @@
+{
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "recorded_amounts": {
+        "870": {
+            "players": 21.0,
+            "npcs": 42.0
+        },
+        "722": {
+            "players": 29.0
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 722,
+                "every": 8.6,
+                "comment": "True Thrust: 15 uses, every 8.6 s, 29 on you"
+            }
+        ]
+    },
+    "comment": "Quest battle 45's Amalj'aa sent after you (BNpcBase 970, BNpcName 248), level 20-21, 454-503 HP. From Bob's Chronofoil capture b8432613 (2026-10-27, four runs of Lord of the Inferno's quest battle 45, `questkit chronofoil --battle 0.8/0.10/0.12` lost and `0.14` won, territory 275, duty 339; a level 24 conjurer): auto-attacks (870) every 3.0 s, 21 on you (median of 39), True Thrust (722) about every 9 s, 29. 426 on itself left out. Hitbox not recorded."
+}

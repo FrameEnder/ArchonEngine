@@ -1,0 +1,29 @@
+{
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 3.0,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 38.0
+        },
+        "9": {
+            "npcs": 59.0
+        },
+        "120": {
+            "npcs": 132.0,
+            "players": 132.0
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 9,
+                "every": 45.0,
+                "comment": "Fast Blade: 3 uses in 4 runs, 59 on an enemy"
+            }
+        ]
+    },
+    "comment": "Quest battle 45's lead (BNpcBase 963, BNpcName 993), level 26, 6730 HP, on your side. From Bob's Chronofoil capture b8432613 (2026-10-27, four runs of Lord of the Inferno's quest battle 45, `questkit chronofoil --battle 0.8/0.10/0.12` lost and `0.14` won, territory 275, duty 339; a level 24 conjurer): auto-attacks (870) every 3.0 s on the Amalj'aa leader, 38 (median of 127); Fast Blade (9) 59, three times; Cure (120, the director's heals) 132 on whoever of the side was lowest. Flash (14, nine uses) and 718 (four) have no action scripts and are left out. Hitbox not recorded."
+}
