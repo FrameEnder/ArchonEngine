@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-27 | — | `master` fast-forwarded to `Latest-Quest` with Bob's OK (changelog).
+| 2026-10-27 | — | Quests (Unsolved Mystery, What Poor People Think); combat (Eastern Thanalan's quest layer); known issues.
+| 2026-10-27 | `08b4849` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (changelog).
 | 2026-10-27 | `041fab0` | Party bots (catching up: put beside the player when far behind); known issues.
 | 2026-10-27 | `470bf64` | Party bots (held up by a wall players don't have); known issues.
 | 2026-10-27 | `49262c3` | Quest battles (56's client script; talking to someone in a quest battle).
@@ -280,7 +281,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | `master` fast-forwarded to `Latest-Quest` with Bob's OK. |
+| — | Unsolved Mystery (618) and What Poor People Think (619), the first two Eastern Thanalan quests of Bob's Chronofoil capture b8432613 (2026-10-27), from their client scripts: 618's three ripe corpses (each a scene, the gathering bar, a scene; its own nibble, BitFlag8, UI8AH and UI8CH, notice 0 `[n, 3, 26024]`), EVENTRANGE0 bringing out two ambushers (new Eastern Thanalan drop-in layer `QB_SubWil110_001`, timeline `UnsolvedMysteryAmbusher_166`) with scene 10, and Isembard's trade and reward; 619's trade with Ungust, the three paupers (0x6001, UI8AL, BitFlag8, notice 1 `[n, 3]`), Ungust again and the reward; fixtures 618 and 619. |
+| `08b4849` | `master` fast-forwarded to `Latest-Quest` with Bob's OK. |
 | `041fab0` | Bob's next Copperbell Mines bundle (2026-10-27): past the entrance now (the log shows each 2 s hold-up and the bots going on), but left at the top of the first lift (30 yalms down) and never catching up. Out of combat a bot 25 yalms or more behind the one it follows for 3 s is put beside them (ActorSetPos and the ZoneIn warp-in effect; `CATCH_UP_DISTANCE`, `CATCH_UP_AFTER`). |
 | `470bf64` | Bob's Copperbell Mines bundle (2026-10-27): the bots never left the entrance, stopped a yalm or two in by the zone's collision (first run since its navmesh was made again with it), most likely at the duty's entrance barrier. A bot the collision has held up for 2 s goes on to where it was going when that's on the navmesh, on the floor there (`WALL_PATIENCE`, `walk_like_a_player`), and the server logs where. |
 | `49262c3` | Bob's dump of Like Mother, Like Daughter's battle script (`ClsCnj005Btl_00440`): scenes 1 and 7 as 56.lua plays, and 10001, the log message for talking to someone in the battle. Sylphie's spawn has the battle as its handler, so clicking her would have started an event that never ended (content events had no talk answer); a quest battle plays 10001 for a talk now (`events/content.rs`). |

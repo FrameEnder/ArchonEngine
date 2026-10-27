@@ -1,0 +1,21 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "damage_to_players": {
+        "12": 6.0
+    },
+    "recorded_amounts": {
+        "722": {
+            "players": 9.5
+        }
+    },
+    "rotation": {
+        "pace": 8.8,
+        "actions": [
+            { "action": 722, "comment": "True Thrust: 3 uses by the two, the first 6.7-8.4 s after they came out, then 8.8 s apart" }
+        ]
+    },
+    "timepoints": [],
+    "comment": "Unsolved Mystery's two ambushers (quest 618, drop-in layer QB_SubWil110_001): BNpcBase 166, level 12, 243 HP. From Bob's Chronofoil capture b8432613 of 2026-10-27, against a level 26 conjurer: auto-attacks (870) every 3.0 s for 6 (5 misses in 7), True Thrust (722) for 9-10 (1 miss in 3). One used 426 on itself (status 204) 2 s before it fell, which isn't modelled. Hitbox not recorded. BNpcBase 166 also spawns in the open world at level 15 (319 HP), which this timeline covers too."
+}

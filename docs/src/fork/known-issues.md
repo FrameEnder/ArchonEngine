@@ -232,6 +232,12 @@ add one when something is found.
   per battle can't tell a health mark from a timer (Underneath the Sultantree's third pair, To Guard a Guardian's
   second wave, which came with five of the first six down rather than all six).
 * The quest battle prompt is always allowed (`ServerRequestReply` result 0); retail presumably checks something.
+* Unsolved Mystery's ambushers (BNpcBase 166, timeline `UnsolvedMysteryAmbusher_166`): one used action 426 on itself
+  (status 204) about 2 s before it fell in Bob's capture b8432613; when and why isn't known (one use), so they never
+  do. Their True Thrust's pace (8.8 s) is from three uses.
+* What Poor People Think's three paupers walk off and fade in their scenes (the client's WalkOut and Transparency);
+  whether the server should take them away afterwards (they're the quest's listeners from sequence 2) isn't known, so
+  it leaves them, as the client shows them.
 
 ## Central Thanalan
 
