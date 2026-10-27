@@ -98,26 +98,37 @@ characters that met requirements before this existed). The sheet is read once, t
 
 ## Achievement Certificates (Jonathas)
 
-Not built yet: Kawari's `CmnDefAchievementReward_00107.lua` plays the greeting (scene 0) and nothing else. What retail
-did (Bob's Chronofoil capture b23b91ef, 2026-10-26, his first visit):
+Jonathas (Old Gridania, CustomTalk 0x000B006B, `CmnDefAchievementReward_00107.lua`) hands out Achievement
+Certificates for achievement points and exchanges them in his SpecialShop. Built 2026-10-27 from the client's script
+(`game_script/custom/001/CmnDefAchievementReward_00107.luab`) and Bob's Chronofoil capture b23b91ef (2026-10-26, his
+first visit):
 
-1. Talking (CustomTalk 0x000B006B, EventStart type 1) played **scene 2** (flags 0x2000, no parameters): handing out
-   the certificates owed. Its return had no results.
-2. The server then sent, for two items, InventoryActionAck (sequence 0xFFFFFFFF, type 6) and **ActorControlSelf 378**
-   (`PlayerCurrency`): 21172 (Achievement Certificate) and 21173 (no name), max 65000, count 1, then 1. Retail sends
-   the same pair at login with count 0. So certificates aren't an inventory item: the client counts them from 378.
-   21173 counts up with 21172 and is probably the total ever given (what tells how many are still owed).
-3. EventLogMessage2: log message 750 with 1 and the item (21172).
-4. **Scene 1** (flags 0x2000, one parameter, 1): his menu. It returned `[2, 0x001B0155]`: the second choice, and
-   the SpecialShop event to open.
-5. The shop opened nested in his event (EventStart for 0x001B0155 with the same actor, type 7: Nest, what `start_event(..., EVENT_TYPE_NEST, 0)` sends), **scene 0** with flags
-   0x2001 and five parameters (`0xF8380000, 248, 0, 0, 1`, not understood). Closing it returned `[1]`; the server
-   finished the shop event and played scene 1 again.
-6. Leaving the menu returned `[1]`; EventFinish.
+1. Talking played **scene 2** (flags 0x2000, no parameters) when certificates were owed: Jonathas hands them out. Its
+   return has no results.
+2. The server then sent, for each of the two currencies, InventoryActionAck (sequence 0xFFFFFFFF, type 6) and
+   **ActorControlSelf 378** (`PlayerCurrency`: 0, item, max 65000, count, 1): 21172, the certificates
+   (CURRENCY_ACHIEVEMENT_AMOUNT in the client's script), and 21173, every certificate ever given
+   (CURRENCY_ACHIEVEMENT_TOTAL), both from 0 to 1. Retail sends the pair at login too, with the counts held.
+   Certificates aren't an inventory item: the client counts them from 378.
+3. EventLogMessage2 with no event: log message 750 with the certificate's item ID.
+4. **Scene 1** (flags 0x2000, one parameter, 0): the menu. With 0 the client asks (anything else skips the question
+   and returns 0). The first choice returns `MAIN_MENU_RESULT_SPECIALSHOP` (2) and the SpecialShop's event ID
+   (0x001B0155, from the script's CallFunction 11); the second explains certificates and returns
+   `MAIN_MENU_RESULT_MENU` (1); the third returns 0.
+5. On 2 the shop opened nested in his event (EventStart for 0x001B0155 with the same actor, type 7: Nest), **scene
+   0** with flags 0x2001 and five parameters (`0xF8380000, 248, 0, 0, 1`, not understood; Kawari sends none, as its
+   other nested shops). Closing it returned `[1]`; the server finished the shop event and played scene 1 again.
+6. After the explanation (1) retail finished the event.
 
-What decides how many certificates are owed isn't recorded (the wiki says one per 50 achievement points), nor what
-scene 1's parameter means (1 here, after the first certificate). The client's script
-(`game_script/custom/001/CmnDefAchievementReward_00107.luab`, `kawari-questdump extract`) would tell both.
+**In Kawari.** Counts are kept in `unlock.player_currencies` (`{ item_id, count }`, migration
+`update-2026-10-27_player_currencies`) and sent at login (`zone_connection/player_currency.rs`: `PLAYER_CURRENCIES`,
+`set_player_currency`). The script plays scene 2 when `player:achievement_certificates_owed()` is above 0 (one per
+`ACHIEVEMENT_POINTS_PER_CERTIFICATE` = 50 achievement points, the Console Games Wiki's number, less the total already
+given; points are the Achievement sheet's Points of what's completed), then `player:give_achievement_certificates()`
+and the menu; the menu when some were given before; the greeting (scene 0) otherwise. A script that sets
+`CONTINUES_AFTER_NESTED` keeps its event when an event nested in it finishes (it's told with scene 255, as before, and
+plays what it queues); others finish with it, as before. The SpecialShop takes an item's first cost from
+`ItemCost`/`CurrencyCost`: when it's one of `PLAYER_CURRENCIES` that count goes down (ack and 378) instead of gil.
 
 ## Portraits
 

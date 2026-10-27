@@ -215,10 +215,10 @@ add one when something is found.
 
 ## Achievement Certificates
 
-* Jonathas (Old Gridania) only greets: retail hands out the certificates owed (scene 2, ActorControlSelf 378 with the
-  count), then a menu (scene 1) that opens his SpecialShop (0x001B0155) nested. Kawari doesn't count certificates or
-  send 378 (the struct now has the count). How many are owed and what scene 1's parameter is need the client's script
-  (`character-windows.md`).
+* One certificate per 50 achievement points is the wiki's number, not checked against a retail character's points.
+* When retail plays Jonathas' greeting (scene 0) isn't recorded; Kawari plays it to someone never given a certificate.
+* The nested shop's five scene parameters (`0xF8380000, 248, 0, 0, 1`) aren't sent or understood.
+* Auracite (Kawari) backups and Kawari Web don't carry `player_currencies` (the certificate counts).
 
 ## Marketboard
 

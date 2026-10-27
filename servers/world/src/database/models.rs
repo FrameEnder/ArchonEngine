@@ -23,7 +23,7 @@ use kawari::{
 use crate::{
     AchievementCounters, ActiveQuests, Bitmask, BuddyBarding, BuddyLevels, CharaMake,
     ClassExperience, ClassLevels, FavoriteAetherytes, GlassesIds, GrandCompanyRanks, PartyMembers,
-    QuestBitmask, SharedFates,
+    PlayerCurrencies, QuestBitmask, SharedFates,
 };
 
 #[derive(Insertable, Identifiable, Queryable, Selectable, AsChangeset, Debug, Default, Clone)]
@@ -309,6 +309,8 @@ pub struct Unlock {
     pub achievement_history: Bitmask<ACHIEVEMENT_HISTORY_SIZE>,
     /// The counters "do this N times" achievements count, by their Key (see `zone_connection/achievement.rs`.)
     pub achievement_counters: AchievementCounters,
+    /// The currencies the client counts outside the inventory (Achievement Certificates), see `player_currency.rs`.
+    pub player_currencies: PlayerCurrencies,
 }
 
 #[derive(

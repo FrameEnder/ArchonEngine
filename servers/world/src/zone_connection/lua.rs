@@ -425,6 +425,9 @@ impl ZoneConnection {
                 LuaTask::SetInnWakeup { watched } => {
                     self.player_data.saw_inn_wakeup = *watched;
                 }
+                LuaTask::GiveAchievementCertificates => {
+                    self.give_achievement_certificates().await;
+                }
                 LuaTask::ToggleMount { id } => {
                     let order;
                     {
@@ -1015,6 +1018,10 @@ impl ZoneConnection {
             if let Some(event) = events.last() {
                 // TODO: Introduce a proper "we returned from nesting" function maybe?
                 event.0.on_return(&event.1, self, 255, &[], player).await;
+                // An event that goes on (its script set CONTINUES_AFTER_NESTED) plays what it queued next.
+                if event.0.continues_after_nested() {
+                    return true;
+                }
             }
             self.event_finish(events).await;
 

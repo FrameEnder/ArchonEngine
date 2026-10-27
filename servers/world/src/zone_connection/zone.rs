@@ -288,6 +288,7 @@ impl ZoneConnection {
         if self.initial_login {
             self.send_quest_information().await;
             self.send_crafting_gathering_information().await;
+            self.send_player_currencies().await;
         }
 
         if lua_zone.intended_use == TerritoryIntendedUse::HousingOutdoor {

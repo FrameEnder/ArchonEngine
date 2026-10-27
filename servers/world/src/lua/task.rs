@@ -106,6 +106,8 @@ pub enum LuaTask {
     SetInnWakeup {
         watched: bool,
     },
+    /// Hands out the Achievement Certificates the player's achievement points are owed (Jonathas.)
+    GiveAchievementCertificates,
     ToggleMount {
         id: u32,
     },

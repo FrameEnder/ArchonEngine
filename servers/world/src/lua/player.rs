@@ -1302,6 +1302,31 @@ impl UserData for LuaPlayer {
         methods.add_method("has_trait", |lua, this, id: u32| {
             Ok(this.has_trait(lua.globals().get("GAME_DATA").unwrap(), id))
         });
+        // How many of a currency the client counts outside the inventory (Achievement Certificates) the player has.
+        methods.add_method("player_currency", |_, this, item_id: u32| {
+            Ok(this.player_data.unlock.player_currencies.count(item_id))
+        });
+        // How many Achievement Certificates the player's achievement points are owed.
+        methods.add_method("achievement_certificates_owed", |lua, this, _: ()| {
+            let game_data = match lua.globals().get::<mlua::Value>("GAME_DATA")? {
+                mlua::Value::UserData(ud) => ud.borrow::<Arc<Mutex<GameData>>>()?.clone(),
+                _ => return Ok(0),
+            };
+            let points = game_data
+                .lock()
+                .achievement_points(&this.player_data.unlock.achievements);
+            Ok(crate::zone_connection::certificates_owed(
+                points,
+                this.player_data
+                    .unlock
+                    .player_currencies
+                    .count(crate::zone_connection::ACHIEVEMENT_CERTIFICATES_TOTAL),
+            ))
+        });
+        methods.add_method_mut("give_achievement_certificates", |_, this, _: ()| {
+            this.queued_tasks.push(LuaTask::GiveAchievementCertificates);
+            Ok(())
+        });
     }
 
     fn add_fields<F: UserDataFields<Self>>(fields: &mut F) {

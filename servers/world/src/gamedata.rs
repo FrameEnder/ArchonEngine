@@ -1382,6 +1382,16 @@ impl GameData {
         self.get_item_info(ItemInfoQuery::ById(item_id as u32))
     }
 
+    /// What an item of a SpecialShop costs: the first cost's item and how many (ItemCost, CurrencyCost.)
+    pub fn get_specialshop_cost(&mut self, shop_id: u32, index: u16) -> Option<(u32, u32)> {
+        let config = get_config();
+        let sheet =
+            SpecialShopSheet::read_from(&mut self.resource, config.world.language()).ok()?;
+        let row = sheet.row(shop_id)?;
+        let item = row.Item.get(index as usize)?;
+        Some((item.ItemCost[0].max(0) as u32, item.CurrencyCost[0]))
+    }
+
     /// Gets the zone id for the given ContentFinderCondition ID.
     pub fn find_zone_for_content(&mut self, content_id: u16) -> Option<u16> {
         let content_finder_row = self.content_finder_condition_sheet.row(content_id as u32)?;
@@ -1724,6 +1734,21 @@ impl GameData {
             self.achievement_rules = Some(rules);
         }
         self.achievement_rules.as_deref().unwrap_or_default()
+    }
+
+    /// The achievement points of the achievements `completed` has (the Achievement sheet's Points of each.)
+    pub fn achievement_points<const N: usize>(&mut self, completed: &crate::Bitmask<N>) -> u32 {
+        let language = get_config().world.language();
+        let Ok(sheet) = AchievementSheet::read_from(&mut self.resource, language) else {
+            tracing::warn!("Couldn't read the Achievement sheet");
+            return 0;
+        };
+        sheet
+            .into_iter()
+            .filter(|(id, _)| completed.contains(*id))
+            .filter_map(|(_, rows)| rows.into_iter().next())
+            .map(|(_, row)| row.Points as u32)
+            .sum()
     }
 
     /// Returns the quest this QuestBattle belongs to, its time limit and its variables.

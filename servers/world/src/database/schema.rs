@@ -157,6 +157,7 @@ diesel::table! {
         achievements -> Text,
         achievement_history -> Text,
         achievement_counters -> Text,
+        player_currencies -> Text,
     }
 }
 

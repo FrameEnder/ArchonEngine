@@ -51,10 +51,58 @@ impl SpecialShopEventHandler {
         let item_index = results[1];
 
         let result;
+        let cost;
 
         {
             let mut game_data = connection.game_data.lock();
             result = game_data.get_specialshop_item(event.id.0, item_index as u16);
+            cost = game_data.get_specialshop_cost(event.id.0, item_index as u16);
+        }
+
+        // Paid with a currency the client counts outside the inventory (Jonathas' Achievement Certificates.)
+        if let (Some(item_info), Some((cost_item, cost_count))) = (&result, cost)
+            && crate::zone_connection::PLAYER_CURRENCIES.contains(&cost_item)
+        {
+            let held = connection.player_currency(cost_item);
+            if held < cost_count {
+                connection
+                    .send_notice(
+                        "Not enough to buy this item. Nice try bypassing the client-side check!",
+                    )
+                    .await;
+                return false;
+            }
+            let Some(add_result) = connection
+                .player_data
+                .inventory
+                .add_in_next_free_slot(Item::new(item_info, 1))
+            else {
+                tracing::error!(ERR_INVENTORY_ADD_FAILED);
+                connection.send_notice(ERR_INVENTORY_ADD_FAILED).await;
+                return false;
+            };
+            connection
+                .set_player_currency(cost_item, held - cost_count)
+                .await;
+            ShopEventHandler::send_gilshop_item_update(connection, add_result).await;
+            Self::send_gilshop_ack(
+                connection,
+                event.id.0,
+                item_info.id,
+                1,
+                cost_count,
+                LogMessageType::ItemBought,
+            )
+            .await;
+            connection
+                .event_scene(
+                    event,
+                    10,
+                    SceneFlags::from_bits(8193).unwrap(),
+                    vec![1, 100],
+                )
+                .await;
+            return false;
         }
 
         // TODO: Use the ItemCost field to determine which currency is used

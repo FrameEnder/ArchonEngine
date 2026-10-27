@@ -350,4 +350,12 @@ impl EventHandler for LuaEventHandler {
             .get("DISABLE_EVENT_POS_ROLLBACK")
             .unwrap_or(false)
     }
+
+    fn continues_after_nested(&self) -> bool {
+        self.lua
+            .0
+            .globals()
+            .get("CONTINUES_AFTER_NESTED")
+            .unwrap_or(false)
+    }
 }

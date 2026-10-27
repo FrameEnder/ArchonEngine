@@ -168,6 +168,33 @@ define_sql_array!(BuddyBarding, u8, 3);
 define_sql_array!(GlassesIds, u16, 2);
 define_sql_array!(SharedFates, u8, SHARED_FATES_SIZE);
 define_sql_array!(AchievementCounters, AchievementCounter);
+define_sql_array!(PlayerCurrencies, PlayerCurrencyCount);
+
+/// How many of a currency the client counts outside the inventory (ActorControlSelf 378) one has.
+#[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
+pub struct PlayerCurrencyCount {
+    pub item_id: u32,
+    pub count: u32,
+}
+
+impl PlayerCurrencies {
+    /// How many of `item_id` one has (0 if none.)
+    pub fn count(&self, item_id: u32) -> u32 {
+        self.0
+            .iter()
+            .find(|entry| entry.item_id == item_id)
+            .map(|entry| entry.count)
+            .unwrap_or_default()
+    }
+
+    /// Sets how many of `item_id` one has.
+    pub fn set(&mut self, item_id: u32, count: u32) {
+        match self.0.iter_mut().find(|entry| entry.item_id == item_id) {
+            Some(entry) => entry.count = count,
+            None => self.0.push(PlayerCurrencyCount { item_id, count }),
+        }
+    }
+}
 
 /// One of the counters "do this N times" achievements count (Achievement Type 1: its Key), and how far it's got.
 #[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]

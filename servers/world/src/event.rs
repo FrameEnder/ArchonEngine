@@ -105,6 +105,12 @@ pub trait EventHandler: std::fmt::Debug + Send + Sync {
     fn disable_event_pos_rollback(&self) -> bool {
         false
     }
+
+    /// Whether this event goes on when an event nested in it finishes (retail's Jonathas plays his menu again after his
+    /// shop closes), rather than finishing with it. Either way it's told with scene 255.
+    fn continues_after_nested(&self) -> bool {
+        false
+    }
 }
 
 /// Dummied out EventHandler, which can be useful for certain handlers that don't need any logic.
