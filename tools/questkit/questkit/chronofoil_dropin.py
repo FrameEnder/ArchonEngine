@@ -7,7 +7,8 @@ FATE spawns them), NPCs owned by someone (pets, chocobos), spawns without a layo
 (quest NPCs), and anything in `exclude_bases`. Monsters wander, so each one goes where it was seen nearest the average
 of its sightings. A base in `one_spot` (e.g. a hunt mark that moves between spawn points) keeps only its first spot.
 
-Guards (character data flags 0x4) keep that flag and their Behavior row (`character_data_flags`, `behavior`). Each
+Humanoids (ModelChara 0) keep how retail drew them (`appearance`: class, weapons, gear, customize). Guards (character
+data flags 0x4) keep that flag and their Behavior row (`character_data_flags`, `behavior`). Each
 sighting also records whether the NPC moved while it was idle (an ActorMove more than `MOVED` yalms from where it
 appeared, while it wasn't fighting: no target, cast or action of its own), and for how long it was seen: a spot is
 `stationary` when it was seen idle for `IDLE_SECONDS` or more without moving and never seen idle and moving, and so
@@ -43,6 +44,21 @@ def _packed(value: int) -> float:
     return value / 65535 * 2000 - 1000  # read_packed_position
 
 
+def _appearance(data: bytes) -> dict | None:
+    """A humanoid's looks and class as CommonSpawn has them (the drop-in's `appearance`): ClassJob, the two weapons,
+    the ten gear slots and the 26 customize bytes."""
+    c = COMMON
+    if len(data) < c + 620:
+        return None
+    return {
+        "class_job": data[c + 119],
+        "main_weapon": list(data[c + 16:c + 24]),
+        "sec_weapon": list(data[c + 24:c + 32]),
+        "models": list(data[c + 508:c + 548]),
+        "look": list(data[c + 594:c + 620]),
+    }
+
+
 def _spawn(data: bytes) -> dict:
     c = COMMON
     quantized = struct.unpack_from("<H", data, c + 98)[0]
@@ -61,6 +77,8 @@ def _spawn(data: bytes) -> dict:
         "position": list(struct.unpack_from("<fff", data, c + 496)),
         "event_npc": struct.unpack_from("<I", data, 4)[0],
         "flags": data[8],
+        "model_chara": struct.unpack_from("<H", data, c + 96)[0],
+        "appearance": _appearance(data),
         "max_links": data[11],
         "link_family": data[12],
         "link_range": data[13],
@@ -186,6 +204,10 @@ def build(seen: dict[int, list[dict]], appends: str, layer: str = "BNPCS_RETAIL"
             # (`director:appear_bnpc`, ActorControl 36 and 54; the Copperbell Mines' ambushing gigas.)
             if last["display"]:
                 data["display_flags"] = last["display"]
+            # A humanoid (ModelChara 0) as retail drew it: its BNpcBase's customize and gear can differ (Trial by
+            # Wind's conjurer, base 1661, came out a Miqo'te from them; retail's was a Hyur.)
+            if last.get("model_chara") == 0 and last.get("appearance"):
+                data["appearance"] = last["appearance"]
             objects.append({
                 "data": data, "layout_id": layout,
                 "position": {axis: round(best["position"][i], 3) for i, axis in enumerate("xyz")},

@@ -877,6 +877,7 @@ impl Zone {
                     stationary,
                     character_data_flags,
                     behavior,
+                    ref appearance,
                 } = object.data
                 {
                     if stationary {
@@ -888,7 +889,7 @@ impl Zone {
                         field_enemy_base_hp(ex_version, level as u8)
                     });
                     let base_npc = create_npc_common_spawn(game_data, base_id, name_id, hp, level);
-                    let spawn = SpawnNpc {
+                    let mut spawn = SpawnNpc {
                         gimmick_id,
                         character_data_flags: match character_data_flags {
                             Some(flags) => CharacterDataFlag::from_bits_retain(flags),
@@ -910,6 +911,9 @@ impl Zone {
                         },
                         ..base_npc
                     };
+                    if let Some(appearance) = appearance {
+                        apply_appearance(&mut spawn, appearance);
+                    }
 
                     self.cached_npcs.insert(object.layout_id, spawn.clone());
                     if !nonpop {
@@ -1894,5 +1898,69 @@ fn log_layer_filters(
                 );
             }
         }
+    }
+}
+
+/// A drop-in's recorded looks over what the sheets gave (`DropInAppearance`): each part only when it's the right size.
+fn apply_appearance(spawn: &mut SpawnNpc, appearance: &kawari::common::DropInAppearance) {
+    use binrw::BinRead;
+    fn read<T: for<'a> BinRead<Args<'a> = ()>>(bytes: &[u8], size: usize) -> Option<T> {
+        (bytes.len() == size)
+            .then(|| T::read_le(&mut std::io::Cursor::new(bytes)).ok())
+            .flatten()
+    }
+    spawn.common.class_job = appearance.class_job;
+    if let Some(weapon) = read(&appearance.main_weapon, 8) {
+        spawn.common.main_weapon_model = weapon;
+    }
+    if let Some(weapon) = read(&appearance.sec_weapon, 8) {
+        spawn.common.sec_weapon_model = weapon;
+    }
+    if let Some(models) = read(&appearance.models, 40) {
+        spawn.common.models = models;
+    }
+    if let Some(look) = read(&appearance.look, 26) {
+        spawn.common.look = look;
+    }
+}
+
+#[cfg(test)]
+mod appearance_tests {
+    use super::*;
+
+    /// Trial by Wind's conjurer as retail spawned him (Bob's Chronofoil capture b23b91ef, the drop-in's numbers.)
+    #[test]
+    fn retail_appearance() {
+        let appearance = kawari::common::DropInAppearance {
+            class_job: 6,
+            main_weapon: vec![189, 2, 1, 0, 6, 0, 0, 0],
+            sec_weapon: vec![0; 8],
+            models: [
+                7, 0, 129, 0, 7, 0, 36, 0, 7, 0, 117, 0, 7, 0, 82, 0, 10, 0, 148, 0,
+            ]
+            .into_iter()
+            .chain([0; 20])
+            .collect(),
+            look: vec![
+                1, 1, 1, 50, 1, 3, 9, 1, 17, 59, 13, 0, 0, 0, 2, 59, 1, 3, 2, 0, 0, 75, 0, 25, 0, 0,
+            ],
+        };
+        let mut spawn = SpawnNpc::default();
+        apply_appearance(&mut spawn, &appearance);
+        assert_eq!(spawn.common.class_job, 6);
+        assert_eq!(spawn.common.main_weapon_model.id, 701);
+        assert_eq!(spawn.common.models[0].id, 7);
+        assert_eq!(spawn.common.models[0].variant, 129);
+        assert_eq!(spawn.common.look.face, 3);
+        assert_eq!(spawn.common.look.hair, 9);
+
+        // A part of the wrong size is left as it was.
+        let mut spawn = SpawnNpc::default();
+        let short = kawari::common::DropInAppearance {
+            look: vec![1, 2, 3],
+            ..appearance
+        };
+        apply_appearance(&mut spawn, &short);
+        assert_eq!(spawn.common.look.face, SpawnNpc::default().common.look.face);
     }
 }

@@ -3182,6 +3182,34 @@ impl GameData {
         })
     }
 
+    /// A quest battle's ContentFinderCondition: the row whose Content is the QuestBattle and whose TerritoryType is
+    /// where it's fought (retail's ZoneInit named 349 for Trial by Wind's 54 in 289 and 300 for Trial by Water's 16 in
+    /// 234, Bob's Chronofoil capture b23b91ef.) The duty's level sync and its ZoneInit come from it.
+    pub fn quest_battle_content_finder(
+        &mut self,
+        quest_battle_id: u32,
+        zone_id: u16,
+    ) -> Option<u16> {
+        self.content_finder_condition_sheet
+            .into_iter()
+            .flatten_subrows()
+            .find(|(_, row)| {
+                row.ContentLinkType != 1
+                    && row.Content as u32 == quest_battle_id
+                    && row.TerritoryType == zone_id
+            })
+            .map(|(id, _)| id as u16)
+    }
+
+    /// The value of one of a quest's parameters (its Lua variables, e.g. QUESTBATTLE0), by name.
+    pub fn quest_param(&mut self, quest_id: u32, name: &str) -> Option<u32> {
+        let row = self.quest_sheet.row(quest_id)?;
+        row.QuestParams
+            .iter()
+            .find(|variable| variable.ScriptInstruction.to_string() == name)
+            .map(|variable| variable.ScriptArg)
+    }
+
     /// Returns the synced level for this content.
     pub fn find_content_synced_level(&mut self, content_finder_row_id: u16) -> Option<u8> {
         let content_finder_row = self

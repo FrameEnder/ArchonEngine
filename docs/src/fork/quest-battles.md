@@ -18,7 +18,10 @@ Guardian, Underneath the Sultantree). The fork added them on top of upstream's c
 3. The server creates a **solo instance** of that territory with a **QuestBattle director**, scripted by
    `resources/scripts/content/questbattle/<QuestBattle id>.lua`. The instance gets the server's Lua state (FATE code
    needs it; an empty state crashed the server in `0663bfc`).
-4. Its NPCs come from the territory's drop-in (`resources/dropins/fst_f1_planmap.json` layers named
+4. It's a duty (2026-10-27): its ContentFinderCondition is the row whose Content is the battle and whose territory
+   is where it's fought, so ZoneInit names it and the player is synced to it ([Level Sync](level-sync.md)). ZoneInit
+   also carries where the player starts, as retail's does (every zone change; Kawari sent the origin).
+5. Its NPCs come from the territory's drop-in (`resources/dropins/fst_f1_planmap.json` layers named
    `QB_<quest script>_001`), with positions, levels and HP from Sapphire or a retail recording.
 
 ## Director script
@@ -194,6 +197,12 @@ a quest's entering event, 0 for every other event (228 events across the capture
 * The client's battle script (`game_script/quest/000/ClsCnj002Btl_00091.luab`) has scene 1 (a short wait, no
   cutscene) and 7 (the closing cutscene), and OnSequence001/002 (the objective and its message); the script plays
   those two and nothing else.
+* Bob's first run (bundle of 2026-10-27) won it, and the quest stayed at sequence 4, so the battle was offered again:
+  QuestBattle row 54's quest isn't quest 91 (the server tried quest 786646), so the win moved nothing. A won battle
+  now moves the quest that's being done and names it (QUESTBATTLE0..3 among its parameters) when the sheet's isn't
+  (`ZoneConnection::quest_for_quest_battle`). The conjurer came out a Miqo'te in other clothes from his BNpcBase
+  (1661); retail's SpawnNpc had a Hyur in Wulfiue's gear, as class 6, so the layer has his `appearance` from the
+  capture (the drop-in's recorded ClassJob, weapons, gear and customize), and character data flags 3, as retail's.
 * Timelines `WindSprite_1659`, `TrialByWindTarget_1662`, `TrialByWindConjurer_1661`, `TrialByWindAdd_1660`; action
   scripts `Aero_00969` and `TrialByWindAdd_00416`. `questkit battle-sim 54`: every step within 1.3 s.
 
@@ -220,6 +229,7 @@ a quest's entering event, 0 for every other event (228 events across the capture
   it went on.
 * The client's battle script (`game_script/quest/000/ClsCnj003Btl_00092.luab`) has scene 1 (the opening cutscene,
   CUT_SCENE_01) and 7 (the closing one, CUT_SCENE_02), and OnSequence001/002; the script plays those two only.
+* The lancers (ClassJob 4) and the archer (5) have their `appearance` from the capture too, and character data flags 2.
 * Timelines `QB16Lancer_1423`, `QB16Archer_1422`, `QB16Yellowjacket_298`, `QB16WaterSprite_1681`; action scripts
   `QB16Yellowjacket_00321`, `QB16WaterSprite_01016`, `QB16WaterSprite_01120`. `questkit battle-sim 16` checks both
   runs (`16.json` won, `16-lost.json`): every step within 0.6 s.

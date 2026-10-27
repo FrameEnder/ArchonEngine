@@ -247,6 +247,10 @@ impl ZoneConnection {
                 game_festival_phases,
                 ui_festival_ids: self.config.active_festivals.map(FestivalId),
                 unk1: 8.59375,
+                // Where the player comes in: retail fills it in every ZoneInit, out in the world and in duties (Bob's
+                // Chronofoil capture b23b91ef: Trial by Wind's start spot, the East Shroud's arrivals); Kawari sent
+                // the origin.
+                position: exit_position,
                 ..Default::default()
             }));
             self.send_ipc_self(ipc).await;

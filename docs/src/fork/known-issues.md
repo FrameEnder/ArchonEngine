@@ -153,6 +153,15 @@ add one when something is found.
 * Trial by Earth's tainted earth sprite cast Stone once in its only recorded fight: how often it casts is a guess
   (every 3 s), and its hitbox isn't recorded. Way of the Conjurer's fixture has some of the layout IDs Bob fought,
   not necessarily the ones that died.
+* Humanoid battle NPCs take their looks from BNpcBase's BNpcCustomize and NpcEquip, and for Trial by Wind's conjurer
+  (base 1661) those gave a different person than retail drew (a Miqo'te, face 201, mouth 128: odd values); why isn't
+  known (the row, the sheet's columns, or retail drawing him from elsewhere). The battle layers carry retail's
+  `appearance` now; other humanoids (Yda, Papalymo, the Copperbell adventurers...) haven't been compared.
+* QuestBattle row 54 doesn't name its quest (the server read 852182); a won battle falls back on the active quest that
+  names it. Whether the other rows' Quest column is right was only seen through their battles working.
+* Quest battles now take their ContentFinderCondition (level sync, ZoneInit); a quest battle that has none still
+  syncs nobody. Kill EXP in them follows the duty rule (none while synced down), which retail's quest battles weren't
+  checked for.
 * Trial by Wind's and Trial by Water's quest battles (54, 16): territories 289 and 234 are taken to have the East
   Shroud's Bg from retail's positions (their NPCs are in `fst_f1f2`); if their NPCs don't appear, that's why. 54 has
   one run: its health marks (75/40/25 %), the conjurer's target order and its last arrival's kit (416, then 969 every

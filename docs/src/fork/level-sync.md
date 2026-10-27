@@ -29,6 +29,12 @@ FATE syncs (a level 87 White Mage synced to 18 and 50) and about 60 duty entries
 
 ## Duties
 
+* **Quest battles are duties too** (2026-10-27): each has a ContentFinderCondition, the row whose Content is the
+  QuestBattle and whose TerritoryType is where it's fought (`GameData::quest_battle_content_finder`; retail's ZoneInit
+  named 349 for Trial by Wind's 54 and 300 for Trial by Water's 16, Bob's Chronofoil capture b23b91ef). The battle's
+  instance takes it, so ZoneInit carries it and the player is synced to its ClassJobLevelSync like any duty's. Before,
+  quest battles had none and synced nobody: a level 21 conjurer fought Trial by Wind at 21 (Bob's bundle of
+  2026-10-27), where retail had him at 14.
 * In the zone-in packets: PlayerStats (synced), then UpdateClassInfo (synced). Leaving: the unsynced UpdateClassInfo
   before the next zone.
 * Level: ContentFinderCondition.ClassJobLevelSync. **Item level: ContentFinderCondition.ItemLevelSync** when it isn't 0

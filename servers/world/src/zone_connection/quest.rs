@@ -48,6 +48,38 @@ impl ZoneConnection {
             .position(|quest| quest.id as u32 == adjusted_id)
     }
 
+    /// The quest a won quest battle moves on: the QuestBattle sheet's (`sheet_quest`, a Quest row ID) when it's one
+    /// being done, otherwise the active quest whose QUESTBATTLE parameters name the battle. Trial by Wind's row
+    /// (54) doesn't name quest 91, so its win moved nothing and the battle was offered again and again (Bob's bundle
+    /// of 2026-10-27.)
+    pub fn quest_for_quest_battle(&self, quest_battle_id: u32, sheet_quest: u32) -> u32 {
+        if self.quest_slot(adjust_quest_id(sheet_quest)).is_some() {
+            return sheet_quest;
+        }
+        let active: Vec<u32> = self
+            .player_data
+            .quest
+            .active
+            .0
+            .iter()
+            .map(|quest| quest.id as u32 + QuestSheet::STARTING_ROW)
+            .collect();
+        let mut game_data = self.game_data.lock();
+        active
+            .into_iter()
+            .find(|quest| {
+                (0..4).any(|n| {
+                    game_data.quest_param(*quest, &format!("QUESTBATTLE{n}")) == Some(quest_battle_id)
+                })
+            })
+            .unwrap_or_else(|| {
+                tracing::warn!(
+                    "Quest battle {quest_battle_id}: its sheet's quest {sheet_quest} isn't being done, and no active quest names the battle"
+                );
+                sheet_quest
+            })
+    }
+
     /// Sends the current state of the quest in `slot` to the client.
     async fn send_quest_update(&mut self, slot: usize) {
         let Some(quest) = self.player_data.quest.active.0.get(slot) else {

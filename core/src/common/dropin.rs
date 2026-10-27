@@ -31,6 +31,21 @@ pub struct DropInObject {
     pub data: DropInObjectData,
 }
 
+/// A battle NPC's looks as retail spawned it: CommonSpawn's bytes for each, so they go back out exactly as they came
+/// (`questkit chronofoil --dropin` writes them for humanoid NPCs, ModelChara 0.)
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone, Default)]
+pub struct DropInAppearance {
+    /// Its ClassJob (the conjurer's 6), which the client shows and arms it by.
+    pub class_job: u8,
+    /// `main_weapon_model` and `sec_weapon_model` (8 bytes each.)
+    pub main_weapon: Vec<u8>,
+    pub sec_weapon: Vec<u8>,
+    /// `models`, the ten gear slots (4 bytes each.)
+    pub models: Vec<u8>,
+    /// `look`, the 26 bytes of customize data.
+    pub look: Vec<u8>,
+}
+
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
 #[serde(tag = "type")]
 pub enum DropInObjectData {
@@ -84,6 +99,11 @@ pub enum DropInObjectData {
         /// If set, the spawn's Behavior row as retail sent it (guards each have their own, 30051-30055.)
         #[serde(default, skip_serializing_if = "Option::is_none")]
         behavior: Option<u16>,
+        /// If set, how a humanoid NPC looks and what class it is, as retail's SpawnNpc had it, instead of its
+        /// BNpcBase's BNpcCustomize and NpcEquip. Trial by Wind's conjurer (BNpcBase 1661) came out a Miqo'te in
+        /// other clothes from those, a Hyur on retail (Bob's 2026-10-27 bundle against his Chronofoil capture.)
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        appearance: Option<DropInAppearance>,
     },
     /// Represents a battle or event NPC.
     #[serde(rename = "event_npc")]

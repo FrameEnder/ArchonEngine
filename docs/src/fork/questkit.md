@@ -282,7 +282,10 @@ reads, chat left out), so `compare` and the rest can use it.
   quantized u16 at CommonSpawn + 98). Left out: FATE monsters, NPCs someone owns (pets, chocobos), spawns without a
   layout ID or turned from an event NPC, and `--exclude-base`s; `--one-spot BASE` keeps one spawn point of something
   that moves between them (a hunt mark). Monsters wander, so each goes where it was seen nearest the average of its
-  sightings. Guards (character data flags 0x4) keep the flag and their Behavior row (CommonSpawn + 94). Each sighting
+  sightings. Humanoids (ModelChara 0, CommonSpawn + 96) keep how retail drew them as `appearance`: ClassJob (+ 119),
+  the two weapons (+ 16, + 24, 8 bytes each), the ten gear slots (+ 508, 40 bytes) and the customize data (+ 594, 26
+  bytes), which the server puts over what BNpcBase gives (2026-10-27). Guards (character data flags 0x4) keep the flag
+  and their Behavior row (CommonSpawn + 94). Each sighting
   records how long the NPC was seen (until DeleteActor, whose actor ID is at byte 4, or leaving the zone), whether it
   moved more than a yalm while idle (ActorMove's packed position at byte 6) and whether it fought (its own
   ActorControlTarget, ActorCast or actions): a spot is `stationary` when it was seen idle a minute or more without

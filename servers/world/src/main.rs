@@ -4837,6 +4837,7 @@ async fn process_server_msg(
             ) => {
                 // The quest moves on straight away, the scenes are just the victory fanfare. Its variables change
                 // in the same journal update, as retail sends it.
+                let quest_id = connection.quest_for_quest_battle(handler_id.event_id(), quest_id);
                 connection.preset_quest_variables(quest_id, &variables);
                 connection.set_quest_sequence(quest_id, sequence).await;
                 connection.quest_battle_stay = stay;

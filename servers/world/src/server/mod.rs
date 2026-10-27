@@ -230,6 +230,18 @@ impl WorldServer {
         instance.duration = Some(Duration::from_mins(info.time_limit as u64));
         director.quest_battle_quest_id = info.quest_id;
 
+        // It's a duty of its own (ContentFinderCondition 349 for Trial by Wind's): the client hears of it in ZoneInit,
+        // and the player is synced to its level, as retail did (Bob's Chronofoil capture b23b91ef: a level 14 there;
+        // without it, a level 21 fought it at 21, Bob's bundle of 2026-10-27.)
+        if let Some(content_finder_condition) =
+            game_data.quest_battle_content_finder(quest_battle_id, zone_id)
+        {
+            instance.content_finder_condition_id = content_finder_condition;
+            instance.synced_level = game_data.find_content_synced_level(content_finder_condition);
+            instance.synced_item_level =
+                game_data.find_content_synced_item_level(content_finder_condition);
+        }
+
         // The QuestBattle's variables (the NPCs it spawns and such) are available to its script, like a quest's.
         for (name, value) in &info.variables {
             if let Err(err) = lua.0.globals().set(name.as_str(), *value) {
