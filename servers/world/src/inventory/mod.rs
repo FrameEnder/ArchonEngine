@@ -722,6 +722,43 @@ impl Inventory {
             .sum()
     }
 
+    /// How many of an item the player has in the bags, the armoury chest or on them (NQ or HQ): what a quest's
+    /// GetNumOfItems counts for gear it gave (Dressed to Deceive gives back what's missing from all of them.)
+    pub fn count_owned(&self, item_id: u32) -> u32 {
+        let containers = [
+            ContainerType::Equipped,
+            ContainerType::ArmoryWeapon,
+            ContainerType::ArmoryOffWeapon,
+            ContainerType::ArmoryHead,
+            ContainerType::ArmoryBody,
+            ContainerType::ArmoryHand,
+            ContainerType::ArmoryLeg,
+            ContainerType::ArmoryFoot,
+            ContainerType::ArmoryEarring,
+            ContainerType::ArmoryNeck,
+            ContainerType::ArmoryWrist,
+            ContainerType::ArmoryRing,
+        ];
+        let elsewhere: u32 = containers
+            .iter()
+            .filter_map(|kind| self.get_container(*kind))
+            .flat_map(|storage| {
+                (0..storage.max_slots() as u16).map(move |index| storage.get_slot(index))
+            })
+            .filter(|slot| slot.item_id == item_id)
+            .map(|slot| slot.quantity.max(0) as u32)
+            .sum();
+        self.count_in_bags(item_id) + elsewhere
+    }
+
+    /// Whether the player wears an item (NQ or HQ.)
+    pub fn wears(&self, item_id: u32) -> bool {
+        (0..self.equipped.max_slots() as u16).any(|slot| {
+            let item = self.equipped.get_slot(slot);
+            item.item_id == item_id && item.quantity > 0
+        })
+    }
+
     /// `use_up_one`, saying which slot it came from.
     pub fn use_up_one_at(&mut self, item_id: u32) -> Option<(ContainerType, u16)> {
         for page in &mut self.pages {

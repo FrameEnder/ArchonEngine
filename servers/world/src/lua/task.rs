@@ -84,6 +84,11 @@ pub enum LuaTask {
     ToggleOrchestrion {
         id: u32,
     },
+    /// An item an event gives (`ZoneConnection::obtain_event_item`), with retail's log and pop-up.
+    ObtainItem {
+        id: u32,
+        quantity: i32,
+    },
     AddItem {
         id: u32,
         quantity: i32,

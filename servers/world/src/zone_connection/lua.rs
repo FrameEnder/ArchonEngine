@@ -307,6 +307,9 @@ impl ZoneConnection {
                         self.send_inventory().await;
                     }
                 }
+                LuaTask::ObtainItem { id, quantity } => {
+                    self.obtain_event_item(*id, *quantity).await;
+                }
                 LuaTask::AddItem {
                     id,
                     quantity,

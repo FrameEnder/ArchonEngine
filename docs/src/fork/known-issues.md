@@ -235,6 +235,9 @@ add one when something is found.
 * Unsolved Mystery's ambushers (BNpcBase 166, timeline `UnsolvedMysteryAmbusher_166`): one used action 426 on itself
   (status 204) about 2 s before it fell in Bob's capture b8432613; when and why isn't known (one use), so they never
   do. Their True Thrust's pace (8.8 s) is from three uses.
+* Dressed to Deceive (574): which of each person's two later scenes is for being dressed isn't recorded (retail was
+  played wearing the attire and played the first, 3, 6, 9, 12, 15); the other (4, 7, …) is taken as not dressed,
+  with no progress. Amalj'aa Wrong Places' (622) other lines go by the order of the client's IsAcceptEvent.
 * What Poor People Think's three paupers walk off and fade in their scenes (the client's WalkOut and Transparency);
   whether the server should take them away afterwards (they're the quest's listeners from sequence 2) isn't known, so
   it leaves them, as the client shows them.

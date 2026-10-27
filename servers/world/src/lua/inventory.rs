@@ -36,6 +36,12 @@ impl UserData for Inventory {
         methods.add_method("count_in_bags", |_, this, item_id: u32| {
             Ok(this.count_in_bags(item_id))
         });
+        // How many the player has anywhere they'd keep gear: the bags, the armoury chest and on them.
+        methods.add_method("count_owned", |_, this, item_id: u32| {
+            Ok(this.count_owned(item_id))
+        });
+        // Whether the player wears it.
+        methods.add_method("wears", |_, this, item_id: u32| Ok(this.wears(item_id)));
     }
 }
 

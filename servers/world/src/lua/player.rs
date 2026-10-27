@@ -916,6 +916,18 @@ impl UserData for LuaPlayer {
             this.add_item(id, quantity, true);
             Ok(())
         });
+        // An item a quest gives along the way (Dressed to Deceive's attire as it's accepted), as retail gives it: the
+        // slot, the "obtained" pop-up and the log line.
+        methods.add_method_mut(
+            "obtain_item",
+            |_, this, (id, quantity): (u32, Option<i32>)| {
+                this.queued_tasks.push(LuaTask::ObtainItem {
+                    id,
+                    quantity: quantity.unwrap_or(1),
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut("take_handed_in_items", |_, this, ()| {
             this.queued_tasks.push(LuaTask::TakeHandedInItems);
             Ok(())

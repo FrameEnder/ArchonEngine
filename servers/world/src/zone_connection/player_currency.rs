@@ -100,7 +100,7 @@ impl ZoneConnection {
     }
 
     /// A log message with no event (handler 0), as retail's EventLogMessage for the certificates.
-    async fn send_event_log_message(&mut self, message_type: u32, params: Vec<u32>) {
+    pub(crate) async fn send_event_log_message(&mut self, message_type: u32, params: Vec<u32>) {
         let Some(ipc) = kawari::ipc::zone::EventLogMessage {
             handler_id: kawari::common::HandlerId(0),
             message_type,

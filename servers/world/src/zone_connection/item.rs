@@ -357,6 +357,39 @@ impl ZoneConnection {
         self.send_inventory().await;
     }
 
+    /// An item an event gives (a quest's `player:obtain_item`): retail's InventoryActionAck (0xFFFFFFFF, 6), the slot
+    /// (here the whole inventory), ActorControlSelf LogMessage 789 with the item (the "obtained" pop-up), then
+    /// EventLogMessage 750 with the item (the log line). Bob's Chronofoil capture b8432613: Dressed to Deceive's two
+    /// pieces of attire as it was accepted, one after the other.
+    pub async fn obtain_event_item(&mut self, id: u32, quantity: i32) {
+        const LOG_MESSAGE_ITEM_POP_UP: u32 = 789;
+        const LOG_MESSAGE_ITEM_OBTAINED: u32 = 750;
+        let new_item = {
+            let mut game_data = self.game_data.lock();
+            game_data
+                .get_item_info(ItemInfoQuery::ById(id))
+                .map(|info| Item::new(&info, quantity))
+        };
+        let Some(new_item) = new_item else {
+            tracing::warn!("An event gave item {id}, which isn't in the game's data");
+            return;
+        };
+        if !self.player_data.inventory.add_obtained_item(new_item) {
+            self.send_notice(ERR_INVENTORY_ADD_FAILED).await;
+            return;
+        }
+        self.send_inventory_ack(u32::MAX, INVENTORY_ACTION_ACK_GENERAL, 0)
+            .await;
+        self.send_inventory().await;
+        self.actor_control_self(ActorControlCategory::LogMessage {
+            log_message: LOG_MESSAGE_ITEM_POP_UP,
+            id,
+        })
+        .await;
+        self.send_event_log_message(LOG_MESSAGE_ITEM_OBTAINED, vec![id])
+            .await;
+    }
+
     /// An item won from a coffer (`server/loot.rs`): the LootMessages went to the party already; retail then sent the
     /// winner the item's slot (UpdateItem.)
     pub async fn obtain_loot(&mut self, id: u32) {
