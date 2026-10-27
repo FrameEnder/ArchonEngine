@@ -27,6 +27,10 @@ mod database;
 /// The marketboard's items, prices, listings and history.
 pub mod marketboard;
 
+/// The Hunting Log's progress and how a kill counts towards it.
+pub mod hunting_log;
+pub use hunting_log::HUNTING_LOGS;
+
 /// Retainers: who they are, what they hold, and how they're shown at a summoning bell.
 pub mod retainer;
 pub use database::{Content, Unlock, WorldDatabase};
@@ -169,6 +173,8 @@ define_sql_array!(GlassesIds, u16, 2);
 define_sql_array!(SharedFates, u8, SHARED_FATES_SIZE);
 define_sql_array!(AchievementCounters, AchievementCounter);
 define_sql_array!(PlayerCurrencies, PlayerCurrencyCount);
+define_sql_array!(HuntingLogs, HuntingLogProgress);
+use hunting_log::HuntingLogProgress;
 
 /// How many of a currency the client counts outside the inventory (ActorControlSelf 378) one has.
 #[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]

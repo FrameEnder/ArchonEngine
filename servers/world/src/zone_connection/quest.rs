@@ -491,6 +491,8 @@ impl ZoneConnection {
                 .unwrap_or_else(|| self.current_level(&game_data));
             (exp, level)
         };
+        // The Hunting Log first: retail counted the kill (and gave a finished entry's EXP) before the kill's own EXP.
+        self.record_hunting_log_kill(name_id).await;
         // Enemies well below you give less (retail: full down to 2 levels below, then 10 % less a level.)
         let mut exp = exp * kill_exp_percent(level as i32 - player_level as i32) / 100;
         // In a duty, retail gave players synced down no kill EXP at all, and nobody a kill chain (Bob's captures.)

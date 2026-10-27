@@ -48,6 +48,7 @@
   - [Saving and Connections](fork/saving.md)
   - [Travel](fork/travel.md)
   - [Achievements, Portraits and Recommendations](fork/character-windows.md)
+  - [Hunting Log](fork/hunting-log.md)
   - [Auracite Backups](fork/auracite.md)
   - [Items That Teach Things](fork/items.md)
   - [Marketboard](fork/marketboard.md)

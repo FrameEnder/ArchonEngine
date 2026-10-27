@@ -22,8 +22,8 @@ use kawari::{
 
 use crate::{
     AchievementCounters, ActiveQuests, Bitmask, BuddyBarding, BuddyLevels, CharaMake,
-    ClassExperience, ClassLevels, FavoriteAetherytes, GlassesIds, GrandCompanyRanks, PartyMembers,
-    PlayerCurrencies, QuestBitmask, SharedFates,
+    ClassExperience, ClassLevels, FavoriteAetherytes, GlassesIds, GrandCompanyRanks, HuntingLogs,
+    PartyMembers, PlayerCurrencies, QuestBitmask, SharedFates,
 };
 
 #[derive(Insertable, Identifiable, Queryable, Selectable, AsChangeset, Debug, Default, Clone)]
@@ -311,6 +311,8 @@ pub struct Unlock {
     pub achievement_counters: AchievementCounters,
     /// The currencies the client counts outside the inventory (Achievement Certificates), see `player_currency.rs`.
     pub player_currencies: PlayerCurrencies,
+    /// The Hunting Log's progress, a log at a time (only those begun; see `hunting_log.rs`.)
+    pub hunting_log: HuntingLogs,
 }
 
 #[derive(

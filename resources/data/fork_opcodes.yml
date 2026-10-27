@@ -413,6 +413,18 @@ ServerZoneIpcType:
   size: 8
   found_on: 2026.10.16.0000.0000
   how_to_find: On retail with Chronofoil, use up three nodes of a group - the 8-byte packet (slot, 0-5) as the third closes, with ActorControlSelf 109 for the first.
+- name: HuntingLog
+  comment: One Hunting Log - its rank and index, the rank's kill counts, which targets and entries are done, which ranks are open. Twelve at login, one after each kill that counts.
+  # 385 on 2026.10.16 (Bob's Chronofoil captures: the twelve 64-byte packets at every login, index 0 to 11 at byte 5,
+  # and one after each kill counted in b23b91ef, with ActorControlSelf 542.) Its handler (0xB307F0 on 2026.10.16)
+  # starts by reading byte 5, the index; the finder is opcodescan's suggest-finders'.
+  opcode: 385
+  size: 64
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On retail with Chronofoil, log in - twelve 64-byte packets, -1 then a rank and 0 to 11, with each index.
+  find:
+  - handler:
+      pattern: 40 53 48 83 EC 20 41 0F B6 50 05
 - name: RetainerStateNotice
   comment: Eight bytes sent before every RetainerState and after a retainer's containers (zeros; 0 then 1 before sending away a retainer whose market changed.)
   # 897 on 2026.09.15, 144 on 2026.10.06 (Bob's Chronofoil captures.)

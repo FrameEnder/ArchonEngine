@@ -63,6 +63,8 @@ use icarus::Map::MapSheet;
 use icarus::Materia::MateriaSheet;
 use icarus::ModelChara::ModelCharaSheet;
 use icarus::ModelSkeleton::ModelSkeletonSheet;
+use icarus::MonsterNote::MonsterNoteSheet;
+use icarus::MonsterNoteTarget::MonsterNoteTargetSheet;
 use icarus::Mount::MountSheet;
 use icarus::NpcEquip::NpcEquipSheet;
 use icarus::NpcYell::NpcYellSheet;
@@ -205,12 +207,23 @@ pub struct GameData {
     pub fate_event_range_lookup: HashMap<u32, u32>,
     /// Read the first time they're needed, see `achievement_rules`.
     achievement_rules: Option<Vec<AchievementRule>>,
+    /// The Hunting Log's entries (MonsterNote rows, their targets' BNpcNames), read the first time a kill needs them.
+    monster_notes: Option<HashMap<u32, MonsterNoteEntry>>,
     /// Each map's DiscoveryIndex, DiscoveryArrayByte and DiscoveryFlag, read the first time they're needed: the
     /// achievement check asks for hundreds at once, and reading the Map sheet each time took long enough (seconds)
     /// to desync the client's connection.
     map_discovery: Option<HashMap<u32, (i16, bool, u32)>>,
     /// The marketboard's items, read the first time it's used (see `marketboard`.)
     marketboard: Option<std::sync::Arc<MarketIndex>>,
+}
+
+/// One Hunting Log entry (a MonsterNote row).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct MonsterNoteEntry {
+    /// Up to four kinds to defeat: their BNpcName and how many (0 for an unused slot.)
+    pub targets: [(u32, u8); 4],
+    /// The EXP for completing it.
+    pub reward: u32,
 }
 
 /// The items on the marketboard: every item with an ItemSearchCategory, by ID and by category.
@@ -894,6 +907,7 @@ impl GameData {
             gimmick_rect_lookup,
             fate_event_range_lookup,
             achievement_rules: None,
+            monster_notes: None,
             map_discovery: None,
             marketboard: None,
             dawn_content_sheet,
@@ -1338,6 +1352,76 @@ impl GameData {
 
         let weather_rate_id = row.WeatherRate;
         self.get_weather_rate_at(weather_rate_id as u32, unix_seconds)
+    }
+
+    /// Which Hunting Log a class or job keeps (ClassJob's MonsterNote: 0 the Gladiator's ... 11 the Rogue's), if any.
+    pub fn hunting_log_index(&self, classjob_id: u8) -> Option<u8> {
+        let row = self.classjob_sheet.row(classjob_id as u32)?;
+        (0..crate::HUNTING_LOGS as i8)
+            .contains(&row.MonsterNote)
+            .then_some(row.MonsterNote as u8)
+    }
+
+    /// The class whose Hunting Log is `index` (the first ClassJob row that keeps it: Gladiator, not Paladin), whose
+    /// number also starts its MonsterNote rows (60001 is the Conjurer's first entry). None for the Grand Companies'.
+    pub fn hunting_log_class(&self, index: u8) -> Option<u8> {
+        self.classjob_sheet
+            .into_iter()
+            .flatten_subrows()
+            .find(|(_, row)| row.MonsterNote == index as i8)
+            .and_then(|(id, _)| u8::try_from(id).ok())
+    }
+
+    /// One Hunting Log entry (a MonsterNote row): what to defeat and its EXP.
+    pub fn monster_note(&mut self, id: u32) -> Option<MonsterNoteEntry> {
+        if self.monster_notes.is_none() {
+            let language = get_config().world.language();
+            // MonsterNote has a Name column, so it's per language; MonsterNoteTarget may not be.
+            let targets: HashMap<u32, u32> =
+                MonsterNoteTargetSheet::read_from(&mut self.resource, Language::None)
+                    .or_else(|_| MonsterNoteTargetSheet::read_from(&mut self.resource, language))
+                    .map(|sheet| {
+                        sheet
+                            .into_iter()
+                            .flatten_subrows()
+                            .map(|(id, row)| (id, row.BNpcName as u32))
+                            .collect()
+                    })
+                    .unwrap_or_else(|err| {
+                        tracing::warn!("Couldn't read the MonsterNoteTarget sheet: {err:?}");
+                        HashMap::new()
+                    });
+            let notes = match MonsterNoteSheet::read_from(&mut self.resource, language) {
+                Ok(sheet) => sheet
+                    .into_iter()
+                    .flatten_subrows()
+                    .map(|(id, row)| {
+                        let mut entry = MonsterNoteEntry {
+                            reward: row.Reward,
+                            ..Default::default()
+                        };
+                        for (slot, (target, count)) in row
+                            .MonsterNoteTarget
+                            .iter()
+                            .zip(row.Count.iter())
+                            .enumerate()
+                        {
+                            let name = targets.get(&(*target as u32)).copied().unwrap_or_default();
+                            if *target != 0 && *count != 0 && name != 0 {
+                                entry.targets[slot] = (name, *count);
+                            }
+                        }
+                        (id, entry)
+                    })
+                    .collect(),
+                Err(err) => {
+                    tracing::warn!("Couldn't read the MonsterNote sheet: {err:?}");
+                    return None;
+                }
+            };
+            self.monster_notes = Some(notes);
+        }
+        self.monster_notes.as_ref()?.get(&id).copied()
     }
 
     /// Gets the array index used in EXP & levels.

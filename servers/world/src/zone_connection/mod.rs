@@ -47,6 +47,7 @@ mod event;
 mod friends;
 mod gathering;
 mod glamour;
+mod hunting_log;
 pub use gathering::GatheringState;
 mod item;
 mod linkshell;

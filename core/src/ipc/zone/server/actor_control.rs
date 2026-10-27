@@ -792,6 +792,16 @@ pub enum ActorControlCategory {
     /// Calls into some Achievement method, unsure what this does yet. (The client empties the nearly completed list
     /// whose index is `unk1`, 0 for the login notice and 1 for the Achievements window's; the fork sends it as the
     /// reply to `ClientTriggerCommand::RequestNearCompletionAchievements`.)
+    /// A Hunting Log target was counted: the entry's MonsterNote row, the target (0-3), the count now (Bob's Chronofoil
+    /// capture b23b91ef, every kill of a target; see docs/src/fork/hunting-log.md.)
+    #[brw(magic = 542u32)]
+    HuntingLogTargetCounted { note: u32, target: u32, count: u32 },
+
+    /// A Hunting Log entry was completed: its MonsterNote row and the class (6 for the Conjurer's entries: it could as
+    /// well be the log's index plus one), then retail gives its EXP.
+    #[brw(magic = 543u32)]
+    HuntingLogEntryCompleted { note: u32, class: u32 },
+
     #[brw(magic = 538u32)]
     UnkAchievementRelated {
         unk1: u32,

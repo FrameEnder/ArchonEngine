@@ -778,6 +778,25 @@ pub enum ServerZoneIpcData {
         #[bw(pad_size_to = 500)]
         unk2: Vec<u8>,
     },
+    /// One Hunting Log (the client's MonsterNoteManager rank info): all twelve at login, and the one a kill counted for
+    /// after it (Bob's Chronofoil captures; docs/src/fork/hunting-log.md.)
+    HuntingLog {
+        /// -1 at login, 0 after a kill.
+        unk1: i32,
+        /// The rank being worked on (0-4; 5 when finished.)
+        rank: u8,
+        /// Which log (ClassJob's MonsterNote.)
+        index: u8,
+        /// Kills of each of the rank's ten entries' four targets.
+        #[brw(pad_after = 2)]
+        counts: [u8; 40],
+        /// Five bits an entry: each target done, then the entry.
+        completed: u64,
+        /// A bit per rank, cleared for each rank opened (all set while the log is locked.) The Rogue's log has only its
+        /// low byte.
+        #[brw(pad_after = 4)]
+        rank_mask: u32,
+    },
     /// One slot of the gathering points' phases changes (7.57's handler writes the byte to QuestManager +0x7AC.)
     GatheringPointPhase {
         slot: u8,

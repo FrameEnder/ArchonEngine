@@ -92,7 +92,7 @@ state" in the log) and the player was left frozen, or revived into an endless lo
 The Map sheet's discovery columns are now read once (`GameData::map_discovery`), and the server warns when a check
 takes over 50 ms.
 
-Everything else (the other counters, hunting log, dungeons, PvP, beast tribes, Grand Company…) isn't tracked; those
+Everything else (the other counters (the Hunting Log is [its own page](hunting-log.md)), dungeons, PvP, beast tribes, Grand Company…) isn't tracked; those
 can be given by hand with `!achievement <id>`. `!achievement clear <id>` takes one away, `!achievement check` runs the check (for
 characters that met requirements before this existed). The sheet is read once, the first time it's needed.
 

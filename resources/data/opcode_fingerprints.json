@@ -2253,6 +2253,16 @@
     },
     {
       "kind": "ServerZoneIpcType",
+      "name": "HuntingLog",
+      "opcode": 385,
+      "case": "59326ac09f5703775d6d18ba10e705ae",
+      "case_group": 1,
+      "handler_at": 11846288,
+      "end": "59326ac09f5703775d6d18ba10e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
       "name": "RetainerStateNotice",
       "opcode": 987,
       "case": "4a516a4a71478fb687862c638373ce1010e705ae",

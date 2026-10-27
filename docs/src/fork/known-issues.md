@@ -217,6 +217,11 @@ add one when something is found.
   scripted, and only the Sun Midge Swarm's drop is in `Drops.lua`. Not tested in game yet.
 * Ovjang (the hunt mark) stands at one of its spawn points; retail moves it between them.
 
+## Hunting Log
+
+* Built 2026-10-27 ([Hunting Log](hunting-log.md)): finishing a rank, the Grand Companies' logs, party kills and 543's
+  second number are guesses or not done (see its page). Auracite (Kawari) backups and Kawari Web don't carry it.
+
 ## Achievement Certificates
 
 * One certificate per 50 achievement points is the wiki's number, not checked against a retail character's points.

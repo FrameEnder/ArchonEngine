@@ -125,6 +125,7 @@ others (the retainer requests, and the server packets other than the notices and
 | DirectorPopupMessage (162) | The battle talk window, see [Quest battles](quest-battles.md#director-script). Its kind is one byte. |
 | PortraitsInformation (182) | The adventurer plate's portrait (BannerData), the reply to client trigger 3200. |
 | Actor controls 514, 515, 538, 600 | Achievement progress, completion, near-completion lists; see [Achievements](character-windows.md). |
+| Actor controls 542, 543 | A Hunting Log target counted (note, target, count) and an entry finished (note, class); see [Hunting Log](hunting-log.md). |
 | Client triggers 1000, 1001, 1002 | Achievement progress, the completed list, the near-completion lists. |
 | QuestActiveList / UpdateQuest | Entry layout, see [Quests](quests.md#what-the-server-keeps-for-a-quest). |
 | AoeEffect8/16/24/32 | Bob's captures (39,333 packets): the effects start at byte 42 as in ActionEffect (40-byte header, bytes 34–41 zero), 64 bytes a target, the target list at the next multiple of 8, then a packed position (0x7FFF ×3 for none) and 6 zero bytes: `align8(42 + 64N) + 8N + 12` = 636, 1212, 1788, 2364 bytes. Kawari's struct had them at 48 (fixed; it isn't sent yet: area actions show one target plus flying text). 2026.10.06's AoeEffect16/24/32 are 912/158/630 per FFXIVOpcodes. Retail also sends AoeEffect8 with no targets for area actions that hit nobody. |
