@@ -255,6 +255,12 @@ report (`/dashboard/quests/script-check/report.md`) and a bundle (`.../bundle`: 
 server's scripts under `fork-scripts/`) download from it. It needs a build whose `kawari-questdump` has `scripts`
 (fork commit `cf9c620`; the page reads the binary's usage text to tell). Named Script Check because Overview's
 `client_check` endpoint already re-reads the client's version.
+
+**Scripts that mention** (2.24.0, the Run kawari-questdump card): `kawari-questdump search <text>…` in the same
+throwaway container, into `<data>/quest-dumps/extracted/` beside the extracted files, for client scripts whose names
+aren't known (quest battles': Bob's 2026-10-27 extract of `ClsCnj002Btl.luab` and `ClsCnj003Btl.luab`, names guessed
+from a pattern, found nothing). The button is off until the active build's binary has `search` in its usage text.
+`/dashboard/quests/extracted.zip` downloads every extracted file in one zip.
 ## Quest progress (Dashboard → Progress)
 
 Every quest from A Realm Reborn to Dawntrail from the quest index (format 2), Main Scenario when in ScenarioTree,

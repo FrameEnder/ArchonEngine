@@ -38,6 +38,7 @@ USAGE:
     kawari-questdump dump <QUEST>... [--out DIR] [--listing]
     kawari-questdump chain <QUEST> <COUNT> [--out DIR] [--listing]
     kawari-questdump extract <GAME PATH>... [--out DIR]
+    kawari-questdump search <TEXT>... [--out DIR] [--listing]
     kawari-questdump scripts <custom|opening> [--server DIR] [--out DIR] [--listing]
     kawari-questdump index [--out DIR]
     kawari-questdump items [--out DIR]
@@ -51,7 +52,12 @@ COMMANDS:
     dump      Dump the given quests.
     chain     Dump the COUNT quests that follow QUEST in the same journal genre (e.g. the main story.)
     extract   Copy any game file out as-is (e.g. game_script/opening/OpeningGridania.luab.) A game_script file
-              can also be given by its name alone (e.g. ManFst005Btl.luab) when its folder isn't known.
+              can also be given by its name alone (e.g. OpeningGridania.luab) when its folder isn't known.
+    search    Copy out every client script (any game_script folder) whose contents mention one of the TEXTs, case
+              aside (e.g. ClsCnj003 finds Trial by Water's quest script and whatever else names it, as its quest
+              battle's.) The index only keeps hashes of names, so each file is named from its own strings (the
+              \"<name> loaded\" it prints, checked against the hash, with a _NNNNN number tried after it) or, failing
+              that, by its hash; search-results.txt lists what was found and where.
     scripts   Copy out every client script of a kind the sheets name: custom (CustomTalk: NPC conversations, menus
               and the shops they open) or opening (the city openings), each with its listing and its sheet row
               (handler ID, Lua parameters), into <out>/<kind>/, plus index.json. With --server (the server's
@@ -647,6 +653,139 @@ fn find_file(options: &Options, file_name: &str) -> Result<usize, String> {
     Ok(found)
 }
 
+/// Every string constant in a compiled script, all functions included.
+fn chunk_strings(function: &luab::Function, found: &mut Vec<String>) {
+    for constant in &function.constants {
+        if let luab::Constant::String(text) = constant {
+            found.push(text.clone());
+        }
+    }
+    for child in &function.protos {
+        chunk_strings(child, found);
+    }
+}
+
+/// A game_script file's real name, from its own strings: the "<name> loaded" its main chunk prints (quest scripts
+/// print their class table's name, ClsCnj003, though the file is ClsCnj003_00092.luab, so a _NNNNN after it is
+/// tried too), or any other identifier-like string, whichever hashes to the index's name hash.
+fn recover_name(bytes: &[u8], name_hash: u32) -> Option<String> {
+    let chunk = luab::parse(bytes).ok()?;
+    let mut strings = Vec::new();
+    chunk_strings(&chunk.main, &mut strings);
+    let loaded: Vec<String> = strings
+        .iter()
+        .filter_map(|text| text.strip_suffix(" loaded").map(str::to_string))
+        .collect();
+    let matches = |name: &str| SqPackIndex::calculate_partial_hash(name) == name_hash;
+    for base in &loaded {
+        let name = format!("{base}.luab");
+        if matches(&name) {
+            return Some(name);
+        }
+        for number in 0..100_000 {
+            let name = format!("{base}_{number:05}.luab");
+            if matches(&name) {
+                return Some(name);
+            }
+        }
+    }
+    strings
+        .iter()
+        .filter(|text| {
+            !text.is_empty()
+                && text.len() <= 64
+                && text.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+        })
+        .map(|text| format!("{text}.luab"))
+        .find(|name| matches(name))
+}
+
+/// The known game_script folder with this hash: one of `SCRIPT_FOLDERS`, or a numbered one inside them
+/// (game_script/quest/000.)
+fn folder_name(path_hash: u32) -> Option<String> {
+    SCRIPT_FOLDERS.iter().find_map(|folder| {
+        if SqPackIndex::calculate_partial_hash(folder) == path_hash {
+            return Some(folder.to_string());
+        }
+        (0..1000)
+            .map(|number| format!("{folder}/{number:03}"))
+            .find(|sub| SqPackIndex::calculate_partial_hash(sub) == path_hash)
+    })
+}
+
+/// Copies out every game_script file that mentions one of `needles` (case aside), named by `recover_name` or its
+/// hash. Returns how many were found.
+fn search_scripts(options: &Options, needles: &[String]) -> Result<usize, String> {
+    let config = get_config();
+    let game_path = match options.game.as_deref() {
+        Some(path) => path.to_string(),
+        None => config.filesystem.game_path(),
+    };
+    let sqpack = Path::new(&game_path).join("sqpack");
+    let mut indices: Vec<PathBuf> = std::fs::read_dir(&sqpack)
+        .map_err(|err| format!("couldn't read {}: {err}", sqpack.display()))?
+        .flatten()
+        .map(|entry| entry.path().join("0b0000.win32.index"))
+        .filter(|path| path.is_file())
+        .collect();
+    indices.sort();
+    std::fs::create_dir_all(&options.out)
+        .map_err(|err| format!("couldn't create {}: {err}", options.out.display()))?;
+
+    let needles: Vec<Vec<u8>> = needles
+        .iter()
+        .map(|needle| needle.to_ascii_lowercase().into_bytes())
+        .collect();
+    let mut resource = SqPackResource::from_existing(&game_path);
+    let mut report = Vec::new();
+    let mut scanned = 0;
+    for index_path in &indices {
+        let Ok(bytes) = std::fs::read(index_path) else {
+            continue;
+        };
+        let Ok(index) = SqPackIndex::from_existing(Platform::Win32, &bytes) else {
+            continue;
+        };
+        for entry in &index.entries {
+            let Hash::SplitPath { name, path } = entry.hash else {
+                continue;
+            };
+            let Ok(bytes) = resource.read_from_hash(index_path, entry.hash) else {
+                continue;
+            };
+            scanned += 1;
+            let lower = bytes.to_ascii_lowercase();
+            let Some(needle) = needles.iter().find(|needle| {
+                lower
+                    .windows(needle.len())
+                    .any(|window| window == needle.as_slice())
+            }) else {
+                continue;
+            };
+            let folder = folder_name(path).unwrap_or_else(|| format!("folder {path:08x}"));
+            let file_name =
+                recover_name(&bytes, name).unwrap_or_else(|| format!("{name:08x}.luab"));
+            let destination = options.out.join(&file_name);
+            std::fs::write(&destination, &bytes)
+                .map_err(|err| format!("couldn't write {}: {err}", destination.display()))?;
+            let summary =
+                write_listing(&bytes, &destination.with_extension("txt"), options.listing);
+            let line = format!(
+                "{folder}/{file_name} (mentions {}; {})",
+                String::from_utf8_lossy(needle),
+                index_path.display()
+            );
+            println!("{line} {summary}");
+            report.push(line);
+        }
+    }
+    println!("{scanned} game_script files read, {} matched", report.len());
+    let listing = options.out.join("search-results.txt");
+    std::fs::write(&listing, report.join("\n") + "\n")
+        .map_err(|err| format!("couldn't write {}: {err}", listing.display()))?;
+    Ok(report.len())
+}
+
 /// Writes a listing of a compiled script next to it. Returns a one-line summary.
 fn write_listing(bytes: &[u8], destination: &Path, listing: bool) -> String {
     match luab::parse(bytes) {
@@ -959,6 +1098,15 @@ fn run(args: &[String]) -> Result<(), String> {
                 return Err("no quests follow that one".to_string());
             }
             dump_quests(&mut data, &row_ids, &options)
+        }
+        "search" => {
+            if options.positional.is_empty() {
+                return Err(USAGE.to_string());
+            }
+            if search_scripts(&options, &options.positional)? == 0 {
+                return Err("no game_script file mentions any of those".to_string());
+            }
+            Ok(())
         }
         "extract" => {
             if options.positional.is_empty() {

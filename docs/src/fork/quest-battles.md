@@ -566,8 +566,10 @@ a quest's entering event, 0 for every other event (228 events across the capture
    name and AI settings), the waves and what preceded each, every NPC's targets with which explanations fit each change
    (counted), its actions and intervals, heals with how hurt the target was, and who never acted. The Duties tab has
    the director's sequence/variable changes; the Monsters tab the enemies' HP and skills.
-2. Dump the battle's client script: `kawari-questdump extract <Name>Btl.luab` finds it by name in any game_script
-   folder.
+2. Dump the battle's client script. Its file name isn't known (`<quest script>Btl.luab` was a guess that found
+   nothing for Trial by Wind and Trial by Water), so search for what it should mention:
+   `kawari-questdump search ClsCnj003` (Kawari Web: Quest Lab → Scripts that mention) copies out every client script
+   naming it, under its real name when its strings give it.
 3. Add the NPCs to the territory drop-in as a `QB_…` layer.
 4. Write `content/questbattle/<id>.lua` with the callbacks above; keep a timing table in its header (seconds from the
    fight starting, the director's scene 60000, not from entering).
