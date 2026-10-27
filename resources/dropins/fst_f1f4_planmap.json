@@ -9846,6 +9846,34 @@
                     "rotation": -2.6566
                 }
             ]
+        },
+        {
+            "name": "QB_ClsCnj001_001",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 294,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 136,
+                        "level": 5,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 134,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147
+                    },
+                    "layout_id": 2320919,
+                    "position": {
+                        "x": 325.185,
+                        "y": -5.217,
+                        "z": 390.488
+                    },
+                    "rotation": -0.0003
+                }
+            ]
         }
     ]
 }

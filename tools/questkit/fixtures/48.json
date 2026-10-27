@@ -1,0 +1,73 @@
+{
+  "quest": 48,
+  "script": "ClsCnj001_00048",
+  "source": "Bob's Chronofoil capture b23b91ef (2026-10-26)",
+  "params": {
+    "ACTOR0": 1000692,
+    "SEQ_0_ACTOR0": 0,
+    "ACTOR1": 1000764,
+    "SEQ_1_ACTOR1": 1,
+    "EOBJECT0": 2000883,
+    "SEQ_2_EOBJECT0": 2,
+    "SEQ_2_EOBJECT0_EVENTACTIONOK": 100,
+    "SEQ_2_EOBJECT0_EVENTACTIONNO": 99,
+    "EVENT_ACTION_SEARCH": 1,
+    "ENEMY0": 2320919,
+    "SEQ_3_ACTOR1": 3,
+    "SEQ_4_ACTOR0": 4,
+    "NQ_POINT_001": 4
+  },
+  "steps": [
+    {
+      "talk": 1000692,
+      "layout": 1170796,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1000764,
+      "layout": 1332314,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 2000883,
+      "layout": 3766545,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 100, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "spawns": [2320919],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [294, 2320919],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1000764,
+      "layout": 1332314,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 3, "flags": "0xf8402fff", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[2, []]]}
+    },
+    {
+      "talk": 1000692,
+      "layout": 1170796,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [1, 5823, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

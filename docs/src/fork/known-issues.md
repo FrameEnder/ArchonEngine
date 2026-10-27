@@ -144,11 +144,12 @@ add one when something is found.
   Ul'dah's story stops after **Call of the Sea** (673), which hands over to Limsa Lominsa. The Ul'dahn Envoy's (528) later ticketer flights (Elyenora in sequences 4–255, L'nophlo in 8–255: a yes/no and an airship cutscene) send you to Limsa Lominsa's (POPRANGE1) or Gridania's (POPRANGE4) arrival from the client script's cutscene IDs only, unseen on retail; its POPRANGE2/3/5 are placed by order and retail's positions. Its Pugilist and
   Thaumaturge **Close to Home** (569, 570) come from their client scripts only: no retail capture, and their replay
   fixtures are 568's with their ITEM0 and ACTOR1 (ACTOR1's layout taken from the quest's todo location).
-* Quest-spawned enemies (307's coblyns, 503's marshlights, 3853's goobbue) lack the quest fields retail's SpawnNpc gives them (Bob's
-  capture of 2026-10-18): `event_npc_instance_id` = the triggering object's layout ID, `handler_id` = the quest,
-  `owner_id` = the player (for 3853's goobbue, `event_npc_instance_id` is the EVENTRANGE that brought it out; and display flags 0x40003, which 307's layer doesn't set). The client script's
-  GetGimmickState checks IsBattleNpcTriggerOwner, so the enemy's quest marker or claim may differ; the kills still
-  count. Needs `spawn_quest_bnpc` to set them (Rust) and a trigger field in drop-ins.
+* Quest-spawned enemies take what brought them out from the current event's target (2026-10-27). For 3853's goobbue
+  retail named the EVENTRANGE; whether Kawari's range events carry the range's layout ID as their target isn't
+  checked. 307's layer doesn't set display flags 0x40003 as retail's spawns had.
+* Trial by Earth's tainted earth sprite cast Stone once in its only recorded fight: how often it casts is a guess
+  (every 3 s), and its hitbox isn't recorded. Way of the Conjurer's fixture has some of the layout IDs Bob fought,
+  not necessarily the ones that died.
 * The mildewed goobbue's timeline (`MildewedGoobbue_355`) has no hitbox (none recorded) and casts on the lightning
   sprite's spacing, not retail's ~3.1 s.
 * Monster timelines are keyed by BNpcBase, so 503's marshlights (base 187, name 901) fight as the coblyns that share

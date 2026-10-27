@@ -296,7 +296,7 @@ the LGB they add to): retail's LGBs don't have them.
 | Coerthas Central Highlands (155) | `roc_r1f1_planmap.json`, layer `BNPCS_RETAIL` (378) | Bob's Chronofoil capture of 2026-10-25 (half an hour flying around it) with all the older ones: `--dropin 155 --appends bg/ffxiv/roc_r1/fld/r1f1/level/planmap.lgb` |
 | East Shroud (152) | `fst_f1f2_planmap.json` (450) | the same capture with the older ones: `--dropin 152 --appends bg/ffxiv/fst_f1/fld/f1f2/level/planmap.lgb` |
 | South Shroud (153) | `fst_f1f3_planmap.json` (397) | the same, `f1f3` |
-| North Shroud (154) | `fst_f1f4_planmap.json` (445) | the same, `f1f4` |
+| North Shroud (154) | `fst_f1f4_planmap.json` (445), and Trial by Earth's `QB_ClsCnj001_001` (1, `nonpop`, display flags 0x40003) | the same, `f1f4`; the quest's from Bob's Chronofoil capture b23b91ef |
 
 Every zone's drop-in was checked against all 64 of Bob's captures (2026-10-25): its `appends` is the territory's own
 `Bg`, and every spawn point in its retail layer was seen in that territory; the only spots no capture shows are the

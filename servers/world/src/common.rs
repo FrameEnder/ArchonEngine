@@ -533,8 +533,9 @@ pub enum ToServer {
     SetMP(ClientId, ObjectId, u16),
     /// Gives back this many resource points (MP, CP or GP), up to the maximum: a gatherer's GP for each gather.
     RestoreResourcePoints(ObjectId, u16),
-    /// A quest brings out the battle NPC at this layout ID (from the zone's drop-ins), already after this player.
-    SpawnQuestBattleNpc(ClientId, ObjectId, u32),
+    /// A quest (the handler) brings out the battle NPC at this layout ID (from the zone's drop-ins), already after this
+    /// player; the last u32 is what brought it out (the layout ID of the object searched or the range walked into.)
+    SpawnQuestBattleNpc(ClientId, ObjectId, u32, HandlerId, u32),
     /// A player (the first ID) called a retainer at a summoning bell (its layout ID), standing at this position: they
     /// appear as this NPC with the second ID, at the bell's spot for retainers if the zone has one.
     SpawnRetainer(ObjectId, ObjectId, Box<SpawnNpc>, u32, Position),

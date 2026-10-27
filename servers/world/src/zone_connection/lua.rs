@@ -473,11 +473,19 @@ impl ZoneConnection {
                         .await;
                 }
                 LuaTask::SpawnQuestBattleNpc { layout_id } => {
+                    // Retail's SpawnNpc names the quest and what brought the enemy out: the current event's (Bob's
+                    // Chronofoil captures of 2026-10-18 and 2026-10-26.)
+                    let (quest, trigger) = events
+                        .last()
+                        .map(|(_, event)| (event.id, event.actor_id.object_id.0))
+                        .unwrap_or_default();
                     self.handle
                         .send(ToServer::SpawnQuestBattleNpc(
                             self.id,
                             self.player_data.character.actor_id,
                             *layout_id,
+                            quest,
+                            trigger,
                         ))
                         .await;
                 }

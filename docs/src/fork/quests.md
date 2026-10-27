@@ -189,7 +189,12 @@ calls `onEmote(emote, target, player)`, with `BASE_ID` the NPC's base ID. questk
    `QB_SubFst060_001`);
 2. does nothing if that NPC is already out (one of each at a time);
 3. inserts it, records it in `instance.quest_spawned_npcs` so it **doesn't respawn** when defeated;
-4. gives it enmity on the player, so it attacks at once.
+4. fills in what retail's SpawnNpc gives a quest's enemy (Bob's Chronofoil captures of 2026-10-18 and b23b91ef,
+   Trial by Earth's tainted earth sprite): `event_npc_instance_id` = what brought it out (the current event's target:
+   the object searched, or the range walked into), `handler_id` = the quest, and the player as `owner_id`,
+   `target_id` and `combat_tagger_id`; the client's GetGimmickState asks IsBattleNpcTriggerOwner. Until 2026-10-27
+   these were 0;
+5. gives it enmity on the player, so it attacks at once.
 
 New spawns need a drop-in layer with the retail position, level and HP (from a Kawari Recorder recording).
 When editing a drop-in JSON, splice the new layer into the text: rewriting it through a JSON library changes how every
@@ -384,6 +389,8 @@ Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `
 | 699 | Color Your World | `006/SubSea921_00699` | client script (2026-10-25), Sapphire, Chronofoil capture (2026-10-25) | Swyrgeim offers it (scene 0, a yield; straight to 255); with RITEM0 in the bags he asks for it (NpcTrade scene 1, a yield; scene 3 without it) and rewards it (2, a yield); the handed-in item leaves its bag only then (`take_handed_in_items`). Unlocks dyeing (UnlockLink 14). |
 | 3017 | If I Had a Glamour | `030/SubCts896_03017` | client script (2026-10-25), Chronofoil capture (2026-10-25) | Swyrgeim offers it (scene 0, a yield, then 1), sequence 1; Folclind gives ITEM0 (scene 2: notice 0 `[24401]`, UI8BH 1), 255; Swyrgeim takes it (event-item NpcTrade 4) and rewards it (5, a yield). Lines: Swyrgeim in 1 (3), Folclind in 255 (6). Unlocks glamours (UnlockLink 15). |
 | 3018 | Absolutely Glamourous | `030/SubCts897_03018` | client script (2026-10-25); Chronofoil capture (2026-10-25) of the offer only, declined | Swyrgeim offers it (scene 0, then 1), sequence 1; Folclind gives ITEM0 (scene 2, notice 0), 2, ITEM0 in UI8BL; Swyrgeim takes it (event-item NpcTrade 4) and gives ITEM1 (5: notice 1, UI8BH 1), 255; Goberin (ACTOR2) takes ITEM1 (NpcTrade 7) and rewards it (8, a yield). Lines: Swyrgeim in 1 and 255 (3, 9), Folclind in 2 (6). Everything after the offer is unverified. |
+| 22 | Way of the Conjurer | `000/ClsCnj000_00022` | client script, Chronofoil capture b23b91ef (2026-10-26) | Madelle offers it (scene 0, a yield), sequence 1; E-Sumi-Yan's cutscene (scene 1, 0xF8482EFB) ends on a yes/no: yes is sequence 2 and notice 0. Three each of ENEMY0–2 (UI8AL, UI8BH, UI8BL; notice 1–3 with [count, 3]; UI8AH counts the kinds done), then 255 with the variables cleared. E-Sumi-Yan's reward (scene 2) gives the Hunting Log (SystemReward 21). |
+| 48 | Trial by Earth | `000/ClsCnj001_00048` | client script, Chronofoil capture b23b91ef (2026-10-26) | E-Sumi-Yan offers it (scene 0), sequence 1; ACTOR1 in the North Shroud (scene 1), notice 0, sequence 2; searching EOBJECT0 (scene 2, the bar, scene 100) brings out ENEMY0, a tainted earth sprite (drop-in layer `QB_ClsCnj001_001`, timeline `TaintedEarthSprite_294`); its kill is notice 1 and sequence 3; ACTOR1's cutscene (scene 3, 0xF8402FFF), notice 2, 255; E-Sumi-Yan's reward (scene 4). |
 
 Upstream's own scripts cover the three city openings and the Close to Home offers. Gridania's story from Close to
 Home to The Gridanian Envoy is complete; Call of the Sea starts the next part (Limsa Lominsa). Limsa Lominsa's runs from

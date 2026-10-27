@@ -3296,7 +3296,13 @@ pub async fn server_main_loop(
                         .min(common.max_resource_points);
                     update_actor_hp_mp(network.clone(), instance, from_actor_id);
                 }
-                ToServer::SpawnQuestBattleNpc(_from_id, from_actor_id, layout_id) => {
+                ToServer::SpawnQuestBattleNpc(
+                    _from_id,
+                    from_actor_id,
+                    layout_id,
+                    quest,
+                    trigger,
+                ) => {
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
                         continue;
@@ -3307,12 +3313,24 @@ pub async fn server_main_loop(
                         continue;
                     }
 
-                    let Some(npc) = instance.zone.get_battle_npc(layout_id) else {
+                    let Some(mut npc) = instance.zone.get_battle_npc(layout_id) else {
                         tracing::warn!(
                             "A quest tried to spawn battle NPC {layout_id}, but it isn't in this zone's drop-ins!"
                         );
                         continue;
                     };
+                    // As retail's (Bob's Chronofoil capture b23b91ef, Trial by Earth's): what brought it out, the
+                    // quest, and the player as its owner, target and claimant (the client script's
+                    // IsBattleNpcTriggerOwner reads these.)
+                    let player = ObjectTypeId {
+                        object_id: from_actor_id,
+                        ..Default::default()
+                    };
+                    npc.event_npc_instance_id = trigger;
+                    npc.common.handler_id = quest;
+                    npc.common.owner_id = from_actor_id;
+                    npc.common.target_id = player;
+                    npc.common.combat_tagger_id = player;
 
                     let npc_id = ObjectId(fastrand::u32(..));
                     {

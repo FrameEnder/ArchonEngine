@@ -1,0 +1,84 @@
+{
+  "quest": 22,
+  "script": "ClsCnj000_00022",
+  "source": "Bob's Chronofoil capture b23b91ef (2026-10-26): every scene, flag, notice and variable; the kills' layout IDs are some of the ones he fought (the capture doesn't say which died)",
+  "params": {
+    "ACTOR0": 1000323,
+    "SEQ_0_ACTOR0": 0,
+    "ACTOR1": 1000692,
+    "SEQ_1_ACTOR1": 1,
+    "ENEMY0": 37,
+    "ENEMY1": 49,
+    "ENEMY2": 47,
+    "SEQ_3_ACTOR1": 2,
+    "HOW_TO_CLASS_CHANGE": 10,
+    "UNLOCK_IMAGE_MONSTER_NOTE": 32,
+    "HOW_TO_MONSTER_NOTE": 45,
+    "LOGMESSAGE_MONSTER_NOTE_PAGE_UNLOCK": 1009
+  },
+  "steps": [
+    {
+      "talk": 1000323,
+      "layout": 1161195,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1000692,
+      "layout": 1170796,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 1, "flags": "0xf8482efb", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "kill": [37, 1408325],
+      "expect": {"sequence": 2, "vars": "010000000000", "notices": [[1, [1, 3]]]}
+    },
+    {
+      "kill": [49, 1408358],
+      "expect": {"sequence": 2, "vars": "011000000000", "notices": [[2, [1, 3]]]}
+    },
+    {
+      "kill": [37, 1408325],
+      "expect": {"sequence": 2, "vars": "021000000000", "notices": [[1, [2, 3]]]}
+    },
+    {
+      "kill": [49, 1408358],
+      "expect": {"sequence": 2, "vars": "022000000000", "notices": [[2, [2, 3]]]}
+    },
+    {
+      "kill": [49, 1408358],
+      "expect": {"sequence": 2, "vars": "123000000000", "notices": [[2, [3, 3]]]}
+    },
+    {
+      "kill": [37, 1408325],
+      "expect": {"sequence": 2, "vars": "233000000000", "notices": [[1, [3, 3]]]}
+    },
+    {
+      "kill": [47, 0],
+      "expect": {"sequence": 2, "vars": "233100000000", "notices": [[3, [1, 3]]]}
+    },
+    {
+      "kill": [47, 0],
+      "expect": {"sequence": 2, "vars": "233200000000", "notices": [[3, [2, 3]]]}
+    },
+    {
+      "kill": [47, 0],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[3, [3, 3]]]}
+    },
+    {
+      "talk": 1000692,
+      "layout": 1170796,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}
