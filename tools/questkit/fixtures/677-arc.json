@@ -1,0 +1,125 @@
+{
+  "quest": 677,
+  "script": "ManFst204_00677",
+  "source": "Bob's Chronofoil capture cc62ad94 (2026-10-28, an arcanist); scenes and effects from Bob's Chronofoil capture of 2026-10-28",
+  "params": {
+    "ACTOR0": 1000100,
+    "ACTOR1": 1004612,
+    "INSTANCEDUNGEON0": 2,
+    "ACTOR2": 1004619,
+    "ACTOR3": 1004620,
+    "ACTOR4": 1004613,
+    "ACTOR5": 1004614,
+    "ACTOR6": 1004615,
+    "SEQ_0_ACTOR0_LQ": 90,
+    "LOC_ACTOR0": 1003061,
+    "LOC_ACTOR1": 1004616,
+    "LOC_ACTOR2": 1004617,
+    "LOC_ACTOR3": 1004618,
+    "LOC_POS_ACTOR3": 4091288,
+    "LOC_FACE0": 604,
+    "LOC_FACE1": 617,
+    "LOC_FACE2": 612,
+    "LOC_FACE3": 605,
+    "UNLOCK_IMAGE_DUNGEON_TAM_TARA": 76,
+    "UNLOCK_ADD_NEW_CONTENT_TO_CF": 3702
+  },
+  "steps": [
+    {
+      "talk": 1000100,
+      "layout": 1140490,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1004612,
+      "layout": 4084697,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "effects": [
+        {
+          "content": 2
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "duty_cleared": 2,
+      "territory": 1037,
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            1,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1000100,
+      "layout": 1140490,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 14,
+          "flags": "0xf8402efb",
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

@@ -126,14 +126,16 @@ DROPS = {
 }
 
 -- What the coffers held on retail, one list per opening (item IDs; the three runs, and a fourth through Duty Support
--- as a gladiator, Bob's Chronofoil capture c99fe374 of 2026-10-28, its last opening of each: not chosen for the
--- class.) 59 and 65 were never opened and hold one of these. See server/loot.rs.
+-- as a gladiator, Bob's Chronofoil capture c99fe374 of 2026-10-28: not chosen for the class; and two with Duty Finder
+-- parties, cc62ad94 of the same day, the last two of 52, 53 and 51, the last of 58 and the first of 59.) 65 was never
+-- opened and holds one of these. See server/loot.rs.
 LOOT = {
-    [52] = { { 3554 }, { 3554, 4310 }, { 3555, 4310 }, { 3556 } },
+    [52] = { { 3554 }, { 3554, 4310 }, { 3555, 4310 }, { 3556 }, { 2683, 4207 }, { 2684, 4206 } },
     [57] = { { 3554 }, { 3554 } },
-    [53] = { { 3034 }, { 3033 }, { 3035 }, { 3034 } },
-    [58] = { { 3033 }, { 3035 }, { 3034 } },
-    [51] = { { 31423 }, { 3786, 31428, 33130 }, { 3781, 31427 }, { 31426 } },
+    [53] = { { 3034 }, { 3033 }, { 3035 }, { 3034 }, { 3330 }, { 3331 } },
+    [58] = { { 3033 }, { 3035 }, { 3034 }, { 3331 } },
+    [59] = { { 31425 } },
+    [51] = { { 31423 }, { 3786, 31428, 33130 }, { 3781, 31427 }, { 31426 }, { 31421 }, { 31422 } },
 }
 -- What the coffers may hold besides what was recorded (`director:treasure_pool`): the FFXIV Console Games Wiki's loot
 -- lists for the duty (each boss's coffer and each "Treasure Coffer" at its map position, matched to these base IDs by

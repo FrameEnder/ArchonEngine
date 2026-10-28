@@ -353,8 +353,12 @@ NPC's times counted like its health; written by hand: Victory in Peril's are the
 as the server gives them, for steps that wait for the player to come close. Without them everyone stands at the
 origin, and anything waiting for the player to come close happens at once.
 
+And retail's **casts** (`casts`: `[[t, layout, action], …]`, the run's ActorCast events by the caster's layout ID,
+written by `--make` since 2026-10-28): the script hears `onActorCast(director, layout, action, 0)` at each, as from the
+server, for steps that wait for an NPC's cast (the companies' battles' Drill Cannons).
+
 It doesn't simulate enmity or who hits whom (the health curves are retail's whatever the script's
-targeting does), or the NPCs' casts and yells (not compared). Losing is: when the player's health (`player`) reaches 0
+targeting does), or the NPCs' casts beyond `casts` and their yells (not compared). Losing is: when the player's health (`player`) reaches 0
 the script hears `onPlayerDeath`, as from the server (since 2026-10-27: Like Mother, Like Daughter's lost run went on
 spawning past retail's end). An event NPC the script spawns (retail's runs list battle NPCs only) goes in the
 fixture's `npcs` by hand, there from the start (56's Sylphie, 4249177). The player's health is retail's when the fixture

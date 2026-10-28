@@ -15,6 +15,22 @@ Aetherytes, attunement, Teleport and maps.
 * Already attuned: the aetheryte menu (scene 2) as upstream.
 * Close to Home's attunement objective uses the aetheryte's own event, and also teaches Return.
 
+## The aethernet's other destinations
+
+Attuning to the last of a city's aethernet shards also opens the aethernet's other destinations: the city's gates and
+its airship landing, which the aethernet menu then lists. They are the Aetheryte sheet's rows with `Invisible` set in
+the city's `AethernetGroup`; the group's visible shards (not `IsAetheryte`, so the city's big aetheryte isn't needed)
+must all be attuned. A destination with a `RequiredQuest` waits for that quest too (row 54, the White Wolf Gate, for
+quest 66338).
+
+Retail (Bob's Chronofoil capture cc62ad94, 2026-10-28, all three cities) sent a LearnTeleport (ActorControlSelf 509)
+for each of them right after the last shard's, in the same burst; the character's aetheryte bitmask at its next login
+(PlayerSetup: the unlocks' 92 bytes start 64 bytes after the name, the aetherytes' 30 follow) had them all set.
+
+`GameData::aethernet_extras` lists each group's shards and destinations; `ZoneConnection::learn_aethernet_extras`
+(`zone_connection/unlock.rs`) teaches any that are due, after a shard is attuned (`LuaTask::UnlockAetheryte`), after a
+quest is completed (for `RequiredQuest`) and at login (so older characters get theirs.)
+
 ## Teleport unlock
 
 On retail the Teleport general action becomes usable after attuning to a **second main aetheryte** (shards don't

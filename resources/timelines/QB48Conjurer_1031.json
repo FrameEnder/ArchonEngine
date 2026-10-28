@@ -1,0 +1,34 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 10.0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 42.0
+        },
+        "121": {
+            "npcs": 14.0
+        },
+        "120": {
+            "npcs": 122.0,
+            "players": 122.0
+        }
+    },
+    "rotation": {
+        "pace": 2.5,
+        "actions": [
+            {
+                "action": 121,
+                "every": 16.3,
+                "comment": "Aero: 6 uses, every 16 s, 14"
+            },
+            {
+                "action": 119,
+                "every": 7.6,
+                "comment": "Stone: 14 uses, every 7.6 s, 42"
+            }
+        ]
+    },
+    "comment": "Quest battle 48's conjurer (BNpcBase 1031, BNpcName 1002), level 20, 1156 HP, on your side. From Bob's Chronofoil capture cc62ad94 (2026-10-28, The Company You Keep (Maelstrom)'s quest battle 48 won, `questkit chronofoil --battle 0.54`, territory 279, duty 342; a level 24 arcanist): on the lancers, then their leader, the archers and the vanguard, from about 8 yalms: Stone (119) 42 every 7.6 s, Aero (121) 14 every 16 s; Cure (120, the director's heals) 122. No auto-attack. Hitbox not recorded."
+}

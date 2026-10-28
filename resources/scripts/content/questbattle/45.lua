@@ -16,10 +16,12 @@
 --   five of the first wave's nine left (four down, in all four runs): sequence 3
 --   30 s after that (30.0-30.1 s, three runs): sequence 4, the second wave (four soldiers on the thaumaturge, a
 --         javelinier on you); the scout's 204 at once, the lead's 205 10 s later
---   two left (the won run: not at three, 8 s before; the lost ones never got there): sequence 5, the third wave (three lancers and three
---         soldiers on the second gladiator, a javelinier on you); the lead's 206 10 s later, the scout's 207 15 s
---   55 s after sequence 5 (55.1 s, the won run, with six enemies still standing and the leader at 84 %; 45.4 s in a
---         gladiator's won run, Bob's capture c99fe374 of 2026-10-28): sequence 7 and the battle's scene 7 (a cutscene,
+--   four of the second wave's five down, at once (0.05 s after the fourth's health reached 0, all three won runs:
+--         Bob's, Dags' and an arcanist's, captures b8432613, c99fe374 and cc62ad94; the lost ones never got there):
+--         sequence 5, the third wave (three lancers and three soldiers on the second gladiator, a javelinier on you);
+--         the lead's 206 10 s later, the scout's 207 15 s
+--   55 s after sequence 5 (55.1 s in all three won runs; in the first with six enemies still standing and the leader
+--         at 84 %): sequence 7 and the battle's scene 7 (a cutscene,
 --         0xF8402EFB); the quest moves to sequence 3. The second gladiator's 210 came 0.85 s after it in the first won
 --         run as it fell (its last words: it was at 0.6 %), and not at all in the second, where it lived.
 --   an ally falling: its last words (the pugilist 209, BNpcName 1007, portrait 73229; the thaumaturge 208, 1005,
@@ -75,10 +77,9 @@ FAIL_DELAY_UPDATES = 12
 -- When things move on: enemies left (the adds), and the timers, in updates (half a second each.)
 SEQUENCE_3_AT = 5
 SEQUENCE_4_AFTER = 60
-SEQUENCE_5_AT = 2
+SECOND_WAVE_DOWN = 4
 WON_AFTER = 110
--- Sequences 3 and 5 came 2 s after the enemy's health reached 0 (2.0 and 1.7 s, the won run), as its death animation
--- ended.
+-- Sequence 3 came 2 s after the enemy's health reached 0 (2.0 s in every won run), as its death animation ended.
 DEATH_COUNTS_AFTER = 4
 
 -- Who's talking (DirectorPopupMessage): the scout by its ENpcResident (an event NPC: kind 3), the Flames by their
@@ -133,6 +134,7 @@ BATTLE:enemy(BNPC_LEADER, { group = "boss", attacks = BNPC_LEAD })
 
 local over = false
 local lost = false
+second_wave_down = 0
 local fail_in = nil
 local phase = 1
 -- Timers of their own, side by side (Battle:steps runs one queue, one step after another): { updates left, fn }.
@@ -246,6 +248,12 @@ function onActorDeath(director, layout_id, position)
         return
     end
     BATTLE:died(director, layout_id)
+    if SECOND_WAVE[layout_id] ~= nil then
+        second_wave_down = second_wave_down + 1
+        if phase == 3 and second_wave_down >= SECOND_WAVE_DOWN then
+            thirdWave(director)
+        end
+    end
     after(DEATH_COUNTS_AFTER, function(d) counted(d) end)
 end
 
@@ -255,8 +263,6 @@ function counted(director)
         phase = 2
         director:set_sequence(3)
         after(SEQUENCE_4_AFTER, function(d) secondWave(d) end)
-    elseif phase == 3 and addsLeft() <= SEQUENCE_5_AT then
-        thirdWave(director)
     end
 end
 

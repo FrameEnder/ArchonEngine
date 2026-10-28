@@ -278,6 +278,11 @@ pub enum ActorControlCategory {
     #[brw(magic = 39u32)]
     DeadFadeOut,
 
+    /// Fall damage: the HP a fall took, as flying text over the one who fell (Bob's Chronofoil captures: 49 falls, all
+    /// with `unk` 1 but two of 450 at level 87; see docs/src/fork/combat.md.)
+    #[brw(magic = 45u32)]
+    FallDamage { damage: u32, unk: u32 },
+
     #[brw(magic = 41u32)]
     ToggleUnlock {
         /// Corresponds to an UnlockLink. Could be a spell, action, emote, etc.
@@ -788,6 +793,12 @@ pub enum ActorControlCategory {
     /// "Achievement unlocked" pop-up.
     #[brw(magic = 515u32)]
     AchievementCompleted { id: u32 },
+
+    /// Someone completed an achievement: retail sent it from the player, to the player and to everyone around them,
+    /// right after `AchievementCompleted` (Bob's Chronofoil capture cc62ad94: all eight of the player's, and four
+    /// other players'.) What the client does with it isn't known.
+    #[brw(magic = 518u32)]
+    AchievementEarned { id: u32 },
 
     /// Calls into some Achievement method, unsure what this does yet. (The client empties the nearly completed list
     /// whose index is `unk1`, 0 for the login notice and 1 for the Achievements window's; the fork sends it as the

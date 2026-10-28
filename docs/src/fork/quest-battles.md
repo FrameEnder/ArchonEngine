@@ -260,8 +260,9 @@ a quest's entering event, 0 for every other event (228 events across the capture
   portrait 73225) at 5 s and 203 (the lead, BNpcName 993, 73226) at 10 s. **Sequence 3 when five of the first wave's
   nine are left** (four down in all four runs), 2 s after the fourth's health reached 0, as its death animation
   ended (the director counts deaths 4 updates late); sequence 4 30 s after it (three runs): the second wave (four
-  soldiers on the thaumaturge, a javelinier on you), 204 at once, 205 10 s later. **Sequence 5 when two adds are
-  left** (at three, 8 s before, it didn't come): the third wave (three lancers and three soldiers on the second
+  soldiers on the thaumaturge, a javelinier on you), 204 at once, 205 10 s later. **Sequence 5 as the fourth of the
+  second wave's five falls**, at once (all three won runs; until 2026-10-28 it was "when two adds are left", which
+  an arcanist's run, Bob's Chronofoil capture cc62ad94, `--battle 0.29`, didn't fit): the third wave (three lancers and three soldiers on the second
   gladiator, a javelinier on you), 206 10 s later, 207 15 s. **55 s after sequence 5 it's won**, whatever is still
   standing (the leader at 84 %, six adds): sequence 7 and, with no "Duty Complete", the battle's scene 7 (0xF8402EFB);
   the quest moves to 3. As the cutscene ends retail sent the player
@@ -282,7 +283,24 @@ a quest's entering event, 0 for every other event (228 events across the capture
 * Timelines `QB45*` (bases 963-970); action script `QB45Amaljaa_00490` (the Amalj'aa's 490, potency 100). The
   Flames' 14 and 718 and the Amalj'aa's 426 (on themselves) aren't modelled. `questkit battle-sim 45` checks all five
   runs (`45.json` won, `45-lost-8/10/12.json`, and `45-dags.json`, Dags' won run as a gladiator: sequence 5 at 79.9 s,
-  the win 55.1 s after it, the same exit to Southern Thanalan): every step within 1.6 s.
+  the win 55.1 s after it, the same exit to Southern Thanalan) and `45-arc.json` (the arcanist's, won, the win 55.1 s
+  after sequence 5 again): every step within 1.6 s.
+
+### The Company You Keep: battles 46, 47 and 48
+
+The three Grand Companies' battles are one battle with each company's people (the same foes, BNpcBases 1016 and
+1020-1023), and their scripts one script with a different head (layouts, lines, start spot), timed against all their
+retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad94):
+
+* **Sequence 3**: their leader below half (49 %), **or the first wave all down**, 2 s after the last one's health
+  reached 0 (the Maelstrom's run: the leader was still at 60 %). **Sequence 4** and the vanguard 11 s after it
+  (11.08, 11.05, 11.06, 9.07 s) when the leader's health brought it, 8 s when the wave did.
+* **The vanguard below 70 and 40 %**: sequences 5 and 6. Then **its Drill Cannons** (525) move it on: 2.9 s after it
+  begins each one (2.85-2.9 s every time, `onActorCast`), sequence 7, and 8 too if it's below 30 % (27.1, 27.5 %: at
+  once; 32.2 %: no, then 17.3 % at the next one). 15 s after 8 sequence 6 again (15.07 s twice), and the next Drill
+  Cannons 7. Until then 7 and 8 were marks at 27 % and 6.3 s later, and the second 6-7 a mark at 14 and 8 %: they
+  only happened to fit.
+* **The win**: 1.5 s after the vanguard's health reached 0 (2.2, 2.05, 0.4 s).
 
 ### Quest battle 46 — The Company You Keep (Twin Adder) (`content/questbattle/46.lua`)
 
@@ -299,9 +317,9 @@ a quest's entering event, 0 for every other event (228 events across the capture
   talk 113 (the lead, BNpcName 1001, portrait 73216) at 5 s and 114 (their leader, 996, 73215) at 10 s. **Their leader
   below half** (his health went 50.1 -> 48.7, 50.3 -> 48.7, 50.8 -> 46.7 % as it came, 57.5-90.1 s in): sequence 3
   and 115, 116 5 s later; **11 s after it** sequence 4 and the magitek vanguard with two archers, all on the lead;
-  117 7 s after that. The vanguard below 70, 40 and 27 %: sequences 5, 6, then 7 and 8; **15 s after 8** sequence 6
-  again and 6.3 s after that 7, by time, not its health (15.07 s here, the vanguard at 14 %; 15.21 s in battle 47, at
-  4 %: until 2026-10-28 these two were marks at 14 and 8 %). Nothing else came with them. **The vanguard down**: 2.2 s later (its death animation) sequence 9 and "Duty
+  117 7 s after that. The vanguard below 70 and 40 %: sequences 5 and 6, then its Drill Cannons bring 7 and 8, and 15 s
+  after 8 sequence 6 again ([above](#the-company-you-keep-battles-46-47-and-48)). Nothing else came with them. **The
+  vanguard down**: 2.2 s later (its death animation) sequence 9 and "Duty
   Complete", the battle's scene 9 (0xF8402EF3) 3.6 s after; the quest moves to 255 and the director to 0xFE with its
   last byte 0x80 (`complete_quest_battle(255, false, 9, 0xF8402EF3)`); out back to the East Shroud. The conjurer
   falling says its last words (119, BNpcName 1176, 73217; a lost run) and it goes on. Your health at 0: sequence
@@ -338,6 +356,22 @@ a quest's entering event, 0 for every other event (228 events across the capture
 * No client battle script was dumped for it (the scene numbers are the capture's). Timelines `QB47*` (bases 1024-1026)
   for the Flames; the foes use battle 46's `QB46*` timelines (the same bases). Flash (14) and Rampart (10) aren't
   modelled. `questkit battle-sim 47` checks the run (`47.json`): every step within 0.7 s.
+
+### Quest battle 48 — The Company You Keep (Maelstrom) (`content/questbattle/48.lua`)
+
+* Quest 681 (ManSea302_00681) enters it from the airship crewman in Lower La Noscea (scene 5) or EVENTRANGE0 (scene
+  6, flags 0x2001), territory 279. Territory 279's Bg is Lower La Noscea's own (`sea_s1/fld/s1f2`, the same as 135),
+  so its NPCs are layer `QB_ManSea302_001` of `sea_s1f2`, from `questkit chronofoil --dropin 279`: three of the
+  Maelstrom on your side (the lead marauder 4105799, BNpcBase 1030, BNpcName 1003, 4956 HP; a conjurer 4105800, 1031;
+  an archer 4105801, 1032; hostile set false) and the other two battles' foes (their leader 4105802, the first wave
+  4105803-4105807, the vanguard 4105862 with archers 4105863 and 4105864). Start spot (368.26, 75.92, -326.54, facing
+  -3.116) from Bob's Chronofoil capture cc62ad94 (2026-10-28, `--battle 0.54`, won; a level 24 arcanist).
+* The flow is the other two's ([above](#the-company-you-keep-battles-46-47-and-48)); battle talk 112 from the lead
+  (portrait 73219) and 113-116 from their leader. Here the first wave fell before their leader reached half, so
+  sequence 3 came from the wave.
+* Timelines `QB48LeadMarauder_1030`, `QB48Conjurer_1031` and `QB48Archer_1032`; the lead's Skull Sunder is
+  `QuestBattleNpc_00035` (a slashing hit scaled by the timeline). The foes use `QB46*`. No client battle script was
+  dumped for it. `questkit battle-sim 48` checks the run (`48.json`).
 
 ### Quest battle 16 — Trial by Water (`content/questbattle/16.lua`)
 

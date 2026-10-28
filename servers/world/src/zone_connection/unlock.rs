@@ -5,6 +5,34 @@ use icarus::{Adventure::AdventureSheet, AetherCurrent::AetherCurrentSheet};
 use kawari::{common::value_to_flag_byte_index_value, ipc::zone::ActorControlCategory};
 
 impl ZoneConnection {
+    /// The city aethernets' extra destinations (the gates, the airship landing): once every shard of a city's
+    /// aethernet is attuned, its extras are learned (LearnTeleport each, after the last shard's), those that need a
+    /// quest once it's done. Retail, Bob's Chronofoil capture cc62ad94 of 2026-10-28: the last of Limsa Lominsa's,
+    /// Gridania's and Ul'dah's shards each brought their gates and airship landing at once (45, 46, 93; 31, 32, 94; 38,
+    /// 39, 40, 95), before the city's big Aetheryte in Ul'dah, but not the White Wolf Gate (54), which needs quest 66338.
+    pub async fn learn_aethernet_extras(&mut self) {
+        let groups = self.game_data.lock().aethernet_extras();
+        let mut learned = Vec::new();
+        for (_, shards, extras) in groups {
+            let has = |id: u32| self.player_data.aetheryte.unlocked.contains(id);
+            if !shards.iter().all(|shard| has(*shard)) {
+                continue;
+            }
+            for (extra, quest) in extras {
+                if has(extra) || (quest != 0 && !self.quest_completed(quest)) {
+                    continue;
+                }
+                learned.push(extra);
+            }
+        }
+        for id in learned {
+            self.player_data.aetheryte.unlocked.set(id);
+            tracing::info!("Aethernet extra destination {id} learned");
+            self.actor_control_self(ActorControlCategory::LearnTeleport { id, unlocked: true })
+                .await;
+        }
+    }
+
     pub async fn toggle_orchestrion(&mut self, orchestrion_id: u32) {
         let should_unlock = self
             .player_data

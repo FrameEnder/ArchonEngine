@@ -74,11 +74,12 @@ pub use companion::{
     COMMAND_FOLLOW, COMMAND_HEALER, COMMAND_WITHDRAW, CompanionProfile, MAX_RANK, eat_onion,
     gain_exp,
 };
+pub mod daily;
 mod director;
 mod dodge;
-pub mod daily;
 pub mod duty_finder;
 mod effect;
+mod fall;
 mod glamour;
 mod instance;
 mod job_gauge;
@@ -2137,15 +2138,22 @@ pub async fn server_main_loop(
 
                     if let Some(instance) = data.find_actor_instance_mut(actor_id) {
                         let mut moved = false;
+                        let mut is_player = false;
                         if let Some((_, spawn)) = instance
                             .actors
                             .iter_mut()
                             .find(|actor| *actor.0 == actor_id)
                         {
+                            is_player = matches!(spawn, NetworkedActor::Player { .. });
                             let common = spawn.get_common_spawn_mut();
                             moved = common.position != position;
                             common.position = position;
                             common.rotation = rotation;
+                        }
+                        if is_player {
+                            fall::player_moved(
+                                &network, instance, actor_id, position, anim_state, jump_state,
+                            );
                         }
 
                         // Send actor move!

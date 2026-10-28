@@ -342,10 +342,10 @@ pub const TRIAL_MEMBERS: [Member; 4] = [
 /// Deepcroft's the same three at 16 with 443, 347 and 316 HP (his capture of 2026-10-24, 3ec702a8 visit 0.3), the
 /// Copperbell Mines' at 17 with 476, 372 and 339 (his capture of 2026-10-25, bd298651 visit 0.5.) A duty not here
 /// takes the member's own `level` and `hp`.
-/// The Conjurer (39, 43) the same (Bob's capture c99fe374 of 2026-10-28): 316 HP at 16, 339 at 17, 432 at 20; its
-/// Sastasha HP isn't recorded yet (it comes at its own level, 16, there.)
+/// The Conjurer (39, 43) the same (Bob's captures c99fe374 and cc62ad94 of 2026-10-28): 293 HP at 15 in Sastasha, 316 at
+/// 16, 339 at 17, 432 at 20.
 pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 4] = [
-    (4, 15, &[(36, 411), (37, 322), (38, 293)]),
+    (4, 15, &[(36, 411), (37, 322), (38, 293), (39, 293)]),
     (2, 16, &[(36, 443), (37, 347), (38, 316), (39, 316)]),
     (3, 17, &[(36, 476), (37, 372), (38, 339), (39, 339)]),
     // The Bowl of Embers (Bob's capture b8432613 of 2026-10-27, visit 0.16): the trials' three at 20.

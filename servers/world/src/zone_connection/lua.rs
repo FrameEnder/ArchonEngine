@@ -197,6 +197,9 @@ impl ZoneConnection {
                             unlocked: *on,
                         })
                         .await;
+                        if *on {
+                            self.learn_aethernet_extras().await;
+                        }
                     }
                     if *on {
                         self.check_teleport_unlock(true).await;

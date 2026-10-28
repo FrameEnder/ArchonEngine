@@ -30,6 +30,10 @@ times counted like its health), which the script sees in `info` as the server gi
 player to come close (Victory in Peril's second pair and cutscene). Without them everyone stands at the origin, so
 "nearest" choices are arbitrary and anything waiting for the player to come close happens at once.
 
+Casts: a fixture can hold the NPCs' casts (`casts`: `[[t, layout, action], ...]`, from retail's ActorCast, timed like
+their health), which the script hears as `onActorCast(director, layout, action, 0)`, as the server calls it when an
+NPC begins an action (the magitek vanguard's Drill Cannons move battles 46-48 on). Instant actions aren't in it.
+
 What it doesn't simulate: enmity and who hits whom (the health curves are retail's whatever the script's targeting does), and losing. The player's health
 follows retail's curve when the fixture has one (`player`, for lines said as the player's health drops), full otherwise.
 """
@@ -153,6 +157,17 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
     if won is not None:
         events.append([rel(won), "won"])
 
+    # The NPCs' casts (ActorCast: "action N ..."), by layout ID.
+    casts = []
+    for event in run.get("Events", []):
+        if event.get("Kind") != "cast":
+            continue
+        actor = actors.get(str(event.get("Id")))
+        action = _number_after(event.get("Text", ""), "action")
+        if actor is None or not actor.get("LayoutId") or action is None or rel(event["S"]) < 0:
+            continue
+        casts.append([rel(event["S"]), actor["LayoutId"], action])
+
     durations = {}
     for t, n in scenes:
         if n in (SCENE_COMMENCE, SCENE_COMPLETE) or t < commence:
@@ -165,6 +180,8 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
                "scenes": durations, "events": events}
     if player:
         fixture["player"] = player
+    if casts:
+        fixture["casts"] = casts
     return fixture
 
 
@@ -173,11 +190,14 @@ def save(fixture: dict, path: Path | None = None) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     npcs = ",\n".join(f'    "{k}": {json.dumps(v)}' for k, v in fixture["npcs"].items())
     events = ",\n".join(f"    {json.dumps(e)}" for e in fixture["events"])
-    head = {k: v for k, v in fixture.items() if k not in ("npcs", "events", "positions")}
+    head = {k: v for k, v in fixture.items() if k not in ("npcs", "events", "positions", "casts")}
     text = json.dumps(head, indent=2)[:-2] + f',\n  "npcs": {{\n{npcs}\n  }},\n  "events": [\n{events}\n  ]'
     if fixture.get("positions"):
         positions = ",\n".join(f'    "{k}": {json.dumps(v)}' for k, v in fixture["positions"].items())
         text += f',\n  "positions": {{\n{positions}\n  }}'
+    if fixture.get("casts"):
+        casts = ",\n".join(f"    {json.dumps(c)}" for c in fixture["casts"])
+        text += f',\n  "casts": [\n{casts}\n  ]'
     text += "\n}\n"
     json.loads(text)
     path.write_text(text)
@@ -281,6 +301,7 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
     not_yet: set[int] = set()
     end = max([e[0] for e in fixture["events"]] or [0]) + AFTER_LAST_EVENT
     known = dropin_layouts()
+    cast_heard: set[tuple] = set()
 
     def follow_calls(outside_update: bool = True):
         nonlocal seen_calls
@@ -319,6 +340,17 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                 if g.onSceneFinished is not None:
                     g.onSceneFinished(director, due[1])
             follow_calls()
+            # Casts, by retail's clock counted from when the script spawned the caster.
+            for cast in fixture.get("casts", []):
+                at, layout, action = cast
+                if layout not in alive or (at, layout, action) in cast_heard:
+                    continue
+                info = npcs.get(layout) or {}
+                if t >= at + spawned[layout] - (info.get("spawn") or 0.0):
+                    cast_heard.add((at, layout, action))
+                    if g.onActorCast is not None:
+                        g.onActorCast(director, layout, action, 0)
+                    follow_calls()
             # Deaths, by retail's clock counted from when the script spawned each one.
             for layout in sorted(alive):
                 info = npcs.get(layout)

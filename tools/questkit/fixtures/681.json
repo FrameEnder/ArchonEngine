@@ -1,0 +1,150 @@
+{
+  "quest": 681,
+  "script": "ManSea302_00681",
+  "source": "Bob's Chronofoil capture cc62ad94 (2026-10-28, an arcanist); scenes and effects from Bob's Chronofoil capture of 2026-10-28",
+  "params": {
+    "ACTOR0": 1004885,
+    "ACTOR1": 1002388,
+    "ACTOR2": 1004883,
+    "ACTOR3": 1004884,
+    "ACTOR4": 1004888,
+    "EVENTRANGE0": 4126868,
+    "ACTOR5": 1004999,
+    "ACTOR6": 1005000,
+    "ACTOR7": 1005001,
+    "ACTOR8": 1005002,
+    "EOBJECT0": 2001656,
+    "EVENT_ACTION_SEARCH": 1,
+    "EOBJECT1": 2001807,
+    "TERRITORYTYPE0": 279,
+    "QUESTBATTLE0": 48,
+    "NCUT0": 218,
+    "LOC_ACTOR0": 1005105
+  },
+  "steps": [
+    {
+      "talk": 1004885,
+      "layout": 4148862,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1002388,
+      "layout": 4058244,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 1,
+          "flags": "0xf8482fff",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "range": 4126868,
+      "scenes": [
+        {
+          "scene": 6,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1004888,
+      "layout": 4126875,
+      "what": "ACTOR4",
+      "scenes": [
+        {
+          "scene": 5,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "effects": [
+        {
+          "zone": 279
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "battle_won": 255,
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1002388,
+      "layout": 4058244,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 20,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

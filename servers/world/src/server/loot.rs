@@ -9,7 +9,8 @@
 //! no rolls, someone who didn't pass gets it with a roll of 0 (LootMessage 3, as Bob got two items on retail), and if
 //! everyone passed it's lost (LootMessage 2.) The coffer fades out once all its items are decided.
 //!
-//! With Duty Support a coffer is the opener's alone (Bob's Chronofoil capture c99fe374 of 2026-10-28, ten coffers in
+//! With no other human in the party (Duty Support, or the player with bots: Bob's rule, 2026-10-28) a coffer is the
+//! opener's alone, as retail's Duty Support coffers were (Bob's Chronofoil capture c99fe374 of 2026-10-28, ten coffers in
 //! Tam-Tara and Copperbell): no LootList, OpenedTreasure with no times, each item straight to them (LootMessage 3, or
 //! 8 and 2 for a unique item they already have, `ZoneConnection::obtain_personal_loot`), and the coffer fades out
 //! 4 s later (3.96-4.00 s.)
@@ -399,7 +400,9 @@ pub fn open(
 
     let items = roll_contents(instance, game_data, base_id);
     let now = Instant::now();
-    if instance.personal_loot {
+    // Only one player here (Duty Support, or a party of bots): the loot is theirs, no rolls (Bob's rule, 2026-10-28:
+    // rolls only with another human in the party; bots always pass.)
+    if players(instance).len() <= 1 {
         open_personal(network, instance, opener, treasure_id, items, now);
         return;
     }

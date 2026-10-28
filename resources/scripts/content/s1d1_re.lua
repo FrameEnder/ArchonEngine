@@ -99,14 +99,21 @@ DENN_SECOND_WAVE = 63.0
 -- The director's onUpdate comes every server tick (0.5 s).
 UPDATES_PER_SECOND = 2
 
--- The Duty Support members' story lines (NpcYell, `director:party_npc_yell(role, line, delay)`), when retail's said them
--- (Bob's Chronofoil capture of 2026-10-23): the Lancer 43.6 s after the duty began, the tank as Chopper came, the
--- Lancer 2 s after the first captain fled (his line 134), the Thaumaturge 2 s after the second (137), the tank 15.5 s
--- after Denn's cutscene began. Nobody says them without Duty Support.
+-- The Duty Support members' story lines (NpcYell, `director:party_npc_yell(role, line, delay, other_role,
+-- other_line)`), when retail's said them (Bob's Chronofoil capture of 2026-10-23, the tank, Lancer and Thaumaturge with
+-- a healer): the Lancer 43.6 s after the duty began, the tank as Chopper came, the Lancer 2 s after the first captain
+-- fled (his line 134), the Thaumaturge 2 s after the second (137), the tank 15.5 s after Denn's cutscene began. With
+-- the Conjurer in the party (an arcanist's: the tank, the Conjurer, the Thaumaturge; Bob's capture cc62ad94 of
+-- 2026-10-28) the lines were others': the tank's 14294 at the start (no Lancer; 9.7 s after the opening cutscene, where
+-- the Lancer's came 27.1 s after it), the Conjurer's 14299 as Chopper came (the tank there too), the Conjurer's 14301 2
+-- s after the first captain fled; the second captain's and Denn's the same. Nobody says them without Duty Support.
 PARTY_NPC_LINE_START = 14296
+PARTY_NPC_LINE_START_TANK = 14294
 PARTY_NPC_LINE_START_AFTER = 43.6
 PARTY_NPC_LINE_CHOPPER = 14298
+PARTY_NPC_LINE_CHOPPER_HEALER = 14299
 PARTY_NPC_LINE_CAPTAIN1 = 14300
+PARTY_NPC_LINE_CAPTAIN1_HEALER = 14301
 PARTY_NPC_LINE_CAPTAIN2 = 14302
 PARTY_NPC_LINE_DENN = 14303
 PARTY_NPC_LINE_DENN_AFTER = 15.5
@@ -193,13 +200,15 @@ function onSetup(director)
     director:hide_eobj(EOBJ_MISTBEARD_COVE_BOSS_WALL)
 
     -- What the coffers held on retail, one list per opening (item IDs; Bob's Chronofoil captures of five runs,
-    -- 2026-10-22, and a sixth, c99fe374 of 2026-10-28, its last opening of 93, 94 and 95.) A coffer without a
-    -- recording (98, 100) holds one of these. See server/loot.rs.
-    director:treasure_loot(94, { { 3554, 4096 }, { 2684, 4096 }, { 2683, 4207 }, { 2679, 4096 }, { 2679, 4310 } })
-    director:treasure_loot(95, { { 3034 }, { 3331 }, { 3035 }, { 3331 } })
+    -- 2026-10-22, a sixth, c99fe374 of 2026-10-28, and a seventh with Duty Support, cc62ad94 of the same day, their
+    -- last openings of 93, 94 and 95.) A coffer without a recording (98, 100) holds one of these. See server/loot.rs.
+    director:treasure_loot(94, {
+        { 3554, 4096 }, { 2684, 4096 }, { 2683, 4207 }, { 2679, 4096 }, { 2679, 4310 }, { 4310 },
+    })
+    director:treasure_loot(95, { { 3034 }, { 3331 }, { 3035 }, { 3331 }, { 3329 } })
     director:treasure_loot(99, { { 3555 } })
     director:treasure_loot(101, { { 31422 } })
-    director:treasure_loot(93, { { 3786, 31424 }, { 31425 }, { 31426, 36374 }, { 3786, 31423 } })
+    director:treasure_loot(93, { { 3786, 31424 }, { 31425 }, { 31426, 36374 }, { 3786, 31423 }, { 38467 } })
     -- The wiki's lists: Chopper's (94), Captain Madison's (95), Denn's (93), and Treasure Coffers 1-4 (98 at its
     -- X 13.8 Y 9.2, 99, 100, 101.)
     director:treasure_pool(94, joined(HEAD_HANDS, ACCESSORIES))
@@ -219,7 +228,8 @@ function onSetup(director)
 
     beginSequence0(director)
 
-    director:party_npc_yell("melee", PARTY_NPC_LINE_START, PARTY_NPC_LINE_START_AFTER)
+    director:party_npc_yell("melee", PARTY_NPC_LINE_START, PARTY_NPC_LINE_START_AFTER, "tank",
+        PARTY_NPC_LINE_START_TANK)
 end
 
 function setSequence(director, sequence)
@@ -248,7 +258,7 @@ function onGimmickAccessor(director, actor_id, id, params)
 
                 beginBattleMusic(director)
                 director:spawn_boss(BNPC_CHOPPER, EOBJ_CATTERY_BOSS_WALL, EOBJ_CATTERY_BOSS_LINE, PLACE_CATTERY)
-                director:party_npc_yell("tank", PARTY_NPC_LINE_CHOPPER)
+                director:party_npc_yell("healer", PARTY_NPC_LINE_CHOPPER_HEALER, 0, "tank", PARTY_NPC_LINE_CHOPPER)
             end
         else
             director:event_action(EVENT_ACTION_INTERACT, actor_id, id)
@@ -368,7 +378,8 @@ function onActorDeath(director, bnpc_id, position)
         director:spawn_treasure(100)
         endBattleMusic(director)
         beginSequence3(director)
-        director:party_npc_yell("melee", PARTY_NPC_LINE_CAPTAIN1, PARTY_NPC_LINE_AFTER_CAPTAIN)
+        director:party_npc_yell("melee", PARTY_NPC_LINE_CAPTAIN1, PARTY_NPC_LINE_AFTER_CAPTAIN, "healer",
+            PARTY_NPC_LINE_CAPTAIN1_HEALER)
 
         -- Update shortcut
         director:update_shortcut(SHORTCUT_AFTER_CAPTAIN1)

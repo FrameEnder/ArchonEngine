@@ -1,0 +1,120 @@
+{
+  "quest": 684,
+  "script": "ManSea303_00684",
+  "source": "Bob's Chronofoil capture cc62ad94 (2026-10-28, an arcanist); scenes and effects from Bob's Chronofoil capture of 2026-10-28",
+  "params": {
+    "ACTOR0": 1002388,
+    "REWARD0": 22,
+    "SCREENIMAGE0": 32,
+    "ACTOR1": 1005012,
+    "POPRANGE0": 4148347,
+    "NCUT0": 221,
+    "NCUT1": 391,
+    "ORDER_OF_MAELSTROM": 1,
+    "HOW_TO_GRANDCOMPANY": 87,
+    "HOW_TO_SUPPLY": 89,
+    "LOC_ACTOR0": 1003783,
+    "LOC_ACTION1": 1002,
+    "LOC_TALKSHAPE1": 6,
+    "SCREENIMAGE1": 69,
+    "HOW_TO_MONSTERNOTE": 45,
+    "LOGMESSAGE_MONSTERNOTE_PAGE_UNLOCK": 1018,
+    "LOC_SE1": 42,
+    "GC_RANK_01": 1
+  },
+  "steps": [
+    {
+      "talk": 1002388,
+      "layout": 4058244,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        },
+        {
+          "scene": 2,
+          "flags": "0x2000",
+          "results": [
+            1
+          ],
+          "yield": true,
+          "resume": [
+            1
+          ],
+          "after": {
+            "results": [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "effects": [
+        {
+          "unlock": 22
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1005012,
+      "layout": 4147225,
+      "what": "ACTOR1",
+      "territory": 212,
+      "scenes": [
+        {
+          "scene": 3,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 4,
+          "flags": "0xf8402efb",
+          "params": [
+            0
+          ],
+          "results": [
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "effects": [
+        {
+          "zone": 212
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

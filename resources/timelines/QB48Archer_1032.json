@@ -1,0 +1,49 @@
+{
+    "autoattack_action_id": 873,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 10.0,
+    "recorded_amounts": {
+        "873": {
+            "npcs": 26.5
+        },
+        "106": {
+            "npcs": 35.0
+        },
+        "97": {
+            "npcs": 46.0
+        },
+        "100": {
+            "npcs": 28.0
+        },
+        "18190": {
+            "npcs": 48.0
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 100,
+                "every": 65.9,
+                "comment": "Venomous Bite: 3 uses, every 66 s, 28"
+            },
+            {
+                "action": 18190,
+                "every": 35.0,
+                "comment": "Straight Shot: 3 uses, every 35 s, 48"
+            },
+            {
+                "action": 97,
+                "every": 12.0,
+                "comment": "Heavy Shot: 5 uses, every 12 s, 46"
+            },
+            {
+                "action": 106,
+                "every": 18.6,
+                "comment": "Quick Nock: 7 uses (12 hit), every 19 s, 35"
+            }
+        ]
+    },
+    "comment": "Quest battle 48's archer (BNpcBase 1032, BNpcName 1004), level 20, 1156 HP, on your side. From Bob's Chronofoil capture cc62ad94 (2026-10-28, The Company You Keep (Maelstrom)'s quest battle 48 won, `questkit chronofoil --battle 0.54`, territory 279, duty 342; a level 24 arcanist): on the lancers, then their leader, the archers and the vanguard, from about 9 yalms; auto-attacks (873) every 3.0 s, 26.5 (median of 50, 2 misses); Quick Nock (106) 35, Heavy Shot (97) 46, Straight Shot (18190) 48 and Venomous Bite (100) 28. Raging Strikes (101, twice) isn't modelled. Hitbox not recorded."
+}

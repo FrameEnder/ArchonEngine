@@ -53,12 +53,14 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   Sastasha, the Tam-Tara Deepcroft, the Copperbell Mines and the Bowl of Embers, at each duty's level
   (`party_npc::DUTY_LEVELS`); any other member chosen (other duties' members) is a Player NPC of that role, listed in a
   Duty Finder party list beside the party NPCs' slots. A duty not in `DUTY_LEVELS` gets them at their own level (15,
-  the Conjurer 16). With a damage dealer player the members chosen aren't recorded (they'd be the Marauder, the
-  Conjurer and the other damage dealer, untested).
+  the Conjurer 16). With a ranged damage dealer the client chose the Marauder, the Conjurer and the Thaumaturge in
+  Sastasha (Bob's capture cc62ad94); a melee player's party isn't recorded.
 * The Conjurer (2026-10-28) heals with Cure only: its Medica (29320; 1-9 times a duty on retail, with two of the party
   below 80 % mostly), Esuna and the instant Cure (29355) aren't cast. Its kit and heal line are medians from one run
   of each duty, untested in game; how hard enemies hit it isn't measured (`damage_taken` 1).
-* With a player tank, Sastasha's tank lines (14298 at Chopper, 14303 after Denn) aren't recorded: nobody says them. The
+* With a player tank, Sastasha's tank lines (14298 at Chopper, 14303 after Denn) aren't recorded: nobody says them.
+  Sastasha's start line comes 43.6 s in whoever says it; the Marauder's 14294 (said with no Lancer there) came at
+  23.4 s in the one run that had it. The
   Bowl of Embers' Conjurer lines (14328, 14330) and the missing 13981 are from one run.
 * The members' abilities that did no damage (26230, 29303, 29766, 29311, 29767, 25082, 25083) are only animations,
   and the Lancer's 29772 doesn't heal it. Their chatter in fights is at random every 150–400 s of fighting, not
@@ -75,6 +77,23 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * How hard enemies hit them (2026-10-23) is the players' scale times retail's ratio for each member (a third for the
   Marauder), untested in game. On retail the enemies stayed on the tank (the Lancer and Thaumaturge took 330 damage
   each in 30 minutes); whether Kawari's enemies stray onto them more isn't checked.
+
+## Fall damage
+
+* Untested in game (2026-10-28). The formula fits the 19 retail falls whose height could be measured within 1.2 %
+  (4 % at worst); falls higher than those measured aren't checked. The drop is from the last
+  height the player stood at, as Kawari reads the client's UpdatePositionHandler: a fall that starts from a slope or
+  a jump off a ledge counts from where they last touched the ground. Two retail landings 10.88 and 14.43 yalms down
+  did no damage (perhaps onto a slope the client slid down, or into water); Kawari would hurt both. Falling into
+  water, gliding and flying aren't checked: only mounted, dead and gimmick jumps are spared. In combat is Condition
+  InCombat as Kawari sets it.
+
+## Aethernet destinations
+
+* Untested in game (2026-10-28). The gates and airship landings are taught after the last shard is attuned, after a
+  quest completes and at login; a character that already had every shard is taught them at its next login. Whether
+  the aethernet menu lists them at once without a re-login isn't checked. Rows with `Invisible` set outside the three
+  cities' groups (later cities) are taken the same way, unverified.
 
 ## Party bots
 
@@ -414,7 +433,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Untested in game (2026-10-22): opening, the rolls, the winner's item, the coffer fading out. LootMessages name bots
   by their actor ID; whether the client finds their names (they're in the party list) isn't known. Duty Support's
   personal loot (2026-10-28) is untested in game, and a full inventory then isn't recorded (Kawari says it couldn't
-  add the item, and it's gone).
+  add the item, and it's gone). Personal loot whenever only one player is there (Bob's rule, 2026-10-28: a party of
+  bots too) is untested in game; retail's only one-player runs were Duty Support.
 * A Greed or Need on a unique item the player has already isn't refused (retail answers 8). LootItem's `bonus` (set
   on retail's Aetherial Brass Wristlets, perhaps their random stats) is left at zero.
 * Sastasha's coffers 98 and 100, the Tam-Tara Deepcroft's 15 and 119 and the Copperbell Mines' 59 and 65 were never
@@ -525,14 +545,16 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quest battles and directors
 
-* **The Company You Keep (Twin Adder)'s battle (46)** and **(Immortal Flames)'s (47)**: untested in game (2026-10-28).
-  Sequences 5-8 (the vanguard at 70, 40 and 27 %, then 15 s and 6.3 s later) are the two won runs', and nothing else
-  was seen to come with them. Only 46's conjurer's last words are recorded (none for 47's allies, nor a loss of 47:
-  it fails as 46 does). No client battle script was dumped for either. Flash, Rampart, Raging Strikes, Life Surge and
-  983 aren't modelled. The Maelstrom's version (681) and its battle aren't scripted.
-* **The companies' first steps** (683-685, Grand Company enlistment, 2026-10-28): untested in game. 684 (the
-  Maelstrom's) has no retail run; it's the other two's script. Retail also sent ActorControl 518 with the company's
-  achievement to the player (perhaps for those around); Kawari sends only the player's 515. A company's Hunting Log
+* **The Company You Keep's battles (46, 47, 48)**: untested in game (2026-10-28). Sequences 5-8 (the vanguard at 70
+  and 40 %, then its Drill Cannons) fit the three won runs, and nothing else was seen to come with them; that the
+  Drill Cannons, not something they come with, move it on is a reading of the runs (2.85-2.9 s after the cast began
+  every time). Only 46's conjurer's last words are recorded (none for 47's or 48's allies, nor a loss of either: they
+  fail as 46 does). No client battle script was dumped for any of them. Flash, Rampart, Raging Strikes, Life Surge
+  and 983 aren't modelled, nor 48's archer's and conjurer's own actions beyond their timelines. Battle 48 is from one
+  run, 681's quest (also one run) untested in game.
+* **The companies' first steps** (683-685, Grand Company enlistment, 2026-10-28): untested in game (684 replays
+  against an arcanist's run, Bob's capture cc62ad94). An achievement's ActorControl 518 (2026-10-28, after 515, to
+  the player and those around) is sent as retail did; what the client does with it isn't known. A company's Hunting Log
   stays locked after enlisting (retail sent nothing for it then; when it opens isn't recorded), and the seals aren't
   capped by rank.
 
@@ -588,8 +610,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   is untested. Territory 275's own layer `QB_ManFst209_001`
   (86868, filter 86631) has event NPCs 1004667 and 1004668; retail showed only 1004668 (the scout, which the script
   also spawns from the drop-in), so the scout may show twice and 1004667 once.
-* Lord of the Inferno's battle (45): the 55 s from the third wave to the win held in both won runs (55.1 and 45.4 s
-  after sequence 5 in Dags', from 79.9 s); the second wave's 30 s from four. Retail's NPCs fought on through the closing
+* Lord of the Inferno's battle (45): the 55 s from the third wave to the win held in all three won runs (55.1 s each);
+  the second wave's 30 s from four runs. Retail's NPCs fought on through the closing
   cutscene, Kawari's stop, so the second gladiator's last words after the win (retail's first won run) won't come. The Flames' 14 and 718
   and the Amalj'aa's 426 aren't modelled.
 * Underneath the Sultantree: the stranger's Flash, Sentinel and Sword Oath (seen on retail, none of them damage) have

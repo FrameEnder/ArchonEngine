@@ -1153,6 +1153,36 @@ impl GameData {
             .count()
     }
 
+    /// The city aethernets' extra destinations (Aetheryte rows with Invisible set: the gates out of the city, the
+    /// airship landing), by AethernetGroup: (the group's shards one has to have, its extra destinations with the quest
+    /// each needs, 0 for none). The shards are the group's other rows that aren't the big Aetheryte; retail gave the
+    /// extras as the last shard was attuned, the big Aetheryte or not (`docs/src/fork/travel.md`).
+    pub fn aethernet_extras(&mut self) -> Vec<(u8, Vec<u32>, Vec<(u32, u32)>)> {
+        let config = get_config();
+        let Ok(sheet) = AetheryteSheet::read_from(&mut self.resource, config.world.language())
+        else {
+            return Vec::new();
+        };
+        let mut groups: std::collections::BTreeMap<u8, (Vec<u32>, Vec<(u32, u32)>)> =
+            Default::default();
+        for (id, row) in sheet.into_iter().flatten_subrows() {
+            if row.AethernetGroup == 0 || row.IsAetheryte {
+                continue;
+            }
+            let group = groups.entry(row.AethernetGroup).or_default();
+            if row.Invisible {
+                group.1.push((id, row.RequiredQuest));
+            } else {
+                group.0.push(id);
+            }
+        }
+        groups
+            .into_iter()
+            .filter(|(_, (shards, extras))| !shards.is_empty() && !extras.is_empty())
+            .map(|(group, (shards, extras))| (group, shards, extras))
+            .collect()
+    }
+
     /// Checks if it's a big Aetheryte (true) or just a shard (false.)
     pub fn is_aetheryte(&mut self, aetheryte_id: u32) -> bool {
         let config = get_config();

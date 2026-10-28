@@ -24,6 +24,7 @@ Other requests and replies:
 | trigger **1000** `RequestAchievementProgress { id }` | actor control **514** `AchievementProgressInfo { id, current, max }` | The counter shown under an achievement. |
 | trigger **1002** `RequestNearCompletionAchievements { slots }` (bit 0: the login notice, bit 1: the window's Near Completion page) | actor control **538** with the slot in its first parameter | 538 empties that list and marks it loaded; the server sends it for each requested slot, so both lists are empty for now. |
 | | actor control **515** `AchievementCompleted { id }` | The client marks it complete, adds it to its history and shows the "Achievement unlocked" pop-up. |
+| | actor control **518** `AchievementEarned { id }` | Right after 515, from the player to them and everyone around (retail's, Bob's Chronofoil capture cc62ad94: all eight of the player's, and other players'). What the client does with it isn't known. |
 | | actor control **600** | Marks the first parameter complete when the second is 1, and takes the third and fourth as its progress. Not used. |
 
 The actor control cases were read from the client's actor control switch (`0xB3A2E0`, jump table at `0xB47964`):

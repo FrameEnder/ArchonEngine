@@ -2,8 +2,8 @@
 
 Dungeon coffers and their Need / Greed / Pass rolls, as retail does them (Bob's Chronofoil capture of five Sastasha
 runs with Duty Finder parties, 2026-10-22: 43 coffers spawned, 15 opened, 35 lots cast by the other players, 18 items
-decided). Party bots roll as those players did. With Duty Support a coffer is yours alone, no rolls
-([below](#duty-support-personal-loot)). Code: `servers/world/src/server/loot.rs`; the duty's script spawns the
+decided). Party bots roll as those players did. With no other human in the party (Duty Support, or bots) a coffer
+is yours alone, no rolls ([below](#one-player-personal-loot)). Code: `servers/world/src/server/loot.rs`; the duty's script spawns the
 coffers and says what they hold.
 
 ## Opening a coffer
@@ -67,6 +67,11 @@ Plundered Cavalier's Hat and Aetherial Brass Gorget, 95 Plundered Trousers, 93 F
 Guisarme, all on the wiki's lists. The Tam-Tara Deepcroft's and the Copperbell Mines' scripts have a fourth opening of
 each coffer opened in the same capture's Duty Support runs (`LOOT`), all on the wiki's lists too.
 
+An arcanist's Duty Support runs (Bob's capture cc62ad94, 2026-10-28) added more openings: Sastasha's 94 (item 4310),
+95 (3329) and 93 (38467); the Tam-Tara Deepcroft's 16 (3555), 62 (3331) and 11 (3786 and 31422); the Copperbell Mines'
+52 (2683 and 4207; 2684 and 4206), 53 (3330; 3331), 58 (3331), 59 (31425) and 51 (31421; 31422). Again a coffer's items
+weren't chosen for the class.
+
 ## Rolling
 
 Each member of the party (the players in the duty and their bots) chooses for each item:
@@ -92,11 +97,12 @@ party: LootResult, then the ack 0xFFFFFFFF 6, the item's slot and LogMessage 789
 `ZoneConnection::obtain_loot`). Once all of a coffer's items are decided it fades out (TreasureFadeOut, from the
 coffer).
 
-## Duty Support: personal loot
+## One player: personal loot
 
-With Duty Support (`Instance::personal_loot`, set as the members join) a coffer's items are the opener's, as retail's
-ten in the Tam-Tara Deepcroft and the Copperbell Mines were (Bob's Chronofoil capture c99fe374 of 2026-10-28, Dags, a
-gladiator):
+Items are rolled for only when another human is in the instance (Bob's rule, 2026-10-28): with one player there
+(Duty Support, whose members are NPCs, or a party of bots) a coffer's items are that player's at once (`loot::open`
+counts the players). Retail's ten in the Tam-Tara Deepcroft and the Copperbell Mines went that way with Duty Support
+(Bob's Chronofoil capture c99fe374 of 2026-10-28, Dags, a gladiator):
 
 1. **OpenedTreasure** from the coffer with no times (all zeros but the coffer); no LootList, no LootItem.
 2. For each item, to the opener (`ZoneConnection::obtain_personal_loot`): **LootMessage 3** (who, the item, 1), then the
@@ -111,7 +117,8 @@ Grimoire (arcanist) and a Plundered Cane (conjurer).
 
 ## Party bots
 
-Each bot passes on every item, so the loot is the player's (Bob's call), after one of the delays the other players
+Alone with bots the player gets everything at once (above). With another human in the party the items are rolled for,
+and each bot passes on every item (Bob's call), after one of the delays the other players
 took on retail (the 35 lots: half within 6 s of the coffer opening, a quarter after 15 s, up to 249 s). Those players
 passed 33 times and greeded twice, and never needed.
 

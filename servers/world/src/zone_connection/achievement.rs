@@ -21,7 +21,8 @@ use kawari::{
 };
 
 use crate::{
-    AchievementCounter, ZoneConnection, common::adjust_quest_id, gamedata::AchievementRule,
+    AchievementCounter, ToServer, ZoneConnection, common::adjust_quest_id,
+    gamedata::AchievementRule,
 };
 
 /// The highest achievement the client's bitmap has room for (it ignores higher ones.)
@@ -112,6 +113,16 @@ impl ZoneConnection {
         tracing::info!("Achievement {id} completed");
         if announce {
             self.actor_control_self(ActorControlCategory::AchievementCompleted { id })
+                .await;
+            // Then, as retail, ActorControl 518 from the player to themselves and those around them.
+            let actor_id = self.player_data.character.actor_id;
+            self.actor_control(actor_id, ActorControlCategory::AchievementEarned { id })
+                .await;
+            self.handle
+                .send(ToServer::BroadcastActorControl(
+                    actor_id,
+                    ActorControlCategory::AchievementEarned { id },
+                ))
                 .await;
         }
     }

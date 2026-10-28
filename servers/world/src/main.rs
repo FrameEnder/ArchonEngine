@@ -683,6 +683,8 @@ async fn process_packet(
                             connection.check_teleport_unlock(false).await;
                             // Likewise what their finished quests unlock (e.g. Recommendations).
                             connection.check_quest_unlocks().await;
+                            // And the city aethernets' extra destinations for those with all its shards already.
+                            connection.learn_aethernet_extras().await;
 
                             // Stats
                             connection.send_stats().await;

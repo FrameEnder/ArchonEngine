@@ -316,6 +316,8 @@ impl ZoneConnection {
 
         self.player_data.quest.completed.set(adjusted_id);
         self.grant_quest_unlocks(id, true).await;
+        // An aethernet destination that waited for this quest (the White Wolf Gate's.)
+        self.learn_aethernet_extras().await;
 
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::FinishQuest {
             quest_id: adjusted_id as u16,

@@ -1,0 +1,45 @@
+{
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 3.0,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 49.0
+        },
+        "31": {
+            "npcs": 74.5
+        },
+        "35": {
+            "npcs": 104.0
+        },
+        "41": {
+            "npcs": 54.0
+        },
+        "120": {
+            "npcs": 46.0,
+            "players": 46.0
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 35,
+                "every": 32.7,
+                "comment": "Skull Sunder: 4 uses, every 33 s, 104"
+            },
+            {
+                "action": 31,
+                "every": 32.4,
+                "comment": "Heavy Swing: 4 uses, every 32 s, 74.5"
+            },
+            {
+                "action": 41,
+                "every": 36.8,
+                "comment": "Overpower: 3 uses, every 37 s, 54"
+            }
+        ]
+    },
+    "comment": "Quest battle 48's lead (BNpcBase 1030, BNpcName 1003), a marauder, level 20, 4956 HP, on your side. From Bob's Chronofoil capture cc62ad94 (2026-10-28, The Company You Keep (Maelstrom)'s quest battle 48 won, `questkit chronofoil --battle 0.54`, territory 279, duty 342; a level 24 arcanist): on the other side's leader until he fell, then the vanguard; auto-attacks (870) every 3.0 s, 49 (median of 49, 3 misses); Skull Sunder (35) 104, Heavy Swing (31) 74.5 and Overpower (41) 54, each every 32-37 s; Cure (120, the director's heals) 46, once. Fracture (33, four uses), Flash (14), Bloodbath (34) and Foresight (32) have no action script here and aren't modelled. Hitbox not recorded."
+}

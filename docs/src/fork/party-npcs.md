@@ -29,8 +29,14 @@ other two 1 ahead and 1.72 to each side); Kawari spawns them on the player, as i
 Embers (203), the Conjurer taking the tank's place and its slot (0: 276 10003 and 1525 1042779 in the dungeons, 10007
 and 1042783 in the Bowl), the other two as before. Its BNpcBase is 14649 (BNpcName 11329) in the dungeons and 14653
 (11333) in the Bowl, ClassJob 6, at 16 with 316 HP, 17 with 339 and 20 with 432: member 39 in `party_npc::MEMBERS` and
-43 in `TRIAL_MEMBERS`, its timelines `DutySupportConjurer_14649.json` and `TrialSupportConjurer_14653.json`. Its HP in
-Sastasha isn't recorded (it comes at its own level, 16, there).
+43 in `TRIAL_MEMBERS`, its timelines `DutySupportConjurer_14649.json` and `TrialSupportConjurer_14653.json`.
+
+**For a ranged damage dealer** (Bob's Chronofoil capture cc62ad94 of 2026-10-28, an arcanist): the client chose 36, 39
+and 38 in Sastasha, the Marauder, the Conjurer and the Thaumaturge, which is what Kawari already picked. The Conjurer
+had 293 HP there at level 15 (`party_npc::DUTY_LEVELS`). With the Conjurer and no Lancer in Sastasha, other members
+said three lines that a healer's party doesn't hear: the Marauder's 14294 at the start instead of the Lancer's 14296,
+the Conjurer's 14299 at Chopper and its 14301 at the first captain ([Dungeons](dungeons.md): `party_npc_yell`'s
+`other_role` and `other_line`).
 
 **`pet_id` is the slot's**, not the member's: 1, 5 and 9 for slots 0, 1 and 2, whoever is in them (the Marauder had 1
 in slot 0 in Sastasha, the Conjurer 1 in slot 0 with a tank; the Thaumaturge 5 and the Lancer 9 in slots 1 and 2 in
@@ -178,6 +184,11 @@ Their lines are NpcYell packets from the member, under its BNpcName:
   plays it at all (the player does), `other_line` from `other_role`; line 0 is nothing): in Sastasha (`content/s1d1_re.lua`) the Lancer's 14296
   43.6 s after the duty began, the Marauder's 14298 as Chopper came, the Lancer's 14300 2 s after the first captain's
   last line, the Thaumaturge's 14302 2 s after the second's, the Marauder's 14303 15.5 s after Denn's cutscene began.
+* **With the Conjurer and no Lancer in Sastasha** (an arcanist's party, Bob's capture cc62ad94): the Marauder said
+  14294 at the start where the Lancer says 14296 (23.4 s after the duty began on retail; Kawari keeps 43.6), the
+  Conjurer 14299 as Chopper came (where the Marauder says 14298; the Marauder was there and didn't) and 14301 2 s
+  after the first captain's last line (the Lancer's 14300). The script asks for the Lancer's and the Conjurer's first
+  and falls back on the others' (`s1d1_re`'s `PARTY_NPC_LINE_START_TANK`, `_CHOPPER_HEALER`, `_CAPTAIN1_HEALER`).
 * **With a tank** (Bob's capture c99fe374) the tank's lines went to another member as lines of their own, at the same
   moment: the Tam-Tara Deepcroft's last, 14313 from the Conjurer 26.8 s after the last seal's cutscene (the tank's
   14312 at 26.5 s); the Copperbell Mines' first boss's, 14319 from the Thaumaturge 6.2 s after it appeared (14318 at

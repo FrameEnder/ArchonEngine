@@ -8,7 +8,7 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 
 | Duty | ContentFinderCondition | Territory | Script | Recorded |
 |---|---|---|---|---|
-| Sastasha | 4 | 1036 | `content/s1d1_re.lua` (upstream's, with the fork's changes) | five Duty Finder runs (2026-10-22), one with Duty Support (2026-10-23) |
+| Sastasha | 4 | 1036 | `content/s1d1_re.lua` (upstream's, with the fork's changes) | five Duty Finder runs (2026-10-22), one with Duty Support (2026-10-23); an arcanist's Duty Support run (cc62ad94, 2026-10-28: the Conjurer's lines, [Party NPCs](party-npcs.md#talking)) |
 | The Tam-Tara Deepcroft | 2 | 1037 | `content/f1d1_re.lua` | one run with Duty Support and two Duty Finder runs (2026-10-24) |
 | The Copperbell Mines | 3 | 1038 | `content/w1d1_re.lua` | one run with Duty Support and two Duty Finder runs (2026-10-25) |
 | The Bowl of Embers (Ifrit) | 56 | 1045 | `content/w1fa_re.lua` | one run with Duty Support, two attempts (2026-10-27) |

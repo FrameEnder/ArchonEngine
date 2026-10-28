@@ -476,6 +476,23 @@ Every tick (500 ms) the first ready entry is used:
 A rotation's action replaces that tick's auto-attack; casts work as for any NPC action (it stands still while casting).
 Heals on allies stay in the content's Lua (`runHeals`), since they pick a target other than the NPC's own.
 
+## Fall damage (`server/fall.rs`)
+
+Retail's falls (Bob's Chronofoil captures, 2026-10-28: 49 falls that hurt and 470 landings that didn't, levels 6 to
+88), as Kawari plays them:
+
+* **When**: the client's UpdatePositionHandler says when the player leaves the ground (MoveAnimationState
+  LeavingCollision, 1, at byte 5; byte 4 is the animation type, byte 6 the jump state) and lands (EnteringCollision,
+  2). The drop is the last height they stood at (taken while neither flag is set and the jump state is NoneOrFalling)
+  less the landing's.
+* **How much**: nothing below 10 yalms (9.99 never hurt, 10.0 did); then `10 + 0.228 × (drop − 10)²` % of the maximum
+  HP (within 1.2 % of the 19 falls whose height could be measured, 4 % at most), rounded.
+* **Never to 0 out of combat**: at least 1 HP is left (retail's 272 of 273 HP, 33,381 of 33,382 after the highest
+  falls). In combat (Condition InCombat) a fall can kill (a long-time player's note, Bob, 2026-10-28).
+* **What's sent**: ActorControl 45 `FallDamage` (the damage, 1) from the player to them and everyone around, then
+  their StatusEffectList. No ActionEffect.
+* Not hurt: mounted, dead, or in a gimmick jump.
+
 ## Defeating enemies
 
 When a battle NPC dies, everyone on its enmity list, and their party in the same instance, gets:

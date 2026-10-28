@@ -79,15 +79,15 @@ CUTSCENE_END = 27
 CUTSCENE_END_PARAMS = { 1, 18, 0, 0 }
 
 -- What the coffers held on retail, one list per opening (item IDs; the three runs, and a fourth through Duty Support
--- as a gladiator, Bob's Chronofoil capture c99fe374 of 2026-10-28, its last opening of each: not chosen for the
--- class, an Acolyte's Skirt and a Plundered Grimoire among them.) A coffer without a recording (15, 119) holds one of
--- these. See server/loot.rs.
+-- as a gladiator, Bob's Chronofoil capture c99fe374 of 2026-10-28: not chosen for the class, an Acolyte's Skirt and a
+-- Plundered Grimoire among them; and a fifth with a Duty Finder party, cc62ad94 of the same day, the last of 16, 62 and
+-- 11.) A coffer without a recording (15, 119) holds one of these. See server/loot.rs.
 LOOT = {
-    [16] = { { 3556 }, { 2679 }, { 2684 } },
+    [16] = { { 3556 }, { 2679 }, { 2684 }, { 3555 } },
     [118] = { { 3330 }, { 3330 } },
     [17] = { { 3555 }, { 3555, 4310 }, { 2683 } },
-    [62] = { { 3033 }, { 3331 }, { 3033 }, { 3330 } },
-    [11] = { { 31426 }, { 3787, 31425 }, { 31427 }, { 31428 } },
+    [62] = { { 3033 }, { 3331 }, { 3033 }, { 3330 }, { 3331 } },
+    [11] = { { 31426 }, { 3787, 31425 }, { 31427 }, { 31428 }, { 3786, 31422 } },
 }
 -- What the coffers may hold besides what was recorded (`director:treasure_pool`): the FFXIV Console Games Wiki's loot
 -- lists for the duty (each boss's coffer and each "Treasure Coffer" at its map position, matched to these base IDs by

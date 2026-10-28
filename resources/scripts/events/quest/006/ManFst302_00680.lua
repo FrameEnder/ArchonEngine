@@ -62,7 +62,8 @@ end
 -- Walking into EVENTRANGE0 offers the battle too.
 function onEnterTrigger(player, arg)
     if player:get_quest_sequence(EVENT_ID) == 2 then
-        play(player, SCENE_RANGE_BATTLE, HIDE_HOTBAR)
+        -- 0x2001, as retail played the Maelstrom's (681, Bob's Chronofoil capture cc62ad94.)
+        play(player, SCENE_RANGE_BATTLE, HIDE_HOTBAR | NO_DEFAULT_CAMERA)
         return
     end
     player:finish_event()
