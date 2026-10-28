@@ -31,6 +31,7 @@ Globals the script sets:
 | Global | Meaning |
 |---|---|
 | `START_POSITION = {x, y, z}`, `START_ROTATION` | Where the player appears. |
+| `EXIT_AFTER_WIN = {territory, x, y, z, rotation}` | Where a won battle sends the player when they leave it, instead of back where they entered it from (also where a logout after the win puts them): Lord of the Inferno's sends them on to Southern Thanalan. A lost one always goes back. |
 | QuestBattle sheet variables | Injected like quest variables (`INIT_POP_01`, `BNPC_NAME_01`, `DEF_ACTION_*`…). Scripts use `X or <number>` so they still work if a name is missing. |
 
 Callbacks:
@@ -263,7 +264,10 @@ a quest's entering event, 0 for every other event (228 events across the capture
   left** (at three, 8 s before, it didn't come): the third wave (three lancers and three soldiers on the second
   gladiator, a javelinier on you), 206 10 s later, 207 15 s. **55 s after sequence 5 it's won**, whatever is still
   standing (the leader at 84 %, six adds): sequence 7 and, with no "Duty Complete", the battle's scene 7 (0xF8402EFB);
-  the second gladiator's 210 (BNpcName 994, 73228); the quest moves to 3. Retail's NPCs fought on through the cutscene
+  the second gladiator's 210 (BNpcName 994, 73228); the quest moves to 3. As the cutscene ends retail sent the player
+  on to Southern Thanalan (146, ZoneInit pop range 4104257, at (-56.7, -24.57, -565.88) facing -0.468), by the flame
+  sergeant the quest goes to next, not back to Eastern Thanalan (`EXIT_AFTER_WIN`; Bob's bundle of 2026-10-28: he was
+  sent back). After the three losses he went back where he had entered. Retail's NPCs fought on through the cutscene
   (the second gladiator fell 3 s into it); Kawari's stop (`end_fight`). An ally falling says its last words (the
   pugilist 209, BNpcName 1007, 73229; the thaumaturge 208, 1005, 73227) and the battle goes on. Your health at 0:
   sequence 0xFE (all three losses).

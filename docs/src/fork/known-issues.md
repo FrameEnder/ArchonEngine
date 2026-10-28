@@ -530,8 +530,8 @@ add one when something is found.
 * The new quest battles' timelines (which skills, how often) are loops fitted to how many times the recording saw
   each skill used.
 * Retail sends the player out of a lost battle; the delays are copied from recordings, not from known rules.
-* Lord of the Inferno's battle (45): not yet played in game (Bob's first try, 2026-10-28, loaded Eastern Thanalan's
-  instance instead: see [Travel](travel.md#warping-within-a-zone)). Territory 275's own layer `QB_ManFst209_001`
+* Lord of the Inferno's battle (45): won in game (Bob's bundle of 2026-10-28); the exit to Southern Thanalan after it
+  is untested. Territory 275's own layer `QB_ManFst209_001`
   (86868, filter 86631) has event NPCs 1004667 and 1004668; retail showed only 1004668 (the scout, which the script
   also spawns from the drop-in), so the scout may show twice and 1004667 once.
 * Lord of the Inferno's battle (45): the 55 s from the third wave to the win is from the one won run; the second

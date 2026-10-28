@@ -1953,6 +1953,7 @@ pub fn director_tick(
                 fanfare,
             } => {
                 let quest_id = instance.directors.first().unwrap().quest_battle_quest_id;
+                let exit = instance.quest_battle_win_exit;
                 let mut network = network.lock();
                 // Won: no one fights on through "Duty Complete" and the closing scene.
                 crate::server::npc_behavior::end_fight(instance, &mut network);
@@ -1968,6 +1969,7 @@ pub fn director_tick(
                         *finish_flags,
                         variables.clone(),
                         *fanfare,
+                        exit,
                     ),
                     DestinationNetwork::ZoneClients,
                 );

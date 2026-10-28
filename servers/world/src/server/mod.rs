@@ -291,6 +291,21 @@ impl WorldServer {
                         ))
                     })();
                     instance.quest_battle_start = start;
+                    // Where a win sends them, when it isn't back where they came from: Lord of the Inferno's sends
+                    // them on to Southern Thanalan.
+                    let exit: Option<(u16, Position, f32)> = (|| {
+                        let exit: mlua::Table = lua.0.globals().get("EXIT_AFTER_WIN").ok()?;
+                        Some((
+                            exit.get("territory").ok()?,
+                            Position(Vec3A::new(
+                                exit.get("x").ok()?,
+                                exit.get("y").ok()?,
+                                exit.get("z").ok()?,
+                            )),
+                            exit.get("rotation").unwrap_or_default(),
+                        ))
+                    })();
+                    instance.quest_battle_win_exit = exit;
 
                     director.lua = lua;
                     director.setup();

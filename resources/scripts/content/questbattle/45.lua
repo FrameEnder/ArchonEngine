@@ -33,6 +33,10 @@ START_POSITION = { x = -334.77, y = -12.09, z = -238.7 }
 START_ROTATION = 2.229
 -- Retail's opening cutscene's flags here (all four runs.)
 OPENING_SCENE_FLAGS = 0xF841AEFB
+-- Won, retail sent the player on to Southern Thanalan (146), by the flame sergeant the quest goes to next, not back
+-- to where they entered (the capture's next visit: ZoneInit pop range 4104257, the player at this spot.) Lost, back where
+-- they came from.
+EXIT_AFTER_WIN = { territory = 146, x = -56.7, y = -24.57, z = -565.88, rotation = -0.468 }
 
 BNPC_LEAD = 4098749
 BNPC_GLADIATOR = 4098743

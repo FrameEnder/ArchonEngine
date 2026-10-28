@@ -4853,7 +4853,15 @@ async fn process_server_msg(
                 finish_flags,
                 variables,
                 fanfare,
+                exit,
             ) => {
+                // A win that sends them on elsewhere (the script's `EXIT_AFTER_WIN`): from now on that's where they
+                // leave to (and where a logout puts them.)
+                if let Some((zone_id, position, rotation)) = exit {
+                    connection.old_zone_id = zone_id;
+                    connection.old_position = position;
+                    connection.old_rotation = rotation;
+                }
                 // The quest moves on straight away, the scenes are just the victory fanfare. Its variables change
                 // in the same journal update, as retail sends it.
                 let quest_id = connection.quest_for_quest_battle(handler_id.event_id(), quest_id);

@@ -216,6 +216,9 @@ pub struct Instance {
     pub party_wipe: Option<crate::server::wipe::PartyWipe>,
     /// Where players start in a quest battle, and which way they face.
     pub quest_battle_start: Option<(Position, f32)>,
+    /// Where the players go when they leave a won quest battle, if not back where they came from (the script's
+    /// `EXIT_AFTER_WIN`: territory, position, rotation.)
+    pub quest_battle_win_exit: Option<(u16, Position, f32)>,
     /// Running over-time effects (DoTs, HoTs, etc.)
     pub periodic_effects: Vec<PeriodicEffect>,
     /// Battle NPCs a quest brought out, which don't respawn once defeated.
