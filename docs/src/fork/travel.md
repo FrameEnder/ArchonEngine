@@ -64,6 +64,17 @@ update on the next frame (2026-10-17, teleporting from the Central Shroud to Gri
 FFXIVClientStructs' `ida/data.yml` for this patch). `remove_actor_from_instance` now sends 2352 and 2357 first, in
 retail's order.
 
+## Warping within a zone
+
+A warp that stays in the zone (an aetheryte shard, a door in the Waking Sands) keeps the player in the instance
+they're in (`begin_change_zone`). Before 2026-10-28 a warp within a private area (the Waking Sands, 212) made a new
+instance of it every time, and the player stayed in the old one too; the next zone change took them out of one of
+the two, so they were in two instances, and the zone loading after that picked whichever came first. In Bob's bundle
+of 2026-10-28 that sent Lord of the Inferno's quest battle (275) the Eastern Thanalan instance he had left: its 16
+monsters (the invisible city's zombies attacking during the loading screen), its FATEs, the FATE director instead of
+the battle's, no opening, and the player dead 81 s in. `remove_actor_from_instance` now also takes a player out of
+every instance they're in.
+
 ## Map discovery
 
 Discovered map parts are saved, sent back at login, and A Realm Reborn's field zones are revealed whole on the first

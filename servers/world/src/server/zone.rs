@@ -1095,6 +1095,13 @@ fn begin_change_zone<'a>(
 
         if needs_init_zone {
             remove_actor_from_instance(data, network, actor_id);
+        } else if data.find_actor_instance(actor_id).is_some() {
+            // Within the same zone they stay in the instance they're in. A private area (the Waking Sands) would
+            // otherwise get a new instance for every warp in it, and the player stayed behind in the old one as well:
+            // the next zone change took them out of the old one only, so they were in two instances, and the quest
+            // battle they entered next was loaded from Eastern Thanalan's (its monsters, its FATEs, no director;
+            // Bob's bundle of 2026-10-28.)
+            return (data.find_actor_instance_mut(actor_id).unwrap(), false);
         }
 
         // then find or create a new instance with the zone id
