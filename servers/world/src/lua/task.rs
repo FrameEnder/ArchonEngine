@@ -337,6 +337,11 @@ pub enum LuaTask {
         territory_id: u16,
         pop_range_id: u32,
     },
+    /// A gear coffer opened (`ZoneConnection::open_coffer`): what it holds, a set of pieces per class.
+    OpenCoffer {
+        item_id: u32,
+        contents: Vec<Vec<u32>>,
+    },
     RemoveCooldowns,
     ToggleHowTo {
         value: bool,

@@ -49,6 +49,26 @@ went to Western Thanalan (140), pop range 8366917 (ZoneInit's, just outside Vesp
 tickets say in chat that where they go isn't known. Retail also sent an InventoryTransaction for the ticket; Kawari
 sends the slot only.
 
+## Gear coffers
+
+Every gear coffer (the "Level N Weapon Coffer"s, the raid and tome coffers, also the ward potions) has ItemAction
+**388**, whose action is **4647** (ItemAction 2462 has it too); `items/Items.lua` sends action 4647 to
+`items/Coffer.lua`. What a coffer holds isn't in the client: its AdditionalData (1000238 for the Level 18 Weapon
+Coffer, 1000239… for the next ones) links to no sheet, so the contents are a table in the script, by coffer: sets of
+item IDs, one per class, the first piece deciding (its ClassJobCategory includes the current class or job: a
+paladin gets the gladiator's set), a gladiator's sword coming with its shield. `player:open_coffer(coffer, sets)`
+(`ZoneConnection::open_coffer`) uses the coffer up and gives the set as an event gives an item (the ack, the
+inventory, LogMessage 789's pop-up and EventLogMessage 750 for each piece). It does nothing, keeping the coffer, in
+instanced content (the item's description says it can't be opened there), when the class has no set, or when the
+bags can't hold the set. A coffer not in the table says so in chat.
+
+Filled in, from the FFXIV Console Games Wiki's pages (no coffer is opened in Bob's captures):
+
+| Coffer | Item | From | Sets |
+|---|---|---|---|
+| Level 18 Weapon Coffer | 31329 | Life, Materia and Everything | 1611 + 2241 (GLA), 1758, 1827, 1688, 8662, 1897, 2111, 2149, 2002 |
+| Level 24 Weapon Coffer | 31331 | Meeting with the Resistance | 1625 + 2246 (GLA), 1766, 1836, 1697, 9193, 1905, 2118, 2156, 2011 |
+
 ## Selling to NPCs, wear and repair
 
 * **Sell price** (`ItemRow::sell_price`): PriceLow, and for materia (ItemUICategory 58) a tenth more rounded up in

@@ -238,6 +238,10 @@ add one when something is found.
 * Aetheryte tickets: only the Vesper Bay ticket's landing is recorded (the destination isn't read from its ItemAction
   Data, whose meaning isn't known). Item casts now come from the ItemAction's action; items with a cast there that
   retail uses instantly would now show one (none known).
+* Gear coffers: retail's packets for opening one aren't recorded (Kawari gives the pieces as an event's items), nor
+  what it says when the class has no set or the coffer is used in a duty (the client may refuse those itself). Only
+  the Level 18 and 24 Weapon Coffers are filled in, from the wiki (whether a gladiator really gets the shield too is
+  its listing's reading); the ward potions share the coffers' action and now say their contents aren't known.
 * An Elezen bot's feet showed nothing in the glamour "keeper of the lilacs" (feet model 410, variant 1). Probably
   the same cause as the Hyur woman's Miqo'te legs (2026-10-27): the race rules weren't read at all (EquipRaceCategory
   in the wrong language), so nothing was left out; fixed, not yet seen in game. A glamour line whose name matches two

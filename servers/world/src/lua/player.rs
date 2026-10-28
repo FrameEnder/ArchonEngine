@@ -1286,6 +1286,15 @@ impl UserData for LuaPlayer {
                 Ok(())
             },
         );
+        // A gear coffer (items/Coffer.lua): the current class's pieces of what it holds given, the coffer used up.
+        methods.add_method_mut(
+            "open_coffer",
+            |_, this, (item_id, contents): (u32, Vec<Vec<u32>>)| {
+                this.queued_tasks
+                    .push(LuaTask::OpenCoffer { item_id, contents });
+                Ok(())
+            },
+        );
         // An aetheryte ticket's teleport (items/TeleportTicket.lua): the ticket used up, then to the pop range.
         methods.add_method_mut(
             "teleport_by_ticket",

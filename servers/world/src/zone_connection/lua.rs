@@ -968,6 +968,9 @@ impl ZoneConnection {
                     self.teleport_by_ticket(*item_id, *territory_id, *pop_range_id)
                         .await;
                 }
+                LuaTask::OpenCoffer { item_id, contents } => {
+                    self.open_coffer(*item_id, contents).await;
+                }
                 LuaTask::RemoveCooldowns => {
                     self.handle
                         .send(ToServer::RemoveCooldowns(

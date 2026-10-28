@@ -396,6 +396,66 @@ impl ZoneConnection {
             .await;
     }
 
+    /// A gear coffer opened (`items/Coffer.lua`): what it holds, a set of pieces per class (a gladiator's sword and
+    /// shield, everyone else's one weapon); the first set whose first piece the current class or job can equip (that
+    /// item's ClassJobCategory) is given, as an event gives an item, and the coffer used up. Nothing for the class, not
+    /// in the bags, no room for the set, or in instanced content (the item's description: it can't be opened there):
+    /// nothing happens and the coffer is kept. Retail's own packets for this aren't recorded yet.
+    pub async fn open_coffer(&mut self, coffer_id: u32, contents: &[Vec<u32>]) {
+        if self.content_finder_condition_id != 0 || self.content_handler_id.is_some() {
+            tracing::info!("Coffer {coffer_id} not opened: in instanced content");
+            return;
+        }
+        if self.player_data.inventory.count_in_bags(coffer_id) == 0 {
+            tracing::warn!("Coffer {coffer_id} opened, but there's none in the bags");
+            return;
+        }
+        let class_job = self.player_data.classjob.current_class as u8;
+        let given: Vec<u32> = {
+            let mut game_data = self.game_data.lock();
+            contents
+                .iter()
+                .find(|set| {
+                    set.first().is_some_and(|main| {
+                        game_data
+                            .get_item_info(ItemInfoQuery::ById(*main))
+                            .is_some()
+                            && {
+                                let category = game_data.get_item_classjobcategory(*main);
+                                game_data
+                                    .get_applicable_classjobs(category as u16)
+                                    .contains(&class_job)
+                            }
+                    })
+                })
+                .cloned()
+                .unwrap_or_default()
+        };
+        if given.is_empty() {
+            tracing::info!("Coffer {coffer_id} holds nothing for class {class_job}");
+            return;
+        }
+        // Room for every piece, tried on a copy first (the coffer's own slot isn't freed until it's opened.)
+        let mut trial = self.player_data.inventory.clone();
+        let fits = {
+            let mut game_data = self.game_data.lock();
+            given.iter().all(|id| {
+                game_data
+                    .get_item_info(ItemInfoQuery::ById(*id))
+                    .is_some_and(|info| trial.add_obtained_item(Item::new(&info, 1)))
+            })
+        };
+        if !fits {
+            self.send_notice(ERR_INVENTORY_ADD_FAILED).await;
+            return;
+        }
+        tracing::info!("Coffer {coffer_id} opened for class {class_job}: {given:?}");
+        self.item_used_up(coffer_id).await;
+        for id in given {
+            self.obtain_event_item(id, 1).await;
+        }
+    }
+
     /// An item won from a coffer (`server/loot.rs`): the LootMessages went to the party already; retail then sent the
     /// winner the item's slot (UpdateItem.)
     pub async fn obtain_loot(&mut self, id: u32) {

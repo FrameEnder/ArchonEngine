@@ -21,6 +21,8 @@ ITEM_ACTION_TYPE_FACEWEAR = 37312
 ITEM_ACTION_TYPE_TELEPORT_TICKET = 9994
 -- Also an unlock link (the client checks it the same way as 2633.)
 ITEM_ACTION_TYPE_UNLOCK_LINK_2 = 43141
+-- Coffers: ItemAction 388 (every gear coffer, also the ward potions) and 2462 have this action.
+ITEM_ACTION_TYPE_COFFER = 4647
 
 -- Items that teach something, by ItemAction type: what they teach, and where its ID is (the ItemAction's Data[0], or
 -- the item's AdditionalData). These are the types the client's own "already learned" check knows
@@ -41,7 +43,9 @@ LEARNED_FROM_ITEMS = {
 function dispatchItem(player, id, action_type, action_data, additional_data, is_misc)
     local has_vfx = action_data[1] ~= 0
     local learned = LEARNED_FROM_ITEMS[action_type]
-    if learned ~= nil then
+    if action_type == ITEM_ACTION_TYPE_COFFER then
+        return runAction("items/Coffer.lua", id)
+    elseif learned ~= nil then
         local learned_id = learned.from == "data" and action_data[1] or additional_data
         player:learn_from_item(learned.kind, learned_id, id)
         return runAction("items/GenericNoEffect.lua", 0)
