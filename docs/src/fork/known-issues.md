@@ -81,9 +81,13 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
-* **The Waking Sands' layer filter** (2026-10-26) is known for The Scions of the Seventh Dawn (90338) and from A Wild
-  Rose by Any Other Name on (90339) only; later visits get 90339 until their keys are recorded (a capture of retail
-  there, or the zone's filter log matched to the story). Other zones with several layer filters send 0, as before.
+* **A Hero in the Making** (511, 2026-10-28): untested in game. Retail talked to Tataru in territory 140 (where she
+  stands for sequence 1); the officers' lines (scenes 3-5, 30-32, 35-37) go by IsAcceptEvent's order, not recorded.
+
+* **The Waking Sands' layer filter** (2026-10-26) is known from The Scions of the Seventh Dawn (90338) to
+  Sylph-management (90342, 2026-10-28); later visits get 90342 until their keys are recorded (a capture of retail
+  there, or the zone's filter log matched to the story). 90341 is keyed to Wood's Will Be Done (683) and, untested,
+  the other companies' 684 and 685; whether accepting 680 already brings it isn't recorded. Other zones with several layer filters send 0, as before.
   The server's own event objects there still follow the first filter for the territory, not the key. Untested in
   game.
 
@@ -508,6 +512,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   the clear's logs aren't sent.
 
 ## Quest battles and directors
+
+* **The Company You Keep (Twin Adder)'s battle (46)**: untested in game (2026-10-28). Sequences 5-8 (the vanguard at
+  70, 40, 27, 14 and 8 %) are the won run's only, and nothing else was seen to come with them. Only the conjurer's
+  last words are recorded (the lead's and the archer's aren't). No client battle script was dumped for it. Flash,
+  Rampart, Raging Strikes, Life Surge and 983 aren't modelled. The other Grand Companies' versions (681 Maelstrom, 682
+  Immortal Flames) and their battles aren't scripted.
 
 * **Into a Copper Hell (44)**: untested in game (2026-10-25). Territory 274's drop-in (`wil_w1t1`) appends a guessed LGB
   for Ul'dah - Steps of Nald; if 274 loads other LGBs, the three adventurers won't spawn. Retail's last DirectorVars

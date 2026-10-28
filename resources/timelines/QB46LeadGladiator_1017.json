@@ -1,0 +1,37 @@
+{
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 3.0,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 47.0
+        },
+        "9": {
+            "npcs": 72.5
+        },
+        "15": {
+            "npcs": 124.0
+        },
+        "120": {
+            "npcs": 90.0,
+            "players": 90.0
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 15,
+                "every": 19.9,
+                "comment": "Riot Blade: 14 uses, every 20 s, 124"
+            },
+            {
+                "action": 9,
+                "every": 18.8,
+                "comment": "Fast Blade: 15 uses, every 19 s, 72.5"
+            }
+        ]
+    },
+    "comment": "Quest battle 46's lead (BNpcBase 1017, BNpcName 1001), level 20, 4956 HP, on your side. From Bob's Chronofoil capture b8432613 (2026-10-27, three runs of The Company You Keep (Twin Adder)'s quest battle 46, `questkit chronofoil --battle 0.30/0.32` lost and `0.34` won, territory 277, duty 340; a level 24 conjurer): on the other side's leader the whole fight (all three runs), auto-attacks (870) every 3.0 s, 47 (median of 100, 30 misses); Riot Blade (15) 124 and Fast Blade (9) 72.5 about every 19-20 s; Cure (120, the director's heals) 90 on whoever of the side was lowest. Flash (14, 14 uses) has no action script and Rampart (10, three) isn't modelled. Hitbox not recorded."
+}

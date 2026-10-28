@@ -53,6 +53,10 @@ mod tests {
         assert_eq!(filter_key(212, |_| false), 90338);
         assert_eq!(filter_key(212, |quest| quest == 509), 90338);
         assert_eq!(filter_key(212, |quest| quest == 510 || quest == 509), 90339);
+        // Bob's capture b8432613: A Hero in the Making, then the Grand Company's next step, then Sylph-management.
+        assert_eq!(filter_key(212, |quest| quest <= 511), 90340);
+        assert_eq!(filter_key(212, |quest| quest <= 511 || quest == 684), 90341);
+        assert_eq!(filter_key(212, |quest| quest <= 513 || quest == 683), 90342);
         assert_eq!(filter_key(140, |_| true), 0);
     }
 }

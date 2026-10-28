@@ -1,0 +1,35 @@
+{
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 3.0,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 46.0
+        },
+        "525": {
+            "npcs": 186.5,
+            "players": 186.5
+        },
+        "526": {
+            "npcs": 145.0,
+            "players": 145.0
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 525,
+                "every": 11.0,
+                "comment": "Drill Cannons: 4 uses, every 11 s, 186.5"
+            },
+            {
+                "action": 526,
+                "every": 10.9,
+                "comment": "Cermet Drill: 11 uses, every 11 s, 145"
+            }
+        ]
+    },
+    "comment": "Quest battle 46's magitek vanguard (BNpcBase 1016, BNpcName 269), level 22, 4683 HP. From Bob's Chronofoil capture b8432613 (2026-10-27, three runs of The Company You Keep (Twin Adder)'s quest battle 46, `questkit chronofoil --battle 0.30/0.32` lost and `0.34` won, territory 277, duty 340; a level 24 conjurer): on the lead gladiator until its last moments (then you), auto-attacks (870) every 3.0 s, 46 (median of 26); Cermet Drill (526, 2.5 s cast, the Action sheet's 6-yalm line) about every 11 s, 145 (one hit seen, most landed on no one); Drill Cannons (525, 2.0 s, a 30-yalm line) 186.5 every 11 s. Hitbox not recorded."
+}

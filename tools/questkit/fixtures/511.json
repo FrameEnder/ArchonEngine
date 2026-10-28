@@ -1,0 +1,246 @@
+{
+  "quest": 511,
+  "script": "ManFst300_00511",
+  "source": "Bob's Chronofoil capture b8432613 (2026-10-27); scenes and effects from Bob's Chronofoil capture of 2026-10-27",
+  "params": {
+    "ACTOR0": 1005116,
+    "ACTOR1": 1003785,
+    "ACTOR2": 1004883,
+    "ACTOR3": 1004884,
+    "ACTOR4": 1004885,
+    "EOBJECT0": 2001690,
+    "EVENT_ACTION_WAITING": 10,
+    "EOBJECT1": 2001691,
+    "ACTOR5": 1001029,
+    "ACTOR6": 1004870,
+    "ACTOR7": 1004871,
+    "ACTOR8": 1004872,
+    "ACTOR9": 1004874,
+    "ACTOR10": 1004875,
+    "ACTOR11": 1004876,
+    "ACTOR12": 1006179,
+    "ACTOR13": 1004880,
+    "ACTOR14": 1004881,
+    "ACTOR15": 1004882,
+    "ACTOR16": 1006173,
+    "ACTOR17": 1006174,
+    "ACTOR18": 1006175,
+    "ACTOR19": 1006181,
+    "ACTOR20": 1006183,
+    "ACTOR21": 1006184,
+    "ACTOR22": 1006177,
+    "ACTOR23": 1006178,
+    "ACTOR24": 1005122,
+    "NCUT0": 89,
+    "NCUT1": 90,
+    "NCUT2": 151,
+    "NCUT3": 91,
+    "NCUT4": 152,
+    "NCUT5": 92,
+    "NCUT6": 153,
+    "NCUT7": 93,
+    "LOC_ACTOR0": 1003783,
+    "LOC_ACTION1": 1002,
+    "LOC_TALKSHAPE1": 6,
+    "LOC_SE1": 42
+  },
+  "steps": [
+    {
+      "talk": 1005116,
+      "layout": 4170055,
+      "what": "ACTOR0",
+      "territory": 212,
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "effects": [
+        {
+          "zone": 212
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1003785,
+      "layout": 3985698,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 2001690,
+      "layout": 4106969,
+      "what": "EOBJECT0",
+      "scenes": [
+        {
+          "scene": 6,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        },
+        {
+          "scene": 7,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "101000800000",
+        "notices": [
+          [
+            1,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 2001691,
+      "layout": 4106943,
+      "what": "EOBJECT1",
+      "scenes": [
+        {
+          "scene": 8,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        },
+        {
+          "scene": 9,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "201100c00000",
+        "notices": [
+          [
+            2,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1001029,
+      "layout": 4054953,
+      "what": "ACTOR5",
+      "scenes": [
+        {
+          "scene": 10,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 11,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            3,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1005122,
+      "layout": 4170056,
+      "what": "ACTOR24",
+      "scenes": [
+        {
+          "scene": 33,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 34,
+          "flags": "0xf8402efb",
+          "params": [
+            0
+          ],
+          "results": [
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

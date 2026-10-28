@@ -99,6 +99,10 @@ the client which filter to use, by quest progress: ZoneInit's `transition_territ
 ActorSetPos' as a quest's cutscene moves you within the zone. In the Waking Sands (Bob's Chronofoil capture afe32479
 visit 0.10, 2026-10-25) it was 90338 at The Scions of the Seventh Dawn's last step and after it was done, and 90339 in
 the ActorSetPos as A Wild Rose by Any Other Name (510) was accepted, and after; every other zone in the captures had 0.
+Later (Bob's capture b8432613, 2026-10-27): 90339 through Lord of the Inferno (343), 90340 as A Hero in the Making
+(511) was accepted (its opening cutscene's ActorSetPos), 90341 once Wood's Will Be Done (683, the Twin Adders' next
+step; the other companies' 684 and 685 are taken to be the same) was accepted, 90342 as Sylph-management (513) was
+accepted.
 Kawari sent 0, and the client showed the people of every visit to the Waking Sands at once (Bob's screenshot of
 2026-10-26: Thancred, Biggs, Wedge, Cid, Yda, Papalymo, Arenvald, Iliud and a row of soldiers in the hall).
 

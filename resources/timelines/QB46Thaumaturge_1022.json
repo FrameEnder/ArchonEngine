@@ -1,0 +1,41 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "141": {
+            "npcs": 57.5
+        },
+        "142": {
+            "npcs": 55.0
+        },
+        "146": {
+            "npcs": 15.5
+        },
+        "156": {
+            "npcs": 32.0
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 146,
+                "every": 30.8,
+                "comment": "Blizzard II: 7 uses, every 31 s, 15.5"
+            },
+            {
+                "action": 142,
+                "every": 10.7,
+                "comment": "Blizzard: 14 uses, every 11 s, 55"
+            },
+            {
+                "action": 141,
+                "every": 6.1,
+                "comment": "Fire: 12 uses, every 6.1 s, 57.5"
+            }
+        ]
+    },
+    "comment": "Quest battle 46's thaumaturge (BNpcBase 1022, BNpcName 997), level 20, 351 HP. From Bob's Chronofoil capture b8432613 (2026-10-27, three runs of The Company You Keep (Twin Adder)'s quest battle 46, `questkit chronofoil --battle 0.30/0.32` lost and `0.34` won, territory 277, duty 340; a level 24 conjurer): on the lead gladiator from range, Fire (141) 57.5, Blizzard (142) 55, Blizzard II (146) 15.5; Fire II (147, four, no damage seen) and Scathe (156, once) left out. No auto-attack. Hitbox not recorded."
+}

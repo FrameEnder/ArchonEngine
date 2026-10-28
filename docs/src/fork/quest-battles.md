@@ -280,6 +280,35 @@ a quest's entering event, 0 for every other event (228 events across the capture
   Flames' 14 and 718 and the Amalj'aa's 426 (on themselves) aren't modelled. `questkit battle-sim 45` checks all four
   runs (`45.json` won, `45-lost-8/10/12.json`): every step within 1.4 s.
 
+### Quest battle 46 — The Company You Keep (Twin Adder) (`content/questbattle/46.lua`)
+
+* Quest 680 (ManFst302_00680) enters it from the airship crewman in the East Shroud (scene 5) or EVENTRANGE0 (scene
+  6), territory 277, ContentFinderCondition 340. Territory 277's Bg is the East Shroud's own (`fst_f1/fld/f1f2`,
+  the same as 152: not a guess this time), so its NPCs are layer `QB_ManFst302_001` of `fst_f1f2`, from `questkit
+  chronofoil --dropin 277`: three Twin Adders on your side (the lead gladiator 4103768, BNpcBase 1017, level 20, 4956
+  HP; a conjurer 4103769, 1018, 1156; an archer 4103770, 1019, 1156; hostile set false), their leader (4103775, 1020,
+  level 22, 3204 HP) with two lancers (1021), a thaumaturge (1022) and two archers (1023), then a magitek vanguard
+  (4103788, 1016, level 22, 4683 HP) with two more archers. Start spot (51.32, 7.89, 450.57, facing 0) and opening
+  flags (0xF841AEFB, scene 1) from Bob's Chronofoil capture b8432613 (2026-10-27, `--battle 0.30`, `0.32` lost,
+  `0.34` won; a level 24 conjurer).
+* The flow (seconds from the fight starting): sequence 2, every enemy on the lead gladiator (all three runs), battle
+  talk 113 (the lead, BNpcName 1001, portrait 73216) at 5 s and 114 (their leader, 996, 73215) at 10 s. **Their leader
+  below half** (his health went 50.1 -> 48.7, 50.3 -> 48.7, 50.8 -> 46.7 % as it came, 57.5-90.1 s in): sequence 3
+  and 115, 116 5 s later; **11 s after it** sequence 4 and the magitek vanguard with two archers, all on the lead;
+  117 7 s after that. The vanguard at 70, 40, 27, 14 and 8 %: sequences 5, 6, 7 then 8, 6, 7 (the won run only;
+  nothing else came with them). **The vanguard down**: 2.2 s later (its death animation) sequence 9 and "Duty
+  Complete", the battle's scene 9 (0xF8402EF3) 3.6 s after; the quest moves to 255 and the director to 0xFE with its
+  last byte 0x80 (`complete_quest_battle(255, false, 9, 0xF8402EF3)`); out back to the East Shroud. The conjurer
+  falling says its last words (119, BNpcName 1176, 73217; a lost run) and it goes on. Your health at 0: sequence
+  0xFE (both losses).
+* The allies: the lead on their leader up close, the conjurer and the archer on the adds (nearest) from about 10
+  yalms; the lead and the conjurer heal the side with Cure (120) below 50 %, their leader his own below 35 % (retail's
+  median 30 %).
+* No client battle script was dumped for it (the scene numbers are the capture's).
+* Timelines `QB46*` (bases 1016-1023, from the three runs); action scripts `QB46MagitekVanguard_00525` (Drill Cannons)
+  and `_00526` (Cermet Drill), lines from the Action sheet. Flash (14), Rampart (10), Raging Strikes (101), Life Surge
+  (83) and 983 aren't modelled. `questkit battle-sim 46` checks all three runs (`46.json` won, `46-lost-30/32.json`).
+
 ### Quest battle 16 — Trial by Water (`content/questbattle/16.lua`)
 
 * Quest 92 (ClsCnj003_00092) enters it from the Gods' Quiver bow (scene 17) or EVENTRANGE0 (scene 34) (territory

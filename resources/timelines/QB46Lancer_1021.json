@@ -1,0 +1,41 @@
+{
+    "autoattack_action_id": 871,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 3.0,
+    "recorded_amounts": {
+        "871": {
+            "npcs": 14.0
+        },
+        "75": {
+            "npcs": 24.0
+        },
+        "82": {
+            "npcs": 19.0
+        },
+        "76": {
+            "npcs": 17.5
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 82,
+                "every": 30.9,
+                "comment": "Leg Sweep: 7 uses, every 31 s, 19"
+            },
+            {
+                "action": 76,
+                "every": 18.8,
+                "comment": "Feint: 6 uses, every 19 s, 17.5"
+            },
+            {
+                "action": 75,
+                "every": 6.6,
+                "comment": "True Thrust: 20 uses, every 6.6 s, 24"
+            }
+        ]
+    },
+    "comment": "Quest battle 46's lancers (BNpcBase 1021, BNpcName 998), level 20, 598 HP. From Bob's Chronofoil capture b8432613 (2026-10-27, three runs of The Company You Keep (Twin Adder)'s quest battle 46, `questkit chronofoil --battle 0.30/0.32` lost and `0.34` won, territory 277, duty 340; a level 24 conjurer): on the lead gladiator, auto-attacks (871) every 3.0 s, 14 (median of 88, 12 misses); True Thrust (75) 24, Feint (76) 17.5, Leg Sweep (82) 19. Life Surge (83, every 42 s) isn't modelled. Hitbox not recorded."
+}

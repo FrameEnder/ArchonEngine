@@ -1,0 +1,49 @@
+{
+    "autoattack_action_id": 873,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "873": {
+            "npcs": 15.0
+        },
+        "97": {
+            "npcs": 27.0
+        },
+        "100": {
+            "npcs": 16.0
+        },
+        "18190": {
+            "npcs": 22.5
+        },
+        "106": {
+            "npcs": 17.0
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 18190,
+                "every": 24.0,
+                "comment": "Straight Shot: 19 uses, every 24 s, 22.5"
+            },
+            {
+                "action": 106,
+                "every": 19.8,
+                "comment": "Quick Nock: 34 uses, every 20 s, 17"
+            },
+            {
+                "action": 97,
+                "every": 17.2,
+                "comment": "Heavy Shot: 21 uses, every 17 s, 27"
+            },
+            {
+                "action": 100,
+                "every": 15.2,
+                "comment": "Venomous Bite: 21 uses, every 15 s, 16"
+            }
+        ]
+    },
+    "comment": "Quest battle 46's archers (BNpcBase 1023, BNpcName 995), level 20, 392 HP. From Bob's Chronofoil capture b8432613 (2026-10-27, three runs of The Company You Keep (Twin Adder)'s quest battle 46, `questkit chronofoil --battle 0.30/0.32` lost and `0.34` won, territory 277, duty 340; a level 24 conjurer): on the lead gladiator, standing where they appeared, auto-attacks (873) every 3.0 s, 15 (median of 255, 25 misses); Venomous Bite (100), Heavy Shot (97), Quick Nock (106) and Straight Shot (18190) every 15-24 s. Raging Strikes (101, every 123 s) isn't modelled. Hitbox not recorded."
+}
