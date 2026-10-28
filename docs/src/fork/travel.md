@@ -72,7 +72,10 @@ instance of it every time, and the player stayed in the old one too; the next zo
 the two, so they were in two instances, and the zone loading after that picked whichever came first. In Bob's bundle
 of 2026-10-28 that sent Lord of the Inferno's quest battle (275) the Eastern Thanalan instance he had left: its 16
 monsters (the invisible city's zombies attacking during the loading screen), its FATEs, the FATE director instead of
-the battle's, no opening, and the player dead 81 s in. `remove_actor_from_instance` now also takes a player out of
+the battle's, no opening, and the player dead 81 s in. Before that, in Eastern Thanalan itself, his position
+updates went to the copy left in the Waking Sands, so the server kept him where he had arrived (36, 1, 1) and never
+sent the monsters he walked past: the invisible city's nine zombies (bases 18 and 19) never appeared, though the
+instance had them. `remove_actor_from_instance` now also takes a player out of
 every instance they're in.
 
 ## Map discovery
