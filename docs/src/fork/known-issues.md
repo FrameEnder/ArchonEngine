@@ -88,6 +88,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
+* **The Company You Keep (Immortal Flames)** (682) and **Sylph-management** (513), 2026-10-28: untested in game, each
+  checked against one retail run (Dags'); the others' lines in 682 go by IsAcceptEvent's order, not recorded.
 * **A Hero in the Making** (511, 2026-10-28): untested in game. Retail talked to Tataru in territory 140 (where she
   stands for sequence 1); the officers' lines (scenes 3-5, 30-32, 35-37) go by IsAcceptEvent's order, not recorded.
 
@@ -523,11 +525,15 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quest battles and directors
 
-* **The Company You Keep (Twin Adder)'s battle (46)**: untested in game (2026-10-28). Sequences 5-8 (the vanguard at
-  70, 40, 27, 14 and 8 %) are the won run's only, and nothing else was seen to come with them. Only the conjurer's
-  last words are recorded (the lead's and the archer's aren't). No client battle script was dumped for it. Flash,
-  Rampart, Raging Strikes, Life Surge and 983 aren't modelled. The other Grand Companies' versions (681 Maelstrom, 682
-  Immortal Flames) and their battles aren't scripted.
+* **The Company You Keep (Twin Adder)'s battle (46)** and **(Immortal Flames)'s (47)**: untested in game (2026-10-28).
+  Sequences 5-8 (the vanguard at 70, 40 and 27 %, then 15 s and 6.3 s later) are the two won runs', and nothing else
+  was seen to come with them. Only 46's conjurer's last words are recorded (none for 47's allies, nor a loss of 47:
+  it fails as 46 does). No client battle script was dumped for either. Flash, Rampart, Raging Strikes, Life Surge and
+  983 aren't modelled. The Maelstrom's version (681) and its battle aren't scripted.
+* **The companies' next steps**: 683 (Wood's Will Be Done), 684 (the Maelstrom's) and 685 (the Immortal Flames') aren't
+  scripted, so on Kawari nobody reaches Sylph-management (513, scripted 2026-10-28, which follows any of them). 685
+  was played in Dags' run (offered in Ul'dah, sequence 255 at once, rewarded in the Waking Sands with a cutscene and
+  UI8AH and UI8AL 1), but there's no dump of its client script yet (a Kawari Web quest bundle with it would do).
 
 * **Into a Copper Hell (44)**: untested in game (2026-10-25). Territory 274's drop-in (`wil_w1t1`) appends a guessed LGB
   for Ul'dah - Steps of Nald; if 274 loads other LGBs, the three adventurers won't spawn. Retail's last DirectorVars

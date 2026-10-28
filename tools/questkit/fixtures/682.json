@@ -1,0 +1,129 @@
+{
+  "quest": 682,
+  "script": "ManWil302_00682",
+  "source": "Bob's Chronofoil capture c99fe374 (2026-10-28, Dags, a gladiator)",
+  "params": {
+    "ACTOR0": 1004883,
+    "ACTOR1": 1002391,
+    "ACTOR2": 1004884,
+    "ACTOR3": 1004885,
+    "ACTOR4": 1004887,
+    "ACTOR5": 1004995,
+    "ACTOR6": 1004996,
+    "ACTOR7": 1004997,
+    "EVENTRANGE0": 4126799,
+    "EOBJECT0": 2001714,
+    "EVENT_ACTION_SEARCH": 1,
+    "EOBJECT1": 2001808,
+    "TERRITORYTYPE0": 278,
+    "QUESTBATTLE0": 47,
+    "NCUT0": 219,
+    "LOC_ACTOR0": 1005106
+  },
+  "steps": [
+    {
+      "talk": 1004883,
+      "layout": 4148861,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1002391,
+      "layout": 3643460,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 1,
+          "flags": "0xf8482efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1004887,
+      "layout": 4126792,
+      "what": "ACTOR4",
+      "scenes": [
+        {
+          "scene": 5,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "effects": [
+        {
+          "zone": 278
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "battle_won": 255,
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1002391,
+      "layout": 3643460,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 18,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

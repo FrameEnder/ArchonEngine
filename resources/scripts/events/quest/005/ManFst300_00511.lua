@@ -3,8 +3,9 @@
 -- Checked against the client's quest script (kawari-questdump, 2026-10-27) and Bob's Chronofoil capture b8432613
 -- (2026-10-27, the whole quest; its fixture is tools/questkit/fixtures/511.json).
 -- Sequence 0:   ACTOR0 (Minfilia) offers it (scene 0, a yield returning 1 when accepted), then the cutscene (scene 1,
---               retail's flags 0xF8402EFB; the client accepts it there): sequence 1, and the player is put where the
---               cutscene left them in the Waking Sands (retail's PrepareZoning and ActorSetPos.)
+--               retail's flags 0xF8402EFB; the client accepts it there): sequence 1, and the player is put back where
+--               they stood to talk to her (retail's PrepareZoning to the Waking Sands and ActorSetPos: Dags' run, Bob's
+--               Chronofoil capture c99fe374, at exactly the spot he talked from; Bob's own another spot.)
 -- Sequence 1:   ACTOR1 (Tataru, scene 2): notice 0, sequence 2.
 -- Sequence 2:   the three Grand Companies' places, in any order, each its todo (the client's IsAcceptEvent):
 --               * EOBJECT0, in Gridania (todo 1): scene 6 (0x2001), EVENT_ACTION_WAITING's bar, then the cutscene
@@ -46,10 +47,8 @@ PLACES = {
 FLAG_BYTE = 3
 PLACES_IN_ALL = 3
 
--- Where retail put the player after the opening cutscene (PrepareZoning, then ActorSetPos), in the Waking Sands.
+-- Where the opening cutscene leaves the player: the Waking Sands, where they stood (PrepareZoning, then ActorSetPos.)
 WAKING_SANDS = 212
-AFTER_OPENING = { x = 38.777237, y = 1.2000012, z = 2.5025156 }
-AFTER_OPENING_ROTATION = 2.8466
 
 -- The others' lines in each sequence: { [sequence] = { [base ID] = scene } }.
 LINES = {
@@ -137,7 +136,8 @@ function sceneFinished(scene, results, player)
         player:accept_quest(EVENT_ID)
         player:quest_sequence(EVENT_ID, 1)
         player:finish_event()
-        player:change_territory(WAKING_SANDS, AFTER_OPENING, AFTER_OPENING_ROTATION)
+        local stood = player.position
+        player:change_territory(WAKING_SANDS, { x = stood.x, y = stood.y, z = stood.z }, player.rotation)
         return
     elseif scene == SCENE_TATARU then
         player:event_notice(EVENT_ID, 0, {})

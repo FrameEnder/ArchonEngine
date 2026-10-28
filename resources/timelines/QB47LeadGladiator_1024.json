@@ -1,0 +1,37 @@
+{
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 3.0,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 48.0
+        },
+        "9": {
+            "npcs": 70.0
+        },
+        "15": {
+            "npcs": 50.0
+        },
+        "120": {
+            "npcs": 91.0,
+            "players": 91.0
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 9,
+                "every": 20.2,
+                "comment": "Fast Blade: 5 uses, every 20 s, 70"
+            },
+            {
+                "action": 15,
+                "every": 28.8,
+                "comment": "Riot Blade: 5 uses, every 29 s, 50"
+            }
+        ]
+    },
+    "comment": "Quest battle 47's lead (BNpcBase 1024, BNpcName 994), level 20, 4956 HP, on your side. From Bob's Chronofoil capture c99fe374 (2026-10-28, The Company You Keep (Immortal Flames)'s quest battle 47 won, `questkit chronofoil --battle 0.47`, territory 278, duty 341; Dags, a level 24 gladiator): on the other side's leader until he fell, then the archers and the vanguard; auto-attacks (870) every 3.0 s, 48 (median of 42, 5 misses); Fast Blade (9) 70 every 20 s and Riot Blade (15) 50 every 29 s; Cure (120, the director's heals) 91 on whoever of the side was lowest (35-55 %, median 52). Flash (14, five uses) has no action script and Rampart (10, once) isn't modelled. Hitbox not recorded."
+}

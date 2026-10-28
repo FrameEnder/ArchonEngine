@@ -16,13 +16,14 @@
 --   their leader below 50 % (49, 49, 47 %; 87.8-90.1 s in the lost runs, 57.5 s in the won one): sequence 3 and 115,
 --         116 5 s later; 11 s after it (11.0, 11.1; 9.1 once) sequence 4 and the magitek vanguard with two archers,
 --         all on the lead; 117 7 s after it (7.1, 7.1, 7.1)
---   the vanguard at 70, 40, 27, 14 and 8 % (68, 39, 27, 14, 8 % as they came in the won run): sequences 5, 6, 7 then
---         8, 6, 7
+--   the vanguard below 70, 40 and 27 % (68, 39, 27 % as they came in the won run): sequences 5, 6, then 7 and 8; 15 s
+--         after 8 sequence 6 again, and 6.3 s after that 7 (timed, not its health: 15.07 s and 6.28 s here, 15.21 s in
+--         the Immortal Flames' battle, 47, where the vanguard was at 14 and 4 % then, Bob's capture c99fe374)
 --   the vanguard down: 2.2 s after its health reached 0 (its death animation), sequence 9 and "Duty Complete", the
 --         battle's scene 9 (a cutscene, 0xF8402EF3) 3.6 s later; the quest moves to 255 and the director to 0xFE with its last byte 0x80
 --   the conjurer falling: its last words (119, BNpcName 1176, portrait 73217; a lost run); the battle goes on
 --   you down: sequence 0xFE (both losses)
--- Retail's sequences 5-8 came with no other change anyone could see; their marks are the won run's, one run.
+-- Retail's sequences 5-8 came with no other change anyone could see; the marks are the won runs' of this battle and 47.
 -- The lead and the conjurer heal (Cure, 120) whoever of the side is lowest below about 50 % (medians 45-47 %); their
 -- leader heals his side (Cure, median 30 %). How hard each hits is in their timelines (QB46*).
 
@@ -57,6 +58,9 @@ VANGUARD_TALK_AFTER = 14
 LEADER_MARK = 49
 -- The win came as the vanguard's death animation ended (2.2 s after its health reached 0.)
 WON_AFTER_DEATH = 4
+-- After the vanguard's third mark (sequence 8): sequence 6 15 s later, then 7 6.3 s after that.
+VANGUARD_AFTER_8 = 30
+VANGUARD_AFTER_6 = 13
 
 -- Who's talking (DirectorPopupMessage), by BNpcName, with retail's portrait. The content's text IDs, as retail sent
 -- them.
@@ -67,13 +71,11 @@ SPEAKERS = {
 }
 LAST_WORDS = { [BNPC_CONJURER] = 119 }
 
--- The vanguard's marks: { percent, director sequence(s) }.
+-- The vanguard's marks: { percent, director sequence(s) }; the last one starts the timed ones.
 VANGUARD_MARKS = {
     { 70, { 5 } },
     { 40, { 6 } },
     { 27, { 7, 8 } },
-    { 14, { 6 } },
-    { 8, { 7 } },
 }
 
 BATTLE = Battle.new()
@@ -160,12 +162,19 @@ function secondWave(director)
 end
 
 function vanguardMarks(director)
-    for _, mark in ipairs(VANGUARD_MARKS) do
+    for index, mark in ipairs(VANGUARD_MARKS) do
         BATTLE:onHealth(BNPC_VANGUARD, mark[1], function(d)
-            if not over then
-                for _, sequence in ipairs(mark[2]) do
-                    d:set_sequence(sequence)
-                end
+            if over then
+                return
+            end
+            for _, sequence in ipairs(mark[2]) do
+                d:set_sequence(sequence)
+            end
+            if index == #VANGUARD_MARKS then
+                BATTLE:steps({
+                    { VANGUARD_AFTER_8, "call", function(d2) if not over then d2:set_sequence(6) end end },
+                    { VANGUARD_AFTER_6, "call", function(d2) if not over then d2:set_sequence(7) end end },
+                })
             end
         end)
     end
@@ -209,6 +218,7 @@ function onActorDeath(director, layout_id, position)
         talk(director, SPEAKERS[layout_id], LAST_WORDS[layout_id])
     end
     if layout_id == BNPC_VANGUARD then
+        BATTLE:clearSteps()
         BATTLE:steps({ { WON_AFTER_DEATH, "call", function(d) won(d) end } })
     end
 end

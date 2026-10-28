@@ -1,0 +1,34 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 10.0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 37.0
+        },
+        "121": {
+            "npcs": 14.5
+        },
+        "120": {
+            "npcs": 124.5,
+            "players": 124.5
+        }
+    },
+    "rotation": {
+        "pace": 2.5,
+        "actions": [
+            {
+                "action": 121,
+                "every": 108.6,
+                "comment": "Aero: 2 uses, 109 s apart, 14.5"
+            },
+            {
+                "action": 119,
+                "every": 7.6,
+                "comment": "Stone: 15 uses, every 7.6 s, 37"
+            }
+        ]
+    },
+    "comment": "Quest battle 47's conjurer (BNpcBase 1025, BNpcName 1006), level 20, 1156 HP, on your side. From Bob's Chronofoil capture c99fe374 (2026-10-28, The Company You Keep (Immortal Flames)'s quest battle 47 won, `questkit chronofoil --battle 0.47`, territory 278, duty 341; Dags, a level 24 gladiator): on the lancers, then the archers and the vanguard, from about 7-11 yalms: Stone (119) 37 every 7.6 s, Aero (121) twice for 14.5; Cure (120, the director's heals) 124.5, at 35-53 % (median 43). No auto-attack. Hitbox not recorded."
+}

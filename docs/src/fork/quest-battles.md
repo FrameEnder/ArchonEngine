@@ -299,8 +299,9 @@ a quest's entering event, 0 for every other event (228 events across the capture
   talk 113 (the lead, BNpcName 1001, portrait 73216) at 5 s and 114 (their leader, 996, 73215) at 10 s. **Their leader
   below half** (his health went 50.1 -> 48.7, 50.3 -> 48.7, 50.8 -> 46.7 % as it came, 57.5-90.1 s in): sequence 3
   and 115, 116 5 s later; **11 s after it** sequence 4 and the magitek vanguard with two archers, all on the lead;
-  117 7 s after that. The vanguard at 70, 40, 27, 14 and 8 %: sequences 5, 6, 7 then 8, 6, 7 (the won run only;
-  nothing else came with them). **The vanguard down**: 2.2 s later (its death animation) sequence 9 and "Duty
+  117 7 s after that. The vanguard below 70, 40 and 27 %: sequences 5, 6, then 7 and 8; **15 s after 8** sequence 6
+  again and 6.3 s after that 7, by time, not its health (15.07 s here, the vanguard at 14 %; 15.21 s in battle 47, at
+  4 %: until 2026-10-28 these two were marks at 14 and 8 %). Nothing else came with them. **The vanguard down**: 2.2 s later (its death animation) sequence 9 and "Duty
   Complete", the battle's scene 9 (0xF8402EF3) 3.6 s after; the quest moves to 255 and the director to 0xFE with its
   last byte 0x80 (`complete_quest_battle(255, false, 9, 0xF8402EF3)`); out back to the East Shroud. The conjurer
   falling says its last words (119, BNpcName 1176, 73217; a lost run) and it goes on. Your health at 0: sequence
@@ -312,6 +313,31 @@ a quest's entering event, 0 for every other event (228 events across the capture
 * Timelines `QB46*` (bases 1016-1023, from the three runs); action scripts `QB46MagitekVanguard_00525` (Drill Cannons)
   and `_00526` (Cermet Drill), lines from the Action sheet. Flash (14), Rampart (10), Raging Strikes (101), Life Surge
   (83) and 983 aren't modelled. `questkit battle-sim 46` checks all three runs (`46.json` won, `46-lost-30/32.json`).
+
+### Quest battle 47 — The Company You Keep (Immortal Flames) (`content/questbattle/47.lua`)
+
+* Quest 682 (ManWil302_00682) enters it from the airship crewman in Western Thanalan (scene 5) or EVENTRANGE0 (scene
+  13), territory 278, ContentFinderCondition 341. Territory 278's Bg is Western Thanalan's own (`wil_w1/fld/w1f1`, the
+  same as 140), so its NPCs are layer `QB_ManWil302_001` of `wil_w1f1`, from `questkit chronofoil --dropin 278`: three
+  Immortal Flames on your side (the lead gladiator 4105366, BNpcBase 1024, BNpcName 994, level 20, 4956 HP; a
+  conjurer 4105365, 1025, 1006, 1156 HP; a thaumaturge 4105364, 1026, 1005, 1156 HP; hostile set false) and the Twin
+  Adders' battle's foes, the same BNpcBases (their leader 4105369, 1020, level 22, 3204 HP; two lancers 1021, a
+  thaumaturge 1022, two archers 1023; then the magitek vanguard 4105368, 1016, 4683 HP, with two more archers). Start
+  spot (172.03, 52.36, -72.12, facing 0.506) and opening flags (0xF841AEFB, scene 1) from Bob's Chronofoil capture
+  c99fe374 (2026-10-28, `--battle 0.47`, won; Dags, a level 24 gladiator).
+* The flow is battle 46's, step for step (seconds from the fight starting): sequence 2, every enemy on the lead; battle
+  talk 112 (the lead, BNpcName 994, portrait 73222) at 5 s and 113 (their leader, 996, 73215) at 10 s; their leader
+  below half (50.8 -> 46.8 %, 47.3 s in): sequence 3 and 114, 115 5 s later; 11.05 s after it sequence 4 with the
+  vanguard and two archers, 116 7.1 s after that; the vanguard below 70, 40 and 27 %: sequences 5, 6, 7 and 8; 15.2 s
+  after 8 sequence 6 (the vanguard was down before the 7 that follows); the vanguard down: 2.0 s later sequence 9 and
+  "Duty Complete", the battle's scene 9 (0xF8402EF3) 3.6 s after; the quest moves to 255; out back to Western
+  Thanalan, where the crewman is.
+* The allies: the lead on their leader up close, the conjurer and the thaumaturge on the adds (nearest) from 7-10
+  yalms; the lead and the conjurer heal the side with Cure (120) below 50 % (retail's at 35-55 %), their leader his own
+  below 35 % (retail's median 35 %).
+* No client battle script was dumped for it (the scene numbers are the capture's). Timelines `QB47*` (bases 1024-1026)
+  for the Flames; the foes use battle 46's `QB46*` timelines (the same bases). Flash (14) and Rampart (10) aren't
+  modelled. `questkit battle-sim 47` checks the run (`47.json`): every step within 0.7 s.
 
 ### Quest battle 16 — Trial by Water (`content/questbattle/16.lua`)
 

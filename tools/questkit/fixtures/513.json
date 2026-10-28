@@ -1,0 +1,72 @@
+{
+  "quest": 513,
+  "script": "ManFst304_00513",
+  "source": "Bob's Chronofoil capture c99fe374 (2026-10-28, Dags, a gladiator)",
+  "params": {
+    "ACTOR0": 1005128,
+    "ACTOR1": 1000168,
+    "SEQ_0_ACTOR0_NQ": 50,
+    "CUT_MANFST30410": 0,
+    "CUT_MANFST30420": 150
+  },
+  "steps": [
+    {
+      "talk": 1005128,
+      "layout": 4170057,
+      "what": "ACTOR0",
+      "territory": 212,
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "effects": [
+        {
+          "zone": 212
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1000168,
+      "layout": 1141151,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

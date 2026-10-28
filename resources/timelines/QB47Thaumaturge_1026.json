@@ -1,0 +1,46 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "attack_range": 7.0,
+    "recorded_amounts": {
+        "146": {
+            "npcs": 23.0
+        },
+        "147": {
+            "npcs": 50.0
+        },
+        "141": {
+            "npcs": 72.0
+        },
+        "142": {
+            "npcs": 71.0
+        }
+    },
+    "rotation": {
+        "pace": 2.5,
+        "actions": [
+            {
+                "action": 147,
+                "every": 35.9,
+                "comment": "Fire II: 4 uses (10 hit), every 36 s, 50"
+            },
+            {
+                "action": 141,
+                "every": 35.6,
+                "comment": "Fire: 4 uses, every 36 s, 72"
+            },
+            {
+                "action": 142,
+                "every": 31.5,
+                "comment": "Blizzard: 4 uses, every 32 s, 71"
+            },
+            {
+                "action": 146,
+                "every": 8.9,
+                "comment": "Blizzard II: 6 uses (12 hit), every 8.9 s, 23"
+            }
+        ]
+    },
+    "comment": "Quest battle 47's thaumaturge (BNpcBase 1026, BNpcName 1005), level 20, 1156 HP, on your side. From Bob's Chronofoil capture c99fe374 (2026-10-28, The Company You Keep (Immortal Flames)'s quest battle 47 won, `questkit chronofoil --battle 0.47`, territory 278, duty 341; Dags, a level 24 gladiator): on the lancers, then the archers and the vanguard, from 5-9 yalms: Blizzard II (146) 23 on two at a time every 8.9 s, Fire II (147) 50 on two or three, Fire (141) 72 and Blizzard (142) 71, each every 32-36 s. No auto-attack, no heals. Hitbox not recorded."
+}
