@@ -10,7 +10,9 @@ What it copies from the server (servers/world/src/events/lua.rs, lua/player.rs, 
 * the client's side is played automatically: every scene returns [1, 0] (accepted / handed over / the first
   reward) with error code 0 unless the step gives other results (a list, or {"results": [...], "error": n} for a
   scene that answers through its error code, like The Gridanian Envoy's gangplanks; "yield": true sends it to
-  onYield, as the client does for some scenes, where the script handles the two apart), and an event action's progress
+  onYield, as the client does for some scenes, where the script handles the two apart; a yield the script answers
+  with `resume_event` gets the scene's "after" answer next, and the resume's parameters must be retail's "resume"),
+  and an event action's progress
   bar always completes. The error code is the script's `player.scene_error_code`, as on the server. A fixture made
   from Chronofoil gives every scene retail's own answer instead (its "scenes" list);
 * every scene the script plays (number, flags, parameters) and what it does outside the quest (zone changes, quest
@@ -286,9 +288,12 @@ class Harness:
         # unused entry with its number.
         unused = list(results) if isinstance(results, list) else None
         nested = False
+        # The scene entry last answered with a yield, which the script may resume (`resume_event`.)
+        yielded_entry = None
         while True:
             scene = None
             action = False
+            resumed = None
             for task in pending:
                 trace.append(repr(task))
                 if task.kind == "notice":
@@ -307,6 +312,8 @@ class Harness:
                     outcome["spawned"].append(task.args[0])
                 elif task.kind in ("call", "join_battle"):
                     outcome["calls"].append(task.kind if task.kind != "call" else task.args[0])
+                    if task.kind == "call" and task.args[0] == "resume_event":
+                        resumed = task.args
                     nested = nested or (task.kind == "call" and task.args[0] == "start_event")
                 effect = _effect(task, self.territory)
                 if effect is not None:
@@ -316,6 +323,23 @@ class Harness:
             callbacks += 1
             if callbacks > MAX_CALLBACKS:
                 raise HarnessError("the event never ends (more than 64 callbacks)")
+            if resumed is not None and scene is None:
+                # The yield answered: the scene goes on, and the client answers it again.
+                entry = yielded_entry if isinstance(yielded_entry, dict) else {}
+                wanted = entry.get("resume")
+                given = list(resumed[3]) if len(resumed) > 3 and resumed[3] is not None else []
+                if wanted is not None and list(wanted) != given:
+                    raise HarnessError(f"resumed scene {resumed[1]} with {given}, retail with {wanted}")
+                after = entry.get("after", {"results": DEFAULT_RESULTS})
+                yielded_entry = None
+                self.player.scene_error_code = after.get("error", 0)
+                table = self.lua.table(*after.get("results", DEFAULT_RESULTS))
+                if self.lua.globals().onReturn is not None and not after.get("yield", False):
+                    pending = self._call("onReturn", resumed[1], table, self.player)
+                else:
+                    pending = self._call("onYield", resumed[1], 0, table, self.player)
+                callbacks += 1
+                continue
             if scene is not None:
                 if unused is not None:
                     entry = next((e for e in unused if e.get("scene") == scene), None)
@@ -335,6 +359,7 @@ class Harness:
                 if self.lua.globals().onReturn is not None and not yielded:
                     pending = self._call("onReturn", scene, table, self.player)
                 else:
+                    yielded_entry = entry if unused is not None else None
                     pending = self._call("onYield", scene, 0, table, self.player)
                 continue
             if action:

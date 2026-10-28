@@ -1765,6 +1765,14 @@ impl GameData {
         (exp, row.GilReward)
     }
 
+    /// The currency a quest gives (the Quest sheet's CurrencyReward and its count), if any: the Grand Companies' first
+    /// steps give 300 of their seals (683-685).
+    pub fn get_quest_currency_reward(&mut self, quest_id: u32) -> Option<(u32, u32)> {
+        let row = self.quest_sheet.row(quest_id)?;
+        (row.CurrencyReward != 0 && row.CurrencyRewardCount != 0)
+            .then_some((row.CurrencyReward, row.CurrencyRewardCount))
+    }
+
     /// The items a quest always gives (not the ones you pick from): its reward items and crystals, as (item, count).
     /// Retail gave a Hi-Potion and 13 Wind Shards for Eggs over Queasy, which are these.
     pub fn get_quest_reward_items(&mut self, quest_id: u32) -> Vec<(u32, u32)> {

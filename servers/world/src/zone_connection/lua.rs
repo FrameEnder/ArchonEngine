@@ -989,7 +989,10 @@ impl ZoneConnection {
                     self.send_mailbox_status().await;
                 }
                 LuaTask::SetGrandCompany { company } => {
+                    // Retail (Bob's Chronofoil capture c99fe374, enlisting): the company's achievement, then
+                    // GrandCompanyInfo.
                     self.set_grand_company(*company);
+                    self.check_achievements(true).await;
                     self.send_grand_company_info().await;
                 }
                 LuaTask::SetGrandCompanyRank { rank } => {

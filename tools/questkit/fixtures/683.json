@@ -1,0 +1,62 @@
+{
+  "quest": 683,
+  "script": "ManFst303_00683",
+  "source": "Bob's Chronofoil capture b8432613 (2026-10-27); scenes and effects from Bob's Chronofoil capture of 2026-10-27",
+  "params": {
+    "ACTOR0": 1002394,
+    "REWARD0": 22,
+    "SCREENIMAGE0": 32,
+    "ACTOR1": 1005012,
+    "POPRANGE0": 4148347,
+    "NCUT0": 220,
+    "NCUT1": 391,
+    "ORDER_OF_TWIN_ADDER": 2,
+    "HOW_TO_GRANDCOMPANY": 87,
+    "HOW_TO_SUPPLY": 89,
+    "LOC_ACTOR0": 1003783,
+    "LOC_ACTION1": 1002,
+    "LOC_TALKSHAPE1": 6,
+    "SCREENIMAGE1": 69,
+    "HOW_TO_MONSTERNOTE": 45,
+    "LOGMESSAGE_MONSTERNOTE_PAGE_UNLOCK": 1017,
+    "LOC_SE1": 42,
+    "GC_RANK_01": 1
+  },
+  "steps": [
+    {
+      "talk": 1002394,
+      "layout": 3975025,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]},
+        {
+          "scene": 2,
+          "flags": "0x2000",
+          "results": [2],
+          "yield": true,
+          "resume": [1],
+          "after": {"results": [0, 0]}
+        }
+      ],
+      "effects": [
+        {"unlock": 22}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1005012,
+      "layout": 4147225,
+      "territory": 212,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true},
+        {"scene": 4, "flags": "0xf8402efb", "params": [0], "results": [0, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 212}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

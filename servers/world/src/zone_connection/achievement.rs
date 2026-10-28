@@ -42,9 +42,22 @@ pub const COUNTER_ENEMIES_DEFEATED: u32 = 11;
 /// it's right from the start, as retail's.
 pub const COUNTER_UNIQUE_QUESTS: u32 = 214;
 
+/// "Enlist in the Maelstrom / the Order of the Twin Adder / the Immortal Flames" (All Watched Over by a Maelstrom of
+/// Loving Grace, Snakebitten, Light My Fire: Type 1, Keys 241-243, Data 0): 1 once enlisted in that company, read
+/// from the character's Grand Company ranks (retail completed Light My Fire, 529, as Dags enlisted: Bob's Chronofoil
+/// capture c99fe374.)
+pub const COUNTER_ENLISTED_MAELSTROM: u32 = 241;
+pub const COUNTER_ENLISTED_FLAMES: u32 = 243;
+
 /// The Type 1 counters the server counts. Retail's have counted since the character was made; the ones kept here
-/// (all but the unique quests) count from when the fork started counting them.
-const COUNTED: &[u32] = &[COUNTER_ENEMIES_DEFEATED, COUNTER_UNIQUE_QUESTS];
+/// (all but the unique quests and the enlistments) count from when the fork started counting them.
+const COUNTED: &[u32] = &[
+    COUNTER_ENEMIES_DEFEATED,
+    COUNTER_UNIQUE_QUESTS,
+    COUNTER_ENLISTED_MAELSTROM,
+    COUNTER_ENLISTED_MAELSTROM + 1,
+    COUNTER_ENLISTED_FLAMES,
+];
 
 /// The IDs a list Type (2, 6, 9) asks for: Key, then Data (A Life of Adventure I: Key 44, Data 55; Gone from Gridania:
 /// Key 66043, Data empty.)
@@ -130,6 +143,16 @@ impl ZoneConnection {
                 .map(|byte| byte.count_ones())
                 .sum();
         }
+        if (COUNTER_ENLISTED_MAELSTROM..=COUNTER_ENLISTED_FLAMES).contains(&key) {
+            let company = (key - COUNTER_ENLISTED_MAELSTROM) as usize;
+            return self
+                .player_data
+                .grand_company
+                .company_ranks
+                .0
+                .get(company)
+                .is_some_and(|rank| *rank > 0) as u32;
+        }
         let counters = &self.player_data.unlock.achievement_counters.0;
         counters
             .iter()
@@ -154,7 +177,8 @@ impl ZoneConnection {
         let listed = listed_ids(rule).into_iter();
         match rule.kind {
             KIND_COUNTER if COUNTED.contains(&(rule.key.max(0) as u32)) => {
-                let wanted = rule.data[0].max(0) as u32;
+                // Data 0 (the enlistments): once.
+                let wanted = (rule.data[0].max(0) as u32).max(1);
                 (
                     self.achievement_counter(rule.key as u32).min(wanted),
                     wanted,

@@ -253,6 +253,8 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
     state: dict = {}
     step: dict | None = None
     pending: dict | None = None  # the scene waiting for the client's answer
+    yielded: dict | None = None  # the last scene entry answered with a yield, which the server may resume
+    resumed: dict | None = None  # a resumed scene entry, waiting for the client's next answer
     loose: list = []  # notices sent outside an event
 
     def close():
@@ -324,8 +326,24 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
             pending = data
         elif kind == "answer" and step is not None:
             if pending is not None and pending["scene"] == data["scene"]:
-                step["scenes"].append(_scene_entry(pending, data))
+                entry = _scene_entry(pending, data)
+                step["scenes"].append(entry)
                 pending = None
+                yielded = entry if data["yielded"] else None
+            elif resumed is not None and resumed["scene"] == data["scene"]:
+                # The scene went on after the server's EventResume: how the client answered it then.
+                after = {"results": data["results"]}
+                if data["yielded"]:
+                    after["yield"] = True
+                elif data["code"]:
+                    after["error"] = data["code"]
+                resumed["after"] = after
+                resumed = None
+        elif kind == "resume" and step is not None:
+            if yielded is not None and yielded["scene"] == data["scene"]:
+                yielded["resume"] = data["params"]
+                resumed = yielded
+                yielded = None
         elif kind == "notice":
             if step is not None and step.get("_open"):
                 step["notices"].append([data["notice"], data["args"]])

@@ -14,6 +14,8 @@ packets around them. The packet layouts are Kawari's (core/src/ipc/zone):
   count u8 @24, parameters u32 from @28.
 * EventReturnHandler* / EventYieldHandler* (client): handler u32, scene u16 @4, error code (or yield ID) u8 @6,
   result count u8 @7, results i32 from @8.
+* EventResume* (server, the answer to a yield the scene goes on after): handler u32, scene u16 @4, resume ID u8 @6,
+  parameter count u8 @7, parameters u32 from @8 (the Grand Companies' enlistment: 230, [1].)
 * EventNotice*: handler u32, notice u8 @4, argument count u8 @5, arguments u32 from @8.
 * AcceptQuest / FinishQuest: quest u16. UpdateQuest: quest u16 @4, sequence u8 @6, variables @14..20.
 * PrepareZoning: territory u16 @4. ActorControlSelf: category u32, then u32 parameters (509 LearnTeleport: aetheryte;
@@ -105,6 +107,10 @@ def quest_events(captures, tables: dict, quests=None) -> dict[int, list[Event]]:
                     handler = struct.unpack_from("<I", d, 0)[0]
                     add(handler, t, "answer", scene=struct.unpack_from("<H", d, 4)[0],
                         yielded=name.startswith("EventYield"), code=d[6], results=_u32s(d, 8, d[7], signed=True))
+                elif name.startswith("EventResume") and segment.dir == "out" and len(d) >= 8:
+                    handler = struct.unpack_from("<I", d, 0)[0]
+                    add(handler, t, "resume", scene=struct.unpack_from("<H", d, 4)[0], id=d[6],
+                        params=_u32s(d, 8, d[7]))
                 elif name.startswith("EventNotice"):
                     handler = struct.unpack_from("<I", d, 0)[0]
                     add(handler, t, "notice", notice=d[4], args=_u32s(d, 8, d[5]))

@@ -66,6 +66,11 @@ Types 2 and 9 missed their first ID.
 * Storyteller I (789, Type 1, Key 214): turning in the tenth quest. Key 214 is unique quests completed; Kawari counts
   it from the completed quests, so it's right for existing characters too.
 * Gone from Gridania (311, Type 6): turning in The Gridanian Envoy in Ul'dah.
+* Snakebitten (528) and Light My Fire (529), Type 1, Keys 242 and 243 with Data 0: enlisting in the Twin Adders
+  (Bob's capture b8432613) and the Immortal Flames (c99fe374), ActorControlSelf 515 then GrandCompanyInfo, as the
+  enlistment's yield was answered. Keys 241-243 are "enlisted in" the Maelstrom, the Twin Adders, the Immortal Flames:
+  Kawari reads them from the Grand Company ranks (1 once the company's rank isn't 0), so they're right for existing
+  characters too, and a counter with Data 0 needs 1.
 * **Discover every location** (Bob's sessions, 2026-06 to 09: Mt. Gulg, Amaurot, The Grand Cosmos, eight Alexander
   floors): each with the last part discovered. Some duties' maps share a discovery slot and are done together: The
   Cuff of the Father is map 238 (parts 1-2) and map 255 (parts 3-4), both DiscoveryIndex 58, and Gordias II (Key 238)

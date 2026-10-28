@@ -44,7 +44,14 @@ impl mlua::FromLua for CurrencyKind {
 #[derive(Clone, Copy, Deserialize, Serialize, Debug)]
 pub struct CurrencyStorage {
     pub gil: Item,
-    pub flame_seal: Item, // TODO: rename to something company agnostic
+    /// Each Grand Company's seals have a slot of their own: 1 the Storm Seals, 2 the Serpent Seals, 3 the Flame Seals
+    /// (retail's quest rewards: Bob's Chronofoil captures b8432613, the Serpent Seals in slot 2, and c99fe374, the
+    /// Flame Seals in slot 3.) Saved characters from before 2026-10-28 have only the Flame Seals' slot.
+    #[serde(default = "storm_seals")]
+    pub storm_seal: Item,
+    #[serde(default = "serpent_seals")]
+    pub serpent_seal: Item,
+    pub flame_seal: Item,
     pub wolf_mark: Item,
     pub tomestone_poetics: Item,
     pub tomestone_mathematics: Item, // TODO: rename season agnostic
@@ -54,10 +61,27 @@ pub struct CurrencyStorage {
     pub dummy: Item,
 }
 
+fn storm_seals() -> Item {
+    Item {
+        item_id: CurrencyKind::StormSeal as u32,
+        ..Default::default()
+    }
+}
+
+fn serpent_seals() -> Item {
+    Item {
+        item_id: CurrencyKind::SerpentSeal as u32,
+        ..Default::default()
+    }
+}
+
 impl CurrencyStorage {
     pub fn get_slot_for_id(id: CurrencyKind) -> u16 {
         match id {
             CurrencyKind::Gil => 0,
+            CurrencyKind::StormSeal => 1,
+            CurrencyKind::SerpentSeal => 2,
+            CurrencyKind::FlameSeal => 3,
             CurrencyKind::WolfMark => 4,
             CurrencyKind::MGP => 9,
             _ => unimplemented!(),
@@ -76,6 +100,8 @@ impl Default for CurrencyStorage {
                 item_id: CurrencyKind::Gil as u32,
                 ..Default::default()
             },
+            storm_seal: storm_seals(),
+            serpent_seal: serpent_seals(),
             flame_seal: Item {
                 item_id: CurrencyKind::FlameSeal as u32,
                 ..Default::default()
@@ -117,6 +143,8 @@ impl Storage for CurrencyStorage {
     fn get_slot_mut(&mut self, index: u16) -> &mut Item {
         match index {
             0 => &mut self.gil,
+            1 => &mut self.storm_seal,
+            2 => &mut self.serpent_seal,
             3 => &mut self.flame_seal,
             4 => &mut self.wolf_mark,
             6 => &mut self.tomestone_poetics,
@@ -131,6 +159,8 @@ impl Storage for CurrencyStorage {
     fn get_slot(&self, index: u16) -> &Item {
         match index {
             0 => &self.gil,
+            1 => &self.storm_seal,
+            2 => &self.serpent_seal,
             3 => &self.flame_seal,
             4 => &self.wolf_mark,
             6 => &self.tomestone_poetics,

@@ -530,10 +530,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   was seen to come with them. Only 46's conjurer's last words are recorded (none for 47's allies, nor a loss of 47:
   it fails as 46 does). No client battle script was dumped for either. Flash, Rampart, Raging Strikes, Life Surge and
   983 aren't modelled. The Maelstrom's version (681) and its battle aren't scripted.
-* **The companies' next steps**: 683 (Wood's Will Be Done), 684 (the Maelstrom's) and 685 (the Immortal Flames') aren't
-  scripted, so on Kawari nobody reaches Sylph-management (513, scripted 2026-10-28, which follows any of them). 685
-  was played in Dags' run (offered in Ul'dah, sequence 255 at once, rewarded in the Waking Sands with a cutscene and
-  UI8AH and UI8AL 1), but there's no dump of its client script yet (a Kawari Web quest bundle with it would do).
+* **The companies' first steps** (683-685, Grand Company enlistment, 2026-10-28): untested in game. 684 (the
+  Maelstrom's) has no retail run; it's the other two's script. Retail also sent ActorControl 518 with the company's
+  achievement to the player (perhaps for those around); Kawari sends only the player's 515. A company's Hunting Log
+  stays locked after enlisting (retail sent nothing for it then; when it opens isn't recorded), and the seals aren't
+  capped by rank.
 
 * **Into a Copper Hell (44)**: untested in game (2026-10-25). Territory 274's drop-in (`wil_w1t1`) appends a guessed LGB
   for Ul'dah - Steps of Nald; if 274 loads other LGBs, the three adventurers won't spawn. Retail's last DirectorVars

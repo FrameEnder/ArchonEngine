@@ -7,12 +7,12 @@ use crate::{
     Event, EventHandler, ItemInfoQuery, LuaEventHandler, ToServer, ZoneConnection,
     common::adjust_quest_id,
     event::quest_script_path,
-    inventory::{Item, Storage},
+    inventory::{CurrencyKind, Item, Storage},
     lua::{KawariLua, LuaPlayer},
     zone_connection::PersistentQuest,
 };
 use kawari::{
-    common::{HandlerId, HandlerType, ObjectId},
+    common::{ContainerType, HandlerId, HandlerType, INVENTORY_ACTION_ACK_GENERAL, ObjectId},
     config::get_config,
     constants::COMPLETED_QUEST_BITMASK_SIZE,
     ipc::zone::{
@@ -233,6 +233,14 @@ impl ZoneConnection {
             .saturating_add_unsigned(rewards.1);
         self.send_inventory().await;
 
+        // Its currency (Grand Company seals), after the gil as retail (Bob's Chronofoil captures b8432613 and c99fe374:
+        // 300 Serpent Seals in the currency's slot 2, 300 Flame Seals in slot 3, then LogMessage 1300 with the company
+        // and the count.)
+        let currency = self.game_data.lock().get_quest_currency_reward(id);
+        if let Some((currency_id, count)) = currency {
+            self.give_quest_currency(id, currency_id, count).await;
+        }
+
         // Add the items it always gives
         let reward_items: Vec<Item>;
         {
@@ -319,6 +327,51 @@ impl ZoneConnection {
         self.send_quest_tracker().await;
 
         self.check_achievements(true).await;
+    }
+
+    /// A quest's currency reward. A Grand Company's seals go in their own slot of the currency (1-3), with retail's
+    /// log line (LogMessage 1300: the company, the count); anything else as an obtained item.
+    async fn give_quest_currency(&mut self, quest_id: u32, currency_id: u32, count: u32) {
+        const LOG_MESSAGE_SEALS: u32 = 1300;
+        const LOG_MESSAGE: u32 = 517;
+        let company = match CurrencyKind::from_repr(currency_id) {
+            Some(CurrencyKind::StormSeal) => 1,
+            Some(CurrencyKind::SerpentSeal) => 2,
+            Some(CurrencyKind::FlameSeal) => 3,
+            _ => 0,
+        };
+        if company == 0 {
+            let item = {
+                let mut game_data = self.game_data.lock();
+                game_data
+                    .get_item_info(ItemInfoQuery::ById(currency_id))
+                    .map(|info| Item::new(&info, count as i32))
+            };
+            if item.is_some_and(|item| self.player_data.inventory.add_obtained_item(item)) {
+                self.send_item_reward_log(currency_id, count).await;
+                self.send_inventory().await;
+            } else {
+                tracing::error!("Couldn't add the currency {currency_id} for quest {quest_id}");
+            }
+            return;
+        }
+        let slot = company as u16;
+        let seals = self.player_data.inventory.currency.get_slot_mut(slot);
+        seals.item_id = currency_id;
+        seals.quantity = seals.quantity.saturating_add_unsigned(count);
+        self.send_inventory_ack(u32::MAX, INVENTORY_ACTION_ACK_GENERAL, 0)
+            .await;
+        self.send_inventory_slot(ContainerType::Currency, slot)
+            .await;
+        self.actor_control_self(ActorControlCategory::Unknown {
+            category: LOG_MESSAGE,
+            param1: LOG_MESSAGE_SEALS,
+            param2: company,
+            param3: count,
+            param4: 0,
+            param5: 0,
+        })
+        .await;
     }
 
     /// Marks quest `id` completed with no rewards: its FinishQuest, as retail sends one for a quest another replaces
