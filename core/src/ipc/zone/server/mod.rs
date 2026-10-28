@@ -641,14 +641,19 @@ pub enum ServerZoneIpcData {
     SupportDeskNotification {
         unk1: [u8; 16],
     },
+    /// The Scenario Guide's main scenario step (fork: retail's layout, Bob's Chronofoil captures b8432613, c99fe374 and
+    /// cc62ad94: sent at login and as each main scenario quest is completed, not when one is accepted.)
     ScenarioGuide {
-        /// Not sure what this controls.
-        quest_id_1: u32,
-        /// Quest ID (Row ID - 65535) shown in big text. The next job quest is automatically determined.
-        next_quest_id: u32,
-        /// The game object ID to center on when opening the map.
-        #[brw(pad_before = 4, pad_after = 16)] // seems empty
-        layout_id: u32,
+        /// The main scenario quest completed last (quest IDs are Row ID - 65536.) The client shows its ScenarioTree
+        /// row's Addon text when it has one: A Hero in the Making's is "Select a Grand Company".
+        last_completed: u32,
+        /// The quests that follow it, up to three (the three Grand Companies' The Company You Keep after A Hero in the
+        /// Making), the rest zero. The next job quest is automatically determined.
+        #[brw(pad_after = 2)]
+        next_quests: [u16; 3],
+        /// Each next quest's IssuerLocation (a Level row), where the map centres on.
+        #[brw(pad_after = 8)] // always empty on retail
+        issuer_locations: [u32; 3],
     },
     LegacyQuestList {
         #[br(count = COMPLETED_LEGACY_QUEST_BITMASK_SIZE)]

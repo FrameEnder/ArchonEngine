@@ -107,10 +107,17 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
-* **The Company You Keep (Immortal Flames)** (682) and **Sylph-management** (513), 2026-10-28: untested in game, each
-  checked against one retail run (Dags'); the others' lines in 682 go by IsAcceptEvent's order, not recorded.
-* **A Hero in the Making** (511, 2026-10-28): untested in game. Retail talked to Tataru in territory 140 (where she
-  stands for sequence 1); the officers' lines (scenes 3-5, 30-32, 35-37) go by IsAcceptEvent's order, not recorded.
+* **The Company You Keep (Immortal Flames)** (682), **For Coin and Country** (685) and **Sylph-management** (513),
+  2026-10-28: played through in game by Bob (bundle 20261028-220355, a conjurer); the others' lines in 682 go by
+  IsAcceptEvent's order, not recorded.
+* **A Hero in the Making** (511, 2026-10-28): played through in game by Bob. Retail talked to Tataru in territory 140
+  (where she stands for sequence 1); the officers' lines (scenes 3-5, 30-32, 35-37) go by IsAcceptEvent's order, not
+  recorded.
+* **The Scenario Guide** (2026-10-28, [Quests](quests.md#scenario-guide)): untested in game. Retail's order of the
+  Grand Companies' three after 511 (681, 680, 682) isn't the sheet's, which Kawari sends (680, 681, 682). The quest
+  completed last is worked out from the completed quests, not recorded as retail must; a quest done out of the
+  story's order (with `!quest` or Kawari Web) could put the guide on an earlier step. Steps before the city's last
+  quests and after We Come in Peace weren't in a capture. We Come in Peace (3856) isn't scripted.
 
 * **The Waking Sands' layer filter** (2026-10-26) is known from The Scions of the Seventh Dawn (90338) to
   Sylph-management (90342, 2026-10-28); later visits get 90342 until their keys are recorded (a capture of retail

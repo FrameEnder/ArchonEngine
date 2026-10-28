@@ -58,7 +58,6 @@ use icarus::ItemRepairPrice::ItemRepairPriceSheet;
 use icarus::ItemRepairResource::ItemRepairResourceSheet;
 use icarus::ItemSearchCategory::ItemSearchCategorySheet;
 use icarus::ItemSortCategory::ItemSortCategorySheet;
-use icarus::Level::LevelSheet;
 use icarus::Map::MapSheet;
 use icarus::Materia::MateriaSheet;
 use icarus::ModelChara::ModelCharaSheet;
@@ -2358,20 +2357,24 @@ impl GameData {
             .map(|name| name.to_string()) // Names don't use SeString features
     }
 
-    /// What the Scenario Guide should show: the main scenario quest that was last completed, the one to do next, and
-    /// the layout ID of whoever offers that next one (for the map.) Quest IDs are adjusted (65575 is 39.)
+    /// What the Scenario Guide should show: the main scenario quest completed last and the ones that follow it (up to
+    /// three), each with its IssuerLocation (a Level row, for the map), as retail sends them (Bob's Chronofoil captures
+    /// b8432613, c99fe374 and cc62ad94: 511 then 681, 680 and 682 for the Grand Companies; 682 then 685; 513 then
+    /// 3856). Quest IDs are adjusted (65575 is 39.)
     ///
-    /// The main scenario is every quest in the ScenarioTree sheet. An accepted one comes first; otherwise the next one
-    /// is the first that isn't done yet, follows on from a completed quest (PreviousQuest, all of them or any of them
-    /// by PreviousQuestJoin), and suits the player's class and Grand Company, like Sapphire's quest availability check.
+    /// The main scenario is every quest in the ScenarioTree sheet. A quest follows one that's done when its
+    /// PreviousQuest are (all of them, or any by PreviousQuestJoin 2), it isn't locked by one that's done (QuestLock:
+    /// any by QuestLockJoin 2, as each Grand Company's The Company You Keep is by the other two), and it suits the
+    /// player's class and Grand Company. The quest completed last is the latest done (by Expansion and SortKey) that
+    /// has such a quest after it and none of whose followers is done. Accepting a quest doesn't change it, as on
+    /// retail.
     pub fn get_scenario_guide(
         &mut self,
         is_completed: impl Fn(u32) -> bool,
-        active: &[u16],
         classjob: u8,
         first_class: u8,
         grand_company: u8,
-    ) -> Option<(u32, u32, u32)> {
+    ) -> Option<(u32, Vec<(u32, u32)>)> {
         let config = get_config();
         let exh = self.resource.read_excel_sheet_header("ScenarioTree").ok()?;
         // Not every sheet is translated, and asking for a language it doesn't have fails.
@@ -2390,123 +2393,87 @@ impl GameData {
                 return None;
             }
         };
-        let quest_ids: Vec<u32> = sheet
+        let quests: Vec<(u32, QuestRow)> = sheet
             .pages
             .iter()
             .flat_map(|page| page.entries.iter())
-            .map(|entry| entry.id)
+            .filter_map(|entry| Some((entry.id, self.quest_sheet.row(entry.id)?)))
             .collect();
+        let done = |id: u32| id != 0 && is_completed(adjust_quest_id(id));
+        let listed =
+            |ids: &[u32]| -> Vec<u32> { ids.iter().copied().filter(|x| *x != 0).collect() };
 
-        // Some steps come in variants, one per starting class (Gridania has three Close to Home quests, all after
-        // Coming to Gridania), and you only ever do one of them. Variants share a name and the quests before them, so
-        // once one is done or accepted, the others are skipped.
-        let variant_key = |row: &QuestRow| {
-            let mut previous: Vec<u32> = row
-                .PreviousQuest
-                .iter()
-                .copied()
-                .filter(|x| *x != 0)
-                .collect();
-            previous.sort();
-            (row.Name.to_string(), previous) // Names don't use SeString features
+        // Which quests could be done next, from those done.
+        let mut suits_class = |category: u8| {
+            category <= 1
+                || self
+                    .get_applicable_classjobs(category as u16)
+                    .contains(&classjob)
         };
-        let done_variants: HashSet<(String, Vec<u32>)> = quest_ids
-            .iter()
-            .filter(|id| {
-                let adjusted = adjust_quest_id(**id);
-                is_completed(adjusted) || active.contains(&(adjusted as u16))
-            })
-            .filter_map(|id| self.quest_sheet.row(*id))
-            .map(|row| variant_key(&row))
-            .collect();
-
-        let checked = quest_ids.len();
-        let mut next = None;
-        for quest_id in quest_ids {
-            let adjusted = adjust_quest_id(quest_id);
-            let Some(row) = self.quest_sheet.row(quest_id) else {
-                continue;
-            };
-            let previous: Vec<u32> = row
-                .PreviousQuest
-                .iter()
-                .copied()
-                .filter(|x| *x != 0)
-                .collect();
-
-            if active.contains(&(adjusted as u16)) {
-                next = Some((quest_id, row, previous));
-                break;
-            }
-            if is_completed(adjusted) || previous.is_empty() {
+        let mut available = HashSet::new();
+        for (id, row) in &quests {
+            let previous = listed(&row.PreviousQuest);
+            if done(*id) || previous.is_empty() {
                 // Quests without one before them start a city's story, and are handed out by the opening.
                 continue;
             }
             let follows_on = if row.PreviousQuestJoin == 2 {
-                previous.iter().any(|x| is_completed(adjust_quest_id(*x)))
+                previous.iter().any(|x| done(*x))
             } else {
-                previous.iter().all(|x| is_completed(adjust_quest_id(*x)))
+                previous.iter().all(|x| done(*x))
             };
-            if !follows_on || done_variants.contains(&variant_key(&row)) {
+            let locks = listed(&row.QuestLock);
+            let locked = !locks.is_empty()
+                && if row.QuestLockJoin == 2 {
+                    locks.iter().any(|x| done(*x))
+                } else {
+                    locks.iter().all(|x| done(*x))
+                };
+            if !follows_on || locked {
                 continue;
             }
             if row.GrandCompany != 0 && row.GrandCompany != grand_company {
-                tracing::info!(
-                    "Scenario Guide: skipping {adjusted}, it's for Grand Company {}",
-                    row.GrandCompany
-                );
                 continue;
             }
-            let mut suits_class = |category: u8| {
-                category <= 1
-                    || self
-                        .get_applicable_classjobs(category as u16)
-                        .contains(&classjob)
-            };
             if !suits_class(row.ClassJobCategory0) || !suits_class(row.ClassJobCategory1) {
-                tracing::info!(
-                    "Scenario Guide: skipping {adjusted}, it's for classes {} / {}",
-                    row.ClassJobCategory0,
-                    row.ClassJobCategory1
-                );
                 continue;
             }
-
-            // Between variants nobody has done yet, prefer the one for the class they started with. (Which of these two
-            // fields says so isn't confirmed, so either counts.)
-            let order = |row: &QuestRow| {
-                let for_first_class =
-                    row.ClassJobRequired == first_class || row.ClassJobUnlock == first_class;
-                (row.ClassJobLevel[0], !for_first_class, row.SortKey)
-            };
-            let better = match &next {
-                Some((_, best, _)) => order(&row) < order(best),
-                None => true,
-            };
-            if better {
-                next = Some((quest_id, row, previous));
-            }
+            available.insert(*id);
         }
 
-        let Some((quest_id, row, previous)) = next else {
-            tracing::info!(
-                "Scenario Guide: checked {checked} main scenario quests, none are available"
-            );
-            return None;
+        // The quest completed last: the latest done one with an available quest after it and none done after it.
+        let followers = |id: u32| -> Vec<&(u32, QuestRow)> {
+            quests
+                .iter()
+                .filter(|(_, row)| row.PreviousQuest.contains(&id))
+                .collect()
         };
-        let last_completed = previous
+        let (last, _) = quests
             .iter()
-            .copied()
-            .find(|x| is_completed(adjust_quest_id(*x)))
-            .map(adjust_quest_id)
-            .unwrap_or_default();
-        let layout_id = LevelSheet::read_from(&mut self.resource, Language::None)
-            .ok()
-            .and_then(|sheet| sheet.row(row.IssuerLocation))
-            .map(|level| level.Object)
-            .unwrap_or_default();
+            .filter(|(id, _)| done(*id))
+            .filter(|(id, _)| {
+                let after = followers(*id);
+                !after.iter().any(|(next, _)| done(*next))
+                    && after.iter().any(|(next, _)| available.contains(next))
+            })
+            .max_by_key(|(_, row)| (row.Expansion, row.SortKey))?;
 
-        Some((last_completed, adjust_quest_id(quest_id), layout_id))
+        // Between variants for different classes (Gridania's three Close to Home), the one for the class they started
+        // with first (which of these two fields says so isn't confirmed, so either counts); otherwise the sheet's order.
+        let mut next: Vec<&(u32, QuestRow)> = followers(*last)
+            .into_iter()
+            .filter(|(id, _)| available.contains(id))
+            .collect();
+        next.sort_by_key(|(_, row)| {
+            !(row.ClassJobRequired == first_class || row.ClassJobUnlock == first_class)
+        });
+        let next = next
+            .into_iter()
+            .take(3)
+            .map(|(id, row)| (adjust_quest_id(*id), row.IssuerLocation))
+            .collect();
+
+        Some((adjust_quest_id(*last), next))
     }
 
     /// Returns the list of applicable classjob IDs based on the ClassJobCategory.

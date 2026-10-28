@@ -327,6 +327,11 @@ server (connect, the dropdown from the class list, send, load).
 
 ## Diagnostics (Dashboard → Diagnostics)
 
+**The quest summary** (2.24.1): `characters.json`'s `quest_summary.completed_ids` reads the completed quests in the
+server's bit order (quest N is bit `0x80 >> (N % 8)` of byte `N // 8`, the world server's
+`QuestBitmaskTransformation`). Before, it read `1 << bit` and listed the wrong quests (Bob's bundle 20261028-220355
+named 682 and 685 by chance, but not 343, 511 or 513, which he had done).
+
 **Who the bundle is about** (2.22.5): the README lists the chosen characters with whoever the window's captures were
 played by first (the content ID in each capture's PlayerSetup), marked "played in this window", and
 `characters.json` has `played_in_window`; before, they were in the database's order, so Bob's bundles read as Lira

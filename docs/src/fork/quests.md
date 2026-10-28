@@ -460,11 +460,31 @@ to the event objects', so `BASE_ID` is the Aetheryte row, the same number as the
 
 ## Scenario Guide
 
-The Scenario Guide (the MSQ marker) is sent at login and whenever quests change (`send_scenario_guide`,
-`zone_connection/quest.rs`): the accepted main scenario quest, or else the next one that follows from what's completed
-(ScenarioTree sheet, with Sapphire's class and Grand Company checks), the last one completed, and where its issuer
-stands. When a step has variants (Close to Home per starting class), once one is done or accepted the others no longer
-count; between untouched variants the starting class's is preferred. ScenarioTree is read in whatever language it has.
+The Scenario Guide (the MSQ marker; `send_scenario_guide` in `zone_connection/quest.rs`, `GameData::get_scenario_guide`)
+plays out as retail's did (Bob's Chronofoil captures b8432613, c99fe374 and cc62ad94, 2026-10-28: 46 packets from the
+three runs, every step from the city's last quests to We Come in Peace):
+
+* **When**: at login and as a main scenario quest is completed. Accepting one changes nothing (retail sent nothing
+  then), so Kawari sends it only when it changes.
+* **What** (ScenarioGuide, 32 bytes): the quest completed last (u32), the up to three quests that follow it (u16 each,
+  then 2 empty bytes), each one's IssuerLocation (u32 each: the Level row as it stands, not its object), then 8 empty
+  bytes. After A Hero in the Making (511) retail sent the three Grand Companies' The Company You Keep (681, 680, 682)
+  with their three issuers; after the one you chose, that company's enlistment (683-685); after it Sylph-management
+  (513); after 513 We Come in Peace (3856).
+* **The label**: the client shows the last quest's ScenarioTree `Addon` text when its row has one. A Hero in the
+  Making's is "Select a Grand Company", so sending 511 as the last quest shows it. Until 2026-10-28 Kawari sent 511
+  again after Sylph-management (Bob's bundle 20261028-220355), because it didn't read QuestLock and so took 680 for
+  the next quest (below).
+* **Which quests follow**: every ScenarioTree quest not done whose PreviousQuest are done (all of them; any by
+  PreviousQuestJoin 2, as 513 after any company's enlistment), that isn't locked (QuestLock: any done by QuestLockJoin
+  2; each company's The Company You Keep is locked by the other two) and that suits the class and the Grand Company.
+* **The quest completed last** is the latest done one (by Expansion, then SortKey) none of whose followers is done and
+  that has an available one after it. Kawari keeps no record of the order quests were done in, so this is worked out
+  from the completed quests; every step of the three runs comes out as retail's.
+* Between variants (Close to Home per starting class) the starting class's comes first; otherwise the sheet's order.
+  Retail put the Grand Companies' three as 681, 680, 682 in all three runs (three different start cities); Kawari
+  sends 680, 681, 682. Nothing in the Quest or ScenarioTree sheets gives retail's order.
+* ScenarioTree is read in whatever language it has.
 
 ## Quest rewards and EXP
 

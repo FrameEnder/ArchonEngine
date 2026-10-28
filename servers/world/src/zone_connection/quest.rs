@@ -106,37 +106,38 @@ impl ZoneConnection {
     }
 
     /// Tells the client which main scenario quest to show in the Scenario Guide, see `GameData::get_scenario_guide`.
+    /// Only when it changed: retail sent it at login and as main scenario quests were completed, not as they were
+    /// accepted (Bob's Chronofoil captures.)
     pub async fn send_scenario_guide(&mut self) {
-        let active: Vec<u16> = self
-            .player_data
-            .quest
-            .active
-            .0
-            .iter()
-            .map(|quest| quest.id)
-            .collect();
         let completed = &self.player_data.quest.completed;
         let guide = self.game_data.lock().get_scenario_guide(
             |id| completed.contains(id),
-            &active,
             self.player_data.classjob.current_class as u8,
             self.player_data.classjob.first_class as u8,
             self.player_data.grand_company.active_company as u8,
         );
-        let Some((last_completed, next_quest_id, layout_id)) = guide else {
+        let Some((last_completed, next)) = guide else {
             tracing::info!("Scenario Guide: no main scenario quest to show");
             return;
         };
-        tracing::info!(
-            "Scenario Guide: next quest {next_quest_id} (issuer layout {layout_id}), last completed {last_completed}"
-        );
+        if self.scenario_guide_sent.as_ref() == Some(&(last_completed, next.clone())) {
+            return;
+        }
+        tracing::info!("Scenario Guide: after {last_completed}, {next:?} (quest, issuer location)");
 
+        let mut next_quests = [0u16; 3];
+        let mut issuer_locations = [0u32; 3];
+        for (i, (quest, location)) in next.iter().enumerate() {
+            next_quests[i] = *quest as u16;
+            issuer_locations[i] = *location;
+        }
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ScenarioGuide {
-            quest_id_1: last_completed,
-            next_quest_id,
-            layout_id,
+            last_completed,
+            next_quests,
+            issuer_locations,
         });
         self.send_ipc_self(ipc).await;
+        self.scenario_guide_sent = Some((last_completed, next));
     }
 
     pub async fn send_quest_information(&mut self) {

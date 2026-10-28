@@ -291,6 +291,9 @@ pub struct ZoneConnection {
     pub pending_retainer_appearance: Option<(u8, physis::savedata::chardat::CustomizeData)>,
     /// The text the client typed into the current event (a retainer's name), see `kawari::ipc::zone::event_text`.
     pub pending_event_text: Option<String>,
+    /// The Scenario Guide last sent (the quest completed last, the next ones and their issuer locations), so it's
+    /// sent only when it changes, as retail did.
+    pub scenario_guide_sent: Option<(u32, Vec<(u32, u32)>)>,
     /// Packet capture for debugging, if enabled in the config.
     pub capture: crate::capture::PacketCapture,
 }
