@@ -596,6 +596,14 @@ impl LuaPlayer {
         });
     }
 
+    fn set_duty_exit(&mut self, zone_id: u16, position: Position, rotation: f32) {
+        self.queued_tasks.push(LuaTask::SetDutyExit {
+            zone_id,
+            position,
+            rotation,
+        });
+    }
+
     fn change_territory_pop_range(&mut self, territory_id: u16, pop_range_id: u32) {
         self.queued_tasks.push(LuaTask::WarpPopRange {
             territory_id,
@@ -748,6 +756,16 @@ impl UserData for LuaPlayer {
                     lua.from_value(exit_position).unwrap_or_default(),
                     lua.from_value(exit_rotation).unwrap_or_default(),
                 );
+                Ok(())
+            },
+        );
+        // Where leaving the duty sends the player (a quest's `onDutyCleared`: Lord of the Inferno's Bowl of Embers sends
+        // them on to Camp Drybone, as retail did.)
+        methods.add_method_mut(
+            "set_duty_exit",
+            |lua, this, (zone_id, position, rotation): (u16, Value, Option<f32>)| {
+                let position: Position = lua.from_value(position)?;
+                this.set_duty_exit(zone_id, position, rotation.unwrap_or_default());
                 Ok(())
             },
         );

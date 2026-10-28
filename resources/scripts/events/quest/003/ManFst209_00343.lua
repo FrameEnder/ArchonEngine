@@ -12,7 +12,7 @@
 -- Sequence 3:   ACTOR6 (the flame sergeant, in Southern Thanalan, scene 14: the Bowl of Embers' unlock image): the Bowl
 --               of Embers (INSTANCEDUNGEON0, InstanceContent 20001) is unlocked, notice 2 [1, 1], sequence 4.
 -- Sequence 4:   clearing the Bowl of Embers: notice 3 [1, 1], sequence 5 (retail sent it in the duty, as it was won;
---               Kawari as the player leaves it, onDutyCleared.)
+--               Kawari as the player leaves it, onDutyCleared), and leaving it sends them to Camp Drybone (POPRANGE1).
 -- Sequence 5:   ACTOR20 (Thancred, scene 40, 0x6001): notice 4 [1, 1], sequence 255.
 -- Sequence 255: ACTOR31 (the Scion of the Seventh Dawn, in the Waking Sands) rewards it (scene 51, a yield returning
 --               1), then the cutscene (scene 52, CUT_MANFST20950, retail's flags 0xF8402EFB, parameter 0; retail set
@@ -93,11 +93,19 @@ function onEventActionCast(player)
     play(player, SCENE_ENTER_BATTLE, OBJECT_FLAGS)
 end
 
+-- Leaving the cleared Bowl of Embers, retail sent the player on to Camp Drybone in Eastern Thanalan, where Thancred waits
+-- (POPRANGE1; the capture's next visit: ZoneInit pop range 4156164, the player at this spot), not back to Southern
+-- Thanalan where they had entered it.
+EASTERN_THANALAN = 145
+CAMP_DRYBONE = { x = -386.72, y = -59.0, z = 133.89 }
+CAMP_DRYBONE_ROTATION = 0.0
+
 -- The Bowl of Embers cleared.
 function onDutyCleared(content_id, player)
     if player:get_quest_sequence(EVENT_ID) == 4 and content_id == INSTANCEDUNGEON0 then
         player:event_notice(EVENT_ID, 3, TODO_DONE)
         player:quest_sequence(EVENT_ID, 5)
+        player:set_duty_exit(EASTERN_THANALAN, CAMP_DRYBONE, CAMP_DRYBONE_ROTATION)
     end
 end
 

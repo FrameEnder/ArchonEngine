@@ -71,6 +71,15 @@ impl ZoneConnection {
                     )
                     .await
                 }
+                LuaTask::SetDutyExit {
+                    zone_id,
+                    position,
+                    rotation,
+                } => {
+                    self.old_zone_id = *zone_id;
+                    self.old_position = *position;
+                    self.old_rotation = *rotation;
+                }
                 LuaTask::SetRemakeMode(remake_mode) => {
                     let mut database = self.database.lock();
                     database.set_remake_mode(

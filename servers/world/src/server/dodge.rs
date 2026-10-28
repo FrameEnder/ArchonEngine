@@ -175,9 +175,12 @@ pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> V
                 timeline,
                 ..
             } if spawn.common.health_points > 0
-                && spawn
+                // An enemy, or a director's helper (held, not hostile: Ifrit's, which cast his Eruption and Radiant
+                // Plumes; the bots stood in all of them, Bob's bundles of 2026-10-28.)
+                && (spawn
                     .character_data_flags
                     .contains(CharacterDataFlag::HOSTILE)
+                    || instance.held_npcs.contains(id))
                 && cast.until > now
                 && cast.action_id != 0 =>
             {

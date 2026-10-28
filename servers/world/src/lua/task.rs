@@ -22,6 +22,12 @@ pub enum LuaTask {
         exit_position: Option<Position>,
         exit_rotation: Option<f32>,
     },
+    /// Where leaving the duty (or quest battle) the player is in sends them, in place of where they entered it from.
+    SetDutyExit {
+        zone_id: u16,
+        position: Position,
+        rotation: f32,
+    },
     SetRemakeMode(RemakeMode),
     Warp {
         warp_id: u32,

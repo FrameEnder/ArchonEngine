@@ -298,3 +298,24 @@ DutyRecommence (0x40000006: the time left, 0, 2) and the entrance circle hidden.
 party's NPCs up beside their player 6.1 s after the fall (once the player has arrived), drops what the script had
 queued and calls its `onPartyWipe` (Ifrit, the Nail and the helpers taken away and Ifrit brought back) and
 `onDutyRecommence`. Before, nothing happened until the player chose to return, and the fight went on without them.
+
+
+**Fixes from Bob's bundles of 2026-10-28** (his first runs; untested since):
+* *Facing at the entrance:* the InstanceContent has no entrance rect and the entrance circle faces north, so Kawari
+  turned players north; retail turned them to 1.571, toward Ifrit, both times. A duty script's `ENTRANCE_ROTATION`
+  now says, where there's no rect (`change_zone_warp_to_entrance`), for coming in and after a wipe.
+* *The next attempt after a wipe:* the old Ifrit's health was still there for an update after `onPartyWipe`, so his
+  80 % and 50 % lines and the Nail came again 8 s into the next attempt; the script now waits for the new Ifrit at
+  full health. The members got up at a fixed 6.1 s, before the player's client had said where it arrived, so they
+  stood up where the player had fallen, in the arena; they now get up once the player's position has moved from where
+  they lay (or at the recommencement).
+* *Too much damage:* Ifrit's hits on the player matched retail (Incinerate 163 against 166, Eruption 219, Radiant
+  Plume 208, Hellfire 224), but the members took far more: they stood in every Eruption and Plume (the helpers aren't
+  hostile, and only hostile casters' areas were dodged; now a director's held helpers' are too), the Lancer stood in
+  front of Ifrit and took 15 Incinerates where retail's took 2 (only after the tank fell; melee bots now stand behind
+  what the tank holds, `Placement::behind`), and everyone stood inside him (their fighting distance was from his
+  middle; it's from his edge now, as retail's 6.5, 7.6 and 13-15 yalms against his 3.5 hitbox). So the party fell
+  and the player with it.
+* *Leaving:* retail sent the player on to Camp Drybone (145, ZoneInit pop range 4156164, the quest's POPRANGE1, at
+  (-386.72, -59.0, 133.89)) during Lord of the Inferno, not back to Southern Thanalan: the quest's `onDutyCleared`
+  sets it (`set_duty_exit`), so only for that step of the story.

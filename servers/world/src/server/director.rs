@@ -1066,6 +1066,18 @@ impl DirectorData {
 
     /// The opening scene's flags, for a script that sets `OPENING_SCENE_FLAGS` (quest battles: retail's differ from
     /// one to the next.)
+    /// Which way players face as they come in (and after a wipe), for a script that sets `ENTRANCE_ROTATION`: a duty
+    /// whose InstanceContent has no entrance rect (the Bowl of Embers': retail turned players to face Ifrit, 1.571,
+    /// where its entrance circle faces 0.)
+    pub fn entrance_rotation(&self) -> Option<f32> {
+        self.lua
+            .0
+            .globals()
+            .get::<Option<f32>>("ENTRANCE_ROTATION")
+            .ok()
+            .flatten()
+    }
+
     pub fn opening_scene_flags(&self) -> Option<u32> {
         self.lua
             .0

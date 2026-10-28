@@ -107,6 +107,8 @@ const TANK_PULL_FROM: f32 = 6.0;
 const TANK_PULL_RANGE: f32 = 20.0;
 /// A party NPC uses its attacks on a target this much further than its fighting distance (the target's hitbox.)
 const PARTY_NPC_REACH: f32 = 1.5;
+/// How far beyond the edge of the tank's target a melee bot stands behind it (`Placement::behind`), inside its reach.
+const MELEE_BEHIND: f32 = 2.0;
 /// The tank keeps up with the player while fighting: further than this from them (they've run on ahead, pulling as they
 /// go, wall to wall), it goes after them, still pulling with its ranged attack and area combo on the way.
 const TANK_KEEP_UP: f32 = 15.0;
@@ -2456,6 +2458,8 @@ struct Engaged {
     position: Vec3A,
     /// Whom it's after most.
     after: Option<ObjectId>,
+    /// Its hitbox radius (its timeline's): how far from its middle its edge is.
+    hitbox: f32,
 }
 
 /// Tells every bot in this instance what to do this tick (see the module's description.)
@@ -2864,9 +2868,13 @@ fn update_party(
         .iter()
         .filter(|(id, _)| !instance.party_bots.contains_key(id))
         .filter_map(|(id, actor)| match actor {
-            NetworkedActor::Npc { enmity, spawn, .. }
-                if spawn.common.health_points > 0
-                    && enmity.keys().any(|hated| members.contains(hated)) =>
+            NetworkedActor::Npc {
+                enmity,
+                spawn,
+                timeline,
+                ..
+            } if spawn.common.health_points > 0
+                && enmity.keys().any(|hated| members.contains(hated)) =>
             {
                 let after = enmity
                     .iter()
@@ -2876,6 +2884,7 @@ fn update_party(
                     id: *id,
                     position: spawn.common.position.0,
                     after,
+                    hitbox: timeline.hitbox_radius,
                 })
             }
             _ => None,
@@ -3388,7 +3397,15 @@ fn update_party(
 
         enmity.clear();
         enmity.insert(target, 1);
-        timeline.attack_range = bot.attack_range;
+        // Its fighting distance is from its target's edge, not its middle: against Ifrit (hitbox 3.5) retail's Duty
+        // Support members fought from 6.5 (the Marauder, 3.0 in Sastasha), 7.6 (the Lancer, 3.4) and 13-15 yalms (the
+        // Thaumaturge, 8.1) of his middle (Bob's capture b8432613, the Bowl of Embers); Kawari's stood inside him.
+        let target_hitbox = engaged
+            .iter()
+            .find(|enemy| enemy.id == target)
+            .map(|enemy| enemy.hitbox)
+            .unwrap_or(0.0);
+        timeline.attack_range = bot.attack_range + target_hitbox;
         *placement = if bot.role == BotRole::Tank {
             // Across its target from the rest of the party, so cones and cleaves miss them; and with the player when
             // they've run on ahead (unless the player is the one it follows only because they're the tank.)
@@ -3407,6 +3424,14 @@ fn update_party(
             Placement {
                 anchors: vec![follow],
                 within: RANGED_STAY_WITHIN,
+                ..Default::default()
+            }
+        } else if let Some(tank) = tank.filter(|tank| tank != bot_id) {
+            // A melee damage dealer fights from behind what the tank holds, out of its frontal cones: retail's Duty
+            // Support Lancer was caught by Ifrit's Incinerate (a cone on the tank) only after the tank had fallen, where
+            // Kawari's stood in front and took 15 of them (Bob's bundles of 2026-10-28.)
+            Placement {
+                behind: Some((tank, target_hitbox + MELEE_BEHIND)),
                 ..Default::default()
             }
         } else {
@@ -3440,7 +3465,7 @@ fn update_party(
                     kit_actions.push((*bot_id, defensive, *bot_id));
                 } else if let Some((action, on_self)) = state.choose(
                     now,
-                    distance <= bot.attack_range + PARTY_NPC_REACH,
+                    distance <= bot.attack_range + target_hitbox + PARTY_NPC_REACH,
                     distance <= TANK_PULL_RANGE,
                 ) {
                     kit_actions.push((*bot_id, action, if on_self { *bot_id } else { target }));

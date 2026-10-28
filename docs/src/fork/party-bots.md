@@ -280,6 +280,11 @@ The packet is 944 bytes (Kawari's `ExamineCharacterInformation`, whose two unkno
   byte. Other features and colours are random within the creator's smallest ranges. Without the creator's data, the
   first six races and faces and hairstyles 1–4, as before. (Workspace icarus features `CharaMakeType`,
   `CharaMakeCustomize`.)
+* **Fighting from the target's edge** (2026-10-28): a bot's fighting distance (and a party NPC's reach for its kit)
+  counts from its target's hitbox, not its middle, as retail's Duty Support members fought Ifrit from 6.5, 7.6 and
+  13-15 yalms of his middle with his 3.5 hitbox; a melee bot (not the tank) stands behind what the tank holds, 2
+  yalms beyond its edge (`MELEE_BEHIND`, `Placement::behind`), out of its frontal cones. Area attacks a director's held
+  helpers cast are dodged as an enemy's are (`dodge::dangers`).
 * **Only gear its race and sex may wear.** Every item's EquipRestriction is a row of EquipRaceCategory, which says
   which races and which sexes may wear it (everyone, one sex, or one race's own gear). A bot's best gear leaves out
   what its race and sex may not wear (`GameData::wearable_restrictions`, `best_gear`), and so does its glamour: such a

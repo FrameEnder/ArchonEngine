@@ -1279,6 +1279,14 @@ pub fn change_zone_warp_to_entrance(
     }
     if entrance_rect_rotation.is_some() {
         exit_rotation = entrance_rect_rotation;
+    } else if let Some(rotation) = target_instance
+        .directors
+        .iter()
+        .find(|director| director.id.handler_type() == HandlerType::InstanceContent)
+        .and_then(|director| director.entrance_rotation())
+    {
+        // No entrance rect (the trials'): the duty's script says, from retail.
+        exit_rotation = Some(rotation);
     }
 
     do_change_zone(

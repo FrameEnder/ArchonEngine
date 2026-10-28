@@ -13,6 +13,11 @@
 -- he fights on with Eruption and his Radiant Plumes. At 0 his last line (2605), the closing cutscene and the duty is
 -- complete. Everyone down is a party wipe (server/wipe.rs): it all begins again.
 
+-- Which way players face as they come in and after a wipe (the InstanceContent has no entrance rect, and the entrance
+-- circle faces north): retail's 1.571, facing Ifrit, both times in the capture (Bob's bundle of 2026-10-28: Kawari
+-- turned him north.)
+ENTRANCE_ROTATION = 1.5708
+
 IFRIT = 4126276
 NAIL = 4126281
 HELPER = 4126284
@@ -97,6 +102,7 @@ nail_up = false
 nail_fallen = false
 said_low = false
 attempts = 1
+waiting_for_new_ifrit = false
 plumes = 0
 -- The party where it stood at the last update: the player and their party's NPCs.
 party = {}
@@ -252,6 +258,15 @@ function onUpdate(director, health, player_health, info)
     if hp == nil then
         return
     end
+    -- Just after a wipe the old Ifrit's health is still there for an update (he's taken away with the tasks this
+    -- queues): his 80 % and 50 % lines and the Nail came again 8 s into the next attempt (Bob's bundle of 2026-10-28.)
+    -- The new one comes at full health.
+    if waiting_for_new_ifrit then
+        if hp < 100 then
+            return
+        end
+        waiting_for_new_ifrit = false
+    end
     if not pulled and info[IFRIT] ~= nil and info[IFRIT].target ~= nil then
         pulled = true
         talk(director, TALK_PULL)
@@ -303,6 +318,7 @@ function onPartyWipe(director)
     end
     attempts = attempts + 1
     reset()
+    waiting_for_new_ifrit = true
     bringIfrit(director)
 end
 

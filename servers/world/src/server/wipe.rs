@@ -45,9 +45,11 @@ const PARTY_WIPE_AFTER: Duration = Duration::from_millis(1000);
 const RETURN_AFTER: Duration = Duration::from_millis(4100);
 const RECOMMENCE_AFTER: Duration = Duration::from_millis(11300);
 /// The party's NPCs get up beside the one they follow once that player has arrived at the start (retail spawned them
-/// there 0.4 s after the player's ActorSetPos; Kawari's comes `WARP_DELAY` after the PrepareZoning, and the player's
-/// position is theirs once their client says so.)
-const PARTY_AFTER: Duration = Duration::from_millis(6100);
+/// there 0.4 s after the player's ActorSetPos): once the player's position is theirs again (their client says where
+/// they are) more than this far from where they fell, or at the recommencement at the latest. At a fixed 6.1 s they
+/// got up where the player had fallen, in the arena, before the player's client had reported its arrival (Bob's
+/// bundle of 2026-10-28.)
+const ARRIVED_DISTANCE: f32 = 1.0;
 
 /// The director events retail sent as everyone went back, with no name in Kawari yet.
 const WIPE_EVENT_29: u32 = 0x80000029;
@@ -62,6 +64,8 @@ const RECOMMENCE_ARG3: u32 = 2;
 pub struct PartyWipe {
     pub fell: Instant,
     pub stage: u8,
+    /// The first player's position as they were sent back (where they lay.)
+    pub lay_at: Option<glam::Vec3A>,
 }
 
 fn players(instance: &Instance) -> Vec<(ObjectId, u32)> {
@@ -73,6 +77,13 @@ fn players(instance: &Instance) -> Vec<(ObjectId, u32)> {
             _ => None,
         })
         .collect()
+}
+
+fn first_player_position(instance: &Instance) -> Option<glam::Vec3A> {
+    instance.actors.values().find_map(|actor| match actor {
+        NetworkedActor::Player { spawn, .. } => Some(spawn.common.position.0),
+        _ => None,
+    })
 }
 
 fn send_director_event(
@@ -157,6 +168,7 @@ pub fn wipe_tick(
             instance.party_wipe = Some(PartyWipe {
                 fell: now,
                 stage: 0,
+                lay_at: None,
             });
         }
         return;
@@ -181,6 +193,7 @@ pub fn wipe_tick(
 
     if wipe.stage == 1 && since >= RETURN_AFTER {
         wipe.stage = 2;
+        wipe.lay_at = first_player_position(instance);
         let left = time_left(instance);
         {
             let mut network = network.lock();
@@ -248,7 +261,11 @@ pub fn wipe_tick(
         }
     }
 
-    if wipe.stage == 2 && since >= PARTY_AFTER {
+    let arrived = match (wipe.lay_at, first_player_position(instance)) {
+        (Some(lay), Some(now_at)) => lay.distance(now_at) > ARRIVED_DISTANCE,
+        _ => true,
+    };
+    if wipe.stage == 2 && (arrived || since >= RECOMMENCE_AFTER) {
         wipe.stage = 3;
         // The party's NPCs, standing or not, back beside the one they follow.
         let bots: Vec<(ObjectId, ObjectId)> = instance
