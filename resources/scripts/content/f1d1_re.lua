@@ -78,14 +78,16 @@ CUTSCENE_FINAL = 26
 CUTSCENE_END = 27
 CUTSCENE_END_PARAMS = { 1, 18, 0, 0 }
 
--- What the coffers held on retail, one list per opening (item IDs; the three runs.) A coffer without a recording
--- (15, 119) holds one of these. See server/loot.rs.
+-- What the coffers held on retail, one list per opening (item IDs; the three runs, and a fourth through Duty Support
+-- as a gladiator, Bob's Chronofoil capture c99fe374 of 2026-10-28, its last opening of each: not chosen for the
+-- class, an Acolyte's Skirt and a Plundered Grimoire among them.) A coffer without a recording (15, 119) holds one of
+-- these. See server/loot.rs.
 LOOT = {
-    [16] = { { 3556 }, { 2679 } },
-    [118] = { { 3330 } },
-    [17] = { { 3555 }, { 3555, 4310 } },
-    [62] = { { 3033 }, { 3331 }, { 3033 } },
-    [11] = { { 31426 }, { 3787, 31425 }, { 31427 } },
+    [16] = { { 3556 }, { 2679 }, { 2684 } },
+    [118] = { { 3330 }, { 3330 } },
+    [17] = { { 3555 }, { 3555, 4310 }, { 2683 } },
+    [62] = { { 3033 }, { 3331 }, { 3033 }, { 3330 } },
+    [11] = { { 31426 }, { 3787, 31425 }, { 31427 }, { 31428 } },
 }
 -- What the coffers may hold besides what was recorded (`director:treasure_pool`): the FFXIV Console Games Wiki's loot
 -- lists for the duty (each boss's coffer and each "Treasure Coffer" at its map position, matched to these base IDs by
@@ -129,12 +131,14 @@ KEY_COFFER = 119
 
 -- The Duty Support members' story lines (NpcYell, `director:party_npc_yell(role, line, delay)`), when retail's said
 -- them: the Lancer 34.5 s after the duty began and as the first room's leader fell, the Thaumaturge as the first room's
--- boss fell, the tank 26.5 s after the last seal was broken. Nobody says them without Duty Support.
+-- boss fell, the tank 26.5 s after the last seal was broken (when the player is the tank, the Conjurer's 14313 then,
+-- 26.8 s after: Bob's Chronofoil capture c99fe374 of 2026-10-28.) Nobody says them without Duty Support.
 PARTY_NPC_LINE_START = 14307
 PARTY_NPC_LINE_START_AFTER = 34.5
 PARTY_NPC_LINE_LEADER1 = 14309
 PARTY_NPC_LINE_BOSS1 = 14311
 PARTY_NPC_LINE_FINAL = 14312
+PARTY_NPC_LINE_FINAL_HEALER = 14313
 PARTY_NPC_LINE_FINAL_AFTER = 26.5
 
 -- The director's variables as retail sent them (DirectorVars), at the start and as each gimmick was used. Retail's
@@ -358,7 +362,8 @@ function onEventActionCast(director, actor_id, target)
         setVars(director, VARS_FINAL)
         director:play_cutscene(CUTSCENE_FINAL)
         director:spawn_boss(BNPC_FINAL_BOSS, EOBJ_FINAL_WALL, EOBJ_FINAL_LINE, PLACE_FINAL)
-        director:party_npc_yell("tank", PARTY_NPC_LINE_FINAL, PARTY_NPC_LINE_FINAL_AFTER)
+        director:party_npc_yell("tank", PARTY_NPC_LINE_FINAL, PARTY_NPC_LINE_FINAL_AFTER, "healer",
+            PARTY_NPC_LINE_FINAL_HEALER)
     end
 end
 

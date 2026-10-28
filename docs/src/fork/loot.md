@@ -2,7 +2,8 @@
 
 Dungeon coffers and their Need / Greed / Pass rolls, as retail does them (Bob's Chronofoil capture of five Sastasha
 runs with Duty Finder parties, 2026-10-22: 43 coffers spawned, 15 opened, 35 lots cast by the other players, 18 items
-decided). Party bots roll as those players did. Code: `servers/world/src/server/loot.rs`; the duty's script spawns the
+decided). Party bots roll as those players did. With Duty Support a coffer is yours alone, no rolls
+([below](#duty-support-personal-loot)). Code: `servers/world/src/server/loot.rs`; the duty's script spawns the
 coffers and says what they hold.
 
 ## Opening a coffer
@@ -61,6 +62,11 @@ Sastasha (`content/s1d1_re.lua`), from the five runs:
 
 The second captain (`BNPC_CAPTAIN2`) dropped nothing in any run, so the script no longer spawns a coffer (96) for him.
 
+A sixth Sastasha run (Bob's capture c99fe374, a Duty Finder party) added an opening of each boss's coffer: 94 the
+Plundered Cavalier's Hat and Aetherial Brass Gorget, 95 Plundered Trousers, 93 Foestriker's Boots and the Plundered
+Guisarme, all on the wiki's lists. The Tam-Tara Deepcroft's and the Copperbell Mines' scripts have a fourth opening of
+each coffer opened in the same capture's Duty Support runs (`LOOT`), all on the wiki's lists too.
+
 ## Rolling
 
 Each member of the party (the players in the duty and their bots) chooses for each item:
@@ -81,8 +87,27 @@ An item is **decided** once every member has chosen, when its 300 seconds are up
   Bob hadn't chosen when the time ran out, twice).
 * If everyone passed it's **lost** (LootMessage 2: the item, 1; LootResult with 0xE0000000 and 0).
 
-A player who wins gets the item in their inventory (an ack and the inventory, as for an enemy's drop). Once all of a
-coffer's items are decided it fades out (TreasureFadeOut, from the coffer).
+A player who wins gets the item as retail sent it (Bob's Chronofoil capture c99fe374, Sastasha with a Duty Finder
+party: LootResult, then the ack 0xFFFFFFFF 6, the item's slot and LogMessage 789, the "obtained" pop-up;
+`ZoneConnection::obtain_loot`). Once all of a coffer's items are decided it fades out (TreasureFadeOut, from the
+coffer).
+
+## Duty Support: personal loot
+
+With Duty Support (`Instance::personal_loot`, set as the members join) a coffer's items are the opener's, as retail's
+ten in the Tam-Tara Deepcroft and the Copperbell Mines were (Bob's Chronofoil capture c99fe374 of 2026-10-28, Dags, a
+gladiator):
+
+1. **OpenedTreasure** from the coffer with no times (all zeros but the coffer); no LootList, no LootItem.
+2. For each item, to the opener (`ZoneConnection::obtain_personal_loot`): **LootMessage 3** (who, the item, 1), then the
+   item as a won one (the ack, its slot, LogMessage 789). A unique item they already have is lost instead:
+   **LootMessage 8** (who, the item, 1, 8), then **LootMessage 2** (the item, 1), and nothing else (a second Acolyte's
+   Skirt in Tam-Tara, the Plundered Gauntlets and a second Foestriker's Tabard in Copperbell).
+3. The coffer fades out 4 s later (3.96-4.00 s, all nine that faded while recorded; the last boss's was still there as
+   the duty ended).
+
+What a coffer holds isn't chosen for the class: a gladiator's held an Acolyte's Skirt (Disciple of Magic), a Plundered
+Grimoire (arcanist) and a Plundered Cane (conjurer).
 
 ## Party bots
 

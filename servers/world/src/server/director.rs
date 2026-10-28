@@ -226,10 +226,12 @@ pub enum LuaDirectorTask {
     },
     /// Has the party NPC (Duty Support member) of a role ("tank", "healer", "melee", "ranged") yell a line from the
     /// NpcYell sheet, `delay` seconds from now: the duty's story lines, at the moments retail's members said them.
+    /// `otherwise`: the role and line said instead when no party NPC plays `role` (the player does.)
     PartyNpcYell {
         role: String,
         npc_yell_id: u32,
         delay: f32,
+        otherwise: Option<(String, u32)>,
     },
     /// Has an NPC yell a line from the NpcYell sheet: a speech bubble over them, and the line in chat.
     Yell {
@@ -743,11 +745,20 @@ impl UserData for LuaDirector {
         );
         methods.add_method_mut(
             "party_npc_yell",
-            |_, this, (role, npc_yell_id, delay): (String, u32, Option<f32>)| {
+            |_,
+             this,
+             (role, npc_yell_id, delay, other_role, other_yell): (
+                String,
+                u32,
+                Option<f32>,
+                Option<String>,
+                Option<u32>,
+            )| {
                 this.tasks.push(LuaDirectorTask::PartyNpcYell {
                     role,
                     npc_yell_id,
                     delay: delay.unwrap_or(0.0),
+                    otherwise: other_role.zip(other_yell),
                 });
                 Ok(())
             },
@@ -2215,8 +2226,15 @@ pub fn director_tick(
                 role,
                 npc_yell_id,
                 delay,
+                otherwise,
             } => {
-                crate::server::party_npc::queue_yell(instance, role, *npc_yell_id, *delay);
+                crate::server::party_npc::queue_yell(
+                    instance,
+                    role,
+                    *npc_yell_id,
+                    *delay,
+                    otherwise.clone(),
+                );
             }
             LuaDirectorTask::Yell {
                 layout_id,

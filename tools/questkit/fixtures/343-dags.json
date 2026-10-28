@@ -1,0 +1,299 @@
+{
+  "quest": 343,
+  "script": "ManFst209_00343",
+  "source": "Bob's Chronofoil capture c99fe374 (2026-10-28, Dags); scenes and effects from Bob's Chronofoil capture of 2026-10-28",
+  "params": {
+    "ACTOR0": 1005116,
+    "ACTOR1": 1004584,
+    "ACTOR2": 1004585,
+    "ACTOR3": 1004586,
+    "ACTOR4": 1004587,
+    "ACTOR5": 1005161,
+    "EOBJECT0": 2001592,
+    "EVENT_ACTION_WAITING_SHOR": 11,
+    "ACTOR6": 1005017,
+    "INSTANCEDUNGEON0": 20001,
+    "ACTOR7": 1004605,
+    "ACTOR8": 1004606,
+    "ACTOR9": 1004608,
+    "ACTOR10": 1004610,
+    "ACTOR11": 1004611,
+    "ACTOR12": 1005140,
+    "ACTOR13": 1005141,
+    "ACTOR14": 1005142,
+    "ACTOR15": 1005143,
+    "ACTOR16": 1005144,
+    "ACTOR17": 1005145,
+    "ACTOR18": 1005018,
+    "ACTOR20": 1005156,
+    "ACTOR21": 1005146,
+    "ACTOR22": 1005147,
+    "ACTOR23": 1005148,
+    "ACTOR24": 1005149,
+    "ACTOR25": 1005150,
+    "ACTOR26": 1005151,
+    "ACTOR27": 1005152,
+    "ACTOR28": 1005153,
+    "ACTOR29": 1005154,
+    "ACTOR30": 1005155,
+    "ACTOR31": 1005012,
+    "TERRITORYTYPE0": 275,
+    "QUESTBATTLE0": 45,
+    "TERRITORYTYPE1": 146,
+    "POPRANGE0": 4165046,
+    "POPRANGE1": 4156164,
+    "POPRANGE2": 4148347,
+    "CUT_MANFST20950": 88,
+    "UNLOCK_IMAGE_DUNGEON": 77,
+    "UNLOCK_ADD_NEW_CONTENT_TO_CF": 3702
+  },
+  "steps": [
+    {
+      "talk": 1005116,
+      "layout": 4170055,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1004584,
+      "layout": 4163974,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            [
+              1,
+              1
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 2001592,
+      "layout": 4092602,
+      "what": "EOBJECT0",
+      "scenes": [
+        {
+          "scene": 7,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        },
+        {
+          "scene": 8,
+          "flags": "0x2001",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "effects": [
+        {
+          "zone": 275
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "battle_won": 3,
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1005018,
+      "layout": 4154838,
+      "what": "ACTOR18",
+      "scenes": [
+        {
+          "scene": 26,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "effects": [
+        {
+          "zone": 146
+        }
+      ],
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1005017,
+      "layout": 4154609,
+      "what": "ACTOR6",
+      "scenes": [
+        {
+          "scene": 14,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "effects": [
+        {
+          "content": 20001
+        }
+      ],
+      "expect": {
+        "sequence": 4,
+        "vars": "000000000000",
+        "notices": [
+          [
+            2,
+            [
+              1,
+              1
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "duty_cleared": 20001,
+      "what": "the Bowl of Embers cleared",
+      "expect": {
+        "sequence": 5,
+        "vars": "000000000000",
+        "notices": [
+          [
+            3,
+            [
+              1,
+              1
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1005156,
+      "layout": 4184530,
+      "what": "ACTOR20",
+      "scenes": [
+        {
+          "scene": 40,
+          "flags": "0x6001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            4,
+            [
+              1,
+              1
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1005012,
+      "layout": 4147225,
+      "territory": 212,
+      "what": "ACTOR31",
+      "scenes": [
+        {
+          "scene": 51,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 52,
+          "flags": "0xf8402efb",
+          "params": [
+            0
+          ],
+          "results": [
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "effects": [
+        {
+          "zone": 212
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

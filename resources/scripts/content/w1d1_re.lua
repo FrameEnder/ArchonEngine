@@ -125,14 +125,15 @@ DROPS = {
     [2790237] = { eobj = EOBJ_ITEM_D, name = 1303, item = ITEM_DOOR },
 }
 
--- What the coffers held on retail, one list per opening (item IDs; the three runs.) 59 and 65 were never opened and
--- hold one of these. See server/loot.rs.
+-- What the coffers held on retail, one list per opening (item IDs; the three runs, and a fourth through Duty Support
+-- as a gladiator, Bob's Chronofoil capture c99fe374 of 2026-10-28, its last opening of each: not chosen for the
+-- class.) 59 and 65 were never opened and hold one of these. See server/loot.rs.
 LOOT = {
-    [52] = { { 3554 }, { 3554, 4310 }, { 3555, 4310 } },
-    [57] = { { 3554 } },
-    [53] = { { 3034 }, { 3033 }, { 3035 } },
-    [58] = { { 3033 }, { 3035 } },
-    [51] = { { 31423 }, { 3786, 31428, 33130 }, { 3781, 31427 } },
+    [52] = { { 3554 }, { 3554, 4310 }, { 3555, 4310 }, { 3556 } },
+    [57] = { { 3554 }, { 3554 } },
+    [53] = { { 3034 }, { 3033 }, { 3035 }, { 3034 } },
+    [58] = { { 3033 }, { 3035 }, { 3034 } },
+    [51] = { { 31423 }, { 3786, 31428, 33130 }, { 3781, 31427 }, { 31426 } },
 }
 -- What the coffers may hold besides what was recorded (`director:treasure_pool`): the FFXIV Console Games Wiki's loot
 -- lists for the duty (each boss's coffer and each "Treasure Coffer" at its map position, matched to these base IDs by
@@ -173,10 +174,12 @@ BOSS_COFFERS = { { 52 }, { 53, 59 }, { 51 } }
 
 -- The Duty Support members' story lines (NpcYell), when retail's said them (the Thaumaturge 40.3 s in, the tank 6.8 s
 -- after the first boss appeared, the Lancer 4.8 s after the second blast cleared the way, the Thaumaturge as the second
--- boss was pulled, the Lancer 29.4 s after the last boss's cutscene began.)
+-- boss was pulled, the Lancer 29.4 s after the last boss's cutscene began.) When the player is the tank, the
+-- Thaumaturge's 14319 in place of the tank's, 6.2 s after (Bob's Chronofoil capture c99fe374 of 2026-10-28.)
 LINE_START = 14315
 LINE_START_AFTER = 40.3
 LINE_BOSS1 = 14318
+LINE_BOSS1_RANGED = 14319
 LINE_BOSS1_AFTER = 6.8
 LINE_BLAST2 = 14320
 LINE_BLAST2_AFTER = BLAST_DELAY + 4.8
@@ -660,7 +663,7 @@ function onEventActionCast(director, actor_id, target)
     elseif target == EOBJ_DOOR1 and doors_set[EOBJ_DOOR1_SLOT] and not doors_open[target] then
         openDoor(director, target, 1, LOG_DOOR1)
         spawnBoss(director, 1)
-        director:party_npc_yell("tank", LINE_BOSS1, LINE_BOSS1_AFTER)
+        director:party_npc_yell("tank", LINE_BOSS1, LINE_BOSS1_AFTER, "ranged", LINE_BOSS1_RANGED)
     elseif target == EOBJ_DOOR2 and doors_set[EOBJ_DOOR2_SLOT] and not doors_open[target] then
         openDoor(director, target, 3, LOG_DOOR2)
         spawnBoss(director, 2)

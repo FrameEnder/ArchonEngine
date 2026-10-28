@@ -246,6 +246,8 @@ pub enum FromServer {
     ),
     /// The player won this item from a coffer (`server/loot.rs`): it goes in their inventory.
     LootWon(u32),
+    /// An item of a coffer that's this player's alone (Duty Support, `server/loot.rs`): its LootMessage and the item.
+    PersonalLoot(u32),
     /// Send the player back from the won quest battle they stayed in.
     LeaveQuestBattle(HandlerId),
     /// The quest battle was lost, send them back to where they entered it.

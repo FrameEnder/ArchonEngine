@@ -264,21 +264,25 @@ a quest's entering event, 0 for every other event (228 events across the capture
   left** (at three, 8 s before, it didn't come): the third wave (three lancers and three soldiers on the second
   gladiator, a javelinier on you), 206 10 s later, 207 15 s. **55 s after sequence 5 it's won**, whatever is still
   standing (the leader at 84 %, six adds): sequence 7 and, with no "Duty Complete", the battle's scene 7 (0xF8402EFB);
-  the second gladiator's 210 (BNpcName 994, 73228); the quest moves to 3. As the cutscene ends retail sent the player
+  the quest moves to 3. As the cutscene ends retail sent the player
   on to Southern Thanalan (146, ZoneInit pop range 4104257, at (-56.7, -24.57, -565.88) facing -0.468), by the flame
   sergeant the quest goes to next, not back to Eastern Thanalan (`EXIT_AFTER_WIN`; Bob's bundle of 2026-10-28: he was
   sent back). After the three losses he went back where he had entered. Retail's NPCs fought on through the cutscene
-  (the second gladiator fell 3 s into it); Kawari's stop (`end_fight`). An ally falling says its last words (the
-  pugilist 209, BNpcName 1007, 73229; the thaumaturge 208, 1005, 73227) and the battle goes on. Your health at 0:
-  sequence 0xFE (all three losses).
+  (the second gladiator fell 0.85 s into it); Kawari's stop (`end_fight`). An ally falling says its last words (the
+  pugilist 209, BNpcName 1007, 73229; the thaumaturge 208, 1005, 73227; the second gladiator 210, 994, 73228, even
+  once the battle is won, not once it's lost) and the battle goes on. Until 2026-10-28 the script said 210 at the win:
+  in the first won run it came 0.85 s after sequence 7 as the second gladiator fell (at 0.6 %), and in Dags' won run
+  (Bob's Chronofoil capture c99fe374 of 2026-10-28, a gladiator, `--battle 0.29`), where it lived, not at all. Your
+  health at 0: sequence 0xFE (all three losses).
 * The allies: the lead on the leader (3 yalms), the others on the adds (nearest), the thaumaturge from 25 yalms;
   Cure (120) on whoever of the side is lowest below 40 % about every 6 s from the lead, the second gladiator and the
   thaumaturge (retail's medians 31-41 %), the pugilist's Second Wind (57) on itself below 35 %.
 * The client's battle script (ManFst209Btl_00343) has scenes 1 (the opening cutscene), 7 (the closing one) and 10001
   (the won't-talk message), and OnSequence001/002; the script plays 1 and 7.
 * Timelines `QB45*` (bases 963-970); action script `QB45Amaljaa_00490` (the Amalj'aa's 490, potency 100). The
-  Flames' 14 and 718 and the Amalj'aa's 426 (on themselves) aren't modelled. `questkit battle-sim 45` checks all four
-  runs (`45.json` won, `45-lost-8/10/12.json`): every step within 1.4 s.
+  Flames' 14 and 718 and the Amalj'aa's 426 (on themselves) aren't modelled. `questkit battle-sim 45` checks all five
+  runs (`45.json` won, `45-lost-8/10/12.json`, and `45-dags.json`, Dags' won run as a gladiator: sequence 5 at 79.9 s,
+  the win 55.1 s after it, the same exit to Southern Thanalan): every step within 1.6 s.
 
 ### Quest battle 46 — The Company You Keep (Twin Adder) (`content/questbattle/46.lua`)
 
@@ -360,8 +364,10 @@ a quest's entering event, 0 for every other event (228 events across the capture
   `complete_quest_battle(5, false, 5, 0xF8402EFB)`, as the other battles move their quest; the quest's script
   doesn't set the sequence itself. Lost (your health at 0): sequence 0xFE at once and out 5 s later.
 * Timelines `IntoACopperHell*_<base>.json` (rotations from the four runs' medians); the old kits' 10, 55 and 57 that
-  these NPCs use have NPC-only scripts (`QuestBattleNpc_000xx.lua`). `questkit battle-sim 44` (the won run): every
-  step within 1.2 s.
+  these NPCs use have NPC-only scripts (`QuestBattleNpc_000xx.lua`). `questkit battle-sim 44` (the won run, and
+  `44-dags.json`, Dags' won run as a gladiator, Bob's capture c99fe374 visit 0.17): every step within 1.2 s. In Dags'
+  run the pugilist stayed at 21.5 % from 52.5 s to 75.4 s (he was on the other two), and 208 came as it went below
+  20 %, so that fixture holds an NPC's health between samples (`"npc_health": "held"`) rather than drawing it straight.
 
 ### Quest battle 38 — Duty, Honor, Country (`content/questbattle/38.lua`)
 

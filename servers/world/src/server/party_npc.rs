@@ -98,6 +98,8 @@ pub struct Kit {
     pub provoke: Option<(u32, f32)>,
     /// A defensive ability on itself with this many enemies on the party, and its cooldown.
     pub defensive: Option<(u32, usize, f32)>,
+    /// A healer's heal, on the lowest of the party when they're below this percent (`PartyBot::heal_below`.)
+    pub heal: Option<(u32, f32)>,
 }
 
 /// A Duty Support member, as retail spawned it and as it fought.
@@ -107,8 +109,6 @@ pub struct Member {
     pub dawn_quest_member: u8,
     pub base_id: u32,
     pub name_id: u32,
-    /// The spawn's `pet_id`, as retail sent it.
-    pub pet_id: u32,
     pub classjob: u8,
     pub level: u8,
     pub hp: u32,
@@ -134,13 +134,14 @@ pub struct Member {
 
 /// Sastasha's three: a Marauder, a Lancer and a Thaumaturge (the run's player was the healer). Party slots in the order
 /// the client chose them (36, 38, 37 in its registration: slot 0 the Marauder, 1 the Thaumaturge, 2 the Lancer, each
-/// slot's ActorControlSelf 276 and 1525 as listed here.)
-pub const MEMBERS: [Member; 3] = [
+/// slot's ActorControlSelf 276 and 1525 as listed here.) With a tank the Conjurer comes instead of the Marauder (39:
+/// Bob's Chronofoil capture c99fe374 of 2026-10-28, registered as 39, 38, 37 in the Tam-Tara Deepcroft and the
+/// Copperbell Mines.)
+pub const MEMBERS: [Member; 4] = [
     Member {
         dawn_quest_member: 36,
         base_id: 14646,
         name_id: 11326,
-        pet_id: 1,
         classjob: 3,
         level: 15,
         hp: 411,
@@ -174,6 +175,7 @@ pub const MEMBERS: [Member; 3] = [
             // 108 and 128 s apart.
             provoke: Some((25083, 30.0)),
             defensive: Some((25082, 3, 100.0)),
+            heal: None,
         },
         // 13951 at its first fight (46 s in), then 13961, 13952 twice; in the Tam-Tara Deepcroft (Bob's capture of
         // 2026-10-24) 13953 three times and 13951.
@@ -184,7 +186,6 @@ pub const MEMBERS: [Member; 3] = [
         dawn_quest_member: 37,
         base_id: 14647,
         name_id: 11327,
-        pet_id: 9,
         classjob: 4,
         level: 15,
         hp: 322,
@@ -214,6 +215,7 @@ pub const MEMBERS: [Member; 3] = [
             aoe: None,
             provoke: None,
             defensive: None,
+            heal: None,
         },
         chatter: &[13962, 13964],
         opens_with_first: false,
@@ -222,7 +224,6 @@ pub const MEMBERS: [Member; 3] = [
         dawn_quest_member: 38,
         base_id: 14648,
         name_id: 11328,
-        pet_id: 5,
         classjob: 7,
         level: 15,
         hp: 293,
@@ -244,8 +245,45 @@ pub const MEMBERS: [Member; 3] = [
             aoe: None,
             provoke: None,
             defensive: None,
+            heal: None,
         },
         chatter: &[13972, 13974],
+        opens_with_first: false,
+    },
+    Member {
+        dawn_quest_member: 39,
+        base_id: 14649,
+        name_id: 11329,
+        classjob: 6,
+        level: 16,
+        hp: 316,
+        slot_member: 10003,
+        slot_resident: 1042779,
+        // Not measured (no enemy hit both it and a player of known defence.)
+        damage_taken: 1.0,
+        statuses: &[],
+        // It struck what was close with its auto-attack (20 and 71 times, for 1.)
+        auto_attack: 17235,
+        // Its median distance from what it hit: 6.9 yalms.
+        attack_range: 7.0,
+        kit: Kit {
+            // Stone every 2.1 s (the median between its spells; 1 s casts), Aero on what it fights every 12 s or so
+            // (11.5-13.6, the first 12 s into a fight); Cure on the lowest of the party below 85 % (retail's were
+            // at 73-76 % in the median, up to 85 %; 133 of 143 on the player, the tank.)
+            gcd: 2.1,
+            filler: &[29322],
+            burst_every: 12.0,
+            first_burst: 12.0,
+            burst: &[gcd(29324, 2.1)],
+            opener: None,
+            pull: None,
+            aoe: None,
+            provoke: None,
+            defensive: None,
+            heal: Some((29317, 85.0)),
+        },
+        // Only the duties' story lines (`director:party_npc_yell`), none of its own in either run.
+        chatter: &[],
         opens_with_first: false,
     },
 ];
@@ -253,8 +291,9 @@ pub const MEMBERS: [Member; 3] = [
 /// The trials' three (DawnQuestMember 40, 41, 42; the Bowl of Embers with Duty Support in Bob's Chronofoil capture
 /// b8432613 of 2026-10-27, registered as 40, 42, 41 under DawnContent 203): the same Marauder, Lancer and Thaumaturge
 /// with BNpcBases and names of their own (14650-14652, 11330-11332) and their own ActorControlSelf 276 and 1525 values,
-/// fighting with the same kits. Their level and HP there are in `DUTY_LEVELS`.
-pub const TRIAL_MEMBERS: [Member; 3] = [
+/// fighting with the same kits. Their level and HP there are in `DUTY_LEVELS`. With a tank, the Conjurer (43, registered
+/// as 43, 42, 41 in Bob's capture c99fe374), with Stone II for Stone.
+pub const TRIAL_MEMBERS: [Member; 4] = [
     Member {
         dawn_quest_member: 40,
         base_id: 14650,
@@ -284,6 +323,18 @@ pub const TRIAL_MEMBERS: [Member; 3] = [
         chatter: &[],
         ..MEMBERS[2]
     },
+    Member {
+        dawn_quest_member: 43,
+        base_id: 14653,
+        name_id: 11333,
+        slot_member: 10007,
+        slot_resident: 1042783,
+        kit: Kit {
+            filler: &[29323],
+            ..MEMBERS[3].kit
+        },
+        ..MEMBERS[3]
+    },
 ];
 
 /// The level the members come at in a duty (its ContentFinderCondition) and each one's HP there, by
@@ -291,12 +342,14 @@ pub const TRIAL_MEMBERS: [Member; 3] = [
 /// Deepcroft's the same three at 16 with 443, 347 and 316 HP (his capture of 2026-10-24, 3ec702a8 visit 0.3), the
 /// Copperbell Mines' at 17 with 476, 372 and 339 (his capture of 2026-10-25, bd298651 visit 0.5.) A duty not here
 /// takes the member's own `level` and `hp`.
-pub const DUTY_LEVELS: [(u16, u8, [(u8, u32); 3]); 4] = [
-    (4, 15, [(36, 411), (37, 322), (38, 293)]),
-    (2, 16, [(36, 443), (37, 347), (38, 316)]),
-    (3, 17, [(36, 476), (37, 372), (38, 339)]),
+/// The Conjurer (39, 43) the same (Bob's capture c99fe374 of 2026-10-28): 316 HP at 16, 339 at 17, 432 at 20; its
+/// Sastasha HP isn't recorded yet (it comes at its own level, 16, there.)
+pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 4] = [
+    (4, 15, &[(36, 411), (37, 322), (38, 293)]),
+    (2, 16, &[(36, 443), (37, 347), (38, 316), (39, 316)]),
+    (3, 17, &[(36, 476), (37, 372), (38, 339), (39, 339)]),
     // The Bowl of Embers (Bob's capture b8432613 of 2026-10-27, visit 0.16): the trials' three at 20.
-    (56, 20, [(40, 618), (41, 469), (42, 428)]),
+    (56, 20, &[(40, 618), (41, 469), (42, 428), (43, 432)]),
 ];
 
 /// A member's level and HP in the duty `content_finder_condition`.
@@ -522,14 +575,27 @@ pub struct QueuedYell {
     pub at: Instant,
     pub role: String,
     pub yell: u32,
+    /// Said instead by this role when no party NPC plays `role`: retail's lines for a role the player played went to
+    /// another member as a line of its own (Bob's Chronofoil capture c99fe374 of 2026-10-28, a tank: the Tam-Tara
+    /// Deepcroft's last line 14313 from the Conjurer, not 14312 from the tank; the Copperbell Mines' first boss's 14319
+    /// from the Thaumaturge, not 14318), at the same moment (26.8 and 6.2 s against 26.5 and 6.8.)
+    pub otherwise: Option<(String, u32)>,
 }
 
-/// Queues a story line for the party NPC playing `role`, `delay` seconds from now. Nobody of that role: it's dropped.
-pub fn queue_yell(instance: &mut Instance, role: &str, yell: u32, delay: f32) {
+/// Queues a story line for the party NPC playing `role`, `delay` seconds from now. Nobody of that role: `otherwise`'s
+/// line from its role, else it's dropped (also when the one of that role has fallen.)
+pub fn queue_yell(
+    instance: &mut Instance,
+    role: &str,
+    yell: u32,
+    delay: f32,
+    otherwise: Option<(String, u32)>,
+) {
     instance.party_npc_yells.push(QueuedYell {
         at: Instant::now() + Duration::from_secs_f32(delay.max(0.0)),
         role: role.to_lowercase(),
         yell,
+        otherwise: otherwise.map(|(role, yell)| (role.to_lowercase(), yell)),
     });
 }
 
@@ -582,25 +648,44 @@ pub fn update_yells(
             .into_iter()
             .partition(|queued| queued.at <= now);
     instance.party_npc_yells = later;
+    let role_of = |state: &MemberState| {
+        let role = game_data
+            .lock()
+            .classjob_role(state.member.classjob)
+            .map(|(role, _, _)| role)
+            .unwrap_or_default();
+        role_name(role)
+    };
+    // The living party NPC playing `role`, and whether one plays it at all.
+    let speaker_of = |role: &str| {
+        let mut plays = false;
+        let mut speaker = None;
+        for (id, bot) in &instance.party_bots {
+            let Some(state) = bot.party_npc.as_ref() else {
+                continue;
+            };
+            if role_of(state) != role {
+                continue;
+            }
+            plays = true;
+            if instance
+                .find_actor(*id)
+                .is_some_and(|actor| actor.get_common_spawn().health_points > 0)
+            {
+                speaker = Some(*id);
+            }
+        }
+        (plays, speaker)
+    };
     for queued in due {
-        let speaker = instance
-            .party_bots
-            .iter()
-            .filter_map(|(id, bot)| bot.party_npc.as_ref().map(|state| (*id, state)))
-            .find(|(id, state)| {
-                let role = game_data
-                    .lock()
-                    .classjob_role(state.member.classjob)
-                    .map(|(role, _, _)| role)
-                    .unwrap_or_default();
-                role_name(role) == queued.role
-                    && instance
-                        .find_actor(*id)
-                        .is_some_and(|actor| actor.get_common_spawn().health_points > 0)
-            })
-            .map(|(id, _)| id);
-        if let Some(speaker) = speaker {
-            yell(network, instance, speaker, queued.yell);
+        let (plays, speaker) = speaker_of(&queued.role);
+        let line = match (&queued.otherwise, plays) {
+            (Some((other, line)), false) => speaker_of(other).1.map(|id| (id, *line)),
+            _ => speaker.map(|id| (id, queued.yell)),
+        };
+        // Line 0: nothing (a line only said when nobody plays `role`.)
+        if let Some((speaker, line)) = line.filter(|(_, line)| *line != 0) {
+            yell(network, instance, speaker, line);
         }
     }
 }
@@ -651,7 +736,8 @@ fn spawn_member(
         common: CommonSpawn {
             base_id: member.base_id,
             name_id: member.name_id,
-            pet_id: member.pet_id,
+            // Retail's: 1, 5, 9 by party slot, whoever is in it (Bob's captures of 2026-10-23 and c99fe374.)
+            pet_id: 1 + 4 * slot as u32,
             handler_id: instance
                 .find_actor(leader)
                 .map(|actor| actor.get_common_spawn().handler_id)
@@ -720,6 +806,10 @@ fn spawn_member(
     );
     bot.pull_action = member.kit.pull;
     bot.aoe_action = member.kit.aoe;
+    if let Some((heal, below)) = member.kit.heal {
+        bot.heal_action = Some(heal);
+        bot.heal_below = below;
+    }
     bot.party_npc = Some(MemberState::new(member, slot));
     instance.party_bots.insert(actor_id, bot);
     tracing::info!(
@@ -866,7 +956,17 @@ mod tests {
             vec![36, 38, 37]
         );
         assert_eq!(member(36).map(|m| m.base_id), Some(14646));
-        assert!(member(39).is_none());
+        assert!(member(44).is_none());
+        // A tank's (Bob's capture c99fe374): the Conjurer first, 39, 38, 37; 43, 42, 41 in the Bowl of Embers, the
+        // Conjurer at 16 in the Tam-Tara Deepcroft and 20 there.
+        assert_eq!(chosen_members([0x0025_2627, 0, 0, 0]), vec![39, 38, 37]);
+        let conjurer = member(39).unwrap();
+        assert_eq!((conjurer.base_id, conjurer.classjob), (14649, 6));
+        assert_eq!(level_and_hp(conjurer, 2), (16, 316));
+        let trial_conjurer = member(43).unwrap();
+        assert_eq!(trial_conjurer.base_id, 14653);
+        assert_eq!(trial_conjurer.kit.filler, &[29323]);
+        assert_eq!(level_and_hp(trial_conjurer, 56), (20, 432));
         // The Bowl of Embers' registration (Bob's capture b8432613): 40, 42, 41, the trials' three, at 20 there.
         assert_eq!(chosen_members([0x0029_2a28, 0, 0, 0]), vec![40, 42, 41]);
         let marauder = member(40).unwrap();

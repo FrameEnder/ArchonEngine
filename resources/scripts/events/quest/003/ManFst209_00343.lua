@@ -19,7 +19,7 @@
 --               UI8AH and UI8AL to 1 as it began), and once it ends the quest is completed and the player put where
 --               the cutscene left them in the Waking Sands (retail's ActorSetPos; no pop range for it.)
 -- The others' lines are matched by the order in which the client's IsAcceptEvent offers each sequence's NPCs (retail
--- played none of them); its other scenes are empty.
+-- played none of them but Adala's ride, scene 26, in a second run); its other scenes are empty.
 
 SCENE_OFFER = 0
 SCENE_ACCEPTED = 1
@@ -28,6 +28,10 @@ SCENE_DESTINATION = 7
 SCENE_ENTER_BATTLE = 8
 SCENE_SERGEANT_AFTER = 14
 SCENE_THANCRED = 40
+-- Adala, in Eastern Thanalan in sequence 3, offers to take you to Southern Thanalan (a yes or no): yes, and the server
+-- sends you to TERRITORYTYPE1 at POPRANGE0 (Bob's Chronofoil capture c99fe374 of 2026-10-28, Dags: PrepareZoning to
+-- 146, ZoneInit pop range 4165046.)
+SCENE_ADALA_RIDE = 26
 SCENE_REWARD = 51
 SCENE_CUTSCENE = 52
 
@@ -140,6 +144,12 @@ function sceneFinished(scene, results, player)
         player:unlock_content(INSTANCEDUNGEON0)
         player:event_notice(EVENT_ID, 2, TODO_DONE)
         player:quest_sequence(EVENT_ID, 4)
+    elseif scene == SCENE_ADALA_RIDE then
+        if results[1] == 1 then
+            player:finish_event()
+            player:change_territory_pop_range(TERRITORYTYPE1, POPRANGE0)
+            return
+        end
     elseif scene == SCENE_THANCRED then
         player:event_notice(EVENT_ID, 4, TODO_DONE)
         player:quest_sequence(EVENT_ID, 255)

@@ -169,8 +169,10 @@ pub struct PartyBot {
     pub role: BotRole,
     /// How close it gets to what it attacks.
     pub attack_range: f32,
-    /// Its single-target heal (healers), if it has one.
+    /// Its single-target heal (healers), if it has one, and whom it heals: the lowest of the party below this
+    /// percent (`HEAL_BELOW_PERCENT`, or a Duty Support member's own, `party_npc::Kit::heal`.)
     pub heal_action: Option<u32>,
+    pub heal_below: f32,
     pub next_heal: Instant,
     /// Tanks: their area enmity combo and ranged pull, and when the next of these (on the GCD) may go.
     pub aoe_action: Option<u32>,
@@ -244,6 +246,7 @@ impl PartyBot {
             role,
             attack_range,
             heal_action: None,
+            heal_below: HEAL_BELOW_PERCENT,
             next_heal: now,
             aoe_action: None,
             pull_action: None,
@@ -1737,6 +1740,7 @@ fn spawn_bot(
             role,
             attack_range,
             heal_action: heal,
+            heal_below: HEAL_BELOW_PERCENT,
             next_heal: Instant::now(),
             aoe_action,
             pull_action,
@@ -3046,15 +3050,13 @@ fn update_party(
         .collect();
     let is_engaged = |id: ObjectId| engaged.iter().any(|enemy| enemy.id == id);
 
-    // Whom the healer helps first: the lowest of the party below the line.
+    // Whom the healer helps first: the lowest of the party, if they're below its line (`PartyBot::heal_below`.)
     let hurt = members
         .iter()
         .filter_map(|id| instance.find_actor(*id).map(|actor| (*id, actor)))
         .filter(|(_, actor)| actor.get_common_spawn().health_points > 0)
         .map(|(id, actor)| (id, health_percent(actor)))
-        .filter(|(_, percent)| *percent < HEAL_BELOW_PERCENT)
-        .min_by(|a, b| a.1.total_cmp(&b.1))
-        .map(|(id, _)| id);
+        .min_by(|a, b| a.1.total_cmp(&b.1));
 
     // Where everyone is and faces, and each bot's place behind the one it follows.
     let where_is: HashMap<ObjectId, (Vec3A, f32)> = members
@@ -3454,7 +3456,10 @@ fn update_party(
 
         // The healer heals first.
         if bot.role == BotRole::Healer
-            && let (Some(heal), Some(patient)) = (bot.heal_action, hurt)
+            && let (Some(heal), Some((patient, _))) = (
+                bot.heal_action,
+                hurt.filter(|(_, percent)| *percent < bot.heal_below),
+            )
             && now >= bot.next_heal
             && !casting
         {

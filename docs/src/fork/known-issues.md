@@ -49,10 +49,17 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 * Untested in game (2026-10-23). Whether the client builds its party list from ActorControlSelf 257, 276 and 1525
   alone, as retail's capture suggests, is the first thing to check.
-* Only Sastasha's, the Tam-Tara Deepcroft's and the Copperbell Mines' three members are recorded (Marauder, Lancer, Thaumaturge, for a
-  healer player; the same three in both, at each duty's level, `party_npc::DUTY_LEVELS`); any other member chosen
-  (their healer, other duties' members) is a Player NPC of that role, listed in a Duty Finder party list beside the
-  party NPCs' slots. A duty not in `DUTY_LEVELS` gets them at Sastasha's level 15.
+* Recorded: the Marauder, Lancer and Thaumaturge (a healer's party) and the Conjurer (a tank's, 2026-10-28) of
+  Sastasha, the Tam-Tara Deepcroft, the Copperbell Mines and the Bowl of Embers, at each duty's level
+  (`party_npc::DUTY_LEVELS`); any other member chosen (other duties' members) is a Player NPC of that role, listed in a
+  Duty Finder party list beside the party NPCs' slots. A duty not in `DUTY_LEVELS` gets them at their own level (15,
+  the Conjurer 16). With a damage dealer player the members chosen aren't recorded (they'd be the Marauder, the
+  Conjurer and the other damage dealer, untested).
+* The Conjurer (2026-10-28) heals with Cure only: its Medica (29320; 1-9 times a duty on retail, with two of the party
+  below 80 % mostly), Esuna and the instant Cure (29355) aren't cast. Its kit and heal line are medians from one run
+  of each duty, untested in game; how hard enemies hit it isn't measured (`damage_taken` 1).
+* With a player tank, Sastasha's tank lines (14298 at Chopper, 14303 after Denn) aren't recorded: nobody says them. The
+  Bowl of Embers' Conjurer lines (14328, 14330) and the missing 13981 are from one run.
 * The members' abilities that did no damage (26230, 29303, 29766, 29311, 29767, 25082, 25083) are only animations,
   and the Lancer's 29772 doesn't heal it. Their chatter in fights is at random every 150–400 s of fighting, not
   whatever made retail's members speak.
@@ -86,8 +93,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 * **The Waking Sands' layer filter** (2026-10-26) is known from The Scions of the Seventh Dawn (90338) to
   Sylph-management (90342, 2026-10-28); later visits get 90342 until their keys are recorded (a capture of retail
-  there, or the zone's filter log matched to the story). 90341 is keyed to Wood's Will Be Done (683) and, untested,
-  the other companies' 684 and 685; whether accepting 680 already brings it isn't recorded. Other zones with several layer filters send 0, as before.
+  there, or the zone's filter log matched to the story). 90341 is keyed to Wood's Will Be Done (683) and the other
+  companies' 684 (untested) and 685 (Bob's capture c99fe374, 2026-10-28); whether accepting 680 or 682 already brings
+  it isn't recorded. Other zones with several layer filters send 0, as before.
   The server's own event objects there still follow the first filter for the territory, not the key. Untested in
   game.
 
@@ -402,11 +410,13 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 * The wiki's loot lists are only in Sastasha, the Tam-Tara Deepcroft and the Copperbell Mines; their fixed-rate extras (a Triple Triad card, an orchestrion material) aren't given, and how many items a never-recorded coffer holds is taken as one.
 * Untested in game (2026-10-22): opening, the rolls, the winner's item, the coffer fading out. LootMessages name bots
-  by their actor ID; whether the client finds their names (they're in the party list) isn't known.
+  by their actor ID; whether the client finds their names (they're in the party list) isn't known. Duty Support's
+  personal loot (2026-10-28) is untested in game, and a full inventory then isn't recorded (Kawari says it couldn't
+  add the item, and it's gone).
 * A Greed or Need on a unique item the player has already isn't refused (retail answers 8). LootItem's `bonus` (set
   on retail's Aetherial Brass Wristlets, perhaps their random stats) is left at zero.
-* Only Sastasha's coffers have recorded contents; coffers 98 and 100 were never opened in the capture and hold one of
-  the others' items. A reopened coffer's SpawnTreasure (retail sends it again with its items when you come back in
+* Sastasha's coffers 98 and 100, the Tam-Tara Deepcroft's 15 and 119 and the Copperbell Mines' 59 and 65 were never
+  opened in a capture and hold what their wiki lists say. A reopened coffer's SpawnTreasure (retail sends it again with its items when you come back in
   range) isn't sent.
 
 ## Party bots
@@ -571,8 +581,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   is untested. Territory 275's own layer `QB_ManFst209_001`
   (86868, filter 86631) has event NPCs 1004667 and 1004668; retail showed only 1004668 (the scout, which the script
   also spawns from the drop-in), so the scout may show twice and 1004667 once.
-* Lord of the Inferno's battle (45): the 55 s from the third wave to the win is from the one won run; the second
-  wave's 30 s from three. Retail's NPCs fought on through the closing cutscene, Kawari's stop. The Flames' 14 and 718
+* Lord of the Inferno's battle (45): the 55 s from the third wave to the win held in both won runs (55.1 and 45.4 s
+  after sequence 5 in Dags', from 79.9 s); the second wave's 30 s from four. Retail's NPCs fought on through the closing
+  cutscene, Kawari's stop, so the second gladiator's last words after the win (retail's first won run) won't come. The Flames' 14 and 718
   and the Amalj'aa's 426 aren't modelled.
 * Underneath the Sultantree: the stranger's Flash, Sentinel and Sword Oath (seen on retail, none of them damage) have
   no action scripts and aren't in his rotation. The third pair of lesser blangas comes at 23 % of the blanga's health;

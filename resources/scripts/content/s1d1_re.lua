@@ -192,13 +192,14 @@ function onSetup(director)
     director:hide_eobj(EOBJ_SECOND_RAMBADE_BOSS_WALL)
     director:hide_eobj(EOBJ_MISTBEARD_COVE_BOSS_WALL)
 
-    -- What the coffers held on retail, one list per opening (item IDs; Bob's Chronofoil capture of five runs,
-    -- 2026-10-22.) A coffer without a recording (98, 100) holds one of these. See server/loot.rs.
-    director:treasure_loot(94, { { 3554, 4096 }, { 2684, 4096 }, { 2683, 4207 }, { 2679, 4096 } })
-    director:treasure_loot(95, { { 3034 }, { 3331 }, { 3035 } })
+    -- What the coffers held on retail, one list per opening (item IDs; Bob's Chronofoil captures of five runs,
+    -- 2026-10-22, and a sixth, c99fe374 of 2026-10-28, its last opening of 93, 94 and 95.) A coffer without a
+    -- recording (98, 100) holds one of these. See server/loot.rs.
+    director:treasure_loot(94, { { 3554, 4096 }, { 2684, 4096 }, { 2683, 4207 }, { 2679, 4096 }, { 2679, 4310 } })
+    director:treasure_loot(95, { { 3034 }, { 3331 }, { 3035 }, { 3331 } })
     director:treasure_loot(99, { { 3555 } })
     director:treasure_loot(101, { { 31422 } })
-    director:treasure_loot(93, { { 3786, 31424 }, { 31425 }, { 31426, 36374 } })
+    director:treasure_loot(93, { { 3786, 31424 }, { 31425 }, { 31426, 36374 }, { 3786, 31423 } })
     -- The wiki's lists: Chopper's (94), Captain Madison's (95), Denn's (93), and Treasure Coffers 1-4 (98 at its
     -- X 13.8 Y 9.2, 99, 100, 101.)
     director:treasure_pool(94, joined(HEAD_HANDS, ACCESSORIES))

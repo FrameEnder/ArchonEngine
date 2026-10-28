@@ -1,0 +1,22 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 17235,
+    "recorded_amounts": {
+        "29317": {
+            "npcs": 182,
+            "players": 182
+        },
+        "29323": {
+            "npcs": 12
+        },
+        "29324": {
+            "npcs": 129
+        },
+        "17235": {
+            "npcs": 1
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The trials' Duty Support Conjurer (BNpcBase 14653, BNpcName 11333, DawnQuestMember 43), who comes when the player is the tank: level 20, 432 HP in the Bowl of Embers. From Bob's Chronofoil capture c99fe374 of 2026-10-28 (visit 0.33, `questkit chronofoil --battle 0.33`: two attempts at Ifrit, the player a gladiator): the median of each action, Cure (29317) 182 on the player, Stone II (29323) 12 and Aero (29324) 129 to Ifrit and the Nail, its auto-attack (17235) 1. Its kit and timing are in `server/party_npc.rs`; hitbox not recorded."
+}

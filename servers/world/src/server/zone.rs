@@ -1457,6 +1457,7 @@ pub fn handle_zone_messages(
                 let (_, roles) =
                     party_npc::fill_duty_support(instance, &mut game_data, *from_actor_id, &chosen);
                 party_roles = roles;
+                instance.personal_loot = true;
                 party_npc::announce(&network, instance, *from_actor_id);
             }
             let room = room.map(|room| room.saturating_sub(party_roles.len()));

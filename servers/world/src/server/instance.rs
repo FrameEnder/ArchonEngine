@@ -215,6 +215,8 @@ pub struct Instance {
     /// The party's loot rule (`duty_finder::LootRule`): the leader's when the party went in full, Normal when the Duty
     /// Finder filled places (`duty_finder::loot_rule`.)
     pub loot_rule: crate::server::duty_finder::LootRule,
+    /// Duty Support: a coffer's items are the opener's, no rolls (`loot::open`.)
+    pub personal_loot: bool,
     /// The Echo and Epic Echo here, in percent (`duty_finder::refresh_echo`), and the multiplier last given the bots.
     pub echo: u16,
     pub epic_echo: u16,

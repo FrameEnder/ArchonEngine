@@ -5028,6 +5028,7 @@ async fn process_server_msg(
             }
             FromServer::TreasureSpawn(treasure) => connection.spawn_treasure(treasure).await,
             FromServer::LootWon(item_id) => connection.obtain_loot(item_id).await,
+            FromServer::PersonalLoot(item_id) => connection.obtain_personal_loot(item_id).await,
             FromServer::LinkshellDisbanded(linkshell_id, linkshell_name) => {
                 connection
                     .crossworld_linkshell_disbanded(linkshell_id, linkshell_name)

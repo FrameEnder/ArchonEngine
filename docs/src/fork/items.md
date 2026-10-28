@@ -57,8 +57,11 @@ Every gear coffer (the "Level N Weapon Coffer"s, the raid and tome coffers, also
 Coffer, 1000239… for the next ones) links to no sheet, so the contents are a table in the script, by coffer: sets of
 item IDs, one per class, the first piece deciding (its ClassJobCategory includes the current class or job: a
 paladin gets the gladiator's set), a gladiator's sword coming with its shield. `player:open_coffer(coffer, sets)`
-(`ZoneConnection::open_coffer`) uses the coffer up and gives the set as an event gives an item (the ack, the
-inventory, LogMessage 789's pop-up and EventLogMessage 750 for each piece). It does nothing, keeping the coffer, in
+(`ZoneConnection::open_coffer`) uses the coffer up and gives the set in retail's order (Bob's Chronofoil capture
+c99fe374 of 2026-10-28, Dags, a gladiator, opening the Level 18 Weapon Coffer: the Carnage Sword and the Iron Lantern
+Shield, the gladiator's set the script has): ActorControlSelf **527** (1232, 0, the item) for each piece, then the
+coffer's slot emptied, then for each piece the ack (0xFFFFFFFF, 6), its slot and LogMessage 789 (the "obtained"
+pop-up); retail sent no log line of its own (no EventLogMessage 750). It does nothing, keeping the coffer, in
 instanced content (the item's description says it can't be opened there), when the class has no set, or when the
 bags can't hold the set. A coffer not in the table says so in chat.
 

@@ -76,7 +76,9 @@ The shields never act nor move. Its death: the arena opens, cutscene 27 (1, 18, 
 **Duty Support.** The same three members as Sastasha's (DawnContent 201, members 36, 38, 37; ContentFinderCondition 2),
 at level 16 with 443, 347 and 316 HP (`party_npc::DUTY_LEVELS`), with the same kits. Their story lines: the Lancer's
 14307 34.5 s in and 14309 as the first room's leader falls, the Thaumaturge's 14311 as its boss falls, the tank's
-14312 26.5 s after the last seal is broken. The Marauder's chatter included 13953, now among its lines.
+14312 26.5 s after the last seal is broken. The Marauder's chatter included 13953, now among its lines. With a player
+tank (Bob's capture c99fe374 of 2026-10-28, Dags, visit 0.9): the Conjurer (39) in the tank's place, the same lines
+from the same members but the last, the Conjurer's 14313 26.8 s after the cutscene; the Conjurer fell once (514 s in).
 
 **Not here:** the shortcut (2000700, shown on retail as the first room is pulled: its pop ranges need the game's
 layout files to find), log 2008 (near the key, a rect's), what statuses 208 and 17 do, the BGM of the last fight.
@@ -207,7 +209,9 @@ never opened.
 **Duty Support.** The same three members at level 17 with 476, 372 and 339 HP (`party_npc::DUTY_LEVELS`). Their story
 lines: the Thaumaturge's 14315 40.3 s in, the tank's 14318 6.8 s after the first boss appears, the Lancer's 14320 4.8 s
 after the second blast clears the way, the Thaumaturge's 14322 as the second boss is pulled, the Lancer's 14324 29.4 s
-after the last boss's cutscene begins. Chatter: 13962, 13964, 13972, 13974, 13953, all already among their lines.
+after the last boss's cutscene begins. Chatter: 13962, 13964, 13972, 13974, 13953, all already among their lines. With a
+player tank (Bob's capture c99fe374, visit 0.14): the Conjurer in the tank's place, and the Thaumaturge's 14319 6.2 s
+after the first boss appeared instead of the tank's 14318; the rest as before.
 
 **The second boss's lines** (14448; all three runs alike): its six helpers (BNpcBase 14449, all layout 9040086, 369
 HP, never fought nor killed) come with it. Each 28463 (2.7 s, on itself) lands 3.0 s after it begins; 1.0 s later the
@@ -287,7 +291,10 @@ then too, the Nail gone (what retail's does to the party then isn't recorded).
 
 **The Duty Support members' lines** (NpcYell): at the pull the Thaumaturge's 14326 (first attempt) or the Lancer's
 14327 (the second), the Thaumaturge's 13693 0.3 s before the Nail appears (both), and her 13981 as Ifrit fell below 4 %;
-the Marauder's chatter 13952. See [Party NPCs](party-npcs.md) for the members (40-42).
+the Marauder's chatter 13952. See [Party NPCs](party-npcs.md) for the members (40-42). With a player tank (Bob's
+capture c99fe374 of 2026-10-28, visit 0.33: the Conjurer, 43, in the tank's place, a wipe then a win) the Conjurer said
+14328 at the first pull and 14330 0.2 s before each Nail, the Thaumaturge neither, and nobody 13981; the Lancer's 14327
+at the second pull as before (`content/w1fa_re.lua`: the Conjurer's lines when it's there, the Thaumaturge's otherwise).
 
 **The wipe** (`server/wipe.rs`, any InstanceContent): every player down (the members were still standing) and 1.0 s
 later the director's PartyWipe (0x40000005); 4.1 s after the fall 0x80000029, 0x40000013, the time left (0x4000000F,

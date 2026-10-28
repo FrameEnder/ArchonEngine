@@ -18,11 +18,13 @@
 --         javelinier on you); the scout's 204 at once, the lead's 205 10 s later
 --   two left (the won run: not at three, 8 s before; the lost ones never got there): sequence 5, the third wave (three lancers and three
 --         soldiers on the second gladiator, a javelinier on you); the lead's 206 10 s later, the scout's 207 15 s
---   55 s after sequence 5 (55.1 s, the won run, with six enemies still standing and the leader at 84 %): sequence 7
---         and the battle's scene 7 (a cutscene, 0xF8402EFB); the second gladiator's last words (210); the quest moves
---         to sequence 3
+--   55 s after sequence 5 (55.1 s, the won run, with six enemies still standing and the leader at 84 %; 45.4 s in a
+--         gladiator's won run, Bob's capture c99fe374 of 2026-10-28): sequence 7 and the battle's scene 7 (a cutscene,
+--         0xF8402EFB); the quest moves to sequence 3. The second gladiator's 210 came 0.85 s after it in the first won
+--         run as it fell (its last words: it was at 0.6 %), and not at all in the second, where it lived.
 --   an ally falling: its last words (the pugilist 209, BNpcName 1007, portrait 73229; the thaumaturge 208, 1005,
---         73227); the battle goes on without it (two fell in two of the lost runs)
+--         73227; the second gladiator 210, 994, 73228, even as the battle was won); the battle goes on without it (two
+--         fell in two of the lost runs)
 --   you down: sequence 0xFE (all three losses)
 -- The allies keep to their own: the lead on the leader, the others on the adds, the thaumaturge healing; Cure (120)
 -- on whoever of the side is lowest below 40 % (retail's medians 31-41 %, about every 6 s), the pugilist's Second
@@ -87,8 +89,9 @@ SPEAKER_GLADIATOR = { layout = BNPC_GLADIATOR, name = 994, icon = 73228 }
 SPEAKERS = {
     [BNPC_PUGILIST] = { layout = BNPC_PUGILIST, name = 1007, icon = 73229 },
     [BNPC_THAUMATURGE] = { layout = BNPC_THAUMATURGE, name = 1005, icon = 73227 },
+    [BNPC_GLADIATOR] = SPEAKER_GLADIATOR,
 }
-LAST_WORDS = { [BNPC_PUGILIST] = 209, [BNPC_THAUMATURGE] = 208 }
+LAST_WORDS = { [BNPC_PUGILIST] = 209, [BNPC_THAUMATURGE] = 208, [BNPC_GLADIATOR] = 210 }
 
 BATTLE = Battle.new()
 ACTION_CURE = 120
@@ -129,6 +132,7 @@ BATTLE:ally(BNPC_THAUMATURGE, {
 BATTLE:enemy(BNPC_LEADER, { group = "boss", attacks = BNPC_LEAD })
 
 local over = false
+local lost = false
 local fail_in = nil
 local phase = 1
 -- Timers of their own, side by side (Battle:steps runs one queue, one step after another): { updates left, fn }.
@@ -210,7 +214,6 @@ function won(director)
     BATTLE:clearSteps()
     timers = {}
     director:set_sequence(SEQUENCE_WON)
-    talk(director, SPEAKER_GLADIATOR, 210)
     -- No "Duty Complete" on retail: the cutscene at once.
     director:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN, false, FINISH_SCENE, FINISH_SCENE_FLAGS, nil, false)
 end
@@ -235,13 +238,14 @@ function onUpdate(director, health, player_health, info)
 end
 
 function onActorDeath(director, layout_id, position)
+    -- An ally's last words, even once the battle is won (retail's second gladiator), but not once it's lost.
+    if LAST_WORDS[layout_id] ~= nil and not lost then
+        talk(director, SPEAKERS[layout_id], LAST_WORDS[layout_id])
+    end
     if over then
         return
     end
     BATTLE:died(director, layout_id)
-    if LAST_WORDS[layout_id] ~= nil then
-        talk(director, SPEAKERS[layout_id], LAST_WORDS[layout_id])
-    end
     after(DEATH_COUNTS_AFTER, function(d) counted(d) end)
 end
 
@@ -262,6 +266,7 @@ function onPlayerDeath(director)
         return
     end
     over = true
+    lost = true
     BATTLE:clearSteps()
     timers = {}
     director:set_sequence(SEQUENCE_FAILED)

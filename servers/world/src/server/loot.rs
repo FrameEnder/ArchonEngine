@@ -8,6 +8,11 @@
 //! Need rolls if there are any, otherwise the Greed rolls (LootMessage 0 for each, 1 for the winner, LootResult.) With
 //! no rolls, someone who didn't pass gets it with a roll of 0 (LootMessage 3, as Bob got two items on retail), and if
 //! everyone passed it's lost (LootMessage 2.) The coffer fades out once all its items are decided.
+//!
+//! With Duty Support a coffer is the opener's alone (Bob's Chronofoil capture c99fe374 of 2026-10-28, ten coffers in
+//! Tam-Tara and Copperbell): no LootList, OpenedTreasure with no times, each item straight to them (LootMessage 3, or
+//! 8 and 2 for a unique item they already have, `ZoneConnection::obtain_personal_loot`), and the coffer fades out
+//! 4 s later (3.96-4.00 s.)
 
 use std::{
     collections::HashMap,
@@ -132,7 +137,12 @@ pub struct Coffer {
     bots_due: Vec<(ObjectId, usize, Instant)>,
     /// The first slot's LootItem serial.
     first_serial: u32,
+    /// When it fades out (a personal coffer's, `PERSONAL_FADE_AFTER` after it opened.)
+    fade_at: Option<Instant>,
 }
+
+/// How long after a personal coffer (Duty Support) opened it faded out on retail.
+const PERSONAL_FADE_AFTER: Duration = Duration::from_secs(4);
 
 /// Who can roll: the players here and their bots.
 fn members(instance: &Instance) -> Vec<ObjectId> {
@@ -389,6 +399,10 @@ pub fn open(
 
     let items = roll_contents(instance, game_data, base_id);
     let now = Instant::now();
+    if instance.personal_loot {
+        open_personal(network, instance, opener, treasure_id, items, now);
+        return;
+    }
     let first_serial = instance.loot_serial;
     instance.loot_serial += items.len() as u32;
     let mut coffer = Coffer {
@@ -403,6 +417,7 @@ pub fn open(
             .collect(),
         bots_due: Vec::new(),
         first_serial,
+        fade_at: None,
     };
     for bot in instance.party_bots.keys() {
         for slot in 0..items.len() {
@@ -458,6 +473,55 @@ pub fn open(
     if empty {
         fade_out(network, instance, treasure_id);
     }
+}
+
+/// A Duty Support coffer: its items go straight to `opener` (see the module's description.)
+fn open_personal(
+    network: &mut NetworkState,
+    instance: &mut Instance,
+    opener: ObjectId,
+    treasure_id: ObjectId,
+    items: Vec<u32>,
+    now: Instant,
+) {
+    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::OpenedTreasure {
+        unk1: 0,
+        unk2: 0,
+        unk3: 0,
+        unk4: 0,
+        entity_id: treasure_id,
+        unk6: 0,
+    });
+    network.send_to_instance(
+        ObjectId::default(),
+        instance,
+        FromServer::PacketSegment(ipc, treasure_id),
+        DestinationNetwork::ZoneClients,
+    );
+    for item in &items {
+        network.send_to_by_actor_id(
+            opener,
+            FromServer::PersonalLoot(*item),
+            DestinationNetwork::ZoneClients,
+        );
+    }
+    instance.coffers.insert(
+        treasure_id,
+        Coffer {
+            opened_at: now,
+            slots: items
+                .iter()
+                .map(|item_id| LootSlot {
+                    item_id: *item_id,
+                    choices: HashMap::new(),
+                    decided: true,
+                })
+                .collect(),
+            bots_due: Vec::new(),
+            first_serial: 0,
+            fade_at: Some(now + PERSONAL_FADE_AFTER),
+        },
+    );
 }
 
 /// `member` chooses for one item. A player's choice is answered (LootRollResult); everyone hears they cast their lot.
@@ -666,7 +730,12 @@ pub fn tick(network: &mut NetworkState, instance: &mut Instance) {
     let now = Instant::now();
     let mut due = Vec::new();
     let mut expired = Vec::new();
+    let mut fading = Vec::new();
     for (treasure_id, coffer) in &mut instance.coffers {
+        if coffer.fade_at.is_some_and(|at| at <= now) {
+            coffer.fade_at = None;
+            fading.push(*treasure_id);
+        }
         coffer.bots_due.retain(|(bot, slot, at)| {
             if *at <= now {
                 due.push((*treasure_id, *bot, *slot));
@@ -694,6 +763,9 @@ pub fn tick(network: &mut NetworkState, instance: &mut Instance) {
     }
     for (treasure_id, slot) in expired {
         decide(network, instance, treasure_id, slot);
+    }
+    for treasure_id in fading {
+        fade_out(network, instance, treasure_id);
     }
 }
 

@@ -20,9 +20,21 @@ level and HP are in `party_npc::DUTY_LEVELS` (by ContentFinderCondition). See [D
 DawnContent 203 as members 40, 42, 41, the same Marauder, Lancer and Thaumaturge but other DawnQuestMember rows with
 BNpcBases 14650-14652, BNpcNames 11330-11332 and ActorControlSelf 276/1525 values 10004-10006 and 1042780-1042782
 (slots 0-2: the Marauder, the Thaumaturge, the Lancer), at level 20 with 618, 469 and 428 HP, fighting with the same
-kits and pet IDs (1, 9, 5): `party_npc::TRIAL_MEMBERS`, their timelines `TrialSupport*_<base>.json` (what each action
+kits: `party_npc::TRIAL_MEMBERS`, their timelines `TrialSupport*_<base>.json` (what each action
 did to Ifrit and the Nail). Retail spawned them a step ahead of the player in a wedge (the Marauder 2 yalms ahead, the
 other two 1 ahead and 1.72 to each side); Kawari spawns them on the player, as in the dungeons.
+
+**The Conjurer, for a tank** (Bob's Chronofoil capture c99fe374 of 2026-10-28, Dags, a gladiator): the client chose
+39, 38, 37 in the Tam-Tara Deepcroft and the Copperbell Mines (DawnContent 201 and 202) and 43, 42, 41 in the Bowl of
+Embers (203), the Conjurer taking the tank's place and its slot (0: 276 10003 and 1525 1042779 in the dungeons, 10007
+and 1042783 in the Bowl), the other two as before. Its BNpcBase is 14649 (BNpcName 11329) in the dungeons and 14653
+(11333) in the Bowl, ClassJob 6, at 16 with 316 HP, 17 with 339 and 20 with 432: member 39 in `party_npc::MEMBERS` and
+43 in `TRIAL_MEMBERS`, its timelines `DutySupportConjurer_14649.json` and `TrialSupportConjurer_14653.json`. Its HP in
+Sastasha isn't recorded (it comes at its own level, 16, there).
+
+**`pet_id` is the slot's**, not the member's: 1, 5 and 9 for slots 0, 1 and 2, whoever is in them (the Marauder had 1
+in slot 0 in Sastasha, the Conjurer 1 in slot 0 with a tank; the Thaumaturge 5 and the Lancer 9 in slots 1 and 2 in
+every run).
 
 ## Registering
 
@@ -46,8 +58,8 @@ rows), in party slot order, up to the first zero byte. The words after it aren't
 0x6FFF in the third, which Kawari took for members 255 and 111 until 2026-10-23, so a Player NPC joined for them. Upstream already queued the duty from the first word; the fork keeps the members
 (`ZoneConnection::duty_support`, cleared by any other registration) and sends them with `JoinContent`. When the player
 has loaded into the duty, `party_npc::fill_duty_support` spawns the recorded members they chose and the Duty Finder's
-bot filling (`party_bot::fill_duty_party`) takes any role still missing, so a member nobody has recorded yet (a tank's
-healer, for one) is a Player NPC of that role for now.
+bot filling (`party_bot::fill_duty_party`) takes any role still missing, so a member nobody has recorded yet is a
+Player NPC of that role for now.
 
 ## The members (Sastasha)
 
@@ -100,6 +112,16 @@ which are NPC-only actions (not the players'):
 | Marauder | 17058, every 3.0 s | 2.67 s | 29299, 29300 | every 20 s (first 9 s in): 26230, 29303 on itself, then 29764, 29765 twice at 2.13 s, then 29766 on itself | 29291 thrown at a fresh pack (21 uses), 29294 its area combo (34, up to 8 hit), 25083 on an enemy turning on someone (30 s at least between), 25082 on itself in pulls of three or more (100 s) |
 | Lancer | 17059, every 3.0 s | 2.67 s | 29305, 29306 | every 11 s (first 9 s in): 26230, 29305, 29311 on itself, 29772, 29767 on itself | each fight opens with 29304 |
 | Thaumaturge | none | 3.07 s (1.7 s casts) | 29314, 29315 | 29312 every 9 s (first 13 s in) | |
+| Conjurer | 17235 (1 a hit, on what's close) | 2.1 s (1 s casts) | Stone 29322 (Stone II 29323 in the Bowl) | Aero 29324 every 12 s (first 12 s in) | Cure 29317 on the lowest of the party below 85 % (`Kit::heal`) |
+
+**The Conjurer heals** (the same capture, three duties): Cure (29317, 1.5 s cast) 143 times in the Tam-Tara
+Deepcroft, 76 in the Copperbell Mines, 26 in the Bowl, nearly all on the player (the tank: 133 of 143, 67 of 76, all
+26); its target was at 73-76 % in the median, never above 85 % (`PartyBot::heal_below`, 85 for it; the made-up
+healers' is 60 %). It healed 124 at 16, 126 at 17 and 182 at 20 (the timelines' `players_by_level` and `players`).
+Medica (29320) came 1, 5 and 9 times, mostly with two of the party below 80 % (Kawari doesn't cast it: an NPC's area
+heal reaches only players); Esuna (25043) once and an instant Cure (29355) three times. Its Aero showed no status (no
+damage over time). It fought from 6.9 yalms (the median), Stone hitting for 14 and Aero for 152 in the dungeons (12
+and 129 in the Bowl).
 
 **The Marauder's leap** (29291, a pack's opener): it's used from about 10 yalms off, and the Marauder lands beside
 the enemy. In Bob's Copperbell Mines capture (bd298651 visit 0.5, 2026-10-25), three times out of three: the hit
@@ -151,15 +173,25 @@ Their lines are NpcYell packets from the member, under its BNpcName:
 * **In the Copperbell Mines** (Bob's capture of 2026-10-25, `bd298651` visit 0.5) the same three at level 17 (476,
   372, 339 HP): the Thaumaturge said 14315 and 14322, the tank 14318, the Lancer 14320 and 14324 (when, in
   [Dungeons](dungeons.md#the-copperbell-mines)); their chatter was lines they already had.
-* **The duty's story lines**, from the director (`director:party_npc_yell(role, line, delay)`, the role "tank",
-  "healer", "melee" or "ranged"; nobody of that role, no line): in Sastasha (`content/s1d1_re.lua`) the Lancer's 14296
+* **The duty's story lines**, from the director (`director:party_npc_yell(role, line, delay, other_role,
+  other_line)`, the role "tank", "healer", "melee" or "ranged"; nobody of that role, no line, or when no party NPC
+  plays it at all (the player does), `other_line` from `other_role`; line 0 is nothing): in Sastasha (`content/s1d1_re.lua`) the Lancer's 14296
   43.6 s after the duty began, the Marauder's 14298 as Chopper came, the Lancer's 14300 2 s after the first captain's
   last line, the Thaumaturge's 14302 2 s after the second's, the Marauder's 14303 15.5 s after Denn's cutscene began.
+* **With a tank** (Bob's capture c99fe374) the tank's lines went to another member as lines of their own, at the same
+  moment: the Tam-Tara Deepcroft's last, 14313 from the Conjurer 26.8 s after the last seal's cutscene (the tank's
+  14312 at 26.5 s); the Copperbell Mines' first boss's, 14319 from the Thaumaturge 6.2 s after it appeared (14318 at
+  6.8). The other lines came from the same members as before. In the Bowl of Embers the Conjurer said its own at the
+  first pull (14328, where the Thaumaturge had said 14326) and 0.2 s before each Nail (14330, the Thaumaturge's 13693),
+  and nobody said 13981 as Ifrit fell; the Lancer's 14327 at the second pull was as before. The Conjurer had no
+  chatter of its own in any of them.
 
 ## Not done yet
 
-* Only Sastasha's three are recorded; other duties' members, and Sastasha's healer (for a player who isn't one),
-  are Player NPCs until a run with them is recorded.
+* Recorded: the Marauder, Lancer, Thaumaturge and Conjurer of the three dungeons and the Bowl. Other duties'
+  members are Player NPCs until a run with them is recorded. Sastasha's lines for the tank, with a player tank, aren't
+  recorded (no line then).
+* The Conjurer's Medica, Esuna and instant Cure aren't cast.
 * What 26230, 29303, 29766, 29311, 29767, 25082 and 25083 do (statuses, enmity) isn't known: they're only their
   animation. The Lancer's 29772 healed it 30 HP on retail; not here.
 * Retail's DawnContent, DawnQuestMember and DawnMemberUIParam sheets aren't read: the members are recorded numbers.

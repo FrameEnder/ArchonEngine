@@ -35,10 +35,14 @@ TALK_DEFEATED = 2605
 
 -- The Duty Support members' lines (NpcYell): at the pull the Thaumaturge's 14326 (the first attempt) and the Lancer's
 -- 14327 (the second), the Thaumaturge's 13693 0.3 s before the Nail appears (both), and 13981 1.3 s after Ifrit fell
--- below 4 % (4.32 to 3.6 %; he had been below 5 % for 5 s.)
+-- below 4 % (4.32 to 3.6 %; he had been below 5 % for 5 s.) With the Conjurer in the party (a tank's, Bob's Chronofoil
+-- capture c99fe374 of 2026-10-28) it said both of the first attempt's instead, its own lines: 14328 at the pull, 14330
+-- 0.2 s before each Nail; the Thaumaturge said neither, and nobody said 13981 as Ifrit fell.
 LINE_PULL_FIRST = 14326
+LINE_PULL_FIRST_HEALER = 14328
 LINE_PULL_AGAIN = 14327
 LINE_NAIL = 13693
+LINE_NAIL_HEALER = 14330
 LINE_LOW = 13981
 LOW_AT = 4
 
@@ -146,7 +150,7 @@ function summonNail(director)
     director:delay(SUMMON_AFTER)
     director:play_action_timeline(IFRIT, SUMMON_TIMELINE)
     director:delay(NAIL_LINE_AFTER)
-    director:party_npc_yell("ranged", LINE_NAIL)
+    director:party_npc_yell("healer", LINE_NAIL_HEALER, 0, "ranged", LINE_NAIL)
     director:delay(NAIL_AFTER)
     director:spawn_bnpc(NAIL)
     director:hold_bnpc(NAIL)
@@ -271,7 +275,7 @@ function onUpdate(director, health, player_health, info)
         pulled = true
         talk(director, TALK_PULL)
         if attempts == 1 then
-            director:party_npc_yell("ranged", LINE_PULL_FIRST)
+            director:party_npc_yell("healer", LINE_PULL_FIRST_HEALER, 0, "ranged", LINE_PULL_FIRST)
         else
             director:party_npc_yell("melee", LINE_PULL_AGAIN)
         end
@@ -289,7 +293,8 @@ function onUpdate(director, health, player_health, info)
     end
     if not said_low and hp < LOW_AT then
         said_low = true
-        director:party_npc_yell("ranged", LINE_LOW)
+        -- Only without a Conjurer among them (line 0: nothing.)
+        director:party_npc_yell("healer", 0, 0, "ranged", LINE_LOW)
     end
 end
 

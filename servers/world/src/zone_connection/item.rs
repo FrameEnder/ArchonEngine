@@ -450,31 +450,104 @@ impl ZoneConnection {
             return;
         }
         tracing::info!("Coffer {coffer_id} opened for class {class_job}: {given:?}");
+        // As retail opened a Level 18 Weapon Coffer for a gladiator (Bob's Chronofoil capture c99fe374 of 2026-10-28,
+        // Dags: the Carnage Sword and the Iron Lantern Shield): ActorControlSelf 527 (1232, 0, the item) for each
+        // piece, the coffer's slot emptied, then for each piece the ack (0xFFFFFFFF, 6), its slot and LogMessage 789
+        // (the "obtained" pop-up); no log line of its own.
+        const COFFER_OBTAINED: u32 = 527;
+        const COFFER_OBTAINED_ARG: u32 = 1232;
+        const LOG_MESSAGE_ITEM_POP_UP: u32 = 789;
+        for id in &given {
+            self.actor_control_self(ActorControlCategory::Unknown {
+                category: COFFER_OBTAINED,
+                param1: COFFER_OBTAINED_ARG,
+                param2: 0,
+                param3: *id,
+                param4: 0,
+                param5: 0,
+            })
+            .await;
+        }
         self.item_used_up(coffer_id).await;
         for id in given {
-            self.obtain_event_item(id, 1).await;
+            let new_item = {
+                let mut game_data = self.game_data.lock();
+                game_data
+                    .get_item_info(ItemInfoQuery::ById(id))
+                    .map(|info| Item::new(&info, 1))
+            };
+            let Some(placed) =
+                new_item.and_then(|item| self.player_data.inventory.add_obtained_item_at(item))
+            else {
+                self.send_notice(ERR_INVENTORY_ADD_FAILED).await;
+                continue;
+            };
+            self.send_inventory_ack(u32::MAX, INVENTORY_ACTION_ACK_GENERAL, 0)
+                .await;
+            self.send_inventory_slot(placed.0, placed.1).await;
+            self.actor_control_self(ActorControlCategory::LogMessage {
+                log_message: LOG_MESSAGE_ITEM_POP_UP,
+                id,
+            })
+            .await;
         }
     }
 
     /// An item won from a coffer (`server/loot.rs`): the LootMessages went to the party already; retail then sent the
-    /// winner the item's slot (UpdateItem.)
+    /// winner the ack (0xFFFFFFFF, 6), the item's slot and ActorControlSelf LogMessage 789 with the item (the "obtained"
+    /// pop-up), the same for a roll won in a Duty Finder party and a Duty Support coffer's item (Bob's Chronofoil capture
+    /// c99fe374 of 2026-10-28: Sastasha, Tam-Tara and Copperbell.)
     pub async fn obtain_loot(&mut self, id: u32) {
+        const LOG_MESSAGE_ITEM_POP_UP: u32 = 789;
         let new_item = {
             let mut game_data = self.game_data.lock();
             game_data
                 .get_item_info(ItemInfoQuery::ById(id))
                 .map(|info| Item::new(&info, 1))
         };
-        let Some(new_item) = new_item else {
-            return;
-        };
-        if !self.player_data.inventory.add_obtained_item(new_item) {
+        let Some(placed) =
+            new_item.and_then(|item| self.player_data.inventory.add_obtained_item_at(item))
+        else {
             self.send_notice(ERR_INVENTORY_ADD_FAILED).await;
             return;
-        }
+        };
         self.send_inventory_ack(u32::MAX, INVENTORY_ACTION_ACK_GENERAL, 0)
             .await;
-        self.send_inventory().await;
+        self.send_inventory_slot(placed.0, placed.1).await;
+        self.actor_control_self(ActorControlCategory::LogMessage {
+            log_message: LOG_MESSAGE_ITEM_POP_UP,
+            id,
+        })
+        .await;
+    }
+
+    /// An item of a coffer that's the opener's alone (Duty Support, `server/loot.rs`): as retail, LootMessage 3 (who,
+    /// the item, 1) and the item (`obtain_loot`); a unique item they already have is lost instead, LootMessage 8 (who,
+    /// the item, 1, 8) then 2 (the item, 1) (Bob's Chronofoil capture c99fe374: a second Acolyte's Skirt in Tam-Tara,
+    /// the Plundered Gauntlets and a second Foestriker's Tabard in Copperbell.)
+    pub async fn obtain_personal_loot(&mut self, id: u32) {
+        let me = self.player_data.character.actor_id.0;
+        let unique = self.game_data.lock().item_is_unique(id);
+        if unique && self.player_data.inventory.count_owned(id) > 0 {
+            for (kind, params) in [
+                (
+                    LOOT_MESSAGE_ALREADY_HAVE,
+                    [me, id, 1, LOOT_ALREADY_HAVE_REASON, 0, 0, 0],
+                ),
+                (LOOT_MESSAGE_LOST, [id, 1, 0, 0, 0, 0, 0]),
+            ] {
+                let ipc =
+                    ServerZoneIpcSegment::new(ServerZoneIpcData::LootMessage { kind, params });
+                self.send_ipc_self(ipc).await;
+            }
+            return;
+        }
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::LootMessage {
+            kind: LOOT_MESSAGE_OBTAINED,
+            params: [me, id, 1, 0, 0, 0, 0],
+        });
+        self.send_ipc_self(ipc).await;
+        self.obtain_loot(id).await;
     }
 
     pub async fn send_inventory_ack(&mut self, sequence: u32, action_type: u8, unk1: u8) {
@@ -803,5 +876,9 @@ impl ZoneConnection {
     }
 }
 
-/// LootMessage's kind for an item obtained directly (an enemy's drop.)
+/// LootMessage's kind for an item obtained directly (an enemy's drop, a Duty Support coffer's item.)
 const LOOT_MESSAGE_OBTAINED: u32 = 3;
+/// LootMessage's kinds for a unique item one already has: 8 (with the reason, 8), then 2, the item lost.
+const LOOT_MESSAGE_ALREADY_HAVE: u32 = 8;
+const LOOT_ALREADY_HAVE_REASON: u32 = 8;
+const LOOT_MESSAGE_LOST: u32 = 2;

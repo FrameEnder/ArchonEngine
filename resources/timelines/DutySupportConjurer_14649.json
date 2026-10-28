@@ -1,0 +1,25 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 17235,
+    "recorded_amounts": {
+        "29317": {
+            "npcs": 126,
+            "players_by_level": {
+                "16": 124,
+                "17": 126
+            }
+        },
+        "29322": {
+            "npcs": 14
+        },
+        "29324": {
+            "npcs": 152
+        },
+        "17235": {
+            "npcs": 1
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The dungeons' Duty Support Conjurer (BNpcBase 14649, BNpcName 11329, DawnQuestMember 39), who comes when the player is the tank: level 16 with 316 HP in the Tam-Tara Deepcroft, 17 with 339 in the Copperbell Mines. From Bob's Chronofoil capture c99fe374 of 2026-10-28 (visits 0.9 and 0.14, `questkit chronofoil --battle`: both with Duty Support, the player a gladiator): the median of each action, Cure (29317) 124 on the player at 16 and 126 at 17 (126 on the members), Stone (29322) 14 and Aero (29324) 152 to the enemies, its auto-attack (17235) 1. Its kit and timing are in `server/party_npc.rs`; hitbox not recorded."
+}
