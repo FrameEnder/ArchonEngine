@@ -720,6 +720,64 @@ impl ZoneConnection {
         ))
     }
 
+    /// The duty the player is in was cleared (`newcomer_here`: someone there hadn't cleared it before.) As retail (Bob's
+    /// Chronofoil captures c99fe374, cc62ad94, 700cc294, 3ec702a8 and f5e78b52: 14 clears), from the duty's director:
+    /// on the player's own first clear the duty's clear EXP, then EventLogMessage 9393 with it; on the first clear or
+    /// with a newcomer there the first-timer bonus's EXP, then EventLogMessage 2163 with the EXP and gil, then the gil.
+    /// A repeat clear with nobody new gave neither (ba1b86c5's two Copperbell Mines, cc26e0ea's two Tam-Taras); the
+    /// arcanist's second Copperbell, a Duty Finder party, had the bonus without the clear EXP. The duty is remembered as
+    /// cleared (`set_content_cleared`.)
+    pub async fn duty_clear_rewards(&mut self, content_id: u16, newcomer_here: bool) {
+        let first_clear = !self.has_cleared_content(content_id);
+        self.set_content_cleared(content_id);
+        let Some((clear_exp, bonus_exp, bonus_gil)) =
+            self.game_data.lock().get_duty_clear_rewards(content_id)
+        else {
+            return;
+        };
+        let handler_id = HandlerId::new(HandlerType::InstanceContent, content_id);
+        tracing::info!(
+            "Duty {content_id} cleared (first clear {first_clear}, a newcomer there {newcomer_here}): {clear_exp} EXP, bonus {bonus_exp} EXP and {bonus_gil} gil"
+        );
+        if first_clear && clear_exp > 0 {
+            self.add_exp(clear_exp as i32).await;
+            self.send_director_log(handler_id, DUTY_CLEAR_EXP_LOG, vec![clear_exp])
+                .await;
+        }
+        if (first_clear || newcomer_here) && (bonus_exp > 0 || bonus_gil > 0) {
+            if bonus_exp > 0 {
+                self.add_exp(bonus_exp as i32).await;
+            }
+            self.send_director_log(
+                handler_id,
+                DUTY_FIRST_TIMER_BONUS_LOG,
+                vec![bonus_exp, bonus_gil],
+            )
+            .await;
+            if bonus_gil > 0 {
+                crate::zone_connection::item::add_gil(self, bonus_gil);
+                self.send_inventory_slot(ContainerType::Currency, 0).await;
+            }
+        }
+    }
+
+    /// A duty's log line (EventLogMessage from its director.)
+    async fn send_director_log(
+        &mut self,
+        handler_id: HandlerId,
+        message_type: u32,
+        params: Vec<u32>,
+    ) {
+        let message = EventLogMessage {
+            handler_id,
+            message_type,
+            params,
+        };
+        if let Some(ipc) = message.package() {
+            self.send_ipc_self(ipc).await;
+        }
+    }
+
     /// The duty a roulette rolled was cleared: its first clear since the day's reset (15:00 UTC, `server/daily.rs`,
     /// kept across restarts) gives the roulette's bonus, gil and for Leveling EXP (`duty_finder::roulette_bonus`.)
     /// Retail's packets for it aren't recorded; the gil comes with the quest reward's log line (1605), the EXP with
@@ -810,6 +868,10 @@ impl ZoneConnection {
         }
     }
 }
+
+/// LogMessage rows for a cleared duty's first-clear EXP, and for its first-timer bonus (EXP, gil.)
+const DUTY_CLEAR_EXP_LOG: u32 = 9393;
+const DUTY_FIRST_TIMER_BONUS_LOG: u32 = 2163;
 
 /// LogMessage rows for a quest's rewards: the gil, an item, items with a count.
 const QUEST_REWARD_GIL_LOG: u32 = 1605;

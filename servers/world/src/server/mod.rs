@@ -3623,6 +3623,12 @@ pub async fn server_main_loop(
 
                     set_character_mode(instance, &mut network, from_actor_id, mode, arg, false);
                 }
+                ToServer::DutyNewcomer(actor_id) => {
+                    let mut data = data.lock();
+                    if let Some(instance) = data.find_actor_instance_mut(actor_id) {
+                        instance.newcomers.insert(actor_id);
+                    }
+                }
                 ToServer::BroadcastActorControl(from_actor_id, actor_control) => {
                     let mut network = network.lock();
                     let data = data.lock();

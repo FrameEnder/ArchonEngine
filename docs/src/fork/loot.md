@@ -124,6 +124,12 @@ passed 33 times and greeded twice, and never needed.
 
 Bots don't open coffers themselves yet (retail's players opened the bosses' 1.5–2.2 s after they appeared).
 
+## Enemies' gil
+
+In a duty with another player there, the duty's own enemies drop a few gil for each player (LootMessage 9, then
+ActorControlSelf 42); bosses and the adds and waves the director spawns don't, and with Duty Support nothing drops,
+like the coffers' rolls. Amounts and retail's counts: [Dungeons: clear rewards](dungeons.md#clear-rewards).
+
 ## Loot rules
 
 Greed Only, and Lootmaster as Kawari plays it, turn every Need into a Greed when the party went in full in a duty that

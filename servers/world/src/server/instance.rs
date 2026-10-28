@@ -217,6 +217,12 @@ pub struct Instance {
     pub loot_rule: crate::server::duty_finder::LootRule,
     /// The players' jumps and falls, for fall damage (`fall.rs`.)
     pub falls: HashMap<ObjectId, crate::server::fall::FallState>,
+    /// The battle NPCs of the zone's own layout, spawned as the instance was made (not by its director): in a duty
+    /// they drop gil when another player is there (`actor::kill_gil`.)
+    pub layout_npcs: HashSet<ObjectId>,
+    /// The players here who hadn't cleared this duty before (`ToServer::DutyNewcomer`): with one in the party everyone
+    /// gets the duty's first-timer bonus when it's cleared.
+    pub newcomers: HashSet<ObjectId>,
     /// The Echo and Epic Echo here, in percent (`duty_finder::refresh_echo`), and the multiplier last given the bots.
     pub echo: u16,
     pub epic_echo: u16,
@@ -312,7 +318,9 @@ impl Instance {
         if !explorer_mode {
             let config = get_config();
             for npc in instance.zone.get_npcs(game_data) {
-                instance.insert_npc(ObjectId(fastrand::u32(..)), npc, &config, game_data);
+                let actor_id = ObjectId(fastrand::u32(..));
+                instance.insert_npc(actor_id, npc, &config, game_data);
+                instance.layout_npcs.insert(actor_id);
             }
         }
 

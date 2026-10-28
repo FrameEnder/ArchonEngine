@@ -434,6 +434,21 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   entries (retail: slot, status 0, source 0xE0000000), Arm's Length's Slow on attackers, and enemies' debuffs from
   Bob's captures (scan `enemy_statuses.csv`) aren't done.
 
+## Duty clear rewards and enemies' gil (2026-10-28)
+
+* Untested in game. The cleared bitmasks are indexed as upstream's unlocked ones (InstanceContent ID less 1, 10001,
+  20001 or 30001), which isn't checked against the client: if it's wrong the Duty Finder shows the wrong duties as
+  cleared. Characters that cleared duties before 2026-10-28 have none recorded, so each one's next clear counts as its
+  first (the clear EXP and the bonus once more).
+* The duties' boss EXP (FinalBossExp, BossExp: retail's 19,386 for Sastasha's last boss) isn't given; bosses give the
+  usual kill EXP.
+* Enemies' gil is fitted to levels 15-17 only (uniform, so level 17's 9 gil comes about a fifth as often as on retail); whether higher-level duties' enemies follow the same factor isn't
+  recorded. Which enemies drop is "spawned with the instance" in Kawari, which matched retail's dungeons' trash in the
+  three dungeons; a duty whose script spawns its trash itself would drop nothing. Each player rolls their own amount
+  (retail's other players' drops aren't in the captures). Open-world enemies give none (retail: three drops of 1 gil
+  in 46 field kills, not modelled).
+* Synced-down players get the clear EXP and the bonus as anyone does (retail's clears were all at the duty's level).
+
 ## Coffers and loot
 
 * The wiki's loot lists are only in Sastasha, the Tam-Tara Deepcroft and the Copperbell Mines; their fixed-rate extras (a Triple Triad card, an orchestrion material) aren't given, and how many items a never-recorded coffer holds is taken as one.

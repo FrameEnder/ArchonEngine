@@ -4642,8 +4642,12 @@ async fn process_server_msg(
                     .target_sign_toggled(sign_id, from_actor_id, target_actor)
                     .await
             }
-            FromServer::DutyCleared(content_id) => {
+            FromServer::DutyCleared(content_id, newcomer_here) => {
                 connection.duty_cleared = Some(content_id);
+                // Its first clear's EXP and the first-timer bonus (`ZoneConnection::duty_clear_rewards`.)
+                connection
+                    .duty_clear_rewards(content_id, newcomer_here)
+                    .await;
                 // Retail's wear and spiritbond came with the duty's completion (docs/src/fork/spiritbond.md.)
                 connection.wear_gear_for_content(content_id).await;
                 // A roulette's first clear of the day (`duty_finder::roulette_bonus`.)
@@ -4678,12 +4682,17 @@ async fn process_server_msg(
                 name_id,
                 layout_id,
                 level,
+                gil,
             } => {
                 connection
                     .on_battle_npc_killed(
                         lua_player, events, actor_id, base_id, name_id, layout_id, level,
                     )
                     .await;
+                // Retail's gil came after the kill's EXP.
+                if gil > 0 {
+                    connection.obtain_dropped_gil(gil).await;
+                }
             }
             FromServer::QuestEventActionInterrupted => {
                 if let Some((_, event)) = events.last() {

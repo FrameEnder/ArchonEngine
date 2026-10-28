@@ -13,6 +13,34 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | The Copperbell Mines | 3 | 1038 | `content/w1d1_re.lua` | one run with Duty Support and two Duty Finder runs (2026-10-25) |
 | The Bowl of Embers (Ifrit) | 56 | 1045 | `content/w1fa_re.lua` | one run with Duty Support, two attempts (2026-10-27) |
 
+## Clear rewards
+
+What a cleared duty gives (`ZoneConnection::duty_clear_rewards`), as retail did in 14 clears of Sastasha, the Tam-Tara
+Deepcroft, the Copperbell Mines and the Bowl of Embers (Bob's Chronofoil captures c99fe374, cc62ad94, 700cc294,
+3ec702a8 and f5e78b52, 2026-10-20 to 10-28), all from the duty's director and in this order:
+
+1. **The player's own first clear**: the clear EXP, the InstanceContent column after FinalBossExp (unnamed in the
+   sheet: Sastasha 18,800, Tam-Tara 19,600, Copperbell 24,200; the Bowl of Embers 0), then EventLogMessage 9393 with
+   it.
+2. **The first-timer bonus**, on the first clear or whenever someone in the party hadn't cleared it (the arcanist's
+   second Copperbell, a Duty Finder party, had the bonus without the clear EXP): NewPlayerBonusExp, then
+   EventLogMessage 2163 with NewPlayerBonusExp and NewPlayerBonusGil, then the gil's slot (Sastasha 2,100 EXP and
+   2,500 gil; Tam-Tara 2,200 and 2,600; Copperbell 2,700 and 2,700; the Bowl 90 and 1,500).
+3. A repeat clear with nobody new gave neither (ba1b86c5's two Copperbell runs, cc26e0ea's two Tam-Taras).
+
+InstanceClearGil (400 for the three dungeons) and InstanceClearExp were never given. Each player's connection says
+whether they're new as they enter (`ToServer::DutyNewcomer`, `Instance::newcomers`; party NPCs and bots never are), the
+clear tells everyone (`FromServer::DutyCleared`'s second value), and the duty is then remembered as cleared: the
+cleared bitmasks in the character's content data (`set_content_cleared`, indexed as upstream's unlocked ones: dungeons
+from InstanceContent 1, guildhests from 10001, trials from 20001, raids from 30001), which the client is sent at login.
+
+**Enemies' gil**: in a duty with another player there, each of the zone's own enemies (spawned as the instance was
+made, `Instance::layout_npcs`; not the bosses, adds and waves the director spawns) drops gil for each player it
+credits: its level × 0.400-0.532, rounded down (`actor::kill_gil`), after the kill's EXP, as the gil's slot,
+LootMessage 9 with the amount and ActorControlSelf 42. Retail: 133 of 133 such kills in the Duty Finder runs dropped
+(level 15: 6-7 gil, 16: 6-8, 17: 6-9), none of the 83 boss, add and wave kills, and none of the 208 kills in Duty
+Support runs (no other player) ([Coffers and Loot](loot.md#enemies-gil)).
+
 ## The Tam-Tara Deepcroft
 
 From Bob's Chronofoil captures of 2026-10-24: `3ec702a8` visit 0.3 (23 minutes with Duty Support, during Fire in the

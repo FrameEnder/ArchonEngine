@@ -2463,7 +2463,7 @@ pub fn director_tick(
                 network.send_to_instance(
                     ObjectId::default(),
                     instance,
-                    FromServer::DutyCleared(instance.content_id),
+                    FromServer::DutyCleared(instance.content_id, !instance.newcomers.is_empty()),
                     DestinationNetwork::ZoneClients,
                 );
             }

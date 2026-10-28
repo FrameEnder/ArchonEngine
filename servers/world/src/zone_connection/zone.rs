@@ -65,6 +65,16 @@ impl ZoneConnection {
             self.entered_roulette = None;
         }
 
+        // In a duty they haven't cleared, they're one of its newcomers (the first-timer bonus is everyone's then.)
+        if let Some(handler) = handler_id
+            && handler.handler_type() == HandlerType::InstanceContent
+            && !self.has_cleared_content(handler.event_id() as u16)
+        {
+            self.handle
+                .send(ToServer::DutyNewcomer(self.player_data.character.actor_id))
+                .await;
+        }
+
         // Quest battles are instanced content too, but don't come from the Duty Finder.
         let bound_by_duty = content_finder_condition_id != 0
             || handler_id.is_some_and(|x| x.handler_type() == HandlerType::QuestBattle);

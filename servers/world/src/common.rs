@@ -214,20 +214,22 @@ pub enum FromServer {
     TargetSignToggled(u32, ObjectId, ObjectTypeId),
     /// Request the client to begin preparing to leave this content.
     LeaveContent,
-    /// The duty the player is in was cleared: its InstanceContent ID.
-    DutyCleared(u16),
+    /// The duty the player is in was cleared: its InstanceContent ID, and whether someone there hadn't cleared it
+    /// before (`Instance::newcomers`: the first-timer bonus is everyone's then.)
+    DutyCleared(u16, bool),
     /// Request the client to finish their current event.
     FinishEvent,
     /// When a fish bites.
     FishBite,
     /// A battle NPC this player (or their party) was fighting was defeated: its BNpcBase ID (what quests' ENEMY
-    /// parameters are), BNpcName ID, layout ID and level.
+    /// parameters are), BNpcName ID, layout ID and level, and the gil it dropped for this player (`actor::kill_gil`.)
     BattleNpcKilled {
         actor_id: ObjectId,
         base_id: u32,
         name_id: u32,
         layout_id: u32,
         level: u8,
+        gil: u32,
     },
     /// The quest battle was won: its director, and the quest and sequence it advances.
     /// Whether the players stay afterwards (until `LeaveQuestBattle`), and the scene played before they leave, with its
@@ -541,6 +543,8 @@ pub enum ToServer {
     QuestEventAction(ClientId, ObjectId, u8),
     /// The client is entering a quest battle: the QuestBattle ID, and the territory it takes place in.
     JoinQuestBattle(ClientId, ObjectId, u32, u16),
+    /// This player is in a duty they haven't cleared before (`Instance::newcomers`.)
+    DutyNewcomer(ObjectId),
     /// The c lient is requesting to leave their current content, the connection is in charge of keeping track of the old position.
     LeaveContent(ClientId, ObjectId, u16, Position, f32),
     /// Update the global server state of the client's conditions.

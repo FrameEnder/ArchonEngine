@@ -661,7 +661,13 @@ fn credit_battle_npc_kill(
         }
     }
 
+    let drops_gil = drops_gil(instance, actor_id);
     for player_id in credited.iter().copied() {
+        let gil = if drops_gil {
+            kill_gil(spawn.common.level, fastrand::f32())
+        } else {
+            0
+        };
         network.send_to_by_actor_id(
             player_id,
             FromServer::BattleNpcKilled {
@@ -670,12 +676,39 @@ fn credit_battle_npc_kill(
                 name_id: spawn.common.name_id,
                 layout_id: spawn.common.layout_id,
                 level: spawn.common.level,
+                gil,
             },
             DestinationNetwork::ZoneClients,
         );
     }
     credited
 }
+
+/// Whether a defeated enemy drops gil: in a duty, one of the zone's own enemies (not one its director spawned, the
+/// bosses and the adds), with another player there. Bob's Chronofoil captures c99fe374 and cc62ad94: in the Duty Finder
+/// runs (three or four other players) every kill of the dungeons' own enemies dropped gil (133 of 133) and none of the
+/// bosses', their adds' or the scripted waves' (0 of 83); the Duty Support runs (no other player) dropped none (0 of
+/// 208 kills.)
+fn drops_gil(instance: &Instance, actor_id: ObjectId) -> bool {
+    let players = instance
+        .actors
+        .values()
+        .filter(|actor| matches!(actor, NetworkedActor::Player { .. }))
+        .count();
+    instance.content_finder_condition_id != 0
+        && players > 1
+        && instance.layout_npcs.contains(&actor_id)
+}
+
+/// The gil an enemy drops, for a roll in [0, 1): its level × 0.400-0.532, rounded down, the widest range that keeps to
+/// retail's 273 drops in Bob's Chronofoil captures (level 15: 6-7 gil, mean 6.58; 16: 6-8, 6.88; 17: 6-9, 7.30.)
+pub fn kill_gil(level: u8, roll: f32) -> u32 {
+    let factor = KILL_GIL_LOW + (KILL_GIL_HIGH - KILL_GIL_LOW) * roll;
+    (level as f32 * factor).floor() as u32
+}
+
+const KILL_GIL_LOW: f32 = 0.400;
+const KILL_GIL_HIGH: f32 = 0.532;
 
 /// Whether this is an enemy (not a party NPC, pet or chocobo): retail never sends one's UpdateHpMpTp. Its health reaches
 /// clients with the hits that change it (their EffectResultBasic), and its StatusEffectList otherwise (a damage over time
@@ -931,5 +964,19 @@ pub fn create_npc_common_spawn(
             ..game_data.get_npc_equip(equip as u32).unwrap_or_default()
         },
         ..Default::default()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::kill_gil;
+
+    /// Retail's ranges (Bob's Chronofoil captures: 273 drops at levels 15-17.)
+    #[test]
+    fn kill_gil_as_retail() {
+        for (level, low, high) in [(15, 6, 7), (16, 6, 8), (17, 6, 9)] {
+            assert_eq!(kill_gil(level, 0.0), low, "level {level}");
+            assert_eq!(kill_gil(level, 0.9999), high, "level {level}");
+        }
     }
 }

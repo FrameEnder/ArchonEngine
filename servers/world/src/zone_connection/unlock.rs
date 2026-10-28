@@ -375,6 +375,49 @@ impl ZoneConnection {
 }
 
 impl ZoneConnection {
+    /// Whether this character has cleared an InstanceContent (the cleared bitmasks, indexed as the unlocked ones:
+    /// dungeons from 1, guildhests from 10001, trials from 20001, raids from 30001.) Other kinds never count as cleared.
+    pub fn has_cleared_content(&self, content: u16) -> bool {
+        let kind = self.game_data.lock().find_type_for_content(content);
+        let content_data = &self.player_data.content;
+        match kind {
+            Some(kawari::common::InstanceContentType::Dungeon) => content
+                .checked_sub(1)
+                .is_some_and(|i| content_data.cleared_dungeons.contains(i as u32)),
+            Some(kawari::common::InstanceContentType::Guildhests) => content
+                .checked_sub(10001)
+                .is_some_and(|i| content_data.cleared_guildhests.contains(i as u32)),
+            Some(kawari::common::InstanceContentType::Trial) => content
+                .checked_sub(20001)
+                .is_some_and(|i| content_data.cleared_trials.contains(i as u32)),
+            Some(kawari::common::InstanceContentType::Raid) => content
+                .checked_sub(30001)
+                .is_some_and(|i| content_data.cleared_raids.contains(i as u32)),
+            _ => false,
+        }
+    }
+
+    /// Records an InstanceContent as cleared (see `has_cleared_content`.)
+    pub fn set_content_cleared(&mut self, content: u16) {
+        let kind = self.game_data.lock().find_type_for_content(content);
+        let content_data = &mut self.player_data.content;
+        match kind {
+            Some(kawari::common::InstanceContentType::Dungeon) if content >= 1 => {
+                content_data.cleared_dungeons.set(content as u32 - 1)
+            }
+            Some(kawari::common::InstanceContentType::Guildhests) if content >= 10001 => {
+                content_data.cleared_guildhests.set(content as u32 - 10001)
+            }
+            Some(kawari::common::InstanceContentType::Trial) if content >= 20001 => {
+                content_data.cleared_trials.set(content as u32 - 20001)
+            }
+            Some(kawari::common::InstanceContentType::Raid) if content >= 30001 => {
+                content_data.cleared_raids.set(content as u32 - 30001)
+            }
+            _ => {}
+        }
+    }
+
     /// Whether this character has unlocked an InstanceContent (the bitmasks `unlock_content` sets, with its offsets:
     /// dungeons from 1, guildhests from 10001, trials from 20001, raids from 30001.) Other kinds count as unlocked.
     pub fn has_unlocked_content(&self, game_data: &mut crate::GameData, content: u16) -> bool {

@@ -1601,6 +1601,14 @@ impl GameData {
     }
 
     /// Gets the content type for the given InstanceContent.
+    /// A duty's clear rewards from its InstanceContent row: the first clear's EXP (the column after FinalBossExp, which
+    /// the sheet doesn't name: Sastasha's 18,800, the Tam-Tara Deepcroft's 19,600 and the Copperbell Mines' 24,200, as
+    /// retail gave them), and the first-timer bonus's EXP and gil (NewPlayerBonusExp, NewPlayerBonusGil.)
+    pub fn get_duty_clear_rewards(&mut self, content_id: u16) -> Option<(u32, u32, u32)> {
+        let row = self.instance_content_sheet.row(content_id as u32)?;
+        Some((row.Unknown0, row.NewPlayerBonusExp, row.NewPlayerBonusGil))
+    }
+
     pub fn find_type_for_content(&mut self, content_id: u16) -> Option<InstanceContentType> {
         let instance_content_row = self.instance_content_sheet.row(content_id as u32)?;
 

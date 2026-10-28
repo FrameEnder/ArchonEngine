@@ -363,6 +363,21 @@ impl ZoneConnection {
         self.send_inventory().await;
     }
 
+    /// Gil an enemy dropped (`actor::kill_gil`), as retail gave it after the kill's EXP: the gil's slot
+    /// (UpdateInventorySlot), LootMessage 9 with the amount, then ActorControlSelf 42 (Bob's Chronofoil captures c99fe374
+    /// and cc62ad94: 136 drops.)
+    pub async fn obtain_dropped_gil(&mut self, gil: u32) {
+        add_gil(self, gil);
+        self.send_inventory_slot(ContainerType::Currency, 0).await;
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::LootMessage {
+            kind: LOOT_MESSAGE_GIL,
+            params: [gil, 0, 0, 0, 0, 0, 0],
+        });
+        self.send_ipc_self(ipc).await;
+        self.actor_control_self(ActorControlCategory::GilObtained)
+            .await;
+    }
+
     /// An item an event gives (a quest's `player:obtain_item`): retail's InventoryActionAck (0xFFFFFFFF, 6), the slot
     /// (here the whole inventory), ActorControlSelf LogMessage 789 with the item (the "obtained" pop-up), then
     /// EventLogMessage 750 with the item (the log line). Bob's Chronofoil capture b8432613: Dressed to Deceive's two
@@ -876,6 +891,14 @@ impl ZoneConnection {
     }
 }
 
+/// Adds gil to the player's gil slot (the currency container's slot 0.)
+pub fn add_gil(connection: &mut ZoneConnection, gil: u32) {
+    let slot = connection.player_data.inventory.currency.get_slot_mut(0);
+    slot.quantity = slot.quantity.saturating_add_unsigned(gil);
+}
+
+/// LootMessage's kind for gil an enemy dropped (the amount.)
+const LOOT_MESSAGE_GIL: u32 = 9;
 /// LootMessage's kind for an item obtained directly (an enemy's drop, a Duty Support coffer's item.)
 const LOOT_MESSAGE_OBTAINED: u32 = 3;
 /// LootMessage's kinds for a unique item one already has: 8 (with the reason, 8), then 2, the item lost.

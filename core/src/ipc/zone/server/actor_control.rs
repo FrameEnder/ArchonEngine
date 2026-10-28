@@ -283,6 +283,11 @@ pub enum ActorControlCategory {
     #[brw(magic = 45u32)]
     FallDamage { damage: u32, unk: u32 },
 
+    /// After a gil drop's LootMessage (kind 9), always and only then: retail's 136 of 136 (Bob's Chronofoil captures
+    /// c99fe374 and cc62ad94), no values. What the client does with it isn't known.
+    #[brw(magic = 42u32)]
+    GilObtained,
+
     #[brw(magic = 41u32)]
     ToggleUnlock {
         /// Corresponds to an UnlockLink. Could be a spell, action, emote, etc.

@@ -138,5 +138,6 @@ From the same scan:
   Kawari sends the client's own flags back once.
 * **ContentFinderFound** has the party's makeup at bytes 30–39 (`0000 0001 0001 0002` for a matched four, zeros and
   the party's size at the end for an unrestricted or premade party, byte 24 then 1).
-* **A swift first-clear bonus**: Haukke Manor (CFC 6) gave 4,300 EXP and 3,800 gil at the end, with LogMessage 2163
-  (the bonus for a swift first-time completion of the duty's objectives, its EXP and gil as parameters). Not done.
+* **The first-timer bonus**: Haukke Manor (CFC 6) gave 4,300 EXP and 3,800 gil at the end, with LogMessage 2163
+  (its EXP and gil as parameters): its InstanceContent row's NewPlayerBonusExp and NewPlayerBonusGil. Done since
+  2026-10-28, see [Dungeons: clear rewards](dungeons.md#clear-rewards).
