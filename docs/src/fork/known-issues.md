@@ -396,6 +396,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Coffers and loot
 
+* The wiki's loot lists are only in Sastasha, the Tam-Tara Deepcroft and the Copperbell Mines; their fixed-rate extras (a Triple Triad card, an orchestrion material) aren't given, and how many items a never-recorded coffer holds is taken as one.
 * Untested in game (2026-10-22): opening, the rolls, the winner's item, the coffer fading out. LootMessages name bots
   by their actor ID; whether the client finds their names (they're in the party list) isn't known.
 * A Greed or Need on a unique item the player has already isn't refused (retail answers 8). LootItem's `bonus` (set

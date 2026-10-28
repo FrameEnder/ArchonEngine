@@ -23,7 +23,7 @@ use kawari::{
 };
 
 use crate::{
-    FromServer, GameData, ToServer,
+    FromServer, GameData, ItemInfoQuery, ToServer,
     server::{
         WorldServer,
         actor::NetworkedActor,
@@ -181,32 +181,72 @@ fn loot_message(network: &mut NetworkState, instance: &Instance, kind: u32, para
     );
 }
 
-fn roll_contents(instance: &Instance, base_id: u32) -> Vec<u32> {
-    contents(&instance.loot_pools, base_id, |n| fastrand::usize(..n))
+fn roll_contents(instance: &Instance, game_data: &mut GameData, base_id: u32) -> Vec<u32> {
+    contents(
+        &instance.loot_pools,
+        &instance.loot_wiki_pools,
+        base_id,
+        |item| item_kind(game_data, item),
+        |n| fastrand::usize(..n),
+    )
 }
 
-/// What a coffer holds: for its base ID, one of the duty's recorded openings picks how many items, and each slot one
-/// of the items found in that slot across them (`director:treasure_loot`.) A coffer without a recording gets one item
-/// from all of the duty's. `pick(n)` chooses one of n.
+/// What kind of thing an item is, so a coffer holds no two of a kind: its EquipSlotCategory (a weapon's one-handed
+/// and two-handed slots alike), or for anything not worn its ItemUICategory.
+fn item_kind(game_data: &mut GameData, item: u32) -> u32 {
+    match game_data.get_item_info(ItemInfoQuery::ById(item)) {
+        Some(row) => match row.equip_category as u32 {
+            0 => 1000 + row.ui_category as u32,
+            1 | 13 => 1,
+            slot => slot,
+        },
+        None => 2000,
+    }
+}
+
+/// What a coffer holds: for its base ID, one of the duty's recorded openings picks how many items (one if it was
+/// never recorded opened), then each item is one of the coffer's candidates, none of a kind already in it (`kind`):
+/// everything recorded in it (`director:treasure_loot`) and the wiki's list for it (`director:treasure_pool`, the
+/// starting point, so items a few recorded runs never showed can still come.) A coffer with neither gets one item
+/// from all of the duty's recordings. `pick(n)` chooses one of n.
 fn contents(
     pools: &HashMap<u32, Vec<Vec<u32>>>,
+    wiki: &HashMap<u32, Vec<u32>>,
     base_id: u32,
+    mut kind: impl FnMut(u32) -> u32,
     mut pick: impl FnMut(usize) -> usize,
 ) -> Vec<u32> {
-    if let Some(openings) = pools.get(&base_id)
-        && !openings.is_empty()
-    {
-        let count = openings[pick(openings.len())].len();
-        let mut items = Vec::new();
-        for slot in 0..count {
-            let candidates: Vec<u32> = openings
-                .iter()
-                .filter_map(|opening| opening.get(slot).copied())
-                .filter(|item| !items.contains(item))
-                .collect();
-            if !candidates.is_empty() {
-                items.push(candidates[pick(candidates.len())]);
+    let openings = pools.get(&base_id).filter(|openings| !openings.is_empty());
+    let listed = wiki.get(&base_id).filter(|items| !items.is_empty());
+    if openings.is_some() || listed.is_some() {
+        let count = openings
+            .map(|openings| openings[pick(openings.len())].len())
+            .unwrap_or(1);
+        let mut candidates: Vec<u32> = Vec::new();
+        for item in openings
+            .into_iter()
+            .flatten()
+            .flatten()
+            .chain(listed.into_iter().flatten())
+        {
+            if !candidates.contains(item) {
+                candidates.push(*item);
             }
+        }
+        let mut items: Vec<u32> = Vec::new();
+        let mut kinds: Vec<u32> = Vec::new();
+        while items.len() < count {
+            let left: Vec<(u32, u32)> = candidates
+                .iter()
+                .map(|item| (*item, kind(*item)))
+                .filter(|(item, of)| !items.contains(item) && !kinds.contains(of))
+                .collect();
+            if left.is_empty() {
+                break;
+            }
+            let (item, of) = left[pick(left.len())];
+            items.push(item);
+            kinds.push(of);
         }
         return items;
     }
@@ -347,7 +387,7 @@ pub fn open(
         return;
     }
 
-    let items = roll_contents(instance, base_id);
+    let items = roll_contents(instance, game_data, base_id);
     let now = Instant::now();
     let first_serial = instance.loot_serial;
     instance.loot_serial += items.len() as u32;
@@ -736,12 +776,33 @@ mod tests {
             ),
             (95, vec![vec![3034]]),
         ]);
-        assert_eq!(contents(&pools, 94, |_| 0), vec![3554, 4096]);
-        assert_eq!(contents(&pools, 94, |n| n - 1), vec![2683, 4207]);
-        assert_eq!(contents(&pools, 95, |_| 0), vec![3034]);
+        // Kinds for the test: hands 3554, heads 2684 and 2683, wristlets 4096, earrings 4207 and 4206, body 3034.
+        let kind = |item: u32| match item {
+            3554 => 5,
+            2684 | 2683 => 3,
+            4096 => 11,
+            4207 | 4206 => 9,
+            _ => 4,
+        };
+        let none = HashMap::new();
+        assert_eq!(contents(&pools, &none, 94, kind, |_| 0), vec![3554, 4096]);
+        // Never two of a kind: the last candidate (the earrings), then the last left that isn't earrings (a head.)
+        assert_eq!(
+            contents(&pools, &none, 94, kind, |n| n - 1),
+            vec![4207, 2683]
+        );
+        assert_eq!(contents(&pools, &none, 95, kind, |_| 0), vec![3034]);
         // A coffer never recorded holds one of the duty's items.
-        assert_eq!(contents(&pools, 100, |n| n - 1).len(), 1);
-        assert!(contents(&HashMap::new(), 94, |_| 0).is_empty());
+        assert_eq!(contents(&pools, &none, 100, kind, |n| n - 1).len(), 1);
+        assert!(contents(&HashMap::new(), &none, 94, kind, |_| 0).is_empty());
+        // The wiki's list adds what the recordings never showed (the ear cuffs, 4206), and gives a coffer never
+        // recorded one of its own items.
+        let wiki = HashMap::from([(94, vec![4206]), (100, vec![3331, 3330])]);
+        assert_eq!(
+            contents(&pools, &wiki, 94, kind, |n| n - 1),
+            vec![4206, 2683]
+        );
+        assert_eq!(contents(&pools, &wiki, 100, kind, |_| 0), vec![3331]);
     }
 
     #[test]

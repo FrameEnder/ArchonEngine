@@ -160,6 +160,29 @@ gate_opened = false
 denn_updates = nil
 denn_waves = 0
 
+-- What the coffers may hold besides what was recorded (`director:treasure_pool`): the FFXIV Console Games Wiki's loot
+-- lists for the duty (each boss's coffer and each "Treasure Coffer" at its map position, matched to these base IDs by
+-- the recorded items and by the coffers' positions in Bob's Chronofoil captures), as item IDs from the Item sheet. The
+-- starting point: a recording adds what the wiki misses (`server/loot.rs`). The wiki's fixed-rate extras (a Triple
+-- Triad card, an orchestrion material) aren't in these.
+HEAD_HANDS = { 2684, 2683, 2679, 3556, 3554, 3555 }
+ACCESSORIES = { 4206, 4207, 4310, 4096 }
+BODY_LEGS = { 3033, 3034, 3035, 3331, 3329, 3330 }
+WEAPONS = { 38467, 31422, 31423, 31421, 31425, 31424, 31427, 31428, 31426 }
+FEET = { 3781, 3786, 3787 }
+-- The bronze coffer by the weapons' list also has these (older pieces of the same levels.)
+OLDER_PIECES = { 2235, 2682, 3031, 3030, 3032, 3783, 3782 }
+
+function joined(...)
+    local all = {}
+    for _, list in ipairs({ ... }) do
+        for _, item in ipairs(list) do
+            table.insert(all, item)
+        end
+    end
+    return all
+end
+
 function onSetup(director)
     coral_color = math.random(0, #EOBJ_CORAL_IDS - 1)
 
@@ -176,6 +199,15 @@ function onSetup(director)
     director:treasure_loot(99, { { 3555 } })
     director:treasure_loot(101, { { 31422 } })
     director:treasure_loot(93, { { 3786, 31424 }, { 31425 }, { 31426, 36374 } })
+    -- The wiki's lists: Chopper's (94), Captain Madison's (95), Denn's (93), and Treasure Coffers 1-4 (98 at its
+    -- X 13.8 Y 9.2, 99, 100, 101.)
+    director:treasure_pool(94, joined(HEAD_HANDS, ACCESSORIES))
+    director:treasure_pool(95, BODY_LEGS)
+    director:treasure_pool(93, joined(WEAPONS, FEET, { 36374 }))
+    director:treasure_pool(98, joined(FEET, { 7036 }))
+    director:treasure_pool(99, HEAD_HANDS)
+    director:treasure_pool(100, BODY_LEGS)
+    director:treasure_pool(101, joined(WEAPONS, OLDER_PIECES))
 
     -- The coral room's coffer (retail: 98 in all five runs, never 97)
     director:spawn_treasure(98)

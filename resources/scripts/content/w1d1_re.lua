@@ -134,6 +134,40 @@ LOOT = {
     [58] = { { 3033 }, { 3035 } },
     [51] = { { 31423 }, { 3786, 31428, 33130 }, { 3781, 31427 } },
 }
+-- What the coffers may hold besides what was recorded (`director:treasure_pool`): the FFXIV Console Games Wiki's loot
+-- lists for the duty (each boss's coffer and each "Treasure Coffer" at its map position, matched to these base IDs by
+-- the recorded items and by the coffers' positions in Bob's Chronofoil captures), as item IDs from the Item sheet. The
+-- starting point: a recording adds what the wiki misses (`server/loot.rs`). The wiki's fixed-rate extras (a Triple
+-- Triad card, an orchestrion material) aren't in these.
+HEAD_HANDS = { 2684, 2683, 2679, 3556, 3554, 3555 }
+ACCESSORIES = { 4206, 4207, 4310, 4096 }
+BODY_LEGS = { 3033, 3034, 3035, 3331, 3329, 3330 }
+WEAPONS = { 38467, 31422, 31423, 31421, 31425, 31424, 31427, 31428, 31426 }
+FEET = { 3781, 3786, 3787 }
+-- The bronze coffer by the weapons' list also has these (older pieces of the same levels.)
+OLDER_PIECES = { 2235, 2682, 3031, 3030, 3032, 3783, 3782 }
+
+function joined(...)
+    local all = {}
+    for _, list in ipairs({ ... }) do
+        for _, item in ipairs(list) do
+            table.insert(all, item)
+        end
+    end
+    return all
+end
+
+-- The wiki's lists: Kottos's silver coffer (52), Ichorous Ire's (53), Gyges the Great's gold one (51), and Treasure
+-- Coffers 1-4 (65, 57, 58, 59.)
+WIKI_LOOT = {
+    [52] = joined(HEAD_HANDS, ACCESSORIES),
+    [53] = BODY_LEGS,
+    [51] = joined(WEAPONS, FEET, { 33130 }),
+    [65] = joined(FEET, ACCESSORIES),
+    [57] = HEAD_HANDS,
+    [58] = BODY_LEGS,
+    [59] = joined(WEAPONS, OLDER_PIECES),
+}
 STANDING_COFFERS = { 65, 57, 58 }
 BOSS_COFFERS = { { 52 }, { 53, 59 }, { 51 } }
 
@@ -184,6 +218,9 @@ function onSetup(director)
 
     for coffer, openings in pairs(LOOT) do
         director:treasure_loot(coffer, openings)
+    end
+    for coffer, items in pairs(WIKI_LOOT) do
+        director:treasure_pool(coffer, items)
     end
     for _, coffer in ipairs(STANDING_COFFERS) do
         director:spawn_treasure(coffer)

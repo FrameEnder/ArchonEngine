@@ -23,9 +23,31 @@ The first player to open it (OpenTreasure) opens it for the party. Every player 
 ## What a coffer holds
 
 There's no loot table in the client's data, so each duty's script records what its coffers held on retail, as item
-numbers: `director:treasure_loot(base_id, { { items of one opening }, ... })`. A coffer picks how many items from one of
-its recorded openings, and each slot one of the items seen in that slot across them; a coffer never recorded open
-holds one item from all of the duty's.
+numbers: `director:treasure_loot(base_id, { { items of one opening }, ... })`, and, as the starting point (Bob,
+2026-10-28: a few runs miss much of a pool), the wiki's list for each coffer: `director:treasure_pool(base_id, { items
+})`. A coffer picks how many items from one of its recorded openings (one if it was never recorded opened), then each
+item from everything recorded in it and the wiki's list together, never two of a kind (EquipSlotCategory, weapons'
+one- and two-handed slots as one; ItemUICategory for anything not worn: `loot::item_kind`): Chopper's two items are a
+piece of gear and an accessory, as retail's were. A coffer with neither holds one item from all of the duty's
+recordings. A recording that shows an item the wiki lacks adds it (it's in `treasure_loot`).
+
+The wiki's lists (FFXIV Console Games Wiki, each dungeon's page: every boss's coffer, and each "Treasure Coffer" with
+its map position) are matched to the coffers' base IDs by the recorded items and by position: the coffers' spawn
+positions in Bob's Chronofoil captures as map coordinates (`41 / c × ((x × c + 1024) / 2048) + 1`, c the Map's
+SizeFactor / 100: Sastasha 2.0, Tam-Tara 3.0, Copperbell 2.0) fall within 0.1 of the wiki's. All 26 items ever
+recorded in these three dungeons are on the wiki's lists. The level 15-17 sets are shared (`HEAD_HANDS`,
+`ACCESSORIES`, `BODY_LEGS`, `WEAPONS`, `FEET`, `OLDER_PIECES` in each script):
+
+| Dungeon | Coffer | The wiki's |
+|---|---|---|
+| Sastasha | 94, 95, 93 | Chopper (head, hands, accessories), Captain Madison (body, legs), Denn (weapons, feet, From the Depths) |
+| Sastasha | 98, 99, 100, 101 | Treasure Coffers 1-4: feet and Seagrot Water; head and hands; body and legs; weapons and older pieces |
+| Tam-Tara | 16, 17, 62, 11 | the Void Soulcounters' three (head and hands; the same and accessories; body and legs), Galvanth (weapons, feet) |
+| Tam-Tara | 15, 118, 119 | Treasure Coffers 1-3: feet and accessories; body and legs; weapons and older pieces |
+| Copperbell | 52, 53, 51 | Kottos (head, hands, accessories), Ichorous Ire (body, legs), Gyges (weapons, feet, Below) |
+| Copperbell | 65, 57, 58, 59 | Treasure Coffers 1-4: feet and accessories; head and hands; body and legs; weapons and older pieces |
+
+The wiki's fixed-rate extras (Sastasha's Triple Triad card, Tam-Tara's orchestrion material) aren't given.
 
 Sastasha (`content/s1d1_re.lua`), from the five runs:
 

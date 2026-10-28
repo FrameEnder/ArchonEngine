@@ -127,6 +127,11 @@ pub enum LuaDirectorTask {
         base_id: u32,
         openings: Vec<Vec<u32>>,
     },
+    /// What a coffer may hold besides what was recorded: the wiki's list for it (`director:treasure_pool`.)
+    TreasurePool {
+        base_id: u32,
+        items: Vec<u32>,
+    },
     SpawnTreasure {
         id: u32,
     },
@@ -580,6 +585,14 @@ impl UserData for LuaDirector {
             |_, this, (base_id, openings): (u32, Vec<Vec<u32>>)| {
                 this.tasks
                     .push(LuaDirectorTask::TreasureLoot { base_id, openings });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "treasure_pool",
+            |_, this, (base_id, items): (u32, Vec<u32>)| {
+                this.tasks
+                    .push(LuaDirectorTask::TreasurePool { base_id, items });
                 Ok(())
             },
         );
@@ -1916,6 +1929,9 @@ pub fn director_tick(
             }
             LuaDirectorTask::TreasureLoot { base_id, openings } => {
                 instance.loot_pools.insert(*base_id, openings.clone());
+            }
+            LuaDirectorTask::TreasurePool { base_id, items } => {
+                instance.loot_wiki_pools.insert(*base_id, items.clone());
             }
             LuaDirectorTask::SpawnTreasure { id } => {
                 if let Some(mut treasure) = instance.zone.get_treasure(*id) {

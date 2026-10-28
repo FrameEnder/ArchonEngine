@@ -194,6 +194,9 @@ pub struct Instance {
     pub coffers: HashMap<ObjectId, crate::server::loot::Coffer>,
     /// What each coffer (by base ID) held on retail, one list per recorded opening (`director:treasure_loot`.)
     pub loot_pools: HashMap<u32, Vec<Vec<u32>>>,
+    /// What each coffer may hold besides (`director:treasure_pool`): the wiki's list, the starting point recordings
+    /// add to.
+    pub loot_wiki_pools: HashMap<u32, Vec<u32>>,
     /// The next LootItem serial.
     pub loot_serial: u32,
     /// List of running/preparing FATEs.
