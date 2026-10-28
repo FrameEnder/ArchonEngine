@@ -374,8 +374,13 @@ impl ZoneConnection {
         &self,
         game_data: &mut crate::GameData,
         roulette: crate::Roulette,
+        limited_leveling: bool,
     ) -> Option<u16> {
         let level = self.current_level(game_data) as u8;
+        // Limited Leveling Roulette: the party's levels, the player's own first (`duty_finder::limited_leveling_allows`.)
+        let mut party_levels = vec![level];
+        party_levels.extend(self.bot_party_levels.iter().copied());
+        let limited = limited_leveling && matches!(roulette, crate::Roulette::Leveling);
         // Retail only rolls duties the party has unlocked and is high enough for (Bob, 2026-10-24: Kawari rolled any.)
         let allowed: Vec<u16> = game_data
             .roulette_duties(roulette)
@@ -383,6 +388,11 @@ impl ZoneConnection {
             .filter(|(_, content, required)| {
                 *required <= level
                     && content.is_none_or(|c| self.has_unlocked_content(game_data, c))
+                    && (!limited
+                        || crate::server::duty_finder::limited_leveling_allows(
+                            *required,
+                            &party_levels,
+                        ))
             })
             .map(|(id, _, _)| id as u16)
             .collect();

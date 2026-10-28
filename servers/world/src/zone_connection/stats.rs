@@ -827,8 +827,18 @@ impl ZoneConnection {
                     .unwrap_or_default()
             })
         });
+        // Minimum IL: no higher than the duty's minimum, whether the level is synced or not.
+        let sync_item_level = match (sync_item_level, self.minimum_item_level) {
+            (Some(synced), Some(minimum)) => Some(synced.min(minimum)),
+            (synced, minimum) => synced.or(minimum),
+        };
 
-        self.parameters_at(level, sync_item_level, true)
+        let mut parameters = self.parameters_at(level, sync_item_level, true);
+        // The Echo raises maximum HP (`server/duty_finder.rs`.)
+        if self.echo_multiplier > 1.0 {
+            parameters.hp = (parameters.hp as f32 * self.echo_multiplier).round() as u32;
+        }
+        parameters
     }
 
     /// The character's own parameters without any gear, at their real level even while synced: what retail sends

@@ -219,6 +219,11 @@ pub struct PartyBot {
     pub braced_for: Option<Instant>,
     /// When each of its brace actions is ready again (their recast.)
     pub brace_ready: HashMap<u32, Instant>,
+    /// How it's shown (`BotLook`), to show it the same way in the next zone.
+    pub look_kind: BotLook,
+    /// One the Duty Finder added to fill a place (`fill_duty_party`): it stays in the duty when its leader goes, as a
+    /// matched stranger does, where a bot of the leader's own party goes with them (`pack_for_travel`.)
+    pub duty_filled: bool,
 }
 
 impl PartyBot {
@@ -264,6 +269,8 @@ impl PartyBot {
             dodge: None,
             braced_for: None,
             brace_ready: HashMap::new(),
+            look_kind: BotLook::PartyMember,
+            duty_filled: false,
         }
     }
 }
@@ -1755,6 +1762,8 @@ fn spawn_bot(
             dodge: None,
             braced_for: None,
             brace_ready: HashMap::new(),
+            look_kind: shown_look,
+            duty_filled: false,
         },
     );
 
@@ -1888,6 +1897,12 @@ pub fn fill_duty_party(
                 tracing::info!(
                     "Duty Finder: {name} fills a place in {leader}'s party (level {level})"
                 );
+                if let Some(bot) = data
+                    .find_actor_instance_mut(leader)
+                    .and_then(|instance| instance.party_bots.get_mut(&actor_id))
+                {
+                    bot.duty_filled = true;
+                }
                 bots.push(actor_id);
             }
             Err(error) => {
@@ -1896,6 +1911,121 @@ pub fn fill_duty_party(
         }
     }
     bots
+}
+
+/// A bot of a player's party going with them to another zone: what it takes to spawn the same bot there (its name,
+/// class, look and glamour, as a kept friend is called again) and how it's shown.
+#[derive(Debug, Clone)]
+pub struct TravellingBot {
+    pub saved: bot_friends::SavedBot,
+    pub look_kind: BotLook,
+}
+
+/// The player `leader` is leaving their instance: the bots of their party (`in_party`) go with them, as a party does
+/// on retail, and are spawned beside them where they arrive (`arrive`). The Duty Finder's own bots (`duty_filled`), a
+/// Duty Support member (a party NPC, the duty's) and bots following outside the party stay behind and go with the
+/// instance. Returns the bots packed; `pack_for_travel` is called as the player leaves (`remove_actor_from_instance`),
+/// so every way out of a zone takes them along.
+pub fn pack_for_travel(
+    data: &mut WorldServer,
+    network: &mut NetworkState,
+    leader: ObjectId,
+) -> usize {
+    let Some(instance) = data.find_actor_instance_mut(leader) else {
+        return 0;
+    };
+    let mut ids: Vec<(usize, ObjectId)> = instance
+        .party_bots
+        .iter()
+        .filter(|(_, bot)| {
+            bot.leader == leader && bot.in_party && !bot.duty_filled && bot.party_npc.is_none()
+        })
+        .map(|(id, bot)| (bot.order, *id))
+        .collect();
+    ids.sort_by_key(|(order, _)| *order);
+    let mut packed = Vec::new();
+    for (_, id) in ids {
+        let (Some(bot), Some(actor)) = (instance.party_bots.get(&id), instance.find_actor(id))
+        else {
+            continue;
+        };
+        let common = actor.get_common_spawn();
+        packed.push(TravellingBot {
+            saved: bot_friends::SavedBot {
+                content_id: bot.content_id,
+                name: common.name.clone(),
+                classjob: common.class_job,
+                look: look_to_hex(&common.look),
+                glamour: bot.glamour_name.clone(),
+                added: 0,
+            },
+            look_kind: bot.look_kind,
+        });
+        instance.party_bots.remove(&id);
+        network.remove_actor(instance, id);
+    }
+    let count = packed.len();
+    if count > 0 {
+        tracing::info!("{leader}'s party goes with them: {count} bots");
+        data.travelling_bots
+            .entry(leader)
+            .or_default()
+            .extend(packed);
+    }
+    count
+}
+
+/// The player `leader` has loaded into their new instance: the bots of their party that came with them
+/// (`pack_for_travel`) are spawned beside them, in the party, at the instance's synced level (a level-synced duty's)
+/// or `BOT_LEVEL`. In a duty, no more than its party has room for (`room`, besides the player): the rest wait and come
+/// along again when the player next changes zone. Returns the ClassJob Roles of those spawned.
+pub fn arrive(
+    data: &mut WorldServer,
+    game_data: &mut GameData,
+    usable: &HashMap<u32, String>,
+    leader: ObjectId,
+    room: Option<usize>,
+) -> Vec<u8> {
+    let Some(mut waiting) = data.travelling_bots.remove(&leader) else {
+        return Vec::new();
+    };
+    let Some(instance) = data.find_actor_instance(leader) else {
+        data.travelling_bots.insert(leader, waiting);
+        return Vec::new();
+    };
+    let level = instance.synced_level.unwrap_or(BOT_LEVEL);
+    let coming = room.unwrap_or(waiting.len()).min(waiting.len());
+    let later = waiting.split_off(coming);
+    let mut roles = Vec::new();
+    for bot in waiting {
+        match spawn_bot(
+            data,
+            game_data,
+            usable,
+            leader,
+            bot.saved.classjob,
+            level,
+            bot.look_kind,
+            true,
+            Some(&bot.saved),
+        ) {
+            Ok((_, name)) => {
+                tracing::info!("{name} came with {leader} (level {level})");
+                if let Some((role, _, _)) = game_data.classjob_role(bot.saved.classjob) {
+                    roles.push(role);
+                }
+            }
+            Err(error) => tracing::warn!("{} couldn't come along: {error}", bot.saved.name),
+        }
+    }
+    if !later.is_empty() {
+        tracing::info!(
+            "{} of {leader}'s bots wait outside (no room in the party here)",
+            later.len()
+        );
+        data.travelling_bots.insert(leader, later);
+    }
+    roles
 }
 
 /// The party list for a player and the bots that joined them, as retail lists a Duty Finder party (Bob's Chronofoil
@@ -2443,6 +2573,30 @@ pub fn dismiss_party_bots(
         .party_bots
         .iter()
         .filter(|(_, bot)| bot.leader == leader)
+        .map(|(id, _)| *id)
+        .collect();
+    for id in &bots {
+        instance.party_bots.remove(id);
+        network.remove_actor(instance, *id);
+    }
+    bots.len()
+}
+
+/// Sends away the duty's own members of `leader`'s party, the bots the Duty Finder added (`duty_filled`) and Duty
+/// Support's members (party NPCs), as the duty ends for them; the bots of their own party stay with them. Returns how
+/// many went.
+pub fn dismiss_duty_members(
+    data: &mut WorldServer,
+    network: &mut NetworkState,
+    leader: ObjectId,
+) -> usize {
+    let Some(instance) = data.find_actor_instance_mut(leader) else {
+        return 0;
+    };
+    let bots: Vec<ObjectId> = instance
+        .party_bots
+        .iter()
+        .filter(|(_, bot)| bot.leader == leader && (bot.duty_filled || bot.party_npc.is_some()))
         .map(|(id, _)| *id)
         .collect();
     for id in &bots {

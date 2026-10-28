@@ -148,6 +148,11 @@ pub struct PartyRoles {
 }
 
 /// Convenient methods built on top of Physis to access data relevant to the server
+/// ContentType's trials (ContentFinderCondition.ContentType.)
+const CONTENT_TYPE_TRIAL: u8 = 4;
+/// ContentUICategory's "High-end Trials" rows, one per expansion (A Realm Reborn to Dawntrail.)
+const HIGH_END_TRIAL_CATEGORIES: [u8; 6] = [19, 20, 22, 33, 39, 47];
+
 #[derive(Clone)]
 pub struct GameData {
     pub resource: ResourceResolver,
@@ -3156,6 +3161,71 @@ impl GameData {
             .row(content_finder_row_id as u32)?;
 
         Some(content_finder_row.ItemLevelSync).filter(|x| *x != 0)
+    }
+
+    /// What a duty's Echo depends on (`duty_finder::echo_on_wipe`): whether it's a trial (ContentFinderCondition's
+    /// ContentType 4), a high-end one (an extreme trial: its ContentUICategory is one of the "High-end Trials"; its
+    /// HighEndDuty is false even for the Striking Tree (Extreme), 78), the expansion it needs (RequiredExVersion) and
+    /// the latest expansion of any duty.
+    pub fn content_echo_kind(
+        &mut self,
+        content_finder_row_id: u16,
+    ) -> Option<(bool, bool, u8, u8)> {
+        let latest = self
+            .content_finder_condition_sheet
+            .into_iter()
+            .flatten_subrows()
+            .map(|(_, row)| row.RequiredExVersion)
+            .max()
+            .unwrap_or(0);
+        let row = self
+            .content_finder_condition_sheet
+            .row(content_finder_row_id as u32)?;
+        Some((
+            row.ContentType == CONTENT_TYPE_TRIAL,
+            HIGH_END_TRIAL_CATEGORIES.contains(&row.ContentUICategory),
+            row.RequiredExVersion,
+            latest,
+        ))
+    }
+
+    /// Whether a duty lets a full party choose Greed Only or Lootmaster (its LootModeType's
+    /// AdditionalLootRulesAvailable: dungeons and extreme trials yes, normal trials no.)
+    pub fn content_allows_loot_rules(&mut self, content_finder_row_id: u16) -> bool {
+        let Some(mode) = self
+            .content_finder_condition_sheet
+            .row(content_finder_row_id as u32)
+            .map(|row| row.LootModeType)
+        else {
+            return false;
+        };
+        // Its one column, read as the sheet comes (no generated sheet for it here); no text, so no language.
+        let Ok(exh) = self.resource.read_excel_sheet_header("LootModeType") else {
+            return false;
+        };
+        let Ok(sheet) = self
+            .resource
+            .read_excel_sheet(&exh, "LootModeType", Language::None)
+        else {
+            return false;
+        };
+        sheet
+            .row(mode as u32)
+            .and_then(|row| {
+                row.columns
+                    .first()
+                    .and_then(|column| column.into_bool().copied())
+            })
+            .unwrap_or(false)
+    }
+
+    /// The item level a duty asks for (ContentFinderCondition.ItemLevelRequired), what Minimum IL brings the party down
+    /// to; None if it asks for none.
+    pub fn find_content_minimum_item_level(&mut self, content_finder_row_id: u16) -> Option<u16> {
+        let row = self
+            .content_finder_condition_sheet
+            .row(content_finder_row_id as u32)?;
+        Some(row.ItemLevelRequired).filter(|x| *x != 0)
     }
 
     /// The roles one party of this duty is made of (ContentFinderCondition's ContentMemberType), for duties of a single

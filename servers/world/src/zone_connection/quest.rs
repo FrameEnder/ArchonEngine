@@ -535,6 +535,10 @@ impl ZoneConnection {
         if in_duty && synced_down {
             exp = 0;
         }
+        // Nor in an unrestricted party without Level Sync (`server/duty_finder.rs`).
+        if self.unsynced_unrestricted() {
+            exp = 0;
+        }
         // Only enemies at or above your level count towards a chain.
         let chain = self.exp_chain_bonus(!in_duty && level as u16 >= player_level);
         if let Some((index, window, _)) = chain {
@@ -582,7 +586,10 @@ impl ZoneConnection {
             handler.on_battle_npc_killed(lua_player, base_id, layout_id);
         }
 
-        roll_drops(lua_player, name_id, level);
+        // No drops from enemies for an unrestricted party without Level Sync (coffers still give theirs.)
+        if !self.unsynced_unrestricted() {
+            roll_drops(lua_player, name_id, level);
+        }
 
         self.process_lua_player(lua_player, events).await;
 
@@ -655,6 +662,47 @@ impl ZoneConnection {
             exp_chain_window(index),
             exp_chain_bonus_percent(index),
         ))
+    }
+
+    /// The duty a roulette rolled was cleared: its first clear since the day's reset (15:00 UTC, `server/daily.rs`,
+    /// kept across restarts) gives the roulette's bonus, gil and for Leveling EXP (`duty_finder::roulette_bonus`.)
+    /// Retail's packets for it aren't recorded; the gil comes with the quest reward's log line (1605), the EXP with
+    /// the usual EXP message.
+    pub async fn roulette_cleared(&mut self, roulette: u8) {
+        let key = format!("roulette-{roulette}");
+        let content_id = self.player_data.character.content_id as u64;
+        if !crate::server::daily::claim(content_id, &key) {
+            tracing::info!("Roulette {roulette} cleared again today: no bonus");
+            return;
+        }
+        let (exp, gil) = {
+            let mut game_data = self.game_data.lock();
+            let level = self.current_level(&game_data) as u32;
+            let at = |game_data: &mut crate::GameData, level: u32| {
+                game_data
+                    .get_param_grow(level)
+                    .map(|row| (row.ScaledQuestXP as u32, row.QuestExpModifier as u32))
+                    .unwrap_or_default()
+            };
+            let (scaled, modifier) = at(&mut game_data, level);
+            let (_, modifier_90) = at(&mut game_data, 90);
+            crate::server::duty_finder::roulette_bonus(roulette, scaled, modifier, modifier_90)
+        };
+        tracing::info!("Roulette {roulette}'s first clear today: {exp} EXP, {gil} gil");
+        if gil > 0 {
+            self.send_reward_log(QUEST_REWARD_GIL_LOG, vec![gil]).await;
+            self.player_data.inventory.currency.get_slot_mut(0).quantity = self
+                .player_data
+                .inventory
+                .currency
+                .get_slot_mut(0)
+                .quantity
+                .saturating_add_unsigned(gil);
+            self.send_inventory().await;
+        }
+        if exp > 0 {
+            self.add_exp(exp as i32).await;
+        }
     }
 
     /// A FATE this player helped with was completed: its EXP and gil (gold rank; retail also gave Grand Company seals,

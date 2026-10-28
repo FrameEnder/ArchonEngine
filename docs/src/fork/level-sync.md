@@ -40,8 +40,9 @@ FATE syncs (a level 87 White Mage synced to 18 and 50) and about 60 duty entries
 * Level: ContentFinderCondition.ClassJobLevelSync. **Item level: ContentFinderCondition.ItemLevelSync** when it isn't 0
   (420, 440, 470, 505 and 60 seen: HP 28138 → 22178 at 420), otherwise ParamGrow[level].ItemLevelSync. Kawari used the
   ParamGrow value always.
-* Unrestricted parties aren't synced (Kawari's existing rule). Retail's max HP there was ×4 (136724 = 4 × 34181); not
-  explained by the captures, not done.
+* Unrestricted parties aren't synced (Kawari's existing rule) unless Level Sync is on too. Retail's max HP there was
+  ×4 (136724 = 4 × 34181): Epic Echo's 300 %, now given ([Duty Finder Settings](duty-finder.md#the-echo-and-epic-echo)).
+  Minimum IL caps the gear at the duty's minimum item level, synced or not (same page).
 
 ## Stats under sync
 

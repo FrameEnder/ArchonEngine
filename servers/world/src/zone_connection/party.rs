@@ -160,6 +160,15 @@ impl ZoneConnection {
         update_status: PartyUpdateStatus,
         me: PartyUpdateTargets,
     ) {
+        self.bot_party_levels = members
+            .as_ref()
+            .map(|list| {
+                list.iter()
+                    .filter(|member| member.actor_id != self.player_data.character.actor_id)
+                    .map(|member| member.classjob_level)
+                    .collect()
+            })
+            .unwrap_or_default();
         let (mut list, party_id) = match members {
             Some(list) => (
                 list,

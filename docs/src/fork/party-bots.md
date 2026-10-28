@@ -198,8 +198,9 @@ Bots are characters to the client, so its menus on them work (`party_bot::handle
   from the bot's actor, with its made-up content ID), or with the usual *not found* when it's none of your bots.
 * **Leave Party** or **Disband Party**: every bot in it goes, and the list empties (DisbandingParty).
 * **Promote** a bot to leader: ignored (a bot can't lead).
-* **Changing zone**: bots don't follow, so when they're dropped (`update`), a player who had them in the party gets
-  an empty list.
+* **Changing zone** (2026-10-28): the bots in your party go with you, into a duty too, and are listed again where
+  you arrive ([Duty Finder Settings](duty-finder.md#your-party-goes-in-with-you)); bots following you outside the
+  party stay behind and leave.
 
 A party of bots is none the server keeps (your `party_id` stays 0), and **Kawari's party code panicked on party 0**:
 `PartyMemberKick` and `PartyChangeLeader` unwrap the party (*Why are we trying to do party operations on an invalid
@@ -451,7 +452,7 @@ Feet: <item name> | <dye>
 ## Not done yet
 
 * In combat melee bots still crowd the same spot by their target (only following is in formation).
-* Bots don't follow you into another zone (they leave when you do). Bots from `!spawn playernpc` aren't level synced (only the Duty Finder's are); they're in the party list
+* Bots outside your party don't follow you into another zone (they leave when you do; those in it come along). Bots from `!spawn playernpc` aren't level synced outside duties; they're in the party list
   once invited.
 * The party list didn't follow chocobo-look bots' HP (retail sends HP through the members' actors, which the client
   may or may not take from an NPC); shown as players, with the list's content IDs, it may: to be checked in game.

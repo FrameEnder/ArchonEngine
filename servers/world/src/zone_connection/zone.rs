@@ -60,6 +60,10 @@ impl ZoneConnection {
         self.fate_motivation_npcs.clear();
         self.content_handler_id = handler_id;
         self.content_finder_condition_id = content_finder_condition_id;
+        if content_finder_condition_id == 0 {
+            self.entered_with = None;
+            self.entered_roulette = None;
+        }
 
         // Quest battles are instanced content too, but don't come from the Duty Finder.
         let bound_by_duty = content_finder_condition_id != 0
@@ -414,6 +418,8 @@ impl ZoneConnection {
 
         self.synced_level = None;
         self.synced_item_level = None;
+        self.minimum_item_level = None;
+        self.echo_multiplier = 1.0;
         self.synced_fate = None;
         self.update_class_info().await;
         self.send_stats().await;
@@ -625,6 +631,8 @@ impl ZoneConnection {
     }
 
     pub async fn join_content(&mut self, id: u16, settings: DutyFinderSetting) {
+        self.entered_with = Some(settings);
+        self.entered_roulette = self.queued_roulette.take();
         // Store our old information, for when we leave the instance
         self.old_zone_id = self.player_data.volatile.zone_id as u16;
         self.old_position = self.player_data.volatile.position;

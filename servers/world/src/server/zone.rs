@@ -1429,46 +1429,103 @@ pub fn handle_zone_messages(
                 job_gauge: JobGauge::default(),
             };
 
-            // In through the Duty Finder alone: bots fill the party (`server/party_bot.rs`), and the client is told
-            // its party list. Through Duty Support: the members chosen first (party NPCs, `server/party_npc.rs`),
-            // announced to the client as retail does, then bots for any role still missing.
-            if instance.pending_duty_bots.remove(from_actor_id) {
-                let content = instance.content_finder_condition_id;
-                let chosen = instance.pending_duty_support.remove(from_actor_id);
-                let usable: HashMap<u32, String> = {
-                    let lua = lua.lock();
-                    let state = lua.0.app_data_ref::<KawariLuaState>().unwrap();
-                    state.action_scripts.clone()
-                };
-                let mut game_data = game_data.lock();
-                let mut npc_roles = Vec::new();
-                if let Some(chosen) = chosen {
-                    let (_, roles) = party_npc::fill_duty_support(
-                        instance,
+            // The bots of their party that came with them (`party_bot::pack_for_travel`) appear beside them, in the
+            // party. In through the Duty Finder: the party's empty places are filled with bots (`server/party_bot.rs`),
+            // for the roles no one in it plays, unless the party went in as it is (Unrestricted Party, Explorer Mode).
+            // Through Duty Support: the members chosen first (party NPCs, `server/party_npc.rs`), announced to the
+            // client as retail does, then bots for any role still missing. The client is told its party list.
+            let content = instance.content_finder_condition_id;
+            let filling = instance.pending_duty_bots.remove(from_actor_id);
+            let chosen = instance.pending_duty_support.remove(from_actor_id);
+            let settings = instance.content_settings.unwrap_or_default();
+            let usable: HashMap<u32, String> = {
+                let lua = lua.lock();
+                let state = lua.0.app_data_ref::<KawariLuaState>().unwrap();
+                state.action_scripts.clone()
+            };
+            let mut game_data = game_data.lock();
+            // In a duty, its one party's places besides the player; none in a solo duty (a quest battle) or an
+            // alliance's, so the party's bots wait outside until the player comes back out.
+            let room = (content != 0).then(|| {
+                game_data
+                    .content_party_roles(content)
+                    .map(|roles| roles.members.saturating_sub(1) as usize)
+                    .unwrap_or(0)
+            });
+            let mut party_roles = Vec::new();
+            if let Some(chosen) = chosen {
+                let (_, roles) =
+                    party_npc::fill_duty_support(instance, &mut game_data, *from_actor_id, &chosen);
+                party_roles = roles;
+                party_npc::announce(&network, instance, *from_actor_id);
+            }
+            let room = room.map(|room| room.saturating_sub(party_roles.len()));
+            party_roles.extend(party_bot::arrive(
+                &mut data,
+                &mut game_data,
+                &usable,
+                *from_actor_id,
+                room,
+            ));
+            if filling {
+                let filled = if crate::server::duty_finder::fills_the_party(settings) {
+                    party_bot::fill_duty_party(
+                        &mut data,
                         &mut game_data,
+                        &usable,
                         *from_actor_id,
-                        &chosen,
+                        content,
+                        &party_roles,
+                    )
+                    .len()
+                } else {
+                    0
+                };
+                if let Some(instance) = data.find_actor_instance_mut(*from_actor_id) {
+                    instance.loot_rule = crate::server::duty_finder::loot_rule(
+                        settings,
+                        game_data.content_allows_loot_rules(content),
+                        filled,
                     );
-                    npc_roles = roles;
-                    party_npc::announce(&network, instance, *from_actor_id);
+                    tracing::info!(
+                        "Duty Finder: {from_actor_id} went in with {settings:?}: {filled} places filled, loot {:?}",
+                        instance.loot_rule
+                    );
                 }
-                party_bot::fill_duty_party(
-                    &mut data,
-                    &mut game_data,
-                    &usable,
-                    *from_actor_id,
-                    content,
-                    &npc_roles,
+            }
+            if let Some(instance) = data.find_actor_instance(*from_actor_id)
+                && let Some(members) = party_bot::party_list(instance, *from_actor_id)
+            {
+                let mut network = network.lock();
+                network.send_to(
+                    *from_id,
+                    FromServer::BotParty(Some(members)),
+                    DestinationNetwork::ZoneClients,
                 );
-                if let Some(instance) = data.find_actor_instance(*from_actor_id)
-                    && let Some(members) = party_bot::party_list(instance, *from_actor_id)
-                {
-                    let mut network = network.lock();
-                    network.send_to(
-                        *from_id,
-                        FromServer::BotParty(Some(members)),
-                        DestinationNetwork::ZoneClients,
-                    );
+            }
+
+            // Epic Echo for an unrestricted party without Level Sync, by the duty's level and the highest member's
+            // (bots too); then everyone gets the duty's Echo (`server/duty_finder.rs`.)
+            if content != 0
+                && let Some(instance) = data.find_actor_instance_mut(*from_actor_id)
+            {
+                use crate::server::duty_finder;
+                if duty_finder::unsynced_unrestricted(settings) {
+                    let duty_level = game_data.find_content_synced_level(content).unwrap_or(0);
+                    let highest = instance
+                        .actors
+                        .iter()
+                        .filter(|(id, actor)| {
+                            matches!(actor, NetworkedActor::Player { .. })
+                                || instance.party_bots.contains_key(id)
+                        })
+                        .map(|(_, actor)| actor.get_common_spawn().level)
+                        .max()
+                        .unwrap_or(0);
+                    instance.epic_echo = duty_finder::epic_echo_percent(duty_level, highest);
+                }
+                if instance.echo > 0 || instance.epic_echo > 0 {
+                    duty_finder::refresh_echo(&network, instance);
                 }
             }
 

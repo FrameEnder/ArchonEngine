@@ -312,6 +312,10 @@ pub enum FromServer {
     TeleportOffered(u32, TeleportQuery),
     /// Sync to this new max level, and item level if the content has its own (ContentFinderCondition.ItemLevelSync.)
     SyncMaxLevel(u8, Option<u16>),
+    /// Minimum IL: bring the character's item level down to this (`Instance::minimum_item_level`.)
+    MinimumItemLevel(u16),
+    /// The Echo's multiplier on the character's maximum HP (`duty_finder::refresh_echo`.)
+    EchoMultiplier(f32),
     /// Play the initial cutscene for instanced content: its duration, settings, and for a quest battle its scene
     /// flags (`OPENING_SCENE_FLAGS` in its script, if it sets them.)
     PlayInitialCutscene(u32, u32, Option<u32>),

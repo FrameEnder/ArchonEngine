@@ -184,6 +184,12 @@ async fn initial_setup(
                     queued_content: None,
                     duty_support: None,
                     duty_settings: None,
+                    entered_with: None,
+                    queued_roulette: None,
+                    entered_roulette: None,
+                    bot_party_levels: Vec::new(),
+                    minimum_item_level: None,
+                    echo_multiplier: 1.0,
                     conditions: Conditions::default(),
                     queued_tasks: Vec::new(),
                     old_zone_id: 0,
@@ -2808,16 +2814,33 @@ async fn process_packet(
                                 )
                                 .await;
                         }
-                        ClientZoneIpcData::QueueRoulette { roulette_id, .. } => {
+                        ClientZoneIpcData::QueueRoulette {
+                            roulette_id, unk1, ..
+                        } => {
                             let Some(roulette) = Roulette::from_repr(*roulette_id) else {
                                 tracing::warn!("Unknown roulette ID: {roulette_id}");
                                 continue;
                             };
+                            // The settings: assumed to sit where QueueDuties has them (its byte 8; no QueueRoulette
+                            // is recorded yet), and only those a roulette can use are taken
+                            // (`duty_finder::roulette_settings`.)
+                            let mut raw = [0u8; 8];
+                            raw.copy_from_slice(&unk1[7..15]);
+                            let settings = kawari_world::duty_finder::roulette_settings(
+                                DutyFinderSetting::from_bits_retain(u64::from_le_bytes(raw)),
+                            );
+                            tracing::info!(
+                                "QueueRoulette {roulette_id}: bytes after the ID {unk1:02x?}, settings taken {settings:?}"
+                            );
 
                             let duty_id;
                             {
                                 let mut game_data = connection.game_data.lock();
-                                duty_id = connection.pick_roulette_duty(&mut game_data, roulette);
+                                duty_id = connection.pick_roulette_duty(
+                                    &mut game_data,
+                                    roulette,
+                                    settings.contains(DutyFinderSetting::LIMITED_LEVELING_ROULETTE),
+                                );
                             }
                             let Some(duty_id) = duty_id else {
                                 tracing::info!(
@@ -2827,11 +2850,9 @@ async fn process_packet(
                             };
 
                             connection
-                                .register_for_content(
-                                    [duty_id, 0, 0, 0, 0],
-                                    DutyFinderSetting::default(),
-                                )
+                                .register_for_content([duty_id, 0, 0, 0, 0], settings)
                                 .await;
+                            connection.queued_roulette = Some(*roulette_id);
                         }
                         ClientZoneIpcData::ContentFinderAction { action, .. } => {
                             if *action == ContentFinderUserAction::Accepted {
@@ -4622,6 +4643,10 @@ async fn process_server_msg(
                 connection.duty_cleared = Some(content_id);
                 // Retail's wear and spiritbond came with the duty's completion (docs/src/fork/spiritbond.md.)
                 connection.wear_gear_for_content(content_id).await;
+                // A roulette's first clear of the day (`duty_finder::roulette_bonus`.)
+                if let Some(roulette) = connection.entered_roulette.take() {
+                    connection.roulette_cleared(roulette).await;
+                }
             }
             FromServer::LeaveContent => {
                 // Retail moved Sastasha's quest along as the player left the cleared duty (Bob's capture, 2026-10-23).
@@ -5207,6 +5232,14 @@ async fn process_server_msg(
                     connection.update_class_info().await;
                     connection.send_stats().await;
                 }
+            }
+            FromServer::EchoMultiplier(multiplier) => {
+                connection.echo_multiplier = multiplier;
+                connection.send_stats().await;
+            }
+            FromServer::MinimumItemLevel(item_level) => {
+                connection.minimum_item_level = Some(item_level);
+                connection.send_stats().await;
             }
             FromServer::PlayInitialCutscene(duration, settings, opening_flags) => {
                 // Quest battles play the same opening scene, but without InstanceContent's parameters (as Sapphire does.)

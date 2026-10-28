@@ -182,6 +182,15 @@ pub struct ZoneConnection {
     /// The Duty Support members the player chose for `queued_content` (`RegisterDutySupport`), sent with JoinContent.
     pub duty_support: Option<Vec<u8>>,
     pub duty_settings: Option<DutyFinderSetting>,
+    /// The Duty Finder settings the duty the player is in was entered with (`join_content`), until they leave it for
+    /// a zone that isn't one: what the duty gives depends on them (`server/duty_finder.rs`).
+    pub entered_with: Option<DutyFinderSetting>,
+    /// The roulette queued for (`QueueRoulette`), and the one the duty they're in was rolled by, for its first clear of
+    /// the day's bonus (`roulette_cleared`.)
+    pub queued_roulette: Option<u8>,
+    pub entered_roulette: Option<u8>,
+    /// The levels of the bots in their party (its last list, `send_bot_party_update`), for Limited Leveling Roulette.
+    pub bot_party_levels: Vec<u8>,
 
     pub conditions: Conditions,
 
@@ -215,6 +224,11 @@ pub struct ZoneConnection {
     pub synced_level: Option<u8>,
     /// The item level the content syncs to, if it has its own (see `GameData::find_content_synced_item_level`.)
     pub synced_item_level: Option<u16>,
+    /// Minimum IL in the duty they're in: their gear capped at this item level, synced or not
+    /// (`FromServer::MinimumItemLevel`.)
+    pub minimum_item_level: Option<u16>,
+    /// The Echo's (and Epic Echo's) multiplier on maximum HP in the duty they're in (`FromServer::EchoMultiplier`.)
+    pub echo_multiplier: f32,
     /// The FATE the player synced to, which unsyncs them when it ends.
     pub synced_fate: Option<u32>,
     /// Player Search results.
@@ -495,6 +509,15 @@ impl ZoneConnection {
         .await;
     }
 
+    /// In a duty entered as an unrestricted party without Level Sync (`duty_finder::unsynced_unrestricted`): no EXP,
+    /// spiritbond or item drops from enemies.
+    pub fn unsynced_unrestricted(&self) -> bool {
+        self.content_finder_condition_id != 0
+            && self
+                .entered_with
+                .is_some_and(crate::server::duty_finder::unsynced_unrestricted)
+    }
+
     pub async fn register_for_content(
         &mut self,
         content_ids: [u16; 5],
@@ -502,6 +525,8 @@ impl ZoneConnection {
     ) {
         self.queued_content = Some(content_ids[0]);
         self.duty_settings = Some(settings);
+        // A roulette's handler sets it again after this.
+        self.queued_roulette = None;
         // Through the Duty Finder unless `RegisterDutySupport` says otherwise after this.
         self.duty_support = None;
 

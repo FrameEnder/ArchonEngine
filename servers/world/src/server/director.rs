@@ -2845,6 +2845,13 @@ pub fn handle_director_messages(
                     DestinationNetwork::ZoneClients,
                 );
             }
+            if let Some(item_level) = instance.minimum_item_level {
+                network.send_to_by_actor_id(
+                    *from_actor_id,
+                    FromServer::MinimumItemLevel(item_level),
+                    DestinationNetwork::ZoneClients,
+                );
+            }
 
             true
         }

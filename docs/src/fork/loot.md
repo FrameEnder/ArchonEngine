@@ -69,3 +69,8 @@ took on retail (the 35 lots: half within 6 s of the coffer opening, a quarter af
 passed 33 times and greeded twice, and never needed.
 
 Bots don't open coffers themselves yet (retail's players opened the bosses' 1.5–2.2 s after they appeared).
+
+## Loot rules
+
+Greed Only, and Lootmaster as Kawari plays it, turn every Need into a Greed when the party went in full in a duty that
+allows them: [Duty Finder Settings](duty-finder.md#loot-rules).

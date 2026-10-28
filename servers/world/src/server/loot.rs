@@ -443,6 +443,12 @@ fn choose(
         return;
     }
     let roll = fastrand::u8(1..=99);
+    // Greed Only (and Lootmaster, as Kawari plays it): a Need counts as a Greed (`duty_finder::LootRule`.)
+    let choice = if choice == CHOICE_NEED && instance.loot_rule.greed_only() {
+        CHOICE_GREED
+    } else {
+        choice
+    };
     let made = match choice {
         CHOICE_NEED => Choice::Need(roll),
         CHOICE_GREED => Choice::Greed(roll),

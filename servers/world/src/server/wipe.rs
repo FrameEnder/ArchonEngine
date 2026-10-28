@@ -22,6 +22,7 @@ use kawari::{
         ContentDirectorEvent, DirectorEvent, EventState, HandlerType, InstanceContentDirectorEvent,
         ObjectId, WarpType,
     },
+    ipc::zone::DutyFinderSetting,
     ipc::zone::{
         ActorControlCategory, ActorControlSelf, PrepareZoning, PrepareZoningFlag,
         ServerZoneIpcData, ServerZoneIpcSegment,
@@ -33,6 +34,7 @@ use crate::{
     ClientId, FromServer, GameData,
     server::{
         actor::{NetworkedActor, set_character_mode},
+        duty_finder,
         instance::Instance,
         network::{DestinationNetwork, NetworkState},
         party_bot,
@@ -161,6 +163,22 @@ pub fn wipe_tick(
     }
 
     let now = Instant::now();
+    // When the fight began (an enemy hating one of the party), for The Echo's three minutes.
+    if instance.fight_started.is_none() && instance.party_wipe.is_none() {
+        let fighting = instance.actors.values().any(|actor| match actor {
+            NetworkedActor::Npc { enmity, .. } => enmity.keys().any(|id| {
+                instance.party_bots.contains_key(id)
+                    || matches!(
+                        instance.find_actor(*id),
+                        Some(NetworkedActor::Player { .. })
+                    )
+            }),
+            _ => false,
+        });
+        if fighting {
+            instance.fight_started = Some(now);
+        }
+    }
     let Some(mut wipe) = instance.party_wipe else {
         let players = players(instance);
         if !players.is_empty() && players.iter().all(|(_, hp)| *hp == 0) {
@@ -258,6 +276,34 @@ pub fn wipe_tick(
         instance.later_director_tasks.clear();
         if let Some(director) = instance.directors.first_mut() {
             director.call_hook("onPartyWipe");
+        }
+
+        // The Echo grows in an older trial when the fight had lasted three minutes, unless silenced; everyone has the
+        // duty's Echo again as they get up (`server/duty_finder.rs`.)
+        let fought = instance
+            .fight_started
+            .map(|started| wipe.fell.duration_since(started))
+            .unwrap_or_default();
+        instance.fight_started = None;
+        let silenced = instance
+            .content_settings
+            .is_some_and(|settings| settings.contains(DutyFinderSetting::SILENCE_ECHO));
+        let kind = game_data
+            .lock()
+            .content_echo_kind(instance.content_finder_condition_id);
+        if !silenced
+            && fought >= duty_finder::ECHO_AFTER
+            && let Some((step, most)) = kind.and_then(duty_finder::echo_on_wipe)
+        {
+            instance.echo = (instance.echo + step).min(most);
+            tracing::info!(
+                "Party wipe after {:.0} s of fighting: The Echo is now {} %",
+                fought.as_secs_f32(),
+                instance.echo
+            );
+        }
+        if instance.echo > 0 || instance.epic_echo > 0 {
+            duty_finder::refresh_echo(&network, instance);
         }
     }
 

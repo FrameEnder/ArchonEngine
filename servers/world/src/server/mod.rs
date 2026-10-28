@@ -76,6 +76,8 @@ pub use companion::{
 };
 mod director;
 mod dodge;
+pub mod daily;
+pub mod duty_finder;
 mod effect;
 mod glamour;
 mod instance;
@@ -130,6 +132,9 @@ struct WorldServer {
     instances: Vec<Instance>,
     /// Each player's chocobo companion (`companion.rs`), by their actor.
     companions: HashMap<ObjectId, companion::Companion>,
+    /// The bots of each player's party on their way with them to another zone (`party_bot::pack_for_travel`), until
+    /// the player has loaded in there (`party_bot::arrive`).
+    travelling_bots: HashMap<ObjectId, Vec<party_bot::TravellingBot>>,
     // TODO: Eventually remove these once we can reliably and ergonomically run misc. tasks on slower intervals!
     rested_exp_counter: i32,
     party_positions_counter: i32,
@@ -421,6 +426,18 @@ impl WorldServer {
         }
 
         instance.content_settings = Some(content_settings);
+        // The leader's loot rule; Normal again if the Duty Finder fills places (`duty_finder::loot_rule`, at the
+        // fill.)
+        instance.loot_rule = duty_finder::loot_rule(
+            content_settings,
+            game_data.content_allows_loot_rules(content_finder_condition),
+            0,
+        );
+        // The Echo some duties start with (`duty_finder::echo_from_the_start`), unless silenced.
+        if !content_settings.contains(DutyFinderSetting::SILENCE_ECHO) {
+            instance.echo = duty_finder::echo_from_the_start(content_finder_condition);
+        }
+        instance.echo_applied = 1.0;
 
         // Set up level sync
         let needs_sync = {
@@ -435,6 +452,10 @@ impl WorldServer {
                 game_data.find_content_synced_level(instance.content_finder_condition_id);
             instance.synced_item_level =
                 game_data.find_content_synced_item_level(instance.content_finder_condition_id);
+        }
+        if content_settings.contains(DutyFinderSetting::MINIMUM_ITEM_LEVEL) {
+            instance.minimum_item_level =
+                game_data.find_content_minimum_item_level(instance.content_finder_condition_id);
         }
 
         self.instances.push(instance);
@@ -3262,8 +3283,10 @@ pub async fn server_main_loop(
                     let mut data = data.lock();
                     let mut network = network.lock();
 
-                    // Their bots stay behind (and go with the instance), and their party list empties.
-                    if party_bot::dismiss_party_bots(&mut data, &mut network, from_actor_id) > 0 {
+                    // The bots the Duty Finder added and Duty Support's members stay behind (and go with the
+                    // instance), and the party list empties, as retail disbands a Duty Finder party; the bots of the
+                    // player's own party go with them (`party_bot::pack_for_travel`) and are listed again there.
+                    if party_bot::dismiss_duty_members(&mut data, &mut network, from_actor_id) > 0 {
                         network.send_to(
                             from_client_id,
                             FromServer::BotParty(None),

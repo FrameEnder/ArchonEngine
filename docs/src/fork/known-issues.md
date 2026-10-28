@@ -23,6 +23,28 @@ add one when something is found.
   The fork's inventory operations (retainer entrust/withdraw/gil/market, `BASE_INVENTORY_ACTION` + 22..26) are
   assumed to keep their offsets from the new base (234), unchecked on 7.57h1.
 
+## Duty Finder settings
+
+See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
+
+* A party of real players still gets no bots for its missing roles (bots can't join a party the server keeps).
+* QueueRoulette's layout isn't known: its settings are assumed to be at QueueDuties' place (byte 8) and only Limited
+  Leveling and the loot rules are taken from it. A bundle with a roulette queued (Limited Leveling on) would settle it.
+* The roulettes' daily bonus EXP (Leveling only) is a stand-in (`LEVELING_BONUS_EXP_FACTOR`), and the gil is the
+  wiki's level 90 amount scaled down by QuestExpModifier, a guess; no tomestones or seals; no Adventurer in Need
+  bonus; the bonus's own packets and log lines aren't recorded (no roulette in any capture).
+* Lootmaster has no window: it plays out as Greed only.
+* Minimum IL doesn't lower bots' gear; no capture used it.
+* The Echo at a duty's start is known only for CFC 97, 101 and 107-110; the wiki's other Coils and older savage raids
+  have none here. The Echo's wipe rule (three minutes, older trials) is the wiki's, not recorded.
+* Echo's damage multiplier can push a hit past 65535 (the effect's amount is 16-bit): capped there.
+* Explorer Mode: only the enemies, barriers and bots are handled; whether retail also stops actions, the duty's time
+  limit (5400 s was still sent) or the coffers isn't checked.
+* ContentFinderUpdate's and ContentFinderFound's retail flags and party makeup aren't sent (Kawari echoes the client's
+  settings); the swift first-clear bonus (LogMessage 2163) isn't given.
+* Bots waiting outside a duty with no room for them (a quest battle, a party bigger than the duty's) come back only at
+  the next zone change after it.
+
 ## Party NPCs (Duty Support)
 
 * Untested in game (2026-10-23). Whether the client builds its party list from ActorControlSelf 257, 276 and 1525
@@ -50,8 +72,8 @@ add one when something is found.
 ## Party bots
 
 * Stage 1 only (see [Party Bots](party-bots.md)): `!spawn playernpc` bots are in the party list only once invited,
-  aren't level synced, don't follow you into another
-  zone, use single-target attacks and one heal only. The Duty
+  aren't level synced outside duties, don't follow you into another zone unless they're in your party, use
+  single-target attacks and one heal only. The Duty
   Finder doesn't fill roles with them yet. In combat melee bots still stand on the same spot by their target. Bots are
   spawned as retail's chocobo companions are (for their nameplates' names): whether the client treats them as your
   chocobo anywhere else (the companion's bar, its commands) hasn't been checked. They run at NPCs' speed (6 yalms a

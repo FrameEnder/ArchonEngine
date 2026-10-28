@@ -1016,6 +1016,32 @@ pub fn execute_action(
                 }
                 _ => {}
             }
+
+            // The Echo: the party's damage and healing raised by the duty's Echo and Epic Echo
+            // (`duty_finder::echo_multiplier`.)
+            let echo =
+                crate::server::duty_finder::echo_multiplier(instance.echo, instance.epic_echo);
+            if echo > 1.0
+                && (matches!(actor, NetworkedActor::Player { .. })
+                    || instance.party_bots.contains_key(&from_actor_id))
+            {
+                let raise = |effects: &mut Vec<TargetEffect>| {
+                    for effect in effects.iter_mut() {
+                        match &mut effect.0 {
+                            TargetEffectKind::Damage { amount, .. }
+                            | TargetEffectKind::Heal { amount, .. } => {
+                                *amount =
+                                    (*amount as f32 * echo).round().min(u16::MAX as f32) as u16;
+                            }
+                            _ => {}
+                        }
+                    }
+                };
+                raise(&mut effects_builder.effects);
+                for (_, effects) in &mut area_bystanders {
+                    raise(effects);
+                }
+            }
         }
     }
 

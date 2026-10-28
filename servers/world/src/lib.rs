@@ -44,7 +44,7 @@ mod status_effects;
 pub use status_effects::StatusEffects;
 
 mod server;
-pub use server::{Party, chosen_members, server_main_loop};
+pub use server::{Party, chosen_members, daily, duty_finder, server_main_loop};
 
 mod custom_ipc_connection;
 pub use custom_ipc_connection::CustomIpcConnection;

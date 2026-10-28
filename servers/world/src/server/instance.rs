@@ -206,6 +206,18 @@ pub struct Instance {
     pub synced_level: Option<u8>,
     /// The item level this content syncs to, if it has its own (otherwise the synced level's ParamGrow.ItemLevelSync.)
     pub synced_item_level: Option<u16>,
+    /// Minimum IL (`DutyFinderSetting::MINIMUM_ITEM_LEVEL`): everyone's item level is brought down to the duty's
+    /// minimum (ContentFinderCondition.ItemLevelRequired), with or without the level sync.
+    pub minimum_item_level: Option<u16>,
+    /// The party's loot rule (`duty_finder::LootRule`): the leader's when the party went in full, Normal when the Duty
+    /// Finder filled places (`duty_finder::loot_rule`.)
+    pub loot_rule: crate::server::duty_finder::LootRule,
+    /// The Echo and Epic Echo here, in percent (`duty_finder::refresh_echo`), and the multiplier last given the bots.
+    pub echo: u16,
+    pub epic_echo: u16,
+    pub echo_applied: f32,
+    /// When the party's current fight began (an enemy hating one of them), for The Echo's three minutes.
+    pub fight_started: Option<std::time::Instant>,
     /// How long this content lasts for, if applicable.
     pub duration: Option<Duration>,
     /// Players who helped defeat each running FATE's enemies (by FATE), who get its rewards if it's completed.
@@ -358,6 +370,18 @@ impl Instance {
         config: &Config,
         game_data: &mut GameData,
     ) {
+        // Explorer Mode: "no enemies or obstacles" (FFXIV Console Games Wiki, *Duty Finder*): the zone's enemies were
+        // left out as the instance was made (`Instance::new`), and its director's (bosses, adds) aren't spawned either.
+        if self
+            .content_settings
+            .is_some_and(|settings| settings.contains(DutyFinderSetting::EXPLORER_MODE))
+            && spawn
+                .character_data_flags
+                .contains(kawari::ipc::zone::CharacterDataFlag::HOSTILE)
+        {
+            return;
+        }
+
         // Load drop-ins
         let mut timeline = serde_json::from_str(
             &std::fs::read_to_string(config.filesystem.locate_timeline_file("Default.json"))
@@ -888,6 +912,8 @@ pub fn remove_actor_from_instance(
 ) {
     // Their chocobo companion leaves with them (server/companion.rs.)
     crate::server::companion::owner_left(data, network, actor_id);
+    // The bots of their party go with them (`party_bot::pack_for_travel`.)
+    crate::server::party_bot::pack_for_travel(data, network, actor_id);
     // From every instance they're in: a player left behind in one (see `begin_change_zone`) was found there by the
     // next zone's loading, and got that instance instead of the one they went to.
     while let Some(current_instance) = data.find_actor_instance_mut(actor_id) {

@@ -162,6 +162,12 @@ impl ZoneConnection {
                 ),
             };
 
+            // No spiritbond in a duty run as an unrestricted party without Level Sync (the gear still wears.)
+            let points = if self.unsynced_unrestricted() {
+                0
+            } else {
+                points
+            };
             let slot_item = self.player_data.inventory.equipped.get_slot_mut(slot);
             let before = (slot_item.condition, slot_item.spiritbond_or_collectability);
             // Gear at 0% gains nothing (the wiki), and only gear that can be extracted from bonds.
