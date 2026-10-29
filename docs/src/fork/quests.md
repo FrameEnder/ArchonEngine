@@ -485,9 +485,14 @@ three runs, every step from the city's last quests to We Come in Peace):
 * **The quest completed last** is the latest done one (by Expansion, then SortKey) none of whose followers is done and
   that has an available one after it. Kawari keeps no record of the order quests were done in, so this is worked out
   from the completed quests; every step of the three runs comes out as retail's.
-* Between variants (Close to Home per starting class) the starting class's comes first; otherwise the sheet's order.
-  Retail put the Grand Companies' three as 681, 680, 682 in all three runs (three different start cities); Kawari
-  sends 680, 681, 682. Nothing in the Quest or ScenarioTree sheets gives retail's order.
+* Between variants (Close to Home per starting class) the starting class's comes first; between the three cities'
+  (The Company You Keep), Limsa Lominsa's, Gridania's, then Ul'dah's, by the city in the quest's script name (`Sea`,
+  `Fst`, `Wil`): retail put them as 681, 680, 682 in all three runs (three different start cities, three different
+  companies chosen), and nothing else in the Quest or ScenarioTree sheets gives that order. Otherwise the sheet's
+  order. The order matters: until 2026-10-29 Kawari sent the sheet's 680, 681, 682, and with The Company You Keep
+  (Maelstrom) accepted the guide still said "Select a Grand Company" (Bob's bundle 20261029-160828). The client seems
+  to take the first path for the one being followed, so on retail a Twin Adder or Immortal Flames player may see the
+  same; not checked.
 * ScenarioTree is read in whatever language it has.
 
 * **Under the guide**: the client lists quests that unlock content (Quest's `Introduction`, e.g. My Little Chocobo,

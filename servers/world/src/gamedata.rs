@@ -2505,13 +2505,28 @@ impl GameData {
             .max_by_key(|(_, row)| (row.Expansion, row.SortKey))?;
 
         // Between variants for different classes (Gridania's three Close to Home), the one for the class they started
-        // with first (which of these two fields says so isn't confirmed, so either counts); otherwise the sheet's order.
+        // with first (which of these two fields says so isn't confirmed, so either counts). Between the three cities'
+        // variants (The Company You Keep), Limsa Lominsa's, Gridania's, then Ul'dah's, by the city in the quest's
+        // script name (Sea, Fst, Wil): retail sent 681, 680, 682 in all three of Bob's runs (Chronofoil captures
+        // b8432613, c99fe374 and cc62ad94), whichever company was chosen. With the sheet's 680 first, a Maelstrom
+        // player on 681 saw "Select a Grand Company" (Bob's bundle 20261029-160828): the client seems to take the
+        // first path for the one being followed. Otherwise the sheet's order.
+        let city = |row: &QuestRow| {
+            let name = row.Id.to_string();
+            ["Sea", "Fst", "Wil"]
+                .iter()
+                .position(|city| name.get(3..6) == Some(*city))
+                .unwrap_or(3)
+        };
         let mut next: Vec<&(u32, QuestRow)> = followers(*last)
             .into_iter()
             .filter(|(id, _)| available.contains(id))
             .collect();
         next.sort_by_key(|(_, row)| {
-            !(row.ClassJobRequired == first_class || row.ClassJobUnlock == first_class)
+            (
+                !(row.ClassJobRequired == first_class || row.ClassJobUnlock == first_class),
+                city(row),
+            )
         });
         let next = next
             .into_iter()

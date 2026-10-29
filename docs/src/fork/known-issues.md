@@ -119,8 +119,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   Characters that finished 700-702 before this lack the company's saddle (`unlock_buddy_equip` gives it.)
 * **Mounting** (2026-10-29, [Chocobo companion](chocobo.md#riding)): retail's ActorControl 0 `[0, 1]` and 2 `[4]`
   around the Mount packet aren't sent.
-* **The Scenario Guide** (2026-10-28, [Quests](quests.md#scenario-guide)): untested in game. Retail's order of the
-  Grand Companies' three after 511 (681, 680, 682) isn't the sheet's, which Kawari sends (680, 681, 682). The quest
+* **The Scenario Guide** (2026-10-28, [Quests](quests.md#scenario-guide)): retail's order of the Grand Companies'
+  three after 511 (681, 680, 682) is sent since 2026-10-29; whether the guide then shows 680 or 682 once accepted
+  (rather than "Select a Grand Company") isn't known, on retail or here. The quest
   completed last is worked out from the completed quests, not recorded as retail must; a quest done out of the
   story's order (with `!quest` or Kawari Web) could put the guide on an earlier step. Steps before the city's last
   quests and after We Come in Peace weren't in a capture. We Come in Peace (3856) isn't scripted.
