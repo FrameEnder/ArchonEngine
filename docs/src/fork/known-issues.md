@@ -116,10 +116,18 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * **My Little Chocobo under the Scenario Guide** (2026-10-29): the quest stayed listed under the guide once done.
   Retail completes a quest before ending the event; Kawari's scripts ended it first. The event now ends after the
   quests finished with it, which is believed (not yet seen in game) to be what the client refreshes the list on.
-* **The Gold Saucer** (2026-10-29, [The Gold Saucer](gold-saucer.md#known-gaps)): untested in game. No GATE can be
-  played, no chocobo racing, no Triple Triad (437 isn't scripted); the Jumbo Cactpot's claim is a guess (paid at the
-  next talk) and its participant bonus missing; the Gold Saucer window shows nothing; no achievements or bonuses for the
-  games. The Mini Cactpot's diagonal lines (6, 7) and The Finer Miner's Morbol and Titan weren't played on retail.
+* **The Gold Saucer** (2026-10-29, [The Gold Saucer](gold-saucer.md#known-gaps)): untested in game. No chocobo racing,
+  no Triple Triad (437 isn't scripted); the Jumbo Cactpot's claim is a guess (paid at the next talk) and its participant
+  bonus missing; the Gold Saucer window shows nothing; no Gold Saucer bonuses. The Mini Cactpot's diagonal lines (6, 7)
+  and The Finer Miner's Morbol and Titan weren't played on retail.
+* **GATEs** (2026-10-29, [The Gold Saucer](gold-saucer.md#gates)): untested in game. Only Air Force One is played, so
+  every slot holds one; Cliffhanger, Any Way the Wind Blows, Leap of Faith and The Slice Is Right aren't. The Gold
+  Saucer's Air Force One (rows 74-76, territory 832, at :20) wasn't seen on retail since 7.4, only the Cieldalaes'. The
+  entrance's first parameter and the opening's fifth are retail's numbers, not understood; the rank in the result is a
+  guess (1 for S, as both runs); RideShootingEnd is retail's 40 bytes as they were. Where the duty puts the player isn't
+  known (InstanceContent 62005 has no entrance; Kawari picks a pop range.) A GATE played is remembered for the
+  connection only (logging out and back in lets it be played again), and from the Duty Finder's question rather than
+  entering. TerminateDirector isn't sent as the player leaves the Gold Saucer during a GATE.
 * **Warps** (2026-10-29, [Travel](travel.md#warps-and-their-conditions)): the ConditionFailEvent's packets are a guess
   (retail's success talk's); a warp with a ConfirmEvent doesn't play it (retail's airship and ferry didn't either.)
 * **Mounting** (2026-10-29, [Chocobo companion](chocobo.md#riding)): retail's ActorControl 0 `[0, 1]` and 2 `[4]`

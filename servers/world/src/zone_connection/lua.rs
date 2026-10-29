@@ -475,13 +475,13 @@ impl ZoneConnection {
                     })
                     .await;
                 }
-                LuaTask::MoveToPopRange { id, fade_out } => {
+                LuaTask::MoveToPopRange { id, warp_type } => {
                     self.handle
                         .send(ToServer::MoveToPopRange(
                             self.id,
                             self.player_data.character.actor_id,
                             *id,
-                            *fade_out,
+                            *warp_type,
                         ))
                         .await;
                 }

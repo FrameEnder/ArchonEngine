@@ -45,9 +45,14 @@ mod companion;
 mod effect;
 mod event;
 mod friends;
+mod gate;
 mod gathering;
 mod glamour;
 mod hunting_log;
+pub use achievement::{
+    COUNTER_GATES_COMPLETED, COUNTER_GOLD_SAUCER_MGP, COUNTER_JUMBO_CACTPOT_MGP,
+    COUNTER_MINI_CACTPOT_MGP,
+};
 pub use gathering::GatheringState;
 mod item;
 mod linkshell;
@@ -61,6 +66,11 @@ mod quest;
 pub use player_currency::{ACHIEVEMENT_CERTIFICATES_TOTAL, PLAYER_CURRENCIES, certificates_owed};
 pub use quest::RETAINER_UNLOCK_LINK;
 mod retainer;
+mod ride_shooting;
+pub use ride_shooting::{
+    OPENING_SCENE_FLAGS as RIDE_SHOOTING_OPENING_FLAGS,
+    OPENING_SCENE_VALUE as RIDE_SHOOTING_OPENING_VALUE,
+};
 mod social;
 mod spiritbond;
 pub use spiritbond::{GearUse, MaterializeRequest};
@@ -296,6 +306,12 @@ pub struct ZoneConnection {
     pub scenario_guide_sent: Option<(u32, Vec<(u32, u32)>)>,
     /// The Gold Saucer game being played (a Mini Cactpot ticket, an arcade machine's play), while its event lasts.
     pub gold_saucer_game: Option<crate::events::GoldSaucerGame>,
+    /// The GATE (its slot, `gate.rs`) the player joined: each can be played once.
+    pub gate_joined: Option<u64>,
+    /// When the GATEs were last looked at (`gate_changed`), so each beginning and end is told once.
+    pub gate_checked: u64,
+    /// Whether this Air Force One's score has been taken (the client sends it again and again until it leaves.)
+    pub ride_shooting_scored: bool,
     /// Packet capture for debugging, if enabled in the config.
     pub capture: crate::capture::PacketCapture,
 }

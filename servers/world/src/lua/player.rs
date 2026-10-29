@@ -11,7 +11,7 @@ use crate::{
     zone_connection::BaseParameters,
 };
 use kawari::{
-    common::{ObjectTypeId, ObjectTypeKind, Position},
+    common::{ObjectTypeId, ObjectTypeKind, Position, WarpType},
     ipc::zone::{
         ActorControlCategory, ActorControlSelf, ActorSetPos, EventType, GrandCompany, OnlineStatus,
         SceneFlags, ServerNoticeFlags, ServerNoticeMessage, ServerZoneIpcData,
@@ -407,9 +407,9 @@ impl LuaPlayer {
             .push(LuaTask::ToggleAetherCurrentCompFlgSetAll {});
     }
 
-    fn move_to_pop_range(&mut self, id: u32, fade_out: bool) {
+    fn move_to_pop_range(&mut self, id: u32, warp_type: WarpType) {
         self.queued_tasks
-            .push(LuaTask::MoveToPopRange { id, fade_out });
+            .push(LuaTask::MoveToPopRange { id, warp_type });
     }
 
     fn set_hp(&mut self, hp: u32) {
@@ -436,6 +436,42 @@ impl LuaPlayer {
     /// A warp's details for its script (`GameData::get_warp_details`): whether the player meets its WarpCondition (the
     /// quests, the class level, the fare in gil), the DefaultTalks shown when they do (`success_event`, before the
     /// question) or don't (`fail_event`), the trip's cutscene and the fare.
+    /// The GATEs for the GATE Keepers (`gate.rs`): `current` while one is on (its type, location, GFATE row, the pop
+    /// range at its entrance and whether registration is open), `next` the next to begin (the same, and `time`, the
+    /// minute it begins, as retail's scene 2 gives it: 18:00:00 for the one beginning at 18:00:01.)
+    fn gate_info(&self, lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
+        let game_data = match lua.globals().get::<mlua::Value>("GAME_DATA")? {
+            mlua::Value::UserData(ud) => ud.borrow::<Arc<Mutex<GameData>>>()?.clone(),
+            _ => unreachable!(),
+        };
+        let now = kawari::common::timestamp_secs() as u64;
+        let (current, next) = {
+            let mut game_data = game_data.lock();
+            (
+                crate::gate::Gate::current(&mut game_data, now),
+                crate::gate::Gate::next(&mut game_data, now),
+            )
+        };
+        let describe = |gate: &crate::gate::Gate| -> mlua::Result<mlua::Table> {
+            let table = lua.create_table()?;
+            table.set("kind", gate.row.kind)?;
+            table.set("location", gate.row.location)?;
+            table.set("row", gate.row.row)?;
+            table.set("pop_range", gate.row.pop_range)?;
+            table.set("registering", gate.registering(now))?;
+            table.set("time", gate.start - crate::gate::GATE_START_OFFSET)?;
+            Ok(table)
+        };
+        let table = lua.create_table()?;
+        if let Some(gate) = current {
+            table.set("current", describe(&gate)?)?;
+        }
+        if let Some(gate) = next {
+            table.set("next", describe(&gate)?)?;
+        }
+        Ok(table)
+    }
+
     fn warp_info(&self, lua: &mlua::Lua, warp_id: u32) -> mlua::Result<mlua::Table> {
         let game_data = match lua.globals().get::<mlua::Value>("GAME_DATA")? {
             mlua::Value::UserData(ud) => ud.borrow::<Arc<Mutex<GameData>>>()?.clone(),
@@ -1180,9 +1216,18 @@ impl UserData for LuaPlayer {
         );
         methods.add_method_mut(
             "move_to_pop_range",
-            |lua, this, (id, fade_out): (u32, Value)| {
+            |lua, this, (id, fade_out, warp_type): (u32, Value, Option<u8>)| {
                 let fade_out: bool = lua.from_value(fade_out).unwrap_or_default();
-                this.move_to_pop_range(id, fade_out);
+                // A warp type of its own: 2 fades out as retail's GATE Keepers' warps did (PrepareZoning with 2, Bob's
+                // Chronofoil capture 2c98f9e8.)
+                let warp_type = match warp_type {
+                    Some(2) => WarpType::Unk2,
+                    Some(1) => WarpType::Normal,
+                    Some(_) => WarpType::None,
+                    None if fade_out => WarpType::Normal,
+                    None => WarpType::None,
+                };
+                this.move_to_pop_range(id, warp_type);
                 Ok(())
             },
         );
@@ -1259,6 +1304,7 @@ impl UserData for LuaPlayer {
                 ))
             },
         );
+        methods.add_method("gate_info", |lua, this, _: ()| this.gate_info(lua));
         methods.add_method("warp_info", |lua, this, warp_id: u32| {
             this.warp_info(lua, warp_id)
         });

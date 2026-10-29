@@ -37,6 +37,9 @@ use crate::{
     },
     inventory::{CurrencyKind, CurrencyStorage},
     lua::LuaPlayer,
+    zone_connection::{
+        COUNTER_GOLD_SAUCER_MGP, COUNTER_JUMBO_CACTPOT_MGP, COUNTER_MINI_CACTPOT_MGP,
+    },
 };
 
 /// The MGP the player won (LogMessage 4765: "You obtain ... MGP.")
@@ -53,6 +56,10 @@ pub enum GoldSaucerGame {
         payout: u32,
     },
     Staged(StagedGame),
+    /// A GATE joined at its entrance, on its way to its duty through this ContentEntry event.
+    GateEntry {
+        content_entry: u32,
+    },
 }
 
 fn flags() -> SceneFlags {
@@ -98,6 +105,11 @@ impl ZoneConnection {
             CurrencyStorage::get_slot_for_id(CurrencyKind::MGP),
         )
         .await;
+        // MGP won counts towards What Happens in the Saucer.
+        if amount > 0 {
+            self.add_to_achievement_counter(COUNTER_GOLD_SAUCER_MGP, amount as u32)
+                .await;
+        }
     }
 
     /// MGP won: retail's log line (LogMessage 4765 with the player and the MGP), then the MGP.
@@ -111,6 +123,20 @@ impl ZoneConnection {
             value: mgp,
         })
         .await;
+        self.change_mgp(mgp as i64).await;
+    }
+
+    /// MGP won, with the InventoryActionAck retail sent between the log line and the MGP after a Mini Cactpot line and
+    /// Air Force One.
+    pub async fn win_mgp_acknowledged(&mut self, mgp: u32) {
+        self.actor_control_self(ActorControlCategory::LogMessageActorNumber {
+            log_message: LOG_MGP_OBTAINED,
+            actor_id: self.player_data.character.actor_id,
+            value: mgp,
+        })
+        .await;
+        self.send_inventory_ack(u32::MAX, INVENTORY_ACTION_ACK_SHOP, 0)
+            .await;
         self.change_mgp(mgp as i64).await;
     }
 
@@ -307,6 +333,9 @@ impl EventHandler for MiniCactpotEventHandler {
                     .send_inventory_ack(u32::MAX, INVENTORY_ACTION_ACK_SHOP, 0)
                     .await;
                 connection.change_mgp(mgp as i64).await;
+                connection
+                    .add_to_achievement_counter(COUNTER_MINI_CACTPOT_MGP, mgp)
+                    .await;
                 connection.send_gold_saucer_flags().await;
                 connection
                     .actor_control_self(director_event(event, 4, [mgp, sum, 0, 0]))
@@ -389,6 +418,9 @@ impl JumboCactpotEventHandler {
                 "Jumbo Cactpot week {week}: ticket {ticket:04} against {winning:04}, {prize} MGP"
             );
             connection.win_mgp(prize).await;
+            connection
+                .add_to_achievement_counter(COUNTER_JUMBO_CACTPOT_MGP, prize)
+                .await;
         }
     }
 }
@@ -705,5 +737,131 @@ impl ZoneConnection {
     /// An arcade machine's payout, after its event finished (see `ArcadeMachineEventHandler::pay`.)
     pub async fn pay_arcade(&mut self, machine: u32, mgp: u32) {
         ArcadeMachineEventHandler::pay(self, machine, mgp).await;
+    }
+}
+
+// --- The GATEs' entrances ---
+
+/// A GATE's entrance (`gate.rs`): an event on the GATE's own director (GoldSaucer), which the client starts at the
+/// entrance it shows. As retail played them (Bob's Chronofoil captures deaf7e28 and 2c98f9e8): scene 0 (0x2000) with
+/// `[the kind's number (Air Force One 498, 501 once played), 0, MGP]`; joining is its yield `[1]`. An in-zone GATE
+/// answers with DirectorEvent `[5, 1, start, registration window]` and the event finishes; an instanced one resumes the
+/// scene with nothing, and when it returns plays the GATE's ContentEntry event, nested (scene 0), which puts the duty in
+/// the Duty Finder (`ContentEntryEventHandler`.)
+#[derive(Debug, Default)]
+pub struct GateEventHandler;
+
+impl GateEventHandler {
+    const SCENE: u16 = 0;
+    const JOIN: i32 = 1;
+    /// The registration's DirectorEvent (see `zone_connection/gate.rs`.)
+    const EVENT_JOINED: u32 = 5;
+
+    fn gate(event: &Event, connection: &ZoneConnection) -> Option<crate::gate::Gate> {
+        let now = timestamp_secs() as u64;
+        connection
+            .current_gate()
+            .filter(|gate| gate.director() == event.id && gate.registering(now))
+    }
+}
+
+#[async_trait]
+impl EventHandler for GateEventHandler {
+    async fn on_talk_connection(
+        &self,
+        event: &Event,
+        _target_id: ObjectTypeId,
+        connection: &mut ZoneConnection,
+        player: &mut LuaPlayer,
+    ) -> bool {
+        let Some(gate) = Self::gate(event, connection) else {
+            tracing::info!("GATE entrance {}: no GATE taking registrations", event.id);
+            player.finish_event();
+            return true;
+        };
+        let first = if connection.joined_gate(&gate) {
+            gate.kind.entrance_played
+        } else {
+            gate.kind.entrance
+        };
+        let mgp = connection.mgp();
+        connection
+            .event_scene(event, Self::SCENE, flags(), vec![first, 0, mgp])
+            .await;
+        true
+    }
+
+    async fn on_yield(
+        &self,
+        event: &Event,
+        connection: &mut ZoneConnection,
+        scene: u16,
+        _yield_id: u8,
+        results: &[i32],
+        player: &mut LuaPlayer,
+    ) {
+        let gate = Self::gate(event, connection);
+        match gate {
+            Some(gate)
+                if results.first() == Some(&Self::JOIN) && !connection.joined_gate(&gate) =>
+            {
+                if gate.kind.instanced {
+                    let content = connection
+                        .game_data
+                        .lock()
+                        .gate_content(gate.row.kind, gate.place);
+                    let Some((content_entry, _)) = content else {
+                        tracing::warn!("GATE row {} has no duty to go to", gate.row.row);
+                        player.finish_event();
+                        return;
+                    };
+                    connection.gold_saucer_game = Some(GoldSaucerGame::GateEntry { content_entry });
+                    connection
+                        .resume_event(event.id.0, scene, 0, Vec::new())
+                        .await;
+                } else {
+                    connection.gate_joined = Some(gate.slot);
+                    connection
+                        .actor_control_self(director_event(
+                            event,
+                            Self::EVENT_JOINED,
+                            [1, gate.start as u32, gate.kind.registration as u32, 0],
+                        ))
+                        .await;
+                    player.finish_event();
+                }
+            }
+            _ => player.finish_event(),
+        }
+    }
+
+    async fn on_return(
+        &self,
+        _event: &Event,
+        connection: &mut ZoneConnection,
+        scene: u16,
+        _results: &[i32],
+        player: &mut LuaPlayer,
+    ) {
+        // Its ContentEntry finished: this one finishes with it.
+        if scene == 255 {
+            return;
+        }
+        if let Some(GoldSaucerGame::GateEntry { content_entry }) =
+            connection.gold_saucer_game.take()
+        {
+            player.queued_tasks.push(crate::lua::LuaTask::StartEvent {
+                event_id: content_entry,
+                event_type: kawari::ipc::zone::EventType::Nest,
+                event_arg: 0,
+            });
+            player.play_scene(
+                crate::ContentEntryEventHandler::SCENE,
+                SceneFlags::HIDE_HOTBAR,
+                Vec::new(),
+            );
+            return;
+        }
+        player.finish_event();
     }
 }

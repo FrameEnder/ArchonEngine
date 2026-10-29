@@ -19,7 +19,8 @@ use diesel::sqlite::Sqlite;
 use kawari::constants::{CLASSJOB_ARRAY_SIZE, SHARED_FATES_SIZE};
 use serde::{Deserialize, Serialize};
 pub use zone_connection::{
-    GearUse, MaterializeRequest, ObsfucationData, PlayerData, TeleportReason, ZoneConnection,
+    GearUse, MaterializeRequest, ObsfucationData, PlayerData, RIDE_SHOOTING_OPENING_FLAGS,
+    RIDE_SHOOTING_OPENING_VALUE, TeleportReason, ZoneConnection,
 };
 
 mod database;
@@ -33,6 +34,9 @@ pub use hunting_log::HUNTING_LOGS;
 
 /// The Gold Saucer's lotteries and arcade machines: their rules and what the character keeps of them.
 pub mod gold_saucer;
+
+/// The GATEs: when they are and which one each is.
+pub mod gate;
 
 /// Retainers: who they are, what they hold, and how they're shown at a summoning bell.
 pub mod retainer;

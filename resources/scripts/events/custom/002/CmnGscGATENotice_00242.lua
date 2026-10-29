@@ -1,45 +1,49 @@
--- The NPCs that inform and teleport you to the current GATE
+-- The GATE Keepers: they tell of the GATE on now, or the next one, and can send you to its entrance.
+--
+-- As retail played them (Bob's Chronofoil captures deaf7e28 and 2c98f9e8 of 2026-10-29, and his archive), all with
+-- flags 0x2000:
+-- Scene 0: a GATE is taking registrations: { type, location, GFATE row }.
+-- Scene 1: a GATE is under way that can't be joined any more (Any Way the Wind Blows after its registration, 61a9a4f3):
+--          the same parameters.
+-- Scene 2: none is on: the next one, { the minute it begins (18:00:00 for 18:00:01's), type, location, row }.
+-- Each returns { 1 to be sent to the GATE's entrance, the row }; retail then finished the event and moved the player to
+-- the entrance's pop range in the Gold Saucer (PrepareZoning with warp type 2.)
+--
+-- GFateType: 1 Cliffhanger, 5 Any Way the Wind Blows, 6 Leap of Faith, 7 Air Force One, 8 The Slice Is Right (2-4 are
+-- GATEs that are gone.) Locations: 1 Wonder Square East, 2 Event Square, 3 Round Square.
 
--- Scenes
---[[ Scene 0 informs the player that a GATE is currently active, where it's taking place, and has the following parameters:
-    First is the GATE, second is the location. See scene 2 notes for GATE ids and location ids.
-]]
-SCENE_00000 = 00000
+SCENE_REGISTRATION = 0
+SCENE_UNDER_WAY = 1
+SCENE_NEXT = 2
 
--- Scene 1 informs the player about an ongoing GATE that can't be participated in (Wind, Slice) but can still be observed and likely shares the same parameters as scene 0. No capture has been made yet, though.
-SCENE_00001 = 00001
+-- A fade, as retail's warp to the entrance.
+WARP_TYPE_FADE = 2
 
---[[ Scene 2 informs the player about when and where the next GATE will take place, and has the following parameters:
-    First one is a Unix timestamp
-
-    Second is the GATE:
-    1 is Cliffhanger
-    2 is Vase Off (a defunct gate)
-    3 is Skinchange We Can Believe In (an old defunct gate)
-    4 is The Time of My Life (another defunct gate)
-    5 is Any Way The Wind Blows
-    6 is Leap of Faith
-    7 is Air Force One
-    8 is Slice is Right
-    -Anything not in the range of 1-9 is " " or causes a softlock
-    
-    Third is the location:
-    1 is Wonder Square East
-    2 is Event Square
-    3 is Round Square
-    4 is Cactpot Board (???)
-    -Anything not in that range results in " " or a softlock
-
-    The fourth is unknown, possibly flags or a destination id of some sort
-]]
-SCENE_00002 = 00002
+-- The GATE this talk is about, for the warp.
+gate = nil
 
 function onTalk(target, player)
-    -- Currently using placeholders for now: Cliffhanger in Wonder Square East.
-    player:play_scene(SCENE_00000, HIDE_HOTBAR, {1, 1})
+    local info = player:gate_info()
+    if info.current ~= nil then
+        gate = info.current
+        if gate.registering then
+            player:play_scene(SCENE_REGISTRATION, HIDE_HOTBAR, { gate.kind, gate.location, gate.row })
+        else
+            player:play_scene(SCENE_UNDER_WAY, HIDE_HOTBAR, { gate.kind, gate.location, gate.row })
+        end
+    elseif info.next ~= nil then
+        gate = info.next
+        player:play_scene(SCENE_NEXT, HIDE_HOTBAR, { gate.time, gate.kind, gate.location, gate.row })
+    else
+        gate = nil
+        player:finish_event()
+    end
 end
 
 function onReturn(scene, results, player)
-    -- first result is 1 if requesting to warp, otherwise 0
     player:finish_event()
+    if gate ~= nil and results[1] == 1 then
+        player:move_to_pop_range(gate.pop_range, true, WARP_TYPE_FADE)
+    end
+    gate = nil
 end

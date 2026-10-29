@@ -1076,6 +1076,127 @@ impl GameData {
         })
     }
 
+    /// A GATE's GFATE row: its type (GFateType), where it is (1 Wonder Square East, 2 Event Square, 3 Round Square)
+    /// and the pop range at its entrance (the first of its GFATEParams.)
+    pub fn get_gate_row(&mut self, row: u32) -> Option<GateRow> {
+        let gate = self.gfate_sheet.row(row)?;
+        Some(GateRow {
+            row,
+            kind: gate.Type,
+            location: gate.Unknown11,
+            pop_range: gate.GFATEParams[0].LGBPopRange,
+        })
+    }
+
+    /// The GFATE rows of a GATE type, in order. A row's place among them (counted from 1) is the row of its type's own
+    /// sheet it uses (GFateRideShooting for Air Force One, GFateClimbing2 for Leap of Faith), which retail tells the
+    /// client in DirectorEvent `[9, row, place]` (Air Force One's row 98 is 6, Leap of Faith's 80 is 12, Any Way the
+    /// Wind Blows' 19 is 2: Bob's Chronofoil capture 2c98f9e8.)
+    pub fn gate_rows(&mut self, kind: u8) -> Vec<u32> {
+        self.gfate_sheet
+            .into_iter()
+            .flatten_subrows()
+            .filter(|(_, row)| row.Type == kind)
+            .map(|(id, _)| id)
+            .collect()
+    }
+
+    /// The ContentEntry event and the duty (ContentFinderCondition) an instanced GATE sends its players to, by its
+    /// type and its row of that type's sheet: Air Force One's (7) GFateRideShooting row has the ContentEntry, and the
+    /// InstanceContent of type 15 (RideShooting) whose ContentRoute is that row is the duty; Leap of Faith's (6)
+    /// GFateClimbing2 row has it, and the PublicContent of type 5 whose AdditionalData is that row is the duty. Retail's:
+    /// Air Force One row 6 is ContentEntry 117 and ContentFinderCondition 1083, Leap of Faith row 12 is 91 and 707
+    /// (Bob's Chronofoil capture 2c98f9e8.)
+    pub fn gate_content(&mut self, kind: u8, place: u32) -> Option<(u32, u16)> {
+        match kind {
+            crate::gate::KIND_AIR_FORCE_ONE => {
+                let sheet = icarus::GFateRideShooting::GFateRideShootingSheet::read_from(
+                    &mut self.resource,
+                    Language::None,
+                )
+                .ok()?;
+                let entry = sheet.row(place)?.ContentEntry;
+                let duty = self
+                    .instance_content_sheet
+                    .into_iter()
+                    .flatten_subrows()
+                    .find(|(_, row)| {
+                        row.InstanceContentType == INSTANCE_CONTENT_RIDE_SHOOTING
+                            && row.ContentRoute as u32 == place
+                    })
+                    .map(|(_, row)| row.ContentFinderCondition)?;
+                Some((entry, duty))
+            }
+            crate::gate::KIND_LEAP_OF_FAITH => {
+                let sheet = icarus::GFateClimbing2::GFateClimbing2Sheet::read_from(
+                    &mut self.resource,
+                    Language::None,
+                )
+                .ok()?;
+                let entry = sheet.row(place)?.ContentEntry;
+                let duty = self
+                    .public_content_sheet
+                    .into_iter()
+                    .flatten_subrows()
+                    .find(|(_, row)| {
+                        row.Type == PUBLIC_CONTENT_LEAP_OF_FAITH
+                            && row.AdditionalData as u32 == place
+                    })
+                    .map(|(_, row)| row.ContentFinderCondition)?;
+                Some((entry, duty))
+            }
+            _ => None,
+        }
+    }
+
+    /// The duty a ContentEntry event (its handler ID) enters, for the GATEs that have one (see `gate_content`.)
+    pub fn content_entry_duty(&mut self, handler: u32) -> Option<u16> {
+        let ride_shooting = icarus::GFateRideShooting::GFateRideShootingSheet::read_from(
+            &mut self.resource,
+            Language::None,
+        )
+        .ok()?
+        .into_iter()
+        .flatten_subrows()
+        .find(|(_, row)| row.ContentEntry == handler)
+        .map(|(place, _)| (crate::gate::KIND_AIR_FORCE_ONE, place));
+        let found = ride_shooting.or_else(|| {
+            icarus::GFateClimbing2::GFateClimbing2Sheet::read_from(
+                &mut self.resource,
+                Language::None,
+            )
+            .ok()?
+            .into_iter()
+            .flatten_subrows()
+            .find(|(_, row)| row.ContentEntry == handler)
+            .map(|(place, _)| (crate::gate::KIND_LEAP_OF_FAITH, place))
+        });
+        let (kind, place) = found?;
+        self.gate_content(kind, place).map(|(_, duty)| duty)
+    }
+
+    /// Air Force One's course (its GFateRideShooting row) in an InstanceContent of type 15 (RideShooting): its
+    /// ContentRoute, which retail tells the client as the duty begins (DirectorEvent `[0, 6]` in InstanceContent 62005.)
+    pub fn ride_shooting_course(&mut self, instance_content: u16) -> Option<u16> {
+        let row = self.instance_content_sheet.row(instance_content as u32)?;
+        (row.InstanceContentType == INSTANCE_CONTENT_RIDE_SHOOTING).then_some(row.ContentRoute)
+    }
+
+    /// What each of Air Force One's targets is worth, by RideShootingTargetType row (1 gold, 2 silver, 3 bronze, 4 the
+    /// ruby bomb: 300, 100, 50 and -20.)
+    pub fn ride_shooting_scores(&mut self) -> Vec<i32> {
+        let Ok(sheet) = icarus::RideShootingTargetType::RideShootingTargetTypeSheet::read_from(
+            &mut self.resource,
+            Language::None,
+        ) else {
+            return Vec::new();
+        };
+        (1..sheet.row_count())
+            .filter_map(|row| sheet.row(row))
+            .map(|row| row.Score as i32)
+            .collect()
+    }
+
     /// Returns the warp logic name (if any) for this Warp.
     pub fn get_warp_logic_name(&mut self, warp_id: u32) -> String {
         let row = self.warp_sheet.row(warp_id).unwrap();
@@ -4195,6 +4316,20 @@ pub struct ArcadeMachine {
     pub texts: [u32; 4],
     pub ranges: [(u8, u8); 4],
     pub values: [u8; 4],
+}
+
+/// InstanceContent's InstanceContentType for Air Force One's duties (62000-62005.)
+pub const INSTANCE_CONTENT_RIDE_SHOOTING: u8 = 15;
+/// PublicContent's Type for Leap of Faith's courses (PublicContent 7-42.)
+pub const PUBLIC_CONTENT_LEAP_OF_FAITH: u8 = 5;
+
+/// A GATE as its GFATE row has it (`GameData::get_gate_row`.)
+#[derive(Debug, Default, Clone, Copy)]
+pub struct GateRow {
+    pub row: u32,
+    pub kind: u8,
+    pub location: u8,
+    pub pop_range: u32,
 }
 
 /// What a warp (a Warp row) asks of the player and plays around itself: its WarpCondition (the quests done, all of them

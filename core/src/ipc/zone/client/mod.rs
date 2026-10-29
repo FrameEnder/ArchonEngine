@@ -604,6 +604,17 @@ pub enum ClientZoneIpcData {
         choice: u32,
         unk: u32,
     },
+    /// Air Force One's result (fork: Bob's Chronofoil captures deaf7e28 and 2c98f9e8, 2026-10-29), sent as the ride
+    /// ends and again and again (568 and 626 times) until the player leaves: 6, the score, 0-5, then the targets hit.
+    /// The two runs' were `06 00 74 13 00 01 02 03 04 05 0e 2a 01 00 00 00` (4980) and `... 42 13 ... 0e 29 01 ...`
+    /// (4930): 14 silver, 42 and 41 bronze, one ruby bomb. The golds (5 both times) aren't there; the result scene had
+    /// them, as the score less the others (see `zone_connection/ride_shooting.rs`.)
+    RideShootingScore {
+        unk1: u16,
+        score: u16,
+        unk2: [u8; 6],
+        hits: [u8; 6],
+    },
     CrossRealmListingsRequest1 {
         unk1: u32,
         unk2: u32,

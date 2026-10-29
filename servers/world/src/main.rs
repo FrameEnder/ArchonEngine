@@ -62,7 +62,8 @@ use kawari_world::{
 use kawari_world::{
     CLIENT_QUEUE_SIZE, ChatConnection, CustomIpcConnection, Event, EventHandler, GameData,
     ObsfucationData, QUEST_BATTLE_SCENE_COMPLETE, QUEST_BATTLE_SCENE_FINISH,
-    QUEST_BATTLE_SCENE_FINISH_FLAGS, Roulette, TeleportReason, ZoneConnection,
+    QUEST_BATTLE_SCENE_FINISH_FLAGS, RIDE_SHOOTING_OPENING_FLAGS, RIDE_SHOOTING_OPENING_VALUE,
+    Roulette, TeleportReason, ZoneConnection,
 };
 
 use mlua::Function;
@@ -245,6 +246,9 @@ async fn initial_setup(
                     pending_event_text: None,
                     scenario_guide_sent: None,
                     gold_saucer_game: None,
+                    gate_joined: None,
+                    gate_checked: kawari::common::timestamp_secs() as u64,
+                    ride_shooting_scored: false,
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
                 };
 
@@ -1261,6 +1265,13 @@ async fn process_packet(
                                             .await;
                                     }
                                 }
+                                // The client asking its GATE director what's on (`zone_connection/gate.rs`.)
+                                ClientTriggerCommand::DirectorTrigger {
+                                    handler_id,
+                                    trigger: director_trigger,
+                                } if handler_id.handler_type() == HandlerType::GoldSaucer => {
+                                    connection.gate_trigger(handler_id, &director_trigger).await;
+                                }
                                 ClientTriggerCommand::OpenGoldSaucerGeneralTab => {
                                     let ipc = ServerZoneIpcSegment::new(
                                         ServerZoneIpcData::GoldSaucerInformation { unk: [0; 40] },
@@ -1386,6 +1397,13 @@ async fn process_packet(
                                         .await;
                                 }
                                 ClientTriggerCommand::AbandonContent { .. } => {
+                                    // Leaving from a scene of the duty's director (Air Force One's result): retail
+                                    // finished its event first (Bob's Chronofoil captures deaf7e28 and 2c98f9e8.)
+                                    if events.last().is_some_and(|event| {
+                                        Some(event.1.id) == connection.content_handler_id
+                                    }) {
+                                        connection.event_finish(events).await;
+                                    }
                                     // Remove ourselves from this instance.
                                     connection
                                         .handle
@@ -3753,6 +3771,12 @@ async fn process_packet(
                                 ))
                                 .await;
                         }
+                        // Air Force One's score as the ride ends (`zone_connection/ride_shooting.rs`.)
+                        ClientZoneIpcData::RideShootingScore { score, hits, .. } => {
+                            connection
+                                .ride_shooting_score(*score, *hits, events, lua_player)
+                                .await;
+                        }
                         ClientZoneIpcData::CrossRealmListingsRequest1 { max_results, .. } => {
                             let results_aligned = max_results.div_ceil(4) * 4; // each packet holds 4
                             let required_packets = results_aligned / 4;
@@ -5322,12 +5346,28 @@ async fn process_server_msg(
                 let is_quest_battle = connection
                     .content_handler_id
                     .is_some_and(|x| x.handler_type() == HandlerType::QuestBattle);
+                // Air Force One's opening has flags and a fifth parameter of its own (`zone_connection/ride_shooting.rs`.)
+                let ride_shooting = connection.ride_shooting_director().is_some();
                 let params = if is_quest_battle {
                     Vec::new()
                 } else {
                     vec![
                         0, // BGM, according to sapphire?
-                        0, 0, 5, 14400, 0, 0, 0, 0, 0, duration, settings,
+                        0,
+                        0,
+                        5,
+                        if ride_shooting {
+                            RIDE_SHOOTING_OPENING_VALUE
+                        } else {
+                            14400
+                        },
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        duration,
+                        settings,
                     ]
                 };
                 // Duties' openings (0x0C53A401) are retail's; a quest battle's opening is a cutscene with its own flags
@@ -5337,6 +5377,8 @@ async fn process_server_msg(
                     SceneFlags::from_bits_retain(
                         opening_flags.unwrap_or(QUEST_BATTLE_OPENING_FLAGS),
                     )
+                } else if ride_shooting {
+                    SceneFlags::from_bits_retain(RIDE_SHOOTING_OPENING_FLAGS)
                 } else {
                     SceneFlags::NO_DEFAULT_CAMERA
                         | SceneFlags::CONDITION_CUTSCENE
@@ -5401,6 +5443,14 @@ async fn process_server_msg(
     }
 }
 
+/// How long until a moment given in seconds since the epoch (a little after it, so the second has begun.)
+fn until_unix_time(at: u64) -> std::time::Duration {
+    (SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(at))
+        .duration_since(SystemTime::now())
+        .unwrap_or_default()
+        + std::time::Duration::from_millis(50)
+}
+
 async fn client_loop(
     mut connection: ZoneConnection,
     mut internal_recv: UnboundedReceiver<FromServer>,
@@ -5430,6 +5480,7 @@ async fn client_loop(
     autosave.tick().await; // the first tick is immediate, there's nothing new to save yet
 
     loop {
+        let gate_wait = until_unix_time(connection.next_gate_change());
         tokio::select! {
             biased; // client data should always be prioritized
             n = connection.socket.read(&mut buf) => {
@@ -5450,6 +5501,10 @@ async fn client_loop(
                 if connection.player_data.character.actor_id.is_valid() && !connection.gracefully_logged_out {
                     connection.autosave();
                 }
+            }
+            // A GATE beginning or ending (`gate.rs`), told to whoever is in the Gold Saucer.
+            _ = tokio::time::sleep(gate_wait) => {
+                connection.gate_changed().await;
             }
             // A connection that dropped without closing (the network went away, the PC lost power) never reads 0 bytes,
             // so it would wait here forever without logging the player out and saving them. The client talks to us

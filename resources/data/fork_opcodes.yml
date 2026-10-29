@@ -237,6 +237,21 @@ ClientZoneIpcType:
   size: 24
   found_on: 2026.10.16.0000.0000
   how_to_find: In My Little Chocobo, give the chocobo a name of 10 to 17 letters - the 24-byte packet starting with the quest's event ID.
+- name: RideShootingScore
+  comment: Air Force One's result as the ride ends - 6, the score, 0-5, then the targets hit (silver, bronze, ruby bombs). Sent again and again until the player leaves.
+  # 796 on 2026.10.16 (Bob's Chronofoil captures deaf7e28 and 2c98f9e8 of 2026-10-29: 568 and 626 of them, 16 bytes,
+  # from the end of the ride until leaving the duty.)
+  opcode: 796
+  size: 16
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On Kawari, play Air Force One to the end - the 16-byte packet sent over and over as the ride ends.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (the client builds it at 0x1957C10 with its
+  # size, 16, as the capture had it.)
+  - immediate:
+      pattern: C7 44 24 40 ?? ?? ?? ?? 88 44 24 21
+      offset: 4
+      width: 4
 ServerZoneIpcType:
 - name: GlamourDresser
   comment: One page of the glamour dresser - the page, 400 item IDs (HQ + 1000000), their first and second stains.
@@ -588,3 +603,15 @@ ServerZoneIpcType:
   size: 136
   found_on: 2026.10.16.0000.0000
   how_to_find: Buy a Mini Cactpot ticket on retail (Kawari Recorder) - the 136-byte packet to the broker's handler (0x250000) right after the MGP.
+- name: RideShootingEnd
+  comment: Sent as Air Force One ends, before its result - the same 40 bytes in both runs recorded.
+  # 318 on 2026.10.16 (Bob's Chronofoil captures deaf7e28 and 2c98f9e8 of 2026-10-29: right after the client's first
+  # RideShootingScore, 40 bytes.)
+  opcode: 318
+  size: 40
+  found_on: 2026.10.16.0000.0000
+  how_to_find: Play Air Force One on retail (Kawari Recorder) - the 40-byte packet as the ride ends, right before the director's result scene (11).
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (its handler, 0xB4EBE0.)
+  - handler:
+      pattern: 48 83 EC 28 48 8B D1 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B 0D

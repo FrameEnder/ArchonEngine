@@ -490,7 +490,7 @@ pub enum ToServer {
     /// We need to despawn a player's minion, and tell other clients
     ActorDespawnsMinion(ObjectId),
     /// Move the player's actor to the specified pop range.
-    MoveToPopRange(ClientId, ObjectId, u32, bool),
+    MoveToPopRange(ClientId, ObjectId, u32, WarpType),
     /// The connection sent a direct message to another client. This needs the sender's actor id too for purposes of `send_ipc_from`.
     TellMessageSent(ObjectId, ObjectId, TellMessage),
     /// The client invited another player to join their party, friend list, or free company.

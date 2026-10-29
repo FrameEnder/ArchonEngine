@@ -10,11 +10,12 @@ use kawari::{
 };
 
 use crate::{
-    ArcadeMachineEventHandler, ContentEventHandler, CraftingEventHandler, FateEventHandler,
-    FishingEventHandler, GameData, GatheringEventHandler, GimmickAccessorEventHandler,
-    GimmickBillEventHandler, GimmickRectEventHandler, GrandCompanyShopEventHandler,
-    InclusionShopEventHandler, JumboCactpotEventHandler, LuaEventHandler, MaterializeEventHandler,
-    MiniCactpotEventHandler, ShopEventHandler, SpecialShopEventHandler, ZoneConnection,
+    ArcadeMachineEventHandler, ContentEntryEventHandler, ContentEventHandler, CraftingEventHandler,
+    FateEventHandler, FishingEventHandler, GameData, GateEventHandler, GatheringEventHandler,
+    GimmickAccessorEventHandler, GimmickBillEventHandler, GimmickRectEventHandler,
+    GrandCompanyShopEventHandler, InclusionShopEventHandler, JumboCactpotEventHandler,
+    LuaEventHandler, MaterializeEventHandler, MiniCactpotEventHandler, ShopEventHandler,
+    SpecialShopEventHandler, ZoneConnection,
 };
 
 use super::lua::LuaPlayer;
@@ -333,6 +334,9 @@ pub fn dispatch_event(
         HandlerType::LotteryDaily => Some(Box::new(MiniCactpotEventHandler)),
         HandlerType::LotteryWeekly => Some(Box::new(JumboCactpotEventHandler)),
         HandlerType::GoldSaucerTalk => generic_lua_event("events/generic/GoldSaucerTalk.lua"),
+        // A GATE's entrance, an event on the GATE's director, and the ContentEntry it leads to (`gate.rs`.)
+        HandlerType::GoldSaucer => Some(Box::new(GateEventHandler)),
+        HandlerType::ContentEntry => Some(Box::new(ContentEntryEventHandler)),
         HandlerType::Verminion => generic_lua_event("events/generic/Verminion.lua"),
         HandlerType::DpsChallengeOfficer => {
             generic_lua_event("events/generic/DpsChallengeOfficer.lua")

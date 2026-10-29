@@ -328,6 +328,11 @@ impl ZoneConnection {
             self.send_hunting_logs().await;
         }
 
+        // The GATE on in the Gold Saucer, if any: its director, before the lotteries' (`zone_connection/gate.rs`.)
+        self.send_gate_director().await;
+        // A new Air Force One takes its score again.
+        self.ride_shooting_scored = false;
+
         // The Gold Saucer's lotteries, as retail told them at every zone change: when the Jumbo Cactpot's weeks begin
         // (912) and what's been played (914; Bob's Chronofoil captures, `gold_saucer.rs`.)
         self.actor_control_self(ActorControlCategory::SetWeeklyLotOffsetTime {

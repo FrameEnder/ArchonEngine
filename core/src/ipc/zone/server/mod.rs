@@ -717,6 +717,11 @@ pub enum ServerZoneIpcData {
     /// A Mini Cactpot ticket just bought (fork: Bob's Chronofoil capture deaf7e28, the three of 2026-10-29): the broker's
     /// handler, 19 and 23 (the payout table's length and the last sum, as retail sent them), the day it's for, the cell
     /// already showing (row, column, its number), then what each sum of a line pays, 6 to 24.
+    /// Sent as Air Force One ends, before its result (fork: Bob's Chronofoil captures deaf7e28 and 2c98f9e8, the same 40
+    /// bytes both times though the scores weren't; what it says isn't known.)
+    RideShootingEnd {
+        unk: [u8; 40],
+    },
     LotteryDailyBoard {
         handler_id: HandlerId,
         payouts_len: u8,

@@ -3098,63 +3098,32 @@ pub fn handle_director_trigger(
             DestinationNetwork::ZoneClients,
         );
     }
-    if handler_id.handler_type() == HandlerType::GoldSaucer
-        && let DirectorTrigger::Unknown { id, .. } = trigger
-        && *id == 0
+    // Air Force One's duty asks which course it is (`[0]`), answered with its GFateRideShooting row (retail: `[0, 6]` in
+    // InstanceContent 62005, Bob's Chronofoil capture 2c98f9e8.) The GATEs' own director (GoldSaucer) is answered by the
+    // connection (`zone_connection/gate.rs`.)
+    if handler_id.handler_type() == HandlerType::InstanceContent
+        && let DirectorTrigger::Unknown { id: 0, .. } = trigger
     {
-        let gate_id = 12; // TODO: GATE hardcoded
-        let row;
-        {
-            let mut game_data = game_data.lock();
-            let Some(gate_row) = game_data.get_gate(gate_id) else {
-                return;
-            };
-            row = gate_row;
+        let course = game_data
+            .lock()
+            .ride_shooting_course(handler_id.event_id() as u16);
+        if let Some(course) = course {
+            let mut network = network.lock();
+            network.send_to_by_actor_id(
+                from_actor_id,
+                FromServer::ActorControlSelf(ActorControlCategory::DirectorEvent {
+                    handler_id,
+                    event: DirectorEvent::Unknown {
+                        id: 0,
+                        arg1: course as u32,
+                        arg2: 0,
+                        arg3: 0,
+                        arg4: 0,
+                    },
+                }),
+                DestinationNetwork::ZoneClients,
+            );
         }
-
-        let mut network = network.lock();
-        network.send_to_by_actor_id(
-            from_actor_id,
-            FromServer::ActorControlSelf(ActorControlCategory::DirectorEvent {
-                handler_id,
-                event: DirectorEvent::Unknown {
-                    id: 9,
-                    arg1: gate_id,
-                    arg2: 4, // 4 for AFO, 12 for Cliffhanger?
-                    arg3: 0,
-                    arg4: 0,
-                },
-            }),
-            DestinationNetwork::ZoneClients,
-        );
-        network.send_to_by_actor_id(
-            from_actor_id,
-            FromServer::ActorControlSelf(ActorControlCategory::DirectorEvent {
-                handler_id,
-                event: DirectorEvent::Unknown {
-                    id: 6,
-                    arg1: row.GFATEParams[0].LGBPopRange,
-                    arg2: timestamp_secs() + 1000, // TODO: hardcoded duration
-                    arg3: 0,
-                    arg4: 0,
-                },
-            }),
-            DestinationNetwork::ZoneClients,
-        );
-        network.send_to_by_actor_id(
-            from_actor_id,
-            FromServer::ActorControlSelf(ActorControlCategory::DirectorEvent {
-                handler_id,
-                event: DirectorEvent::Unknown {
-                    id: 11,
-                    arg1: 3,
-                    arg2: 0,
-                    arg3: 0,
-                    arg4: 0,
-                },
-            }),
-            DestinationNetwork::ZoneClients,
-        );
     }
 
     // TODO: send triggers to Lua etc.

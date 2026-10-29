@@ -2406,6 +2406,16 @@
         "end": "70a8801cc9d74a6738bcb8996cea595cc5e35ac9",
         "group": 6
       }
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "RideShootingEnd",
+      "opcode": 318,
+      "case": "de23b881c32caf0810e705ae",
+      "case_group": 1,
+      "handler_at": 11856864,
+      "end": "de23b881c32caf0810e705ae",
+      "end_group": 1
     }
   ],
   "client": [
@@ -4025,6 +4035,18 @@
         {
           "function": "6452280fdcc949d5b2a1cabcbe0956d2d9d1cd48a5ad3a4d85db2e927883776237a09a0c2a9bf8c4548309ab24cf7076b2d337ce98f9ae70161d73b6526a6968c1daabef8a7f36d9a78b7ef198f9ae708a7f36d9bb57d2a7f2a90fffe6c9b4ce3eb15156e33705289c73b40e80d549516b9510b710e705ae7c78bdbff2a90fffe6c9b4ce3eb151560c0de00056a009bf10e705ae528eafcff2a90fffe6c9b4ce3eb15156f01a6d7480d54951808a17af395a7c321f9699a79640f90171a61bfe822f40139e3cbd1e25881787b947bab5d5fd9331089b08a13eb15156d461f821fbe32e513eb151568f5053dae4f86c4e326205c490dcc0bd69d9543b6cea595cc5e35ac9",
           "function_at": 11745664
+        }
+      ]
+    },
+    {
+      "kind": "ClientZoneIpcType",
+      "name": "RideShootingScore",
+      "opcode": 796,
+      "size": 16,
+      "sites": [
+        {
+          "function": "d9d1cd48a5ad3a4d85db2e9278837762a3c49027d311e2d6526a6968d6df7363e549a5ea64a0b0789c56280016d338bce75ec184d310ca267b59b7af12c12f8616d338bc30722947cbd8dccee6c9b4cece24ccba4c4b236e9f92d5be12c12f8616d338bc184e0be40c0de000548c08bba9ac828f25fa11bf12c12f8616d338bc75af6b05663db157656dc8389188652c36dbd13c12c12f86fbb0a7bcebd50439eee9c44dbd430d3d5b0824fbd72e822f79ff7ddcabf59c19047a015822b67a153eb1515671a61bfebdcb67159e3cbd1e089b08a13eb15156d461f821fbe32e513eb15156da6a6f71c5e35ac9",
+          "function_at": 26573712
         }
       ]
     }

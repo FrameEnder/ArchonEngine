@@ -1768,7 +1768,7 @@ pub fn handle_zone_messages(
 
             true
         }
-        ToServer::MoveToPopRange(from_id, from_actor_id, id, fade_out) => {
+        ToServer::MoveToPopRange(from_id, from_actor_id, id, warp_type) => {
             let zone_id;
             {
                 let data = data.lock();
@@ -1792,11 +1792,7 @@ pub fn handle_zone_messages(
                 *id,
                 *from_actor_id,
                 *from_id,
-                if *fade_out {
-                    WarpType::Normal
-                } else {
-                    WarpType::None
-                },
+                *warp_type,
                 0,
             );
 

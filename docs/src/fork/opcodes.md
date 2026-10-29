@@ -27,11 +27,13 @@ upstream's [Opcodes](../opcodes.md) page.
   it probably is.
 
 Since upstream's 7.57h1 (2026.10.16, merged on the `upstream-7.57h1` branch, in `master` since 2026-10-21) every entry is found on 2026.10.16 (see
-[Finding them on 7.57h1](#finding-them-on-757h1) below). 35 of the 39 have finders (2026-10-26; 14 before 2026-10-25), so the startup scan checks them on each start and re-finds them
+[Finding them on 7.57h1](#finding-them-on-757h1) below). 38 of the 47 have finders (2026-10-29; 35 of 39 on 2026-10-26, 14 before 2026-10-25), so the startup scan checks them on each start and re-finds them
 after the next patch, and every one is in the shipped fingerprints. The four without can't have one: their code is
 the same as other packets' (RequestPlayerRetainerInfo, a request without arguments; GatheringPointPhase; the two
 ItemMarketBoards, which share a handler); after a patch only the fingerprints find them (the ItemMarketBoards as a
-pair of candidates).
+pair of candidates). Of the five added since, EventResume16 and LotteryDailyBoard can't have one either (`suggest-finders`
+finds their code isn't unique); EventYieldText16, EventYieldText24 and CompanionName have none yet, though `suggest-finders`
+writes one for each on 2026.10.16.
 
 ## Current entries (game 2026.10.16, patch 7.57h1)
 
@@ -42,6 +44,8 @@ pair of candidates).
 | CompanionName | server → client | 157 | | 40 | The chocobo's name as the server took it (0, then the name), right before the text answer's EventResume (both captures). |
 | EventResume16 | server → client | 529 | | 72 | Resumes a scene with 9 to 16 parameters: Out on a Limb's and The Finer Miner's swings (Bob's Chronofoil capture deaf7e28). See [The Gold Saucer](gold-saucer.md#arcade-machines). |
 | LotteryDailyBoard | server → client | 326 | | 136 | A Mini Cactpot ticket just bought: the day, the cell showing, the payouts (deaf7e28). See [The Gold Saucer](gold-saucer.md#the-mini-cactpot). |
+| RideShootingScore | client → server | 796 | | 16 | Air Force One's score as the ride ends: 6, the score, 0-5, the silvers, bronzes and ruby bombs hit; sent again and again until leaving (Bob's Chronofoil captures deaf7e28 and 2c98f9e8). Finder. See [The Gold Saucer](gold-saucer.md#air-force-one). |
+| RideShootingEnd | server → client | 318 | | 40 | Sent as Air Force One ends, before its result: the same 40 bytes both times, meaning unknown (the same captures). Finder. |
 | EventReturnHandler16 | client → server | 555 | 856 (09.15), 200 (10.06) | 72 | A scene finished with up to 16 results, e.g. a three-item NPC trade returns 12 (Surveying the Damage). Finder. |
 | EventNotice2 | server → client | 834 | 386 (10.06) | 16 | A quest/event notice with 0–2 arguments: the progress pop-up. Finder (confirms only, see below); 10.16's from a retail capture. |
 | EventNotice4 | server → client | 467 | 210 (10.06) | 24 | The same with 3–4 arguments. Finder (confirms only); 10.16's from a retail capture. |

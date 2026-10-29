@@ -50,6 +50,16 @@ pub const COUNTER_UNIQUE_QUESTS: u32 = 214;
 pub const COUNTER_ENLISTED_MAELSTROM: u32 = 241;
 pub const COUNTER_ENLISTED_FLAMES: u32 = 243;
 
+/// The Gold Saucer's (Type 1, the Achievement sheet's Keys): MGP won at its attractions (What Happens in the Saucer,
+/// 1,000 to 10,000,000), GATEs completed (Enemy at the GATE, 1 to 100), MGP won from the Jumbo Cactpot (You Could
+/// Already Be a Winner) and from the Mini Cactpot (Dream Small, 1 to 1,000,000.) Retail completed Dream Small I with
+/// the first Mini Cactpot win, Enemy at the GATE I with the first Air Force One (Bob's Chronofoil captures deaf7e28 and
+/// 2c98f9e8) and What Happens in the Saucer II as a Leap of Faith paid out.
+pub const COUNTER_GOLD_SAUCER_MGP: u32 = 356;
+pub const COUNTER_GATES_COMPLETED: u32 = 363;
+pub const COUNTER_JUMBO_CACTPOT_MGP: u32 = 365;
+pub const COUNTER_MINI_CACTPOT_MGP: u32 = 366;
+
 /// The Type 1 counters the server counts. Retail's have counted since the character was made; the ones kept here
 /// (all but the unique quests and the enlistments) count from when the fork started counting them.
 const COUNTED: &[u32] = &[
@@ -58,6 +68,10 @@ const COUNTED: &[u32] = &[
     COUNTER_ENLISTED_MAELSTROM,
     COUNTER_ENLISTED_MAELSTROM + 1,
     COUNTER_ENLISTED_FLAMES,
+    COUNTER_GOLD_SAUCER_MGP,
+    COUNTER_GATES_COMPLETED,
+    COUNTER_JUMBO_CACTPOT_MGP,
+    COUNTER_MINI_CACTPOT_MGP,
 ];
 
 /// The IDs a list Type (2, 6, 9) asks for: Key, then Data (A Life of Adventure I: Key 44, Data 55; Gone from Gridania:

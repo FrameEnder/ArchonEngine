@@ -124,7 +124,7 @@ pub enum LuaTask {
     },
     MoveToPopRange {
         id: u32,
-        fade_out: bool,
+        warp_type: kawari::common::WarpType,
     },
     SetHP {
         hp: u32,

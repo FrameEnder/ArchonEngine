@@ -1,9 +1,11 @@
 # The Gold Saucer
 
-The Manderville Gold Saucer: how it's unlocked, its lotteries and arcade machines, and what isn't there yet. From
+The Manderville Gold Saucer: how it's unlocked, its lotteries, arcade machines and GATEs, and what isn't there yet. From
 Bob's Chronofoil capture **deaf7e28** (2026-10-29, 51 minutes: It Could Happen to You through So You Want to Be a Jockey,
-three Mini Cactpot tickets, three Jumbo Cactpot tickets, 50 arcade games, The Slice Is Right and Air Force One), his
-quest dumps of 434-437, 488 and 489, and the public wikis where the capture didn't show something (marked so).
+three Mini Cactpot tickets, three Jumbo Cactpot tickets, 50 arcade games, The Slice Is Right and Air Force One) and
+**2c98f9e8** (the same evening, an hour: Air Force One twice, Leap of Faith, Any Way the Wind Blows, the GATE Keepers),
+his archive's Gold Saucer sessions, his quest dumps of 434-437, 488 and 489, and the public wikis where the captures
+didn't show something (marked so).
 
 Where it lives: the quests in `resources/scripts/events/quest/004/`; the games in `servers/world/src/events/gold_saucer.rs`
 (the events) and `servers/world/src/gold_saucer.rs` (the rules, the numbers and what the character keeps,
@@ -38,6 +40,12 @@ The currency's slot 9 (item 29). Retail's packets around it:
   retail's log line is **527** `[4765, 0, MGP]`, then 913 `[0]`. Kawari's script takes the gil and gives the MGP, without
   the log line.
 * The cap is 9,999,999 (the public wikis).
+* **Achievements** (Type 1 counters, the Achievement sheet's Keys): MGP won at the attractions, 356 (What Happens in the
+  Saucer, 1,000 to 10,000,000: every MGP won, `change_mgp`); GATEs completed, 363 (Enemy at the GATE, 1 to 100: Air Force
+  One); the Jumbo Cactpot's MGP, 365 (You Could Already Be a Winner); the Mini Cactpot's, 366 (Dream Small, 1 to
+  1,000,000.) Retail completed Dream Small I with the first Mini Cactpot win, Enemy at the GATE I with the first Air
+  Force One and What Happens in the Saucer II as Leap of Faith paid. Kawari counts them from now on, so a character's
+  earlier play doesn't count.
 * At every zone change retail sends **912** `[1378000800]` (`SetWeeklyLotOffsetTime`, when the Jumbo Cactpot's weeks
   begin), **914** (`SetGoldSaucerFlags`: 8 once a Mini Cactpot ticket has been played that day, 16 once a Jumbo Cactpot
   ticket was bought that week: 0, then 8, then 24 in the capture; Bob's older character had 126, the other bits unknown)
@@ -109,23 +117,115 @@ answered with resume 21 `[1, deadline]` (`[1, deadline, 2000]` for 5 and 6; the 
 
 ## GATEs
 
-**Not done**: none of the GATEs can be played. Upstream's GoldSaucer director sends one hardcoded GATE (Cliffhanger) when
-the client asks (client trigger 808 `[1]`, `[0]` to a GoldSaucer director); retail answered with 109 `[9, GFATE row,
-type]`, `[6, its pop range, the end]` and `[11, phase]`, and moved the phase on as it ran (`[11, 3]` announced, 4-10 as it
-went, 1 when over). From the capture:
+From Bob's Chronofoil captures deaf7e28 and 2c98f9e8 (2026-10-29: The Slice Is Right, two Air Force Ones, Leap of
+Faith, Any Way the Wind Blows and the GATE Keepers between them) and his archive (dd09ac61, ea704111, 61a9a4f3: five
+more), the public wikis for the schedule and the rewards. Where it lives: `servers/world/src/gate.rs` (the schedule,
+what each type is), `zone_connection/gate.rs` (what the client in the Gold Saucer is told), `events/gold_saucer.rs`
+(`GateEventHandler`, the entrances), `events/content.rs` (`ContentEntryEventHandler`), `zone_connection/ride_shooting.rs`
+(Air Force One) and `events/custom/002/CmnGscGATENotice_00242.lua` (the GATE Keepers.)
 
-* **The Slice Is Right** (GFATE 77, GFateType 8, director 0x800A02A9): talking to its entrance, scene 0 `[503, 0, MGP]`,
-  a yield `[1]` to join, then 109 `[5, 1, start, 120]`; the gold piles are EObjs whose events give 1000 a pile (109
-  `[33, score, ...]`, EventLogMessage 4728); the end 109 `[8, 1, 2]` and 3,000 MGP (528, 910 `[16, 3000]`.)
-* **Air Force One** (director 0x800A02AA) sends you through ContentEntry 117 to InstanceContent 62005 (ContentFinderCondition
-  1083, territory 1335): the client's shooting is client packet 796 (568 in 2.3 minutes), the result Unknown318 and scene 11
-  of the InstanceContent director, 3,000 MGP.
-* The schedule since 7.4 (the patch notes): a GATE every 20 minutes, one of three for its slot.
+**Kawari plays Air Force One only.** Its schedule follows from the time alone, so every connection works out the same
+GATE without asking the server: in each slot the Air Force One that slot's minute has (the Cieldalaes' courses at :00 and
+:40, the Gold Saucer's at :20), its course picked from the slot. Untested in game.
+
+### The schedule
+
+* A GATE every 20 minutes, a second past the hour, :20 and :40 (retail's NpcYells at 17:40:01, 18:00:01, 18:20:01,
+  18:40:01.) Since 7.4 (the wikis): at :00 Air Force One (the Cieldalaes), Cliffhanger or Leap of Faith; at :20 Any Way
+  the Wind Blows, The Slice Is Right or Air Force One (the Gold Saucer); at :40 The Slice Is Right, Leap of Faith or Air
+  Force One (the Cieldalaes.) Retail played Air Force One rows 96 and 98 at :00 and :40; the :20 one wasn't seen.
+* GFATE rows: Cliffhanger type 1, Any Way the Wind Blows 5 (rows 5, 19, 55-59, 61), Leap of Faith 6 (65-73, 78-95), Air
+  Force One 7 (74-76 the Gold Saucer's, 96-98 the Cieldalaes'), The Slice Is Right 8 (77); the location (1 Wonder Square
+  East, 2 Event Square, 3 Round Square) is the row's last column, the entrance's pop range its first GFATEParams.
+* A row's **place** among its type's rows (counted from 1) is the row of its type's own sheet: GFateRideShooting for Air
+  Force One (row 98 is 6), GFateClimbing2 for Leap of Faith (80 is 12). Any Way the Wind Blows' 19 was 2, but The Slice
+  Is Right's 77 was 8, not 1.
+* The **director** is GoldSaucer (0x800A) with an ID retail counts up by one a GATE (680-685 from 17:00 to 18:40, other
+  numbers on other days); Kawari's comes from the slot.
+
+| Type | Registration | InitDirector's content ID | Entrance's first parameter | Instanced |
+|---|---|---|---|---|
+| Any Way the Wind Blows (5) | 120 s | 6 | 89 | no |
+| Leap of Faith (6) | 480 s | 9 | 493 | yes (PublicContent) |
+| Air Force One (7) | 600 s | 10 | 498, 501 once played | yes (InstanceContent) |
+| The Slice Is Right (8) | 120 s | 11 | 503 | no |
+
+### What the client in the Gold Saucer is told
+
+* **It begins**: to everyone in territory 144, NpcYell 2450 `[location, type]`, ActorControlSelf 100 (InitDirector) with
+  the director and its content ID, and 109 `[11, 3]` (the phase: 3 registration, 4 starting, 5 under way; The Slice Is
+  Right used 6-10 as it went; 1 over.) Coming into the zone while it's on gives the InitDirector alone, right after
+  ZoneInit; retail sent 101 (TerminateDirector) as the player left the zone for a duty (Kawari doesn't).
+* **The client asks** (client trigger 808 to the director, `[1]` then `[0]`), answered after the second with 109 `[9,
+  row, place]`, `[6, the entrance's pop range, when registration ends]`, once the player has played it `[8, 1, 0]` and
+  `[5, 1, the start, the registration window]`, and `[11, phase]`.
+* **An instanced GATE is over when registration ends**: 109 `[11, 1]` and ActorControlSelf 101. The in-zone ones went on:
+  Any Way the Wind Blows sent `[7, its game's start]`, `[11, 4]`, `[11, 5]`, NpcYells 2452 and 2462-2463 (from
+  ENpcResident 1010476) and `[26, round]` each round, then `[8, 1, 1]`, `[11, 1]`, 7,500 MGP (528, 910 `[6, 7500]`) and
+  WTFungah I (1118), 101 a second later and NpcYell 2451 ten seconds after.
+
+### The entrance
+
+The entrance the client shows is an object of its own (retail's had IDs like 0x4001F0CC, never spawned by the server);
+talking to it starts an event on the GATE's director (`GateEventHandler`):
+
+* Scene 0 (0x2000) `[the type's number, 0, MGP]` (the table above; not the time left.) Joining is its yield `[1]`.
+* **In the zone**: 109 `[5, 1, start, window]`, the event finishes and the player is moved onto the arena (PrepareZoning,
+  warp type 2; Kawari answers without the move, none of these being played.)
+* **Instanced**: the scene is resumed with nothing; when it returns, the GATE's ContentEntry event (GFateRideShooting's or
+  GFateClimbing2's row: Air Force One 117, Leap of Faith 91) plays, nested, its scene 0 (0x2000, nothing), which returns
+  `[2, 0]` to go (`ContentEntryEventHandler`.) The duty goes into the Duty Finder: ContentFinderUpdate, both events
+  finish, ContentFinderFound, and the player enters from its window. The duty is the InstanceContent of type 15
+  (RideShooting) whose ContentRoute is that row (Air Force One 62000-62005, ContentFinderCondition 640-642 in
+  territory 832 for the Gold Saucer's, 1081-1083 in 1335 for the Cieldalaes'), or the PublicContent of type 5 whose
+  AdditionalData is (Leap of Faith 7-42: row 12 is PublicContent 19, ContentFinderCondition 707, territory 899.)
+* Each GATE can be played once: Kawari remembers it for the connection from the ContentEntry's answer.
+
+### The GATE Keepers
+
+CustomTalk 242 (`CmnGscGATENotice`), flags 0x2000: scene 0 `[type, location, row]` while a GATE takes registrations,
+scene 1 with the same while one is under way that can't be joined any more, scene 2 `[the minute the next begins (18:00:00
+for 18:00:01's), type, location, row]` otherwise. Each returns `[1, row]` to go to the GATE's entrance: the event finishes
+and the player is moved to the entrance's pop range (PrepareZoning with warp type 2; `player:move_to_pop_range` takes a
+warp type now.)
+
+### Air Force One
+
+InstanceContent 62005 (`ride2_003`, ContentFinderCondition 1083, territory 1335), twice on retail (scores 4980 and 4930):
+
+* In the duty the client asks its course (808 `[0]` to the InstanceContent director): 109 `[0, 6]`, its
+  GFateRideShooting row (`server/director.rs`.) Then DirectorVars, and the opening (EnterTerritory, scene 1) with flags
+  0x0C002001 and `[0, 0, 0, 5, 1793225644, 0, 0, 0, 0, 0, 3600, 262152]`: the fifth parameter was the same in both runs,
+  an hour apart (Kawari's other duties send 14400 there.) Its end: 109 `[0x40000001, 3600]` and `[0x80000004, 3599]`.
+* The client flies and shoots on its own (2.3 minutes); as the ride ends it sends **RideShootingScore** (fork client
+  opcode 796, 16 bytes): 6, the score, 0-5, then the silvers, bronzes and ruby bombs hit (14, 42, 1), and again and again
+  until the player leaves (568 and 626 times.)
+* The answer (the first only): **RideShootingEnd** (fork opcode 318, the same 40 bytes both times), 109 `[0x40000002, 0]`,
+  `[0x40000007, 0]`, `[0x40000007, 1]`, a GameProgress event (argument 7) with scene 11 (0x0C002001) `[0, score, rank,
+  300, golds, 100, silvers, 50, bronzes, -20, ruby bombs, MGP]` (the worths are RideShootingTargetType's; the golds,
+  5 both times, are what's left of the score), the MGP (528, the InventoryActionAck, the slot; no 910) and Enemy at the
+  GATE I (1115).
+* Ranks (the wikis): Perfect (5,000, every target) 4,000 MGP, S (4,000) 3,000, A (1,500) 1,500, B (500) 500, C 100. Both
+  of retail's were S, with 1 as the rank: Kawari counts them 0 (Perfect) to 4 (C.)
+* The player leaves from the result (client trigger 819): its event finishes first, then the way out.
+
+### The Slice Is Right (not played)
+
+GFATE 77, director 0x800A02A9 (deaf7e28, 17:20): scene 0 `[503, 0, MGP]`, the yield `[1]`, then 109 `[5, 1, start,
+120]`; the gold piles are EObjs whose events give 1,000 a pile (109 `[33, score, ...]`, EventLogMessage 4728); the end
+109 `[8, 1, 2]` and 3,000 MGP (528, 910 `[16, 3000]`.)
+
+### Leap of Faith (not played)
+
+PublicContent 19 (`climb2_012`, ContentFinderCondition 707, director 0x80040013, territory 899), once on retail: the
+opening (scene 1, 0x2000, `[0, 0, 0, 5, 600, 0]`), 109 `[0x40000001, 600]`; then `[0, n]` for each of 0-9 in no order over
+the run (perhaps the other players reaching the goal), One Small Leap (2126) as the player reached it, `[1, 8230738]`; an
+object's event (0xF0304) and the director's GameProgress scene 4 (argument 2, 0x08002001) `[0, 2000, 0, 500, 300, 100]`
+with 4,000 MGP and What Happens in the Saucer II. Its platforms and cactuars need more than the captures show.
 
 ## Known gaps
 
-The GATEs; chocobo racing; Triple Triad (437, Triple Triad Trial, isn't scripted); the Jumbo Cactpot's claim scene and
+Every GATE but Air Force One (Cliffhanger, Any Way the Wind Blows, Leap of Faith, The Slice Is Right); chocobo racing; Triple Triad (437, Triple Triad Trial, isn't scripted); the Jumbo Cactpot's claim scene and
 participant bonus; the Gold Saucer window's information (`GoldSaucerInformation` is still upstream's zeros);
-achievements for the games (retail completed 1125 after the first Mini Cactpot win, 1115 after Air Force One); Gold
-Saucer bonuses (the VIP card and the Free Company's Jackpot actions); The Finer Miner's Morbol and Titan, Monster Toss
+Gold Saucer bonuses (the VIP card and the Free Company's Jackpot actions); The Finer Miner's Morbol and Titan, Monster Toss
 and Crystal Tower Striker weren't played on retail.

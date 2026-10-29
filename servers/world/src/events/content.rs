@@ -116,3 +116,59 @@ impl EventHandler for ContentEventHandler {
         player.finish_event();
     }
 }
+
+/// A ContentEntry event (0x2C0000): the question before a duty that's entered on the spot rather than queued for, the
+/// GATEs' (Air Force One's 117, Leap of Faith's 91: Bob's Chronofoil capture 2c98f9e8.) Retail played its scene 0
+/// (0x2000, no parameters), which returned `[2, 0]` to go; the duty (`GameData::content_entry_duty`) was then put in
+/// the Duty Finder (ContentFinderUpdate, then ContentFinderFound once the events finished), and the player entered it
+/// from there.
+#[derive(Debug, Default)]
+pub struct ContentEntryEventHandler;
+
+impl ContentEntryEventHandler {
+    pub const SCENE: u16 = 0;
+    const ENTER: i32 = 2;
+}
+
+#[async_trait]
+impl EventHandler for ContentEntryEventHandler {
+    async fn on_talk(&self, _event: &Event, _target_id: ObjectTypeId, player: &mut LuaPlayer) {
+        player.play_scene(Self::SCENE, SceneFlags::HIDE_HOTBAR, Vec::new());
+    }
+
+    async fn on_return(
+        &self,
+        event: &Event,
+        connection: &mut ZoneConnection,
+        _scene: u16,
+        results: &[i32],
+        player: &mut LuaPlayer,
+    ) {
+        if results.first() == Some(&Self::ENTER) {
+            let duty = connection.game_data.lock().content_entry_duty(event.id.0);
+            match duty {
+                Some(duty) => {
+                    // A GATE's: it's been played once this is answered.
+                    if let Some(gate) = connection.current_gate() {
+                        let entry = connection
+                            .game_data
+                            .lock()
+                            .gate_content(gate.row.kind, gate.place)
+                            .map(|(entry, _)| entry);
+                        if entry == Some(event.id.0) {
+                            connection.gate_joined = Some(gate.slot);
+                        }
+                    }
+                    connection
+                        .register_for_content(
+                            [duty, 0, 0, 0, 0],
+                            kawari::ipc::zone::DutyFinderSetting::default(),
+                        )
+                        .await;
+                }
+                None => tracing::warn!("ContentEntry {} has no duty Kawari knows", event.id),
+            }
+        }
+        player.finish_event();
+    }
+}
