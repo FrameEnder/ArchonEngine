@@ -817,6 +817,25 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   aren't done. Spearfishing and fishing are separate (upstream's fishing).
 * A used-up timed point stays visible (empty) until it despawns; each player sees their own phases and integrity.
 
+## Grand Companies
+
+See [Grand Companies](grand-company.md). Untested in game (2026-10-29).
+
+* **Promotions** follow the client's script; retail's packets for one aren't recorded (no capture reached a
+  promotion), so the order (seals, rank, GrandCompanyInfo, then the ceremony) is a guess, and what follows a rank's
+  reward scene (5, 6, 9, 10) too. What the new rank unlocks isn't given: expert delivery, the company leves, changing
+  companies.
+* **Changing companies** (the officer's scene 7, for a member of another company) isn't done; the event ends.
+* **Supply and provisioning missions** open and close, but handing items in (seals, EXP) isn't recorded or done.
+* **The quartermaster** sends no InventoryTransactions (retail sent three a purchase). Ventures (21072, which Kawari
+  keeps as a currency) bought there aren't checked. A purchase over the seals the client showed is refused with no
+  message.
+* **Seals** still aren't capped by rank (GrandCompanyRank's MaxSeals: 10,000 at rank 1).
+* **My Little Chocobo**: a name longer than 17 bytes comes in a text yield of a size not recorded (the client's
+  limit isn't known: Kawari takes up to 20 characters), and retail's answer to an unusable name isn't known (Kawari
+  resumes the yield with 0). Retail's Unknown452 after the hand-over and Unknown159 (seen after the officer's menu and
+  the whistle) aren't sent. The Maelstrom's version (701) has only its acceptance recorded.
+
 ## Chocobo companion
 
 * Untested in game (2026-10-24). Its fighting is from one capture at level 88 with Attacker at 6: how its HP and
@@ -826,7 +845,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   Accuracy, Critical Hit and Attack Speed traits do nothing, and its attack range (3 yalms) is a guess.
 * Companion EXP from a kill is a stand-in: as much as its owner's base EXP for it (retail's monsters well below Bob
   gave neither of them any). Retail's rank-up and onion packets aren't recorded (only CompanionUpdate is sent); the
-  Challenge Log's Bosom Buddies, chocobo raising at a stable, the favourite feed, colouring, naming, its party-list
+  Challenge Log's Bosom Buddies, chocobo raising at a stable, the favourite feed, colouring, renaming (My Little Chocobo names it), its party-list
   entry, Examine on it and pillion on one's own chocobo aren't done.
 * ActorControl 36/267 and 54 after it appears aren't understood; retail's spawn display flag 0x20 is left out.
 * The premium saddlebag isn't offered; the saddlebag can be opened anywhere.

@@ -64,6 +64,7 @@
   - [Coffers and Loot](fork/loot.md)
   - [Crafting](fork/crafting.md)
   - [Gathering](fork/gathering.md)
+  - [Grand Companies](fork/grand-company.md)
   - [Chocobo Companion](fork/chocobo.md)
   - [Fork Opcodes](fork/opcodes.md)
   - [Packet Layouts from the Client](fork/packet-layouts.md)

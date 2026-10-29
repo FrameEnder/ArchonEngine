@@ -11,7 +11,8 @@ What it copies from the server (servers/world/src/events/lua.rs, lua/player.rs, 
   reward) with error code 0 unless the step gives other results (a list, or {"results": [...], "error": n} for a
   scene that answers through its error code, like The Gridanian Envoy's gangplanks; "yield": true sends it to
   onYield, as the client does for some scenes, where the script handles the two apart; a yield the script answers
-  with `resume_event` gets the scene's "after" answer next, and the resume's parameters must be retail's "resume"),
+  with `resume_event` (or `name_companion`, which the server resumes with 1) gets the scene's "after" answer next,
+  and the resume's parameters must be retail's "resume"; "yield_id" is the yield's ID, 0 if not given),
   and an event action's progress
   bar always completes. The error code is the script's `player.scene_error_code`, as on the server. A fixture made
   from Chronofoil gives every scene retail's own answer instead (its "scenes" list);
@@ -314,6 +315,9 @@ class Harness:
                     outcome["calls"].append(task.kind if task.kind != "call" else task.args[0])
                     if task.kind == "call" and task.args[0] == "resume_event":
                         resumed = task.args
+                    elif task.kind == "call" and task.args[0] == "name_companion":
+                        # The server takes the name and resumes the yield with 1 (`ZoneConnection::name_companion`.)
+                        resumed = (task.args[0], task.args[1], task.args[2], [1])
                     nested = nested or (task.kind == "call" and task.args[0] == "start_event")
                 effect = _effect(task, self.territory)
                 if effect is not None:
@@ -350,9 +354,11 @@ class Harness:
                     values = results.get(str(scene), results.get(scene, DEFAULT_RESULTS))
                 error = 0
                 yielded = False
+                yield_id = 0
                 if isinstance(values, dict):
                     error = values.get("error", 0)
                     yielded = values.get("yield", False)
+                    yield_id = values.get("yield_id", 0)
                     values = values.get("results", DEFAULT_RESULTS)
                 self.player.scene_error_code = error
                 table = self.lua.table(*values)
@@ -360,7 +366,7 @@ class Harness:
                     pending = self._call("onReturn", scene, table, self.player)
                 else:
                     yielded_entry = entry if unused is not None else None
-                    pending = self._call("onYield", scene, 0, table, self.player)
+                    pending = self._call("onYield", scene, yield_id, table, self.player)
                 continue
             if action:
                 pending = self._call("onEventActionCast", self.player)

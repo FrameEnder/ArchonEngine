@@ -12,8 +12,9 @@ use kawari::{
 use crate::{
     ContentEventHandler, CraftingEventHandler, FateEventHandler, FishingEventHandler, GameData,
     GatheringEventHandler, GimmickAccessorEventHandler, GimmickBillEventHandler,
-    GimmickRectEventHandler, InclusionShopEventHandler, LuaEventHandler, MaterializeEventHandler,
-    ShopEventHandler, SpecialShopEventHandler, ZoneConnection,
+    GimmickRectEventHandler, GrandCompanyShopEventHandler, InclusionShopEventHandler,
+    LuaEventHandler, MaterializeEventHandler, ShopEventHandler, SpecialShopEventHandler,
+    ZoneConnection,
 };
 
 use super::lua::LuaPlayer;
@@ -325,6 +326,8 @@ pub fn dispatch_event(
             generic_lua_event("events/generic/GimmickPathMove.lua")
         }
         HandlerType::SpecialShop => Some(Box::new(SpecialShopEventHandler::new())),
+        // A quartermaster's seal exchange (`events/gc_shop.rs`.)
+        HandlerType::GrandCompanyShop => Some(Box::new(GrandCompanyShopEventHandler::new())),
         HandlerType::HousingAethernet => generic_lua_event("events/generic/HousingAethernet.lua"),
         HandlerType::InstanceContent => Some(Box::new(ContentEventHandler::new())),
         HandlerType::PublicContent => Some(Box::new(ContentEventHandler::new())),

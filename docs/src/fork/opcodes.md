@@ -37,6 +37,9 @@ pair of candidates).
 
 | Name | Direction | Opcode | Earlier | Size | What it is |
 |---|---|---|---|---|---|
+| EventYieldText16 | client → server | 945 | | 16 | An event's text answer of up to 9 bytes: the handler, scene, yield ID, then the text from byte 7 (a chocobo's name; Bob's Chronofoil capture 0845b9a2). See [Grand Companies](grand-company.md#my-little-chocobo). |
+| EventYieldText24 | client → server | 137 | | 24 | The same for 10 to 17 bytes (capture bab8c255). |
+| CompanionName | server → client | 157 | | 40 | The chocobo's name as the server took it (0, then the name), right before the text answer's EventResume (both captures). |
 | EventReturnHandler16 | client → server | 555 | 856 (09.15), 200 (10.06) | 72 | A scene finished with up to 16 results, e.g. a three-item NPC trade returns 12 (Surveying the Damage). Finder. |
 | EventNotice2 | server → client | 834 | 386 (10.06) | 16 | A quest/event notice with 0–2 arguments: the progress pop-up. Finder (confirms only, see below); 10.16's from a retail capture. |
 | EventNotice4 | server → client | 467 | 210 (10.06) | 24 | The same with 3–4 arguments. Finder (confirms only); 10.16's from a retail capture. |

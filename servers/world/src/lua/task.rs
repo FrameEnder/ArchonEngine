@@ -354,6 +354,13 @@ pub enum LuaTask {
     SetGrandCompanyRank {
         rank: u8,
     },
+    /// A promotion at the personnel officer (`ZoneConnection::promote_grand_company`.)
+    PromoteGrandCompany,
+    /// Names the chocobo companion from the event's text answer (`ZoneConnection::name_companion`.)
+    NameCompanion {
+        scene: u16,
+        yield_id: u8,
+    },
     Jump {
         name: String,
     },

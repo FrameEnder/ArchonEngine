@@ -1002,6 +1002,12 @@ impl ZoneConnection {
                     self.set_grand_company_rank(*rank);
                     self.send_grand_company_info().await;
                 }
+                LuaTask::PromoteGrandCompany => {
+                    self.promote_grand_company().await;
+                }
+                LuaTask::NameCompanion { scene, yield_id } => {
+                    self.name_companion(*scene, *yield_id).await;
+                }
                 LuaTask::Jump { name } => {
                     self.handle
                         .send(ToServer::Jump(self.id, name.clone()))

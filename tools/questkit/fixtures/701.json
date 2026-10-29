@@ -1,0 +1,35 @@
+{
+  "quest": 701,
+  "script": "SubSea910_00701",
+  "source": "Bob's Chronofoil capture 9c4e397d (2026-10-29, accepted only); scenes and effects from Bob's Chronofoil capture of 2026-10-29",
+  "params": {
+    "ACTOR0": 1003281,
+    "ACTOR1": 1001027,
+    "RITEM0": 6017,
+    "ACTOR2": 1006002,
+    "NCUT0": 239,
+    "HOW_TO_CHOCOBO": 85
+  },
+  "steps": [
+    {
+      "talk": 1003281,
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    }
+  ]
+}

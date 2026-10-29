@@ -1,7 +1,8 @@
 # Chocobo Companion
 
 The player's own chocobo: summoned with Gysahl Greens, following and fighting beside its owner, told what to do from
-its menu, wearing barding, ridden, and its saddlebag. Unlocking it (the quest that names it) is the quests' business.
+its menu, wearing barding, ridden, and its saddlebag. Unlocking it is the quests' business: My Little Chocobo names it
+(`ZoneConnection::name_companion`, [Grand Companies](grand-company.md#my-little-chocobo)).
 
 Code: `servers/world/src/server/companion.rs` (the companion in the world: summoning, its time, withdrawing, riding,
 following its owner into fights), `servers/world/src/zone_connection/companion.rs` (the Companion window and the

@@ -248,6 +248,15 @@ pub enum ClientZoneIpcData {
         #[brw(pad_after = 4)]
         unk: u8,
     },
+    /// An event's text answer of up to 9 bytes (fork: Bob's Chronofoil capture 0845b9a2, a chocobo named in My Little
+    /// Chocobo): the handler, scene and yield ID, then the text from byte 7; see `event_text_short`.
+    EventYieldText16 {
+        data: [u8; 16],
+    },
+    /// The same for 10 to 17 bytes (capture bab8c255.)
+    EventYieldText24 {
+        data: [u8; 24],
+    },
     /// The client asks for a retainer's sale history (243 on 2026.09.15, Bob's Chronofoil captures.) Answered with
     /// `ServerZoneIpcData::RetainerSaleHistory`.
     RequestRetainerSaleHistory {
@@ -894,6 +903,53 @@ pub fn event_text(data: &[u8]) -> Option<EventText> {
         yield_id: data[6],
         text: String::from_utf8_lossy(&text[..end]).into_owned(),
     })
+}
+
+/// Reads an `EventYieldText16`/`EventYieldText24`: the handler, scene, yield ID, then the text from byte 7 to its first
+/// zero. None if it's too short or isn't for an event.
+pub fn event_text_short(data: &[u8]) -> Option<EventText> {
+    if data.len() < 8 || data[..4] == [0; 4] {
+        return None;
+    }
+    let text = &data[7..];
+    let end = text
+        .iter()
+        .position(|byte| *byte == 0)
+        .unwrap_or(text.len());
+    Some(EventText {
+        handler_id: u32::from_le_bytes(data[0..4].try_into().ok()?),
+        scene: u16::from_le_bytes(data[4..6].try_into().ok()?),
+        yield_id: data[6],
+        text: String::from_utf8_lossy(&text[..end]).into_owned(),
+    })
+}
+
+#[cfg(test)]
+mod event_text_short_tests {
+    use super::*;
+
+    /// Retail's (Bob's Chronofoil captures 0845b9a2 and bab8c255.)
+    #[test]
+    fn reads_retails() {
+        let omark = [
+            0xbc, 0x02, 0x01, 0x00, 0x04, 0x00, 0xe7, b'O', b'm', b'a', b'r', b'k', 0, 0, 0, 0,
+        ];
+        let read = event_text_short(&omark).unwrap();
+        assert_eq!(
+            (
+                read.handler_id,
+                read.scene,
+                read.yield_id,
+                read.text.as_str()
+            ),
+            (0x102bc, 4, 0xe7, "Omark")
+        );
+        let mut vandergum = [0u8; 24];
+        vandergum[..7].copy_from_slice(&[0xbe, 0x02, 0x01, 0x00, 0x04, 0x00, 0xe7]);
+        vandergum[7..16].copy_from_slice(b"Vandergum");
+        vandergum[17] = 0x31; // what followed on retail, after the text's end
+        assert_eq!(event_text_short(&vandergum).unwrap().text, "Vandergum");
+    }
 }
 
 #[cfg(test)]

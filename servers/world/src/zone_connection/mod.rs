@@ -641,6 +641,43 @@ impl ZoneConnection {
         None
     }
 
+    /// Promotes the player in their Grand Company, as the personnel officer does once the client's checks pass (its
+    /// script's scene 2: the rank-up quest, the Hunting Log and the seals): the seals the rank asks for are paid
+    /// (GrandCompanyRank's RequiredSeals of the rank held: 2,000 from Private Third Class), then the rank, then
+    /// GrandCompanyInfo. Retail's packets for it aren't recorded (Bob's captures never reached a promotion.) Returns
+    /// false if there's no company, no next rank, or not enough seals.
+    pub async fn promote_grand_company(&mut self) -> bool {
+        let company = self.player_data.grand_company.active_company;
+        let Some(rank) = self.grand_company_rank(company) else {
+            return false;
+        };
+        let cost = self.game_data.lock().get_gc_rank_seals(rank);
+        let next = self.game_data.lock().get_gc_rank_seals(rank + 1);
+        let (Some((_, required)), Some(_)) = (cost, next) else {
+            tracing::warn!("Grand Company {company:?}: no rank after {rank}");
+            return false;
+        };
+        let slot = company as u16;
+        let seals = &mut crate::inventory::Storage::get_slot_mut(
+            &mut self.player_data.inventory.currency,
+            slot,
+        )
+        .quantity;
+        if (*seals as u32) < required {
+            tracing::warn!(
+                "Grand Company {company:?}: {required} seals needed to leave rank {rank}"
+            );
+            return false;
+        }
+        *seals -= required as i32;
+        self.send_inventory_slot(kawari::common::ContainerType::Currency, slot)
+            .await;
+        self.set_grand_company_rank(rank + 1);
+        self.send_grand_company_info().await;
+        tracing::info!("Grand Company {company:?}: promoted to rank {}", rank + 1);
+        true
+    }
+
     pub fn set_grand_company_rank(&mut self, rank: u8) {
         if self.player_data.grand_company.active_company != IpcGrandCompany::None {
             let company_index = self.player_data.grand_company.active_company as usize - 1;

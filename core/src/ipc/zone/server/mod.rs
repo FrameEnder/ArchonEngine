@@ -711,6 +711,17 @@ pub enum ServerZoneIpcData {
         kind: u32,
         params: [u32; 7],
     },
+    /// The chocobo companion's name as the server took it, sent right before resuming the event that asked for it
+    /// (fork: Bob's Chronofoil captures 0845b9a2 and bab8c255, My Little Chocobo: 0, then the name.)
+    CompanionName {
+        unk: u8,
+        #[brw(pad_size_to = CHAR_NAME_MAX_LENGTH)]
+        #[br(count = CHAR_NAME_MAX_LENGTH)]
+        #[br(map = read_string)]
+        #[bw(map = write_string)]
+        #[brw(pad_after = 7)]
+        name: String,
+    },
     /// Sent before every RetainerState and after a retainer's containers (Bob's 2026-10-18 capture): zeros, or
     /// `market_changed` 1 before sending away a retainer whose market listings changed.
     RetainerStateNotice {

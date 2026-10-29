@@ -3657,6 +3657,35 @@ async fn process_packet(
                                 tracing::warn!("Creating local linkshells is unimplemented");
                             }
                         }
+                        // An event's text answer (a chocobo's name), in the size its text needs.
+                        ClientZoneIpcData::EventYieldText16 { data: _ }
+                        | ClientZoneIpcData::EventYieldText24 { data: _ } => {
+                            let text = match &data.data {
+                                ClientZoneIpcData::EventYieldText16 { data } => {
+                                    kawari::ipc::zone::event_text_short(data)
+                                }
+                                ClientZoneIpcData::EventYieldText24 { data } => {
+                                    kawari::ipc::zone::event_text_short(data)
+                                }
+                                _ => None,
+                            };
+                            if let Some(text) = text
+                                && let Some(event) = events.last()
+                            {
+                                connection.pending_event_text = Some(text.text.clone());
+                                event
+                                    .0
+                                    .on_yield(
+                                        &event.1,
+                                        connection,
+                                        text.scene,
+                                        text.yield_id,
+                                        &[],
+                                        lua_player,
+                                    )
+                                    .await;
+                            }
+                        }
                         ClientZoneIpcData::CrossworldLinkshellMemberListRequest {
                             linkshell_id,
                             sequence,

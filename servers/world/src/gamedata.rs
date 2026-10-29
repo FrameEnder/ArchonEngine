@@ -1510,6 +1510,44 @@ impl GameData {
         Some((item.ItemCost[0].max(0) as u32, item.CurrencyCost[0]))
     }
 
+    /// The Grand Company whose quartermaster opens this GCShop event (the GCShop sheet: 1441793 the Maelstrom's, 1441794
+    /// the Twin Adders', 1441795 the Immortal Flames'.)
+    pub fn get_gc_shop_company(&mut self, shop_id: u32) -> Option<u8> {
+        let sheet =
+            icarus::GCShop::GCShopSheet::read_from(&mut self.resource, Language::None).ok()?;
+        let company = sheet.row(shop_id)?.GrandCompany;
+        (company > 0).then_some(company as u8)
+    }
+
+    /// An item of a quartermaster's list: GCScripShopItem's row `category` (a GCScripShopCategory: the company, tier and
+    /// tab, e.g. 1 the Maelstrom's Materiel, 10 the Twin Adders') and its subrow `index`, as the client names them when
+    /// buying. Returns the item, its price in seals and the rank it needs.
+    pub fn get_gc_shop_item(&mut self, category: u32, index: u16) -> Option<(u32, u32, u8)> {
+        let sheet = icarus::GCScripShopItem::GCScripShopItemSheet::read_from(
+            &mut self.resource,
+            Language::None,
+        )
+        .ok()?;
+        let row = sheet.subrow(category, index)?;
+        (row.Item > 0).then_some((
+            row.Item as u32,
+            row.CostGCSeals,
+            row.RequiredGrandCompanyRank.max(0) as u8,
+        ))
+    }
+
+    /// A Grand Company rank's seal cap and what being promoted from it costs (GrandCompanyRank: MaxSeals,
+    /// RequiredSeals; rank 1 holds 10,000 and its promotion costs 2,000.)
+    pub fn get_gc_rank_seals(&mut self, rank: u8) -> Option<(u32, u32)> {
+        let sheet = icarus::GrandCompanyRank::GrandCompanyRankSheet::read_from(
+            &mut self.resource,
+            Language::None,
+        )
+        .ok()?;
+        let row = sheet.row(rank as u32)?;
+        Some((row.MaxSeals, row.RequiredSeals))
+    }
+
     /// Gets the zone id for the given ContentFinderCondition ID.
     pub fn find_zone_for_content(&mut self, content_id: u16) -> Option<u16> {
         let content_finder_row = self.content_finder_condition_sheet.row(content_id as u32)?;

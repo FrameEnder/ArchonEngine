@@ -223,6 +223,20 @@ ClientZoneIpcType:
       pattern: C7 45 B0 ?? ?? ?? ?? 0F 10 4D 88 48 C7 45 B8 90 00 00 00
       offset: 3
       width: 4
+- name: EventYieldText16
+  comment: An event's text answer of up to 9 bytes - the handler, scene, yield ID, then the text from byte 7 (a chocobo's name in My Little Chocobo.)
+  # 945 on 2026.10.16 (Bob's Chronofoil capture 0845b9a2 of 2026-10-29, naming a chocobo Omark.)
+  opcode: 945
+  size: 16
+  found_on: 2026.10.16.0000.0000
+  how_to_find: In My Little Chocobo, give the chocobo a name of up to 9 letters - the 16-byte packet starting with the quest's event ID.
+- name: EventYieldText24
+  comment: An event's text answer of 10 to 17 bytes, laid out as EventYieldText16.
+  # 137 on 2026.10.16 (Bob's Chronofoil capture bab8c255 of 2026-10-29, naming a chocobo Vandergum.)
+  opcode: 137
+  size: 24
+  found_on: 2026.10.16.0000.0000
+  how_to_find: In My Little Chocobo, give the chocobo a name of 10 to 17 letters - the 24-byte packet starting with the quest's event ID.
 ServerZoneIpcType:
 - name: GlamourDresser
   comment: One page of the glamour dresser - the page, 400 item IDs (HQ + 1000000), their first and second stains.
@@ -552,3 +566,10 @@ ServerZoneIpcType:
   # HandleAchievementsPacket in FFXIVClientStructs.
   - handler:
       pattern: 4C 8D 89 ?? ?? ?? ?? 48 8B D1
+- name: CompanionName
+  comment: The chocobo companion's name as the server took it - 0, then the name - before an event's text answer is resumed.
+  # 157 on 2026.10.16 (Bob's Chronofoil captures 0845b9a2 and bab8c255 of 2026-10-29: My Little Chocobo, both times right before the EventResume.)
+  opcode: 157
+  size: 40
+  found_on: 2026.10.16.0000.0000
+  how_to_find: Record My Little Chocobo's naming on retail (Kawari Recorder) - the 40-byte packet with the name right before the EventResume.

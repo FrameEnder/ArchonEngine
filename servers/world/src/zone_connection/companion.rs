@@ -19,7 +19,43 @@ use crate::{
 /// Each skill line (Defender, Attacker, Healer) has ten skills (BuddySkill.)
 const MAX_SKILL_LEVEL: u8 = 10;
 
+/// The longest chocobo name the client's prompt takes, in characters (a stand-in for its own limit, which isn't
+/// recorded; Bob's names were 5 and 9.)
+const COMPANION_NAME_MAX: usize = 20;
+
 impl ZoneConnection {
+    /// Names the chocobo companion from the event's text answer (`EventYieldText16/24`, My Little Chocobo's scene 4),
+    /// as retail answered (Bob's Chronofoil captures 0845b9a2 and bab8c255): CompanionName with the name, then the
+    /// yield resumed with 1. A name that's empty, too long or not letters (spaces, apostrophes and hyphens between
+    /// them) resumes it with 0 instead and changes nothing (retail's answer to one isn't recorded.)
+    pub async fn name_companion(&mut self, scene: u16, yield_id: u8) {
+        let name = self.pending_event_text.take().unwrap_or_default();
+        let valid = !name.is_empty()
+            && name.chars().count() <= COMPANION_NAME_MAX
+            && name.chars().next().is_some_and(|c| c.is_alphabetic())
+            && name
+                .chars()
+                .all(|c| c.is_alphabetic() || c == ' ' || c == '\'' || c == '-');
+        let Some(handler) = self.event_handler_id else {
+            return;
+        };
+        if valid {
+            self.player_data.buddy.name = name.clone();
+            let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::CompanionName { unk: 0, name });
+            self.send_ipc_self(ipc).await;
+            self.handle
+                .send(ToServer::SetCompanion(
+                    self.player_data.character.actor_id,
+                    self.companion_profile(),
+                ))
+                .await;
+        } else {
+            tracing::warn!("Not a usable chocobo name: {name:?}");
+        }
+        self.resume_event(handler.0, scene, yield_id, vec![valid as u32])
+            .await;
+    }
+
     /// The companion as the server needs it: its name, rank, EXP and skill points, stance, barding's models, colour.
     pub fn companion_profile(&self) -> CompanionProfile {
         let buddy = &self.player_data.buddy;

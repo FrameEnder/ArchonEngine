@@ -25,6 +25,9 @@ pub use content::*;
 mod special_shop;
 pub use special_shop::*;
 
+mod gc_shop;
+pub use gc_shop::*;
+
 mod fate;
 pub use fate::*;
 

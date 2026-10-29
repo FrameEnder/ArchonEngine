@@ -632,6 +632,15 @@ impl LuaPlayer {
             .push(LuaTask::SetGrandCompanyRank { rank });
     }
 
+    fn promote_grand_company(&mut self) {
+        self.queued_tasks.push(LuaTask::PromoteGrandCompany);
+    }
+
+    fn name_companion(&mut self, scene: u16, yield_id: u8) {
+        self.queued_tasks
+            .push(LuaTask::NameCompanion { scene, yield_id });
+    }
+
     fn jump(&mut self, name: String) {
         self.queued_tasks.push(LuaTask::Jump { name });
     }
@@ -1325,6 +1334,16 @@ impl UserData for LuaPlayer {
         });
         methods.add_method_mut("set_grand_company_rank", |_, this, rank: u8| {
             this.set_grand_company_rank(rank);
+            Ok(())
+        });
+        // The personnel officer's promotion, once the client's own checks passed (ComDefGrandCompanyOfficer's scene 2.)
+        methods.add_method_mut("promote_grand_company", |_, this, _: ()| {
+            this.promote_grand_company();
+            Ok(())
+        });
+        // The chocobo's name the client typed (an event text answer): taken, and the yield resumed with 1 (0 if unusable.)
+        methods.add_method_mut("name_companion", |_, this, (scene, yield_id): (u16, u8)| {
+            this.name_companion(scene, yield_id);
             Ok(())
         });
         methods.add_method_mut("jump", |_, this, name: String| {
