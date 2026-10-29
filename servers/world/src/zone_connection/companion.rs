@@ -4,7 +4,9 @@
 
 use kawari::{
     common::{INVENTORY_ACTION_ACK_GENERAL, LegacyEquipmentModelId},
-    ipc::zone::{ContainerInfo, ItemOperation, ServerZoneIpcData, ServerZoneIpcSegment},
+    ipc::zone::{
+        ActorControlCategory, ContainerInfo, ItemOperation, ServerZoneIpcData, ServerZoneIpcSegment,
+    },
 };
 
 use crate::{
@@ -172,7 +174,21 @@ impl ZoneConnection {
         barding.resize(3, 0);
         barding[slot as usize] = equip as u8;
         self.player_data.buddy.barding.0 = barding;
+        // Retail answered with ActorControlSelf 255 [slot, equip], summoned or not, then the companion's Equip when
+        // it was out (Bob's Chronofoil captures); without it the appearance tab never showed the change.
+        self.actor_control_self(ActorControlCategory::CompanionBarding { slot, equip })
+            .await;
         self.send_companion().await;
+    }
+
+    /// Barding given and put on in every slot, as retail did at My Little Chocobo's end with the Grand Company's
+    /// saddle (ActorControlSelf 254 [row], then 255 [slot, row] for the three slots: Bob's Chronofoil captures
+    /// 0845b9a2, row 5, and bab8c255, row 9.)
+    pub async fn give_companion_barding(&mut self, equip: u32) {
+        self.unlock_buddy_equip(equip).await;
+        for slot in 0..3 {
+            self.set_companion_barding(slot, equip).await;
+        }
     }
 
     /// The next skill of a line learnt (client trigger 1702: 0 Defender, 1 Attacker, 2 Healer.) It costs as many

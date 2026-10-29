@@ -11,7 +11,7 @@
 --               231, EventYieldText16/24), which the server takes (`name_companion`: CompanionName, then the yield
 --               resumed with 1); as the scene ends, notice 1, sequence 255.
 -- Sequence 255: ACTOR1 rewards it (scene 6, a yield returning 1: the Chocobo Whistle, 6001, whose use teaches the
---               company chocobo mount.)
+--               company chocobo mount), with the company's saddle on the chocobo (COMPANY_SADDLE.)
 -- ACTOR0's line after it's accepted is scene 3 (sequences 1, 2 and 255), ACTOR1's in sequence 2 scene 5.
 
 SCENE_OFFER = 0
@@ -21,6 +21,9 @@ SCENE_ACTOR0_LINE = 3
 SCENE_NAME = 4
 SCENE_ACTOR1_LINE = 5
 SCENE_REWARD = 6
+
+-- The company's saddle, given and put on the chocobo in all three slots as the quest ends: retail's (Bob's Chronofoil capture bab8c255): the Ul'dahn Saddle.
+COMPANY_SADDLE = 9
 
 -- Retail's flags: every scene 0x2000 but the cutscene's.
 CUTSCENE_FLAGS = 0xF8402FFF
@@ -79,8 +82,9 @@ function sceneFinished(scene, results, player)
         player:quest_sequence(EVENT_ID, 255)
     elseif scene == SCENE_REWARD then
         if results[1] == 1 then
-            player:finish_event()
+            player:give_companion_barding(COMPANY_SADDLE)
             player:finish_quest(EVENT_ID, 0)
+            player:finish_event()
             return
         end
     end

@@ -313,6 +313,10 @@ impl LuaPlayer {
         self.queued_tasks.push(LuaTask::UnlockBuddyEquip { id });
     }
 
+    fn give_companion_barding(&mut self, id: u32) {
+        self.queued_tasks.push(LuaTask::GiveCompanionBarding { id });
+    }
+
     fn unlock_buddy_equip_all(&mut self) {
         self.queued_tasks.push(LuaTask::UnlockBuddyEquipAll {});
     }
@@ -1042,6 +1046,10 @@ impl UserData for LuaPlayer {
         });
         methods.add_method_mut("unlock_buddy_equip", |_, this, id: u32| {
             this.unlock_buddy_equip(id);
+            Ok(())
+        });
+        methods.add_method_mut("give_companion_barding", |_, this, id: u32| {
+            this.give_companion_barding(id);
             Ok(())
         });
         methods.add_method_mut("unlock_buddy_equip_all", |_, this, _: ()| {

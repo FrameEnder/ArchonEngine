@@ -211,6 +211,10 @@ pub enum LuaTask {
     UnlockBuddyEquip {
         id: u32,
     },
+    /// Barding given and put on the chocobo companion in every slot (`give_companion_barding`.)
+    GiveCompanionBarding {
+        id: u32,
+    },
     /// A Thavnairian Onion fed to the chocobo companion (`items/ThavnairianOnion.lua`.)
     FeedCompanionOnion {
         item_id: u32,

@@ -113,6 +113,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * **A Hero in the Making** (511, 2026-10-28): played through in game by Bob. Retail talked to Tataru in territory 140
   (where she stands for sequence 1); the officers' lines (scenes 3-5, 30-32, 35-37) go by IsAcceptEvent's order, not
   recorded.
+* **My Little Chocobo under the Scenario Guide** (2026-10-29): the quest stayed listed under the guide once done.
+  Retail completes a quest before ending the event; Kawari's scripts ended it first. The event now ends after the
+  quests finished with it, which is believed (not yet seen in game) to be what the client refreshes the list on.
+  Characters that finished 700-702 before this lack the company's saddle (`unlock_buddy_equip` gives it.)
+* **Mounting** (2026-10-29, [Chocobo companion](chocobo.md#riding)): retail's ActorControl 0 `[0, 1]` and 2 `[4]`
+  around the Mount packet aren't sent.
 * **The Scenario Guide** (2026-10-28, [Quests](quests.md#scenario-guide)): untested in game. Retail's order of the
   Grand Companies' three after 511 (681, 680, 682) isn't the sheet's, which Kawari sends (680, 681, 682). The quest
   completed last is worked out from the completed quests, not recorded as retail must; a quest done out of the

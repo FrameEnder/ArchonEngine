@@ -141,7 +141,13 @@ pub fn handle_action_messages(
             // An item is used through its ItemAction's own action (its type: an Action row), whose cast it has and
             // whose ID the cast bar shows: retail's Vesper Bay Aetheryte Ticket (item 30362) cast action 9994 for 5 s
             // (Bob's Chronofoil capture b8432613); the item's ID read as an Action row gave some unrelated action's.
-            cast_action = if request.action_type == ActionType::Item {
+            cast_action = if request.action_type == ActionType::Mount {
+                // Every mount casts the Mount action (4, a 1.0 s bar): retail's ActorCast named it with the mount's ID
+                // as the action (Bob's Chronofoil captures 5fe95296, 63fcdf06, a5ae031a, cc26e0ea: 1.0 s every time.)
+                // The mount's ID read as an Action row gave whatever that action casts (none for mount 1, 2.5 s for
+                // 412: Bob's bundle 20261029-152644.)
+                MOUNT_ACTION
+            } else if request.action_type == ActionType::Item {
                 game_data
                     .lookup_item_action_data(request.action_id)
                     .map(|(action, _, _)| action as u32)
@@ -544,6 +550,21 @@ pub fn execute_action(
             network.send_to_by_actor_id(from_actor_id, msg, DestinationNetwork::ZoneClients);
         }
 
+        // The mount appears a moment after the effect, as retail's (`MOUNT_ARRIVES_AFTER`.)
+        let barding = (request.action_id == companion::COMPANION_MOUNT as u32)
+            .then(|| companion::mount_bytes(&data, from_actor_id))
+            .flatten();
+        if let Some(instance) = data.find_actor_instance_mut(from_actor_id) {
+            instance.insert_task(
+                from_id,
+                from_actor_id,
+                MOUNT_ARRIVES_AFTER,
+                QueuedTaskData::MountArrives {
+                    segment: mount_segment(request.action_id, barding),
+                },
+            );
+        }
+
         // Riding one's own chocobo: others see its barding, and the companion, if it's out, goes in.
         if request.action_id == companion::COMPANION_MOUNT as u32 {
             if let Some((barding, color)) = companion::barding(&data, from_actor_id)
@@ -714,18 +735,7 @@ pub fn execute_action(
                 execute_item_action(game_data.clone(), lua.clone(), &request, &mut lua_player)
             }
             ActionType::Mount => {
-                // One's own chocobo shows its barding and colour (the companion's.)
-                let barding = (request.action_id == companion::COMPANION_MOUNT as u32)
-                    .then(|| companion::mount_bytes(&data, from_actor_id))
-                    .flatten();
-                execute_mount_action(
-                    network.clone(),
-                    from_actor_id,
-                    &request,
-                    actor,
-                    instance,
-                    barding,
-                )
+                execute_mount_action(network.clone(), from_actor_id, &request, actor, instance)
             }
             ActionType::Ornament => {
                 execute_ornament_action(network.clone(), from_actor_id, &request, actor, instance)
@@ -2757,7 +2767,6 @@ pub fn execute_mount_action(
     request: &ActionRequest,
     actor: &NetworkedActor,
     instance: &Instance,
-    barding: Option<[u8; 14]>,
 ) -> Option<EffectsBuilder> {
     let mut network = network.lock();
 
@@ -2774,7 +2783,7 @@ pub fn execute_mount_action(
         animation_target_id: request.target,
         targets: vec![request.target],
         action_id: request.action_id,
-        animation_lock: ANIMATION_LOCK_TIME,
+        animation_lock: ANIMATION_LOCK_AFTER_CAST, // retail's 0.1 (Bob's Chronofoil captures)
         rotation: common_spawn.rotation,
         spell_id: request.action_id as u16,
         source_sequence: request.sequence,
@@ -2794,19 +2803,24 @@ pub fn execute_mount_action(
         DestinationNetwork::ZoneClients,
     );
 
-    // Retail's for the Company Chocobo: 1, its colour, its barding's three models (u16 model, u16 variant.)
-    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::Mount {
-        id: request.action_id as u16,
-        unk1: barding.unwrap_or([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-    });
-    network.send_in_range_inclusive_instance(
-        from_actor_id,
-        instance,
-        FromServer::PacketSegment(ipc, from_actor_id),
-        DestinationNetwork::ZoneClients,
-    );
-
+    // The Mount packet itself follows MOUNT_ARRIVES_AFTER later (`execute_action` queues it.)
     None
+}
+
+/// The Mount action every mount casts (Action 4.)
+pub const MOUNT_ACTION: u32 = 4;
+
+/// How long after the mount action's effect the mount appears (its Mount packet): retail's 0.55-0.58 s in all six
+/// mountings of Bob's Chronofoil captures (63fcdf06 and cc26e0ea: the ActionEffect at the bar's end, then the Mount.)
+const MOUNT_ARRIVES_AFTER: Duration = Duration::from_millis(570);
+
+/// The Mount packet: retail's for the Company Chocobo has 1, its colour, then its barding's three models (u16 model,
+/// u16 variant); other mounts 1 and zeros.
+pub fn mount_segment(mount: u32, barding: Option<[u8; 14]>) -> ServerZoneIpcSegment {
+    ServerZoneIpcSegment::new(ServerZoneIpcData::Mount {
+        id: mount as u16,
+        unk1: barding.unwrap_or([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+    })
 }
 
 /// Handles ornament-related actions.

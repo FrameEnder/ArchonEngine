@@ -70,6 +70,7 @@ Player methods (`servers/world/src/lua/player.rs`), the ones quests use:
 | `finish_quest(id, chosen_item)` | Completes it: gil, EXP, the fixed items and crystals, the optional item the player picked (`results[2]` of the reward scene). EXP is `ExpFactor × ScaledQuestXP[L] × QuestExpModifier[L] / 100` with L the player's level but no more than the quest's (ClassJobLevel + QuestLevelOffset): exact on 30+ turn-ins in Bob's captures (a level 1 quest at level 2 gives 400, not 660). As retail, the log lines come first (EventLogMessage from no event: 1605 the gil, 1606 an item, 1607 items with a count), then the gil and items, then the EXP. |
 | `cancel_quest(id)`, `incomplete_quest(id)`, `has_quest(id)` | As named. |
 | `event_notice(id, notice, {args})` | Sends an EventNotice (see below). |
+| `give_companion_barding(row)` | Gives the chocobo companion a BuddyEquip row and puts it on in all three slots (ActorControlSelf 254, then 255 for each), as My Little Chocobo's end does with the company's saddle ([Chocobo companion](chocobo.md#commands-barding-skills)). |
 | `mark_quest_completed(id)` | Marks another quest completed with no rewards (its FinishQuest), as retail does for a quest one replaces: Lurkers in the Grotto (543) completes 464. |
 | `start_nested_event(handler)` / `finish_nested_event(handler)` | Sends only the packets of a nested event (EventStart / EventFinish, type Nest, on the current event's target), as retail does with the aetheryte's event while attuning in Close to Home; no handler runs for it. If an event action is interrupted, the nested event is finished too (and OccupiedInEvent removed). |
 | `event_action(id)` | Starts an event action (the progress bar: Searching, Aiding, Interacting…); the script gets `onEventActionCast(player)` when it completes, after the EventAction row's CastTime (read in the world server's language: the sheet has a Name column, and read without one it failed and every bar ended after a 2 s fallback, before the client's, until 2026-10-20). Directors' event actions (`begin_event_action`) take the same time. |
@@ -488,6 +489,12 @@ three runs, every step from the city's last quests to We Come in Peace):
   Retail put the Grand Companies' three as 681, 680, 682 in all three runs (three different start cities); Kawari
   sends 680, 681, 682. Nothing in the Quest or ScenarioTree sheets gives retail's order.
 * ScenarioTree is read in whatever language it has.
+
+* **Under the guide**: the client lists quests that unlock content (Quest's `Introduction`, e.g. My Little Chocobo,
+  EventIconType 8) from its own state; nothing from the server names them. Retail ends a quest as UpdateQuest
+  (clearing its slot), FinishQuest, QuestTracker, then EventFinish (Bob's Chronofoil captures bab8c255 and 0845b9a2).
+  Kawari's My Little Chocobo ended the event first and its name stayed under the guide once done (Bob's bundle
+  20261029-152644), so `process_lua_player` now ends an event after the quests finished in the same batch.
 
 ## Quest rewards and EXP
 

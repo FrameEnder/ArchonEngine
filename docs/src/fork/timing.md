@@ -22,7 +22,8 @@ counting "updates", auto-attack timers) are half-second steps.
   bar ends ([Combat](combat.md)).
 * **Slidecasting**: moving cancels an interruptible cast until it lands (`task.point > now`); as it lands half a
   second early, moving during the last half second doesn't interrupt it, as on retail. Mount and item casts land at
-  the end of their bar and keep a half-second window (`task.point > now + 500 ms`).
+  the end of their bar (a mount's is retail's 1.0 s Mount, action 4, and its Mount packet 0.57 s later: see
+  [Chocobo companion](chocobo.md#riding)) and keep a half-second window (`task.point > now + 500 ms`).
 * **Duty clock**: once a duty's countdown starts its time left is re-sent every 300 s (`resync_duty_clock`), as
   retail. Retail's wipe: PartyWipe (0x40000005), 3 s later 0x8000000D, 0x80000029, 0x40000013, then 0x4000000F (time
   left) and 0x40000011, and DutyRecommence (0x40000006) 10.2 s after the wipe. Kawari plays it out as the Bowl of

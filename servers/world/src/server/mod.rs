@@ -1773,6 +1773,25 @@ pub async fn server_main_loop(
                                     DestinationNetwork::ZoneClients,
                                 );
                             }
+                            QueuedTaskData::MountArrives { segment } => {
+                                let mut network = network.lock();
+                                let data = data.lock();
+                                let from = task.from_actor_id;
+                                let mounted = |actor: &NetworkedActor| {
+                                    actor.get_common_spawn().mode == CharacterMode::Mounted
+                                };
+                                // Still mounted (it wasn't dismounted, or the actor gone, in the meantime.)
+                                if let Some(instance) = data.find_actor_instance(from)
+                                    && instance.find_actor(from).is_some_and(mounted)
+                                {
+                                    network.send_in_range_inclusive_instance(
+                                        from,
+                                        instance,
+                                        FromServer::PacketSegment(segment.clone(), from),
+                                        DestinationNetwork::ZoneClients,
+                                    );
+                                }
+                            }
                             QueuedTaskData::EffectResultLands { segment } => {
                                 let mut network = network.lock();
                                 let data = data.lock();

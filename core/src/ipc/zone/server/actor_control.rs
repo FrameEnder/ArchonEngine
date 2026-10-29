@@ -540,6 +540,17 @@ pub enum ActorControlCategory {
         id: u32, // Index to BuddyEquip sheet
     },
 
+    /// Barding the chocobo companion now wears, to its owner: retail's answer to client trigger 1701 and, for each
+    /// slot, at My Little Chocobo's end (Bob's Chronofoil captures 0845b9a2 and bab8c255.) The Companion window's
+    /// appearance tab shows what this says.
+    #[brw(magic = 255u32)]
+    CompanionBarding {
+        /// 0 head, 1 body, 2 legs.
+        slot: u32,
+        /// A BuddyEquip row (0 none.)
+        equip: u32,
+    },
+
     /// Also seen during Carbuncle spawning.
     #[brw(magic = 257u32)]
     SetupPet {

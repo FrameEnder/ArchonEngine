@@ -54,8 +54,15 @@ At zone-in with no companion out retail sent 263 `[0]`, CompanionUpdate `[0, 1, 
 * **Withdraw**: ActorControl 258 `[1]` on the companion, CompanionUpdate `[0, 1, 0, …]`, 264 with 2; 2 s later
   SetupPet with no pet (0xE0000000), CompanionUpdate again, and it's deleted. Its time is lost. The same when its
   time runs out or it falls.
-* **Barding** (client trigger 1701 `[slot, BuddyEquip row]`, slot 0 head, 1 body, 2 legs): the companion's Equip,
-  with BuddyEquip's ModelTop/ModelBody/ModelLegs (model | variant << 16) in head, body and feet.
+* **Barding** (client trigger 1701 `[slot, BuddyEquip row]`, slot 0 head, 1 body, 2 legs): ActorControlSelf 255
+  `[slot, row]` to the owner, summoned or not (`CompanionBarding`: the Companion window's appearance tab shows only what
+  it says; until 2026-10-29 Kawari sent nothing and the tab never changed, Bob's bundle 20261029-152644), then, when
+  it's out, the companion's Equip, with BuddyEquip's ModelTop/ModelBody/ModelLegs (model | variant << 16) in head, body
+  and feet. A row the character doesn't have is refused.
+* **The company's saddle**: My Little Chocobo ends with ActorControlSelf 254 `[row]` (the barding given) and 255
+  `[slot, row]` for the three slots, before FinishQuest: row 5 the Gridanian Saddle (0845b9a2), 9 the Ul'dahn Saddle
+  (bab8c255); the Maelstrom's 1 is BuddyEquip's row for that company with Order 1, as the other two are. Scripts call
+  `player:give_companion_barding(row)`.
 * **Skills** (client trigger 1702 `[line]`, 0 Defender, 1 Attacker, 2 Healer): the line's next skill costs its place
   in the line in points (retail: 11 points, Attacker at 4, then 6, then 0), answered with CompanionUpdate (no time)
   and the companion's StatusEffectList.
@@ -115,6 +122,13 @@ companion had spent 21 = 1 + ... + 6); a skill costs its level. Its HP and attac
 change.
 
 ## Riding
+
+Mounting (any mount; four of Bob's Chronofoil captures): the request; ActorCast at +0.05 s (action 4 Mount, action
+type 13, the mount's ID, 1.0 s) and Condition 0x04; at +1.03 s the condition cleared and ActionEffect1 (the mount's
+ID, a 0.1 s lock); at +1.6 s ActorControl 0 `[0, 1]`, ActorControl 2 `[4]`, Condition, 928 `[12]`, the Mount packet
+and 263 `[1]`. Kawari casts action 4 for every mount (`MOUNT_ACTION`; until 2026-10-29 it looked the mount's ID up as
+an Action row, so mount 1 had no cast and 412 a 2.5 s one) and sends the Mount packet 0.57 s after the cast lands
+(`MOUNT_ARRIVES_AFTER`), if still mounted. The mode ActorControls (0, 2) around it aren't sent.
 
 Mounting one's own chocobo (Mount 1) with the companion out: ActorControl 272 `[0]` on the companion (it goes), 928
 `[12]` to the owner, the Mount packet (`[1, colour, head, body, legs]`, each barding model as u16 model and u16

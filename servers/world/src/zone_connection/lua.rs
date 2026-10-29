@@ -53,8 +53,24 @@ impl ZoneConnection {
         let mut run_finish_event = false;
         let mut continue_nesting = false;
 
-        let tasks = player.queued_tasks.clone();
+        let mut tasks = player.queued_tasks.clone();
         player.queued_tasks.clear();
+        // Retail completes a quest before it ends the event (UpdateQuest, FinishQuest, QuestTracker, then EventFinish:
+        // Bob's Chronofoil captures bab8c255 and 0845b9a2). A script that finished the event first left the quest it
+        // had just completed under the Scenario Guide (Bob's bundle 20261029-152644, My Little Chocobo: the client
+        // seems to refresh that list as the event ends.) So an event's end waits for the quests finished with it.
+        if let Some(last_finish) = tasks.iter().rposition(|task| {
+            matches!(
+                task,
+                LuaTask::FinishQuest { .. } | LuaTask::MarkQuestCompleted { .. }
+            )
+        }) && let Some(finish_event) = tasks[..last_finish]
+            .iter()
+            .position(|task| matches!(task, LuaTask::FinishEvent))
+        {
+            let task = tasks.remove(finish_event);
+            tasks.insert(last_finish, task);
+        }
         for task in &tasks {
             match task {
                 LuaTask::ChangeTerritory {
@@ -611,6 +627,9 @@ impl ZoneConnection {
                 }
                 LuaTask::UnlockBuddyEquip { id } => {
                     self.unlock_buddy_equip(*id).await;
+                }
+                LuaTask::GiveCompanionBarding { id } => {
+                    self.give_companion_barding(*id).await;
                 }
                 LuaTask::UnlockBuddyEquipAll => {
                     let max_buddy_equip_id = BUDDY_EQUIP_BITMASK_SIZE as u32 * 8;

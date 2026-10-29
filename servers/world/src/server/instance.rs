@@ -82,6 +82,8 @@ pub enum QueuedTaskData {
     SealBossWall { id: u32, place_name: u32 },
     /// Generically send a packet segment, only used for `do_change_zone`. Don't abuse this as a generic task, you almost certainly want to create a new variant.
     PacketSegment { segment: ServerZoneIpcSegment },
+    /// A mount appearing under `from_actor_id` (its Mount packet), sent to everyone near, itself too (`action.rs`.)
+    MountArrives { segment: ServerZoneIpcSegment },
     /// An action's result as its hit lands (EffectResultBasic), sent to everyone near `from_actor_id`, the target.
     EffectResultLands { segment: ServerZoneIpcSegment },
     /// Used by directors since its tough to fit this into the director logic.
