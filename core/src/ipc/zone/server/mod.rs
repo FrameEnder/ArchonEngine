@@ -270,6 +270,9 @@ pub enum ServerZoneIpcData {
     EventResume2(#[brw(args { max_params: 2 } )] EventResume),
     EventResume4(#[brw(args { max_params: 4 } )] EventResume),
     EventResume8(#[brw(args { max_params: 8 } )] EventResume),
+    /// Resumes a scene with 9 to 16 parameters (fork: the Gold Saucer's staged arcade games, Bob's Chronofoil capture
+    /// deaf7e28.)
+    EventResume16(#[brw(args { max_params: 16 } )] EventResume),
     EventScene2(#[brw(args { max_params: 2 } )] EventScene),
     EventScene4(#[brw(args { max_params: 4 } )] EventScene),
     EventScene8(#[brw(args { max_params: 8 } )] EventScene),
@@ -710,6 +713,21 @@ pub enum ServerZoneIpcData {
     LootMessage {
         kind: u32,
         params: [u32; 7],
+    },
+    /// A Mini Cactpot ticket just bought (fork: Bob's Chronofoil capture deaf7e28, the three of 2026-10-29): the broker's
+    /// handler, 19 and 23 (the payout table's length and the last sum, as retail sent them), the day it's for, the cell
+    /// already showing (row, column, its number), then what each sum of a line pays, 6 to 24.
+    LotteryDailyBoard {
+        handler_id: HandlerId,
+        payouts_len: u8,
+        last_sum: u8,
+        #[brw(pad_before = 2)]
+        day: u32,
+        row: u32,
+        column: u32,
+        number: u32,
+        #[brw(pad_after = 36)]
+        payouts: [u32; 19],
     },
     /// The chocobo companion's name as the server took it, sent right before resuming the event that asked for it
     /// (fork: Bob's Chronofoil captures 0845b9a2 and bab8c255, My Little Chocobo: 0, then the name.)
@@ -1753,6 +1771,50 @@ mod tests {
     #[test]
     fn server_zone_ipc_sizes() {
         test_opcodes::<ServerZoneIpcSegment>();
+    }
+
+    /// Retail's Mini Cactpot ticket and Out on a Limb swing, byte for byte (Bob's Chronofoil capture deaf7e28.)
+    #[test]
+    fn gold_saucer_layouts() {
+        use binrw::BinWrite;
+
+        let write = |data: ServerZoneIpcData| {
+            let mut cursor = std::io::Cursor::new(Vec::new());
+            data.write_le(&mut cursor).unwrap();
+            cursor.into_inner()
+        };
+        let board = write(ServerZoneIpcData::LotteryDailyBoard {
+            handler_id: HandlerId(0x250000),
+            payouts_len: 19,
+            last_sum: 23,
+            day: 4813,
+            row: 1,
+            column: 1,
+            number: 2,
+            payouts: [
+                10000, 36, 720, 360, 80, 252, 108, 72, 54, 180, 72, 180, 119, 36, 306, 1080, 144,
+                1800, 3600,
+            ],
+        });
+        assert_eq!(board.len(), 136);
+        assert_eq!(
+            &board[..28],
+            &[
+                0x00, 0x00, 0x25, 0x00, 0x13, 0x17, 0x00, 0x00, 0xcd, 0x12, 0, 0, 1, 0, 0, 0, 1, 0,
+                0, 0, 2, 0, 0, 0, 0x10, 0x27, 0, 0
+            ]
+        );
+        let swing = write(ServerZoneIpcData::EventResume16(EventResume {
+            handler_id: HandlerId(0x240006),
+            scene: 14,
+            resume_id: 24,
+            params: vec![1, 2, 1, 121592, 4792, 0, 0, 0, 0],
+        }));
+        assert_eq!(swing.len(), 72);
+        assert_eq!(
+            &swing[..16],
+            &[6, 0, 0x24, 0, 0x0e, 0, 0x18, 9, 1, 0, 0, 0, 2, 0, 0, 0]
+        );
     }
 
     /// Where the client's handler (HandleAchievementsPacket) reads each part.

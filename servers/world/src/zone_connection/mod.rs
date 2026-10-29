@@ -294,6 +294,8 @@ pub struct ZoneConnection {
     /// The Scenario Guide last sent (the quest completed last, the next ones and their issuer locations), so it's
     /// sent only when it changes, as retail did.
     pub scenario_guide_sent: Option<(u32, Vec<(u32, u32)>)>,
+    /// The Gold Saucer game being played (a Mini Cactpot ticket, an arcade machine's play), while its event lasts.
+    pub gold_saucer_game: Option<crate::events::GoldSaucerGame>,
     /// Packet capture for debugging, if enabled in the config.
     pub capture: crate::capture::PacketCapture,
 }

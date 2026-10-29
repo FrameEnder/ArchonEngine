@@ -313,6 +313,13 @@ impl LuaPlayer {
         self.queued_tasks.push(LuaTask::UnlockBuddyEquip { id });
     }
 
+    /// An arcade machine's payout, once the event's finish has gone out (`events/gold_saucer.rs`.)
+    pub fn queue_mgp_win(&mut self, machine: u32, mgp: u32) {
+        if mgp > 0 {
+            self.queued_tasks.push(LuaTask::PayArcade { machine, mgp });
+        }
+    }
+
     fn give_companion_barding(&mut self, id: u32) {
         self.queued_tasks.push(LuaTask::GiveCompanionBarding { id });
     }
@@ -424,6 +431,43 @@ impl LuaPlayer {
     fn finish_quest(&mut self, id: u32, optional_item: u32) {
         self.queued_tasks
             .push(LuaTask::FinishQuest { id, optional_item });
+    }
+
+    /// A warp's details for its script (`GameData::get_warp_details`): whether the player meets its WarpCondition (the
+    /// quests, the class level, the fare in gil), the DefaultTalks shown when they do (`success_event`, before the
+    /// question) or don't (`fail_event`), the trip's cutscene and the fare.
+    fn warp_info(&self, lua: &mlua::Lua, warp_id: u32) -> mlua::Result<mlua::Table> {
+        let game_data = match lua.globals().get::<mlua::Value>("GAME_DATA")? {
+            mlua::Value::UserData(ud) => ud.borrow::<Arc<Mutex<GameData>>>()?.clone(),
+            _ => unreachable!(),
+        };
+        let details = game_data
+            .lock()
+            .get_warp_details(warp_id)
+            .unwrap_or_default();
+        let completed = &self.player_data.quest.completed;
+        let quests_done = details.required_quests.is_empty()
+            || if details.any_quest {
+                details
+                    .required_quests
+                    .iter()
+                    .any(|q| completed.contains(*q))
+            } else {
+                details
+                    .required_quests
+                    .iter()
+                    .all(|q| completed.contains(*q))
+            };
+        let gil = self.player_data.inventory.currency.gil.quantity.max(0) as u32;
+        let met =
+            quests_done && self.current_level as u16 >= details.class_level && gil >= details.gil;
+        let table = lua.create_table()?;
+        table.set("met", met)?;
+        table.set("success_event", details.success_event)?;
+        table.set("fail_event", details.fail_event)?;
+        table.set("cutscene", details.start_cutscene)?;
+        table.set("gil", details.gil)?;
+        Ok(table)
     }
 
     /// Returns the target DefaultTalk event for a given SwitchTalk event.
@@ -1215,6 +1259,9 @@ impl UserData for LuaPlayer {
                 ))
             },
         );
+        methods.add_method("warp_info", |lua, this, warp_id: u32| {
+            this.warp_info(lua, warp_id)
+        });
         methods.add_method_mut("register_for_content", |_, this, content_id: u16| {
             this.register_for_content(content_id);
             Ok(())

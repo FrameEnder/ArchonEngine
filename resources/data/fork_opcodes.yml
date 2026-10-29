@@ -573,3 +573,18 @@ ServerZoneIpcType:
   size: 40
   found_on: 2026.10.16.0000.0000
   how_to_find: Record My Little Chocobo's naming on retail (Kawari Recorder) - the 40-byte packet with the name right before the EventResume.
+- name: EventResume16
+  comment: Resumes a scene with 9 to 16 parameters.
+  # 529 on 2026.10.16 (Bob's Chronofoil capture deaf7e28 of 2026-10-29: Out on a Limb's and The Finer Miner's swings,
+  # resume 23 and 24 with 9 parameters, 72 bytes.)
+  opcode: 529
+  size: 72
+  found_on: 2026.10.16.0000.0000
+  how_to_find: Play Out on a Limb on retail (Kawari Recorder) - each swing is answered with this 72-byte packet to the arcade machine's handler.
+- name: LotteryDailyBoard
+  comment: A Mini Cactpot ticket just bought - its day, the cell already showing and the payout table.
+  # 326 on 2026.10.16 (Bob's Chronofoil capture deaf7e28 of 2026-10-29: the answer to each ticket bought, 136 bytes.)
+  opcode: 326
+  size: 136
+  found_on: 2026.10.16.0000.0000
+  how_to_find: Buy a Mini Cactpot ticket on retail (Kawari Recorder) - the 136-byte packet to the broker's handler (0x250000) right after the MGP.

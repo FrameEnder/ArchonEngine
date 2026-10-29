@@ -66,6 +66,7 @@
   - [Gathering](fork/gathering.md)
   - [Grand Companies](fork/grand-company.md)
   - [Chocobo Companion](fork/chocobo.md)
+  - [The Gold Saucer](fork/gold-saucer.md)
   - [Fork Opcodes](fork/opcodes.md)
   - [Packet Layouts from the Client](fork/packet-layouts.md)
   - [What Retail Sends That Kawari Doesn't](fork/unfilled-fields.md)

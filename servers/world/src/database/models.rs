@@ -313,6 +313,8 @@ pub struct Unlock {
     pub player_currencies: PlayerCurrencies,
     /// The Hunting Log's progress, a log at a time (only those begun; see `hunting_log.rs`.)
     pub hunting_log: HuntingLogs,
+    /// The Gold Saucer's lotteries: today's Mini Cactpot tickets, the week's Jumbo Cactpot (see `gold_saucer.rs`.)
+    pub gold_saucer: crate::gold_saucer::GoldSaucerState,
 }
 
 #[derive(

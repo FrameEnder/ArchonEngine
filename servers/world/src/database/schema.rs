@@ -159,6 +159,7 @@ diesel::table! {
         achievement_counters -> Text,
         player_currencies -> Text,
         hunting_log -> Text,
+        gold_saucer -> Text,
     }
 }
 

@@ -80,6 +80,24 @@ update on the next frame (2026-10-17, teleporting from the Central Shroud to Gri
 FFXIVClientStructs' `ida/data.yml` for this patch). `remove_actor_from_instance` now sends 2352 and 2357 first, in
 retail's order.
 
+## Warps and their conditions
+
+A warp (a Warp row: lifts, doors, ferries, airship ticketers) may ask something of the player, its WarpCondition: quests
+done (all of them, or any by CompleteParam 2), a class level and a fare in gil. The generic `events/generic/Warp.lua`
+reads it through `player:warp_info(id)` (`GameData::get_warp_details`) and plays it as retail did:
+
+* **Met**, with a ConditionSuccessEvent: that DefaultTalk first, nested (EventStart type 7, its scene 0, 0x2000), then
+  the yes/no (Aleport's ferry, warp 37, in Bob's Chronofoil capture cc62ad94; the lifts to and from Chocobo Square, 105
+  and 106, in deaf7e28.)
+* **Not met**: the ConditionFailEvent instead of the yes/no, and nothing more. The client itself refuses the yes/no then
+  (error code 50, at once): Bob's bundle 20261029-154412, the Ul'dah ticketers (warps 29 and 30, 120 gil) with too
+  little gil, and the Gold Saucer's (108) before It Could Happen to You. Retail's fail talk wasn't captured; it's
+  played as the success talk is. Before 2026-10-29 Kawari played the yes/no regardless and nothing came of it.
+* **Yes** on a warp with a StartCutscene (the airships) plays scene 1000 (retail's flags 0x482402, the flight from
+  Limsa Lominsa to Ul'dah, warp 31), then warps. The **fare** is taken as the warp goes (retail's gil slot came with
+  PrepareZoning: Aleport's 40 gil, the airship's 120); Kawari took none until 2026-10-29 (Bob's bundle
+  20261029-154625.)
+
 ## Warping within a zone
 
 A warp that stays in the zone (an aetheryte shard, a door in the Waking Sands) keeps the player in the instance

@@ -1,0 +1,84 @@
+{
+  "quest": 435,
+  "script": "SubGsc002_00435",
+  "source": "Bob's Chronofoil capture deaf7e28 (2026-10-29, the Gold Saucer); scenes and effects from Bob's Chronofoil capture of 2026-10-29",
+  "params": {
+    "ACTOR0": 1011022,
+    "ACTOR1": 1010448,
+    "ACTOR2": 1011038,
+    "ACTOR3": 1010478,
+    "ACTOR4": 1011080,
+    "ACTOR5": 1011079,
+    "ACTOR6": 1011084,
+    "LOC_CHECK_QUEST_001": 66996,
+    "LOC_CHECK_QUEST_002": 65625,
+    "LOC_CHECK_QUEST_003": 65964,
+    "LOC_LEVEL_ENPC_001": 5581118,
+    "LOC_ACTIONTIMELINE_001": 1072,
+    "LOC_LEVEL_ENPC_002": 5581208,
+    "LOC_LEVEL_ENPC_003": 5584143,
+    "LOC_ENPC_001": 1011586,
+    "LOC_LEVEL_ENPC_004": 5653245,
+    "LOC_LEVEL_ENPC_005": 5581064,
+    "BGM0": 250
+  },
+  "steps": [
+    {
+      "talk": 1011022,
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1010448,
+      "scenes": [
+        {"scene": 2, "flags": "0xf8402ef3", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1011038,
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1010478,
+      "scenes": [
+        {"scene": 5, "flags": "0xf8402ef3", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 4, "vars": "000000000000", "notices": [[2, []]]}
+    },
+    {
+      "talk": 1011080,
+      "scenes": [
+        {"scene": 6, "flags": "0xf8402ef3", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 5, "vars": "000000000000", "notices": [[3, []]]}
+    },
+    {
+      "talk": 1011079,
+      "scenes": [
+        {"scene": 7, "flags": "0xf8402ef3", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 6, "vars": "000000000000", "notices": [[4, []]]}
+    },
+    {
+      "talk": 1011084,
+      "scenes": [
+        {"scene": 8, "flags": "0xf8402ef3", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[5, []]]}
+    },
+    {
+      "talk": 1010448,
+      "scenes": [
+        {"scene": 9, "flags": "0xf8402ef3", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

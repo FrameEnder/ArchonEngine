@@ -2378,6 +2378,34 @@
       "handler_at": 11846976,
       "end": "de23b881b2c0bef310e705ae",
       "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "EventResume16",
+      "opcode": 529,
+      "case": "24c043641cac5181abb5348db01999e6573cfaeace24ccba9dc2e1db10e705ae",
+      "case_group": 8,
+      "handler_at": 11746480,
+      "end": "24c043641cac5181abb5348db01999e6573cfaeace24ccba9dc2e1db10e705ae",
+      "end_group": 8,
+      "sub": {
+        "end": "70a8801cc9d74a6738bcb8996cea595cc5e35ac9",
+        "group": 6
+      }
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "LotteryDailyBoard",
+      "opcode": 326,
+      "case": "24c043641cac5181abb5348db01999e6573cfaeace24ccba9dc2e1db10e705ae",
+      "case_group": 8,
+      "handler_at": 11746480,
+      "end": "24c043641cac5181abb5348db01999e6573cfaeace24ccba9dc2e1db10e705ae",
+      "end_group": 8,
+      "sub": {
+        "end": "70a8801cc9d74a6738bcb8996cea595cc5e35ac9",
+        "group": 6
+      }
     }
   ],
   "client": [

@@ -795,6 +795,33 @@ pub enum ActorControlCategory {
         id: u32,
     },
 
+    /// `LogMessage` with two values (fork): the Jumbo Cactpot's purchase line, 4735, with the ticket's number and its
+    /// price (Bob's Chronofoil capture deaf7e28.) Shares 517, so it's only ever written; a read gives `LogMessage`.
+    #[brw(magic = 517u32)]
+    LogMessageValues {
+        log_message: u32,
+        value1: u32,
+        value2: u32,
+    },
+
+    /// A log line with a number for the player (fork): retail's MGP from the Gil to MGP exchange, LogMessage 4765 with
+    /// 0 and the MGP (Bob's Chronofoil capture deaf7e28.)
+    #[brw(magic = 527u32)]
+    LogMessageNumber {
+        log_message: u32,
+        unk: u32,
+        value: u32,
+    },
+
+    /// A log line naming an actor and a number (fork): retail's MGP won at the Gold Saucer, LogMessage 4765 with the
+    /// player's actor ID and the MGP (Bob's Chronofoil capture deaf7e28: the Cactpot, the arcade machines, GATEs.)
+    #[brw(magic = 528u32)]
+    LogMessageActorNumber {
+        log_message: u32,
+        actor_id: ObjectId,
+        value: u32,
+    },
+
     #[brw(magic = 519u32)]
     SetPartyMemberCutsceneFlags { actor_id: ObjectId, unk2: u32 },
 
@@ -920,6 +947,11 @@ pub enum ActorControlCategory {
     },
 
     /// For the Gold Saucer.
+    /// MGP won and where (fork: Bob's Chronofoil capture deaf7e28, after each payout: 8 Cuff-a-Cur, 10 The Moogle's
+    /// Paw, 13 The Finer Miner, 14 Out on a Limb, 16 a GATE.)
+    #[brw(magic = 910u32)]
+    GoldSaucerMgpWon { source: u32, mgp: u32 },
+
     #[brw(magic = 911u32)]
     UnkGoldSaucerRelated { unk1: u32 },
 

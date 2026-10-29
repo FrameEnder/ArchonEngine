@@ -211,6 +211,11 @@ pub enum LuaTask {
     UnlockBuddyEquip {
         id: u32,
     },
+    /// An arcade machine's payout, after its event finished (`events/gold_saucer.rs`.)
+    PayArcade {
+        machine: u32,
+        mgp: u32,
+    },
     /// Barding given and put on the chocobo companion in every slot (`give_companion_barding`.)
     GiveCompanionBarding {
         id: u32,

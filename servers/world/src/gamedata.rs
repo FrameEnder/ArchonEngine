@@ -1022,6 +1022,60 @@ impl GameData {
         Some((row.PopRange, row.TerritoryType))
     }
 
+    /// What a warp asks of the player and plays around itself (its Warp and WarpCondition rows), see `WarpDetails`.
+    pub fn get_warp_details(&mut self, warp_id: u32) -> Option<WarpDetails> {
+        let row = self.warp_sheet.row(warp_id)?;
+        let mut details = WarpDetails {
+            success_event: row.ConditionSuccessEvent,
+            fail_event: row.ConditionFailEvent,
+            start_cutscene: row.StartCutscene,
+            ..Default::default()
+        };
+        if row.WarpCondition != 0 {
+            let sheet = icarus::WarpCondition::WarpConditionSheet::read_from(
+                &mut self.resource,
+                Language::None,
+            )
+            .ok()?;
+            let condition = sheet.row(row.WarpCondition as u32)?;
+            details.required_quests = [
+                condition.RequiredQuest1,
+                condition.RequiredQuest2,
+                condition.RequiredQuest3,
+                condition.RequiredQuest4,
+            ]
+            .into_iter()
+            .filter(|quest| *quest != 0)
+            .map(adjust_quest_id)
+            .collect();
+            details.any_quest = condition.CompleteParam == 2;
+            details.gil = condition.Gil as u32;
+            details.class_level = condition.ClassLevel;
+        }
+        Some(details)
+    }
+
+    /// A Gold Saucer arcade machine's GoldSaucerArcadeMachine row (its event's ID), see `ArcadeMachine`.
+    pub fn get_arcade_machine(&mut self, id: u32) -> Option<ArcadeMachine> {
+        let sheet = icarus::GoldSaucerArcadeMachine::GoldSaucerArcadeMachineSheet::read_from(
+            &mut self.resource,
+            Language::None,
+        )
+        .ok()?;
+        let row = sheet.row(id)?;
+        Some(ArcadeMachine {
+            timeout: row.Timeout as u64,
+            texts: [row.Poor, row.Good, row.Great, row.Excellent],
+            ranges: [
+                (row.Unknown1, row.Unknown2),
+                (row.Unknown6, row.Unknown7),
+                (row.Unknown11, row.Unknown12),
+                (row.Unknown16, row.Unknown17),
+            ],
+            values: [row.Unknown3, row.Unknown8, row.Unknown13, row.Unknown18],
+        })
+    }
+
     /// Returns the warp logic name (if any) for this Warp.
     pub fn get_warp_logic_name(&mut self, warp_id: u32) -> String {
         let row = self.warp_sheet.row(warp_id).unwrap();
@@ -4128,6 +4182,33 @@ mod weather_tests {
         let rolls: Vec<i32> = (0..20).map(|i| weather_target(start + i * 1400)).collect();
         assert!(rolls.windows(2).any(|pair| pair[0] != pair[1]));
     }
+}
+
+/// A Gold Saucer arcade machine as its GoldSaucerArcadeMachine row has it: four tiers (poor, good, great,
+/// excellent), each with its result text and two numbers and a value. For the staged games (The Finer Miner, Out on a
+/// Limb) the numbers are the range of distances from the hidden spot that make the tier and the value the damage it
+/// does (Out on a Limb: 21-100 nothing, 11-20 1, 3-10 4, 0-2 10, as retail's swings bear out); for the others the
+/// value is the MGP the result screen shows. `timeout` is how long a play may take, in seconds (15, 30 or 60.)
+#[derive(Debug, Default, Clone)]
+pub struct ArcadeMachine {
+    pub timeout: u64,
+    pub texts: [u32; 4],
+    pub ranges: [(u8, u8); 4],
+    pub values: [u8; 4],
+}
+
+/// What a warp (a Warp row) asks of the player and plays around itself: its WarpCondition (the quests done, all of them
+/// or any by CompleteParam 2, the class level, the fare) and the DefaultTalks shown when it's met (before the question)
+/// or not (instead of it), and the cutscene of the trip (airships.)
+#[derive(Debug, Default, Clone)]
+pub struct WarpDetails {
+    pub success_event: u32,
+    pub fail_event: u32,
+    pub start_cutscene: u16,
+    pub required_quests: Vec<u32>,
+    pub any_quest: bool,
+    pub gil: u32,
+    pub class_level: u16,
 }
 
 /// One leg of a teleport's cost between two TerritoryTypeTelepo points (x, y, expansion, relay): the map distance (x

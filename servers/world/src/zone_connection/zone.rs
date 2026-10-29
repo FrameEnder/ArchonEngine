@@ -328,6 +328,14 @@ impl ZoneConnection {
             self.send_hunting_logs().await;
         }
 
+        // The Gold Saucer's lotteries, as retail told them at every zone change: when the Jumbo Cactpot's weeks begin
+        // (912) and what's been played (914; Bob's Chronofoil captures, `gold_saucer.rs`.)
+        self.actor_control_self(ActorControlCategory::SetWeeklyLotOffsetTime {
+            offset_time: crate::gold_saucer::WEEKLY_LOT_OFFSET_TIME as u32,
+        })
+        .await;
+        self.send_gold_saucer_flags().await;
+
         if lua_zone.intended_use == TerritoryIntendedUse::HousingOutdoor {
             let mut houses = [House::default(); 30];
 

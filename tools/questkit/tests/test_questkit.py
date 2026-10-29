@@ -342,7 +342,7 @@ class CaptureTools(unittest.TestCase):
         self.assertIn("> stuck", report)
         self.assertIn("**differ**", report)  # server UI8F 0x40, client 0x00
         self.assertIn("quest 9999, started", report)  # the event left open
-        self.assertIn("opcode 0 (72 bytes, the size of EventReturnHandler16)", report)
+        self.assertIn("opcode 0 (72 bytes, the size of EventReturnHandler16", report)
         self.assertIn("Lua errors", report)
 
     def test_compare(self):

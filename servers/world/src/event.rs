@@ -4,17 +4,17 @@ use async_trait::async_trait;
 use parking_lot::Mutex;
 
 use kawari::{
-    common::{CharacterMode, HandlerId, HandlerType, ObjectId, ObjectTypeId},
+    common::{CharacterMode, DirectorTrigger, HandlerId, HandlerType, ObjectId, ObjectTypeId},
     config::get_config,
     ipc::zone::{Condition, EventType, SceneFlags},
 };
 
 use crate::{
-    ContentEventHandler, CraftingEventHandler, FateEventHandler, FishingEventHandler, GameData,
-    GatheringEventHandler, GimmickAccessorEventHandler, GimmickBillEventHandler,
-    GimmickRectEventHandler, GrandCompanyShopEventHandler, InclusionShopEventHandler,
-    LuaEventHandler, MaterializeEventHandler, ShopEventHandler, SpecialShopEventHandler,
-    ZoneConnection,
+    ArcadeMachineEventHandler, ContentEventHandler, CraftingEventHandler, FateEventHandler,
+    FishingEventHandler, GameData, GatheringEventHandler, GimmickAccessorEventHandler,
+    GimmickBillEventHandler, GimmickRectEventHandler, GrandCompanyShopEventHandler,
+    InclusionShopEventHandler, JumboCactpotEventHandler, LuaEventHandler, MaterializeEventHandler,
+    MiniCactpotEventHandler, ShopEventHandler, SpecialShopEventHandler, ZoneConnection,
 };
 
 use super::lua::LuaPlayer;
@@ -42,6 +42,28 @@ pub trait EventHandler: std::fmt::Debug + Send + Sync {
     async fn on_event_action_cast(&self, event: &Event, player: &mut LuaPlayer) {}
 
     async fn on_talk(&self, event: &Event, target_id: ObjectTypeId, player: &mut LuaPlayer) {}
+
+    /// Talked to, with the connection at hand, for handlers that tell the client more than a scene first (the Gold
+    /// Saucer's lotteries.) True if it was handled, so `on_talk` isn't run.
+    async fn on_talk_connection(
+        &self,
+        event: &Event,
+        target_id: ObjectTypeId,
+        connection: &mut ZoneConnection,
+        player: &mut LuaPlayer,
+    ) -> bool {
+        false
+    }
+
+    /// A client trigger 808 (DirectorTrigger) for this event's handler: the Mini Cactpot's scratches and line.
+    async fn on_trigger(
+        &self,
+        event: &Event,
+        connection: &mut ZoneConnection,
+        trigger: &DirectorTrigger,
+        player: &mut LuaPlayer,
+    ) {
+    }
 
     /// A key item of this quest was used on `target_id` (the event was started with type EventItem.)
     async fn on_event_item(
@@ -306,9 +328,10 @@ pub fn dispatch_event(
         HandlerType::ExitRange => generic_lua_event("events/generic/ExitRange.lua"),
         HandlerType::Fishing => Some(Box::new(FishingEventHandler::new())),
         HandlerType::SwitchTalk => generic_lua_event("events/generic/SwitchTalk.lua"),
-        HandlerType::GoldSaucerArcadeMachine => {
-            generic_lua_event("events/generic/GoldSaucerArcadeMachine.lua")
-        }
+        // The Gold Saucer's arcade machines and lotteries (`events/gold_saucer.rs`.)
+        HandlerType::GoldSaucerArcadeMachine => Some(Box::new(ArcadeMachineEventHandler)),
+        HandlerType::LotteryDaily => Some(Box::new(MiniCactpotEventHandler)),
+        HandlerType::LotteryWeekly => Some(Box::new(JumboCactpotEventHandler)),
         HandlerType::GoldSaucerTalk => generic_lua_event("events/generic/GoldSaucerTalk.lua"),
         HandlerType::Verminion => generic_lua_event("events/generic/Verminion.lua"),
         HandlerType::DpsChallengeOfficer => {

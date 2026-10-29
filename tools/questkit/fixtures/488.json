@@ -1,0 +1,15 @@
+{
+  "quest": 488,
+  "script": "SubGsc103_00488",
+  "source": "Bob's Chronofoil capture deaf7e28 (2026-10-29, the Gold Saucer); scenes and effects from Bob's Chronofoil capture of 2026-10-29",
+  "params": {"ACTOR0": 1010445},
+  "steps": [
+    {
+      "talk": 1010445,
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

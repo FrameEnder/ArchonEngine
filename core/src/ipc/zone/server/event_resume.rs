@@ -36,6 +36,9 @@ impl EventResume {
             5..=8 => Some(ServerZoneIpcSegment::new(ServerZoneIpcData::EventResume8(
                 self.clone(),
             ))),
+            9..=16 => Some(ServerZoneIpcSegment::new(ServerZoneIpcData::EventResume16(
+                self.clone(),
+            ))),
             _ => None,
         }
     }

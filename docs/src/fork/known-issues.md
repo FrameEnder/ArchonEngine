@@ -116,6 +116,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * **My Little Chocobo under the Scenario Guide** (2026-10-29): the quest stayed listed under the guide once done.
   Retail completes a quest before ending the event; Kawari's scripts ended it first. The event now ends after the
   quests finished with it, which is believed (not yet seen in game) to be what the client refreshes the list on.
+* **The Gold Saucer** (2026-10-29, [The Gold Saucer](gold-saucer.md#known-gaps)): untested in game. No GATE can be
+  played, no chocobo racing, no Triple Triad (437 isn't scripted); the Jumbo Cactpot's claim is a guess (paid at the
+  next talk) and its participant bonus missing; the Gold Saucer window shows nothing; no achievements or bonuses for the
+  games. The Mini Cactpot's diagonal lines (6, 7) and The Finer Miner's Morbol and Titan weren't played on retail.
+* **Warps** (2026-10-29, [Travel](travel.md#warps-and-their-conditions)): the ConditionFailEvent's packets are a guess
+  (retail's success talk's); a warp with a ConfirmEvent doesn't play it (retail's airship and ferry didn't either.)
 * **Mounting** (2026-10-29, [Chocobo companion](chocobo.md#riding)): retail's ActorControl 0 `[0, 1]` and 2 `[4]`
   around the Mount packet aren't sent, nor what it re-sends when you ride into a zone that has mounts. A companion put
   away by riding one's own chocobo into a zone without mounts isn't brought back. Places within a zone where mounts

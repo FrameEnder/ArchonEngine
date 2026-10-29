@@ -28,6 +28,9 @@ pub use special_shop::*;
 mod gc_shop;
 pub use gc_shop::*;
 
+mod gold_saucer;
+pub use gold_saucer::*;
+
 mod fate;
 pub use fate::*;
 

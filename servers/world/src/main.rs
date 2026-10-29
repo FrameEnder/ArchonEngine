@@ -244,6 +244,7 @@ async fn initial_setup(
                     duty_cleared: None,
                     pending_event_text: None,
                     scenario_guide_sent: None,
+                    gold_saucer_game: None,
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
                 };
 
@@ -1239,6 +1240,26 @@ async fn process_packet(
                                 }
                                 ClientTriggerCommand::SeenCutscene { id } => {
                                     connection.player_data.unlock.cutscene_seen.set(id);
+                                }
+                                // The Mini Cactpot's scratches go to its event (`events/gold_saucer.rs`.)
+                                ClientTriggerCommand::DirectorTrigger {
+                                    handler_id,
+                                    trigger: director_trigger,
+                                } if events
+                                    .last()
+                                    .is_some_and(|event| event.1.id == handler_id) =>
+                                {
+                                    if let Some(event) = events.last() {
+                                        event
+                                            .0
+                                            .on_trigger(
+                                                &event.1,
+                                                connection,
+                                                &director_trigger,
+                                                lua_player,
+                                            )
+                                            .await;
+                                    }
                                 }
                                 ClientTriggerCommand::OpenGoldSaucerGeneralTab => {
                                     let ipc = ServerZoneIpcSegment::new(
@@ -2616,8 +2637,16 @@ async fn process_packet(
                                         ))
                                         .await;
                                 } else if let Some(event) = events.last_mut() {
-                                    // begin talk function if it exists
-                                    event.0.on_talk(&event.1, *actor_id, lua_player).await;
+                                    // begin talk function if it exists (handlers that need the connection first)
+                                    if !event
+                                        .0
+                                        .on_talk_connection(
+                                            &event.1, *actor_id, connection, lua_player,
+                                        )
+                                        .await
+                                    {
+                                        event.0.on_talk(&event.1, *actor_id, lua_player).await;
+                                    }
                                 }
                             }
                         }

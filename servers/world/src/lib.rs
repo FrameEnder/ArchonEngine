@@ -31,6 +31,9 @@ pub mod marketboard;
 pub mod hunting_log;
 pub use hunting_log::HUNTING_LOGS;
 
+/// The Gold Saucer's lotteries and arcade machines: their rules and what the character keeps of them.
+pub mod gold_saucer;
+
 /// Retainers: who they are, what they hold, and how they're shown at a summoning bell.
 pub mod retainer;
 pub use database::{Content, Unlock, WorldDatabase};

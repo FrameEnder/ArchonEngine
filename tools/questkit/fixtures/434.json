@@ -1,0 +1,39 @@
+{
+  "quest": 434,
+  "script": "SubGsc001_00434",
+  "source": "Bob's Chronofoil capture deaf7e28 (2026-10-29, the Gold Saucer); scenes and effects from Bob's Chronofoil capture of 2026-10-29",
+  "params": {
+    "ACTOR0": 1011565,
+    "ITEM0": 2001555,
+    "ACTOR1": 1011566,
+    "ACTOR2": 1004433,
+    "POPRANGE0": 5654039,
+    "NCUT0": 769,
+    "NCUT1": 770,
+    "HOW_TO0": 201,
+    "SCREENIMAGE0": 272,
+    "BGM0": 250
+  },
+  "steps": [
+    {
+      "talk": 1011565,
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001000000000", "notices": []}
+    },
+    {
+      "talk": 1004433,
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 4, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 5, "flags": "0xf8402efb", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 144}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

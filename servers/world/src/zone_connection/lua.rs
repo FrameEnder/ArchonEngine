@@ -628,6 +628,9 @@ impl ZoneConnection {
                 LuaTask::UnlockBuddyEquip { id } => {
                     self.unlock_buddy_equip(*id).await;
                 }
+                LuaTask::PayArcade { machine, mgp } => {
+                    self.pay_arcade(*machine, *mgp).await;
+                }
                 LuaTask::GiveCompanionBarding { id } => {
                     self.give_companion_barding(*id).await;
                 }
