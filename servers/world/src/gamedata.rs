@@ -3729,6 +3729,13 @@ impl GameData {
         Some(self.territory_type_sheet.row(zone_id.into())?.ExVersion)
     }
 
+    /// Whether mounts may be ridden in a zone (TerritoryType's Mount: not in the cities, the Waking Sands, duties...)
+    pub fn zone_allows_mounts(&mut self, zone_id: u16) -> bool {
+        self.territory_type_sheet
+            .row(zone_id.into())
+            .is_some_and(|row| row.Mount)
+    }
+
     /// Returns the TerritoryIntendedUse for a given zone.
     pub fn get_intended_use(&mut self, zone_id: u32) -> Option<TerritoryIntendedUse> {
         let row = self.territory_type_sheet.row(zone_id)?;

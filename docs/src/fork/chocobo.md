@@ -25,6 +25,12 @@ body, legs). Retail's: EXP at offset 0x20, rank/stars/points/command/colour/feed
 the supply satisfaction. The zone connection sends the same to the server (`ToServer::SetCompanion`) at every zone-in
 and change.
 
+**The colour** isn't PlayerSetup's byte, which was 0 in every retail login: retail sent ActorControlSelf **274**
+`[stain]` right after it, at every login, 36 (Desert Yellow) for a chocobo never recoloured (all of Bob's Chronofoil
+captures to 2026-10-29), and the Companion window's appearance tab shows that. Kawari sends it at login since
+2026-10-29 (`CompanionColor`, upstream's `UpdateHater`; `CompanionProfile::stain`); before, the tab had no colour.
+What retail sends when the colour changes (feeding the chocobo fruit) isn't recorded, and changing it isn't done.
+
 ## Summoning
 
 Gysahl Greens (item action 851) cast for 1 s; then the item is used up (UpdateInventorySlot) and the ActionEffect,
@@ -61,8 +67,10 @@ At zone-in with no companion out retail sent 263 `[0]`, CompanionUpdate `[0, 1, 
   and feet. A row the character doesn't have is refused.
 * **The company's saddle**: My Little Chocobo ends with ActorControlSelf 254 `[row]` (the barding given) and 255
   `[slot, row]` for the three slots, before FinishQuest: row 5 the Gridanian Saddle (0845b9a2), 9 the Ul'dahn Saddle
-  (bab8c255); the Maelstrom's 1 is BuddyEquip's row for that company with Order 1, as the other two are. Scripts call
-  `player:give_companion_barding(row)`.
+  (bab8c255); the Maelstrom's 1 is BuddyEquip's row for that company with Order 1, as the other two are. The server
+  gives it as the quest finishes (`COMPANY_SADDLES` in `zone_connection/quest.rs`, `grant_company_saddle`); at login a
+  character who finished one without it (before 2026-10-29) is given it, and wears it in all three slots if the
+  chocobo wears nothing. Other content can call `player:give_companion_barding(row)`.
 * **Skills** (client trigger 1702 `[line]`, 0 Defender, 1 Attacker, 2 Healer): the line's next skill costs its place
   in the line in points (retail: 11 points, Attacker at 4, then 6, then 0), answered with CompanionUpdate (no time)
   and the companion's StatusEffectList.
@@ -129,6 +137,14 @@ ID, a 0.1 s lock); at +1.6 s ActorControl 0 `[0, 1]`, ActorControl 2 `[4]`, Cond
 and 263 `[1]`. Kawari casts action 4 for every mount (`MOUNT_ACTION`; until 2026-10-29 it looked the mount's ID up as
 an Action row, so mount 1 had no cast and 412 a 2.5 s one) and sends the Mount packet 0.57 s after the cast lands
 (`MOUNT_ARRIVES_AFTER`), if still mounted. The mode ActorControls (0, 2) around it aren't sent.
+
+**Zoning while mounted** (Bob's Chronofoil captures of 2026-10-28 and 29, every zone change made mounted): into a zone whose
+TerritoryType has no Mount (Ul'dah, the Waking Sands, the Twins' Gridania) the spawn had no mount and the Condition
+after the load was empty; into one that has (Eastern Thanalan) retail re-sent ActorControl 0 `[0, 1]`, 2 `[4]`, the
+mounted Condition, 928 `[9]` and the Mount packet 1.5 s after PrepareZoning. Kawari takes the mount off on the way
+into a zone without them (`handle_zone_change`, `GameData::zone_allows_mounts`); until 2026-10-29 it kept it in the
+spawn and they rode through Ul'dah (Bob's bundle 20261029-162434). Into a zone with mounts the spawn keeps it, without
+retail's re-sent packets.
 
 Mounting one's own chocobo (Mount 1) with the companion out: ActorControl 272 `[0]` on the companion (it goes), 928
 `[12]` to the owner, the Mount packet (`[1, colour, head, body, legs]`, each barding model as u16 model and u16

@@ -25,6 +25,10 @@ use kawari::{
 /// UnlockLink, `docs/src/fork/quests.md`.)
 pub const RETAINER_UNLOCK_LINK: u32 = 3;
 pub const RETAINER_UNLOCK_QUEST: u32 = 509;
+/// My Little Chocobo's Grand Company saddle (quest, BuddyEquip row), given and worn as it ends: retail's 5 for the Twin
+/// Adders' 700 (Bob's Chronofoil capture 0845b9a2) and 9 for the Immortal Flames' 702 (bab8c255); the Maelstrom's 701
+/// isn't recorded, 1 is that company's BuddyEquip row with Order 1, as the other two are.
+const COMPANY_SADDLES: [(u32, u32); 3] = [(700, 5), (701, 1), (702, 9)];
 
 impl ZoneConnection {
     /// What the client is sent for one of our active quests.
@@ -397,6 +401,7 @@ impl ZoneConnection {
     /// Unlocks what finishing quest `id` (its full row ID) grants (`GameData::get_quest_unlock_links`). `notify`
     /// tells the client straight away; otherwise it's in PlayerSetup, at login.
     pub async fn grant_quest_unlocks(&mut self, id: u32, notify: bool) {
+        self.grant_company_saddle(adjust_quest_id(id), notify).await;
         let links = self.game_data.lock().get_quest_unlock_links(id);
         for link in links {
             if self.player_data.unlock.unlocks.contains(link) {
@@ -411,6 +416,32 @@ impl ZoneConnection {
                 })
                 .await;
             }
+        }
+    }
+
+    /// My Little Chocobo's saddle (`COMPANY_SADDLES`). As the quest ends (`notify`) it's given and put on in every slot
+    /// (ActorControlSelf 254, then 255 for each, before FinishQuest as on retail); at login a character who finished
+    /// the quest without it (before 2026-10-29) is given it, and wears it if the chocobo wears nothing.
+    async fn grant_company_saddle(&mut self, quest: u32, notify: bool) {
+        let Some((_, saddle)) = COMPANY_SADDLES.iter().find(|(id, _)| *id == quest) else {
+            return;
+        };
+        if notify {
+            self.give_companion_barding(*saddle).await;
+            return;
+        }
+        if self.player_data.companion.unlocked_equip.contains(*saddle) {
+            return;
+        }
+        tracing::info!(
+            "{} finished quest {quest} without its saddle {saddle}: given",
+            self.player_data.character.name
+        );
+        self.player_data.companion.unlocked_equip.set(*saddle);
+        let barding = &mut self.player_data.buddy.barding.0;
+        barding.resize(3, 0);
+        if barding.iter().all(|row| *row == 0) {
+            barding.fill(*saddle as u8);
         }
     }
 

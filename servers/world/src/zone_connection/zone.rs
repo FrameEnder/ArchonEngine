@@ -6,8 +6,8 @@ use crate::{
 };
 use kawari::{
     common::{
-        FestivalId, HandlerId, HandlerType, HouseId, HouseUnit, HousingFlag, LandData, Position,
-        TerritoryIntendedUse, WarpType, timestamp_secs,
+        CharacterMode, FestivalId, HandlerId, HandlerType, HouseId, HouseUnit, HousingFlag,
+        LandData, Position, TerritoryIntendedUse, WarpType, timestamp_secs,
     },
     constants::{
         DISCOVERY_MAPS_WITH_UP_TO_16_REGIONS_BITMASK_SIZE, MAP_DISCOVERY_BITMASK_SIZE,
@@ -78,6 +78,24 @@ impl ZoneConnection {
         // Quest battles are instanced content too, but don't come from the Duty Finder.
         let bound_by_duty = content_finder_condition_id != 0
             || handler_id.is_some_and(|x| x.handler_type() == HandlerType::QuestBattle);
+
+        // Riding into a zone without mounts gets them off: retail's spawn there had no mount and the Condition after
+        // the load none (Bob's Chronofoil captures: into Ul'dah, the Waking Sands, the Twins' Gridania; elsewhere it
+        // re-sent the mount.) Kawari kept the mount in the spawn, and they rode through Ul'dah (Bob's bundle
+        // 20261029-162434.)
+        if self.player_data.volatile.current_mount != 0
+            && !self.game_data.lock().zone_allows_mounts(new_zone_id)
+        {
+            tracing::info!(
+                "{} rode into zone {new_zone_id}, which has no mounts: dismounted",
+                self.player_data.character.name
+            );
+            self.player_data.volatile.current_mount = 0;
+            if self.player_data.volatile.mode == CharacterMode::Mounted {
+                self.player_data.volatile.mode = CharacterMode::Normal;
+                self.player_data.volatile.mode_arg = 0;
+            }
+        }
 
         // Commit back our zone id and other volatile info on zone change.
         {

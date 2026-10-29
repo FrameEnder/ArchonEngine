@@ -1021,6 +1021,11 @@ async fn process_packet(
                             connection
                                 .actor_control_self(ActorControlCategory::SetItemLevel { level })
                                 .await;
+                            // The chocobo's colour, as retail sent it at every login (see `CompanionColor`.)
+                            let stain = connection.companion_profile().stain() as u32;
+                            connection
+                                .actor_control_self(ActorControlCategory::CompanionColor { stain })
+                                .await;
 
                             connection
                                 .handle

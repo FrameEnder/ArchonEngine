@@ -600,8 +600,14 @@ pub enum ActorControlCategory {
         unlocked: bool,
     },
 
+    /// The chocobo companion's colour, to its owner: the Companion window's appearance tab shows it. Retail sent it at
+    /// every login, after PlayerSetup (whose colour byte was 0), with 36 (Desert Yellow) for chocobos never recoloured
+    /// (all of Bob's Chronofoil captures to 2026-10-29.) Upstream called it UpdateHater.
     #[brw(magic = 274u32)]
-    UpdateHater { unk1: u32 },
+    CompanionColor {
+        /// A Stain row.
+        stain: u32,
+    },
 
     #[brw(magic = 295u32)]
     Pose { unk1: u32, pose: u32 },

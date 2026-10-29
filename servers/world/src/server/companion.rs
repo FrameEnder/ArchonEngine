@@ -337,7 +337,8 @@ pub struct CompanionProfile {
 }
 
 impl CompanionProfile {
-    fn stain(&self) -> u8 {
+    /// Its colour as the game shows it: Desert Yellow (36) when it was never changed.
+    pub fn stain(&self) -> u8 {
         if self.color == 0 {
             DEFAULT_STAIN
         } else {

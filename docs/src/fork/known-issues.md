@@ -116,9 +116,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * **My Little Chocobo under the Scenario Guide** (2026-10-29): the quest stayed listed under the guide once done.
   Retail completes a quest before ending the event; Kawari's scripts ended it first. The event now ends after the
   quests finished with it, which is believed (not yet seen in game) to be what the client refreshes the list on.
-  Characters that finished 700-702 before this lack the company's saddle (`unlock_buddy_equip` gives it.)
 * **Mounting** (2026-10-29, [Chocobo companion](chocobo.md#riding)): retail's ActorControl 0 `[0, 1]` and 2 `[4]`
-  around the Mount packet aren't sent.
+  around the Mount packet aren't sent, nor what it re-sends when you ride into a zone that has mounts. A companion put
+  away by riding one's own chocobo into a zone without mounts isn't brought back. Places within a zone where mounts
+  aren't allowed aren't known to the server.
+* **The chocobo's colour** (2026-10-29): sent at login (ActorControlSelf 274); recolouring it isn't done.
 * **The Scenario Guide** (2026-10-28, [Quests](quests.md#scenario-guide)): retail's order of the Grand Companies'
   three after 511 (681, 680, 682) is sent since 2026-10-29; whether the guide then shows 680 or 682 once accepted
   (rather than "Select a Grand Company") isn't known, on retail or here. The quest
