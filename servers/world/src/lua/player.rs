@@ -1407,6 +1407,14 @@ impl UserData for LuaPlayer {
         );
         // An aetheryte ticket's teleport (items/TeleportTicket.lua): the ticket used up, then to the pop range.
         methods.add_method_mut(
+            "redeem_mgp_voucher",
+            |_, this, (item_id, mgp): (u32, u32)| {
+                this.queued_tasks
+                    .push(LuaTask::RedeemMgpVoucher { item_id, mgp });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
             "teleport_by_ticket",
             |_, this, (item_id, territory_id, pop_range_id): (u32, u16, u32)| {
                 this.queued_tasks.push(LuaTask::TeleportByTicket {

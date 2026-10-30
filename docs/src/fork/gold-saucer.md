@@ -40,6 +40,9 @@ The currency's slot 9 (item 29). Retail's packets around it:
   retail's log line is **527** `[4765, 0, MGP]`, then 913 `[0]`. Kawari's script takes the gil and gives the MGP, without
   the log line.
 * The cap is 9,999,999 (the public wikis).
+* **MGP Vouchers** (ItemAction type 3800, the MGP in Data[0]: Scratch It Rich's MGP Voucher, item 10131, is 100): used,
+  one fewer, the log line (528) and the MGP (`redeem_mgp_voucher`, `items/Items.lua`). Not recorded on retail; before,
+  using one did nothing (Bob's bundle 20261030-021002.)
 * **Achievements** (Type 1 counters, the Achievement sheet's Keys): MGP won at the attractions, 356 (What Happens in the
   Saucer, 1,000 to 10,000,000: every MGP won, `change_mgp`); GATEs completed, 363 (Enemy at the GATE, 1 to 100: Air Force
   One); the Jumbo Cactpot's MGP, 365 (You Could Already Be a Winner); the Mini Cactpot's, 366 (Dream Small, 1 to
@@ -58,7 +61,10 @@ LotteryDaily (handler 0x250000), the broker in the Entrance Square. Three ticket
 
 1. The talk: ActorControlSelf 109 (`DirectorEvent`) `[28, 1 if today's tickets are used]` and `[30, tickets left, 10]`,
    then scene 0 (0x2000) with `[0x11, 10]` the first time ever (the explanation), `[0x13, 10, MGP, day, tickets left]`
-   afterwards, `[0x12]` with no tickets left.
+   afterwards, `[0x12]` with no tickets left. The first number looks like flags on 0x10 (1 a greeting, 2 the game
+   explained already). Retail's player had no MGP at the first talk; with `[0x11, 10]` alone the client offered a
+   ticket and said there wasn't the MGP for it however much there was (Bob's bundle 20261030-020833), so Kawari sends
+   the MGP, the day and the tickets left with 0x11 too.
 2. Buying is the scene's yield 5: the MGP, then **LotteryDailyBoard** (fork opcode 326, 136 bytes): the handler, 19 and
    23, the day, the cell already showing (row, column, number) and what each line's sum pays.
 3. Each of the three scratches is client trigger 808 `[8, row, column]`, answered with 109 `[2, row, column, number]`.

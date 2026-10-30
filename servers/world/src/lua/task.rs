@@ -109,6 +109,11 @@ pub enum LuaTask {
     AddExp {
         amount: i32,
     },
+    /// An MGP Voucher used: one fewer, and its MGP (`ZoneConnection::redeem_mgp_voucher`.)
+    RedeemMgpVoucher {
+        item_id: u32,
+        mgp: u32,
+    },
     StartEvent {
         event_id: u32,
         event_type: EventType,

@@ -92,6 +92,34 @@ impl ZoneConnection {
 
     /// Takes or gives MGP (up to the cap) and sends its slot.
     pub async fn change_mgp(&mut self, amount: i64) {
+        self.set_mgp_by(amount).await;
+        // MGP won counts towards What Happens in the Saucer.
+        if amount > 0 {
+            self.add_to_achievement_counter(COUNTER_GOLD_SAUCER_MGP, amount as u32)
+                .await;
+        }
+    }
+
+    /// An MGP Voucher used (ItemAction type 3800, its MGP in Data[0]: 100 for the voucher from Scratch It Rich): one
+    /// fewer, the log line and the MGP. Not won at an attraction, so it doesn't count towards What Happens in the
+    /// Saucer. Retail's use wasn't recorded.
+    pub async fn redeem_mgp_voucher(&mut self, item_id: u32, mgp: u32) {
+        if self.player_data.inventory.count_in_bags(item_id) == 0 {
+            tracing::warn!("MGP voucher {item_id} used, but there's none in the bags");
+            return;
+        }
+        self.item_used_up(item_id).await;
+        self.actor_control_self(ActorControlCategory::LogMessageActorNumber {
+            log_message: LOG_MGP_OBTAINED,
+            actor_id: self.player_data.character.actor_id,
+            value: mgp,
+        })
+        .await;
+        self.set_mgp_by(mgp as i64).await;
+    }
+
+    /// The MGP changed by `amount` (up to the cap), and its slot sent.
+    async fn set_mgp_by(&mut self, amount: i64) {
         let slot = self
             .player_data
             .inventory
@@ -105,11 +133,6 @@ impl ZoneConnection {
             CurrencyStorage::get_slot_for_id(CurrencyKind::MGP),
         )
         .await;
-        // MGP won counts towards What Happens in the Saucer.
-        if amount > 0 {
-            self.add_to_achievement_counter(COUNTER_GOLD_SAUCER_MGP, amount as u32)
-                .await;
-        }
     }
 
     /// MGP won: retail's log line (LogMessage 4765 with the player and the MGP), then the MGP.
@@ -175,19 +198,20 @@ impl MiniCactpotEventHandler {
         connection
             .actor_control_self(director_event(event, 30, [left, MINI_CACTPOT_COST, 0, 0]))
             .await;
+        // The first number looks like flags on 0x10: 1 a greeting, 2 the game explained already. After it the price,
+        // the MGP the player has, the day and the tickets left. Retail's first talk ever was `[0x11, 10]` alone, but
+        // that player had no MGP; with only those two the client offered the ticket and said there wasn't the MGP for
+        // it however much there was (Bob's bundle 20261030-020833), so the MGP and the rest come with 0x11 too.
         let params = if left == 0 {
             vec![0x12]
-        } else if !played {
-            vec![0x11, MINI_CACTPOT_COST]
         } else {
             let mgp = connection.mgp();
-            vec![
-                if greeting { 0x13 } else { 0x10 },
-                MINI_CACTPOT_COST,
-                mgp,
-                day,
-                left,
-            ]
+            let kind = match (played, greeting) {
+                (false, _) => 0x11,
+                (true, true) => 0x13,
+                (true, false) => 0x10,
+            };
+            vec![kind, MINI_CACTPOT_COST, mgp, day, left]
         };
         connection
             .event_scene(event, Self::SCENE, flags(), params)

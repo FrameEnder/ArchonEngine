@@ -112,7 +112,8 @@ impl ZoneConnection {
             return;
         }
         let Some(director) = self.ride_shooting_director() else {
-            tracing::warn!("An Air Force One score ({score}) outside of Air Force One");
+            // The client goes on sending it for a moment after leaving the duty.
+            tracing::debug!("An Air Force One score ({score}) outside of Air Force One");
             return;
         };
         self.ride_shooting_scored = true;

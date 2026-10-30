@@ -135,6 +135,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   arcade machine stopped at its coin (GoldSaucerArcadeMachine was read without its language, so no row was found); the
   Mini and Jumbo Cactpot brokers stuck in their quests' talk (Scratch It Rich and Hitting the Cactpot called
   `has_quest` with the event ID, which the server refuses; questkit's harness now refuses it too.)
+* **The Mini Cactpot's first talk and the MGP Voucher** (2026-10-29, Bob's bundles 20261030-020833 and -021002): the
+  broker said there wasn't the MGP for a ticket on the first talk (fixed by sending the MGP with it; whether the second
+  talk had the same trouble isn't known), and the MGP Voucher did nothing. Neither is tested in game yet; the voucher's
+  packets on retail weren't recorded.
 * **Warps** (2026-10-29, [Travel](travel.md#warps-and-their-conditions)): the ConditionFailEvent's packets are a guess
   (retail's success talk's); a warp with a ConfirmEvent doesn't play it (retail's airship and ferry didn't either.)
 * **Mounting** (2026-10-29, [Chocobo companion](chocobo.md#riding)): retail's ActorControl 0 `[0, 1]` and 2 `[4]`

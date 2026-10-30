@@ -21,6 +21,8 @@ ITEM_ACTION_TYPE_FACEWEAR = 37312
 ITEM_ACTION_TYPE_TELEPORT_TICKET = 9994
 -- Also an unlock link (the client checks it the same way as 2633.)
 ITEM_ACTION_TYPE_UNLOCK_LINK_2 = 43141
+-- MGP Vouchers: Data[0] is the MGP (ItemAction 628, the MGP Voucher from Scratch It Rich: 100.)
+ITEM_ACTION_TYPE_MGP_VOUCHER = 3800
 -- Coffers: ItemAction 388 (every gear coffer, also the ward potions) and 2462 have this action.
 ITEM_ACTION_TYPE_COFFER = 4647
 
@@ -67,6 +69,9 @@ function dispatchItem(player, id, action_type, action_data, additional_data, is_
         return runAction("items/GyshalGreens.lua", additional_data)
     elseif action_type == ITEM_ACTION_TYPE_TELEPORT_TICKET then
         return runAction("items/TeleportTicket.lua", id)
+    elseif action_type == ITEM_ACTION_TYPE_MGP_VOUCHER then
+        player:redeem_mgp_voucher(id, action_data[1])
+        return runAction("items/GenericNoEffect.lua", 0)
     elseif action_type == ITEM_ACTION_TYPE_THAVNAIRIAN_ONION then
         player:feed_companion_onion(id)
         return runAction("items/GenericNoEffect.lua", 0)
