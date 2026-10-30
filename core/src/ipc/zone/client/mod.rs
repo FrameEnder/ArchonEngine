@@ -604,6 +604,14 @@ pub enum ClientZoneIpcData {
         choice: u32,
         unk: u32,
     },
+    /// A chocobo porter's ride passing one of its route's points (fork: Bob's Chronofoil captures cc62ad94, 1fac2416 and
+    /// 2528a32d, nine rides): the ChocoboTaxi row and the point's number, 1, 2, 3...
+    ChocoboTaxiCheckpoint { taxi: u32, checkpoint: u32 },
+    /// A chocobo porter's ride at its end (fork, the same captures): the last checkpoint's number (13 for ChocoboTaxi 25.)
+    ChocoboTaxiArrived {
+        #[brw(pad_after = 4)]
+        checkpoints: u32,
+    },
     /// Air Force One's result (fork: Bob's Chronofoil captures deaf7e28 and 2c98f9e8, 2026-10-29), sent as the ride
     /// ends and again and again (568 and 626 times) until the player leaves: 6, the score, 0-5, then the targets hit.
     /// The two runs' were `06 00 74 13 00 01 02 03 04 05 0e 2a 01 00 00 00` (4980) and `... 42 13 ... 0e 29 01 ...`

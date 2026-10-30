@@ -85,6 +85,9 @@ writes one for each on 2026.10.16.
 | LootResult | server → client | 807 | | 16 | Who won a coffer's item, with what roll (0xE0000000 when everyone passed). Same capture. Finder (written by `suggest-finders`; it reads 521 on 10.06). |
 | ActionRequestGroundTargeted | client → server | 492 | 891 (09.15), 846 (10.06) | 24 | A ground-targeted action (Asylum...): the action, its type, the sequence, the rotation, where on the ground. Not yet seen on Kawari; the layout is from Bob's captures. Handled as an action on oneself for now. Finder. |
 | Achievements | server → client | 985 | 991 (10.06) | 552 | The completed achievements and the last five, the reply to client trigger 1001. Finder: its handler (HandleAchievementsPacket). See [Achievements](character-windows.md). |
+| ChocoboTaxiStart | server → client | 538 | | 16 | A chocobo porter's ride begins: the ChocoboTaxi row, its Location, 8 bytes of 0 (Bob's Chronofoil captures cc62ad94, 1fac2416, 2528a32d: nine rides). See [Travel](travel.md#chocobo-porters). |
+| ChocoboTaxiCheckpoint | client → server | 534 | | 8 | A point of the porter's route passed: the ChocoboTaxi row, the point's number (the same captures). |
+| ChocoboTaxiArrived | client → server | 518 | | 8 | The route's end: the last point's number, then 0 (the same captures). |
 
 The client picks the event return packet by result count (2, 4, 8, 16…); EventReturnHandler16's finder looks for its
 16 case writing the opcode and the 88-byte size, and uses `with: EventReturnHandler2` because the yield sender has

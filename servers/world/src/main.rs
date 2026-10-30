@@ -249,6 +249,8 @@ async fn initial_setup(
                     gate_joined: None,
                     gate_checked: kawari::common::timestamp_secs() as u64,
                     ride_shooting_scored: false,
+                    chocobo_taxi: None,
+                    riding_chocobo_taxi: None,
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
                 };
 
@@ -1141,6 +1143,9 @@ async fn process_packet(
 
                                     // Reset so it doesn't get stuck to Aetheryte:
                                     connection.teleport_reason = TeleportReason::NotSpecified;
+
+                                    // At a chocobo porter's route start: on its chocobo, and off.
+                                    connection.start_chocobo_taxi().await;
                                 }
                                 ClientTriggerCommand::BeginContentsReplay => {
                                     connection.conditions.set_condition(
@@ -3770,6 +3775,14 @@ async fn process_packet(
                                     *choice,
                                 ))
                                 .await;
+                        }
+                        // A chocobo porter's ride (`zone_connection/chocobo_taxi.rs`): its points as the client passes
+                        // them, then the end.
+                        ClientZoneIpcData::ChocoboTaxiCheckpoint { taxi, checkpoint } => {
+                            tracing::debug!("ChocoboTaxi {taxi}: point {checkpoint}");
+                        }
+                        ClientZoneIpcData::ChocoboTaxiArrived { checkpoints } => {
+                            connection.finish_chocobo_taxi(*checkpoints).await;
                         }
                         // Air Force One's score as the ride ends (`zone_connection/ride_shooting.rs`.)
                         ClientZoneIpcData::RideShootingScore { score, hits, .. } => {

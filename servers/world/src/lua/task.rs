@@ -234,6 +234,12 @@ pub enum LuaTask {
         id: u32,
     },
     ToggleChocoboTaxiStandAll,
+    /// A chocobo porter's ride along ChocoboTaxi `taxi` from its start (`zone_connection/chocobo_taxi.rs`.)
+    RideChocoboTaxi {
+        taxi: u32,
+        position: Position,
+        rotation: f32,
+    },
     ToggleCaughtFish {
         id: u32,
     },

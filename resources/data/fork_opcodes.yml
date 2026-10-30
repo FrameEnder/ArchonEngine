@@ -252,7 +252,31 @@ ClientZoneIpcType:
       pattern: C7 44 24 40 ?? ?? ?? ?? 88 44 24 21
       offset: 4
       width: 4
+- name: ChocoboTaxiCheckpoint
+  comment: A chocobo porter's ride passing one of its route's points - the ChocoboTaxi row and the point's number (1, 2, 3...)
+  # 534 on 2026.10.16 (Bob's Chronofoil captures cc62ad94, 1fac2416 and 2528a32d: one every few seconds of each of the
+  # nine rides, 8 bytes, the row first.)
+  opcode: 534
+  size: 8
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On Kawari, ride a chocobo porter - the 8-byte packets every few seconds of the ride, starting with the ChocoboTaxi row.
+- name: ChocoboTaxiArrived
+  comment: A chocobo porter's ride has reached its end - how many route points it passed.
+  # 518 on 2026.10.16 (Bob's Chronofoil captures cc62ad94, 1fac2416 and 2528a32d: once at the end of each of the nine
+  # rides, 8 bytes, 13 for ChocoboTaxi 25, 11 for 56, 14 for 57, the last checkpoint's number.)
+  opcode: 518
+  size: 8
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On Kawari, ride a chocobo porter to the end - the 8-byte packet as it arrives, after the last ChocoboTaxiCheckpoint.
 ServerZoneIpcType:
+- name: ChocoboTaxiStart
+  comment: Starts a chocobo porter's ride - the ChocoboTaxi row and its Location column.
+  # 538 on 2026.10.16 (Bob's Chronofoil captures cc62ad94, 1fac2416 and 2528a32d: in all nine rides, 16 bytes, with the
+  # Mount packet as the player was put at the start - 25 and 3792350, 56 and 3686766, 57 and 4011314.)
+  opcode: 538
+  size: 16
+  found_on: 2026.10.16.0000.0000
+  how_to_find: Ride a chocobo porter on retail (Kawari Recorder) - the 16-byte packet right after the porter's Mount packet, the ChocoboTaxi row first.
 - name: GlamourDresser
   comment: One page of the glamour dresser - the page, 400 item IDs (HQ + 1000000), their first and second stains.
   # 436 on 2026.10.16 (Bob's Chronofoil capture of 2026-10-24: two 2408-byte pages answering ClientTrigger 2350.) Its

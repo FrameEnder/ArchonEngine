@@ -117,6 +117,42 @@ sent the monsters he walked past: the invisible city's nine zombies (bases 18 an
 instance had them. `remove_actor_from_instance` now also takes a player out of
 every instance they're in.
 
+## Chocobo porters
+
+A chocobo porter (a ChocoboTaxiStand, handler type 18: events `0x0012xxxx`, the stand being the low 16 bits) takes the
+player along a set route to another stand, the client riding it on its own. Kawari plays it as retail did in Bob's
+Chronofoil captures cc62ad94, 1fac2416 and 2528a32d (nine rides: ChocoboTaxi 25 in the South Shroud, 56 and 57 in
+Eastern Thanalan; client 2026.10.16). `events/generic/Chocobokeep.lua` is the porter, `zone_connection/chocobo_taxi.rs`
+the ride.
+
+* **The first talk registers the stand**: ActorControlSelf 510 (`ToggleChocoboTaxiStandUnlock [stand, 1]`) at the
+  EventStart, then scene 0 with `[1]` (flags 0x2000), whose answer means nothing; no ride. Some stands registered
+  another along with them: 5 and 3 with 2, 24 with 21, 15 with 10; 4 and 19 alone. Why these isn't known, so they're
+  a table in the script (`ALSO_REGISTERS`). `player:has_chocobo_taxi_stand(id)` reads the player's stands.
+* **Later talks** play scene 0 with `[0]`: the menu, whose first result is the ChocoboTaxi row chosen (25, 56, 57), or
+  0. `player:ride_chocobo_taxi(taxi, x, y, z, rotation)` starts the ride after the EventFinish.
+* **The ride**: the fare (ChocoboTaxi's Fare) is taken from the gil slot; Condition BetweenAreas; PrepareZoning to the
+  same territory with warp type 10 (ChocoboTaxi), the character hidden and flags 0x02 (`warp_appearance`); about 1.5 s
+  later ActorSetPos (warp type 10, arg 2) at the route's start. Retail's starts were a few yalms from the porter and
+  the same every time: stand 5 (174.14, 8.19, -52.94) facing -1.521, 15 (-432.33, -38.6, 99.95) facing 2.995, 19
+  (-538.72, -0.35, -200.45) facing -0.238 (`ROUTE_STARTS`); other stands start where the player stands.
+* **On the chocobo**: SetMode mounted (ActorControl 2 `[4]`), the Mount packet (mount 3, everything after it 0, to
+  everyone around: `ToServer::ChocoboTaxiMount`), the online status UsingAChocoboPorter (16), and `ChocoboTaxiStart`
+  (server opcode 538, [Fork opcodes](opcodes.md)): the ChocoboTaxi row and its Location column (25 and 3792350, 56
+  and 3686766, 57 and 4011314). Then UsingChocoboTaxi (22) instead of BetweenAreas. Retail sent all this right after
+  the ActorSetPos, before the client's FinishZoning (ClientTrigger 201 `[0, 10]`), and the Condition after it; Kawari
+  sends it all as the client finishes zoning, since the ActorSetPos is a queued task.
+* **On the way** the client sends `ChocoboTaxiCheckpoint` (client opcode 534: the row and the point's number, 1, 2,
+  3…) every few seconds, its position updates as usual, and at the end `ChocoboTaxiArrived` (518: the last point's
+  number, 13 for ChocoboTaxi 25, 11 for 56, 14 for 57). The rides took 43 s (25) and 59-60 s (56, 57). Arrivals were
+  around (-196.2, 8.69, -56.6) for 25, (-539.7, -0.6, -198.1) for 56 and (-434.0, -38.5, 96.9) for 57, each a few
+  yalms from the other end's porter.
+* **At the end**: the online status back, SetMode normal (ActorControl 2 `[1]`), the Condition cleared.
+
+Not sent (what they do isn't known): ActorControlSelf 263 `[1]` with the fare and `[0]` at the end, 236 `[1]` and
+0 `[0, 1, 0]` with the ActorSetPos, 928 `[9]`, 504 `[32]` at the start and end, 930, 253 `[0, 1]` and 260
+`[0, 0, 0, 7]` at the end; and the EventFinish's result byte, 0x12 for the ride on retail (Kawari's 1).
+
 ## Map discovery
 
 Discovered map parts are saved, sent back at login, and A Realm Reborn's field zones are revealed whole on the first

@@ -21,6 +21,7 @@ use icarus::CraftAction::CraftActionSheet;
 use icarus::CustomTalk::CustomTalkSheet;
 use icarus::DawnContent::DawnContentSheet;
 use icarus::ENpcBase::ENpcBaseSheet;
+use icarus::ChocoboTaxi::ChocoboTaxiSheet;
 use icarus::EObj::EObjSheet;
 use icarus::Emote::EmoteSheet;
 use icarus::EquipSlotCategory::EquipSlotCategorySheet;
@@ -2263,6 +2264,14 @@ impl GameData {
     }
 
     /// Returns the data associated with this EObj.
+    /// A chocobo porter's route (a ChocoboTaxi row): its Location column, what it costs (Fare, gil) and how long it
+    /// takes (TimeRequired, minutes.)
+    pub fn chocobo_taxi(&mut self, taxi: u32) -> Option<(u32, u16, u8)> {
+        let sheet = ChocoboTaxiSheet::read_from(&mut self.resource, Language::None).ok()?;
+        let row = sheet.row(taxi)?;
+        Some((row.Location, row.Fare, row.TimeRequired))
+    }
+
     pub fn get_eobj_data(&mut self, eobj_id: u32) -> u32 {
         let row = self.eobj_sheet.row(eobj_id).unwrap();
         row.Data

@@ -338,6 +338,19 @@ impl LuaPlayer {
             .push(LuaTask::ToggleChocoboTaxiStandAll {});
     }
 
+    /// Whether the player has registered at ChocoboTaxiStand `id` (its event's low 16 bits.)
+    fn has_chocobo_taxi_stand(&self, id: u32) -> bool {
+        self.player_data.unlock.chocobo_taxi_stands.contains(id)
+    }
+
+    fn ride_chocobo_taxi(&mut self, taxi: u32, position: Position, rotation: f32) {
+        self.queued_tasks.push(LuaTask::RideChocoboTaxi {
+            taxi,
+            position,
+            rotation,
+        });
+    }
+
     fn toggle_caught_fish(&mut self, id: u32) {
         self.queued_tasks.push(LuaTask::ToggleCaughtFish { id });
     }
@@ -1144,6 +1157,18 @@ impl UserData for LuaPlayer {
             this.toggle_chocobo_taxi_stand_all();
             Ok(())
         });
+        methods.add_method("has_chocobo_taxi_stand", |_, this, id: u32| {
+            Ok(this.has_chocobo_taxi_stand(id))
+        });
+        // A chocobo porter's ride along ChocoboTaxi `taxi`, from the route's start (`events/generic/Chocobokeep.lua`.)
+        methods.add_method_mut(
+            "ride_chocobo_taxi",
+            |_, this, (taxi, x, y, z, rotation): (u32, f32, f32, f32, f32)| {
+                let position = Position(glam::Vec3A::new(x, y, z));
+                this.ride_chocobo_taxi(taxi, position, rotation);
+                Ok(())
+            },
+        );
         methods.add_method_mut("toggle_caught_fish", |_, this, id: u32| {
             this.toggle_caught_fish(id);
             Ok(())

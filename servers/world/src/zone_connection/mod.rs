@@ -41,6 +41,7 @@ use super::{
 mod achievement;
 mod actor;
 mod chat;
+mod chocobo_taxi;
 mod companion;
 mod effect;
 mod event;
@@ -312,6 +313,10 @@ pub struct ZoneConnection {
     pub gate_checked: u64,
     /// Whether this Air Force One's score has been taken (the client sends it again and again until it leaves.)
     pub ride_shooting_scored: bool,
+    /// The chocobo porter's ride being warped to (ChocoboTaxi row, its Location), until the client has finished zoning.
+    pub chocobo_taxi: Option<(u32, u32)>,
+    /// The chocobo porter's ride under way (ChocoboTaxi row), until the client says it has arrived.
+    pub riding_chocobo_taxi: Option<u32>,
     /// Packet capture for debugging, if enabled in the config.
     pub capture: crate::capture::PacketCapture,
 }

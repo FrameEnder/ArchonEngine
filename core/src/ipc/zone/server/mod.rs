@@ -724,6 +724,15 @@ pub enum ServerZoneIpcData {
     RideShootingEnd {
         unk: [u8; 40],
     },
+    /// Starts a chocobo porter's ride (fork: Bob's Chronofoil captures cc62ad94, 1fac2416 and 2528a32d, all nine rides):
+    /// the ChocoboTaxi row and, taken to be its Location (retail's 25 and 3792350, 56 and 3686766, 57 and 4011314), the
+    /// row's Location column. The client rides the route itself and says where it is (`ChocoboTaxiCheckpoint`) and when
+    /// it's there (`ChocoboTaxiArrived`.)
+    ChocoboTaxiStart {
+        taxi: u32,
+        #[brw(pad_after = 8)]
+        location: u32,
+    },
     LotteryDailyBoard {
         handler_id: HandlerId,
         #[brw(pad_before = 2)]

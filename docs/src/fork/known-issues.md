@@ -95,6 +95,20 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   the aethernet menu lists them at once without a re-login isn't checked. Rows with `Invisible` set outside the three
   cities' groups (later cities) are taken the same way, unverified.
 
+## Chocobo porters (2026-10-30)
+
+* Untested in game. Built from nine retail rides (three routes); see [Travel](travel.md#chocobo-porters).
+* Only stands 5, 15 and 19 have their route start; elsewhere the ride starts where the player stands, which may be
+  off the route the client rides. A capture of each stand's ride gives its start.
+* Which stands register another along with them (5 and 3 with 2, 24 with 21, 15 with 10) is a table of what was
+  seen; the rule behind it, and the stands not seen, aren't known.
+* The mount, the online status and `ChocoboTaxiStart` go as the client finishes zoning, not with the ActorSetPos
+  before it as on retail. Whether the client minds isn't known.
+* ActorControlSelf 263, 236, 0, 928, 504, 930, 253 and 260 that came with retail's ride aren't sent, nor the
+  EventFinish's 0x12.
+* Logging out or disconnecting during a ride isn't handled: the character is saved wherever it was on the route.
+* The checkpoints are only logged; nothing checks the client rode the route.
+
 ## Party bots
 
 * Stage 1 only (see [Party Bots](party-bots.md)): `!spawn playernpc` bots are in the party list only once invited,

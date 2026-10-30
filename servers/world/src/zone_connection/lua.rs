@@ -644,6 +644,13 @@ impl ZoneConnection {
                 LuaTask::ToggleChocoboTaxiStand { id } => {
                     self.toggle_chocobo_taxi_stand(*id).await;
                 }
+                LuaTask::RideChocoboTaxi {
+                    taxi,
+                    position,
+                    rotation,
+                } => {
+                    self.begin_chocobo_taxi(*taxi, *position, *rotation).await;
+                }
                 LuaTask::ToggleChocoboTaxiStandAll => {
                     let max_chocobo_taxi_stand_id = CHOCOBO_TAXI_STANDS_BITMASK_SIZE as u32 * 8;
 

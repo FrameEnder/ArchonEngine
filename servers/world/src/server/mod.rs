@@ -3585,6 +3585,33 @@ pub async fn server_main_loop(
                         tracing::warn!("Failed to load Init.lua: {:?}", err);
                     }
                 }
+                // A chocobo porter's ride (`zone_connection/chocobo_taxi.rs`): the Mount to everyone around, as retail's.
+                ToServer::ChocoboTaxiMount(from_actor_id, mount) => {
+                    let mut network = network.lock();
+                    let mut data = data.lock();
+                    let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
+                        continue;
+                    };
+                    let Some(actor) = instance.find_actor_mut(from_actor_id) else {
+                        continue;
+                    };
+                    let common = actor.get_common_spawn_mut();
+                    common.current_mount = mount;
+                    common.mode = if mount != 0 {
+                        CharacterMode::Mounted
+                    } else {
+                        CharacterMode::Normal
+                    };
+                    if mount != 0 {
+                        let segment = action::mount_segment(mount as u32, Some([0; 14]));
+                        network.send_in_range_inclusive_instance(
+                            from_actor_id,
+                            instance,
+                            FromServer::PacketSegment(segment, from_actor_id),
+                            DestinationNetwork::ZoneClients,
+                        );
+                    }
+                }
                 ToServer::Dismounted(from_actor_id, party_id) => {
                     let mut network = network.lock();
                     let data = data.lock();
