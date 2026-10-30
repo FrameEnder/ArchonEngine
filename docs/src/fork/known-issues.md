@@ -608,8 +608,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quest battles and directors
 
-* **Brotherly Love's battle (57)** (2026-10-30): untested in game, from one won run. Its client battle script wasn't
-  dumped (`GaiUsa201Btl_00724.luab`, or `kawari-questdump search GaiUsa201`). What brings sequence 6 is read as the
+* **Brotherly Love's battle (57)** (2026-10-30): untested in game, from one won run (its client battle script, dumped
+  2026-10-30, has only the opening and closing scenes and sequences 1-2's objective). What brings sequence 6 is read as the
   leader's health (the hit that took it from 43 to 35 %) and could as well be a timer (26.2 s after sequence 5); what
   happens if you don't fight, or the leader falls first, isn't known. The beast's 604 is a hit to 20 % of Yda's and
   Papalymo's HP, cast once by the director: retail's effect on them was kind 48 (unknown to Kawari; a knockback? they

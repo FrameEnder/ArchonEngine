@@ -207,9 +207,11 @@ a quest's entering event, 0 for every other event (228 events across the capture
   `QuestBattleNpc_00063` (Yda, on herself) and `QuestBattleNpc_00151` (Papalymo, on the beast), their statuses'
   durations guessed. `questkit battle-sim 57` checks the run (`57.json`, Claxio added by hand): every step within
   1 s.
-* The client's battle script wasn't dumped (it should sit beside the quest's, `GaiUsa201Btl_00724.luab`, or come from
-  `kawari-questdump search GaiUsa201`), so the scenes the director plays (1, 8) and its OnSequence messages aren't
-  checked against it.
+* The client's battle script (`game_script/quest/007/GaiUsa201Btl_00724.luab`, Bob's `kawari-questdump search
+  GaiUsa201` of 2026-10-30) has scene 1 (the opening cutscene), scene 8 (the closing cutscene, which can be skipped),
+  scene 10001 (EVENT_QIB_NOT_TALK, for talking to someone in the battle: Kawari's generic answer), OnSequence001 (the
+  objective, no music) and OnSequence002 (the objective as a message). Nothing in it reacts to sequences 3-8: they're
+  the director's own. The director plays only 1 and 8.
 
 ### Quest battle 56 — Like Mother, Like Daughter (`content/questbattle/56.lua`)
 
