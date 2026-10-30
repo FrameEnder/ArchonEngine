@@ -5,19 +5,24 @@
 -- (1587, 4255894) on your side at level 50, Claxio watching (an event NPC, 4256371), and the second wave: a beast that
 -- isn't to be killed (1585, 4255903, 49300 HP), a gladiator (1658, 4255897) and a conjurer (1583, 4255896). Layout
 -- IDs, levels, HP, positions, display flags, looks and the start spot are retail's (Bob's Chronofoil capture 5fcc970c
--- of 2026-10-30, `questkit chronofoil --battle 0.7`, one run, won; a level 26 player.)
+-- of 2026-10-30, `questkit chronofoil --battle 0.7`, won; a level 26 player), and checked against a second run of
+-- another character's (capture 1fac2416, `--battle 0.4`, won.)
 --
--- Timed against that run (seconds from the fight starting, the director's scene 60000):
+-- Timed against both runs (seconds from the fight starting, the director's scene 60000):
 --   0       sequence 2: the first wave fights. Two thaumaturges go for Yda and Papalymo, one and the leader for you
 --           (the leader on Papalymo); Yda and Papalymo each take the thaumaturge on them, then the oldest left
 --   5, 10   battle talk 78 (the leader) and 79 (Claxio, ENpcResident 1006684: an event NPC, kind 3)
---   26.4    the first thaumaturge down, as its death animation ended (2 s after its health reached 0): sequence 3,
---           the leader's 80, and the second wave (the beast on Yda, the other two on you)
---   +10.1   sequence 4: Yda and Papalymo leave the rest to you and fight the beast. Papalymo's 81 2 s later, the
---           beast's 604 at them 3.9 s later, Claxio's 82 7 s later, Yda's 85 and Papalymo's 86 8 s later (as the 604
---           left them at 80 %)
---   +10.1   sequence 5: the leader turns on you; Yda's 83 1.9 s later
---   the leader at 35 % (43 -> 35, 26.2 s after sequence 5): sequence 6, Papalymo's 84
+--   the first thaumaturge down, as its death animation ended (2 s after its health reached 0; 26.4 s in the first
+--           run), or 30 s in if none is (30.1 in the second): sequence 3, the leader's 80, and the second wave (the
+--           beast on Yda, the other two on you)
+--   sequence 3 + 12.0 (12.1 and 12.0): Papalymo's 81; + 13.6 the beast's 604 at Yda and Papalymo (14.1 and 13.1),
+--           Claxio's 82 at + 17.0, Yda's 85 and Papalymo's 86 4.2 s after the 604 began (as it left them at 80 %),
+--           Yda's 83 at + 22.0 (82 + 5.0 in both runs)
+--   37 s in (36.5 and 37.0, whatever came before): sequence 4: Yda and Papalymo leave the rest to you and fight the
+--           beast
+--   + 10.1  sequence 5: the leader turns on you
+--   the leader at 40 % (43 -> 35 in the first run, 45 -> 39.9 in the second, 26.2 and 2.6 s after sequence 5):
+--           sequence 6, Papalymo's 84
 --   every enemy but the beast down (the conjurer last, 99.9 s): sequence 7 at once (its health at 0, not its death
 --           animation's end); 2.5 s later the beast runs back the way it came, Yda and Papalymo after it; 9.1 s
 --           after sequence 7 "Duty Complete" (60001) and sequence 8, the beast and Claxio fade out (taken away 1.4 s
@@ -53,7 +58,8 @@ FAIL_DELAY_UPDATES = 12
 
 -- Timers, in updates (half a second each): a timer of n updates fires n / 2 s after it's set by another timer, and
 -- (n - 1) / 2 s after it's set outside them (onCommence, a death: counted down from that same update.)
-SEQUENCE_4_AFTER = 21
+SEQUENCE_3_LATEST = 61
+SEQUENCE_4_AT = 75
 SEQUENCE_5_AFTER = 20
 WON_AFTER = 19
 -- The beast gives up and runs back the way it came 2.5 s after sequence 7 (retail's last hit at 1.8 s, its first step
@@ -64,10 +70,10 @@ FADE_SECONDS = 1.4
 -- Retail's director answered the first thaumaturge's death 2 s after its health reached 0, as the death animation
 -- ended; the last add's at once (sequence 7 came with its health at 0, its Defeated 2 s later.)
 DEATH_ANIMATION_UPDATES = 4
--- The leader's health (percent) that brings sequence 6, after sequence 5: retail's came with the hit that took it from
--- 43 to 35, so the mark is somewhere in between.
-LEADER_HEALTH = 35
--- The beast's area attack the director has it use 3.9 s into sequence 4 (on itself.)
+-- The leader's health (percent) that brings sequence 6, after sequence 5: retail's came with the hits that took it
+-- from 43 to 35 in one run and 45 to 39.9 in the other.
+LEADER_HEALTH = 40
+-- The beast's area attack the director has it use (on itself), 13.6 s after sequence 3.
 ACTION_BEAST = 604
 
 -- Who's talking (DirectorPopupMessage), with retail's portraits; Claxio by his ENpcResident (an event NPC: kind 3.)
@@ -141,40 +147,50 @@ function sortedKeys(t)
     return keys
 end
 
+-- The second wave, once (the first thaumaturge's death or 30 s in, whichever comes first.)
+local second_wave_came = false
 function secondWave(director)
-    if phase < 7 then
+    if second_wave_came then
+        return
+    end
+    second_wave_came = true
+    if phase < 3 then
         phase = 3
     end
+    adds_left = adds_left + #SECOND_WAVE
     director:set_sequence(3)
     talk(director, SPEAKER_LEADER, 80)
     BATTLE:spawn(director, { BNPC_BEAST, SECOND_WAVE[1], SECOND_WAVE[2] })
-    after(SEQUENCE_4_AFTER, function(d)
-        if phase >= 7 then
-            return -- everything but the beast already down
-        end
-        phase = 4
-        d:set_sequence(4)
-        -- Yda and Papalymo leave the rest to you.
-        BATTLE:change(d, "the beast", {
-            [BNPC_YDA] = { focus = { "boss" } },
-            [BNPC_PAPALYMO] = { focus = { "boss" } },
-        })
-        after(4, function(d2) talk(d2, SPEAKER_PAPALYMO, 81) end)
-        after(8, function(d2) d2:use_action(BNPC_BEAST, ACTION_BEAST, BNPC_BEAST) end)
-        after(14, function(d2) talk(d2, SPEAKER_CLAXIO, 82) end)
-        after(16, function(d2)
+    after(24, function(d) talk(d, SPEAKER_PAPALYMO, 81) end)
+    after(27, function(d)
+        d:use_action(BNPC_BEAST, ACTION_BEAST, BNPC_BEAST)
+        after(8, function(d2)
             talk(d2, SPEAKER_YDA, 85)
             talk(d2, SPEAKER_PAPALYMO, 86)
         end)
-        after(SEQUENCE_5_AFTER, function(d2)
-            if phase >= 7 then
-                return
-            end
-            phase = 5
-            d2:set_sequence(5)
-            BATTLE:engage(d2, { BNPC_LEADER }, nil)
-            after(4, function(d3) talk(d3, SPEAKER_YDA, 83) end)
-        end)
+    end)
+    after(34, function(d) talk(d, SPEAKER_CLAXIO, 82) end)
+    after(44, function(d) talk(d, SPEAKER_YDA, 83) end)
+end
+
+-- 37 s in: Yda and Papalymo leave the rest to you; 10.1 s later the leader turns on you.
+function sequence4(director)
+    if phase >= 7 then
+        return -- everything but the beast already down
+    end
+    phase = 4
+    director:set_sequence(4)
+    BATTLE:change(director, "the beast", {
+        [BNPC_YDA] = { focus = { "boss" } },
+        [BNPC_PAPALYMO] = { focus = { "boss" } },
+    })
+    after(SEQUENCE_5_AFTER, function(d)
+        if phase >= 7 then
+            return
+        end
+        phase = 5
+        d:set_sequence(5)
+        BATTLE:engage(d, { BNPC_LEADER }, nil)
     end)
 end
 
@@ -192,6 +208,8 @@ function onCommence(director)
     adds_left = #first
     after(11, function(d) talk(d, SPEAKER_LEADER, 78) end)
     after(21, function(d) talk(d, SPEAKER_CLAXIO, 79) end)
+    after(SEQUENCE_3_LATEST, secondWave)
+    after(SEQUENCE_4_AT, sequence4)
 end
 
 function onUpdate(director, health, player_health, info)
@@ -227,12 +245,12 @@ function onActorDeath(director, layout_id, position)
         return
     end
     adds_left = adds_left - 1
-    local first_thaumaturge = phase == 1 and THAUMATURGES[layout_id] ~= nil
+    local first_thaumaturge = phase == 1 and not second_wave_came and THAUMATURGES[layout_id] ~= nil
     if first_thaumaturge then
         phase = 2
-        adds_left = adds_left + #SECOND_WAVE -- coming
     end
-    local all_down = adds_left <= 0 and phase >= 2 and phase < 7
+    -- The second wave counts itself in when it comes.
+    local all_down = adds_left <= 0 and second_wave_came and phase < 7
     if all_down then
         phase = 7
     end

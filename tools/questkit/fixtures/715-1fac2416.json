@@ -1,0 +1,69 @@
+{
+  "quest": 715,
+  "script": "GaiUsa101_00715",
+  "source": "Bob's Chronofoil capture 1fac2416 (2026-10-30, another character); scenes and effects from Bob's Chronofoil capture of 2026-10-30",
+  "params": {
+    "ACTOR0": 1000540,
+    "ITEM0": 2000573,
+    "ACTOR1": 1006188,
+    "ITEM1": 2000574,
+    "ACTOR2": 1000580,
+    "SEQ_0_ACTOR0_LQ": 90,
+    "ACTION_TIMELINE_EVENT_TROUBLE": 944,
+    "ACTION_TIMELINE_EVENT_JOY": 953,
+    "ACTION_TIMELINE_EVENT_BYEBYE": 962,
+    "ACTION_TIMELINE_EVENT_FIDGET": 968,
+    "LOC_ACTOR0": 1002275,
+    "LOC_ACTOR1": 1002276,
+    "LOC_BGM1": 102
+  },
+  "steps": [
+    {
+      "talk": 1000540,
+      "layout": 2339530,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 90, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []}
+    },
+    {
+      "talk": 1006188,
+      "layout": 4249560,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "001100000000", "notices": [[0, [25918]]]}
+    },
+    {
+      "talk": 1000580,
+      "layout": 1146516,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "001100000000", "notices": [[1, []]]}
+    },
+    {
+      "emote": [11, 1000580],
+      "layout": 1146516,
+      "scenes": [
+        {"scene": 5, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001100000000", "notices": [[2, []]]}
+    },
+    {
+      "talk": 1000580,
+      "layout": 1146516,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 7, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 8, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 9, "flags": "0xf8402efb", "results": [1, 4578, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

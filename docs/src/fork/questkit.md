@@ -349,8 +349,10 @@ no drop-in has, or that retail never had.
 `onSetup`: Trial by Wind's sequence 1 came 0.4 s before scene 60000, inside the second it used to keep), and when
 retail spawned one layout ID twice (Trial by Wind's 4248510, a second wind sprite while the first still stood) the
 first is the NPC and the second only a spawn event; before 2026-10-27 the second overwrote the first, so the first
-looked late. A second run of the same battle goes beside it as `<id>-lost.json` (`--make` writes `<id>.json`;
-rename it), and `battle-sim <id>` runs both.
+looked late. A second run of the same battle goes beside it as `<id>-<suffix>.json` (`<id>-lost.json`, or the
+capture's ID: `57-1fac2416.json`; `--make` writes `<id>.json`, so rename it), and `battle-sim <id>` runs them all. A
+quest's second run does the same (`fixtures/<quest>-1fac2416.json`, renamed from what `fixture` writes), and
+`replay` runs every one.
 
 A fixture can also hold retail's **positions** (`positions`: `{"player": [[t, x, y, z], …], "<layout>": […]}`, an
 NPC's times counted like its health; written by hand: Victory in Peril's are the player's from the capture's

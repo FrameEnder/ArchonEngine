@@ -184,14 +184,15 @@ a quest's entering event, 0 for every other event (228 events across the capture
 * Quest 3862 (XxaUsa308_03862; the old 740's battle too) enters it from Laurentius (scene 8; territory 232, duty 311).
   Territory 232's TerritoryType has the South Shroud's level, so its NPCs are layer `QB_XxaUsa308_002` of `fst_f1f3`,
   with retail's layout IDs, levels, HP, positions, display and character data flags, looks and the start spot (40.19,
-  7.81, -9.13, facing -1.175) from Bob's Chronofoil capture caa5e908 (2026-10-30, `--battle 0.13`, one run, won; a
-  level 27 player): the boss (4293096, base 1639, BNpcName 2064, 4522 HP), three lancers with it (4293092, 4293093,
+  7.81, -9.13, facing -1.175) from Bob's Chronofoil capture caa5e908 (2026-10-30, `--battle 0.13`, won; a level 27
+  player), checked against a second run of another character's (capture 1fac2416, `--battle 0.13`, won): the boss (4293096, base 1639, BNpcName 2064, 4522 HP), three lancers with it (4293092, 4293093,
   4293095, base 1642), a lancer (4293098, base 1640) and a gladiator (4293097, base 1646, BNpcName 80) on your side, the
   second wave (archer 4293111 base 1644, thaumaturge 4293110 base 1643, lancer 4293109 base 1642, gladiator 4293099
   base 1645, BNpcName 57) and two archers who come to help (4293125, 4293126, base 1641, BNpcName 139).
 * The flow (seconds from the fight starting): sequence 2 with the boss and its lancers (the boss and one on your lancer,
   one on your gladiator, one on you); battle talk 86 (the boss) at 5 s and 87 (your gladiator) at 10 s. The three
-  lancers down, as the last one's death animation ends: sequence 3 and the second wave (archer and gladiator on your
+  lancers down, as the last one's death animation ends (29.9 and 28.9 s in, 3.0 and 1.1 s after the last one's health
+  reached 0): sequence 3 and the second wave (archer and gladiator on your
   gladiator, thaumaturge and lancer on you), the enemy gladiator's 88 10 s later and the boss's 89 15 s later. 30.0 s
   after 3, sequence 4 and the archers, their 90 5.1 s later and the boss's 91 10.1 s later; 30.1 s after 4, sequence 5
   and the second wave's archer, thaumaturge and lancer again (two on the first archer). The enemy gladiator's last
@@ -199,11 +200,11 @@ a quest's entering event, 0 for every other event (228 events across the capture
   (0xF8402EFB); the quest moves to sequence 255. The opening scene's flags are 0xF8412EFB.
 * Your lancer takes the lancer on it, then the boss for good; your gladiator the one on it, then the newest arrivals,
   Curing your side below 63 % (retail's at 44-69 %); the boss Cures itself below 68 % (retail's at 63-68 %); the archers
-  take the adds, then the boss. Whether sequences 4 and 5 wait for anything but the 30 s isn't known (one run; the
-  second wave was down by sequence 5).
+  take the adds, then the boss. Sequences 4 and 5 came 30 s apart in both runs (the second wave down by sequence 5 in
+  both), so nothing else is known to hold them.
 * Timelines `QB13*` (bases 1639-1646); action scripts `QuestBattleNpc_00077`, `QuestBattleNpc_00477`,
   `QuestBattleNpc_00403` (also Presence of the Enemy's fourth ambusher's) and `QuestBattleNpc_01003`, their statuses'
-  durations guessed. `questkit battle-sim 13` checks the run (`13.json`): every step within 1 s.
+  durations guessed. `questkit battle-sim 13` checks both runs (`13.json`, `13-1fac2416.json`): every step within 1 s.
 * The client's battle script (`GaiUsa308Btl_00740.luab`, Bob's dump of 2026-10-30) has scenes 1 (the opening cutscene)
   and 7 (the closing one), OnSequence001 (the objective, no music) and OnSequence002 (its message); no 10001. The
   director plays only 1 and 7.
@@ -214,7 +215,8 @@ a quest's entering event, 0 for every other event (228 events across the capture
   copy of the East Shroud (retail's spots in it are the East Shroud's, near Komuxio's quests), so its NPCs are layer
   `QB_GaiUsa201_001` of `fst_f1f2`, with retail's layout IDs, levels, HP, positions, display flags, character data
   flags (3), looks and the start spot (-288.22, 12.51, -52.01, facing -2.229) from Bob's Chronofoil capture 5fcc970c
-  (2026-10-30, `--battle 0.7`, one run, won; a level 26 player): three thaumaturges (4255869-4255871, base 1584) and
+  (2026-10-30, `--battle 0.7`, won; a level 26 player), checked against a second run of another character's (capture
+  1fac2416, `--battle 0.4`, won): three thaumaturges (4255869-4255871, base 1584) and
   their gladiator leader (4255868, base 1582, BNpcName 583), Yda (4255892, base 1586) and Papalymo (4255894, base 1587)
   on your side at level 50 with 25890 HP, Claxio watching (4256371, an event NPC, ENpcResident 1006684), and the second
   wave: a beast that isn't to be killed (4255903, base 1585, BNpcName 2063, 49300 HP), a gladiator (4255897, base 1658)
@@ -222,11 +224,15 @@ a quest's entering event, 0 for every other event (228 events across the capture
 * The flow (seconds from the fight starting): sequence 2; the leader's battle talk 78 at 5 s and Claxio's 79 at 10 s
   (kind 3, portrait 73208). Two thaumaturges go for Yda and Papalymo, the third and the leader for you (the leader on
   Papalymo, his every hit a 0 or a miss), and Yda and Papalymo each take the one on them, then the oldest left. The
-  first thaumaturge down: sequence 3 and the leader's 80 as its death animation ends (2 s after its health reached 0),
-  and the second wave (the beast on Yda, the other two on you). 10.1 s later sequence 4: Yda and Papalymo leave the rest
-  to you and take on the beast; Papalymo's 81 2 s later, the beast's 604 at them 3.9 s later, Claxio's 82 7 s later,
-  Yda's 85 and Papalymo's 86 together 8 s later. 10.1 s after 4, sequence 5: the leader turns on you; Yda's 83 1.9 s
-  later. The leader at 35 % (the hit that took it from 43 to 35): sequence 6 and Papalymo's 84. Every enemy but the beast
+  first thaumaturge down, as its death animation ends (2 s after its health reached 0; 26.4 s in, the first run), or 30 s
+  in if none is (30.1, the second run): sequence 3, the leader's 80 and the second wave (the beast on Yda, the other two
+  on you). From sequence 3, the same in both runs: Papalymo's 81 at 12.0 s, the beast's 604 at Yda and Papalymo at 13.6
+  (14.1 and 13.1), Claxio's 82 at 17.0, Yda's 85 and Papalymo's 86 together 4.2 s after the 604 began, Yda's 83 at 22.0.
+  Sequence 4 at 37 s from the start whatever came before (36.5 and 37.0: 10.1 s after sequence 3 in the first run, 6.9
+  in the second): Yda and Papalymo leave the rest to you and take on the beast. 10.1 s after 4, sequence 5: the leader
+  turns on you. The leader at 40 % after that (43 -> 35 in the first run, 45 -> 39.9 in the second): sequence 6 and
+  Papalymo's 84. Until 2026-10-30 the director had sequence 3 wait for a death and timed the talks and sequence 4 from
+  it; the second run (no thaumaturge down by 30 s) showed what's timed from what. Every enemy but the beast
   down: sequence 7 at once (the last one's health at 0, not its death animation's end); 2.5 s later the beast runs back
   the way it came (toward where it appeared, at speed bytes 40 then 32: Kawari's run is 60) with Yda and Papalymo after
   it (`retreat_bnpc`); 9.1 s after sequence 7 "Duty Complete" and sequence 8, ActorControl 607 from the beast, Claxio
@@ -239,8 +245,8 @@ a quest's entering event, 0 for every other event (228 events across the capture
   and 86 come as it lands. The beast fights only them; Papalymo Cures you below 62 % (retail's at 41-61 %).
 * Timelines `QB57*` (bases 1582-1587, 1658); action scripts `QB57Beast_00604`, `QB57Beast_00606`,
   `QuestBattleNpc_00063` (Yda, on herself) and `QuestBattleNpc_00151` (Papalymo, on the beast), their statuses'
-  durations guessed. `questkit battle-sim 57` checks the run (`57.json`, Claxio added by hand): every step within
-  1 s.
+  durations guessed. `questkit battle-sim 57` checks both runs (`57.json`, `57-1fac2416.json`, Claxio added by hand
+  to each): every step within 1 s (the first run's talks 0.5-1.4 s early: its sequence 3 is simulated 0.4 s early).
 * The client's battle script (`game_script/quest/007/GaiUsa201Btl_00724.luab`, Bob's `kawari-questdump search
   GaiUsa201` of 2026-10-30) has scene 1 (the opening cutscene), scene 8 (the closing cutscene, which can be skipped),
   scene 10001 (EVENT_QIB_NOT_TALK, for talking to someone in the battle: Kawari's generic answer), OnSequence001 (the

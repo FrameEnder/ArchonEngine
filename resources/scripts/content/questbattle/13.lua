@@ -5,16 +5,18 @@
 -- gladiator (4293097, base 1646) on your side, the second wave (an archer 4293111, a thaumaturge 4293110 and a lancer
 -- 4293109, bases 1644, 1643, 1642; a gladiator 4293099, base 1645, BNpcName 57), and two archers who come to help
 -- (4293125, 4293126, base 1641, BNpcName 139). Layout IDs, levels, HP, positions, display flags, looks and the start spot
--- are retail's (Bob's Chronofoil capture caa5e908 of 2026-10-30, `questkit chronofoil --battle 0.13`, one run, won; a
--- level 27 player.) The client's battle script (GaiUsa308Btl_00740, Bob's dump of 2026-10-30) has scenes 1 (the opening
+-- are retail's (Bob's Chronofoil capture caa5e908 of 2026-10-30, `questkit chronofoil --battle 0.13`, won; a
+-- level 27 player), and checked against a second run of another character's (capture 1fac2416, `--battle 0.13`,
+-- won.) The client's battle script (GaiUsa308Btl_00740, Bob's dump of 2026-10-30) has scenes 1 (the opening
 -- cutscene) and 7 (the closing one), and OnSequence001/002 (the objective and its message.)
 --
--- Timed against that run (seconds from the fight starting, the director's scene 60000):
+-- Timed against both runs (seconds from the fight starting, the director's scene 60000):
 --   0       sequence 2: the boss and its three lancers, each on someone: the boss and one on your lancer, one on your
 --           gladiator, one on you. Your lancer takes the one on it, then the boss; your gladiator the one on it, then
 --           the newest arrivals, healing your lancer (Cure) when it's low
 --   5, 10   battle talk 86 (the boss) and 87 (your gladiator, BNpcName 80)
---   29.0    the three lancers down, as the last one's death animation ended: sequence 3 and the second wave (the archer
+--   29.9    the three lancers down (28.9 in the second run; 3.0 and 1.1 s after the last one's health reached 0, so as
+--           its death animation ended, give or take): sequence 3 and the second wave (the archer
 --           and the gladiator on your gladiator, the thaumaturge and the lancer on you); the gladiator's 88 10 s later
 --           and the boss's 89 15 s later
 --   +30.0   sequence 4 and the two archers (they take the adds, then the boss); the first archer's 90 5.1 s later and
