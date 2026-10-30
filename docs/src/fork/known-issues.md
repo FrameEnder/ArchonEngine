@@ -108,14 +108,17 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 ## Quests
 
 * **The Twelveswood's story, Spirited Away (725) to Into the Beast's Maw (514)** (2026-10-30, from Bob's dumps and
-  Chronofoil capture caa5e908): untested in game; each replays against its retail run and a second run of another
-  character's (capture 1fac2416, 2026-10-30; `<quest>-1fac2416.json`). Into the Beast's Maw needs
+  Chronofoil capture caa5e908): untested in game; each replays against its retail run and two more of other
+  characters' (captures 1fac2416 and 2528a32d, 2026-10-30; `<quest>-1fac2416.json`, `<quest>-2528a32d.json`). Into the Beast's Maw needs
   the Thousand Maws of Toto-Rak, scripted since 2026-10-30 (see below) and untested.
-  Sylphish Concerns' second destination's nibble (UI8CL) is a guess (it was the last in both runs). The quests' humanoid enemies (BNpcBase 55, 61, 62,
+  Sylphish Concerns' second destination's nibble (UI8CL) is a guess (it was the last in all three runs; the client's
+  script never reads it). The quests' humanoid enemies (BNpcBase 55, 61, 62,
   64) use the Western Thanalan 4th Cohort's timelines (the same bases), not numbers from these fights.
 * **The Twelveswood's story, We Come in Peace (3856) to Brotherly Love (724)** (2026-10-30, from Bob's dumps and
-  Chronofoil capture 5fcc970c): untested in game; each but We Come in Peace also replays against a second run
-  (capture 1fac2416, `<quest>-1fac2416.json`). Retail completed the old
+  Chronofoil capture 5fcc970c): untested in game; each also replays against capture 2528a32d's run
+  (`<quest>-2528a32d.json`), and each but We Come in Peace against 1fac2416's (`<quest>-1fac2416.json`). The fixture
+  maker read Presence of the Enemy's (719) kills in 2528a32d out of order and missed the last (it came 0.08 s into the
+  box's scene, before it was answered): the fixture was put right by hand from the kills' ActorControl 6. Retail completed the old
   numbers of three (708, 717, 718) with the new ones, which Kawari does too (`mark_quest_completed`); what the old ones
   did on their own isn't known, and they aren't scripted. First Contact's (715) other emotes, Dance Dance Diplomacy's
   (3857) other-emote scenes and Presence of the Enemy's (719) box before the four are down weren't seen on retail.
@@ -604,8 +607,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## The Thousand Maws of Toto-Rak
 
-* Untested in game (2026-10-30), from two runs (one with Duty Support, one Duty Finder run). The director was checked
-  against both with a throwaway lupa harness (its webs, objectives, rooms, adds, eggs, tail and end within a tick of
+* Untested in game (2026-10-30), from three runs (one with Duty Support, two Duty Finder runs). The director was
+  checked against all three with a throwaway lupa harness (its webs, objectives, rooms, adds, eggs, tail and end within a tick of
   retail's where the run's own positions and health allow); no questkit command does that for a duty yet.
 * The drop-in's LGB (`bg/ffxiv/fst_f1/rad/f1r1/level/planmap.lgb`) is the TerritoryType's folder plus `planmap.lgb`, not
   checked against the LVB. The last boss's tail has a layout ID of the fork's (99000266); retail's had none.
@@ -637,15 +640,16 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quest battles and directors
 
-* **Nouveau Riche's battle (13)** (2026-10-30): untested in game, from two won runs. Sequences 4 and 5 come 30 s apart
-  as on retail; whether either waits for the wave before it isn't known (in both runs it was down in time). Sequence 3
-  came 3.0 and 1.1 s after the last lancer's health reached 0: Kawari answers at 2 s. The second wave comes back at sequence 5 only
+* **Nouveau Riche's battle (13)** (2026-10-30): untested in game, from three won runs. Sequences 4 and 5 come 30 s apart
+  as on retail; whether either waits for the wave before it isn't known (in every run it was down in time). Sequence 3
+  came 3.0, 1.1 and 2.0 s after the last lancer's health reached 0: Kawari answers at 2 s. The second wave comes back at sequence 5 only
   where it has fallen.
-* **Brotherly Love's battle (57)** (2026-10-30): untested in game, from two won runs (its client battle script, dumped
+* **Brotherly Love's battle (57)** (2026-10-30): untested in game, from three won runs (its client battle script, dumped
   2026-10-30, has only the opening and closing scenes and sequences 1-2's objective). Sequence 3 at the first
-  thaumaturge's death or 30 s, sequence 4 at 37 s and sequence 6 at the leader's 40 % are readings of the two runs
-  (sequence 6 came 26.2 and 2.6 s after sequence 5, at 35 and 39.9 %, so not a timer); what happens if you don't
-  fight, or the leader falls first, isn't known. The beast's 604 is a hit to 20 % of Yda's and
+  thaumaturge's death or 30 s, sequence 4 at 37 s and sequence 6 at the leader's 40 % are readings of the runs
+  (sequence 6 came 26.2, 2.6 and 0.1 s after sequence 5, at 35 and 39.9 % and with the leader already down, so not a
+  timer). Sequence 4 came at 36.5, 37.0 and 38.6 s: what holds it past 37 isn't known (no death, cast or position fits
+  all three). What happens if you don't fight isn't known. The beast's 604 is a hit to 20 % of Yda's and
   Papalymo's HP, cast once by the director: retail's effect on them was kind 48 (unknown to Kawari; a knockback? they
   moved 26-37 yalms over the fight), the first left both at exactly 80 % and the second took nothing. Yda's 63 and
   Papalymo's 151 durations are guesses, and the statuses they give aren't scripted. Played by Bob (bundles

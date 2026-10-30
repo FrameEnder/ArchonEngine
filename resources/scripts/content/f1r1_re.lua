@@ -1,7 +1,8 @@
 -- The Thousand Maws of Toto-Rak
 --
 -- From Bob's Chronofoil captures of 2026-10-30: one run with Duty Support (caa5e908, visit 0.15, 27 minutes, during
--- Into the Beast's Maw) and one Duty Finder run with three other players (1fac2416, visit 0.15, 10.6 minutes);
+-- Into the Beast's Maw) and two Duty Finder runs with three other players (1fac2416, visit 0.15, 10.6 minutes;
+-- 2528a32d, visit 0.14, 9.2 minutes, which checked them: the same webs, objectives, adds and tail);
 -- `questkit chronofoil --battle` and the visits' packets (docs/src/fork/dungeons.md). Numbers only; names and text are
 -- the game's.
 --
@@ -20,8 +21,7 @@ WEBS = {
     { index = 1, pack = { 9074846, 9074847, 9074848, 9074849 }, boss = 3642541 },
     { index = 2, pack = { 9074872, 9074873, 9074874, 9074875 } },
     { index = 3, pack = { 9074881, 9074882, 9074883 }, boss = 3642543 },
-    -- Coffer 25 came 3.7 and 4.0 s after this one burned.
-    { index = 4, pack = { 9074888, 9074889, 9074890 }, coffer = 25, coffer_after = 3.8 },
+    { index = 4, pack = { 9074888, 9074889, 9074890 } },
     { index = 5, pack = { 9074898, 9074899, 9074900 } },
 }
 MAP_EFFECT_BURNT = 2
@@ -123,18 +123,19 @@ EGG_DIES_AFTER = 4.8
 
 BGM_BATTLE = 37
 
--- Coffers (retail's, one list per opening; `server/loot.rs`): 22 and 21 as the first room's boss falls, 23 the
--- second's, 27 the last boss's, 25 after the fourth web; 19 and 29 stand from the start. 21 was opened in one run.
+-- Coffers (retail's, one list per opening; `server/loot.rs`; Bob's three runs, caa5e908, 1fac2416 and 2528a32d): 22 and
+-- 21 as the first room's boss falls, 23 the second's, 27 the last boss's; 19, 29 and 25 stand from the start (each came
+-- into view as the players came near: 25 3.7, 4.0 and 10.1 s after the fourth web burned.)
 LOOT = {
     [22] = { { 7035 }, { 31446 } },
-    [21] = { { 2749 } },
+    [21] = { { 2749 }, { 2749 } },
     [19] = { { 3584 }, { 3584 } },
     [29] = { { 3093 }, { 3095 } },
-    [23] = { { 3093 }, { 3095 } },
+    [23] = { { 3093 }, { 3095 }, { 31442 } },
     [25] = { { 2159 }, { 1696 } },
-    [27] = { { 38470 }, { 31443, 1907 } },
+    [27] = { { 38470 }, { 31443, 1907 }, { 2117 } },
 }
-STANDING_COFFERS = { 19, 29 }
+STANDING_COFFERS = { 19, 29, 25 }
 FINAL_COFFER = 27
 
 -- Event objects retail spawned hidden that nothing showed (2001005, 2001152, by the last room.)
@@ -204,11 +205,6 @@ function burnWeb(director, web)
     director:map_effect(web.index, MAP_EFFECT_BURNT)
     if web.boss ~= nil then
         director:set_targetable(web.boss, true)
-    end
-    if web.coffer ~= nil then
-        director:delay(web.coffer_after)
-        director:spawn_treasure(web.coffer)
-        director:delay(0)
     end
 end
 

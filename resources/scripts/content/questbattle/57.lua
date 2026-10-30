@@ -5,24 +5,24 @@
 -- (1587, 4255894) on your side at level 50, Claxio watching (an event NPC, 4256371), and the second wave: a beast that
 -- isn't to be killed (1585, 4255903, 49300 HP), a gladiator (1658, 4255897) and a conjurer (1583, 4255896). Layout
 -- IDs, levels, HP, positions, display flags, looks and the start spot are retail's (Bob's Chronofoil capture 5fcc970c
--- of 2026-10-30, `questkit chronofoil --battle 0.7`, won; a level 26 player), and checked against a second run of
--- another character's (capture 1fac2416, `--battle 0.4`, won.)
+-- of 2026-10-30, `questkit chronofoil --battle 0.7`, won; a level 26 player), and checked against two more runs of
+-- other characters' (captures 1fac2416, `--battle 0.4`, and 2528a32d, `--battle 0.3`, both won.)
 --
--- Timed against both runs (seconds from the fight starting, the director's scene 60000):
+-- Timed against the three runs (seconds from the fight starting, the director's scene 60000):
 --   0       sequence 2: the first wave fights. Two thaumaturges go for Yda and Papalymo, one and the leader for you
 --           (the leader on Papalymo); Yda and Papalymo each take the thaumaturge on them, then the oldest left
 --   5, 10   battle talk 78 (the leader) and 79 (Claxio, ENpcResident 1006684: an event NPC, kind 3)
 --   the first thaumaturge down, as its death animation ended (2 s after its health reached 0; 26.4 s in the first
---           run), or 30 s in if none is (30.1 in the second): sequence 3, the leader's 80, and the second wave (the
+--           run), or 30 s in if none is (30.1 in the second and third): sequence 3, the leader's 80, and the second wave (the
 --           beast on Yda, the other two on you)
---   sequence 3 + 12.0 (12.1 and 12.0): Papalymo's 81; + 13.6 the beast's 604 at Yda and Papalymo (14.1 and 13.1),
---           Claxio's 82 at + 17.0, Yda's 85 and Papalymo's 86 4.2 s after the 604 began (as it left them at 80 %),
---           Yda's 83 at + 22.0 (82 + 5.0 in both runs)
---   37 s in (36.5 and 37.0, whatever came before): sequence 4: Yda and Papalymo leave the rest to you and fight the
---           beast
+--   sequence 3 + 12.0 (12.1, 12.0, 12.0): Papalymo's 81; + 13.6 the beast's 604 at Yda and Papalymo (14.1, 13.1,
+--           16.0), Claxio's 82 at + 17.0, Yda's 85 and Papalymo's 86 at + 17.5 (18.2, 17.3, 17.1: 4.2 s after the 604
+--           began in two runs, 1.1 in the third, so from sequence 3), Yda's 83 at + 22.0 (82 + 5.0 in every run)
+--   37 s in (36.5, 37.0 and 38.6, whatever came before; no death, cast or position fits all three): sequence 4: Yda
+--           and Papalymo leave the rest to you and fight the beast
 --   + 10.1  sequence 5: the leader turns on you
---   the leader at 40 % (43 -> 35 in the first run, 45 -> 39.9 in the second, 26.2 and 2.6 s after sequence 5):
---           sequence 6, Papalymo's 84
+--   the leader at 40 % (43 -> 35 in the first run, 45 -> 39.9 in the second, 26.2 and 2.6 s after sequence 5), or
+--           already down (the third, killed 35.9 s in: sequence 6 0.1 s after 5): sequence 6, Papalymo's 84
 --   every enemy but the beast down (the conjurer last, 99.9 s): sequence 7 at once (its health at 0, not its death
 --           animation's end); 2.5 s later the beast runs back the way it came, Yda and Papalymo after it; 9.1 s
 --           after sequence 7 "Duty Complete" (60001) and sequence 8, the beast and Claxio fade out (taken away 1.4 s
@@ -162,12 +162,10 @@ function secondWave(director)
     talk(director, SPEAKER_LEADER, 80)
     BATTLE:spawn(director, { BNPC_BEAST, SECOND_WAVE[1], SECOND_WAVE[2] })
     after(24, function(d) talk(d, SPEAKER_PAPALYMO, 81) end)
-    after(27, function(d)
-        d:use_action(BNPC_BEAST, ACTION_BEAST, BNPC_BEAST)
-        after(8, function(d2)
-            talk(d2, SPEAKER_YDA, 85)
-            talk(d2, SPEAKER_PAPALYMO, 86)
-        end)
+    after(27, function(d) d:use_action(BNPC_BEAST, ACTION_BEAST, BNPC_BEAST) end)
+    after(35, function(d)
+        talk(d, SPEAKER_YDA, 85)
+        talk(d, SPEAKER_PAPALYMO, 86)
     end)
     after(34, function(d) talk(d, SPEAKER_CLAXIO, 82) end)
     after(44, function(d) talk(d, SPEAKER_YDA, 83) end)

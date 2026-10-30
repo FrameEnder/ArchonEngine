@@ -12,7 +12,7 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | The Tam-Tara Deepcroft | 2 | 1037 | `content/f1d1_re.lua` | one run with Duty Support and two Duty Finder runs (2026-10-24) |
 | The Copperbell Mines | 3 | 1038 | `content/w1d1_re.lua` | one run with Duty Support and two Duty Finder runs (2026-10-25) |
 | The Bowl of Embers (Ifrit) | 56 | 1045 | `content/w1fa_re.lua` | one run with Duty Support, two attempts (2026-10-27) |
-| The Thousand Maws of Toto-Rak | 1 | 1039 | `content/f1r1_re.lua` | one run with Duty Support (caa5e908) and one Duty Finder run (1fac2416), 2026-10-30 |
+| The Thousand Maws of Toto-Rak | 1 | 1039 | `content/f1r1_re.lua` | one run with Duty Support (caa5e908) and two Duty Finder runs (1fac2416, 2528a32d), 2026-10-30 |
 
 ## Clear rewards
 
@@ -282,13 +282,14 @@ effects are, statuses 8, 18, 53, 203, and ActorControl 15 (0, 1, 28764, 0) just 
 ## The Thousand Maws of Toto-Rak
 
 From Bob's Chronofoil captures of 2026-10-30: `caa5e908` visit 0.15 (27 minutes with Duty Support, during Into the
-Beast's Maw, quest 514, which unlocks it; one death and a walk back in) and `1fac2416` visit 0.15 (a Duty Finder run
-with three other players, 10.6 minutes), read with `questkit chronofoil --battle` and the visits' packets (numbers
+Beast's Maw, quest 514, which unlocks it; one death and a walk back in), `1fac2416` visit 0.15 (a Duty Finder run
+with three other players, 10.6 minutes) and `2528a32d` visit 0.14 (another, 9.2 minutes, which checked everything
+below: the same webs, objectives, adds, tail, eggs and spots), read with `questkit chronofoil --battle` and the visits' packets (numbers
 only). The script's name, `f1r1_re`, is the ContentFinderCondition's ShortCode (row 1, checked against the sheet) and
 the drop-in's LGB is `bg/ffxiv/fst_f1/rad/f1r1/level/planmap.lgb` (TerritoryType 1039's `Bg` folder; the LVB's own
 list not checked: the server log says "Loaded dropin" if it matched).
 
-**Enemies.** `questkit chronofoil --dropin 1039` over both captures gave the 50 battle NPCs seen (level 24; trash 1340
+**Enemies.** `questkit chronofoil --dropin 1039` over the three captures gave the 50 battle NPCs seen (level 24; trash 1340
 HP). The bosses' adds and eggs (260, 271, 572: one layout ID per kind, spawned again and again) and the last boss (259)
 are `nonpop`; the room bosses (270) stand from the start, untargetable (their display flags, 0x8, as retail's spawn).
 The last boss's tail (266) had no layout ID on retail (it comes off the boss); Kawari spawns by layout ID, so it has
@@ -303,18 +304,18 @@ scripts: 345, 346, 364, 697, 698, 701, 702, 704, 730, 1014 (344, 390, 968, 970 a
 
 **The webs.** Six webs close the way (the director's map effects 0-5, set up as Kawari does every InstanceContent's);
 each burns away (DirectorMapEffect, state 1, timeline 2) as the last of the pack guarding it falls, its health at 0,
-whoever that was, in both runs: 9074838-9074840, 9074846-9074849, 9074872-9074875, 9074881-9074883, 9074888-9074890,
+whoever that was, in all three runs: 9074838-9074840, 9074846-9074849, 9074872-9074875, 9074881-9074883, 9074888-9074890,
 9074898-9074900. The second and fourth open a room, and with them its boss (270) becomes targetable (ActorControl 54 in
-the same tick, `set_targetable`). Coffer 25 came 3.7 and 4.0 s after the fifth. The web's collision isn't known to
+the same tick, `set_targetable`). The web's collision isn't known to
 Kawari's: party NPCs get past a web by walking on through a wall after 2 s, as they do any wall in a duty.
 
 **The objectives.** Toto-Rak counts its progress with the duty's objectives (InstanceContent 1's six, InstanceContentText
 33300-33305), not DirectorVars (sent once, all 0): ContentDirector events 0x80000016 `[done, 1]` and 0x80000015 `[next,
-0]` (`director:objective`), the same in both runs: entering the first room (0), its boss (1), entering the second (2),
+0]` (`director:objective`), the same in all three runs: entering the first room (0), its boss (1), entering the second (2),
 its boss (3), entering the last (4), the last boss (5, with no next). A room counts as entered as the first player
-reaches it, about its line: 23.3 and 23.7 yalms from the first boss (a position at 23.7 didn't, before), 22.1 and 22.3
-from the second (24.0 didn't), 41.0 and 41.7 from the last (43.0 and 43.6 didn't), whoever it was (another player in
-the Duty Finder run): `reach` 23.5, 22.5 and 42.0.
+reaches it, about its line: 23.3 and 23.7 yalms from the first boss (a position at 23.7 didn't, before), 22.1, 22.3
+and 22.1 from the second (24.0 didn't), 41.0, 41.7 and 40.7 from the last (43.0, 43.6 and 43.1 didn't), whoever it was
+(another player in both Duty Finder runs): `reach` 23.5, 22.5 and 42.0.
 
 **The rooms** (`boss_room`: sealed 15 s after the boss's pull, log 2012 (PlaceName, 15) then 2013, the walls hidden at
 the start as retail spawned them; opened at its death, log 2014):
@@ -322,7 +323,7 @@ the start as retail spawned them; opened at its death, log 2014):
 | Boss | PlaceName | Wall / line / barrier (layout IDs) | Retail |
 |---|---|---|---|
 | 270 (3642541, 6248 HP) | 523 | 9089607 / 9089609 / 9087967 | The battle music (37) at its pull, off at its death; the barrier on the far side (EObj 2002872, standing from the start) hidden at its death. 1014 0.1-0.7 s after its pull, then every 6.4 s. Coffers 22 and 21 |
-| 270 (3642543, 6248 HP) | 522 | 9089610 / 9089612 / 9087976 | The same, and two adds (271, both layout 3656529, 467 HP) at 50 % (49.8, 45.7 %), always at the same two spots. Coffer 23 |
+| 270 (3642543, 6248 HP) | 522 | 9089610 / 9089612 / 9087976 | The same, and two adds (271, both layout 3656529, 467 HP) at 50 % (49.8, 45.7, 48.2 %), always at the same two spots. Coffer 23 |
 | 259 (3446839, 10451 HP) | 612 | 9089456 / 9089470 | See below. Coffer 27 |
 
 **The last room.** Reaching it: objective 4 done, cutscene 95 (scene 3 with 95, 1, 38, 1, 0; flags 0x8502403),
@@ -331,9 +332,9 @@ weather 2 (4 s), coffer 27, the duty complete. The boss, from its pull (both run
 target and those in front) at 7.6-9.1 s then every 27.6; 701 (2.2 s, round itself) at 16.1-17.4 then every 36.6 (30.7
 to 51); 698 (1.2 s) at 25.1-25.3 then every 27.8, on someone other than its target, and 4.7 s after it began an egg
 (572) lands where they stood (`onActorCast`'s target position); 5.0 s later the egg casts 730 round itself (2.7 s: a
-hit, status 2089) and it dies 2.1 s after that (`kill_bnpc`). Two adds (260, layout 3862492) at 75 % (74.7, 73.9 %)
-and two at 30 % (29.5, 28.6 %), at the same four spots every time. At 55 % (it came at 54.2 and 47.1 %: retail waited
-for what the boss was doing) 704 on itself, then 702 2.7 s later: as it begins the tail (266, 1278 HP) comes off where
+hit, status 2089) and it dies 2.1 s after that (`kill_bnpc`). Two adds (260, layout 3862492) at 75 % (74.7, 73.9, 74.5 %)
+and two at 30 % (29.5, 28.6, 30.0 %), at the same four spots every time. At 55 % (it came at 54.2, 47.1 and 52.1 %:
+retail waited for what the boss was doing, and in the third run its 701 ended just after the health fell past 55) 704 on itself, then 702 2.7 s later: as it begins the tail (266, 1278 HP) comes off where
 the boss stands, the boss gets ActorControl 31 `[0, 0, 0, 1]` and 30 `[0, 1, the tail's actor ID, 0]` and log 2016
 comes; while the tail stands 702 again every 30.8 s; the tail's death: ActorControl 20 `[64]`, 30 `[0, 2, the tail, 1]`
 and 31 `[0, 0, 0, 0]` on the boss (`bnpc_control`). What 30 and 31 do isn't known (Kawari has no name for them).
@@ -343,8 +344,10 @@ it hidden and showed it (SetEventState 0) as the duty was complete. Kawari now h
 a duty exit (GimmickAccessor of the DutyExit kind, `Zone::exit_eobjs`) and shows them all with `complete_duty`
 (`LuaDirectorTask::ShowExits`); it only knew 2000139.
 
-**Coffers** (`treasure_loot`): 22 held 7035 or 31446; 21 2749; 19 3584 both times; 29 3093 or 3095; 23 3093 or 3095;
-25 2159 or 1696; 27 38470, or 31443 and 1907. 19 and 29 stand from the start; 21 was opened once. No wiki pools yet.
+**Coffers** (`treasure_loot`): 22 held 7035 or 31446; 21 2749 both times; 19 3584 both times; 29 3093 or 3095; 23
+3093, 3095 or 31442; 25 2159 or 1696; 27 38470, 31443 and 1907, or 2117. 19, 29 and 25 stand from the start: each came
+into view as the players came near (25 3.7, 4.0 and 10.1 s after the fifth web burned, so not the director's). No wiki
+pools yet.
 
 **Duty Support.** The trials' three: the Marauder (40), the Thaumaturge (42) and the Conjurer (43), at level 24 with
 842, 583 and 588 HP (`party_npc::DUTY_LEVELS`; the Lancer, 41, wasn't there: 639 is a guess). Their story lines: the
@@ -355,7 +358,7 @@ room's cutscene began. Chatter: the Marauder's 13951, 13952 and 13953, the Thaum
 second room; its pop range needs the game's layout files), what 30 and 31 on the last boss do, the event object retail
 put near it 4.0 s into each 702 (EObj 2000404, the director's, not in the layout: hidden as the tail died, deleted 3.4 s
 later; Kawari can't spawn an event object the layout hasn't), the item every player got as the duty was complete (log
-789 and 1232 with it: 3095 in one run, 31443 in the other), the webs' collision, status 9 (an auto-attack's, twice).
+789 and 1232 with it: 3095, 31443 and 2013 in the three runs), the webs' collision, status 9 (an auto-attack's, twice).
 
 ## The Bowl of Embers
 

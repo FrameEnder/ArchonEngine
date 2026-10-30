@@ -2,11 +2,11 @@
     "autoattack_action_id": 870,
     "recorded_amounts": {
         "870": {
-            "players": 57,
+            "players": 58,
             "npcs": 35
         },
         "697": {
-            "players": 121,
+            "players": 116.5,
             "npcs": 45.5
         },
         "701": {
@@ -52,5 +52,5 @@
         "701": 2.1
     },
     "from_pull": true,
-    "comment": "The Thousand Maws of Toto-Rak's last boss (BNpcBase 259, 3446839): 10451 HP, level 24; auto-attack 870 every 3.0 s, 697 every 27.6 s, 701 every 36.6 s, 698 every 27.8 s from its pull; at 55 % the director has it use 704 and 702 (its tail, 266) and calls its adds (260) at 75 and 30 %. For 364, 345 and 1014, which only poison, the recorded amount is the poison's tick (retail's ActionEffect gives it with the status). From Bob's Chronofoil captures of the Thousand Maws of Toto-Rak (2026-10-30): one run with Duty Support (caa5e908, visit 0.15) and one Duty Finder run (1fac2416, visit 0.15), `questkit chronofoil --battle`. `players` is the median damage to players over the two runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+    "comment": "The Thousand Maws of Toto-Rak's last boss (BNpcBase 259, 3446839): 10451 HP, level 24; auto-attack 870 every 3.0 s, 697 every 27.6 s, 701 every 36.6 s, 698 every 27.8 s from its pull; at 55 % the director has it use 704 and 702 (its tail, 266) and calls its adds (260) at 75 and 30 %. For 364, 345 and 1014, which only poison, the recorded amount is the poison's tick (retail's ActionEffect gives it with the status). From Bob's Chronofoil captures of the Thousand Maws of Toto-Rak (2026-10-30): one run with Duty Support (caa5e908, visit 0.15) and two Duty Finder runs (1fac2416 and 2528a32d, visits 0.15 and 0.14), `questkit chronofoil --battle`. `players` is the median damage to players over the three runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
 }

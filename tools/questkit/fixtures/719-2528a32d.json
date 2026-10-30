@@ -1,0 +1,125 @@
+{
+  "quest": 719,
+  "script": "GaiUsa105_00719",
+  "source": "Bob's Chronofoil capture 2528a32d (2026-10-30, a third character); scenes and effects from Bob's Chronofoil capture of 2026-10-30; the kills in the order the capture's ActorControl 6 gave them (1896, 1895, 1898, 1897: the fixture had read them as 1896, 1897, 1895 and left out the last, which came 0.08 s into the box's scene 8, before it was answered: the server went on to the search once it was)",
+  "params": {
+    "ACTOR0": 1000580,
+    "ACTOR1": 1000585,
+    "ACTOR2": 1000277,
+    "ACTOR3": 1000553,
+    "ACTOR4": 1000545,
+    "EVENTRANGE0": 4289786,
+    "EOBJECT0": 2001918,
+    "EVENT_ACTION_GATHER_MIDDLE": 7,
+    "ENEMY0": 4278151,
+    "ENEMY1": 4278153,
+    "ENEMY2": 4278162,
+    "ENEMY3": 4278167,
+    "ITEM0": 2000578,
+    "EOBJECT1": 2002280,
+    "EVENT_ACTION_SEARCH": 1,
+    "ACTION_TIMELINE_EVENT_TROUBLE": 944,
+    "ACTION_TIMELINE_EVENT_JOY_BIG": 945,
+    "ACTION_TIMELINE_EVENT_TALK_ENTREAT": 951
+  },
+  "steps": [
+    {
+      "talk": 1000580,
+      "layout": 1146516,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1000585,
+      "layout": 1146521,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "010000000080", "notices": [[0, [1, 4]]]}
+    },
+    {
+      "talk": 1000277,
+      "layout": 2360718,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "0200000000c0", "notices": [[0, [2, 4]]]}
+    },
+    {
+      "talk": 1000553,
+      "layout": 1146486,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "0300000000e0", "notices": [[0, [3, 4]]]}
+    },
+    {
+      "talk": 1000545,
+      "layout": 2339532,
+      "what": "ACTOR4",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, [4, 4]]]}
+    },
+    {
+      "talk": 1000580,
+      "layout": 1146516,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 6, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": [[1, []]]}
+    },
+    {
+      "range": 4289786,
+      "scenes": [
+        {"scene": 7, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [1896, 4278153],
+      "expect": {"sequence": 3, "vars": "010000000000", "notices": []}
+    },
+    {
+      "kill": [1895, 4278151],
+      "expect": {"sequence": 3, "vars": "020000000000", "notices": []}
+    },
+    {
+      "kill": [1898, 4278167],
+      "expect": {"sequence": 3, "vars": "030000000000", "notices": []}
+    },
+    {
+      "kill": [1897, 4278162],
+      "expect": {"sequence": 3, "vars": "040000000000", "notices": []}
+    },
+    {
+      "talk": 2001918,
+      "layout": 4268643,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 8, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 9, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001000000000", "notices": [[2, [1, 1, 26151]]]}
+    },
+    {
+      "talk": 1000580,
+      "layout": 1146516,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 12, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 13, "flags": "0x2000", "results": [1, 4555, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

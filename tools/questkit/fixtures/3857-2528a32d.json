@@ -1,0 +1,69 @@
+{
+  "quest": 3857,
+  "script": "XxaUsa103_03857",
+  "source": "Bob's Chronofoil capture 2528a32d (2026-10-30, a third character); scenes and effects from Bob's Chronofoil capture of 2026-10-30",
+  "params": {"ACTOR0": 1006674, "ACTOR1": 1000563, "ACTOR2": 1000576, "ACTOR3": 1000587, "QST_ACCEPT_CHECK": 66253},
+  "steps": [
+    {
+      "talk": 1006674,
+      "layout": 4250366,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1000576,
+      "layout": 1146512,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "emote": [11, 1000576],
+      "layout": 1146512,
+      "scenes": [
+        {"scene": 6, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "010000000040", "notices": [[0, [1, 3]]]}
+    },
+    {
+      "talk": 1000563,
+      "layout": 1332293,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "010000000040", "notices": []}
+    },
+    {
+      "emote": [11, 1000563],
+      "layout": 1332293,
+      "scenes": [
+        {"scene": 3, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "0200000000c0", "notices": [[0, [2, 3]]]}
+    },
+    {
+      "emote": [11, 1000587],
+      "layout": 1146523,
+      "scenes": [
+        {"scene": 9, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, [3, 3]]]}
+    },
+    {
+      "talk": 1006674,
+      "layout": 4250366,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 11, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}
