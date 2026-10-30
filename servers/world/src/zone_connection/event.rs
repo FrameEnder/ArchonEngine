@@ -14,6 +14,10 @@ use kawari::{
     },
 };
 
+/// How long after an event to see whether it moved the zone's layer filter on: long enough for a zone change it began
+/// to have sent its PrepareZoning (retail warped at once, with the EventFinish.)
+const LAYER_FILTER_CHECK_AFTER: std::time::Duration = std::time::Duration::from_millis(500);
+
 impl ZoneConnection {
     /// Starts a scene for the current event.
     pub async fn event_scene(
@@ -82,6 +86,12 @@ impl ZoneConnection {
             self.event_handler_id = Some(event.1.id);
         } else {
             self.event_handler_id = None;
+            // Whether the event moved the zone's layer filter on, once it's had its effect (a zone change it began
+            // cancels this with its PrepareZoning: the new zone's ZoneInit has its key.)
+            if crate::layer_filters::has_filters(self.player_data.volatile.zone_id as u16) {
+                self.layer_filter_check =
+                    Some(std::time::Instant::now() + LAYER_FILTER_CHECK_AFTER);
+            }
         }
     }
 

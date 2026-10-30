@@ -182,6 +182,19 @@ accepted.
 Kawari sent 0, and the client showed the people of every visit to the Waking Sands at once (Bob's screenshot of
 2026-10-26: Thancred, Biggs, Wedge, Cid, Yda, Papalymo, Arenvald, Iliud and a row of soldiers in the hall).
 
+**Back from the Wood** (746; Bob's Chronofoil captures 9df4ff01 and 3a705e18, 2026-10-30): 90342 in ZoneInit as the
+player came in with it at sequence 2; its zone-entry cutscene moved it to 255, and right after the EventFinish retail
+sent PrepareZoning to the Waking Sands itself (warp type 18, the character hidden, flags 0) and, 1.5 s later,
+ActorSetPos where the player stood (warp type 18, arg 2) with **90343**, the key at every later visit. So the key can
+also wait for a sequence (an entry's `"sequence"`). Retail did the same every time the key changed within a visit in
+the captures (cc62ad94's 90339, 90340 and 90342), always that warp: a moved key only shows once
+the client is warped. Kawari had no such warp (only the cutscenes that move the player anyway sent one), so the
+Waking Sands kept its old layers after Back from the Wood's cutscene until the next zone-in (Bob, 2026-10-30). Now,
+half a second after any event ends in a zone with layer filters (`event_finish`), the connection compares the key
+for where the story is with the one the client was last given (ZoneInit, ActorSetPos: `layer_filter_shown`) and, if
+it changed, warps the player where they stand as retail did (`refresh_layer_filter`); a zone change the event began
+(its PrepareZoning) cancels the check, as its ZoneInit has the key.
+
 Kawari reads the key from `resources/data/layer_filters.json` (`layer_filters.rs`: per territory, the last entry whose
 quest has been accepted or completed; an entry without a quest is the default), puts it in ZoneInit, and fills it in
 any ActorSetPos to the player that has none (`ZoneConnection::send_ipc_from`). Retail picks it on its own servers, so

@@ -1072,6 +1072,9 @@ fn warp_appearance(warp_type: WarpType, same_zone: bool) -> (u8, PrepareZoningFl
         // A chocobo porter's ride: retail's PrepareZoning hid the character, with 0x02 (Bob's Chronofoil captures,
         // nine rides; `zone_connection/chocobo_taxi.rs`.)
         WarpType::ChocoboTaxi => (1, PrepareZoningFlag::UNK2),
+        // The story moved a zone's layer filter on where the player stands (`refresh_layer_filter`): retail's
+        // PrepareZoning hid the character, flags 0 (Bob's Chronofoil captures, every one of them.)
+        WarpType::Unk18 => (1, PrepareZoningFlag::default()),
         _ => (0, PrepareZoningFlag::default()),
     }
 }

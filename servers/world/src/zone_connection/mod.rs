@@ -17,7 +17,7 @@ use crate::{
     lua::{KawariLua, LuaTask},
 };
 use kawari::{
-    common::{HandlerId, ObjectId, Position, timestamp_secs},
+    common::{HandlerId, ObjectId, Position, WarpType, timestamp_secs},
     config::WorldConfig,
     ipc::zone::{
         ApartmentList, ApartmentListEntry, CWLSMemberListEntry, ClientTriggerCommand,
@@ -313,6 +313,10 @@ pub struct ZoneConnection {
     pub gate_checked: u64,
     /// Whether this Air Force One's score has been taken (the client sends it again and again until it leaves.)
     pub ride_shooting_scored: bool,
+    /// The layer filter key the client was last given for the zone it's in (ZoneInit, ActorSetPos.)
+    pub layer_filter_shown: u32,
+    /// When to see whether the story moved the zone's layer filter on (after an event; `refresh_layer_filter`.)
+    pub layer_filter_check: Option<std::time::Instant>,
     /// The chocobo porter's ride being warped to (ChocoboTaxi row, its Location), until the client has finished zoning.
     pub chocobo_taxi: Option<(u32, u32)>,
     /// The chocobo porter's ride under way (ChocoboTaxi row), until the client says it has arrived.
@@ -334,14 +338,44 @@ impl ZoneConnection {
     /// The layer filter the client is shown `territory` with, for this character's quest progress (`layer_filters`.)
     pub fn layer_filter_key(&self, territory: u16) -> u32 {
         let quests = &self.player_data.quest;
-        crate::layer_filters::filter_key(territory, |quest| {
+        crate::layer_filters::filter_key(territory, |quest, sequence| {
             quests.completed.contains(quest)
-                || quests
-                    .active
-                    .0
-                    .iter()
-                    .any(|active| active.id as u32 == quest)
+                || quests.active.0.iter().any(|active| {
+                    active.id as u32 == quest
+                        && sequence.is_none_or(|needed| active.sequence >= needed)
+                })
         })
+    }
+
+    /// After an event: if the story has moved the zone's layer filter on (Back from the Wood's cutscene in the Waking
+    /// Sands), the player is warped where they stand so the client loads the new one, as retail did: PrepareZoning to
+    /// the same territory with warp type 18, then ActorSetPos (warp type 18, arg 2) with the new key, 1.5 s later
+    /// (Bob's Chronofoil captures cc62ad94, 9df4ff01, 3a705e18: every time the key changed within a visit.) Without it
+    /// the client kept the layers it came in with until the next zone-in.
+    pub async fn refresh_layer_filter(&mut self) {
+        self.layer_filter_check = None;
+        let territory = self.player_data.volatile.zone_id as u16;
+        if !self.spawned_in || !crate::layer_filters::has_filters(territory) {
+            return;
+        }
+        let key = self.layer_filter_key(territory);
+        if key == self.layer_filter_shown {
+            return;
+        }
+        tracing::info!(
+            "Layer filter of {territory} now {key} (shown {}): warped where they stand",
+            self.layer_filter_shown
+        );
+        let position = self.player_data.volatile.position;
+        let rotation = self.player_data.volatile.rotation as f32;
+        self.change_zone(
+            territory,
+            Some(position),
+            Some(rotation),
+            WarpType::Unk18,
+            0,
+        )
+        .await;
     }
 
     pub async fn send_ipc_self(&mut self, ipc: ServerZoneIpcSegment) {
@@ -371,12 +405,22 @@ impl ZoneConnection {
         // Moved within a zone the story changes (a quest's cutscene ending in the Waking Sands): the layer filter for
         // where the story is now, as retail's ActorSetPos carried (`layer_filters`; 0 showed every stage at once.)
         if let ServerZoneIpcData::ActorSetPos(set_pos) = &mut ipc.data
-            && set_pos.transition_territory_filter_key == 0
             && (source_actor == ObjectId::default()
                 || source_actor == self.player_data.character.actor_id)
         {
-            set_pos.transition_territory_filter_key =
-                self.layer_filter_key(self.player_data.volatile.zone_id as u16);
+            if set_pos.transition_territory_filter_key == 0 {
+                set_pos.transition_territory_filter_key =
+                    self.layer_filter_key(self.player_data.volatile.zone_id as u16);
+            }
+            self.layer_filter_shown = set_pos.transition_territory_filter_key;
+        }
+        // What the client shows the zone with now (`refresh_layer_filter`), and a zone change under way brings its own.
+        match &ipc.data {
+            ServerZoneIpcData::ZoneInit(init) => {
+                self.layer_filter_shown = init.transition_territory_filter_key;
+            }
+            ServerZoneIpcData::PrepareZoning(_) => self.layer_filter_check = None,
+            _ => {}
         }
         let segment = PacketSegment {
             source_actor: if source_actor == ObjectId::default() {

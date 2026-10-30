@@ -43,6 +43,14 @@ const TELEPORT_INSUFFICIENT_GIL: u32 = 2;
 
 const AUTOSAVE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(30);
 
+/// Sleeps until `at`, or forever when there's nothing to wait for (a `select!` branch that's off.)
+async fn sleep_until_or_never(at: Option<std::time::Instant>) {
+    match at {
+        Some(at) => tokio::time::sleep_until(at.into()).await,
+        None => std::future::pending().await,
+    }
+}
+
 /// How long a zone connection can go without hearing from the client before it's treated as dropped (and the player
 /// is logged out and saved.)
 const DEAD_CONNECTION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60);
@@ -251,6 +259,8 @@ async fn initial_setup(
                     ride_shooting_scored: false,
                     chocobo_taxi: None,
                     riding_chocobo_taxi: None,
+                    layer_filter_shown: 0,
+                    layer_filter_check: None,
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
                 };
 
@@ -5560,6 +5570,14 @@ async fn client_loop(
             _ = autosave.tick() => {
                 if connection.player_data.character.actor_id.is_valid() && !connection.gracefully_logged_out {
                     connection.autosave();
+                }
+            }
+            // An event ended: the story may have moved the zone's layer filter on (`refresh_layer_filter`.)
+            _ = sleep_until_or_never(connection.layer_filter_check), if connection.layer_filter_check.is_some() => {
+                if events.is_empty() {
+                    connection.refresh_layer_filter().await;
+                } else {
+                    connection.layer_filter_check = None;
                 }
             }
             // A GATE beginning or ending (`gate.rs`), told to whoever is in the Gold Saucer.
