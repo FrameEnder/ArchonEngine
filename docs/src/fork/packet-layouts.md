@@ -181,6 +181,21 @@ These `size` findings are worth a check:
 a byte at +4). That's where Kawari puts them: its `pad_after = 4` is after the list, not before it. The earlier
 known-issues entry saying they're one field off was wrong, and has been removed.
 
+## Client packets of the wrong size (2026-10-30)
+
+A client packet holds several segments, each with its own size. Kawari read each segment's IPC straight from the
+stream with its layout, so a layout shorter or longer than what the client sent left the stream in the wrong place and
+the next segment's header was garbage: "no variants matched … Unexpected value for enum" on `segment_type`, and the whole
+packet was dropped. In Bob's bundle 20261030-202136 that was, by its timing, the click on the Waking Sands' door: its StartTalkEvent was
+in the dropped packet, so the server never started the warp and the client waited in its event (`!finishevent` had
+nothing to finish). Now each segment is read from its own bytes (`packet/encryption.rs`, `decrypt`): a layout reading
+less leaves the rest unread, one reading more gets zeros, and either way the server warns with the opcode and both
+sizes ("… came with N bytes but its layout reads M"), so the next one is easy to find.
+
+The one known so far: **CrossRealmListingsRequest2** (878, the Party Finder's) comes with 64 bytes on 2026.10.16 (16
+times in Bob's Chronofoil captures), where upstream's `opcodes.yml` and layout have 40. Upstream's entry is left as it
+is (fork rule); it now only warns.
+
 ## Limits
 
 * **Virtual calls are not followed.** Handlers that pass the packet through a vtable show as "nothing found"; the

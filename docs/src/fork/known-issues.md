@@ -102,6 +102,15 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Haukke Manor (1040) and six others weren't recorded (the player had already moved before the first position
   update). Untested in game.
 
+## Client packets of the wrong size (2026-10-30)
+
+* A client packet whose layout doesn't match the client's size now only warns ([Packet layouts](packet-layouts.md#client-packets-of-the-wrong-size-2026-10-30));
+  the fields of a short layout read zeros past the client's bytes. CrossRealmListingsRequest2 (878) is 64 bytes on the
+  client and 40 in upstream's layout, so it warns each time the Party Finder asks. Which packet the Waking Sands' door
+  click came with in Bob's bundle isn't known (nothing logged the bytes); nothing else in the captures differs.
+* Weapon coffers: only the "Level N Weapon Coffer"s are filled in, from the wiki; the raid and tome coffers say their
+  contents aren't known. Opening one on retail was recorded once (the Level 18, a gladiator's).
+
 ## Chocobo porters (2026-10-30)
 
 * Untested in game. Built from nine retail rides (three routes); see [Travel](travel.md#chocobo-porters).

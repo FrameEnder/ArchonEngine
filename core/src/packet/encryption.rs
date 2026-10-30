@@ -27,18 +27,37 @@ pub(crate) fn decrypt<T: ReadWriteIpcSegment>(size: u32, state: &ConnectionState
 
         let mut cursor = Cursor::new(&data);
         T::read_options(&mut cursor, endian, (&size,))
-    } else if remap::active() {
-        // An opcode found while running comes in with its real opcode, but is read as its placeholder.
-        let mut data = vec![0; size.saturating_sub(IPC_HEADER_SIZE) as usize];
-        reader.read_exact(&mut data)?;
-        remap::rewrite_opcode(&mut data, remap::kind_of::<T::OpCode>(), remap::incoming);
+    } else {
+        // Each segment is read from its own bytes, so an IPC whose layout is shorter or longer than what the client
+        // sent spoils only itself: read from the stream, a wrong size threw off every segment after it in the packet
+        // ("no variants matched" on a segment type: Bob's bundle 20261030-202136, the Waking Sands' door never
+        // answered and the client waited in its event.) Past the end it reads zeros, and either way it's logged.
+        let length = size.saturating_sub(IPC_HEADER_SIZE) as usize;
+        let mut data = vec![0; length + READ_SLACK];
+        reader.read_exact(&mut data[..length])?;
+        if remap::active() {
+            // An opcode found while running comes in with its real opcode, but is read as its placeholder.
+            remap::rewrite_opcode(&mut data, remap::kind_of::<T::OpCode>(), remap::incoming);
+        }
 
         let mut cursor = Cursor::new(&data);
-        T::read_options(&mut cursor, endian, (&size,))
-    } else {
-        T::read_options(reader, endian, (&size,))
+        let value = T::read_options(&mut cursor, endian, (&size,))?;
+        let read = cursor.position() as usize;
+        if read != length {
+            tracing::warn!(
+                "{} (opcode {}) came with {} bytes but its layout reads {}: check its size",
+                value.get_name(),
+                value.get_opcode(),
+                length.saturating_sub(16),
+                read.saturating_sub(16)
+            );
+        }
+        Ok(value)
     }
 }
+
+/// Zeros after a segment's bytes, for a layout that reads past what the client sent.
+const READ_SLACK: usize = 4096;
 
 #[binrw::writer(writer, endian)]
 pub(crate) fn encrypt<T: ReadWriteIpcSegment>(

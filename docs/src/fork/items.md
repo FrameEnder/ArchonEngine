@@ -65,12 +65,28 @@ pop-up); retail sent no log line of its own (no EventLogMessage 750). It does no
 instanced content (the item's description says it can't be opened there), when the class has no set, or when the
 bags can't hold the set. A coffer not in the table says so in chat.
 
-Filled in, from the FFXIV Console Games Wiki's pages (no coffer is opened in Bob's captures):
+Filled in, from the FFXIV Console Games Wiki's pages (every "Level N Weapon Coffer" since 2026-10-30; until then
+only the Level 18 and 24 ones were, and the Level 21 one said in chat that its contents weren't known: Bob's bundle
+20261030-201929). Each wiki name matched exactly one item in the Item sheet, of the class its place in the list says. The
+level 50 coffers have the scholar's book apart from the arcanist's and summoner's (ClassJobCategory ACN SMN, then SCH):
 
 | Coffer | Item | From | Sets |
 |---|---|---|---|
 | Level 18 Weapon Coffer | 31329 | Life, Materia and Everything | 1611 + 2241 (GLA), 1758, 1827, 1688, 8662, 1897, 2111, 2149, 2002 |
+| Level 21 Weapon Coffer | 31330 | Microbrewing | 1614 + 2242 (GLA), 1764, 1833, 1694, 8663, 1899, 2116, 2151, 2010 |
 | Level 24 Weapon Coffer | 31331 | Meeting with the Resistance | 1625 + 2246 (GLA), 1766, 1836, 1697, 9193, 1905, 2118, 2156, 2011 |
+| Level 28 Weapon Coffer | 31332 | Skeletons in Her Closet | 1627 + 2250 (GLA), 1769, 1838, 1699, 8664, 1908, 2069, 2160, 1967 |
+| Level 34 Weapon Coffer | 31333 | You Can't Take It with You | 1637 + 2260 (GLA), 1778, 1847, 1708, 8665, 1917, 2123, 2166, 2023 |
+| Level 36 Weapon Coffer | 31334 | Road to Redemption | 1639 + 2262 (GLA), 1781, 1850, 1711, 8666, 1920, 2078, 2169, 2026 |
+| Level 40 Weapon Coffer | 31335 | By the Lights of Ishgard | 1650 + 2270 (GLA), 1786, 1855, 1716, 9209, 1925, 2083, 2174, 1974 |
+| Level 45 Weapon Coffer | 31336 | Fool Me Twice | 1659 + 2287 (GLA), 1796, 1867, 1728, 8667, 1937, 2094, 2185, 1981 |
+| Level 49 Weapon Coffer | 31337 | A Hero in Need | 1663 + 2296 (GLA), 1803, 1872, 1733, 8668, 1942, 2133, 2189, 2044 |
+| Level 50 Weapon Coffer (IL 70) | 31691 | It's Possibly a Primal | 1666 + 2302 (GLA), 1806, 1875, 1736, 9225, 1945, 2136, 2193 (ACN SMN), 2048, 2194 (SCH) |
+| Level 50 Weapon Coffer (IL 90) | 31696 | When Yugiri Met the Fraternity | 1679 + 2311 (GLA), 1818, 1888, 1748, 9241, 1957, 2141, 2217 (ACN SMN), 2054, 2218 (SCH) |
+| Level 50 Weapon Coffer (IL 110) | 31701 | The Reason Roaille | 7351 + 7350 (GLA), 7353, 7354, 7352, 9247, 7355, 7357, 7358 (ACN SMN), 7356, 7359 (SCH) |
+
+The order in each row is the script's: GLA, MRD, LNC, PGL, ROG, ARC, THM, ACN, CNJ (and SCH). The jobs that came
+later (DRK, MCH, AST and on) have nothing in them, as the wiki lists them, so the coffer says so and stays.
 
 ## Selling to NPCs, wear and repair
 

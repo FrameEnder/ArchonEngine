@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-30 | — | Quests (763, Meeting with the Resistance).
+| 2026-10-30 | — | Packet layouts (client packets of the wrong size: each segment read from its own bytes; CrossRealmListingsRequest2's 64 bytes); items (every Level N Weapon Coffer); known issues.
+| 2026-10-30 | `56866ad` | Quests (763, Meeting with the Resistance).
 | 2026-10-30 | `d89964c` | Quests (second runs of 743-762 from capture 3a705e18).
 | 2026-10-30 | `5ac07e5` | Quests (743, 744, 746, 747, 748, 756, 757, 761, 762, 1104; second runs of 699, 701, 3017; StartEmoteEvent: the client asks for a quest's emote event); questkit (`from`: fixtures from the middle of a quest); fork opcodes (StartEmoteEvent, its fingerprint and finder); known issues.
 | 2026-10-30 | `4bee59d` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (changelog).
@@ -335,7 +336,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | **Quest** 763 (Meeting with the Resistance) in `events/quest/007/`, from Bob's quest dump and Chronofoil capture 3a705e18 (2026-10-30), with its fixture. Docs: quests. |
+| — | **Client packets read segment by segment** (`core/src/packet/encryption.rs`): a layout of the wrong size no longer throws off the rest of the packet, which had dropped the Waking Sands' door's StartTalkEvent and left the client waiting (Bob's bundle 20261030-202136); a mismatch is warned about with the opcode and sizes. **Weapon coffers** (`items/Coffer.lua`): every "Level N Weapon Coffer" (31329-31337, 31691, 31696, 31701) from the wiki's pages, the item IDs matched in the Item sheet; the Level 21 one had none (Bob's bundle 20261030-201929). Docs: items, packet layouts, known issues. |
+| `56866ad` | **Quest** 763 (Meeting with the Resistance) in `events/quest/007/`, from Bob's quest dump and Chronofoil capture 3a705e18 (2026-10-30), with its fixture. Docs: quests. |
 | `d89964c` | Bob's Chronofoil capture 3a705e18 (2026-10-30, another character): second-run fixtures `<quest>-3a705e18.json` for 743, 744, 746, 747, 748, 756, 757, 761 and 762, all matching the scripts as they are. Docs: quests. |
 | `5ac07e5` | Bob's Chronofoil capture 9df4ff01 (2026-10-30) and his quest dumps: **quests** 743 (A Simple Gift), 744 (Believe in Your Sylph), 746 (Back from the Wood), 747 (Shadow of Darkness), 748 (Highbridge Times, which completes 752 too), 756 (Where There Is Smoke), 757 (On to Little Ala Mhigo), 761 (Tea for Three), 762 (Foot in the Door) in `events/quest/007/` and 1104 (A Pup No Longer (Maelstrom)) in `011/`, each with its fixture; second-run fixtures for 699, 701 (from sequence 1) and 3017. **StartEmoteEvent** (fork client opcode 401, `ClientZoneIpcData::StartEmoteEvent`, `GameData::quest_listens_for_any_emote`): the client's request for a quest's emote event, on the player's own actor for 744's emote in an area; fingerprints re-recorded and a finder. Eastern Thanalan's drop-in: layer `QB_GaiUsa504_001` (756's dusk bat); timeline `DuskBat_363`. questkit: a fixture's `from` starts the quest mid-way. Docs: quests, questkit, opcodes, known issues.
 | `4bee59d` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (the Twelveswood's story to Into the Beast's Maw, the Thousand Maws of Toto-Rak, chocobo porters). |
