@@ -1,0 +1,34 @@
+{
+    "autoattack_action_id": 871,
+    "recorded_amounts": {
+        "871": {
+            "npcs": 31
+        },
+        "866": {
+            "npcs": 97
+        }
+    },
+    "rotation": {
+        "pace": 10.2,
+        "actions": [
+            {
+                "action": 866,
+                "every": 10.2,
+                "comment": "13 uses"
+            },
+            {
+                "action": 83,
+                "every": 67.3,
+                "comment": "twice, on itself: Life Surge"
+            },
+            {
+                "action": 477,
+                "every": 120.0,
+                "comment": "once, on itself: status 65"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Nouveau Riche's lancer on your side (quest battle 13, BNpcBase 1640, BNpcName 122, layout 4293098): level 22, 1774 HP, ClassJob 4; the nearest add, then the boss. From Bob's Chronofoil capture caa5e908 (2026-10-30, one run of Nouveau Riche's quest battle 13, won, `questkit chronofoil --battle 0.13`, territory 232, duty 311; a level 27 player): `players` is the median damage to the player, `npcs` to NPCs, `every` the time between uses. Hitbox not recorded."
+}

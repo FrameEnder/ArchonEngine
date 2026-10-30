@@ -179,6 +179,35 @@ a quest's entering event, 0 for every other event (228 events across the capture
 
 ## The battles
 
+### Quest battle 13 — Nouveau Riche (`content/questbattle/13.lua`)
+
+* Quest 3862 (XxaUsa308_03862; the old 740's battle too) enters it from Laurentius (scene 8; territory 232, duty 311).
+  Territory 232's TerritoryType has the South Shroud's level, so its NPCs are layer `QB_XxaUsa308_002` of `fst_f1f3`,
+  with retail's layout IDs, levels, HP, positions, display and character data flags, looks and the start spot (40.19,
+  7.81, -9.13, facing -1.175) from Bob's Chronofoil capture caa5e908 (2026-10-30, `--battle 0.13`, one run, won; a
+  level 27 player): the boss (4293096, base 1639, BNpcName 2064, 4522 HP), three lancers with it (4293092, 4293093,
+  4293095, base 1642), a lancer (4293098, base 1640) and a gladiator (4293097, base 1646, BNpcName 80) on your side, the
+  second wave (archer 4293111 base 1644, thaumaturge 4293110 base 1643, lancer 4293109 base 1642, gladiator 4293099
+  base 1645, BNpcName 57) and two archers who come to help (4293125, 4293126, base 1641, BNpcName 139).
+* The flow (seconds from the fight starting): sequence 2 with the boss and its lancers (the boss and one on your lancer,
+  one on your gladiator, one on you); battle talk 86 (the boss) at 5 s and 87 (your gladiator) at 10 s. The three
+  lancers down, as the last one's death animation ends: sequence 3 and the second wave (archer and gladiator on your
+  gladiator, thaumaturge and lancer on you), the enemy gladiator's 88 10 s later and the boss's 89 15 s later. 30.0 s
+  after 3, sequence 4 and the archers, their 90 5.1 s later and the boss's 91 10.1 s later; 30.1 s after 4, sequence 5
+  and the second wave's archer, thaumaturge and lancer again (two on the first archer). The enemy gladiator's last
+  words (92) as its health reaches 0. The boss down: its 93, sequences 6 and 7 and "Duty Complete" at once, then scene 7
+  (0xF8402EFB); the quest moves to sequence 255. The opening scene's flags are 0xF8412EFB.
+* Your lancer takes the lancer on it, then the boss for good; your gladiator the one on it, then the newest arrivals,
+  Curing your side below 63 % (retail's at 44-69 %); the boss Cures itself below 68 % (retail's at 63-68 %); the archers
+  take the adds, then the boss. Whether sequences 4 and 5 wait for anything but the 30 s isn't known (one run; the
+  second wave was down by sequence 5).
+* Timelines `QB13*` (bases 1639-1646); action scripts `QuestBattleNpc_00077`, `QuestBattleNpc_00477`,
+  `QuestBattleNpc_00403` (also Presence of the Enemy's fourth ambusher's) and `QuestBattleNpc_01003`, their statuses'
+  durations guessed. `questkit battle-sim 13` checks the run (`13.json`): every step within 1 s.
+* The client's battle script (`GaiUsa308Btl_00740.luab`, Bob's dump of 2026-10-30) has scenes 1 (the opening cutscene)
+  and 7 (the closing one), OnSequence001 (the objective, no music) and OnSequence002 (its message); no 10001. The
+  director plays only 1 and 7.
+
 ### Quest battle 57 — Brotherly Love (`content/questbattle/57.lua`)
 
 * Quest 724 (GaiUsa201_00724) enters it from Claxio (scene 4; territory 303, duty 350). Territory 303 is taken to be a

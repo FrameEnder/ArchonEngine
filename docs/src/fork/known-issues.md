@@ -107,6 +107,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
+* **The Twelveswood's story, Spirited Away (725) to Into the Beast's Maw (514)** (2026-10-30, from Bob's dumps and
+  Chronofoil capture caa5e908): untested in game; each replays against its one retail run. Into the Beast's Maw needs
+  the Thousand Maws of Toto-Rak, which isn't in Kawari yet (the capture has a 27-minute run of it with Duty Support).
+  Sylphish Concerns' second destination's nibble (UI8CL) is a guess. The quests' humanoid enemies (BNpcBase 55, 61, 62,
+  64) use the Western Thanalan 4th Cohort's timelines (the same bases), not numbers from these fights.
 * **The Twelveswood's story, We Come in Peace (3856) to Brotherly Love (724)** (2026-10-30, from Bob's dumps and
   Chronofoil capture 5fcc970c): untested in game; each replays against its one retail run. Retail completed the old
   numbers of three (708, 717, 718) with the new ones, which Kawari does too (`mark_quest_completed`); what the old ones
@@ -610,6 +615,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quest battles and directors
 
+* **Nouveau Riche's battle (13)** (2026-10-30): untested in game, from one won run. Sequences 4 and 5 come 30 s apart
+  as on retail; whether either waits for the wave before it isn't known. The second wave comes back at sequence 5 only
+  where it has fallen.
 * **Brotherly Love's battle (57)** (2026-10-30): untested in game, from one won run (its client battle script, dumped
   2026-10-30, has only the opening and closing scenes and sequences 1-2's objective). What brings sequence 6 is read as the
   leader's health (the hit that took it from 43 to 35 %) and could as well be a timer (26.2 s after sequence 5); what

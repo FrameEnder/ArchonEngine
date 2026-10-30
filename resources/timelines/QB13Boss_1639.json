@@ -1,0 +1,32 @@
+{
+    "autoattack_action_id": 871,
+    "recorded_amounts": {
+        "871": {
+            "npcs": 36
+        },
+        "866": {
+            "npcs": 110
+        },
+        "120": {
+            "npcs": 233
+        }
+    },
+    "rotation": {
+        "pace": 11.2,
+        "actions": [
+            {
+                "action": 866,
+                "every": 11.2,
+                "comment": "11 uses"
+            },
+            {
+                "action": 77,
+                "every": 120.0,
+                "comment": "once, on itself: status 114 (40)"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Nouveau Riche's boss (quest battle 13, BNpcBase 1639, BNpcName 2064, layout 4293096): level 23, 4522 HP, ClassJob 4; on the lancer ally (4293098) the whole fight; Cure (120, the director's heals) on itself at 63-68 %, 233. From Bob's Chronofoil capture caa5e908 (2026-10-30, one run of Nouveau Riche's quest battle 13, won, `questkit chronofoil --battle 0.13`, territory 232, duty 311; a level 27 player): `players` is the median damage to the player, `npcs` to NPCs, `every` the time between uses. Hitbox not recorded."
+}

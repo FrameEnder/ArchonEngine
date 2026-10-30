@@ -1,0 +1,54 @@
+{
+    "autoattack_action_id": 873,
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "873": {
+            "npcs": 19
+        },
+        "97": {
+            "npcs": 33.5
+        },
+        "106": {
+            "npcs": 23
+        },
+        "18190": {
+            "npcs": 29.5
+        },
+        "100": {
+            "npcs": 19
+        }
+    },
+    "rotation": {
+        "pace": 7.5,
+        "actions": [
+            {
+                "action": 18190,
+                "every": 15.4,
+                "comment": "Straight Shot"
+            },
+            {
+                "action": 97,
+                "every": 15.0,
+                "comment": "Heavy Shot"
+            },
+            {
+                "action": 106,
+                "every": 15.4,
+                "comment": "Quick Nock"
+            },
+            {
+                "action": 100,
+                "refresh": 24.0,
+                "comment": "Venomous Bite"
+            },
+            {
+                "action": 101,
+                "every": 120.0,
+                "comment": "once, on itself: Raging Strikes"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Nouveau Riche's archers on your side (quest battle 13, BNpcBase 1641, BNpcName 139, layouts 4293125, 4293126; sequence 4): level 22, 986 HP, ClassJob 5. From Bob's Chronofoil capture caa5e908 (2026-10-30, one run of Nouveau Riche's quest battle 13, won, `questkit chronofoil --battle 0.13`, territory 232, duty 311; a level 27 player): `players` is the median damage to the player, `npcs` to NPCs, `every` the time between uses. Hitbox not recorded."
+}

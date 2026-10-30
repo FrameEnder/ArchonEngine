@@ -1,0 +1,37 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 94
+        },
+        "720": {
+            "npcs": 191
+        },
+        "1003": {
+            "npcs": 306
+        }
+    },
+    "rotation": {
+        "pace": 10.6,
+        "actions": [
+            {
+                "action": 720,
+                "every": 10.6,
+                "comment": "4 uses, around itself"
+            },
+            {
+                "action": 403,
+                "every": 21.2,
+                "comment": "twice, on itself: status 61 (50)"
+            },
+            {
+                "action": 1003,
+                "every": 60.0,
+                "comment": "once, 306 on the gladiator ally"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Nouveau Riche's gladiator (quest battle 13, BNpcBase 1645, BNpcName 57, layout 4293099): level 24, 1647 HP, ClassJob 3 (marauder kit); on the gladiator ally. From Bob's Chronofoil capture caa5e908 (2026-10-30, one run of Nouveau Riche's quest battle 13, won, `questkit chronofoil --battle 0.13`, territory 232, duty 311; a level 27 player): `players` is the median damage to the player, `npcs` to NPCs, `every` the time between uses. Hitbox not recorded."
+}

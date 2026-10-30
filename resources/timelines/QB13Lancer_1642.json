@@ -1,0 +1,25 @@
+{
+    "autoattack_action_id": 871,
+    "recorded_amounts": {
+        "871": {
+            "players": 22,
+            "npcs": 28
+        },
+        "866": {
+            "npcs": 94.5
+        }
+    },
+    "rotation": {
+        "pace": 9.8,
+        "actions": [
+            {
+                "action": 866,
+                "every": 9.8,
+                "comment": "9 uses over five of them"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Nouveau Riche's lancers (quest battle 13, BNpcBase 1642, BNpcName 546, layouts 4293092-4293095, level 22, 394 HP; 4293109, level 21, 366 HP), ClassJob 4. From Bob's Chronofoil capture caa5e908 (2026-10-30, one run of Nouveau Riche's quest battle 13, won, `questkit chronofoil --battle 0.13`, territory 232, duty 311; a level 27 player): `players` is the median damage to the player, `npcs` to NPCs, `every` the time between uses. Hitbox not recorded."
+}

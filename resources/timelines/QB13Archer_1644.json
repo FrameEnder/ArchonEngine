@@ -1,0 +1,54 @@
+{
+    "autoattack_action_id": 873,
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "873": {
+            "npcs": 35
+        },
+        "97": {
+            "npcs": 64
+        },
+        "106": {
+            "npcs": 37
+        },
+        "18190": {
+            "npcs": 52
+        },
+        "100": {
+            "npcs": 38.5
+        }
+    },
+    "rotation": {
+        "pace": 7.5,
+        "actions": [
+            {
+                "action": 101,
+                "every": 60.0,
+                "comment": "Raging Strikes on itself, as it comes"
+            },
+            {
+                "action": 106,
+                "every": 57.0,
+                "comment": "Quick Nock"
+            },
+            {
+                "action": 18190,
+                "every": 57.0,
+                "comment": "Straight Shot"
+            },
+            {
+                "action": 97,
+                "every": 55.0,
+                "comment": "Heavy Shot"
+            },
+            {
+                "action": 100,
+                "refresh": 24.0,
+                "comment": "Venomous Bite"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Nouveau Riche's archer (quest battle 13, BNpcBase 1644, BNpcName 2066, layout 4293111): level 21, 297 HP, ClassJob 5; on the gladiator ally. From Bob's Chronofoil capture caa5e908 (2026-10-30, one run of Nouveau Riche's quest battle 13, won, `questkit chronofoil --battle 0.13`, territory 232, duty 311; a level 27 player): `players` is the median damage to the player, `npcs` to NPCs, `every` the time between uses. Hitbox not recorded."
+}

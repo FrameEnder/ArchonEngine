@@ -1,0 +1,29 @@
+{
+    "autoattack_action_id": 0,
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "141": {
+            "players": 84,
+            "npcs": 103
+        },
+        "147": {
+            "npcs": 34.5
+        }
+    },
+    "rotation": {
+        "pace": 4.0,
+        "actions": [
+            {
+                "action": 147,
+                "comment": "Fire II, around the target"
+            },
+            {
+                "action": 141,
+                "comment": "Fire"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Nouveau Riche's thaumaturge (quest battle 13, BNpcBase 1643, BNpcName 2065, layout 4293110): level 21, 251 HP, ClassJob 7; two casts in each life. From Bob's Chronofoil capture caa5e908 (2026-10-30, one run of Nouveau Riche's quest battle 13, won, `questkit chronofoil --battle 0.13`, territory 232, duty 311; a level 27 player): `players` is the median damage to the player, `npcs` to NPCs, `every` the time between uses. Hitbox not recorded."
+}
