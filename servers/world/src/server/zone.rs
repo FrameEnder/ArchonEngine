@@ -1286,10 +1286,7 @@ pub fn change_zone_warp_to_entrance(
         .map(|rect| {
             let (_, rotation, _) = Affine3A::from(rect.transform).to_scale_rotation_translation();
             let facing = euler_to_direction(rotation.to_euler(EulerRot::XYZ));
-            tracing::info!(
-                "Players come in facing {facing} (entrance rect {})",
-                rect.instance_id
-            );
+            tracing::info!("The entrance rect {} faces {facing}", rect.instance_id);
             facing
         });
 
@@ -1317,16 +1314,22 @@ pub fn change_zone_warp_to_entrance(
             exit_rotation = None;
         }
     }
-    if entrance_rect_rotation.is_some() {
-        exit_rotation = entrance_rect_rotation;
-    } else if let Some(rotation) = target_instance
+    // Which way they face: a duty script's `ENTRANCE_ROTATION`, else retail's recorded facing (`entrance_facing.json`),
+    // else the entrance rect's, else the entrance object's. The rect's was wrong in most duties (Toto-Rak 0 for
+    // retail's 1.5708; Bob's bundle 20261030-165554.)
+    let script_rotation = target_instance
         .directors
         .iter()
         .find(|director| director.id.handler_type() == HandlerType::InstanceContent)
-        .and_then(|director| director.entrance_rotation())
-    {
-        // No entrance rect (the trials'): the duty's script says, from retail.
+        .and_then(|director| director.entrance_rotation());
+    let territory = target_instance.zone.id;
+    if let Some(rotation) = script_rotation {
         exit_rotation = Some(rotation);
+    } else if let Some(rotation) = crate::entrance_facing::entrance_facing(territory) {
+        tracing::info!("Players come in facing {rotation} (retail's, recorded for {territory})");
+        exit_rotation = Some(rotation);
+    } else if entrance_rect_rotation.is_some() {
+        exit_rotation = entrance_rect_rotation;
     }
 
     do_change_zone(

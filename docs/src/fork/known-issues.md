@@ -95,6 +95,13 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   the aethernet menu lists them at once without a re-login isn't checked. Rows with `Invisible` set outside the three
   cities' groups (later cities) are taken the same way, unverified.
 
+## Facing at a duty's entrance (2026-10-30)
+
+* Retail's facing is a recorded table ([Dungeons](dungeons.md#facing-at-the-entrance)); a duty not in it still faces
+  the way its entrance rect does, which was wrong in most duties checked. What retail's facing comes from isn't known.
+* Haukke Manor (1040) and six others weren't recorded (the player had already moved before the first position
+  update). Untested in game.
+
 ## Chocobo porters (2026-10-30)
 
 * Untested in game. Built from nine retail rides (three routes); see [Travel](travel.md#chocobo-porters).

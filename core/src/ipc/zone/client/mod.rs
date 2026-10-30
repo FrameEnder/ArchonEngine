@@ -606,7 +606,10 @@ pub enum ClientZoneIpcData {
     },
     /// A chocobo porter's ride passing one of its route's points (fork: Bob's Chronofoil captures cc62ad94, 1fac2416 and
     /// 2528a32d, nine rides): the ChocoboTaxi row and the point's number, 1, 2, 3...
-    ChocoboTaxiCheckpoint { taxi: u32, checkpoint: u32 },
+    ChocoboTaxiCheckpoint {
+        taxi: u32,
+        checkpoint: u32,
+    },
     /// A chocobo porter's ride at its end (fork, the same captures): the last checkpoint's number (13 for ChocoboTaxi 25.)
     ChocoboTaxiArrived {
         #[brw(pad_after = 4)]

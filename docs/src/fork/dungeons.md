@@ -14,6 +14,23 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | The Bowl of Embers (Ifrit) | 56 | 1045 | `content/w1fa_re.lua` | one run with Duty Support, two attempts (2026-10-27) |
 | The Thousand Maws of Toto-Rak | 1 | 1039 | `content/f1r1_re.lua` | one run with Duty Support (caa5e908) and two Duty Finder runs (1fac2416, 2528a32d), 2026-10-30 |
 
+## Facing at the entrance
+
+Retail turns players the same way every time they come into a given duty. Kawari had them face the way the
+InstanceContent's entrance rect faces (or, without one, the entrance circle), and that was wrong in most duties: the
+Thousand Maws of Toto-Rak 0 where retail turned them to 1.5708 (Bob's bundle 20261030-165554), the Copperbell Mines
+1.5708 for 1.7881, Sastasha -1.4752 for -1.6239; the Tam-Tara Deepcroft's 0 happened to be right. Why the rects
+differ from retail isn't known (there's no game data here to look at them with).
+
+So retail's facing is recorded, by territory, in `resources/data/entrance_facing.json` (`entrance_facing.rs`): 64
+territories from Bob's Chronofoil captures (June to October 2026), each either the ActorSetPos that put the player at
+the entrance or the rotation in the client's first position update, which came about a second after the zone loaded
+and before the player could turn. Every duty entered more than once had the same facing each time (Sastasha 8 times,
+the Copperbell Mines 6, Toto-Rak 3). Seven whose first update came more than 3 s in were left out (378, 522, 523, 580,
+581, 838 and Haukke Manor's 1040). What decides the facing, in order (`change_zone_warp_to_entrance`, coming in and
+after a wipe): a duty script's `ENTRANCE_ROTATION`, the recorded facing, the entrance rect's, the entrance object's.
+The server log says which: "Players come in facing … (retail's, recorded for …)" or "The entrance rect … faces …".
+
 ## Clear rewards
 
 What a cleared duty gives (`ZoneConnection::duty_clear_rewards`), as retail did in 14 clears of Sastasha, the Tam-Tara
@@ -131,10 +148,9 @@ last bosses' helpers (14449, 9020) are `nonpop`. Every kind fought has a timelin
 **Coming in.** Retail turned players to 1.788 at the entrance (all three runs, about (-254.4, 23.8, -170.7));
 Kawari turned them to 0, the way the entrance circle's own layout object (2000182, bound to 4085080) faces, which is
 how every InstanceContent was entered (the Sastasha and Tam-Tara runs in Bob's bundles too; Tam-Tara's retail
-facing happens to be 0). Players now face the way the InstanceContent's entrance rect does (its LGBEventRange
-column, an EventRange in the layout; Sapphire's `movePlayerToEntrance`), where the duty has one (`zone.rs`,
-`change_zone_warp_to_entrance`); the server log says which rect and facing it used ("Players come in facing").
-Not yet checked in game against 1.788 (no game data here; Bob's bundle of 2026-10-25).
+facing happens to be 0). Players then faced the way the InstanceContent's entrance rect does (its LGBEventRange
+column, an EventRange in the layout; Sapphire's `movePlayerToEntrance`), which gave 1.5708, still not retail's; since
+2026-10-30 they face retail's recorded 1.7881 ([Facing at the entrance](#facing-at-the-entrance)).
 
 **The way through.** Retail's DirectorVars (sequence 1 throughout): data 1 (the first byte after the flag and branch,
 `set_data(0, …)`; the script wrote each one byte higher, so the Duty Information window counted nothing, Bob's bundle
