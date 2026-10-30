@@ -19,8 +19,9 @@
 --   +10.1   sequence 5: the leader turns on you; Yda's 83 1.9 s later
 --   the leader at 35 % (43 -> 35, 26.2 s after sequence 5): sequence 6, Papalymo's 84
 --   every enemy but the beast down (the conjurer last, 99.9 s): sequence 7 at once (its health at 0, not its death
---           animation's end); 9.1 s later "Duty Complete" (60001) and sequence 8, the beast and Claxio taken away,
---           then the battle's scene 8 (0xF8402EFB); the quest moves to sequence 255
+--           animation's end); 2.5 s later the beast runs back the way it came, Yda and Papalymo after it; 9.1 s
+--           after sequence 7 "Duty Complete" (60001) and sequence 8, the beast and Claxio fade out (taken away 1.4 s
+--           later), then the battle's scene 8 (0xF8402EFB); the quest moves to sequence 255
 --   you down: sequence 0xFE
 -- How hard each hits is in their timelines (QB57*).
 
@@ -55,6 +56,11 @@ FAIL_DELAY_UPDATES = 12
 SEQUENCE_4_AFTER = 21
 SEQUENCE_5_AFTER = 20
 WON_AFTER = 19
+-- The beast gives up and runs back the way it came 2.5 s after sequence 7 (retail's last hit at 1.8 s, its first step
+-- at 2.5 s), and is faded out as "Duty Complete" plays, then taken away 1.4 s later, with Claxio (ActorControl 607
+-- from each, then their DeleteActors 1.4 s on; Bob's Chronofoil capture 5fcc970c.)
+RETREAT_AFTER = 6
+FADE_SECONDS = 1.4
 -- Retail's director answered the first thaumaturge's death 2 s after its health reached 0, as the death animation
 -- ended; the last add's at once (sequence 7 came with its health at 0, its Defeated 2 s later.)
 DEATH_ANIMATION_UPDATES = 4
@@ -241,14 +247,18 @@ end
 -- Every enemy but the beast down.
 function allDown(director)
     director:set_sequence(SEQUENCE_ADDS_DOWN)
+    -- Yda and Papalymo chase it as it goes (retail's kept after it until the closing scene.)
+    after(RETREAT_AFTER, function(d) d:retreat_bnpc(BNPC_BEAST) end)
     after(WON_AFTER, function(d)
         over = true
         timers = {}
         d:set_sequence(SEQUENCE_WON)
-        -- Retail took the beast and Claxio away as "Duty Complete" played, before the closing scene.
+        d:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN, false, FINISH_SCENE, FINISH_SCENE_FLAGS)
+        d:fade_out_bnpc(BNPC_BEAST)
+        d:fade_out_bnpc(BNPC_CLAXIO)
+        d:delay(FADE_SECONDS)
         d:despawn_bnpc(BNPC_BEAST)
         d:despawn_bnpc(BNPC_CLAXIO)
-        d:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN, false, FINISH_SCENE, FINISH_SCENE_FLAGS)
     end)
 end
 

@@ -261,6 +261,18 @@ pub enum ActorControlCategory {
         action_timeline: u32,
     },
 
+    /// Fades an NPC out before it's taken away (a DeleteActor 0.6-1.4 s later), when it leaves without dying: retail's
+    /// `[itself, 1, 0, 100]` for Brotherly Love's beast, Claxio and the fallen conjurer as "Duty Complete" played (Bob's
+    /// Chronofoil capture 5fcc970c), and before most despawns of living NPCs in his other captures (also seen:
+    /// `[itself, 2, 197, 100]` and `[itself, 1, 0, 300]`; what `kind`, `unk` and `time` mean isn't known.)
+    #[brw(magic = 607u32)]
+    FadeOut {
+        actor: ObjectId,
+        kind: u32,
+        unk: u32,
+        time: u32,
+    },
+
     /// The next ActorMove puts the character there at once rather than walking it: the client's handler (2026.10.16,
     /// case 0xEF) sets a flag in its MoveController. Retail sent it right before each ActorMove that landed Kottos'
     /// jumps (Bob's Copperbell Mines captures of 2026-10-25.)

@@ -174,6 +174,8 @@ pub struct Instance {
     pub unaware_npcs: std::collections::HashSet<u32>,
     /// Open-world NPCs and whom they couldn't get to, until when they leave them alone (`npc_behavior`.)
     pub unreachable: HashMap<(ObjectId, ObjectId), std::time::Instant>,
+    /// NPCs a wall has stopped, and for how many behaviour ticks in a row (`npc_behavior`, `NPC_WALL_PATIENCE_TICKS`.)
+    pub walled_ticks: HashMap<ObjectId, u32>,
     /// NPCs a director spawned hidden that come into view a little later (`director:appear_bnpc`.)
     pub pending_appearances: Vec<crate::server::director::PendingAppearance>,
     /// The GATE the Gold Saucer is showing (its screens, its entrance's NPC), see `server/gate.rs`.

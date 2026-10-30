@@ -616,7 +616,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   happens if you don't fight, or the leader falls first, isn't known. The beast's 604 is a hit to 20 % of Yda's and
   Papalymo's HP, cast once by the director: retail's effect on them was kind 48 (unknown to Kawari; a knockback? they
   moved 26-37 yalms over the fight), the first left both at exactly 80 % and the second took nothing. Yda's 63 and
-  Papalymo's 151 durations are guesses, and the statuses they give aren't scripted.
+  Papalymo's 151 durations are guesses, and the statuses they give aren't scripted. Played by Bob (bundles
+  20261030-110117 and -110334): Yda stopped short of the beast for good (a wall; NPCs in content now walk on through
+  one after 2 s, not yet tested in game) and the beast vanished at the end instead of running off and fading (it runs
+  home and fades now, at Kawari's run speed, not retail's slower one; NPCs have no speed of their own yet). Where the
+  wall was isn't known: the server logs the next one (`held up by a wall`).
 * **AoE amounts from Chronofoil runs before 2026-10-30**: questkit read AoeEffects' effects six bytes off (fixed), so
   timelines' `recorded_amounts` for area actions taken from those runs' reports (Like Mother, Like Daughter's 1684s'
   440, others) should be read again from their runs.

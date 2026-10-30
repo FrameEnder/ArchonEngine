@@ -286,6 +286,17 @@ pub enum LuaDirectorTask {
         category: u32,
         params: [u32; 4],
     },
+    /// Fade a BNpc (actor ID or layout ID) out, as retail does before taking away one that leaves without dying
+    /// (ActorControl `FadeOut`, 607); the script despawns it a moment later (`despawn_bnpc`.)
+    FadeOutBattleNpc {
+        who: u32,
+    },
+    /// A BNpc (actor ID or layout ID) gives up the fight and runs back to where it appeared, paying no attention to
+    /// anyone (as an enemy leashed in the open world does; it keeps its health): Brotherly Love's beast as its friends
+    /// fell (Bob's Chronofoil capture 5fcc970c.)
+    RetreatBattleNpc {
+        who: u32,
+    },
     /// Bring a BNpc spawned hidden (its display flags have INVISIBLE, as retail's spawn had) into view `delay` seconds
     /// from now: ActorControl `Appear` (a fade-in, and `action_timeline` played on it) then `SetTargetable`, as retail
     /// did for the Copperbell Mines' ambushing gigas (158, 0.6-0.9 s after their spawn; Bob's captures of 2026-10-25.)
@@ -896,6 +907,14 @@ impl UserData for LuaDirector {
                 Ok(())
             },
         );
+        methods.add_method_mut("fade_out_bnpc", |_, this, who: u32| {
+            this.tasks.push(LuaDirectorTask::FadeOutBattleNpc { who });
+            Ok(())
+        });
+        methods.add_method_mut("retreat_bnpc", |_, this, who: u32| {
+            this.tasks.push(LuaDirectorTask::RetreatBattleNpc { who });
+            Ok(())
+        });
         methods.add_method_mut("release_bnpc", |_, this, who: u32| {
             this.tasks.push(LuaDirectorTask::ReleaseBattleNpc { who });
             Ok(())
@@ -2584,6 +2603,65 @@ pub fn director_tick(
                     ActorControlCategory::SetModelScale {
                         model_scale_id: *model_scale_id,
                     },
+                );
+            }
+            LuaDirectorTask::FadeOutBattleNpc { who } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to fade out!");
+                    continue;
+                };
+                network.lock().send_ac_in_range_instance(
+                    instance,
+                    actor_id,
+                    ActorControlCategory::FadeOut {
+                        actor: actor_id,
+                        kind: 1,
+                        unk: 0,
+                        time: 100,
+                    },
+                );
+            }
+            LuaDirectorTask::RetreatBattleNpc { who } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to send back!");
+                    continue;
+                };
+                if let Some(NetworkedActor::Npc {
+                    spawn,
+                    state,
+                    enmity,
+                    navmesh_target,
+                    navmesh_path,
+                    navmesh_path_lerp,
+                    last_position,
+                    returning_home,
+                    home,
+                    cast,
+                    ..
+                }) = instance.find_actor_mut(actor_id)
+                {
+                    if *state == crate::server::NpcState::Dead {
+                        continue;
+                    }
+                    enmity.clear();
+                    *state = crate::server::NpcState::natural_state_of(spawn);
+                    *navmesh_target = Some(crate::server::actor::NpcTarget::Position(*home));
+                    navmesh_path.clear();
+                    *navmesh_path_lerp = 0.0;
+                    *last_position = Some(spawn.common.position.0);
+                    *returning_home = true;
+                    *cast = None;
+                    spawn.common.target_id = ObjectTypeId::default();
+                }
+                network.lock().send_in_range_instance(
+                    actor_id,
+                    instance,
+                    FromServer::ActorControlTarget(
+                        actor_id,
+                        ObjectTypeId::default(),
+                        ActorControlCategory::SetTarget,
+                    ),
+                    DestinationNetwork::ZoneClients,
                 );
             }
             LuaDirectorTask::ReleaseBattleNpc { who } => {

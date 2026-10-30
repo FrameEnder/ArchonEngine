@@ -76,6 +76,12 @@ pub const BEHAVIOR_TICK_SECONDS: f32 = 0.5;
 /// How far (in yalms) an enemy will chase from where it spawned before giving up, going home and healing up.
 /// TODO: per enemy, from Kawari Recorder's "World" recording (gave up at ~N yalms from spawn.)
 const LEASH_DISTANCE: f32 = 40.0;
+/// How many behaviour ticks (half a second each) an NPC in content, or a pet, waits at a wall before walking on
+/// through it, as party bots do (`party_bot::WALL_PATIENCE`, 2 s). Yda stood 16 yalms from the beast she was sent after
+/// for the rest of Brotherly Love's battle (Bob's bundles 20261030-110117 and -110334): her path ended where the
+/// navmesh did, the rest went straight, and the collision stopped every step of it; with the path never used up she
+/// never planned another. Retail's NPCs aren't held up like that.
+const NPC_WALL_PATIENCE_TICKS: u32 = 4;
 
 /// How long (in behaviour ticks) an enemy goes without reaching the one it's after, who's beyond `LEASH_DISTANCE` of
 /// its home, before giving up: 7 s, the shortest chase before retail's enemies gave up (Bob's Chronofoil captures.)
@@ -199,6 +205,8 @@ pub fn npc_behavior(
     instance.busy_npcs.retain(|_, until| *until > busy_now);
     // NPCs whose step a wall or a drop cut short this tick: their path goes on from where they stopped.
     let mut walled: HashSet<ObjectId> = HashSet::new();
+    // Every NPC a wall stopped this tick, whether or not it then walked on through it (`NPC_WALL_PATIENCE_TICKS`.)
+    let mut blocked: HashSet<ObjectId> = HashSet::new();
 
     // const pass
     for (id, actor) in &instance.actors {
@@ -333,10 +341,27 @@ pub fn npc_behavior(
                             OPEN_WORLD_MAX_DROP
                         };
                         let walk = collision.walk(spawn.common.position.0, along, max_drop);
+                        let walled_for = instance.walled_ticks.get(id).copied().unwrap_or_default();
                         if walk.blocked {
-                            walled.insert(*id);
+                            blocked.insert(*id);
                         }
-                        Position(walk.at)
+                        if walk.blocked && goes_anywhere && walled_for >= NPC_WALL_PATIENCE_TICKS {
+                            if walled_for == NPC_WALL_PATIENCE_TICKS {
+                                tracing::info!(
+                                    "NPC {} (layout {}) held up by a wall at {:?} for {} ticks: walking on through",
+                                    id.0,
+                                    spawn.common.layout_id,
+                                    spawn.common.position.0,
+                                    walled_for
+                                );
+                            }
+                            Position(along)
+                        } else {
+                            if walk.blocked {
+                                walled.insert(*id);
+                            }
+                            Position(walk.at)
+                        }
                     }
                     None => Position(along),
                 };
@@ -384,6 +409,12 @@ pub fn npc_behavior(
                 ));
             }
         }
+    }
+
+    // How long each has been stopped by a wall, in a row.
+    instance.walled_ticks.retain(|id, _| blocked.contains(id));
+    for id in &blocked {
+        *instance.walled_ticks.entry(*id).or_default() += 1;
     }
 
     let mut newly_acquired_targets = Vec::new();

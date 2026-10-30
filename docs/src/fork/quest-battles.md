@@ -60,6 +60,8 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `restart_timeline(npc, anchor)` | Starts a `from_pull` timeline's clock again from now for its points `after` `anchor` (an action's ID, as a point with `restarts` does, or any number the timeline uses for a phase), so the director begins a boss's phase: Ifrit's at 80 % and 50 % (his lines' text IDs, 2601 and 2602) and after Hellfire (458). |
 | `move_bnpc(npc, x, y, z, rotation)` | One ActorMove there (no snap), which the client walks the NPC along: the last Copperbell boss going to the middle for 28760. |
 | `hold_bnpc(npc, held)` | Holds an NPC (actor ID or layout ID; `held` defaults to true): `npc_behavior` leaves it alone (no noticing, chasing, timeline or enmity on players), so it does only what the director has it do, as retail's boss helpers (`Instance::held_npcs`). |
+| `fade_out_bnpc(npc)` | Fades an NPC (actor ID or layout ID) out, as retail does before taking away one that leaves without dying: ActorControl `FadeOut` (607) `[itself, 1, 0, 100]` from it; despawn it a moment later (retail's DeleteActor came 0.6-1.4 s after). Brotherly Love's beast and Claxio as "Duty Complete" played. |
+| `retreat_bnpc(npc)` | The NPC gives up the fight and runs back to where it appeared, paying no attention to anyone (an open-world leash's return: enmity cleared every tick, its target dropped, no health back in content). Whoever was after it can chase it. Brotherly Love's beast as its friends fell. |
 | `release_bnpc(npc)` | ActorControl 417 with no one (0xE0000000) from the NPC, as retail let each boss helper go the moment its boss died. |
 | `set_model_scale(npc, row)` | Draws an NPC at another ModelScale row (ActorControl 48, `SetModelScale`), as retail grew the second Copperbell boss (16, 17, 18). |
 | `actor_use_action(actor_id, action, target_actor_id)` | `use_action` by actor IDs; with no target the NPC casts on itself, as retail's helpers do (an area attack cast on oneself lands on everyone inside it the caster's battalion is at war with, `action.rs`). |
@@ -196,9 +198,12 @@ a quest's entering event, 0 for every other event (228 events across the capture
   to you and take on the beast; Papalymo's 81 2 s later, the beast's 604 at them 3.9 s later, Claxio's 82 7 s later,
   Yda's 85 and Papalymo's 86 together 8 s later. 10.1 s after 4, sequence 5: the leader turns on you; Yda's 83 1.9 s
   later. The leader at 35 % (the hit that took it from 43 to 35): sequence 6 and Papalymo's 84. Every enemy but the beast
-  down: sequence 7 at once (the last one's health at 0, not its death animation's end); 9.1 s later "Duty Complete"
-  and sequence 8, the beast and Claxio taken away, then the battle's scene 8 (0xF8402EFB); the quest moves to sequence
-  255. The opening scene's flags are 0xF8412EFB.
+  down: sequence 7 at once (the last one's health at 0, not its death animation's end); 2.5 s later the beast runs back
+  the way it came (toward where it appeared, at speed bytes 40 then 32: Kawari's run is 60) with Yda and Papalymo after
+  it (`retreat_bnpc`); 9.1 s after sequence 7 "Duty Complete" and sequence 8, ActorControl 607 from the beast, Claxio
+  and the fallen conjurer, their DeleteActors 0.6-1.4 s later (`fade_out_bnpc`, then `despawn_bnpc`; until
+  2026-10-30 the beast and Claxio just vanished, Bob's bundle 20261030-110334), then the battle's scene 8
+  (0xF8402EFB); the quest moves to sequence 255. The opening scene's flags are 0xF8412EFB.
 * The beast's first 604 left Yda and Papalymo at exactly 80 % (their EffectResults 1.2 s after its AoeEffect, whose
   effect on each was kind 48, with 63 and 52: a kind Kawari doesn't know); its second, 30.7 s later, took nothing. Here
   the director casts it once, a hit scaled to 20 % of their HP (`QB57Beast_00604`); Yda's and Papalymo's lines 85
