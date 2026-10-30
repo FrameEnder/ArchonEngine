@@ -16,6 +16,10 @@
 //! enemies walk where players walk. The navmesh is built without them (they'd cut it for good.) Bob's bundles of
 //! 2026-10-27: the Copperbell Mines' bots held up at the entrance, the Tam-Tara Deepcroft's for 42 and 81 s at the
 //! first room while he walked on.
+//!
+//! **Materials.** Each triangle keeps its PCB polygon's material (since version 3), which says what the floor is: the
+//! Thousand Maws of Toto-Rak's slime is its own surface, and standing on it gives a status (`server/status_floor.rs`).
+//! Version 2 files (no materials) are still read; a zone that needs them has its navmesh made again.
 
 use std::sync::{Arc, Mutex, OnceLock, Weak};
 use std::{collections::HashMap, path::Path};
@@ -24,7 +28,9 @@ use glam::Vec3A;
 
 /// The file's first bytes, and the layout's version.
 const MAGIC: &[u8; 4] = b"KCOL";
-const VERSION: u32 = 2;
+const VERSION: u32 = 3;
+/// The version before materials, still read (without them.)
+const VERSION_WITHOUT_MATERIALS: u32 = 2;
 
 /// The grid the triangles are filed in (yalms a side.)
 const CELL: f32 = 2.0;
@@ -63,6 +69,8 @@ pub struct Collision {
     gimmicks: Arc<[u32]>,
     /// For each triangle, its gimmick (an index into `gimmicks`, plus one), or 0 for the zone's own.
     owners: Arc<[u32]>,
+    /// For each triangle, its PCB polygon's material; empty when the file has none (version 2.)
+    materials: Arc<[u64]>,
     /// Which gimmicks are gone here (by index into `gimmicks`.)
     gone: Vec<bool>,
     /// Which gimmicks the director has put up here (shown: a boss room sealed), which nobody gets through.
@@ -97,18 +105,28 @@ impl Collision {
         vertices: Vec<[f32; 3]>,
         triangles: Vec<[u32; 3]>,
         owners: Vec<u32>,
+        materials: Vec<u64>,
         climb: f32,
         radius: f32,
         max_slope: f32,
     ) -> Self {
         let mut gimmicks: Vec<u32> = Vec::new();
-        let (triangles, owners): (Vec<[u32; 3]>, Vec<u32>) = triangles
-            .into_iter()
+        let kept: Vec<usize> = triangles
+            .iter()
             .enumerate()
             .filter(|(_, tri)| {
                 tri.iter().all(|i| (*i as usize) < vertices.len())
                     && normal(&vertices, tri).length_squared() > 1e-12
             })
+            .map(|(index, _)| index)
+            .collect();
+        let materials: Vec<u64> = kept
+            .iter()
+            .map(|index| materials.get(*index).copied().unwrap_or(0))
+            .collect();
+        let (triangles, owners): (Vec<[u32; 3]>, Vec<u32>) = kept
+            .into_iter()
+            .map(|index| (index, triangles[index]))
             .map(|(index, tri)| {
                 let layout = owners.get(index).copied().unwrap_or(0);
                 if layout == 0 {
@@ -149,6 +167,7 @@ impl Collision {
             sealed: vec![false; gimmicks.len()],
             gimmicks: gimmicks.into(),
             owners: owners.into(),
+            materials: materials.into(),
             ..Default::default()
         };
 
@@ -234,13 +253,21 @@ impl Collision {
         for value in self.gimmicks.iter().chain(self.owners.iter()) {
             out.extend_from_slice(&value.to_le_bytes());
         }
+        for index in 0..self.triangles.len() {
+            let material = self.materials.get(index).copied().unwrap_or(0);
+            out.extend_from_slice(&material.to_le_bytes());
+        }
         out
     }
 
     /// Reads a file written by `to_bytes`, or None if it isn't one (or is another version.)
     pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
         let mut r = Reader { bytes, at: 0 };
-        if r.take(4)? != MAGIC || r.u32()? != VERSION {
+        if r.take(4)? != MAGIC {
+            return None;
+        }
+        let version = r.u32()?;
+        if version != VERSION && version != VERSION_WITHOUT_MATERIALS {
             return None;
         }
         let climb = r.f32()?;
@@ -298,6 +325,13 @@ impl Collision {
             }
             owners.push(owner);
         }
+        let mut materials = Vec::new();
+        if version == VERSION {
+            materials.reserve(triangle_count);
+            for _ in 0..triangle_count {
+                materials.push(r.u64()?);
+            }
+        }
         let mut collision = Self {
             climb,
             radius,
@@ -314,6 +348,7 @@ impl Collision {
             sealed: vec![false; gimmicks.len()],
             gimmicks: gimmicks.into(),
             owners: owners.into(),
+            materials: materials.into(),
         };
         collision.find_floors();
         Some(collision)
@@ -326,7 +361,10 @@ impl Collision {
         let path = path_for(nvm_path);
         let key = path.to_string_lossy().to_string();
         let mut loaded = LOADED.get_or_init(Default::default).lock().ok()?;
-        if let Some(collision) = loaded.get(&key).and_then(Weak::upgrade) {
+        // One already loaded, unless it's an older one without materials that's been made again since.
+        if let Some(collision) = loaded.get(&key).and_then(Weak::upgrade)
+            && (collision.has_materials() || !is_current(&path))
+        {
             return Some(collision);
         }
         let bytes = std::fs::read(&path).ok()?;
@@ -411,6 +449,35 @@ impl Collision {
                 && best.is_none_or(|best| y > best)
             {
                 best = Some(y);
+            }
+        }
+        best
+    }
+
+    /// Whether the file had the triangles' materials (version 3 on.)
+    pub fn has_materials(&self) -> bool {
+        !self.materials.is_empty() || self.triangles.is_empty()
+    }
+
+    /// The highest floor at (x, z) between `bottom` and `top`, with its triangle's material (0 when unknown), or None.
+    pub fn floor_material(&self, x: f32, z: f32, top: f32, bottom: f32) -> Option<(f32, u64)> {
+        if !self.covers(x, z) {
+            return None;
+        }
+        let cell = self.cells_over(&[x, z, x, z]).next()?;
+        let mut best: Option<(f32, u64)> = None;
+        for index in self.cell_triangles(cell) {
+            if !self.floors[*index as usize] || self.is_gone(*index) {
+                continue;
+            }
+            let [a, b, c] = self.triangle(*index);
+            if let Some(y) = height_at(a, b, c, x, z)
+                && y <= top
+                && y >= bottom
+                && best.is_none_or(|(best, _)| y > best)
+            {
+                let material = self.materials.get(*index as usize).copied().unwrap_or(0);
+                best = Some((y, material));
             }
         }
         best
@@ -633,6 +700,10 @@ impl<'a> Reader<'a> {
         Some(u32::from_le_bytes(self.take(4)?.try_into().ok()?))
     }
 
+    fn u64(&mut self) -> Option<u64> {
+        Some(u64::from_le_bytes(self.take(8)?.try_into().ok()?))
+    }
+
     fn f32(&mut self) -> Option<f32> {
         Some(f32::from_le_bytes(self.take(4)?.try_into().ok()?))
     }
@@ -737,7 +808,7 @@ mod tests {
     fn world(build: impl FnOnce(&mut Vec<[f32; 3]>, &mut Vec<[u32; 3]>)) -> Collision {
         let (mut v, mut t) = (Vec::new(), Vec::new());
         build(&mut v, &mut t);
-        let collision = Collision::build(v, t, Vec::new(), 0.75, 0.4, 55.0);
+        let collision = Collision::build(v, t, Vec::new(), Vec::new(), 0.75, 0.4, 55.0);
         // The file reads back as it was written.
         let again = Collision::from_bytes(&collision.to_bytes()).unwrap();
         assert_eq!(again.triangles, collision.triangles);
@@ -846,6 +917,32 @@ mod tests {
     }
 
     #[test]
+    fn floors_keep_their_material() {
+        // A floor (material 7), and a raised patch of slime on it (material 0x1234), as in Toto-Rak's last room.
+        let (mut v, mut t) = (Vec::new(), Vec::new());
+        floor_quad(&mut v, &mut t, -10.0, -10.0, 10.0, 10.0, 0.0);
+        let floor = t.len();
+        floor_quad(&mut v, &mut t, 2.0, 2.0, 4.0, 4.0, 0.2);
+        let mut materials = vec![7; floor];
+        materials.resize(t.len(), 0x1234);
+        let built = Collision::build(v, t, Vec::new(), materials, 0.75, 0.4, 55.0);
+        let c = Collision::from_bytes(&built.to_bytes()).unwrap();
+        assert!(c.has_materials());
+        assert_eq!(c.floor_material(0.0, 0.0, 0.5, -0.5), Some((0.0, 7)));
+        assert_eq!(c.floor_material(3.0, 3.0, 0.7, -0.3), Some((0.2, 0x1234)));
+        // In the air: no floor near enough.
+        assert_eq!(c.floor_material(0.0, 0.0, 3.5, 2.5), None);
+
+        // A version 2 file (no materials) still reads, without them.
+        let mut old = built.to_bytes();
+        old[4..8].copy_from_slice(&2u32.to_le_bytes());
+        old.truncate(old.len() - 8 * built.triangles.len());
+        let c = Collision::from_bytes(&old).unwrap();
+        assert!(!c.has_materials());
+        assert_eq!(c.floor_material(3.0, 3.0, 0.7, -0.3), Some((0.2, 0)));
+    }
+
+    #[test]
     fn a_gimmick_stops_walkers_until_it_is_gone() {
         // A barrier (event object 4100000's gimmick) across the floor at x = 3.
         let (mut v, mut t) = (Vec::new(), Vec::new());
@@ -854,7 +951,7 @@ mod tests {
         wall_x(&mut v, &mut t, 3.0, -10.0, 10.0, 0.0, 4.0);
         let mut owners = vec![0; floor];
         owners.resize(t.len(), 4100000);
-        let built = Collision::build(v, t, owners, 0.75, 0.4, 55.0);
+        let built = Collision::build(v, t, owners, Vec::new(), 0.75, 0.4, 55.0);
         let mut c = Collision::from_bytes(&built.to_bytes()).unwrap();
         assert_eq!(c.owners, built.owners);
         assert!(c.has_gimmick(4100000) && !c.has_gimmick(1));
@@ -911,7 +1008,7 @@ mod tests {
         wall_x(&mut v, &mut t, 3.0, -10.0, 10.0, 0.0, 4.0);
         let mut owners = vec![0; floor];
         owners.resize(t.len(), 77);
-        let mut c = Collision::build(v, t, owners, 0.75, 0.4, 55.0);
+        let mut c = Collision::build(v, t, owners, Vec::new(), 0.75, 0.4, 55.0);
         let walk = c.walk(Vec3A::ZERO, Vec3A::new(8.0, 0.0, 0.0), 50.0);
         assert_eq!((walk.gimmick, walk.sealed), (Some(77), false));
         c.set_gimmick_sealed(77, true);

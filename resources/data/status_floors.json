@@ -1,0 +1,31 @@
+{
+    "comment": "Floors that give a status while a player stands on them, by territory: retail's server gives it as a player steps onto one (ActorControl 20 GainEffect [status, param, 0] and a StatusEffectList with it, source 0xE0000000, no time limit) and takes it away as they step off (ActorControl 21 LoseEffect [status, param, 0xE0000000]). The floor is its own surface in the zone's collision, with its own PCB material, so each entry names points recorded on retail standing on it (inside) and next to it (outside): Kawari reads the materials of the floor at the inside points from the zone's collision, and checks that none of the outside points have one of them. The Thousand Maws of Toto-Rak (1039): the slime at the last room's entrance and on the boss's platform gives status 67 with param 30 (Bob's Chronofoil captures caa5e908, 1fac2416 and 2528a32d, 2026-10-30: given 17 times, 5 of them to the recording player; the points are the recording player's own position updates.) See docs/src/fork/dungeons.md.",
+    "territories": {
+        "1039": [
+            {
+                "status": 67,
+                "param": 30,
+                "inside": [
+                    [201.21, -39.27, -143.65],
+                    [202.46, -38.95, -143.54],
+                    [203.86, -39.08, -143.13],
+                    [205.18, -39.51, -142.67],
+                    [205.71, -39.54, -139.21],
+                    [229.75, -39.04, -148.53],
+                    [228.45, -38.98, -151.30],
+                    [227.84, -39.13, -150.92]
+                ],
+                "outside": [
+                    [197.68, -39.71, -143.15],
+                    [201.40, -39.65, -139.63],
+                    [210.49, -39.29, -138.93],
+                    [211.15, -39.29, -140.39],
+                    [222.44, -39.29, -144.24],
+                    [225.18, -39.29, -145.03],
+                    [230.13, -39.29, -144.58],
+                    [234.76, -39.29, -144.66]
+                ]
+            }
+        ]
+    }
+}

@@ -641,6 +641,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   how often they tick (3 s) and their 15 s are from the StatusEffectList, and 1355's and 1360's 345 and 364 were seen
   on few targets. 346 (1359) reached nobody and does nothing.
 * Duty Support's Lancer (41) at 24 has a guessed 639 HP.
+* The slime's status 67 (2026-10-30) is untested in game: whether the slime's PCB material is its own (not the
+  floor's around it) can only be seen on a server with the game (the log names the materials, or says the floor was
+  left out). Party NPCs don't get it (whether retail's Duty Support members did wasn't recorded). The first entry
+  into Toto-Rak after this update makes its navmesh again (a minute or so) for the materials.
 
 ## The Bowl of Embers
 

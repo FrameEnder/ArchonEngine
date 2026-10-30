@@ -223,6 +223,10 @@ pub struct Instance {
     pub loot_rule: crate::server::duty_finder::LootRule,
     /// The players' jumps and falls, for fall damage (`fall.rs`.)
     pub falls: HashMap<ObjectId, crate::server::fall::FallState>,
+    /// The floors here that give a status (`status_floor.rs`), once found in the collision.
+    pub status_floors: Option<Vec<crate::server::status_floor::StatusFloor>>,
+    /// The status (and its param) each player has from the floor they stand on.
+    pub on_status_floor: HashMap<ObjectId, (u16, u16)>,
     /// The battle NPCs of the zone's own layout, spawned as the instance was made (not by its director): in a duty
     /// they drop gil when another player is there (`actor::kill_gil`.)
     pub layout_npcs: HashSet<ObjectId>,
@@ -291,12 +295,28 @@ impl Instance {
                     );
                 }
                 instance.collision = crate::collision::Collision::load_shared(&nvm_path);
+                // A zone with floors that give a status needs its collision's materials (version 3): an older one
+                // is made again.
+                let needs_materials = crate::server::status_floor::has_floors(instance.zone.id)
+                    && instance
+                        .collision
+                        .as_ref()
+                        .is_some_and(|collision| !collision.has_materials());
+                if needs_materials {
+                    tracing::info!(
+                        "{nvm_path:?}'s collision has no materials (for its status floors), so it's made again"
+                    );
+                }
                 // A navmesh made before the collision was written with it: made again (both), keeping this one
                 // until then. NPCs keep to the navmesh's floor meanwhile.
-                if instance.collision.is_none() && config.world.generate_navmesh {
-                    tracing::info!(
-                        "{nvm_path:?} has no collision yet, so it's made again with one"
-                    );
+                if (instance.collision.is_none() || needs_materials)
+                    && config.world.generate_navmesh
+                {
+                    if instance.collision.is_none() {
+                        tracing::info!(
+                            "{nvm_path:?} has no collision yet, so it's made again with one"
+                        );
+                    }
                     instance.generate_navmesh =
                         NavmeshGenerationStep::Needed(nvm_path.to_str().unwrap().to_string());
                 }
@@ -660,6 +680,8 @@ impl Instance {
 
     /// A collision just loaded: the gimmicks already gone here go from it too.
     pub fn collision_loaded(&mut self) {
+        // Its floors' materials are found again.
+        self.status_floors = None;
         let Some(collision) = &self.collision else {
             return;
         };

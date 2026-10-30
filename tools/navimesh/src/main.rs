@@ -495,6 +495,7 @@ fn main() {
         geometry.vertices,
         geometry.triangles,
         geometry.owners,
+        geometry.materials,
         navimesh_row.AgentMaxClimb,
         navimesh_row.AgentRadius,
         navimesh_row.AgentMaxSlope,
@@ -521,6 +522,8 @@ struct Geometry {
     triangles: Vec<[u32; 3]>,
     /// For each triangle, the layout ID of the event object whose gimmick it belongs to, or 0.
     owners: Vec<u32>,
+    /// For each triangle, its PCB polygon's material (what the floor is: the slime in the Thousand Maws of Toto-Rak.)
+    materials: Vec<u64>,
 }
 
 /// Represents the heightfield of a tile.
@@ -550,6 +553,7 @@ fn walk_node(node: &Node, transform: &Affine3A, owner: u32, geometry: &mut Geome
                 first + indices[2] as u32,
             ]);
             geometry.owners.push(owner);
+            geometry.materials.push(polygon.material);
         }
     }
 

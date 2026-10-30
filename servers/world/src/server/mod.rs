@@ -113,6 +113,7 @@ mod placement;
 mod rotation;
 mod social;
 mod spawn_allocator;
+mod status_floor;
 mod wipe;
 mod zone;
 
@@ -2176,6 +2177,7 @@ pub async fn server_main_loop(
                             fall::player_moved(
                                 &network, instance, actor_id, position, anim_state, jump_state,
                             );
+                            status_floor::player_moved(&network, instance, actor_id, position);
                         }
 
                         // Send actor move!

@@ -355,6 +355,20 @@ the boss stands, the boss gets ActorControl 31 `[0, 0, 0, 1]` and 30 `[0, 1, the
 comes; while the tail stands 702 again every 30.8 s; the tail's death: ActorControl 20 `[64]`, 30 `[0, 2, the tail, 1]`
 and 31 `[0, 0, 0, 0]` on the boss (`bnpc_control`). What 30 and 31 do isn't known (Kawari has no name for them).
 
+**The slime** (`server/status_floor.rs`, `resources/data/status_floors.json`; Bob's bundle 20261030-171016: it gave
+nothing). The slime at the last room's entrance (x about 199 to 207.5, z -137.5 to -144) and in patches on the boss's
+platform (about (228, -150)) gives status 67 with param 30 while a player stands on it: ActorControl 20 (GainEffect)
+`[67, 30, 0]` and a StatusEffectList with it (source 0xE0000000, no time limit) as they step on, ActorControl 21
+(LoseEffect) `[67, 30, 0xE0000000]` and the list as they step off, within a quarter second of the position update
+that took them there; a jump over it gave nothing until the landing. 17 times in the three runs (5 to the recording
+player). It's a surface of its own, raised above the floor: on it, retail's players stood at y -38.98 to -39.13, beside
+it on the platform at -39.29. So Kawari tells it by its collision material: each triangle of a zone's collision now
+keeps its PCB polygon's material (`kawari-navimesh`, collision file version 3; version 2 files still read, without
+them, and a zone with status floors has its navmesh made again), and the floor's materials are those under eight
+points recorded on it, checked against eight beside it ("Status floor 67 (param 30) in 1039: materials [...]" in the
+server log, or a warning that it was left out). A player in the air (no floor within half a yalm) keeps what they
+had. Any duty can have such floors: an entry in `status_floors.json` with retail's points.
+
 **The exit.** Toto-Rak's exit is EObj 2000683, not 2000139 (whose EObj Data, GimmickAccessor 5, it shares): retail spawned
 it hidden and showed it (SetEventState 0) as the duty was complete. Kawari now hides every event object whose gimmick is
 a duty exit (GimmickAccessor of the DutyExit kind, `Zone::exit_eobjs`) and shows them all with `complete_duty`
