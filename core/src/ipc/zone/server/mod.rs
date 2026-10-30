@@ -715,8 +715,10 @@ pub enum ServerZoneIpcData {
         params: [u32; 7],
     },
     /// A Mini Cactpot ticket just bought (fork: Bob's Chronofoil capture deaf7e28, the three of 2026-10-29): the broker's
-    /// handler, 19 and 23 (the payout table's length and the last sum, as retail sent them), the day it's for, the cell
-    /// already showing (row, column, its number), then what each sum of a line pays, 6 to 24.
+    /// handler, two zero bytes, 19 and 23 (the payout table's length and the last sum, as retail sent them), the day it's
+    /// for, the cell already showing (row, column, its number), then what each sum of a line pays, 6 to 24. Until
+    /// 2026-10-30 the 19 and 23 came before the two zeros, and the client never opened the ticket (Bob's bundle
+    /// 20261030-102912: stuck in the broker's talk.)
     /// Sent as Air Force One ends, before its result (fork: Bob's Chronofoil captures deaf7e28 and 2c98f9e8, the same 40
     /// bytes both times though the scores weren't; what it says isn't known.)
     RideShootingEnd {
@@ -724,9 +726,9 @@ pub enum ServerZoneIpcData {
     },
     LotteryDailyBoard {
         handler_id: HandlerId,
+        #[brw(pad_before = 2)]
         payouts_len: u8,
         last_sum: u8,
-        #[brw(pad_before = 2)]
         day: u32,
         row: u32,
         column: u32,
@@ -1805,7 +1807,7 @@ mod tests {
         assert_eq!(
             &board[..28],
             &[
-                0x00, 0x00, 0x25, 0x00, 0x13, 0x17, 0x00, 0x00, 0xcd, 0x12, 0, 0, 1, 0, 0, 0, 1, 0,
+                0x00, 0x00, 0x25, 0x00, 0x00, 0x00, 0x13, 0x17, 0xcd, 0x12, 0, 0, 1, 0, 0, 0, 1, 0,
                 0, 0, 2, 0, 0, 0, 0x10, 0x27, 0, 0
             ]
         );

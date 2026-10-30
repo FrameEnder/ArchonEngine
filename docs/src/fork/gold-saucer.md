@@ -62,11 +62,14 @@ LotteryDaily (handler 0x250000), the broker in the Entrance Square. Three ticket
 1. The talk: ActorControlSelf 109 (`DirectorEvent`) `[28, 1 if today's tickets are used]` and `[30, tickets left, 10]`,
    then scene 0 (0x2000) with `[0x11, 10]` the first time ever (the explanation), `[0x13, 10, MGP, day, tickets left]`
    afterwards, `[0x12]` with no tickets left. The first number looks like flags on 0x10 (1 a greeting, 2 the game
-   explained already). Retail's player had no MGP at the first talk; with `[0x11, 10]` alone the client offered a
-   ticket and said there wasn't the MGP for it however much there was (Bob's bundle 20261030-020833), so Kawari sends
-   the MGP, the day and the tickets left with 0x11 too.
-2. Buying is the scene's yield 5: the MGP, then **LotteryDailyBoard** (fork opcode 326, 136 bytes): the handler, 19 and
-   23, the day, the cell already showing (row, column, number) and what each line's sum pays.
+   explained already). The first talk ever is the explanation, and it ends without a ticket: retail's player (no MGP
+   then) came back for one. Kawari sent the MGP, the day and the tickets left after 0x11 for a while (2026-10-29,
+   reading Bob's bundle 20261030-020833 as the client not seeing his MGP); in his bundle 20261030-102912, with 500 MGP,
+   the first talk ended all the same and the second sold the ticket, so it's retail's `[0x11, 10]` again.
+2. Buying is the scene's yield 5: the MGP, then **LotteryDailyBoard** (fork opcode 326, 136 bytes): the handler, two
+   zero bytes, 19 and 23 (bytes 6 and 7), the day, the cell already showing (row, column, number) and what each line's
+   sum pays. Kawari had the 19 and 23 before the zeros until 2026-10-30, and the client never showed the ticket: no
+   scratch came, and the talk had to be ended with `!finishevent` (Bob's bundle 20261030-102912).
 3. Each of the three scratches is client trigger 808 `[8, row, column]`, answered with 109 `[2, row, column, number]`.
 4. The line is 808 `[9, line]`: 109 `[3, row, column, number]` for all nine cells, the log line (528), the
    InventoryActionAck, the MGP, 914 and 109 `[4, MGP, sum]`.

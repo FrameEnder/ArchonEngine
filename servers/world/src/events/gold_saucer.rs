@@ -199,18 +199,16 @@ impl MiniCactpotEventHandler {
             .actor_control_self(director_event(event, 30, [left, MINI_CACTPOT_COST, 0, 0]))
             .await;
         // The first number looks like flags on 0x10: 1 a greeting, 2 the game explained already. After it the price,
-        // the MGP the player has, the day and the tickets left. Retail's first talk ever was `[0x11, 10]` alone, but
-        // that player had no MGP; with only those two the client offered the ticket and said there wasn't the MGP for
-        // it however much there was (Bob's bundle 20261030-020833), so the MGP and the rest come with 0x11 too.
+        // the MGP the player has, the day and the tickets left. The first talk ever is retail's `[0x11, 10]`: the
+        // explanation, which ends the talk without a ticket (retail's player came back for one; Bob's bundles
+        // 20261030-020833 and 20261030-102912, with the MGP and the rest sent after 0x11 or not, the same.)
         let params = if left == 0 {
             vec![0x12]
+        } else if !played {
+            vec![0x11, MINI_CACTPOT_COST]
         } else {
             let mgp = connection.mgp();
-            let kind = match (played, greeting) {
-                (false, _) => 0x11,
-                (true, true) => 0x13,
-                (true, false) => 0x10,
-            };
+            let kind = if greeting { 0x13 } else { 0x10 };
             vec![kind, MINI_CACTPOT_COST, mgp, day, left]
         };
         connection
