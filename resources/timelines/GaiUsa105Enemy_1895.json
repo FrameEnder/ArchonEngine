@@ -1,0 +1,24 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 5
+        },
+        "720": {
+            "players": 19.5
+        }
+    },
+    "rotation": {
+        "pace": 11.0,
+        "actions": [
+            {
+                "action": 720,
+                "every": 11.0,
+                "comment": "2.2 s cast around itself, twice, 11 s apart"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Presence of the Enemy's (719) first ambusher (BNpcBase 1895, layout 4278151): level 22, 246 HP. From Bob's Chronofoil capture 5fcc970c (2026-10-30, the East Shroud, `questkit chronofoil --battle 0.6`): `players` is the median damage to the player (level 21-22), `every` the time between uses. Hitbox not recorded."
+}

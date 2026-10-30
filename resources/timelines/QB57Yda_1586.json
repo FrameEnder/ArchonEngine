@@ -1,0 +1,51 @@
+{
+    "hitbox_radius": 0.5,
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "872": {
+            "npcs": 118.5
+        },
+        "53": {
+            "npcs": 223
+        },
+        "54": {
+            "npcs": 300.5
+        },
+        "70": {
+            "npcs": 184
+        }
+    },
+    "rotation": {
+        "pace": 7.0,
+        "actions": [
+            {
+                "action": 53,
+                "every": 21.0,
+                "comment": "Bootshine, 5 uses"
+            },
+            {
+                "action": 54,
+                "every": 22.2,
+                "comment": "True Strike, 4 uses"
+            },
+            {
+                "action": 70,
+                "every": 20.2,
+                "comment": "Rockbreaker, 4 uses, 1-3 enemies each"
+            },
+            {
+                "action": 63,
+                "every": 120.0,
+                "comment": "once, on herself: status 103 (5)"
+            },
+            {
+                "action": 55,
+                "every": 120.0,
+                "comment": "once, on herself: status 99 (12)"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Yda in Brotherly Love's quest battle 57 (BNpcBase 1586, BNpcName 619, layout 4255892): level 50, 25890 HP, ClassJob 2. From Bob's Chronofoil capture 5fcc970c (2026-10-30, one run of Brotherly Love's quest battle 57, won, `questkit chronofoil --battle 0.7`, territory 303, duty 350; a level 26 player): `players` is the median damage to the player, `npcs` to Yda and Papalymo (level 50), `every` the time between uses. Hitbox not recorded."
+}

@@ -75,6 +75,9 @@ def _fixture_chronofoil(args) -> int:
     if args.recording:
         for layout, base in Recordings.open(args.recording).layout_bases().items():
             bases.setdefault(layout, base)
+    if args.dumps:
+        for layout, base in fixtures.dump_layout_bases(Path(args.dumps)).items():
+            bases.setdefault(layout, base)
     dates = sorted({c.start.date().isoformat() for c in captures if c.start})
     status = 0
     for quest in quests:

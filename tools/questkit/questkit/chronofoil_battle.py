@@ -154,11 +154,11 @@ def run_from_visit(capture: Capture, tables: dict, visit: Visit) -> dict:
                 action, = struct.unpack_from("<I", data, 8)
                 kind = data[31]
                 count = data[33]
-                if name == "ActionEffect1":
-                    effects_at, targets_at, slots = 42, 112, 1
-                else:
-                    slots = int(name.removeprefix("AoeEffect"))
-                    effects_at, targets_at = 48, 48 + slots * 64
+                # Both kinds have the effects at 42 (after the header's 8 unread bytes) and the targets 6 bytes after
+                # them (Kawari's ActionEffect and AoeEffect); the AoeEffects' were read from 48 until 2026-10-30, a
+                # target's effects off by six bytes (a 146's 15 damage read as kind 15, its first target's miss lost).
+                slots = 1 if name == "ActionEffect1" else int(name.removeprefix("AoeEffect"))
+                effects_at, targets_at = 42, 42 + slots * 64 + 6
                 targets = []
                 for k in range(min(count, slots)):
                     target, = struct.unpack_from("<I", data, targets_at + k * 8)

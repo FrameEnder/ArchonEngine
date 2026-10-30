@@ -122,8 +122,11 @@ EventYieldHandler), notices, AcceptQuest/UpdateQuest/FinishQuest, EventFinish, a
 talk or zone-entry event becomes a step; a quest change outside any event is a quest battle won (in TERRITORYTYPE0) or
 a kill. Talks that change nothing are steps too (agreeing to a quest battle); a progress bar broken off (a scene the
 client never answered) isn't, since nothing happened. The talked-to actor is the layout ID of an event NPC or object;
-its base ID comes from the server's SpawnObject packets, the Recorder export's NPC list (`--recording`, optional) or
-the existing fixture, which also gives what the capture can't (kills, `spawns`) by matching the state each step left
+its base ID comes from the server's SpawnObject packets, the Recorder export's NPC list (`--recording`, optional),
+the dumps (`--dumps`: a todo's locations are the layout IDs of who it's done with, and the listeners whose
+`despawn_sequence` is the todo's index are their base IDs, taken when there are as many of each; since 2026-10-30,
+`fixtures.dump_layout_bases`. It can miss: Brotherly Love's todo 2 is at 4309068, but retail's Claxio was talked to at
+3853930) or the existing fixture, which also gives what the capture can't (kills, `spawns`) by matching the state each step left
 the quest in. Unlocks in the step that completes a quest are left out: those are the Quest sheet's, sent by the
 server's `finish_quest`. Without a dump, the existing fixture's parameters are used.
 
@@ -302,7 +305,9 @@ reads, chat left out), so `compare` and the rest can use it.
   SpawnNpc/SpawnPlayer (BNpcBase and BNpcName, layout ID, HP, battalion, level, class, position; players other than
   you are just "player"), positions (ActorMove, ActorSetPos), HP (UpdateHpMpTp, EffectResult(Basic): the HP is the
   packet's own actor's), **targets** (ActorControlTarget SetTarget, which retail sends for NPCs too), deaths
-  (Defeated), every action with its targets and effects, casts in the Recorder's text, the director's sequence and
+  (Defeated), every action with its targets and effects (an AoeEffect's from byte 42, as an ActionEffect1's; until
+  2026-10-30 they were read from 48, six bytes off: Blizzard II's 15 damage came out as an effect of kind 15 and its
+  first target's miss was lost, so AoE amounts read from earlier runs are suspect), casts in the Recorder's text, the director's sequence and
   variables, its scenes (60000 starts the fight, 60001 is "Duty Complete") and when the client finished each, battle
   talk, NPC yells, map effects, every actor control, and the enemy list (HaterList, EnmityList). It
   has no names (no game data here: NPCs show as `base N [layout]`), no Action sheet (shapes, omens, class kits) and no

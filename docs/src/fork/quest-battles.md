@@ -177,6 +177,40 @@ a quest's entering event, 0 for every other event (228 events across the capture
 
 ## The battles
 
+### Quest battle 57 — Brotherly Love (`content/questbattle/57.lua`)
+
+* Quest 724 (GaiUsa201_00724) enters it from Claxio (scene 4; territory 303, duty 350). Territory 303 is taken to be a
+  copy of the East Shroud (retail's spots in it are the East Shroud's, near Komuxio's quests), so its NPCs are layer
+  `QB_GaiUsa201_001` of `fst_f1f2`, with retail's layout IDs, levels, HP, positions, display flags, character data
+  flags (3), looks and the start spot (-288.22, 12.51, -52.01, facing -2.229) from Bob's Chronofoil capture 5fcc970c
+  (2026-10-30, `--battle 0.7`, one run, won; a level 26 player): three thaumaturges (4255869-4255871, base 1584) and
+  their gladiator leader (4255868, base 1582, BNpcName 583), Yda (4255892, base 1586) and Papalymo (4255894, base 1587)
+  on your side at level 50 with 25890 HP, Claxio watching (4256371, an event NPC, ENpcResident 1006684), and the second
+  wave: a beast that isn't to be killed (4255903, base 1585, BNpcName 2063, 49300 HP), a gladiator (4255897, base 1658)
+  and a conjurer (4255896, base 1583) that heals the gladiators.
+* The flow (seconds from the fight starting): sequence 2; the leader's battle talk 78 at 5 s and Claxio's 79 at 10 s
+  (kind 3, portrait 73208). Two thaumaturges go for Yda and Papalymo, the third and the leader for you (the leader on
+  Papalymo, his every hit a 0 or a miss), and Yda and Papalymo each take the one on them, then the oldest left. The
+  first thaumaturge down: sequence 3 and the leader's 80 as its death animation ends (2 s after its health reached 0),
+  and the second wave (the beast on Yda, the other two on you). 10.1 s later sequence 4: Yda and Papalymo leave the rest
+  to you and take on the beast; Papalymo's 81 2 s later, the beast's 604 at them 3.9 s later, Claxio's 82 7 s later,
+  Yda's 85 and Papalymo's 86 together 8 s later. 10.1 s after 4, sequence 5: the leader turns on you; Yda's 83 1.9 s
+  later. The leader at 35 % (the hit that took it from 43 to 35): sequence 6 and Papalymo's 84. Every enemy but the beast
+  down: sequence 7 at once (the last one's health at 0, not its death animation's end); 9.1 s later "Duty Complete"
+  and sequence 8, the beast and Claxio taken away, then the battle's scene 8 (0xF8402EFB); the quest moves to sequence
+  255. The opening scene's flags are 0xF8412EFB.
+* The beast's first 604 left Yda and Papalymo at exactly 80 % (their EffectResults 1.2 s after its AoeEffect, whose
+  effect on each was kind 48, with 63 and 52: a kind Kawari doesn't know); its second, 30.7 s later, took nothing. Here
+  the director casts it once, a hit scaled to 20 % of their HP (`QB57Beast_00604`); Yda's and Papalymo's lines 85
+  and 86 come as it lands. The beast fights only them; Papalymo Cures you below 62 % (retail's at 41-61 %).
+* Timelines `QB57*` (bases 1582-1587, 1658); action scripts `QB57Beast_00604`, `QB57Beast_00606`,
+  `QuestBattleNpc_00063` (Yda, on herself) and `QuestBattleNpc_00151` (Papalymo, on the beast), their statuses'
+  durations guessed. `questkit battle-sim 57` checks the run (`57.json`, Claxio added by hand): every step within
+  1 s.
+* The client's battle script wasn't dumped (it should sit beside the quest's, `GaiUsa201Btl_00724.luab`, or come from
+  `kawari-questdump search GaiUsa201`), so the scenes the director plays (1, 8) and its OnSequence messages aren't
+  checked against it.
+
 ### Quest battle 56 — Like Mother, Like Daughter (`content/questbattle/56.lua`)
 
 * Quest 440 (ClsCnj005_00440) enters it from Sylphie (scene 11; territory 291, duty 356). Territory 291 is taken to be

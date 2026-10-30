@@ -1,0 +1,21 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "872": {
+            "players": 4
+        }
+    },
+    "rotation": {
+        "pace": 7.5,
+        "actions": [
+            {
+                "action": 55,
+                "every": 60.0,
+                "comment": "once, on itself: status 99 (12)"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Presence of the Enemy's (719) third ambusher (BNpcBase 1897, layout 4278162): level 21, 229 HP. Retail's also used 475 (6 on the player) and 404 (on itself: status 8 at 226), once each; neither is scripted. From Bob's Chronofoil capture 5fcc970c (2026-10-30, the East Shroud, `questkit chronofoil --battle 0.6`): `players` is the median damage to the player (level 21-22), `every` the time between uses. Hitbox not recorded."
+}

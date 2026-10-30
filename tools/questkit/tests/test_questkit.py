@@ -255,6 +255,21 @@ def handler(name):
     return f"handler_id: HandlerId {{ type: QUEST, id: {QUEST} }}"
 
 
+class DumpLayoutBasesTest(unittest.TestCase):
+    def test_todo_locations_are_their_listeners(self):
+        # Sylphic Studies' todo 0 at 2339560 is Ysabel Hawthorne (1000615), listening until todo 0; todo 1 has two
+        # locations and one listener, so it's left alone.
+        with tempfile.TemporaryDirectory() as tmp:
+            quest = Path(tmp) / "GaiUsa003_00709"
+            quest.mkdir()
+            (quest / "quest.json").write_text(json.dumps({
+                "todos": [{"index": 0, "locations": [2339560]}, {"index": 1, "locations": [1, 2]}],
+                "listeners": [{"listener": 1000615, "despawn_sequence": 0},
+                              {"listener": 1000616, "despawn_sequence": 1}],
+            }))
+            self.assertEqual(fixtures.dump_layout_bases(Path(tmp)), {2339560: 1000615})
+
+
 class InZoneMoveTest(unittest.TestCase):
     """Moving the player to a pop range in the zone they're in is retail's PrepareZoning to that same territory: replay
     counts it as a zone change there when the step says where it happens (Coming to Limsa Lominsa's lift.)"""

@@ -1,0 +1,11 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "872": {
+            "players": 12
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Ochus (BNpcBase 33): the one First Impressions (710) brings out of the tussock (layout 4277224, level 20, 413 HP) auto-attacked for 12 every 3 s and used 364 once (status 18 at 7 on the player; 364 isn't scripted). The open world's (level 21, 458 HP) weren't fought. From Bob's Chronofoil capture 5fcc970c (2026-10-30, the East Shroud, `questkit chronofoil --battle 0.6`): `players` is the median damage to the player (level 21-22), `every` the time between uses. Hitbox not recorded."
+}

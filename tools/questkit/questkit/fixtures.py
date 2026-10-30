@@ -81,6 +81,27 @@ def load_dump(dumps: Path, quest: int) -> dict | None:
     return None
 
 
+def dump_layout_bases(dumps: Path) -> dict[int, int]:
+    """Event NPCs' and objects' layout IDs to their base IDs, from the dumps' todos and listeners: a todo's locations are
+    the layout IDs of who it's done with, and the listeners whose despawn_sequence is the todo's index are who (Sylphic
+    Studies: todo 0 at 2339560, Ysabel Hawthorne 1000615 listening until todo 0; Bob's dumps and capture 5fcc970c of
+    2026-10-30.) Only taken when there are as many listeners as locations, in order."""
+    bases: dict[int, int] = {}
+    for path in sorted(Path(dumps).glob("*/quest.json")):
+        try:
+            data = json.loads(path.read_text())
+        except json.JSONDecodeError:
+            continue
+        listeners = data.get("listeners", [])
+        for todo in data.get("todos", []):
+            locations = todo.get("locations", [])
+            who = [x["listener"] for x in listeners if x.get("despawn_sequence") == todo.get("index")]
+            if locations and len(who) == len(locations):
+                for layout, base in zip(locations, who):
+                    bases.setdefault(layout, base)
+    return bases
+
+
 def numeric_params(dump: dict) -> dict[str, int]:
     params = {}
     for param in dump.get("params", []):

@@ -1,0 +1,27 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "872": {
+            "npcs": 32
+        },
+        "606": {
+            "npcs": 102
+        },
+        "604": {
+            "npcs": 5178
+        }
+    },
+    "rotation": {
+        "pace": 30.7,
+        "actions": [
+            {
+                "action": 606,
+                "every": 30.7,
+                "comment": "2.2 s cast, 30.7 s apart, 102 on Papalymo"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Brotherly Love's beast (quest battle 57, BNpcBase 1585, BNpcName 2063, layout 4255903): level 22, 49300 HP, never killed; it fights only Yda and Papalymo (8 of 17 auto-attacks missed). Its first 604 (2.7 s cast, the director's, 3.9 s after sequence 4) left both of them at exactly 80 % (5178 of 25890 here, as a recorded hit); the second, 30.7 s later, took nothing, so the director casts it once. From Bob's Chronofoil capture 5fcc970c (2026-10-30, one run of Brotherly Love's quest battle 57, won, `questkit chronofoil --battle 0.7`, territory 303, duty 350; a level 26 player): `players` is the median damage to the player, `npcs` to Yda and Papalymo (level 50), `every` the time between uses. Hitbox not recorded."
+}

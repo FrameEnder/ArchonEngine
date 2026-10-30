@@ -107,6 +107,13 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
+* **The Twelveswood's story, We Come in Peace (3856) to Brotherly Love (724)** (2026-10-30, from Bob's dumps and
+  Chronofoil capture 5fcc970c): untested in game; each replays against its one retail run. Retail completed the old
+  numbers of three (708, 717, 718) with the new ones, which Kawari does too (`mark_quest_completed`); what the old ones
+  did on their own isn't known, and they aren't scripted. First Contact's (715) other emotes, Dance Dance Diplomacy's
+  (3857) other-emote scenes and Presence of the Enemy's (719) box before the four are down weren't seen on retail.
+  Retail's quest enemies' actions 364 (the ochu), 404, 475, 308 and 403 (719's ambushers) aren't scripted, so they're
+  left out of their timelines; those timelines are from one fight each.
 * **The Company You Keep (Immortal Flames)** (682), **For Coin and Country** (685) and **Sylph-management** (513),
   2026-10-28: played through in game by Bob (bundle 20261028-220355, a conjurer); the others' lines in 682 go by
   IsAcceptEvent's order, not recorded.
@@ -601,6 +608,16 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quest battles and directors
 
+* **Brotherly Love's battle (57)** (2026-10-30): untested in game, from one won run. Its client battle script wasn't
+  dumped (`GaiUsa201Btl_00724.luab`, or `kawari-questdump search GaiUsa201`). What brings sequence 6 is read as the
+  leader's health (the hit that took it from 43 to 35 %) and could as well be a timer (26.2 s after sequence 5); what
+  happens if you don't fight, or the leader falls first, isn't known. The beast's 604 is a hit to 20 % of Yda's and
+  Papalymo's HP, cast once by the director: retail's effect on them was kind 48 (unknown to Kawari; a knockback? they
+  moved 26-37 yalms over the fight), the first left both at exactly 80 % and the second took nothing. Yda's 63 and
+  Papalymo's 151 durations are guesses, and the statuses they give aren't scripted.
+* **AoE amounts from Chronofoil runs before 2026-10-30**: questkit read AoeEffects' effects six bytes off (fixed), so
+  timelines' `recorded_amounts` for area actions taken from those runs' reports (Like Mother, Like Daughter's 1684s'
+  440, others) should be read again from their runs.
 * **The Company You Keep's battles (46, 47, 48)**: untested in game (2026-10-28). Sequences 5-8 (the vanguard at 70
   and 40 %, then its Drill Cannons) fit the three won runs, and nothing else was seen to come with them; that the
   Drill Cannons, not something they come with, move it on is a reading of the runs (2.85-2.9 s after the cast began
