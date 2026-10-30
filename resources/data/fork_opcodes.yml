@@ -33,6 +33,23 @@
 # Keep double quotes out of comments.
 
 ClientZoneIpcType:
+- name: StartEmoteEvent
+  comment: An emote a quest is listening for - who it was used on (the player themselves inside the quest's area), the quest's event, the emote. Like StartTalkEvent; the server starts the quest's Emote event.
+  # 401 on 2026.10.16 (Bob's Chronofoil captures: every quest emote, 16 bytes - on an NPC, The Ties That Bind's sylphs'
+  # emote 11 (3857) and 715's 12; on the player's own actor, 744's emote 22 in EVENTRANGE0 (capture 9df4ff01), which
+  # retail answered with EventStart of type 2 on the player and the quest's scene. Right after the emote's
+  # ClientTrigger.)
+  opcode: 401
+  size: 16
+  found_on: 2026.10.16.0000.0000
+  how_to_find: On Kawari, use an emote a quest asks for on its NPC - the 16-byte packet right after the emote, starting with the NPC's ID, then the quest's event ID and the emote.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 952 on 2026.10.06 (no 10.06 capture of a quest emote to check it with.)
+  - immediate:
+      pattern: C7 44 24 50 ?? ?? ?? ?? 48 C7 44 24 58 20 00 00 00 89 5C 24 78 75 ??
+      offset: 4
+      width: 4
 - name: LootRoll
   comment: Need, Greed or Pass on one item of an open coffer - the coffer, the item's slot, the choice (1 need, 2 greed, 5 pass.)
   # 766 on 2026.10.16 (Bob's Chronofoil capture of Sastasha, 2026-10-22: 15 rolls, each answered by LootRollResult.)

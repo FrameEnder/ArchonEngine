@@ -1,0 +1,21 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "872": {
+            "players": 23
+        }
+    },
+    "rotation": {
+        "pace": 7.5,
+        "actions": [
+            {
+                "action": 55,
+                "every": 60.0,
+                "comment": "once, on itself: status 99 (12)"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The dusk bat (BNpcBase 363) Where There Is Smoke (756) brings out (layout 4279981): level 25, 594 HP. Retail's auto-attacked for 22-24 every 3 s and used 55 once on itself; it also used 475 (32 on the player) and 57 (healed itself 181; Kawari's 57 heals a pugilist's fixed 52, so it isn't used here), once each. From Bob's Chronofoil capture 9df4ff01 (2026-10-30, Eastern Thanalan, `questkit chronofoil --battle 0.13`): `players` is the median damage to the player (level 25), `every` the time between uses. Hitbox not recorded."
+}

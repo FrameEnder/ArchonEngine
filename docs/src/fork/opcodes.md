@@ -27,7 +27,7 @@ upstream's [Opcodes](../opcodes.md) page.
   it probably is.
 
 Since upstream's 7.57h1 (2026.10.16, merged on the `upstream-7.57h1` branch, in `master` since 2026-10-21) every entry is found on 2026.10.16 (see
-[Finding them on 7.57h1](#finding-them-on-757h1) below). 41 of the 50 have finders (2026-10-30; 38 of 47 on 2026-10-29, 35 of 39 on 2026-10-26, 14 before 2026-10-25), so the startup scan checks them on each start and re-finds them
+[Finding them on 7.57h1](#finding-them-on-757h1) below). 42 of the 51 have finders (2026-10-30; 38 of 47 on 2026-10-29, 35 of 39 on 2026-10-26, 14 before 2026-10-25), so the startup scan checks them on each start and re-finds them
 after the next patch, and every one is in the shipped fingerprints. The four without can't have one: their code is
 the same as other packets' (RequestPlayerRetainerInfo, a request without arguments; GatheringPointPhase; the two
 ItemMarketBoards, which share a handler); after a patch only the fingerprints find them (the ItemMarketBoards as a
@@ -87,6 +87,7 @@ u32 was 0 in all nine rides.
 | LootResult | server → client | 807 | | 16 | Who won a coffer's item, with what roll (0xE0000000 when everyone passed). Same capture. Finder (written by `suggest-finders`; it reads 521 on 10.06). |
 | ActionRequestGroundTargeted | client → server | 492 | 891 (09.15), 846 (10.06) | 24 | A ground-targeted action (Asylum...): the action, its type, the sequence, the rotation, where on the ground. Not yet seen on Kawari; the layout is from Bob's captures. Handled as an action on oneself for now. Finder. |
 | Achievements | server → client | 985 | 991 (10.06) | 552 | The completed achievements and the last five, the reply to client trigger 1001. Finder: its handler (HandleAchievementsPacket). See [Achievements](character-windows.md). |
+| StartEmoteEvent | client → server | 401 | | 16 | An emote a quest listens for: who it was used on (an NPC, or the player's own actor in the quest's area), the quest's event, the emote; the server starts the quest's Emote event (every quest emote in Bob's Chronofoil captures; 744's on the player, capture 9df4ff01). See [Quests](quests.md#emotes-on-an-npc). Finder. |
 | ChocoboTaxiStart | server → client | 538 | | 16 | A chocobo porter's ride begins: the ChocoboTaxi row, its Location, 8 bytes of 0 (Bob's Chronofoil captures cc62ad94, 1fac2416, 2528a32d: nine rides). See [Travel](travel.md#chocobo-porters). |
 | ChocoboTaxiCheckpoint | client → server | 534 | | 8 | A point of the porter's route passed: the ChocoboTaxi row, the point's number (the same captures). |
 | ChocoboTaxiArrived | client → server | 518 | | 8 | The route's end: the last point's number, then 0 (the same captures). |

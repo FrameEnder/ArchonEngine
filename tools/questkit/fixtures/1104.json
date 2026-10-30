@@ -1,0 +1,40 @@
+{
+  "quest": 1104,
+  "script": "ComLim001_01104",
+  "source": "Bob's Chronofoil capture 9df4ff01 (2026-10-30); scenes and effects from Bob's Chronofoil capture of 2026-10-30",
+  "params": {
+    "ACTOR0": 1003281,
+    "ACTOR1": 1005184,
+    "SCREENIMAGE0": 1100,
+    "HOW_TO_001": 130,
+    "UNLOCK_ADD_NEW_CONTENT_TO_CF": 3702,
+    "CUT_SCENE_01": 1167,
+    "SCREENIMAGE1": 1101
+  },
+  "steps": [
+    {
+      "talk": 1003281,
+      "layout": 4101423,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1005184,
+      "layout": 4256835,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 4, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"content": 40001}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

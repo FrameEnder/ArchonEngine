@@ -2673,6 +2673,53 @@ async fn process_packet(
                                 }
                             }
                         }
+                        // An emote a quest listens for: the client asks for the quest's event itself (retail answers with
+                        // EventStart of type 2 on whoever it was used on, the player too: 744's emote in its area.)
+                        ClientZoneIpcData::StartEmoteEvent {
+                            actor_id,
+                            handler_id,
+                            emote,
+                        } => {
+                            let sequence =
+                                (handler_id.handler_type() == HandlerType::Quest)
+                                    .then(|| {
+                                        lua_player.player_data.quest.active.0.iter().find_map(
+                                            |quest| {
+                                                (quest.id as u32 + 0x10000 == handler_id.0)
+                                                    .then_some(quest.sequence)
+                                            },
+                                        )
+                                    })
+                                    .flatten();
+                            let listens = sequence.is_some_and(|sequence| {
+                                connection
+                                    .game_data
+                                    .lock()
+                                    .quest_listens_for_any_emote(handler_id.0, sequence)
+                            });
+                            if !listens {
+                                tracing::warn!(
+                                    "Emote {emote} on {actor_id:?} for {handler_id}, which isn't listening for one"
+                                );
+                            } else if events.is_empty()
+                                && connection
+                                    .start_event(
+                                        *actor_id,
+                                        *handler_id,
+                                        EventType::Emote,
+                                        *emote,
+                                        events,
+                                        lua_player,
+                                    )
+                                    .await
+                                && let Some(event) = events.last_mut()
+                            {
+                                event
+                                    .0
+                                    .on_emote(&event.1, *emote, *actor_id, lua_player)
+                                    .await;
+                            }
+                        }
                         ClientZoneIpcData::EventReturnHandler2(handler) => {
                             tracing::info!(message = "Event returned", handler_id = %handler.handler_id, error_code = handler.error_code, scene = handler.scene, params = ?&handler.params[..handler.num_results as usize]);
                             lua_player.scene_error_code = handler.error_code;

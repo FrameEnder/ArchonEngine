@@ -79,6 +79,7 @@ state after it:
 | `"spawns": [layout, …]` | The step must bring these out (`spawn_quest_bnpc`) |
 | `"results": {"scene": [..]}` | What the client answers a scene with, if not `[1, 0]`; `{"results": [..], "error": n}` also sets the scene's error code (`player.scene_error_code`), for yes/nos that answer through it; `"yield": true` sends it back through `onYield` as retail's client did (EventYieldHandler), even when the script has `onReturn`; a yield the server answered with EventResume has `"resume"` (its parameters, which the script's `resume_event` must match; `name_companion` counts as a resume with 1, as the server answers a usable name) and `"after"` (the client's next answer, which replay gives the script after the resume); `"yield_id"` is the yield's ID (0 if not given: a text answer's is 231) |
 | `"what"` | Which parameter the target is (for reading) |
+| `"from": {"sequence", "vars"}` | A run recorded from the middle of the quest (the capture began after it was accepted): the quest is active in that state before the first step (701's run in capture 9df4ff01) |
 
 **The harness** (`harness.py`) runs the real script under Lua 5.4 the way the world server does:
 

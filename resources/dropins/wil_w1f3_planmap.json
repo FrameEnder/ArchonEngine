@@ -9302,6 +9302,34 @@
                     "rotation": -2.522
                 }
             ]
+        },
+        {
+            "name": "QB_GaiUsa504_001",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 363,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 594,
+                        "level": 25,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1997,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147
+                    },
+                    "layout_id": 4279981,
+                    "position": {
+                        "x": 321.976,
+                        "y": 17.233,
+                        "z": -249.201
+                    },
+                    "rotation": -2.0656
+                }
+            ]
         }
     ]
 }

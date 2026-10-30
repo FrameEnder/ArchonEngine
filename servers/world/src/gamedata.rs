@@ -2862,6 +2862,21 @@ impl GameData {
         self.quest_listens_for(quest_id, base_id, sequence, EMOTE)
     }
 
+    /// Whether a quest listens for an emote at all in this sequence (an Emote listener of any base ID): the client asks
+    /// for the event itself (`StartEmoteEvent`), on the player's own actor when the quest wants it used in an area
+    /// (Believe in Your Sylph, 744: listener 5010000, the area its EVENTRANGE0.)
+    pub fn quest_listens_for_any_emote(&mut self, quest_id: u32, sequence: u8) -> bool {
+        const EMOTE: u8 = 2; // EventType::Emote
+        let Some(row) = self.quest_sheet.row(quest_id) else {
+            return false;
+        };
+        row.QuestListenerParams.iter().any(|listener| {
+            listener.Listener != 0
+                && listener.QuestUInt8A == EMOTE
+                && listener.ActorSpawnSeq == sequence
+        })
+    }
+
     /// Whether the quest listens for an action used on this NPC or object in this sequence (a listener of event type
     /// ActionResult, 18: Trial by Water's wounded Wood Wailer in sequence 4.)
     pub fn quest_listens_for_action(&mut self, quest_id: u32, base_id: u32, sequence: u8) -> bool {

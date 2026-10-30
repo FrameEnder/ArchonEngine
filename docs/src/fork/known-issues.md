@@ -406,6 +406,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Lord of the Inferno (343): its notice 3 is sent as the player leaves the cleared Bowl of Embers (`onDutyCleared`);
   retail sent it in the duty as it was won. Its others' lines in sequences 2-4 go by the order of the client's IsAcceptEvent (retail
   played none).
+* The quests from capture 9df4ff01 (743-762, 1104; 2026-10-30) are untested in game. Believe in Your Sylph's lookout
+  emote relies on the client's StartEmoteEvent (fork opcode 401): the server doesn't check the player is in
+  EVENTRANGE0. Its empty scenes (2, 4-6, 9-11) and Highbridge Times' and Tea for Three's other lines aren't played or
+  go by the client's IsAnnounce order (retail played none). Where There Is Smoke's dusk bat's 475 (32 on the player)
+  and its 181 self-heal (57; Kawari's 57 heals a fixed 52) aren't used. A Pup No Longer (1104) unlocks InstanceContent
+  40001, retail's number; the Twin Adders' and Immortal Flames' versions aren't scripted.
 
 ## Central Thanalan
 

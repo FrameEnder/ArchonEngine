@@ -604,6 +604,13 @@ pub enum ClientZoneIpcData {
         choice: u32,
         unk: u32,
     },
+    /// An emote a quest listens for (fork: Bob's Chronofoil captures, 2026.10.16): who it was used on (an NPC, or the
+    /// player's own actor inside the quest's area), the quest's event, the emote. Sent right after the emote.
+    StartEmoteEvent {
+        actor_id: ObjectTypeId,
+        handler_id: HandlerId,
+        emote: u32,
+    },
     /// A chocobo porter's ride passing one of its route's points (fork: Bob's Chronofoil captures cc62ad94, 1fac2416 and
     /// 2528a32d, nine rides): the ChocoboTaxi row and the point's number, 1, 2, 3...
     ChocoboTaxiCheckpoint {

@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import fixtures, repo
-from .harness import Harness, HarnessError
+from .harness import Harness, HarnessError, Quest
 
 
 @dataclass
@@ -54,6 +54,10 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
         result.error = str(error)
         return result
     harness.world.aetherytes.update(fixture.get("aetherytes", []))
+    # A run recorded from the middle of the quest (a capture started after it was accepted): it's already active.
+    if "from" in fixture:
+        start = fixture["from"]
+        harness.world.quests[quest] = Quest(start["sequence"], list(bytes.fromhex(start.get("vars", "00" * 6))))
 
     for index, step in enumerate(fixture.get("steps", [])):
         trace: list[str] = []
