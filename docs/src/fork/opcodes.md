@@ -27,13 +27,15 @@ upstream's [Opcodes](../opcodes.md) page.
   it probably is.
 
 Since upstream's 7.57h1 (2026.10.16, merged on the `upstream-7.57h1` branch, in `master` since 2026-10-21) every entry is found on 2026.10.16 (see
-[Finding them on 7.57h1](#finding-them-on-757h1) below). 38 of the 47 have finders (2026-10-29; 35 of 39 on 2026-10-26, 14 before 2026-10-25), so the startup scan checks them on each start and re-finds them
+[Finding them on 7.57h1](#finding-them-on-757h1) below). 41 of the 50 have finders (2026-10-30; 38 of 47 on 2026-10-29, 35 of 39 on 2026-10-26, 14 before 2026-10-25), so the startup scan checks them on each start and re-finds them
 after the next patch, and every one is in the shipped fingerprints. The four without can't have one: their code is
 the same as other packets' (RequestPlayerRetainerInfo, a request without arguments; GatheringPointPhase; the two
 ItemMarketBoards, which share a handler); after a patch only the fingerprints find them (the ItemMarketBoards as a
 pair of candidates). Of the five added since, EventResume16 and LotteryDailyBoard can't have one either (`suggest-finders`
 finds their code isn't unique); EventYieldText16, EventYieldText24 and CompanionName have none yet, though `suggest-finders`
-writes one for each on 2026.10.16.
+writes one for each on 2026.10.16. The chocobo porters' three (2026-10-30) have theirs, written by `suggest-finders`;
+ChocoboTaxiStart's handler reads three u32s (0, 4, 8), so its last 8 bytes aren't all padding, though retail's third
+u32 was 0 in all nine rides.
 
 ## Current entries (game 2026.10.16, patch 7.57h1)
 

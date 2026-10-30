@@ -260,6 +260,13 @@ ClientZoneIpcType:
   size: 8
   found_on: 2026.10.16.0000.0000
   how_to_find: On Kawari, ride a chocobo porter - the 8-byte packets every few seconds of the ride, starting with the ChocoboTaxi row.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 862 on 2026.10.06 (no 10.06 capture of a ride to check it with.)
+  - immediate:
+      pattern: C7 44 24 20 ?? ?? ?? ?? 45 33 C0 48 C7 44 24 28 18 00 00 00 48 8D 54 24 20 89 7C 24 40 48 8B C8 89 5C 24 44
+      offset: 4
+      width: 4
 - name: ChocoboTaxiArrived
   comment: A chocobo porter's ride has reached its end - how many route points it passed.
   # 518 on 2026.10.16 (Bob's Chronofoil captures cc62ad94, 1fac2416 and 2528a32d: once at the end of each of the nine
@@ -268,6 +275,13 @@ ClientZoneIpcType:
   size: 8
   found_on: 2026.10.16.0000.0000
   how_to_find: On Kawari, ride a chocobo porter to the end - the 8-byte packet as it arrives, after the last ChocoboTaxiCheckpoint.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there);
+  # it reads 629 on 2026.10.06 (no 10.06 capture of a ride to check it with.)
+  - immediate:
+      pattern: C7 45 A0 ?? ?? ?? ?? 45 33 C0 48 C7 45 A8 18 00 00 00
+      offset: 3
+      width: 4
 ServerZoneIpcType:
 - name: ChocoboTaxiStart
   comment: Starts a chocobo porter's ride - the ChocoboTaxi row and its Location column.
@@ -277,6 +291,12 @@ ServerZoneIpcType:
   size: 16
   found_on: 2026.10.16.0000.0000
   how_to_find: Ride a chocobo porter on retail (Kawari Recorder) - the 16-byte packet right after the porter's Mount packet, the ChocoboTaxi row first.
+  find:
+  # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (checked to read this opcode there; its
+  # handler reads the u32s at 0, 4 and 8);
+  # it reads 462 on 2026.10.06 (no 10.06 capture of a ride to check it with.)
+  - handler:
+      pattern: 44 8B 49 08 44 8B 41 04 8B 11 48 8D 0D
 - name: GlamourDresser
   comment: One page of the glamour dresser - the page, 400 item IDs (HQ + 1000000), their first and second stains.
   # 436 on 2026.10.16 (Bob's Chronofoil capture of 2026-10-24: two 2408-byte pages answering ClientTrigger 2350.) Its
