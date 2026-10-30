@@ -457,7 +457,7 @@ impl LuaPlayer {
             table.set("kind", gate.row.kind)?;
             table.set("location", gate.row.location)?;
             table.set("row", gate.row.row)?;
-            table.set("pop_range", gate.row.pop_range)?;
+            table.set("entrance", gate.row.entrance)?;
             table.set("registering", gate.registering(now))?;
             table.set("time", gate.start - crate::gate::GATE_START_OFFSET)?;
             Ok(table)

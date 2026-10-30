@@ -7,7 +7,8 @@
 --          the same parameters.
 -- Scene 2: none is on: the next one, { the minute it begins (18:00:00 for 18:00:01's), type, location, row }.
 -- Each returns { 1 to be sent to the GATE's entrance, the row }; retail then finished the event and moved the player to
--- the entrance's pop range in the Gold Saucer (PrepareZoning with warp type 2.)
+-- the entrance in the Gold Saucer (PrepareZoning with warp type 2, then ActorSetPos 4.5 yalms in front of the
+-- entrance's NPC, facing it: the GFATE row's "pop range" is that NPC's layout ID.)
 --
 -- GFateType: 1 Cliffhanger, 5 Any Way the Wind Blows, 6 Leap of Faith, 7 Air Force One, 8 The Slice Is Right (2-4 are
 -- GATEs that are gone.) Locations: 1 Wonder Square East, 2 Event Square, 3 Round Square.
@@ -43,7 +44,7 @@ end
 function onReturn(scene, results, player)
     player:finish_event()
     if gate ~= nil and results[1] == 1 then
-        player:move_to_pop_range(gate.pop_range, true, WARP_TYPE_FADE)
+        player:move_to_pop_range(gate.entrance, true, WARP_TYPE_FADE)
     end
     gate = nil
 end

@@ -1057,9 +1057,11 @@ impl GameData {
 
     /// A Gold Saucer arcade machine's GoldSaucerArcadeMachine row (its event's ID), see `ArcadeMachine`.
     pub fn get_arcade_machine(&mut self, id: u32) -> Option<ArcadeMachine> {
+        // It has text (its names and payout texts), so it's read in the world's language: with Language::None it
+        // didn't read at all, and every machine stopped at its coin (Bob's bundle 20261030-010830.)
         let sheet = icarus::GoldSaucerArcadeMachine::GoldSaucerArcadeMachineSheet::read_from(
             &mut self.resource,
-            Language::None,
+            get_config().world.language(),
         )
         .ok()?;
         let row = sheet.row(id)?;
@@ -1077,14 +1079,15 @@ impl GameData {
     }
 
     /// A GATE's GFATE row: its type (GFateType), where it is (1 Wonder Square East, 2 Event Square, 3 Round Square)
-    /// and the pop range at its entrance (the first of its GFATEParams.)
+    /// and its entrance: the first of its GFATEParams' LGBPopRange, which is the layout ID of the event NPC retail
+    /// spawned there for the GATE (Air Force One's 7773571, Sabotender Guia; Bob's Chronofoil capture 2c98f9e8.)
     pub fn get_gate_row(&mut self, row: u32) -> Option<GateRow> {
         let gate = self.gfate_sheet.row(row)?;
         Some(GateRow {
             row,
             kind: gate.Type,
             location: gate.Unknown11,
-            pop_range: gate.GFATEParams[0].LGBPopRange,
+            entrance: gate.GFATEParams[0].LGBPopRange,
         })
     }
 
@@ -4329,7 +4332,7 @@ pub struct GateRow {
     pub row: u32,
     pub kind: u8,
     pub location: u8,
-    pub pop_range: u32,
+    pub entrance: u32,
 }
 
 /// What a warp (a Warp row) asks of the player and plays around itself: its WarpCondition (the quests done, all of them

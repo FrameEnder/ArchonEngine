@@ -147,7 +147,7 @@ impl ZoneConnection {
         self.gate_event(
             director,
             EVENT_ENTRANCE,
-            [gate.row.pop_range, gate.registration_end as u32, 0, 0],
+            [gate.row.entrance, gate.registration_end as u32, 0, 0],
         )
         .await;
         if self.joined_gate(&gate) {

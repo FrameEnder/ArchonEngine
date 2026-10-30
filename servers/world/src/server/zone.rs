@@ -1183,6 +1183,22 @@ pub fn change_zone_warp_to_pop_range(
             Affine3A::from(destination_object.transform).to_scale_rotation_translation();
         exit_position = Some(pick_point_in_pop_range(destination_object));
         exit_rotation = Some(euler_to_direction(rotation.to_euler(EulerRot::XYZ)));
+    } else if let Some(npc) = target_instance.zone.get_battle_npc(destination_instance_id) {
+        // An NPC's layout ID: in front of it, facing it. The GATEs' "pop ranges" (GFATEParams' LGBPopRange) are their
+        // entrances' NPCs, and retail's GATE Keepers put the player 4.5 yalms in front of Sabotender Guia, turned to
+        // her (Bob's Chronofoil capture 2c98f9e8: ActorSetPos at (-53.36, 3.26, -65.00), facing -1.82, from her at
+        // (-57.86, 3.26, -65.40) facing 1.35.)
+        const IN_FRONT: f32 = 4.5;
+        let facing = npc.common.rotation;
+        let position = npc.common.position.0
+            + Vec3A::new(facing.sin() * IN_FRONT, 0.0, facing.cos() * IN_FRONT);
+        exit_position = Some(Position(position));
+        let turned = facing + std::f32::consts::PI;
+        exit_rotation = Some(if turned > std::f32::consts::PI {
+            turned - std::f32::consts::TAU
+        } else {
+            turned
+        });
     } else {
         tracing::warn!(
             "Failed to find pop range {destination_instance_id} in zone {}",

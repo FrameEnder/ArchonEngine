@@ -7,7 +7,8 @@
                 {
                     "data": {
                         "base_id": 1016306,
-                        "type": "event_npc"
+                        "type": "event_npc",
+                        "nonpop": true
                     },
                     "layout_id": 7773571,
                     "position": {
@@ -16,6 +17,48 @@
                         "z": -65.39929962158203
                     },
                     "rotation": 1.35256028175354
+                },
+                {
+                    "data": {
+                        "base_id": 1016306,
+                        "type": "event_npc",
+                        "nonpop": true
+                    },
+                    "layout_id": 7621822,
+                    "position": {
+                        "x": -57.862220764160156,
+                        "y": 3.2570478916168213,
+                        "z": -65.39927673339844
+                    },
+                    "rotation": 1.35256028175354
+                },
+                {
+                    "data": {
+                        "base_id": 1010476,
+                        "type": "event_npc",
+                        "nonpop": true
+                    },
+                    "layout_id": 5126495,
+                    "position": {
+                        "x": 77.5933609008789,
+                        "y": -5.0,
+                        "z": -69.82099914550781
+                    },
+                    "rotation": -0.2963024977773481
+                },
+                {
+                    "data": {
+                        "base_id": 1031796,
+                        "type": "event_npc",
+                        "nonpop": true
+                    },
+                    "layout_id": 8138065,
+                    "position": {
+                        "x": 77.89335632324219,
+                        "y": -5.0,
+                        "z": -69.82099914550781
+                    },
+                    "rotation": -0.2963024977773481
                 }
             ]
         }

@@ -166,8 +166,14 @@ GATE without asking the server: in each slot the Air Force One that slot's minut
 
 ### The entrance
 
-The entrance the client shows is an object of its own (retail's had IDs like 0x4001F0CC, never spawned by the server);
-talking to it starts an event on the GATE's director (`GateEventHandler`):
+The entrance is an event NPC the server spawns as the GATE begins and removes as it's over (`server/gate.rs`), its
+handler the GATE's director, so talking to it starts an event on the director (`GateEventHandler`). Its layout ID is the
+GFATE row's first LGBPopRange, which isn't a pop range at all: Air Force One's and Leap of Faith's 7773571 and 7621822
+(Sabotender Guia, ENpcResident 1016306, at (-57.86, 3.26, -65.40) in the Round Square), Any Way the Wind Blows' 5126495
+(1010476), The Slice Is Right's 8138065 (1031796), both in the Event Square. Retail's spawns had the 0x40000 display flag
+as the GATE began and none for whoever came by later. They're in `dropins/w1eb_planmap.json`, `nonpop`: upstream's
+drop-in had Air Force One's out all the time, with no handler, so she couldn't be talked to (Bob's bundle
+20261030-010154.)
 
 * Scene 0 (0x2000) `[the type's number, 0, MGP]` (the table above; not the time left.) Joining is its yield `[1]`.
 * **In the zone**: 109 `[5, 1, start, window]`, the event finishes and the player is moved onto the arena (PrepareZoning,
@@ -186,8 +192,20 @@ talking to it starts an event on the GATE's director (`GateEventHandler`):
 CustomTalk 242 (`CmnGscGATENotice`), flags 0x2000: scene 0 `[type, location, row]` while a GATE takes registrations,
 scene 1 with the same while one is under way that can't be joined any more, scene 2 `[the minute the next begins (18:00:00
 for 18:00:01's), type, location, row]` otherwise. Each returns `[1, row]` to go to the GATE's entrance: the event finishes
-and the player is moved to the entrance's pop range (PrepareZoning with warp type 2; `player:move_to_pop_range` takes a
-warp type now.)
+and the player is moved to the entrance (PrepareZoning with warp type 2, then ActorSetPos 4.5 yalms in front of its
+NPC, facing her: retail's at (-53.36, 3.26, -65.00), facing -1.82). `player:move_to_pop_range` takes a warp type, and
+given an NPC's layout ID instead of a pop range it puts the player in front of that NPC (`change_zone_warp_to_pop_range`;
+before, the warp found no pop range and left the player at the aetheryte.)
+
+### The screens and the squares
+
+As a GATE begins, every one of the Gold Saucer's GATE screens (EObj 2005037: layouts 5485250-5485253, 5668781, 5668782)
+gets ActorControl 413 `[4, 8]` from itself and shows the GATE; as its registration ends, `[1, 2]` (the in-zone ones'
+games go on after it). The Round Square's set piece (EObj 2007457, 7833432) plays Air Force One's (`[16, 32]` at the
+start, `[64, 128]` at the end) or Leap of Faith's (`[1, 2]`, `[4, 8]`); the Event Square's (EObj 2005129, 5614704) went
+`[256, 512]` and `[4, 8]` by turns through Any Way the Wind Blows. 413's two numbers look like a pair of the EObj's
+shared group timeline states (an object spawned later had the first as its SpawnObject `args1`, which the server keeps.)
+From all of the captures, whichever screens were near the player.
 
 ### Air Force One
 

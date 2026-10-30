@@ -12,7 +12,7 @@
 //!   (the phase: 3 registration, 4 starting, 5 under way, 1 over.) Coming into the zone while it lasts gives the
 //!   InitDirector alone.
 //! * The client then asks (client trigger 808 `[1]`, `[0]`), answered with 109 `[9, the GFATE row, its place among its
-//!   type's rows]`, `[6, its entrance's pop range, when registration ends]`, for a player who has joined `[8, 1, 0]`
+//!   type's rows]`, `[6, its entrance (the NPC's layout ID), when registration ends]`, for a player who has joined `[8, 1, 0]`
 //!   and `[5, 1, the start, the registration window]`, and `[11, phase]`.
 //! * An instanced GATE (Air Force One, Leap of Faith) is over once registration ends: 109 `[11, 1]` and
 //!   ActorControlSelf 101 (TerminateDirector.)
@@ -46,7 +46,7 @@ pub const NPC_YELL_GATE_BEGINS: u32 = 2450;
 #[derive(Debug, Clone, Copy)]
 pub struct GateKind {
     pub kind: u8,
-    /// How long registration lasts, in seconds: `[5, 1, start, this]` and `[6, pop range, start + this]`.
+    /// How long registration lasts, in seconds: `[5, 1, start, this]` and `[6, entrance, start + this]`.
     pub registration: u64,
     /// InitDirector's content ID.
     pub content_id: u16,
@@ -57,7 +57,22 @@ pub struct GateKind {
     pub entrance_played: u32,
     /// Played in its own duty, entered through a ContentEntry event and the Duty Finder.
     pub instanced: bool,
+    /// Its set piece in the square (an EObj, by layout ID) and the timeline states (ActorControl 413, see
+    /// `GATE_SCREENS`) it's given as the GATE begins and as it's over.
+    pub stage: Option<(u32, [u32; 2], [u32; 2])>,
 }
+
+/// The Gold Saucer's GATE screens (EObj 2005037, by layout ID): retail gave all of them ActorControl 413 `[4, 8]` as
+/// a GATE began (they show it) and `[1, 2]` as its registration ended, from each screen (Bob's Chronofoil captures
+/// deaf7e28 and 2c98f9e8, and the archive's dd09ac61, ea704111 and 61a9a4f3: whichever were near the player.) An EObj
+/// spawned afterwards had the first number as its SpawnObject `args1`.
+pub const GATE_SCREENS: [u32; 6] = [5485250, 5485251, 5485252, 5485253, 5668781, 5668782];
+pub const SCREEN_ON: [u32; 2] = [4, 8];
+pub const SCREEN_OFF: [u32; 2] = [1, 2];
+
+/// The Round Square's set piece (EObj 2007457): Air Force One's (`[16, 32]` as it begins, `[64, 128]` as it's over) or
+/// Leap of Faith's (`[1, 2]`, `[4, 8]`.)
+const ROUND_SQUARE_STAGE: u32 = 7833432;
 
 pub const GATE_KINDS: &[GateKind] = &[
     // 18:20 on 2026-10-29 (2c98f9e8), 17:20 on dd09ac61 and 20:20 on ea704111.
@@ -68,6 +83,8 @@ pub const GATE_KINDS: &[GateKind] = &[
         entrance: 89,
         entrance_played: 89,
         instanced: false,
+        // The Event Square's (EObj 2005129) went on through the game (`[256, 512]` and `[4, 8]` by turns.)
+        stage: None,
     },
     // 18:00 (2c98f9e8) and 17:40 on dd09ac61.
     GateKind {
@@ -77,6 +94,7 @@ pub const GATE_KINDS: &[GateKind] = &[
         entrance: 493,
         entrance_played: 493,
         instanced: true,
+        stage: Some((ROUND_SQUARE_STAGE, [1, 2], [4, 8])),
     },
     // 17:40 (deaf7e28), 18:40 (2c98f9e8), 20:00 on ea704111 and 17:40 on 61a9a4f3.
     GateKind {
@@ -86,6 +104,7 @@ pub const GATE_KINDS: &[GateKind] = &[
         entrance: 498,
         entrance_played: 501,
         instanced: true,
+        stage: Some((ROUND_SQUARE_STAGE, [16, 32], [64, 128])),
     },
     // 17:20 (deaf7e28.)
     GateKind {
@@ -95,6 +114,7 @@ pub const GATE_KINDS: &[GateKind] = &[
         entrance: 503,
         entrance_played: 503,
         instanced: false,
+        stage: None,
     },
 ];
 
@@ -149,6 +169,14 @@ pub fn slot_times(slot: u64) -> Option<(u64, u64, u64)> {
     // after it, but none of them are played yet.
     let end = registration_end;
     Some((start, registration_end, end))
+}
+
+/// What the Gold Saucer shows of its GATEs, as the server keeps it for the zone (`server/gate.rs`): which GATE (its
+/// slot) is on, and its entrance.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct GateShown {
+    pub slot: u64,
+    pub entrance: Option<kawari::common::ObjectId>,
 }
 
 /// A GATE that is (or will be) on.

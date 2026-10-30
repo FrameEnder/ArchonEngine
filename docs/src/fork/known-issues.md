@@ -127,7 +127,14 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   guess (1 for S, as both runs); RideShootingEnd is retail's 40 bytes as they were. Where the duty puts the player isn't
   known (InstanceContent 62005 has no entrance; Kawari picks a pop range.) A GATE played is remembered for the
   connection only (logging out and back in lets it be played again), and from the Duty Finder's question rather than
-  entering. TerminateDirector isn't sent as the player leaves the Gold Saucer during a GATE.
+  entering. TerminateDirector isn't sent as the player leaves the Gold Saucer during a GATE. The
+  entrance's spawn lacks retail's 0x40000 display flag at the GATE's start; the place the GATE Keepers put you is 4.5
+  yalms straight in front of the entrance (retail's was a little to one side.)
+* **Fixed (2026-10-29, Bob's bundles 20261030-010154, -010830, -010939)**: the GATE Keepers' warp ended at the
+  aetheryte, the entrance stood out all the time and couldn't be talked to, the screens didn't show the GATE; every
+  arcade machine stopped at its coin (GoldSaucerArcadeMachine was read without its language, so no row was found); the
+  Mini and Jumbo Cactpot brokers stuck in their quests' talk (Scratch It Rich and Hitting the Cactpot called
+  `has_quest` with the event ID, which the server refuses; questkit's harness now refuses it too.)
 * **Warps** (2026-10-29, [Travel](travel.md#warps-and-their-conditions)): the ConditionFailEvent's packets are a guess
   (retail's success talk's); a warp with a ConfirmEvent doesn't play it (retail's airship and ferry didn't either.)
 * **Mounting** (2026-10-29, [Chocobo companion](chocobo.md#riding)): retail's ActorControl 0 `[0, 1]` and 2 `[4]`

@@ -9,7 +9,7 @@
 SCENE_OFFER = 0
 
 function onTalk(target, player)
-    if player:has_quest(EVENT_ID) or BASE_ID ~= ACTOR0 then
+    if player:get_quest_sequence(EVENT_ID) ~= nil or BASE_ID ~= ACTOR0 then
         player:finish_event()
         return
     end

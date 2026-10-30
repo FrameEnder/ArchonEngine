@@ -126,6 +126,10 @@ class FakePlayer:
         return q.variables[index]
 
     def has_quest(self, quest):
+        # The server takes the quest's number (a u16), not its event ID: has_quest(EVENT_ID) is an error there, which
+        # left the Mini Cactpot broker's talk stuck (Bob's bundle 20261030-010939.)
+        if not 0 <= quest <= 0xFFFF:
+            raise ValueError(f"has_quest({quest}): the server takes a quest number (0-65535), not an event ID")
         number = self._h.quest_number(quest)
         return number in self._h.copy.quests or number in self._h.copy.completed
 

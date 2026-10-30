@@ -176,6 +176,8 @@ pub struct Instance {
     pub unreachable: HashMap<(ObjectId, ObjectId), std::time::Instant>,
     /// NPCs a director spawned hidden that come into view a little later (`director:appear_bnpc`.)
     pub pending_appearances: Vec<crate::server::director::PendingAppearance>,
+    /// The GATE the Gold Saucer is showing (its screens, its entrance's NPC), see `server/gate.rs`.
+    pub gate_shown: Option<crate::gate::GateShown>,
     /// NPCs a director holds (`director:hold_bnpc`): `npc_behavior` leaves them alone, so they do only what the
     /// director has them do (warps, jumps, actions), as retail's invisible boss helpers.
     pub held_npcs: std::collections::HashSet<ObjectId>,

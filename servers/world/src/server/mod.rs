@@ -80,6 +80,7 @@ mod dodge;
 pub mod duty_finder;
 mod effect;
 mod fall;
+mod gate;
 mod glamour;
 mod instance;
 mod job_gauge;
@@ -1480,6 +1481,8 @@ fn server_logic_tick(
             // Process any director tasks for this instance.
             director_tick(network.clone(), instance, game_data.clone());
             fate_tick(network.clone(), instance, game_data.clone());
+            // The Gold Saucer's GATEs: their entrances, screens and set pieces.
+            gate::gate_tick(network.clone(), instance, game_data.clone());
         }
         // Ensure the rested EXP counter only happens every 10 seconds.
         data.rested_exp_counter += 1;
