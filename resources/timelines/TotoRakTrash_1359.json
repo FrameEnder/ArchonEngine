@@ -1,0 +1,30 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "872": {
+            "players": 63,
+            "npcs": 31
+        },
+        "344": {
+            "players": 86.5
+        }
+    },
+    "rotation": {
+        "pace": 4.4,
+        "actions": [
+            {
+                "action": 346,
+                "every": 20.8,
+                "comment": "5 uses, every 20.8 s: a 2.2 s cast that reached nobody (TotoRakTrash_00346)"
+            },
+            {
+                "action": 344,
+                "every": 4.4,
+                "comment": "15 uses, every 4.4 s"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The Thousand Maws of Toto-Rak trash (BNpcBase 1359): 1340 HP, level 24; auto-attack 872 every 3.0 s, 344 every 4.4 s, 346 (a 2.2 s cast that reached nobody) every 20.8 s. For 364, 345 and 1014, which only poison, the recorded amount is the poison's tick (retail's ActionEffect gives it with the status). From Bob's Chronofoil captures of the Thousand Maws of Toto-Rak (2026-10-30): one run with Duty Support (caa5e908, visit 0.15) and one Duty Finder run (1fac2416, visit 0.15), `questkit chronofoil --battle`. `players` is the median damage to players over the two runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

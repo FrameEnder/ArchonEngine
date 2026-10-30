@@ -32,8 +32,8 @@ use kawari::{
     common::{
         CharacterMode, DistanceRange, DropIn, DropInLayer, DropInObjectData, ENTRANCE_CIRCLE_IDS,
         EOBJ_EXIT, EOBJ_HOUSING_ENTRANCE, EOBJ_SHORTCUT, EOBJ_SHORTCUT_EXPLORER_MODE, EventState,
-        GimmickRectTriggerType, HandlerType, ObjectId, Position, TerritoryIntendedUse, WARP_DELAY,
-        WarpType, euler_to_direction, internal_housing_row,
+        GimmickAccessorType, GimmickRectTriggerType, HandlerType, ObjectId, Position,
+        TerritoryIntendedUse, WARP_DELAY, WarpType, euler_to_direction, internal_housing_row,
     },
     config::get_config,
     ipc::zone::{
@@ -121,6 +121,23 @@ pub struct Zone {
     /// The drop-ins' unspoiled, legendary and ephemeral gathering points, spawned while they're up
     /// (`Instance::update_timed_gathering_points`.)
     pub timed_gathering_points: Vec<TimedGatheringPoint>,
+    /// The duty's exits (EObj IDs), hidden until it's complete (`get_event_objects`): every event object whose gimmick
+    /// is the duty exit (GimmickAccessor of the DutyExit kind), not only 2000139, which most dungeons use; the Thousand
+    /// Maws of Toto-Rak's is 2000683 (its EObj Data the same GimmickAccessor, 5; retail spawned it hidden and showed it
+    /// as the duty was complete, Bob's Chronofoil captures caa5e908 and 1fac2416 of 2026-10-30.)
+    pub exit_eobjs: Vec<u32>,
+}
+
+/// Whether this event object's gimmick is the duty exit (its EObj Data a GimmickAccessor of the DutyExit kind.)
+fn is_duty_exit(game_data: &mut GameData, base_id: u32) -> bool {
+    if base_id == EOBJ_EXIT {
+        return true;
+    }
+    let data = game_data.get_eobj_data(base_id);
+    data >> 16 == HandlerType::GimmickAccessor as u32
+        && game_data
+            .lookup_gimmick_accessor(data & 0xFFFF)
+            .is_some_and(|(kind, ..)| matches!(kind, GimmickAccessorType::DutyExit))
 }
 
 /// A gathering point that's only up at certain Eorzea times.
@@ -680,9 +697,13 @@ impl Zone {
                         };
 
                         // Hide shortcuts and exits, these are spawned later by the director.
+                        let exit = is_duty_exit(game_data, eobj.parent_data.base_id);
+                        if exit && !self.exit_eobjs.contains(&eobj.parent_data.base_id) {
+                            self.exit_eobjs.push(eobj.parent_data.base_id);
+                        }
                         let event_state = if (eobj.parent_data.base_id == EOBJ_SHORTCUT
                             && !explorer_mode)
-                            || eobj.parent_data.base_id == EOBJ_EXIT
+                            || exit
                         {
                             EventState::OFF | EventState::UNK2 | EventState::UNK3
                         } else if explorer_mode {

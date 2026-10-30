@@ -110,7 +110,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * **The Twelveswood's story, Spirited Away (725) to Into the Beast's Maw (514)** (2026-10-30, from Bob's dumps and
   Chronofoil capture caa5e908): untested in game; each replays against its retail run and a second run of another
   character's (capture 1fac2416, 2026-10-30; `<quest>-1fac2416.json`). Into the Beast's Maw needs
-  the Thousand Maws of Toto-Rak, which isn't in Kawari yet (the capture has a 27-minute run of it with Duty Support).
+  the Thousand Maws of Toto-Rak, scripted since 2026-10-30 (see below) and untested.
   Sylphish Concerns' second destination's nibble (UI8CL) is a guess (it was the last in both runs). The quests' humanoid enemies (BNpcBase 55, 61, 62,
   64) use the Western Thanalan 4th Cohort's timelines (the same bases), not numbers from these fights.
 * **The Twelveswood's story, We Come in Peace (3856) to Brotherly Love (724)** (2026-10-30, from Bob's dumps and
@@ -601,6 +601,22 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   Unknown7 (0x40000007: (0, 1) and (1, 1) during the run, (0, 0) and (1, 0) at the clear), ActorControlSelf 130 (3, 1)
   and 257 ×3, or UnkContentFinder2 (3, 4); the clear rewards need checking against the InstanceContent sheet.
 * The timelines are by BNpcBase (1395-1403, 1421, 14448, 14449, 14460, 14537, 9020).
+
+## The Thousand Maws of Toto-Rak
+
+* Untested in game (2026-10-30), from two runs (one with Duty Support, one Duty Finder run). The director was checked
+  against both with a throwaway lupa harness (its webs, objectives, rooms, adds, eggs, tail and end within a tick of
+  retail's where the run's own positions and health allow); no questkit command does that for a duty yet.
+* The drop-in's LGB (`bg/ffxiv/fst_f1/rad/f1r1/level/planmap.lgb`) is the TerritoryType's folder plus `planmap.lgb`, not
+  checked against the LVB. The last boss's tail has a layout ID of the fork's (99000266); retail's had none.
+* The webs' collision: party NPCs walk through a web after 2 s held up by it (as any wall in a duty), burnt or not;
+  they follow the player, who can't pass one standing.
+* Not done: the shortcut, the event object near the last boss 4 s into each 702, the item given as the duty was
+  complete, what ActorControl 30 and 31 on the last boss do, the boss's facing for its tail. The last boss's 704 comes
+  at once at 55 %; retail's waited for what the boss was doing (up to 3 s). The poisons' ticks are retail's numbers;
+  how often they tick (3 s) and their 15 s are from the StatusEffectList, and 1355's and 1360's 345 and 364 were seen
+  on few targets. 346 (1359) reached nobody and does nothing.
+* Duty Support's Lancer (41) at 24 has a guessed 639 HP.
 
 ## The Bowl of Embers
 

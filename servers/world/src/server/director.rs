@@ -8,7 +8,7 @@ use std::{
 
 use kawari::{
     common::{
-        ContentDirectorEvent, DirectorEvent, DirectorTrigger, DutyOption, EOBJ_EXIT, EOBJ_SHORTCUT,
+        ContentDirectorEvent, DirectorEvent, DirectorTrigger, DutyOption, EOBJ_SHORTCUT,
         EventState, GimmickAccessorType, GimmickRectEvent, HandlerId, HandlerType,
         InstanceContentDirectorEvent, LeveDirectorEvent, LogMessageType, ObjectId, ObjectTypeId,
         ObjectTypeKind, Position, PublicContentType, TerritoryIntendedUse, WARP_DELAY, WarpType,
@@ -19,7 +19,7 @@ use kawari::{
     ipc::zone::{
         ActorControlCategory, ActorControlSelf, ActorSetPos, ChatMessage, DisplayFlag,
         DutyFinderSetting, EventLogMessage, MapEffects, PrepareZoning, ServerZoneIpcData,
-        ServerZoneIpcSegment, TreasureKind, WalkInEvent,
+        ServerZoneIpcSegment, TreasureKind, WalkInEvent, WeatherChange,
     },
 };
 use mlua::{Function, LuaSerdeExt, UserData, UserDataMethods, Value};
@@ -74,6 +74,9 @@ pub enum LuaDirectorTask {
     SpawnBattleNpc {
         id: u32,
         actor_id: ObjectId,
+        /// Where, if not its layout's spot (and its facing, if given): the Thousand Maws of Toto-Rak's last boss put its
+        /// adds (one layout ID for each kind) wherever it called them.
+        at: Option<(Position, Option<f32>)>,
     },
     /// Spawn a BNpc (by layout ID) tethered to another (by layout ID): the line the client draws between them, a
     /// Channeling row, comes with its spawn and goes when it dies (retail: Tam-Tara's shields to Galvanth.)
@@ -297,6 +300,39 @@ pub enum LuaDirectorTask {
     RetreatBattleNpc {
         who: u32,
     },
+    /// Make a BNpc (actor ID or layout ID) targetable or not (ActorControl `SetTargetable`, 54, to everyone around):
+    /// the Thousand Maws of Toto-Rak's room bosses wait in their webs untargetable until their room's guards are down.
+    SetTargetable {
+        who: u32,
+        targetable: bool,
+    },
+    /// Send a BNpc (actor ID or layout ID) an ActorControl by its category and parameters, for the ones Kawari has no
+    /// name for (as `EObjControl`): the Thousand Maws of Toto-Rak's last boss's 30 and 31 as its tail comes off.
+    BattleNpcControl {
+        who: u32,
+        category: u32,
+        params: [u32; 4],
+    },
+    /// A BNpc (actor ID or layout ID) dies where it stands, as if its health ran out (`actor::kill_actor`): the
+    /// Thousand Maws of Toto-Rak's last boss's eggs, gone with their own blast.
+    KillBattleNpc {
+        who: u32,
+    },
+    /// The duty's objectives (ContentDirector 0x80000016 and 0x80000015): `done` is done, and `next` is the one now, if
+    /// there's another.
+    Objective {
+        done: u32,
+        next: Option<u32>,
+    },
+    /// The weather everyone in the instance sees now (WeatherId), fading in over `fade` seconds; `forced` as retail's
+    /// second byte (1 for the Thousand Maws of Toto-Rak's last fight's, 0 as it went back.)
+    SetWeather {
+        id: u8,
+        fade: f32,
+        forced: bool,
+    },
+    /// Show the duty's exits (every event object in the zone whose gimmick is the duty exit, `Zone::exit_eobjs`.)
+    ShowExits,
     /// Bring a BNpc spawned hidden (its display flags have INVISIBLE, as retail's spawn had) into view `delay` seconds
     /// from now: ActorControl `Appear` (a fade-in, and `action_timeline` played on it) then `SetTargetable`, as retail
     /// did for the Copperbell Mines' ambushing gigas (158, 0.6-0.9 s after their spawn; Bob's captures of 2026-10-25.)
@@ -445,6 +481,8 @@ pub struct ActorInfo {
     /// Who it's targeting: an NPC's layout ID, or the player.
     pub target_layout: Option<u32>,
     pub target_is_player: bool,
+    /// Whether it's targeting anyone at all (a party NPC has no layout ID: its target shows as "party".)
+    pub has_target: bool,
 }
 
 /// A director cutscene's scene parameters after its ID, unless the script gives its own: upstream's, as retail sent
@@ -511,12 +549,21 @@ impl UserData for LuaDirector {
             this.tasks.push(LuaDirectorTask::LogMessage { id, params });
             Ok(())
         });
-        methods.add_method_mut("spawn_bnpc", |_, this, id: u32| {
-            let actor_id = ObjectId(fastrand::u32(1..0xE000_0000));
-            this.tasks
-                .push(LuaDirectorTask::SpawnBattleNpc { id, actor_id });
-            Ok(actor_id.0)
-        });
+        methods.add_method_mut(
+            "spawn_bnpc",
+            |_, this, (id, x, y, z, rotation): (u32, Option<f32>, Option<f32>, Option<f32>, Option<f32>)| {
+                let actor_id = ObjectId(fastrand::u32(1..0xE000_0000));
+                let at = match (x, y, z) {
+                    (Some(x), Some(y), Some(z)) => {
+                        Some((Position(glam::Vec3A::new(x, y, z)), rotation))
+                    }
+                    _ => None,
+                };
+                this.tasks
+                    .push(LuaDirectorTask::SpawnBattleNpc { id, actor_id, at });
+                Ok(actor_id.0)
+            },
+        );
         methods.add_method_mut(
             "spawn_tethered_bnpc",
             |_, this, (id, to, channeling): (u32, u32, u16)| {
@@ -634,9 +681,8 @@ impl UserData for LuaDirector {
             Ok(())
         });
         methods.add_method_mut("complete_duty", |_, this, _: ()| {
-            // Show the exit object
-            this.tasks
-                .push(LuaDirectorTask::ShowEObj { base_id: EOBJ_EXIT });
+            // Show the exit objects
+            this.tasks.push(LuaDirectorTask::ShowExits);
             this.tasks.push(LuaDirectorTask::CompleteDuty {});
             Ok(())
         });
@@ -915,6 +961,48 @@ impl UserData for LuaDirector {
             this.tasks.push(LuaDirectorTask::RetreatBattleNpc { who });
             Ok(())
         });
+        methods.add_method_mut(
+            "set_targetable",
+            |_, this, (who, targetable): (u32, bool)| {
+                this.tasks
+                    .push(LuaDirectorTask::SetTargetable { who, targetable });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "bnpc_control",
+            |_, this, (who, category, params): (u32, u32, Option<Vec<u32>>)| {
+                let mut four = [0; 4];
+                for (slot, value) in four.iter_mut().zip(params.unwrap_or_default()) {
+                    *slot = value;
+                }
+                this.tasks.push(LuaDirectorTask::BattleNpcControl {
+                    who,
+                    category,
+                    params: four,
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut("kill_bnpc", |_, this, who: u32| {
+            this.tasks.push(LuaDirectorTask::KillBattleNpc { who });
+            Ok(())
+        });
+        methods.add_method_mut("objective", |_, this, (done, next): (u32, Option<u32>)| {
+            this.tasks.push(LuaDirectorTask::Objective { done, next });
+            Ok(())
+        });
+        methods.add_method_mut(
+            "set_weather",
+            |_, this, (id, fade, forced): (u8, Option<f32>, Option<bool>)| {
+                this.tasks.push(LuaDirectorTask::SetWeather {
+                    id,
+                    fade: fade.unwrap_or(0.0),
+                    forced: forced.unwrap_or(false),
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut("release_bnpc", |_, this, who: u32| {
             this.tasks.push(LuaDirectorTask::ReleaseBattleNpc { who });
             Ok(())
@@ -1069,6 +1157,8 @@ impl DirectorData {
                     entry.set("target", target)?;
                 } else if actor.target_is_player {
                     entry.set("target", "player")?;
+                } else if actor.has_target {
+                    entry.set("target", "party")?;
                 }
                 match key.parse::<u32>() {
                     Ok(layout_id) => details.set(layout_id, entry)?,
@@ -1245,8 +1335,15 @@ impl DirectorData {
     }
 
     /// A BNpc (`layout_id`, as `actor_id`) began an action (`onActorCast`), for scripts that answer what a boss does:
-    /// the Copperbell Mines' Kottos' 28543 sets off its markers and its jumps.
-    pub fn on_actor_cast(&mut self, layout_id: u32, action_id: u32, actor_id: ObjectId) {
+    /// the Copperbell Mines' Kottos' 28543 sets off its markers and its jumps. Where its target stood comes after
+    /// (x, y, z; nil without one): the Thousand Maws of Toto-Rak's last boss's eggs land there.
+    pub fn on_actor_cast(
+        &mut self,
+        layout_id: u32,
+        action_id: u32,
+        actor_id: ObjectId,
+        target: Option<Position>,
+    ) {
         if self.lua.0.globals().get::<Function>("onActorCast").is_err() {
             return;
         }
@@ -1255,7 +1352,11 @@ impl DirectorData {
             let err = self.lua.0.scope(|scope| {
                 let data = scope.create_userdata_ref_mut(&mut lua_director)?;
                 let func: Function = self.lua.0.globals().get("onActorCast")?;
-                func.call::<()>((data, layout_id, action_id, actor_id.0))?;
+                let (x, y, z) = match target {
+                    Some(position) => (Some(position.0.x), Some(position.0.y), Some(position.0.z)),
+                    None => (None, None, None),
+                };
+                func.call::<()>((data, layout_id, action_id, actor_id.0, x, y, z))?;
                 Ok(())
             });
             self.apply_lua_director(lua_director);
@@ -1557,7 +1658,30 @@ fn update_director(instance: &mut Instance) {
             position: common.position.0,
             target_layout: layout_of.get(&target).copied(),
             target_is_player: players.contains(&target),
+            has_target: target.is_valid(),
         });
+    }
+    // Every player too, as "player1", "player2"... ("player" is one of them): a duty's line is crossed by whoever
+    // reaches it first (the Thousand Maws of Toto-Rak's rooms, another player's in a Duty Finder run.)
+    let mut sorted_players = players.clone();
+    sorted_players.sort_by_key(|id| id.0);
+    for (index, id) in sorted_players.iter().enumerate() {
+        let Some(actor) = instance.find_actor(*id) else {
+            continue;
+        };
+        let common = actor.get_common_spawn();
+        let target = common.target_id.object_id;
+        info.insert(
+            format!("player{}", index + 1),
+            ActorInfo {
+                hp: common.health_points,
+                max_hp: common.max_health_points,
+                position: common.position.0,
+                target_layout: layout_of.get(&target).copied(),
+                target_is_player: players.contains(&target),
+                has_target: target.is_valid(),
+            },
+        );
     }
     // The party's NPCs (Duty Support members and bots, which have no layout ID) as "party1", "party2"...: whom an
     // attack on the party can fall on (Ifrit's Eruption, under one of them.)
@@ -1580,6 +1704,7 @@ fn update_director(instance: &mut Instance) {
                 position: common.position.0,
                 target_layout: layout_of.get(&target).copied(),
                 target_is_player: players.contains(&target),
+                has_target: target.is_valid(),
             },
         );
     }
@@ -1622,6 +1747,22 @@ pub fn director_tick(
     } else {
         return;
     };
+    // How many of the director's tasks this tick takes: any a death in it queues (`KillBattleNpc`'s `onActorDeath`)
+    // wait for the next.
+    let taken = tasks.len();
+    // The duty's exits, each shown as an event object.
+    let tasks: Vec<LuaDirectorTask> = tasks
+        .into_iter()
+        .flat_map(|task| match task {
+            LuaDirectorTask::ShowExits => instance
+                .zone
+                .exit_eobjs
+                .iter()
+                .map(|base_id| LuaDirectorTask::ShowEObj { base_id: *base_id })
+                .collect(),
+            task => vec![task],
+        })
+        .collect();
 
     let mut bosses = if let Some(director) = &instance.directors.first() {
         director.bosses.clone()
@@ -1797,9 +1938,15 @@ pub fn director_tick(
                     DestinationNetwork::ZoneClients,
                 );
             }
-            LuaDirectorTask::SpawnBattleNpc { id, actor_id } => {
+            LuaDirectorTask::SpawnBattleNpc { id, actor_id, at } => {
                 if let Some(mut npc) = instance.zone.get_battle_npc(*id) {
                     npc.common.handler_id = director_id;
+                    if let Some((position, rotation)) = at {
+                        npc.common.position = *position;
+                        if let Some(rotation) = rotation {
+                            npc.common.rotation = *rotation;
+                        }
+                    }
                     let config = get_config();
                     let mut game_data = game_data.lock();
                     instance.insert_npc(*actor_id, npc, &config, &mut game_data);
@@ -2621,6 +2768,102 @@ pub fn director_tick(
                     },
                 );
             }
+            LuaDirectorTask::SetTargetable { who, targetable } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} for SetTargetable!");
+                    continue;
+                };
+                network.lock().send_ac_in_range_instance(
+                    instance,
+                    actor_id,
+                    ActorControlCategory::SetTargetable {
+                        targetable: *targetable,
+                    },
+                );
+            }
+            LuaDirectorTask::BattleNpcControl {
+                who,
+                category,
+                params,
+            } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} for BattleNpcControl!");
+                    continue;
+                };
+                network.lock().send_ac_in_range_instance(
+                    instance,
+                    actor_id,
+                    ActorControlCategory::Unknown {
+                        category: *category,
+                        param1: params[0],
+                        param2: params[1],
+                        param3: params[2],
+                        param4: params[3],
+                        param5: 0,
+                    },
+                );
+            }
+            LuaDirectorTask::KillBattleNpc { who } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} for KillBattleNpc!");
+                    continue;
+                };
+                let alive = instance.find_actor_mut(actor_id).is_some_and(|actor| {
+                    let common = actor.get_common_spawn_mut();
+                    let alive = common.health_points > 0;
+                    common.health_points = 0;
+                    alive
+                });
+                if alive {
+                    crate::server::actor::kill_actor(network.clone(), instance, actor_id);
+                }
+            }
+            LuaDirectorTask::Objective { done, next } => {
+                let mut events = vec![ContentDirectorEvent::ObjectiveDone {
+                    index: *done,
+                    done: 1,
+                }];
+                if let Some(next) = next {
+                    events.push(ContentDirectorEvent::SetObjective {
+                        index: *next,
+                        unk: 0,
+                    });
+                }
+                let mut network = network.lock();
+                for event in events {
+                    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorControlSelf(
+                        ActorControlSelf {
+                            category: ActorControlCategory::DirectorEvent {
+                                handler_id: director_id,
+                                event: DirectorEvent::ContentDirector(event),
+                            },
+                        },
+                    ));
+                    network.send_to_instance(
+                        ObjectId::default(),
+                        instance,
+                        FromServer::PacketSegment(ipc, ObjectId::default()),
+                        DestinationNetwork::ZoneClients,
+                    );
+                }
+            }
+            LuaDirectorTask::SetWeather { id, fade, forced } => {
+                instance.weather_id = *id as u16;
+                let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::WeatherId(WeatherChange {
+                    weather_id: *id,
+                    disables_override: *forced,
+                    fade_length: *fade,
+                    ..Default::default()
+                }));
+                network.lock().send_to_instance(
+                    ObjectId::default(),
+                    instance,
+                    FromServer::PacketSegment(ipc, ObjectId::default()),
+                    DestinationNetwork::ZoneClients,
+                );
+            }
+            // Expanded into `ShowEObj`s above.
+            LuaDirectorTask::ShowExits => {}
             LuaDirectorTask::RetreatBattleNpc { who } => {
                 let Some(actor_id) = resolve_bnpc(instance, *who) else {
                     tracing::warn!("Failed to find bnpc {who} to send back!");
@@ -2767,7 +3010,7 @@ pub fn director_tick(
     }
 
     if let Some(director) = &mut instance.directors.first_mut() {
-        director.tasks.clear();
+        director.tasks.drain(..taken.min(director.tasks.len()));
         director.bosses = bosses;
     }
 }

@@ -227,6 +227,9 @@ Enemies still compute damage like players do (stat × potency), which is far too
   tick out from the NPC's stats as if it were a player's, which made Victory in Peril's corsair conjurers' Aero tick
   for 26–28 where retail's were 2–7 (the hit, scaled to 7, was right). Aero's tick is 30 potency to the hit's 50, so
   the same scale gives about 4.
+* An NPC action with **no hit, only a damage over time** (the Thousand Maws of Toto-Rak's poisons) has its recorded
+  amount as the tick (`set_npc_periodic_damage`): retail's ActionEffect gives the tick with the status (effect kind 14:
+  the status, the tick, 50), 57 on the player and 19 on a Duty Support member for the room bosses' 1014.
 * Drains (`heal_self` effect, e.g. Blood Drain) heal the attacker by what they took; the attacker's HP is sent after.
 
 A timeline with `timeline_always_plays` (only Sastasha's giant clams have one) runs whether or not the NPC is

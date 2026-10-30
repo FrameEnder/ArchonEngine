@@ -121,12 +121,14 @@ pub enum ContentDirectorEvent {
     /// ???
     #[brw(magic = 0x80000014u32)]
     UnknownDirector14 { unk1: u32 },
-    /// ???
+    /// The duty's objective now (fork): its index among the InstanceContent's objectives (InstanceContentTextData
+    /// ObjectiveStart to ObjectiveEnd), and 0. Retail's in the Thousand Maws of Toto-Rak (its six objectives, 33300-33305):
+    /// the next one each time one was done (Bob's Chronofoil captures caa5e908 and 1fac2416 of 2026-10-30.)
     #[brw(magic = 0x80000015u32)]
-    UnknownDirector15 { unk1: u32 },
-    /// ???
+    SetObjective { index: u32, unk: u32 },
+    /// An objective done (fork): its index, and 1 (retail's every time.)
     #[brw(magic = 0x80000016u32)]
-    UnknownDirector16 { unk1: u32 },
+    ObjectiveDone { index: u32, done: u32 },
     /// Sound related?
     #[brw(magic = 0x80000017u32)]
     UnknownDirector17 { unk1: u32, unk2: u32 },

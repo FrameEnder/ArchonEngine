@@ -300,8 +300,9 @@ pub const TRIAL_MEMBERS: [Member; 4] = [
         name_id: 11330,
         slot_member: 10004,
         slot_resident: 1042780,
-        // 13952 in both of the capture's attempts at Ifrit (15.6 and 34.6 s into the fight.)
-        chatter: &[13952],
+        // 13952 in both of the capture's attempts at Ifrit (15.6 and 34.6 s into the fight); 13951, 13952 and 13953 in
+        // the Thousand Maws of Toto-Rak (Bob's capture caa5e908 of 2026-10-30.)
+        chatter: &[13952, 13951, 13953],
         opens_with_first: false,
         ..MEMBERS[0]
     },
@@ -320,7 +321,8 @@ pub const TRIAL_MEMBERS: [Member; 4] = [
         name_id: 11332,
         slot_member: 10006,
         slot_resident: 1042782,
-        chatter: &[],
+        // 13972 (seven times) in the Thousand Maws of Toto-Rak (Bob's capture caa5e908 of 2026-10-30.)
+        chatter: &[13972],
         ..MEMBERS[2]
     },
     Member {
@@ -344,12 +346,16 @@ pub const TRIAL_MEMBERS: [Member; 4] = [
 /// takes the member's own `level` and `hp`.
 /// The Conjurer (39, 43) the same (Bob's captures c99fe374 and cc62ad94 of 2026-10-28): 293 HP at 15 in Sastasha, 316 at
 /// 16, 339 at 17, 432 at 20.
-pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 4] = [
+pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 5] = [
     (4, 15, &[(36, 411), (37, 322), (38, 293), (39, 293)]),
     (2, 16, &[(36, 443), (37, 347), (38, 316), (39, 316)]),
     (3, 17, &[(36, 476), (37, 372), (38, 339), (39, 339)]),
     // The Bowl of Embers (Bob's capture b8432613 of 2026-10-27, visit 0.16): the trials' three at 20.
     (56, 20, &[(40, 618), (41, 469), (42, 428), (43, 432)]),
+    // The Thousand Maws of Toto-Rak (Bob's capture caa5e908 of 2026-10-30, visit 0.15): the trials' three (40, 42 and the
+    // Conjurer, 43) at 24 with 842, 583 and 588. The Lancer (41) wasn't there: 639 is a guess, the Marauder's HP by the
+    // Lancer's share of it at 20 (469 of 618.)
+    (1, 24, &[(40, 842), (41, 639), (42, 583), (43, 588)]),
 ];
 
 /// A member's level and HP in the duty `content_finder_condition`.

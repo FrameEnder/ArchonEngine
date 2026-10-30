@@ -2,8 +2,8 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use kawari::{
     common::{
-        DEBUG_COMMAND_TRIGGER, DirectorEvent, EOBJ_EXIT, EventState, HandlerId, HandlerType,
-        ObjectId, WarpType,
+        DEBUG_COMMAND_TRIGGER, DirectorEvent, EventState, HandlerId, HandlerType, ObjectId,
+        WarpType,
     },
     ipc::zone::{
         ActionRequest, ActionType, ActorControlCategory, ServerNoticeMessage, ServerZoneIpcData,
@@ -655,7 +655,7 @@ fn process_debug_commands(
                     .first_mut()
                     .unwrap()
                     .tasks
-                    .push(LuaDirectorTask::ShowEObj { base_id: EOBJ_EXIT });
+                    .push(LuaDirectorTask::ShowExits);
                 instance
                     .directors
                     .first_mut()

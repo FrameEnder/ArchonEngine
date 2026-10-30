@@ -1,0 +1,56 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 57,
+            "npcs": 35
+        },
+        "697": {
+            "players": 121,
+            "npcs": 45.5
+        },
+        "701": {
+            "players": 238,
+            "npcs": 208
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 8.0,
+            "every": 27.5,
+            "data": {
+                "type": "action",
+                "action_id": 697
+            },
+            "comment": "697 (instant, it hits those in front of it too) 7.6 and 9.1 s after its pull, then every 27.6 s (25.9-36.2)"
+        },
+        {
+            "time": 16.5,
+            "every": 36.5,
+            "data": {
+                "type": "action",
+                "action_id": 701,
+                "target": "itself"
+            },
+            "comment": "701 (2.2 s, round itself) 16.1 and 17.4 s after its pull, then every 36.6 s (30.7-51.0)"
+        },
+        {
+            "time": 25.0,
+            "every": 27.5,
+            "data": {
+                "type": "action",
+                "action_id": 698,
+                "target": "other"
+            },
+            "comment": "698 (1.2 s) 25.1 and 25.3 s after its pull, then every 27.8 s (22.5-32.4), on someone other than its target: an egg (572) lands where they stood 4.7 s after it began (the director, f1r1_re.lua onActorCast)"
+        }
+    ],
+    "animation_locks": {
+        "697": 2.1,
+        "698": 2.1,
+        "701": 2.1
+    },
+    "from_pull": true,
+    "comment": "The Thousand Maws of Toto-Rak's last boss (BNpcBase 259, 3446839): 10451 HP, level 24; auto-attack 870 every 3.0 s, 697 every 27.6 s, 701 every 36.6 s, 698 every 27.8 s from its pull; at 55 % the director has it use 704 and 702 (its tail, 266) and calls its adds (260) at 75 and 30 %. For 364, 345 and 1014, which only poison, the recorded amount is the poison's tick (retail's ActionEffect gives it with the status). From Bob's Chronofoil captures of the Thousand Maws of Toto-Rak (2026-10-30): one run with Duty Support (caa5e908, visit 0.15) and one Duty Finder run (1fac2416, visit 0.15), `questkit chronofoil --battle`. `players` is the median damage to players over the two runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

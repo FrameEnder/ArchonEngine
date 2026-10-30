@@ -919,6 +919,7 @@ pub fn execute_action(
                 scale_npc_periodic_damage(&mut effects_builder.periodic, scale);
             } else {
                 scale_npc_heal(&mut effects_builder.effects, recorded);
+                set_npc_periodic_damage(&mut effects_builder.periodic, recorded);
             }
         } else if npc_hitting_player && let Some(effects_builder) = &mut effects_builder {
             let scale = npc_damage_scale(actor, common_spawn.level);
@@ -3135,6 +3136,17 @@ fn scale_npc_periodic_damage(periodic: &mut [PeriodicSpec], scale: f32) {
     for spec in periodic.iter_mut() {
         if matches!(spec.kind, PeriodicKind::Damage) && !spec.on_self {
             spec.amount = ((spec.amount as f32 * scale).round() as u32).max(1);
+        }
+    }
+}
+
+/// An NPC's action with no hit, only a damage over time (the Thousand Maws of Toto-Rak's poisons: status 2089 from the
+/// room bosses' 1014, 57 a tick on retail's player and 19 on a Duty Support member, its adds' 3-9): its recorded amount
+/// is the tick's, as retail's ActionEffect gives it with the status (Bob's Chronofoil captures caa5e908 and 1fac2416.)
+fn set_npc_periodic_damage(periodic: &mut [PeriodicSpec], recorded: f32) {
+    for spec in periodic.iter_mut() {
+        if matches!(spec.kind, PeriodicKind::Damage) && !spec.on_self {
+            spec.amount = (recorded.round() as u32).max(1);
         }
     }
 }

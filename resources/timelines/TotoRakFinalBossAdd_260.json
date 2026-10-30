@@ -1,0 +1,12 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 76.5,
+            "npcs": 30
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The Thousand Maws of Toto-Rak's last boss's adds (BNpcBase 260, all layout 3862492): 670 HP, level 24, two at a time as the boss falls to 75 and 30 %; auto-attack 870 every 3.0 s, nothing else. For 364, 345 and 1014, which only poison, the recorded amount is the poison's tick (retail's ActionEffect gives it with the status). From Bob's Chronofoil captures of the Thousand Maws of Toto-Rak (2026-10-30): one run with Duty Support (caa5e908, visit 0.15) and one Duty Finder run (1fac2416, visit 0.15), `questkit chronofoil --battle`. `players` is the median damage to players over the two runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}
