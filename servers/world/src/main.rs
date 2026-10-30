@@ -4413,7 +4413,7 @@ async fn process_packet(
         }
 
         // Update lua player
-        lua_player.player_data = connection.player_data.clone();
+        connection.sync_lua_player(lua_player);
     }
 
     true
@@ -4658,7 +4658,7 @@ async fn process_server_msg(
                 if connection.process_lua_player(lua_player, events).await {
                     connection.process_lua_player(lua_player, events).await;
                 }
-                lua_player.player_data = connection.player_data.clone();
+                connection.sync_lua_player(lua_player);
             }
             FromServer::NewStatusEffects(status_effects) => {
                 lua_player.status_effects = status_effects
@@ -5439,7 +5439,7 @@ async fn process_server_msg(
         if connection.process_lua_player(lua_player, events).await {
             connection.process_lua_player(lua_player, events).await;
         }
-        lua_player.player_data = connection.player_data.clone();
+        connection.sync_lua_player(lua_player);
     }
 }
 
@@ -5463,7 +5463,7 @@ async fn client_loop(
     client_handle.actor_id = connection.player_data.character.actor_id;
 
     // Do an initial update otherwise it may be uninitialized for the first packet that needs Lua
-    lua_player.player_data = connection.player_data.clone();
+    connection.sync_lua_player(&mut lua_player);
 
     // tell the server we exist, now that we confirmed we are a legitimate connection
     connection

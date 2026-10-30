@@ -4,6 +4,7 @@ use crate::{
     GameData, SyncedItemStats, ToServer, ZoneConnection,
     gamedata::{ItemInfoQuery, ItemRow, Modifiers},
     inventory::{ITEM_FLAG_HQ, Storage},
+    lua::LuaPlayer,
 };
 use icarus::{ParamGrow::ParamGrowRow, Tribe::TribeRow};
 use kawari::{
@@ -917,6 +918,18 @@ impl ZoneConnection {
                 base_parameters,
             ))
             .await;
+    }
+
+    /// Brings the scripts' view of the player up to date: their data and the level they're at (the synced level
+    /// while synced, as their spawn has it). Event scripts saw level 0 until 2026-10-30, so every warp asking for a
+    /// class level (WarpCondition's ClassLevel) turned the player away: Romarique's ferry to Sweetbloom Pier (Warp
+    /// 131077, condition 4: level 10) said to come back at level 10 to a level 24 (Bob's bundle 20261030-101331.)
+    pub fn sync_lua_player(&self, lua_player: &mut LuaPlayer) {
+        lua_player.player_data = self.player_data.clone();
+        lua_player.current_level = match self.synced_level {
+            Some(level) => level,
+            None => self.current_level(&self.game_data.lock()) as u8,
+        };
     }
 
     pub fn current_level(&self, game_data: &GameData) -> u16 {

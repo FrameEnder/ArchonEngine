@@ -657,7 +657,7 @@ impl ZoneConnection {
             .collect();
 
         // Scripts should see the latest quest state.
-        lua_player.player_data = self.player_data.clone();
+        self.sync_lua_player(lua_player);
 
         for quest_id in quest_ids {
             let handler_id = HandlerId::new(HandlerType::Quest, quest_id);
@@ -683,7 +683,7 @@ impl ZoneConnection {
         // "To Crush Your Enemies" counts it.
         self.add_to_achievement_counter(super::achievement::COUNTER_ENEMIES_DEFEATED, 1)
             .await;
-        lua_player.player_data = self.player_data.clone();
+        self.sync_lua_player(lua_player);
     }
 
     /// The player is leaving a duty they cleared: every active quest hears of it (`onDutyCleared`), as retail moved
@@ -702,7 +702,7 @@ impl ZoneConnection {
             .iter()
             .map(|quest| quest.id)
             .collect();
-        lua_player.player_data = self.player_data.clone();
+        self.sync_lua_player(lua_player);
 
         for quest_id in quest_ids {
             let handler_id = HandlerId::new(HandlerType::Quest, quest_id);
@@ -718,7 +718,7 @@ impl ZoneConnection {
         }
 
         self.process_lua_player(lua_player, events).await;
-        lua_player.player_data = self.player_data.clone();
+        self.sync_lua_player(lua_player);
     }
 
     /// Moves the EXP chain along for a kill that counts and returns its place in the chain (from 0), the window the

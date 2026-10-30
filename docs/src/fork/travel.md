@@ -97,6 +97,11 @@ reads it through `player:warp_info(id)` (`GameData::get_warp_details`) and plays
   Limsa Lominsa to Ul'dah, warp 31), then warps. The **fare** is taken as the warp goes (retail's gil slot came with
   PrepareZoning: Aleport's 40 gil, the airship's 120); Kawari took none until 2026-10-29 (Bob's bundle
   20261029-154625.)
+* **The class level** is the player's current class's (the synced one while synced). Event scripts saw level 0 until
+  2026-10-30 (`LuaPlayer::current_level` was only filled in for actions), so every warp asking for a level turned the
+  player away: Romarique's ferry to Sweetbloom Pier (warp 131077, WarpCondition 4: level 10, no quests or fare)
+  played its fail talk (DefaultTalk 590355) to a level 24 (Bob's bundle 20261030-101331). The connection now fills it
+  in with the player's data whenever it refreshes the scripts' view (`ZoneConnection::sync_lua_player`).
 
 ## Warping within a zone
 
