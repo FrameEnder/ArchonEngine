@@ -1,0 +1,48 @@
+{
+    "autoattack_action_id": 871,
+    "recorded_amounts": {
+        "871": {
+            "npcs": 50
+        },
+        "75": {
+            "npcs": 85
+        },
+        "78": {
+            "npcs": 101.5
+        },
+        "84": {
+            "npcs": 51
+        },
+        "120": {
+            "npcs": 132
+        }
+    },
+    "rotation": {
+        "pace": 6.2,
+        "actions": [
+            {
+                "action": 83,
+                "every": 45.7,
+                "comment": "Life Surge, twice, on himself"
+            },
+            {
+                "action": 84,
+                "every": 32.8,
+                "comment": "Full Thrust, 3 uses"
+            },
+            {
+                "action": 78,
+                "every": 45.7,
+                "comment": "Vorpal Thrust, 4 uses"
+            },
+            {
+                "action": 75,
+                "every": 24.4,
+                "comment": "True Thrust, 4 uses"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Big Trouble in Little Ala Mhigo's Gundobald on your side (quest battle 58, BNpcBase 1982, BNpcName 2069, layout 4251873): level 27, 7108 HP, ClassJob 4; on the boss from start to end; Cure (120, the director's heals) on the others at 9-62 % (median 40), 132. From Bob's Chronofoil capture 20ef0e90 (2026-10-31, one run of Big Trouble in Little Ala Mhigo's quest battle 58, won, `questkit chronofoil --battle 0.1`, territory 306, duty 353; a level 31 player): `players` is the median damage to the player, `npcs` to the other side's NPCs (heals: to its own), `every` the time between uses. Hitbox not recorded."
+}

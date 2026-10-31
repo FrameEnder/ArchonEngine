@@ -184,6 +184,43 @@ a quest's entering event, 0 for every other event (228 events across the capture
 
 ## The battles
 
+### Quest battle 58 — Big Trouble in Little Ala Mhigo (`content/questbattle/58.lua`)
+
+* Quest 782 (GaiUsa709_00782) enters it from Wilred (scene 13; territory 306, duty 353). Territory 306's TerritoryType
+  has Southern Thanalan's level (w1f4), so its NPCs are layer `QB_GaiUsa709_001` of `wil_w1f4`, with retail's layout
+  IDs, levels, HP, positions, display and character data flags, looks and the start spot (39.49, 3.84, -364.19, facing
+  -0.14) from Bob's Chronofoil capture 20ef0e90 (2026-10-31, `--battle 0.1`, won; a level 31 player): on your side
+  Wilred (4251863, base 1984, BNpcName 2071), two young men (4251864 and 4251867, bases 1985 and 1986, BNpcName 2072,
+  891 HP), Gundobald (4251873, base 1982, BNpcName 2069, 7108 HP) and a conjurer (4251874, base 1983); against you the
+  boss (4252035, base 1977, BNpcName 2067, 5712 HP) and three waves: three (4252772, 4252773, 4252775), three (4252781,
+  4252783, 4252785) and four (4252786-4252789). The script takes the layout IDs from the QuestBattle sheet's
+  INIT_P_POP_* and INIT_POP_1ST/2ST/3ST_* and the portraits from its FACE_GRAPHIC_*; the sheet names five more
+  (4252774, 4252776, 4252782, 4252784, 4252790) that retail didn't bring out. Retail had everyone of the first wave
+  and your side out from the moment you arrived (as in 57's runs); here they come out as the fight starts, like every
+  other battle (the cutscenes make their own characters).
+* The flow (seconds from the fight starting): sequence 2: the boss on Gundobald, the first wave's lancer on the first
+  young man and its two pugilists on the conjurer; Wilred's battle talk 98 at 5 s, Gundobald's 99 at 10, the young
+  men's yells 1127 and 1128 (the sheet's YELL_QIB_01, 02) at 15 and 20. The first wave down, as the last one's death
+  animation ends (2 s after its health reached 0; 31.7 s in): sequence 3, the second wave 0.5 s later (on the first
+  young man, Wilred, Wilred), the boss's 100 at + 5.1, Gundobald's 101 with sequence 4 at + 10.1. Sequence 4 + 4.9
+  Gundobald's 102; + 50.0 sequence 5, the boss's 103 and the third wave (on Wilred, the conjurer, Wilred, Gundobald);
+  + 10.1 sequence 6. The third wave's third down (its health at 0, at once): sequence 7, Gundobald's 104 1.1 s later.
+  A young man's health at 0: his last words (107 the first, 108 the second; both fell on retail, at 55.6 and 111.1
+  s). The boss's health at 0: 2.0 s later "Duty Complete" and sequence 8, then the battle's scene 8 (0xF8402EFB); the
+  quest moves to sequence 255 (retail's director went to 0xFE, its last byte 0x80, as the scene ended). The opening
+  scene's flags are 0xF8412EFB. With one run, sequence 5 (50.0 s after 4, the second wave not all down) and 7 (the
+  third of four down, not 47.1 s after 6) are read as a timer and a death; a second run would settle them.
+* Gundobald fights the boss throughout and Cures the others (never himself or you) below 62 % (retail's at 9-62 %);
+  the conjurer stands where it is and Cures its side and itself below 50 % (retail's at 9-50 %); Wilred and the young
+  men take the nearest add.
+* Timelines `QB58*` (bases 1729, 1730, 1977-1986); action scripts `QuestBattleNpc_00426` (status 204 for 30 s),
+  `_00517`, `_00865`, `_01288` (status 15 for 16 s on someone of the other side). The third wave's pugilists' heal on
+  themselves (57) is QuestBattleNpc_00057's fixed 52, not retail's 332-347: recorded amounts don't scale a heal on
+  oneself. `questkit battle-sim 58` checks the run (`58.json`): every step within 0.5 s.
+* The client's battle script (`GaiUsa709Btl_00782`, Bob's extracted scripts of 2026-10-31) has scenes 1 (the opening
+  cutscene) and 8 (the closing one, which can be skipped), OnSequence001 (the objective, no music) and OnSequence002
+  (its message); no 10001. Nothing in it reacts to sequences 3-8. The director plays only 1 and 8.
+
 ### Quest battle 13 — Nouveau Riche (`content/questbattle/13.lua`)
 
 * Quest 3862 (XxaUsa308_03862; the old 740's battle too) enters it from Laurentius (scene 8; territory 232, duty 311).

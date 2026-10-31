@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-31 | — | `master` fast-forwarded to `Latest-Quest` with Bob's OK (changelog).
+| 2026-10-31 | — | Quests (777, 778, 782); quest battles (58); known issues.
+| 2026-10-31 | `9250d3e` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (changelog).
 | 2026-10-31 | `1220e75` | Quests (765, 774, 775, 776); known issues.
 | 2026-10-30 | `eac3ba5` | Travel (layer filters: Back from the Wood's 90343 and the warp where the player stands when the key changes within a visit).
 | 2026-10-30 | `84adf33` | Packet layouts (client packets of the wrong size: each segment read from its own bytes; CrossRealmListingsRequest2's 64 bytes); items (every Level N Weapon Coffer); known issues.
@@ -339,7 +340,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | `master` fast-forwarded to `Latest-Quest` with Bob's OK (Meeting with the Resistance, 743-765 and 774-776 played in game). |
+| — | Bob's Chronofoil capture 20ef0e90 (2026-10-31), his quest dumps and the battle script he extracted: **quests** 777 (The Bear and the Young'uns' Cares), 778 (Wilred Wants You) and 782 (Big Trouble in Little Ala Mhigo) in `events/quest/007/`, each with its fixture. **Quest battle 58** (`content/questbattle/58.lua`, layer `QB_GaiUsa709_001` of `wil_w1f4` for territory 306: your side, the boss, three waves; layout IDs and portraits from the QuestBattle sheet), its sequences, battle talk, waves and win within 0.5 s of the run in battle-sim (`battles/58.json`), checked against its client battle script (GaiUsa709Btl_00782); timelines `QB58*` (bases 1729, 1730, 1977-1986), action scripts `QuestBattleNpc_00426`, `_00517`, `_00865`, `_01288`. Southern Thanalan's drop-in: layer `QB_GaiUsa705_001` (778's two enemies, bases 2257 and 2258); timelines `GaiUsa705Enemy_2257`, `_2258`. Docs: quests, quest battles, known issues. |
+| `9250d3e` | `master` fast-forwarded to `Latest-Quest` with Bob's OK (Meeting with the Resistance, 743-765 and 774-776 played in game). |
 | `1220e75` | Bob's Chronofoil capture a0149e5e (2026-10-31) and his quest dumps: **quests** 765 (Killing Him Softly), 774 (Helping Horn), 775 (He Ain't Heavy) and 776 (Come Highly Recommended) in `events/quest/007/`, each with its fixture. The South Shroud's drop-in: layer `QB_GaiUsa702_001` (775's enemy, base 1909); its timeline `GaiUsa702Enemy_1909` and action script 405 (`actions/004/GaiUsa702Enemy_00405.lua`). Docs: quests, known issues. |
 | `eac3ba5` | **Layer filters that change within a visit** (Bob, 2026-10-30: the Waking Sands didn't change after Back from the Wood's cutscene): `layer_filters.json` gets 90343 for 746 at sequence 255 (an entry's new `sequence`; `layer_filters::filter_key` asks for it), and after any event in a zone with layer filters the connection warps the player where they stand when the key moved on, as retail did (PrepareZoning and ActorSetPos with warp type 18: `ZoneConnection::refresh_layer_filter`, `layer_filter_shown`, `layer_filter_check`, `warp_appearance`'s warp type 18). Docs: travel. |
 | `84adf33` | **Client packets read segment by segment** (`core/src/packet/encryption.rs`): a layout of the wrong size no longer throws off the rest of the packet, which had dropped the Waking Sands' door's StartTalkEvent and left the client waiting (Bob's bundle 20261030-202136); a mismatch is warned about with the opcode and sizes. **Weapon coffers** (`items/Coffer.lua`): every "Level N Weapon Coffer" (31329-31337, 31691, 31696, 31701) from the wiki's pages, the item IDs matched in the Item sheet; the Level 21 one had none (Bob's bundle 20261030-201929). Docs: items, packet layouts, known issues. |

@@ -1,0 +1,30 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "872": {
+            "npcs": 44
+        },
+        "490": {
+            "players": 109,
+            "npcs": 155
+        }
+    },
+    "rotation": {
+        "pace": 10.0,
+        "actions": [
+            {
+                "action": 490,
+                "every": 10.1,
+                "comment": "8 uses"
+            },
+            {
+                "action": 426,
+                "every": 60.0,
+                "comment": "once, on itself: status 204 (50) for 30.5 s"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Big Trouble in Little Ala Mhigo's the pugilists (quest battle 58, BNpcBase 1978, BNpcName 253, layouts 4252772 and 4252773 in the first wave, 4252781 in the second): level 25, 504 HP, ClassJob 2. From Bob's Chronofoil capture 20ef0e90 (2026-10-31, one run of Big Trouble in Little Ala Mhigo's quest battle 58, won, `questkit chronofoil --battle 0.1`, territory 306, duty 353; a level 31 player): `players` is the median damage to the player, `npcs` to the other side's NPCs (heals: to its own), `every` the time between uses. Hitbox not recorded."
+}

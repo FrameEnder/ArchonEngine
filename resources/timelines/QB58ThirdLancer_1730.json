@@ -1,0 +1,35 @@
+{
+    "autoattack_action_id": 871,
+    "recorded_amounts": {
+        "871": {
+            "npcs": 55
+        },
+        "866": {
+            "players": 191,
+            "npcs": 243
+        }
+    },
+    "rotation": {
+        "pace": 8.7,
+        "actions": [
+            {
+                "action": 866,
+                "every": 12.1,
+                "comment": "7 uses"
+            },
+            {
+                "action": 477,
+                "every": 60.0,
+                "comment": "once each, on itself: status 65"
+            },
+            {
+                "action": 83,
+                "every": 120.0,
+                "comment": "Life Surge, once, on itself"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Big Trouble in Little Ala Mhigo's the third wave's lancers (quest battle 58, BNpcBase 1730, BNpcName 2202, layouts 4252788 and 4252789): level 25, 504 HP, ClassJob 4. From Bob's Chronofoil capture 20ef0e90 (2026-10-31, one run of Big Trouble in Little Ala Mhigo's quest battle 58, won, `questkit chronofoil --battle 0.1`, territory 306, duty 353; a level 31 player): `players` is the median damage to the player, `npcs` to the other side's NPCs (heals: to its own), `every` the time between uses. Hitbox not recorded."
+}

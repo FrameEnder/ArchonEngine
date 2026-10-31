@@ -1,0 +1,24 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 54
+        },
+        "517": {
+            "npcs": 157.5
+        }
+    },
+    "rotation": {
+        "pace": 7.1,
+        "actions": [
+            {
+                "action": 517,
+                "every": 7.1,
+                "comment": "twice, an area: four of the other side each time"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Big Trouble in Little Ala Mhigo's the second wave's third (quest battle 58, BNpcBase 1981, BNpcName 1126, layout 4252785): level 25, 504 HP, no class. From Bob's Chronofoil capture 20ef0e90 (2026-10-31, one run of Big Trouble in Little Ala Mhigo's quest battle 58, won, `questkit chronofoil --battle 0.1`, territory 306, duty 353; a level 31 player): `players` is the median damage to the player, `npcs` to the other side's NPCs (heals: to its own), `every` the time between uses. Hitbox not recorded."
+}
