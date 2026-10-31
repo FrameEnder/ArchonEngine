@@ -7,5 +7,5 @@
     },
     "timeline_always_plays": false,
     "timepoints": [],
-    "comment": "Wilred Wants You's (778) ENEMY1 (BNpcBase 2258, layout 4279874), one of the two Wilred brings out: level 27, 677 HP. Its auto-attack came every 3 s: 10 swings, one missed, the rest for 17-21; defeated second, 39.5 s after they came out. From Bob's Chronofoil capture 20ef0e90 (2026-10-31, Southern Thanalan, `questkit chronofoil --battle 0.0`): `players` is the median damage to the player (level 32). Hitbox not recorded."
+    "comment": "Wilred Wants You's (778) ENEMY1 (BNpcBase 2258, layout 4279874), one of the two Wilred brings out: level 27, 677 HP. Its auto-attack came every 3 s, 14-28 when it landed (29 swings, 4 misses); it fell second in all three fights, 39.5 s after they came out in the first. From Bob's Chronofoil captures 20ef0e90, 9faa9bac and bd51ca23 (2026-10-31, three characters, Southern Thanalan, `questkit chronofoil --battle 0.0` of each): `players` is the median damage to the player (level 32 in all three). Hitbox not recorded."
 }

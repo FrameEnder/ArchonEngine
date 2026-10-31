@@ -415,7 +415,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Lord of the Inferno (343): its notice 3 is sent as the player leaves the cleared Bowl of Embers (`onDutyCleared`);
   retail sent it in the duty as it was won. Its others' lines in sequences 2-4 go by the order of the client's IsAcceptEvent (retail
   played none).
-* The quests from captures 9df4ff01 and 3a705e18 (743-763, 1104; 2026-10-30) are untested in game. So are 765 and 774-776 (capture a0149e5e, 2026-10-31) and 777, 778 and 782 (capture 20ef0e90, 2026-10-31, one run each). Big Trouble in Little Ala Mhigo's (782) bystanders in sequence 3 (ACTOR6-10, which the client accepts talks with) have no scenes: which of its scenes 14-20 belong to whom isn't known, and retail's talks to them weren't recorded; Bertliana's (9, 12, 21) flags are a guess (0x2000). Wilred Wants You's (778) enemies' timelines are from one fight, and talking to Wilred again after one has fallen brings it out again (either counts, as the client's script accepts both while UI8AL is below 2; what retail does then wasn't seen); He Ain't Heavy's enemy's 405 (a placed cast) takes its shape from the Action sheet, unchecked, and its 130 is one hit of two. Believe in Your Sylph's lookout
+* The quests from captures 9df4ff01 and 3a705e18 (743-763, 1104; 2026-10-30) are untested in game. So are 765 and 774-776 (capture a0149e5e, 2026-10-31) and 777, 778 and 782 (capture 20ef0e90, 2026-10-31; replayed against two more characters' runs, captures 9faa9bac and bd51ca23: the same steps). Big Trouble in Little Ala Mhigo's (782) bystanders in sequence 3 (ACTOR6-10, which the client accepts talks with) have no scenes: which of its scenes 14-20 belong to whom isn't known, and retail's talks to them weren't recorded; Bertliana's (9, 12, 21) flags are a guess (0x2000). In Wilred Wants You (778) ENEMY0 fell first in all three runs; talking to Wilred again after one has fallen brings it out again (either counts, as the client's script accepts both while UI8AL is below 2; what retail does then wasn't seen); He Ain't Heavy's enemy's 405 (a placed cast) takes its shape from the Action sheet, unchecked, and its 130 is one hit of two. Believe in Your Sylph's lookout
   emote relies on the client's StartEmoteEvent (fork opcode 401): the server doesn't check the player is in
   EVENTRANGE0. Its empty scenes (2, 4-6, 9-11) and Highbridge Times' and Tea for Three's other lines aren't played or
   go by the client's IsAnnounce order (retail played none). Where There Is Smoke's dusk bat's 475 (32 on the player)
@@ -680,14 +680,14 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quest battles and directors
 
-* **Big Trouble in Little Ala Mhigo's battle (58)** (2026-10-31): untested in game, from one won run (capture 20ef0e90;
-  its client battle script has only the opening and closing scenes and sequences 1-2's objective). Sequence 5 at 50 s
-  after 4 and sequence 7 at the third wave's third fall are readings of that run (5 came with the second wave not all
-  down; 7 came 47.1 s after 6, as the third's health reached 0). What happens if Gundobald, Wilred or the conjurer
-  falls, or if you don't fight, isn't known. Retail had the first wave and your side out from the moment you arrived;
+* **Big Trouble in Little Ala Mhigo's battle (58)** (2026-10-31): untested in game, from three won runs (captures
+  20ef0e90, 9faa9bac, bd51ca23; its client battle script has only the opening and closing scenes and sequences 1-2's
+  objective). Sequence 5's three ways in (the second wave down, the boss at 40 %, 50 s after 4) were each seen once;
+  the boss's mark is between 40.9 and 39.7 %. What happens if Gundobald or Wilred falls (the conjurer fell in one run
+  and nothing changed), or if you don't fight, isn't known. Retail had the first wave and your side out from the moment you arrived;
   Kawari brings them out as the fight starts. The third wave's pugilists' self-heal (57) is a fixed 52 (retail's
-  332-347); the statuses of 426 (204), 1288 (15) and the boss's Thunder II (162) aren't scripted beyond being applied,
-  and 1288's 16 s and 426's 30 s are from when they were lost.
+  338); the statuses of 426 (204), 632 (197), 1288 (15), the boss's Thunder II (162) and the conjurer's Aero (143)
+  aren't scripted beyond being applied, and their durations are from when they were lost.
 * **Nouveau Riche's battle (13)** (2026-10-30): untested in game, from three won runs. Sequences 4 and 5 come 30 s apart
   as on retail; whether either waits for the wave before it isn't known (in every run it was down in time). Sequence 3
   came 3.0, 1.1 and 2.0 s after the last lancer's health reached 0: Kawari answers at 2 s. The second wave comes back at sequence 5 only

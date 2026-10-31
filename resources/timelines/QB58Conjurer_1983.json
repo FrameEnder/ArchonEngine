@@ -3,10 +3,13 @@
     "attack_range": 25.0,
     "recorded_amounts": {
         "119": {
-            "npcs": 75
+            "npcs": 76
         },
         "127": {
             "npcs": 107
+        },
+        "121": {
+            "npcs": 28
         },
         "120": {
             "npcs": 252
@@ -16,18 +19,23 @@
         "pace": 11.2,
         "actions": [
             {
+                "action": 121,
+                "every": 95.0,
+                "comment": "Aero, 3 uses: status 143 for 31 s"
+            },
+            {
                 "action": 127,
-                "every": 18.7,
-                "comment": "Stone II, 8 uses"
+                "every": 11.7,
+                "comment": "Stone II, 21 uses"
             },
             {
                 "action": 119,
                 "every": 11.2,
-                "comment": "Stone, 7 uses"
+                "comment": "Stone, 10 uses"
             }
         ]
     },
     "timeline_always_plays": false,
     "timepoints": [],
-    "comment": "Big Trouble in Little Ala Mhigo's the conjurer on your side (quest battle 58, BNpcBase 1983, BNpcName 2070, layout 4251874): level 27, 2708 HP, ClassJob 6; stood where it appeared (at most 2.9 yalms from it); Cure (120, the director's heals) on its side at 9-50 % (median 34), itself twice, 252. From Bob's Chronofoil capture 20ef0e90 (2026-10-31, one run of Big Trouble in Little Ala Mhigo's quest battle 58, won, `questkit chronofoil --battle 0.1`, territory 306, duty 353; a level 31 player): `players` is the median damage to the player, `npcs` to the other side's NPCs (heals: to its own), `every` the time between uses. Hitbox not recorded."
+    "comment": "Big Trouble in Little Ala Mhigo's the conjurer on your side (quest battle 58, BNpcBase 1983, BNpcName 2070, layout 4251874): level 27, 2708 HP, ClassJob 6; stood where it appeared; Cure (120, the director's heals) on its side and itself at 2-50 %, never on you, 252; it fell in one run. From Bob's Chronofoil captures 20ef0e90, 9faa9bac and bd51ca23 (2026-10-31, three runs of Big Trouble in Little Ala Mhigo's quest battle 58 by three characters, all won, `questkit chronofoil --battle 0.1` of each, territory 306, duty 353; level 31 players): `players` is the median damage to the player, `npcs` to the other side's NPCs (heals: to its own), `every` the median time between uses. Hitbox not recorded."
 }

@@ -3,24 +3,24 @@
     "attack_range": 15.0,
     "recorded_amounts": {
         "146": {
-            "players": 21.5,
-            "npcs": 32.5
+            "players": 22,
+            "npcs": 33
         },
         "147": {
-            "players": 40.5,
-            "npcs": 53
+            "players": 36,
+            "npcs": 53.5
         },
         "148": {
-            "npcs": 30
+            "npcs": 29
         },
         "141": {
-            "npcs": 95
+            "npcs": 100
         },
         "142": {
-            "npcs": 104.5
+            "npcs": 106
         },
         "156": {
-            "npcs": 120
+            "npcs": 89.5
         }
     },
     "rotation": {
@@ -28,42 +28,42 @@
         "actions": [
             {
                 "action": 148,
-                "every": 23.2,
-                "comment": "Thunder II, 4 uses: status 162 for 19 s"
+                "every": 34.5,
+                "comment": "Thunder II, 10 uses: status 162 for 19 s"
             },
             {
                 "action": 1288,
                 "every": 41.5,
-                "comment": "4 uses, on someone of the other side (you once): status 15 (226) for up to 16 s"
+                "comment": "10 uses, on someone of the other side (you once): status 15 (226) for up to 16 s"
             },
             {
                 "action": 147,
                 "every": 28.9,
-                "comment": "Fire II, 4 uses, an area on Gundobald"
+                "comment": "Fire II, 6 uses, an area on its target"
             },
             {
                 "action": 146,
-                "every": 30.8,
-                "comment": "Blizzard II, 6 uses, an area around itself"
+                "every": 23.3,
+                "comment": "Blizzard II, 12 uses, an area around itself"
             },
             {
                 "action": 142,
-                "every": 77.4,
-                "comment": "Blizzard, twice"
+                "every": 35.0,
+                "comment": "Blizzard, 11 uses"
             },
             {
                 "action": 141,
-                "every": 116.3,
-                "comment": "Fire, twice"
+                "every": 38.8,
+                "comment": "Fire, 11 uses"
             },
             {
                 "action": 156,
-                "every": 120.0,
-                "comment": "Scathe, once"
+                "every": 54.7,
+                "comment": "Scathe, 4 uses"
             }
         ]
     },
     "timeline_always_plays": false,
     "timepoints": [],
-    "comment": "Big Trouble in Little Ala Mhigo's the boss (quest battle 58, BNpcBase 1977, BNpcName 2067, layout 4252035): level 28, 5712 HP, ClassJob 7; on Gundobald from start to end, never auto-attacking; dead 177.0 s into the fight (its health at 0). From Bob's Chronofoil capture 20ef0e90 (2026-10-31, one run of Big Trouble in Little Ala Mhigo's quest battle 58, won, `questkit chronofoil --battle 0.1`, territory 306, duty 353; a level 31 player): `players` is the median damage to the player, `npcs` to the other side's NPCs (heals: to its own), `every` the time between uses. Hitbox not recorded."
+    "comment": "Big Trouble in Little Ala Mhigo's the boss (quest battle 58, BNpcBase 1977, BNpcName 2067, layout 4252035): level 28, 5712 HP, ClassJob 7; on Gundobald from start to end in all three runs, never auto-attacking. From Bob's Chronofoil captures 20ef0e90, 9faa9bac and bd51ca23 (2026-10-31, three runs of Big Trouble in Little Ala Mhigo's quest battle 58 by three characters, all won, `questkit chronofoil --battle 0.1` of each, territory 306, duty 353; level 31 players): `players` is the median damage to the player, `npcs` to the other side's NPCs (heals: to its own), `every` the median time between uses. Hitbox not recorded."
 }
