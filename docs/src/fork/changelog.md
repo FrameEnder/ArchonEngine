@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-10-30 | — | Travel (layer filters: Back from the Wood's 90343 and the warp where the player stands when the key changes within a visit).
+| 2026-10-31 | — | Quests (765, 774, 775, 776); known issues.
+| 2026-10-30 | `eac3ba5` | Travel (layer filters: Back from the Wood's 90343 and the warp where the player stands when the key changes within a visit).
 | 2026-10-30 | `84adf33` | Packet layouts (client packets of the wrong size: each segment read from its own bytes; CrossRealmListingsRequest2's 64 bytes); items (every Level N Weapon Coffer); known issues.
 | 2026-10-30 | `56866ad` | Quests (763, Meeting with the Resistance).
 | 2026-10-30 | `d89964c` | Quests (second runs of 743-762 from capture 3a705e18).
@@ -337,7 +338,8 @@ Commits on `Latest-Quest` since the fork point (`8f65e4b`, upstream v7.56.1). `m
 
 | Commit | Change |
 |---|---|
-| — | **Layer filters that change within a visit** (Bob, 2026-10-30: the Waking Sands didn't change after Back from the Wood's cutscene): `layer_filters.json` gets 90343 for 746 at sequence 255 (an entry's new `sequence`; `layer_filters::filter_key` asks for it), and after any event in a zone with layer filters the connection warps the player where they stand when the key moved on, as retail did (PrepareZoning and ActorSetPos with warp type 18: `ZoneConnection::refresh_layer_filter`, `layer_filter_shown`, `layer_filter_check`, `warp_appearance`'s warp type 18). Docs: travel. |
+| — | Bob's Chronofoil capture a0149e5e (2026-10-31) and his quest dumps: **quests** 765 (Killing Him Softly), 774 (Helping Horn), 775 (He Ain't Heavy) and 776 (Come Highly Recommended) in `events/quest/007/`, each with its fixture. The South Shroud's drop-in: layer `QB_GaiUsa702_001` (775's enemy, base 1909); its timeline `GaiUsa702Enemy_1909` and action script 405 (`actions/004/GaiUsa702Enemy_00405.lua`). Docs: quests, known issues. |
+| `eac3ba5` | **Layer filters that change within a visit** (Bob, 2026-10-30: the Waking Sands didn't change after Back from the Wood's cutscene): `layer_filters.json` gets 90343 for 746 at sequence 255 (an entry's new `sequence`; `layer_filters::filter_key` asks for it), and after any event in a zone with layer filters the connection warps the player where they stand when the key moved on, as retail did (PrepareZoning and ActorSetPos with warp type 18: `ZoneConnection::refresh_layer_filter`, `layer_filter_shown`, `layer_filter_check`, `warp_appearance`'s warp type 18). Docs: travel. |
 | `84adf33` | **Client packets read segment by segment** (`core/src/packet/encryption.rs`): a layout of the wrong size no longer throws off the rest of the packet, which had dropped the Waking Sands' door's StartTalkEvent and left the client waiting (Bob's bundle 20261030-202136); a mismatch is warned about with the opcode and sizes. **Weapon coffers** (`items/Coffer.lua`): every "Level N Weapon Coffer" (31329-31337, 31691, 31696, 31701) from the wiki's pages, the item IDs matched in the Item sheet; the Level 21 one had none (Bob's bundle 20261030-201929). Docs: items, packet layouts, known issues. |
 | `56866ad` | **Quest** 763 (Meeting with the Resistance) in `events/quest/007/`, from Bob's quest dump and Chronofoil capture 3a705e18 (2026-10-30), with its fixture. Docs: quests. |
 | `d89964c` | Bob's Chronofoil capture 3a705e18 (2026-10-30, another character): second-run fixtures `<quest>-3a705e18.json` for 743, 744, 746, 747, 748, 756, 757, 761 and 762, all matching the scripts as they are. Docs: quests. |

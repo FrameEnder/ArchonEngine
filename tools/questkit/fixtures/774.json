@@ -1,0 +1,64 @@
+{
+  "quest": 774,
+  "script": "GaiUsa701_00774",
+  "source": "Bob's Chronofoil capture a0149e5e (2026-10-31); scenes and effects from Bob's Chronofoil capture of 2026-10-31",
+  "params": {"ACTOR0": 1000332, "ENEMY0": 4, "ITEM0": 2000612, "ACTOR1": 1000590, "ITEM1": 2000613, "ACTOR2": 1006680},
+  "steps": [
+    {
+      "talk": 1000332,
+      "layout": 2366523,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [4, 2320820],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": [[0, [1, 4, 22204]]]}
+    },
+    {
+      "kill": [4, 2320821],
+      "expect": {"sequence": 1, "vars": "002000000000", "notices": [[0, [2, 4, 22204]]]}
+    },
+    {
+      "kill": [4, 2320832],
+      "expect": {"sequence": 1, "vars": "003000000000", "notices": [[0, [3, 4, 22204]]]}
+    },
+    {
+      "kill": [4, 2320822],
+      "expect": {"sequence": 2, "vars": "004000000000", "notices": [[0, [4, 4, 22204]]]}
+    },
+    {
+      "talk": 1000332,
+      "layout": 2366523,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "004000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1000590,
+      "layout": 1146551,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 5, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000100000000", "notices": [[2, [22603]]]}
+    },
+    {
+      "talk": 1006680,
+      "layout": 4255738,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 6, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 7, "flags": "0x2000", "results": [1, 5825, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

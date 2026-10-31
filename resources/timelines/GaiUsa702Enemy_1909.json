@@ -1,0 +1,24 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 46
+        },
+        "405": {
+            "players": 130
+        }
+    },
+    "rotation": {
+        "pace": 9.9,
+        "actions": [
+            {
+                "action": 405,
+                "every": 9.9,
+                "comment": "twice, 9.9 s apart, a 2.2 s cast placed where it aimed: 130 on the player, then a miss"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "He Ain't Heavy's (775) enemy (BNpcBase 1909, layout 4278416), brought out by talking to ACTOR2: level 27, 1015 HP, dead 22.7 s after it came out. Its auto-attack hit for 44-46 every 3 s. From Bob's Chronofoil capture a0149e5e (2026-10-31, the South Shroud, `questkit chronofoil --battle 0.0`): `players` is the median damage to the player (level 27), `every` the time between uses. Hitbox not recorded."
+}
