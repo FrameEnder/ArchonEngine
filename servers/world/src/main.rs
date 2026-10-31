@@ -11,6 +11,7 @@ use kawari::common::{
     Position, QuestSpecialFlags, TAB_SHARED_FATE_COUNT, TerritoryIntendedUse, WarpType,
     calculate_max_level, in_housing_area,
 };
+
 use kawari::config::get_config;
 use kawari_world::inventory::{Item, MAX_LARGE_STORAGE, Storage, get_next_free_slot};
 use physis::equipment::EquipSlot;
@@ -56,6 +57,7 @@ use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 
 use kawari::common::INVENTORY_ACTION_ACK_GENERAL;
+use kawari::packet::PredefinedOpcode;
 
 fn spawn_main_loop(
     game_data: Arc<Mutex<GameData>>,
@@ -3404,6 +3406,7 @@ async fn process_packet(
                                     *recipient_content_id,
                                     *attached_items,
                                     message.clone(),
+                                    data.header.op_code.get_opcode() as u32,
                                 )
                                 .await;
                         }
@@ -3420,7 +3423,11 @@ async fn process_packet(
                             ..
                         } => {
                             connection
-                                .delete_letter(*sender_content_id, *timestamp)
+                                .delete_letter(
+                                    *sender_content_id,
+                                    *timestamp,
+                                    data.header.op_code.get_opcode() as u32,
+                                )
                                 .await;
                         }
                         ClientZoneIpcData::RewardDeliveryRequest { .. } => {
@@ -3432,7 +3439,11 @@ async fn process_packet(
                             ..
                         } => {
                             connection
-                                .take_attachments_from_letter(*sender_content_id, *timestamp)
+                                .take_attachments_from_letter(
+                                    *sender_content_id,
+                                    *timestamp,
+                                    data.header.op_code.get_opcode() as u32,
+                                )
                                 .await;
                         }
                         ClientZoneIpcData::RemoveFriend {

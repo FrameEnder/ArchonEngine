@@ -1253,8 +1253,8 @@ pub enum ServerZoneIpcData {
     },
     Letter(Letter),
     LetterUpdate {
-        /// Seems to be a result or mode value. When a letter is sent successfully, this will be 0xDD. When a letter is deleted successfully, it will contain 0x366. When attachments are taken, it will contain 0x24E. Completely unknown purpose, as it doesn't seem to be a timestamp, actor id, or LogMessageType.
-        unk_result: u32,
+        /// The letter-related action the client just took. This is the literal client opcode corresponding to sending/deleting letters, or taking attachments.
+        mail_action: u32, // TODO: This might just be u16 since it's an opcode?
         unk1: u32, // Probably just padding, seems to always be 0.
         /// When deleting a letter, the sender's content id. When sending a letter, zeroes.
         sender_content_id: u64,
