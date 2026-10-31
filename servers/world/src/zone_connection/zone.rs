@@ -258,7 +258,20 @@ impl ZoneConnection {
             };
 
             if !bound_by_duty {
-                flags |= ZoneInitFlags::ENABLE_FLYING;
+                // Flying, where the zone has an AetherCurrentCompFlgSet and the player has completed it (A Realm
+                // Reborn's 19 for its field zones), as retail's ZoneInit sets it: 641 of them across Bob's Chronofoil
+                // captures, his flying character's (sets 1-19) and his story characters' (none), not one otherwise.
+                // Upstream set it everywhere outside duties, and new characters flew in Southern Thanalan (Bob's
+                // bundle 20261031-203841).
+                let flying_set = self.game_data.lock().flying_set(new_zone_id);
+                if flying_set.is_some_and(|set| {
+                    self.player_data
+                        .aether_current
+                        .comp_flg_set
+                        .contains(set - 1)
+                }) {
+                    flags |= ZoneInitFlags::ENABLE_FLYING;
+                }
             } else {
                 self.offered_teleport = None; // Discard any previously offered teleports once we're in a duty.
 

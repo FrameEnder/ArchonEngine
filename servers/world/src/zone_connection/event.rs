@@ -108,6 +108,9 @@ impl ZoneConnection {
         let old_event_handler_id = self.event_handler_id;
         self.event_handler_id = Some(event_id);
 
+        // Retail sheathes the player's weapon first, for every event.
+        self.sheathe_weapon_for_event().await;
+
         // tell the client the event has started
         {
             let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::EventStart(EventStart {

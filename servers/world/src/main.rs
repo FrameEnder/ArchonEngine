@@ -3065,18 +3065,8 @@ async fn process_packet(
                             handler_id,
                             ..
                         } => {
-                            // Yes, an ActorControl is sent here, not an ActorControlSelf!
-                            connection
-                                .actor_control(
-                                    connection.player_data.character.actor_id,
-                                    ActorControlCategory::ToggleWeapon {
-                                        shown: false,
-                                        unk_flag: 1,
-                                        unk2: 1,
-                                    },
-                                )
-                                .await;
-
+                            // start_event sheathes the weapon first (an ActorControl, not an ActorControlSelf), as retail
+                            // does before every event.
                             let actor_id = ObjectTypeId {
                                 object_id: connection.player_data.character.actor_id,
                                 object_type: ObjectTypeKind::None,
@@ -3107,18 +3097,8 @@ async fn process_packet(
                         } => {
                             // TODO: allow Lua scripts to handle these differently?
 
-                            // Yes, an ActorControl is sent here, not an ActorControlSelf!
-                            connection
-                                .actor_control(
-                                    connection.player_data.character.actor_id,
-                                    ActorControlCategory::ToggleWeapon {
-                                        shown: false,
-                                        unk_flag: 1,
-                                        unk2: 1,
-                                    },
-                                )
-                                .await;
-
+                            // start_event sheathes the weapon first (an ActorControl, not an ActorControlSelf), as retail
+                            // does before every event.
                             let actor_id = ObjectTypeId {
                                 object_id: connection.player_data.character.actor_id,
                                 object_type: ObjectTypeKind::None,

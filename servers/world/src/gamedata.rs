@@ -3938,6 +3938,17 @@ impl GameData {
             .is_some_and(|row| row.Mount)
     }
 
+    /// The AetherCurrentCompFlgSet whose completion lets you fly in a zone (TerritoryType's AetherCurrentCompFlgSet):
+    /// 19 for every one of A Realm Reborn's field zones, a set of its own for each later field zone, none (0) for the
+    /// cities, inns, the Gold Saucer, Idyllshire, duties and the like, where nobody flies.
+    pub fn flying_set(&mut self, zone_id: u16) -> Option<u32> {
+        let set = self
+            .territory_type_sheet
+            .row(zone_id.into())?
+            .AetherCurrentCompFlgSet;
+        (set != 0).then_some(set as u32)
+    }
+
     /// Returns the TerritoryIntendedUse for a given zone.
     pub fn get_intended_use(&mut self, zone_id: u32) -> Option<TerritoryIntendedUse> {
         let row = self.territory_type_sheet.row(zone_id)?;

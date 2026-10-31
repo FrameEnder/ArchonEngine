@@ -232,6 +232,15 @@ New spawns need a drop-in layer with the retail position, level and HP (from a K
 When editing a drop-in JSON, splice the new layer into the text: rewriting it through a JSON library changes how every
 float is written.
 
+### Every event sheathes the weapon
+
+Right before every EventStart retail sends ActorControl (not ActorControlSelf) ToggleWeapon `[0, 1, 1]` from the
+player, to them and to everyone around, weapon out or not: talks, emotes, items, nested events, zone entry and a
+director's scenes, about 150 events in Bob's Chronofoil captures of 2026-10-30 and 31, every one preceded by it.
+`ZoneConnection::start_event` and a nested event's start send it (`sheathe_weapon_for_event`); until 2026-10-31 only
+walk-in and walk-out events did, to the player alone, and the weapon stayed out when you talked to someone after a
+fight (Bob's bundle 20261031-204038).
+
 ### Cutscenes that end somewhere else
 
 Some cutscenes end with the player in another zone: the client fades to black at the end (or when it's skipped) and

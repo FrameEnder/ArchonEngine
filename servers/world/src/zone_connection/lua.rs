@@ -245,6 +245,10 @@ impl ZoneConnection {
                         continue;
                     };
                     self.nested_event = start.then_some(HandlerId(*handler_id));
+                    if *start {
+                        // As before every EventStart on retail (its nested events' too.)
+                        self.sheathe_weapon_for_event().await;
+                    }
                     let ipc = if *start {
                         ServerZoneIpcSegment::new(ServerZoneIpcData::EventStart(EventStart {
                             target_id: event.actor_id,

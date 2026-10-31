@@ -158,6 +158,23 @@ impl ZoneConnection {
             .await;
     }
 
+    /// Sheathes the player's weapon, as retail does right before every EventStart (talks, emotes, items, nested events,
+    /// zone entry, a director's scenes: about 150 events across Bob's Chronofoil captures of 2026-10-30 and 31, every
+    /// one preceded by it): an ActorControl (not ActorControlSelf) ToggleWeapon `[0, 1, 1]` from the player, to
+    /// themselves and to everyone around. Sent whether the weapon was out or not, as retail does.
+    pub async fn sheathe_weapon_for_event(&mut self) {
+        let actor_id = self.player_data.character.actor_id;
+        let category = ActorControlCategory::ToggleWeapon {
+            shown: false,
+            unk_flag: 1,
+            unk2: 1,
+        };
+        self.actor_control(actor_id, category.clone()).await;
+        self.handle
+            .send(ToServer::BroadcastActorControl(actor_id, category))
+            .await;
+    }
+
     pub async fn actor_control(&mut self, actor_id: ObjectId, category: ActorControlCategory) {
         let ipc =
             ServerZoneIpcSegment::new(ServerZoneIpcData::ActorControl(ActorControl { category }));

@@ -125,6 +125,13 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Logging out or disconnecting during a ride isn't handled: the character is saved wherever it was on the route.
 * The checkpoints are only logged; nothing checks the client rode the route.
 
+## Flying and riding speed (2026-10-31)
+
+* Kawari sets ZoneInit's flying flag only where the character has completed the zone's AetherCurrentCompFlgSet, as
+  retail does. Nothing but the GM commands grants set 19 (A Realm Reborn's) yet: how retail completes it (presumably
+  with A Realm Reborn's story) isn't recorded. Riding speed should follow (it was faster with the flag wrongly set);
+  not yet checked in game.
+
 ## Party bots
 
 * Stage 1 only (see [Party Bots](party-bots.md)): `!spawn playernpc` bots are in the party list only once invited,

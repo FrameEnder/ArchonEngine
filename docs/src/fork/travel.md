@@ -208,6 +208,24 @@ Realm Reborn only the Waking Sands; later, territory 351 (247671, then 251230 in
 entered, then 276018 to 276022 in turn within one visit, an event moving on). Which quest each goes with isn't
 recorded, so they aren't in `layer_filters.json` yet. Every other zone, cities and inns among them, had 0.
 
+## Flying and riding speed
+
+Whether the client lets you fly in a zone is ZoneInit's `ENABLE_FLYING` (0x10). Retail sets it where the zone's
+TerritoryType has an AetherCurrentCompFlgSet and the player has completed that set: 19 for every one of A Realm
+Reborn's field zones, one set per field zone after that, none for the cities, inns, the Gold Saucer, Idyllshire and
+duties. In all 641 ZoneInits of Bob's 69 Chronofoil captures (June to October 2026) the flag is exactly that: his
+flying character's PlayerSetup has sets 1-19 and gets it in every field zone, his story characters have none and never
+get it. Upstream set it in every zone outside a duty, so a character who hadn't finished A Realm Reborn could fly in
+Southern Thanalan (Bob's bundle 20261031-203841). `GameData::flying_set` reads the set, `zone.rs` checks it against the
+character's `aether_current.comp_flg_set`.
+
+The client works out riding speed itself, from the zone's MountSpeed row; the Mount packet carries nothing about it
+(Kawari's are byte for byte retail's: the mount, then a 1 or 0 and the chocobo's barding). The speeds the client
+reported (UpdatePositionHandler, Southern Thanalan) were about 1.5 times running speed for the story characters on
+retail (both mounts, three captures), 3.2 times for the flying character in A Realm Reborn's zones, and 2.2 times on
+Kawari with the flag wrongly set: the flag seems to have put the client on a faster speed. With the flag as retail's,
+the speed should be too; not yet checked in game.
+
 ## Weather
 
 Kawari forecasts weather like the client (WeatherRate's chances against a roll for each 8 Eorzean hour window,
