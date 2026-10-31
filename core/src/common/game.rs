@@ -7,9 +7,7 @@ use bitflags::bitflags;
 use serde_derive::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter, FromRepr};
 
-use crate::{
-    constants::BASE_INVENTORY_ACTION, festivals::festival_name, ipc::zone::DutyFinderSetting,
-};
+use crate::{festivals::festival_name, ipc::zone::DutyFinderSetting, opcodes::ClientZoneIpcType};
 
 /// Maxmimum length of a character's name.
 pub const CHAR_NAME_MAX_LENGTH: usize = 32;
@@ -727,31 +725,43 @@ impl ContainerType {
 #[repr(u32)]
 pub enum ItemOperationKind {
     /// The operation opcode/type when the server wants the client to create a storage. Seen during login to create the HandIn storage.
-    CreateStorage = BASE_INVENTORY_ACTION,
+    CreateStorage = ClientZoneIpcType::get_opcode(&ClientZoneIpcType::ItemOperation) as u32 + 1,
+    /// Dummy placeholder.
+    Unk1,
+    /// Dummy placeholder.
+    Unk2,
+    /// Dummy placeholder.
+    Unk3,
     /// The operation opcode/type when an item is created in the inventory. Seen during currency shop transactions, and likely elsewhere.
-    Create = BASE_INVENTORY_ACTION + 4,
+    Create,
     /// The operation opcode/type when updating the inventory. Seen during all shop transactions when updating currency, and elsewhere.
-    Update = BASE_INVENTORY_ACTION + 5,
+    Update,
     /// The operation opcode/type when discarding an item from the inventory. Seen when discarding an item from the inventory, and during gilshop sell transactions.
-    Discard = BASE_INVENTORY_ACTION + 6,
+    Discard,
     #[default]
     /// The operation opcode/type when moving an item to an emtpy slot in the inventory.
-    Move = BASE_INVENTORY_ACTION + 7,
+    Move,
     /// The operation opcode/type when moving an item to a slot occupied by another in the inventory.
-    Exchange = BASE_INVENTORY_ACTION + 8,
+    Exchange,
     /// The operation opcode/type when splitting stacks of identical items.
-    SplitStack = BASE_INVENTORY_ACTION + 9,
+    SplitStack,
+    /// Seen during trading. TODO: probably wrong
+    UnkTrading1,
     /// The operation opcode/type when combining stacks of identical items.
-    CombineStack = BASE_INVENTORY_ACTION + 11,
+    CombineStack,
+    Unk5,
+    Unk6,
+    Unk7,
+    Unk8,
+    Unk9,
+    Unk10,
     /// The operation opcode/type when the server wants the client to equip the mannequin (character sheet/try on preview model?). Seen during login and probably elsewhere.
-    EquipMannequin = BASE_INVENTORY_ACTION + 18,
-    /// Seen while discarding.
+    EquipMannequin,
+    /// Seen while discarding. TODO: probably wrong
     UnkDiscard = 0x90,
-    /// Seen during trading (256 in 7.55)
-    UnkTrading1 = 244,
-    /// Seen during trading (256 in 7.55)
+    /// Seen during trading. TODO: probably wrong
     UnkTrading2 = 256,
-    /// Seen while equipping gearsets.
+    /// Seen while equipping gearsets. TODO: probably wrong
     UnkGearSetEquipped = 567,
 }
 

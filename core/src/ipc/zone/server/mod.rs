@@ -352,9 +352,9 @@ pub enum ServerZoneIpcData {
     InventoryTransactionFinish {
         /// Same sequence value as in InventoryTransaction.
         sequence: u32,
-        /// Repeated unk1 value. No, it's not a copy-paste error.
+        /// Repeated sequence value. No, it's not a copy-paste error.
         sequence_repeat: u32,
-        /// Unknown, seems to always be 0x00000090.
+        /// The operation that's finishing.'
         operation_type: ItemOperationKind,
         /// Unknown, seems to always be 0x00000200.
         unk2: u32,
