@@ -1,5 +1,5 @@
 > [!NOTE]
-> Our repository has moved to https://codeberg.org/redstrate/Kawari, this one is no longer be updated and will be removed at a later date.
+> This is an unofficial downstream fork of Kawari using AI, and focusing on Progression, as well as any structural elements tied to it. I recommend https://codeberg.org/redstrate/Kawari, If you'd like to assist the genuine core of the project which handles structural work with an authentic human lead element. this fork will remain downstream as I respect that it differs from Redstrates vision of Kawari proper, and wish to work on this in different ways openly. 
 
 # Kawari
 
