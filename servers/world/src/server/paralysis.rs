@@ -57,6 +57,26 @@ impl Paralysis {
     }
 }
 
+/// The living players and NPCs with paralysis. Only those: objects and treasure coffers have no health
+/// (`get_common_spawn` panics on them: the North Shroud's gathering points brought the world server down, Bob's bundle
+/// 20261101-211113.)
+fn paralysed_actors(instance: &Instance) -> Vec<ObjectId> {
+    instance
+        .actors
+        .iter()
+        .filter(|(_, actor)| {
+            matches!(
+                actor,
+                NetworkedActor::Player { .. } | NetworkedActor::Npc { .. }
+            ) && actor.get_common_spawn().health_points > 0
+                && actor
+                    .status_effects()
+                    .is_some_and(|effects| effects.get(STATUS_PARALYSIS).is_some())
+        })
+        .map(|(id, _)| *id)
+        .collect()
+}
+
 /// Rolls for everyone paralysed whose 3 s are up.
 pub fn paralysis_tick(
     network: Arc<Mutex<NetworkState>>,
@@ -69,17 +89,7 @@ pub fn paralysis_tick(
         .locked_until
         .retain(|_, until| *until > now);
 
-    let paralysed: Vec<ObjectId> = instance
-        .actors
-        .iter()
-        .filter(|(_, actor)| {
-            actor.get_common_spawn().health_points > 0
-                && actor
-                    .status_effects()
-                    .is_some_and(|effects| effects.get(STATUS_PARALYSIS).is_some())
-        })
-        .map(|(id, _)| *id)
-        .collect();
+    let paralysed = paralysed_actors(instance);
     instance
         .paralysis
         .next_roll
@@ -181,6 +191,21 @@ fn seize_up(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use kawari::ipc::zone::SpawnObject;
+
+    #[test]
+    fn objects_are_left_alone() {
+        // A gathering point (an object) in the instance: no panic, nobody paralysed.
+        let mut instance = Instance::default();
+        instance.actors.insert(
+            ObjectId(0x4000_0002),
+            NetworkedActor::Object {
+                object: SpawnObject::default(),
+                layer_name: String::new(),
+            },
+        );
+        assert!(paralysed_actors(&instance).is_empty());
+    }
 
     #[test]
     fn locked_for_a_second() {
