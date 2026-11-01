@@ -688,7 +688,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 ## Quest battles and directors
 
 * **Quest battle 17 (quest 441)** (2026-11-01): untested in game, from three runs (two lost, one won; capture
-  df6f5af9), and quest 441 isn't scripted yet (waiting on Bob's dump), so it can't be entered. Whether the fight
+  df6f5af9; quest 441 scripted from Bob's dump the same day, untested too). Whether the fight
   really waits for every add once the boss is down (Bob's reading) wasn't seen: in the won run they were all down first.
   The boss's drain is in its rotation, so when it comes depends on what else it's doing (retail's first came 1.6 s
   after the first yodomi in one run and about 10 s after in the others). The paralysis's 16 s is from when it was lost

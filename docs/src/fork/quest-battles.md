@@ -213,8 +213,12 @@ a quest's entering event, 0 for every other event (228 events across the capture
 * Sylphie fights the boss, then the imps when they come, and Cures you below 50 % (retail's at 7-50 %, never anyone
   else). Timelines `QB17*` (bases 301, 558, 1709, 1710). `questkit battle-sim 17` checks the three runs (`17.json`,
   `17-lost-1.json`, `17-lost-2.json`, their health held between hits, `npc_health: held`): every step within 0.8 s.
+* The client's battle script (`ClsCnj006Btl_00441`, Bob's extracted scripts of 2026-11-01) has scenes 1 (the opening
+  cutscene, CUT_SCENE_01: 19) and 7 (the closing one, CUT_SCENE_02: 20, which can be skipped), OnSequence001 (the
+  objective) and OnSequence002 (its message); no 10001. Nothing in it reacts to sequences 3-7: they're the director's
+  own. The director plays only 1 and 7.
 * The quest's three tainted earth sprites (layer `QB_ClsCnj006_001`, base 294, level 20, 619 HP) are in the same
-  drop-in; the quest script waits on Bob's dump.
+  drop-in.
 
 ### Quest battle 58 — Big Trouble in Little Ala Mhigo (`content/questbattle/58.lua`)
 
