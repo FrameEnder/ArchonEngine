@@ -539,6 +539,8 @@ pub enum ToServer {
     /// The client is requesting to join the following content.
     /// The Duty Support members chosen (DawnQuestMember, in party slot order), when registered through Duty Support.
     JoinContent(ClientId, ObjectId, u16, DutyFinderSetting, Option<Vec<u8>>),
+    /// A key item used on the ground where the client aimed it (ActionRequestGroundTargeted of type EventItem.)
+    EventItemOnGround(ClientId, ObjectId, ActionRequest, Position),
     /// The client started an event action (its EventAction row, last) during a quest event, which finishes casting
     /// after this many seconds.
     QuestEventAction(ClientId, ObjectId, u8, u32),

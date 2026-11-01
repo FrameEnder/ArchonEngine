@@ -14,8 +14,8 @@ use crate::{
     lua::KawariLua,
     server::{
         action::{
-            execute_action, handle_action_messages, targets_event_object,
-            use_action_on_event_object, use_event_item,
+            event_item_on_ground_landed, execute_action, handle_action_messages,
+            targets_event_object, use_action_on_event_object, use_event_item,
         },
         actor::{
             NetworkedActor, NpcState, kill_actor, set_character_mode, set_player_minion,
@@ -1600,6 +1600,22 @@ pub async fn server_main_loop(
 
                     for (instance_index, task) in &tasks_to_execute {
                         match &task.data {
+                            QueuedTaskData::EventItemOnGround {
+                                request,
+                                position,
+                                landed_on,
+                            } => {
+                                event_item_on_ground_landed(
+                                    network.clone(),
+                                    data.clone(),
+                                    game_data.clone(),
+                                    task.from_id,
+                                    task.from_actor_id,
+                                    request,
+                                    *position,
+                                    *landed_on,
+                                );
+                            }
                             QueuedTaskData::CastAction { request, .. }
                                 if request.action_type == ActionType::EventItem =>
                             {

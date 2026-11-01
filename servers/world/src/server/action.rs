@@ -125,6 +125,19 @@ pub fn handle_action_messages(
     network: Arc<Mutex<NetworkState>>,
     msg: &ToServer,
 ) -> bool {
+    if let ToServer::EventItemOnGround(from_id, from_actor_id, request, position) = msg {
+        start_event_item_on_ground(
+            data,
+            game_data,
+            network,
+            *from_id,
+            *from_actor_id,
+            request,
+            *position,
+        );
+        return true;
+    }
+
     if let ToServer::ActionRequest(from_id, from_actor_id, request) = msg {
         if request.action_type == ActionType::EventItem {
             start_event_item(data, game_data, network, *from_id, *from_actor_id, request);
@@ -445,6 +458,195 @@ pub fn use_event_item(
 
 /// What retail's ActionEffect for a key item's use locks (0.1 s, Bob's 2026-10-18 capture.)
 const EVENT_ITEM_ANIMATION_LOCK: f32 = 0.1;
+
+/// How long after a ground-targeted key item lands its quest event starts (retail: 1.23-1.28 s after the AoeEffect8,
+/// three throws that landed on Rock of Rancor's destination, Bob's Chronofoil captures of 2026-11-01.)
+const EVENT_ITEM_ON_GROUND_EVENT_DELAY: Duration = Duration::from_millis(1250);
+
+/// How far from where a ground-targeted key item lands its object can be, when the Action sheet gives its Action no
+/// EffectRange: a guess, between retail's throws that landed on Rock of Rancor's destination (within 0.4 yalms of each
+/// other) and those that didn't (3.3 and 4.0 yalms from them.)
+const EVENT_ITEM_ON_GROUND_FALLBACK_RADIUS: f32 = 2.0;
+
+/// A key item thrown or placed on the ground (ActionRequestGroundTargeted of type EventItem: Rock of Rancor's firesand,
+/// HOWTO_GT), as retail does it (Bob's Chronofoil captures 412ba91d, b166797f and 7d85c539 of 2026-11-01, five throws):
+/// the recast of the EventItem's Action (ActorControlSelf 17: group 63, 1276, 500), its cast bar on no one with the
+/// spot it's aimed at (ActorCast: target 0xE0000000, rotation 0, the spot packed), then, when the bar ends,
+/// `event_item_on_ground_landed`. Kawari used to take it as a use on the player: the throw landed at their feet and the
+/// event started on them, which no quest listens for (Bob's bundle 20261101-213135.)
+fn start_event_item_on_ground(
+    data: Arc<Mutex<WorldServer>>,
+    game_data: Arc<Mutex<GameData>>,
+    network: Arc<Mutex<NetworkState>>,
+    from_id: ClientId,
+    from_actor_id: ObjectId,
+    request: &ActionRequest,
+    position: Position,
+) {
+    let (info, recast) = {
+        let mut game_data = game_data.lock();
+        let Some(info) = game_data.get_event_item(request.action_id) else {
+            tracing::warn!(
+                "{} isn't an event item, ignoring its use",
+                request.action_id
+            );
+            return;
+        };
+        let recast = game_data.get_action_recast(info.action as u32);
+        (info, recast)
+    };
+
+    let mut data = data.lock();
+    let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
+        return;
+    };
+    {
+        let mut network = network.lock();
+        if let Some((cooldown_group, recast_100ms, _)) = recast
+            && cooldown_group > 0
+            && recast_100ms > 0
+        {
+            let ipc =
+                ServerZoneIpcSegment::new(ServerZoneIpcData::ActorControlSelf(ActorControlSelf {
+                    category: ActorControlCategory::SetCooldownTimerMax {
+                        cooldown_group: cooldown_group as u32 - 1,
+                        action_id: info.action as u32,
+                        milliseconds: recast_100ms as u32 * 10,
+                    },
+                }));
+            network.send_to_by_actor_id(
+                from_actor_id,
+                FromServer::PacketSegment(ipc, from_actor_id),
+                DestinationNetwork::ZoneClients,
+            );
+        }
+        let actor_cast = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
+            spell_id: info.action,
+            action_id: request.action_id,
+            action_type: request.action_type,
+            omen_delay: 0,
+            cast_time: info.cast_time_ms as f32 / 1000.0,
+            target: ObjectId::default(),
+            // 0 in the packet, as retail's.
+            rotation: -std::f32::consts::PI,
+            interruptible: false,
+            ballista_entity_id: ObjectId::default(),
+            position,
+        });
+        network.send_in_range_inclusive_instance(
+            from_actor_id,
+            instance,
+            FromServer::PacketSegment(actor_cast, from_actor_id),
+            DestinationNetwork::ZoneClients,
+        );
+    }
+    instance.insert_task(
+        from_id,
+        from_actor_id,
+        Duration::from_millis(info.cast_time_ms as u64),
+        QueuedTaskData::EventItemOnGround {
+            request: request.clone(),
+            position,
+            landed_on: None,
+        },
+    );
+}
+
+/// A ground-targeted key item's cast bar ended (`landed_on` None): retail's AoeEffect8 at the spot, on no one, listing
+/// the event object it landed on with no effects (the nearest within the EffectRange of the EventItem's Action, the
+/// zone's layout ones included: retail listed Rock of Rancor's destination, the client's own object, by its layout ID);
+/// two of retail's five throws landed on nothing (3.3 and 4.0 yalms from where the others did) and that was all. One
+/// that landed on something starts the quest's event on it a little later (the task again, with `landed_on`: then
+/// `FromServer::EventItemUsed`, as for a key item used on something.)
+pub fn event_item_on_ground_landed(
+    network: Arc<Mutex<NetworkState>>,
+    data: Arc<Mutex<WorldServer>>,
+    game_data: Arc<Mutex<GameData>>,
+    from_id: ClientId,
+    from_actor_id: ObjectId,
+    request: &ActionRequest,
+    position: Position,
+    landed_on: Option<ObjectTypeId>,
+) {
+    if let Some(target) = landed_on {
+        network.lock().send_to(
+            from_id,
+            FromServer::EventItemUsed(request.action_id, target),
+            DestinationNetwork::ZoneClients,
+        );
+        return;
+    }
+
+    let (spell_id, radius) = {
+        let mut game_data = game_data.lock();
+        let spell_id = game_data
+            .get_event_item(request.action_id)
+            .map(|info| info.action)
+            .unwrap_or_default();
+        let radius = game_data
+            .get_action_info(spell_id as u32)
+            .map(|info| info.effect_range as f32)
+            .filter(|range| *range > 0.0)
+            .unwrap_or(EVENT_ITEM_ON_GROUND_FALLBACK_RADIUS);
+        (spell_id, radius)
+    };
+
+    let mut data = data.lock();
+    let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
+        return;
+    };
+    let hit = instance
+        .zone
+        .event_object_near(position.0, radius)
+        .map(|object| ObjectTypeId {
+            object_id: ObjectId(object.layout_id),
+            object_type: ObjectTypeKind::EObjOrNpc,
+        });
+    tracing::info!(
+        "Key item {} landed at {:?} (within {radius} yalms: {hit:?})",
+        request.action_id,
+        position.0
+    );
+    {
+        let mut network = network.lock();
+        let targets: Vec<ObjectTypeId> = hit.into_iter().collect();
+        let ipc = AoeEffect {
+            animation_target_id: ObjectTypeId::default(),
+            action_id: request.action_id,
+            global_sequence: network.global_action_sequence,
+            animation_lock: EVENT_ITEM_ANIMATION_LOCK,
+            source_sequence: request.sequence,
+            rotation: request.rotation1,
+            spell_id,
+            action_type: ActionType::EventItem,
+            effects: vec![[TargetEffect::default(); 8]; targets.len()],
+            targets,
+            position,
+            ..Default::default()
+        }
+        .package()
+        .unwrap();
+        network.global_action_sequence += 1;
+        network.send_in_range_inclusive_instance(
+            from_actor_id,
+            instance,
+            FromServer::PacketSegment(ipc, from_actor_id),
+            DestinationNetwork::ZoneClients,
+        );
+    }
+    if hit.is_some() {
+        instance.insert_task(
+            from_id,
+            from_actor_id,
+            EVENT_ITEM_ON_GROUND_EVENT_DELAY,
+            QueuedTaskData::EventItemOnGround {
+                request: request.clone(),
+                position,
+                landed_on: hit,
+            },
+        );
+    }
+}
 
 /// Whether an action is aimed at something the server doesn't have as an actor: an event NPC or object the client
 /// places itself (the wounded Wood Wailer Trial by Water has you heal.)

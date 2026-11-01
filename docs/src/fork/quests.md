@@ -172,6 +172,26 @@ an `unimplemented!()` (and any ActionRequest without an Action row an `unwrap`),
 an unknown action is now ignored with a warning. questkit's fixtures replay it as an `event_item: [item, base ID]`
 step.
 
+**Thrown on the ground.** Some key items are aimed at a spot instead (the quest's `HOWTO_GT` tutorial: Rock of
+Rancor's firesand, ITEM0 on its destination). Retail (Bob's Chronofoil captures 412ba91d, b166797f and 7d85c539 of
+2026-11-01, five throws):
+
+1. the client sends **ActionRequestGroundTargeted** (fork opcode 492) of type EventItem, with the item and the spot;
+2. the server sends the recast of the EventItem's Action (ActorControlSelf 17: group 63, 1276, 500) and its cast bar
+   on no one (ActorCast: target 0xE0000000, rotation 0, the spot packed; 1 s);
+3. when it ends: **AoeEffect8** at the spot, its animation on no one, listing the event object it landed on with no
+   effects (the destination, the client's own object, by its layout ID and type 1), or nothing: two throws landed
+   3.3 and 4.0 yalms from where the other three did, and nothing more happened;
+4. 1.25 s after one that landed on it (1.23-1.28 s), the quest's event on the object, as above (EventStart type 8 on
+   the layout ID, the scene).
+
+Kawari: `main.rs` sends it on as `ToServer::EventItemOnGround`; `server/action.rs`'s `start_event_item_on_ground`
+and `event_item_on_ground_landed` (a `QueuedTaskData::EventItemOnGround` task, twice) find the object with
+`Zone::event_object_near`: the nearest event object of the zone's layout within the EffectRange of the EventItem's
+Action (2 yalms if the sheet gives none), on the ground. Before 2026-11-01 the ground request was taken as an action on
+the player: the throw landed at their feet and the event started on them, which no quest listens for (Bob's bundle
+20261101-213135).
+
 ### Emotes on an NPC
 
 Some quests want an emote used on an NPC (Double Dealing, 466: ACTOR1 won't talk until you do). On retail (Bob's

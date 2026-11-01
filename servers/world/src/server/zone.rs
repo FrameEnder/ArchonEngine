@@ -866,6 +866,22 @@ impl Zone {
         self.cached_objects.get(&base_id).cloned()
     }
 
+    /// The event object (of the zone's layout, spawned or the client's own) nearest `position` on the ground, within
+    /// `radius` yalms of it, for something thrown or placed there (a ground-targeted key item, `action::
+    /// event_item_on_ground_landed`.)
+    pub fn event_object_near(&self, position: Vec3A, radius: f32) -> Option<SpawnObject> {
+        self.cached_objects
+            .values()
+            .filter(|object| object.kind == ObjectKind::EventObj)
+            .map(|object| {
+                let offset = object.position.0 - position;
+                (object, offset.x.hypot(offset.z))
+            })
+            .filter(|(_, distance)| *distance <= radius)
+            .min_by(|a, b| a.1.total_cmp(&b.1))
+            .map(|(object, _)| *object)
+    }
+
     /// Returns an SpawnNpc for the given instance ID.
     pub fn get_battle_npc(&self, instance_id: u32) -> Option<SpawnNpc> {
         self.cached_npcs.get(&instance_id).cloned()
@@ -2078,5 +2094,40 @@ mod appearance_tests {
         };
         apply_appearance(&mut spawn, &short);
         assert_eq!(spawn.common.look.face, SpawnNpc::default().common.look.face);
+    }
+}
+
+#[cfg(test)]
+mod event_object_near_tests {
+    use super::*;
+
+    /// Rock of Rancor's throws: the destination where retail's landed, a gathering point closer still (never a target),
+    /// and a throw too far off.
+    #[test]
+    fn nearest_event_object_within_reach() {
+        let mut zone = Zone::default();
+        let object = |kind, layout_id, x, z| SpawnObject {
+            kind,
+            layout_id,
+            position: Position(Vec3A::new(x, -66.3, z)),
+            ..Default::default()
+        };
+        zone.cached_objects.insert(
+            2001983,
+            object(ObjectKind::EventObj, 4273290, -222.8, 396.7),
+        );
+        zone.cached_objects.insert(
+            2001984,
+            object(ObjectKind::EventObj, 4273291, -212.0, 380.0),
+        );
+        zone.cached_objects
+            .insert(30001, object(ObjectKind::GatheringPoint, 9, -223.0, 396.8));
+
+        let landed = |x, z| {
+            zone.event_object_near(Vec3A::new(x, -66.35, z), 2.0)
+                .map(|object| object.layout_id)
+        };
+        assert_eq!(landed(-222.89, 396.55), Some(4273290));
+        assert_eq!(landed(-225.17, 394.39), None);
     }
 }

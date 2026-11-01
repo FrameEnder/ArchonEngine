@@ -25,7 +25,8 @@ use crate::{
 use kawari::{
     common::{
         CharacterMode, DistanceRange, ENTRANCE_CIRCLE_IDS, EventState, FateState, HandlerId,
-        HandlerType, MAXIMUM_FATES, MOB_WANDER_TIME, ObjectId, Position, timestamp_secs,
+        HandlerType, MAXIMUM_FATES, MOB_WANDER_TIME, ObjectId, ObjectTypeId, Position,
+        timestamp_secs,
     },
     config::{Config, get_config},
     ipc::zone::{
@@ -101,6 +102,13 @@ pub enum QueuedTaskData {
     /// Complete a quest's EventAction (its progress bar, EventAction row `id`), which moving, an enemy's attack or
     /// paralysis can interrupt (`Instance::interrupt_event_action`.)
     QuestEventAction { id: u32 },
+    /// A key item thrown or placed on the ground (`action::start_event_item_on_ground`): its cast bar ends (`landed_on`
+    /// None), then, if it landed on an event object, that object's quest event starts.
+    EventItemOnGround {
+        request: ActionRequest,
+        position: Position,
+        landed_on: Option<ObjectTypeId>,
+    },
     /// Make a fish bite.
     FishBite,
     /// Seal a boss wall.

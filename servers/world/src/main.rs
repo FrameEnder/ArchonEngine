@@ -2446,6 +2446,35 @@ async fn process_packet(
                             action_type,
                             sequence,
                             rotation,
+                            position,
+                            ..
+                        } if *action_type == kawari::ipc::zone::ActionType::EventItem => {
+                            // A key item thrown or placed where the player aimed it (Rock of Rancor's firesand.)
+                            let request = kawari::ipc::zone::ActionRequest {
+                                action_id: *action_id,
+                                unk1: *unk1,
+                                action_type: *action_type,
+                                sequence: *sequence,
+                                rotation1: *rotation,
+                                rotation2: *rotation,
+                                ..Default::default()
+                            };
+                            connection
+                                .handle
+                                .send(ToServer::EventItemOnGround(
+                                    connection.id,
+                                    connection.player_data.character.actor_id,
+                                    request,
+                                    *position,
+                                ))
+                                .await;
+                        }
+                        ClientZoneIpcData::ActionRequestGroundTargeted {
+                            action_id,
+                            unk1,
+                            action_type,
+                            sequence,
+                            rotation,
                             ..
                         } => {
                             // Handled like an action on themselves, so the client gets its result (ground placement,
