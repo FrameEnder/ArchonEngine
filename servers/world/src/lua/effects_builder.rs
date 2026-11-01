@@ -61,6 +61,10 @@ pub struct EffectsBuilder {
     pub provoke: bool,
     /// If true, the target's first status that can be removed is (Esuna.)
     pub cleanse: bool,
+    /// If true, a gaze: it lands only on those facing the caster (within 90 degrees of where they look); anyone looking
+    /// away is missed. Retail's Akoman's 513 in quest battle 17 (Bob's Chronofoil capture df6f5af9: every target facing
+    /// it within 58 degrees paralysed, every one turned 94 degrees or more away missed.)
+    pub gaze: bool,
 }
 
 /// Status: a revive offered (Raise...), which the dead player can accept.
@@ -171,6 +175,11 @@ impl UserData for EffectsBuilder {
             }));
             Ok(())
         });
+        // A gaze: only those facing the caster are affected (see `EffectsBuilder::gaze`.)
+        methods.add_method_mut("gaze", |_, this, _: ()| {
+            this.gaze = true;
+            Ok(())
+        });
         // The caster goes to the top of the target's enmity list.
         methods.add_method_mut("provoke", |_, this, _: ()| {
             this.provoke = true;
@@ -266,6 +275,29 @@ impl UserData for EffectsBuilder {
                     kind: PeriodicKind::Heal,
                     amount: tick_amount,
                     on_self: false,
+                });
+                Ok(())
+            },
+        );
+        // Gives the caster a status effect that heals it `tick_amount` every 3 seconds while it lasts: the Akoman's drain
+        // (1127) gave it Regen (158) for 21 s, about 90 a tick (Bob's Chronofoil capture df6f5af9.)
+        methods.add_method_mut(
+            "heal_over_time_self",
+            |_, this, (effect_id, duration, tick_amount): (u16, f32, u32)| {
+                this.effects
+                    .push(TargetEffect(TargetEffectKind::GainEffectSelf {
+                        unk1: 0,
+                        unk2: 0,
+                        unk3: 0,
+                        effect_id,
+                        duration,
+                        param: 0,
+                    }));
+                this.periodic.push(PeriodicSpec {
+                    effect_id,
+                    kind: PeriodicKind::Heal,
+                    amount: tick_amount,
+                    on_self: true,
                 });
                 Ok(())
             },

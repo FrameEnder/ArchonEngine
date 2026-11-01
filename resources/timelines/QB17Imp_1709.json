@@ -1,0 +1,32 @@
+{
+    "autoattack_action_id": 0,
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "142": {
+            "players": 117,
+            "npcs": 159
+        },
+        "146": {
+            "players": 33,
+            "npcs": 43.5
+        }
+    },
+    "rotation": {
+        "pace": 6.2,
+        "actions": [
+            {
+                "action": 142,
+                "every": 14.1,
+                "comment": "Blizzard, 28 uses"
+            },
+            {
+                "action": 146,
+                "every": 14.3,
+                "comment": "Blizzard II, 24 uses, an area"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Quest battle 17 (quest 441): the imps (quest battle 17, BNpcBase 1709, BNpcName 1930, layouts 4273820 and 4273821, the sheet's INIT_POP_IMP_*): level 28, 535 HP; on the player, never auto-attacking. From Bob's Chronofoil capture df6f5af9 (2026-11-01, three runs of quest battle 17, the first two lost and the third won, `questkit chronofoil --battle 0.4`, `0.6` and `0.8`, territory 235, duty 301; a level 33 conjurer synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs, `every` the median time between uses. Hitbox not recorded."
+}

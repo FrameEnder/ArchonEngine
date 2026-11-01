@@ -8,7 +8,7 @@
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
-use kawari::common::{ObjectId, Rotation};
+use kawari::common::{ObjectId, Rotation, RotationAction};
 
 /// The GCD's recast group in the Action sheet.
 pub const GCD_GROUP: u8 = 58;
@@ -50,6 +50,18 @@ pub struct Situation {
     /// The target's and its own health, in %.
     pub target_hp: f32,
     pub self_hp: f32,
+    /// The NPCs on its own side by BNpcBase, one of each (the lowest layout ID), for entries used `on_ally`.
+    pub allies: HashMap<u32, ObjectId>,
+}
+
+impl Situation {
+    /// Whom an entry is used on: its ally for one `on_ally`, otherwise the NPC's target.
+    pub fn target_for(&self, entry: &RotationAction) -> Option<ObjectId> {
+        match entry.on_ally {
+            Some(base) => self.allies.get(&base).copied(),
+            None => Some(self.target),
+        }
+    }
 }
 
 impl RotationState {
@@ -88,6 +100,10 @@ impl RotationState {
             let Some(action) = mechanics(entry.action) else {
                 continue;
             };
+            // One used on an ally waits for that ally to be there.
+            let Some(target) = situation.target_for(entry) else {
+                continue;
+            };
             if !no_gcd && (action.gcd && !gcd_ready || !action.gcd && !can_weave) {
                 continue;
             }
@@ -107,12 +123,9 @@ impl RotationState {
                 continue;
             }
             if let Some(refresh) = entry.refresh
-                && self
-                    .used_on
-                    .get(&(entry.action, situation.target))
-                    .is_some_and(|at| {
-                        now.duration_since(*at) < Duration::from_secs_f32(refresh.max(0.0))
-                    })
+                && self.used_on.get(&(entry.action, target)).is_some_and(|at| {
+                    now.duration_since(*at) < Duration::from_secs_f32(refresh.max(0.0))
+                })
             {
                 continue;
             }
@@ -263,6 +276,7 @@ mod tests {
                 target: ObjectId(1),
                 target_hp: 100.0,
                 self_hp: 100.0,
+                allies: HashMap::new(),
             };
             if let Some(action) = state.choose(rotation, &situation, &mut mechanics) {
                 state.record(rotation, action, ObjectId(1), now, mechanics(action));
@@ -400,6 +414,7 @@ mod tests {
             target: ObjectId(2),
             target_hp: 100.0,
             self_hp: 100.0,
+            allies: HashMap::new(),
         };
         assert_eq!(
             state.choose(&rotation, &on_other, &mut mechanics),
@@ -410,6 +425,7 @@ mod tests {
             target: ObjectId(1),
             target_hp: 100.0,
             self_hp: 100.0,
+            allies: HashMap::new(),
         };
         assert_eq!(
             state.choose(&rotation, &on_same, &mut mechanics),
@@ -430,6 +446,7 @@ mod tests {
             target: ObjectId(1),
             target_hp: 50.0,
             self_hp: 100.0,
+            allies: HashMap::new(),
         };
         assert_eq!(state.choose(&finisher, &healthy, &mut mechanics), None);
         let low = Situation {
@@ -437,10 +454,60 @@ mod tests {
             target: ObjectId(1),
             target_hp: 10.0,
             self_hp: 100.0,
+            allies: HashMap::new(),
         };
         assert_eq!(
             state.choose(&finisher, &low, &mut mechanics),
             Some(TRUE_THRUST)
+        );
+    }
+    #[test]
+    fn on_ally_waits_for_the_ally_and_goes_on_it() {
+        // The Akoman's drain on a yodomi (quest battle 17): first while one is out, otherwise its usual action.
+        const YODOMI: u32 = 1710;
+        let rotation = Rotation {
+            pace: 2.5,
+            actions: vec![
+                RotationAction {
+                    action: THUNDER,
+                    on_ally: Some(YODOMI),
+                    every: Some(26.0),
+                    ..Default::default()
+                },
+                RotationAction {
+                    action: TRUE_THRUST,
+                    ..Default::default()
+                },
+            ],
+        };
+        let state = RotationState::default();
+        let start = Instant::now();
+        let alone = Situation {
+            now: start,
+            target: ObjectId(1),
+            target_hp: 100.0,
+            self_hp: 100.0,
+            allies: HashMap::new(),
+        };
+        assert_eq!(
+            state.choose(&rotation, &alone, &mut mechanics),
+            Some(TRUE_THRUST)
+        );
+        let with_yodomi = Situation {
+            allies: HashMap::from([(YODOMI, ObjectId(7))]),
+            ..alone
+        };
+        assert_eq!(
+            state.choose(&rotation, &with_yodomi, &mut mechanics),
+            Some(THUNDER)
+        );
+        assert_eq!(
+            with_yodomi.target_for(&rotation.actions[0]),
+            Some(ObjectId(7))
+        );
+        assert_eq!(
+            with_yodomi.target_for(&rotation.actions[1]),
+            Some(ObjectId(1))
         );
     }
 }

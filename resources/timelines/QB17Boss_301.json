@@ -1,0 +1,46 @@
+{
+    "autoattack_action_id": 0,
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "119": {
+            "players": 140,
+            "npcs": 186
+        },
+        "127": {
+            "players": 196,
+            "npcs": 246
+        },
+        "1127": {
+            "npcs": 65.5
+        }
+    },
+    "rotation": {
+        "pace": 7.3,
+        "actions": [
+            {
+                "action": 1127,
+                "on_ally": 1710,
+                "every": 25.8,
+                "comment": "the drain (the sheet's DEF_YODOMI_DORAIN), 12 uses, always on a yodomi while one is out: Regen for itself (QuestBattleNpc_01127)"
+            },
+            {
+                "action": 513,
+                "every": 23.9,
+                "comment": "the paralysing gaze, 13 uses (QuestBattleNpc_00513)"
+            },
+            {
+                "action": 127,
+                "every": 25.3,
+                "comment": "Stone II, 11 uses"
+            },
+            {
+                "action": 119,
+                "every": 23.5,
+                "comment": "Stone, 12 uses"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Quest battle 17 (quest 441): the boss (quest battle 17, BNpcBase 301, BNpcName 596, layout 3796294, the sheet's INIT_POP_BOSS): level 30, 2106 HP; on the player throughout, never auto-attacking; moved at most 12 yalms. From Bob's Chronofoil capture df6f5af9 (2026-11-01, three runs of quest battle 17, the first two lost and the third won, `questkit chronofoil --battle 0.4`, `0.6` and `0.8`, territory 235, duty 301; a level 33 conjurer synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs, `every` the median time between uses. Hitbox not recorded."
+}

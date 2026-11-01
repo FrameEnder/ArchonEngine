@@ -166,6 +166,27 @@ pub fn npc_behavior(
             (*id, percent)
         })
         .collect();
+    // Each side's living battle NPCs by BNpcBase, one of each (the lowest layout ID), for rotation entries used
+    // `on_ally` (the Akoman's drain on a yodomi, quest battle 17): (hostile, base) -> (layout, actor).
+    let mut allies_by_base: HashMap<(bool, u32), (u32, ObjectId)> = HashMap::new();
+    for (id, actor) in &instance.actors {
+        if let NetworkedActor::Npc { spawn, .. } = actor
+            && matches!(spawn.common.object_kind, ObjectKind::BattleNpc(_))
+            && spawn.common.health_points > 0
+        {
+            let hostile = spawn
+                .character_data_flags
+                .contains(CharacterDataFlag::HOSTILE);
+            let key = (hostile, spawn.common.base_id);
+            let layout = spawn.common.layout_id;
+            if allies_by_base
+                .get(&key)
+                .is_none_or(|(existing, _)| layout < *existing)
+            {
+                allies_by_base.insert(key, (layout, *id));
+            }
+        }
+    }
     // Everyone's position, for NPCs told to stay near someone (the director's `keep_near`.)
     let positions: HashMap<ObjectId, Vec3A> = instance
         .actors
@@ -1104,16 +1125,40 @@ pub fn npc_behavior(
                 && spawn.common.target_id.object_id.is_valid()
             {
                 let target = spawn.common.target_id.object_id;
+                let hostile = spawn
+                    .character_data_flags
+                    .contains(CharacterDataFlag::HOSTILE);
+                let allies = if rotation.actions.iter().any(|entry| entry.on_ally.is_some()) {
+                    allies_by_base
+                        .iter()
+                        .filter(|((side, _), (_, ally))| *side == hostile && ally != id)
+                        .map(|((_, base), (_, ally))| (*base, *ally))
+                        .collect()
+                } else {
+                    HashMap::new()
+                };
                 let situation = Situation {
                     now: Instant::now(),
                     target,
                     target_hp: health_percent.get(&target).copied().unwrap_or(100.0),
                     self_hp: health_percent.get(id).copied().unwrap_or(100.0),
+                    allies,
                 };
                 let mut game_data = game_data.lock();
                 let mut mechanics = |action| game_data.get_action_mechanics(action);
                 if let Some(action_id) = rotation_state.choose(rotation, &situation, &mut mechanics)
                 {
+                    // Its target, or the ally an `on_ally` entry goes on.
+                    let target = rotation
+                        .actions
+                        .iter()
+                        .find(|entry| entry.action == action_id)
+                        .and_then(|entry| situation.target_for(entry))
+                        .unwrap_or(target);
+                    let target_id = ObjectTypeId {
+                        object_id: target,
+                        ..spawn.common.target_id
+                    };
                     let action_mechanics = mechanics(action_id);
                     rotation_state.record(
                         rotation,
@@ -1129,6 +1174,7 @@ pub fn npc_behavior(
                             until: Instant::now() + Duration::from_secs_f32(cast_time_seconds),
                             target_position: target_actor_pos
                                 .get(&target)
+                                .or_else(|| positions.get(&target))
                                 .copied()
                                 .unwrap_or(spawn.common.position.0),
                             rotation: spawn.common.rotation,
@@ -1138,7 +1184,7 @@ pub fn npc_behavior(
                             action_id,
                             action_type: ActionType::Action,
                             rotation1: spawn.common.rotation,
-                            target: spawn.common.target_id,
+                            target: target_id,
                             ..Default::default()
                         };
                         new_action_requests.push((*id, request, cast_time_seconds));

@@ -794,10 +794,7 @@ pub fn execute_action(
             && let NetworkedActor::Npc { cast, timeline, .. } = actor
             && request.target.object_id != from_actor_id
             && let Some(target) = instance.find_actor(request.target.object_id)
-            && effects_builder
-                .effects
-                .iter()
-                .any(|effect| matches!(effect.0, TargetEffectKind::Damage { .. }))
+            && effects_builder.effects.iter().any(is_hostile_effect)
         {
             let (rotation, aimed_at) = match cast {
                 Some(cast) => (cast.rotation, cast.target_position),
@@ -849,10 +846,7 @@ pub fn execute_action(
             && let Some(shape) = action_info.and_then(|info| info.area_shape())
             && let NetworkedActor::Npc { cast, timeline, .. } = actor
             && request.target.object_id == from_actor_id
-            && effects_builder
-                .effects
-                .iter()
-                .any(|effect| matches!(effect.0, TargetEffectKind::Damage { .. }))
+            && effects_builder.effects.iter().any(is_hostile_effect)
         {
             let (rotation, aimed_at) = match cast {
                 Some(cast) => (cast.rotation, cast.target_position),
@@ -889,6 +883,29 @@ pub fn execute_action(
                 }
             }
             effects_builder.effects.clear();
+        }
+
+        // A gaze lands only on those facing the caster; the rest are missed (their status and damage both), and stay
+        // in the result as a miss, as retail showed them.
+        if let Some(effects_builder) = &mut effects_builder
+            && effects_builder.gaze
+        {
+            let caster = actor.position().0;
+            let looks_away = |id: ObjectId| {
+                id != from_actor_id
+                    && instance
+                        .find_actor(id)
+                        .is_some_and(|other| !faces(other.position().0, other.rotation(), caster))
+            };
+            if looks_away(request.target.object_id) && !effects_builder.effects.is_empty() {
+                effects_builder.effects = vec![TargetEffect(TargetEffectKind::Miss)];
+                effects_builder.periodic.clear();
+            }
+            for (id, effects) in &mut area_bystanders {
+                if looks_away(*id) {
+                    *effects = vec![TargetEffect(TargetEffectKind::Miss)];
+                }
+            }
         }
 
         // What retail's recording says this NPC's action does to this kind of target (Timeline::recorded_amounts):
@@ -1074,6 +1091,17 @@ pub fn execute_action(
             // aggro any NPCs, more so the more damage this does
             {
                 let multiplier = enmity_multiplier(instance, from_actor_id);
+                // Not one of its own side: the Akoman draining a yodomi (1127, quest battle 17) didn't turn the yodomi
+                // on it; they kept on the player and Sylphie (Bob's Chronofoil capture df6f5af9.)
+                let same_side = instance
+                    .find_actor(from_actor_id)
+                    .and_then(area_side)
+                    .is_some_and(|caster| {
+                        instance
+                            .find_actor(request.target.object_id)
+                            .and_then(area_side)
+                            == Some(caster)
+                    });
                 let Some(actor) = instance.find_actor_mut(request.target.object_id) else {
                     return;
                 };
@@ -1093,7 +1121,10 @@ pub fn execute_action(
                 let heals_target = effects_builder.effects.iter().any(|effect| {
                     matches!(effect.0, TargetEffectKind::Heal { unk1, .. } if unk1[4] & EFFECT_ON_SOURCE == 0)
                 });
-                if request.target.object_id != from_actor_id && (damage > 0 || !heals_target) {
+                if request.target.object_id != from_actor_id
+                    && !same_side
+                    && (damage > 0 || !heals_target)
+                {
                     actor.add_enmity(from_actor_id, damage.saturating_mul(multiplier));
                 }
                 if effects_builder.provoke {
@@ -2877,6 +2908,26 @@ pub fn execute_ornament_action(
 
 /// Which side of a fight an actor is on, for whom an NPC's area attack catches besides its target: players and the
 /// NPCs that aren't hostile to them (`false`), or hostile NPCs (`true`). `None` for anything that isn't a fighter.
+/// An effect that makes an action hostile, and so spread over its area: damage, or a status on the target (a debuff:
+/// the Akoman's paralysing gaze, 513, does no damage and caught Sylphie and the player alike, Bob's Chronofoil capture
+/// df6f5af9). A status on oneself (GainEffectSelf) or a heal doesn't.
+fn is_hostile_effect(effect: &TargetEffect) -> bool {
+    matches!(
+        effect.0,
+        TargetEffectKind::Damage { .. } | TargetEffectKind::GainEffect { .. }
+    )
+}
+
+/// Whether someone at `position` facing `rotation` looks toward `caster`, within 90 degrees either way: a gaze lands
+/// on them (see `EffectsBuilder::gaze`). Rotation 0 faces +Z, as everywhere else.
+pub fn faces(position: Vec3A, rotation: f32, caster: Vec3A) -> bool {
+    let to_caster = Vec2::new(caster.x - position.x, caster.z - position.z);
+    if to_caster.length_squared() < f32::EPSILON {
+        return true;
+    }
+    Vec2::new(rotation.sin(), rotation.cos()).dot(to_caster) >= 0.0
+}
+
 fn area_side(actor: &NetworkedActor) -> Option<bool> {
     match actor {
         NetworkedActor::Player { .. } => Some(false),
@@ -3049,6 +3100,24 @@ mod combo_tests {
 #[cfg(test)]
 mod area_tests {
     use super::*;
+
+    #[test]
+    fn a_gaze_needs_the_caster_in_front() {
+        // Facing +z (rotation 0), the caster straight ahead, 58 degrees off (paralysed on retail), 94 degrees off and
+        // behind (missed on retail, quest battle 17.)
+        let me = Vec3A::ZERO;
+        let at = |degrees: f32| {
+            let r = degrees.to_radians();
+            Vec3A::new(7.0 * r.sin(), 0.0, 7.0 * r.cos())
+        };
+        assert!(faces(me, 0.0, at(0.0)));
+        assert!(faces(me, 0.0, at(58.0)));
+        assert!(faces(me, 0.0, at(-58.0)));
+        assert!(!faces(me, 0.0, at(94.0)));
+        assert!(!faces(me, 0.0, at(180.0)));
+        // Turned to face it, the one behind is in front.
+        assert!(faces(me, std::f32::consts::PI, at(180.0)));
+    }
 
     #[test]
     fn frost_breath_cone() {

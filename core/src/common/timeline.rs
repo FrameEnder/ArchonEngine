@@ -92,6 +92,11 @@ pub struct RotationAction {
     pub target_hp_below: Option<f32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub self_hp_below: Option<f32>,
+    /// Use it on a living NPC of this BNpcBase on its own side (the lowest layout ID of them) instead of its target, and
+    /// only while there is one: the Akoman's drain (1127) on the yodomi that feed it in quest battle 17 (Bob's
+    /// Chronofoil capture df6f5af9.)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub on_ally: Option<u32>,
     /// Where the numbers came from (ignored by the server.)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub comment: Option<String>,

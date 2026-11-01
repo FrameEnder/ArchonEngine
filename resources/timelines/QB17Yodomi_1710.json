@@ -1,0 +1,6 @@
+{
+    "autoattack_action_id": 0,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Quest battle 17 (quest 441): the yodomi (quest battle 17, BNpcBase 1710, BNpcName 1424, layouts 4273807 and 4273810, the sheet's INIT_POP_YODOMI_*): level 25, 540 HP; they never acted or moved, only fed the boss its drain (1127). From Bob's Chronofoil capture df6f5af9 (2026-11-01, three runs of quest battle 17, the first two lost and the third won, `questkit chronofoil --battle 0.4`, `0.6` and `0.8`, territory 235, duty 301; a level 33 conjurer synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs, `every` the median time between uses. Hitbox not recorded."
+}

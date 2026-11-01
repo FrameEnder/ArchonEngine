@@ -184,6 +184,38 @@ a quest's entering event, 0 for every other event (228 events across the capture
 
 ## The battles
 
+### Quest battle 17 — the conjurers' quest 441 (`content/questbattle/17.lua`)
+
+* Quest 441 (ClsCnj006_00441) enters it (scene 26, YesNoQuestBattle; territory 235, duty 301). Territory 235's
+  TerritoryType has the South Shroud's level, so its NPCs are layer `QB_ClsCnj006_002` of `fst_f1f3`, with retail's
+  layout IDs, levels, HP, positions, display and character data flags and the start spot (318.21, 4.36, -82.8, facing
+  1.933) from Bob's Chronofoil capture df6f5af9 (2026-11-01, `--battle 0.4` and `0.6` lost, `0.8` won; a level 33
+  conjurer synced to 34): Sylphie on your side (3873175, base 558, BNpcName 628), the boss (3796294, base 301, BNpcName
+  596, 2106 HP), two yodomi (4273807, 4273810, base 1710) and two imps (4273820, 4273821, base 1709). The script takes
+  the layout IDs, the yells (QIB_YELL_01/02, 1003 and 1004) and the drain's ID (DEF_YODOMI_DORAIN, 1127) from the
+  QuestBattle sheet.
+* The flow, the same in all three runs (seconds from the fight starting): sequence 2; Sylphie's battle talk 48 and 49
+  at 5 and 10 s (her BNpcName, no portrait), her yell 1003 at 15.1. The boss at 70 % (75.5 -> 66.2, 73.1 -> 66.5,
+  71.4 -> 63.2): sequence 3, her yell 1004 and the first yodomi 0.2-0.5 s later. In sequence 3 the boss's first drain
+  brings sequence 4 3.6 s after its cast begins and her 50 5 s after that (the first run only: in the others the boss
+  reached 40 % first). The boss at 40 % (42.1 -> 39.4, 44.4 -> 36.5, 46.6 -> 38.8): sequence 5, the imps 0.3-0.5 s
+  later, her 51 10 s after; 20 s after 5, sequence 6, the second yodomi and her 52 5 s after. The won run: the boss's
+  health at 0 with every add already down, "Duty Complete" and sequence 7 at once, then the battle's scene 7
+  (0xF8402FFF); the quest moves to 255. Both losses: sequence 0xFE at the player's health's 0. The opening scene's
+  flags are 0xF841AFFF.
+* **The yodomi** never act or move (`hold_bnpc`); they're there to be drained: about every 26 s the boss casts 1127 on
+  one (its rotation's `on_ally`, see [Class rotations](combat.md#class-rotations-serverrotationrs)), which hurts the
+  yodomi 61-97, heals the boss about 32 and gives it Regen for 21 s at about 90 a tick, some 30 % of its health
+  (QuestBattleNpc_01127). Killing them stops it. **The boss's 513 is a gaze** (see [Gazes](combat.md)): it paralyses
+  whoever faces it (status 17 for 16 s) and misses anyone looking away (QuestBattleNpc_00513). Bob, playing it: "this
+  can be dodged with an 100% effectiveness by simply looking away from the Boss", and the fight doesn't end until every
+  enemy is down; the script wins only once the boss and everything brought out are down.
+* Sylphie fights the boss, then the imps when they come, and Cures you below 50 % (retail's at 7-50 %, never anyone
+  else). Timelines `QB17*` (bases 301, 558, 1709, 1710). `questkit battle-sim 17` checks the three runs (`17.json`,
+  `17-lost-1.json`, `17-lost-2.json`, their health held between hits, `npc_health: held`): every step within 0.8 s.
+* The quest's three tainted earth sprites (layer `QB_ClsCnj006_001`, base 294, level 20, 619 HP) are in the same
+  drop-in; the quest script waits on Bob's dump.
+
 ### Quest battle 58 — Big Trouble in Little Ala Mhigo (`content/questbattle/58.lua`)
 
 * Quest 782 (GaiUsa709_00782) enters it from Wilred (scene 13; territory 306, duty 353). Territory 306's TerritoryType

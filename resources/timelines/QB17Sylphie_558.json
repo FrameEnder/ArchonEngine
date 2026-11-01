@@ -1,0 +1,36 @@
+{
+    "autoattack_action_id": 870,
+    "attack_range": 15.0,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 12
+        },
+        "119": {
+            "npcs": 44
+        },
+        "121": {
+            "npcs": 16
+        },
+        "120": {
+            "players": 237
+        }
+    },
+    "rotation": {
+        "pace": 7.7,
+        "actions": [
+            {
+                "action": 121,
+                "refresh": 17.0,
+                "comment": "Aero, 12 uses, re-applied as its status (143) wears off"
+            },
+            {
+                "action": 119,
+                "every": 9.9,
+                "comment": "Stone, 31 uses"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Quest battle 17 (quest 441): Sylphie on your side (quest battle 17, BNpcBase 558, BNpcName 628, layout 3873175, the sheet's INIT_P_POP_SYLPHIE): level 26, 2564 HP, ClassJob 6; on the boss, then the imps; Cure (120, the director's heals) on you at 7-50 %, 237. From Bob's Chronofoil capture df6f5af9 (2026-11-01, three runs of quest battle 17, the first two lost and the third won, `questkit chronofoil --battle 0.4`, `0.6` and `0.8`, territory 235, duty 301; a level 33 conjurer synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs, `every` the median time between uses. Hitbox not recorded."
+}
