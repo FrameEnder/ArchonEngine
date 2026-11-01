@@ -539,8 +539,9 @@ pub enum ToServer {
     /// The client is requesting to join the following content.
     /// The Duty Support members chosen (DawnQuestMember, in party slot order), when registered through Duty Support.
     JoinContent(ClientId, ObjectId, u16, DutyFinderSetting, Option<Vec<u8>>),
-    /// The client started an event action during a quest event, which finishes casting after this many seconds.
-    QuestEventAction(ClientId, ObjectId, u8),
+    /// The client started an event action (its EventAction row, last) during a quest event, which finishes casting
+    /// after this many seconds.
+    QuestEventAction(ClientId, ObjectId, u8, u32),
     /// The client is entering a quest battle: the QuestBattle ID, and the territory it takes place in.
     JoinQuestBattle(ClientId, ObjectId, u32, u16),
     /// This player is in a duty they haven't cleared before (`Instance::newcomers`.)

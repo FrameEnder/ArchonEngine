@@ -4835,16 +4835,15 @@ async fn process_server_msg(
                 if let Some((_, event)) = events.last() {
                     tracing::info!("Event action interrupted during event {}", event.id);
 
-                    // End the progress bar, and the event with it: the player can try again once they're clear.
+                    // Everyone around already saw the bar cancelled (CancelCast, `Instance::interrupt_event_action`.)
+                    // Then retail sent ActorControlSelf 138 with the event's handler and finished the event, with no
+                    // EventAction ending the bar (Bob's Chronofoil captures: every one of 41, quests' and others'.)
+                    // The player can try again once they're clear.
+                    let handler_id = event.id;
                     connection
-                        .actor_control_target(
-                            connection.player_data.character.actor_id,
-                            event.actor_id,
-                            ActorControlCategory::EventAction {
-                                unk1: 0,
-                                id: connection.event_action_id,
-                            },
-                        )
+                        .actor_control_self(ActorControlCategory::DisableEventPosRollback {
+                            handler_id,
+                        })
                         .await;
                     // A nested event started for the action (the aetheryte's, attuning in a quest) ends too.
                     if let Some(handler_id) = connection.nested_event.take() {

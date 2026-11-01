@@ -16,6 +16,7 @@ use crate::{
         fate::{FateInstance, internally_start_fate},
         job_gauge::JobGauge,
         network::{DestinationNetwork, NetworkState},
+        paralysis::Paralysis,
         periodic::PeriodicEffect,
         zone::Zone,
     },
@@ -43,6 +44,29 @@ pub enum NavmeshGenerationStep {
     Needed(String),
     /// The process to write the navmesh has started, and we need to wait until the file exists.
     Started(String),
+}
+
+/// CancelCast's second value for a quest's progress bar (an action's is 1, an item's 2, a mount's 13.)
+const EVENT_ACTION_CANCEL_KIND: u32 = 4;
+
+/// Why a quest's progress bar was cut short. Retail (Bob's Chronofoil captures 2026-10-14 to 2026-11-01): 37 broken
+/// off by moving, CancelCast `537, 4, bar, 0`; three by a hit, as its damage landed (its EffectResult), and one by
+/// paralysis, `540, 4, bar, 1`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EventActionInterruption {
+    Moved,
+    Hit,
+    Paralysed,
+}
+
+impl EventActionInterruption {
+    /// CancelCast's first and last values.
+    fn cancel_cast(self) -> (u32, u32) {
+        match self {
+            Self::Moved => (537, 0),
+            Self::Hit | Self::Paralysed => (540, 1),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -74,8 +98,9 @@ pub enum QueuedTaskData {
     },
     /// Complete an EventAction
     CastEventAction { target: ObjectId },
-    /// Complete a quest's EventAction (its progress bar), which an enemy's attack can interrupt.
-    QuestEventAction,
+    /// Complete a quest's EventAction (its progress bar, EventAction row `id`), which moving, an enemy's attack or
+    /// paralysis can interrupt (`Instance::interrupt_event_action`.)
+    QuestEventAction { id: u32 },
     /// Make a fish bite.
     FishBite,
     /// Seal a boss wall.
@@ -254,6 +279,8 @@ pub struct Instance {
     pub quest_battle_win_exit: Option<(u16, Position, f32)>,
     /// Running over-time effects (DoTs, HoTs, etc.)
     pub periodic_effects: Vec<PeriodicEffect>,
+    /// Who is paralysed: their rolls, and NPCs that just seized up (`server/paralysis.rs`.)
+    pub paralysis: Paralysis,
     /// Battle NPCs a quest brought out, which don't respawn once defeated.
     pub quest_spawned_npcs: HashSet<ObjectId>,
     /// When players' HP and MP next regenerate (every 3 s, like retail's tick.)
@@ -760,18 +787,38 @@ impl Instance {
     }
 
     /// Interrupts the quest event action (the progress bar for searching something) this player is in the middle of,
-    /// if any, like an enemy's attack does on retail. The client is told so it can end the event.
-    pub fn interrupt_event_action(&mut self, network: &mut NetworkState, actor_id: ObjectId) {
+    /// if any, as retail does: everyone around sees it cancelled (ActorControl CancelCast from the player: retail's
+    /// first value says why, its second is 4 for an event action), then the client is told so the connection ends the
+    /// event (`FromServer::QuestEventActionInterrupted`.)
+    pub fn interrupt_event_action(
+        &mut self,
+        network: &mut NetworkState,
+        actor_id: ObjectId,
+        why: EventActionInterruption,
+    ) {
         let mut interrupted = Vec::new();
         self.queued_task.retain(|task| {
-            let matches = task.from_actor_id == actor_id
-                && matches!(task.data, QueuedTaskData::QuestEventAction);
-            if matches {
-                interrupted.push(task.from_id);
+            if task.from_actor_id == actor_id
+                && let QueuedTaskData::QuestEventAction { id } = task.data
+            {
+                interrupted.push((task.from_id, id));
+                false
+            } else {
+                true
             }
-            !matches
         });
-        for from_id in interrupted {
+        let (unk1, unk3) = why.cancel_cast();
+        for (from_id, action_id) in interrupted {
+            network.send_ac_in_range_inclusive_instance(
+                self,
+                actor_id,
+                ActorControlCategory::CancelCast {
+                    unk1,
+                    unk2: EVENT_ACTION_CANCEL_KIND,
+                    action_id,
+                    unk3,
+                },
+            );
             network.send_to(
                 from_id,
                 FromServer::QuestEventActionInterrupted,

@@ -211,6 +211,9 @@ class Harness:
         self.script_path = script_path
         self.quest = quest
         self.params = params
+        # The step's progress bar is broken off (a fixture's `"interrupted": true`: moving, a hit or paralysis on
+        # retail), so the server ends the event instead of calling onEventActionCast.
+        self.interrupt_bar = False
         self.world = world or World()
         self._flags = repo.scene_flags()
         self._global = (repo.SCRIPTS / "Global.lua").read_text()
@@ -373,6 +376,10 @@ class Harness:
                     pending = self._call("onYield", scene, yield_id, table, self.player)
                 continue
             if action:
+                if self.interrupt_bar:
+                    outcome["finished"] = True
+                    outcome["interrupted"] = True
+                    return outcome
                 pending = self._call("onEventActionCast", self.player)
                 continue
             return outcome

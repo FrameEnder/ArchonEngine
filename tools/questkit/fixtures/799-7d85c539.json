@@ -1,0 +1,72 @@
+{
+  "quest": 799,
+  "script": "GaiUsa904_00799",
+  "source": "Bob's Chronofoil capture 7d85c539 (2026-11-01, the whole quest, another run); scenes and effects from Bob's Chronofoil capture of 2026-11-01",
+  "params": {
+    "ACTOR0": 1006240,
+    "EVENTRANGE0": 4299594,
+    "ACTOR1": 1007541,
+    "EVENT_ACTION_SEARCH": 1,
+    "ENEMY0": 4299601,
+    "ITEM0": 2000861,
+    "EOBJECT0": 2002462,
+    "ACTOR2": 1002780,
+    "LOC_ACTOR0": 1006240,
+    "LOC_ACTOR1": 1006241,
+    "LOC_ACTOR2": 1006242,
+    "LOC_ACTION1": 788,
+    "LOC_POS_ACTOR1": 4256813,
+    "LOC_POS_ACTOR2": 4256814,
+    "LOC_POS_ACTOR": 4329140,
+    "LOC_ACTOR4": 1007541,
+    "LOC_POS_ACTOR4": 4329223,
+    "LOC_POS_ACTOR5": 4329392,
+    "LOC_ACTION2": 981,
+    "LOC_ACTOR5": 1007643,
+    "LOC_IDLE100": 804,
+    "LOC_ACTOR10": 1034134
+  },
+  "steps": [
+    {
+      "talk": 1006240,
+      "layout": 4256812,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "range": 4299594,
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [182, 4299601],
+      "expect": {"sequence": 1, "vars": "010000000000", "notices": []}
+    },
+    {
+      "talk": 1007541,
+      "layout": 4300021,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 3, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 4, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001000000000", "notices": [[0, [26024]]]}
+    },
+    {
+      "talk": 1002780,
+      "layout": 3656535,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 7, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 8, "flags": "0xf8402efb", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

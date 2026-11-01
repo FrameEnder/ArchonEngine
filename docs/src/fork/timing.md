@@ -38,10 +38,21 @@ counting "updates", auto-attack timers) are half-second steps.
    Interacting, Attuning…, the EventAction sheet has the cast time).
 2. For quests, the connection sends `ToServer::QuestEventAction`; the server queues `QueuedTaskData::QuestEventAction`
    for when the cast time is up (exactly then, on the task tick).
-3. When it fires, the connection ends the bar and calls the script's `onEventActionCast(player)`.
-4. **Interruption**: when an enemy damages the player (single-target hit, or an area attack catching a bystander,
-   `server/action.rs`), `instance.interrupt_event_action` cancels the task and sends
-   `FromServer::QuestEventActionInterrupted`; the connection ends the bar and finishes the event. The player tries again.
+3. When it fires, the connection ends the bar and calls the script's `onEventActionCast(player)`. (Retail sent the
+   next scene first and ended the bar in the same instant: Seeing Eye to Winged Eye's look-out, 2026-11-01.)
+4. **Interruption** (`Instance::interrupt_event_action(network, actor, why)`) cancels the task, as retail did in Bob's
+   Chronofoil captures (41 bars broken off, 2026-10-14 to 2026-11-01, quests' and others'):
+   * **moving** (the player's position changing, at any point of the bar: as late as 8.6 s into a 10 s look-out; only
+     turning doesn't, `server/mod.rs`'s position handler): CancelCast `537, 4, bar, 0`, 37 times;
+   * **a hit**, when its damage lands (single-target hit, or an area attack catching a bystander, `server/action.rs`):
+     `540, 4, bar, 1`, three times;
+   * **paralysis** seizing the player up ([Paralysis](combat.md#paralysis-serverparalysisrs)): `540, 4, bar, 1`, once.
+
+   CancelCast (ActorControl 15: why, 4 for an event action, the EventAction row, 1 or 0) goes from the player to
+   everyone around. Then the connection (`FromServer::QuestEventActionInterrupted`) sends ActorControlSelf 138
+   (`DisableEventPosRollback`, the event's handler) and finishes the event; retail sent no EventAction ending the bar
+   (Kawari did before 2026-11-01, and moving didn't interrupt anything). The player tries again. The bar's row goes
+   with the task (`QueuedTaskData::QuestEventAction { id }`, from `ToServer::QuestEventAction`'s last value).
 
 Generic aetheryte/shard attunement (EventAction 19, 5 s) uses the same bar.
 

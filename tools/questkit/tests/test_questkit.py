@@ -213,6 +213,18 @@ class Fixtures(unittest.TestCase):
         self.assertFalse(result.ok)
         self.assertIn("vars 01 00 00 00 00 80, retail 02 00 00 00 00 80", result.steps[-1].problems[0])
 
+    def test_interrupted_search(self):
+        # A search broken off (moving, a hit, paralysis): the bar starts, the server ends the event, nothing else.
+        fixture = fixtures.build(QUEST, self.recordings, self.dump)
+        search = fixture["steps"][2]
+        broken = {"talk": search["talk"], "layout": search.get("layout"), "scenes": [], "interrupted": True,
+                  "expect": dict(fixture["steps"][1]["expect"], notices=[])}
+        fixture["steps"].insert(2, broken)
+        result = replay.run(fixture, self.script)
+        self.assertTrue(result.ok, replay.format_results([result]))
+        del broken["interrupted"]
+        self.assertFalse(replay.run(fixture, self.script).ok)
+
     def test_replay_catches_unfinished_events(self):
         broken = self.dir / "broken.lua"
         broken.write_text(SCRIPT.replace("    player:finish_event()\nend\nfunction onYield",

@@ -29,8 +29,8 @@ use crate::{
         effect::{handle_effect_messages, remove_effect, send_effects_list},
         fate::{ended_fate, fate_tick, start_fate, start_next_fate, unk10_fate},
         instance::{
-            Instance, NavmeshGenerationStep, QueuedTaskData, WEATHER_WINDOW_SECONDS,
-            remove_actor_from_instance,
+            EventActionInterruption, Instance, NavmeshGenerationStep, QueuedTaskData,
+            WEATHER_WINDOW_SECONDS, remove_actor_from_instance,
         },
         linkshell::handle_linkshell_messages,
         network::{DestinationNetwork, NetworkState},
@@ -89,11 +89,13 @@ mod modifiers;
 use job_gauge::CLASSJOB_WHITE_MAGE;
 mod linkshell;
 mod network;
+mod paralysis;
 mod party;
 mod party_bot;
 mod party_npc;
 mod periodic;
 mod pet;
+use paralysis::paralysis_tick;
 pub use party::{Party, PartyMember};
 pub use party_bot::BOT_LEVEL;
 pub use party_npc::chosen_members;
@@ -1232,6 +1234,8 @@ fn server_logic_tick(
 
             // Damage/healing over time
             periodic_tick(network.clone(), instance);
+            // Paralysed actors seizing up.
+            paralysis_tick(network.clone(), &game_data, instance);
 
             // A running duty's time left is re-sent every 300 s, as retail.
             director::resync_duty_clock(&mut network.lock(), instance);
@@ -1744,7 +1748,7 @@ pub async fn server_main_loop(
                                     director.event_action_cast(task.from_actor_id, *target);
                                 }
                             }
-                            QueuedTaskData::QuestEventAction => {
+                            QueuedTaskData::QuestEventAction { .. } => {
                                 let mut network = network.lock();
                                 network.send_to(
                                     task.from_id,
@@ -2209,6 +2213,13 @@ pub async fn server_main_loop(
                                     instance.cancel_task(network.clone(), &task);
                                 }
                             }
+                            // Moving breaks off a quest's progress bar too, at any point of it (retail: 37 times,
+                            // as late as 8.6 s into Seeing Eye to Winged Eye's 10 s look-out; only turning didn't.)
+                            instance.interrupt_event_action(
+                                &mut network.lock(),
+                                actor_id,
+                                EventActionInterruption::Moved,
+                            );
 
                             // If the actor moved, and they're in a party, we need to update our information.
                             if let Some(party_id) = party_id {
@@ -3554,9 +3565,9 @@ pub async fn server_main_loop(
                         send_effects_list(network.clone(), instance, from_actor_id);
                     }
                 }
-                ToServer::QuestEventAction(from_client_id, from_actor_id, cast_time) => {
-                    // Finish the cast when the client's progress bar does, unless an enemy's attack interrupts it
-                    // first (see interrupt_event_action.)
+                ToServer::QuestEventAction(from_client_id, from_actor_id, cast_time, id) => {
+                    // Finish the cast when the client's progress bar does, unless moving, an enemy's attack or
+                    // paralysis interrupts it first (see interrupt_event_action.)
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
                         continue;
@@ -3565,7 +3576,7 @@ pub async fn server_main_loop(
                         from_client_id,
                         from_actor_id,
                         Duration::from_secs(cast_time as u64),
-                        QueuedTaskData::QuestEventAction,
+                        QueuedTaskData::QuestEventAction { id },
                     );
                 }
                 ToServer::Fish(from_client_id, from_actor_id) => {

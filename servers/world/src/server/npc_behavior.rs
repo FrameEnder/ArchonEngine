@@ -140,6 +140,13 @@ pub fn npc_behavior(
     let mut actor_moves = Vec::new();
     let mut target_actor_pos = HashMap::new();
     let enemies = instance.find_possible_enemies();
+    let now = Instant::now();
+    let paralysis_locked: HashSet<ObjectId> = instance
+        .actors
+        .keys()
+        .filter(|id| instance.paralysis.locked(**id, now))
+        .copied()
+        .collect();
     let levels: HashMap<ObjectId, u8> = instance
         .actors
         .iter()
@@ -933,6 +940,9 @@ pub fn npc_behavior(
             } else {
                 can_take_action = false;
             }
+            // Not for a second after seizing up with paralysis (`server/paralysis.rs`.)
+            let paralysed = paralysis_locked.contains(id);
+            let can_take_action = can_take_action && !paralysed;
 
             // Only update the timeline on exact second marks. A timeline that always plays (Sastasha's giant clams opening
             // and closing) runs whether or not the NPC is fighting; its actions still need a target. Nothing read the
@@ -941,6 +951,7 @@ pub fn npc_behavior(
             // second, on whom it says, whether in reach or not.
             let mut used_timeline = false;
             if timeline.from_pull
+                && !paralysed
                 && *state == NpcState::Hate
                 && spawn.common.target_id.object_id.is_valid()
             {

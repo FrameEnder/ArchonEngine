@@ -25,7 +25,7 @@ use crate::{
         companion,
         effect::{gain_effect, gain_effect_instance, process_effects_list},
         first_attack,
-        instance::{Instance, QueuedTaskData},
+        instance::{EventActionInterruption, Instance, QueuedTaskData},
         modifiers,
         network::{DestinationNetwork, NetworkState},
         party::get_party_id_from_actor_id,
@@ -1345,6 +1345,7 @@ pub fn execute_action(
                                 instance.interrupt_event_action(
                                     &mut network.lock(),
                                     request.target.object_id,
+                                    EventActionInterruption::Hit,
                                 );
                             }
 
@@ -3328,7 +3329,7 @@ fn hit_area_bystander(
     if damage > 0 {
         let mut network = network.lock();
         // Being hit interrupts searching something for a quest.
-        instance.interrupt_event_action(&mut network, target_id);
+        instance.interrupt_event_action(&mut network, target_id, EventActionInterruption::Hit);
         // Shown in the area attack's packet otherwise (AoeEffect8.)
         if flying_text {
             network.send_ac_in_range_inclusive_instance(

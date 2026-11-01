@@ -11,11 +11,11 @@
             {
                 "action": 330,
                 "every": 20.9,
-                "comment": "twice, 20.9 s apart, on the player: status 18 (16) for 15 s"
+                "comment": "twice, on the player: status 18 (16, 12 on a level 32 character) for 15 s; the first at 0-4 s, the second 16.9-21.1 s later (three runs)"
             }
         ]
     },
     "timeline_always_plays": false,
     "timepoints": [],
-    "comment": "Seeing Eye to Winged Eye's (786) enemy (BNpcBase 1899, BNpcName 1985, layout 4285321), brought out by the lookout at EOBJECT0: level 29, 1125 HP, defeated 37.9 s after it came out. Its auto-attack hit for 26-50 (median 31.5, 10 of 11) every 3 s. From Bob's Chronofoil capture 412ba91d (2026-11-01, the North Shroud, `questkit chronofoil --battle 0.4`): `players` is the median damage to the player (level 33). Hitbox not recorded."
+    "comment": "Seeing Eye to Winged Eye's (786) enemy (BNpcBase 1899, BNpcName 1985, layout 4285321), brought out by the lookout at EOBJECT0: level 29, 1125 HP, defeated 37.9 s after it came out. Its auto-attack hit for 26-50 (median 31.5, 10 of 11) every 3 s. From Bob's Chronofoil capture 412ba91d (2026-11-01, the North Shroud, `questkit chronofoil --battle 0.4`): `players` is the median damage to the player (level 33). Captures 7d85c539 (level 33: 29-31, 47 a critical hit) and b166797f (level 32, a sturdier character: 18-23) agree. Hitbox not recorded."
 }

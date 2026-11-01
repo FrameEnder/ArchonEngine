@@ -7,8 +7,9 @@
 -- Sequence 1:   EOBJECT0 (the destination): scene 2 (0x2001, empty), EVENT_ACTION_LOOKOUT_LONG's bar (10 s on
 --               retail), then scene 3 (0x2001, the client's pop message), which brings out ENEMY0 (layer
 --               QB_GaiUsa802_001 of the North Shroud drop-in, at retail's position, level and HP; timeline
---               GaiUsa802Enemy_1899), the player's own. Its death: notice 0, sequence 255. Retail's first look-out
---               was broken off 8.7 s into the bar (no scene 3) and done again.
+--               GaiUsa802Enemy_1899), the player's own. Its death: notice 0, sequence 255. The look-out was broken
+--               off in two of three runs (moving 8.7 s in, capture 412ba91d; paralysis 0.9 s in, b166797f): the server
+--               ends the event then, with no scene 3, and it's done again.
 -- Sequence 255: ACTOR0 rewards it (scene 4, a yield: QuestReward, 1 and the optional item chosen.)
 
 SCENE_OFFER = 0

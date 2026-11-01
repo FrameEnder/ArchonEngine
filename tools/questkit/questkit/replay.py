@@ -69,6 +69,7 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
         try:
             results = step["scenes"] if "scenes" in step else step.get("results", {})
             harness.territory = step.get("territory")
+            harness.interrupt_bar = bool(step.get("interrupted"))
             if "talk" in step:
                 outcome = harness.talk(step["talk"], results, trace, step.get("layout"))
             elif "event_item" in step:

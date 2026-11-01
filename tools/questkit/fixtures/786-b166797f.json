@@ -1,0 +1,57 @@
+{
+  "quest": 786,
+  "script": "GaiUsa802_00786",
+  "source": "Bob's Chronofoil capture b166797f (2026-11-01, the whole quest, another run; its first look-out was broken off 0.9 s into the bar by paralysis, CancelCast 540: `interrupted`); scenes and effects from Bob's Chronofoil capture of 2026-11-01",
+  "params": {
+    "ACTOR0": 1006242,
+    "EOBJECT0": 2001982,
+    "EVENT_ACTION_LOOKOUT_LONG": 41,
+    "ENEMY0": 4285321,
+    "EVENT_ACTION_SEARCH": 1
+  },
+  "steps": [
+    {
+      "talk": 1006242,
+      "layout": 4256814,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 2001982,
+      "layout": 4273283,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "interrupted": true,
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 2001982,
+      "layout": 4273283,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 3, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [1899, 4285321],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1006242,
+      "layout": 4256814,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

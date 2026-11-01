@@ -1,0 +1,65 @@
+{
+  "quest": 800,
+  "script": "GaiUsa905_00800",
+  "source": "Bob's Chronofoil capture 7d85c539 (2026-11-01, the whole quest, another run); scenes and effects from Bob's Chronofoil capture of 2026-11-01",
+  "params": {
+    "ACTOR0": 1002780,
+    "ITEM0": 2000630,
+    "ACTOR1": 1000100,
+    "ACTOR2": 1000146,
+    "ACTOR3": 1000248,
+    "ACTOR4": 1006263
+  },
+  "steps": [
+    {
+      "talk": 1002780,
+      "layout": 3656535,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []}
+    },
+    {
+      "talk": 1000100,
+      "layout": 1140490,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "001000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1000146,
+      "layout": 1141124,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 5, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "001000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1000248,
+      "layout": 1141267,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 6, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 7, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001000000000", "notices": [[2, []]]}
+    },
+    {
+      "talk": 1006263,
+      "layout": 4258824,
+      "what": "ACTOR4",
+      "scenes": [
+        {"scene": 8, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 9, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

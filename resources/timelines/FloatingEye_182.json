@@ -1,29 +1,17 @@
 {
-    "autoattack_action_id": 0,
+    "autoattack_action_id": 970,
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 513,
+                "every": 600,
+                "comment": "its gaze, once a fight: first in three of four retail fights, 5 s in in the other"
+            }
+        ]
+    },
     "timeline_always_plays": false,
-    "timepoints": [
-        {
-            "time": 0,
-            "data": {
-                "type": "action",
-                "action_id": 970
-            }
-        },
-        {
-            "time": 3,
-            "data": {
-                "type": "action",
-                "action_id": 970
-            }
-        },
-        {
-            "time": 5,
-            "data": {
-                "type": "invulnerability",
-                "invulnerable": false
-            },
-            "comment": "Marks the end of the loop"
-        }
-    ],
+    "timepoints": [],
+    "comment": "Floating eye (BNpcBase 182). Retail's (Bob's Chronofoil captures 412ba91d, b166797f and 7d85c539 of 2026-11-01 and the Recorder's v154, Power of Deduction's eye, layout 4299601, level 29: four fights): 513 once as it opened, then 970 every 3.06 s instead of an auto-attack. 970 hit level 32-33 players for 30-68 (median 48 at level 33); the default damage is kept, since open-world eyes of other levels share this timeline.",
     "attack_range": 10.0
 }
