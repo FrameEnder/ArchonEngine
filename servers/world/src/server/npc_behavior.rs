@@ -76,11 +76,15 @@ pub const BEHAVIOR_TICK_SECONDS: f32 = 0.5;
 /// How far (in yalms) an enemy will chase from where it spawned before giving up, going home and healing up.
 /// TODO: per enemy, from Kawari Recorder's "World" recording (gave up at ~N yalms from spawn.)
 const LEASH_DISTANCE: f32 = 40.0;
-/// How many behaviour ticks (half a second each) an NPC in content, or a pet, waits at a wall before walking on
-/// through it, as party bots do (`party_bot::WALL_PATIENCE`, 2 s). Yda stood 16 yalms from the beast she was sent after
-/// for the rest of Brotherly Love's battle (Bob's bundles 20261030-110117 and -110334): her path ended where the
-/// navmesh did, the rest went straight, and the collision stopped every step of it; with the path never used up she
-/// never planned another. Retail's NPCs aren't held up like that.
+/// How many behaviour ticks (half a second each) an NPC waits at a wall (or a drop) before walking on along its path,
+/// as party bots do (`party_bot::WALL_PATIENCE`, 2 s). Yda stood 16 yalms from the beast she was sent after for the rest
+/// of Brotherly Love's battle (Bob's bundles 20261030-110117 and -110334): her path ended where the navmesh did, the
+/// rest went straight, and the collision stopped every step of it; with the path never used up she never planned
+/// another. Retail's NPCs aren't held up like that: its server walks them on the navmesh alone. Open-world enemies too
+/// (a Ziz in the North Shroud stood 8.5 yalms short of the player it was after, never attacking, for as long as he
+/// watched: Bob's bundle 20261101-215226). Out there a path keeps to the navmesh but for at most its last
+/// `MAX_OFF_MESH_GAP` yalms (where there's no mesh to the one it's after), so walking on keeps them to where the
+/// navmesh says they can go, not through the world's walls or off its cliffs.
 const NPC_WALL_PATIENCE_TICKS: u32 = 4;
 
 /// How long (in behaviour ticks) an enemy goes without reaching the one it's after, who's beyond `LEASH_DISTANCE` of
@@ -373,7 +377,7 @@ pub fn npc_behavior(
                         if walk.blocked {
                             blocked.insert(*id);
                         }
-                        if walk.blocked && goes_anywhere && walled_for >= NPC_WALL_PATIENCE_TICKS {
+                        if walk.blocked && walled_for >= NPC_WALL_PATIENCE_TICKS {
                             if walled_for == NPC_WALL_PATIENCE_TICKS {
                                 tracing::info!(
                                     "NPC {} (layout {}) held up by a wall at {:?} for {} ticks: walking on through",

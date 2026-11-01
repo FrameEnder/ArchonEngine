@@ -728,7 +728,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   20261030-110117 and -110334): Yda stopped short of the beast for good (a wall; NPCs in content now walk on through
   one after 2 s, not yet tested in game) and the beast vanished at the end instead of running off and fading (it runs
   home and fades now, at Kawari's run speed, not retail's slower one; NPCs have no speed of their own yet). Where the
-  wall was isn't known: the server logs the next one (`held up by a wall`).
+  wall was isn't known: the server logs the next one (`held up by a wall`). Open-world enemies walk on too since
+  2026-11-01 (a Ziz held up for good in the North Shroud, Bob's bundle 20261101-215226): the collision there stops
+  steps the navmesh allows, and where isn't known yet, the log says (`held up by a wall at`).
 * **AoE amounts from Chronofoil runs before 2026-10-30**: questkit read AoeEffects' effects six bytes off (fixed), so
   timelines' `recorded_amounts` for area actions taken from those runs' reports (Like Mother, Like Daughter's 1684s'
   440, others) should be read again from their runs.
