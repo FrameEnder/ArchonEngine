@@ -184,7 +184,7 @@ a quest's entering event, 0 for every other event (228 events across the capture
 
 ## The battles
 
-### Quest battle 17 — the conjurers' quest 441 (`content/questbattle/17.lua`)
+### Quest battle 17 — In Nature's Embrace (`content/questbattle/17.lua`)
 
 * Quest 441 (ClsCnj006_00441) enters it (scene 26, YesNoQuestBattle; territory 235, duty 301). Territory 235's
   TerritoryType has the South Shroud's level, so its NPCs are layer `QB_ClsCnj006_002` of `fst_f1f3`, with retail's

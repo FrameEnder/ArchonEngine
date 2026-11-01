@@ -1,4 +1,4 @@
--- Quest: the conjurers' quest 441 (ClsCnj006_00441)
+-- Quest: In Nature's Embrace
 --
 -- Written from the client's quest script (kawari-questdump, 2026-11-01) and checked against Bob's Chronofoil capture
 -- df6f5af9 (2026-11-01, the whole quest and its battle, entered three times: its fixture is

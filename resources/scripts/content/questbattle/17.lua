@@ -1,4 +1,4 @@
--- Quest battle 17 (ClsCnj006_00441, the conjurers' quest 441.)
+-- Quest battle 17: In Nature's Embrace (ClsCnj006_00441, the conjurers' quest 441.)
 -- It takes place in territory 235, whose TerritoryType has the South Shroud's level (f1f3), so its NPCs live in the
 -- fst_f1f3 drop-in (layer QB_ClsCnj006_002): Sylphie on your side (base 558, 3873175, the QuestBattle sheet's
 -- INIT_P_POP_SYLPHIE), the boss (301, 3796294, INIT_POP_BOSS, 2106 HP), two yodomi (1710, INIT_POP_YODOMI_01/02) and
