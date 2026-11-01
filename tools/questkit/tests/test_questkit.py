@@ -293,6 +293,21 @@ class InZoneMoveTest(unittest.TestCase):
         self.assertIsNone(_effect(task, None))
 
 
+class BattleSimSpawnTest(unittest.TestCase):
+    """battle-sim checks the opening line-up too: everyone retail had from the start must be brought out, and nobody
+    more often than retail (Like Mother, Like Daughter's first wave, written the wrong way round.)"""
+
+    def test_line_up(self):
+        fixture = {"npcs": {"1": {"spawn": None}, "2": {"spawn": None}, "3": {"spawn": 40.0}},
+                   "events": [[40.0, "spawn", 3], [75.0, "spawn", 3]]}
+        right = [(0.0, "spawn_bnpc", (1,)), (0.0, "spawn_bnpc", (2,)), (40.0, "spawn_bnpc", (3,)),
+                 (75.0, "spawn_bnpc", (3,))]
+        self.assertEqual(battle_sim.spawn_problems(fixture, right), [])
+        wrong = [(0.0, "spawn_bnpc", (1,)), (0.0, "spawn_bnpc", (1,))]
+        self.assertEqual(battle_sim.spawn_problems(fixture, wrong),
+                         ["retail had 2 from the start: the script never brings it out", "brings 1 out 2 times, retail 1"])
+
+
 class BattleSimPlayerTest(unittest.TestCase):
     """battle-sim gives a script the player's health as retail's last seen value (it jumps, so no interpolating), and
     a fixture can give one event more slack than the rest."""

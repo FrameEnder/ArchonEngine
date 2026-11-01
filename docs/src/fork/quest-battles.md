@@ -367,7 +367,11 @@ a quest's entering event, 0 for every other event (228 events across the capture
   elementals heal too. The director keeps its own timers beside `Battle:steps` (whose steps run one after another).
 * Timelines `QB56*` (bases 1682-1693); action scripts `QB56Add_00440`, `QB56Add_01119`, `QB56Sprite_01118`,
   `QB56Sprite_00313` (their statuses' durations guessed). `questkit battle-sim 56` checks both runs (`56.json`,
-  `56-lost.json`): every step within 1 s.
+  `56-lost.json`): every step within 1 s, and the opening line-up.
+* Until 2026-11-01 the first wave (`FIRST_WAVE`) was written the wrong way round (`{ [conjurer] = 1683 }` where
+  `arrive` takes `{ [enemy] = conjurer }`): the three conjurers came out a second time, as enemies, and the 1683s never
+  did, so six conjurers burnt the target down in 14 s and every wave came at once (Bob's bundle 20261101-221536: "it
+  completes almost instantly", "the enemies end up changing sides").
 * The client's battle script (`game_script/quest/004/ClsCnj005Btl_00440.luab`, Bob's dump of 2026-10-27) has scenes 1
   (a short wait) and 7 (nothing, the end), OnSequence001/002 (the objective and its message), and scene 10001: a log
   message, EVENT_QIB_NOT_TALK, for talking to someone in the battle. Sylphie's spawn carries the battle as its

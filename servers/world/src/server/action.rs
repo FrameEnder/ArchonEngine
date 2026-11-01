@@ -996,7 +996,10 @@ pub fn execute_action(
             && let NetworkedActor::Npc { cast, timeline, .. } = actor
             && request.target.object_id != from_actor_id
             && let Some(target) = instance.find_actor(request.target.object_id)
-            && effects_builder.effects.iter().any(is_hostile_effect)
+            && effects_builder
+                .effects
+                .iter()
+                .any(|effect| is_hostile_effect(effect, area_side(target) != area_side(actor)))
         {
             let (rotation, aimed_at) = match cast {
                 Some(cast) => (cast.rotation, cast.target_position),
@@ -1048,7 +1051,10 @@ pub fn execute_action(
             && let Some(shape) = action_info.and_then(|info| info.area_shape())
             && let NetworkedActor::Npc { cast, timeline, .. } = actor
             && request.target.object_id == from_actor_id
-            && effects_builder.effects.iter().any(is_hostile_effect)
+            && effects_builder
+                .effects
+                .iter()
+                .any(|effect| is_hostile_effect(effect, false))
         {
             let (rotation, aimed_at) = match cast {
                 Some(cast) => (cast.rotation, cast.target_position),
@@ -3109,16 +3115,17 @@ pub fn execute_ornament_action(
     None
 }
 
-/// Which side of a fight an actor is on, for whom an NPC's area attack catches besides its target: players and the
-/// NPCs that aren't hostile to them (`false`), or hostile NPCs (`true`). `None` for anything that isn't a fighter.
-/// An effect that makes an action hostile, and so spread over its area: damage, or a status on the target (a debuff:
-/// the Akoman's paralysing gaze, 513, does no damage and caught Sylphie and the player alike, Bob's Chronofoil capture
-/// df6f5af9). A status on oneself (GainEffectSelf) or a heal doesn't.
-fn is_hostile_effect(effect: &TargetEffect) -> bool {
-    matches!(
-        effect.0,
-        TargetEffectKind::Damage { .. } | TargetEffectKind::GainEffect { .. }
-    )
+/// An effect that makes an action hostile, and so spread over its area: damage, or a status put on someone of the
+/// other side (`on_the_other_side`: a debuff, the Akoman's paralysing gaze, 513, which does no damage and caught Sylphie
+/// and the player alike, Bob's Chronofoil capture df6f5af9). A status on the caster itself or on its own side is a buff
+/// (Like Mother, Like Daughter's 1683s and 1687 cast 416 on themselves, its sprite 313), and a heal isn't hostile
+/// either: taken for attacks (`801f36f`), buffs with an area went to the caster's enemies instead of it.
+fn is_hostile_effect(effect: &TargetEffect, on_the_other_side: bool) -> bool {
+    match effect.0 {
+        TargetEffectKind::Damage { .. } => true,
+        TargetEffectKind::GainEffect { .. } => on_the_other_side,
+        _ => false,
+    }
 }
 
 /// Whether someone at `position` facing `rotation` looks toward `caster`, within 90 degrees either way: a gaze lands
@@ -3131,6 +3138,8 @@ pub fn faces(position: Vec3A, rotation: f32, caster: Vec3A) -> bool {
     Vec2::new(rotation.sin(), rotation.cos()).dot(to_caster) >= 0.0
 }
 
+/// Which side of a fight an actor is on, for whom an NPC's area attack catches besides its target: players and the
+/// NPCs that aren't hostile to them (`false`), or hostile NPCs (`true`). `None` for anything that isn't a fighter.
 fn area_side(actor: &NetworkedActor) -> Option<bool> {
     match actor {
         NetworkedActor::Player { .. } => Some(false),
@@ -3303,6 +3312,22 @@ mod combo_tests {
 #[cfg(test)]
 mod area_tests {
     use super::*;
+
+    #[test]
+    fn buffs_are_not_attacks() {
+        let status = TargetEffect(TargetEffectKind::GainEffect {
+            unk1: 0,
+            unk2: 0,
+            param: 50,
+            unk3: 0,
+            effect_id: 57,
+            duration: 30.0,
+        });
+        // A debuff on the other side spreads; the same status on oneself or one's own side doesn't.
+        assert!(is_hostile_effect(&status, true));
+        assert!(!is_hostile_effect(&status, false));
+        assert!(!is_hostile_effect(&TargetEffect::default(), true));
+    }
 
     #[test]
     fn a_gaze_needs_the_caster_in_front() {

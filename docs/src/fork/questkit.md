@@ -345,7 +345,9 @@ NPC's health from retail's curve, counted from when the *script* spawned it (a w
 `onActorDeath` when its health reaches 0 (when Kawari calls it; retail's Defeated comes about 2 s later, after the
 death animation), and `onSceneFinished` after as long as the client took on retail. Retail's events are then matched
 to the script's, in order, each within the fixture's tolerance (2 s). It also fails on an NPC the script spawns that
-no drop-in has, or that retail never had.
+no drop-in has, or that retail never had; on one retail had from the start that the script never brings out; and on
+one the script brings out more often than retail did (`spawn_problems`; the timed events only cover later arrivals,
+so Like Mother, Like Daughter's first wave, written the wrong way round, passed until 2026-11-01).
 
 `--make` leaves out a sequence set before the fight that another replaces by the time it starts (the script's
 `onSetup`: Trial by Wind's sequence 1 came 0.4 s before scene 60000, inside the second it used to keep), and when

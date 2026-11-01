@@ -37,8 +37,9 @@ BNPC_WULFIUE = 4249072
 BNPC_NOLANEL = 4249073
 BNPC_JOACIN = 4249074
 CONJURERS = { BNPC_WULFIUE, BNPC_NOLANEL, BNPC_JOACIN }
--- The first wave: each conjurer's own 1683.
-FIRST_WAVE = { [BNPC_WULFIUE] = 4249088, [BNPC_NOLANEL] = 4249083, [BNPC_JOACIN] = 4249087 }
+-- The first wave: each conjurer's own 1683 ({ [enemy] = conjurer }, as every wave: written the other way round, it
+-- brought the conjurers out a second time as enemies and never the 1683s, Bob's bundle 20261101-221536.)
+FIRST_WAVE = { [4249088] = BNPC_WULFIUE, [4249083] = BNPC_NOLANEL, [4249087] = BNPC_JOACIN }
 -- Sequence 3: a 1685 on Nolanel and a 1684 on Joacin.
 SECOND_WAVE = { [4249106] = BNPC_NOLANEL, [4249097] = BNPC_JOACIN }
 -- Sequence 4: the elementals, and a 1684 on Wulfiue.

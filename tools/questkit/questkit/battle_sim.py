@@ -392,9 +392,37 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
         result.error = f"script error at {clock[0]:.1f} s: {str(error).strip().splitlines()[0]}"
         return result
 
+    result.problems += spawn_problems(fixture, calls)
     result.problems += compare(fixture, calls, result)
     result.ok = not result.problems
     return result
+
+
+def spawn_problems(fixture: dict, calls: list[tuple]) -> list[str]:
+    """Who the script brings out against retail's line-up: everyone retail had from the start (the timed events only
+    cover later arrivals), and nobody more often than retail (Like Mother, Like Daughter's first wave, written the wrong
+    way round, brought the three conjurers out a second time as enemies and never the 1683s, and passed: Bob's bundle
+    20261101-221536.)"""
+    problems = []
+    script_count: dict[int, int] = {}
+    for t, name, args in calls:
+        if name == "spawn_bnpc" and args and t >= 0:
+            layout = int(args[0])
+            script_count[layout] = script_count.get(layout, 0) + 1
+    retail_count: dict[int, int] = {}
+    for layout, info in fixture["npcs"].items():
+        if info.get("spawn") is None:
+            retail_count[int(layout)] = 1
+    for event in fixture["events"]:
+        if event[1] == "spawn":
+            retail_count[event[2]] = retail_count.get(event[2], 0) + 1
+    for layout in sorted(retail_count):
+        if fixture["npcs"].get(str(layout), {}).get("spawn", 0) is None and layout not in script_count:
+            problems.append(f"retail had {layout} from the start: the script never brings it out")
+    for layout, count in sorted(script_count.items()):
+        if layout in retail_count and count > retail_count[layout]:
+            problems.append(f"brings {layout} out {count} times, retail {retail_count[layout]}")
+    return problems
 
 
 def script_events(calls: list[tuple]) -> list[list]:
