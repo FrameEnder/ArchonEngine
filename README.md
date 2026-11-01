@@ -6,15 +6,7 @@ Kawari currently supports patch **7.57h1** (2026.10.16.0000.0000). We only suppo
 
 To get started, there is a guide to [running Kawari in our documentation](https://docs.xiv.zone/kawari/setup/overview.html).
 
-## Features
-
-It's hard to write down what we support, since the project is always in flux. But here's a basic idea of where we're at:
-* The opening sequence
-* Basic zone exploration
-* Multiplayer
-* Instanced content
-
-If you want to implement something that's missing, [see our Contributing guide](https://docs.xiv.zone/kawari/contributing.html)!
+**NOTE**: This is not a private server. It does not (and [sometimes intentionally](https://docs.xiv.zone/kawari/scope.html)) implement everything from retail. If you want to actually play the game, create a free trial account.
 
 ## Credits & Thank You
 
