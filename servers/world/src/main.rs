@@ -4466,9 +4466,9 @@ async fn process_server_msg(
             FromServer::SetCharacterMode(mode, arg) => {
                 connection.set_character_mode(mode, arg, false).await;
             }
-            FromServer::ZoneDiceRoll(from_actor_id, roll_data) => {
+            FromServer::ZoneDiceRoll(from_actor_id, from_actor_position, roll_data) => {
                 connection
-                    .dice_roll_received(from_actor_id, roll_data)
+                    .dice_roll_received(from_actor_id, from_actor_position, roll_data)
                     .await;
             }
             _ => {

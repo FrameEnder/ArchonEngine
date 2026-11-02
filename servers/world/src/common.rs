@@ -246,7 +246,7 @@ pub enum FromServer {
     /// Inform the chat connection that someone (or their own player) in one of their ChatChannels sent a dice roll.
     ChatDiceRoll(ObjectId, ChatDiceRollResult),
     /// Inform the zone connection that someone (or their own player) in the vicinity sent a dice roll.
-    ZoneDiceRoll(ObjectId, ZoneDiceRollResult),
+    ZoneDiceRoll(ObjectId, Position, ZoneDiceRollResult),
 }
 
 #[derive(Debug, Clone)]
@@ -498,7 +498,7 @@ pub enum ToServer {
     /// The client uses the /dice command to send a dice roll to one of their ChatChannels.
     ChatDiceRoll(ObjectId, ChatDiceRollResult),
     /// The client uses the /random command to send a dice roll to nearby players in the vicinity.
-    ZoneDiceRoll(ObjectId, ZoneDiceRollResult),
+    ZoneDiceRoll(ObjectId, Position, ZoneDiceRollResult),
     /// Tell the server to reload the active festivals in all running instances.
     ReloadFestivals,
     /// For the SpawnBatteNpc custom IPC.
