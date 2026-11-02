@@ -1,5 +1,5 @@
 {
-    "comment": "Which way retail turned players as they came into an instanced duty, by territory (radians, Kawari's rotation). Recorded from Bob's Chronofoil captures (2026-06 to 2026-10, 64 territories, 1 to 8 entries each, the same every time a duty was entered more than once): the ActorSetPos that put the player at the entrance, or else the rotation in the client's first position update, sent about a second after the zone loaded and before the player could turn. Entries whose first update came more than 3 s in (territories 378, 522, 523, 580, 581, 838, 1040) were left out. Kawari's entrance rects gave the wrong facing for most duties (the Thousand Maws of Toto-Rak 0 for retail's 1.5708, the Copperbell Mines 1.5708 for 1.7881, Sastasha -1.4752 for -1.6239; Bob's bundles of 2026-10-25 to 2026-10-30). See docs/src/fork/dungeons.md.",
+    "comment": "Which way retail turned players as they came into an instanced duty, by territory (radians, Kawari's rotation). Recorded from Bob's Chronofoil captures (2026-06 to 2026-10, 65 territories, 1 to 8 entries each, the same every time a duty was entered more than once): the ActorSetPos that put the player at the entrance, or else the rotation in the client's first position update, sent about a second after the zone loaded and before the player could turn. Entries whose first update came more than 3 s in (territories 378, 522, 523, 580, 581, 838) were left out. Haukke Manor (1040) is from the ActorSetPos of one of four runs (Bob's capture e7580e0d of 2026-11-02, visit 0.1; the others' first updates came 8.7-22 s in.) Kawari's entrance rects gave the wrong facing for most duties (the Thousand Maws of Toto-Rak 0 for retail's 1.5708, the Copperbell Mines 1.5708 for 1.7881, Sastasha -1.4752 for -1.6239; Bob's bundles of 2026-10-25 to 2026-10-30). See docs/src/fork/dungeons.md.",
     "runs": {
         "193": 1,
         "194": 1,
@@ -58,6 +58,7 @@
         "1037": 5,
         "1038": 6,
         "1039": 3,
+        "1040": 1,
         "1043": 1,
         "1045": 3,
         "1046": 1,
@@ -124,6 +125,7 @@
         "1037": 0.0,
         "1038": 1.7881,
         "1039": 1.5708,
+        "1040": -1.5705,
         "1043": -1.5871,
         "1045": 1.5708,
         "1046": -3.1416,

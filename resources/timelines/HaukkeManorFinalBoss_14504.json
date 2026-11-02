@@ -1,0 +1,135 @@
+{
+    "autoattack_action_id": 28647,
+    "from_pull": true,
+    "recorded_amounts": {
+        "28647": {
+            "players": 81,
+            "npcs": 47
+        },
+        "28646": {
+            "players": 260
+        },
+        "28645": {
+            "players": 312,
+            "npcs": 153
+        }
+    },
+    "timepoints": [
+        {
+            "time": 0.0,
+            "data": {
+                "type": "action",
+                "action_id": 28644,
+                "target": "nobody"
+            },
+            "comment": "28644 as it is pulled (12.0-39.8 s after it came out, all four runs)"
+        },
+        {
+            "time": 5.5,
+            "data": {
+                "type": "action",
+                "action_id": 28640,
+                "target": "itself"
+            },
+            "comment": "28640 5.2-5.4 s in"
+        },
+        {
+            "time": 24.5,
+            "data": {
+                "type": "action",
+                "action_id": 28640,
+                "target": "itself"
+            },
+            "comment": "28640 again 24.4-24.6 s in"
+        },
+        {
+            "time": 41.0,
+            "every": 63.0,
+            "data": {
+                "type": "action",
+                "action_id": 28646,
+                "target": "other"
+            },
+            "comment": "28646 on a player 41.2 s in, then every 63.1 s"
+        },
+        {
+            "time": 52.2,
+            "every": 63.0,
+            "data": {
+                "type": "action",
+                "action_id": 28640,
+                "target": "itself"
+            },
+            "comment": "28640 on itself 52.4 s in, then every 63.1 s"
+        },
+        {
+            "time": 58.2,
+            "every": 63.0,
+            "data": {
+                "type": "action",
+                "action_id": 28649,
+                "target": "itself"
+            },
+            "comment": "28649 on itself 58.4 s in, then every 63.1 s"
+        },
+        {
+            "time": 58.5,
+            "every": 63.0,
+            "data": {
+                "type": "action",
+                "action_id": 28644,
+                "target": "nobody"
+            },
+            "comment": "28644 on no one 58.7 s in, then every 63.1 s"
+        },
+        {
+            "time": 59.8,
+            "every": 63.0,
+            "data": {
+                "type": "action",
+                "action_id": 28643
+            },
+            "comment": "28643 on up to four 60.0 s in, then every 63.1 s"
+        },
+        {
+            "time": 75.9,
+            "every": 63.0,
+            "data": {
+                "type": "action",
+                "action_id": 28645
+            },
+            "comment": "28645 76.1 s in, then every 63.1 s"
+        },
+        {
+            "time": 83.1,
+            "every": 63.0,
+            "data": {
+                "type": "action",
+                "action_id": 28644,
+                "target": "nobody"
+            },
+            "comment": "28644 on no one 83.3 s in, then every 63.1 s"
+        },
+        {
+            "time": 88.4,
+            "every": 63.0,
+            "data": {
+                "type": "action",
+                "action_id": 28640,
+                "target": "itself"
+            },
+            "comment": "28640 on itself 88.6 s in, then every 63.1 s"
+        }
+    ],
+    "animation_locks": {
+        "28647": 0.6,
+        "28640": 2.1,
+        "28644": 1.1,
+        "28646": 2.1,
+        "28649": 0.2,
+        "28643": 2.1,
+        "28645": 2.1
+    },
+    "timeline_always_plays": false,
+    "comment": "Haukke Manor's last boss (BNpcBase 14504, layout 9058727, level 28, 21063 HP), from its pull (`from_pull`), the same to a few tenths of a second in all four runs: 28644, 28640 at 5.4 and 24.6 s, then from 41.2 s every 63.1 s: 28646 on a player, 28640 11.2 s later, 28649, 28644, 28643 on up to four, 28645 16.1 s after that, 28644 and 28640. 28647 every 3.0 s is its attack. Bob's Chronofoil captures of Haukke Manor (territory 1040) on 2026-11-02: 5d9c7d7f visit 0.2 (48 minutes with Duty Support, during quest 801) and e7580e0d visits 0.1, 0.3 and 0.5 (Duty Finder runs with three other players), `questkit chronofoil --battle`. `players` is the median damage to players over the four runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

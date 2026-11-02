@@ -1,0 +1,58 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 100.5,
+            "npcs": 57
+        },
+        "855": {
+            "players": 328,
+            "npcs": 292
+        },
+        "489": {
+            "players": 138.5,
+            "npcs": 88
+        },
+        "705": {
+            "players": 324.5
+        }
+    },
+    "timepoints": [
+        {
+            "time": 5.0,
+            "every": 18.4,
+            "data": {
+                "type": "action",
+                "action_id": 489
+            },
+            "comment": "489 4.9 s after the pull (all four runs), then every 18.3-20.5 s"
+        },
+        {
+            "time": 16.0,
+            "every": 18.4,
+            "data": {
+                "type": "action",
+                "action_id": 855
+            },
+            "comment": "855 11.1-11.3 s after each 489"
+        },
+        {
+            "time": 103.0,
+            "every": 50.8,
+            "data": {
+                "type": "action",
+                "action_id": 705,
+                "target": "other"
+            },
+            "comment": "705 on a player 103.0 s after the pull, every 50.7-50.8 s (the Duty Support run; the shorter runs ended first)"
+        }
+    ],
+    "animation_locks": {
+        "855": 1.1,
+        "489": 2.1,
+        "705": 2.1
+    },
+    "timeline_always_plays": false,
+    "comment": "Haukke Manor's first boss (BNpcBase 272, layout 3633770, level 28, 17136 HP), from its pull (`from_pull`): auto-attack 870, 489 then 855 11 s later, about every 18.4 s, and 705 on a player every 50.8 s. Bob's Chronofoil captures of Haukke Manor (territory 1040) on 2026-11-02: 5d9c7d7f visit 0.2 (48 minutes with Duty Support, during quest 801) and e7580e0d visits 0.1, 0.3 and 0.5 (Duty Finder runs with three other players), `questkit chronofoil --battle`. `players` is the median damage to players over the four runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

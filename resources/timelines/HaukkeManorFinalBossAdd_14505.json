@@ -1,0 +1,26 @@
+{
+    "autoattack_action_id": 0,
+    "attack_range": 10.0,
+    "recorded_amounts": {
+        "28648": {
+            "players": 247,
+            "npcs": 236
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 28648,
+                "every": 34.2,
+                "comment": "12 uses, every 34.2 s: a gaze"
+            }
+        ]
+    },
+    "animation_locks": {
+        "28648": 3.1
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Haukke Manor's last boss's 14505 (level 28, 714 HP): a gaze (28648) every 34.2 s, nothing else. Bob's Chronofoil captures of Haukke Manor (territory 1040) on 2026-11-02: 5d9c7d7f visit 0.2 (48 minutes with Duty Support, during quest 801) and e7580e0d visits 0.1, 0.3 and 0.5 (Duty Finder runs with three other players), `questkit chronofoil --battle`. `players` is the median damage to players over the four runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

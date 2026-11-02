@@ -13,6 +13,7 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | The Copperbell Mines | 3 | 1038 | `content/w1d1_re.lua` | one run with Duty Support and two Duty Finder runs (2026-10-25) |
 | The Bowl of Embers (Ifrit) | 56 | 1045 | `content/w1fa_re.lua` | one run with Duty Support, two attempts (2026-10-27) |
 | The Thousand Maws of Toto-Rak | 1 | 1039 | `content/f1r1_re.lua` | one run with Duty Support (caa5e908) and two Duty Finder runs (1fac2416, 2528a32d), 2026-10-30 |
+| Haukke Manor | 6 | 1040 | `content/f1d2_re.lua` | one run with Duty Support (5d9c7d7f) and three Duty Finder runs (e7580e0d: twice as the tank, once as the healer), 2026-11-02 |
 
 ## Facing at the entrance
 
@@ -22,12 +23,13 @@ Thousand Maws of Toto-Rak 0 where retail turned them to 1.5708 (Bob's bundle 202
 1.5708 for 1.7881, Sastasha -1.4752 for -1.6239; the Tam-Tara Deepcroft's 0 happened to be right. Why the rects
 differ from retail isn't known (there's no game data here to look at them with).
 
-So retail's facing is recorded, by territory, in `resources/data/entrance_facing.json` (`entrance_facing.rs`): 64
+So retail's facing is recorded, by territory, in `resources/data/entrance_facing.json` (`entrance_facing.rs`): 65
 territories from Bob's Chronofoil captures (June to October 2026), each either the ActorSetPos that put the player at
 the entrance or the rotation in the client's first position update, which came about a second after the zone loaded
 and before the player could turn. Every duty entered more than once had the same facing each time (Sastasha 8 times,
-the Copperbell Mines 6, Toto-Rak 3). Seven whose first update came more than 3 s in were left out (378, 522, 523, 580,
-581, 838 and Haukke Manor's 1040). What decides the facing, in order (`change_zone_warp_to_entrance`, coming in and
+the Copperbell Mines 6, Toto-Rak 3). Six whose first update came more than 3 s in were left out (378, 522, 523, 580,
+581, 838); Haukke Manor (1040) is -1.5705, the ActorSetPos of one of its four runs (Bob's capture e7580e0d of
+2026-11-02; the other three's first updates came 8.7-22 s in). What decides the facing, in order (`change_zone_warp_to_entrance`, coming in and
 after a wipe): a duty script's `ENTRANCE_ROTATION`, the recorded facing, the entrance rect's, the entrance object's.
 The server log says which: "Players come in facing … (retail's, recorded for …)" or "The entrance rect … faces …".
 
@@ -38,12 +40,13 @@ Deepcroft, the Copperbell Mines and the Bowl of Embers (Bob's Chronofoil capture
 3ec702a8 and f5e78b52, 2026-10-20 to 10-28), all from the duty's director and in this order:
 
 1. **The player's own first clear**: the clear EXP, the InstanceContent column after FinalBossExp (unnamed in the
-   sheet: Sastasha 18,800, Tam-Tara 19,600, Copperbell 24,200; the Bowl of Embers 0), then EventLogMessage 9393 with
-   it.
+   sheet: Sastasha 18,800, Tam-Tara 19,600, Copperbell 24,200, Haukke Manor 39,000; the Bowl of Embers 0), then
+   EventLogMessage 9393 with it.
 2. **The first-timer bonus**, on the first clear or whenever someone in the party hadn't cleared it (the arcanist's
    second Copperbell, a Duty Finder party, had the bonus without the clear EXP): NewPlayerBonusExp, then
    EventLogMessage 2163 with NewPlayerBonusExp and NewPlayerBonusGil, then the gil's slot (Sastasha 2,100 EXP and
-   2,500 gil; Tam-Tara 2,200 and 2,600; Copperbell 2,700 and 2,700; the Bowl 90 and 1,500).
+   2,500 gil; Tam-Tara 2,200 and 2,600; Copperbell 2,700 and 2,700; Haukke Manor 4,300 and 3,800; the Bowl 90 and
+   1,500).
 3. A repeat clear with nobody new gave neither (ba1b86c5's two Copperbell runs, cc26e0ea's two Tam-Taras).
 
 InstanceClearGil (400 for the three dungeons) and InstanceClearExp were never given. Each player's connection says
@@ -387,8 +390,92 @@ room's cutscene began. Chatter: the Marauder's 13951, 13952 and 13953, the Thaum
 **Not here:** the shortcut (2000700, GimmickAccessor 74; shown by the time of the Duty Finder run's wipe, after the
 second room; its pop range needs the game's layout files), what 30 and 31 on the last boss do, the event object retail
 put near it 4.0 s into each 702 (EObj 2000404, the director's, not in the layout: hidden as the tail died, deleted 3.4 s
-later; Kawari can't spawn an event object the layout hasn't), the item every player got as the duty was complete (log
+later; `spawn_eobj` can now spawn one the layout hasn't, since Haukke Manor, but this script doesn't yet), the item every player got as the duty was complete (log
 789 and 1232 with it: 3095, 31443 and 2013 in the three runs), the webs' collision, status 9 (an auto-attack's, twice).
+
+## Haukke Manor
+
+From Bob's Chronofoil captures of 2026-11-02: `5d9c7d7f` visit 0.2 (48 minutes with Duty Support, during Skeletons in
+Her Closet, quest 801, which unlocks it; one death and the shortcut back) and `e7580e0d` visits 0.1, 0.3 and 0.5 (Duty
+Finder runs with three other players: twice as the tank, once as the healer, 9-12 minutes each), read with `questkit
+chronofoil --battle` and the visits' packets (numbers only). The script's name, `f1d2_re`, is the ContentFinderCondition's
+ShortCode by analogy with `f1d1_re` (not checked against the sheet: the server log says if `content/f1d2_re.lua` isn't
+found); the drop-in's LGB is `bg/ffxiv/fst_f1/dun/f1d2/level/planmap.lgb` (Bob's dump of it, 2026-11-02, has the
+event objects, pop ranges, event ranges and coffers named below).
+
+**Enemies.** `questkit chronofoil --dropin 1040` over the two captures gave the 57 battle NPCs seen (level 28; trash
+2420 HP, 276 1210). The pair (273, 274) and the last boss with its adds (14504, 14505, 14506) are `nonpop`: the
+director spawns them; the first boss (272) and the floating eyes (275, 14698) stand from the start. Every kind has a
+timeline from the four runs (`HaukkeManor*_<base>.json`): the casters (1368, 273) and the eye 275 cast every 3.1-3.2 s
+instead of auto-attacking; the first boss casts 489 and then 855 every 18.4 s and 705 on a player every 50.8 s; the
+last boss's rotation (`from_pull`) was the same to a few tenths of a second in all four runs. New action scripts: 378,
+488, 489, 510, 514, 705, 855, 859, 860, 28640-28649, 29709, 29710, 29776 (`HaukkeManor*`).
+
+**The keys and doors** (GimmickAccessor events, 0x000F00xx). Something to pick up has no prompt: the event starts, an
+EventAction 21 runs 2 s, then log 2031 with the item, the object hidden (ActorControl 54 0 and SetEventState 7) and the
+event finished. A door is a prompt (scene 1, flags 0x2001), then EventAction 24 for 2 s, log 2059 with a parameter of its
+own, the door hidden the same way. Every run the same:
+
+| EObj | What | Retail |
+|---|---|---|
+| 2000302-2000305 | the keys lying about (item 2000260) | each counts one more key held (director data 0) |
+| 2000329, 2000337, 2000343, 2000344 | the plain doors | each uses up a key (log 2059 `[757]`) |
+| 2000324 | the first boss's key (2000263) | dropped where it fell (spawned as it died, args2 1282): data 1 \|= 1 |
+| 2000355 | the door it opens | log 2059 `[655]`; the key isn't used up |
+| 2000325 | the cellar's key (2000264) | data 1 \|= 4 |
+| 2000356 | the cellar's door | log 2059 `[756]`; the pair come out 0.4 s later |
+| 2001235 | the pair's key (2000259) | dropped where the last of the two fell (spawned, args2 66818, not in the layout): data 1 \|= 2 |
+| 2001233 | the stairs up | without the pair's key, its own log 2004 and the event refused (EventFinish result 0x65), no prompt; with it, the prompt, EventAction 24 and log 2023 `[0]` |
+| 2012969 | the way back up from the cellar | shown as the pair fall; a prompt, then its own log 2049 (from GimmickAccessor 0x41A's handler) and the party at the entrance (pop range 9228207) |
+
+The rest of the keys' series (2000306-2000308) and of the doors' (2000331, 2000339, 2000345), never used in the four
+runs, are taken to work the same; 2000338 stood open (spawned in state 7, every run). The director's variables
+(DirectorVars, sequence 1 throughout) are those two numbers: 0, 0 at the start; 1, 0 with a key; 0, 0 through a door;
+1, 1 with the first boss's key; 2, 1, 1, 1, 1, 5 and 1, 7 as the rest come. The script sends the same (checked with
+lupa, the Duty Support run's steps).
+
+**The first boss** (272, 17136 HP, standing in its hall; arena wall 2001605, line 2001604, PlaceName 604): its pull
+seals the hall (log 2012 `[604, 15]`, 15 s later the wall and log 2013), starts the battle music (37) and shows the
+shortcut. Its death: log 2069 `[423, 2000263]` (its BNpcName, the key), both wall and line hidden and 2001236 (the way
+on, standing from the start) too, log 2014, the music off; coffers 73 by it and 70 and 71 in the cellar.
+
+**The pair** (273, the caster, 7068 HP; 274, the fighter, 7768 HP; wall 2001607, line 2001606, PlaceName 609): out of
+the cellar's door, both going for the party together (8 s later, as it came in); the room opens as the **last** of them
+falls, whichever it is (273 in one run, 274 in three): log 2069 with that one's BNpcName (426 or 427) and the key,
+2012969 shown, the walls hidden, log 2014, coffers 77 by them and 69 upstairs. Kawari: `boss_room` called for each of
+them with the same wall now makes one room of them (sealed by either's pull, opened as the last dies:
+`DirectorData::on_actor_death`).
+
+**The last room.** Past the stairs, coming to its door plays the cutscene (scene 3: 170, 1, 38, 1, 0); the door (2000357,
+closed from the start) opens with it, and the last boss (14504, 21063 HP) and 14505 (714 HP, untargetable by its
+display flags) are there 2.4 s later. The boss's pull seals the room (log 2012 `[608, 15]`, then the wall 2000357 again
+and 2013); 14505 joins in 15.4 s after the pull and 14506 (2142 HP) comes 34.0 s after it, the same to 0.1 s in all four
+runs whatever the boss's health (88, 47, 43, 55 %). Its death: log 2014, the walls (2000357, line 2001080) hidden, the
+exit shown, the clear rewards (log 9393 `[39000]`, the first clear's EXP, and 2163 `[4300, 3800]`, the first-timer
+bonus), cutscene 171 (1, 18, 0, 0), 14505 gone, coffer 79. Which event range is the cutscene's rect isn't known: the
+script takes any of the three by that door (3943563, 4105682, 9393269), once the stairs are open.
+
+**The shortcut** (2000700): shown as the first boss is pulled, taking the party outside its hall (pop range 11438017;
+retail's warps put them at (-41.2, 0, 12.5)), and from the pair's pull outside theirs (11438018, (-30.8, -18.8, 0.4)).
+Outside the last room (11438019) from its cutscene isn't seen on retail. Kawari's shortcut gimmick now takes a pop range
+of its own when its GimmickAccessor has one (Param1) and isn't the duty's shortcut, with its line (Param2) from its own
+handler; if 2012969's isn't a shortcut, the script sends the party up itself (`director:warp_to_pop_range`).
+
+**Coffers** (`treasure_loot`): 66 and 68 stand from the start; 73 held 31464, 31464 and 4122, or 31456 and 4112; 77
+31459 and 4451, or 31451 and 4445; 79 9198 (the Duty Support run's, alone), 31466 and 2165, or 31460 and 1844; 68 4116.
+70, 71 and 69 were never opened. No wiki pools yet.
+
+**Duty Support.** The trials' three: the Marauder (40), the Thaumaturge (42) and the Conjurer (43), at level 28 with
+1026, 710 and 717 HP (`party_npc::DUTY_LEVELS`; the Lancer, 41, wasn't there: 779 is a guess). Their story lines: the
+Marauder's 14339 24.7 s in and 14345 as the first boss is pulled (retail: 3.9 s before, as the party came into its
+hall), the Conjurer's 14344 32.8 s in and 14349 12.6 s after the last room's cutscene began, the Thaumaturge's 14347 as
+the last of the pair fell. Chatter: the Marauder's 13951, 13952, 13953 and 13961 (now among its lines), the
+Thaumaturge's 13972.
+
+**Not here:** the stairs' locked log comes from the director after a prompt (retail: from the gimmick, with no prompt);
+the exit's log 1534 `[6]`; what 28640, 28644 and 28649 (on the last boss itself, no effects) and the eyes' gazes do; what the
+director events 0x40000007 (`[0, 1]` 0.2 s after the first door, `[1, 1]` 25 s after the first boss's key) and
+0x80000004 are; wiki loot pools.
 
 ## The Bowl of Embers
 

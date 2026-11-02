@@ -301,8 +301,9 @@ pub const TRIAL_MEMBERS: [Member; 4] = [
         slot_member: 10004,
         slot_resident: 1042780,
         // 13952 in both of the capture's attempts at Ifrit (15.6 and 34.6 s into the fight); 13951, 13952 and 13953 in
-        // the Thousand Maws of Toto-Rak (Bob's capture caa5e908 of 2026-10-30.)
-        chatter: &[13952, 13951, 13953],
+        // the Thousand Maws of Toto-Rak (Bob's capture caa5e908 of 2026-10-30); 13961 once in Haukke Manor too (his
+        // capture 5d9c7d7f of 2026-11-02, with 13952 thrice, 13953 four times and 13951 once.)
+        chatter: &[13952, 13951, 13953, 13961],
         opens_with_first: false,
         ..MEMBERS[0]
     },
@@ -346,7 +347,7 @@ pub const TRIAL_MEMBERS: [Member; 4] = [
 /// takes the member's own `level` and `hp`.
 /// The Conjurer (39, 43) the same (Bob's captures c99fe374 and cc62ad94 of 2026-10-28): 293 HP at 15 in Sastasha, 316 at
 /// 16, 339 at 17, 432 at 20.
-pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 5] = [
+pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 6] = [
     (4, 15, &[(36, 411), (37, 322), (38, 293), (39, 293)]),
     (2, 16, &[(36, 443), (37, 347), (38, 316), (39, 316)]),
     (3, 17, &[(36, 476), (37, 372), (38, 339), (39, 339)]),
@@ -356,6 +357,10 @@ pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 5] = [
     // Conjurer, 43) at 24 with 842, 583 and 588. The Lancer (41) wasn't there: 639 is a guess, the Marauder's HP by the
     // Lancer's share of it at 20 (469 of 618.)
     (1, 24, &[(40, 842), (41, 639), (42, 583), (43, 588)]),
+    // Haukke Manor (Bob's capture 5d9c7d7f of 2026-11-02, visit 0.2): the Marauder, the Thaumaturge and the Conjurer
+    // (40, 42, 43) at 28 with 1026, 710 and 717. The Lancer (41) wasn't there: 779 is a guess, the Marauder's HP by the
+    // Lancer's share of it at 20 (469 of 618.)
+    (6, 28, &[(40, 1026), (41, 779), (42, 710), (43, 717)]),
 ];
 
 /// A member's level and HP in the duty `content_finder_condition`.

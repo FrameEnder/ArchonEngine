@@ -1,0 +1,32 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 24.5,
+            "npcs": 19.0
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 28641,
+                "on_ally": 14504,
+                "every": 20.0,
+                "comment": "2 uses on the boss: status 151 (how often is a guess)"
+            },
+            {
+                "action": 28642,
+                "every": 10.0,
+                "comment": "4 uses on an enemy: status 2104 (how often is a guess: four in its 31 s)"
+            }
+        ]
+    },
+    "animation_locks": {
+        "28641": 2.1,
+        "28642": 2.1
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Haukke Manor's last boss's 14506 (level 28, 2142 HP): auto-attack 870, 28642 on its target and 28641 on the boss. It comes 34.0 s after the boss is pulled, whatever the boss's health (88, 47, 43 and 55 % in the four runs; the director spawns it). Bob's Chronofoil captures of Haukke Manor (territory 1040) on 2026-11-02: 5d9c7d7f visit 0.2 (48 minutes with Duty Support, during quest 801) and e7580e0d visits 0.1, 0.3 and 0.5 (Duty Finder runs with three other players), `questkit chronofoil --battle`. `players` is the median damage to players over the four runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

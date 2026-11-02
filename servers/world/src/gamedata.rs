@@ -2262,6 +2262,11 @@ impl GameData {
     }
 
     /// Returns the pop type for this EObj.
+    /// Whether this EObj can be targeted, if the sheet has it.
+    pub fn eobj_targetable(&mut self, eobj_id: u32) -> Option<bool> {
+        self.eobj_sheet.row(eobj_id).map(|row| row.Targetable)
+    }
+
     pub fn get_eobj_extra_data(&mut self, eobj_id: u32) -> (u8, bool) {
         let row = self.eobj_sheet.row(eobj_id).unwrap();
 

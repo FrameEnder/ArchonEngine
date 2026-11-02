@@ -1,0 +1,35 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 69.5,
+            "npcs": 40
+        },
+        "29776": {
+            "players": 336.5,
+            "npcs": 299
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 29776,
+                "every": 41.7,
+                "comment": "18 uses, every 41.7 s, on up to two: status 66 for 6 s"
+            },
+            {
+                "action": 488,
+                "every": 31.8,
+                "comment": "32 uses, every 31.8 s: status 18 on its target"
+            }
+        ]
+    },
+    "animation_locks": {
+        "29776": 2.1,
+        "488": 2.1
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Haukke Manor's BNpcBase 276 (level 28, 1210 HP): auto-attack 870, 488 every 31.8 s and 29776 every 41.7 s. Bob's Chronofoil captures of Haukke Manor (territory 1040) on 2026-11-02: 5d9c7d7f visit 0.2 (48 minutes with Duty Support, during quest 801) and e7580e0d visits 0.1, 0.3 and 0.5 (Duty Finder runs with three other players), `questkit chronofoil --battle`. `players` is the median damage to players over the four runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

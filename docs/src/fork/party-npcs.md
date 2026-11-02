@@ -183,6 +183,10 @@ Their lines are NpcYell packets from the member, under its BNpcName:
   Thaumaturge and Conjurer (40, 42, 43) at level 24 (842, 583, 588 HP; the Lancer's 639 is a guess): the tank said
   14331 and 14337, the Conjurer 14336 (when, in [Dungeons](dungeons.md#the-thousand-maws-of-toto-rak)); the tank's
   chatter 13951, 13952 and 13953, the Thaumaturge's 13972 seven times, which are now the trials' members' lines too.
+* **In Haukke Manor** (Bob's capture of 2026-11-02, `5d9c7d7f` visit 0.2) the same three at level 28 (1026, 710, 717
+  HP; the Lancer's 779 is a guess): the tank said 14339 and 14345, the Conjurer 14344 and 14349, the Thaumaturge 14347
+  (when, in [Dungeons](dungeons.md#haukke-manor)); the tank's chatter 13952 three times, 13953 four times, 13951 and
+  13961 (now among the trials' Marauder's lines too), the Thaumaturge's 13972.
 * **The duty's story lines**, from the director (`director:party_npc_yell(role, line, delay, other_role,
   other_line)`, the role "tank", "healer", "melee" or "ranged"; nobody of that role, no line, or when no party NPC
   plays it at all (the player does), `other_line` from `other_role`; line 0 is nothing): in Sastasha (`content/s1d1_re.lua`) the Lancer's 14296

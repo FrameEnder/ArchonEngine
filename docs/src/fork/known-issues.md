@@ -99,8 +99,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 * Retail's facing is a recorded table ([Dungeons](dungeons.md#facing-at-the-entrance)); a duty not in it still faces
   the way its entrance rect does, which was wrong in most duties checked. What retail's facing comes from isn't known.
-* Haukke Manor (1040) and six others weren't recorded (the player had already moved before the first position
-  update). Untested in game.
+* Six weren't recorded (the player had already moved before the first position update). Haukke Manor's (1040,
+  2026-11-02) is one run's ActorSetPos. Untested in game.
 
 ## Client packets of the wrong size (2026-10-30)
 
@@ -678,6 +678,25 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   floor's around it) can only be seen on a server with the game (the log names the materials, or says the floor was
   left out). Party NPCs don't get it (whether retail's Duty Support members did wasn't recorded). The first entry
   into Toto-Rak after this update makes its navmesh again (a minute or so) for the materials.
+
+## Haukke Manor (2026-11-02)
+
+* Untested in game, from four runs (one with Duty Support, three Duty Finder runs). The director was checked against
+  the Duty Support run's steps with a throwaway lupa harness (its variables after every key and door, the rooms, the
+  drops, the last fight's adds); no questkit command does that for a duty yet.
+* The script's name (`f1d2_re`, the ShortCode) is by analogy, not checked against the sheet: if the server log says
+  `content/f1d2_re.lua` isn't found, the director has another name.
+* Which event range plays the last room's cutscene isn't known: any of the three at its door (3943563, 4105682, 9393269)
+  does, once the stairs are open. If none is a cutscene rect Kawari knows, nothing brings the last boss.
+* The way back up from the cellar (2012969) is taken to be a shortcut GimmickAccessor with its own pop range and line
+  (Param1, Param2); if not, the script sends the party to pop range 9228207 itself. Which it is shows in the log only.
+* The keys 2000306-2000308 and the doors 2000331, 2000339 and 2000345 weren't used on retail; they're taken to work as
+  the others of their series. The stairs' locked line comes after a prompt here (retail: no prompt, the gimmick's own
+  log 2004 and EventFinish result 0x65).
+* The shortcut outside the last room (11438019, from its cutscene) isn't seen on retail. The exit's log 1534 `[6]`
+  isn't sent. 2000324 (the first boss's key) is spawned with its layout ID (retail: 0).
+* Duty Support's Lancer (41) at 28 has a guessed 779 HP. Not done: what the last boss's 28640, 28644 and 28649 and the
+  eyes' gazes (513, 29709, 29710) do; the director events 0x40000007 and 0x80000004; wiki loot pools.
 
 ## The Bowl of Embers
 

@@ -18,8 +18,9 @@ use kawari::{
     ipc::chat::ChatChannelType,
     ipc::zone::{
         ActorControlCategory, ActorControlSelf, ActorSetPos, ChatMessage, DisplayFlag,
-        DutyFinderSetting, EventLogMessage, MapEffects, PrepareZoning, ServerZoneIpcData,
-        ServerZoneIpcSegment, TreasureKind, WalkInEvent, WeatherChange,
+        DutyFinderSetting, EventLogMessage, MapEffects, ObjectKind, PrepareZoning,
+        ServerZoneIpcData, ServerZoneIpcSegment, SpawnObject, TreasureKind, WalkInEvent,
+        WeatherChange,
     },
 };
 use mlua::{Function, LuaSerdeExt, UserData, UserDataMethods, Value};
@@ -49,9 +50,13 @@ pub enum LuaDirectorTask {
     DeleteEObj {
         base_id: u32,
     },
+    /// Spawn an event object of the zone's layout (moved to `position`), or, when the layout has none, one made from
+    /// its EObj row alone, as retail spawned Haukke Manor's dropped keys (layout ID 0, the director's handler; Bob's
+    /// Chronofoil captures of 2026-11-02.) `args2` is SpawnObject's, as retail sent it (EObj-specific.)
     SpawnEObj {
         base_id: u32,
         position: Option<Position>,
+        args2: Option<u32>,
     },
     SendVariables,
     AbandonDuty {
@@ -150,8 +155,11 @@ pub enum LuaDirectorTask {
     UpdateShortcut {
         poprange_id: u32,
     },
+    /// Send this player through a shortcut: to `pop_range_id`, or (without one) to where the duty's shortcut
+    /// points now (`update_shortcut`).
     UseShortcut {
         actor_id: ObjectId,
+        pop_range_id: Option<u32>,
     },
     CompleteDuty,
     /// Win a quest battle, which also moves its quest to this sequence. "Duty Complete" shows straight away; unless
@@ -516,10 +524,13 @@ impl UserData for LuaDirector {
         });
         methods.add_method_mut(
             "spawn_eobj",
-            |lua, this, (base_id, position): (u32, Value)| {
+            |lua, this, (base_id, position, args2): (u32, Value, Option<u32>)| {
                 let position: Option<Position> = lua.from_value(position).ok();
-                this.tasks
-                    .push(LuaDirectorTask::SpawnEObj { base_id, position });
+                this.tasks.push(LuaDirectorTask::SpawnEObj {
+                    base_id,
+                    position,
+                    args2,
+                });
                 Ok(())
             },
         );
@@ -680,6 +691,17 @@ impl UserData for LuaDirector {
                 .push(LuaDirectorTask::UpdateShortcut { poprange_id });
             Ok(())
         });
+        // Send a player somewhere in the duty, as a shortcut does (a gimmick of the script's own.)
+        methods.add_method_mut(
+            "warp_to_pop_range",
+            |_, this, (actor_id, pop_range_id): (u32, u32)| {
+                this.tasks.push(LuaDirectorTask::UseShortcut {
+                    actor_id: ObjectId(actor_id),
+                    pop_range_id: Some(pop_range_id),
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut("complete_duty", |_, this, _: ()| {
             // Show the exit objects
             this.tasks.push(LuaDirectorTask::ShowExits);
@@ -1368,7 +1390,15 @@ impl DirectorData {
     }
 
     pub fn on_actor_death(&mut self, bnpc_id: u32, position: Position) {
-        if let Some(boss) = self.bosses.get(&bnpc_id) {
+        // A room with several bosses (`boss_room` called for each with the same wall: Haukke Manor's pair) opens as
+        // the last of them falls (Bob's Chronofoil captures of 2026-11-02, four runs: whichever of the two died
+        // last.)
+        if let Some(boss) = self.bosses.remove(&bnpc_id)
+            && !self
+                .bosses
+                .values()
+                .any(|other| other.wall_id == boss.wall_id)
+        {
             self.unseal_boss_wall(boss.wall_id, boss.line_id, boss.place_name);
         }
 
@@ -1455,13 +1485,15 @@ impl DirectorData {
 
     /// Actually insert tasks to seal the boss wall.
     pub fn seal_boss_wall(&mut self, id: u32, place_name: u32) {
-        if let Some(boss) = self.bosses.iter_mut().find(|x| x.1.wall_id == id) {
+        if self.bosses.values().any(|boss| boss.wall_id == id) {
             self.tasks.push(LuaDirectorTask::LogMessage {
                 id: LogMessageType::BossRoomSealed as u32,
                 params: vec![place_name],
             });
             self.tasks.push(LuaDirectorTask::ShowEObj { base_id: id });
-            boss.1.state = DirectorBossState::Closed;
+            for boss in self.bosses.values_mut().filter(|boss| boss.wall_id == id) {
+                boss.state = DirectorBossState::Closed;
+            }
         }
     }
 
@@ -1503,13 +1535,21 @@ impl DirectorData {
             } else {
                 boss.actor_id
             };
+            let wall_id = boss.wall_id;
             self.tasks.push(LuaDirectorTask::SealBossWall {
                 actor_id,
-                id: boss.wall_id,
+                id: wall_id,
                 place_name: boss.place_name,
                 time_until: 15,
             });
-            boss.state = DirectorBossState::Aggro;
+            // The room's other bosses are sealed in with it.
+            for boss in self
+                .bosses
+                .values_mut()
+                .filter(|boss| boss.wall_id == wall_id)
+            {
+                boss.state = DirectorBossState::Aggro;
+            }
         }
     }
 
@@ -1839,10 +1879,29 @@ pub fn director_tick(
                 let mut network = network.lock();
                 network.remove_actor(instance, actor_id);
             }
-            LuaDirectorTask::SpawnEObj { base_id, position } => {
-                if let Some(mut object) = instance.zone.get_event_object(*base_id) {
+            LuaDirectorTask::SpawnEObj {
+                base_id,
+                position,
+                args2,
+            } => {
+                let object = instance.zone.get_event_object(*base_id).or_else(|| {
+                    let targetable = game_data.lock().eobj_targetable(*base_id)?;
+                    Some(SpawnObject {
+                        kind: ObjectKind::EventObj,
+                        base_id: *base_id,
+                        not_targetable: !targetable,
+                        entity_id: ObjectId(fastrand::u32(..)),
+                        handler_id: director_id,
+                        radius: 1.0,
+                        ..Default::default()
+                    })
+                });
+                if let Some(mut object) = object {
                     if let Some(position) = position {
                         object.position = *position;
+                    }
+                    if let Some(args2) = args2 {
+                        object.args2 = *args2;
                     }
                     instance.insert_object(object.entity_id, object, String::default()); // TODO: insert layer name
                 } else {
@@ -2575,20 +2634,27 @@ pub fn director_tick(
             LuaDirectorTask::UpdateShortcut { poprange_id } => {
                 instance.directors.first_mut().unwrap().shortcut_poprange_id = Some(*poprange_id);
             }
-            LuaDirectorTask::UseShortcut { actor_id } => {
+            LuaDirectorTask::UseShortcut {
+                actor_id,
+                pop_range_id,
+            } => {
+                let id = pop_range_id.or_else(|| {
+                    instance
+                        .directors
+                        .first()
+                        .and_then(|director| director.shortcut_poprange_id)
+                });
+                let Some(id) = id else {
+                    tracing::warn!(
+                        "The shortcut was used before the director pointed it anywhere!"
+                    );
+                    continue;
+                };
                 instance.insert_task(
                     ClientId::default(),
                     *actor_id,
                     Duration::from_secs(0),
-                    QueuedTaskData::WarpToPopRange {
-                        id: instance
-                            .directors
-                            .first()
-                            .as_ref()
-                            .unwrap()
-                            .shortcut_poprange_id
-                            .unwrap(),
-                    },
+                    QueuedTaskData::WarpToPopRange { id },
                 );
             }
             LuaDirectorTask::CompleteDuty => {
@@ -3053,11 +3119,32 @@ pub fn handle_director_messages(
 
             match gimmick_accessor_type {
                 GimmickAccessorType::Shortcut => {
+                    // The duty's shortcut goes where the director points it; any other (Param1, a pop range) goes to
+                    // its own place, after its line (Param2, a LogMessage, from the gimmick's own handler): Haukke
+                    // Manor's way back up from the cellar (GimmickAccessor 0x41A), Bob's Chronofoil captures of
+                    // 2026-11-02: scene 1, then LogMessage 2049 from 0x000F041A, EventFinish and the warp.
+                    let pop_range_id =
+                        (gimmick_param1 != 0 && base_id != EOBJ_SHORTCUT).then_some(gimmick_param1);
+                    if pop_range_id.is_some() && gimmick_param2 != 0 {
+                        let ipc = EventLogMessage {
+                            handler_id: HandlerId::new(HandlerType::GimmickAccessor, *id as u16),
+                            message_type: gimmick_param2,
+                            params: Vec::new(),
+                        }
+                        .package()
+                        .unwrap();
+                        network.lock().send_to_by_actor_id(
+                            *from_actor_id,
+                            FromServer::PacketSegment(ipc, *from_actor_id),
+                            DestinationNetwork::ZoneClients,
+                        );
+                    }
                     director.tasks.push(LuaDirectorTask::FinishGimmickEvent {
                         actor_id: *from_actor_id,
                     });
                     director.tasks.push(LuaDirectorTask::UseShortcut {
                         actor_id: *from_actor_id,
+                        pop_range_id,
                     });
                 }
                 GimmickAccessorType::DutyExit
@@ -3637,4 +3724,61 @@ fn capitalize_words(name: &str) -> String {
         })
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn room(wall_id: u32) -> DirectorBoss {
+        DirectorBoss {
+            state: DirectorBossState::Open,
+            actor_id: ObjectId::default(),
+            wall_id,
+            line_id: wall_id + 1,
+            place_name: 609,
+            triggers: [0; 8],
+        }
+    }
+
+    fn unsealed(director: &DirectorData) -> bool {
+        director.tasks.iter().any(|task| {
+            matches!(task, LuaDirectorTask::LogMessage { id, .. } if *id == LogMessageType::BossRoomUnsealed as u32)
+        })
+    }
+
+    #[test]
+    fn a_room_of_two_opens_as_the_last_falls() {
+        // Haukke Manor's pair: one wall, two bosses.
+        let mut director = DirectorData::default();
+        director.bosses.insert(3633631, room(2001607));
+        director.bosses.insert(3633633, room(2001607));
+
+        director.on_actor_aggro(3633633, ObjectId(1));
+        let sealing = director
+            .tasks
+            .iter()
+            .filter(|task| matches!(task, LuaDirectorTask::SealBossWall { .. }))
+            .count();
+        assert_eq!(sealing, 1);
+        assert!(
+            director
+                .bosses
+                .values()
+                .all(|boss| boss.state == DirectorBossState::Aggro)
+        );
+        // The other's pull doesn't seal it again.
+        director.on_actor_aggro(3633631, ObjectId(1));
+        let sealing_again = director
+            .tasks
+            .iter()
+            .filter(|task| matches!(task, LuaDirectorTask::SealBossWall { .. }))
+            .count();
+        assert_eq!(sealing_again, 1);
+
+        director.on_actor_death(3633633, Position::default());
+        assert!(!unsealed(&director));
+        director.on_actor_death(3633631, Position::default());
+        assert!(unsealed(&director));
+    }
 }
