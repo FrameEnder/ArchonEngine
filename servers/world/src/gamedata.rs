@@ -212,6 +212,8 @@ pub struct GameData {
     pub fate_event_range_lookup: HashMap<u32, u32>,
     /// Read the first time they're needed, see `achievement_rules`.
     achievement_rules: Option<Vec<AchievementRule>>,
+    /// Each achievement's reward, its Title and Item (either may be 0), for those with one (`achievement_reward`.)
+    achievement_rewards: Option<HashMap<u32, (u16, u32)>>,
     /// The Hunting Log's entries (MonsterNote rows, their targets' BNpcNames), read the first time a kill needs them.
     monster_notes: Option<HashMap<u32, MonsterNoteEntry>>,
     /// Each map's DiscoveryIndex, DiscoveryArrayByte and DiscoveryFlag, read the first time they're needed: the
@@ -912,6 +914,7 @@ impl GameData {
             gimmick_rect_lookup,
             fate_event_range_lookup,
             achievement_rules: None,
+            achievement_rewards: None,
             monster_notes: None,
             map_discovery: None,
             marketboard: None,
@@ -2085,6 +2088,50 @@ impl GameData {
             self.achievement_rules = Some(rules);
         }
         self.achievement_rules.as_deref().unwrap_or_default()
+    }
+
+    /// What completing an achievement gives: the Achievement sheet's Title (a Title row) and Item, either 0 for none.
+    /// Read the first time it's needed. Retail unlocked the title as the achievement was completed (Bob's Chronofoil
+    /// captures: ActorControl 501 with each of the ten completions that had one.)
+    pub fn achievement_reward(&mut self, id: u32) -> (u16, u32) {
+        if self.achievement_rewards.is_none() {
+            let language = get_config().world.language();
+            let rewards = match AchievementSheet::read_from(&mut self.resource, language) {
+                Ok(sheet) => sheet
+                    .into_iter()
+                    .filter_map(|(id, rows)| {
+                        let (_, row) = rows.into_iter().next()?;
+                        (row.Title != 0 || row.Item != 0).then_some((id, (row.Title, row.Item)))
+                    })
+                    .collect(),
+                Err(err) => {
+                    tracing::warn!("Couldn't read the Achievement sheet: {err:?}");
+                    HashMap::new()
+                }
+            };
+            self.achievement_rewards = Some(rewards);
+        }
+        self.achievement_rewards
+            .as_ref()
+            .and_then(|rewards| rewards.get(&id))
+            .copied()
+            .unwrap_or_default()
+    }
+
+    /// Every achievement that gives a title, and the title (for titles owed by achievements completed before they were
+    /// given out.)
+    pub fn achievement_titles(&mut self) -> Vec<(u32, u16)> {
+        self.achievement_reward(0);
+        self.achievement_rewards
+            .as_ref()
+            .map(|rewards| {
+                rewards
+                    .iter()
+                    .filter(|(_, (title, _))| *title != 0)
+                    .map(|(id, (title, _))| (*id, *title))
+                    .collect()
+            })
+            .unwrap_or_default()
     }
 
     /// The achievement points of the achievements `completed` has (the Achievement sheet's Points of each.)

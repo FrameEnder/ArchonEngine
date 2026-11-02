@@ -84,6 +84,17 @@ Types 2 and 9 missed their first ID.
   Kawari doesn't know 518 (presumably what others nearby see); it isn't sent yet. On every zone-in retail also sends 600
   `AchievementProgress` for the achievements being tracked, then 538.
 
+**Rewards** (`complete_achievement`, `GameData::achievement_reward`: the Achievement sheet's **Title** and **Item**).
+A title is unlocked as its achievement completes: retail sent **ActorControl 501** `UnlockTitle { title }` from the
+player in the same instant as the 515, just before it, with each of the ten completions in Bob's Chronofoil captures that
+had one (achievements 1102, 1164, 1379, 1494, 1629, 2241, 2297, 2298, 2424 and 2740; titles 204, 235, 268, 290, 315,
+420, 430, 431, 476 and 560); the client adds it to its list and the title window offers it. Kawari
+keeps it in `unlock.titles` and sends the 501 (`unlock_title`). Titles of achievements completed before 2026-11-02 are
+added quietly when the client asks for the title list (`unlock_owed_titles`, ClientTrigger `RequestTitleList`). An
+item is given as an obtained item (`obtain_drop`: LootMessage's "You obtain", the slot): no completion with one was
+recorded on retail, so how retail delivers it isn't known. Before 2026-11-02 neither was given (Bob, 2026-11-02: the
+Gold Saucer's title "Gambler" never came).
+
 **Counters** (Type 1, `unlock.achievement_counters`, migration `update-2026-10-16-3_achievement_counters`) are kept
 per character by Key. There are 1128 Keys, which the sheet only describes in words ("Defeat 100 enemies" is Key 11,
 "gil from defeating enemies" 12, levequests 13–22, synthesis by craft and level 23–62, gathering by job, level and

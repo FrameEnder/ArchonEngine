@@ -1048,6 +1048,12 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
 * Packet captures (`data/captures`, one file per connection while capturing is on) have no limit; only Diagnostics'
   clear button removes them.
 
+## Achievements
+
+* Achievement items (the Achievement sheet's Item) are given as an obtained item with its log line; no retail
+  completion with one was recorded, so the packets, and what happens with a full inventory (retail may keep it for
+  Jonathas), aren't checked. Titles from elsewhere (quests, Grand Company ranks, PvP) aren't given.
+
 ## FATEs
 
 * Entering a zone, Kawari sends FateInit before CreateFateContext; retail creates the contexts first (during the

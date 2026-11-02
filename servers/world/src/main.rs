@@ -1128,6 +1128,8 @@ async fn process_packet(
                         ClientZoneIpcData::ClientTrigger(trigger) => {
                             match trigger.trigger {
                                 ClientTriggerCommand::RequestTitleList => {
+                                    // With the titles of achievements completed before they were given out.
+                                    connection.unlock_owed_titles();
                                     let ipc =
                                         ServerZoneIpcSegment::new(ServerZoneIpcData::TitleList {
                                             unlock_bitmask: connection

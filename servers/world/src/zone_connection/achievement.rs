@@ -16,7 +16,7 @@
 //! * 20: every aether current in a zone (AetherCurrentCompFlgSet Key), "Freebird"
 
 use kawari::{
-    constants::{ACHIEVEMENT_BITMASK_SIZE, ACHIEVEMENT_HISTORY_SIZE},
+    constants::{ACHIEVEMENT_BITMASK_SIZE, ACHIEVEMENT_HISTORY_SIZE, TITLE_UNLOCK_BITMASK_SIZE},
     ipc::zone::{ActorControlCategory, ServerZoneIpcData, ServerZoneIpcSegment},
 };
 
@@ -125,6 +125,11 @@ impl ZoneConnection {
             history.iter().flat_map(|id| id.to_le_bytes()).collect();
 
         tracing::info!("Achievement {id} completed");
+        let (title, item) = self.game_data.lock().achievement_reward(id);
+        // Its title first, as retail (ActorControl 501 from the player, then 515, in the same instant.)
+        if title != 0 {
+            self.unlock_title(title, announce).await;
+        }
         if announce {
             self.actor_control_self(ActorControlCategory::AchievementCompleted { id })
                 .await;
@@ -138,6 +143,53 @@ impl ZoneConnection {
                     ActorControlCategory::AchievementEarned { id },
                 ))
                 .await;
+        }
+        // Its item. Not seen on retail (no achievement with one was completed in Bob's captures): given as an obtained
+        // item, with its log line; with the inventory full the client's told it couldn't be added.
+        if item != 0 {
+            self.obtain_drop(item, 1).await;
+        }
+    }
+
+    /// Unlocks a title (the Title sheet's row). With `announce`, retail's ActorControl 501 `UnlockTitle` tells the
+    /// client, which adds it to the title list; without, it's in the list the next time the client asks.
+    pub async fn unlock_title(&mut self, title: u16, announce: bool) {
+        let titles = &mut self.player_data.unlock.titles;
+        titles.data.resize(TITLE_UNLOCK_BITMASK_SIZE, 0);
+        if titles.contains(title as u32) {
+            return;
+        }
+        titles.set(title as u32);
+        tracing::info!("Title {title} unlocked");
+        if announce {
+            let actor_id = self.player_data.character.actor_id;
+            self.actor_control(
+                actor_id,
+                ActorControlCategory::UnlockTitle {
+                    title_id: title as u32,
+                },
+            )
+            .await;
+        }
+    }
+
+    /// The titles of achievements completed before titles were given out (2026-11-02), unlocked quietly.
+    pub fn unlock_owed_titles(&mut self) {
+        let owed: Vec<u16> = self
+            .game_data
+            .lock()
+            .achievement_titles()
+            .into_iter()
+            .filter(|(id, _)| self.has_achievement(*id))
+            .map(|(_, title)| title)
+            .collect();
+        let titles = &mut self.player_data.unlock.titles;
+        titles.data.resize(TITLE_UNLOCK_BITMASK_SIZE, 0);
+        for title in owed {
+            if !titles.contains(title as u32) {
+                tracing::info!("Title {title} unlocked (owed by a completed achievement)");
+                titles.set(title as u32);
+            }
         }
     }
 
