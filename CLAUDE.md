@@ -30,7 +30,8 @@ when no code changes.
 * Minimal, focused changes; list every changed file when reporting.
 * Play mechanics out as retail did: when something is missing (a packet, an ActorControl, a timing), build it the way
   retail does, as a reusable piece later content can use, not a workaround in one script (`overview.md`).
-* Work on `Latest-Quest`; merge to `master` only with Bob's OK. Palace of the Dead work goes on `Deep-Dungeon`.
+* Work on `test-pending` (since 2026-11-03; `Latest-Quest` before); merge to `master` only with Bob's OK. Palace of
+  the Dead work goes on `Deep-Dungeon`.
 * Don't run `cargo fmt` on the workspace (it reformats upstream files); `rustfmt --check --edition 2024` the files
   you changed.
 * Quest scripts follow the pattern in `docs/src/fork/quests.md` and are checked against the client's script and a

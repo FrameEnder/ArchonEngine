@@ -417,7 +417,7 @@ Compiles every script with Lua 5.4's `load` (nothing runs). It found upstream's 
 | Build and test | PRs, pushes to master, by hand | `cargo build --workspace --locked`, `cargo test --workspace --locked -- --skip test_item_level` |
 
 The repository is private, so Actions minutes are limited: the quick jobs take about a minute each, the full build
-several, which is why it doesn't run on every push to Latest-Quest. Run it by hand from Actions → Fork checks → Run
+several, which is why it doesn't run on every push to the working branch (`test-pending`). Run it by hand from Actions → Fork checks → Run
 workflow. Upstream's own CI (`.forgejo/workflows/main.yml`) is for Codeberg and doesn't run on GitHub.
 
 ## Adding to it

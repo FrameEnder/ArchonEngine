@@ -29,8 +29,9 @@ How they fit together:
 
 | Branch | Purpose |
 |---|---|
-| `master` | What Bob runs. Only updated with Bob's OK, normally by fast-forwarding from `Latest-Quest`. |
-| `Latest-Quest` | Day-to-day work: quests, engine fixes, tools. Bob builds and tests from here first. |
+| `master` | What Bob runs. Only updated with Bob's OK, normally by fast-forwarding from `test-pending`. |
+| `test-pending` | Day-to-day work since 2026-11-03 (branched from `master` at `ba373bc`): quests, engine fixes, tools. Bob builds and tests from here first. |
+| `Latest-Quest` | Day-to-day work until 2026-11-03; left at `ba373bc` (the same as `master` then). |
 | `Deep-Dungeon` | Palace of the Dead work, branched from `master` at `d28f9cf`. Nothing on it yet beyond master. |
 | `upstream-sync`, `opcode-scan`, `white-mage-kit`, `fix/instance-cleanup` | Finished feature branches, already merged. |
 | `diag/quest-layout`, `diag/zone-hang`, `quest/close-to-home`, `set_quest_sequence`, `Event-Test` | Old investigation branches from before the quest rollback (`3fb25fe`). Kept for reference only. |
