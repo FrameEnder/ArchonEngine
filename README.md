@@ -25,6 +25,7 @@ If you want to implement something that's missing, get in touch
 
 ## Credits & Thank You
 
+* [Kawari](https://codeberg.org/redstrate/Kawari) for the core of the server.
 * [Sapphire](https://github.com/SapphireServer/Sapphire) for reference.
 * [iolite](https://github.com/0xbbadbeef/iolite) for inspiration & reference.
 * [TemporalStasis](https://github.com/NotNite/TemporalStasis) for tooling and reference.
