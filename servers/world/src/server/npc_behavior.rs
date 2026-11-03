@@ -114,6 +114,19 @@ fn flat_distance(a: Vec3A, b: Vec3A) -> f32 {
 /// How far an open-world enemy steps down off a ledge (yalms; a guess): it doesn't throw itself off a cliff after
 /// someone, as retail's keep to their navmesh. Bots, pets and everyone in duties go down as far as a player would.
 const OPEN_WORLD_MAX_DROP: f32 = 3.0;
+
+/// How far below its path a walker that goes anywhere (bots, pets, NPCs in duties) may step down: as far as its path
+/// goes down, and this much more (a guess, the open world's.) Off the path's height it stopped there instead of
+/// dropping, so it no longer fell where the collision has no floor under its way: Bob's Haukke Manor bundle of
+/// 2026-11-02, where the tank bot and three enemies, cutting a corner of their path at (-32, 0, 45), stepped into the
+/// sunken space beside it (floor at -3.2, no railing in Kawari's collision) and on down to the cellar 18.8 yalms under
+/// the player, which on retail no one ever reached (four runs.)
+pub const PATH_DROP_MARGIN: f32 = 3.0;
+
+/// The deepest drop a walker going anywhere takes, stepping from `here` towards a point of its path at `along`.
+pub fn path_max_drop(here: Vec3A, along: Vec3A) -> f32 {
+    (here.y - along.y).max(0.0) + PATH_DROP_MARGIN
+}
 /// NPC actions that leap their user to its target, and how long after the hit it lands (seconds). Retail's Duty Support
 /// Marauder opens a pull with 29291 from about 10 yalms off: the hit (a 1.1 s lock), then 0.58 s later ActorControl
 /// 239 (`SnapNextMove`) and an ActorMove (speed 60) to beside its target, three times out of three in Bob's Copperbell
@@ -368,7 +381,7 @@ pub fn npc_behavior(
                             || spawn.common.owner_id.is_valid()
                             || in_content;
                         let max_drop = if goes_anywhere {
-                            f32::INFINITY
+                            path_max_drop(spawn.common.position.0, along)
                         } else {
                             OPEN_WORLD_MAX_DROP
                         };
@@ -377,7 +390,9 @@ pub fn npc_behavior(
                         if walk.blocked {
                             blocked.insert(*id);
                         }
-                        if walk.blocked && walled_for >= NPC_WALL_PATIENCE_TICKS {
+                        // A gimmick the director put up (a sealed room's wall, a locked door) stops it for good, as
+                        // it stops a player.
+                        if walk.blocked && !walk.sealed && walled_for >= NPC_WALL_PATIENCE_TICKS {
                             if walled_for == NPC_WALL_PATIENCE_TICKS {
                                 tracing::info!(
                                     "NPC {} (layout {}) held up by a wall at {:?} for {} ticks: walking on through",

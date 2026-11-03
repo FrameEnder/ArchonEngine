@@ -165,6 +165,16 @@ function onSetup(director)
     director:hide_eobj(PAIR_WALL)
     director:hide_eobj(EOBJ_WAY_UP)
     director:hide_eobj(EOBJ_OPEN_DOOR)
+    -- The doors standing closed (the keys' and the bosses'), the way on past the first boss and the last room's door:
+    -- shown, so nobody walks through them before they open, bots and enemies included (Bob's bundle of 2026-11-02:
+    -- the tank bot went up through the locked stairs the moment he was refused, as through any gimmick the director
+    -- hadn't touched.) Retail spawned them all in state 0, as shown.
+    for _, door in ipairs(KEY_DOORS) do
+        director:show_eobj(door)
+    end
+    for _, door in ipairs({ EOBJ_BOSS1_DOOR, EOBJ_CELLAR_DOOR, EOBJ_STAIRS, EOBJ_BOSS1_WAY_ON, FINAL_WALL }) do
+        director:show_eobj(door)
+    end
 
     for coffer, openings in pairs(LOOT) do
         director:treasure_loot(coffer, openings)

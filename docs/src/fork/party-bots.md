@@ -139,6 +139,13 @@ in its open state). Now only a gimmick the director has put up (`show_eobj`: a b
 `WALL_PATIENCE` way past it, and the log says so (`held up by the gimmick of event object …, which the director hasn't
 touched; on past it`).
 
+**Not off a ledge its way doesn't go** (2026-11-02, Bob's Haukke Manor bundle): a bot steps down only as far as its
+path goes down and 3 yalms more (`npc_behavior::path_max_drop`), not as far as a player can drop. The tank bot, cutting
+a corner of its path at (-32, 0, 45) into a sunken space beside it (floor at -3.2: Kawari's collision has no railing
+there), went on down to the cellar 18.8 yalms under the player, with the enemies after it. A duty's director shows its
+closed doors at the start (Haukke Manor's `f1d2_re`) so they're sealed gimmicks, which bots and enemies don't walk
+through; the tank had gone up through the locked stairs right after the player was refused.
+
 **Through the grating** (same run): in Kottos' arena the bots dropped through the metal grating onto the floor 2
 yalms below, one step at a time, where Bob walked across it (y −9.93 to −11.95 between two ticks). The collision asked
 for the floor at the walker's centre only, and the grating's holes let that through. Now a walker stands on the highest

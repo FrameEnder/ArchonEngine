@@ -429,7 +429,9 @@ own, the door hidden the same way. Every run the same:
 | 2012969 | the way back up from the cellar | shown as the pair fall; a prompt, then its own log 2049 (from GimmickAccessor 0x41A's handler) and the party at the entrance (pop range 9228207) |
 
 The rest of the keys' series (2000306-2000308) and of the doors' (2000331, 2000339, 2000345), never used in the four
-runs, are taken to work the same; 2000338 stood open (spawned in state 7, every run). The director's variables
+runs, are taken to work the same; 2000338 stood open (spawned in state 7, every run). The script shows every closed
+door at the start (as retail spawned them, state 0), so they're the director's gimmicks: bots and enemies don't walk
+through them before they open (Bob's bundle of 2026-11-02: the tank bot went up through the locked stairs). The director's variables
 (DirectorVars, sequence 1 throughout) are those two numbers: 0, 0 at the start; 1, 0 with a key; 0, 0 through a door;
 1, 1 with the first boss's key; 2, 1, 1, 1, 1, 5 and 1, 7 as the rest come. The script sends the same (checked with
 lupa, the Duty Support run's steps).

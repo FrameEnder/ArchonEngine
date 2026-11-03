@@ -3178,6 +3178,13 @@ pub fn in_area(
     )
 }
 
+/// How far above or below an area attack's middle (its caster, or where it's aimed for one put on a spot) it reaches,
+/// in yalms. The shapes were taken flat, so one cast in Haukke Manor's cellar caught the player on the floor above,
+/// 18.8 yalms up (Bob's bundle of 2026-11-02, 29776 twice). Retail's never hit anyone more than 1.71 yalms above or
+/// below them (674 hits of area attacks in Bob's Chronofoil captures where both sides' positions were fresh); 5 is a
+/// guess above that, well short of a floor.
+pub const AREA_HALF_HEIGHT: f32 = 5.0;
+
 /// `in_area` counting `reach` yalms past the shape's edge instead of the player's hitbox (party bots dodging keep a
 /// margin beyond it: `dodge.rs`.)
 pub fn in_area_with_reach(
@@ -3189,6 +3196,15 @@ pub fn in_area_with_reach(
     caster_radius: f32,
     reach: f32,
 ) -> bool {
+    let middle = match shape {
+        AreaShape::Circle { on_target, .. } | AreaShape::Donut { on_target, .. } if on_target => {
+            aimed_at
+        }
+        _ => caster,
+    };
+    if (point.y - middle.y).abs() > AREA_HALF_HEIGHT {
+        return false;
+    }
     let flat = |v: Vec3A| Vec2::new(v.x, v.z);
     let offset = flat(point) - flat(caster);
     let distance = offset.length();
@@ -3420,6 +3436,54 @@ mod area_tests {
         assert!(!at(6.6));
         assert!(!at(6.7));
         assert!(!at(7.8));
+    }
+
+    #[test]
+    fn a_floor_apart_is_out_of_reach() {
+        // Haukke Manor: a 276 in the cellar (y -18.8) and the player on the floor above, 4-7 yalms across.
+        let circle = AreaShape::Circle {
+            radius: 8.0,
+            on_target: false,
+        };
+        let caster = Vec3A::new(-33.5, -18.8, 3.3);
+        assert!(!in_area(
+            circle,
+            caster,
+            0.0,
+            caster,
+            Vec3A::new(-34.7, 0.0, 7.5),
+            1.0
+        ));
+        assert!(in_area(
+            circle,
+            caster,
+            0.0,
+            caster,
+            Vec3A::new(-34.7, -17.1, 7.5),
+            1.0
+        ));
+        // Put on a spot: measured from the spot.
+        let on_spot = AreaShape::Circle {
+            radius: 6.0,
+            on_target: true,
+        };
+        let spot = Vec3A::new(0.0, 10.0, 0.0);
+        assert!(in_area(
+            on_spot,
+            Vec3A::ZERO,
+            0.0,
+            spot,
+            Vec3A::new(1.0, 10.0, 0.0),
+            1.0
+        ));
+        assert!(!in_area(
+            on_spot,
+            Vec3A::ZERO,
+            0.0,
+            spot,
+            Vec3A::new(1.0, 0.0, 0.0),
+            1.0
+        ));
     }
 }
 

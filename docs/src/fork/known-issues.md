@@ -697,6 +697,15 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   isn't sent. 2000324 (the first boss's key) is spawned with its layout ID (retail: 0).
 * Duty Support's Lancer (41) at 28 has a guessed 779 HP. Not done: what the last boss's 28640, 28644 and 28649 and the
   eyes' gazes (513, 29709, 29710) do; the director events 0x40000007 and 0x80000004; wiki loot pools.
+* **Kawari's collision has no barrier along a sunken space by the west wing** (Bob's navmesh and collision of
+  2026-11-02): the ground floor at x -34 to -18, z 16 to 44 is at -3.2, with a strip down to the cellar at z 36, and the
+  edge at z 45 has no wall; the navmesh goes round it, and no retail player was ever there above the cellar. Walkers
+  no longer drop off their path's height there, but whatever closes it on retail (most likely a BgPart whose collision
+  is an analytic box or cylinder: `kawari-navimesh` reads BgParts' collision only when it's `Replace`, and logged
+  "Cylinder collision is not yet supported" twice) isn't in the collision. Checking needs the zone's `bg.lgb`.
+* With party bots (a Duty Finder run, 2026-11-02): the tank and three enemies ended in the cellar under the player,
+  whom the enemies' area attacks there hit through the floor, and he died. Fixed as above (area attacks' height, the
+  path's drop, the doors sealed); untested in game.
 
 ## The Bowl of Embers
 
@@ -854,7 +863,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   every way out goes into the far side of it.
 * A ledge's drop is instant (it's on the floor below the next tick, and the client glides it down over the half
   second), not a fall at a player's speed.
-* `OPEN_WORLD_MAX_DROP` (3 yalms) is a guess; and how retail's Duty Support members follow a player who jumps off a
+* `OPEN_WORLD_MAX_DROP` and `PATH_DROP_MARGIN` (3 yalms) are guesses, and `AREA_HALF_HEIGHT` (5) too; and how retail's Duty Support members follow a player who jumps off a
   ledge (down after them, or round by the path) isn't recorded.
 * The generator's other changes (the heights the navmesh covers taken from the geometry, the climb in cell heights,
   ledges filtered) change every navmesh made again; paths that worked could differ.

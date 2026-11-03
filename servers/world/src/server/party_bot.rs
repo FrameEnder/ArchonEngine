@@ -454,7 +454,12 @@ fn walk_like_a_player(
     walled_for: Duration,
 ) -> (Vec3A, bool) {
     if let Some(collision) = collision {
-        let walk = collision.walk(here, to, f32::INFINITY);
+        // Down as far as its way goes, not off a ledge its way doesn't (`path_max_drop`.)
+        let walk = collision.walk(
+            here,
+            to,
+            crate::server::npc_behavior::path_max_drop(here, to),
+        );
         // Said once, as its patience runs out, for the bundles.
         let patience_ran_out = walled_for >= WALL_PATIENCE
             && walled_for < WALL_PATIENCE + Duration::from_secs_f32(BEHAVIOR_TICK_SECONDS);
