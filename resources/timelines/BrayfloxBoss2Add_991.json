@@ -3,6 +3,7 @@
     "from_pull": true,
     "recorded_amounts": {
         "870": {
+            "players": 50.5,
             "npcs": 30
         },
         "985": {
@@ -38,5 +39,5 @@
         "519": 2.1
     },
     "timeline_always_plays": false,
-    "comment": "Brayflox's Longstop's second boss's add (BNpcBase 991, layout 4102303, 5790 HP), brought in as the boss falls to 80 %: auto-attack 870, 985 43.2 s after it came (on whom it fights: the goblin 422, 297-304) and 29.4 s later, 519 (status 17) 75.9 s in and 14.8 s later. Bob's Chronofoil capture 44df02fc of Brayflox's Longstop (territory 1041) on 2026-11-03, visit 0.20 (34 minutes with Duty Support, during quest 832), `questkit chronofoil --battle`. `players` is the median damage to players in the run, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+    "comment": "Brayflox's Longstop's second boss's add (BNpcBase 991, layout 4102303, 5790 HP), brought in as the boss falls to 80 %: auto-attack 870, 985 43.2 s after it came (on whom it fights: the goblin 422, 297-304) and 29.4 s later, 519 (status 17) 75.9 s in and 14.8 s later. Bob's Chronofoil captures of Brayflox's Longstop (territory 1041) on 2026-11-03: 44df02fc visit 0.20 (34 minutes with Duty Support, during quest 832) and c9145fdc visit 0.14 (14 minutes, a Duty Finder run with three other players), `questkit chronofoil --battle`. `players` is the median damage to players (the Duty Finder run's four where it had any), `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
 }

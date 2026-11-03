@@ -3,13 +3,15 @@
     "from_pull": true,
     "recorded_amounts": {
         "872": {
+            "players": 184,
             "npcs": 95
         },
         "980": {
+            "players": 325,
             "npcs": 282.5
         },
         "979": {
-            "players": 98,
+            "players": 64.5,
             "npcs": 55.5
         }
     },
@@ -61,5 +63,5 @@
         "979": 2.1
     },
     "timeline_always_plays": false,
-    "comment": "Brayflox's Longstop's third boss (BNpcBase 427, layout 3997806, level 32, 18817 HP), from its pull (`from_pull`): auto-attack 872, 980 (on up to three where its target stands) 7.2 s in and about every 21 s (18.1-27.7), 982 (a 3.5 s cast, round itself) 15.2 s in and every 42.7 s, 448 (2.5 s) 33.5 s in and every 45 s, 979 44.2 s in and every 31.2 s; 2.6-2.9 s after each 979 a 1064 appears where its target stood (the director). At 20 % the dragon (429) comes (the director). Bob's Chronofoil capture 44df02fc of Brayflox's Longstop (territory 1041) on 2026-11-03, visit 0.20 (34 minutes with Duty Support, during quest 832), `questkit chronofoil --battle`. `players` is the median damage to players in the run, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+    "comment": "Brayflox's Longstop's third boss (BNpcBase 427, layout 3997806, level 32, 18817 HP), from its pull (`from_pull`): auto-attack 872, 980 (on up to three where its target stands) 7.2 s in and about every 21 s (18.1-27.7), 982 (a 3.5 s cast, round itself) 15.2 s in and every 42.7 s, 448 (2.5 s) 33.5 s in and every 45 s, 979 44.2 s in and every 31.2 s; 2.6-2.9 s after each 979 a 1064 appears where its target stood (the director). At 20 % the dragon (429) comes (the director). Bob's Chronofoil captures of Brayflox's Longstop (territory 1041) on 2026-11-03: 44df02fc visit 0.20 (34 minutes with Duty Support, during quest 832) and c9145fdc visit 0.14 (14 minutes, a Duty Finder run with three other players), `questkit chronofoil --battle`. `players` is the median damage to players (the Duty Finder run's four where it had any), `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
 }

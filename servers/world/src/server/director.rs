@@ -443,6 +443,8 @@ const JUMP_MOVE_SPEED: u8 = 90;
 /// CancelCast's first parameter for a cast the director called off (`retreat_bnpc`): retail's for Haukke Manor's eye,
 /// its 514 cut short as it fled (Bob's Chronofoil capture 5d9c7d7f, the Duty Support run.)
 const RETREAT_CANCEL: u32 = 537;
+/// The line retail's director logged as a player left a duty by its exit, with the InstanceContent's ID.
+const LOG_DUTY_EXIT: u32 = 1534;
 
 /// A BNpc to bring into view (`LuaDirectorTask::AppearBattleNpc`.)
 #[derive(Debug, Clone, Copy)]
@@ -3291,6 +3293,16 @@ pub fn handle_director_messages(
                 | GimmickAccessorType::LeapOfFaithExit => {
                     // 0 means the user hit "Yes" in the prompt
                     if params[0] == 0 {
+                        // A duty's exit: retail's director logged 1534 with its InstanceContent first (Haukke Manor's
+                        // `[6]`, Brayflox's Longstop's `[8]`: Bob's Chronofoil captures of 2026-11-02 and 03.)
+                        if matches!(gimmick_accessor_type, GimmickAccessorType::DutyExit)
+                            && director.id.handler_type() == HandlerType::InstanceContent
+                        {
+                            director.tasks.push(LuaDirectorTask::LogMessage {
+                                id: LOG_DUTY_EXIT,
+                                params: vec![director.id.event_id()],
+                            });
+                        }
                         director.tasks.push(LuaDirectorTask::AbandonDuty {
                             actor_id: *from_actor_id,
                         });

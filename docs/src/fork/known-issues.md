@@ -704,8 +704,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * The keys 2000306-2000308 and the doors 2000331, 2000339 and 2000345 weren't used on retail; they're taken to work as
   the others of their series. The stairs' locked line comes after a prompt here (retail: no prompt, the gimmick's own
   log 2004 and EventFinish result 0x65).
-* The shortcut outside the last room (11438019, from its cutscene) isn't seen on retail. The exit's log 1534 `[6]`
-  isn't sent. 2000324 (the first boss's key) is spawned with its layout ID (retail: 0).
+* The shortcut outside the last room (11438019, from its cutscene) isn't seen on retail. 2000324 (the first boss's key) is spawned with its layout ID (retail: 0).
 * Duty Support's Lancer (41) at 28 has a guessed 779 HP. Not done: what the last boss's 28640, 28644 and 28649 and the
   eyes' gazes (513, 29709, 29710) do; the director events 0x40000007 and 0x80000004; wiki loot pools.
 * **The sunken space by the west wing** (the ground floor at x -34 to -18, z 16 to 44, at -3.2, with a strip down to the
@@ -740,24 +739,27 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Brayflox's Longstop (2026-11-03)
 
-* Untested in game, from one run with Duty Support (Bob's capture 44df02fc). The director was checked against the run's
-  steps with a throwaway lupa harness (its variables after the key, the doors and each boss, the waves, the dragon, the
-  puddles); Bob plans more runs on other characters, which will show what changes from run to run.
+* Untested in game, from two runs (one with Duty Support, one through the Duty Finder: Bob's captures 44df02fc and
+  c9145fdc). The director was checked against the runs' steps with a throwaway lupa harness (its variables after the
+  key, the doors and each boss, the waves, the ambushes, the dragon, the puddles).
 * Not dumped yet: the layout (`bg/ffxiv/sea_s1/dun/s1d2/level/planmap.lgb`) and `bg.lgb`. Until then the shortcut
-  (2000700, shown at the first boss's pull) has no destination; the last boss's cutscene is played by the player's
-  position (x past -74, z below -225, as retail's player was) rather than the layout's event range; which puddle spot
-  is which map effect is a guess within each set; the ambushes come by distance from their goblins (28 and 25 yalms).
-* Seen once each, so the timing is one run's: the first boss's waves after the third (the same three again), what 505,
-  506, 508, 448, 498, 982 and 29618 do to whoever they catch (no one was caught: a plain hit for now), 991 Bravado (no
-  effect seen), the trash's rotations for actions used once or twice (322, 364, 365, 498, 1010: 20-30 s guesses).
+  (2000700, shown at the first boss's pull) has no destination (nobody used it in either run); the last boss's
+  cutscene and the ambushes go by where players stood in the runs rather than the layout's event ranges; which puddle
+  spot is which map effect is a guess within each set.
+* From one or two runs: the first boss's waves after the third (the same spots again), the dragon's leaving below 71 %
+  (and, if nobody wears it down, after 24.2 s: a guess from the longest seen), what 505, 506, 508, 448, 498, 29618 and
+  28660 do to whoever they catch (no one was caught in either run: a plain hit for now), 982's status 60 (how long it
+  lasts wasn't seen: 15 s), 991 Bravado (no effect seen), the trash's rotations for actions used once or twice (364,
+  365, 498, 1010: 20-30 s guesses).
+* The event NPCs after the clear come whenever the party had NPCs in it (Duty Support members or party bots): the
+  director can't tell the two apart.
 * Not sent: the director events 0x40000007, the logs 9393 and 2163 at the clear, DirectorSetupMapEffects64 at the
-  start, opcodes 820 and 664 (unknown). The goblins' 421 lines other than those above, and ActionTimeline 957 on
-  others, aren't played. Nothing resets the bosses after a wipe (`onPartyWipe` isn't defined).
+  start, opcodes 820 and 664 (unknown). Nothing resets the bosses after a wipe (`onPartyWipe` isn't defined).
 * Duty Support's Lancer (45) at 32 has a guessed 1120 HP; the members' kits at 32 beyond the Marauder's combo and burst
   are the trials' (see [Party NPCs](party-npcs.md)).
 * Quest 832 moved to sequence 4 on retail as the player used the exit (EventNotice2 and UpdateQuest just before the
-  PrepareZoning), not at the clear; the player came back where they queued (-335.78, 68.71, 160.72 in Eastern La
-  Noscea), next to the quest's NPC. The quest isn't scripted yet (no dump).
+  PrepareZoning), not at the clear; the player came back where they had queued (both runs). The quest isn't scripted
+  yet (no dump).
 
 ## The Bowl of Embers
 

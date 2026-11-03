@@ -518,54 +518,64 @@ director events 0x40000007 (`[0, 1]` 0.2 s after the first door, `[1, 1]` 25 s a
 
 ## Brayflox's Longstop
 
-From Bob's Chronofoil capture `44df02fc` of 2026-11-03, visit 0.20: one run with Duty Support (34 minutes, during The
-Things We Do for Cheese, quest 832, which unlocks it at its sequence 3), read with `questkit chronofoil --battle 0.20`
-and the visit's packets (numbers only). ContentFinderCondition 8 (ShortCode `s1d2_re`, from the sheet), territory 1041
-(`ffxiv/sea_s1/dun/s1d2`), InstanceContent 8; the drop-in's LGB is `bg/ffxiv/sea_s1/dun/s1d2/level/planmap.lgb` (not
-dumped yet: the layout's pop ranges, event ranges and map effects aren't known). Retail's sequence was 1 throughout.
+From Bob's Chronofoil captures of 2026-11-03: `44df02fc` visit 0.20 (34 minutes with Duty Support, during The Things
+We Do for Cheese, quest 832, which unlocks it at its sequence 3) and `c9145fdc` visit 0.14 (14 minutes, the Duty Finder
+with three other players), read with `questkit chronofoil --battle` and the visits' packets (numbers only).
+ContentFinderCondition 8 (ShortCode `s1d2_re`, from the sheet), territory 1041 (`ffxiv/sea_s1/dun/s1d2`), InstanceContent
+8; the drop-in's LGB is `bg/ffxiv/sea_s1/dun/s1d2/level/planmap.lgb` (not dumped yet: the layout's pop ranges, event
+ranges and map effects aren't known). Retail's sequence was 1 throughout; both runs' DirectorVars were the same.
 
 **Enemies.** `questkit chronofoil --dropin 1041` gave the 57 battle NPCs seen (level 32; trash 2258 HP). What the
 director brings (new actor IDs on retail) is `nonpop`: the first boss (423) and its adds (424, 425, 426), the enemy and
 goblin after it (1046 at 3992769, 420), the two ambushes (1044s 3977699-3977701, 3977704-3977705), the second boss
 (990), its add (991) and the goblin who fights it (422), the third boss (427), its blobs (1064) and the dragon (429), the
-last boss (14533) and its fourteen helpers (BNpcBase 9020, no layout ID on retail: the fork's 99009020). Event NPCs: the
-key's (ENpcResident 1004346, layout 4000399) from the start, three (1043371, 1043373, 1043374) on the terrace after the
-clear. Every kind fought has a timeline (`Brayflox*_<base>.json`); new action scripts: 322, 365, 448, 498, 505, 506, 508,
-519, 564, 920, 979-982, 984, 985, 990-992, 1010, 1393, 28656-28660, 29617, 29618 (`Brayflox*`).
+last boss (14533) and its fourteen helpers (BNpcBase 9020, no layout ID on retail: the fork's 99009020), and three
+goblins after the clear (4107001, 4107000, 4106998, from the Duty Finder run). Event NPCs: the key's (ENpcResident
+1004346, layout 4000399) from the start, three (1043371, 1043373, 1043374) on the terrace after a Duty Support clear.
+The goblins (420, 421, 422) carry retail's character flag 0x2 but are BNpcBase battalion 0, on the party's side. Every
+kind fought has a timeline (`Brayflox*_<base>.json`: `players` from the Duty Finder run's four, `npcs` from the Duty
+Support members); new action scripts: 322, 365, 448, 498, 505, 506, 508, 519, 564, 920, 979-982, 984, 985, 990-992,
+1010, 1393, 28656-28660, 29617, 29618 (`Brayflox*`). 982 gives status 60 and no damage; 505, 506, 508, 448, 498, 29618 and
+28660 caught nobody in either run.
 
 **The way through** (EObj IDs; doors are GimmickAccessor events 0x000F00A2-A6). Retail's DirectorVars: data 0 the key
 held, data 2 and 3 the progress (1 the key, 2 the first boss, 4 the second, 8 the terrace door; data 3 alone 16 at the
-clear): 1, 0, 1, 1; 0, 0, 1, 1; 3, 3; 7, 7; 15, 15; 15, 31. The script sends the same (checked with lupa).
+clear): 1, 0, 1, 1; 0, 0, 1, 1; 3, 3; 7, 7; 15, 15; 15, 31. The script sends the same (checked with lupa). Where the
+runs differ, both are given.
 
 | What | Retail |
 |---|---|
 | The dragon by the entrance (989, untargetable) | ActionTimeline 1385 3.7 s after DutyCommence, gone 10.3 s later |
-| The key's event NPC (ContentNpc 1, handler 0x190001) | scene 4 (flags 0x2000); on its return log 2031 `[2000521]`, EventFinish, the variables; 0.4 s later the first boss and three 425s in the pond |
+| The key's event NPC (ContentNpc 1, handler 0x190001) | scene 4 (flags 0x2000); on its return log 2031 `[2000521]`, EventFinish, the variables; at once (0.4 s, 0) the first boss and three 425s in the pond. Another player's talk reaches everyone as the log and variables |
 | 2001462, the pond's door | a prompt (scene 1, 0x2001), EventAction 24 for 2 s, log 2059 `[759]`, state 7, map effect 7 (state 1, timeline 2) |
-| The first boss (423; wall 2001584, line 2001585, PlaceName 687) | log 2012 `[687, 15]` as it and its adds were pulled, the shortcut (2000700) shown, BGM 37; 2013 15 s later. Its waves: log 2052 and three adds 60.1 s after the pull, then every 55 s (425, 425, 426; 426, 425, 425; 425, 424, 426), each going for the party at once |
-| Its death | log 2014, 2059 `[760]`, 2001463 opened, map effect 8, BGM 0, coffer 109; an enemy (1046) and a goblin (420) running at it (lines 143 5 and 6 s later, 148 and ActionTimeline 957 as the enemy fell, which drops coffer 105); the tank's line 14354 8.4 s later; the second boss 13.4 s later; the goblin on the ledge (4155136) calls 145 every 15 s from 18.9 s on |
-| The ambushes | three 1044s by the goblin 4000414 and two by 4000410, as the player came within 28 and 25 yalms of them, going for the goblins (145 from each; 146 15.8 s later from the first; 148 and 957 from the second as the last of its two fell, which drops coffer 106) |
-| The second boss (990; wall 2001586, line 2001587, PlaceName 688) | at 80 % its add (991) and a goblin (422, level 20, the party's side), fighting each other; the boss's 984 only after the add fell (3.7 s after, every 30.8 s). The goblin's lines: 150 18 s in, 151 with its 991 and 156 4 s on, 155 with its 990 and 157 6 s on, 158 6.3 s after the room opened |
-| Its death | log 2014, 2059 `[761]`, 2001464 opened, map effect 9, coffer 110, the healer's 14357, the third boss spawned |
-| The third boss (427; wall 2001588, line 2001589, PlaceName 689) | a 1064 2.6-2.9 s after each 979 where its target stood; at 20 % the dragon (429), spawned unseen, Appear 0.8 s later with 564 on everyone, log 2055 at 4.8 s, 29618 and 29617 (lock-on 218), untargetable at 24.2 s, ActionTimeline 1385 at 25.6, log 2056 at 31.2, deleted at 36.3 s; the room opened (log 2014, 2059 `[762]`, 2001465, map effect 10, coffer 111, the healer's 14359) as it was deleted, 29.4 s after the boss fell |
+| The first boss (423; wall 2001584, line 2001585, PlaceName 687) | log 2012 `[687, 15]` as it and its adds were pulled, the shortcut (2000700) shown, BGM 37; 2013 15 s later. Its waves: log 2052 and three adds 60.1 s after the pull (both runs), then every 55 s, each going for the party at once; the kinds a new mix each time (425, 425, 426; 426, 425, 425; 425, 424, 426 twice), the first wave at the same three spots in both runs |
+| Its death | log 2014, 2059 `[760]`, 2001463 opened, map effect 8, BGM 0, coffer 109; an enemy (1046) and a goblin (420) running at it (143 twice, about 5 s later; 148 or 149 and ActionTimeline 957 3.6-4.1 s after the enemy fell, which drops coffer 105); the tank's line 14354 8.4 s later; the second boss 13.4 and 14.1 s later; the goblin on the ledge (4155136) calls 145 every 15 s from 18.9 and 23.0 s on |
+| The ambushes | three 1044s by the goblin 4000414 as a player crossed x 42-44, z -82 to -78 going north (both runs), two by 4000410 as one crossed x 57-58, z -87 going east (the Duty Support run only: the other party never went that way, and they never came), going for the goblins (145 from each; 146 15.8 s later from the first once); the first pack cleared drops coffer 106 (the second in one run, the first in the other) and its goblin cheers 3.3-3.5 s after (148 or 149, 957) |
+| The second boss (990; wall 2001586, line 2001587, PlaceName 688) | at 80 % (both runs) its add (991) and a goblin (422, level 20, the party's side), fighting each other; boss and add hold the room together: it opened as the last of them fell (the boss in one run, the add 12 s after the boss in the other). The boss's 984 only after the add fell (3.7 s after, every 30.8 s). The goblin's lines: 150 18 s in, 151 with its 991 and 156 4 s on, 155 with its 990 and 157 6 s on, 158 5.0-6.3 s after the room opened |
+| The room's opening | log 2014, 2059 `[761]`, 2001464 opened, map effect 9, coffer 110, the healer's 14357, the third boss spawned |
+| The third boss (427; wall 2001588, line 2001589, PlaceName 689) | a 1064 2.6-2.9 s after each 979 where its target stood; at 20 % (both runs) the dragon (429), spawned unseen, Appear 0.6-0.8 s later with 564 on everyone, log 2055 at 4.6-4.8 s, 29618 at 13.1-13.3 s; it leaves as its health falls below 71 % (at 70.7 % 24.2 s in, and between 71.6 and 67.2 % 15.9 s in): untargetable, ActionTimeline 1385 1.4-2.3 s later, log 2056 7.0 s later, deleted 12.1-12.2 s later; the room opened (log 2014, 2059 `[762]`, 2001465, map effect 10, coffer 111, the healer's 14359) as it was deleted, the boss having fallen 4.6-4.9 s after the dragon came. 2001465 refused a player before that (EventFinish 0x65) |
 | 2001466, the terrace door | no prompt, EventAction 24 for 2 s, log 2059 `[691]`, state 7, the variables 15, 15 |
-| The last boss's cutscene | scene 3 (184, 1, 38, 1, 0) as the player came up the slope at about (-73, 33, -233); the boss (14533; wall 2002872, line 2002735, PlaceName 690) and 14 helpers 2.4 s later; the Thaumaturge's 14360 32.4 s after |
-| The clear | log 2014, scene 3 (185, 1, 18, 0, 0), coffer 112, the exit (2000139) shown; the three event NPCs 3.1 s later |
+| The last boss's cutscene | scene 3 (184, 1, 38, 1, 0) as a player came up the slope (at about (-73, 33, -233) and (-79, 33, -237)); the boss (14533; wall 2002872, line 2002735, PlaceName 690) and 14 helpers 2.1-2.4 s later; the Thaumaturge's 14360 32.4 s after |
+| The clear | log 2014, scene 3 (185, 1, 18, 0, 0), coffer 112, the exit (2000139) shown; with Duty Support the three event NPCs 3.1 s later, in the Duty Finder three goblins 25.4 s later |
+| The exit | a prompt; on yes the director's log 1534 `[8]` (the InstanceContent, as Haukke Manor's `[6]`), then the player out where they had queued (both runs: by quest 832's NPC in Eastern La Noscea) |
 
 Kawari: `content/s1d2_re.lua`. The ContentNpc event is new (`ContentNpcEventHandler`, the director's `onContentNpc`),
-as are `leave_boss_room` (the dragon) and `map_effect`'s state; `onCommence` now reaches a dungeon's script too.
+as are `leave_boss_room` (the dragon; the second boss's add if the boss falls before it comes) and `map_effect`'s
+state; `onCommence` now reaches a dungeon's script too, and a duty's exit sends retail's log 1534 for every
+InstanceContent (`handle_director_messages`). The ambushes and the last boss's cutscene go by where any player stands
+(`info.player1`...).
 
 **The last boss's puddles** (`onActorCast`): seven spots, a map effect each (0-6), two helpers on each. With each 28656
-(3.0 s, on itself: 16.3 s into the fight, then two 5.1 s apart every 48.2 s from 58.6) four or three spots' helpers
-cast 28657 (5.0 s) at once; 5.6 s later those spots' map effects go to state 1 (timeline 2) and their other helpers
-cast 28658 (9.0 s, 10 yalms); 8.9 s after that the map effects go to state 4 (timeline 8). The first 28656 marks the
-middle (0) and set A; each pair after it the middle and one set first (A in two of four pairs), then the other. A's
-three spots are map effects 2, 4, 6 and B's 1, 3, 5, but which spot is which number is a guess until the layout's map
-effects are read. Its 28659 (5.0 s, lock-on 218, status 2104 for 15 s) on the tank 5.1 s in and every 48.2 s; 28660 (a
-cone, 390 on the player) 36.6 s in, every 48.2 s.
+(3.0 s, on itself: 16.2-16.3 s into the fight, then two 5.1 s apart every 48.2 s from 57.7-58.6) four or three spots'
+helpers cast 28657 (5.0 s) at once; 5.5-5.6 s later those spots' map effects go to state 1 (timeline 2) and their other
+helpers cast 28658 (9.0 s, 10 yalms); 8.9 s after that the map effects go to state 4 (timeline 8). The first 28656
+marks the middle (0) and set A; each pair after it the middle and one set first (A in three of five pairs over the two
+runs), then the other. A's three spots are map effects 2, 4, 6 and B's 1, 3, 5, but which spot is which number is a
+guess until the layout's map effects are read. Its 28659 (5.0 s, lock-on 218, status 2104 for 15 s; 362 on the tank)
+5.1 s in and every 41.7-48.4 s; 28660 (a cone) 36.6 s in, every 47.5-48.4 s.
 
-**Coffers** (Treasure rows; one item each in the Duty Support run): 109 31476, 105 4462, 106 3608, 110 3610, 111 3382,
-112 31472.
+**Coffers** (Treasure rows; one item each opening): 109 31476 or 31473, 105 4462, 106 3608, 110 3610 or 3609, 111 3382
+or 3380, 112 31472.
 
 ## The Bowl of Embers
 

@@ -2,9 +2,11 @@
     "autoattack_action_id": 873,
     "recorded_amounts": {
         "873": {
+            "players": 133.5,
             "npcs": 50
         },
         "322": {
+            "players": 138,
             "npcs": 49
         }
     },
@@ -13,8 +15,8 @@
         "actions": [
             {
                 "action": 322,
-                "every": 20.0,
-                "comment": "4 uses in two fights, 3.9 s apart in one: how often isn't known, 20 s a guess"
+                "every": 3.9,
+                "comment": "its spell between auto-attacks: every 3.9 s (3.4-4.9) in the Duty Finder run (15 uses), 4 in the Duty Support run"
             }
         ]
     },
@@ -23,5 +25,5 @@
         "322": 2.1
     },
     "timeline_always_plays": false,
-    "comment": "Brayflox's Longstop's BNpcBase 1041 (level 32, 2258 HP; 4186437, 4186440): auto-attack 873 (from range), 322 four times in two fights (3.9 s apart in one). Bob's Chronofoil capture 44df02fc of Brayflox's Longstop (territory 1041) on 2026-11-03, visit 0.20 (34 minutes with Duty Support, during quest 832), `questkit chronofoil --battle`. `players` is the median damage to players in the run, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+    "comment": "Brayflox's Longstop's BNpcBase 1041 (level 32, 2258 HP; 4186437, 4186440): auto-attack 873 (from range), 322 every 3.9 s. Bob's Chronofoil captures of Brayflox's Longstop (territory 1041) on 2026-11-03: 44df02fc visit 0.20 (34 minutes with Duty Support, during quest 832) and c9145fdc visit 0.14 (14 minutes, a Duty Finder run with three other players), `questkit chronofoil --battle`. `players` is the median damage to players (the Duty Finder run's four where it had any), `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
 }
