@@ -280,6 +280,12 @@ pub struct ZoneConnection {
     pub content_finder_condition_id: u16,
     /// The InstanceContent the player cleared and hasn't left yet: quests hear of it as they leave (`onDutyCleared`).
     pub duty_cleared: Option<u16>,
+    /// Quests that leaving a cleared duty moved on to a zone-entry event (a cutscene "back in" a zone): it plays where
+    /// the player comes back to, wherever that is (`play_after_duty_scenes`.)
+    pub after_duty_scenes: Vec<u16>,
+    /// When to play `after_duty_scenes` the client hasn't asked for itself (after the zone the duty sent the player
+    /// back to has loaded.)
+    pub after_duty_check: Option<std::time::Instant>,
     /// The event action currently being cast by a quest, see `LuaTask::EventAction`.
     pub event_action_id: u32,
     /// A nested event whose packets a script started (`start_nested_event`) and hasn't finished yet.
