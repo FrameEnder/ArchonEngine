@@ -12,12 +12,12 @@ use kawari_world::{Navmesh, NavmeshParams, NavmeshTile, collision::Collision};
 use physis::{
     Language,
     layer::{
-        AnalyticCollider, AnalyticColliderType, Layer, LayerEntryData, ModelCollisionType,
-        TriggerBoxShape,
+        AnalyticCollider, AnalyticColliderType, DoorState, Layer, LayerEntryData,
+        ModelCollisionType, TriggerBoxShape,
     },
     lgb::Lgb,
     lvb::Lvb,
-    pcb::{ListEntry, Node, Pcb, Polygon},
+    pcb::{ListEntry, Node, Pcb},
     resource::{ResourceResolver, SqPackResource, UnpackedResource},
     sgb::Sgb,
 };
@@ -157,7 +157,15 @@ fn main() {
 
                 let before = geometry.triangles.len();
                 let transform = Affine3A::default();
-                walk_layer(&mut resolver, layer, &transform, &bound, 0, &mut geometry);
+                walk_layer(
+                    &mut resolver,
+                    layer,
+                    &transform,
+                    &bound,
+                    0,
+                    false,
+                    &mut geometry,
+                );
                 if layer_set.is_some_and(|id| !layer.header.has_layer_set(id as u32)) {
                     outside_layer_set += geometry.triangles.len() - before;
                 }
@@ -174,10 +182,11 @@ fn main() {
     gimmicks.sort_unstable();
     gimmicks.dedup();
     tracing::info!(
-        "{} collision triangles from {} vertices; {gimmick_triangles} of them the gimmicks of {} event objects {gimmicks:?} (left out of the navmesh); {outside_layer_set} from layers outside the territory's layer set {layer_set:?}",
+        "{} collision triangles from {} vertices; {gimmick_triangles} of them the gimmicks of {} event objects {gimmicks:?} (left out of the navmesh); {outside_layer_set} from layers outside the territory's layer set {layer_set:?}; {} collision boxes of open doors left out",
         geometry.triangles.len(),
         geometry.vertices.len(),
-        gimmicks.len()
+        gimmicks.len(),
+        geometry.open_door_boxes
     );
 
     // The area to cover: the geometry's own bounds, all of it (list.pcb's leave out shared groups' meshes; and the
@@ -527,6 +536,8 @@ struct Geometry {
     owners: Vec<u32>,
     /// For each triangle, its PCB polygon's material (what the floor is: the slime in the Thousand Maws of Toto-Rak.)
     materials: Vec<u64>,
+    /// How many collision boxes were left out as an open door's (`walk_layer`.)
+    open_door_boxes: usize,
 }
 
 /// Represents the heightfield of a tile.
@@ -690,6 +701,16 @@ fn analytic_shape(collider: &AnalyticCollider, part: &Affine3A) -> Option<(Shape
     Some((shape, *part * Affine3A::from(collider.transform) * bounds))
 }
 
+/// Whether a shared group placed with `state` is a door standing open, whose collision boxes (the closed door's) aren't
+/// there: Haukke Manor's `sgbg_f1d2_a1_door1.sgb` on its layout's `BG_a1_open_door` layer (Open) and `BG_a1_close_door`
+/// (Closed) are the same door, and in Kawari's collision every one of them was shut: a box 4.6 yalms across and 10.5
+/// high in the doorway, which Bob walked through and the bots stopped at, and which cut the navmesh there, so paths
+/// to him went nowhere (Bob's bundle 20261103-051833 and the zone's `bg.lgb`.) A door left `Auto` (every shared group
+/// that isn't a door is) keeps its collision, as one the director controls does (its event object's state decides.)
+fn leaves_door_open(state: DoorState) -> bool {
+    state == DoorState::Open
+}
+
 fn walk_node(node: &Node, transform: &Affine3A, owner: u32, geometry: &mut Geometry) {
     if !node.vertices.is_empty() {
         let first = geometry.vertices.len() as u32;
@@ -736,13 +757,15 @@ fn add_plate(
 }
 
 /// Walk each layer, add it's collision model to the scene. `bound` names the shared groups event objects control
-/// (see `main`); `owner` is the gimmick a shared group's layers belong to (0 at the top.)
+/// (see `main`); `owner` is the gimmick a shared group's layers belong to (0 at the top); `open_door` says the layers
+/// are those of a door standing open (`leaves_door_open`.)
 fn walk_layer(
     resolver: &mut ResourceResolver,
     layer: &Layer,
     transform: &Affine3A,
     bound: &HashMap<u32, u32>,
     owner: u32,
+    open_door: bool,
     geometry: &mut Geometry,
 ) {
     for object in &layer.objects {
@@ -781,6 +804,12 @@ fn walk_layer(
                 if !collision_box.parent_data.enabled {
                     continue;
                 }
+                // The closed door of a door that stands open: it isn't there (`leaves_door_open`.)
+                if open_door && owner == 0 {
+                    geometry.open_door_boxes += 1;
+                    continue;
+                }
+                let material = collision_box.collision_attributes.material_id;
 
                 if !collision_box.collision_asset_path.value.is_empty() {
                     let Pcb::Mesh(pcb) = resolver
@@ -795,88 +824,23 @@ fn walk_layer(
                     match collision_box.parent_data.trigger_box_shape {
                         TriggerBoxShape::None => unreachable!(),
                         TriggerBoxShape::Box => {
-                            // TODO: It might be nice to have this as a helper somewhere?
-                            let Pcb::Mesh(mesh) = Pcb::new_from_vertices(
-                                &[
-                                    [-1.0, -1.0, 1.0],
-                                    [1.0, -1.0, 1.0],
-                                    [-1.0, 1.0, 1.0],
-                                    [1.0, 1.0, 1.0],
-                                    [-1.0, -1.0, -1.0],
-                                    [1.0, -1.0, -1.0],
-                                    [-1.0, 1.0, -1.0],
-                                    [1.0, 1.0, -1.0],
-                                ],
-                                &[
-                                    Polygon {
-                                        vertex_indices: [2, 6, 7],
-                                        material: 0,
-                                    },
-                                    Polygon {
-                                        vertex_indices: [2, 3, 7],
-                                        material: 0,
-                                    },
-                                    Polygon {
-                                        vertex_indices: [0, 4, 5],
-                                        material: 0,
-                                    },
-                                    Polygon {
-                                        vertex_indices: [0, 1, 5],
-                                        material: 0,
-                                    },
-                                    Polygon {
-                                        vertex_indices: [0, 2, 6],
-                                        material: 0,
-                                    },
-                                    Polygon {
-                                        vertex_indices: [0, 4, 6],
-                                        material: 0,
-                                    },
-                                    Polygon {
-                                        vertex_indices: [1, 3, 7],
-                                        material: 0,
-                                    },
-                                    Polygon {
-                                        vertex_indices: [1, 5, 7],
-                                        material: 0,
-                                    },
-                                    Polygon {
-                                        vertex_indices: [0, 2, 3],
-                                        material: 0,
-                                    },
-                                    Polygon {
-                                        vertex_indices: [0, 1, 3],
-                                        material: 0,
-                                    },
-                                    Polygon {
-                                        vertex_indices: [4, 6, 7],
-                                        material: 0,
-                                    },
-                                    Polygon {
-                                        vertex_indices: [4, 5, 7],
-                                        material: 0,
-                                    },
-                                ],
-                            ) else {
-                                panic!("This can never happen!!");
-                            };
-
-                            walk_node(&mesh, &child_transform, owner, geometry);
+                            add_shape(Shape::Box, &child_transform, owner, material, geometry)
                         }
                         TriggerBoxShape::Sphere => {
-                            add_shape(Shape::Sphere, &child_transform, owner, 0, geometry)
+                            add_shape(Shape::Sphere, &child_transform, owner, material, geometry)
                         }
                         TriggerBoxShape::Cylinder => {
-                            add_shape(Shape::Cylinder, &child_transform, owner, 0, geometry)
+                            add_shape(Shape::Cylinder, &child_transform, owner, material, geometry)
                         }
                         TriggerBoxShape::Mesh => unreachable!(),
                         TriggerBoxShape::Plane | TriggerBoxShape::PlaneTwoSided => {
-                            add_shape(Shape::Plane, &child_transform, owner, 0, geometry)
+                            add_shape(Shape::Plane, &child_transform, owner, material, geometry)
                         }
                     }
                 }
             }
             LayerEntryData::SharedGroup(sgb) => {
+                let open_door = open_door || leaves_door_open(sgb.initial_door_state);
                 match resolver.parsed::<Sgb>(&sgb.asset_path.value) {
                     Ok(sgb) => {
                         for group in &sgb.sections[0].layer_groups {
@@ -887,6 +851,7 @@ fn walk_layer(
                                     &child_transform,
                                     bound,
                                     owner,
+                                    open_door,
                                     geometry,
                                 );
                             }
@@ -929,12 +894,7 @@ mod tests {
 
     /// The corners of a placed shape's collision: its lowest x, y, z and its highest.
     fn extent(shape: Shape, transform: &Affine3A) -> ([f32; 3], [f32; 3]) {
-        let mut geometry = Geometry {
-            vertices: Vec::new(),
-            triangles: Vec::new(),
-            owners: Vec::new(),
-            materials: Vec::new(),
-        };
+        let mut geometry = Geometry::default();
         add_shape(shape, transform, 9, 0x3005, &mut geometry);
         assert!(geometry.owners.iter().all(|owner| *owner == 9));
         assert!(
@@ -997,6 +957,14 @@ mod tests {
             )
             .is_none()
         );
+    }
+
+    #[test]
+    fn only_an_open_door_is_left_open() {
+        assert!(leaves_door_open(DoorState::Open));
+        assert!(!leaves_door_open(DoorState::Closed));
+        // What every shared group that isn't a door is left as.
+        assert!(!leaves_door_open(DoorState::Auto));
     }
 
     #[test]

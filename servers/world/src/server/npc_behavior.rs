@@ -127,6 +127,38 @@ pub const PATH_DROP_MARGIN: f32 = 3.0;
 pub fn path_max_drop(here: Vec3A, along: Vec3A) -> f32 {
     (here.y - along.y).max(0.0) + PATH_DROP_MARGIN
 }
+
+/// Where a walker held up by a wall at `here` goes on to, its patience run out, towards `along` (a point of its path):
+/// there, on the floor no higher than a step over the higher of the two and no deeper than `max_drop` under `here`.
+/// None where a gimmick the director put up stands between (`Collision::crosses_sealed`), or there's no such floor:
+/// put on the path's height over a hole, it sank to the floor below the next tick; Bob's Haukke Manor bundle
+/// 20261103-051833, where bots and enemies walked on past a shelf by the sunken space at (-32, 0, 45) and on down to
+/// the cellar, as they did through the doors it shows shut.
+pub fn past_a_wall(
+    collision: &crate::collision::Collision,
+    here: Vec3A,
+    along: Vec3A,
+    max_drop: f32,
+) -> Option<Vec3A> {
+    if collision.crosses_sealed(here, along) {
+        return None;
+    }
+    let y = collision.floor(
+        along.x,
+        along.z,
+        here.y.max(along.y) + collision.climb,
+        here.y - max_drop,
+    )?;
+    Some(Vec3A::new(along.x, y, along.z))
+}
+
+/// Whether an NPC at `from` sees whom it's after at `to`, on its instance's `collision` (`Collision::sees`): through a
+/// wall, a floor or a door the director shut, it doesn't act on them; it walks on until it does. Without a collision
+/// (not made yet) it sees everyone. Bob's Haukke Manor bundles 20261103-051638 and -051833: bots and enemies attacked
+/// through walls.
+pub fn in_sight(collision: Option<&crate::collision::Collision>, from: Vec3A, to: Vec3A) -> bool {
+    collision.is_none_or(|collision| collision.sees(from, to))
+}
 /// NPC actions that leap their user to its target, and how long after the hit it lands (seconds). Retail's Duty Support
 /// Marauder opens a pull with 29291 from about 10 yalms off: the hit (a 1.1 s lock), then 0.58 s later ActorControl
 /// 239 (`SnapNextMove`) and an ActorMove (speed 60) to beside its target, three times out of three in Bob's Copperbell
@@ -348,9 +380,15 @@ pub fn npc_behavior(
                         timeline.attack_range,
                     )
                     .is_some();
-            let (position, rotation) = if distance <= min_distance
-                && !(strayed && !current_path.is_empty())
-            {
+            // In reach of who it's after only where it sees them (`in_sight`): out of sight it walks on towards them.
+            let in_reach = distance <= min_distance
+                && (!use_min_distance
+                    || in_sight(
+                        instance.collision.as_deref(),
+                        spawn.common.position.0,
+                        target_pos,
+                    ));
+            let (position, rotation) = if in_reach && !(strayed && !current_path.is_empty()) {
                 // Standing on the spot it walked to keeps its facing (atan2(0, 0) turned it north there.)
                 let rotation = if flat_distance(spawn.common.position.0, target_pos) < MIN_STEP {
                     spawn.common.rotation
@@ -391,18 +429,30 @@ pub fn npc_behavior(
                             blocked.insert(*id);
                         }
                         // A gimmick the director put up (a sealed room's wall, a locked door) stops it for good, as
-                        // it stops a player.
-                        if walk.blocked && !walk.sealed && walled_for >= NPC_WALL_PATIENCE_TICKS {
-                            if walled_for == NPC_WALL_PATIENCE_TICKS {
-                                tracing::info!(
-                                    "NPC {} (layout {}) held up by a wall at {:?} for {} ticks: walking on through",
-                                    id.0,
-                                    spawn.common.layout_id,
-                                    spawn.common.position.0,
-                                    walled_for
-                                );
-                            }
-                            Position(along)
+                        // it stops a player; so does one between it and where it'd go on to, and a drop there it
+                        // wouldn't step down (`past_a_wall`.)
+                        let past =
+                            (walk.blocked && !walk.sealed && walled_for >= NPC_WALL_PATIENCE_TICKS)
+                                .then(|| {
+                                    past_a_wall(collision, spawn.common.position.0, along, max_drop)
+                                })
+                                .flatten();
+                        if walk.blocked && walled_for == NPC_WALL_PATIENCE_TICKS {
+                            tracing::info!(
+                                "NPC {} (layout {}) held up by a wall at {:?} for {} ticks: {}",
+                                id.0,
+                                spawn.common.layout_id,
+                                spawn.common.position.0,
+                                walled_for,
+                                if past.is_some() {
+                                    "walking on through"
+                                } else {
+                                    "it stays (a gimmick the director put up, or no floor it would step onto, there)"
+                                }
+                            );
+                        }
+                        if let Some(past) = past {
+                            Position(past)
                         } else {
                             if walk.blocked {
                                 walled.insert(*id);
@@ -477,6 +527,8 @@ pub fn npc_behavior(
     let now = Instant::now();
     instance.unreachable.retain(|_, until| *until > now);
 
+    // Who sees whom, on the collision as it is this tick (`in_sight`.)
+    let sight = instance.collision.clone();
     // mut pass
     for (id, actor) in &mut instance.actors {
         // A director's helper does only what it's told: it neither moves, notices, fights nor follows a timeline
@@ -824,21 +876,25 @@ pub fn npc_behavior(
                             timeline.attack_range,
                         )
                     };
+                    // In reach: in range, and in sight (`in_sight`): out of sight it walks on towards them (a player
+                    // round a corner draws a caster after them, as on retail) and doesn't act on them.
+                    let in_reach = distance <= timeline.attack_range
+                        && (matches!(current_target, NpcTarget::Position(_))
+                            || in_sight(sight.as_deref(), spawn.common.position.0, target_pos));
                     let needs_repath = match current_target {
                         NpcTarget::Actor(_) => {
-                            current_path.is_empty()
-                                && (distance > timeline.attack_range || strayed_to.is_some())
+                            current_path.is_empty() && (!in_reach || strayed_to.is_some())
                         }
                         NpcTarget::Position(_) => current_path.is_empty(),
                     };
-                    can_take_action = distance <= timeline.attack_range;
+                    can_take_action = in_reach;
 
                     let current_pos = spawn.common.position.0;
                     // Standing in range of who it's after: forget the path, so it sets off from where it stands when
                     // they move. The old one kept advancing while it stood, and it jumped back and forth along it
                     // when it ran again (2026-10-19 bundle.)
                     if matches!(current_target, NpcTarget::Actor(_))
-                        && distance <= timeline.attack_range
+                        && in_reach
                         && strayed_to.is_none()
                         && !current_path.is_empty()
                     {
@@ -1710,6 +1766,101 @@ mod notice_tests {
         assert!(!can_notice(enemy, 0.0, Vec3A::new(0.0, 0.0, 16.0)));
         // Across the ±π seam.
         assert!(can_notice(enemy, PI - 0.1, Vec3A::new(-1.0, 0.0, -13.0)));
+    }
+}
+
+#[cfg(test)]
+mod wall_tests {
+    use super::*;
+    use crate::collision::Collision;
+
+    #[test]
+    fn going_on_past_a_wall_keeps_off_a_drop_and_a_shut_door() {
+        // A floor at 0 for x < 6, the sunken one at -3.2 beyond, a wall at x = 2 (z -10..10) and a door the director
+        // shows shut (gimmick 9) at x = -2.
+        let mut v: Vec<[f32; 3]> = Vec::new();
+        let mut t: Vec<[u32; 3]> = Vec::new();
+        fn quad(v: &mut Vec<[f32; 3]>, t: &mut Vec<[u32; 3]>, corners: [[f32; 3]; 4]) {
+            let i = v.len() as u32;
+            v.extend(corners);
+            t.extend([[i, i + 1, i + 2], [i, i + 2, i + 3]]);
+        }
+        quad(
+            &mut v,
+            &mut t,
+            [
+                [-10.0, 0.0, -10.0],
+                [6.0, 0.0, -10.0],
+                [6.0, 0.0, 10.0],
+                [-10.0, 0.0, 10.0],
+            ],
+        );
+        quad(
+            &mut v,
+            &mut t,
+            [
+                [6.0, -3.2, -10.0],
+                [20.0, -3.2, -10.0],
+                [20.0, -3.2, 10.0],
+                [6.0, -3.2, 10.0],
+            ],
+        );
+        quad(
+            &mut v,
+            &mut t,
+            [
+                [2.0, 0.0, -10.0],
+                [2.0, 0.0, 10.0],
+                [2.0, 4.0, 10.0],
+                [2.0, 4.0, -10.0],
+            ],
+        );
+        let plain = t.len();
+        quad(
+            &mut v,
+            &mut t,
+            [
+                [-2.0, 0.0, -10.0],
+                [-2.0, 0.0, 10.0],
+                [-2.0, 4.0, 10.0],
+                [-2.0, 4.0, -10.0],
+            ],
+        );
+        let mut owners = vec![0; plain];
+        owners.resize(t.len(), 9);
+        let mut collision = Collision::build(v, t, owners, Vec::new(), 0.75, 0.4, 55.0);
+        let here = Vec3A::new(0.0, 0.0, 0.0);
+        // On past the wall to the same floor: yes.
+        assert_eq!(
+            past_a_wall(
+                &collision,
+                here,
+                Vec3A::new(4.0, 0.0, 0.0),
+                PATH_DROP_MARGIN
+            ),
+            Some(Vec3A::new(4.0, 0.0, 0.0))
+        );
+        // Over the sunken floor, deeper than it would step down: no.
+        assert_eq!(
+            past_a_wall(
+                &collision,
+                here,
+                Vec3A::new(8.0, 0.0, 0.0),
+                PATH_DROP_MARGIN
+            ),
+            None
+        );
+        // Through the door: until the director shuts it.
+        let beyond = Vec3A::new(-4.0, 0.0, 0.0);
+        assert!(past_a_wall(&collision, here, beyond, PATH_DROP_MARGIN).is_some());
+        collision.set_gimmick_sealed(9, true);
+        assert_eq!(
+            past_a_wall(&collision, here, beyond, PATH_DROP_MARGIN),
+            None
+        );
+        // And it sees no one through the wall.
+        assert!(!in_sight(Some(&collision), here, Vec3A::new(4.0, 0.0, 0.0)));
+        assert!(in_sight(None, here, Vec3A::new(4.0, 0.0, 0.0)));
     }
 }
 

@@ -25,6 +25,14 @@
 //! a cylinder, a sphere or a plane: their analytic collider, 569 of Haukke Manor's 1199 BgParts with collision) and the
 //! collision boxes of those shapes too; before, only meshes and boxes. Older files are still read, and each zone's
 //! navmesh and collision are made again the first time it's entered (`is_older`.)
+//!
+//! **Open doors.** Since version 5 a door's shared group placed standing open leaves out its collision boxes (the
+//! closed door's): before, every door was shut in the collision and the navmesh, though players walk through the open
+//! ones (Bob's Haukke Manor bundle 20261103-051833: bots held at its open doors, and paths to him that went nowhere.)
+//!
+//! **Line of sight.** `sees` says whether a straight line between two points (at eye height) is clear of the
+//! collision: walls, floors and ceilings, and the gimmicks the director put up; gimmicks it hasn't touched don't block
+//! it (some aren't solid for players, as for walking.)
 
 use std::sync::{Arc, Mutex, OnceLock, Weak};
 use std::{collections::HashMap, path::Path};
@@ -33,7 +41,9 @@ use glam::Vec3A;
 
 /// The file's first bytes, and the layout's version.
 const MAGIC: &[u8; 4] = b"KCOL";
-const VERSION: u32 = 4;
+const VERSION: u32 = 5;
+/// The version with every door shut, still read (the same layout.)
+const VERSION_WITH_DOORS_SHUT: u32 = 4;
 /// The version before the simple shapes, still read (the same layout.)
 const VERSION_WITHOUT_SHAPES: u32 = 3;
 /// The version before materials, still read (without them.)
@@ -45,6 +55,8 @@ const CELL: f32 = 2.0;
 const SUBSTEP: f32 = 0.25;
 /// The heights a walker's body meets walls at, over its climb (yalms): a step it can take is no wall.
 const WALL_HEIGHTS: [f32; 2] = [0.1, 1.4];
+/// How high over someone's feet their line of sight goes from and to (yalms; a guess, about a Hyur's eyes.)
+pub const LINE_OF_SIGHT_HEIGHT: f32 = 1.5;
 /// How far below its feet a walker looks for the floor it's over when it's put somewhere (yalms.)
 const SETTLE_DEPTH: f32 = 200.0;
 /// How far above its feet it looks when it's under the floor (it was walked straight through a slope, or spawned a
@@ -277,7 +289,14 @@ impl Collision {
             return None;
         }
         let version = r.u32()?;
-        if ![VERSION, VERSION_WITHOUT_SHAPES, VERSION_WITHOUT_MATERIALS].contains(&version) {
+        if ![
+            VERSION,
+            VERSION_WITH_DOORS_SHUT,
+            VERSION_WITHOUT_SHAPES,
+            VERSION_WITHOUT_MATERIALS,
+        ]
+        .contains(&version)
+        {
             return None;
         }
         let climb = r.f32()?;
@@ -465,8 +484,8 @@ impl Collision {
         best
     }
 
-    /// Whether it's from an older file, made before the simple shapes were in it (version 3 or 2): the zone's navmesh
-    /// and collision are made again.
+    /// Whether it's from an older file, made before the open doors were left open (version 4) or the simple shapes
+    /// were in it (version 3 or 2): the zone's navmesh and collision are made again.
     pub fn is_older(&self) -> bool {
         self.version < VERSION
     }
@@ -540,6 +559,68 @@ impl Collision {
             .iter()
             .position(|g| *g == layout_id)
             .is_some_and(|index| self.sealed[index])
+    }
+
+    /// Whether triangle `index` belongs to a gimmick the director put up (shown) here.
+    fn is_sealed_triangle(&self, index: u32) -> bool {
+        let owner = self.owners.get(index as usize).copied().unwrap_or(0);
+        owner != 0
+            && !self.is_gone(index)
+            && self
+                .sealed
+                .get(owner as usize - 1)
+                .copied()
+                .unwrap_or(false)
+    }
+
+    /// Whether the straight line from `from` to `to` goes into a triangle that `counts`, looked for a cell's length at
+    /// a time (a long line's whole box would be most of a room's cells.)
+    fn line_meets(&self, from: Vec3A, to: Vec3A, counts: impl Fn(u32) -> bool) -> bool {
+        let pieces = (Vec3A::new(to.x - from.x, 0.0, to.z - from.z).length() / CELL)
+            .ceil()
+            .max(1.0) as usize;
+        let mut seen = std::collections::HashSet::new();
+        for piece in 0..pieces {
+            let a = from.lerp(to, piece as f32 / pieces as f32);
+            let b = from.lerp(to, (piece + 1) as f32 / pieces as f32);
+            let bounds = [a.x.min(b.x), a.z.min(b.z), a.x.max(b.x), a.z.max(b.z)];
+            for cell in self.cells_over(&bounds) {
+                for index in self.cell_triangles(cell) {
+                    if !seen.insert(*index) || !counts(*index) {
+                        continue;
+                    }
+                    let [p, q, r] = self.triangle(*index);
+                    if segment_hits(from, to, p, q, r).is_some() {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    }
+
+    /// Whether `from` and `to` (at eye height: `LINE_OF_SIGHT_HEIGHT` over each one's feet) see each other: nothing
+    /// of the collision between them (walls, floors, ceilings) but gimmicks that are gone, or that the director hasn't
+    /// put up (they stop no one for good: some aren't solid for players.)
+    pub fn sees(&self, from: Vec3A, to: Vec3A) -> bool {
+        let up = Vec3A::new(0.0, LINE_OF_SIGHT_HEIGHT, 0.0);
+        !self.line_meets(from + up, to + up, |index| {
+            self.gimmick_of(index).is_none() || self.is_sealed_triangle(index)
+        })
+    }
+
+    /// Whether the way from `from` to `to` (across the ground, at a body's height) goes through a gimmick the director
+    /// put up: a sealed room's wall, a door it shows as shut. A walker held up somewhere else never goes on past one.
+    pub fn crosses_sealed(&self, from: Vec3A, to: Vec3A) -> bool {
+        if !self.sealed.contains(&true) {
+            return false;
+        }
+        WALL_HEIGHTS.iter().any(|height| {
+            let up = Vec3A::new(0.0, self.climb + height, 0.0);
+            self.line_meets(from + up, Vec3A::new(to.x, from.y, to.z) + up, |index| {
+                self.is_sealed_triangle(index)
+            })
+        })
     }
 
     /// The floor a body stands on at (x, z) between `top` and `bottom`: the highest floor there, or, where that's a
@@ -964,6 +1045,9 @@ mod tests {
         three[4..8].copy_from_slice(&3u32.to_le_bytes());
         let c = Collision::from_bytes(&three).unwrap();
         assert!(c.has_materials() && c.is_older());
+        // A version 4 file (every door shut) too.
+        three[4..8].copy_from_slice(&4u32.to_le_bytes());
+        assert!(Collision::from_bytes(&three).unwrap().is_older());
         assert!(!Collision::from_bytes(&built.to_bytes()).unwrap().is_older());
     }
 
@@ -1023,6 +1107,36 @@ mod tests {
             f32::INFINITY,
         );
         assert!(walk.at.y <= 0.0);
+    }
+
+    #[test]
+    fn a_wall_or_a_floor_blocks_the_line_of_sight() {
+        // A room's floor with a wall at x = 3 (from z -10 to 0 only), a floor 6 above, and a door (gimmick 77) at x = -3.
+        let (mut v, mut t) = (Vec::new(), Vec::new());
+        floor_quad(&mut v, &mut t, -10.0, -10.0, 10.0, 10.0, 0.0);
+        wall_x(&mut v, &mut t, 3.0, -10.0, 0.0, 0.0, 4.0);
+        floor_quad(&mut v, &mut t, -10.0, -10.0, 10.0, 10.0, 6.0);
+        let plain = t.len();
+        wall_x(&mut v, &mut t, -3.0, -10.0, 10.0, 0.0, 4.0);
+        let mut owners = vec![0; plain];
+        owners.resize(t.len(), 77);
+        let mut c = Collision::build(v, t, owners, Vec::new(), 0.75, 0.4, 55.0);
+        let here = Vec3A::new(0.0, 0.0, -5.0);
+        // Through the wall: no; past its end: yes; through the floor above: no.
+        assert!(!c.sees(here, Vec3A::new(8.0, 0.0, -5.0)));
+        assert!(c.sees(here, Vec3A::new(8.0, 0.0, 9.0)));
+        assert!(!c.sees(here, Vec3A::new(0.0, 6.0, -5.0)));
+        // A long way across a room, cell by cell (more than one of them.)
+        assert!(c.sees(Vec3A::new(-2.0, 0.0, -9.0), Vec3A::new(2.0, 0.0, 9.0)));
+        // A door the director hasn't touched doesn't block it, nor block the way; one it shut does both.
+        let beyond = Vec3A::new(-8.0, 0.0, -5.0);
+        assert!(c.sees(here, beyond) && !c.crosses_sealed(here, beyond));
+        c.set_gimmick_sealed(77, true);
+        assert!(!c.sees(here, beyond) && c.crosses_sealed(here, beyond));
+        assert!(!c.crosses_sealed(here, Vec3A::new(8.0, 0.0, 9.0)));
+        // Gone (opened), it's no wall at all.
+        c.set_gimmick_gone(77, true);
+        assert!(c.sees(here, beyond) && !c.crosses_sealed(here, beyond));
     }
 
     #[test]

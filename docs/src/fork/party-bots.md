@@ -154,6 +154,18 @@ floor under its body's edge (`radius` out, eight ways round) where the floor at 
 over once its centre is past the edge by its radius (`Collision::body_floor`, also used to settle a bot that's put
 somewhere).
 
+**Open doors, and seeing whom it acts on** (Bob's Haukke Manor bundles 20261103-051638 and -051833): the bots stopped
+at doorways Bob walked through, 40 s at the hall's east door (x 49, z 36) and 51 s at another (x 16.5, z 69.3), then
+went on through the wall after their patience; and with no navmesh through those doorways, a path to him ended at the
+nearest edge and the rest went straight, through walls and down the sunken space by the west wing towards the cellar.
+Every door's shared group (`sgbg_f1d2_a1_door1.sgb` and its kind) was shut in the collision and the navmesh: a box 4.6
+yalms across and 10.5 high in the doorway, the door's closed collision, though the layout places most of them open
+(`BG_a1_open_door`, `DoorState::Open`). Now `kawari-navimesh` leaves that box out of a door placed open (collision
+version 5, so every zone's navmesh and collision are made again), and a bot whose patience runs out goes on only where
+no gimmick the director put up stands between, and onto a floor no deeper than it steps down (the navmesh's floor 3
+yalms down is another storey.) Bots (and enemies) act only on whom they see ([Combat: line of
+sight](combat.md)): out of sight they walk on until they do; a healer doesn't heal, nor the tank pull, through a wall.
+
 **What a glamour put on** (same day): each bot's glamour now logs the pieces it wears (item, EquipSlotCategory, model,
 stains) and the ones it left out and why (`Party bot glamour "…": wears …; left out …`). Bob's Elezen Pugilist in
 "keeper of the lilacs" showed no feet (feet model 0x19A, variant 1 in his SpawnPlayer); which piece that was isn't in

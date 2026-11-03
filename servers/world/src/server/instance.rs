@@ -344,14 +344,15 @@ impl Instance {
                 }
                 // A navmesh made before the collision was written with it: made again (both), keeping this one
                 // until then. NPCs keep to the navmesh's floor meanwhile.
-                // One made before the collision had the layouts' simple shapes (version 4): made again too.
+                // One made before the collision had the layouts' simple shapes (version 4) or left open doors open
+                // (version 5): made again too.
                 let older = instance
                     .collision
                     .as_ref()
                     .is_some_and(|collision| collision.is_older());
                 if older {
                     tracing::info!(
-                        "{nvm_path:?}'s collision is from before the simple shapes (boxes, cylinders, spheres, planes), so it's made again"
+                        "{nvm_path:?}'s collision is from an older kawari-navimesh (before open doors and simple shapes), so it's made again"
                     );
                 }
                 if (instance.collision.is_none() || needs_materials || older)

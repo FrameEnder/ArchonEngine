@@ -431,6 +431,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   game data where it was written; 2 yalms if it's 0): the server log says the radius and what it landed on at each
   throw ("Key item … landed at …"). Retail's Condition 4 (casting) during the bar isn't sent, and whether moving
   cancels the bar wasn't seen (Kawari doesn't).
+* Line of sight (`Collision::sees`, since 2026-11-02) goes from 1.5 yalms over each one's feet (a guess; retail's
+  height and whether its enemies need sight for every action aren't known), to the target's middle whatever its size,
+  and isn't checked for an NPC's sight aggro (`can_notice`) or for areas. Untested in game.
 * Collision that's a simple shape (`kawari-navimesh`, since 2026-11-02) is placed as vnavmesh places it and checked
   against Haukke Manor's `bg.lgb` only (three walls, by their numbers); untested in game anywhere. Every zone's navmesh
   and collision are made again the first time it's entered after the update (collision version 4), which takes a while
@@ -707,6 +710,14 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   cellar at z 36): its edge at z 45 is closed by invisible walls whose collision is a simple shape (BgParts 3819851,
   3819852 and 3867912: boxes 5.4 and 3.9 yalms high), which `kawari-navimesh` left out before 2026-11-02. They're in the
   collision now (version 4: [Combat: walking on the collision](combat.md#walking-on-the-collision)); untested in game.
+  Bob's next run (bundle 20261103-051833, version 4) still had bots and enemies down there: they walked on past the
+  shelf (3867912) after their patience, onto the sunken floor; they no longer go on to a floor deeper than they'd step
+  down. The sunken floor still has gaps in its edge (x -34 to -32, -31 to -26, -21 to -14 at z 45) with nothing in
+  Kawari's collision; whether retail has more there wasn't checked with the zone's shared groups.
+* Haukke Manor's doors: untested since the open ones are left open (collision version 5). That a door placed `Open`
+  leaves out only its collision boxes is from the doorways' boxes in Kawari's collision (two faces 0.225 apart, 4.6
+  wide, 10.5 high, with a box's material 0) and the layout's door states, not from the door's `.sgb` (not seen): a door
+  whose closed collision is a mesh would still be shut.
 * With party bots (a Duty Finder run, 2026-11-02): the tank and three enemies ended in the cellar under the player,
   whom the enemies' area attacks there hit through the floor, and he died. Fixed as above (area attacks' height, the
   path's drop, the doors sealed); untested in game.

@@ -408,6 +408,12 @@ collision is a simple shape (3819851, 3819852: boxes 2.4 yalms wide, 5.4 high; 3
 Bob's `bg.lgb` (2026-11-02). Kawari's collision has them since collision version 4; before, the tank bot and three
 enemies walked off that edge to the cellar ([Party bots](party-bots.md)).
 
+**Its doors.** The layout places one door shared group (`sgbg_f1d2_a1_door1.sgb`, `_door2`, `_door4`; the cellar's
+`sgbg_f1d2_b1_door*.sgb`) in each doorway, most of them open (`BG_a1_open_door`: the hall's east doors at x ±49, z ±36;
+x 16.5, z 69.3 and 84.6; x -23.3, z 0; x -16.5, z 69.6) and some shut for good (`BG_a1_close_door`). Those an event
+object controls (the keys' doors, the bosses') follow the director. Kawari had every one shut; since collision version 5
+the open ones are open ([Party bots](party-bots.md)).
+
 **Enemies.** `questkit chronofoil --dropin 1040` over the two captures gave the 57 battle NPCs seen (level 28; trash
 2420 HP, 276 1210). The pair (273, 274) and the last boss with its adds (14504, 14505, 14506) are `nonpop`: the
 director spawns them; the first boss (272) and the floating eyes (275, 14698) stand from the start. Every kind has a

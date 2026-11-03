@@ -474,6 +474,16 @@ fn walk_like_a_player(
                 }
                 return (walk.at, true);
             }
+            // Nor past one between it and where it'd go on to (held up by the wall beside a door the director
+            // shows shut, it went on through the door: Bob's Haukke Manor bundle 20261103-051833.)
+            if collision.crosses_sealed(here, to) {
+                if patience_ran_out {
+                    tracing::info!(
+                        "Party bot at {here}: held up by the zone's collision, with a gimmick the director put up between it and {to}; it waits"
+                    );
+                }
+                return (walk.at, true);
+            }
             if let Some(gimmick) = walk.gimmick
                 && patience_ran_out
             {
@@ -481,14 +491,20 @@ fn walk_like_a_player(
                     "Party bot at {here}: held up by the gimmick of event object {gimmick} (layout ID), which the director hasn't touched; on past it"
                 );
             }
-            let ground = navmesh.ground_under(to).map(|ground| ground.y).or_else(|| {
-                collision.floor(
-                    to.x,
-                    to.z,
-                    here.y + collision.climb,
-                    here.y - collision.climb,
-                )
-            });
+            // No deeper than its way goes down (the navmesh's floor 3 yalms down is another storey.)
+            let lowest = here.y - crate::server::npc_behavior::path_max_drop(here, to);
+            let ground = navmesh
+                .ground_under(to)
+                .map(|ground| ground.y)
+                .filter(|y| *y >= lowest)
+                .or_else(|| {
+                    collision.floor(
+                        to.x,
+                        to.z,
+                        here.y + collision.climb,
+                        here.y - collision.climb,
+                    )
+                });
             if let Some(y) = ground {
                 let settled = collision.settle(Vec3A::new(to.x, y, to.z));
                 return (settled, false);
@@ -3459,6 +3475,27 @@ fn update_party(
             fighting.push(*bot_id);
         }
 
+        // Whom it sees from where it stands (`npc_behavior::in_sight`): it acts on no one else, as a player can't.
+        let sees = |position: Vec3A| {
+            crate::server::npc_behavior::in_sight(
+                collision.as_deref(),
+                spawn.common.position.0,
+                position,
+            )
+        };
+        let sees_actor = |id: ObjectId| {
+            where_is
+                .get(&id)
+                .map(|(position, _)| *position)
+                .or_else(|| {
+                    engaged
+                        .iter()
+                        .find(|enemy| enemy.id == id)
+                        .map(|enemy| enemy.position)
+                })
+                .is_none_or(sees)
+        };
+
         // The healer heals first.
         if bot.role == BotRole::Healer
             && let (Some(heal), Some((patient, _))) = (
@@ -3467,6 +3504,7 @@ fn update_party(
             )
             && now >= bot.next_heal
             && !casting
+            && sees_actor(patient)
         {
             heals.push((*bot_id, heal, patient));
             continue;
@@ -3534,6 +3572,7 @@ fn update_party(
                     if let Some(pull) = bot.pull_action
                         && !bot.pulled.contains(&target)
                         && (TANK_PULL_FROM..=TANK_PULL_RANGE).contains(&distance)
+                        && sees_actor(target)
                     {
                         specials.push((*bot_id, pull, target, Vec::new()));
                     } else if let Some(aoe) = bot.aoe_action
@@ -3622,16 +3661,20 @@ fn update_party(
                     .find(|(id, _)| id == bot_id)
                     .map(|(_, enemy)| *enemy);
                 if let Some(enemy) = provoking
+                    && sees_actor(enemy)
                     && let Some(provoke) = state.provoke(now)
                 {
                     kit_actions.push((*bot_id, provoke, enemy));
                 } else if let Some(defensive) = state.defensive(now, engaged.len()) {
                     kit_actions.push((*bot_id, defensive, *bot_id));
-                } else if let Some((action, on_self)) = state.choose(
-                    now,
-                    distance <= bot.attack_range + target_hitbox + PARTY_NPC_REACH,
-                    distance <= TANK_PULL_RANGE,
-                ) {
+                } else if let Some((action, on_self)) = {
+                    let in_sight = sees_actor(target);
+                    state.choose(
+                        now,
+                        in_sight && distance <= bot.attack_range + target_hitbox + PARTY_NPC_REACH,
+                        in_sight && distance <= TANK_PULL_RANGE,
+                    )
+                } {
                     kit_actions.push((*bot_id, action, if on_self { *bot_id } else { target }));
                 }
             }
