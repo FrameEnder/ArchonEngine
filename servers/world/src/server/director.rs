@@ -3166,6 +3166,16 @@ pub fn handle_director_messages(
             }
 
             match gimmick_accessor_type {
+                // Its prompt answered "No" (1; "Yes" is 0, as the other prompts'): nothing happens. Haukke Manor's
+                // way back up warped the player either way (Bob's bundle 20261103-130104: params [1] twice, and he
+                // was taken up both times.)
+                GimmickAccessorType::Shortcut
+                    if params.first().is_some_and(|answer| *answer != 0) =>
+                {
+                    director.tasks.push(LuaDirectorTask::FinishGimmickEvent {
+                        actor_id: *from_actor_id,
+                    });
+                }
                 GimmickAccessorType::Shortcut => {
                     // The duty's shortcut goes where the director points it; any other (Param1, a pop range) goes to
                     // its own place, after its line (Param2, a LogMessage, from the gimmick's own handler): Haukke

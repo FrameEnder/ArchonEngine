@@ -437,7 +437,7 @@ own, the door hidden the same way. Every run the same:
 | 2000356 | the cellar's door | log 2059 `[756]`; the pair come out 0.4 s later |
 | 2001235 | the pair's key (2000259) | dropped where the last of the two fell (spawned, args2 66818, not in the layout): data 1 \|= 2 |
 | 2001233 | the stairs up | without the pair's key, its own log 2004 and the event refused (EventFinish result 0x65), no prompt; with it, the prompt, EventAction 24 and log 2023 `[0]` |
-| 2012969 | the way back up from the cellar | shown as the pair fall; a prompt, then its own log 2049 (from GimmickAccessor 0x41A's handler) and the party at the entrance (pop range 9228207) |
+| 2012969 | the way back up from the cellar | shown as the pair fall; a prompt (yes answers 0, no 1), then its own log 2049 (from GimmickAccessor 0x41A's handler) and the party at the entrance (pop range 9228207); no does nothing (Kawari warped either way until 2026-11-03: Bob's bundle 20261103-130104) |
 
 The rest of the keys' series (2000306-2000308) and of the doors' (2000331, 2000339, 2000345), never used in the four
 runs, are taken to work the same; 2000338 stood open (spawned in state 7, every run). The script shows every closed
