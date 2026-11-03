@@ -51,87 +51,6 @@ async fn sleep_until_or_never(at: Option<std::time::Instant>) {
     }
 }
 
-/// How long after the zone a cleared duty sent the player back to has loaded the server waits for the client to ask
-/// for a quest's zone-entry event itself before playing it (`ZoneConnection::after_duty_scenes`): the client asked 1.2-1.4
-/// s after its FinishLoading, back in the Central Shroud and coming into a duty (Bob's bundle 20261103-133134.)
-const AFTER_DUTY_WAIT: std::time::Duration = std::time::Duration::from_secs(3);
-
-/// Starts a zone-entry event (EventStart type 15, the zone as its argument) and runs its script's `onEnterTerritory`:
-/// one the client asked for (`EnterTerritoryEvent`), or a quest's after a cleared duty (`play_after_duty_scene`.)
-async fn start_enter_territory_event(
-    connection: &mut ZoneConnection,
-    lua_player: &mut LuaPlayer,
-    events: &mut Vec<(Box<dyn EventHandler>, Event)>,
-    handler_id: HandlerId,
-) {
-    connection
-        .start_event(
-            ObjectTypeId {
-                object_id: connection.player_data.character.actor_id,
-                object_type: ObjectTypeKind::None,
-            },
-            handler_id,
-            EventType::EnterTerritory,
-            connection.player_data.volatile.zone_id as u32,
-            events,
-            lua_player,
-        )
-        .await;
-    if let Some(event) = events.last_mut() {
-        event.0.on_enter_territory(&event.1, lua_player).await;
-    } else {
-        tracing::warn!(
-            "No event started from EnterTerritoryEvent?! This probably means its missing a handler for its type."
-        );
-    }
-}
-
-/// Plays the next quest's zone-entry event that leaving a cleared duty moved it on to (`after_duty_scenes`), the
-/// client not having asked for it: the player came back somewhere else than the zone it's in. One at a time, once
-/// nothing else is going on; the rest after it.
-async fn play_after_duty_scene(
-    connection: &mut ZoneConnection,
-    lua_player: &mut LuaPlayer,
-    events: &mut Vec<(Box<dyn EventHandler>, Event)>,
-) {
-    if !events.is_empty() {
-        connection.after_duty_check = Some(std::time::Instant::now() + AFTER_DUTY_WAIT);
-        return;
-    }
-    if connection.after_duty_scenes.is_empty() {
-        connection.after_duty_check = None;
-        return;
-    }
-    let quest_id = connection.after_duty_scenes.remove(0);
-    connection.after_duty_check = (!connection.after_duty_scenes.is_empty())
-        .then(|| std::time::Instant::now() + AFTER_DUTY_WAIT);
-    // Still on that step (nothing else moved it on meanwhile.)
-    let handler_id = HandlerId::new(HandlerType::Quest, quest_id);
-    let sequence = connection
-        .player_data
-        .quest
-        .active
-        .0
-        .iter()
-        .find(|quest| quest.id == quest_id)
-        .map(|quest| quest.sequence);
-    let Some(sequence) = sequence else {
-        return;
-    };
-    if !connection
-        .game_data
-        .lock()
-        .quest_enters_territory(handler_id.0, sequence)
-    {
-        return;
-    }
-    tracing::info!(
-        "Quest {quest_id}: its zone-entry event after the duty, played in zone {} (the client didn't ask for it here)",
-        connection.player_data.volatile.zone_id
-    );
-    start_enter_territory_event(connection, lua_player, events, handler_id).await;
-}
-
 /// How long a zone connection can go without hearing from the client before it's treated as dropped (and the player
 /// is logged out and saved.)
 const DEAD_CONNECTION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60);
@@ -332,8 +251,6 @@ async fn initial_setup(
                     pending_retainer_appearance: None,
                     content_finder_condition_id: 0,
                     duty_cleared: None,
-                    after_duty_scenes: Vec::new(),
-                    after_duty_check: None,
                     pending_event_text: None,
                     scenario_guide_sent: None,
                     gold_saucer_game: None,
@@ -1167,12 +1084,6 @@ async fn process_packet(
                         }
                         ClientZoneIpcData::FinishLoading { .. } => {
                             let spawn = connection.respawn_player(true).await;
-
-                            // Back from a cleared duty: its quests' zone-entry events, if the client doesn't ask.
-                            if !connection.after_duty_scenes.is_empty() {
-                                connection.after_duty_check =
-                                    Some(std::time::Instant::now() + AFTER_DUTY_WAIT);
-                            }
 
                             // tell the server we loaded into the zone, so it can start sending us actors
                             connection
@@ -3638,18 +3549,26 @@ async fn process_packet(
                                 ))
                                 .await;
 
-                            // A quest's after-duty scene the client asked for itself (back in its own zone.)
-                            if handler_id.handler_type() == HandlerType::Quest {
-                                let quest_id = handler_id.event_id() as u16;
-                                connection.after_duty_scenes.retain(|id| *id != quest_id);
+                            connection
+                                .start_event(
+                                    ObjectTypeId {
+                                        object_id: connection.player_data.character.actor_id,
+                                        object_type: ObjectTypeKind::None,
+                                    },
+                                    *handler_id,
+                                    EventType::EnterTerritory,
+                                    connection.player_data.volatile.zone_id as u32,
+                                    events,
+                                    lua_player,
+                                )
+                                .await;
+                            if let Some(event) = events.last_mut() {
+                                event.0.on_enter_territory(&event.1, lua_player).await;
+                            } else {
+                                tracing::warn!(
+                                    "No event started from EnterTerritoryEvent?! This probably means its missing a handler for its type."
+                                );
                             }
-                            start_enter_territory_event(
-                                connection,
-                                lua_player,
-                                events,
-                                *handler_id,
-                            )
-                            .await;
                         }
                         ClientZoneIpcData::Trade { sequence, .. } => {
                             // TODO: This needs a lot more research, but it's good enough for now to act as a stub to prevent client softlocks
@@ -5678,10 +5597,6 @@ async fn client_loop(
                 } else {
                     connection.layer_filter_check = None;
                 }
-            }
-            // Back from a cleared duty: a quest's zone-entry event the client didn't ask for (`after_duty_scenes`.)
-            _ = sleep_until_or_never(connection.after_duty_check), if connection.after_duty_check.is_some() => {
-                play_after_duty_scene(&mut connection, &mut lua_player, &mut events).await;
             }
             // A GATE beginning or ending (`gate.rs`), told to whoever is in the Gold Saucer.
             _ = tokio::time::sleep(gate_wait) => {

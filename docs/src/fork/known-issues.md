@@ -712,10 +712,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   shelf (3867912) after their patience, onto the sunken floor; they no longer go on to a floor deeper than they'd step
   down. The sunken floor still has gaps in its edge (x -34 to -32, -31 to -26, -21 to -14 at z 45) with nothing in
   Kawari's collision; whether retail has more there wasn't checked with the zone's shared groups.
-* A quest's zone-entry cutscene after a cleared duty plays where the player comes back to (`after_duty_scenes`, since
-  2026-11-03, Bob's call), not only in the step's own zone as the client asks for it; untested in game, and what retail
-  does when the player queued from elsewhere isn't recorded. A client that asks for it itself more than 3 s after
-  loading (`AFTER_DUTY_WAIT`) would get it twice.
+* Retail's clear of a story dungeon put the player at the dungeon's door (the quest's POPRANGE0) for Skeletons in Her
+  Closet and Into the Beast's Maw, whose next step is a cutscene in that zone; other quests with a dungeon and a
+  POPRANGE0 weren't checked. Kawari's ZoneInit there doesn't carry the pop range's ID (retail's did); the positions are
+  the captures'.
 * Haukke Manor's eye at the last room's door (since 2026-11-03): untested in game. Kawari doesn't send retail's
   opcode 942 `[the eye, 1]` (unknown), doesn't put the eye's health back to full as it flies (retail's did, over a
   second), and doesn't send ToggleWeapon off and SetBattle 0 at once (the eye and the party leave battle on their own as

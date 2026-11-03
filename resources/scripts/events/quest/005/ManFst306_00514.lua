@@ -8,7 +8,10 @@
 -- Sequence 1:   ACTOR1 (Bloisirant) talks (scene 2, which shows the dungeon's unlock image and the "new duty" log
 --               line): the Thousand Maws of Toto-Rak (INSTANCEDUNGEON0) are unlocked, notice 0, sequence 2.
 -- Sequence 2:   clearing it: retail moved it on as the player left the cleared duty (no notice, no variables,
---               sequence 3), which the server tells the script with onDutyCleared.
+--               sequence 3), which the server tells the script with onDutyCleared, and sent them to the dungeon's
+--               entrance in TERRITORYTYPE0 (POPRANGE0, pop range 4332862), not back where they entered from: both
+--               runs went in from the Quarrymill (40, 8, -10) and came out there (Bob's Chronofoil captures caa5e908
+--               and 1fac2416, visit 0.16's ZoneInit), as Skeletons in Her Closet's clear does from anywhere.
 -- Sequence 3:   back in TERRITORYTYPE0 (153, the South Shroud; onEnterTerritory) the cutscene plays (scene 4,
 --               0xF8402EFB, its zone-entry event): notice 2, sequence 255.
 -- Sequence 255: ACTOR0 rewards it (scene 5, a yield: QuestReward, 1 and the chosen item.)
@@ -47,9 +50,16 @@ function onTalk(target, player)
 end
 
 -- Leaving a duty the player cleared (its InstanceContent ID). Not an event of the quest's: nothing to finish.
+-- Where leaving the cleared duty puts the player (POPRANGE0): the two captures' ZoneInit and the player's own spawn
+-- there (rotation 14 of 65535.)
+MAWS_ENTRANCE = { x = -87.64, y = 3.30, z = -167.38 }
+MAWS_ENTRANCE_ROTATION = -3.1403
+
 function onDutyCleared(content_id, player)
     if player:get_quest_sequence(EVENT_ID) == 2 and content_id == INSTANCEDUNGEON0 then
         player:quest_sequence(EVENT_ID, 3)
+        -- At the entrance, where the client asks for the cutscene (onEnterTerritory.)
+        player:set_duty_exit(TERRITORYTYPE0, MAWS_ENTRANCE, MAWS_ENTRANCE_ROTATION)
     end
 end
 

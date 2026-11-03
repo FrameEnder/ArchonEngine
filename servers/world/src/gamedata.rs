@@ -2937,22 +2937,6 @@ impl GameData {
         })
     }
 
-    /// Whether a quest (its Quest row) has a zone-entry event in this sequence: a listener of event type
-    /// EnterTerritory (15), for which the client asks (`EnterTerritoryEvent`) as the player comes into the zone the
-    /// step is in. Skeletons in Her Closet's listener 5020000 in sequence 3 (its cutscene after Haukke Manor, in the
-    /// Central Shroud), Into a Copper Hell's in sequence 5.
-    pub fn quest_enters_territory(&mut self, quest_id: u32, sequence: u8) -> bool {
-        const ENTER_TERRITORY: u8 = 15; // EventType::EnterTerritory
-        let Some(row) = self.quest_sheet.row(quest_id) else {
-            return false;
-        };
-        row.QuestListenerParams.iter().any(|listener| {
-            listener.Listener != 0
-                && listener.QuestUInt8A == ENTER_TERRITORY
-                && listener.ActorSpawnSeq == sequence
-        })
-    }
-
     /// Whether the quest listens for an action used on this NPC or object in this sequence (a listener of event type
     /// ActionResult, 18: Trial by Water's wounded Wood Wailer in sequence 4.)
     pub fn quest_listens_for_action(&mut self, quest_id: u32, base_id: u32, sequence: u8) -> bool {

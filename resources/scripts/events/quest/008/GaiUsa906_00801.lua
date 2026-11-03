@@ -9,7 +9,9 @@
 --               EVENT_ACTION_TOUCH_MIDDLE's bar (retail's 5 s), then scene 3 (0x2001: the dungeon's unlock image and
 --               the "new duty" log line): Haukke Manor (INSTANCEDUNGEON0) unlocked, notice 0, sequence 2.
 -- Sequence 2:   clearing it: retail moved it on as the player left the cleared duty (no notice, no variables,
---               sequence 3), which the server tells the script with onDutyCleared.
+--               sequence 3), which the server tells the script with onDutyCleared, and sent them to the manor's
+--               front gate in TERRITORYTYPE0 (POPRANGE0), wherever they had queued from (Bob's Chronofoil capture
+--               25342d59, 2026-11-03: queued in New Gridania, ZoneInit to 148 with pop range 4332869.)
 -- Sequence 3:   back in TERRITORYTYPE0 (onEnterTerritory) CUT_SCENE_01 plays (scene 4, 0xF8402EFB, its zone-entry
 --               event): notice 2, sequence 4.
 -- Sequence 4:   ACTOR0 talks (scene 5): notice 3, sequence 255.
@@ -25,6 +27,11 @@ SCENE_REWARD = 6
 
 CUTSCENE_FLAGS = SET_BASE | HIDE_HOTBAR -- 0xF8402EFB on retail
 OBJECT_FLAGS = HIDE_HOTBAR | NO_DEFAULT_CAMERA -- 0x2001 on retail
+
+-- Where leaving the cleared duty puts the player (POPRANGE0, the manor's front gate): capture 25342d59's ZoneInit and the
+-- player's own spawn there (rotation 5018 of 65535.)
+MANOR_GATE = { x = -568.90, y = 67.01, z = 70.14 }
+MANOR_GATE_ROTATION = -2.6605
 
 NOTICE_UNLOCKED = 0
 NOTICE_AFTER_DUTY = 2
@@ -67,6 +74,8 @@ end
 function onDutyCleared(content_id, player)
     if player:get_quest_sequence(EVENT_ID) == 2 and content_id == INSTANCEDUNGEON0 then
         player:quest_sequence(EVENT_ID, 3)
+        -- Back at the manor's gate, where the client asks for the cutscene (onEnterTerritory.)
+        player:set_duty_exit(TERRITORYTYPE0, MANOR_GATE, MANOR_GATE_ROTATION)
     end
 end
 

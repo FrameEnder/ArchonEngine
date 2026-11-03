@@ -694,15 +694,14 @@ impl ZoneConnection {
         events: &mut Vec<(Box<dyn EventHandler>, Event)>,
         content_id: u16,
     ) {
-        let before: Vec<(u16, u8)> = self
+        let quest_ids: Vec<u16> = self
             .player_data
             .quest
             .active
             .0
             .iter()
-            .map(|quest| (quest.id, quest.sequence))
+            .map(|quest| quest.id)
             .collect();
-        let quest_ids: Vec<u16> = before.iter().map(|(id, _)| *id).collect();
         self.sync_lua_player(lua_player);
 
         for quest_id in quest_ids {
@@ -720,33 +719,6 @@ impl ZoneConnection {
 
         self.process_lua_player(lua_player, events).await;
         self.sync_lua_player(lua_player);
-
-        // A quest moved on to a zone-entry event (Skeletons in Her Closet's cutscene "back in" the Central Shroud,
-        // which shows the duty just finished): it plays where the player comes back to, whichever zone they queued
-        // from, not only when they next come into that zone, as the client would ask for it (Bob's call, 2026-11-03:
-        // he queued from New Gridania and the cutscene waited until he teleported to the Central Shroud.)
-        for (quest_id, sequence) in before {
-            let now = self
-                .player_data
-                .quest
-                .active
-                .0
-                .iter()
-                .find(|quest| quest.id == quest_id)
-                .map(|quest| quest.sequence);
-            if let Some(now) = now
-                && now != sequence
-                && self
-                    .game_data
-                    .lock()
-                    .quest_enters_territory(HandlerId::new(HandlerType::Quest, quest_id).0, now)
-            {
-                tracing::info!(
-                    "Quest {quest_id}: leaving the duty moved it on to its zone-entry event (sequence {now}), played where the player comes back to"
-                );
-                self.after_duty_scenes.push(quest_id);
-            }
-        }
     }
 
     /// Moves the EXP chain along for a kill that counts and returns its place in the chain (from 0), the window the
