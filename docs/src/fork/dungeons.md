@@ -459,14 +459,25 @@ falls, whichever it is (273 in one run, 274 in three): log 2069 with that one's 
 them with the same wall now makes one room of them (sealed by either's pull, opened as the last dies:
 `DirectorData::on_actor_death`).
 
-**The last room.** Past the stairs, coming to its door plays the cutscene (scene 3: 170, 1, 38, 1, 0); the door (2000357,
-closed from the start) opens with it, and the last boss (14504, 21063 HP) and 14505 (714 HP, untargetable by its
-display flags) are there 2.4 s later. The boss's pull seals the room (log 2012 `[608, 15]`, then the wall 2000357 again
-and 2013); 14505 joins in 15.4 s after the pull and 14506 (2142 HP) comes 34.0 s after it, the same to 0.1 s in all four
-runs whatever the boss's health (88, 47, 43, 55 %). Its death: log 2014, the walls (2000357, line 2001080) hidden, the
-exit shown, the clear rewards (log 9393 `[39000]`, the first clear's EXP, and 2163 `[4300, 3800]`, the first-timer
-bonus), cutscene 171 (1, 18, 0, 0), 14505 gone, coffer 79. Which event range is the cutscene's rect isn't known: the
-script takes any of the three by that door (3943563, 4105682, 9393269), once the stairs are open.
+**The eye at the last room's door** (275, 8568 HP, layout 3633689, in the corridor before it): it never dies. Below
+60 % (retail's four runs: 59.9, 58.1, 57.5 and 57.9 % by the hit that crossed it) it gives up the fight: ToggleWeapon off
+and SetBattle 0 from it, SetBattle 0 to the party, an unknown packet (opcode 942, `[the eye, 1]`), its cast cancelled
+(CancelCast `[537, 1, 514, 0]` in the run it was casting), its target dropped, its health back to full over the next
+second; it runs (speed 60) along the corridor to x 24.5-25.4, z 0 (1.7-2.6 yalms short of the door, at 22.8), 1.8 to 8 s
+depending on where it was. As it gets there the door (2000357) opens (SetEventState 7) and the director's cutscene
+starts at once (scene 3: 170, 1, 38, 1, 0); it drifts on through the doorway at a walk (speed 20) and is deleted 1.1-1.4
+s later. Kawari (`f1d2_re`, since 2026-11-03): below 60 % `set_invulnerable`, `set_notice` off and `retreat_bnpc` to
+(24.5, 17.07, 0); within a yalm of there (`onUpdate`'s `info`) it's held, walks on to x 23.3 (`move_bnpc`, speed 20),
+the door opens with the cutscene, and it's despawned 1.3 s later. Killed some other way, the door opens all the same.
+Before, the script waited for a player to come into an event range by the door, which they couldn't reach with it shut
+(Bob's bundle 20261103-121655: the eye killed, the door never opened).
+
+**The last room.** The door opening with the eye plays the cutscene (above); the last boss (14504, 21063 HP) and 14505
+(714 HP, untargetable by its display flags) are there 2.4 s later. The boss's pull seals the room (log 2012 `[608, 15]`,
+then the wall 2000357 again and 2013); 14505 joins in 15.4 s after the pull and 14506 (2142 HP) comes 34.0 s after it,
+the same to 0.1 s in all four runs whatever the boss's health (88, 47, 43, 55 %). Its death: log 2014, the walls
+(2000357, line 2001080) hidden, the exit shown, the clear rewards (log 9393 `[39000]`, the first clear's EXP, and 2163
+`[4300, 3800]`, the first-timer bonus), cutscene 171 (1, 18, 0, 0), 14505 gone, coffer 79.
 
 **The shortcut** (2000700): shown as the first boss is pulled, taking the party outside its hall (pop range 11438017;
 retail's warps put them at (-41.2, 0, 12.5)), and from the pair's pull outside theirs (11438018, (-30.8, -18.8, 0.4)).

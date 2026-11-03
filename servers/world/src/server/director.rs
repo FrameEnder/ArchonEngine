@@ -304,9 +304,12 @@ pub enum LuaDirectorTask {
     },
     /// A BNpc (actor ID or layout ID) gives up the fight and runs back to where it appeared, paying no attention to
     /// anyone (as an enemy leashed in the open world does; it keeps its health): Brotherly Love's beast as its friends
-    /// fell (Bob's Chronofoil capture 5fcc970c.)
+    /// fell (Bob's Chronofoil capture 5fcc970c.) With `to`, it runs there instead (its home from then on): Haukke
+    /// Manor's eye to the last room's door. A cast it's in the middle of is cancelled (CancelCast 537, as retail
+    /// cancelled the eye's 514.)
     RetreatBattleNpc {
         who: u32,
+        to: Option<glam::Vec3A>,
     },
     /// Make a BNpc (actor ID or layout ID) targetable or not (ActorControl `SetTargetable`, 54, to everyone around):
     /// the Thousand Maws of Toto-Rak's room bosses wait in their webs untargetable until their room's guards are down.
@@ -365,11 +368,13 @@ pub enum LuaDirectorTask {
         rotation: Option<f32>,
     },
     /// A BNpc (by actor ID, or layout ID) runs somewhere: one ActorMove there, which the client walks it along, as
-    /// retail's last Copperbell boss went to the arena's middle for 28760.
+    /// retail's last Copperbell boss went to the arena's middle for 28760. `speed` is the ActorMove's speed byte
+    /// (`JUMP_MOVE_SPEED` unless given; retail's walk is 20, its run 60.)
     MoveBattleNpc {
         who: u32,
         position: Position,
         rotation: f32,
+        speed: Option<u8>,
     },
     /// Make a BNpc (by actor ID) use an action on another actor (by actor ID), or on itself if there's none.
     ActorUseAction {
@@ -425,6 +430,9 @@ fn resolve_bnpc(instance: &Instance, who: u32) -> Option<ObjectId> {
 
 /// Retail's speed byte on the ActorMove that lands a jump (Kottos', Bob's Copperbell Mines captures of 2026-10-25.)
 const JUMP_MOVE_SPEED: u8 = 90;
+/// CancelCast's first parameter for a cast the director called off (`retreat_bnpc`): retail's for Haukke Manor's eye,
+/// its 514 cut short as it fled (Bob's Chronofoil capture 5d9c7d7f, the Duty Support run.)
+const RETREAT_CANCEL: u32 = 537;
 
 /// A BNpc to bring into view (`LuaDirectorTask::AppearBattleNpc`.)
 #[derive(Debug, Clone, Copy)]
@@ -979,10 +987,18 @@ impl UserData for LuaDirector {
             this.tasks.push(LuaDirectorTask::FadeOutBattleNpc { who });
             Ok(())
         });
-        methods.add_method_mut("retreat_bnpc", |_, this, who: u32| {
-            this.tasks.push(LuaDirectorTask::RetreatBattleNpc { who });
-            Ok(())
-        });
+        methods.add_method_mut(
+            "retreat_bnpc",
+            |_, this, (who, x, y, z): (u32, Option<f32>, Option<f32>, Option<f32>)| {
+                let to = match (x, y, z) {
+                    (Some(x), Some(y), Some(z)) => Some(glam::Vec3A::new(x, y, z)),
+                    _ => None,
+                };
+                this.tasks
+                    .push(LuaDirectorTask::RetreatBattleNpc { who, to });
+                Ok(())
+            },
+        );
         methods.add_method_mut(
             "set_targetable",
             |_, this, (who, targetable): (u32, bool)| {
@@ -1038,11 +1054,21 @@ impl UserData for LuaDirector {
         });
         methods.add_method_mut(
             "move_bnpc",
-            |_, this, (who, x, y, z, rotation): (u32, f32, f32, f32, Option<f32>)| {
+            |_,
+             this,
+             (who, x, y, z, rotation, speed): (
+                u32,
+                f32,
+                f32,
+                f32,
+                Option<f32>,
+                Option<u8>,
+            )| {
                 this.tasks.push(LuaDirectorTask::MoveBattleNpc {
                     who,
                     position: Position(glam::Vec3A::new(x, y, z)),
                     rotation: rotation.unwrap_or(0.0),
+                    speed,
                 });
                 Ok(())
             },
@@ -2793,7 +2819,12 @@ pub fn director_tick(
                             kawari::common::MoveAnimationType::empty(),
                             kawari::common::MoveAnimationState::None,
                             kawari::common::JumpState::NoneOrFalling,
-                            Some(JUMP_MOVE_SPEED),
+                            Some(match task {
+                                LuaDirectorTask::MoveBattleNpc {
+                                    speed: Some(speed), ..
+                                } => *speed,
+                                _ => JUMP_MOVE_SPEED,
+                            }),
                         ),
                         DestinationNetwork::ZoneClients,
                     );
@@ -2930,11 +2961,12 @@ pub fn director_tick(
             }
             // Expanded into `ShowEObj`s above.
             LuaDirectorTask::ShowExits => {}
-            LuaDirectorTask::RetreatBattleNpc { who } => {
+            LuaDirectorTask::RetreatBattleNpc { who, to } => {
                 let Some(actor_id) = resolve_bnpc(instance, *who) else {
                     tracing::warn!("Failed to find bnpc {who} to send back!");
                     continue;
                 };
+                let cancelled = instance.cancel_actor_casts(actor_id);
                 if let Some(NetworkedActor::Npc {
                     spawn,
                     state,
@@ -2952,6 +2984,9 @@ pub fn director_tick(
                     if *state == crate::server::NpcState::Dead {
                         continue;
                     }
+                    if let Some(to) = to {
+                        *home = *to;
+                    }
                     enmity.clear();
                     *state = crate::server::NpcState::natural_state_of(spawn);
                     *navmesh_target = Some(crate::server::actor::NpcTarget::Position(*home));
@@ -2962,7 +2997,20 @@ pub fn director_tick(
                     *cast = None;
                     spawn.common.target_id = ObjectTypeId::default();
                 }
-                network.lock().send_in_range_instance(
+                let mut network = network.lock();
+                for action_id in cancelled {
+                    network.send_ac_in_range_inclusive_instance(
+                        instance,
+                        actor_id,
+                        ActorControlCategory::CancelCast {
+                            unk1: RETREAT_CANCEL,
+                            unk2: 1,
+                            action_id,
+                            unk3: 0,
+                        },
+                    );
+                }
+                network.send_in_range_instance(
                     actor_id,
                     instance,
                     FromServer::ActorControlTarget(

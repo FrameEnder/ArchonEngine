@@ -695,8 +695,6 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   drops, the last fight's adds); no questkit command does that for a duty yet.
 * The script's name (`f1d2_re`, the ShortCode) is by analogy, not checked against the sheet: if the server log says
   `content/f1d2_re.lua` isn't found, the director has another name.
-* Which event range plays the last room's cutscene isn't known: any of the three at its door (3943563, 4105682, 9393269)
-  does, once the stairs are open. If none is a cutscene rect Kawari knows, nothing brings the last boss.
 * The way back up from the cellar (2012969) is taken to be a shortcut GimmickAccessor with its own pop range and line
   (Param1, Param2); if not, the script sends the party to pop range 9228207 itself. Which it is shows in the log only.
 * The keys 2000306-2000308 and the doors 2000331, 2000339 and 2000345 weren't used on retail; they're taken to work as
@@ -714,6 +712,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   shelf (3867912) after their patience, onto the sunken floor; they no longer go on to a floor deeper than they'd step
   down. The sunken floor still has gaps in its edge (x -34 to -32, -31 to -26, -21 to -14 at z 45) with nothing in
   Kawari's collision; whether retail has more there wasn't checked with the zone's shared groups.
+* Haukke Manor's eye at the last room's door (since 2026-11-03): untested in game. Kawari doesn't send retail's
+  opcode 942 `[the eye, 1]` (unknown), doesn't put the eye's health back to full as it flies (retail's did, over a
+  second), and doesn't send ToggleWeapon off and SetBattle 0 at once (the eye and the party leave battle on their own as
+  its enmity goes).
 * Haukke Manor's doors: untested since the open ones are left open (collision version 5). That a door placed `Open`
   leaves out only its collision boxes is from the doorways' boxes in Kawari's collision (two faces 0.225 apart, 4.6
   wide, 10.5 high, with a box's material 0) and the layout's door states, not from the door's `.sgb` (not seen): a door

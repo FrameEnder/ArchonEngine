@@ -7,8 +7,8 @@
 --
 -- The manor's doors open with its keys: the plain ones with any of the keys lying about (each used up), three with a
 -- key of their own: the first boss's, the one lying in the cellar and the pair's. The first boss stands in its hall from
--- the start; the cellar's door brings the pair out; the pair's key opens the stairs up, and coming to the last room
--- plays its cutscene and brings the last boss with its two adds.
+-- the start; the cellar's door brings the pair out; the pair's key opens the stairs up, and the eye before the last
+-- room's door, worn down, flies to the door and opens it: the room's cutscene, and the last boss with its two adds.
 
 -- The director's variables (DirectorVars; retail's sequence was 1 throughout): data 0 counts the keys held, data 1 the
 -- other keys found (1 the first boss's, 4 the cellar's, 2 the pair's.)
@@ -85,8 +85,20 @@ BNPC_FINAL_ADD2_COMES = 34.0
 FINAL_WALL = 2000357
 FINAL_LINE = 2001080
 PLACE_FINAL = 608
--- The event ranges at the last room's door (one of them is the cutscene's rect: which isn't known.)
-FINAL_RANGES = { [3943563] = true, [4105682] = true, [9393269] = true }
+
+-- The floating eye before the last room's door (BNpcBase 275): below 60 % it gives up the fight and flies to the door
+-- (retail's four runs: at 57.5-59.9 %, its cast cancelled, the party out of battle), running there (speed 60) along the
+-- corridor; as it gets there the door opens (state 7), the last room's cutscene plays and the boss and its first add
+-- are there; it drifts on through the doorway at a walk (speed 20) and is gone 1.1-1.4 s after the door opened.
+-- Where it stopped running: x 24.5-25.4, z 0 (1.7-2.6 yalms short of the door, at 22.8); where it drifted to, about
+-- x 23.3.
+BNPC_DOOR_EYE = 3633689
+DOOR_EYE_FLEES_BELOW = 60
+DOOR_EYE_GOES_TO = { x = 24.5, y = 17.07, z = 0.0 }
+DOOR_EYE_THERE = 1.0
+DOOR_EYE_DRIFTS_TO = { x = 23.3, y = 17.07, z = 0.0 }
+DOOR_EYE_WALK = 20
+DOOR_EYE_GONE_AFTER = 1.3
 
 -- The shortcut (2000700, by the entrance) is shown as the first boss is pulled; it takes you outside the first boss's
 -- hall, then (from the pair's pull) outside the cellar's room (pop ranges 11438017 and 11438018, where retail's warps
@@ -134,7 +146,7 @@ found = 0
 boss1_pulled = false
 pair_pulled = false
 pair_left = 2
-stairs_opened = false
+eye_fled = false
 final_started = false
 final_pulled = false
 
@@ -191,6 +203,10 @@ function pulled(info, id)
     return info ~= nil and info[id] ~= nil and info[id].target ~= nil
 end
 
+function flat_distance(a, b)
+    return math.sqrt((a.x - b.x) ^ 2 + (a.z - b.z) ^ 2)
+end
+
 function onUpdate(director, health, player_health, info)
     if not boss1_pulled and pulled(info, BNPC_BOSS1) then
         boss1_pulled = true
@@ -208,6 +224,26 @@ function onUpdate(director, health, player_health, info)
                 break
             end
         end
+    end
+
+    -- The eye, worn down, flies to the last room's door, and opens it as it gets there.
+    if not eye_fled and health ~= nil and health[BNPC_DOOR_EYE] ~= nil and health[BNPC_DOOR_EYE] < DOOR_EYE_FLEES_BELOW then
+        eye_fled = true
+        director:set_invulnerable(BNPC_DOOR_EYE, true)
+        director:set_notice(BNPC_DOOR_EYE, false)
+        director:retreat_bnpc(BNPC_DOOR_EYE, DOOR_EYE_GOES_TO.x, DOOR_EYE_GOES_TO.y, DOOR_EYE_GOES_TO.z)
+    end
+    local eye = info ~= nil and info[BNPC_DOOR_EYE] or nil
+    if eye_fled and not final_started and eye ~= nil
+        and flat_distance(eye, DOOR_EYE_GOES_TO) <= DOOR_EYE_THERE then
+        director:hold_bnpc(BNPC_DOOR_EYE)
+        local facing = math.atan(DOOR_EYE_DRIFTS_TO.x - eye.x, DOOR_EYE_DRIFTS_TO.z - eye.z)
+        director:move_bnpc(BNPC_DOOR_EYE, DOOR_EYE_DRIFTS_TO.x, DOOR_EYE_DRIFTS_TO.y, DOOR_EYE_DRIFTS_TO.z, facing,
+            DOOR_EYE_WALK)
+        startFinal(director)
+        director:delay(DOOR_EYE_GONE_AFTER)
+        director:despawn_bnpc(BNPC_DOOR_EYE)
+        director:delay(0)
     end
 
     if final_started and not final_pulled and pulled(info, BNPC_FINAL) then
@@ -245,6 +281,9 @@ function onActorDeath(director, bnpc_id, position)
             end
             director:party_npc_yell("ranged", LINE_PAIR)
         end
+    elseif bnpc_id == BNPC_DOOR_EYE and not final_started then
+        -- Killed before it fled (it never was on retail): the door opens all the same.
+        startFinal(director)
     elseif bnpc_id == BNPC_FINAL then
         director:despawn_bnpc(BNPC_FINAL_ADD)
         director:spawn_treasure(FINAL_COFFER)
@@ -315,7 +354,6 @@ function onEventActionCast(director, actor_id, target)
             director:spawn_bnpc(id)
         end
     elseif target == EOBJ_STAIRS then
-        stairs_opened = true
         director:log_message(LOG_STAIRS, { 0 })
     else
         return
@@ -325,9 +363,9 @@ function onEventActionCast(director, actor_id, target)
     sendVars(director)
 end
 
--- Coming to the last room: its cutscene, its wall opens, and the last boss and its first add are there.
-function onGimmickRect(director, target)
-    if final_started or not stairs_opened or not FINAL_RANGES[target] then
+-- The eye at the last room's door: the door opens, its cutscene, and the last boss and its first add are there.
+function startFinal(director)
+    if final_started then
         return
     end
     final_started = true
