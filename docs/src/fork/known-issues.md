@@ -431,6 +431,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   game data where it was written; 2 yalms if it's 0): the server log says the radius and what it landed on at each
   throw ("Key item … landed at …"). Retail's Condition 4 (casting) during the bar isn't sent, and whether moving
   cancels the bar wasn't seen (Kawari doesn't).
+* Collision that's a simple shape (`kawari-navimesh`, since 2026-11-02) is placed as vnavmesh places it and checked
+  against Haukke Manor's `bg.lgb` only (three walls, by their numbers); untested in game anywhere. Every zone's navmesh
+  and collision are made again the first time it's entered after the update (collision version 4), which takes a while
+  for open-world zones. What the shapes' materials mean (Haukke Manor's are 0x1000-0x17005, mask 0xFFFFFFFF) isn't
+  known: all of them are kept, as walls and floors, so a shape that's only for the camera or for flying would stop
+  walkers wrongly.
 * `kawari-navimesh` can't make the Waking Sands' navmesh (territory 212, `wil_w1/evt/w1e6`): its level's bg path is empty, so it looks for `/collision/list.pcb` and panics (Bob's bundle 20261101-211113). Only the tool stops, run again at each visit; the world server goes on without a navmesh there (no enemies to move).
 * Paralysis's durations came down 30, 15, 7 s as it was put on the same actor again (and once 3), which Kawari doesn't do; its chance (one roll in two) is the same whatever gave it. Whether a damage-over-time tick interrupts a progress bar wasn't seen.
 * The quests from captures 9df4ff01 and 3a705e18 (743-763, 1104; 2026-10-30) are untested in game. So are 765 and 774-776 (capture a0149e5e, 2026-10-31) and 777, 778 and 782 (capture 20ef0e90, 2026-10-31; replayed against two more characters' runs, captures 9faa9bac and bd51ca23: the same steps). Big Trouble in Little Ala Mhigo's (782) bystanders in sequence 3 (ACTOR6-10, which the client accepts talks with) have no scenes: which of its scenes 14-20 belong to whom isn't known, and retail's talks to them weren't recorded; Bertliana's (9, 12, 21) flags are a guess (0x2000). In Wilred Wants You (778) ENEMY0 fell first in all three runs; talking to Wilred again after one has fallen brings it out again (either counts, as the client's script accepts both while UI8AL is below 2; what retail does then wasn't seen); He Ain't Heavy's enemy's 405 (a placed cast) takes its shape from the Action sheet, unchecked, and its 130 is one hit of two. Believe in Your Sylph's lookout
@@ -697,12 +703,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   isn't sent. 2000324 (the first boss's key) is spawned with its layout ID (retail: 0).
 * Duty Support's Lancer (41) at 28 has a guessed 779 HP. Not done: what the last boss's 28640, 28644 and 28649 and the
   eyes' gazes (513, 29709, 29710) do; the director events 0x40000007 and 0x80000004; wiki loot pools.
-* **Kawari's collision has no barrier along a sunken space by the west wing** (Bob's navmesh and collision of
-  2026-11-02): the ground floor at x -34 to -18, z 16 to 44 is at -3.2, with a strip down to the cellar at z 36, and the
-  edge at z 45 has no wall; the navmesh goes round it, and no retail player was ever there above the cellar. Walkers
-  no longer drop off their path's height there, but whatever closes it on retail (most likely a BgPart whose collision
-  is an analytic box or cylinder: `kawari-navimesh` reads BgParts' collision only when it's `Replace`, and logged
-  "Cylinder collision is not yet supported" twice) isn't in the collision. Checking needs the zone's `bg.lgb`.
+* **The sunken space by the west wing** (the ground floor at x -34 to -18, z 16 to 44, at -3.2, with a strip down to the
+  cellar at z 36): its edge at z 45 is closed by invisible walls whose collision is a simple shape (BgParts 3819851,
+  3819852 and 3867912: boxes 5.4 and 3.9 yalms high), which `kawari-navimesh` left out before 2026-11-02. They're in the
+  collision now (version 4: [Combat: walking on the collision](combat.md#walking-on-the-collision)); untested in game.
 * With party bots (a Duty Finder run, 2026-11-02): the tank and three enemies ended in the cellar under the player,
   whom the enemies' area attacks there hit through the floor, and he died. Fixed as above (area attacks' height, the
   path's drop, the doors sealed); untested in game.

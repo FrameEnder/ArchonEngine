@@ -11,7 +11,10 @@ use kawari::config::get_config;
 use kawari_world::{Navmesh, NavmeshParams, NavmeshTile, collision::Collision};
 use physis::{
     Language,
-    layer::{Layer, LayerEntryData, ModelCollisionType, TriggerBoxShape},
+    layer::{
+        AnalyticCollider, AnalyticColliderType, Layer, LayerEntryData, ModelCollisionType,
+        TriggerBoxShape,
+    },
     lgb::Lgb,
     lvb::Lvb,
     pcb::{ListEntry, Node, Pcb, Polygon},
@@ -535,6 +538,158 @@ struct Tile {
 }
 
 /// Walk each node, add it's collision model to the scene (as `owner`'s gimmick, if it isn't 0.)
+/// A simple shape's mesh, as the game draws its collision: a box and a cylinder from -1 to 1 on each axis (the
+/// cylinder upright, 16 sides), a sphere of radius 1, a plane from -1 to 1 across x and y at z 0.
+fn unit_shape(shape: Shape) -> (Vec<[f32; 3]>, Vec<[u32; 3]>) {
+    use std::f32::consts::TAU;
+    match shape {
+        Shape::Box => {
+            let vertices = vec![
+                [-1.0, -1.0, -1.0],
+                [-1.0, -1.0, 1.0],
+                [1.0, -1.0, -1.0],
+                [1.0, -1.0, 1.0],
+                [-1.0, 1.0, -1.0],
+                [-1.0, 1.0, 1.0],
+                [1.0, 1.0, -1.0],
+                [1.0, 1.0, 1.0],
+            ];
+            let triangles = vec![
+                [0, 2, 1],
+                [1, 2, 3],
+                [5, 7, 4],
+                [4, 7, 6],
+                [0, 1, 4],
+                [4, 1, 5],
+                [2, 6, 3],
+                [3, 6, 7],
+                [0, 4, 2],
+                [2, 4, 6],
+                [1, 3, 5],
+                [5, 3, 7],
+            ];
+            (vertices, triangles)
+        }
+        Shape::Cylinder => {
+            const SIDES: u32 = 16;
+            let mut vertices = Vec::new();
+            for i in 0..SIDES {
+                let angle = i as f32 * TAU / SIDES as f32;
+                vertices.push([angle.cos(), -1.0, angle.sin()]);
+                vertices.push([angle.cos(), 1.0, angle.sin()]);
+            }
+            let (bottom, top) = (SIDES * 2, SIDES * 2 + 1);
+            vertices.push([0.0, -1.0, 0.0]);
+            vertices.push([0.0, 1.0, 0.0]);
+            let mut triangles = Vec::new();
+            for i in 0..SIDES {
+                let (a, b) = (i * 2, ((i + 1) % SIDES) * 2);
+                triangles.push([a, b, a + 1]);
+                triangles.push([a + 1, b, b + 1]);
+                triangles.push([b, a, bottom]);
+                triangles.push([a + 1, b + 1, top]);
+            }
+            (vertices, triangles)
+        }
+        Shape::Sphere => {
+            const SIDES: u32 = 16;
+            const RINGS: u32 = 7;
+            let mut vertices = vec![[0.0, -1.0, 0.0], [0.0, 1.0, 0.0]];
+            for ring in 1..=RINGS {
+                let pitch = -TAU / 4.0 + ring as f32 * (TAU / 2.0) / (RINGS + 1) as f32;
+                for i in 0..SIDES {
+                    let angle = i as f32 * TAU / SIDES as f32;
+                    vertices.push([
+                        pitch.cos() * angle.cos(),
+                        pitch.sin(),
+                        pitch.cos() * angle.sin(),
+                    ]);
+                }
+            }
+            let at = |ring: u32, i: u32| 2 + (ring - 1) * SIDES + i % SIDES;
+            let mut triangles = Vec::new();
+            for i in 0..SIDES {
+                triangles.push([0, at(1, i + 1), at(1, i)]);
+                triangles.push([1, at(RINGS, i), at(RINGS, i + 1)]);
+                for ring in 1..RINGS {
+                    triangles.push([at(ring, i), at(ring, i + 1), at(ring + 1, i)]);
+                    triangles.push([at(ring + 1, i), at(ring, i + 1), at(ring + 1, i + 1)]);
+                }
+            }
+            (vertices, triangles)
+        }
+        Shape::Plane => (
+            vec![
+                [-1.0, 1.0, 0.0],
+                [-1.0, -1.0, 0.0],
+                [1.0, -1.0, 0.0],
+                [1.0, 1.0, 0.0],
+            ],
+            vec![[0, 1, 2], [0, 2, 3]],
+        ),
+    }
+}
+
+/// The simple shapes collision can be (a BgPart's analytic collider, a collision box without a mesh.)
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Shape {
+    Box,
+    Cylinder,
+    Sphere,
+    Plane,
+}
+
+/// Adds a simple shape's collision, placed by `transform`.
+fn add_shape(
+    shape: Shape,
+    transform: &Affine3A,
+    owner: u32,
+    material: u64,
+    geometry: &mut Geometry,
+) {
+    let (vertices, triangles) = unit_shape(shape);
+    let first = geometry.vertices.len() as u32;
+    for vertex in vertices {
+        let transformed = transform.transform_point3a(Vec3A::from(vertex));
+        geometry
+            .vertices
+            .push([transformed.x, transformed.y, transformed.z]);
+    }
+    for triangle in triangles {
+        geometry.triangles.push([
+            first + triangle[0],
+            first + triangle[1],
+            first + triangle[2],
+        ]);
+        geometry.owners.push(owner);
+        geometry.materials.push(material);
+    }
+}
+
+/// Where a BgPart's analytic collider is (its shape, and its transform from the unit shape to the world): the
+/// collider's bounds give its size (half their extent) and middle, then its own transform, then the BgPart's
+/// (`part`). A cylinder is as deep as it is wide. The order and the cylinder's depth as vnavmesh's SceneExtractor has
+/// them (github.com/awgil/ffxiv_navmesh, read for how the client places them, not copied.) None for a type with no
+/// shape.
+fn analytic_shape(collider: &AnalyticCollider, part: &Affine3A) -> Option<(Shape, Affine3A)> {
+    let shape = match collider.collider_type {
+        AnalyticColliderType::Box => Shape::Box,
+        AnalyticColliderType::Cylinder => Shape::Cylinder,
+        AnalyticColliderType::Sphere => Shape::Sphere,
+        AnalyticColliderType::Plane => Shape::Plane,
+        AnalyticColliderType::None => return None,
+    };
+    let min = glam::Vec3::from(collider.bounds.min);
+    let max = glam::Vec3::from(collider.bounds.max);
+    let mut half = (max - min) * 0.5;
+    if shape == Shape::Cylinder {
+        half.z = half.x;
+    }
+    let bounds =
+        Affine3A::from_scale_rotation_translation(half, glam::Quat::IDENTITY, (min + max) * 0.5);
+    Some((shape, *part * Affine3A::from(collider.transform) * bounds))
+}
+
 fn walk_node(node: &Node, transform: &Affine3A, owner: u32, geometry: &mut Geometry) {
     if !node.vertices.is_empty() {
         let first = geometry.vertices.len() as u32;
@@ -600,7 +755,16 @@ fn walk_layer(
 
         match &object.data {
             LayerEntryData::BgPart(bg_part) => {
-                if !bg_part.collision_asset_path.value.is_empty()
+                // Collision that's a simple shape (Bob's Haukke Manor bg.lgb, 2026-11-02: 569 of its 1199 BgParts
+                // with collision, among them the invisible walls by its west wing's sunken space, which walkers fell
+                // through to the cellar without.)
+                if bg_part.collision_type == ModelCollisionType::Box
+                    && let Some(collider) = &bg_part.analytic_collider
+                {
+                    if let Some((shape, placed)) = analytic_shape(collider, &child_transform) {
+                        add_shape(shape, &placed, owner, collider.material_id as u64, geometry);
+                    }
+                } else if !bg_part.collision_asset_path.value.is_empty()
                     && bg_part.collision_type == ModelCollisionType::Replace
                 {
                     let Pcb::Mesh(pcb) = resolver
@@ -700,17 +864,14 @@ fn walk_layer(
                             walk_node(&mesh, &child_transform, owner, geometry);
                         }
                         TriggerBoxShape::Sphere => {
-                            tracing::warn!("Sphere collision is not yet supported!")
+                            add_shape(Shape::Sphere, &child_transform, owner, 0, geometry)
                         }
                         TriggerBoxShape::Cylinder => {
-                            tracing::warn!("Cylinder collision is not yet supported!")
-                        }
-                        TriggerBoxShape::Plane => {
-                            tracing::warn!("Plane collision is not yet supported!")
+                            add_shape(Shape::Cylinder, &child_transform, owner, 0, geometry)
                         }
                         TriggerBoxShape::Mesh => unreachable!(),
-                        TriggerBoxShape::PlaneTwoSided => {
-                            tracing::warn!("Plane two-sided collision is not yet supported!")
+                        TriggerBoxShape::Plane | TriggerBoxShape::PlaneTwoSided => {
+                            add_shape(Shape::Plane, &child_transform, owner, 0, geometry)
                         }
                     }
                 }
@@ -738,5 +899,121 @@ fn walk_layer(
             }
             _ => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use physis::{AABB, layer::Transformation};
+
+    fn collider(
+        collider_type: AnalyticColliderType,
+        min: [f32; 3],
+        max: [f32; 3],
+    ) -> AnalyticCollider {
+        AnalyticCollider {
+            material_mask: 0xFFFF_FFFF,
+            material_id: 0x3005,
+            unk1: 0,
+            unk2: 0,
+            collider_type,
+            transform: Transformation {
+                translation: [0.0; 3],
+                rotation: [0.0; 3],
+                scale: [1.0; 3],
+            },
+            bounds: AABB { min, max },
+        }
+    }
+
+    /// The corners of a placed shape's collision: its lowest x, y, z and its highest.
+    fn extent(shape: Shape, transform: &Affine3A) -> ([f32; 3], [f32; 3]) {
+        let mut geometry = Geometry {
+            vertices: Vec::new(),
+            triangles: Vec::new(),
+            owners: Vec::new(),
+            materials: Vec::new(),
+        };
+        add_shape(shape, transform, 9, 0x3005, &mut geometry);
+        assert!(geometry.owners.iter().all(|owner| *owner == 9));
+        assert!(
+            geometry
+                .materials
+                .iter()
+                .all(|material| *material == 0x3005)
+        );
+        let (mut low, mut high) = ([f32::MAX; 3], [f32::MIN; 3]);
+        for vertex in &geometry.vertices {
+            for axis in 0..3 {
+                low[axis] = low[axis].min(vertex[axis]);
+                high[axis] = high[axis].max(vertex[axis]);
+            }
+        }
+        (low, high)
+    }
+
+    fn close(a: [f32; 3], b: [f32; 3]) -> bool {
+        a.iter().zip(b).all(|(a, b)| (a - b).abs() < 0.01)
+    }
+
+    #[test]
+    fn a_turned_box_is_where_the_game_has_it() {
+        // Haukke Manor's BgPart 3867912 (Bob's bg.lgb, 2026-11-02), a wall by the west wing's sunken space: turned a
+        // quarter round, its bounds' 3.1 yalms across x run along z in the world.
+        let part = Affine3A::from(Transformation {
+            translation: [-32.39, 0.0, 47.12],
+            rotation: [0.0, 1.5705, 0.0],
+            scale: [1.0; 3],
+        });
+        let box_collider = collider(
+            AnalyticColliderType::Box,
+            [-1.549, 0.0, 0.0],
+            [1.549, 3.895, 1.355],
+        );
+        let (shape, placed) = analytic_shape(&box_collider, &part).unwrap();
+        assert_eq!(shape, Shape::Box);
+        let (low, high) = extent(shape, &placed);
+        assert!(close(low, [-32.39, 0.0, 45.571]), "{low:?}");
+        assert!(close(high, [-31.035, 3.895, 48.669]), "{high:?}");
+    }
+
+    #[test]
+    fn a_cylinder_is_as_deep_as_it_is_wide() {
+        let cylinder = collider(
+            AnalyticColliderType::Cylinder,
+            [-2.0, 0.0, -0.5],
+            [2.0, 3.0, 0.5],
+        );
+        let (shape, placed) = analytic_shape(&cylinder, &Affine3A::IDENTITY).unwrap();
+        assert_eq!(shape, Shape::Cylinder);
+        let (low, high) = extent(shape, &placed);
+        assert!(close(low, [-2.0, 0.0, -2.0]), "{low:?}");
+        assert!(close(high, [2.0, 3.0, 2.0]), "{high:?}");
+        assert!(
+            analytic_shape(
+                &collider(AnalyticColliderType::None, [0.0; 3], [1.0; 3]),
+                &Affine3A::IDENTITY
+            )
+            .is_none()
+        );
+    }
+
+    #[test]
+    fn a_plane_is_one_quad() {
+        let (vertices, triangles) = unit_shape(Shape::Plane);
+        assert_eq!((vertices.len(), triangles.len()), (4, 2));
+        let (vertices, triangles) = unit_shape(Shape::Sphere);
+        assert!(
+            triangles
+                .iter()
+                .flatten()
+                .all(|index| (*index as usize) < vertices.len())
+        );
+        assert!(
+            vertices
+                .iter()
+                .all(|v| (Vec3A::from(*v).length() - 1.0).abs() < 1e-5)
+        );
     }
 }

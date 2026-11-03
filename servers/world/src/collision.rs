@@ -20,6 +20,11 @@
 //! **Materials.** Each triangle keeps its PCB polygon's material (since version 3), which says what the floor is: the
 //! Thousand Maws of Toto-Rak's slime is its own surface, and standing on it gives a status (`server/status_floor.rs`).
 //! Version 2 files (no materials) are still read; a zone that needs them has its navmesh made again.
+//!
+//! **Simple shapes.** Since version 4 the collision has the layouts' BgParts whose collision is a simple shape (a box,
+//! a cylinder, a sphere or a plane: their analytic collider, 569 of Haukke Manor's 1199 BgParts with collision) and the
+//! collision boxes of those shapes too; before, only meshes and boxes. Older files are still read, and each zone's
+//! navmesh and collision are made again the first time it's entered (`is_older`.)
 
 use std::sync::{Arc, Mutex, OnceLock, Weak};
 use std::{collections::HashMap, path::Path};
@@ -28,7 +33,9 @@ use glam::Vec3A;
 
 /// The file's first bytes, and the layout's version.
 const MAGIC: &[u8; 4] = b"KCOL";
-const VERSION: u32 = 3;
+const VERSION: u32 = 4;
+/// The version before the simple shapes, still read (the same layout.)
+const VERSION_WITHOUT_SHAPES: u32 = 3;
 /// The version before materials, still read (without them.)
 const VERSION_WITHOUT_MATERIALS: u32 = 2;
 
@@ -75,6 +82,8 @@ pub struct Collision {
     gone: Vec<bool>,
     /// Which gimmicks the director has put up here (shown: a boss room sealed), which nobody gets through.
     sealed: Vec<bool>,
+    /// The file's version (`VERSION` for one built here.)
+    version: u32,
 }
 
 /// Where a walk got to, and whether something stopped it before the end.
@@ -168,6 +177,7 @@ impl Collision {
             gimmicks: gimmicks.into(),
             owners: owners.into(),
             materials: materials.into(),
+            version: VERSION,
             ..Default::default()
         };
 
@@ -267,7 +277,7 @@ impl Collision {
             return None;
         }
         let version = r.u32()?;
-        if version != VERSION && version != VERSION_WITHOUT_MATERIALS {
+        if ![VERSION, VERSION_WITHOUT_SHAPES, VERSION_WITHOUT_MATERIALS].contains(&version) {
             return None;
         }
         let climb = r.f32()?;
@@ -326,7 +336,7 @@ impl Collision {
             owners.push(owner);
         }
         let mut materials = Vec::new();
-        if version == VERSION {
+        if version >= VERSION_WITHOUT_SHAPES {
             materials.reserve(triangle_count);
             for _ in 0..triangle_count {
                 materials.push(r.u64()?);
@@ -349,6 +359,7 @@ impl Collision {
             gimmicks: gimmicks.into(),
             owners: owners.into(),
             materials: materials.into(),
+            version,
         };
         collision.find_floors();
         Some(collision)
@@ -361,9 +372,9 @@ impl Collision {
         let path = path_for(nvm_path);
         let key = path.to_string_lossy().to_string();
         let mut loaded = LOADED.get_or_init(Default::default).lock().ok()?;
-        // One already loaded, unless it's an older one without materials that's been made again since.
+        // One already loaded, unless it's an older one that's been made again since.
         if let Some(collision) = loaded.get(&key).and_then(Weak::upgrade)
-            && (collision.has_materials() || !is_current(&path))
+            && (!collision.is_older() || !is_current(&path))
         {
             return Some(collision);
         }
@@ -452,6 +463,12 @@ impl Collision {
             }
         }
         best
+    }
+
+    /// Whether it's from an older file, made before the simple shapes were in it (version 3 or 2): the zone's navmesh
+    /// and collision are made again.
+    pub fn is_older(&self) -> bool {
+        self.version < VERSION
     }
 
     /// Whether the file had the triangles' materials (version 3 on.)
@@ -939,7 +956,15 @@ mod tests {
         old.truncate(old.len() - 8 * built.triangles.len());
         let c = Collision::from_bytes(&old).unwrap();
         assert!(!c.has_materials());
+        assert!(c.is_older());
         assert_eq!(c.floor_material(3.0, 3.0, 0.7, -0.3), Some((0.2, 0)));
+
+        // A version 3 file (before the simple shapes) reads with its materials, and is made again.
+        let mut three = built.to_bytes();
+        three[4..8].copy_from_slice(&3u32.to_le_bytes());
+        let c = Collision::from_bytes(&three).unwrap();
+        assert!(c.has_materials() && c.is_older());
+        assert!(!Collision::from_bytes(&built.to_bytes()).unwrap().is_older());
     }
 
     #[test]

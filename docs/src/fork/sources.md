@@ -167,6 +167,18 @@ Bob's glamour bundle, all 2026-10-27. Numbers only go in the code, with a commen
   [karashiiro/FFXIVOpcodes](https://github.com/karashiiro/FFXIVOpcodes): packet structs and opcodes per patch, for
   checking ours (FFXIVOpcodes is updated irregularly; check its date).
 
+### vnavmesh
+
+[awgil/ffxiv_navmesh](https://github.com/awgil/ffxiv_navmesh) is a Dalamud plugin that builds a navmesh from the
+zone's collision as the client has it loaded (its `SceneDefinition.cs` and `SceneExtractor.cs`). The repository has no
+licence, so it's read for how the game's collision is put together, never copied.
+
+* **Answers**: how a BgPart's analytic collider (a box, cylinder, sphere or plane) is placed: half its bounds' extent
+  and their middle, then its own transform, then the BgPart's; a cylinder is as deep as it is wide. How the game's
+  material ID and mask are 64 bits (two 32-bit halves). Used for `kawari-navimesh`'s simple shapes (2026-11-02).
+* **Limits**: it works on the client's loaded scene, not on the files; Kawari's builder reads the LGB, so the two can
+  differ (a layer the client hasn't loaded, a shape's unknown fields).
+
 ### Wikis
 
 * [Console Games Wiki](https://ffxiv.consolegameswiki.com): dungeon and trial guides that describe each boss's

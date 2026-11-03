@@ -141,8 +141,8 @@ touched; on past it`).
 
 **Not off a ledge its way doesn't go** (2026-11-02, Bob's Haukke Manor bundle): a bot steps down only as far as its
 path goes down and 3 yalms more (`npc_behavior::path_max_drop`), not as far as a player can drop. The tank bot, cutting
-a corner of its path at (-32, 0, 45) into a sunken space beside it (floor at -3.2: Kawari's collision has no railing
-there), went on down to the cellar 18.8 yalms under the player, with the enemies after it. A duty's director shows its
+a corner of its path at (-32, 0, 45) into a sunken space beside it (floor at -3.2: Kawari's collision had no railing
+there, as its invisible walls are simple shapes, in the collision since the same day), went on down to the cellar 18.8 yalms under the player, with the enemies after it. A duty's director shows its
 closed doors at the start (Haukke Manor's `f1d2_re`) so they're sealed gimmicks, which bots and enemies don't walk
 through; the tank had gone up through the locked stairs right after the player was refused.
 

@@ -403,6 +403,11 @@ ShortCode by analogy with `f1d1_re` (not checked against the sheet: the server l
 found); the drop-in's LGB is `bg/ffxiv/fst_f1/dun/f1d2/level/planmap.lgb` (Bob's dump of it, 2026-11-02, has the
 event objects, pop ranges, event ranges and coffers named below).
 
+**Its invisible walls.** The edge of the sunken space by the west wing (z 45, x -32 to -21) is closed by BgParts whose
+collision is a simple shape (3819851, 3819852: boxes 2.4 yalms wide, 5.4 high; 3867912: 3.1 wide, 3.9 high), from
+Bob's `bg.lgb` (2026-11-02). Kawari's collision has them since collision version 4; before, the tank bot and three
+enemies walked off that edge to the cellar ([Party bots](party-bots.md)).
+
 **Enemies.** `questkit chronofoil --dropin 1040` over the two captures gave the 57 battle NPCs seen (level 28; trash
 2420 HP, 276 1210). The pair (273, 274) and the last boss with its adds (14504, 14505, 14506) are `nonpop`: the
 director spawns them; the first boss (272) and the floating eyes (275, 14698) stand from the start. Every kind has a
