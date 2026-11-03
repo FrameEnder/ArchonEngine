@@ -10,12 +10,12 @@ use kawari::{
 };
 
 use crate::{
-    ArcadeMachineEventHandler, ContentEntryEventHandler, ContentEventHandler, CraftingEventHandler,
-    FateEventHandler, FishingEventHandler, GameData, GateEventHandler, GatheringEventHandler,
-    GimmickAccessorEventHandler, GimmickBillEventHandler, GimmickRectEventHandler,
-    GrandCompanyShopEventHandler, InclusionShopEventHandler, JumboCactpotEventHandler,
-    LuaEventHandler, MaterializeEventHandler, MiniCactpotEventHandler, ShopEventHandler,
-    SpecialShopEventHandler, ZoneConnection,
+    ArcadeMachineEventHandler, ContentEntryEventHandler, ContentEventHandler,
+    ContentNpcEventHandler, CraftingEventHandler, FateEventHandler, FishingEventHandler, GameData,
+    GateEventHandler, GatheringEventHandler, GimmickAccessorEventHandler, GimmickBillEventHandler,
+    GimmickRectEventHandler, GrandCompanyShopEventHandler, InclusionShopEventHandler,
+    JumboCactpotEventHandler, LuaEventHandler, MaterializeEventHandler, MiniCactpotEventHandler,
+    ShopEventHandler, SpecialShopEventHandler, ZoneConnection,
 };
 
 use super::lua::LuaPlayer;
@@ -314,6 +314,7 @@ pub fn dispatch_event(
             generic_lua_event(&script_path)
         }
         HandlerType::GimmickAccessor => Some(Box::new(GimmickAccessorEventHandler::new())),
+        HandlerType::ContentNpc => Some(Box::new(ContentNpcEventHandler::new())),
         HandlerType::GimmickBill => Some(Box::new(GimmickBillEventHandler::new())),
         HandlerType::GimmickRect => Some(Box::new(GimmickRectEventHandler::new())),
         HandlerType::ChocoboTaxiStand => generic_lua_event("events/generic/Chocobokeep.lua"),

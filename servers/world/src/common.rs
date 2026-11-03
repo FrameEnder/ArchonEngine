@@ -586,6 +586,8 @@ pub enum ToServer {
     StartCountdown(u64, ObjectId, u64, u64, String, ObjectId, u16),
     /// The client yields from a GimmickAccessor.
     GimmickAccessor(u32, ObjectId, ObjectId, Vec<i32>),
+    /// The client's talk with a duty's ContentNpc returned (its row, the player, the event NPC, the scene's results.)
+    ContentNpc(u32, ObjectId, ObjectId, Vec<i32>),
     /// The client begins fishing.
     Fish(ClientId, ObjectId),
     /// Warp to a specified pop range in a new territory.

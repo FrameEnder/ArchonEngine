@@ -1,0 +1,39 @@
+{
+    "autoattack_action_id": 871,
+    "from_pull": true,
+    "recorded_amounts": {
+        "871": {
+            "npcs": 82
+        },
+        "504": {
+            "npcs": 108
+        }
+    },
+    "timepoints": [
+        {
+            "time": 9.4,
+            "every": 8.7,
+            "data": {
+                "type": "action",
+                "action_id": 504
+            },
+            "comment": "504 9.4 s after the pull, then every 8.7 s (6.7-16.7; 20 uses on the tank)"
+        },
+        {
+            "time": 53.6,
+            "every": 31.8,
+            "data": {
+                "type": "action",
+                "action_id": 506,
+                "target": "itself"
+            },
+            "comment": "506's cast (3.0 s) 53.6 s in, then every 31.8 s (31.6-32.0, five uses; it caught no one)"
+        }
+    ],
+    "animation_locks": {
+        "504": 2.1,
+        "506": 2.1
+    },
+    "timeline_always_plays": false,
+    "comment": "Brayflox's Longstop's first boss (BNpcBase 423, layout 3992765, level 32, 17370 HP), from its pull (`from_pull`): auto-attack 871, 504 9.4 s in and then about every 8.7 s, 506 (a 3.0 s cast) 53.6 s in and then every 31.8 s. The director sends its adds in (`content/s1d2_re.lua`). Bob's Chronofoil capture 44df02fc of Brayflox's Longstop (territory 1041) on 2026-11-03, visit 0.20 (34 minutes with Duty Support, during quest 832), `questkit chronofoil --battle`. `players` is the median damage to players in the run, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

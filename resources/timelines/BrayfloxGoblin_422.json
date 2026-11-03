@@ -1,0 +1,46 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 2
+        },
+        "992": {
+            "npcs": 1
+        },
+        "990": {
+            "npcs": 1
+        }
+    },
+    "timepoints": [
+        {
+            "time": 34.3,
+            "every": 22.5,
+            "data": {
+                "type": "action",
+                "action_id": 991
+            },
+            "comment": "991 34.3 s after it went for the add, then 29.4 and 15.5 s later"
+        },
+        {
+            "time": 86.3,
+            "every": 16.1,
+            "data": {
+                "type": "action",
+                "action_id": 992
+            },
+            "comment": "992 86.3 s in, then every 16.1 s (five uses)"
+        },
+        {
+            "time": 90.4,
+            "every": 31.5,
+            "data": {
+                "type": "action",
+                "action_id": 990
+            },
+            "comment": "990 90.4 s in, then every 31.5 s (three uses, status 197 for 20 s on whom it hit)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Brayflox's Longstop's goblin (BNpcBase 422, layout 4102292, level 20, 12390 HP; on the party's side), who comes with the second boss's add and fights it, then the boss: auto-attack 870 (1-71, mostly 1-2), 991 34.3 s after it took the add on and then every 22.5 s (three uses), 992 from 86.3 s every 16.1 s, 990 (on up to two, status 197 for 20 s) from 90.4 s every 31.5 s. The director has it say its lines as it uses them. Bob's Chronofoil capture 44df02fc of Brayflox's Longstop (territory 1041) on 2026-11-03, visit 0.20 (34 minutes with Duty Support, during quest 832), `questkit chronofoil --battle`. `players` is the median damage to players in the run, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

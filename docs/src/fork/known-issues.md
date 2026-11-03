@@ -144,6 +144,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
+* **Bob's capture 44df02fc (2026-11-03)** has quests 516, 809, 810, 811 (with its quest battle: QuestBattle 59,
+  ContentFinderCondition 354, territory 307, six tries), 812, 814, 3865, 821, 822, 831 and 832 from start to finish;
+  none is scripted until their client scripts (and 811's battle script) are dumped.
+
 * **The Twelveswood's story, Spirited Away (725) to Into the Beast's Maw (514)** (2026-10-30, from Bob's dumps and
   Chronofoil capture caa5e908): untested in game; each replays against its retail run and two more of other
   characters' (captures 1fac2416 and 2528a32d, 2026-10-30; `<quest>-1fac2416.json`, `<quest>-2528a32d.json`). Into the Beast's Maw needs
@@ -733,6 +737,27 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * With party bots (a Duty Finder run, 2026-11-02): the tank and three enemies ended in the cellar under the player,
   whom the enemies' area attacks there hit through the floor, and he died. Fixed as above (area attacks' height, the
   path's drop, the doors sealed); untested in game.
+
+## Brayflox's Longstop (2026-11-03)
+
+* Untested in game, from one run with Duty Support (Bob's capture 44df02fc). The director was checked against the run's
+  steps with a throwaway lupa harness (its variables after the key, the doors and each boss, the waves, the dragon, the
+  puddles); Bob plans more runs on other characters, which will show what changes from run to run.
+* Not dumped yet: the layout (`bg/ffxiv/sea_s1/dun/s1d2/level/planmap.lgb`) and `bg.lgb`. Until then the shortcut
+  (2000700, shown at the first boss's pull) has no destination; the last boss's cutscene is played by the player's
+  position (x past -74, z below -225, as retail's player was) rather than the layout's event range; which puddle spot
+  is which map effect is a guess within each set; the ambushes come by distance from their goblins (28 and 25 yalms).
+* Seen once each, so the timing is one run's: the first boss's waves after the third (the same three again), what 505,
+  506, 508, 448, 498, 982 and 29618 do to whoever they catch (no one was caught: a plain hit for now), 991 Bravado (no
+  effect seen), the trash's rotations for actions used once or twice (322, 364, 365, 498, 1010: 20-30 s guesses).
+* Not sent: the director events 0x40000007, the logs 9393 and 2163 at the clear, DirectorSetupMapEffects64 at the
+  start, opcodes 820 and 664 (unknown). The goblins' 421 lines other than those above, and ActionTimeline 957 on
+  others, aren't played. Nothing resets the bosses after a wipe (`onPartyWipe` isn't defined).
+* Duty Support's Lancer (45) at 32 has a guessed 1120 HP; the members' kits at 32 beyond the Marauder's combo and burst
+  are the trials' (see [Party NPCs](party-npcs.md)).
+* Quest 832 moved to sequence 4 on retail as the player used the exit (EventNotice2 and UpdateQuest just before the
+  PrepareZoning), not at the clear; the player came back where they queued (-335.78, 68.71, 160.72 in Eastern La
+  Noscea), next to the quest's NPC. The quest isn't scripted yet (no dump).
 
 ## The Bowl of Embers
 

@@ -39,7 +39,7 @@ Callbacks:
 | Callback | When |
 |---|---|
 | `onSetup(director)` | The instance was created. |
-| `onCommence(director)` | The player is in: spawn NPCs, set the first sequence, start the chatter. |
+| `onCommence(director)` | The player is in: spawn NPCs, set the first sequence, start the chatter. A dungeon's script that defines it hears it as the duty commences (DutyCommence, since 2026-11-03): Brayflox's Longstop's dragon flies off 3.7 s later. |
 | `onUpdate(director, health, player_health, info)` | Every logic tick (500 ms). `health` maps each living NPC's layout ID to its health %, `player_health` the player's; `info` has everyone's real numbers and position (`info[layout] = { hp, max_hp, x, y, z }`, `info.player` the same, and the party's NPCs, which have no layout ID, as `info.party1`, `info.party2`...), for highest-HP and nearest choices. Waves, thresholds and timed steps live here. Since 2026-10-30 every player is in `info` too, as `player1`, `player2`... (`player` is one of them), and an NPC targeting a party NPC (no layout ID) has `target` `"party"` (it had none, so a boss pulled by a Duty Support tank looked unpulled.) |
 | `onActorCast(director, layout_id, action_id, actor_id, x, y, z)` | An NPC began an action from its timeline or rotation (its cast bar, or an instant one). Optional. For scripts that answer what a boss does: the Copperbell Mines' Kottos' 28543 sets off its markers and leaps. Since 2026-10-30 also where its target stood as it began (`x, y, z`, nil without one): the Thousand Maws of Toto-Rak's last boss's eggs land where its 698 was aimed. |
 | `onActorDeath(director, layout_id, position)` | An NPC died. Optional (the server skips it when a script, or a FATE's, doesn't define it). |
@@ -47,6 +47,7 @@ Callbacks:
 | `onPartyWipe(director)` | A duty's party wipe (every player down, `server/wipe.rs`), as everyone is sent back to the start: reset the fight (the Bowl of Embers takes Ifrit away and brings him back). Whatever the script had `delay`ed is dropped first. Optional. |
 | `onDutyRecommence(director)` | The duty begins again after a wipe (DutyRecommence). Optional. |
 | `onSceneFinished(director, scene)` | A player finished one of the director's own scenes (`play_scene`), e.g. a cutscene halfway through. Optional. |
+| `onContentNpc(director, actor_id, id, npc, results)` | A player's talk with a duty's ContentNpc (row `id`, event NPC actor `npc`) returned: the server played its scene (4, flags 0x2000, retail's for ContentNpc 1) and the script finishes the event (`finish_gimmick(actor_id)`); without it the event just finishes. Brayflox's Longstop's key (2026-11-03). |
 
 Director methods (`servers/world/src/server/director.rs`), the ones the fork added:
 
@@ -81,6 +82,8 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `set_notice(npc, notices)` | With `false`, an aggressive NPC no longer notices whoever comes close (players or allied NPCs, `AGGRO_RANGE`); it fights only when hit or sent after someone (`set_hate`). `true` restores it. Kept per layout ID for the instance (`Instance::unaware_npcs`). |
 | `set_invulnerable(npc, invulnerable)` | Whether NPC `npc` takes damage (its `currently_invulnerable`, as a timeline's invulnerability timepoint sets it). The Tam-Tara Deepcroft's last boss while a shield stands. |
 | `boss_room(boss, wall, line, place, triggers)` | A boss arena whose boss isn't spawned with it (`spawn_boss` spawns and seals on the boss's own pull): sealed 15 s after the boss or any of `triggers` (layout IDs) goes for someone (logs 2012, 2013, the wall shown), opened when `boss` dies (both hidden, log 2014). The Tam-Tara Deepcroft's rooms, sealed by their pack's pull.Called for several bosses with the same wall, they're one room (since 2026-11-02): sealed by any one's pull, opened as the **last** of them dies (Haukke Manor's pair). |
+| `leave_boss_room(boss)` | A boss that leaves its room without dying (despawned, not killed): it no longer holds the room, which opens (wall and line hidden, log 2014) if none of the room's other bosses is left. Brayflox's Longstop's dragon (429), which holds the third room with its boss (`boss_room` for both with one wall) and flies off (2026-11-03). |
+| `map_effect(index, timeline, state)` | DirectorMapEffect: a map effect to `timeline` and `state` (1 unless given; Brayflox's Longstop's puddles go to 4 with timeline 8 as they burst). |
 | `spawn_eobj(eobj, position, args2)` | Spawns an event object of the zone's layout (at `position`, a table with x, y, z, if given), or, when the layout has none, one made from its EObj row alone (layout ID 0, the director's handler, radius 1: Haukke Manor's pair's key, as retail spawned it). `args2` is SpawnObject's, as retail sent it (EObj-specific: 1282 and 66818 for Haukke Manor's two dropped keys). |
 | `warp_to_pop_range(actor_id, pop_range)` | Sends that player to a pop range of the duty, as a shortcut does (PrepareZoning to the same territory, then ActorSetPos): a gimmick of the script's own that warps. |
 | `set_attack_range(npc, yalms)` | How close the NPC gets to its target before attacking: melee (3) or a caster's distance. |

@@ -56,6 +56,55 @@ impl EventHandler for GimmickAccessorEventHandler {
     }
 }
 
+/// For ContentNpc events: an event NPC of a duty that the director answers (Brayflox's Longstop's ENpc 1004346, ContentNpc
+/// 1, whose talk hands the party the key to the first boss's pond). Retail played one scene, then the director's log,
+/// variables and spawns followed the scene's return, and the event finished (Bob's Chronofoil capture 44df02fc of
+/// 2026-11-03, visit 0.20).
+#[derive(Debug)]
+pub struct ContentNpcEventHandler;
+
+impl Default for ContentNpcEventHandler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl ContentNpcEventHandler {
+    /// Retail's scene for ContentNpc 1, with HIDE_HOTBAR (0x2000). It's the only ContentNpc recorded, so whether every
+    /// row plays 4 isn't known.
+    pub const SCENE_TALK: u16 = 4;
+
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+#[async_trait]
+impl EventHandler for ContentNpcEventHandler {
+    async fn on_talk(&self, _event: &Event, _target_id: ObjectTypeId, player: &mut LuaPlayer) {
+        player.play_scene(Self::SCENE_TALK, SceneFlags::HIDE_HOTBAR, Vec::new());
+    }
+
+    async fn on_return(
+        &self,
+        event: &Event,
+        connection: &mut ZoneConnection,
+        _scene: u16,
+        results: &[i32],
+        _player: &mut LuaPlayer,
+    ) {
+        connection
+            .handle
+            .send(ToServer::ContentNpc(
+                event.id.event_id(),
+                connection.player_data.character.actor_id,
+                event.actor_id.object_id,
+                results.to_vec(),
+            ))
+            .await;
+    }
+}
+
 /// For GimmickRect events.
 #[derive(Debug)]
 pub struct GimmickRectEventHandler;

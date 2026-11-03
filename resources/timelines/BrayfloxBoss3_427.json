@@ -1,0 +1,65 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "recorded_amounts": {
+        "872": {
+            "npcs": 95
+        },
+        "980": {
+            "npcs": 282.5
+        },
+        "979": {
+            "players": 98,
+            "npcs": 55.5
+        }
+    },
+    "timepoints": [
+        {
+            "time": 7.2,
+            "every": 21.0,
+            "data": {
+                "type": "action",
+                "action_id": 980
+            },
+            "comment": "980 7.2 s in, then every 21 s (seven uses: 18.1, 27.7, 18.3, 23.3, 20.8, 18.1 s apart)"
+        },
+        {
+            "time": 15.2,
+            "every": 42.7,
+            "data": {
+                "type": "action",
+                "action_id": 982,
+                "target": "itself"
+            },
+            "comment": "982's cast (3.5 s) 15.2 s in, then every 42.7 s (45.8, 39.5; it caught no one)"
+        },
+        {
+            "time": 33.5,
+            "every": 45.0,
+            "data": {
+                "type": "action",
+                "action_id": 448,
+                "target": "itself"
+            },
+            "comment": "448's cast (2.5 s) 33.5 s in, then every 45.0 s (49.3, 40.7; it caught no one)"
+        },
+        {
+            "time": 44.2,
+            "every": 31.2,
+            "data": {
+                "type": "action",
+                "action_id": 979,
+                "target": "other"
+            },
+            "comment": "979 44.2 s in, then every 31.2 s (29.8, 32.5): the tank twice, the player once"
+        }
+    ],
+    "animation_locks": {
+        "980": 2.1,
+        "982": 2.1,
+        "448": 2.1,
+        "979": 2.1
+    },
+    "timeline_always_plays": false,
+    "comment": "Brayflox's Longstop's third boss (BNpcBase 427, layout 3997806, level 32, 18817 HP), from its pull (`from_pull`): auto-attack 872, 980 (on up to three where its target stands) 7.2 s in and about every 21 s (18.1-27.7), 982 (a 3.5 s cast, round itself) 15.2 s in and every 42.7 s, 448 (2.5 s) 33.5 s in and every 45 s, 979 44.2 s in and every 31.2 s; 2.6-2.9 s after each 979 a 1064 appears where its target stood (the director). At 20 % the dragon (429) comes (the director). Bob's Chronofoil capture 44df02fc of Brayflox's Longstop (territory 1041) on 2026-11-03, visit 0.20 (34 minutes with Duty Support, during quest 832), `questkit chronofoil --battle`. `players` is the median damage to players in the run, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}

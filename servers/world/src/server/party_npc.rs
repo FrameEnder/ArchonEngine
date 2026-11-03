@@ -340,6 +340,65 @@ pub const TRIAL_MEMBERS: [Member; 4] = [
     },
 ];
 
+/// The third set (DawnQuestMember 44-47; Brayflox's Longstop with Duty Support in Bob's Chronofoil capture 44df02fc of
+/// 2026-11-03, visit 0.20, registered as 44, 47, 46 under DawnContent 206): the Marauder, Lancer, Thaumaturge and Conjurer
+/// again, with BNpcBases 14654-14657 (BNpcNames 11330-11333, the trials' names) and ActorControlSelf 276/1525 values of
+/// their own (10008-10011, 1042784-1042787; slots 0-2 held 44, 47, 46). The Lancer (45, 14655) wasn't there: its slot
+/// values follow the others'. Their level and HP there are in `DUTY_LEVELS`.
+pub const THIRD_MEMBERS: [Member; 4] = [
+    Member {
+        dawn_quest_member: 44,
+        base_id: 14654,
+        name_id: 11330,
+        slot_member: 10008,
+        slot_resident: 1042784,
+        kit: Kit {
+            // At 32 its combo has a third step (29301), and its burst one of each of its stronger actions and 29768
+            // (58, 58 and 54 uses), not two of each: 26230 and 29303 on itself, 29764, 29765, 29768, then 29766 on
+            // itself, the same gaps.
+            filler: &[29299, 29300, 29301],
+            burst: &[
+                ability(26230, 1.07),
+                on_self(29303, 0.18),
+                gcd(29764, 1.61),
+                gcd(29765, 2.15),
+                gcd(29768, 2.14),
+                on_self(29766, 1.07),
+            ],
+            ..TRIAL_MEMBERS[0].kit
+        },
+        // 13955 six times and 13956 once (Bob's capture 44df02fc.)
+        chatter: &[13955, 13956],
+        ..TRIAL_MEMBERS[0]
+    },
+    Member {
+        dawn_quest_member: 45,
+        base_id: 14655,
+        name_id: 11331,
+        slot_member: 10009,
+        slot_resident: 1042785,
+        ..TRIAL_MEMBERS[1]
+    },
+    Member {
+        dawn_quest_member: 46,
+        base_id: 14656,
+        name_id: 11332,
+        slot_member: 10010,
+        slot_resident: 1042786,
+        // 13975 three times and 13976 twice (Bob's capture 44df02fc.)
+        chatter: &[13975, 13976],
+        ..TRIAL_MEMBERS[2]
+    },
+    Member {
+        dawn_quest_member: 47,
+        base_id: 14657,
+        name_id: 11333,
+        slot_member: 10011,
+        slot_resident: 1042787,
+        ..TRIAL_MEMBERS[3]
+    },
+];
+
 /// The level the members come at in a duty (its ContentFinderCondition) and each one's HP there, by
 /// `dawn_quest_member`: retail's Sastasha members were level 15 (Bob's capture of 2026-10-23), the Tam-Tara
 /// Deepcroft's the same three at 16 with 443, 347 and 316 HP (his capture of 2026-10-24, 3ec702a8 visit 0.3), the
@@ -347,7 +406,7 @@ pub const TRIAL_MEMBERS: [Member; 4] = [
 /// takes the member's own `level` and `hp`.
 /// The Conjurer (39, 43) the same (Bob's captures c99fe374 and cc62ad94 of 2026-10-28): 293 HP at 15 in Sastasha, 316 at
 /// 16, 339 at 17, 432 at 20.
-pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 6] = [
+pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 7] = [
     (4, 15, &[(36, 411), (37, 322), (38, 293), (39, 293)]),
     (2, 16, &[(36, 443), (37, 347), (38, 316), (39, 316)]),
     (3, 17, &[(36, 476), (37, 372), (38, 339), (39, 339)]),
@@ -361,6 +420,10 @@ pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 6] = [
     // (40, 42, 43) at 28 with 1026, 710 and 717. The Lancer (41) wasn't there: 779 is a guess, the Marauder's HP by the
     // Lancer's share of it at 20 (469 of 618.)
     (6, 28, &[(40, 1026), (41, 779), (42, 710), (43, 717)]),
+    // Brayflox's Longstop (Bob's capture 44df02fc of 2026-11-03, visit 0.20): the third set's Marauder, Thaumaturge and
+    // Conjurer (44, 46, 47) at 32 with 1476, 1013 and 1022. The Lancer (45) wasn't there: 1120 is a guess, the
+    // Marauder's HP by the Lancer's share of it at 20 (469 of 618.)
+    (8, 32, &[(44, 1476), (45, 1120), (46, 1013), (47, 1022)]),
 ];
 
 /// A member's level and HP in the duty `content_finder_condition`.
@@ -381,6 +444,7 @@ pub fn member(dawn_quest_member: u8) -> Option<&'static Member> {
     MEMBERS
         .iter()
         .chain(TRIAL_MEMBERS.iter())
+        .chain(THIRD_MEMBERS.iter())
         .find(|member| member.dawn_quest_member == dawn_quest_member)
 }
 
@@ -967,7 +1031,17 @@ mod tests {
             vec![36, 38, 37]
         );
         assert_eq!(member(36).map(|m| m.base_id), Some(14646));
-        assert!(member(44).is_none());
+        assert!(member(48).is_none());
+        // Brayflox's Longstop (Bob's capture 44df02fc): 44, 47, 46 under DawnContent 206, at 32 there.
+        assert_eq!(chosen_members([0x002E_2F2C, 0, 0, 0]), vec![44, 47, 46]);
+        let marauder = member(44).unwrap();
+        assert_eq!((marauder.base_id, marauder.classjob), (14654, 3));
+        assert_eq!(marauder.kit.filler, &[29299, 29300, 29301]);
+        assert_eq!(level_and_hp(marauder, 8), (32, 1476));
+        assert_eq!(
+            member(47).map(|m| (m.base_id, m.classjob)),
+            Some((14657, 6))
+        );
         // A tank's (Bob's capture c99fe374): the Conjurer first, 39, 38, 37; 43, 42, 41 in the Bowl of Embers, the
         // Conjurer at 16 in the Tam-Tara Deepcroft and 20 there.
         assert_eq!(chosen_members([0x0025_2627, 0, 0, 0]), vec![39, 38, 37]);

@@ -38,6 +38,17 @@ said three lines that a healer's party doesn't hear: the Marauder's 14294 at the
 the Conjurer's 14299 at Chopper and its 14301 at the first captain ([Dungeons](dungeons.md): `party_npc_yell`'s
 `other_role` and `other_line`).
 
+**The third set** (Brayflox's Longstop, Bob's Chronofoil capture 44df02fc of 2026-11-03, visit 0.20, the player a
+level 34 arcanist): registered as 44, 47, 46 under DawnContent 206, the Marauder, the Conjurer and the Thaumaturge with
+BNpcBases 14654, 14657 and 14656 (the trials' BNpcNames 11330, 11333 and 11332), ActorControlSelf 276 10008, 10011,
+10010 and 1525 1042784, 1042787, 1042786 for slots 0-2, at level 32 with 1476, 1022 and 1013 HP:
+`party_npc::THIRD_MEMBERS` (the Lancer, 45 and 14655, follows the others' numbers, with a guessed 1120 HP). At 32 the
+Marauder's combo has a third step (29299, 29300, 29301) and its burst one each of 29764, 29765 and 29768 (58, 58 and 54
+uses) between 26230/29303 and 29766; the Thaumaturge's and the Conjurer's kits are the trials' (29314/29315 with 29313;
+29323 with 29324 and Cure 29318). Their chatter: the Marauder's 13955 and 13956, the Thaumaturge's 13975 and 13976.
+Not taken up: the Marauder's 29295, 29297 (status 87 on itself) and 29777, the Thaumaturge's 29763 and 3269, the
+Conjurer's Medica (29320) and Esuna (25043).
+
 **`pet_id` is the slot's**, not the member's: 1, 5 and 9 for slots 0, 1 and 2, whoever is in them (the Marauder had 1
 in slot 0 in Sastasha, the Conjurer 1 in slot 0 with a tank; the Thaumaturge 5 and the Lancer 9 in slots 1 and 2 in
 every run).
@@ -207,7 +218,7 @@ Their lines are NpcYell packets from the member, under its BNpcName:
 
 ## Not done yet
 
-* Recorded: the Marauder, Lancer, Thaumaturge and Conjurer of the three dungeons and the Bowl. Other duties'
+* Recorded: the Marauder, Lancer, Thaumaturge and Conjurer of the three dungeons and the Bowl, and the third set in Brayflox's Longstop (at 32). Other duties'
   members are Player NPCs until a run with them is recorded. Sastasha's lines for the tank, with a player tank, aren't
   recorded (no line then).
 * The Conjurer's Medica, Esuna and instant Cure aren't cast.

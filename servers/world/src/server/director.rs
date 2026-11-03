@@ -285,9 +285,12 @@ pub enum LuaDirectorTask {
         target: Option<u32>,
         amount: u32,
     },
+    /// A map effect's state and timeline (DirectorMapEffect): `state` 1 for most; Brayflox's Longstop's puddles went
+    /// to 4 with timeline 8 as they burst (Bob's Chronofoil capture 44df02fc of 2026-11-03.)
     MapEffect {
         index: u32,
         timeline_id: u32,
+        state: u16,
     },
     /// Send an EObj (by EObj ID or layout ID) an ActorControl by its category and parameters, for the ones Kawari has
     /// no name for: the Copperbell Mines' blasts (413 with 8, 2 on the charge as it goes off, Bob's captures of
@@ -652,6 +655,29 @@ impl UserData for LuaDirector {
                 Ok(())
             },
         );
+        // A boss that leaves its room without dying, as retail's dragon (BNpcBase 429) flew off from Brayflox's Longstop's
+        // third boss room: it no longer holds the room, which opens (wall and line hidden, log 2014) if none of the
+        // room's other bosses is left (Bob's Chronofoil capture 44df02fc of 2026-11-03: the room opened as it went.)
+        methods.add_method_mut("leave_boss_room", |_, this, bnpc_id: u32| {
+            if let Some(boss) = this.bosses.remove(&bnpc_id)
+                && !this
+                    .bosses
+                    .values()
+                    .any(|other| other.wall_id == boss.wall_id)
+            {
+                this.tasks.push(LuaDirectorTask::HideEObj {
+                    base_id: boss.wall_id,
+                });
+                this.tasks.push(LuaDirectorTask::HideEObj {
+                    base_id: boss.line_id,
+                });
+                this.tasks.push(LuaDirectorTask::LogMessage {
+                    id: LogMessageType::BossRoomUnsealed as u32,
+                    params: vec![boss.place_name],
+                });
+            }
+            Ok(())
+        });
         methods.add_method_mut(
             "set_invulnerable",
             |_, this, (layout_id, invulnerable): (u32, bool)| {
@@ -939,11 +965,17 @@ impl UserData for LuaDirector {
                 Ok(())
             },
         );
-        methods.add_method_mut("map_effect", |_, this, (index, timeline_id): (u32, u32)| {
-            this.tasks
-                .push(LuaDirectorTask::MapEffect { index, timeline_id });
-            Ok(())
-        });
+        methods.add_method_mut(
+            "map_effect",
+            |_, this, (index, timeline_id, state): (u32, u32, Option<u16>)| {
+                this.tasks.push(LuaDirectorTask::MapEffect {
+                    index,
+                    timeline_id,
+                    state: state.unwrap_or(1),
+                });
+                Ok(())
+            },
+        );
         methods.add_method_mut("delay", |_, this, seconds: f32| {
             this.delays.push((this.tasks.len(), seconds.max(0.0)));
             Ok(())
@@ -1317,6 +1349,29 @@ impl DirectorData {
             tracing::warn!("Syntax error during onGimmickAccessor: {err:?}");
 
             // Finish the gimmick event so the client at least gets unstuck
+            self.tasks
+                .push(LuaDirectorTask::FinishGimmickEvent { actor_id });
+        }
+    }
+
+    /// A player's talk with a ContentNpc (row `id`, event NPC `npc`) returned: the script's `onContentNpc(director,
+    /// actor_id, id, npc, results)`, which finishes the event (`finish_gimmick`). Without one the event just finishes.
+    pub fn content_npc(&mut self, actor_id: ObjectId, id: u32, npc: ObjectId, results: &[i32]) {
+        let Ok(func) = self.lua.0.globals().get::<Function>("onContentNpc") else {
+            self.tasks
+                .push(LuaDirectorTask::FinishGimmickEvent { actor_id });
+            return;
+        };
+
+        let mut lua_director = self.create_lua_director();
+        let err = self.lua.0.scope(|scope| {
+            let data = scope.create_userdata_ref_mut(&mut lua_director)?;
+            func.call::<()>((data, actor_id.0, id, npc.0, results))?;
+            Ok(())
+        });
+        self.apply_lua_director(lua_director);
+        if let Err(err) = err {
+            tracing::warn!("Syntax error during onContentNpc: {err:?}");
             self.tasks
                 .push(LuaDirectorTask::FinishGimmickEvent { actor_id });
         }
@@ -2737,10 +2792,14 @@ pub fn director_tick(
                     DestinationNetwork::ZoneClients,
                 );
             }
-            LuaDirectorTask::MapEffect { index, timeline_id } => {
+            LuaDirectorTask::MapEffect {
+                index,
+                timeline_id,
+                state,
+            } => {
                 let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::DirectorMapEffect {
                     handler_id: director_id,
-                    state: 1,
+                    state: *state,
                     timeline_id: *timeline_id as u16,
                     index: *index as u8,
                 });
@@ -3324,6 +3383,20 @@ pub fn handle_director_messages(
 
             true
         }
+        ToServer::ContentNpc(id, from_actor_id, from_object_id, params) => {
+            let mut data = data.lock();
+            let Some(instance) = data.find_actor_instance_mut(*from_actor_id) else {
+                tracing::warn!("Somehow failed to find an instance for actor?");
+                return true;
+            };
+            let Some(director) = &mut instance.directors.first_mut() else {
+                tracing::warn!("Expected a director when recieving a ContentNpc?");
+                return true;
+            };
+            director.content_npc(*from_actor_id, *id, *from_object_id, params);
+
+            true
+        }
         ToServer::ReadyDirectorData(from_actor_id) => {
             let mut data = data.lock();
             let Some(instance) = data.find_actor_instance_mut(*from_actor_id) else {
@@ -3454,6 +3527,19 @@ pub fn handle_director_messages(
                 FromServer::PacketSegment(ipc, *from_actor_id),
                 DestinationNetwork::ZoneClients,
             );
+
+            // A dungeon's script that times something from the duty's start hears it too (Brayflox's Longstop's
+            // dragon flew off 3.7 s after DutyCommence: Bob's Chronofoil capture 44df02fc of 2026-11-03.)
+            if let Some(director) = instance.directors.first_mut()
+                && director
+                    .lua
+                    .0
+                    .globals()
+                    .contains_key("onCommence")
+                    .unwrap_or_default()
+            {
+                director.commence();
+            }
 
             let entrance_actor_id;
             let state = EventState::OFF | EventState::UNK2 | EventState::UNK3;

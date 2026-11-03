@@ -1,0 +1,28 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 136,
+            "npcs": 47
+        },
+        "517": {
+            "players": 394
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 517,
+                "every": 16.4,
+                "comment": "7 uses, every 16.4 s"
+            }
+        ]
+    },
+    "timepoints": [],
+    "animation_locks": {
+        "517": 2.1
+    },
+    "timeline_always_plays": false,
+    "comment": "Brayflox's Longstop's BNpcBase 1045 (level 32, 2258 HP; 3977762, 3977774, 3992803, 3997317): auto-attack 870, 517 every 16.4 s (seven uses, 388-400 on the player). Bob's Chronofoil capture 44df02fc of Brayflox's Longstop (territory 1041) on 2026-11-03, visit 0.20 (34 minutes with Duty Support, during quest 832), `questkit chronofoil --battle`. `players` is the median damage to players in the run, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+}
