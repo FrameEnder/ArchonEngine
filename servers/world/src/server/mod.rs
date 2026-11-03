@@ -583,6 +583,45 @@ const RAISED_DURATION: f32 = 5.0;
 /// Sends a player back to the duty's starting point, alive with full HP and MP and no Weakness or Brink of Death (as
 /// retail): `prepare` (its warp type and look) then the warp to the entrance. A dead player's Return, and everyone after
 /// a party wipe (`wipe.rs`).
+/// A player walked towards an actor whatever they do (`EffectsBuilder::walk_to_caster`): with `start`, ForcedMoveTowards
+/// (speed, the actor) to them, else ForcedMoveEnd; and `pose`, if any, shown on them to everyone near (ActorControl 82,
+/// retail's 1132 as Lady Amandine's Beguiling Mist landed and 0 as it ended; what it is isn't known.)
+fn walk_to_caster(
+    network: &mut NetworkState,
+    instance: &Instance,
+    player: ObjectId,
+    start: Option<(ObjectId, u8)>,
+    pose: Option<u32>,
+) {
+    let data = match start {
+        Some((target_id, speed)) => ServerZoneIpcData::ForcedMoveTowards { speed, target_id },
+        None => ServerZoneIpcData::ForcedMoveEnd { unk: [0; 8] },
+    };
+    network.send_to_by_actor_id(
+        player,
+        FromServer::PacketSegment(ServerZoneIpcSegment::new(data), player),
+        DestinationNetwork::ZoneClients,
+    );
+    if let Some(pose) = pose {
+        network.send_ac_in_range_inclusive_instance(
+            instance,
+            player,
+            ActorControlCategory::Unknown {
+                category: ACTOR_CONTROL_POSE,
+                param1: pose,
+                param2: 0,
+                param3: 0,
+                param4: 0,
+                param5: 0,
+            },
+        );
+    }
+}
+
+/// ActorControl 82: Lady Amandine's Beguiling Mist put each player it walked in 1132 and back to 0 (Bob's Chronofoil
+/// captures of Haukke Manor); Kawari has no name for it.
+const ACTOR_CONTROL_POSE: u32 = 82;
+
 fn return_to_start(
     network: &Arc<Mutex<NetworkState>>,
     game_data: &Arc<Mutex<GameData>>,
@@ -1779,6 +1818,36 @@ pub async fn server_main_loop(
                                     FromServer::FishBite,
                                     DestinationNetwork::ZoneClients,
                                 );
+                            }
+                            QueuedTaskData::WalkToCaster {
+                                towards,
+                                speed,
+                                pose,
+                            } => {
+                                let data = data.lock();
+                                if let Some(instance) = data.find_actor_instance(task.from_actor_id)
+                                {
+                                    walk_to_caster(
+                                        &mut network.lock(),
+                                        instance,
+                                        task.from_actor_id,
+                                        Some((*towards, *speed)),
+                                        (*pose != 0).then_some(*pose),
+                                    );
+                                }
+                            }
+                            QueuedTaskData::WalkToCasterEnd { pose } => {
+                                let data = data.lock();
+                                if let Some(instance) = data.find_actor_instance(task.from_actor_id)
+                                {
+                                    walk_to_caster(
+                                        &mut network.lock(),
+                                        instance,
+                                        task.from_actor_id,
+                                        None,
+                                        (*pose != 0).then_some(0),
+                                    );
+                                }
                             }
                             QueuedTaskData::SealBossWall { id, place_name } => {
                                 let mut data = data.lock();

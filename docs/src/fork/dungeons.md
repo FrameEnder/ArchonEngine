@@ -479,6 +479,21 @@ the same to 0.1 s in all four runs whatever the boss's health (88, 47, 43, 55 %)
 (2000357, line 2001080) hidden, the exit shown, the clear rewards (log 9393 `[39000]`, the first clear's EXP, and 2163
 `[4300, 3800]`, the first-timer bonus), cutscene 171 (1, 18, 0, 0), 14505 gone, coffer 79.
 
+**The last boss's fight** (since 2026-11-03; Bob's Chronofoil captures, the four runs of 2026-11-02 and 25342d59 of
+2026-11-03, the same to a tenth of a second whenever it got that far): its timeline (`HaukkeManorFinalBoss_14504.json`)
+has each action at its cast's start, every 63.1 s from 37.2 s: 28646 on a player, 28640, 28649, then 28644 and 28643 as
+28649 lands, 28645, 28644 and 28640 (until 2026-11-03 the times were when each landed, so every cast came about 4 s late
+and 28644 and 28643 came before the 28649 they follow; the first boss's 855 and 705 too, 3 and 4 s). The director
+(`f1d2_re`'s `onActorCast`) plays the rest:
+
+| Retail | Kawari |
+|---|---|
+| 28640 (4.0 s cast, on itself): 5.1 s after its cast began, the eye (14505) is put by the room's middle (-2.5, 17, 4: ActorSetPos, then ActionTimeline 7747 on it); 5.2 s later the eye casts its gaze (28648, 4.7 s bar) and 8.1 s after that plays 7737 | `warp_bnpc`, `play_action_timeline`, `actor_use_action` on the eye, held (`hold_bnpc`: it neither moves nor acts on its own; its timeline has no rotation now, it had a gaze every 34.2 s) |
+| Its second 28640: 14506 comes 5.3 s on, unseen, and shows 0.85 s later (ActorControl 36 with ActionTimeline 158, 54) | `spawn_bnpc`, `appear_bnpc(…, 158, 0.85)`, `set_hate` (it was a fixed 34 s after the pull, and never shown) |
+| From the third 28640 they take turns: the eye by a wall, at (-4.5, 17, 22) or (-4.5, 17, -14) (three runs and two), its gaze 7.2 s after, then by the middle again | the same, the wall at random |
+| 28644 (instant, no target): the first as it's pulled; then each one leaps it (SnapNextMove, ActorMove speed 90) 0.8 s on beside the eye by the wall (x -0.5, the eye's z), where it stands 4.9 s, or 0.7 s on back to the middle (-7.52, 17.26, 3.98) | `jump_bnpc`; `root_bnpc` (new) for the 4.9 s |
+| 28643 (instant, everyone in 100 yalms) 1.4 s after that 28644: the two Seduced statuses, and each player walked to it for 3.0 s, while the eye's gaze is cast | `effects:walk_to_caster(3.0, 4, 1132)` ([Combat: walked to the caster](combat.md)); the gaze lands 1.7 s after the walk ends, on those still facing the eye |
+
 **The shortcut** (2000700): shown as the first boss is pulled, taking the party outside its hall (pop range 11438017;
 retail's warps put them at (-41.2, 0, 12.5)), and from the pair's pull outside theirs (11438018, (-30.8, -18.8, 0.4)).
 Outside the last room (11438019) from its cutscene isn't seen on retail. Kawari's shortcut gimmick now takes a pop range

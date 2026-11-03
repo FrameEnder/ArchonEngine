@@ -1684,6 +1684,8 @@ pub fn execute_action(
         // The ActionEffect's global sequence, which its results name, and who it showed effects on.
         let effect_sequence;
         let shown_on: Vec<ObjectId>;
+        // Those it landed on (not missed: a gaze looked away from), for what lasts on them (`walk_to_caster`.)
+        let landed_on: Vec<ObjectId>;
         {
             let mut network = network.lock();
 
@@ -1827,6 +1829,15 @@ pub fn execute_action(
                     .unwrap()
                 };
                 effect_sequence = network.global_action_sequence;
+                landed_on = shown
+                    .iter()
+                    .filter(|(_, effects)| {
+                        effects
+                            .iter()
+                            .any(|effect| !matches!(effect.0, TargetEffectKind::Miss))
+                    })
+                    .map(|(target, _)| target.object_id)
+                    .collect();
                 shown_on = shown
                     .iter()
                     .take(if use_aoe_packet {
@@ -1977,6 +1988,41 @@ pub fn execute_action(
                     FromServer::PacketSegment(ipc, from_actor_id),
                     DestinationNetwork::ZoneClients,
                 );
+            }
+
+            // Players it lands on walk towards the one who used it, as the hit lands, for a while (`walk_to_caster`:
+            // Lady Amandine's Beguiling Mist; retail's ForcedMoveTowards came with each one's result, 0.7 s after the
+            // area's effect, and ForcedMoveEnd 3.0 s after it.)
+            if let Some(walk) = effects_builder.walk_to_caster {
+                let mut data = data.lock();
+                if let Some(instance) = data.find_actor_instance_mut(from_actor_id) {
+                    for player in landed_on.iter().copied() {
+                        if player == from_actor_id
+                            || !matches!(
+                                instance.find_actor(player),
+                                Some(NetworkedActor::Player { .. })
+                            )
+                        {
+                            continue;
+                        }
+                        instance.insert_task(
+                            ClientId::default(),
+                            player,
+                            EFFECT_RESULT_AFTER,
+                            QueuedTaskData::WalkToCaster {
+                                towards: from_actor_id,
+                                speed: walk.speed,
+                                pose: walk.pose,
+                            },
+                        );
+                        instance.insert_task(
+                            ClientId::default(),
+                            player,
+                            EFFECT_RESULT_AFTER + Duration::from_secs_f32(walk.seconds),
+                            QueuedTaskData::WalkToCasterEnd { pose: walk.pose },
+                        );
+                    }
+                }
             }
 
             // Each target the effect showed on gets its result as the hit lands: its health, under the effect's

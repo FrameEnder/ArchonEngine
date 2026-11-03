@@ -111,6 +111,15 @@ pub enum QueuedTaskData {
     },
     /// Make a fish bite.
     FishBite,
+    /// A player an action walks towards `towards` (`EffectsBuilder::walk_to_caster`): `from_actor_id`, the player, is
+    /// sent `ForcedMoveTowards` and shown in `pose` (ActorControl 82) to everyone near.
+    WalkToCaster {
+        towards: ObjectId,
+        speed: u8,
+        pose: u32,
+    },
+    /// The end of `WalkToCaster`: `ForcedMoveEnd`, and the pose undone (82 with 0) if there was one.
+    WalkToCasterEnd { pose: u32 },
     /// Seal a boss wall.
     SealBossWall { id: u32, place_name: u32 },
     /// Generically send a packet segment, only used for `do_change_zone`. Don't abuse this as a generic task, you almost certainly want to create a new variant.
@@ -225,6 +234,9 @@ pub struct Instance {
     /// NPCs a director keeps busy until when (`director:busy_bnpc`): they don't move or act on their own, though their
     /// timelines go on.
     pub busy_npcs: HashMap<ObjectId, std::time::Instant>,
+    /// NPCs a director keeps where they stand until when (`director:root_bnpc`): they don't move, but act as ever (their
+    /// timeline, their attacks.)
+    pub rooted_npcs: HashMap<ObjectId, std::time::Instant>,
     pub later_director_tasks: Vec<(std::time::Instant, crate::server::director::LuaDirectorTask)>,
     /// The fight here is over (a quest battle won, `npc_behavior::end_fight`): NPCs don't take anyone on again, whatever
     /// hits or heals them.

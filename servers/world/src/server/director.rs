@@ -402,6 +402,13 @@ pub enum LuaDirectorTask {
         who: u32,
         seconds: f32,
     },
+    /// Keep a BNpc (actor ID or layout ID) where it stands for `seconds`: it doesn't move, but acts as ever (its
+    /// timeline, its attacks), as retail's Lady Amandine stood 4.9 s beside her eye where she'd leapt, using her 28643
+    /// there (`Instance::rooted_npcs`.)
+    RootBattleNpc {
+        who: u32,
+        seconds: f32,
+    },
     /// Starts a `from_pull` timeline's clock again from now for its points `after` this (an action's ID, as a point
     /// with `restarts` does, or any number the timeline's points use for a phase): a phase the director begins
     /// (Ifrit's at 80 % and 50 %, and after his Hellfire, in the Bowl of Embers.)
@@ -963,6 +970,11 @@ impl UserData for LuaDirector {
                 Ok(())
             },
         );
+        methods.add_method_mut("root_bnpc", |_, this, (who, seconds): (u32, f32)| {
+            this.tasks
+                .push(LuaDirectorTask::RootBattleNpc { who, seconds });
+            Ok(())
+        });
         methods.add_method_mut("busy_bnpc", |_, this, (who, seconds): (u32, f32)| {
             this.tasks
                 .push(LuaDirectorTask::BusyBattleNpc { who, seconds });
@@ -3031,6 +3043,16 @@ pub fn director_tick(
                     ActorControlCategory::SetCompanionOwnerId {
                         new_id: ObjectId(0xE000_0000),
                     },
+                );
+            }
+            LuaDirectorTask::RootBattleNpc { who, seconds } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to keep where it stands!");
+                    continue;
+                };
+                instance.rooted_npcs.insert(
+                    actor_id,
+                    Instant::now() + Duration::from_secs_f32(seconds.max(0.0)),
                 );
             }
             LuaDirectorTask::BusyBattleNpc { who, seconds } => {

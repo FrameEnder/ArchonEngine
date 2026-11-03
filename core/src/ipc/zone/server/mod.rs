@@ -724,6 +724,20 @@ pub enum ServerZoneIpcData {
     RideShootingEnd {
         unk: [u8; 40],
     },
+    /// Walks the player towards an actor whatever they do, until `ForcedMoveEnd` (fork: opcode 132 on 2026.10.16, Bob's
+    /// Chronofoil captures of Haukke Manor, 2026-11-02 and -03): what a Seduced status does. Retail sent `[4, the boss]`
+    /// to each player Lady Amandine's Beguiling Mist (28643) hit, and their client walked them to her at about 3.5 yalms
+    /// a second. The client's handler stores `speed` as a float and the target in its movement controller.
+    ForcedMoveTowards {
+        speed: u8,
+        #[brw(pad_before = 3)]
+        target_id: ObjectId,
+    },
+    /// Ends `ForcedMoveTowards`, giving the player their controls back (fork: opcode 166 on 2026.10.16, 3.0 s after it
+    /// on retail; 8 bytes of zeros.)
+    ForcedMoveEnd {
+        unk: [u8; 8],
+    },
     /// Starts a chocobo porter's ride (fork: Bob's Chronofoil captures cc62ad94, 1fac2416 and 2528a32d, all nine rides):
     /// the ChocoboTaxi row and, taken to be its Location (retail's 25 and 3792350, 56 and 3686766, 57 and 4011314), the
     /// row's Location column. The client rides the route itself and says where it is (`ChocoboTaxiCheckpoint`) and when

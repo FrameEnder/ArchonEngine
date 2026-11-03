@@ -74,14 +74,11 @@ PAIR_WALL = 2001607
 PAIR_LINE = 2001606
 PLACE_PAIR = 609
 
--- The last boss (14504) and its adds: 14505 with it from the start, joining in 15.4 s after the boss is pulled; 14506
--- coming 34.0 s after it (all four runs, within 0.1 s.) Its arena's wall (closed from the start, opened by the
--- cutscene) and line.
+-- The last boss (14504) and its adds: the eye (14505, untargetable), with it from the start, and 14506. Its arena's
+-- wall (closed from the start, opened by the cutscene) and line.
 BNPC_FINAL = 9058727
 BNPC_FINAL_ADD = 9058728
-BNPC_FINAL_ADD_JOINS = 15.4
 BNPC_FINAL_ADD2 = 9058729
-BNPC_FINAL_ADD2_COMES = 34.0
 FINAL_WALL = 2000357
 FINAL_LINE = 2001080
 PLACE_FINAL = 608
@@ -108,6 +105,40 @@ SHORTCUT_PAIR = 11438018
 SHORTCUT_FINAL = 11438019
 
 BGM_BATTLE = 37
+
+-- How the last boss fights (Bob's Chronofoil captures: the four runs of 2026-11-02 and 25342d59 of 2026-11-03, all the
+-- same to a tenth of a second; times from the start of the cast the director answers):
+-- * 28640 (its timeline's, a 4.0 s cast): 5.1 s on, the eye is put by the room's middle (ActorSetPos, then
+--   ActionTimeline 7747 on it); 5.2 s after that it casts its gaze (28648), and 8.1 s after the gaze began it plays
+--   7737. Its second 28640 brings in 14506 instead, 5.3 s on (spawned unseen, shown 0.85 s later with ActionTimeline
+--   158), and from the third they take turns: by a wall, either of two (the gaze 7.2 s after it's put there, as the
+--   boss's 28643 lands beside it), then by the middle again.
+-- * 28644 (instant, no target): its first comes as it's pulled, where it stands; then each one leaps it (SnapNextMove
+--   and an ActorMove) beside the eye by the wall, 0.8 s on, where it stays 4.9 s (28643, Seduced: everyone walked to it,
+--   `walk_to_caster` in its action script), or back to the middle, 0.7 s on.
+EYE_MIDDLE = { x = -2.5, y = 17.0, z = 4.0, rotation = 1.5707 }
+EYE_WALLS = {
+    { x = -4.5, y = 17.0, z = 22.0, rotation = -3.1416 },
+    { x = -4.5, y = 17.0, z = -14.0, rotation = 0.0 },
+}
+-- Where the boss leaps beside the eye by a wall (retail's -0.5 and the eye's z), and back to.
+BOSS_BESIDE_EYE_X = -0.5
+BOSS_HOME = { x = -7.52, y = 17.26, z = 3.98 }
+ACTION_VOID_CALL = 28640
+ACTION_TELEPORT = 28644
+ACTION_GAZE = 28648
+EYE_PUT_AFTER = 5.1
+EYE_RISES = 7747
+EYE_GAZE_AFTER_MIDDLE = 10.3
+EYE_GAZE_AFTER_WALL = 12.3
+EYE_SINKS_AFTER_GAZE = 8.1
+EYE_SINKS = 7737
+ADD2_COMES_AFTER = 5.3
+ADD2_APPEARS = 158
+ADD2_APPEARS_AFTER = 0.85
+LEAP_BESIDE_AFTER = 0.8
+LEAP_HOME_AFTER = 0.7
+STAYS_BESIDE = 4.9
 
 CUTSCENE_FINAL = 170
 CUTSCENE_END = 171
@@ -149,6 +180,11 @@ pair_left = 2
 eye_fled = false
 final_started = false
 final_pulled = false
+-- The last fight: how many of each answered action the boss has used, where the eye is by a wall, the eye's actor.
+void_calls = 0
+teleports = 0
+eye_wall = nil
+final_eye = nil
 
 function contains(list, id)
     for _, value in ipairs(list) do
@@ -248,11 +284,56 @@ function onUpdate(director, health, player_health, info)
 
     if final_started and not final_pulled and pulled(info, BNPC_FINAL) then
         final_pulled = true
-        director:delay(BNPC_FINAL_ADD_JOINS)
-        director:set_hate(BNPC_FINAL_ADD, nil, 300) -- the player
-        director:delay(BNPC_FINAL_ADD2_COMES)
-        director:spawn_bnpc(BNPC_FINAL_ADD2)
-        director:set_hate(BNPC_FINAL_ADD2, nil, 300)
+    end
+end
+
+-- The last boss's actions the director plays out (see the top of the file.)
+function onActorCast(director, layout_id, action_id, actor_id)
+    if layout_id ~= BNPC_FINAL then
+        return
+    end
+    if action_id == ACTION_VOID_CALL then
+        void_calls = void_calls + 1
+        if void_calls == 2 then
+            director:delay(ADD2_COMES_AFTER)
+            director:spawn_bnpc(BNPC_FINAL_ADD2)
+            director:appear_bnpc(BNPC_FINAL_ADD2, ADD2_APPEARS, ADD2_APPEARS_AFTER)
+            director:set_hate(BNPC_FINAL_ADD2, nil, 300) -- the player
+            director:delay(0)
+            return
+        end
+        -- The first, then every other one from the fourth: by the middle; the third, fifth...: by a wall.
+        local spot = EYE_MIDDLE
+        local gaze_after = EYE_GAZE_AFTER_MIDDLE
+        if void_calls >= 3 and void_calls % 2 == 1 then
+            eye_wall = EYE_WALLS[math.random(#EYE_WALLS)]
+            spot = eye_wall
+            gaze_after = EYE_GAZE_AFTER_WALL
+        end
+        director:delay(EYE_PUT_AFTER)
+        director:warp_bnpc(BNPC_FINAL_ADD, spot.x, spot.y, spot.z, spot.rotation)
+        director:play_action_timeline(BNPC_FINAL_ADD, EYE_RISES)
+        if final_eye ~= nil then
+            director:delay(gaze_after)
+            director:actor_use_action(final_eye, ACTION_GAZE)
+            director:delay(gaze_after + EYE_SINKS_AFTER_GAZE)
+            director:play_action_timeline(BNPC_FINAL_ADD, EYE_SINKS)
+        end
+        director:delay(0)
+    elseif action_id == ACTION_TELEPORT then
+        teleports = teleports + 1
+        if teleports == 1 then
+            return
+        end
+        if teleports % 2 == 0 and eye_wall ~= nil then
+            director:delay(LEAP_BESIDE_AFTER)
+            director:jump_bnpc(BNPC_FINAL, BOSS_BESIDE_EYE_X, eye_wall.y, eye_wall.z)
+            director:root_bnpc(BNPC_FINAL, STAYS_BESIDE)
+        else
+            director:delay(LEAP_HOME_AFTER)
+            director:jump_bnpc(BNPC_FINAL, BOSS_HOME.x, BOSS_HOME.y, BOSS_HOME.z)
+        end
+        director:delay(0)
     end
 end
 
@@ -373,7 +454,9 @@ function startFinal(director)
     director:play_cutscene(CUTSCENE_FINAL)
     director:update_shortcut(SHORTCUT_FINAL)
     director:spawn_boss(BNPC_FINAL, FINAL_WALL, FINAL_LINE, PLACE_FINAL)
-    director:spawn_bnpc(BNPC_FINAL_ADD)
+    -- The eye goes where the director puts it and gazes when it says (`onActorCast`.)
+    final_eye = director:spawn_bnpc(BNPC_FINAL_ADD)
+    director:hold_bnpc(BNPC_FINAL_ADD)
     director:party_npc_yell("healer", LINE_FINAL, LINE_FINAL_AFTER)
 end
 

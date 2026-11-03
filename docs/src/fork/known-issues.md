@@ -716,6 +716,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   Closet and Into the Beast's Maw, whose next step is a cutscene in that zone; other quests with a dungeon and a
   POPRANGE0 weren't checked. Kawari's ZoneInit there doesn't carry the pop range's ID (retail's did); the positions are
   the captures'.
+* Lady Amandine's fight (since 2026-11-03) is untested in game. Kawari doesn't send retail's opcodes 820 (as Beguiling
+  Mist walks a player), 839 and UpdateClassInfo (as it ends); what ActorControl 82 (1132) shows isn't known; the eye's
+  gaze comes from the director's half-second ticks (to 0.5 s). 28645, 28646 and 14506's actions are as before (their
+  effects from the recordings, not looked at again.)
+* The first boss's 705: the Duty Support run's first came 99 s into the fight, the Duty Finder runs' 22-27 s in; the
+  timeline has the first.
 * Haukke Manor's eye at the last room's door (since 2026-11-03): untested in game. Kawari doesn't send retail's
   opcode 942 `[the eye, 1]` (unknown), doesn't put the eye's health back to full as it flies (retail's did, over a
   second), and doesn't send ToggleWeapon off and SetBattle 0 at once (the eye and the party leave battle on their own as

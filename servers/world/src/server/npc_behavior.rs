@@ -280,6 +280,7 @@ pub fn npc_behavior(
 
     let busy_now = Instant::now();
     instance.busy_npcs.retain(|_, until| *until > busy_now);
+    instance.rooted_npcs.retain(|_, until| *until > busy_now);
     // NPCs whose step a wall or a drop cut short this tick: their path goes on from where they stopped.
     let mut walled: HashSet<ObjectId> = HashSet::new();
     // Every NPC a wall stopped this tick, whether or not it then walked on through it (`NPC_WALL_PATIENCE_TICKS`.)
@@ -287,8 +288,9 @@ pub fn npc_behavior(
 
     // const pass
     for (id, actor) in &instance.actors {
-        // Kept busy by its director (`director:busy_bnpc`): it stays as it is.
-        if instance.busy_npcs.contains_key(id) {
+        // Kept busy by its director (`director:busy_bnpc`): it stays as it is. Kept where it stands
+        // (`director:root_bnpc`): it doesn't move (its actions are the mut pass's.)
+        if instance.busy_npcs.contains_key(id) || instance.rooted_npcs.contains_key(id) {
             continue;
         }
         // A director's helper does only what it's told (`director:hold_bnpc`.)

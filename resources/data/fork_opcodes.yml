@@ -676,3 +676,29 @@ ServerZoneIpcType:
   # Written by `kawari-opcodescan <exe> suggest-finders` from 2026.10.16 (its handler, 0xB4EBE0.)
   - handler:
       pattern: 48 83 EC 28 48 8B D1 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B 0D
+- name: ForcedMoveTowards
+  comment: Walks the player towards an actor whatever they do (a Seduced status) - the speed, then the actor, until ForcedMoveEnd.
+  # 132 on 2026.10.16 (Bob's Chronofoil captures of Haukke Manor, 2026-11-02 and 25342d59 of 2026-11-03: to each player
+  # Lady Amandine's 28643 lands on, [4, the boss], 8 bytes; their client then walked them towards her at about 3.5
+  # yalms a second for 3 s.) Its handler (0xB4E260) stores the first byte as a float and the u32 at 4 as the target in
+  # a global movement controller (0x631B80); ForcedMoveEnd's resets the same one.
+  opcode: 132
+  size: 8
+  found_on: 2026.10.16.0000.0000
+  how_to_find: Fight Lady Amandine in Haukke Manor on retail (Kawari Recorder) - the 8-byte packet [4, the boss] to each player Beguiling Mist (28643) hits.
+  find:
+  # Its handler (0xB4E260 on 2026.10.16), unique there; it reads 130 on 2026.10.06 (no 10.06 capture to check it with.)
+  - handler:
+      pattern: 0F B6 01 44 8B 41 04 48 8D 0D ?? ?? ?? ?? 66 0F 6E C8 0F 5B C9 E9
+- name: ForcedMoveEnd
+  comment: Ends ForcedMoveTowards - 8 bytes of zeros.
+  # 166 on 2026.10.16 (the same captures: 3.0 s after each ForcedMoveTowards.) Its handler (0xB4E320) resets the
+  # movement controller (target 0xE0000000, speed -1) and gives the player back their controls.
+  opcode: 166
+  size: 8
+  found_on: 2026.10.16.0000.0000
+  how_to_find: The 8-byte packet of zeros 3 s after ForcedMoveTowards, in the same fight.
+  find:
+  # Its handler (0xB4E320 on 2026.10.16), unique there; it reads 772 on 2026.10.06 (no 10.06 capture to check it with.)
+  - handler:
+      pattern: 48 8B 15 ?? ?? ?? ?? 48 85 D2 74 0C 48 8D 0D ?? ?? ?? ?? E9 ?? ?? ?? ?? C3

@@ -2426,6 +2426,26 @@
       "handler_at": 11856864,
       "end": "de23b881c32caf0810e705ae",
       "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "ForcedMoveTowards",
+      "opcode": 132,
+      "case": "de23b881bb9baf0710e705ae",
+      "case_group": 1,
+      "handler_at": 11854432,
+      "end": "de23b881bb9baf0710e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "ForcedMoveEnd",
+      "opcode": 166,
+      "case": "de23b881b3c5db4410e705ae",
+      "case_group": 1,
+      "handler_at": 11854624,
+      "end": "de23b881b3c5db4410e705ae",
+      "end_group": 1
     }
   ],
   "client": [

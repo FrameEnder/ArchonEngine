@@ -29,23 +29,23 @@
             "comment": "489 4.9 s after the pull (all four runs), then every 18.3-20.5 s"
         },
         {
-            "time": 16.0,
+            "time": 13.2,
             "every": 18.4,
             "data": {
                 "type": "action",
                 "action_id": 855
             },
-            "comment": "855 11.1-11.3 s after each 489"
+            "comment": "855's cast (3.0 s) 8.2 s after each 489 (it lands 11.1-11.3 s after)"
         },
         {
-            "time": 103.0,
+            "time": 99.0,
             "every": 50.8,
             "data": {
                 "type": "action",
                 "action_id": 705,
                 "target": "other"
             },
-            "comment": "705 on a player 103.0 s after the pull, every 50.7-50.8 s (the Duty Support run; the shorter runs ended first)"
+            "comment": "705's cast (4.0 s) on a player 99.0 s after the pull (it lands at 103.0), every 50.7-50.8 s (the Duty Support run; the shorter runs ended first)"
         }
     ],
     "animation_locks": {
@@ -54,5 +54,5 @@
         "705": 2.1
     },
     "timeline_always_plays": false,
-    "comment": "Haukke Manor's first boss (BNpcBase 272, layout 3633770, level 28, 17136 HP), from its pull (`from_pull`): auto-attack 870, 489 then 855 11 s later, about every 18.4 s, and 705 on a player every 50.8 s. Bob's Chronofoil captures of Haukke Manor (territory 1040) on 2026-11-02: 5d9c7d7f visit 0.2 (48 minutes with Duty Support, during quest 801) and e7580e0d visits 0.1, 0.3 and 0.5 (Duty Finder runs with three other players), `questkit chronofoil --battle`. `players` is the median damage to players over the four runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+    "comment": "Haukke Manor's first boss (BNpcBase 272, layout 3633770, level 28, 17136 HP), from its pull (`from_pull`): auto-attack 870, 489 then 855 11 s later, about every 18.4 s, and 705 on a player every 50.8 s. Bob's Chronofoil captures of Haukke Manor (territory 1040) on 2026-11-02: 5d9c7d7f visit 0.2 (48 minutes with Duty Support, during quest 801) and e7580e0d visits 0.1, 0.3 and 0.5 (Duty Finder runs with three other players), `questkit chronofoil --battle`. `players` is the median damage to players over the four runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded. Each time is its cast's start (until 2026-11-03, 855's and 705's were when they landed, 3 and 4 s late.)"
 }

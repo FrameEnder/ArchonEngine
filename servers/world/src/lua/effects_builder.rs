@@ -65,6 +65,21 @@ pub struct EffectsBuilder {
     /// away is missed. Retail's Akoman's 513 in quest battle 17 (Bob's Chronofoil capture df6f5af9: every target facing
     /// it within 58 degrees paralysed, every one turned 94 degrees or more away missed.)
     pub gaze: bool,
+    /// If set, each player it lands on is walked towards the caster, whatever they do (`ForcedMoveTowards`), and drawn
+    /// in a pose (ActorControl 82 with its value, retail's unknown), for a while: what a Seduced status does. Lady
+    /// Amandine's Beguiling Mist (28643) in Haukke Manor (Bob's Chronofoil captures: speed 4, pose 1132, 3.0 s.)
+    pub walk_to_caster: Option<WalkToCaster>,
+}
+
+/// Players walked towards the one using the action (`EffectsBuilder::walk_to_caster`.)
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct WalkToCaster {
+    /// How long, in seconds.
+    pub seconds: f32,
+    /// ForcedMoveTowards' speed (retail's 4.)
+    pub speed: u8,
+    /// ActorControl 82's value on the player meanwhile (retail's 1132), 0 for none.
+    pub pose: u32,
 }
 
 /// Status: a revive offered (Raise...), which the dead player can accept.
@@ -175,6 +190,18 @@ impl UserData for EffectsBuilder {
             }));
             Ok(())
         });
+        // Players it lands on walk towards the caster for `seconds` (see `EffectsBuilder::walk_to_caster`.)
+        methods.add_method_mut(
+            "walk_to_caster",
+            |_, this, (seconds, speed, pose): (f32, u8, Option<u32>)| {
+                this.walk_to_caster = Some(WalkToCaster {
+                    seconds,
+                    speed,
+                    pose: pose.unwrap_or_default(),
+                });
+                Ok(())
+            },
+        );
         // A gaze: only those facing the caster are affected (see `EffectsBuilder::gaze`.)
         methods.add_method_mut("gaze", |_, this, _: ()| {
             this.gaze = true;

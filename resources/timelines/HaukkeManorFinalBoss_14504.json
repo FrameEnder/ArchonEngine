@@ -22,103 +22,103 @@
                 "action_id": 28644,
                 "target": "nobody"
             },
-            "comment": "28644 as it is pulled (12.0-39.8 s after it came out, all four runs)"
+            "comment": "28644 (a teleport, instant) as it is pulled, 1.4 s before its first 28640's cast (all five runs)"
         },
         {
-            "time": 5.5,
+            "time": 1.5,
             "data": {
                 "type": "action",
                 "action_id": 28640,
                 "target": "itself"
             },
-            "comment": "28640 5.2-5.4 s in"
+            "comment": "28640's cast (4.0 s) 1.4 s in: the director puts the eye by the room's middle"
         },
         {
-            "time": 24.5,
+            "time": 20.6,
             "data": {
                 "type": "action",
                 "action_id": 28640,
                 "target": "itself"
             },
-            "comment": "28640 again 24.4-24.6 s in"
+            "comment": "28640 again 20.6 s in: the director brings in 14506"
         },
         {
-            "time": 41.0,
+            "time": 37.2,
             "every": 63.0,
             "data": {
                 "type": "action",
                 "action_id": 28646,
                 "target": "other"
             },
-            "comment": "28646 on a player 41.2 s in, then every 63.1 s"
+            "comment": "28646's cast (4.0 s) on a player 37.2 s in, then every 63.1 s"
         },
         {
-            "time": 52.2,
+            "time": 48.4,
             "every": 63.0,
             "data": {
                 "type": "action",
                 "action_id": 28640,
                 "target": "itself"
             },
-            "comment": "28640 on itself 52.4 s in, then every 63.1 s"
+            "comment": "28640's cast 48.4 s in, then every 63.1 s: the director puts the eye by a wall"
         },
         {
-            "time": 58.2,
+            "time": 54.5,
             "every": 63.0,
             "data": {
                 "type": "action",
                 "action_id": 28649,
                 "target": "itself"
             },
-            "comment": "28649 on itself 58.4 s in, then every 63.1 s"
+            "comment": "28649's cast (3.9 s) 54.5 s in, then every 63.1 s"
         },
         {
-            "time": 58.5,
+            "time": 58.6,
             "every": 63.0,
             "data": {
                 "type": "action",
                 "action_id": 28644,
                 "target": "nobody"
             },
-            "comment": "28644 on no one 58.7 s in, then every 63.1 s"
+            "comment": "28644 (instant) 0.2 s after 28649 lands, then every 63.1 s: the director leaps it beside the eye"
         },
         {
-            "time": 59.8,
+            "time": 60.0,
             "every": 63.0,
             "data": {
                 "type": "action",
                 "action_id": 28643
             },
-            "comment": "28643 on up to four 60.0 s in, then every 63.1 s"
+            "comment": "28643 (instant) on everyone 1.4 s after 28644, then every 63.1 s: Seduced, walked towards it"
         },
         {
-            "time": 75.9,
+            "time": 71.1,
             "every": 63.0,
             "data": {
                 "type": "action",
                 "action_id": 28645
             },
-            "comment": "28645 76.1 s in, then every 63.1 s"
+            "comment": "28645's cast (5.0 s) 71.1 s in, then every 63.1 s"
         },
         {
-            "time": 83.1,
+            "time": 83.3,
             "every": 63.0,
             "data": {
                 "type": "action",
                 "action_id": 28644,
                 "target": "nobody"
             },
-            "comment": "28644 on no one 83.3 s in, then every 63.1 s"
+            "comment": "28644 (instant) 83.3 s in, then every 63.1 s: the director leaps it back to the middle"
         },
         {
-            "time": 88.4,
+            "time": 84.6,
             "every": 63.0,
             "data": {
                 "type": "action",
                 "action_id": 28640,
                 "target": "itself"
             },
-            "comment": "28640 on itself 88.6 s in, then every 63.1 s"
+            "comment": "28640's cast 84.6 s in, then every 63.1 s: the eye by the middle again"
         }
     ],
     "animation_locks": {
@@ -131,5 +131,5 @@
         "28645": 2.1
     },
     "timeline_always_plays": false,
-    "comment": "Haukke Manor's last boss (BNpcBase 14504, layout 9058727, level 28, 21063 HP), from its pull (`from_pull`), the same to a few tenths of a second in all four runs: 28644, 28640 at 5.4 and 24.6 s, then from 41.2 s every 63.1 s: 28646 on a player, 28640 11.2 s later, 28649, 28644, 28643 on up to four, 28645 16.1 s after that, 28644 and 28640. 28647 every 3.0 s is its attack. Bob's Chronofoil captures of Haukke Manor (territory 1040) on 2026-11-02: 5d9c7d7f visit 0.2 (48 minutes with Duty Support, during quest 801) and e7580e0d visits 0.1, 0.3 and 0.5 (Duty Finder runs with three other players), `questkit chronofoil --battle`. `players` is the median damage to players over the four runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
+    "comment": "Haukke Manor's last boss (BNpcBase 14504, layout 9058727, level 28, 21063 HP), from its pull (`from_pull`), the same to a few tenths of a second in all five runs: 28644, 28640's casts at 1.4 and 20.6 s, then from 37.2 s every 63.1 s: 28646 on a player, 28640, 28649, 28644 and 28643 on everyone as it lands, 28645, 28644 and 28640. Each time is its cast's start (until 2026-11-03 they were when it landed, so every cast came about 4 s late and 28644 and 28643 before the 28649 they follow); 28640 and 28644 are answered by the director (`content/f1d2_re.lua`). 28647 every 3.0 s is its attack. Bob's Chronofoil captures of Haukke Manor (territory 1040) on 2026-11-02: 5d9c7d7f visit 0.2 (48 minutes with Duty Support, during quest 801) and e7580e0d visits 0.1, 0.3 and 0.5 (Duty Finder runs with three other players), and 25342d59 visit 0.3 (2026-11-03, the Duty Finder), `questkit chronofoil --battle` and the visits' packets. `players` is the median damage to players over the four runs, `npcs` to the Duty Support members; `every` the median time between uses. Hitbox not recorded."
 }
