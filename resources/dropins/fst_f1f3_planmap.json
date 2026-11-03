@@ -11690,6 +11690,35 @@
                     "rotation": 2.7085
                 }
             ]
+        },
+        {
+            "name": "QB_XxaUsb012_001",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 1888,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1170,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 34,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147,
+                        "character_data_flags": 2
+                    },
+                    "layout_id": 4292977,
+                    "position": {
+                        "x": -71.853,
+                        "y": 1.116,
+                        "z": 316.076
+                    },
+                    "rotation": 2.9851
+                }
+            ]
         }
     ]
 }

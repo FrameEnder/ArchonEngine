@@ -1,0 +1,24 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "872": {
+            "players": 39.5
+        },
+        "373": {
+            "players": 51
+        }
+    },
+    "rotation": {
+        "pace": 7.1,
+        "actions": [
+            {
+                "action": 373,
+                "every": 7.1,
+                "comment": "between auto-attacks, every 6.1-8.1 s"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Quest 809's last enemy (BNpcBase 2240, BNpcName 678, layout 4291285), out once the other four have fallen: level 30, 585 HP. From Bob's Chronofoil captures 44df02fc and c9145fdc (2026-11-03, a level 35-36 player each), `questkit chronofoil --battle 0.3`, `0.4` and `0.6`): `players` is the median damage to the player, `every` the time between uses. Hitbox not recorded."
+}

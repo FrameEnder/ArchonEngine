@@ -69,6 +69,7 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
         try:
             results = step["scenes"] if "scenes" in step else step.get("results", {})
             harness.territory = step.get("territory")
+            layers_before = _layer_entries(harness, quest)
             harness.interrupt_bar = bool(step.get("interrupted"))
             if "talk" in step:
                 outcome = harness.talk(step["talk"], results, trace, step.get("layout"))
@@ -98,6 +99,9 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
             problems.append(str(error))
         except Exception as error:  # Lua errors
             problems.append(f"script error: {str(error).strip().splitlines()[0] if str(error).strip() else error!r}")
+
+        if not problems and outcome:
+            _layer_filter_warp(harness, quest, layers_before, outcome)
 
         if not problems and outcome and not outcome.get("finished"):
             problems.append("the event was never finished (no finish_event): the client would be left waiting")
@@ -144,6 +148,34 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
         if problems:
             break
     return result
+
+
+def _layer_entries(harness: Harness, quest: int) -> list[int]:
+    """Which of this quest's layer filter entries (resources/data/layer_filters.json) apply in the step's territory:
+    the quest accepted and as far as the entry's sequence, or completed (the server's `layer_filter_key`)."""
+    if harness.territory is None:
+        return []
+    entries = repo.layer_filters().get(int(harness.territory), [])
+    state = harness.state()
+    applying = []
+    for index, entry in enumerate(entries):
+        if entry.get("quest") != quest:
+            continue
+        if state.get("completed") or ("sequence" in state and state["sequence"] >= entry.get("sequence", 0)):
+            applying.append(index)
+    return applying
+
+
+def _layer_filter_warp(harness: Harness, quest: int, before: list[int], outcome: dict):
+    """After an event the server warps the player where they stand when the story moved the zone's layer filter on
+    (`ZoneConnection::refresh_layer_filter`: PrepareZoning to the same territory, warp type 18), unless the script
+    already moved them within it, which loads the new filter too. Retail's zone change in the fixture's terms."""
+    if _layer_entries(harness, quest) == before:
+        return
+    territory = int(harness.territory)
+    if any(effect.get("zone") == territory for effect in outcome.get("effects", [])):
+        return
+    outcome.setdefault("effects", []).append({"zone": territory})
 
 
 def _key(effect: dict) -> tuple:

@@ -1,0 +1,42 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 50,
+            "npcs": 44
+        },
+        "575": {
+            "players": 63
+        },
+        "579": {
+            "players": 82.5
+        }
+    },
+    "timepoints": [
+        {
+            "time": 9.5,
+            "data": {
+                "type": "action",
+                "action_id": 579,
+                "target": "target"
+            },
+            "comment": "2.2 s cast round itself, once: its hit 11.1-12.3 s after it came out (three fights)"
+        },
+        {
+            "time": 14.0,
+            "every": 16.6,
+            "data": {
+                "type": "action",
+                "action_id": 575,
+                "target": "target"
+            },
+            "comment": "a hit between auto-attacks, 8.1-19.8 s after it came out, the second 16.6 s later"
+        }
+    ],
+    "animation_locks": {
+        "579": 2.1
+    },
+    "timeline_always_plays": false,
+    "comment": "Quest 810's enemy (BNpcBase 1900, BNpcName 1986, layout 4291318, layer QB_GaiUsb003_001): level 30, 1170 HP; auto-attack 870, 579 once and 575 every 16.6 s, from its pull (`from_pull`). From Bob's Chronofoil captures 44df02fc and c9145fdc (2026-11-03, a level 35-36 player each), `questkit chronofoil --battle 0.3` (two fights) and `0.4`): `players` is the median damage to the player, `npcs` once on someone else. Hitbox not recorded."
+}

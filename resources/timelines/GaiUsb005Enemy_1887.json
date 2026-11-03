@@ -1,0 +1,53 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "recorded_amounts": {
+        "872": {
+            "players": 45.5,
+            "npcs": 39
+        },
+        "347": {
+            "players": 17
+        },
+        "976": {
+            "players": 63
+        },
+        "1006": {
+            "players": 160
+        }
+    },
+    "timepoints": [
+        {
+            "time": 5.5,
+            "data": {
+                "type": "action",
+                "action_id": 347,
+                "target": "target"
+            },
+            "comment": "once, 6.1 s after it came out (one run of two)"
+        },
+        {
+            "time": 6.7,
+            "data": {
+                "type": "action",
+                "action_id": 1006,
+                "target": "target"
+            },
+            "comment": "3.7 s cast round itself, once: its hit 9.8-11.0 s after it came out"
+        },
+        {
+            "time": 18.0,
+            "data": {
+                "type": "action",
+                "action_id": 976,
+                "target": "target"
+            },
+            "comment": "once, 17.5-19.8 s after it came out"
+        }
+    ],
+    "animation_locks": {
+        "1006": 2.1
+    },
+    "timeline_always_plays": false,
+    "comment": "Nix That's (812) enemy (BNpcBase 1887, BNpcName 1976, layout 4292674, layer QB_GaiUsb005_001): level 30, 1170 HP; auto-attack 872 and three actions once each, from its pull (`from_pull`). From Bob's Chronofoil captures 44df02fc and c9145fdc (2026-11-03, a level 35-36 player each), `questkit chronofoil --battle 0.16` (two fights, the second over in a second) and `0.10`): `players` is the median damage to the player, `npcs` once on someone else. Hitbox not recorded."
+}

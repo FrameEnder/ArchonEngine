@@ -18,6 +18,7 @@ FORK_OPCODES = ROOT / "resources" / "data" / "fork_opcodes.yml"
 SCENE_FLAGS_RS = ROOT / "core" / "src" / "ipc" / "zone" / "server" / "event_scene.rs"
 ACTOR_CONTROL_RS = ROOT / "core" / "src" / "ipc" / "zone" / "server" / "actor_control.rs"
 FIXTURES = ROOT / "tools" / "questkit" / "fixtures"
+LAYER_FILTERS = ROOT / "resources" / "data" / "layer_filters.json"
 
 # Quest handler IDs are the quest number plus this (the Quest sheet's starting row.)
 QUEST_HANDLER_BASE = 0x10000
@@ -34,6 +35,14 @@ def find_quest_script(quest_id: int) -> Path | None:
     for path in sorted(folder.glob(f"*_{quest_id:05}.lua")):
         return path
     return None
+
+
+def layer_filters() -> dict[int, list[dict]]:
+    """resources/data/layer_filters.json's entries by territory (the server's `layer_filters.rs`.)"""
+    import json
+
+    data = json.loads(LAYER_FILTERS.read_text())
+    return {int(territory): entries for territory, entries in data.get("territories", {}).items()}
 
 
 def scene_flags() -> dict[str, int]:

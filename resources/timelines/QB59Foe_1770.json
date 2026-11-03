@@ -1,0 +1,7 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {},
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "The Lominsan Way's quest battle (59): the enemy the player defeats to win (BNpcBase 1770, BNpcName 2074, layout 4295470; battalion 4): level 30, 3900 HP. It never moved or acted in seven runs (Bob's Chronofoil captures 44df02fc (2026-11-03, six runs, the last won) and c9145fdc (2026-11-03, one run, won), `questkit chronofoil --battle`; a level 34-35 player): the director holds it."
+}

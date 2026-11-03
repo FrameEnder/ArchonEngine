@@ -11445,6 +11445,64 @@
                     "rotation": 3.0097
                 }
             ]
+        },
+        {
+            "name": "QB_GaiUsb102_001",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 1889,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1330,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1977,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147,
+                        "character_data_flags": 2
+                    },
+                    "layout_id": 4293187,
+                    "position": {
+                        "x": 81.217,
+                        "y": 1.77,
+                        "z": 693.675
+                    },
+                    "rotation": -1.756
+                }
+            ]
+        },
+        {
+            "name": "QB_GaiUsb103_001",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 1890,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1596,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1978,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147,
+                        "character_data_flags": 2
+                    },
+                    "layout_id": 4293190,
+                    "position": {
+                        "x": 26.195,
+                        "y": 17.519,
+                        "z": 594.2
+                    },
+                    "rotation": 2.6241
+                }
+            ]
         }
     ]
 }

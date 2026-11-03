@@ -55,6 +55,14 @@ LOG_TERRACE_DOOR = 691
 EVENT_ACTION_OPEN = 24
 DOORS = { EOBJ_POND_DOOR, EOBJ_BOSS1_WAY_ON, EOBJ_BOSS2_WAY_ON, EOBJ_BOSS3_WAY_ON, EOBJ_TERRACE_DOOR }
 EOBJ_SHORTCUT = 2000700
+-- Where the shortcut (2000700, by the entrance) takes the party: the layout's four pop ranges for it (layer
+-- LVD_zone_01 of planmap.lgb, Bob's dump of 2026-11-03), each outside one of the boss rooms, the next one's as that
+-- boss is pulled, as in the Copperbell Mines and Sastasha. Retail showed the shortcut as the first boss was pulled;
+-- nobody used it in either run, so which pop range goes with which pull is the layout's order and the rooms' places.
+SHORTCUT_BOSS1 = 11438223
+SHORTCUT_BOSS2 = 11438224
+SHORTCUT_BOSS3 = 11438225
+SHORTCUT_FINAL = 11438226
 
 -- Map effects retail set as doors opened (state 1, timeline 2): the pond's door, then each of the first three rooms'
 -- ways on.
@@ -127,16 +135,21 @@ YELL_HELP_FIRST = 21.0
 YELL_HELP_EVERY = 15.0
 YELL_HELP_AGAIN = 146
 
--- The ambushes: three 1044s by one goblin and two by another, appearing as a player crosses into their stretch of the
--- path (both runs' player crossed the first's at x 42-44, z -82 to -78, heading north; the Duty Support run's the
--- second's at x 57-58, z -87, heading east; the Duty Finder run never went that way, and its second never came) and
--- going for the goblin; the goblin calls out as they come (145; the first 146 15.8 s later in one run). The first of the
+-- The ambushes: three 1044s by one goblin and two by another, appearing as a player enters their event range (the
+-- layout's 4000437 and 4000429, layer LVD_gimmick_01 of planmap.lgb: 0.15-0.42 s after the player's position update
+-- inside it in both runs; the Duty Finder run never went into the second's, and its second never came) and going for
+-- the goblin; the goblin calls out as they come (145; the first 146 15.8 s later in one run). The first of the
 -- two to be cleared drops coffer 106 and its goblin cheers 3.3-3.5 s after (148 or 149, ActionTimeline 957).
 AMBUSHES = {
-    { goblin = 4000414, from = { x = 37.0, z = -83.0 }, to = { x = 48.0, z = -72.0 },
-        enemies = { 3977699, 3977700, 3977701 }, again = 15.8 },
-    { goblin = 4000410, from = { x = 56.0, z = -93.0 }, to = { x = 64.0, z = -82.0 },
-        enemies = { 3977704, 3977705 } },
+    { goblin = 4000414, range = 4000437, enemies = { 3977699, 3977700, 3977701 }, again = 15.8 },
+    { goblin = 4000410, range = 4000429, enemies = { 3977704, 3977705 } },
+}
+-- The event ranges the director watches, from planmap.lgb (Bob's dump of 2026-11-03): their box's middle, its turn
+-- about the vertical (radians) and its half-sizes, as the layout has them.
+EVENT_RANGES = {
+    [4000437] = { x = 43.42, y = 7.76, z = -77.21, rotation = -1.366, sx = 3.0, sy = 3.0, sz = 4.0 },
+    [4000429] = { x = 61.4, y = 7.25, z = -84.34, rotation = -1.406, sx = 4.0, sy = 3.0, sz = 12.0 },
+    [4105944] = { x = -66.72, y = 35.36, z = -234.73, rotation = 0.251, sx = 1.5, sy = 3.0, sz = 9.0 },
 }
 AMBUSH_COFFER = 106
 AMBUSH_CHEER_AFTER = 3.4
@@ -192,15 +205,16 @@ DRAGON_FLIES_AFTER = 1.9
 DRAGON_LEAVES_LOG_AFTER = 7.0
 DRAGON_GONE_AFTER = 12.2
 
--- The last boss (14533) and its terrace. Its cutscene (184) played as a player came up the slope at about x -73 to
--- -79, z -233 to -237 (both runs; the layout's event range isn't known yet); the boss and its helpers came 2.1-2.4 s
--- later.
+-- The last boss (14533) and its terrace. Its cutscene (184) played as a player entered the event range across the top
+-- of the slope (4105944, layer LVD_gimmick_01 of planmap.lgb: 0.03 s after the position update inside it in the Duty
+-- Support run), as Sastasha's last boss's does (`onGimmickRect`, when the server knows it as a cutscene trigger; the
+-- director checks the players itself too); the boss and its helpers came 2.1-2.4 s later.
 BNPC_FINAL = 9059658
 FINAL_WALL = 2002872
 FINAL_LINE = 2002735
 PLACE_FINAL = 690
 CUTSCENE_FINAL = 184
-FINAL_TRIGGER = { x = -80.0, y = 30.0, z = -225.0 }
+FINAL_RANGE = 4105944
 CUTSCENE_END = 185
 CUTSCENE_END_PARAMS = { 1, 18, 0, 0 }
 -- After the clear: with Duty Support, its members as event NPCs on the terrace 3.1 s later (ENpcResidents 1043371,
@@ -216,9 +230,11 @@ AFTER_CLEAR_GOBLINS_AFTER = 25.4
 -- at once; 5.6 s later (5.5 in the Duty Finder run) their map effects go to state 1 (timeline 2) and the spots' other
 -- helpers cast 28658 (9.0 s); 8.9 s after that the map effects go to state 4 (timeline 8). The first 28656 marks the
 -- middle and set A; after it the boss casts two 5.1 s apart, the first marking the middle and one of the sets (A in
--- three of five pairs over the two runs), the second the other set. Which map effect is which spot: the middle is 0
--- (it came with both sets); A's three are 2, 4, 6 and B's 1, 3, 5, but which of them is which is a guess until the
--- layout's map effects are read.
+-- three of five pairs over the two runs), the second the other set. Each spot is one of the layout's SharedGroups
+-- (`layout`: layer LVD_Boss3_Gimmick_Remake of planmap.lgb, Bob's dump of 2026-11-03, sgbg_s1d2_a0_gmc01.sgb, each
+-- within 0.04 yalms of the spot's helpers), whose map effect the server finds by it (`map_effect_at`: its place in the
+-- duty's ContentDirectorManagedSG). The middle was map effect 0 (it came with both sets) and A's three among 2, 4 and
+-- 6, B's among 1, 3 and 5 (`index`, used if the layout ID isn't in the list).
 HELPER = 99009020
 ACTION_TOXIC_VOMIT = 28656
 ACTION_MARK = 28657
@@ -226,13 +242,13 @@ ACTION_BURST = 28658
 BURST_AFTER = 5.6
 BURST_LANDS_AFTER = 8.9
 SPOTS = {
-    [0] = { x = -26.44, y = 34.99, z = -236.01, rotation = 0.0 },
-    [1] = { x = -40.45, y = 34.47, z = -227.99, rotation = 2.059 },
-    [2] = { x = -40.45, y = 34.99, z = -244.01, rotation = 1.065 },
-    [3] = { x = -12.47, y = 35.45, z = -227.99, rotation = -2.042 },
-    [4] = { x = -26.44, y = 35.23, z = -219.99, rotation = -3.142 },
-    [5] = { x = -26.44, y = 35.2, z = -252.0, rotation = 0.0 },
-    [6] = { x = -12.47, y = 35.39, z = -244.01, rotation = -1.012 },
+    [0] = { x = -26.44, y = 34.99, z = -236.01, rotation = 0.0, layout = 9068345 },
+    [1] = { x = -40.45, y = 34.47, z = -227.99, rotation = 2.059, layout = 9070179 },
+    [2] = { x = -40.45, y = 34.99, z = -244.01, rotation = 1.065, layout = 9070182 },
+    [3] = { x = -12.47, y = 35.45, z = -227.99, rotation = -2.042, layout = 9070177 },
+    [4] = { x = -26.44, y = 35.23, z = -219.99, rotation = -3.142, layout = 9070178 },
+    [5] = { x = -26.44, y = 35.2, z = -252.0, rotation = 0.0, layout = 9070173 },
+    [6] = { x = -12.47, y = 35.39, z = -244.01, rotation = -1.012, layout = 9070174 },
 }
 SET_A = { 2, 4, 6 }
 SET_B = { 1, 3, 5 }
@@ -347,8 +363,13 @@ function players(info)
     return list
 end
 
-function within(position, from, to)
-    return position.x >= from.x and position.x <= to.x and position.z >= from.z and position.z <= to.z
+-- Whether a position is inside one of EVENT_RANGES' boxes (turned into the box's own frame.)
+function inRange(position, id)
+    local range = EVENT_RANGES[id]
+    local dx, dy, dz = position.x - range.x, position.y - range.y, position.z - range.z
+    local c, s = math.cos(range.rotation), math.sin(range.rotation)
+    local lx, lz = dx * c - dz * s, dx * s + dz * c
+    return math.abs(lx) <= range.sx and math.abs(dy) <= range.sy and math.abs(lz) <= range.sz
 end
 
 function onSetup(director)
@@ -432,7 +453,7 @@ function onUpdate(director, health, player_health, info)
         boss1_pulled = true
         boss1_pulled_at = clock
         director:set_bgm(BGM_BATTLE)
-        director:show_eobj(EOBJ_SHORTCUT)
+        director:update_shortcut(SHORTCUT_BOSS1)
     end
     if boss1_pulled and not boss1_dead
         and clock - boss1_pulled_at >= BOSS1_FIRST_WAVE + boss1_waves * BOSS1_WAVE_EVERY then
@@ -442,12 +463,11 @@ function onUpdate(director, health, player_health, info)
 
     for _, player in ipairs(players(info)) do
         for index, ambush in ipairs(AMBUSHES) do
-            if boss1_dead and not ambushed[index] and within(player, ambush.from, ambush.to) then
+            if boss1_dead and not ambushed[index] and inRange(player, ambush.range) then
                 springAmbush(director, index)
             end
         end
-        if not final_started and progress & PROGRESS_DOOR ~= 0 and player.x > FINAL_TRIGGER.x
-            and player.y > FINAL_TRIGGER.y and player.z < FINAL_TRIGGER.z then
+        if not final_started and progress & PROGRESS_DOOR ~= 0 and inRange(player, FINAL_RANGE) then
             startFinal(director)
         end
     end
@@ -455,6 +475,7 @@ function onUpdate(director, health, player_health, info)
     if not boss2_pulled and pulled(info, BNPC_BOSS2) then
         boss2_pulled = true
         director:set_bgm(BGM_BATTLE)
+        director:update_shortcut(SHORTCUT_BOSS2)
     end
     if boss2_pulled and not boss2_add_came and not boss2_dead and health ~= nil and health[BNPC_BOSS2] ~= nil
         and health[BNPC_BOSS2] < BOSS2_ADD_BELOW then
@@ -471,6 +492,7 @@ function onUpdate(director, health, player_health, info)
     if not boss3_pulled and pulled(info, BNPC_BOSS3) then
         boss3_pulled = true
         director:set_bgm(BGM_BATTLE)
+        director:update_shortcut(SHORTCUT_BOSS3)
     end
     if boss3_pulled and not dragon_came and not boss3_dead and health ~= nil and health[BNPC_BOSS3] ~= nil
         and health[BNPC_BOSS3] < DRAGON_BELOW then
@@ -643,14 +665,14 @@ function puddles(director, marked)
     end
     director:delay(BURST_AFTER)
     for _, spot in ipairs(marked) do
-        director:map_effect(spot, MAP_EFFECT_MARKED.timeline, MAP_EFFECT_MARKED.state)
+        director:map_effect_at(SPOTS[spot].layout, MAP_EFFECT_MARKED.timeline, MAP_EFFECT_MARKED.state, spot)
         if helpers[spot] ~= nil then
             director:actor_use_action(helpers[spot].burst, ACTION_BURST)
         end
     end
     director:delay(BURST_AFTER + BURST_LANDS_AFTER)
     for _, spot in ipairs(marked) do
-        director:map_effect(spot, MAP_EFFECT_BURST.timeline, MAP_EFFECT_BURST.state)
+        director:map_effect_at(SPOTS[spot].layout, MAP_EFFECT_BURST.timeline, MAP_EFFECT_BURST.state, spot)
     end
     director:delay(0)
 end
@@ -750,11 +772,18 @@ function onActorDeath(director, bnpc_id, position)
 end
 
 -- The last boss's terrace: its cutscene, the boss and its helpers (held: they act when the director says).
+function onGimmickRect(director, target)
+    if target == FINAL_RANGE and not final_started and progress & PROGRESS_DOOR ~= 0 then
+        startFinal(director)
+    end
+end
+
 function startFinal(director)
     if final_started then
         return
     end
     final_started = true
+    director:update_shortcut(SHORTCUT_FINAL)
     director:play_cutscene(CUTSCENE_FINAL)
     director:spawn_boss(BNPC_FINAL, FINAL_WALL, FINAL_LINE, PLACE_FINAL)
     for spot, at in pairs(SPOTS) do
@@ -812,5 +841,14 @@ function onEventActionCast(director, actor_id, target)
 end
 
 function getDebugShortcut(id)
+    if id == 0 then
+        return SHORTCUT_BOSS1
+    elseif id == 1 then
+        return SHORTCUT_BOSS2
+    elseif id == 2 then
+        return SHORTCUT_BOSS3
+    elseif id == 3 then
+        return SHORTCUT_FINAL
+    end
     return 0
 end

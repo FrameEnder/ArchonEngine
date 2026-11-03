@@ -1,0 +1,7 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {},
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "The Lominsan Way's quest battle (59): the NPC the player protects (BNpcBase 1771, BNpcName 2075, layout 4295472; battalion 5): level 30, 2418 HP; the battle is lost when it falls. It never moved or acted in seven runs (Bob's Chronofoil captures 44df02fc (2026-11-03, six runs, the last won) and c9145fdc (2026-11-03, one run, won), `questkit chronofoil --battle`; a level 34-35 player): the director holds it."
+}

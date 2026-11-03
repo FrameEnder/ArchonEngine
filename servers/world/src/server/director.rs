@@ -292,6 +292,15 @@ pub enum LuaDirectorTask {
         timeline_id: u32,
         state: u16,
     },
+    /// The same, for the map effect on a layout object (`layout_id`, e.g. a SharedGroup of the duty's LGB): its index
+    /// is where that ID stands in the InstanceContent's ContentDirectorManagedSG list (`GameData::get_map_effects`,
+    /// the list retail's DirectorSetupMapEffects follows), or `otherwise` when it isn't in it.
+    MapEffectAt {
+        layout_id: u32,
+        timeline_id: u32,
+        state: u16,
+        otherwise: Option<u32>,
+    },
     /// Send an EObj (by EObj ID or layout ID) an ActorControl by its category and parameters, for the ones Kawari has
     /// no name for: the Copperbell Mines' blasts (413 with 8, 2 on the charge as it goes off, Bob's captures of
     /// 2026-10-25.)
@@ -974,6 +983,18 @@ impl UserData for LuaDirector {
                     index,
                     timeline_id,
                     state: state.unwrap_or(1),
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "map_effect_at",
+            |_, this, (layout_id, timeline_id, state, otherwise): (u32, u32, Option<u16>, Option<u32>)| {
+                this.tasks.push(LuaDirectorTask::MapEffectAt {
+                    layout_id,
+                    timeline_id,
+                    state: state.unwrap_or(1),
+                    otherwise,
                 });
                 Ok(())
             },
@@ -2811,6 +2832,35 @@ pub fn director_tick(
                     ObjectId::default(),
                     instance,
                     FromServer::PacketSegment(ipc, ObjectId::default()), // TODO: how do we just send it from the player?
+                    DestinationNetwork::ZoneClients,
+                );
+            }
+            LuaDirectorTask::MapEffectAt {
+                layout_id,
+                timeline_id,
+                state,
+                otherwise,
+            } => {
+                let index = game_data
+                    .lock()
+                    .get_map_effects(instance.content_id as u32)
+                    .and_then(|ids| ids.iter().position(|id| *id as u32 == *layout_id))
+                    .map(|index| index as u32)
+                    .or(*otherwise);
+                let Some(index) = index else {
+                    tracing::warn!("No map effect for layout {layout_id} in this duty!");
+                    continue;
+                };
+                let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::DirectorMapEffect {
+                    handler_id: director_id,
+                    state: *state,
+                    timeline_id: *timeline_id as u16,
+                    index: index as u8,
+                });
+                network.lock().send_to_instance(
+                    ObjectId::default(),
+                    instance,
+                    FromServer::PacketSegment(ipc, ObjectId::default()),
                     DestinationNetwork::ZoneClients,
                 );
             }

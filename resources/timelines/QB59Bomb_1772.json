@@ -1,0 +1,12 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "1133": {
+            "players": 1826,
+            "npcs": 2292
+        }
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "The Lominsan Way's quest battle (59): the bomb (BNpcBase 1772, BNpcName 1385, layout 4295473; battalion 4), out 0.3-0.4 s after sequence 8: level 30, 897 HP. It never moved and did nothing but its blast (1133, round itself) 32.0 s after it came out, unless killed first (three of five runs), and fell 2 s after it: the director holds it and has it blow (content/questbattle/59.lua). From Bob's Chronofoil captures 44df02fc (2026-11-03, six runs, the last won) and c9145fdc (2026-11-03, one run, won), `questkit chronofoil --battle`; a level 34-35 player: the blast's damage to 1771 (2290, 2294) and the player (1826, the one run they stood by it). Hitbox not recorded."
+}

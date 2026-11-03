@@ -1,0 +1,62 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 25
+        },
+        "31": {
+            "npcs": 37
+        },
+        "1299": {
+            "players": 60
+        }
+    },
+    "timepoints": [
+        {
+            "time": 36.0,
+            "every": 15.0,
+            "data": {
+                "type": "action",
+                "action_id": 1299,
+                "target": "itself"
+            },
+            "comment": "2.2 s line from itself, from 34-40 s into the fight, then every 15 s (14.6-15.7; a 32 s gap in two runs)"
+        },
+        {
+            "time": 38.5,
+            "every": 15.0,
+            "data": {
+                "type": "action",
+                "action_id": 31,
+                "target": "target"
+            },
+            "comment": "on the one it's fighting, 2.5 s after each line ..."
+        },
+        {
+            "time": 41.1,
+            "every": 15.0,
+            "data": {
+                "type": "action",
+                "action_id": 31,
+                "target": "target"
+            },
+            "comment": "... then 2.6 s later ..."
+        },
+        {
+            "time": 43.7,
+            "every": 15.0,
+            "data": {
+                "type": "action",
+                "action_id": 31,
+                "target": "target"
+            },
+            "comment": "... and again (two to four, three most often)"
+        }
+    ],
+    "animation_locks": {
+        "1299": 2.1
+    },
+    "timeline_always_plays": false,
+    "comment": "The Lominsan Way's quest battle (59): its first enemy (BNpcBase 1769, BNpcName 2073, layout 4295469; battalion 4): level 27, 677 HP. It fights the NPC the player protects (BNpcBase 1771) the whole fight and never turned on the player, even when they hit it (the director's hate, content/questbattle/59.lua); from its pull (`from_pull`, the fight's start): auto-attack 870, a line every 15 s and Heavy Swings after each; its Paralyze (1118) on the player is the director's, after sequence 4. From Bob's Chronofoil captures 44df02fc (2026-11-03, six runs, the last won) and c9145fdc (2026-11-03, one run, won), `questkit chronofoil --battle`; a level 34-35 player: `npcs` is the median damage to 1771 (100 auto-attacks, 23 Heavy Swings), `players` the one line that caught the player. Hitbox not recorded."
+}

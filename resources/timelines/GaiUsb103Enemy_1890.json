@@ -1,0 +1,29 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 41
+        },
+        "528": {
+            "players": 92
+        }
+    },
+    "timepoints": [
+        {
+            "time": 8.3,
+            "every": 10.9,
+            "data": {
+                "type": "action",
+                "action_id": 528,
+                "target": "target"
+            },
+            "comment": "2.2 s cast in front of itself, every 10.9 s: its hit 10.5 s after it came out (both fights)"
+        }
+    ],
+    "animation_locks": {
+        "528": 2.1
+    },
+    "timeline_always_plays": false,
+    "comment": "When the Worm Turns' (822) second enemy (BNpcBase 1890, BNpcName 1978, layout 4293190, layer QB_GaiUsb103_001): level 31, 1596 HP; auto-attack 870 and 528 every 10.9 s, from its pull (`from_pull`). From Bob's Chronofoil captures 44df02fc and c9145fdc (2026-11-03, a level 35-36 player each), `questkit chronofoil --battle 0.18` and `0.12`): `players` is the median damage to the player. Hitbox not recorded."
+}

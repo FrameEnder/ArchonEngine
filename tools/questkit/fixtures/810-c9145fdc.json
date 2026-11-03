@@ -1,0 +1,52 @@
+{
+  "quest": 810,
+  "script": "GaiUsb003_00810",
+  "source": "Bob's Chronofoil capture c9145fdc (2026-11-03, the whole quest); scenes and effects from Bob's Chronofoil capture of 2026-11-03",
+  "params": {
+    "ACTOR0": 1006264,
+    "EOBJECT0": 2002034,
+    "EVENT_ACTION_LOOKOUT_LONG": 41,
+    "ENEMY0": 4291318,
+    "EVENT_ACTION_SEARCH": 1,
+    "EOBJECT1": 2002633,
+    "EOBJECT2": 2002634,
+    "EOBJECT3": 2002635,
+    "EOBJECT4": 2002636,
+    "EOBJECT5": 2002637
+  },
+  "steps": [
+    {
+      "talk": 1006264,
+      "layout": 4259850,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 2002034,
+      "layout": 4286899,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 3, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [1900, 4291318],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1006264,
+      "layout": 4259850,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 14, "flags": "0x2000", "results": [1, 2753, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

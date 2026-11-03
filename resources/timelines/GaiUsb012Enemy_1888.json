@@ -1,0 +1,28 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "recorded_amounts": {
+        "872": {
+            "players": 45.5
+        },
+        "417": {
+            "players": 192
+        }
+    },
+    "timepoints": [
+        {
+            "time": 8.0,
+            "data": {
+                "type": "action",
+                "action_id": 417,
+                "target": "target"
+            },
+            "comment": "3.7 s cast round itself, once: its hit 11.4-12.0 s after it came out"
+        }
+    ],
+    "animation_locks": {
+        "417": 2.1
+    },
+    "timeline_always_plays": false,
+    "comment": "Trial by Turtle's (3865) enemy (BNpcBase 1888, BNpcName 34, layout 4292977, layer QB_XxaUsb012_001): level 30, 1170 HP; auto-attack 872 and 417 once, from its pull (`from_pull`). From Bob's Chronofoil captures 44df02fc and c9145fdc (2026-11-03, a level 35-36 player each), `questkit chronofoil --battle 0.17` and `0.11`): `players` is the median damage to the player. Hitbox not recorded."
+}

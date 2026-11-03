@@ -1,0 +1,24 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "872": {
+            "players": 11
+        },
+        "373": {
+            "players": 16
+        }
+    },
+    "rotation": {
+        "pace": 8.1,
+        "actions": [
+            {
+                "action": 373,
+                "every": 8.1,
+                "comment": "between auto-attacks, every 8.1 s (6.3-8.1), first 5-8 s after it came out"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Quest 809's first four enemies (BNpcBase 2239, BNpcName 417, layouts 4291274, 4291279, 4291283 and 4291284, layer QB_GaiUsb002_001): level 30, 390 HP. From Bob's Chronofoil captures 44df02fc and c9145fdc (2026-11-03, a level 35-36 player each), `questkit chronofoil --battle 0.3` and `0.4`): `players` is the median damage to the player, `every` the median time between one's uses. Hitbox not recorded."
+}

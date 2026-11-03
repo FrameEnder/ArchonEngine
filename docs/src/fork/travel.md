@@ -186,7 +186,9 @@ Kawari sent 0, and the client showed the people of every visit to the Waking San
 player came in with it at sequence 2; its zone-entry cutscene moved it to 255, and right after the EventFinish retail
 sent PrepareZoning to the Waking Sands itself (warp type 18, the character hidden, flags 0) and, 1.5 s later,
 ActorSetPos where the player stood (warp type 18, arg 2) with **90343**, the key at every later visit. So the key can
-also wait for a sequence (an entry's `"sequence"`). Retail did the same every time the key changed within a visit in
+also wait for a sequence (an entry's `"sequence"`). **Wrath of the Titan** (516; Bob's Chronofoil capture 44df02fc, 2026-11-03): 90343 in
+ZoneInit, then, as its accepting cutscene ended, the same warp with **90344** (ActorSetPos `…12 02 e8600100…`: warp
+type 18, arg 2, the key, the player's own spot). Retail did the same every time the key changed within a visit in
 the captures (cc62ad94's 90339, 90340 and 90342), always that warp: a moved key only shows once
 the client is warped. Kawari had no such warp (only the cutscenes that move the player anyway sent one), so the
 Waking Sands kept its old layers after Back from the Wood's cutscene until the next zone-in (Bob, 2026-10-30). Now,

@@ -1,0 +1,180 @@
+{
+  "quest": 832,
+  "script": "GaiUsb201_00832",
+  "source": "Bob's Chronofoil capture c9145fdc (2026-11-03, the whole quest); scenes and effects from Bob's Chronofoil capture of 2026-11-03",
+  "params": {
+    "ACTOR0": 1006266,
+    "ACTOR1": 1006267,
+    "ACTOR2": 1006268,
+    "INSTANCEDUNGEON0": 8,
+    "ITEM0": 2000864,
+    "UNLOCK_IMAGE_DUNGEON": 79,
+    "LOC_ACTION1": 957,
+    "LOC_ACTION2": 945,
+    "GOB_MOT_TALK": 949,
+    "GOB_MOT_BOW": 957,
+    "UNLOCK_ADD_NEW_CONTENT_TO_CF": 3702,
+    "CONTENT_START": 8
+  },
+  "steps": [
+    {
+      "talk": 1006266,
+      "layout": 4258355,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1006267,
+      "layout": 4258438,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006268,
+      "layout": 4258449,
+      "what": "ACTOR2",
+      "scenes": [
+        {
+          "scene": 3,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "effects": [
+        {
+          "content": 8
+        }
+      ],
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000",
+        "notices": [
+          [
+            1,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "duty_cleared": 8,
+      "territory": 1041,
+      "what": "leaving Brayflox's Longstop (INSTANCEDUNGEON0) by its exit after clearing it",
+      "expect": {
+        "sequence": 4,
+        "vars": "000000000000",
+        "notices": [
+          [
+            2,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006268,
+      "layout": 4258449,
+      "what": "ACTOR2",
+      "scenes": [
+        {
+          "scene": 5,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "001000000000",
+        "notices": [
+          [
+            3,
+            [
+              24451
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006266,
+      "layout": 4258355,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 6,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 7,
+          "flags": "0x2000",
+          "results": [
+            1,
+            3827,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

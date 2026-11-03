@@ -84,6 +84,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `boss_room(boss, wall, line, place, triggers)` | A boss arena whose boss isn't spawned with it (`spawn_boss` spawns and seals on the boss's own pull): sealed 15 s after the boss or any of `triggers` (layout IDs) goes for someone (logs 2012, 2013, the wall shown), opened when `boss` dies (both hidden, log 2014). The Tam-Tara Deepcroft's rooms, sealed by their pack's pull.Called for several bosses with the same wall, they're one room (since 2026-11-02): sealed by any one's pull, opened as the **last** of them dies (Haukke Manor's pair). |
 | `leave_boss_room(boss)` | A boss that leaves its room without dying (despawned, not killed): it no longer holds the room, which opens (wall and line hidden, log 2014) if none of the room's other bosses is left. Brayflox's Longstop's dragon (429), which holds the third room with its boss (`boss_room` for both with one wall) and flies off (2026-11-03). |
 | `map_effect(index, timeline, state)` | DirectorMapEffect: a map effect to `timeline` and `state` (1 unless given; Brayflox's Longstop's puddles go to 4 with timeline 8 as they burst). |
+| `map_effect_at(layout_id, timeline, state, otherwise)` | The same for the map effect on a layout object (a SharedGroup of the duty's LGB): its index is where the ID stands in the InstanceContent's ContentDirectorManagedSG (`GameData::get_map_effects`, the list the director's DirectorSetupMapEffects follows), or `otherwise` if it isn't there (Brayflox's Longstop's puddles.) |
 | `spawn_eobj(eobj, position, args2)` | Spawns an event object of the zone's layout (at `position`, a table with x, y, z, if given), or, when the layout has none, one made from its EObj row alone (layout ID 0, the director's handler, radius 1: Haukke Manor's pair's key, as retail spawned it). `args2` is SpawnObject's, as retail sent it (EObj-specific: 1282 and 66818 for Haukke Manor's two dropped keys). |
 | `warp_to_pop_range(actor_id, pop_range)` | Sends that player to a pop range of the duty, as a shortcut does (PrepareZoning to the same territory, then ActorSetPos): a gimmick of the script's own that warps. |
 | `set_attack_range(npc, yalms)` | How close the NPC gets to its target before attacking: melee (3) or a caster's distance. |
@@ -189,6 +190,42 @@ a quest's entering event, 0 for every other event (228 events across the capture
 (60001, from the client's generic director script) was found.
 
 ## The battles
+
+### Quest battle 59 — The Lominsan Way (`content/questbattle/59.lua`)
+
+* Quest 811 (GaiUsb004_00811) enters it from the Grey Fleet miller (scene 2; territory 307, duty 354). Territory 307's
+  TerritoryType has Lower La Noscea's level (s1f2), so its NPCs are layer `QB_GaiUsb004_001` of `sea_s1f2`, with
+  retail's layout IDs, levels, HP, positions, flags, looks and the start spot (704.42, 65.78, -290.68, facing -2.07)
+  from Bob's Chronofoil captures 44df02fc (2026-11-03, `--battle 0.4` to `0.14`: five runs lost, the sixth won) and
+  c9145fdc (2026-11-03, `--battle 0.5`, won); a level 34-35 player. The one who talks and fights (4295469, base 1769,
+  BNpcName 2073, 677 HP, battalion 4), the enemy you defeat to win (4295470, base 1770, 3900 HP), the NPC you protect
+  (4295472, base 1771, 2418 HP, battalion 5: the only one of its side), a bomb (4295473, base 1772, BNpcName 1385, 897
+  HP) and an onlooker (event NPC 1007082, 4295474, ENpcResident name for its line: kind 3). All four battle NPCs had
+  character data flags 1 on retail; battalions decide who fights whom.
+* **A lead-in before the fight.** Retail's opening scene 1 (0x2001) is over at once; then the director's scene 2
+  (0x2001, its client script only waits 480 frames: 16 s) as a GameProgress event with sequence 2 and three lines
+  (1769's 92 and 93 at 3.1 and 8.1 s, the onlooker's 94 at 13.1 s); as scene 2 ends, scene 60000 and sequence 3. Kawari
+  has no scene 60000: `onCommence` (the opening's end) plays scene 2 and `onSceneFinished(2)` starts the fight. battle-sim
+  models it with the fixture's `lead_in` ([questkit](questkit.md#battle-sim)).
+* The flow (seconds from the fight starting), the same in seven runs: 1769 fights 1771 the whole time and never turned
+  on the player, even when hit (the director's enmity); 1770 and 1771 never moved or acted (held). 1769's NpcYells
+  1274-1278 at 3.1, 8.1, 13.1, 18.1 and 23.1. 1770 at **80 %** (its first health seen under it 77.4-78.7): sequence 4
+  and 1769's yell 1285; 1.7-3.6 s later 1769 casts Paralyze (1118, 3.7 s; status 17 at 50 for 30 s) on the player,
+  and **sequence 5 5.0 s after that cast began** (4.95-5.06 in every run), whatever 1770's health (59.9-70.1 %: not a
+  health mark), with 1769's 95 and 96 3.0 and 8.0 s after. A run that never brought 1770 to 80 % had no Paralyze.
+  1770 at 50 %: sequence 6; at 40 %: sequence 7 and 1769's 97; 3.0-3.1 s later sequence 8 and 0.3-0.4 s after that
+  the bomb, which stands where it came out: killed (three runs), sequence 9, 1769's yell 1279 3.0-3.1 s and its 98
+  8.0-8.1 s after; otherwise its blast (1133, round itself, no cast) 32.0 s after it came out (31.8 in the other run):
+  2290-2294 to 1771 and 1826 to the player beside it, both dead, and sequence 9; the bomb falls 2.0 s later (Kill).
+  1770's health at 0: "Duty Complete" and sequence 10 at once, the battle's scene 10 (0xF8402EFB) 3.0 s later; the
+  quest moves to sequence 255.
+* Lost: sequence 0xFE as 1771's health reaches 0 (the bomb twice; 1769 wore it down in 217 s once), 1769's (1769's
+  99 with it; twice) or yours; out about 5 s later.
+* 1769 (QB59Attacker_1769): auto-attack 870 (25 on 1771), a 2.2 s line from itself (1299) from 36 s and every 15 s,
+  three Heavy Swings (31, 37) after each; Paralyze is the director's (`use_action`), after sequence 4.
+* Fixtures: `59.json` (44df02fc, won), `59-c9145fdc.json` (won), `59-lost-4.json` (the bomb), `59-lost-8.json` (1769
+  killed), `59-lost-12.json` (1771 worn down), each with the onlooker added and `"npc_health": "held"` (interpolating put
+  sequence 6 2.2 s early in the won run).
 
 ### Quest battle 17 — In Nature's Embrace (`content/questbattle/17.lua`)
 

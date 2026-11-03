@@ -12,6 +12,11 @@ battle, `questkit chronofoil --battle N.V`, or a Kawari Recorder battle file) an
     }
 
 Times are seconds from the fight starting (the director's scene 60000, which is when Kawari calls `onCommence`).
+A battle whose director played scenes of its own between the opening and the fight (The Lominsan Way's scene 2, 16 s
+of battle talk before scene 60000) has them in `lead_in` (`{"2": 16.04}`, how long the client took over each): Kawari
+calls `onCommence` as the opening ends, so the simulator does so that long before 0, and the script plays them from
+there (`onSceneFinished` starts the fight); what retail did meanwhile (its sequence, battle talk) comes at negative
+times.
 `spawn` is when the NPC appeared (null: it was there when the fight started), `death` when its health reached 0 (when
 Kawari calls `onActorDeath`; retail's Defeated comes about 2 s later), `hp` its health in percent over time. The events are retail's director sequence changes, battle talk (by text ID), the NPCs that
 arrived during the fight, and "won" ("Duty Complete", the director's scene 60001).
@@ -55,6 +60,7 @@ SCENE_COMPLETE = 60001
 DONE_SEQUENCES = (0xFE, 0xFF)  # set by the server once a battle is over, not by the script
 DEFAULT_TOLERANCE = 2.0
 AFTER_LAST_EVENT = 30.0  # how long to keep simulating after retail's last event
+SETUP_CLOCK = -1000.0  # onSetup's time: before the opening, never compared
 
 
 # --- making a fixture from a retail run -----------------------------------------------------------------------------
@@ -82,6 +88,16 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
 
     def rel(t):
         return round(t - commence, 2)
+
+    # The director's own scenes between the opening (the first scene) and the fight: how long each took.
+    lead_in = {}
+    for t, n in scenes[1:]:
+        if t >= commence or n in (SCENE_COMMENCE, SCENE_COMPLETE):
+            continue
+        end = next((e for e, m in ends if m == n and e >= t), None)
+        if end is not None:
+            lead_in[str(n)] = round(end - t, 2)
+    lead_in_start = next((t for t, n in scenes[1:] if str(n) in lead_in), None)
 
     actors = {k: a for k, a in run.get("Actors", {}).items() if a.get("Kind") == "battle npc" and a.get("LayoutId")}
     curves: dict[str, list] = {k: [] for k in actors}
@@ -145,12 +161,15 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
         sequence = _number_after(text, "sequence")
         # One set before the fight and replaced by the time it starts is the script's onSetup (Trial by Wind's
         # sequence 1, 0.4 s before scene 60000 and sequence 2.)
+        # One set with a lead-in scene is the script's, at its time (The Lominsan Way's sequence 2.)
+        in_lead_in = lead_in_start is not None and lead_in_start - 0.2 <= t < commence - 1.0
         replaced = t < commence and any(t < later <= commence for later, _ in sequences[n + 1:])
-        if t < commence - 1.0 or replaced or sequence in DONE_SEQUENCES or sequence == last_sequence:
+        if not in_lead_in and (t < commence - 1.0 or replaced) or sequence in DONE_SEQUENCES \
+                or sequence == last_sequence:
             last_sequence = sequence if t >= commence - 1.0 else last_sequence
             continue
         last_sequence = sequence
-        events.append([max(rel(t), 0.0), "sequence", sequence])
+        events.append([rel(t) if in_lead_in else max(rel(t), 0.0), "sequence", sequence])
     for t, text in _director_events(run, "battle talk"):
         events.append([rel(t), "talk", _number_after(text, "text")])
     won = next((t for t, n in scenes if n == SCENE_COMPLETE), None)
@@ -178,6 +197,8 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
     events.sort(key=lambda e: (e[0], e[1]))
     fixture = {"quest_battle": quest_battle, "source": source, "tolerance": DEFAULT_TOLERANCE, "npcs": npcs,
                "scenes": durations, "events": events}
+    if lead_in:
+        fixture["lead_in"] = lead_in
     if player:
         fixture["player"] = player
     if casts:
@@ -300,6 +321,9 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
     # Spawned outside onUpdate: not in the next update's health yet (the server spawns them after that update.)
     not_yet: set[int] = set()
     end = max([e[0] for e in fixture["events"]] or [0]) + AFTER_LAST_EVENT
+    # Kawari's onCommence comes as the opening ends: before the director's lead-in scenes, if retail had any.
+    lead_in = fixture.get("lead_in", {})
+    start = -round(sum(lead_in.values()) * 2) / 2
     known = dropin_layouts()
     cast_heard: set[tuple] = set()
 
@@ -308,7 +332,8 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
         for t, name, args in calls[seen_calls:]:
             if name == "spawn_bnpc" and args and args[0] not in spawned:
                 layout = int(args[0])
-                spawned[layout] = t
+                # Brought out before the fight (a lead-in): its health follows retail's from the fight's start.
+                spawned[layout] = max(t, 0.0)
                 alive.add(layout)
                 if outside_update:
                     not_yet.add(layout)
@@ -320,18 +345,19 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                 alive.discard(int(args[0]))
             elif name == "play_scene" and args:
                 scene = int(args[0])
-                scenes_due.append((t + fixture.get("scenes", {}).get(str(scene), 1.0), scene))
+                took = lead_in.get(str(scene)) if t < 0 else None
+                scenes_due.append((t + (took or fixture.get("scenes", {}).get(str(scene), 1.0)), scene))
         seen_calls = len(calls)
 
     try:
         # Before the opening cutscene (onSetup): not compared, retail's sequence 1 comes then too.
-        clock[0] = -1.0
+        clock[0] = SETUP_CLOCK
         if g.onSetup is not None:
             g.onSetup(director)
-        clock[0] = 0.0
+        clock[0] = start
         g.onCommence(director)
         follow_calls()
-        t = 0.0
+        t = start
         player_fell = [False]
         while t <= end:
             clock[0] = t
@@ -406,7 +432,7 @@ def spawn_problems(fixture: dict, calls: list[tuple]) -> list[str]:
     problems = []
     script_count: dict[int, int] = {}
     for t, name, args in calls:
-        if name == "spawn_bnpc" and args and t >= 0:
+        if name == "spawn_bnpc" and args and t > SETUP_CLOCK:
             layout = int(args[0])
             script_count[layout] = script_count.get(layout, 0) + 1
     retail_count: dict[int, int] = {}
@@ -428,7 +454,7 @@ def spawn_problems(fixture: dict, calls: list[tuple]) -> list[str]:
 def script_events(calls: list[tuple]) -> list[list]:
     events = []
     for t, name, args in calls:
-        if t < 0:
+        if t <= SETUP_CLOCK:
             continue
         if name == "set_sequence" and args and args[0] not in DONE_SEQUENCES:
             events.append([t, "sequence", int(args[0])])
@@ -447,7 +473,7 @@ def compare(fixture: dict, calls: list[tuple], result: SimResult) -> list[str]:
     tolerance = fixture.get("tolerance", DEFAULT_TOLERANCE)
     mine = script_events(calls)
     initial = {int(k) for k, v in fixture["npcs"].items() if v.get("spawn") is None}
-    mine = [e for e in mine if not (e[1] == "spawn" and e[2] in initial and e[0] == 0.0)]
+    mine = [e for e in mine if not (e[1] == "spawn" and e[2] in initial and e[0] <= 0.0)]
     used = [False] * len(mine)
     problems = []
     for event in fixture["events"]:

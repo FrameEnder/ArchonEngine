@@ -64,7 +64,7 @@ state after it:
 
 | Step | Meaning |
 |---|---|
-| `{"talk": base}` | Talk to / examine an NPC or object (the event's `BASE_ID`); `"layout"` gives its layout ID, which the script sees as `target.object_id` (upstream's Ul'dah scripts tell NPCs apart by it). `"territory"` says where it happened, written when retail moved the player within that territory (PrepareZoning to the same one), so replay counts a script's `move_to_pop_range` as that zone change. |
+| `{"talk": base}` | Talk to / examine an NPC or object (the event's `BASE_ID`); `"layout"` gives its layout ID, which the script sees as `target.object_id` (upstream's Ul'dah scripts tell NPCs apart by it). `"territory"` says where it happened, written when retail moved the player within that territory (PrepareZoning to the same one), so replay counts a script's `move_to_pop_range` as that zone change, and the server's own warp when the step moves that territory's layer filter on (`resources/data/layer_filters.json`: an entry of the quest's starts or stops applying, and the script didn't move the player itself; Wrath of the Titan's accepting cutscene, 2026-11-03). |
 | `{"kill": [base, layout]}` | A battle NPC with this BNpcBase and layout ID died (`onBNpcKill`) |
 | `{"event_item": [item, base], "layout": …}` | A key item used on this NPC or object (`onEventItem`, after the server's EventItem event starts) |
 | `{"range": arg}` | Walked into an event range (`onEnterTrigger`) |
@@ -363,6 +363,13 @@ NPC's times counted like its health; written by hand: Victory in Peril's are the
 `UpdatePositionHandlerInstance` and the NPCs' from the run's samples, on one clock), which the script sees in `info`
 as the server gives them, for steps that wait for the player to come close. Without them everyone stands at the
 origin, and anything waiting for the player to come close happens at once.
+
+A battle whose director played a scene of its own between the opening and the fight has a **lead-in** (`lead_in`:
+`{"<scene>": seconds}`, how long the client took over each, written by `--make` since 2026-11-03). The Lominsan Way's
+battle (59) plays scene 2 for 16 s, with sequence 2 and three lines of battle talk, before scene 60000: Kawari calls
+`onCommence` as the opening ends, so the simulator does that long before 0, the script plays the scene from there
+and starts the fight as it ends (`onSceneFinished`), and retail's sequence and talk meanwhile are matched at negative
+times. NPCs the script brings out before the fight follow retail's health from its start.
 
 And retail's **casts** (`casts`: `[[t, layout, action], …]`, the run's ActorCast events by the caster's layout ID,
 written by `--make` since 2026-10-28): the script hears `onActorCast(director, layout, action, 0)` at each, as from the

@@ -5336,6 +5336,35 @@
                     "rotation": -1.0677
                 }
             ]
+        },
+        {
+            "name": "QB_GaiUsb005_001",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 1887,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1170,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1976,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147,
+                        "character_data_flags": 2
+                    },
+                    "layout_id": 4292674,
+                    "position": {
+                        "x": 674.254,
+                        "y": 9.0,
+                        "z": 511.066
+                    },
+                    "rotation": -1.6942
+                }
+            ]
         }
     ]
 }

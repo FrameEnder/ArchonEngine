@@ -144,9 +144,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
-* **Bob's capture 44df02fc (2026-11-03)** has quests 516, 809, 810, 811 (with its quest battle: QuestBattle 59,
-  ContentFinderCondition 354, territory 307, six tries), 812, 814, 3865, 821, 822, 831 and 832 from start to finish;
-  none is scripted until their client scripts (and 811's battle script) are dumped.
+* **Wrath of the Titan (516) to The Things We Do for Cheese (832)** (2026-11-03, from Bob's dumps and Chronofoil
+  captures 44df02fc and c9145fdc): untested in game; each replays against both runs. The quest enemies' timelines
+  (`GaiUsb*Enemy_*`) are from two fights each (one for 1889's 426, at retail's param 100 where its shared script gives
+  50; one for 1887's 347). Trial by Turtle's EOBJECT1 and Hungry Hungry Goobbues' EOBJECT1-5 weren't used on retail and
+  do nothing here. Wrath of the Titan's warp after its accepting cutscene is the Waking Sands' layer filter moving on
+  (90344, one capture): anyone already past 516 gets 90344 there too.
 
 * **The Twelveswood's story, Spirited Away (725) to Into the Beast's Maw (514)** (2026-10-30, from Bob's dumps and
   Chronofoil capture caa5e908): untested in game; each replays against its retail run and two more of other
@@ -742,10 +745,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Untested in game, from two runs (one with Duty Support, one through the Duty Finder: Bob's captures 44df02fc and
   c9145fdc). The director was checked against the runs' steps with a throwaway lupa harness (its variables after the
   key, the doors and each boss, the waves, the ambushes, the dragon, the puddles).
-* Not dumped yet: the layout (`bg/ffxiv/sea_s1/dun/s1d2/level/planmap.lgb`) and `bg.lgb`. Until then the shortcut
-  (2000700, shown at the first boss's pull) has no destination (nobody used it in either run); the last boss's
-  cutscene and the ambushes go by where players stood in the runs rather than the layout's event ranges; which puddle
-  spot is which map effect is a guess within each set.
+* The shortcut (2000700) takes the party to the layout's pop range outside the room of the boss last pulled
+  (11438223-11438226): nobody used it in either run, so that order is the layout's and the other dungeons'. The
+  puddles' map effects are found by their SharedGroups in ContentDirectorManagedSG (`map_effect_at`): that its layout
+  IDs are the LGB's SharedGroup instance IDs is taken from Kawari's reading of the sheet, not seen; if not, the
+  indices seen on retail are used, which spot is which within a set still a guess then. The event ranges' boxes are
+  copied from the layout (Kawari's map ranges ignore a box's turn: the script checks the turned box itself).
 * From one or two runs: the first boss's waves after the third (the same spots again), the dragon's leaving below 71 %
   (and, if nobody wears it down, after 24.2 s: a guess from the longest seen), what 505, 506, 508, 448, 498, 29618 and
   28660 do to whoever they catch (no one was caught in either run: a plain hit for now), 982's status 60 (how long it
@@ -758,8 +763,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Duty Support's Lancer (45) at 32 has a guessed 1120 HP; the members' kits at 32 beyond the Marauder's combo and burst
   are the trials' (see [Party NPCs](party-npcs.md)).
 * Quest 832 moved to sequence 4 on retail as the player used the exit (EventNotice2 and UpdateQuest just before the
-  PrepareZoning), not at the clear; the player came back where they had queued (both runs). The quest isn't scripted
-  yet (no dump).
+  PrepareZoning), not at the clear; the player came back where they had queued (both runs). Scripted since
+  2026-11-03 (`onDutyCleared`), untested.
 
 ## The Bowl of Embers
 
@@ -780,6 +785,14 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quest battles and directors
 
+* **The Lominsan Way's battle (59)** (2026-11-03): untested in game, from seven runs (five lost, two won; captures
+  44df02fc and c9145fdc). Its lead-in (scene 2 played from `onCommence`, the fight from its end) is new: the client
+  hasn't been seen to accept a GameProgress scene right after the opening this way. Paralyze comes 3.0 s after
+  sequence 4 (retail's 1.7-3.6) and sequence 5 5.0 s after it began, by the director's clock, not the cast's
+  (interrupted, the sequence still comes). 1769's 15 s line and Heavy Swings come from its timeline on a fixed clock;
+  retail's second line was 15 or 32 s after the first. What happens if the bomb's blast misses 1771 (it was always
+  beside it) or the player kills 1769 before the fight starts isn't known. The onlooker's spawn uses `spawn_bnpc` on an
+  event NPC, as Brotherly Love's does.
 * **Quest battle 17 (quest 441)** (2026-11-01): from three runs (two lost, one won; capture df6f5af9; quest 441
   scripted from Bob's dump the same day). Bob played the quest and won the battle on 2026-11-02; its reward then
   crashed the server (an action's UnlockLink taken as an unlock bit, fixed the same day): the reward is untested

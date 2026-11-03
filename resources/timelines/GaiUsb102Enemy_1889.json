@@ -1,0 +1,38 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 43
+        },
+        "490": {
+            "players": 113.5
+        }
+    },
+    "timepoints": [
+        {
+            "time": 7.2,
+            "every": 11.0,
+            "data": {
+                "type": "action",
+                "action_id": 490,
+                "target": "target"
+            },
+            "comment": "2.2 s cast, every 11 s (9.9-11.9): its hit 8.5-10.3 s after it came out"
+        },
+        {
+            "time": 29.9,
+            "data": {
+                "type": "action",
+                "action_id": 426,
+                "target": "itself"
+            },
+            "comment": "1.2 s cast on itself, once, 31.1 s after it came out (the one fight that lasted that long): status 204 at 100 for 30 s"
+        }
+    ],
+    "animation_locks": {
+        "490": 2.1
+    },
+    "timeline_always_plays": false,
+    "comment": "Quest 821's enemy (BNpcBase 1889, BNpcName 1977, layout 4293187, layer QB_GaiUsb102_001): level 31, 1330 HP; auto-attack 870, 490 every 11 s and 426 once, from its pull (`from_pull`). From Bob's Chronofoil captures 44df02fc and c9145fdc (2026-11-03, a level 35-36 player each), `questkit chronofoil --battle 0.18` and `0.12`): `players` is the median damage to the player. 426's script gives 204 at 50 (Big Trouble in Little Ala Mhigo's); here retail's was 100. Hitbox not recorded."
+}
