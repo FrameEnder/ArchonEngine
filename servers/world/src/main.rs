@@ -3060,15 +3060,23 @@ async fn process_packet(
                             let mut database = connection.database.lock();
                             database.commit_volatile(&connection.player_data);
                         }
+                        // A gearset, and the plate linked to it when the client sends one (byte 60, as in
+                        // EquipGearsetGlamour): equipped, then the plate applied.
                         ClientZoneIpcData::EquipGearset {
                             gearset_index,
                             containers,
                             indices,
+                            glamour_plate,
                             ..
                         } => {
                             connection
                                 .equip_gearset(*gearset_index, containers, indices)
                                 .await;
+                            if *glamour_plate > 0 {
+                                connection
+                                    .apply_glamour_plate(*glamour_plate as usize - 1)
+                                    .await;
+                            }
                         }
                         // A gearset with a glamour plate linked: equipped, then the plate applied (Bob's capture of
                         // 2026-10-24.)

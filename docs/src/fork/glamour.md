@@ -66,9 +66,20 @@ under three plates without one). Retail also sent ActorControlSelf 521 (item lev
 gearset), meaning unknown; Kawari sends its own stats.
 
 **Gearset links.** A gearset's linked plate lives with the gearset on the client (the Gear Set List's link and unlink
-sent nothing). Equipping a gearset with one sends **EquipGearsetGlamour**: EquipGearset's 72 bytes with the plate's
-number (from 1) at byte 60, where EquipGearset has 0, then 56 bytes that held nothing recognisable (upstream's
-EquipGearset2, 1487, is the same size with an old opcode).
+sent nothing). The client decides whether to apply it: it asks for the plates first (ClientTrigger 2356) when it
+hasn't got them since the zone loaded, then sends the gearset with the plate's number (from 1) at byte 60, or 0 for
+none. It sends that in either packet: **EquipGearsetGlamour** (605, EquipGearset's 72 bytes then 56 that held nothing
+recognisable; upstream's EquipGearset2, 1487, is the same size with an old opcode) or the plain **EquipGearset** (774);
+which of the two isn't tied to the plate (retail's clients sent 605 with 0 and 774 with plates 1, 3 and 20). Retail
+applied the plate whenever byte 60 had one, in both: LogMessage 4364 and the plate's 4309 lines, in all 15 gearset
+changes of Bob's Chronofoil captures 63fcdf06, 8d85b18d, ba1b86c5, cc26e0ea and f4316611 (October 2026). Kawari read
+it only from 605 until 2026-11-02; now from both.
+
+When the client sends 0 for a gearset with a plate linked, the server has nothing to apply. Bob's bundles of
+2026-11-02 (a Conjurer's gearset linked to plate 1): in Old Gridania (133) the client sent 0, three times at two
+places; in New Gridania (132), right after zoning, it sent 1 and the plate went on; its later clicks there sent 0, the
+plate being on already. Why it sent 0 in Old Gridania isn't known: both were sanctuaries to the server (rested EXP),
+and each time in Old Gridania he had just set a portrait (SetAdventurerPlatePortrait, 4 s before).
 
 **When the client's bags are out of date.** EquipGearset names, for each of the 14 slots, the container and slot the
 client thinks the piece is in (`Invalid`, -1 for none; `Equipped` for one already worn). Kawari used to read a named

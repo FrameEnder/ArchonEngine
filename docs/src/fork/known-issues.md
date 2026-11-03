@@ -959,6 +959,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Applying a glamour plate (character window, gearsets with a plate linked) and the mender's repairs follow Bob's
   capture of 2026-10-24 and are untested in game. ActorControlSelf 1801 and the repair ones (90, 91, 93) are sent as
   retail without being understood; 57 and 804 after a plate aren't sent.
+* A gearset's linked plate (2026-11-02): the plain EquipGearset's plate byte is now applied, as retail did (until now
+  only EquipGearsetGlamour's was); untested in game. Bob's client sent no plate at all for his linked gearset in Old
+  Gridania (three clicks at two places, each soon after he had set a portrait) and did in New Gridania: why isn't
+  known (the client's own check; Kawari has nothing to apply then).
 * Not done: outfit sets, armoire items on plates, glamour prisms, dyeing a dresser item, self-repair, materia
   extraction. SaveGlamourPlate's last 124 bytes and its second 12 flags aren't understood; ArmoireInfo's meaning
   isn't known (it's sent as retail's 1 and zeros).

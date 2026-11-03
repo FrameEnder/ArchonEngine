@@ -294,8 +294,13 @@ pub enum ClientZoneIpcData {
         containers: [ContainerType; 14],
         /// Indices into the containers.
         indices: [i16; 14],
+        /// The gearset's linked glamour plate (from 1) when the client applies it with the gearset, as in
+        /// EquipGearsetGlamour; 0 for none. Retail's clients sent it in this packet too, and retail applied it (Bob's
+        /// Chronofoil captures 63fcdf06, ba1b86c5 and cc26e0ea, 2026-10: plates 1, 3 and 20, each answered with
+        /// LogMessage 4364 and the plate's 4309 lines.)
+        glamour_plate: u8,
         /// For the moment, it is completely unclear what unk1 and unk2 are used for or represent.
-        #[brw(pad_before = 6)]
+        #[brw(pad_before = 5)]
         unk1: u16,
         #[brw(pad_after = 2)]
         unk2: u16,
@@ -902,6 +907,36 @@ mod tests {
         assert_eq!(dye1_containers, [9999; 12]);
         assert_eq!((stain0[3], stain0[5], stain0[2]), (1, 6, 0xFF));
         assert_eq!(stain1, [0xFF; 12]);
+    }
+
+    /// A retail EquipGearset (72 bytes) carrying its linked plate, applied by retail with it (Bob's Chronofoil capture
+    /// 63fcdf06: gearset 10, plate 1.)
+    #[test]
+    fn read_equip_gearset_with_plate() {
+        use binrw::BinRead;
+        let mut bytes = vec![0x14, 0x00];
+        bytes.extend(774u16.to_le_bytes()); // EquipGearset's opcode
+        bytes.extend([0u8; 12]);
+        const HEX: &str = "0a000000ac0d800c810c820c830c0f27850c860c870c880c890ce40ce40c0f2702000000110014000200ffff0f0011000b000800010003000c00ffff010000000000110000000000";
+        bytes.extend(
+            (0..HEX.len())
+                .step_by(2)
+                .map(|i| u8::from_str_radix(&HEX[i..i + 2], 16).unwrap()),
+        );
+        let size = bytes.len() as u32;
+        let segment =
+            ClientZoneIpcSegment::read_le_args(&mut std::io::Cursor::new(&bytes), (&size,))
+                .unwrap();
+        let ClientZoneIpcData::EquipGearset {
+            gearset_index,
+            glamour_plate,
+            unk1,
+            ..
+        } = segment.data
+        else {
+            panic!("not an EquipGearset: {:?}", segment.data);
+        };
+        assert_eq!((gearset_index, glamour_plate, unk1), (10, 1, 17));
     }
 }
 
