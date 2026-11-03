@@ -1,23 +1,26 @@
 > [!NOTE]
 > This is an unofficial downstream fork of Kawari using AI, and focusing on Progression, as well as any structural elements tied to it. I recommend https://codeberg.org/redstrate/Kawari, If you'd like to assist the genuine core of the project which handles structural work with an authentic human lead element. this fork will remain downstream as I respect that it differs from Redstrates vision of Kawari proper, and wish to work on this in different ways openly. 
 
-# Kawari
+# ArchonEngine
 
-Modern server emulator for FFXIV. Updates on the project can be found [on my blog](https://redstrate.com/blog/series/kawari-progress-report/).
+Modern server emulator for FFXIV.
 
-Kawari currently supports patch **7.57h1** (2026.10.16.0000.0000). We only support the Windows client. If you're looking for a 1.x server, check out our sister project [Kodama](https://codeberg.org/redstrate/Kodama).
+ArchonEngine/Kawari currently supports patch **7.57h1** (2026.10.16.0000.0000). We only support the Windows client.
 
 To get started, there is a guide to [running Kawari in our documentation](https://docs.xiv.zone/kawari/setup/overview.html).
 
 ## Features
 
 It's hard to write down what we support, since the project is always in flux. But here's a basic idea of where we're at:
-* The opening sequence
-* Basic zone exploration
+* All City State Quest Lines
+* Quests Up to Skeletons in Her Closet
+* Basic Combat from 1-50
 * Multiplayer
 * Instanced content
+* Manderville Gold Saucer Mini-Games: Gates only include Air Force One
+* More to Come
 
-If you want to implement something that's missing, [see our Contributing guide](https://docs.xiv.zone/kawari/contributing.html)!
+If you want to implement something that's missing, get in touch
 
 ## Credits & Thank You
 
