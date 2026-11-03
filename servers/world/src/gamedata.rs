@@ -617,6 +617,14 @@ const RECORDED_QUEST_UNLOCKS: [(u32, u32); 3] = [(509, 3), (699, 14), (3017, 15)
 /// The first Quest row (quest 1's), as event IDs count them.
 const QUEST_ROW_START: u32 = 65536;
 
+/// Whether `link` is a bit of the character's unlock bitmask. An action's (or emote's, or general action's) UnlockLink
+/// can instead be a quest's row ID, the quest whose completion unlocks it (65536 and up): the level 30 Conjurer quest's
+/// own action, 65977 for quest 441, which set bit 65977 of a 736-bit mask and brought the world server down as the
+/// quest was rewarded (Bob's bundle 20261103-032121). Its completion is what unlocks it, so there's nothing to set.
+fn is_unlock_link(link: u32) -> bool {
+    link != 0 && (link as usize) < kawari::constants::UNLOCK_BITMASK_SIZE * 8
+}
+
 /// The ways a battle NPC's hitbox might come from its model, tried against retail's (`check_hitbox_formulas`.)
 const HITBOX_FORMULAS: [&str; 4] = [
     "ModelChara.Radius x BNpcBase.Scale",
@@ -3028,7 +3036,15 @@ impl GameData {
         {
             links.push(emote_row.UnlockLink);
         }
-        links.retain(|link| *link != 0);
+        links.retain(|link| {
+            let fits = is_unlock_link(*link);
+            if !fits && *link != 0 && *link < QUEST_ROW_START {
+                tracing::warn!(
+                    "Quest {quest_id}'s unlock link {link} is past the unlock bitmask, left out"
+                );
+            }
+            fits
+        });
         links.sort_unstable();
         links.dedup();
         links
@@ -4328,6 +4344,20 @@ impl Resource for SqPackResourceSpy {
 
     fn exists(&mut self, path: &str) -> bool {
         self.sqpack_resource.exists(path)
+    }
+}
+
+#[cfg(test)]
+mod unlock_link_tests {
+    use super::is_unlock_link;
+
+    #[test]
+    fn quest_links_are_left_out() {
+        assert!(is_unlock_link(14)); // dyeing (Color Your World)
+        assert!(is_unlock_link(735));
+        assert!(!is_unlock_link(736));
+        assert!(!is_unlock_link(65977)); // quest 441, the level 30 Conjurer quest's action
+        assert!(!is_unlock_link(0));
     }
 }
 

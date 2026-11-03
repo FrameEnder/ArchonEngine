@@ -616,4 +616,8 @@ Color Your World's 15, If I Had a Glamour's 22 and 25), its ActionReward and Emo
 SystemReward (taken as unlock links), and what retail was recorded granting (`RECORDED_QUEST_UNLOCKS`: the three
 above, so they hold whichever column is theirs). Each link granted is logged ("Quest … unlocks unlock link …"), which
 tells from a bundle which sources are right. Characters who finished them before get them at their next login.
+An UnlockLink of 65536 or more is a quest's row ID, the quest whose completion unlocks the thing (the Action sheet
+links a class quest's action to the quest itself: In Nature's Embrace's, 65977), not a bit of the unlock bitmask (736
+bits), so it's left out; setting it brought the world server down as 441 was rewarded (Bob's bundle 20261103-032121,
+2026-11-02). A link under 65536 past the mask is left out with a warning.
 If I Had a Glamour's LogMessage 789 (ActorControlSelf 517, with the item 13258) isn't sent.
