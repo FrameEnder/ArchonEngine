@@ -16,6 +16,7 @@ It's hard to write down what we support, since the project is always in flux. Bu
 * Quests Up to Skeletons in Her Closet
 * Basic Combat from 1-50
 * Multiplayer
+* Player Bots that Fill Instanced Party's Dynamically
 * Instanced content
 * Manderville Gold Saucer Mini-Games: Gates only include Air Force One
 * More to Come
