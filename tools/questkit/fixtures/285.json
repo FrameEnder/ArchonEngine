@@ -1,0 +1,61 @@
+{
+  "quest": 285,
+  "script": "ClsGla011_00285",
+  "source": "Bob's Chronofoil capture d3379099 (2026-11-04, the whole quest on a Conjurer); scenes and effects from Bob's Chronofoil capture of 2026-11-04",
+  "params": {
+    "CLASSJOB": 1,
+    "ACTOR0": 1002277,
+    "ACTOR1": 1001739,
+    "LOGMESSAGE_MONSTER_NOTE_PAGE_UNLOCK": 1010,
+    "UNLOCK_IMAGE_CLASS_GLA": 36,
+    "HOW_TO_CLASS_CHANGE": 10,
+    "GEARSET_UNLOCK": 1905,
+    "HOW_TO_JOB": 94
+  },
+  "steps": [
+    {
+      "talk": 1002277,
+      "layout": 3279279,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1001739,
+      "layout": 2617212,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 1,
+          "flags": "0xf8482efb",
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

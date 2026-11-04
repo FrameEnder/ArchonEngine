@@ -29,6 +29,10 @@ pub const RETAINER_UNLOCK_QUEST: u32 = 509;
 /// Adders' 700 (Bob's Chronofoil capture 0845b9a2) and 9 for the Immortal Flames' 702 (bab8c255); the Maelstrom's 701
 /// isn't recorded, 1 is that company's BuddyEquip row with Order 1, as the other two are.
 const COMPANY_SADDLES: [(u32, u32); 3] = [(700, 5), (701, 1), (702, 9)];
+/// ActorControlSelf 257 and 260 (Kawari's SetupPet and SetPetParameters), as retail sent them when a class was
+/// unlocked (`unlock_quest_classjob`).
+const CLASS_UNLOCK_PET_SETUP: u32 = 257;
+const CLASS_UNLOCK_PET_PARAMETERS: u32 = 260;
 
 impl ZoneConnection {
     /// What the client is sent for one of our active quests.
@@ -316,6 +320,9 @@ impl ZoneConnection {
             self.add_exp(rewards.0 as i32).await;
         }
 
+        // A class's joining quest unlocks it (its CLASSJOB parameter), after the EXP as retail.
+        self.unlock_quest_classjob(id).await;
+
         // The quests after it moved up a slot, so send the whole journal again
         self.send_active_quests().await;
 
@@ -334,6 +341,69 @@ impl ZoneConnection {
         self.send_quest_tracker().await;
 
         self.check_achievements(true).await;
+    }
+
+    /// The class or job a quest's completion unlocks: its CLASSJOB parameter, which every class's joining quest has
+    /// (Way of the Gladiator for the other classes, ClsGla011_00285, CLASSJOB 1; the Rogue's My First Daggers; the
+    /// level 30 jobs' first quests: 25 quests in the Quest sheet.) Nothing else in the sheets says so: the ClassJob
+    /// sheet's UnlockQuest is 0 for the base classes, and the Quest sheet's ClassJobUnlock is the class a quest belongs
+    /// to (Way of the Gladiator for Gladiators and So You Want to Be a Gladiator have it, the one that unlocks doesn't.)
+    /// A class already unlocked (a crafter's later quests that carry the parameter too) is left as it is. Retail, as a
+    /// Conjurer finished 285 (Bob's Chronofoil capture d3379099, 2026-11-04): after the quest's EXP, UnlockClass (8)
+    /// with the class, ActorControlSelf 257 (the owner, 0, 0xE0000000, 1, 1) and 260 (0, 0, 7: the pet hotbar's,
+    /// as for a class change), then SetLevel (9) with the class and its starting level; the class then shows as
+    /// unlocked and its weapon can be equipped.
+    async fn unlock_quest_classjob(&mut self, quest_id: u32) {
+        let (classjob_id, starting_level) = {
+            let mut game_data = self.game_data.lock();
+            let Some(classjob_id) = game_data
+                .get_quest_variables(quest_id)
+                .into_iter()
+                .find(|(name, _)| name == "CLASSJOB")
+                .map(|(_, value)| value)
+            else {
+                return;
+            };
+            let starting_level = game_data
+                .get_starting_level(classjob_id as u16)
+                .unwrap_or(1);
+            (classjob_id, starting_level)
+        };
+        if classjob_id == 0
+            || self
+                .level_for(classjob_id as u16)
+                .is_none_or(|level| level > 0)
+        {
+            return;
+        }
+        tracing::info!("Quest {quest_id} unlocks class {classjob_id} (level {starting_level})");
+        self.set_level_for(classjob_id as u8, starting_level as u16);
+        self.actor_control_self(ActorControlCategory::UnlockClass { classjob_id })
+            .await;
+        let actor_id = self.player_data.character.actor_id;
+        self.actor_control_self(ActorControlCategory::Unknown {
+            category: CLASS_UNLOCK_PET_SETUP,
+            param1: actor_id.0,
+            param2: 0,
+            param3: ObjectId::default().0,
+            param4: 1,
+            param5: 1,
+        })
+        .await;
+        self.actor_control_self(ActorControlCategory::Unknown {
+            category: CLASS_UNLOCK_PET_PARAMETERS,
+            param1: 0,
+            param2: 0,
+            param3: 7,
+            param4: 0,
+            param5: 0,
+        })
+        .await;
+        self.actor_control_self(ActorControlCategory::SetLevel {
+            classjob_id,
+            level: starting_level as u32,
+        })
+        .await;
     }
 
     /// A quest's currency reward. A Grand Company's seals go in their own slot of the currency (1-3), with retail's

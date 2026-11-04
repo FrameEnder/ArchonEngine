@@ -1,0 +1,228 @@
+{
+  "quest": 286,
+  "script": "ClsGla021_00286",
+  "source": "Bob's Chronofoil capture d3379099 (2026-11-04, the whole quest on a Conjurer); scenes and effects from Bob's Chronofoil capture of 2026-11-04",
+  "params": {
+    "ACTOR0": 1001739,
+    "ENEMY0": 351,
+    "ENEMY1": 385,
+    "ENEMY2": 205
+  },
+  "steps": [
+    {
+      "talk": 1001739,
+      "layout": 2617212,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "kill": [
+        351,
+        3746485
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "010000000000",
+        "notices": [
+          [
+            0,
+            [
+              1,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        351,
+        3746484
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "020000000000",
+        "notices": [
+          [
+            0,
+            [
+              2,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        385,
+        3746543
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "021000000000",
+        "notices": [
+          [
+            1,
+            [
+              1,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        385,
+        3746542
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "022000000000",
+        "notices": [
+          [
+            1,
+            [
+              2,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        351,
+        3746486
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "132000000000",
+        "notices": [
+          [
+            0,
+            [
+              3,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        385,
+        3746544
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "233000000000",
+        "notices": [
+          [
+            1,
+            [
+              3,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        205,
+        3746783
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "233100000000",
+        "notices": [
+          [
+            2,
+            [
+              1,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        205,
+        3746775
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "233200000000",
+        "notices": [
+          [
+            2,
+            [
+              2,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        205,
+        3746782
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            2,
+            [
+              3,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1001739,
+      "layout": 2617212,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 1,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

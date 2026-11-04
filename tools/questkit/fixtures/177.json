@@ -1,0 +1,29 @@
+{
+  "quest": 177,
+  "script": "ClsGla001_00177",
+  "source": "Bob's Chronofoil capture d3379099 (2026-11-04, the whole quest on a Conjurer); scenes and effects from Bob's Chronofoil capture of 2026-11-04",
+  "params": {},
+  "steps": [
+    {
+      "talk": 1002277,
+      "layout": 3279279,
+      "what": "its issuer",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

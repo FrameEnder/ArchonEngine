@@ -144,6 +144,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
+* **Joining a class from another (177, 285, 286; the CLASSJOB unlock)** (2026-11-04, from Bob's dumps and Chronofoil
+  capture d3379099, a Conjurer): untested in game. Only the Gladiators' route is scripted; the other classes' joining
+  quests unlock their class the same way once they are. The server doesn't stop a locked class's weapon being
+  equipped (the client refuses it). Retail's ActorControlSelf 257 and 260 at the unlock are sent as recorded, their
+  meaning not known (Kawari calls them SetupPet and SetPetParameters). What 177 does for someone the client says
+  doesn't qualify (its IsQuestAcceptQualified) wasn't seen: the answer it returns decides.
 * **The Gladiators' first two quests (253, 256)** (2026-11-03, from Bob's dumps and Chronofoil capture 208c3716):
   untested in game; each replays against the one run, played by a level 37 Gladiator, so 256's enemies' damage wasn't
   recorded (their timelines use the defaults). 256's marauders and Pfarmurl take any emote (the Quest sheet's emote
