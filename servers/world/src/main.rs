@@ -4765,6 +4765,7 @@ async fn process_server_msg(
             }
             FromServer::ParalysisProc(cancelled) => connection.paralysis_proc(cancelled).await,
             FromServer::SendClassInfo => connection.send_class_info().await,
+            FromServer::ParalysisRecovered => connection.send_conditions().await,
             FromServer::SpawnObject(object) => connection.spawn_object(object).await,
             FromServer::LocationDiscovered(map_id, map_part_id) => {
                 connection.discover_location(map_id, map_part_id).await

@@ -128,6 +128,9 @@ pub enum FromServer {
     ParalysisProc(Vec<(u32, u32)>),
     /// The player's UpdateClassInfo alone, as retail sent it after each paralysis proc.
     SendClassInfo,
+    /// A second after a paralysis proc: the player's conditions again, which lets their client act and move
+    /// (`paralysis::release_players`.)
+    ParalysisRecovered,
     /// Update an actor's model IDs.
     ActorEquip(
         ObjectId,

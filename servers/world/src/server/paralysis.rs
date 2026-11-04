@@ -41,11 +41,13 @@ pub const LOCKOUT: Duration = Duration::from_secs(1);
 const CANCEL_SPELL: u32 = 541;
 const CANCEL_OTHER: u32 = 540;
 
-/// Who is paralysed: when each next rolls, and until when an NPC that seized up can't act.
+/// Who is paralysed: when each next rolls, until when an NPC that seized up can't act, and when a player that seized
+/// up is let go (`release_players`.)
 #[derive(Debug, Default)]
 pub struct Paralysis {
     next_roll: HashMap<ObjectId, Instant>,
     locked_until: HashMap<ObjectId, Instant>,
+    release_at: HashMap<ObjectId, Instant>,
 }
 
 impl Paralysis {
@@ -88,6 +90,7 @@ pub fn paralysis_tick(
         .paralysis
         .locked_until
         .retain(|_, until| *until > now);
+    release_players(&network, instance, now);
 
     let paralysed = paralysed_actors(instance);
     instance
@@ -116,6 +119,37 @@ pub fn paralysis_tick(
 
     for id in seized {
         seize_up(network.clone(), game_data, instance, id, now);
+    }
+}
+
+/// A player's client seizes up on its own at a proc (the FloatingNumberVFX) and stays that way until the server next
+/// sends its conditions: retail sent them, unchanged, 0.98 s after every proc on the player (Bob's Chronofoil capture
+/// 44df02fc, all of them), which is why its next ActionRequest came 1.03-1.26 s after. Kawari never did: a proc that
+/// came while the player was casting got the Casting condition's own updates soon after and passed, but one that cut
+/// a cast short (the conditions sent just before it, then nothing) left the player unable to act or move for good,
+/// the status long gone (Bob's bundles 20261104-150457 to -180355.) Sent at the first tick a second after the proc
+/// (procs fall on ticks, so that's 1.0 s), whether or not the player is still paralysed.
+fn release_players(network: &Arc<Mutex<NetworkState>>, instance: &mut Instance, now: Instant) {
+    // A tick's slack, so a release due a hair after this tick goes now rather than half a second late.
+    let due = now + Duration::from_millis(50);
+    let released: Vec<ObjectId> = instance
+        .paralysis
+        .release_at
+        .iter()
+        .filter(|(_, at)| **at <= due)
+        .map(|(id, _)| *id)
+        .collect();
+    if released.is_empty() {
+        return;
+    }
+    let mut network = network.lock();
+    for id in released {
+        instance.paralysis.release_at.remove(&id);
+        network.send_to_by_actor_id(
+            id,
+            FromServer::ParalysisRecovered,
+            DestinationNetwork::ZoneClients,
+        );
     }
 }
 
@@ -169,6 +203,12 @@ fn seize_up(
         instance.find_actor(actor_id),
         Some(NetworkedActor::Player { .. })
     );
+    if is_player {
+        instance
+            .paralysis
+            .release_at
+            .insert(actor_id, now + LOCKOUT);
+    }
 
     {
         let mut network = network.lock();
