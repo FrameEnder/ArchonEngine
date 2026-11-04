@@ -153,8 +153,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   retail's order now ([Quests](quests.md), "Changing class"), untested in game: whether that is what let the client
   change class again isn't confirmed. Still unlike retail: the InventoryActionAck for a weapon comes first (retail's
   after Equip and ActorControlSelf 57), the Equip and the stats come once more than retail's, a gearset's
-  InventoryTransactionFinish has Kawari's operation 0x237 (retail's 0xFC, 0xC00), and ActorControlSelf 805 after a
-  gearset and 3103 (0xC1F, before a gearset's class change) mean nothing known (805 is sent, 3103 isn't). A gearset
+  InventoryTransactionFinish has Kawari's operation 0x237 (retail's 0xFC, 0xC00), and what ActorControlSelf 805
+  (after a gearset) and 3103 (before a gearset's class change) mean isn't known; both are sent as retail. That 3103
+  is what the client waited for after a gearset changed the class ("Synching with server...") is a deduction from
+  the one retail gearset that did. A gearset
   that changes to a job doesn't look at the soul crystal (`equip_gearset` takes the class from the weapon). The
   level-31 "All Classes" armour stayed on the level-1 Gladiator (`remove_incompatible_armor` checks the class, not the
   level); whether the client takes it off itself wasn't seen. A summoned pet isn't dismissed on a class change (only

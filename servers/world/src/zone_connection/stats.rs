@@ -641,6 +641,9 @@ impl UserData for BaseParameters {
     }
 }
 
+/// ActorControlSelf 3103, retail's before the class change a gearset makes (`finish_changing_class`.)
+const GEARSET_CLASS_CHANGE: u32 = 3103;
+
 impl ZoneConnection {
     pub async fn update_class_info(&mut self) {
         let ipc;
@@ -722,6 +725,23 @@ impl ZoneConnection {
     /// message (Bob's bundle 20261104-135324; Lira Ormont's of 2026-10-26.) Only when the class really changes:
     /// retail sent none of this for a weapon or gearset of the same class.
     pub async fn finish_changing_class(&mut self) {
+        // A gearset of another class: retail sent ActorControlSelf 3103, with nothing in it, before the class change
+        // (Bob's Chronofoil capture d3379099: the one gearset that changed the class; none for the weapon or a gearset
+        // of the same class.) Without it the client refused every later item move with LogMessage 715, "Unable to move
+        // item. Please try again. (Synching with server...)", most likely waiting for it (Bob's bundle
+        // 20261104-143022.)
+        if self.gearset_equipped {
+            self.actor_control_self(ActorControlCategory::Unknown {
+                category: GEARSET_CLASS_CHANGE,
+                param1: 0,
+                param2: 0,
+                param3: 0,
+                param4: 0,
+                param5: 0,
+            })
+            .await;
+        }
+
         let classjob_id = self.player_data.classjob.current_class as u8;
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorGauge {
             classjob_id,

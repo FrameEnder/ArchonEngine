@@ -638,7 +638,12 @@ gladius from the bags and by a gearset, and back to Conjurer by the cane from th
 UnkJobGauge for the new class, PlayerStats, the map markers, **UnkClassRelated**, ActorControl (not ActorControlSelf)
 5 with the class (the change's VFX, to the player and everyone around), SetupPet and SetPetParameters with no pet
 twice, Equip (with the class and its level), ActorControlSelf 521 (the item level) and 57, for the weapon
-InventoryActionAck, for a gearset ActorControlSelf 805, then StatusEffectList and **UpdateClassInfo last**. A weapon
+InventoryActionAck, for a gearset ActorControlSelf 805, then StatusEffectList and **UpdateClassInfo last**. A gearset
+that changes the class has **ActorControlSelf 3103** (empty) first, right after the equipped container: the only one
+in the capture, and none for the weapon or a gearset of the same class. Without it, once a gearset had changed the
+class (Gladiator to Conjurer, which then went through), the client refused every item move after it with LogMessage
+715, "Unable to move item. Please try again. (Synching with server...)", sending nothing (Bob's bundle
+20261104-143022); a gearset of the same class never needed it. A weapon
 or gearset of the same class got none of the class packets (capture 44df02fc: PlayerStats, Equip, 521, 57, the ack,
 StatusEffectList, UpdateClassInfo). Kawari sent UpdateClassInfo first, before UnkClassRelated, and the client then
 refused every later class change with no message and without asking the server: a gearset of the old class or its
