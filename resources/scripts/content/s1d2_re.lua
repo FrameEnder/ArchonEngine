@@ -213,6 +213,10 @@ BNPC_FINAL = 9059658
 FINAL_WALL = 2002872
 FINAL_LINE = 2002735
 PLACE_FINAL = 690
+-- Its floor: the cylinder round the terrace (EventRange 9059667, 20 yalms, layer LVD_Boss3_Gimmick_Remake of
+-- planmap.lgb). Retail's party never went more than 19.4 yalms from its middle in either run; the party bots and party
+-- NPCs keep inside it while dodging (`spawn_boss`'s arena).
+FINAL_ARENA = 9059667
 CUTSCENE_FINAL = 184
 FINAL_RANGE = 4105944
 CUTSCENE_END = 185
@@ -785,7 +789,7 @@ function startFinal(director)
     final_started = true
     director:update_shortcut(SHORTCUT_FINAL)
     director:play_cutscene(CUTSCENE_FINAL)
-    director:spawn_boss(BNPC_FINAL, FINAL_WALL, FINAL_LINE, PLACE_FINAL)
+    director:spawn_boss(BNPC_FINAL, FINAL_WALL, FINAL_LINE, PLACE_FINAL, FINAL_ARENA)
     for spot, at in pairs(SPOTS) do
         local mark = director:spawn_bnpc(HELPER, at.x, at.y, at.z, at.rotation)
         local burst = director:spawn_bnpc(HELPER, at.x, at.y, at.z, at.rotation)

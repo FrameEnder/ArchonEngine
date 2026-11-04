@@ -418,6 +418,17 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
     one caught (Aquaveil, Divine Benison, Adloquium); else its own (Sheltron, Vengeance, Sentinel, Rampart). Only
     actions its class has learnt by its level (`GameData::brace_actions`: the Action row's ClassJobCategory and
     ClassJobLevel), each kept to its recast (`PartyBot::brace_ready`).
+    **In turn, on the floor** (2026-11-04, Bob, of Brayflox's Longstop's last boss, whose puddles, old and new,
+    covered its whole terrace and sent the party off it: "they should avoid older AOEs wait for them to lapse before
+    then avoiding newer AOEs in a queue like system, all while respecting the arena bounds"). The attacks being cast
+    are taken as waves by when they go off (within 0.25 s, `SAME_WAVE`: a boss's helpers' puddles together), and a
+    dodger tries to be out of all of them, then of all but the last wave, and so on to the first alone
+    (`dodge::in_turn`, `dodge::choose`): if it's out of the soonest ones where it stands it waits there (no brace);
+    once they've gone off it gets out of the next. It braces only when it can't get out of even the first wave. While
+    a boss whose room names its floor (`spawn_boss`/`boss_room`'s `arena`) is being fought, no spot off that floor
+    counts (half a yalm in from its edge, `ARENA_MARGIN`: retail's party never went more than 19.4 yalms from the middle
+    of the 20-yalm terrace). Before, with no spot out of everything on the floor, the nearest one off it won (27
+    yalms out on the terrace's rocks, Bob's bundle 20261104-204423).
 * **Its rotation** (`build_rotation`, a heuristic until bots' rotations are recorded), run by the NPC class rotations
   (`server/rotation.rs`, a 2.5 s pace like a player's GCD): its abilities whenever they're ready; its combos, each step
   after the one it follows (highest level first, so a combo runs to its end); its damage over time spells and

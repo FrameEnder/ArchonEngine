@@ -114,6 +114,9 @@ pub enum LuaDirectorTask {
         wall_id: u32,
         line_id: u32,
         place_name: u32,
+        /// The layout's range (an EventRange or MapRange's layout ID, 0 for none) the room's floor is: see
+        /// `DirectorBoss::arena`.
+        arena: u32,
     },
     /// A boss arena whose boss is spawned some other way (or later): sealed `wall_id` 15 s after the boss or one of
     /// `triggers` (layout IDs) goes for someone, unsealed when the boss dies. The Tam-Tara Deepcroft's rooms seal as
@@ -124,6 +127,7 @@ pub enum LuaDirectorTask {
         line_id: u32,
         place_name: u32,
         triggers: Vec<u32>,
+        arena: u32,
     },
     /// Whether a BNpc takes damage (`director:set_invulnerable`.)
     SetInvulnerable {
@@ -635,12 +639,21 @@ impl UserData for LuaDirector {
         });
         methods.add_method_mut(
             "spawn_boss",
-            |_, this, (bnpc_id, wall_id, line_id, place_name): (u32, u32, u32, u32)| {
+            |_,
+             this,
+             (bnpc_id, wall_id, line_id, place_name, arena): (
+                u32,
+                u32,
+                u32,
+                u32,
+                Option<u32>,
+            )| {
                 this.tasks.push(LuaDirectorTask::SpawnBoss {
                     bnpc_id,
                     wall_id,
                     line_id,
                     place_name,
+                    arena: arena.unwrap_or(0),
                 });
                 Ok(())
             },
@@ -649,12 +662,13 @@ impl UserData for LuaDirector {
             "boss_room",
             |_,
              this,
-             (bnpc_id, wall_id, line_id, place_name, triggers): (
+             (bnpc_id, wall_id, line_id, place_name, triggers, arena): (
                 u32,
                 u32,
                 u32,
                 u32,
                 Option<Vec<u32>>,
+                Option<u32>,
             )| {
                 this.tasks.push(LuaDirectorTask::BossRoom {
                     bnpc_id,
@@ -662,6 +676,7 @@ impl UserData for LuaDirector {
                     line_id,
                     place_name,
                     triggers: triggers.unwrap_or_default(),
+                    arena: arena.unwrap_or(0),
                 });
                 Ok(())
             },
@@ -1180,6 +1195,21 @@ impl UserData for LuaDirector {
     }
 }
 
+/// A boss room's arena (`DirectorBoss::arena`) the zone has no range for keeps nobody in: said once, as it's set.
+fn warn_if_no_arena(instance: &Instance, arena: u32) {
+    if arena != 0
+        && !instance
+            .zone
+            .map_ranges
+            .iter()
+            .any(|range| range.instance_id == arena)
+    {
+        tracing::warn!(
+            "Boss room arena {arena} isn't one of the zone's ranges: the party isn't kept in it"
+        );
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DirectorBossState {
     /// The boss arena is open and nothing has happened yet.
@@ -1199,6 +1229,11 @@ pub struct DirectorBoss {
     place_name: u32,
     /// Other BNpcs (layout IDs, 0 for none) whose pull seals the arena too.
     triggers: [u32; 8],
+    /// The layout's range that is the room's floor (an EventRange's or MapRange's layout ID, 0 for none): from the
+    /// pull until the boss is gone, party bots and party NPCs keep inside it (`dodge::arena`). Brayflox's Longstop's
+    /// last boss's terrace is the cylinder 9059667 (20 yalms) in its gimmick layer; retail's party never went more
+    /// than 19.4 yalms from its middle, Kawari's ran 27 out to get away from its puddles (Bob's bundle 20261104-204423.)
+    arena: u32,
 }
 
 #[derive(Debug, Default)]
@@ -1597,6 +1632,14 @@ impl DirectorData {
                 self.tasks.push(task);
             }
         }
+    }
+
+    /// The range a boss being fought keeps the party in (`DirectorBoss::arena`): its layout ID.
+    pub fn arena(&self) -> Option<u32> {
+        self.bosses
+            .values()
+            .find(|boss| boss.arena != 0 && boss.state != DirectorBossState::Open)
+            .map(|boss| boss.arena)
     }
 
     /// Actually insert tasks to seal the boss wall.
@@ -2217,6 +2260,7 @@ pub fn director_tick(
                 wall_id,
                 line_id,
                 place_name,
+                arena,
             } => {
                 if let Some(mut npc) = instance.zone.get_battle_npc(*bnpc_id) {
                     npc.common.handler_id = director_id;
@@ -2225,6 +2269,7 @@ pub fn director_tick(
                     let config = get_config();
                     let mut game_data = game_data.lock();
                     instance.insert_npc(actor_id, npc, &config, &mut game_data);
+                    warn_if_no_arena(instance, *arena);
                     bosses.insert(
                         *bnpc_id,
                         DirectorBoss {
@@ -2234,6 +2279,7 @@ pub fn director_tick(
                             line_id: *line_id,
                             place_name: *place_name,
                             triggers: [0; 8],
+                            arena: *arena,
                         },
                     );
                 } else {
@@ -2246,11 +2292,13 @@ pub fn director_tick(
                 line_id,
                 place_name,
                 triggers,
+                arena,
             } => {
                 let mut ids = [0; 8];
                 for (slot, id) in ids.iter_mut().zip(triggers) {
                     *slot = *id;
                 }
+                warn_if_no_arena(instance, *arena);
                 bosses.insert(
                     *bnpc_id,
                     DirectorBoss {
@@ -2260,6 +2308,7 @@ pub fn director_tick(
                         line_id: *line_id,
                         place_name: *place_name,
                         triggers: ids,
+                        arena: *arena,
                     },
                 );
             }
@@ -3966,6 +4015,7 @@ mod tests {
             line_id: wall_id + 1,
             place_name: 609,
             triggers: [0; 8],
+            arena: 0,
         }
     }
 
@@ -3973,6 +4023,24 @@ mod tests {
         director.tasks.iter().any(|task| {
             matches!(task, LuaDirectorTask::LogMessage { id, .. } if *id == LogMessageType::BossRoomUnsealed as u32)
         })
+    }
+
+    /// A room's floor keeps the party in from the pull on, not before (Brayflox's Longstop's last boss's terrace.)
+    #[test]
+    fn the_arena_holds_from_the_pull() {
+        let mut director = DirectorData::default();
+        director.bosses.insert(
+            9059658,
+            DirectorBoss {
+                arena: 9059667,
+                ..room(2002872)
+            },
+        );
+        assert_eq!(director.arena(), None);
+        director.on_actor_aggro(9059658, ObjectId(1));
+        assert_eq!(director.arena(), Some(9059667));
+        director.bosses.clear();
+        assert_eq!(director.arena(), None);
     }
 
     #[test]

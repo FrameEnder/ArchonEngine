@@ -573,11 +573,11 @@ last boss's is.
 | EventRange 4000437 | (43.42, 7.76, -77.21), turned -1.366, half-sizes 3 × 3 × 4 | the first ambush |
 | EventRange 4000429 | (61.4, 7.25, -84.34), turned -1.406, 4 × 3 × 12 | the second ambush |
 | EventRange 4105944 | (-66.72, 35.36, -234.73), turned 0.251, 1.5 × 3 × 9 | the last boss's cutscene |
+| EventRange 9059667 (LVD_Boss3_Gimmick_Remake) | (-26.44, 35.0, -235.98), a cylinder of 20 yalms (10 high) | the last boss's floor (`spawn_boss`'s arena): the party bots and party NPCs don't dodge off it. Retail's party went no further than 19.4 yalms from its middle in either run; Kawari's ran 27 out (Bob's bundle 20261104-204423) |
 | PopRanges 11438223-11438226 (LVD_zone_01) | (82.7, 0.8, 27.5), (15.8, 7.4, -65.0), (-115.1, -2.4, 34.1), (-61.1, 34.0, -234.4): outside the four boss rooms | the shortcut's destination, the next as each boss is pulled (`update_shortcut`) |
 | SharedGroups 9068345, 9070173-9070182 (LVD_Boss3_Gimmick_Remake, `sgbg_s1d2_a0_gmc01.sgb`) | the seven puddle spots | their map effects (`map_effect_at`) |
 
-Not used: EventRanges 4000419, 4000434, 4186387, 4186389 and 3998421 (the entrance: InstanceContent 8 names it), the
-cylinder 9059667 round the last boss's terrace (20 yalms), the LVD_Faith ranges (9394119-9394121, Duty Support's),
+Not used: EventRanges 4000419, 4000434, 4186387, 4186389 and 3998421 (the entrance: InstanceContent 8 names it), the LVD_Faith ranges (9394119-9394121, Duty Support's),
 and the gimmick layer's pop ranges by the boss walls (4086919-4086922, 7373172-7373182); `bg.lgb` has the rooms' own
 geometry, nothing the director needs.
 

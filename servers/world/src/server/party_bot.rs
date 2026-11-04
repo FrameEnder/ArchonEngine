@@ -3151,6 +3151,10 @@ fn update_party(
     let mut lines: Vec<(ObjectId, u32)> = Vec::new();
     // Enemies' area attacks being cast: everyone in one gets out of it (`dodge.rs`.)
     let dangers: Vec<Danger> = dodge::dangers(instance, &mut game_data.lock(), now);
+    // The waves of them it tries to be out of, all first, then the soonest ones (`dodge::in_turn`.)
+    let in_turn = dodge::in_turn(&dangers);
+    // A boss room's floor while its boss is fought: no spot off it counts (`dodge::arena`.)
+    let arena = dodge::arena(instance);
     let mut dodges: Vec<(ObjectId, Option<dodge::Dodge>)> = Vec::new();
     // The party where it stands (for bracing: who an attack catches, and who's most hurt.)
     let allies: Vec<(ObjectId, Vec3A, f32)> = members
@@ -3188,7 +3192,9 @@ fn update_party(
 
         // An enemy's area attack over it: out of it, after a moment (retail's Duty Support members, `dodge.rs`), to
         // the nearest spot out of every one being cast, as near its target (or the player) as that allows; it waits
-        // there, still acting if what it's after is in reach, until a moment after the last has gone off.
+        // there, still acting if what it's after is in reach, until a moment after the last has gone off. With
+        // nowhere out of all of them, out of the ones going off soonest (waiting where it is if it's already out of
+        // those), and on to the next once they have; never off a boss room's floor.
         let here = spawn.common.position.0;
         let threats: Vec<&Danger> = dangers
             .iter()
@@ -3213,27 +3219,36 @@ fn update_party(
             // Only somewhere on the map: on the navmesh, with a path there along it (Bob, 2026-10-24); without a
             // navmesh nowhere is known to be, and it braces instead (below.)
             let flat = |a: Vec3A, b: Vec3A| Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length();
-            let walkable =
-                |point: Vec3A| navmesh.is_available() && navmesh.ground_under(point).is_some();
+            let walkable = |point: Vec3A| {
+                navmesh.is_available()
+                    && navmesh.ground_under(point).is_some()
+                    && arena.is_none_or(|arena| arena.holds(point))
+            };
             let reachable = |to: Vec3A| {
                 instance_navmesh_path(navmesh, here, to)
                     .last()
                     .is_some_and(|end| flat(*end, to) <= AT_SPOT)
             };
-            let spot = dodge
-                .and_then(|dodge| dodge.to)
-                .filter(|to| {
-                    dangers
-                        .iter()
-                        .all(|danger| !danger.catches(*to, DODGE_MARGIN))
-                })
-                .or_else(|| {
-                    dodge::safe_spots(here, rather, &dangers, walkable)
+            // The most waves it can be out of: where it stands, the spot it was going to, or a new one.
+            let choice = dodge::choose(
+                here,
+                rather,
+                &in_turn,
+                dodge.and_then(|dodge| dodge.to),
+                walkable,
+                |spots| {
+                    spots
                         .into_iter()
                         .take(DODGE_PATHS_TRIED)
                         .find(|to| reachable(*to))
-                });
-            if spot.is_none() && bot.braced_for.is_none_or(|braced| braced < until) {
+                },
+            );
+            let (spot, waiting) = match choice {
+                dodge::Choice::Go(to) => (Some(to), false),
+                dodge::Choice::Wait => (None, true),
+                dodge::Choice::Nowhere => (None, false),
+            };
+            if spot.is_none() && !waiting && bot.braced_for.is_none_or(|braced| braced < until) {
                 // Nowhere to go: it stays and shields what it can (`dodge::choose_brace`.)
                 let caught: Vec<&(ObjectId, Vec3A, f32)> = allies
                     .iter()

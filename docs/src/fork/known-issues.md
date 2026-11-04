@@ -72,7 +72,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   client's marker yet, and a hitbox from the model is whichever formula the startup check finds (see its log line) and
   untested in game. Every area attack a hostile NPC casts
   counts, even one that would do nothing to them; the margin past the hit edge (half a yalm) and the reaction
-  (0.8–1.3 s, quickened to 0.5–0.9 s on Bob's request) come from one fight (Tam-Tara's last boss, two casts). A bot's own cast isn't interrupted: it slides it.
+  (0.8–1.3 s, quickened to 0.5–0.9 s on Bob's request) come from one fight (Tam-Tara's last boss, two casts). A bot's own cast isn't interrupted: it slides it. Dodging in turn and keeping to a boss room's floor (2026-11-04) are untested in game; only Brayflox's Longstop's
+  last boss names its floor (`arena`), so in every other room a dodger with nowhere on the floor out of everything
+  can still go off it (the other rooms' floors aren't known: most dungeons' layouts have no such range, and the walls
+  alone don't say where the floor ends). A dodger doesn't weigh whether it can reach a spot before the attack goes
+  off.
   The safe spot is checked only for standing on the navmesh, not for a path there that stays out of the area.
 * How hard enemies hit them (2026-10-23) is the players' scale times retail's ratio for each member (a third for the
   Marauder), untested in game. On retail the enemies stayed on the tank (the Lancer and Thaumaturge took 330 damage

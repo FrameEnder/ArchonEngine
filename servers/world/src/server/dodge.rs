@@ -13,10 +13,12 @@ use glam::{Vec2, Vec3A};
 
 use kawari::{common::ObjectId, ipc::zone::CharacterDataFlag};
 
+use physis::layer::TriggerBoxShape;
+
 use crate::{
     GameData,
     gamedata::AreaShape,
-    server::{actor::NetworkedActor, instance::Instance},
+    server::{actor::NetworkedActor, instance::Instance, zone::MapRange},
 };
 
 /// How far past an area attack's hit edge a dodger stops (retail's stood at 11.0 yalms from a circle they otherwise
@@ -200,6 +202,126 @@ pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> V
         .collect()
 }
 
+/// How far inside a boss room's floor a dodger keeps (its hitbox: retail's party went no further than 19.4 yalms from
+/// the middle of Brayflox's Longstop's last boss's 20-yalm terrace.)
+pub const ARENA_MARGIN: f32 = 0.5;
+/// Area attacks going off within this much of each other are one wave: a dodger gets out of all of them or none.
+const SAME_WAVE: Duration = Duration::from_millis(250);
+
+/// The floor of a boss room being fought (`DirectorBoss::arena`): a player can't leave it, so a dodger doesn't either.
+#[derive(Debug, Clone, Copy)]
+pub struct Arena {
+    centre: Vec3A,
+    /// Its half-sizes across the ground (x, z): a cylinder's or sphere's radius twice, a box's half-sizes.
+    half: Vec2,
+    round: bool,
+}
+
+impl Arena {
+    /// From the layout's range: a cylinder or a sphere (round), or a box (turned boxes aren't, as Kawari's map ranges.)
+    pub fn of(range: &MapRange) -> Option<Self> {
+        let half = Vec2::new(range.scale.x, range.scale.z);
+        match range.trigger_box_shape {
+            TriggerBoxShape::Cylinder | TriggerBoxShape::Sphere => Some(Self {
+                centre: range.position,
+                half: Vec2::splat(range.scale.x),
+                round: true,
+            }),
+            TriggerBoxShape::Box => Some(Self {
+                centre: range.position,
+                half,
+                round: false,
+            }),
+            _ => None,
+        }
+    }
+
+    /// Whether `point` is on it, `ARENA_MARGIN` in from its edge.
+    pub fn holds(&self, point: Vec3A) -> bool {
+        let offset = Vec2::new(point.x - self.centre.x, point.z - self.centre.z);
+        let half = self.half - Vec2::splat(ARENA_MARGIN);
+        if self.round {
+            offset.length() <= half.x
+        } else {
+            offset.x.abs() <= half.x && offset.y.abs() <= half.y
+        }
+    }
+}
+
+/// The floor of the boss room the instance's director is fighting in, if it named one (and the zone has that range: a
+/// layout ID that isn't one leaves the dodgers free, as before.)
+pub fn arena(instance: &Instance) -> Option<Arena> {
+    let id = instance
+        .directors
+        .iter()
+        .find_map(|director| director.arena())?;
+    instance
+        .zone
+        .map_ranges
+        .iter()
+        .find(|range| range.instance_id == id)
+        .and_then(Arena::of)
+}
+
+/// The dangers a dodger tries to be out of, in turn: all of them, then all but the last wave to go off, and so on down
+/// to the first wave alone (Bob, 2026-11-04: with Brayflox's Longstop's last boss's puddles over its whole terrace,
+/// old and new, get out of the older ones and wait for them to go off, then out of the newer ones, as a player does,
+/// never off the floor.) Each is the soonest waves, soonest first.
+pub fn in_turn(dangers: &[Danger]) -> Vec<Vec<Danger>> {
+    let mut soonest = dangers.to_vec();
+    soonest.sort_by_key(|danger| danger.until);
+    // Where each wave ends: the first danger going off more than `SAME_WAVE` after the one before it.
+    let mut ends: Vec<usize> = (1..soonest.len())
+        .filter(|&i| soonest[i].until > soonest[i - 1].until + SAME_WAVE)
+        .collect();
+    ends.push(soonest.len());
+    ends.iter()
+        .rev()
+        .filter(|&&end| end > 0)
+        .map(|&end| soonest[..end].to_vec())
+        .collect()
+}
+
+/// What a dodger caught in an area attack does.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Choice {
+    /// Runs there.
+    Go(Vec3A),
+    /// Stays: it's out of the soonest waves already, and waits for them to go off before it gets out of the rest.
+    Wait,
+    /// Nowhere out of even the soonest wave (it braces.)
+    Nowhere,
+}
+
+/// Out of as many of the waves as it can (`in_turn`, all of them first): for each, staying if it's out of them where
+/// it stands, else the spot it was already going to (`previous`) if that's still out of them and allowed, else the
+/// first of the spots out of them (`safe_spots`) that `pick` takes (`party_bot`: the first a navmesh path reaches.)
+pub fn choose(
+    from: Vec3A,
+    rather: Vec3A,
+    in_turn: &[Vec<Danger>],
+    previous: Option<Vec3A>,
+    walkable: impl Fn(Vec3A) -> bool,
+    pick: impl Fn(Vec<Vec3A>) -> Option<Vec3A>,
+) -> Choice {
+    let out_of = |point: Vec3A, wave: &[Danger]| {
+        wave.iter()
+            .all(|danger| !danger.catches(point, DODGE_MARGIN))
+    };
+    for wave in in_turn {
+        if out_of(from, wave) {
+            return Choice::Wait;
+        }
+        if let Some(to) = previous.filter(|to| walkable(*to) && out_of(*to, wave)) {
+            return Choice::Go(to);
+        }
+        if let Some(to) = pick(safe_spots(from, rather, wave, &walkable)) {
+            return Choice::Go(to);
+        }
+    }
+    Choice::Nowhere
+}
+
 /// A party bot getting out of area attacks: where to (None when nowhere safe was found: it stays), when it sets off,
 /// and when the last attack it's avoiding goes off.
 #[derive(Debug, Clone, Copy)]
@@ -221,7 +343,7 @@ pub fn safe_spot(
     dangers: &[Danger],
     walkable: impl Fn(Vec3A) -> bool,
 ) -> Option<Vec3A> {
-    safe_spots(from, rather, dangers, walkable)
+    safe_spots(from, rather, dangers, &walkable)
         .into_iter()
         .next()
 }
@@ -233,7 +355,7 @@ pub fn safe_spots(
     from: Vec3A,
     rather: Vec3A,
     dangers: &[Danger],
-    walkable: impl Fn(Vec3A) -> bool,
+    walkable: &impl Fn(Vec3A) -> bool,
 ) -> Vec<Vec3A> {
     let safe = |point: Vec3A| {
         dangers
@@ -510,7 +632,7 @@ mod tests {
         });
         // Only the inside of the circle is on the map: no spot at all.
         let inside = |point: Vec3A| flat(point) < 8.0;
-        assert!(safe_spots(Vec3A::new(0.0, 0.0, 2.0), Vec3A::ZERO, &[danger], inside).is_empty());
+        assert!(safe_spots(Vec3A::new(0.0, 0.0, 2.0), Vec3A::ZERO, &[danger], &inside).is_empty());
     }
 
     #[test]
@@ -535,6 +657,99 @@ mod tests {
             Some((7531, Brace::OnSelf))
         );
         assert_eq!(choose_brace(&all[3..], 0, false), None);
+    }
+
+    /// Brayflox's Longstop's last boss's puddles (Bob's bundle 20261104-204423, the spots from its helpers): 10-yalm
+    /// circles on the middle of its 20-yalm terrace and on a hexagon 16 yalms out, the middle and set A going off
+    /// first, the middle and set B 5.1 s later. Out of both there's nowhere on the floor, only off it (where Kawari's
+    /// party went); on it, out of the first wave (by a B spot), then, once that's gone off, out of the second.
+    #[test]
+    fn puddles_in_turn_on_the_floor() {
+        let now = Instant::now();
+        let range = MapRange {
+            trigger_box_shape: TriggerBoxShape::Cylinder,
+            position: Vec3A::ZERO,
+            scale: Vec3A::new(20.0, 10.0, 20.0),
+            ..Default::default()
+        };
+        let arena = Arena::of(&range).unwrap();
+        let puddle = |angle: Option<f32>, after: f32| {
+            let caster = angle.map_or(Vec3A::ZERO, |degrees: f32| {
+                let a = degrees.to_radians();
+                Vec3A::new(a.sin() * 16.0, 0.0, a.cos() * 16.0)
+            });
+            Danger {
+                caster,
+                aimed_at: caster,
+                caster_radius: 0.5,
+                until: now + Duration::from_secs_f32(after),
+                ..danger(AreaShape::Circle {
+                    radius: 10.0,
+                    on_target: false,
+                })
+            }
+        };
+        let first = [None, Some(0.0), Some(120.0), Some(240.0)].map(|at| puddle(at, 9.0));
+        let second = [None, Some(60.0), Some(180.0), Some(300.0)].map(|at| puddle(at, 14.1));
+        let all: Vec<Danger> = first.iter().chain(&second).copied().collect();
+        let on_floor = |point: Vec3A| arena.holds(point);
+        let first_spot = |spots: Vec<Vec3A>| spots.into_iter().next();
+
+        let waves = in_turn(&all);
+        assert_eq!(waves.len(), 2);
+        assert_eq!(waves[0].len(), 8);
+        assert_eq!(waves[1].len(), 4);
+
+        // On an A spot: out of everything is only off the floor.
+        let here = first[1].caster;
+        let anywhere_spot = safe_spot(here, here, &all, anywhere).unwrap();
+        assert!(!arena.holds(anywhere_spot), "{anywhere_spot:?}");
+        // On it: out of the first wave, by the nearer B spot, and inside the edge.
+        let Choice::Go(to) = choose(here, here, &waves, None, on_floor, first_spot) else {
+            panic!("it should go");
+        };
+        assert!(arena.holds(to));
+        assert!(first.iter().all(|danger| !danger.catches(to, DODGE_MARGIN)));
+        assert!(second.iter().any(|danger| danger.catches(to, DODGE_MARGIN)));
+        // There, it waits for the first wave.
+        assert_eq!(
+            choose(to, to, &waves, Some(to), on_floor, first_spot),
+            Choice::Wait
+        );
+        // Once it's gone off, out of the second, still on the floor.
+        let next = in_turn(&second);
+        let Choice::Go(then) = choose(to, to, &next, Some(to), on_floor, first_spot) else {
+            panic!("it should go again");
+        };
+        assert!(arena.holds(then));
+        assert!(
+            second
+                .iter()
+                .all(|danger| !danger.catches(then, DODGE_MARGIN))
+        );
+    }
+
+    #[test]
+    fn arena_shapes() {
+        let round = Arena::of(&MapRange {
+            trigger_box_shape: TriggerBoxShape::Cylinder,
+            position: Vec3A::new(10.0, 5.0, 10.0),
+            scale: Vec3A::new(20.0, 10.0, 20.0),
+            ..Default::default()
+        })
+        .unwrap();
+        assert!(round.holds(Vec3A::new(29.4, 0.0, 10.0)));
+        assert!(!round.holds(Vec3A::new(29.6, 0.0, 10.0)));
+        assert!(!round.holds(Vec3A::new(25.0, 0.0, 25.0)));
+        let square = Arena::of(&MapRange {
+            trigger_box_shape: TriggerBoxShape::Box,
+            position: Vec3A::ZERO,
+            scale: Vec3A::new(10.0, 5.0, 4.0),
+            ..Default::default()
+        })
+        .unwrap();
+        assert!(square.holds(Vec3A::new(9.0, 0.0, 3.0)));
+        assert!(!square.holds(Vec3A::new(9.0, 0.0, 3.6)));
     }
 
     #[test]
