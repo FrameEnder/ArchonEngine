@@ -232,6 +232,9 @@ pub struct ZoneConnection {
         kawari::ipc::zone::ItemInfo,
     >,
     pub inventory_shown: bool,
+    /// A gearset was equipped and its Equip hasn't come back yet: retail's ActorControlSelf 805 follows it
+    /// (`update_equip`.)
+    pub gearset_equipped: bool,
     pub synced_level: Option<u8>,
     /// The item level the content syncs to, if it has its own (see `GameData::find_content_synced_item_level`.)
     pub synced_item_level: Option<u16>,

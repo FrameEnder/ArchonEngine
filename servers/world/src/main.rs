@@ -219,6 +219,7 @@ async fn initial_setup(
                     gathering: Default::default(),
                     shown_items: Default::default(),
                     inventory_shown: false,
+                    gearset_equipped: false,
                     is_party_leader: false,
                     synced_level: None,
                     synced_item_level: None,

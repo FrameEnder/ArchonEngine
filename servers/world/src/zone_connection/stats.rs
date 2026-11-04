@@ -713,30 +713,77 @@ impl ZoneConnection {
         .await;
     }
 
+    /// Tells the client its class changed (`current_class` already set), as retail does it (Bob's Chronofoil capture
+    /// d3379099 of 2026-11-04: a Conjurer to Gladiator and back, by the weapon and by a gearset): the new class's
+    /// gauge, the stats, UnkClassRelated, the ClassJobChange ActorControl (to the player and everyone around), the pet
+    /// hotbar cleared (SetupPet and SetPetParameters with no pet, twice), then the equipment (Equip, the item level)
+    /// and UpdateClassInfo last, which `update_equip` sends. UpdateClassInfo must not come first: Kawari sent it before
+    /// UnkClassRelated, and the client then refused any further class change, by gearset or by weapon, with no
+    /// message (Bob's bundle 20261104-135324; Lira Ormont's of 2026-10-26.) Only when the class really changes:
+    /// retail sent none of this for a weapon or gearset of the same class.
     pub async fn finish_changing_class(&mut self) {
-        // Play the VFX!
-        self.broadcast_actor_control(ActorControlCategory::ClassJobChangeVFX {
-            classjob_id: self.player_data.classjob.current_class as u32,
-        })
-        .await;
+        let classjob_id = self.player_data.classjob.current_class as u8;
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorGauge {
+            classjob_id,
+            data: [0; 15],
+        });
+        self.send_ipc_self(ipc).await;
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UnkJobGauge { unk: [0; 8] });
+        self.send_ipc_self(ipc).await;
+        self.send_stats().await;
 
         let ipc;
         {
             let game_data = self.game_data.lock();
 
             ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UnkClassRelated {
-                classjob_id: self.player_data.classjob.current_class as u8,
+                classjob_id,
                 class_level: self.current_level(&game_data),
                 current_level: self.current_level(&game_data),
             });
         }
         self.send_ipc_self(ipc).await;
 
+        // An ActorControl (not ActorControlSelf) to the player, as retail, and to everyone around: the VFX.
+        let actor_id = self.player_data.character.actor_id;
+        let category = ActorControlCategory::ClassJobChangeVFX {
+            classjob_id: classjob_id as u32,
+        };
+        self.actor_control(actor_id, category.clone()).await;
+        self.handle
+            .send(ToServer::BroadcastActorControl(actor_id, category))
+            .await;
+
+        for _ in 0..2 {
+            self.clear_pet_hotbar().await;
+        }
+
         // Commit back our classjob data after changing. Done here so it gets picked up by any paths that change classjob.
         {
             let mut db = self.database.lock();
             db.commit_classjob_and_inventory(&self.player_data);
         }
+    }
+
+    /// SetupPet and SetPetParameters with no pet (the pet hotbar hidden), as retail sent them on every class change
+    /// and when a class was unlocked (Bob's Chronofoil capture d3379099): `[owner, 0, no actor, 1, 1]` and
+    /// `[0, 0, 7, 0]`.
+    pub async fn clear_pet_hotbar(&mut self) {
+        self.actor_control_self(ActorControlCategory::SetupPet {
+            owner_id: self.player_data.character.actor_id,
+            pet_id: 0,
+            pet_actor_id: ObjectId::default(),
+            unk2: 1,
+            unk3: 1,
+        })
+        .await;
+        self.actor_control_self(ActorControlCategory::SetPetParameters {
+            pet_id: 0,
+            unk2: 0,
+            unk3: 7,
+            unk4: 0,
+        })
+        .await;
     }
 
     /// What each equipped item gives, capped under item level sync `sync_item_level`.

@@ -85,9 +85,10 @@ and each time in Old Gridania he had just set a portrait (SetAdventurerPlatePort
 client thinks the piece is in (`Invalid`, -1 for none; `Equipped` for one already worn). Kawari used to read a named
 slot that it had empty as "nothing for this slot" and took off what was worn. Now it leaves that slot as it is, logs
 a warning and sends the slot as it really is (UpdateInventorySlot), so the client's view catches up and the next try
-works. Lira Ormont's gear sets "sometimes" not working (2026-10-26) are most likely that: crafts had left her bags
-out of step with the client's ([Crafting](crafting.md)). Not confirmed: the one EquipGearset in her bundle (index 254,
-a crafter set) went through.
+works. Lira Ormont's gear sets "sometimes" not working (2026-10-26) were thought to be that (crafts had left her bags
+out of step with the client's, [Crafting](crafting.md)), but her bundle has the same pattern as Bob's of 2026-11-04:
+she changed class by the weapon (White Mage to Carpenter), the client then sent only the new class's recommended gear
+and no other gearset: Kawari's class change came in the wrong order ([Quests](quests.md), "Changing class").
 
 ## The armoire
 

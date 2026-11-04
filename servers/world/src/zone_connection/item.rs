@@ -265,10 +265,19 @@ impl ZoneConnection {
     ) {
         self.send_stats().await;
 
+        // Retail's own Equip has the class's level after the class (Bob's Chronofoil capture d3379099: 1 for a level 1
+        // Gladiator, 35 for a level 35 Conjurer); Kawari's was 0.
+        let level = if self.player_data.character.actor_id == actor_id {
+            let game_data = self.game_data.lock();
+            self.current_level(&game_data) as u8
+        } else {
+            0
+        };
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::Equip(Equip {
             main_weapon_id,
             sub_weapon_id,
             classjob_id: self.player_data.classjob.current_class as u8,
+            level,
             models,
             second_model_stain_ids,
             ..Default::default()
@@ -302,6 +311,21 @@ impl ZoneConnection {
                 param5: 0,
             })
             .await;
+
+            // After a gearset retail sent ActorControlSelf 805 here, with nothing in it (every EquipGearset in Bob's
+            // Chronofoil captures 44df02fc and d3379099), meaning unknown.
+            if self.gearset_equipped {
+                self.gearset_equipped = false;
+                self.actor_control_self(ActorControlCategory::Unknown {
+                    category: GEARSET_EQUIPPED_END,
+                    param1: 0,
+                    param2: 0,
+                    param3: 0,
+                    param4: 0,
+                    param5: 0,
+                })
+                .await;
+            }
         }
 
         self.send_stats().await;
@@ -697,11 +721,14 @@ impl ZoneConnection {
             classjobs = game_data.get_applicable_classjobs(item_info.classjob_category as u16);
         }
 
+        let previous_class = self.player_data.classjob.current_class;
         self.player_data.classjob.current_class = classjobs.first().copied().unwrap() as i32;
         assert!(self.player_data.classjob.current_class != 0); // If this is 0, then something went seriously wrong.
 
-        self.update_class_info().await;
-        self.finish_changing_class().await;
+        // UpdateClassInfo comes with the equipment (`update_equip`), after the class change, as on retail.
+        if self.player_data.classjob.current_class != previous_class {
+            self.finish_changing_class().await;
+        }
     }
 
     /// Changes the class based on the soul crystal equipped.
@@ -716,11 +743,14 @@ impl ZoneConnection {
             }
 
             if let Some(classjob_id) = classjob_id {
+                let previous_class = self.player_data.classjob.current_class;
                 self.player_data.classjob.current_class = classjob_id as i32;
                 assert!(self.player_data.classjob.current_class != 0); // If this is 0, then something went seriously wrong.
 
-                self.update_class_info().await;
-                self.finish_changing_class().await;
+                // As for the weapon: UpdateClassInfo comes with the equipment.
+                if self.player_data.classjob.current_class != previous_class {
+                    self.finish_changing_class().await;
+                }
             }
         }
     }
@@ -869,6 +899,8 @@ impl ZoneConnection {
             }
         }
 
+        self.gearset_equipped = true;
+
         // Inform the client that the gearset was successfully equipped.
         self.actor_control_self(ActorControlCategory::GearSetEquipped {
             gearset_index: gearset_index,
@@ -896,6 +928,9 @@ pub fn add_gil(connection: &mut ZoneConnection, gil: u32) {
     let slot = connection.player_data.inventory.currency.get_slot_mut(0);
     slot.quantity = slot.quantity.saturating_add_unsigned(gil);
 }
+
+/// ActorControlSelf 805, retail's after every gearset (`update_equip`.)
+const GEARSET_EQUIPPED_END: u32 = 805;
 
 /// LootMessage's kind for gil an enemy dropped (the amount.)
 const LOOT_MESSAGE_GIL: u32 = 9;

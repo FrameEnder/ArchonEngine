@@ -629,7 +629,25 @@ UnlockClass (ActorControlSelf 8) with the class, ActorControlSelf 257 (the playe
 7), then SetLevel (9) with the class and its ClassJob StartingLevel; the class's level is set, so it's no longer
 locked (level 0) and its weapon (the quest's reward, the weathered gladius) can be equipped, which changes the class.
 A class already unlocked is left as it is. The route for a non-Gladiator: 177 (completed as its issuer's question is
-answered yes, never accepted), 285, then My First Gladius (286, the Gladiators' first hunt).
+answered yes, never accepted), 285, then My First Gladius (286, the Gladiators' first hunt). 257 and 260 are SetupPet
+and SetPetParameters with no pet (the pet hotbar hidden), sent on every class change too (`clear_pet_hotbar`).
+
+**Changing class.** Equipping another class's weapon (an ItemOperation into the main hand) or a gearset of another
+class changes the class; retail's reply, the same both ways (capture d3379099: the Conjurer to Gladiator by the
+gladius from the bags and by a gearset, and back to Conjurer by the cane from the armoury): ActorGauge and
+UnkJobGauge for the new class, PlayerStats, the map markers, **UnkClassRelated**, ActorControl (not ActorControlSelf)
+5 with the class (the change's VFX, to the player and everyone around), SetupPet and SetPetParameters with no pet
+twice, Equip (with the class and its level), ActorControlSelf 521 (the item level) and 57, for the weapon
+InventoryActionAck, for a gearset ActorControlSelf 805, then StatusEffectList and **UpdateClassInfo last**. A weapon
+or gearset of the same class got none of the class packets (capture 44df02fc: PlayerStats, Equip, 521, 57, the ack,
+StatusEffectList, UpdateClassInfo). Kawari sent UpdateClassInfo first, before UnkClassRelated, and the client then
+refused every later class change with no message and without asking the server: a gearset of the old class or its
+weapon simply did nothing, while the recommended gear and a gearset matching what was worn still went through
+(Bob's bundle 20261104-135324, a Conjurer who had just joined the Gladiators; Lira Ormont's of 2026-10-26, a White
+Mage changing to Carpenter by the tool). `finish_changing_class` now follows retail's order, only when the class really changes,
+and UpdateClassInfo comes with the equipment (`update_equip`). The client also kept updating the old class's gearset
+with the new class's gear (the Conjurer's set held the gladius and the recommended armour), probably the same
+missed change.
 
 **Unlock links.** A quest's `REWARD…` parameters are unlock links it grants when finished (`get_quest_unlock_links`,
 `grant_quest_unlocks`): Spirithold Broken's `REWARD0 = 9` is the Recommendations window and `REWARD_LEVE = 5`

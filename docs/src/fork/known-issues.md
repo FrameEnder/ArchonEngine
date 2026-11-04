@@ -147,9 +147,18 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * **Joining a class from another (177, 285, 286; the CLASSJOB unlock)** (2026-11-04, from Bob's dumps and Chronofoil
   capture d3379099, a Conjurer): untested in game. Only the Gladiators' route is scripted; the other classes' joining
   quests unlock their class the same way once they are. The server doesn't stop a locked class's weapon being
-  equipped (the client refuses it). Retail's ActorControlSelf 257 and 260 at the unlock are sent as recorded, their
-  meaning not known (Kawari calls them SetupPet and SetPetParameters). What 177 does for someone the client says
+  equipped (the client refuses it). What 177 does for someone the client says
   doesn't qualify (its IsQuestAcceptQualified) wasn't seen: the answer it returns decides.
+* **Changing class** (2026-11-04, Bob's bundle 20261104-135324 and Chronofoil capture d3379099): the reply is in
+  retail's order now ([Quests](quests.md), "Changing class"), untested in game: whether that is what let the client
+  change class again isn't confirmed. Still unlike retail: the InventoryActionAck for a weapon comes first (retail's
+  after Equip and ActorControlSelf 57), the Equip and the stats come once more than retail's, a gearset's
+  InventoryTransactionFinish has Kawari's operation 0x237 (retail's 0xFC, 0xC00), and ActorControlSelf 805 after a
+  gearset and 3103 (0xC1F, before a gearset's class change) mean nothing known (805 is sent, 3103 isn't). A gearset
+  that changes to a job doesn't look at the soul crystal (`equip_gearset` takes the class from the weapon). The
+  level-31 "All Classes" armour stayed on the level-1 Gladiator (`remove_incompatible_armor` checks the class, not the
+  level); whether the client takes it off itself wasn't seen. A summoned pet isn't dismissed on a class change (only
+  its hotbar is cleared, as retail's packets do). Another player's Equip carries the receiver's class.
 * **The Gladiators' first two quests (253, 256)** (2026-11-03, from Bob's dumps and Chronofoil capture 208c3716):
   untested in game; each replays against the one run, played by a level 37 Gladiator, so 256's enemies' damage wasn't
   recorded (their timelines use the defaults). 256's marauders and Pfarmurl take any emote (the Quest sheet's emote

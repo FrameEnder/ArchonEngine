@@ -29,10 +29,6 @@ pub const RETAINER_UNLOCK_QUEST: u32 = 509;
 /// Adders' 700 (Bob's Chronofoil capture 0845b9a2) and 9 for the Immortal Flames' 702 (bab8c255); the Maelstrom's 701
 /// isn't recorded, 1 is that company's BuddyEquip row with Order 1, as the other two are.
 const COMPANY_SADDLES: [(u32, u32); 3] = [(700, 5), (701, 1), (702, 9)];
-/// ActorControlSelf 257 and 260 (Kawari's SetupPet and SetPetParameters), as retail sent them when a class was
-/// unlocked (`unlock_quest_classjob`).
-const CLASS_UNLOCK_PET_SETUP: u32 = 257;
-const CLASS_UNLOCK_PET_PARAMETERS: u32 = 260;
 
 impl ZoneConnection {
     /// What the client is sent for one of our active quests.
@@ -380,25 +376,7 @@ impl ZoneConnection {
         self.set_level_for(classjob_id as u8, starting_level as u16);
         self.actor_control_self(ActorControlCategory::UnlockClass { classjob_id })
             .await;
-        let actor_id = self.player_data.character.actor_id;
-        self.actor_control_self(ActorControlCategory::Unknown {
-            category: CLASS_UNLOCK_PET_SETUP,
-            param1: actor_id.0,
-            param2: 0,
-            param3: ObjectId::default().0,
-            param4: 1,
-            param5: 1,
-        })
-        .await;
-        self.actor_control_self(ActorControlCategory::Unknown {
-            category: CLASS_UNLOCK_PET_PARAMETERS,
-            param1: 0,
-            param2: 0,
-            param3: 7,
-            param4: 0,
-            param5: 0,
-        })
-        .await;
+        self.clear_pet_hotbar().await;
         self.actor_control_self(ActorControlCategory::SetLevel {
             classjob_id,
             level: starting_level as u32,
