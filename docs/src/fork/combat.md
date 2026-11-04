@@ -522,6 +522,13 @@ Status 17, as retail played it out in Bob's Chronofoil captures (85 windows of i
   Lominsan Way): when it cut a cast short, Condition (Casting off), then CancelCast, then the proc (ActorControl 23),
   from the player to the player too. (Retail's StatusEffectList and UpdateClassInfo right after are its 3 s tick, sent
   every 3 s whatever happens, which the procs fall on.)
+* **Its param is 0.** Every retail EffectResult and StatusEffectList with Paralysis has param 0 (44df02fc: the
+  player's, after 1769's Paralyze). Kawari gave it 50 (Paralyze, 1118, and the gaze, 513): the scripts had read the
+  ActionEffect's status entry, `0E 32 00 00 00 00 11 00`, whose second byte (50 there, 33 elsewhere) isn't the param
+  (the param is the fourth: Sprint's 30). The Status sheet gives Paralysis a ParamModifier (33), so the client may do
+  something with the param that retail's 0 never does; the freeze came each time a proc cut a cast short, and the
+  client's cancel refunds the cast's recast through its own adjusted-recast code (0x1408EE100), the one place in that
+  path a status's modifier could enter. That this is the cause is a deduction; the 0 is retail's either way.
 * **The Casting condition.** Retail sets the player's Casting condition right after their ActorCast and clears it as
   the cast lands (before its ActionEffect) or is cut short (before the CancelCast): every cast in that capture.
   Kawari never set it (`action::set_casting` now does). With no Casting to clear, a player whose cast the server cut

@@ -210,7 +210,7 @@ a quest's entering event, 0 for every other event (228 events across the capture
 * The flow (seconds from the fight starting), the same in seven runs: 1769 fights 1771 the whole time and never turned
   on the player, even when hit (the director's enmity); 1770 and 1771 never moved or acted (held). 1769's NpcYells
   1274-1278 at 3.1, 8.1, 13.1, 18.1 and 23.1. 1770 at **80 %** (its first health seen under it 77.4-78.7): sequence 4
-  and 1769's yell 1285; 1.7-3.6 s later 1769 casts Paralyze (1118, 3.7 s; status 17 at 50 for 30 s) on the player,
+  and 1769's yell 1285; 1.7-3.6 s later 1769 casts Paralyze (1118, 3.7 s; status 17, param 0, for 30 s) on the player,
   and **sequence 5 5.0 s after that cast began** (4.95-5.06 in every run), whatever 1770's health (59.9-70.1 %: not a
   health mark), with 1769's 95 and 96 3.0 and 8.0 s after. A run that never brought 1770 to 80 % had no Paralyze.
   1770 at 50 %: sequence 6; at 40 %: sequence 7 and 1769's 97; 3.0-3.1 s later sequence 8 and 0.3-0.4 s after that

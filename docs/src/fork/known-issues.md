@@ -470,9 +470,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   known: all of them are kept, as walls and floors, so a shape that's only for the camera or for flying would stop
   walkers wrongly.
 * `kawari-navimesh` can't make the Waking Sands' navmesh (territory 212, `wil_w1/evt/w1e6`): its level's bg path is empty, so it looks for `/collision/list.pcb` and panics (Bob's bundle 20261101-211113). Only the tool stops, run again at each visit; the world server goes on without a navmesh there (no enemies to move).
-* The player's Casting condition is set for their casts as retail (2026-11-04, after three bundles of paralysis
-  freezing the player; [Combat](combat.md#paralysis-serverparalysisrs)), untested in game: that it is what the client
-  waited for is a deduction (it's the last difference from retail's packets). A cast cancelled by the player's death
+* Paralysis froze the player whenever a proc cut a cast short (2026-11-04, four bundles); after the Casting condition
+  and the proc's packets matched retail's, the one difference left was the status's param (Kawari's 50, retail's 0),
+  now 0 ([Combat](combat.md#paralysis-serverparalysisrs)). Untested in game; why the client froze isn't known for
+  sure. Other statuses whose param the scripts took from an ActionEffect's second byte may be wrong the same way
+  (QB56Sprite_00313's 199 at 50, TrialByWindAdd_00416's 57 at 50, AcornArmageddon_00863's Heavy at 50): not checked. A cast cancelled by the player's death
   or a zone change leaves the condition to the next condition update. Other cancels the server sends the player
   (`interrupt_event_action`'s progress bars) weren't checked against retail.
 * Paralysis's durations came down 30, 15, 7 s as it was put on the same actor again (and once 3), which Kawari doesn't do; its chance (one roll in two) is the same whatever gave it. Whether a damage-over-time tick interrupts a progress bar wasn't seen.
