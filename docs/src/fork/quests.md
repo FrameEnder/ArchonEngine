@@ -638,21 +638,32 @@ gladius from the bags and by a gearset, and back to Conjurer by the cane from th
 UnkJobGauge for the new class, PlayerStats, the map markers, **UnkClassRelated**, ActorControl (not ActorControlSelf)
 5 with the class (the change's VFX, to the player and everyone around), SetupPet and SetPetParameters with no pet
 twice, Equip (with the class and its level), ActorControlSelf 521 (the item level) and 57, for the weapon
-InventoryActionAck, for a gearset ActorControlSelf 805, then StatusEffectList and **UpdateClassInfo last**. A gearset
-that changes the class has **ActorControlSelf 3103** (empty) first, right after the equipped container: the only one
-in the capture, and none for the weapon or a gearset of the same class. Without it, once a gearset had changed the
-class (Gladiator to Conjurer, which then went through), the client refused every item move after it with LogMessage
-715, "Unable to move item. Please try again. (Synching with server...)", sending nothing (Bob's bundle
-20261104-143022); a gearset of the same class never needed it. A weapon
+InventoryActionAck, for a gearset ActorControlSelf 805, then StatusEffectList and **UpdateClassInfo last**. (A
+gearset's ActorControlSelf 3103, empty, after the equipped container, came with five of retail's nine gearsets, with
+or without a class change: what decides it isn't known, and Kawari doesn't send it.) A weapon
 or gearset of the same class got none of the class packets (capture 44df02fc: PlayerStats, Equip, 521, 57, the ack,
-StatusEffectList, UpdateClassInfo). Kawari sent UpdateClassInfo first, before UnkClassRelated, and the client then
-refused every later class change with no message and without asking the server: a gearset of the old class or its
-weapon simply did nothing, while the recommended gear and a gearset matching what was worn still went through
-(Bob's bundle 20261104-135324, a Conjurer who had just joined the Gladiators; Lira Ormont's of 2026-10-26, a White
-Mage changing to Carpenter by the tool). `finish_changing_class` now follows retail's order, only when the class really changes,
-and UpdateClassInfo comes with the equipment (`update_equip`). The client also kept updating the old class's gearset
-with the new class's gear (the Conjurer's set held the gladius and the recommended armour), probably the same
-missed change.
+StatusEffectList, UpdateClassInfo). Kawari sent UpdateClassInfo first, before UnkClassRelated; `finish_changing_class`
+now follows retail's order, only when the class really changes, and UpdateClassInfo comes with the equipment
+(`update_equip`). That order was first taken for why the client refused to change class again (Bob's bundle
+20261104-135324, a Conjurer who had just joined the Gladiators; Lira Ormont's of 2026-10-26, a White Mage changing to
+Carpenter), but in both a gearset had been equipped earlier in the same zone, and the gearset's reply (below)
+explains it on its own.
+
+**A gearset's moves.** After any gearset, class change or not, the client refused every item move until the zone
+changed: LogMessage 715, "Unable to move item. Please try again. (Synching with server...)", and nothing sent (Bob's
+bundles 20261104-143022 and -144101; in all of Kawari's bundles no item move ever followed a gearset in the same
+zone, while gearsets after gearsets went through, which is why it looked like a class-change problem). Retail's reply
+to every gearset (nine, Bob's Chronofoil captures cc26e0ea, ba1b86c5, 44df02fc and d3379099): the slots that
+changed (UpdateInventorySlot), GearSetEquipped, one **InventoryTransaction for every piece of the gearset**, worn
+already or not (a worn one from its slot to itself), all with the **same sequence**, each side with what it holds
+afterwards (stack and item), the destination container as a u32; then **InventoryTransactionFinish** with that
+sequence twice, 0x17A when the client sent a glamour plate with it (all six) or 0xFC without (all three), and **one
+more than the transactions** in its second byte (11 → 0xC00, 12 → 0xD00, 13 → 0xE00, in all nine); then the equipped
+container. Kawari sent transactions only for the pieces that moved, each with its own sequence, the Equipped
+container in the destination's low half and the real one in the high half (it read them as two containers), and a
+finish of 0x237 counting 13 whatever the gearset: the client waited for transactions that never came. `equip_gearset`
+now replies as retail (`ItemOperationKind::GearsetGlamour` is 0x17A; the InventoryTransaction's destination is
+`dst_storage_id` with `dst_storage_high`, 0xFFFF only for the "no destination" sentinel).
 
 **Unlock links.** A quest's `REWARD…` parameters are unlock links it grants when finished (`get_quest_unlock_links`,
 `grant_quest_unlocks`): Spirithold Broken's `REWARD0 = 9` is the Recommendations window and `REWARD_LEVE = 5`

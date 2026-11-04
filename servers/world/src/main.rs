@@ -2567,8 +2567,8 @@ async fn process_packet(
                                         src_container_index: action.src_container_index,
                                         src_stack: action.src_stack,
                                         src_item_id: action.src_item_id,
-                                        dummy_container: ContainerType::DiscardingItemSentinel,
                                         dst_storage_id: ContainerType::DiscardingItemSentinel,
+                                        dst_storage_high: 0xFFFF,
                                         dst_container_index: u16::MAX,
                                         dst_actor_id: ObjectId::default(),
                                         dst_stack: 0,
@@ -3071,7 +3071,12 @@ async fn process_packet(
                             ..
                         } => {
                             connection
-                                .equip_gearset(*gearset_index, containers, indices)
+                                .equip_gearset(
+                                    *gearset_index,
+                                    containers,
+                                    indices,
+                                    *glamour_plate > 0,
+                                )
                                 .await;
                             if *glamour_plate > 0 {
                                 connection
@@ -3089,7 +3094,12 @@ async fn process_packet(
                             ..
                         } => {
                             connection
-                                .equip_gearset(*gearset_index, containers, indices)
+                                .equip_gearset(
+                                    *gearset_index,
+                                    containers,
+                                    indices,
+                                    *glamour_plate > 0,
+                                )
                                 .await;
                             if *glamour_plate > 0 {
                                 connection

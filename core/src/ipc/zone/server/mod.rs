@@ -358,18 +358,20 @@ pub enum ServerZoneIpcData {
         src_stack: u32,
         src_item_id: u32,
 
-        /// This section was observed to be static, across two captures and a bunch of discards these never changed.
-        /// Always set to 0xE000_0000, also known as no/invalid actor.
+        /// The player for a move between two of their slots (a gearset's), 0xE000_0000 (no actor) otherwise.
         dst_actor_id: ObjectId,
-        /// Used in discard operations, both this dummy container and dst_storage_id are set to a container type of 0xFFFF.
-        /// While this struct is nearly identical to ItemOperation, it deviates here by not having 2 bytes of padding.
-        dummy_container: ContainerType,
+        /// The destination container: a u32 on retail, its low half here (fork: every gearset of Bob's Chronofoil
+        /// captures has the container in the low half and 0 in the high half, e.g. `0x0000_0DAC`; Kawari had read the
+        /// halves as two containers and sent the Equipped container in the low one for every gearset move.)
+        /// DiscardingItemSentinel when there's none (discards, updates), with `dst_storage_high` 0xFFFF.
         dst_storage_id: ContainerType,
+        /// The container's high half: 0, or 0xFFFF with DiscardingItemSentinel.
+        dst_storage_high: u16,
         dst_container_index: u16,
-        /// Always set to zero.
+        /// For a gearset's moves, what each side holds afterwards: the destination's stack and item (retail's); zero
+        /// otherwise.
         #[brw(pad_before = 2)]
         dst_stack: u32,
-        /// Always set to zero.
         dst_item_id: u32,
     },
     InventoryTransactionFinish {
@@ -1845,6 +1847,59 @@ mod tests {
             &swing[..16],
             &[6, 0, 0x24, 0, 0x0e, 0, 0x18, 9, 1, 0, 0, 0, 2, 0, 0, 0]
         );
+    }
+
+    /// A gearset's move and its finish as retail sent them, word for word (Bob's Chronofoil capture d3379099: the
+    /// cane from the armoury into the main hand, the gladius back.)
+    #[test]
+    fn gearset_transaction_layout() {
+        use binrw::BinWrite;
+
+        let write = |data: ServerZoneIpcData| {
+            let mut cursor = std::io::Cursor::new(Vec::new());
+            data.write_le(&mut cursor).unwrap();
+            cursor
+                .into_inner()
+                .chunks(4)
+                .map(|word| u32::from_le_bytes(word.try_into().unwrap()))
+                .collect::<Vec<u32>>()
+        };
+        let player = ObjectId(0x1002b65e);
+        let transaction = write(ServerZoneIpcData::InventoryTransaction {
+            sequence: 0x84482,
+            operation_type: ItemOperationKind::Exchange,
+            src_actor_id: player,
+            src_storage_id: ContainerType::Equipped,
+            src_container_index: 0,
+            src_stack: 1,
+            src_item_id: 0x7dd,
+            dst_actor_id: player,
+            dst_storage_id: ContainerType::ArmoryWeapon,
+            dst_storage_high: 0,
+            dst_container_index: 6,
+            dst_stack: 1,
+            dst_item_id: 0x641,
+        });
+        assert_eq!(
+            transaction,
+            [
+                0x84482, 0xf2, 0x1002b65e, 0x3e8, 0, 1, 0x7dd, 0x1002b65e, 0xdac, 6, 1, 0x641
+            ]
+        );
+        let finish = write(ServerZoneIpcData::InventoryTransactionFinish {
+            sequence: 0x84482,
+            sequence_repeat: 0x84482,
+            operation_type: ItemOperationKind::EquipMannequin,
+            unk2: 0xc00,
+        });
+        assert_eq!(finish, [0x84482, 0x84482, 0xfc, 0xc00]);
+        let finish = write(ServerZoneIpcData::InventoryTransactionFinish {
+            sequence: 0x73266,
+            sequence_repeat: 0x73266,
+            operation_type: ItemOperationKind::GearsetGlamour,
+            unk2: 0xc00,
+        });
+        assert_eq!(finish[2], 0x17a);
     }
 
     /// Where the client's handler (HandleAchievementsPacket) reads each part.

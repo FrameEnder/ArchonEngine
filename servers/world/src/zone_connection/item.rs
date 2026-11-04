@@ -615,96 +615,31 @@ impl ZoneConnection {
         self.player_data.item_sequence += 1;
     }
 
-    /// Swaps two items from two (possibly different) containers and informs the client of this change.
-    pub async fn swap_items(
+    /// Swaps two slots' items in the server's inventory only (a gearset's moves, which are sent together.)
+    fn swap_slots(
         &mut self,
         src_container: ContainerType,
         src_index: u16,
         dst_container: ContainerType,
         dst_index: u16,
-    ) {
-        let Some(src_item) = self
-            .player_data
-            .inventory
-            .get_item(src_container, src_index)
-        else {
+    ) -> bool {
+        let inventory = &mut self.player_data.inventory;
+        let (Some(src_item), Some(dst_item)) = (
+            inventory.get_item(src_container, src_index),
+            inventory.get_item(dst_container, dst_index),
+        ) else {
             tracing::warn!(
-                "Unable to swap items: src_container was an invalid container for this operation: {src_container}!"
+                "Unable to swap {src_container:?} {src_index} and {dst_container:?} {dst_index}: no such slot!"
             );
-            return;
+            return false;
         };
-
-        // move src item into dst slot
-        let Some(dst_slot) = self
-            .player_data
-            .inventory
-            .get_item_mut(dst_container, dst_index)
-        else {
-            tracing::warn!(
-                "Unable to swap items: dst_container was an invalid container for this operation: {dst_container}!"
-            );
-            return;
-        };
-
-        let dst_item = *dst_slot;
-        let was_empty = dst_item.quantity == 0;
-        dst_slot.clone_from(&src_item);
-
-        // move dst item into src slot
-        let src_slot = self
-            .player_data
-            .inventory
-            .get_item_mut(src_container, src_index)
-            .unwrap(); // This unwrap should be fine since we've reached this point.
-        src_slot.clone_from(&dst_item);
-
-        // Then inform the client of the updated slots, we have to do this since this is caused server-side.
-        {
-            let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateInventorySlot(ItemInfo {
-                sequence: self.player_data.item_sequence,
-                container: src_container,
-                slot: src_index,
-                ..dst_item.into()
-            }));
-            self.send_ipc_self(ipc).await;
-            self.player_data.item_sequence += 1;
+        if let Some(slot) = inventory.get_item_mut(dst_container, dst_index) {
+            *slot = src_item;
         }
-
-        {
-            let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateInventorySlot(ItemInfo {
-                sequence: self.player_data.item_sequence,
-                container: dst_container,
-                slot: dst_index,
-                ..src_item.into()
-            }));
-            self.send_ipc_self(ipc).await;
-            self.player_data.item_sequence += 1;
+        if let Some(slot) = inventory.get_item_mut(src_container, src_index) {
+            *slot = dst_item;
         }
-
-        // And also update the current transaction
-        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::InventoryTransaction {
-            sequence: self.player_data.item_sequence,
-            operation_type: if was_empty {
-                ItemOperationKind::Move
-            } else {
-                ItemOperationKind::Exchange
-            },
-
-            src_actor_id: self.player_data.character.actor_id,
-            src_storage_id: src_container,
-            src_container_index: src_index,
-            src_stack: src_item.quantity as u32,
-            src_item_id: src_item.item_id,
-
-            dst_actor_id: self.player_data.character.actor_id,
-            dst_storage_id: dst_container,
-            dst_container_index: dst_index,
-            dst_stack: dst_item.quantity as u32,
-            dst_item_id: dst_item.item_id,
-
-            dummy_container: ContainerType::Equipped,
-        });
-        self.send_ipc_self(ipc).await;
+        true
     }
 
     /// Changes the class based on the weapon equipped.
@@ -818,98 +753,174 @@ impl ZoneConnection {
         }
     }
 
-    /// Equips a gearset from the client's EquipGearset (or EquipGearsetGlamour): each slot's item from where the client
-    /// says it is, then GearSetEquipped, the finish, the equipped container, the model and the stats.
+    /// Equips a gearset from the client's EquipGearset (or EquipGearsetGlamour, `with_plate` when it sent a glamour
+    /// plate): each slot's item from where the client says it is. As retail replied to every gearset (Bob's Chronofoil
+    /// captures cc26e0ea, ba1b86c5, 44df02fc and d3379099, nine gearsets): the slots that changed (UpdateInventorySlot),
+    /// GearSetEquipped, then one InventoryTransaction for **every** piece of the gearset, worn already or not, all with
+    /// the same sequence and each side with what it holds afterwards, then InventoryTransactionFinish with that
+    /// sequence, `GearsetGlamour` (with a plate) or `EquipMannequin` (without) and one more than the transactions in
+    /// its second byte; then the equipped container, the model and the stats. Kawari sent transactions only for the
+    /// pieces that moved, each with its own sequence and the Equipped container in the wrong half of the destination,
+    /// and a finish that counted 13: the client then waited for the rest and refused every item move until the zone
+    /// changed, "Unable to move item. Please try again. (Synching with server...)" (LogMessage 715; Bob's bundles of
+    /// 2026-11-04: no item move ever followed a gearset in the same zone in any of Kawari's bundles.)
     pub async fn equip_gearset(
         &mut self,
         gearset_index: u32,
         containers: &[ContainerType; 14],
         indices: &[i16; 14],
+        with_plate: bool,
     ) {
-        // TODO: handle missing items, full inventory and such
-        for slot in 0..14 {
-            let from_slot = indices[slot];
-            let from_container = containers[slot];
+        let actor_id = self.player_data.character.actor_id;
+        // (operation, source container and slot, destination container and slot); each side's item is read after.
+        let mut moves: Vec<(ItemOperationKind, ContainerType, u16, ContainerType, u16)> =
+            Vec::new();
+        let mut changed: Vec<(ContainerType, u16)> = Vec::new();
 
-            if from_container == ContainerType::Equipped {
+        for slot in 0..14u16 {
+            let from_slot = indices[slot as usize];
+            let from_container = containers[slot as usize];
+            let equipped_item = self.player_data.inventory.equipped.get_slot(slot);
+
+            if from_container == ContainerType::Invalid || from_slot == -1 {
+                // Nothing for this slot in the gearset: what's worn goes to the armoury.
+                if equipped_item.is_empty_slot() {
+                    continue;
+                }
+                let target_container = ContainerType::from_equip_slot(slot as u8);
+                let Some(free_slot) = self
+                    .player_data
+                    .inventory
+                    .get_container(target_container)
+                    .and_then(|container| get_next_free_slot(container))
+                else {
+                    continue;
+                };
+                if self.swap_slots(ContainerType::Equipped, slot, target_container, free_slot) {
+                    moves.push((
+                        ItemOperationKind::Move,
+                        ContainerType::Equipped,
+                        slot,
+                        target_container,
+                        free_slot,
+                    ));
+                    changed.push((ContainerType::Equipped, slot));
+                    changed.push((target_container, free_slot));
+                }
                 continue;
             }
 
-            let mut from_item = Item::default();
-
-            if from_slot != -1
-                && let Some(the_item) = self
-                    .player_data
-                    .inventory
-                    .get_item(from_container, from_slot as u16)
-            {
-                from_item = the_item;
+            let from_slot = from_slot as u16;
+            if from_container == ContainerType::Equipped {
+                // Worn already: retail still lists it, from its slot to itself.
+                if !equipped_item.is_empty_slot() {
+                    moves.push((
+                        ItemOperationKind::Exchange,
+                        ContainerType::Equipped,
+                        from_slot,
+                        ContainerType::Equipped,
+                        slot,
+                    ));
+                }
+                continue;
             }
 
-            let equipped_item = self.player_data.inventory.equipped.get_slot(slot as u16);
-
-            if from_slot != -1 && from_item.is_empty_slot() {
+            let from_item = self
+                .player_data
+                .inventory
+                .get_item(from_container, from_slot)
+                .unwrap_or_default();
+            if from_item.is_empty_slot() {
                 // The client names an item where the server has none: its view of that bag is out of date. Leave this
                 // piece as it is (rather than take off what's worn) and tell the client what's really in the slot.
                 tracing::warn!(
                     "Gear set {gearset_index} wants {from_container:?} {from_slot} for slot {slot}, which is empty here."
                 );
-                self.send_inventory_slot(from_container, from_slot as u16)
-                    .await;
+                self.send_inventory_slot(from_container, from_slot).await;
                 continue;
             }
 
-            if !from_item.is_empty_slot() && !equipped_item.is_empty_slot() {
-                // If there is something equipped and a replacement for it, we must swap.
-                self.swap_items(
+            let operation = if equipped_item.is_empty_slot() {
+                ItemOperationKind::Move
+            } else {
+                ItemOperationKind::Exchange
+            };
+            if self.swap_slots(from_container, from_slot, ContainerType::Equipped, slot) {
+                moves.push((
+                    operation,
                     from_container,
-                    from_slot as u16,
+                    from_slot,
                     ContainerType::Equipped,
-                    slot as u16,
-                )
-                .await;
-            } else if !from_item.is_empty_slot() && equipped_item.is_empty_slot() {
-                // If there is nothing equipped but a new item in that slot, we just have to move it.
-                // TODO: be a little smarter about this maybe?
-                self.swap_items(
-                    from_container,
-                    from_slot as u16,
-                    ContainerType::Equipped,
-                    slot as u16,
-                )
-                .await;
-            } else if from_item.is_empty_slot() && !equipped_item.is_empty_slot() {
-                // If there is something equipped but the slot is empty in the gearset, we have to move it somewhere.
-                let target_container_type = ContainerType::from_equip_slot(slot as u8);
-
-                if let Some(target_container) = self
-                    .player_data
-                    .inventory
-                    .get_container(target_container_type)
-                    && let Some(free_slot) = get_next_free_slot(target_container)
-                {
-                    self.swap_items(
-                        ContainerType::Equipped,
-                        slot as u16,
-                        target_container_type,
-                        free_slot,
-                    )
-                    .await;
-                }
+                    slot,
+                ));
+                changed.push((from_container, from_slot));
+                changed.push((ContainerType::Equipped, slot));
             }
+        }
+
+        // The slots that changed, as they are now.
+        for (container, slot) in changed {
+            let item = self
+                .player_data
+                .inventory
+                .get_item(container, slot)
+                .unwrap_or_default();
+            let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UpdateInventorySlot(ItemInfo {
+                sequence: self.player_data.item_sequence,
+                container,
+                slot,
+                ..item.into()
+            }));
+            self.send_ipc_self(ipc).await;
+            self.player_data.item_sequence += 1;
         }
 
         self.gearset_equipped = true;
 
         // Inform the client that the gearset was successfully equipped.
-        self.actor_control_self(ActorControlCategory::GearSetEquipped {
-            gearset_index: gearset_index,
-        })
-        .await;
-
-        // And that we're done modifying the inventory.
-        self.send_inventory_transaction_finish(ItemOperationKind::UnkGearSetEquipped, 3584)
+        self.actor_control_self(ActorControlCategory::GearSetEquipped { gearset_index })
             .await;
+
+        // Every piece's move, one sequence for them all and the finish.
+        let sequence = self.player_data.item_sequence;
+        self.player_data.item_sequence += 1;
+        let count = moves.len() as u32;
+        for (operation_type, src_container, src_index, dst_container, dst_index) in moves {
+            let inventory = &self.player_data.inventory;
+            let src_item = inventory
+                .get_item(src_container, src_index)
+                .unwrap_or_default();
+            let dst_item = inventory
+                .get_item(dst_container, dst_index)
+                .unwrap_or_default();
+            let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::InventoryTransaction {
+                sequence,
+                operation_type,
+                src_actor_id: actor_id,
+                src_storage_id: src_container,
+                src_container_index: src_index,
+                src_stack: src_item.quantity.max(0) as u32,
+                src_item_id: src_item.item_id,
+                dst_actor_id: actor_id,
+                dst_storage_id: dst_container,
+                dst_storage_high: 0,
+                dst_container_index: dst_index,
+                dst_stack: dst_item.quantity.max(0) as u32,
+                dst_item_id: dst_item.item_id,
+            });
+            self.send_ipc_self(ipc).await;
+        }
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::InventoryTransactionFinish {
+            sequence,
+            sequence_repeat: sequence,
+            operation_type: if with_plate {
+                ItemOperationKind::GearsetGlamour
+            } else {
+                ItemOperationKind::EquipMannequin
+            },
+            unk2: ((count + 1) & 0xFF) << 8,
+        });
+        self.send_ipc_self(ipc).await;
 
         // Retail also re-sends the equipped container
         self.send_equipped_inventory().await;

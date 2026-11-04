@@ -761,6 +761,8 @@ pub enum ItemOperationKind {
     /// The operation opcode/type when combining stacks of identical items.
     CombineStack = BASE_INVENTORY_ACTION + 11,
     /// The operation opcode/type when the server wants the client to equip the mannequin (character sheet/try on preview model?). Seen during login and probably elsewhere.
+    /// Also what ends a gearset's moves (InventoryTransactionFinish) when it comes with no glamour plate (0xFC on
+    /// 2026.10.16, the three gearsets of Bob's Chronofoil capture d3379099; `GearsetGlamour` with one.)
     EquipMannequin = BASE_INVENTORY_ACTION + 18,
     /// Putting an item from the bags into the chocobo saddlebag (its window's context menu): the destination is all
     /// zeros, the server picks it as for a retainer (Bob's Chronofoil capture of 2026-10-24.)
@@ -788,8 +790,13 @@ pub enum ItemOperationKind {
     UnkDiscard = 0x90,
     /// Seen during trading (256 in 7.55)
     UnkTrading1 = 244,
-    /// Seen while equipping gearsets.
+    /// Seen while equipping gearsets (upstream's, an older version's; retail's are `EquipMannequin` and
+    /// `GearsetGlamour`.)
     UnkGearSetEquipped = 567,
+    /// Ends a gearset's moves when the client sent a glamour plate with it (InventoryTransactionFinish; 0x17A on
+    /// 2026.10.16 in all six such gearsets of Bob's Chronofoil captures cc26e0ea, ba1b86c5 and 44df02fc;
+    /// `EquipMannequin`'s value for the three without one, d3379099's.)
+    GearsetGlamour = BASE_INVENTORY_ACTION + 144,
 }
 
 impl ItemOperationKind {
