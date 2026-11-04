@@ -1300,7 +1300,12 @@ pub fn execute_action(
             {
                 let multiplier = enmity_multiplier(instance, from_actor_id);
                 // Not one of its own side: the Akoman draining a yodomi (1127, quest battle 17) didn't turn the yodomi
-                // on it; they kept on the player and Sylphie (Bob's Chronofoil capture df6f5af9.)
+                // on it; they kept on the player and Sylphie (Bob's Chronofoil capture df6f5af9.) The character flag's side
+                // alone isn't enough: a passive monster (no HOSTILE flag: the Qiqirn, Sahagin and efts by Ul'dah) is on
+                // the player's side by it, so a player's hits on one gave no enmity, and its death no credit for
+                // quests, the Hunting Log or EXP (Bob's bundle 20261104-130013, Way of the Gladiator). The two must
+                // also be battalions not at war with each other (the Battalion sheet, as area attacks cast on oneself
+                // use; players are battalion 0, monsters 4.)
                 let same_side = instance
                     .find_actor(from_actor_id)
                     .and_then(area_side)
@@ -1309,7 +1314,19 @@ pub fn execute_action(
                             .find_actor(request.target.object_id)
                             .and_then(area_side)
                             == Some(caster)
-                    });
+                    })
+                    && match (
+                        instance.find_actor(from_actor_id),
+                        instance.find_actor(request.target.object_id),
+                    ) {
+                        (Some(from), Some(target)) => !game_data
+                            .lock()
+                            .get_battalion_enemies(from.get_common_spawn().battalion as u32)
+                            .get(target.get_common_spawn().battalion as usize)
+                            .copied()
+                            .unwrap_or(false),
+                        _ => true,
+                    };
                 let Some(actor) = instance.find_actor_mut(request.target.object_id) else {
                     return;
                 };

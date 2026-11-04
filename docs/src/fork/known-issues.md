@@ -942,6 +942,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Combat
 
+* Passive monsters (no HOSTILE character flag) are on the monsters' side again, by battalion (2026-11-04, untested in
+  game): a player's single-target hits on one give enmity, so it fights back and its kill is credited (quests,
+  Hunting Log, EXP). Kills of passive monsters from 2026-11-01 to then weren't counted anywhere and aren't made up.
 * ClientTrigger 441 is unknown: it came twice just before an EquipGearset (Lira Ormont, 2026-10-26); retail's meaning wasn't checked.
 * NPCs no longer redraw their weapon after every action (2026-10-25: retail never did; the redraw dated from the
   old 0.6 s animation lock and swing 0, which now match retail). If NPCs drop their battle stance between attacks
