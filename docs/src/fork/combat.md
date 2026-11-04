@@ -230,6 +230,13 @@ Enemies still compute damage like players do (stat × potency), which is far too
 * An NPC action with **no hit, only a damage over time** (the Thousand Maws of Toto-Rak's poisons) has its recorded
   amount as the tick (`set_npc_periodic_damage`): retail's ActionEffect gives the tick with the status (effect kind 14:
   the status, the tick, 50), 57 on the player and 19 on a Duty Support member for the room bosses' 1014.
+* **Knockbacks** are an effect of their own (`TargetEffectKind::Knockback`, kind 31, since 2026-11-04): `1F 00 00 00
+  00 00` then the Knockback sheet's row as a u16. The server only names the row; the client moves the player itself and
+  sends its own positions as it goes. An action script adds one with `effects:knockback(row)` after the damage; a miss
+  drops it (`roll_npc_hit`), and players caught by an area attack get it as the main target does. From The Lominsan
+  Way's Rive (1299) on the player: `03 00 71 00 00 00 3c 00`, `1f 00 00 00 00 00 01 00`, `1b 00 00 00 00 80 13 05`
+  (Bob's Chronofoil capture 44df02fc), the player then about 8 yalms further on along the line; its miss had only the
+  Miss. The last entry (kind 27, 0x80, the action's ID) isn't sent; it isn't the knockback.
 * Drains (`heal_self` effect, e.g. Blood Drain) heal the attacker by what they took; the attacker's HP is sent after.
 
 A timeline with `timeline_always_plays` (only Sastasha's giant clams have one) runs whether or not the NPC is

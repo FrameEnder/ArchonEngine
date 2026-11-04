@@ -148,6 +148,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   player, 1769 hiding from the bomb and coming back, and the bomb's countdown lines are retail's now, untested in game.
   The Rive retail used from the hiding place about 3 s after the bomb was gone isn't played; what 1769 does if the bomb
   blows and 1771 lives wasn't seen (it comes back as after a kill). battle-sim doesn't check log lines or movement.
+  Rive's knockback (2026-11-04) is untested in game; the entry retail sent after it (kind 27, `00 80`, 1299) isn't.
 * **Joining a class from another (177, 285, 286; the CLASSJOB unlock)** (2026-11-04, from Bob's dumps and Chronofoil
   capture d3379099, a Conjurer): untested in game. Only the Gladiators' route is scripted; the other classes' joining
   quests unlock their class the same way once they are. The server doesn't stop a locked class's weapon being
@@ -693,8 +694,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   helpers, the ambushes' appearing, the Duty Information counts, the entrance facing) are untested in game.
 * The dropped items (2000159, 2001531, 2000179) are spawned with `spawn_eobj`, which needs them in the duty's layout
   (retail spawned them with layout ID 0); if they aren't, the server logs it and the way stays shut.
-* 28462's and 28760's effect (`kk 00 1b 00 00 00 00 80` then the action ID, `kk` per target: probably a knockback or
-  draw-in) isn't decoded or sent. Retail's helpers' SetTarget on the player isn't sent. 28544's and 28549's damage
+* 28462's and 28760's effect (`kk 00 1b 00 00 00 00 80` then the action ID, `kk` per target) isn't decoded or sent.
+  It isn't the knockback: Rive (The Lominsan Way) had the same entry after its knockback, which is kind 31
+  ([Combat](combat.md#enemy-damage-to-players)). Retail's helpers' SetTarget on the player isn't sent. 28544's and 28549's damage
   are stand-ins (28546's): nobody was caught by them in Bob's three runs.
 * The second boss's 14449 helpers are hostile (display flags 0x60008): held, they don't move or fight back, but
   players and bots may still be able to target and hit them.
@@ -806,8 +808,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   (the dungeons too) when every player is down. In a dungeon it sends the party back to the start but leaves the
   enemies as they are (they lose their targets and go home); retail's dungeon wipes weren't checked.
 * What happens when the Nail isn't killed is Cactbot's (Hellfire 44.3 s after the 50 % line); the first attempt wiped
-  before. Hellfire's damage then is the killed-Nail one. Vulcan Burst's knockback isn't sent (its effect isn't
-  decoded), only its 1 damage.
+  before. Hellfire's damage then is the killed-Nail one. Vulcan Burst's knockback isn't sent, only its 1 damage:
+  knockbacks are kind 31 with a Knockback row now (`effects:knockback`), but Vulcan Burst's row wasn't read from a
+  recording.
 * Ifrit's hitbox (3.5) is a guess from the members' distances. Eruption goes under anyone of the party (retail's nine
   were never on the player). Retail's helpers cast at a point on the ground; Kawari's are put there and cast on
   themselves. Kawari spawns nine helpers where retail spawned twenty. BNpcBase 401's timeline (`IfritHelper_401`)

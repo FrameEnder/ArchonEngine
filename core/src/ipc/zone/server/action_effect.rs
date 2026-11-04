@@ -115,6 +115,11 @@ pub enum TargetEffectKind {
         unk: [u8; 3], // empty?
         effect_id: u16,
     },
+    /// Knocks the target back: the client moves them itself, by its Knockback sheet's row (fork: The Lominsan Way's
+    /// Rive, 1299, on the player: `1F 00 00 00 00 00 01 00` after the damage, and the client's own position updates
+    /// then took the player about 8 yalms on the way the line went; none on a miss. Bob's Chronofoil capture 44df02fc.)
+    #[brw(magic = 31u8)]
+    Knockback { unk: [u8; 5], knockback_id: u16 },
     /// Seen during mounting.
     #[brw(magic = 39u8)]
     Mount { unk1: u8, unk2: u32, id: u16 },
@@ -467,5 +472,25 @@ mod tests {
         );
 
         assert_eq!(action_result.targets[0].object_id, ObjectId(277114100));
+    }
+
+    /// The Lominsan Way's Rive on the player, as retail sent it (Bob's Chronofoil capture 44df02fc).
+    #[test]
+    fn knockback_layout() {
+        use binrw::BinWrite;
+
+        let bytes = [0x1f, 0, 0, 0, 0, 0, 0x01, 0];
+        let effect = TargetEffect::read_le(&mut Cursor::new(&bytes)).unwrap();
+        assert_eq!(
+            effect.0,
+            TargetEffectKind::Knockback {
+                unk: [0; 5],
+                knockback_id: 1
+            }
+        );
+
+        let mut written = Cursor::new(Vec::new());
+        effect.write_le(&mut written).unwrap();
+        assert_eq!(written.into_inner(), bytes);
     }
 }

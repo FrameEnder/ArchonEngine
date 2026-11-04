@@ -222,6 +222,15 @@ impl UserData for EffectsBuilder {
                 .push(TargetEffect(TargetEffectKind::InterruptAction {}));
             Ok(())
         });
+        // Knocks the target back by the Knockback sheet's row (the client moves them; see `TargetEffectKind::Knockback`.)
+        // Nothing on a miss.
+        methods.add_method_mut("knockback", |_, this, knockback_id: u16| {
+            this.effects.push(TargetEffect(TargetEffectKind::Knockback {
+                unk: [0; 5],
+                knockback_id,
+            }));
+            Ok(())
+        });
         methods.add_method_mut("play_vfx", |_, this, effect_id: u16| {
             this.effects.push(TargetEffect(TargetEffectKind::PlayVFX {
                 unk: [0; 5],

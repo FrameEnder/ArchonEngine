@@ -226,6 +226,10 @@ a quest's entering event, 0 for every other event (228 events across the capture
   aimed at the player**, whoever 1769 is fighting: every cast's ActorCast faced the player within a degree (19 casts,
   seven runs; it hit them when they stood in it, 60 once, and 1771 once, a miss, when it stood in line with them), so
   its timeline's point has `facing: player` (Kawari had aimed it at 1771).
+* **Rive knocks the player back** along its line: retail's ActionEffect on the player had a knockback after the
+  damage (Knockback row 1, [Combat](combat.md#enemy-damage-to-players)) and the client took them about 8 yalms on
+  the way the line faced; none when it missed. Kawari sent only the damage until 2026-11-04 (Bob's bundle
+  20261104-184153); `QB59Enemy_01299` adds `effects:knockback(1)`.
 * **1769 hides from the bomb.** At sequence 8 (as the bomb comes out) it runs off to (704.37, 66.09, -279.13), 2.2 s
   at a run from beside 1771, turns to -129° and does nothing while the bomb is out (no action in any run); 7.0-7.2 s
   after the bomb is gone (four runs that got that far) it runs back to (694.97, 66.45, -286.64) and fights 1771 again.

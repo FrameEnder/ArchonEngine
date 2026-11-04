@@ -3628,9 +3628,10 @@ fn roll_npc_hit(effects: &mut Vec<TargetEffect>, scale: f32, miss_percent: u8) {
     let missed = roll < miss_percent;
     let parried = !missed && roll < miss_percent + NPC_PARRY_PERCENT;
     if missed {
-        // Nothing lands: no damage, and no drain either.
+        // Nothing lands: no damage, no drain and no knockback either (Rive's misses had only the Miss.)
         effects.retain(|effect| {
             !matches!(effect.0, TargetEffectKind::Heal { unk1, .. } if unk1[4] & EFFECT_ON_SOURCE != 0)
+                && !matches!(effect.0, TargetEffectKind::Knockback { .. })
         });
         for effect in effects.iter_mut() {
             if matches!(effect.0, TargetEffectKind::Damage { .. }) {
