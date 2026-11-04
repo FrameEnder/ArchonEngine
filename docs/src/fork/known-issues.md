@@ -144,6 +144,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
+* **The Gladiators' first two quests (253, 256)** (2026-11-03, from Bob's dumps and Chronofoil capture 208c3716):
+  untested in game; each replays against the one run, played by a level 37 Gladiator, so 256's enemies' damage wasn't
+  recorded (their timelines use the defaults). 256's marauders and Pfarmurl take any emote (the Quest sheet's emote
+  listeners have no condition; retail's was 23). Its second sack's bit in UI8F (0x40) and the companions' empty
+  scenes (13-16) are taken from the client's order, not seen.
 * **Wrath of the Titan (516) to The Things We Do for Cheese (832)** (2026-11-03, from Bob's dumps and Chronofoil
   captures 44df02fc and c9145fdc): untested in game; each replays against both runs. The quest enemies' timelines
   (`GaiUsb*Enemy_*`) are from two fights each (one for 1889's 426, at retail's param 100 where its shared script gives

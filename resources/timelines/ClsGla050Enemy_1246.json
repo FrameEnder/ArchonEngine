@@ -1,0 +1,7 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {},
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "Kicking the Hornet's Nest's (256) ENEMY0 (BNpcBase 1246, BNpcName 1179, layout 3968834, layer QB_ClsGla050_001), brought out by searching a caravan sack: level 4, 102 HP; auto-attack 870 and nothing else. From Bob's Chronofoil capture 208c3716 (2026-11-03, `questkit chronofoil --battle 0.12`, Western Thanalan): one fight, over in 5.5 s (one auto-attack, a miss). The player was a level 37 Gladiator, so its damage then says nothing about a level 5 player's: no `recorded_amounts`. Hitbox not recorded."
+}

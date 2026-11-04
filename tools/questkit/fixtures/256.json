@@ -1,0 +1,454 @@
+{
+  "quest": 256,
+  "script": "ClsGla050_00256",
+  "source": "Bob's Chronofoil capture 208c3716 (2026-11-03, the whole quest); scenes and effects from Bob's Chronofoil capture of 2026-11-03",
+  "params": {
+    "ACTOR0": 1001739,
+    "ACTOR1": 1003984,
+    "ACTOR2": 1003990,
+    "ACTOR3": 1003992,
+    "ACTOR4": 1003994,
+    "ACTOR5": 1003983,
+    "ACTOR6": 1003991,
+    "ACTOR7": 1003993,
+    "ACTOR8": 1003989,
+    "ACTOR9": 1004222,
+    "ACTOR10": 1004236,
+    "ACTOR11": 1004223,
+    "ACTOR12": 1001353,
+    "ACTOR13": 1003985,
+    "EOBJECT0": 2001725,
+    "EVENT_ACTION_SEARCH": 1,
+    "EOBJECT1": 2001408,
+    "EVENT_ACTION_GATHER_SHORT": 6,
+    "ENEMY0": 3968834,
+    "ITEM0": 2000524,
+    "EOBJECT2": 2001409,
+    "ENEMY1": 4148249,
+    "ACTOR14": 1006018,
+    "CUT_SCENE_01": 34
+  },
+  "steps": [
+    {
+      "talk": 1001739,
+      "layout": 2617212,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1003984,
+      "layout": 3968827,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 1,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "emote": [
+        23,
+        1003984
+      ],
+      "layout": 3968827,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "010000000080",
+        "notices": [
+          [
+            0,
+            [
+              1,
+              4
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "emote": [
+        23,
+        1003992
+      ],
+      "layout": 3969697,
+      "what": "ACTOR3",
+      "scenes": [
+        {
+          "scene": 8,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "0200000000a0",
+        "notices": [
+          [
+            0,
+            [
+              2,
+              4
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "emote": [
+        23,
+        1003990
+      ],
+      "layout": 3969692,
+      "what": "ACTOR2",
+      "scenes": [
+        {
+          "scene": 5,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "0300000000e0",
+        "notices": [
+          [
+            0,
+            [
+              3,
+              4
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "emote": [
+        23,
+        1003994
+      ],
+      "layout": 3969700,
+      "what": "ACTOR4",
+      "scenes": [
+        {
+          "scene": 11,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            [
+              4,
+              4
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "emote": [
+        23,
+        1004222
+      ],
+      "layout": 3995609,
+      "scenes": [
+        {
+          "scene": 18,
+          "flags": "0x402400",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000",
+        "notices": [
+          [
+            1,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1001353,
+      "layout": 3146810,
+      "what": "ACTOR12",
+      "scenes": [
+        {
+          "scene": 26,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 4,
+        "vars": "000000000000",
+        "notices": [
+          [
+            2,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1001739,
+      "layout": 2617212,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 27,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 5,
+        "vars": "000000000000",
+        "notices": [
+          [
+            3,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1003985,
+      "layout": 3968832,
+      "what": "ACTOR13",
+      "scenes": [
+        {
+          "scene": 28,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 6,
+        "vars": "000000000000",
+        "notices": [
+          [
+            4,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 2001408,
+      "layout": 3972501,
+      "what": "EOBJECT1",
+      "scenes": [
+        {
+          "scene": 32,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        },
+        {
+          "scene": 33,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 6,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "kill": [
+        1246,
+        3968834
+      ],
+      "expect": {
+        "sequence": 6,
+        "vars": "110100000080",
+        "notices": [
+          [
+            5,
+            [
+              1,
+              2,
+              25919
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 2001409,
+      "layout": 3972503,
+      "what": "EOBJECT2",
+      "scenes": [
+        {
+          "scene": 34,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        },
+        {
+          "scene": 35,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 6,
+        "vars": "110100000080",
+        "notices": []
+      }
+    },
+    {
+      "kill": [
+        1390,
+        4148249
+      ],
+      "expect": {
+        "sequence": 7,
+        "vars": "002000000000",
+        "notices": [
+          [
+            5,
+            [
+              2,
+              2,
+              25919
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1003985,
+      "layout": 3968832,
+      "what": "ACTOR13",
+      "scenes": [
+        {
+          "scene": 40,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 41,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            6,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1001739,
+      "layout": 2617212,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 45,
+          "flags": "0x2000",
+          "results": [
+            1,
+            5823,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}
