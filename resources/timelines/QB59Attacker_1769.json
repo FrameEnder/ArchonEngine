@@ -25,27 +25,27 @@
             "comment": "2.2 s line from itself, aimed at the player (every cast, within a degree), from 34-40 s into the fight, then every 15 s (14.6-15.7; a 32 s gap in two runs)"
         },
         {
-            "time": 38.5,
+            "time": 41.0,
             "every": 15.0,
             "data": {
                 "type": "action",
                 "action_id": 31,
                 "target": "target"
             },
-            "comment": "on the one it's fighting, 2.5 s after each line ..."
+            "comment": "on the one it's fighting, 2.4-2.5 s after each line goes off (36 + its 2.5 s cast + 2.46; seven runs, ActionEffect to ActionEffect: at 38.5 it began as Rive went off, and Rive went the boulder's way) ..."
         },
         {
-            "time": 41.1,
+            "time": 43.6,
             "every": 15.0,
             "data": {
                 "type": "action",
                 "action_id": 31,
                 "target": "target"
             },
-            "comment": "... then 2.6 s later ..."
+            "comment": "... then 2.6 s later (2.58-2.62) ..."
         },
         {
-            "time": 43.7,
+            "time": 46.2,
             "every": 15.0,
             "data": {
                 "type": "action",

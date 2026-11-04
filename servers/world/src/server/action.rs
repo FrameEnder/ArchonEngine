@@ -19,7 +19,7 @@ use crate::{
     server::{
         WorldServer,
         actor::{
-            NetworkedActor, bnpc_base_hp, create_npc_common_spawn, update_actor_hp_mp,
+            NetworkedActor, NpcCast, bnpc_base_hp, create_npc_common_spawn, update_actor_hp_mp,
             update_actor_hp_mp_after_hit,
         },
         companion,
@@ -905,10 +905,13 @@ pub fn execute_action(
         }
 
         common_spawn = actor.get_common_spawn().clone();
+        // Its own cast record, or the request's facing (an NPC's request carries the way it faced as the cast began)
+        // when another action's record took its place as the cast ended: Heavy Swing, due the tick Rive went off,
+        // sent Rive towards 1771 though its omen pointed at the player (The Lominsan Way, Bob's bundle 20261104-190047.)
         npc_cast_rotation = match actor {
-            NetworkedActor::Npc {
-                cast: Some(cast), ..
-            } if cast.action_id == request.action_id => Some(cast.rotation),
+            NetworkedActor::Npc { cast, .. } => Some(
+                own_cast(cast, request.action_id).map_or(request.rotation1, |cast| cast.rotation),
+            ),
             _ => None,
         };
         // Retail's NPC auto-attacks lock for 0.1 s and swing one of three ways, like a player's (Bob's Copperbell Mines
@@ -1007,9 +1010,9 @@ pub fn execute_action(
                 .iter()
                 .any(|effect| is_hostile_effect(effect, area_side(target) != area_side(actor)))
         {
-            let (rotation, aimed_at) = match cast {
+            let (rotation, aimed_at) = match own_cast(cast, request.action_id) {
                 Some(cast) => (cast.rotation, cast.target_position),
-                None => (actor.rotation(), target.position().0),
+                None => (request.rotation1, target.position().0),
             };
             let caught = |position: Vec3A| {
                 in_area(
@@ -1062,9 +1065,9 @@ pub fn execute_action(
                 .iter()
                 .any(|effect| is_hostile_effect(effect, false))
         {
-            let (rotation, aimed_at) = match cast {
+            let (rotation, aimed_at) = match own_cast(cast, request.action_id) {
                 Some(cast) => (cast.rotation, cast.target_position),
-                None => (actor.rotation(), actor.position().0),
+                None => (request.rotation1, actor.position().0),
             };
             let enemies = game_data
                 .lock()
@@ -1801,9 +1804,10 @@ pub fn execute_action(
                             .lock()
                             .find_actor_instance(from_actor_id)
                             .and_then(|instance| match instance.find_actor(from_actor_id) {
-                                Some(NetworkedActor::Npc {
-                                    cast: Some(cast), ..
-                                }) => Some(Position(cast.target_position)),
+                                Some(NetworkedActor::Npc { cast, .. }) => {
+                                    own_cast(cast, request.action_id)
+                                        .map(|cast| Position(cast.target_position))
+                                }
                                 _ => None,
                             })
                             .unwrap_or(common_spawn.position);
@@ -3217,6 +3221,12 @@ fn is_hostile_effect(effect: &TargetEffect, on_the_other_side: bool) -> bool {
 
 /// Whether someone at `position` facing `rotation` looks toward `caster`, within 90 degrees either way: a gaze lands
 /// on them (see `EffectsBuilder::gaze`). Rotation 0 faces +Z, as everywhere else.
+/// An NPC's cast record, if it's still the one for this action: another action begun the tick the cast went off (a
+/// timeline point due then) replaces it before the cast's own action runs.
+fn own_cast(cast: &Option<NpcCast>, action_id: u32) -> Option<&NpcCast> {
+    cast.as_ref().filter(|cast| cast.action_id == action_id)
+}
+
 pub fn faces(position: Vec3A, rotation: f32, caster: Vec3A) -> bool {
     let to_caster = Vec2::new(caster.x - position.x, caster.z - position.z);
     if to_caster.length_squared() < f32::EPSILON {

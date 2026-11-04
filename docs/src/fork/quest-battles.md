@@ -222,7 +222,7 @@ a quest's entering event, 0 for every other event (228 events across the capture
 * Lost: sequence 0xFE as 1771's health reaches 0 (the bomb twice; 1769 wore it down in 217 s once), 1769's (1769's
   99 with it; twice) or yours; out about 5 s later.
 * 1769 (QB59Attacker_1769): auto-attack 870 (25 on 1771), a 2.2 s line from itself (Rive, 1299) from 36 s and every
-  15 s, three Heavy Swings (31, 37) after each; Paralyze is the director's (`use_action`), after sequence 4. **Rive is
+  15 s, three Heavy Swings (31, 37) after each, the first 2.4-2.5 s after Rive goes off and the others 2.6 s apart (timeline 41.0, 43.6, 46.2: they were at 38.5, 41.1, 43.7, measured from Rive's start, so the first began the tick Rive went off and Rive went 1771's way, Bob's bundle 20261104-190047); Paralyze is the director's (`use_action`), after sequence 4. **Rive is
   aimed at the player**, whoever 1769 is fighting: every cast's ActorCast faced the player within a degree (19 casts,
   seven runs; it hit them when they stood in it, 60 once, and 1771 once, a miss, when it stood in line with them), so
   its timeline's point has `facing: player` (Kawari had aimed it at 1771).

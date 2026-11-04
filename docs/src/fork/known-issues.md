@@ -148,7 +148,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   player, 1769 hiding from the bomb and coming back, and the bomb's countdown lines are retail's now, untested in game.
   The Rive retail used from the hiding place about 3 s after the bomb was gone isn't played; what 1769 does if the bomb
   blows and 1771 lives wasn't seen (it comes back as after a kill). battle-sim doesn't check log lines or movement.
-  Rive's knockback (2026-11-04) is untested in game; the entry retail sent after it (kind 27, `00 80`, 1299) isn't.
+  Rive's knockback (2026-11-04) is untested in game, as is Rive keeping its facing when Heavy Swing comes the tick
+  it goes off; the entry retail sent after it (kind 27, `00 80`, 1299) isn't.
 * **Joining a class from another (177, 285, 286; the CLASSJOB unlock)** (2026-11-04, from Bob's dumps and Chronofoil
   capture d3379099, a Conjurer): untested in game. Only the Gladiators' route is scripted; the other classes' joining
   quests unlock their class the same way once they are. The server doesn't stop a locked class's weapon being
