@@ -255,6 +255,19 @@ pub enum TimepointTarget {
     Nobody,
 }
 
+/// Which way an action cast on itself (`TimepointTarget::Itself`, an area in front of or around it) goes.
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone, Copy, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum TimepointFacing {
+    /// Towards the one it's fighting.
+    #[default]
+    Target,
+    /// Towards the nearest player, whoever it's fighting: The Lominsan Way's 1769 aimed every Rive (1299, a line) at
+    /// the player, within a degree, while it fought the one it was there to kill (Bob's Chronofoil captures 44df02fc and
+    /// c9145fdc: 19 casts in seven runs.)
+    Player,
+}
+
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
 #[serde(tag = "type")]
 pub enum TimepointData {
@@ -270,6 +283,9 @@ pub enum TimepointData {
         /// Whom it's used on (its target unless said.)
         #[serde(default, skip_serializing_if = "is_default_target")]
         target: TimepointTarget,
+        /// For one cast on itself, which way it faces (its target unless said.)
+        #[serde(default, skip_serializing_if = "is_default_facing")]
+        facing: TimepointFacing,
     },
     /// Animates timelines for the gimmick this actor is bound to, such as Giant Clams.
     #[serde(rename = "timeline_state")]
@@ -281,6 +297,10 @@ pub enum TimepointData {
 
 fn is_default_target(target: &TimepointTarget) -> bool {
     *target == TimepointTarget::Target
+}
+
+fn is_default_facing(facing: &TimepointFacing) -> bool {
+    *facing == TimepointFacing::Target
 }
 
 #[cfg(test)]
@@ -332,6 +352,7 @@ mod tests {
                         action_id: 872,
                         lockon: None,
                         target: TimepointTarget::Target,
+                        facing: TimepointFacing::Target,
                     }
                 }]
             }

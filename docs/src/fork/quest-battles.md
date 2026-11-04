@@ -221,8 +221,22 @@ a quest's entering event, 0 for every other event (228 events across the capture
   quest moves to sequence 255.
 * Lost: sequence 0xFE as 1771's health reaches 0 (the bomb twice; 1769 wore it down in 217 s once), 1769's (1769's
   99 with it; twice) or yours; out about 5 s later.
-* 1769 (QB59Attacker_1769): auto-attack 870 (25 on 1771), a 2.2 s line from itself (1299) from 36 s and every 15 s,
-  three Heavy Swings (31, 37) after each; Paralyze is the director's (`use_action`), after sequence 4.
+* 1769 (QB59Attacker_1769): auto-attack 870 (25 on 1771), a 2.2 s line from itself (Rive, 1299) from 36 s and every
+  15 s, three Heavy Swings (31, 37) after each; Paralyze is the director's (`use_action`), after sequence 4. **Rive is
+  aimed at the player**, whoever 1769 is fighting: every cast's ActorCast faced the player within a degree (19 casts,
+  seven runs; it hit them when they stood in it, 60 once, and 1771 once, a miss, when it stood in line with them), so
+  its timeline's point has `facing: player` (Kawari had aimed it at 1771).
+* **1769 hides from the bomb.** At sequence 8 (as the bomb comes out) it runs off to (704.37, 66.09, -279.13), 2.2 s
+  at a run from beside 1771, turns to -129° and does nothing while the bomb is out (no action in any run); 7.0-7.2 s
+  after the bomb is gone (four runs that got that far) it runs back to (694.97, 66.45, -286.64) and fights 1771 again.
+  Kawari: `retreat_bnpc` there, `hold_bnpc` and `move_bnpc` to face retail's way on arriving (`onUpdate`'s `info`),
+  then `retreat_bnpc` back and the director's enmity on 1771 again as it gets there. Retail also used one Rive from
+  where it hid about 3 s after the bomb was gone, before going back; Kawari's timeline stays where it was while 1769 is
+  held, so its next Rive comes on its own count.
+* **The bomb's countdown** is the director's log lines: LogMessage 3217, 3218 and 3219 ("15 seconds to
+  self-destruct..." and 10, 5) 14.6, 19.6 and 24.7 s after the bomb came out, while it still stood (EventLogMessage
+  from the director, every run; a bomb killed before one had none of the later). They don't line up with the blast
+  (32 s), as on retail. battle-sim doesn't check log lines.
 * Fixtures: `59.json` (44df02fc, won), `59-c9145fdc.json` (won), `59-lost-4.json` (the bomb), `59-lost-8.json` (1769
   killed), `59-lost-12.json` (1771 worn down), each with the onlooker added and `"npc_health": "held"` (interpolating put
   sequence 6 2.2 s early in the won run).

@@ -10,7 +10,7 @@ use kawari::{
     common::{
         AUTO_ATTACK_RATE, JumpState, MOB_WANDER_JITTER, MOB_WANDER_TIME, MoveAnimationState,
         MoveAnimationType, ObjectId, ObjectTypeId, ObjectTypeKind, Position,
-        STRIKING_DUMMY_NAME_ID, TimepointData, TimepointTarget,
+        STRIKING_DUMMY_NAME_ID, TimepointData, TimepointFacing, TimepointTarget,
     },
     ipc::zone::{
         ActionRequest, ActionType, ActorControlCategory, BattleNpcSubKind, CharacterDataFlag,
@@ -254,6 +254,16 @@ pub fn npc_behavior(
             )
         })
         .map(|(id, actor)| (*id, actor.get_common_spawn().position.0))
+        .collect();
+    // The players' positions, for an area an NPC aims at the nearest one (`TimepointFacing::Player`.)
+    let player_positions: Vec<Vec3A> = instance
+        .actors
+        .values()
+        .filter(|actor| {
+            matches!(actor, NetworkedActor::Player { .. })
+                && actor.get_common_spawn().health_points > 0
+        })
+        .map(|actor| actor.get_common_spawn().position.0)
         .collect();
     // Who everyone is targeting, for NPCs placed behind the tank's target.
     let targets: HashMap<ObjectId, ObjectId> = instance
@@ -1067,6 +1077,7 @@ pub fn npc_behavior(
                             action_id,
                             lockon,
                             target,
+                            facing: faces,
                         } => {
                             let fighting = spawn.common.target_id.object_id;
                             let on = match target {
@@ -1104,8 +1115,19 @@ pub fn npc_behavior(
                             // Kottos began each Colossal Slam, 28546, facing the tank, -1.94 with the tank at -1.94 and
                             // 1.04 at 0.97, Bob's capture of 2026-10-25. Kawari left it facing wherever its last leap
                             // had, so the cone always went the same way and caught nobody, Bob's bundle of 2026-10-26.)
-                            let facing = match target {
-                                TimepointTarget::Itself => positions.get(&fighting).copied(),
+                            let facing = match (target, faces) {
+                                (TimepointTarget::Itself, TimepointFacing::Player) => {
+                                    let here = spawn.common.position.0;
+                                    player_positions
+                                        .iter()
+                                        .copied()
+                                        .min_by(|a, b| {
+                                            flat_distance(here, *a)
+                                                .total_cmp(&flat_distance(here, *b))
+                                        })
+                                        .or_else(|| positions.get(&fighting).copied())
+                                }
+                                (TimepointTarget::Itself, _) => positions.get(&fighting).copied(),
                                 _ if on != *id => Some(at),
                                 _ => None,
                             };

@@ -22,7 +22,14 @@
 --           got 1770 to 80 % had no Paralyze.
 --   the bomb: it stands where it came out and 32.0 s after (31.8 in the other run) blows (1133, round itself: 1771
 --           and the player beside it fell) unless killed first (three of five): either way sequence 9; killed, 1769's
---           yell 1279 3.0-3.1 s after and its 98 8.0-8.1 s after; blown, it falls 2.0 s later (Kill)
+--           yell 1279 3.0-3.1 s after and its 98 8.0-8.1 s after; blown, it falls 2.0 s later (Kill). While it's out
+--           the director's log lines count it down: 3217, 3218 and 3219 ("15/10/5 seconds to self-destruct...") 14.6,
+--           19.6 and 24.7 s after it came out, while it still stands (every run: the EventLogMessage from the director)
+--   1769 at sequence 8 runs off to hide, (704.37, 66.09, -279.13), from beside 1771 (2.2 s at a run), turns to -129
+--           degrees and does nothing while the bomb is out; 7.0-7.2 s after it's gone it runs back to (694.97, 66.45,
+--           -286.64) and takes up 1771 again (four runs that got there)
+--   1769's Rive (1299, a line in front of itself) is aimed at the player every time, whoever it's fighting (19
+--           casts: within a degree of the player's bearing), its timeline's `facing`
 --   1770's health at 0: "Duty Complete" (60001) and sequence 10 at once, the battle's scene 10 (0xF8402EFB) 3.0 s
 --           later; the quest moves to sequence 255
 --   lost, sequence 0xFE at once: 1771's health at 0 (three runs: the bomb twice, 1769 after 217 s once), 1769's (two
@@ -59,6 +66,16 @@ BOMB_FALLS_AFTER = 4
 
 -- How much 1769 hates 1771: it never turns away.
 ATTACKER_ON_PROTECTED = 1000000
+-- Where 1769 hides while the bomb is out, the way it faces there, where it comes back to, and how near counts as
+-- there (retail's, every run.)
+ATTACKER_HIDES_AT = { x = 704.37, y = 66.09, z = -279.13 }
+ATTACKER_HIDING_ROTATION = -2.25
+ATTACKER_COMES_BACK_TO = { x = 694.97, y = 66.45, z = -286.64 }
+ATTACKER_THERE = 1.0
+-- In updates: it comes back 7.0 s after the bomb's gone.
+ATTACKER_BACK_AFTER = 14
+-- The bomb's countdown: the director's log lines and when (in updates after it came out: 14.6, 19.6, 24.7 s.)
+BOMB_COUNTDOWN = { { 29, 3217 }, { 39, 3218 }, { 49, 3219 } }
 
 QUEST_SEQUENCE_AFTER_WIN = 255
 SEQUENCE_FIGHTING = 3
@@ -84,6 +101,8 @@ local over = false
 local fail_in = nil
 local bomb_actor = nil
 local bomb_blown = false
+-- 1769: nil, "hiding" (on its way), "hidden" (held there), "coming back".
+local attacker_away = nil
 -- Timers of their own, side by side: { updates left, fn }.
 local timers = {}
 
@@ -183,11 +202,53 @@ function bombComes(director)
     end
     phase = SEQUENCE_BOMB
     director:set_sequence(SEQUENCE_BOMB)
+    -- 1769 runs off to hide as its bomb comes out.
+    attacker_away = "hiding"
+    director:retreat_bnpc(BNPC_ATTACKER, ATTACKER_HIDES_AT.x, ATTACKER_HIDES_AT.y, ATTACKER_HIDES_AT.z)
     after(1, function(d)
         bomb_actor = d:spawn_bnpc(BNPC_BOMB)
         d:hold_bnpc(BNPC_BOMB)
         after(LAST_RESORT_AFTER, blowBomb)
+        for _, step in ipairs(BOMB_COUNTDOWN) do
+            after(step[1], function(d2)
+                if not over and phase == SEQUENCE_BOMB then
+                    d2:log_message(step[2], {})
+                end
+            end)
+        end
     end)
+end
+
+-- The bomb's gone (killed, or fallen after its blast): 1769 comes back to 1771 7 s later.
+function bombGone(director)
+    after(ATTACKER_BACK_AFTER, function(d)
+        if over or attacker_away == nil then
+            return
+        end
+        attacker_away = "coming back"
+        d:hold_bnpc(BNPC_ATTACKER, false)
+        d:retreat_bnpc(BNPC_ATTACKER, ATTACKER_COMES_BACK_TO.x, ATTACKER_COMES_BACK_TO.y, ATTACKER_COMES_BACK_TO.z)
+    end)
+end
+
+function flatDistance(a, b)
+    return math.sqrt((a.x - b.x) ^ 2 + (a.z - b.z) ^ 2)
+end
+
+-- 1769 getting where it was going: held where it hides, facing retail's way; back beside 1771, after it again.
+function attackerArrives(director, info)
+    local attacker = info ~= nil and info[BNPC_ATTACKER] or nil
+    if attacker == nil or attacker_away == nil then
+        return
+    end
+    if attacker_away == "hiding" and flatDistance(attacker, ATTACKER_HIDES_AT) <= ATTACKER_THERE then
+        attacker_away = "hidden"
+        director:hold_bnpc(BNPC_ATTACKER)
+        director:move_bnpc(BNPC_ATTACKER, attacker.x, attacker.y, attacker.z, ATTACKER_HIDING_ROTATION)
+    elseif attacker_away == "coming back" and flatDistance(attacker, ATTACKER_COMES_BACK_TO) <= ATTACKER_THERE then
+        attacker_away = nil
+        director:set_hate(BNPC_ATTACKER, BNPC_PROTECTED, ATTACKER_ON_PROTECTED)
+    end
 end
 
 -- 32 s after it came out, unless it was killed first.
@@ -199,7 +260,10 @@ function blowBomb(director)
     phase = SEQUENCE_BOMB_GONE
     director:actor_use_action(bomb_actor, ACTION_LAST_RESORT)
     director:set_sequence(SEQUENCE_BOMB_GONE)
-    after(BOMB_FALLS_AFTER, function(d) d:kill_bnpc(BNPC_BOMB) end)
+    after(BOMB_FALLS_AFTER, function(d)
+        d:kill_bnpc(BNPC_BOMB)
+        bombGone(d)
+    end)
 end
 
 function onUpdate(director, health, player_health, info)
@@ -215,6 +279,7 @@ function onUpdate(director, health, player_health, info)
         return
     end
     runTimers(director)
+    attackerArrives(director, info)
     local foe = health[BNPC_FOE]
     if foe ~= nil and phase >= SEQUENCE_FIGHTING and phase < 7 then
         advance(director, foe)
@@ -245,6 +310,7 @@ function onActorDeath(director, layout_id, position)
     elseif layout_id == BNPC_BOMB and not bomb_blown then
         phase = SEQUENCE_BOMB_GONE
         director:set_sequence(SEQUENCE_BOMB_GONE)
+        bombGone(director)
         after(7, function(d) d:yell(BNPC_ATTACKER, YELL_BOMB_KILLED) end)
         after(17, function(d) talk(d, SPEAKER_ATTACKER, 98) end)
     end

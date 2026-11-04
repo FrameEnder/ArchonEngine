@@ -239,8 +239,9 @@ capture of five runs; Kawari's whole-second timelines make it 16 s, shut 5); the
 
 Timeline fields the fork uses: `from_pull` (times from the NPC's pull to the half second instead of whole seconds from
 its spawn; each point fires when due, in reach or not, and may repeat every `every` seconds; an action point's
-`target` is `target` (default), `other` (someone else on its enmity list at random), `itself` or `nobody`; a point
-with `hp_below` comes once as its health falls to that percentage instead of at a time, one with `restarts` starts the
+`target` is `target` (default), `other` (someone else on its enmity list at random), `itself` or `nobody`, and one on
+`itself` goes the way of `facing`: `target` (default, the one it's fighting) or `player` (the nearest player, whoever
+it's fighting: The Lominsan Way's Rive); a point with `hp_below` comes once as its health falls to that percentage instead of at a time, one with `restarts` starts the
 clock again as it's used, and one `after` an action counts from that action's last use and comes only while it's the
 last to restart the clock: Kottos and the Copperbell Mines' other two bosses; the director can start a phase itself,
 `restart_timeline`, as Ifrit's),

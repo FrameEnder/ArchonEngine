@@ -144,6 +144,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
+* **The Lominsan Way (59)'s bomb phase** (2026-11-04, Bob's report after paralysis was fixed): Rive aimed at the
+  player, 1769 hiding from the bomb and coming back, and the bomb's countdown lines are retail's now, untested in game.
+  The Rive retail used from the hiding place about 3 s after the bomb was gone isn't played; what 1769 does if the bomb
+  blows and 1771 lives wasn't seen (it comes back as after a kill). battle-sim doesn't check log lines or movement.
 * **Joining a class from another (177, 285, 286; the CLASSJOB unlock)** (2026-11-04, from Bob's dumps and Chronofoil
   capture d3379099, a Conjurer): untested in game. Only the Gladiators' route is scripted; the other classes' joining
   quests unlock their class the same way once they are. The server doesn't stop a locked class's weapon being
