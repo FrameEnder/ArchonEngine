@@ -123,6 +123,11 @@ pub enum FromServer {
     ActorControlTarget(ObjectId, ObjectTypeId, ActorControlCategory),
     /// We need to update the player actor
     ActorControlSelf(ActorControlCategory),
+    /// The player seized up with paralysis: what it cancelled (CancelCast's first value and the action), for the
+    /// player's own share of retail's packets (`ZoneConnection::paralysis_proc`.)
+    ParalysisProc(Vec<(u32, u32)>),
+    /// The player's UpdateClassInfo alone, as retail sent it after each paralysis proc.
+    SendClassInfo,
     /// Update an actor's model IDs.
     ActorEquip(
         ObjectId,

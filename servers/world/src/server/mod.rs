@@ -95,6 +95,7 @@ mod party_bot;
 mod party_npc;
 mod periodic;
 mod pet;
+pub use paralysis::STATUS_PARALYSIS;
 use paralysis::paralysis_tick;
 pub use party::{Party, PartyMember};
 pub use party_bot::BOT_LEVEL;

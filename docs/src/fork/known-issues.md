@@ -470,8 +470,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   known: all of them are kept, as walls and floors, so a shape that's only for the camera or for flying would stop
   walkers wrongly.
 * `kawari-navimesh` can't make the Waking Sands' navmesh (territory 212, `wil_w1/evt/w1e6`): its level's bg path is empty, so it looks for `/collision/list.pcb` and panics (Bob's bundle 20261101-211113). Only the tool stops, run again at each visit; the world server goes on without a navmesh there (no enemies to move).
-* Paralysis's proc and CancelCast now reach the paralysed player as ActorControl (2026-11-04, Bob's bundle
-  20261104-150457), untested in game. Other cancels the server sends the player as ActorControlSelf haven't been
+* Paralysis's proc now reaches the paralysed player as retail's (2026-11-04, Bob's bundles 20261104-150457 and
+  -151537: the conditions, CancelCast and the proc as ActorControl, StatusEffectList and UpdateClassInfo), untested in
+  game; which of them the client was waiting for isn't known. Kawari still never sets the Casting condition while a
+  player casts (retail did, from the ActorCast to the cast's end). Other cancels the server sends the player as ActorControlSelf haven't been
   checked against retail the same way: a progress bar broken off by a hit or paralysis (`interrupt_event_action`) and
   `send_ac_in_range_inclusive_instance`'s other users.
 * Paralysis's durations came down 30, 15, 7 s as it was put on the same actor again (and once 3), which Kawari doesn't do; its chance (one roll in two) is the same whatever gave it. Whether a damage-over-time tick interrupts a progress bar wasn't seen.

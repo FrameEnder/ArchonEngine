@@ -154,40 +154,70 @@ fn seize_up(
             .collect()
     };
 
-    {
-        let mut network = network.lock();
-        // Retail's values as they were: what each means isn't known. Both go as ActorControl from the actor, to the
-        // actor too (not ActorControlSelf): a player told by ActorControlSelf that their spell was cancelled never
-        // acted or moved again (Bob's bundle 20261104-150457, The Lominsan Way's Paralyze), and retail sent the player
-        // ActorControl in every proc of Bob's Chronofoil capture 44df02fc.
-        let mut send = |category: ActorControlCategory| {
-            network.send_in_range_inclusive_instance(
-                actor_id,
-                instance,
-                FromServer::ActorControl(actor_id, category),
-                DestinationNetwork::ZoneClients,
-            );
-        };
-        send(ActorControlCategory::FloatingNumberVFX {
-            unk1: STATUS_PARALYSIS as u32,
-            kind: 30,
-            amount: 0,
-            object_id: actor_id,
-        });
-        for (action_id, category) in categories {
+    let cancels: Vec<(u32, u32)> = categories
+        .into_iter()
+        .map(|(action_id, category)| {
             let unk1 = if category == Some(ActionCategory::Spell) {
                 CANCEL_SPELL
             } else {
                 CANCEL_OTHER
             };
-            send(ActorControlCategory::CancelCast {
-                unk1,
-                unk2: 1,
-                action_id,
-                unk3: 1,
-            });
+            (unk1, action_id)
+        })
+        .collect();
+    let is_player = matches!(
+        instance.find_actor(actor_id),
+        Some(NetworkedActor::Player { .. })
+    );
+
+    {
+        let mut network = network.lock();
+        // Retail's values as they were: what each means isn't known. Everyone around gets the CancelCasts and the proc
+        // as ActorControl from the actor; the player's own come from their connection (`paralysis_proc`), with the
+        // conditions first when a cast was cut short, as retail.
+        for (unk1, action_id) in &cancels {
+            network.send_ac_in_range_instance(
+                instance,
+                actor_id,
+                ActorControlCategory::CancelCast {
+                    unk1: *unk1,
+                    unk2: 1,
+                    action_id: *action_id,
+                    unk3: 1,
+                },
+            );
+        }
+        network.send_ac_in_range_instance(
+            instance,
+            actor_id,
+            ActorControlCategory::FloatingNumberVFX {
+                unk1: STATUS_PARALYSIS as u32,
+                kind: 30,
+                amount: 0,
+                object_id: actor_id,
+            },
+        );
+        if is_player {
+            network.send_to_by_actor_id(
+                actor_id,
+                FromServer::ParalysisProc(cancels),
+                DestinationNetwork::ZoneClients,
+            );
         }
         instance.interrupt_event_action(&mut network, actor_id, EventActionInterruption::Paralysed);
+    }
+
+    // Then, on every proc, retail sent the player StatusEffectList and UpdateClassInfo (Bob's Chronofoil capture
+    // 44df02fc: all of them, cast cut short or not). Kawari sent neither, and the player's client never acted or moved
+    // again after a proc that cut a cast short, as ActorControlSelf or ActorControl (Bob's bundles 20261104-150457 and
+    // -151537.)
+    if is_player {
+        crate::server::effect::send_effects_list(network.clone(), instance, actor_id);
+        network.lock().send_to_by_actor_id(
+            actor_id,
+            FromServer::SendClassInfo,
+            DestinationNetwork::ZoneClients,
+        );
     }
 }
 

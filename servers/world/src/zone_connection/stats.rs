@@ -10,7 +10,8 @@ use icarus::{ParamGrow::ParamGrowRow, Tribe::TribeRow};
 use kawari::{
     common::{ActionCategory, MAXIMUM_RESTED_EXP, ObjectId},
     ipc::zone::{
-        ActorControlCategory, PlayerStats, ServerZoneIpcData, ServerZoneIpcSegment, UpdateClassInfo,
+        ActorControlCategory, Condition, PlayerStats, ServerZoneIpcData, ServerZoneIpcSegment,
+        UpdateClassInfo,
     },
 };
 use mlua::{UserData, UserDataMethods};
@@ -643,6 +644,58 @@ impl UserData for BaseParameters {
 
 impl ZoneConnection {
     pub async fn update_class_info(&mut self) {
+        self.send_class_info().await;
+
+        // Update rested EXP so the bar doesn't reset.
+        self.actor_control_self(ActorControlCategory::UpdateRestedExp {
+            exp: self.player_data.classjob.rested_exp as u32,
+        })
+        .await;
+
+        // Send this too, otherwise actions dependent on the gauge won't function
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorGauge {
+            classjob_id: self.player_data.classjob.current_class as u8,
+            data: [0; 15],
+        });
+        self.send_ipc_self(ipc).await;
+    }
+
+    /// The player's own share of a paralysis proc, as retail sent it (Bob's Chronofoil capture 44df02fc, every proc
+    /// on the player in The Lominsan Way): when it cut a cast short, the conditions (Casting off) and CancelCast for
+    /// each, then the proc (FloatingNumberVFX `17, 30, 0, player`), all as ActorControl from the player; the server
+    /// then sends StatusEffectList and UpdateClassInfo (`paralysis::seize_up`.)
+    pub async fn paralysis_proc(&mut self, cancelled: Vec<(u32, u32)>) {
+        let actor_id = self.player_data.character.actor_id;
+        if !cancelled.is_empty() {
+            self.conditions.toggle_condition(Condition::Casting, false);
+            self.send_conditions().await;
+        }
+        for (unk1, action_id) in cancelled {
+            self.actor_control(
+                actor_id,
+                ActorControlCategory::CancelCast {
+                    unk1,
+                    unk2: 1,
+                    action_id,
+                    unk3: 1,
+                },
+            )
+            .await;
+        }
+        self.actor_control(
+            actor_id,
+            ActorControlCategory::FloatingNumberVFX {
+                unk1: crate::server::STATUS_PARALYSIS as u32,
+                kind: 30,
+                amount: 0,
+                object_id: actor_id,
+            },
+        )
+        .await;
+    }
+
+    /// UpdateClassInfo alone.
+    pub async fn send_class_info(&mut self) {
         let ipc;
         {
             let game_data = self.game_data.lock();
@@ -662,19 +715,6 @@ impl ZoneConnection {
                 rested_exp: self.player_data.classjob.rested_exp as u32,
             }));
         }
-        self.send_ipc_self(ipc).await;
-
-        // Update rested EXP so the bar doesn't reset.
-        self.actor_control_self(ActorControlCategory::UpdateRestedExp {
-            exp: self.player_data.classjob.rested_exp as u32,
-        })
-        .await;
-
-        // Send this too, otherwise actions dependent on the gauge won't function
-        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorGauge {
-            classjob_id: self.player_data.classjob.current_class as u8,
-            data: [0; 15],
-        });
         self.send_ipc_self(ipc).await;
     }
 
