@@ -20,11 +20,11 @@ use kawari::{
 };
 
 use crate::{
-    GameData,
+    FromServer, GameData,
     server::{
         actor::NetworkedActor,
         instance::{EventActionInterruption, Instance},
-        network::NetworkState,
+        network::{DestinationNetwork, NetworkState},
     },
 };
 
@@ -156,33 +156,36 @@ fn seize_up(
 
     {
         let mut network = network.lock();
-        // Retail's values as they were: what each means isn't known.
-        network.send_ac_in_range_inclusive_instance(
-            instance,
-            actor_id,
-            ActorControlCategory::FloatingNumberVFX {
-                unk1: STATUS_PARALYSIS as u32,
-                kind: 30,
-                amount: 0,
-                object_id: actor_id,
-            },
-        );
+        // Retail's values as they were: what each means isn't known. Both go as ActorControl from the actor, to the
+        // actor too (not ActorControlSelf): a player told by ActorControlSelf that their spell was cancelled never
+        // acted or moved again (Bob's bundle 20261104-150457, The Lominsan Way's Paralyze), and retail sent the player
+        // ActorControl in every proc of Bob's Chronofoil capture 44df02fc.
+        let mut send = |category: ActorControlCategory| {
+            network.send_in_range_inclusive_instance(
+                actor_id,
+                instance,
+                FromServer::ActorControl(actor_id, category),
+                DestinationNetwork::ZoneClients,
+            );
+        };
+        send(ActorControlCategory::FloatingNumberVFX {
+            unk1: STATUS_PARALYSIS as u32,
+            kind: 30,
+            amount: 0,
+            object_id: actor_id,
+        });
         for (action_id, category) in categories {
             let unk1 = if category == Some(ActionCategory::Spell) {
                 CANCEL_SPELL
             } else {
                 CANCEL_OTHER
             };
-            network.send_ac_in_range_inclusive_instance(
-                instance,
-                actor_id,
-                ActorControlCategory::CancelCast {
-                    unk1,
-                    unk2: 1,
-                    action_id,
-                    unk3: 1,
-                },
-            );
+            send(ActorControlCategory::CancelCast {
+                unk1,
+                unk2: 1,
+                action_id,
+                unk3: 1,
+            });
         }
         instance.interrupt_event_action(&mut network, actor_id, EventActionInterruption::Paralysed);
     }

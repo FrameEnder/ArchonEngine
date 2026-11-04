@@ -518,6 +518,11 @@ Status 17, as retail played it out in Bob's Chronofoil captures (85 windows of i
   look-out, 0.9 s into the bar). An NPC acts on nothing for a second after (`LOCKOUT`: retail's next action came
   0.98 s or more after every proc); players' clients hold themselves back (their next ActionRequest came 1.03-1.26 s
   after).
+* **ActorControl, not ActorControlSelf, to the paralysed player too**: retail sent the player both packets as
+  ActorControl from themselves (every proc on the player in capture 44df02fc, The Lominsan Way). Kawari sent the
+  player ActorControlSelf, and a player whose spell was cancelled that way never acted or moved again: the client sent
+  nothing more, the status long gone (Bob's bundle 20261104-150457: Cure cut short 0.9 s into its cast, then nothing
+  for 78 s).
 
 Before 2026-11-01 paralysis did nothing (quest battle 17's gaze and the floating eye's gave it).
 
