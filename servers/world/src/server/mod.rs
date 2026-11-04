@@ -1639,6 +1639,20 @@ pub async fn server_main_loop(
                     }
 
                     for (instance_index, task) in &tasks_to_execute {
+                        // A player's cast landing: their Casting condition off first, as retail (`set_casting`.)
+                        let player_cast =
+                            matches!(task.data, QueuedTaskData::CastAction { .. })
+                                && data.lock().instances.get(*instance_index).is_some_and(
+                                    |instance| {
+                                        matches!(
+                                            instance.find_actor(task.from_actor_id),
+                                            Some(NetworkedActor::Player { .. })
+                                        )
+                                    },
+                                );
+                        if player_cast {
+                            action::set_casting(&mut network.lock(), task.from_actor_id, false);
+                        }
                         match &task.data {
                             QueuedTaskData::EventItemOnGround {
                                 request,

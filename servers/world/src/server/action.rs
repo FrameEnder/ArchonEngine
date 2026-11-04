@@ -41,9 +41,9 @@ use kawari::{
     config::get_config,
     ipc::zone::{
         ActionEffect, ActionRequest, ActionType, ActorControlCategory, ActorControlSelf, AoeEffect,
-        BattleNpcSubKind, CharacterDataFlag, CommonSpawn, DamageKind, DamageType, EffectEntry,
-        EffectResult, ObjectKind, ServerZoneIpcData, ServerZoneIpcSegment, SpawnNpc, TargetEffect,
-        TargetEffectKind,
+        BattleNpcSubKind, CharacterDataFlag, CommonSpawn, Condition, DamageKind, DamageType,
+        EffectEntry, EffectResult, ObjectKind, ServerZoneIpcData, ServerZoneIpcSegment, SpawnNpc,
+        TargetEffect, TargetEffectKind,
     },
 };
 
@@ -252,6 +252,9 @@ pub fn handle_action_messages(
                 FromServer::PacketSegment(actor_cast, *from_actor_id),
                 DestinationNetwork::ZoneClients,
             );
+            if let NetworkedActor::Player { .. } = actor {
+                set_casting(&mut network, *from_actor_id, true);
+            }
         }
 
         // Retail tells the player each action's recast as they use it (ActorControlSelf 17, with the cast bar or the
@@ -392,6 +395,9 @@ fn start_event_item(
             FromServer::PacketSegment(actor_cast, from_actor_id),
             DestinationNetwork::ZoneClients,
         );
+        if let NetworkedActor::Player { .. } = actor {
+            set_casting(&mut network, from_actor_id, true);
+        }
     }
     // Moving cancels it like any cast (`CastAction`, which `execute_queued_task` sends to `use_event_item`.)
     instance.insert_task(
@@ -2621,6 +2627,18 @@ fn apply_caster_results(
     }
 }
 
+/// The player's Casting condition, as retail kept it (Bob's Chronofoil capture 44df02fc, every cast in The Lominsan
+/// Way): on right after their ActorCast, off as the cast lands (before its ActionEffect) or is cut short (before the
+/// CancelCast). Kawari never set it; a player's client then never acted or moved again once the server cut one of
+/// their casts short (paralysis: Bob's bundles 20261104-150457, -151537 and -153016, whatever else was sent.)
+pub fn set_casting(network: &mut NetworkState, actor_id: ObjectId, on: bool) {
+    network.send_to_by_actor_id(
+        actor_id,
+        FromServer::ToggleCondition(Condition::Casting, on),
+        DestinationNetwork::ZoneClients,
+    );
+}
+
 pub fn cancel_action(
     network: Arc<Mutex<NetworkState>>,
     instance: &mut Instance,
@@ -2636,6 +2654,7 @@ pub fn cancel_action(
     });
 
     let mut network = network.lock();
+    set_casting(&mut network, actor_id, false);
     network.send_to(from_id, msg, DestinationNetwork::ZoneClients);
 
     // An interrupted NPC can move and act again straight away.
@@ -2654,6 +2673,11 @@ fn interrupt_cast(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
         *cast = None;
     }
     let mut network = network.lock();
+    if !cancelled.is_empty()
+        && let Some(NetworkedActor::Player { .. }) = instance.find_actor(actor_id)
+    {
+        set_casting(&mut network, actor_id, false);
+    }
     for action_id in cancelled {
         network.send_ac_in_range_inclusive_instance(
             instance,

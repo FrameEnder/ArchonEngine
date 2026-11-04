@@ -470,12 +470,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   known: all of them are kept, as walls and floors, so a shape that's only for the camera or for flying would stop
   walkers wrongly.
 * `kawari-navimesh` can't make the Waking Sands' navmesh (territory 212, `wil_w1/evt/w1e6`): its level's bg path is empty, so it looks for `/collision/list.pcb` and panics (Bob's bundle 20261101-211113). Only the tool stops, run again at each visit; the world server goes on without a navmesh there (no enemies to move).
-* Paralysis's proc now reaches the paralysed player as retail's (2026-11-04, Bob's bundles 20261104-150457 and
-  -151537: the conditions, CancelCast and the proc as ActorControl, StatusEffectList and UpdateClassInfo), untested in
-  game; which of them the client was waiting for isn't known. Kawari still never sets the Casting condition while a
-  player casts (retail did, from the ActorCast to the cast's end). Other cancels the server sends the player as ActorControlSelf haven't been
-  checked against retail the same way: a progress bar broken off by a hit or paralysis (`interrupt_event_action`) and
-  `send_ac_in_range_inclusive_instance`'s other users.
+* The player's Casting condition is set for their casts as retail (2026-11-04, after three bundles of paralysis
+  freezing the player; [Combat](combat.md#paralysis-serverparalysisrs)), untested in game: that it is what the client
+  waited for is a deduction (it's the last difference from retail's packets). A cast cancelled by the player's death
+  or a zone change leaves the condition to the next condition update. Other cancels the server sends the player
+  (`interrupt_event_action`'s progress bars) weren't checked against retail.
 * Paralysis's durations came down 30, 15, 7 s as it was put on the same actor again (and once 3), which Kawari doesn't do; its chance (one roll in two) is the same whatever gave it. Whether a damage-over-time tick interrupts a progress bar wasn't seen.
 * The quests from captures 9df4ff01 and 3a705e18 (743-763, 1104; 2026-10-30) are untested in game. So are 765 and 774-776 (capture a0149e5e, 2026-10-31) and 777, 778 and 782 (capture 20ef0e90, 2026-10-31; replayed against two more characters' runs, captures 9faa9bac and bd51ca23: the same steps). Big Trouble in Little Ala Mhigo's (782) bystanders in sequence 3 (ACTOR6-10, which the client accepts talks with) have no scenes: which of its scenes 14-20 belong to whom isn't known, and retail's talks to them weren't recorded; Bertliana's (9, 12, 21) flags are a guess (0x2000). In Wilred Wants You (778) ENEMY0 fell first in all three runs; talking to Wilred again after one has fallen brings it out again (either counts, as the client's script accepts both while UI8AL is below 2; what retail does then wasn't seen); He Ain't Heavy's enemy's 405 (a placed cast) takes its shape from the Action sheet, unchecked, and its 130 is one hit of two. Believe in Your Sylph's lookout
   emote relies on the client's StartEmoteEvent (fork opcode 401): the server doesn't check the player is in

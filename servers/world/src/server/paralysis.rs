@@ -207,10 +207,8 @@ fn seize_up(
         instance.interrupt_event_action(&mut network, actor_id, EventActionInterruption::Paralysed);
     }
 
-    // Then, on every proc, retail sent the player StatusEffectList and UpdateClassInfo (Bob's Chronofoil capture
-    // 44df02fc: all of them, cast cut short or not). Kawari sent neither, and the player's client never acted or moved
-    // again after a proc that cut a cast short, as ActorControlSelf or ActorControl (Bob's bundles 20261104-150457 and
-    // -151537.)
+    // Then StatusEffectList and UpdateClassInfo, as the player had them right after every proc on retail (Bob's
+    // Chronofoil capture 44df02fc). They're retail's 3 s tick, which the procs fall on, rather than the proc's own.
     if is_player {
         crate::server::effect::send_effects_list(network.clone(), instance, actor_id);
         network.lock().send_to_by_actor_id(

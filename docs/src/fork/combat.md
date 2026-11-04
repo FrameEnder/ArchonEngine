@@ -519,14 +519,18 @@ Status 17, as retail played it out in Bob's Chronofoil captures (85 windows of i
   0.98 s or more after every proc); players' clients hold themselves back (their next ActionRequest came 1.03-1.26 s
   after).
 * **The paralysed player's own packets**, as retail sent them on every proc on the player in capture 44df02fc (The
-  Lominsan Way): when it cut a cast short, Condition (Casting off), then CancelCast; the proc (ActorControl 23); then
-  **StatusEffectList and UpdateClassInfo**, cast cut short or not. The CancelCast and the proc are ActorControl from the
-  player, to the player too. Kawari sent the player only the CancelCast and the proc, first as ActorControlSelf, and the
-  client never acted or moved again after a proc that cut a cast short, the status long gone (Bob's bundle
-  20261104-150457: Cure cut short 0.9 s into its cast, then nothing for 78 s); as ActorControl it did the same (bundle
-  20261104-151537), so the missing packets are the rest (`ZoneConnection::paralysis_proc`, then `send_effects_list`
-  and `FromServer::SendClassInfo`). Retail also sent ActorControl 1540 (`0, 3, an NPC`) with some procs, unknown, not
-  sent.
+  Lominsan Way): when it cut a cast short, Condition (Casting off), then CancelCast, then the proc (ActorControl 23),
+  from the player to the player too. (Retail's StatusEffectList and UpdateClassInfo right after are its 3 s tick, sent
+  every 3 s whatever happens, which the procs fall on.)
+* **The Casting condition.** Retail sets the player's Casting condition right after their ActorCast and clears it as
+  the cast lands (before its ActionEffect) or is cut short (before the CancelCast): every cast in that capture.
+  Kawari never set it (`action::set_casting` now does). With no Casting to clear, a player whose cast the server cut
+  short never acted or moved again, the status long gone, whatever else was sent (Bob's bundles 20261104-150457,
+  -151537 and -153016: CancelCast and the proc as ActorControlSelf, then as ActorControl, then with StatusEffectList and
+  UpdateClassInfo; the client sent nothing more each time). ActorControl and ActorControlSelf can't have been the
+  difference: the 2026.10.16 client hands all three ActorControl packets to the same function (0x140B3A8C0, the
+  category's switch; CancelCast, 15, interrupts the character's cast and prints the log line in its first value).
+  Retail also sent ActorControl 1540 (`0, 3, an NPC`) with some procs, unknown, not sent.
 
 Before 2026-11-01 paralysis did nothing (quest battle 17's gaze and the floating eye's gave it).
 
