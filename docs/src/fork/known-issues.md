@@ -148,6 +148,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
+* **Ul'dah's Most Wanted (261) and its quest battle 19** (2026-11-05, from Bob's dumps and Chronofoil capture
+  a763f0a0): untested in game, from one run. The second wave after the second of three thugs is down, and the 2 s
+  the director waits on a death, fit that run; the quest's thugs' Feint gave Slow (status 9) on retail, which Kawari's
+  Feint doesn't (nor is Slow modelled); how often the thugs' Feint and Heartstopper and the tougher thug's True Thrust
+  come is a guess (each was used once). The gutless gladiator can be talked to again while his two are out (they
+  aren't brought out twice); what retail does then wasn't seen.
 * **Seer Folly (1079) and its quest battle 75** (2026-11-05, from Bob's dumps and Chronofoil captures 8d550e33 and
   dc565f7c): untested in game, from one run. What brings the second wave (the boss's adds down) and the third (the
   boss at 40 %) fits that run only; the QuestBattle sheet's other ten layout IDs (more raptors, bats, slugs and water

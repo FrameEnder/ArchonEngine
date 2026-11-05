@@ -1,0 +1,30 @@
+{
+    "autoattack_action_id": 871,
+    "from_pull": true,
+    "recorded_amounts": {
+        "871": {
+            "players": 15,
+            "npcs": 33
+        },
+        "866": {
+            "players": 48,
+            "npcs": 98
+        }
+    },
+    "animation_locks": {
+        "866": 1.6
+    },
+    "timepoints": [
+        {
+            "time": 8.0,
+            "every": 8.9,
+            "data": {
+                "type": "action",
+                "action_id": 866
+            },
+            "comment": "Heartstopper (866, 2.5 s, a line 3 yalms wide) 8.1 s after it came, then 8.9 s later"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Ul'dah's Most Wanted (quest 261): the thugs' leader (quest battle 19, BNpcBase 628, BNpcName 944, layout 3983981, the sheet's INIT_POP_03_01): level 10, 672 HP, a lancer; on the gladiator, then on you. From Bob's Chronofoil capture a763f0a0 (2026-11-05, one run of Ul'dah's Most Wanted's quest battle 19, won, `questkit chronofoil --battle 0.5`, territory 253, duty 314; a level 14 gladiator): `players` is the median damage to the player, `npcs` to the other side's NPCs (or a heal's on them), times from its pull. Hitbox not recorded."
+}

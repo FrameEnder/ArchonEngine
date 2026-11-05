@@ -1,0 +1,34 @@
+{
+    "autoattack_action_id": 871,
+    "from_pull": true,
+    "recorded_amounts": {
+        "871": {
+            "players": 4
+        },
+        "76": {
+            "players": 5
+        }
+    },
+    "timepoints": [
+        {
+            "time": 8.0,
+            "every": 20.0,
+            "data": {
+                "type": "action",
+                "action_id": 76
+            },
+            "comment": "Feint (76) on you 8.2 s after it came: 5 and Slow (9) on retail, which Kawari's Feint doesn't give; once (it fell 12 s after it came: how often is a guess)"
+        },
+        {
+            "time": 10.5,
+            "every": 20.0,
+            "data": {
+                "type": "action",
+                "action_id": 866
+            },
+            "comment": "Heartstopper (866, 2.5 s, a line 3 yalms wide) 10.8 s after it came (missed); once"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Ul'dah's Most Wanted (quest 261): the two the gutless gladiator's scene brings out (BNpcBase 1245, BNpcName 923, layouts 3976825 and 3976826, the quest's ENEMY0 and ENEMY1): level 10, 192 HP, lancers; on you. From Bob's Chronofoil capture a763f0a0 (2026-11-05, the quest on a level 14 gladiator, `questkit chronofoil --battle 0.1`, territory 141): `players` is the median damage to the player, times from its pull. Hitbox not recorded."
+}

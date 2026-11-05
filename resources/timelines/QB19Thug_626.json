@@ -1,0 +1,12 @@
+{
+    "autoattack_action_id": 871,
+    "recorded_amounts": {
+        "871": {
+            "players": 4,
+            "npcs": 9
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Ul'dah's Most Wanted (quest 261): the thugs (quest battle 19, BNpcBase 626, BNpcName 923, layouts 3977803-3977805, 3977808 and 3977809, the sheet's INIT_POP_01_01-03, 02_02, 02_03): level 8, 143 HP, lancers; only auto-attacks, on the gladiator, then on you once you hit them. From Bob's Chronofoil capture a763f0a0 (2026-11-05, one run of Ul'dah's Most Wanted's quest battle 19, won, `questkit chronofoil --battle 0.5`, territory 253, duty 314; a level 14 gladiator): `players` is the median damage to the player, `npcs` to the other side's NPCs (or a heal's on them), times from its pull. Hitbox not recorded."
+}

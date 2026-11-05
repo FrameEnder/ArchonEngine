@@ -1,0 +1,26 @@
+{
+    "autoattack_action_id": 871,
+    "from_pull": true,
+    "recorded_amounts": {
+        "871": {
+            "players": 6,
+            "npcs": 12
+        },
+        "75": {
+            "npcs": 23
+        }
+    },
+    "timepoints": [
+        {
+            "time": 8.5,
+            "every": 20.0,
+            "data": {
+                "type": "action",
+                "action_id": 75
+            },
+            "comment": "True Thrust (75) 8.6 s after it came (once: it fell 14 s after it came; how often it comes again is a guess)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Ul'dah's Most Wanted (quest 261): the second wave's tougher thug (quest battle 19, BNpcBase 627, BNpcName 923, layout 3977807, the sheet's INIT_POP_02_01): level 9, 208 HP, a lancer; on the gladiator, then on you. From Bob's Chronofoil capture a763f0a0 (2026-11-05, one run of Ul'dah's Most Wanted's quest battle 19, won, `questkit chronofoil --battle 0.5`, territory 253, duty 314; a level 14 gladiator): `players` is the median damage to the player, `npcs` to the other side's NPCs (or a heal's on them), times from its pull. Hitbox not recorded."
+}

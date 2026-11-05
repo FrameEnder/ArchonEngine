@@ -191,6 +191,34 @@ a quest's entering event, 0 for every other event (228 events across the capture
 
 ## The battles
 
+### Quest battle 19 — Ul'dah's Most Wanted (`content/questbattle/19.lua`)
+
+* Quest 261 (ClsGla100_00261, the Gladiators' level 10 quest) enters it (scene 5, YesNoQuestBattle; territory 253,
+  duty 314). Territory 253's TerritoryType has Central Thanalan's level (w1f2), so its NPCs are layer
+  `QB_ClsGla100_002` of `wil_w1_planmap.json`, with the QuestBattle sheet's layout IDs and retail's levels, HP,
+  positions, gear, display flags (0x40003) and character data flags (2 for the ally, 3 for the enemies) from Bob's
+  Chronofoil capture a763f0a0 (2026-11-05, `--battle 0.5`, one run, won; a level 14 gladiator): the gladiator on your
+  side (3977801, base 625, BNpcName 924, level 10, 211 HP), three thugs (3977803-3977805, base 626), then two more and a
+  tougher one (3977807-3977809, 626 and 627), then their leader (3983981, base 628, 672 HP). The start spot (27.35, 13.0,
+  51.79, facing -2.571) and the opening's flags (0x2001: no cutscene) are the run's.
+* The flow (seconds from the fight starting; the director acted on a death **2 s after the health reached 0**, its
+  death animation, all four times, as Lord of the Inferno's: `DEATH_NOTICED_AFTER`): sequence 2, the thugs on the
+  gladiator; battle talk 107 (the gladiator, no portrait) at 5.9 s. **The second of the three down** (18.4 s): sequence 3,
+  the next three 0.6 s later, on the gladiator, 108 10.1 s after. **All six down** (47.3 s): sequence 4 and 103 at once;
+  5.0 s later sequence 5 and their leader, on the gladiator, who holds back (no target, `holdBack`) until **sequence 6**,
+  5.1 s after 5; 104 2.0 s after that. **The leader down** (77.6 s): "Duty Complete", sequence 7, the battle's scene 7
+  (0x2001) 3.6 s later; the quest moves to 5. `questkit battle-sim 19` matches all 15 events within 0.5 s (the win 1.1 s
+  early: 2.1 s after the death that time).
+* The gladiator fights up close (Fast Blade, Rampart and Fight or Flight on himself) and Cures himself at 25-35 %
+  (retail's at 52 and 74 of 211), never you. The thugs only auto-attack, the tougher one with a True Thrust; the leader
+  uses Heartstopper (866) 8 s after he comes, then every 8.9 s. Timelines `QB19*` (bases 625-628).
+* The client's battle script (`ClsGla100Btl_00261`, Bob's extracted scripts of 2026-11-05) has scenes 1 and 7 (both
+  just END_EVENT_SCENE_RESULT), OnSequence001 (the objective) and OnSequence002 (its message); nothing reacts to
+  sequences 3-7. The director plays only 1 and 7.
+* The quest's two thugs (layer `QB_ClsGla100_001`, base 1245, level 10, 192 HP; timeline `ClsGla100Thug_1245`) were
+  spawned on retail for the player by the gutless gladiator's event (their SpawnNpc names him), which is why
+  `questkit chronofoil --dropin` left them out ("owned by someone").
+
 ### Quest battle 75 — Seer Folly (`content/questbattle/75.lua`)
 
 * Quest 1079 (JobWhm300_01079, the White Mage's first quest) enters it (scene 2, YesNoQuestBattle; territory 319,
