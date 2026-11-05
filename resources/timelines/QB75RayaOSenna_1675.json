@@ -1,0 +1,41 @@
+{
+    "autoattack_action_id": 0,
+    "attack_range": 5.0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 213
+        },
+        "127": {
+            "npcs": 300
+        },
+        "121": {
+            "npcs": 75
+        },
+        "120": {
+            "npcs": 725
+        }
+    },
+    "rotation": {
+        "pace": 6.5,
+        "actions": [
+            {
+                "action": 121,
+                "refresh": 17.0,
+                "comment": "Aero, once"
+            },
+            {
+                "action": 127,
+                "every": 13.0,
+                "comment": "Stone II, 4 uses"
+            },
+            {
+                "action": 119,
+                "every": 13.0,
+                "comment": "Stone, once"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Seer Folly (quest 1079): Raya-O-Senna on your side (quest battle 75, BNpcBase 1675, BNpcName 1422, layout 4293115, the sheet's INIT_P_POP_RAYAO_01): level 40, 2081 HP, a white mage; on the boss, then the adds; Cure (120, the director's heals) on A-Ruhn-Senna and herself at 40-80 %, never on you. Her Regen (137), Stoneskin (129) and Divine Seal (138) on herself, A-Ruhn-Senna or you aren't played. No auto-attack. From Bob's Chronofoil capture 8d550e33 (2026-11-05, one run of Seer Folly's quest battle 75, won, `questkit chronofoil --battle 0.4`, territory 319, duty 368; a level 35 conjurer synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (or a heal's on them), times from its pull. Hitbox not recorded."
+}

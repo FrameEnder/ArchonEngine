@@ -191,6 +191,39 @@ a quest's entering event, 0 for every other event (228 events across the capture
 
 ## The battles
 
+### Quest battle 75 — Seer Folly (`content/questbattle/75.lua`)
+
+* Quest 1079 (JobWhm300_01079, the White Mage's first quest) enters it (scene 2, YesNoQuestBattle; territory 319,
+  duty 368). Territory 319's TerritoryType has the Central Shroud's level (f1f1), so its NPCs are layer
+  `QB_JobWhm300_001` of `fst_f1_planmap.json`, with the QuestBattle sheet's layout IDs and retail's levels, HP,
+  positions, display flags (0x40001 for the allies, 0x40003 for the enemies) and character data flags (3 for all) from
+  Bob's Chronofoil capture 8d550e33 (2026-11-05, `--battle 0.4`, one run, won; a level 35 conjurer synced to 34):
+  Raya-O-Senna and A-Ruhn-Senna on your side (4293115, base 1675, BNpcName 1422; 4293116, 1676, 1423; level 40 and 41,
+  white mages), the boss (4293124, base 1674, 6209 HP) with a raptor (1678) and two bats (1680), then two waves of
+  three. The sheet's other layout IDs (four more raptors, bats and slugs, two water sprites) never came in that run and
+  aren't spawned. The start spot (-284.58, 19.84, 119.85, facing -0.149) and the opening's flags (0xF8412FFF) are the
+  run's.
+* The flow (seconds from the fight starting, the director's scene 60000): sequence 2, the boss on Raya-O-Senna and its
+  adds on A-Ruhn-Senna; battle talk 86 (Raya-O-Senna, no portrait) at 5.1 s and 87 (A-Ruhn-Senna) at 10.1 s. **The
+  boss's adds down** (20.8 s, as the last of them fell; the boss was at 85.6 % from 17.5 to 23.5 s, so not its health):
+  sequence 3 and the second wave at once (a raptor on Raya-O-Senna, a bat on A-Ruhn-Senna, a slug on you). **The boss at
+  40 %** (44.1 -> 38.3 %, 56.7 s): sequence 4 and the third wave at once (a raptor on A-Ruhn-Senna, a bat on you, a
+  water sprite on Raya-O-Senna), her 88 3.1 s later. **Everything down** (113.0 s; the report's deaths are the Kill
+  ActorControl, about 2 s after the health reached 0): "Duty Complete" and sequence 5, the battle's scene 5
+  (0xF8402EFB) 3.1 s later, the quest to 255 with UI8BH 1 (`QUEST_VARS_AFTER_WIN`), the director to 254 with its last
+  byte 0x80. `questkit battle-sim 75` matches all 14 events within 0.3 s.
+* The allies stay by you and cast from 5 yalms (Stone, Stone II, Aero), and Cure each other below 60 % (retail's at
+  40-80 %), never you. Their Regen, Stoneskin (129) and Divine Seal (138) aren't played (barriers don't absorb, and
+  the others only show the status). **The boss** uses Realm Shaker (697, instant, round itself) 11.8 s in and every
+  20.4 s until it's at 40 %, then only Silkscreen (701, 2.5 s, a line on whom it's fighting) every 6 s, which **knocks
+  back** whoever it hits (Knockback row 1, as the Thousand Maws of Toto-Rak's boss's: its targets 9-10 yalms further
+  off). The slug's Viscous Discharge (1166) silences everyone it catches for 10 s, and its Aqueous Discharge (381) hits
+  round it every 7.2 s; the raptors breathe frost (318) every 20 s; the water sprite casts Water and Water II.
+  Timelines `QB75*` (bases 1674-1680), action scripts `QB75Slug_00381`, `QB75Slug_01166`.
+* The client's battle script (`JobWhm300Btl_01079`, Bob's extracted scripts of 2026-11-05) has scenes 1 (the opening)
+  and 5 (the closing cutscene, CUT_END_NCUT: 346), OnSequence001 (the objective) and OnSequence002 (its message);
+  nothing in it reacts to sequences 3-5. The director plays only 1 and 5.
+
 ### Quest battle 59 — The Lominsan Way (`content/questbattle/59.lua`)
 
 * Quest 811 (GaiUsb004_00811) enters it from the Grey Fleet miller (scene 2; territory 307, duty 354). Territory 307's

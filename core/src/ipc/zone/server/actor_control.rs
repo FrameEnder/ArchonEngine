@@ -874,6 +874,12 @@ pub enum ActorControlCategory {
     #[brw(magic = 543u32)]
     HuntingLogEntryCompleted { note: u32, class: u32 },
 
+    /// Sent with a job's soul crystal as its first quest gave it, with that quest's HOW_TO_JOB (the HowTo row on jobs:
+    /// Seer Folly's 94; Bob's Chronofoil capture 8d550e33, 2026-11-05, between the reward's InventoryActionAck and the
+    /// crystal's slot). Probably makes that HowTo entry available; what the client does with it wasn't checked.
+    #[brw(magic = 540u32)]
+    JobHowTo { how_to: u32 },
+
     #[brw(magic = 538u32)]
     UnkAchievementRelated {
         unk1: u32,
@@ -1463,5 +1469,19 @@ mod tests {
             let read = ActorControl::read_le(&mut Cursor::new(bytes)).unwrap();
             assert_eq!(format!("{:?}", read.category), format!("{category:?}"));
         }
+    }
+
+    /// Retail's ActorControlSelf with Seer Folly's soul crystal (Bob's Chronofoil capture 8d550e33.)
+    #[test]
+    fn job_how_to_matches_retail() {
+        let mut written = Cursor::new(Vec::new());
+        ActorControlSelf {
+            category: ActorControlCategory::JobHowTo { how_to: 94 },
+        }
+        .write_le(&mut written)
+        .unwrap();
+        let mut retail = vec![0x1c, 0x02, 0, 0, 0x5e, 0, 0, 0];
+        retail.resize(40, 0);
+        assert_eq!(written.into_inner(), retail);
     }
 }

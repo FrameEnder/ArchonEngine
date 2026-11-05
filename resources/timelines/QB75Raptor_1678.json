@@ -1,0 +1,28 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 95
+        },
+        "318": {
+            "npcs": 284
+        }
+    },
+    "animation_locks": {
+        "318": 2.4
+    },
+    "timepoints": [
+        {
+            "time": 27.5,
+            "every": 20.2,
+            "data": {
+                "type": "action",
+                "action_id": 318
+            },
+            "comment": "Frost Breath (318, 2.5 s, a cone 6 yalms long) 27.7-27.8 s after it came (both that lived long enough), then every 19.4-22.1 s"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Seer Folly (quest 1079): the raptors (quest battle 75, BNpcBase 1678, BNpcName 130, layouts 4293129, 4293148 and 4293155, the sheet's INIT_POP_1/2/3_RPT_01): level 30, 390 HP; the boss's on A-Ruhn-Senna, the second wave's on Raya-O-Senna, the third's on A-Ruhn-Senna. From Bob's Chronofoil capture 8d550e33 (2026-11-05, one run of Seer Folly's quest battle 75, won, `questkit chronofoil --battle 0.4`, territory 319, duty 368; a level 35 conjurer synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (or a heal's on them), times from its pull. Hitbox not recorded."
+}

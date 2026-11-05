@@ -1,0 +1,33 @@
+{
+    "autoattack_action_id": 0,
+    "attack_range": 10.0,
+    "from_pull": true,
+    "recorded_amounts": {
+        "1120": {
+            "npcs": 83
+        }
+    },
+    "timepoints": [
+        {
+            "time": 5.5,
+            "every": 15.0,
+            "data": {
+                "type": "action",
+                "action_id": 1120
+            },
+            "comment": "Water (1120, 1.0 s) 5.6 s after it came"
+        },
+        {
+            "time": 12.0,
+            "every": 15.0,
+            "data": {
+                "type": "action",
+                "action_id": 1016,
+                "target": "itself"
+            },
+            "comment": "Water II (1016, 2.5 s, 5 yalms round itself) 12.2 s after it came (missed); it fell 19 s after it came, so how often each comes is Trial by Water's sprites' (about 13-15 s)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Seer Folly (quest 1079): the third wave's water sprite (quest battle 75, BNpcBase 1679, BNpcName 56, layout 4293151, the sheet's INIT_POP_3_WATER_ERMNT_01): level 30, 156 HP; on Raya-O-Senna; no auto-attack. From Bob's Chronofoil capture 8d550e33 (2026-11-05, one run of Seer Folly's quest battle 75, won, `questkit chronofoil --battle 0.4`, territory 319, duty 368; a level 35 conjurer synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (or a heal's on them), times from its pull. Hitbox not recorded."
+}

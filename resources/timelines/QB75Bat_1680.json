@@ -1,0 +1,12 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "872": {
+            "players": 31,
+            "npcs": 38.5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Seer Folly (quest 1079): the bats (quest battle 75, BNpcBase 1680, BNpcName 201, layouts 4293133, 4293134, 4293146 and 4293153, the sheet's INIT_POP_1_FLY_01/02, _2_FLY_01 and _3_FLY_01): level 27, 67 HP; only auto-attacks; the boss's and the second wave's on A-Ruhn-Senna, the third wave's on you. From Bob's Chronofoil capture 8d550e33 (2026-11-05, one run of Seer Folly's quest battle 75, won, `questkit chronofoil --battle 0.4`, territory 319, duty 368; a level 35 conjurer synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (or a heal's on them), times from its pull. Hitbox not recorded."
+}

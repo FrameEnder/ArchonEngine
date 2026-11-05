@@ -237,6 +237,9 @@ Enemies still compute damage like players do (stat × potency), which is far too
   Way's Rive (1299) on the player: `03 00 71 00 00 00 3c 00`, `1f 00 00 00 00 00 01 00`, `1b 00 00 00 00 80 13 05`
   (Bob's Chronofoil capture 44df02fc), the player then about 8 yalms further on along the line; its miss had only the
   Miss. The last entry (kind 27, 0x80, the action's ID) isn't sent; it isn't the knockback.
+  Silkscreen (701) knocks back the same way (row 1 in every hit: the Thousand Maws of Toto-Rak's boss's three, Seer
+  Folly's quest battle boss's seven, its targets 9-10 yalms further off; `TotoRakFinalBoss_00701`). The kind-27 entry
+  (`1B`, the action's ID, 0x80) came with every action that hit in both captures.
 * Drains (`heal_self` effect, e.g. Blood Drain) heal the attacker by what they took; the attacker's HP is sent after.
 
 A timeline with `timeline_always_plays` (only Sastasha's giant clams have one) runs whether or not the NPC is

@@ -1,0 +1,56 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 163,
+            "npcs": 202.5
+        },
+        "697": {
+            "players": 209,
+            "npcs": 257
+        },
+        "701": {
+            "players": 390,
+            "npcs": 519
+        }
+    },
+    "animation_locks": {
+        "697": 2.4,
+        "701": 2.1
+    },
+    "timepoints": [
+        {
+            "time": 11.5,
+            "every": 20.4,
+            "data": {
+                "type": "action",
+                "action_id": 697,
+                "target": "itself"
+            },
+            "comment": "Realm Shaker (697, instant, 6 yalms round itself) 11.8 s in, then every 20.4 s, until its health is at 40 %"
+        },
+        {
+            "time": 0,
+            "hp_below": 40,
+            "restarts": true,
+            "data": {
+                "type": "action",
+                "action_id": 701
+            },
+            "comment": "Silkscreen (701, 2.5 s, a line 15 yalms long and 4 wide) on the one it's fighting as its health falls to 40 % (its cast began 0.9 s after the 38.3 % sample), knocking them back (Knockback row 1): no Realm Shaker after it"
+        },
+        {
+            "time": 6.0,
+            "every": 6.0,
+            "after": 701,
+            "data": {
+                "type": "action",
+                "action_id": 701
+            },
+            "comment": "then Silkscreen every 6.0 s (4.6-6.9)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Seer Folly (quest 1079): the boss (quest battle 75, BNpcBase 1674, BNpcName 11, layout 4293124, the sheet's INIT_POP_1_BOSS_TRANT_01): level 31, 6209 HP; on Raya-O-Senna, then on you and her in turn; moved at most 26 yalms. From Bob's Chronofoil capture 8d550e33 (2026-11-05, one run of Seer Folly's quest battle 75, won, `questkit chronofoil --battle 0.4`, territory 319, duty 368; a level 35 conjurer synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (or a heal's on them), times from its pull. Hitbox not recorded."
+}

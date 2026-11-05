@@ -2821,6 +2821,16 @@ impl GameData {
         None
     }
 
+    /// The job a quest unlocks (the ClassJob row whose UnlockQuest it is, `quest_id` being the Quest row) and that job's
+    /// soul crystal: Seer Folly (66615) the White Mage's (24) and 4547.
+    pub fn get_job_unlocked_by_quest(&mut self, quest_id: u32) -> Option<(u32, u32)> {
+        self.classjob_sheet
+            .into_iter()
+            .flatten_subrows()
+            .find(|(_, row)| row.UnlockQuest == quest_id && row.ItemSoulCrystal != 0)
+            .map(|(id, row)| (id, row.ItemSoulCrystal))
+    }
+
     /// Gets the starting level for the classjob.
     pub fn get_starting_level(&mut self, classjob_id: u16) -> Option<u8> {
         let row = self.classjob_sheet.row(classjob_id as u32)?;

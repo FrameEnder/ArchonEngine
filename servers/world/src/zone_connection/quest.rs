@@ -12,7 +12,10 @@ use crate::{
     zone_connection::PersistentQuest,
 };
 use kawari::{
-    common::{ContainerType, HandlerId, HandlerType, INVENTORY_ACTION_ACK_GENERAL, ObjectId},
+    common::{
+        ContainerType, HandlerId, HandlerType, INVENTORY_ACTION_ACK_GENERAL,
+        INVENTORY_ACTION_ACK_SHOP, ObjectId,
+    },
     config::get_config,
     constants::COMPLETED_QUEST_BITMASK_SIZE,
     ipc::zone::{
@@ -318,6 +321,8 @@ impl ZoneConnection {
 
         // A class's joining quest unlocks it (its CLASSJOB parameter), after the EXP as retail.
         self.unlock_quest_classjob(id).await;
+        // A job's first quest gives its soul crystal, after the EXP as retail.
+        self.give_job_soul_crystal(id).await;
 
         // The quests after it moved up a slot, so send the whole journal again
         self.send_active_quests().await;
@@ -382,6 +387,64 @@ impl ZoneConnection {
             level: starting_level as u32,
         })
         .await;
+    }
+
+    /// A job's first quest (the ClassJob row whose UnlockQuest it is) gives that job's soul crystal (its
+    /// ItemSoulCrystal) into the bags. Retail, after Seer Folly's EXP (Bob's Chronofoil capture 8d550e33, 2026-11-05: a
+    /// conjurer, the White Mage's 4547): InventoryActionAck (0xFFFFFFFF, 6), ActorControlSelf 540 with the quest's
+    /// HOW_TO_JOB (94), the crystal's slot (the first free one in the bags), LogMessage 789 (ActorControlSelf 517) with
+    /// the item and EventLogMessage 750 with it, then the quest's FinishQuest. The Quest sheet doesn't list the crystal
+    /// among its items (its OtherReward, 15, names it in the journal). Nothing if they have it already.
+    async fn give_job_soul_crystal(&mut self, quest_id: u32) {
+        const OBTAINED_LOG: u32 = 789;
+        const SOUL_CRYSTAL_LOG: u32 = 750;
+        let (item, how_to) = {
+            let mut game_data = self.game_data.lock();
+            let Some((classjob_id, item_id)) = game_data.get_job_unlocked_by_quest(quest_id) else {
+                return;
+            };
+            tracing::info!("Quest {quest_id} gives job {classjob_id}'s soul crystal {item_id}");
+            let how_to = game_data
+                .get_quest_variables(quest_id)
+                .into_iter()
+                .find(|(name, _)| name == "HOW_TO_JOB")
+                .map(|(_, value)| value);
+            let item = game_data
+                .get_item_info(ItemInfoQuery::ById(item_id))
+                .map(|info| Item::new(&info, 1));
+            (item, how_to)
+        };
+        let Some(item) = item else {
+            return;
+        };
+        let item_id = item.item_id;
+        let inventory = &mut self.player_data.inventory;
+        if inventory.has_soul_crystal(item_id)
+            || inventory.count_in_bags(item_id) > 0
+            || (inventory.equipped.soul_crystal.item_id == item_id
+                && inventory.equipped.soul_crystal.quantity > 0)
+        {
+            return;
+        }
+        let Some((container, slot)) = self.player_data.inventory.add_obtained_item_at(item) else {
+            tracing::error!(
+                "Couldn't give the soul crystal {item_id} for quest {quest_id}, the inventory is full!"
+            );
+            return;
+        };
+        self.send_inventory_ack(u32::MAX, INVENTORY_ACTION_ACK_SHOP, 0)
+            .await;
+        if let Some(how_to) = how_to {
+            self.actor_control_self(ActorControlCategory::JobHowTo { how_to })
+                .await;
+        }
+        self.send_inventory_slot(container, slot).await;
+        self.actor_control_self(ActorControlCategory::LogMessage {
+            log_message: OBTAINED_LOG,
+            id: item_id,
+        })
+        .await;
+        self.send_reward_log(SOUL_CRYSTAL_LOG, vec![item_id]).await;
     }
 
     /// A quest's currency reward. A Grand Company's seals go in their own slot of the currency (1-3), with retail's

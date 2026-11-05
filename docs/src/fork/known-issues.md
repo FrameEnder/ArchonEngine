@@ -148,6 +148,15 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
+* **Seer Folly (1079) and its quest battle 75** (2026-11-05, from Bob's dumps and Chronofoil captures 8d550e33 and
+  dc565f7c): untested in game, from one run. What brings the second wave (the boss's adds down) and the third (the
+  boss at 40 %) fits that run only; the QuestBattle sheet's other ten layout IDs (more raptors, bats, slugs and water
+  sprites) never came, so whatever brings them (a bigger party? a longer fight?) isn't known and they aren't spawned.
+  The allies' Regen, Stoneskin and Divine Seal aren't played, and the slug's Silence isn't enforced by the server
+  (the client may grey out spells itself). Which of the empty scenes 3-5 EOBJECT0 and A-Ruhn-Senna play is a guess.
+  ActorControlSelf 540 (sent with the soul crystal, the quest's HOW_TO_JOB) isn't understood. Equipping the soul
+  crystal sends the class change as a weapon's does, with Kawari's ack first and no map markers (retail's ack comes
+  after ActorControlSelf 57, and its map markers twice).
 * **The Lominsan Way (59)'s bomb phase** (2026-11-04, Bob's report after paralysis was fixed): Rive aimed at the
   player, 1769 hiding from the bomb and coming back, and the bomb's countdown lines are retail's now, untested in game.
   The Rive retail used from the hiding place about 3 s after the bomb was gone isn't played; what 1769 does if the bomb
