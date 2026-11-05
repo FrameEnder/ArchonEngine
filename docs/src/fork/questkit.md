@@ -46,7 +46,11 @@ The report has:
   * **late casts**: the player's casts that landed more than 0.3 s after the bar, and warps more than 1.5 s after a
     cast landed (the Teleport bug: 8.2 s);
   * a **timeline** of quest and event packets (scenes, returns with their results, quest states, notices, unknown
-    packets), filtered to the tested quest when there is one.
+    packets), filtered to the tested quest when there is one;
+  * the **marks** (`!mark` in game, the captures' `note` lines starting `MARK`), each with its time.
+* **What the client said was stopping the player**: each Kawari Probe snapshot with a `stuck` part (Probe 0.7.0,
+  `/kprobe stuck`): conditions, character mode, animation lock, cast, queued action, action sequence, pending item
+  moves, statuses, the last 20 refused actions and log messages, and any hook that failed.
 
 Checked against the old bundles: it points straight at the Pauline (open event + unknown 856), teleport (8.2 s warp)
 and pre-fix cast timing (+0.3–0.5 s) problems.
@@ -311,8 +315,11 @@ reads, chat left out), so `compare` and the rest can use it.
   2026-10-30 they were read from 48, six bytes off: Blizzard II's 15 damage came out as an effect of kind 15 and its
   first target's miss was lost, so AoE amounts read from earlier runs are suspect), casts in the Recorder's text, the director's sequence and
   variables, its scenes (60000 starts the fight, 60001 is "Duty Complete") and when the client finished each, battle
-  talk, NPC yells, map effects, every actor control, and the enemy list (HaterList, EnmityList). It
-  has no names (no game data here: NPCs show as `base N [layout]`), no Action sheet (shapes, omens, class kits) and no
+  talk, NPC yells, map effects, every actor control, and the enemy list (HaterList, EnmityList). Facings
+  (`R`) since 2026-11-05: a spawn's, each ActorMove's (the quantized u16 at byte 0), and your own position and facing
+  from your client's UpdatePositionHandler (rotation f32 at 0, position at 8) or UpdatePositionHandlerInstance
+  (position at 12); before, your position only changed when the server moved you, so a run's player stood at their
+  spawn. It has no names (no game data here: NPCs show as `base N [layout]`), no Action sheet (shapes, omens, class kits) and no
   layout layers; positions only change when a packet moves someone.
 * **`--quest Q[,Q]`** prints what those quests did (`chronofoil_quest.py`): talks, scenes with their flags and the
   client's answers (yield or return, results, error code), notices, quest updates, and the zone changes, attunements

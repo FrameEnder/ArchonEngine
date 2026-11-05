@@ -20,6 +20,7 @@ folder), or `--game <game folder>`. Full guide: [Quest Dumps](../scripting/quest
 | `index` | `quest-index.json` (format 2): every quest's name, level, genre, issuer, area, class restriction, prerequisites and how they combine, `main_scenario` (in ScenarioTree), `expansion_name`, journal `genre_name`/`category_name`/`section_name` | Kawari Web's quest search, prerequisite completion and Progress page |
 | `items` | `item-index.json`: every named item's `id`, `name`, `description`, `category` (ItemUICategory), `icon`, `stack_size`, `unique`, `untradable`, `search_category`, `rarity`, `level_equip`, `level_item`, `can_be_hq`, in the server's language; and `marketboard-categories.json` (every ItemSearchCategory with a tab: `id`, `name`, `tab`, `order`, `icon`, `class_job`) | Kawari Web's Shop item linking and Marketboard page |
 | `classes` | `class-index.json` (format 1): `classes`, every ClassJob with a Role (`id`, `name`, `name_english`, `abbreviation`, `role`, `parent`, `primary_stat`), in the game's UIPriority order | Kawari Web's glamour API (the Glamour Collector's Class dropdown) |
+| `actions` | `action-index.json` (format 1): `actions`, every named Action and every one with an area (`id`, `name`, `cast` in seconds, `cast_type`, `effect_range`, `x_axis`, `range`, `omen`: the Omen row's path, `player`); `knockbacks`, every Knockback row with a distance (`id`, `distance`, `speed`, `direction`, `direction_arg`) | Kawari Web's battle replay (each cast's area, as the world server's `ActionInfo::area_shape`, and each push's length) |
 | `content` | `content-index.json` (format 1): `expansions` and `content_types` (ID → name); `duties`, every ContentFinderCondition with a name and content type (`id`, `name`, `short_code`, `content_type`, `territory`, `territory_bg`, `intended_use`, `level`, `level_sync`, `item_level`, `ex_version`, `in_duty_finder`, `high_end`, `pvp`, `sort_key`); `zones`, every open-world TerritoryType (intended use 1) with a place name (`id`, `name`, `region`, `internal_name`, `bg`, `ex_version`) | Kawari Web's Progress → Misc Content |
 
 Kawari Web runs it in a throwaway container from the active server image (Quest Lab, Progress, Shop → Manage).
@@ -107,7 +108,7 @@ object per line (`servers/world/src/capture.rs`):
 | Field | Meaning |
 |---|---|
 | `t` | Unix time in ms |
-| `dir` | `out` (server → client), `in` (client → server), or `note` (free text in `text`; supported by the capture, but nothing writes notes since the quest rollback) |
+| `dir` | `out` (server → client), `in` (client → server), or `note` (free text in `text`: the player's `!mark`s, `MARK <what they saw> \| zone <id> at (x, y, z) facing <r> \| quests <id:seq …>`) |
 | `name`, `kind`, `size` | Kawari's name for the packet, segment kind, data size |
 | `hex` | The IPC segment as sent, **including its 16-byte IPC header** |
 | `decoded` | Kawari's reading of it (truncated if huge) |

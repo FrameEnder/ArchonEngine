@@ -107,6 +107,29 @@ client's QuestWork in memory: an 8-byte header, then id, sequence, flags, six va
 items, zone, position, conditions. Also used to find client internals (e.g. where ServerRequestCallbackManager takes
 replies, actor control 925).
 
+**Why am I stuck?** (0.7.0, 2026-11-05): `/kprobe stuck` (or the plugin's main window button) opens a window with what
+the client itself says is stopping the player, live: its conditions, the character's mode (and its parameter), the
+animation lock, the cast in progress, the queued action, the last action sequence it sent and the last the server
+answered, its item moves still waiting on the server (InventoryManager's pending operations: while one is there it
+refuses the next with "Synching with server...", LogMessage 715), the statuses with their sources, and the last 60
+actions it refused (UseAction hooked; each with GetActionStatus's reason, a LogMessage row such as 572 "not ready yet"
+or 579 "can't while casting") and log messages it showed (ShowLogMessage and ShowLogMessageUInt hooked). *Send
+snapshot* sends it with a note, labelled `stuck: <note>`; every snapshot carries the same as `stuck`, so the freeze is
+in the next bundle (`questkit triage` prints it). A hook that fails after a game patch is listed as failed and that part
+is missing; the rest still works. Built for the paralysis freeze (2026-11-04, five tries) and the gearsets' "Synching
+with server" lock, both the client waiting on something no server log shows. (`probe/KawariProbe/StuckWatch.cs`,
+`StuckWindow.cs` in kawari-diagnostics.)
+
+## `!mark`
+
+`!mark <what you saw>` in game (zone chat: Say or the default channel) writes a note into the packet capture and the
+server log, at that moment: `MARK <what you saw> | zone <territory> at (x, y, z) facing <r> | quests <id:seq ...>`
+(`ZoneConnection::mark`, `servers/world/src/zone_connection/chat.rs`). Anyone can use it, not only GMs; the server
+answers in chat whether it went into the capture or, with capturing off, only the log. A bundle's README lists every
+mark in its captures with the file and line (`captures/<name>.gz line N`), `questkit triage` lists them under the
+captures, and the battle replay shows them on its timeline. It's there so a bundle says *when* something went wrong,
+not just that it did.
+
 ## Kawari Bestiary (`bestiary/`)
 
 The Recorder's predecessor, monsters only. Its Central Shroud recording set the enemy HP, auto-attack rate and damage.
@@ -122,8 +145,8 @@ newest.
 | `meta.json` | Build running, the note (what Bob was doing) | |
 | `server.log` | Container log, colour codes stripped | Errors, "Variables available", quest changes |
 | `characters.json` | Saved quest rows and position from world.db (`quest_summary`) | The server's view |
-| `snapshots/*.json` | Kawari Probe snapshots (`quests[].raw_hex`) | The client's view; compare with `characters.json` |
-| `captures/*.jsonl.gz` | Packet captures (gunzip; see [Tools](tools.md#packet-capture)) | Timings, exact bytes sent |
+| `snapshots/*.json` | Kawari Probe snapshots (`quests[].raw_hex`; `stuck` from 0.7.0) | The client's view; compare with `characters.json` |
+| `captures/*.jsonl.gz` | Packet captures (gunzip; see [Tools](tools.md#packet-capture)); `note` lines are `!mark`s | Timings, exact bytes sent; the README lists the marks with their line |
 | `config.json` | Server config, secrets removed | |
 
 Reading order: `python3 tools/questkit triage <kawari-diagnostics>` first (it does the next steps in one report);
@@ -132,6 +155,8 @@ capture around the time of the note → the log. A bundle sent by Quest Lab's *T
 `meta.json` (quest, name, character, content_id, where it started, when), and its note starts with "Quest test".
 
 `questkit compare --capture <bundle> --recording <export>` checks the bundle's captures against a retail recording.
+Kawari Web's [battle replay](kawari-web.md#battle-replay-dashboard--battle-replay-2250) puts a capture's fight beside a
+retail one on a map.
 
 ## Chronofoil captures (release `1`)
 

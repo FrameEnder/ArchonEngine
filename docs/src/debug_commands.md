@@ -24,6 +24,7 @@ These special debug commands start with `!` and are custom to Kawari.
 | `!item <name>` | Gives you an item matching by name. |
 | `!inspect` | Prints info about the player. |
 | `!itemlevel <level>` | Temporarily set your own item level. |
+| `!mark <what you saw>` | Writes a note into your packet capture and the server log: your words, then the zone, where you stand and face, and your quests' steps. For anyone, not just GMs; a diagnostics bundle lists the marks with their capture line, and the battle replay shows them. See [Recorder and diagnostics](fork/recorder-and-diagnostics.md#mark). |
 | `!mapeffect <state> <timeline_id> <index>` | Sets the map effect at index to a new state. |
 | `!mount <id/name>` | Allows you to mount in any zone, on the specified mount ID/name. |
 | `!monies` | Give a unreasonable amount of some currencies. |

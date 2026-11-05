@@ -131,6 +131,12 @@ impl ZoneConnection {
         chat_message: &SeString, // TODO: Replace this with an SEString
         events: &mut Vec<(Box<dyn EventHandler>, Event)>,
     ) -> bool {
+        // `!mark` is for anyone testing, GM or not.
+        if let Some(text) = mark_text(&chat_message.to_string()) {
+            self.mark(&text).await;
+            return true;
+        }
+
         if self.player_data.character.gm_rank == GameMasterRank::NormalUser {
             tracing::info!("Rejecting debug command because the user is not GM!");
             return true;
@@ -485,5 +491,68 @@ impl ZoneConnection {
             }
             _ => false,
         }
+    }
+
+    /// `!mark <what happened>`: notes the moment in the packet capture (a `note` line, `capture.rs`) and the server
+    /// log, with where the player is and their quests' steps, so a diagnostics bundle shows exactly when something went
+    /// wrong (Bob, 2026-11-05: "sometimes Rive goes toward the boulder" had to be found by reading a whole capture.)
+    /// The player is told whether the capture is on: without it only the log has the mark.
+    pub async fn mark(&mut self, text: &str) {
+        let position = self.player_data.volatile.position.0;
+        let quests: Vec<String> = self
+            .player_data
+            .quest
+            .active
+            .0
+            .iter()
+            .filter(|quest| quest.id != 0)
+            .map(|quest| format!("{}:{}", quest.id, quest.sequence))
+            .collect();
+        let note = format!(
+            "MARK {text} | zone {} at ({:.2}, {:.2}, {:.2}) facing {:.3} | quests {}",
+            self.player_data.volatile.zone_id,
+            position.x,
+            position.y,
+            position.z,
+            self.player_data.volatile.rotation,
+            if quests.is_empty() {
+                "none".to_string()
+            } else {
+                quests.join(" ")
+            }
+        );
+        tracing::info!("{} {note}", self.player_data.character.name);
+        self.capture.note(&note);
+        let reply = if self.capture.is_enabled() {
+            "Marked in the packet capture."
+        } else {
+            "Marked in the server log only: packet capture is off (Kawari Web → Diagnostics turns it on)."
+        };
+        self.send_notice(reply).await;
+    }
+}
+
+/// The text of a `!mark` command (empty for a bare `!mark`), or None for anything else.
+fn mark_text(message: &str) -> Option<String> {
+    let rest = message.strip_prefix("!mark")?;
+    if !(rest.is_empty() || rest.starts_with(' ')) {
+        return None;
+    }
+    Some(rest.trim().to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::mark_text;
+
+    #[test]
+    fn mark_text_reads_the_command() {
+        assert_eq!(
+            mark_text("!mark Rive went the other way").as_deref(),
+            Some("Rive went the other way")
+        );
+        assert_eq!(mark_text("!mark").as_deref(), Some(""));
+        assert_eq!(mark_text("!marker"), None);
+        assert_eq!(mark_text("!equip 1"), None);
     }
 }

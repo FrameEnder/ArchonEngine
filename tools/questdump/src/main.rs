@@ -14,14 +14,14 @@ use std::{
 };
 
 use icarus::{
-    BNpcName::BNpcNameSheet, ClassJob::ClassJobSheet, ClassJobCategory::ClassJobCategorySheet,
-    ContentFinderCondition::ContentFinderConditionSheet, ContentType::ContentTypeSheet,
-    ENpcResident::ENpcResidentSheet, EObjName::EObjNameSheet, ExVersion::ExVersionSheet,
-    Item::ItemSheet, ItemSearchCategory::ItemSearchCategorySheet,
+    Action::ActionSheet, BNpcName::BNpcNameSheet, ClassJob::ClassJobSheet,
+    ClassJobCategory::ClassJobCategorySheet, ContentFinderCondition::ContentFinderConditionSheet,
+    ContentType::ContentTypeSheet, ENpcResident::ENpcResidentSheet, EObjName::EObjNameSheet,
+    ExVersion::ExVersionSheet, Item::ItemSheet, ItemSearchCategory::ItemSearchCategorySheet,
     ItemUICategory::ItemUICategorySheet, JournalCategory::JournalCategorySheet,
     JournalGenre::JournalGenreSheet, JournalSection::JournalSectionSheet,
-    PlaceName::PlaceNameSheet, Quest::QuestSheet, ScenarioTree::ScenarioTreeSheet,
-    TerritoryType::TerritoryTypeSheet,
+    Knockback::KnockbackSheet, Omen::OmenSheet, PlaceName::PlaceNameSheet, Quest::QuestSheet,
+    ScenarioTree::ScenarioTreeSheet, TerritoryType::TerritoryTypeSheet,
 };
 use kawari::config::get_config;
 use physis::Language;
@@ -44,6 +44,7 @@ USAGE:
     kawari-questdump items [--out DIR]
     kawari-questdump content [--out DIR]
     kawari-questdump classes [--out DIR]
+    kawari-questdump actions [--out DIR]
     kawari-questdump disasm <FILE.luab> [--listing]
 
 QUEST can be a quest ID (3854 or 69390), a script ID (XxaFst034_03854) or the quest's name in quotes.
@@ -77,6 +78,10 @@ COMMANDS:
               which zones have monster spawns.)
     classes   Write class-index.json: every combat class and job (ClassJob: name, English name, abbreviation,
               role, base class, main stat), for Kawari Web's glamour API (the Glamour Collector's Class list.)
+    actions   Write action-index.json: every named action, and every one with an area, with its name, cast time,
+              and what the client draws its area from (CastType, EffectRange, XAxisModifier, Range and its omen's
+              path), and how far each knockback pushes (Knockback: distance, speed, direction), for Kawari Web's
+              battle replay (each cast's shape on the map, as the server's area_shape, and each push.)
     disasm   Print a readable listing of a compiled script you already have.
 
 OPTIONS:
@@ -990,6 +995,59 @@ fn class_index(resolver: &mut ResourceResolver) -> Result<Value, String> {
     }))
 }
 
+/// action-index.json (format 1): every named action, and every one with an area, with what its area is drawn from
+/// (the same fields as the world server's `ActionInfo::area_shape`: CastType, EffectRange, XAxisModifier, Range, and
+/// the omen's path for a cone's angle or a donut's hole.)
+fn action_index(resolver: &mut ResourceResolver) -> Result<Value, String> {
+    let language = get_config().world.language();
+    let omens: HashMap<u32, String> = OmenSheet::read_from(resolver, Language::None)
+        .map_err(|err| format!("couldn't read the Omen sheet: {err:?}"))?
+        .into_iter()
+        .flatten_subrows()
+        .map(|(id, row)| (id, row.Path.to_string()))
+        .collect();
+    let sheet = ActionSheet::read_from(resolver, language)
+        .map_err(|err| format!("couldn't read the Action sheet: {err:?}"))?;
+    let actions: Vec<Value> = sheet
+        .into_iter()
+        .flatten_subrows()
+        .filter_map(|(id, row)| {
+            let name = row.Name.to_string();
+            if name.is_empty() && row.EffectRange == 0 {
+                return None;
+            }
+            Some(json!({
+                "id": id,
+                "name": name,
+                "cast": f32::from(row.Cast100ms) / 10.0,
+                "cast_type": row.CastType,
+                "effect_range": row.EffectRange,
+                "x_axis": row.XAxisModifier,
+                "range": row.Range,
+                "omen": omens.get(&u32::from(row.Omen)).cloned().unwrap_or_default(),
+                "player": row.IsPlayerAction,
+            }))
+        })
+        .collect();
+    // How far each knockback pushes (an action's Knockback effect names a row): for drawing the push.
+    let knockbacks: Vec<Value> = KnockbackSheet::read_from(resolver, Language::None)
+        .map_err(|err| format!("couldn't read the Knockback sheet: {err:?}"))?
+        .into_iter()
+        .flatten_subrows()
+        .filter(|(_, row)| row.Distance != 0)
+        .map(|(id, row)| {
+            json!({
+                "id": id,
+                "distance": row.Distance,
+                "speed": row.Speed,
+                "direction": row.Direction,
+                "direction_arg": row.DirectionArg,
+            })
+        })
+        .collect();
+    Ok(json!({ "format": 1, "actions": actions, "knockbacks": knockbacks }))
+}
+
 fn content_index(resolver: &mut ResourceResolver) -> Result<Value, String> {
     let language = get_config().world.language();
     let place_names: HashMap<u32, String> = PlaceNameSheet::read_from(resolver, language)
@@ -1203,6 +1261,21 @@ fn run(args: &[String]) -> Result<(), String> {
                 "Wrote {} duties and {} zones to {}",
                 index["duties"].as_array().map_or(0, Vec::len),
                 index["zones"].as_array().map_or(0, Vec::len),
+                destination.display()
+            );
+            Ok(())
+        }
+        "actions" => {
+            let mut data = GameData::open(options.game.as_deref())?;
+            std::fs::create_dir_all(&options.out)
+                .map_err(|err| format!("couldn't create {}: {err}", options.out.display()))?;
+            let destination = options.out.join("action-index.json");
+            let index = action_index(&mut data.resolver)?;
+            std::fs::write(&destination, serde_json::to_string(&index).unwrap())
+                .map_err(|err| format!("couldn't write {}: {err}", destination.display()))?;
+            println!(
+                "Wrote {} actions to {}",
+                index["actions"].as_array().map_or(0, Vec::len),
                 destination.display()
             );
             Ok(())

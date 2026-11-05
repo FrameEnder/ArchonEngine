@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+import json
+
 import re
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
@@ -186,6 +188,41 @@ def _quests(report: Report, bundle: Bundle):
             report.add()
             report.add("The snapshot may be older than the server's save; check its time against the log.")
         report.add()
+    _stuck(report, snapshots)
+
+
+def _stuck(report: Report, snapshots: list[dict]):
+    """What each snapshot's client said was stopping the player (Kawari Probe 0.7.0's `stuck`, /kprobe stuck.)"""
+    with_stuck = [snap for snap in snapshots if isinstance(snap.get("stuck"), dict)]
+    if not with_stuck:
+        return
+    report.add("## What the client said was stopping the player")
+    report.add()
+    for snap in sorted(with_stuck, key=lambda s: s.get("client_time", "")):
+        stuck = snap["stuck"]
+        report.add(f"### \"{snap.get('label', '')}\" at {snap.get('client_time', '?')} ({snap.get('character', '?')})")
+        report.add()
+        for label, key in (("Conditions", "conditions"), ("Character mode", "character_mode"),
+                           ("Animation lock (s)", "animation_lock"), ("Casting", "casting"), ("Queued", "queued"),
+                           ("Action sequence (used, handled)", "last_action_sequence"),
+                           ("Pending item moves", "pending_item_moves"), ("Statuses", "statuses")):
+            value = stuck.get(key)
+            if isinstance(value, list):
+                value = ", ".join(json.dumps(v) if isinstance(v, dict) else str(v) for v in value) or "none"
+            elif isinstance(value, dict):
+                value = json.dumps(value)
+            if key == "character_mode" and stuck.get("character_mode_param") is not None:
+                value = f"{value} ({stuck['character_mode_param']})"
+            report.add(f"* {label}: {value if value is not None else '-'}")
+        events = stuck.get("events") or []
+        if events:
+            report.add(f"* Refused actions and log messages (the last {min(len(events), 20)}):")
+            for event in events[-20:]:
+                report.add(f"  * `{event}`")
+        failed = {k: v for k, v in (stuck.get("hooks") or {}).items() if v != "ok"}
+        if failed:
+            report.add(f"* Hooks that failed (that part is missing): {failed}")
+        report.add()
 
 
 # --- Log ------------------------------------------------------------------------------------------------------------
@@ -253,6 +290,14 @@ def _captures(report: Report, bundle: Bundle, timeline_items: int, test: dict | 
             names[actor] = character.get("character", {}).get("name", str(actor))
     report.add(f"{len(files)} file(s), {len(packets)} packets from {clock(packets[0].t)} to {clock(packets[-1].t)} UTC.")
     report.add()
+    # The moments Bob marked in game (`!mark`, the world server's note lines starting with MARK.)
+    marks = [p for p in packets if p.dir == "note" and p.text.startswith("MARK")]
+    if marks:
+        report.add("**Marks** (`!mark` in game):")
+        report.add()
+        for mark in marks:
+            report.add(f"* {clock(mark.t)} UTC: {mark.text[len('MARK'):].strip()}")
+        report.add()
 
     by_actor: dict[int, list[capture.Packet]] = defaultdict(list)
     for packet in packets:

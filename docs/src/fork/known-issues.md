@@ -1208,6 +1208,14 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
 * Store items arrive as items; what they do when used depends on server support.
 * Packet captures (`data/captures`, one file per connection while capturing is on) have no limit; only Diagnostics'
   clear button removes them.
+* The battle replay (2.25.0) was checked in a test Kawari Web with an action index made from exported sheets (no Omen
+  sheet there, so every cone came out 90°), not yet on Bob's server with `kawari-questdump actions` from his own install.
+  Actors show by BNpcBase and level, not their names (no BNpcName list read from the game yet). A capture is read
+  from Kawari's decoded text, so a packet whose Debug text changes shape (a renamed field) silently drops out of it.
+* `!mark` and Kawari Probe 0.7.0's *why am I stuck* window are built and tested outside the game only (the Probe in CI,
+  `!mark`'s parsing in a test); neither has been used in game yet. The Probe's three hooks (UseAction,
+  ShowLogMessage, ShowLogMessageUInt) come from ClientStructs; a wrong one shows as failed in the window, the rest
+  still read.
 
 ## Achievements
 

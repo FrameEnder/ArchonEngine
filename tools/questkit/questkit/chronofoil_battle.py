@@ -86,7 +86,7 @@ def run_from_visit(capture: Capture, tables: dict, visit: Visit) -> dict:
         actors[actor] = entry
         hp[actor] = current
         target, = struct.unpack_from("<I", data, offset)
-        sample(t, actor, Hp=current, P=position, T=target if target != 0xE0000000 else 0)
+        sample(t, actor, Hp=current, P=position, R=entry["Rotation"], T=target if target != 0xE0000000 else 0)
 
     for position, segment in enumerate(capture.segments(protocols=("zone",))):
         if position < visit.first:
@@ -96,6 +96,15 @@ def run_from_visit(capture: Capture, tables: dict, visit: Visit) -> dict:
         name = names.name(segment)
         data, t, src = segment.data, segment.t, segment.src
         if segment.dir != "out":
+            # Where the player went and faced, as their client said (the server only echoes others' moves): rotation
+            # first, then the position at 8 (UpdatePositionHandler) or 12 (the Instance one, after the rotation it
+            # turns towards.)
+            moved_at = {"UpdatePositionHandler": 8, "UpdatePositionHandlerInstance": 12}.get(name)
+            if moved_at is not None and len(data) >= moved_at + 12:
+                rotation, = struct.unpack_from("<f", data, 0)
+                position = [round(v, 2) for v in struct.unpack_from("<fff", data, moved_at)]
+                sample(t, you or src, P=position, R=round(rotation, 3))
+                continue
             # When the client finishes a director's scene (a cutscene halfway through, the closing scene.)
             if name.startswith(("EventReturnHandler", "EventYieldHandler")) and len(data) >= 6:
                 handler, scene = struct.unpack_from("<IH", data, 0)
@@ -116,8 +125,9 @@ def run_from_visit(capture: Capture, tables: dict, visit: Visit) -> dict:
                 if gone in actors:
                     actors[gone]["LastSeen"] = at(t)
             elif name == "ActorMove" and len(data) >= 12:
+                rotation, = struct.unpack_from("<H", data, 0)
                 x, y, z = struct.unpack_from("<HHH", data, 6)
-                sample(t, src, P=[_packed(x), _packed(y), _packed(z)])
+                sample(t, src, P=[_packed(x), _packed(y), _packed(z)], R=_rotation(rotation))
             elif name == "ActorSetPos" and len(data) >= 20:
                 sample(t, src, P=[round(v, 2) for v in struct.unpack_from("<fff", data, 8)])
             elif name == "UpdateHpMpTp" and len(data) >= 4:

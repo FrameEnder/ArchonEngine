@@ -12,7 +12,7 @@ how they depend on the fork. Code: `kawari_core/` (logic, no Flask) and `kawari_
 | `world.db` | read; writes only for logged-out characters (and `mail`, and the `marketboard_*` settings) | profiles, Progress, Quest Lab character setup, Shop gil and delivery, Marketboard prices |
 | `config.yaml` | read/write | Dashboard config editor, Diagnostics toggling `world.packet_capture` |
 | The active server image | runs throwaway containers | `kawari-questdump` (Quest Lab, Progress index, Shop item list) |
-| `<data>/quest-dumps/` | written by questdump | `quest-index.json`, `item-index.json`, `marketboard-categories.json`, `class-index.json`, per-quest dumps |
+| `<data>/quest-dumps/` | written by questdump | `quest-index.json`, `item-index.json`, `marketboard-categories.json`, `class-index.json`, `action-index.json`, per-quest dumps |
 | `<data>/data/glamours.txt` | read/write | Bot glamours (the party bots' list; the server reads it from `/kawari/data`) |
 | `<data>/captures/` | read | Diagnostics bundles |
 | The web app's own SQLite db | read/write | feed, notifications, settings, shop tables |
@@ -24,7 +24,7 @@ over the database, so direct edits only happen while the character is logged out
 
 Home, How to Connect, Feed (called Community in the top bar from 2.19.0) and profiles (character tile boards, private by default), Notifications, Settings,
 **Shop**, and the admin **Dashboard**: server control, config editor, database health/migrations, backups, accounts,
-Auracite import/inspect/export (extended backups from 2.22.0), branding, Quest Lab, Progress, Marketboard, Bot glamours (2.21.0), Diagnostics, Updates (which fork/forge/commit the server is
+Auracite import/inspect/export (extended backups from 2.22.0), branding, Quest Lab, Progress, Marketboard, Bot glamours (2.21.0), Diagnostics, Battle replay (2.25.0), Updates (which fork/forge/commit the server is
 built from), container logs.
 
 ## Auracite backups (2.22.0)
@@ -330,7 +330,52 @@ address (an optional host permission), which also spares the API any CORS header
 (no token 401, a non-admin's 403, a list written with its backup) and with the extension in Chromium against a test
 server (connect, the dropdown from the class list, send, load).
 
+## Battle replay (Dashboard → Battle replay, 2.25.0)
+
+A retail fight and a Kawari one side by side on a top-down map, on one clock (`kawari_web/replay.py`,
+`kawari_core/battle_replay.py`, `templates/dashboard/replay.html`). Made so a fight that goes wrong on Kawari can be
+*seen* next to retail's instead of read out of two packet listings: where everyone stood and faced, each cast's area as
+the client draws it, who hit whom for how much, knockbacks, deaths and the player's `!mark`s.
+
+* **Sources**: either side is a battle run (Kawari Recorder's, from Diagnostics' battles, or one uploaded here: `questkit
+  chronofoil --battle N.V --out run.json.gz` makes one from a Chronofoil capture; kept in `<web>/diag/replay-uploads`,
+  the newest 100, numbers only) or one zone visit of a Kawari packet capture (`<data>/captures/*.jsonl`, cut at each
+  ZoneInit; the visit with the most hits is picked first). Two retail runs or two Kawari tries can be compared too.
+  `?a=<source>&b=<source>` in the address picks them (`upload:<file>`, `battle:<file>`, `capture:<file>:<visit>`),
+  so a comparison can be linked.
+* **Reading a capture**: from Kawari's `decoded` text, packet by packet: SpawnNpc/SpawnPlayer (kind, BNpcBase, BNpcName,
+  layout, battalion, level, HP, position, facing), ActorMove and ActorSetPos, the player's own UpdatePositionHandler(
+  Instance), HP from UpdateHpMpTp and EffectResult(Basic) (the packet's own actor's), ActorCast (action, target, cast
+  time, where and which way), CancelCast, ActionEffect1/AoeEffectN (each target's damage, heal, miss and Knockback
+  row), Kill, DeleteActor, DirectorVars (the director's sequence) and the `!mark` notes. A battle run is read from its
+  Actors, Samples (`P`, `R`, `Hp`), Actions (effect kinds 3/5/6 damage, 4 heal, 1 miss, 31 knockback) and Events
+  (casts from their text). One replay format for both (format 1, described in `battle_replay.py`).
+* **Areas**: from `action-index.json` (*Read the action list from the game*, `kawari-questdump actions`), shaped as the
+  world server's `ActionInfo::area_shape` (CastType 2/5/7 circles, 3/13 cones with the omen's `fanNNN` angle, 4/8/12
+  lines and rectangles EffectRange long and XAxisModifier wide, 10 donuts with the omen's `sircle_AABB` hole, 11
+  crosses), drawn at the caster (its position at the cast's start, its cast's facing), its target (followed until the
+  cast ends) or the spot aimed at (CastType 7), filling as the cast goes, gone when it ends or is cancelled. An instant
+  area (no cast before it) flashes at its source as it hits. Without the index, casts are dots with their action IDs.
+* **Hits**: a line from the source to each target, red for damage, green for heals, with the amount; a knockback is an
+  arrow away from the source, the Knockback row's distance long.
+* **The clock**: play (¼× to 8×), the scrubber, arrow keys (shift: 5 s), space. Each side has its own 0 s ("This side's
+  0 s is its N s"), set by hand or to its first hostile hit or first cast, so retail's and Kawari's fights line up
+  however long the zone-in took. Under each map, a strip of that side's casts, hits, deaths, director steps and marks
+  (click to jump), and a log of everything within 12 s, the moment's rows highlighted (click one to go to it).
+* **The map**: framed on where the hits happened (*Frame everyone* for every position seen), one view for both sides
+  when they're the same zone (*Same map*), drag to pan, wheel to zoom, a 5-yalm grid (25 at a distance). Hovering an
+  actor shows its kind, BNpcBase, layout, BNpcName ID, battalion, HP and position. Sides are from battalions: yours and
+  your battalion's are allies, every other battalion an enemy (Lominsan Way's 1771 is battalion 5, hostile to both).
+* Actors show by numbers (BNpcBase and level), since there's no BNpcName list read from the game yet; the actions are
+  named.
+* Checked against Bob's bundle 20261104-204423 (The Lominsan Way's quest battle: Rive's line at the player, the hit and
+  its knockback) and the retail run of Ul'dah's Most Wanted (Chronofoil a763f0a0), in a test Kawari Web with an action
+  index built from exported sheets; not yet on Bob's server with its own game install.
+
 ## Diagnostics (Dashboard → Diagnostics)
+
+**Marks** (2.25.0): the bundle's README lists every `!mark` in its captures (time, file, line, what was seen), under the
+packet captures ([Recorder and diagnostics](recorder-and-diagnostics.md#mark)).
 
 **The quest summary** (2.24.1): `characters.json`'s `quest_summary.completed_ids` reads the completed quests in the
 server's bit order (quest N is bit `0x80 >> (N % 8)` of byte `N // 8`, the world server's

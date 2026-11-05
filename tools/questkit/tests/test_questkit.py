@@ -351,6 +351,8 @@ class CaptureTools(unittest.TestCase):
             packet(base + 50, "out", "EventScene2", f"EventScene2(EventScene {{ {handler('')}, scene: 5 }})"),
             packet(base + 60, "in", "Unknown", "Unknown { unk: [] }", bytes(72)),
         ]
+        lines.append({"t": int((base + 61) * 1000), "dir": "note",
+                      "text": "MARK the boss went the other way | zone 148 at (1.00, 2.00, 3.00) facing 0.000 | quests none"})
         captures = self.dir / "bundle" / "captures"
         captures.mkdir(parents=True)
         with gzip.open(captures / "zone-1-ClientId1.jsonl.gz", "wt") as out:
@@ -367,6 +369,12 @@ class CaptureTools(unittest.TestCase):
         (snapshots / "a.json").write_text(json.dumps({"character": "Tester", "client_time": "x", "conditions": [],
                                                       "quests": [{"id": QUEST, "sequence": 2,
                                                                   "variables_hex": "010000000000"}]}))
+        (snapshots / "b.json").write_text(json.dumps({"character": "Tester", "client_time": "w", "label": "stuck: frozen",
+                                                      "quests": [], "stuck": {
+                                                          "conditions": ["Casting"], "animation_lock": 0.5,
+                                                          "pending_item_moves": [],
+                                                          "events": ["12:00:00.000 LogMessage 572"],
+                                                          "hooks": {"actions refused": "ok", "log messages": "failed: x"}}}))
         (bundle / "server.log").write_text(
             "2026-10-14T20:01:00.000000Z  WARN kawari_world::server: Unknown Zone packet Unknown(856) recieved\n"
             "2026-10-14T20:01:01.000000Z ERROR kawari_world: Error while calling onTalk: attempt to index nil\n")
@@ -386,6 +394,11 @@ class CaptureTools(unittest.TestCase):
         self.assertIn("quest 9999, started", report)  # the event left open
         self.assertIn("opcode 0 (72 bytes, the size of EventReturnHandler16", report)
         self.assertIn("Lua errors", report)
+        self.assertIn("**Marks**", report)
+        self.assertIn("the boss went the other way | zone 148", report)
+        self.assertIn("What the client said was stopping the player", report)
+        self.assertIn("`12:00:00.000 LogMessage 572`", report)
+        self.assertIn("Hooks that failed", report)
 
     def test_compare(self):
         packets = self.bundle.packets()
