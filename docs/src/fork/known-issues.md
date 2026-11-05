@@ -148,6 +148,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
+* **850, 855 and 856** (2026-11-05, from Bob's dumps and three runs each, Chronofoil d65126c9, b4ce5e3f and 811eb9ff):
+  untested in game. In the Company of Heroes has a line for everyone in every sequence, but retail was only seen
+  playing the quest's own scenes: the rest are numbered as the client's IsAcceptEvent orders its targets (which fits
+  every scene the client has), and the feasting tables' scenes are empty, so a wrong number there shows as nothing
+  happening. As You Wish's destinations are put out by the client itself (no SpawnObject), as Battle Scars' palm wines.
+  It Was a Very Good Year's enemy (base 1910) has a timeline from three fights; its hitbox isn't recorded.
 * **The six quests after Brayflox's Longstop in Eastern La Noscea (3866, 840, 843, 845, 846, 848)** (2026-11-05, from
   Bob's dumps and three runs each, Chronofoil b766138c, 811b6f1b and 62c1dfe4): untested in game. Battle Scars' palm
   wines (layouts 4293291-4293293) are put out by the client itself on retail (no SpawnObject in any run); the server

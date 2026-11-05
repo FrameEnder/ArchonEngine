@@ -1,0 +1,137 @@
+{
+  "quest": 855,
+  "script": "GaiUsb314_00855",
+  "source": "Chronofoil capture 811eb9ff (2026-11-05, a White Mage); scenes and effects from Bob's Chronofoil capture of 2026-11-05",
+  "params": {
+    "ACTOR0": 1006676,
+    "ACTOR1": 1006314,
+    "ACTOR2": 1006313,
+    "ACTOR3": 1006315,
+    "ACTOR4": 1006316,
+    "ACTOR5": 1006317,
+    "ACTOR6": 1006318,
+    "ACTOR7": 1006319,
+    "EOBJECT0": 2002075,
+    "EVENT_ACTION_SEARCH": 1,
+    "EOBJECT1": 2002076,
+    "EOBJECT2": 2002077,
+    "EOBJECT3": 2002078,
+    "EOBJECT4": 2002079,
+    "EOBJECT5": 2002080,
+    "EOBJECT6": 2002081,
+    "EOBJECT7": 2002082,
+    "EOBJECT8": 2002598,
+    "ACTOR8": 1006266,
+    "CUT_SCENE_01": 369,
+    "BGM_LVUP": 23,
+    "LOC_ACTOR1": 1006272,
+    "LOC_ACTION0": 788,
+    "LOC_ACTION1": 1016,
+    "LOC_ACTION2": 683,
+    "LOC_POS_ACTOR0": 4374246,
+    "LOC_POS_ACTOR1": 4258358,
+    "LOC_POS_EOBJ1": 4373897,
+    "LOC_POS_CAM1": 4374251,
+    "LOC_EOBJ1": 2002687,
+    "QST_ACCEPT_CHECK": 66390,
+    "LOC_ACTOR100": 1007014,
+    "EOBJ_RM284534": 2015153
+  },
+  "steps": [
+    {
+      "talk": 1006676,
+      "layout": 4258769,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 2, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1006314,
+      "layout": 4258484,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 2002598,
+      "layout": 4331560,
+      "what": "EOBJECT8",
+      "scenes": [
+        {"scene": 26, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 27, "flags": "0xf8406ef3", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1006319,
+      "layout": 4258525,
+      "what": "ACTOR7",
+      "scenes": [
+        {"scene": 59, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 60, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "100001000800", "notices": [[2, [1, 5]]]}
+    },
+    {
+      "talk": 1006318,
+      "layout": 4258524,
+      "what": "ACTOR6",
+      "scenes": [
+        {"scene": 57, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "200011001800", "notices": [[2, [2, 5]]]}
+    },
+    {
+      "talk": 1006317,
+      "layout": 4258521,
+      "what": "ACTOR5",
+      "scenes": [
+        {"scene": 53, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "301011005800", "notices": [[2, [3, 5]]]}
+    },
+    {
+      "talk": 1006316,
+      "layout": 4258500,
+      "what": "ACTOR4",
+      "scenes": [
+        {"scene": 55, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "401111007800", "notices": [[2, [4, 5]]]}
+    },
+    {
+      "talk": 1006266,
+      "layout": 4258355,
+      "what": "ACTOR8",
+      "scenes": [
+        {"scene": 51, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 52, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[2, [5, 5]]]}
+    },
+    {
+      "talk": 1006676,
+      "layout": 4258769,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 75, "flags": "0xf8402efb", "results": [0, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 255, "vars": "110000000000", "notices": []}
+    },
+    {
+      "talk": 1006676,
+      "layout": 4258769,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 75, "flags": "0xf8402efb", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 50
+        },
+        "575": {
+            "players": 64
+        },
+        "579": {
+            "players": 82.5
+        }
+    },
+    "timepoints": [
+        {
+            "time": 6.5,
+            "every": 18.0,
+            "data": {
+                "type": "action",
+                "action_id": 579,
+                "target": "target"
+            },
+            "comment": "2.2 s cast round itself: started 6.4, 14.0 and 7.4 s after it came out, the next 17.6-24.5 s later (three fights)"
+        },
+        {
+            "time": 7.5,
+            "every": 17.6,
+            "data": {
+                "type": "action",
+                "action_id": 575,
+                "target": "target"
+            },
+            "comment": "a hit between auto-attacks, 7.6-16.2 s after it came out, the next 8.4-17.7 s later"
+        }
+    ],
+    "animation_locks": {
+        "579": 2.1
+    },
+    "timeline_always_plays": false,
+    "comment": "It Was a Very Good Year's (850) enemy (BNpcBase 1910, BNpcName 2002, layout 4293297, layer QB_GaiUsb309_001): level 33, 1582 HP; auto-attack 870 every 3.03 s, 579 and 575 about every 18 s, from its pull (`from_pull`). From Bob's Chronofoil captures d65126c9, b4ce5e3f and 811eb9ff (2026-11-05: an Arcanist, a Gladiator and a White Mage, one fight each), `questkit chronofoil --battle 0.0`, `1.0` and `2.0`: `players` is the median damage to the player across the three (the Gladiator took 28-36 from 870, the others 49-54). Hitbox not recorded."
+}
