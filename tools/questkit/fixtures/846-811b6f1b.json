@@ -1,0 +1,47 @@
+{
+  "quest": 846,
+  "script": "GaiUsb305_00846",
+  "source": "Chronofoil capture 811b6f1b (2026-11-05, an Arcanist); scenes and effects from Bob's Chronofoil capture of 2026-11-05",
+  "params": {"ACTOR0": 1006312, "ENEMY0": 136},
+  "steps": [
+    {
+      "talk": 1006312,
+      "layout": 4258297,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [136, 3967276],
+      "expect": {"sequence": 1, "vars": "010000000000", "notices": [[0, [1, 5]]]}
+    },
+    {
+      "kill": [136, 3967275],
+      "expect": {"sequence": 1, "vars": "020000000000", "notices": [[0, [2, 5]]]}
+    },
+    {
+      "kill": [136, 3967272],
+      "expect": {"sequence": 1, "vars": "030000000000", "notices": [[0, [3, 5]]]}
+    },
+    {
+      "kill": [136, 3967271],
+      "expect": {"sequence": 1, "vars": "040000000000", "notices": [[0, [4, 5]]]}
+    },
+    {
+      "kill": [136, 3967268],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, [5, 5]]]}
+    },
+    {
+      "talk": 1006312,
+      "layout": 4258297,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

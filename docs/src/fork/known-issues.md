@@ -148,6 +148,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
+* **The six quests after Brayflox's Longstop in Eastern La Noscea (3866, 840, 843, 845, 846, 848)** (2026-11-05, from
+  Bob's dumps and three runs each, Chronofoil b766138c, 811b6f1b and 62c1dfe4): untested in game. Battle Scars' palm
+  wines (layouts 4293291-4293293) are put out by the client itself on retail (no SpawnObject in any run); the server
+  maps them to EOBJECT0-2 from the zone's layout, which replay can't check. That Weight counts any tainted water
+  sprite the player kills; whether retail counts one killed by a party member wasn't seen (Bob was alone).
 * **Ul'dah's Most Wanted (261) and its quest battle 19** (2026-11-05, from Bob's dumps and Chronofoil capture
   a763f0a0): untested in game, from one run. The second wave after the second of three thugs is down, and the 2 s
   the director waits on a death, fit that run; the quest's thugs' Feint gave Slow (status 9) on retail, which Kawari's

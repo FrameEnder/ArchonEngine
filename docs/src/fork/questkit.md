@@ -126,13 +126,16 @@ prints them): StartTalkEvent, EventStart, the scenes and the client's answers (E
 EventYieldHandler), notices, AcceptQuest/UpdateQuest/FinishQuest, EventFinish, and while the quest's event is open
 (or within a second after it), PrepareZoning and the ActorControlSelf LearnTeleport (509) and ToggleUnlock (41). Each
 talk or zone-entry event becomes a step; a quest change outside any event is a quest battle won (in TERRITORYTYPE0) or
-a kill. Talks that change nothing are steps too (agreeing to a quest battle); a progress bar broken off (a scene the
+a kill. A kill is named from the capture itself since 2026-11-05: the battle NPC (its BNpcBase and layout ID, from its
+SpawnNpc) whose ActorControl Defeated came at most 0.5 s before the change (`KILL_WINDOW`; retail sends them together).
+Before, kills came only from an existing fixture, matched by state, so a second run's fixture made over the first one's
+(`--force`) got the first run's sprites: That Weight's three runs each killed a different five. Talks that change nothing are steps too (agreeing to a quest battle); a progress bar broken off (a scene the
 client never answered) isn't, since nothing happened. The talked-to actor is the layout ID of an event NPC or object;
 its base ID comes from the server's SpawnObject packets, the Recorder export's NPC list (`--recording`, optional),
 the dumps (`--dumps`: a todo's locations are the layout IDs of who it's done with, and the listeners whose
 `despawn_sequence` is the todo's index are their base IDs, taken when there are as many of each; since 2026-10-30,
 `fixtures.dump_layout_bases`. It can miss: Brotherly Love's todo 2 is at 4309068, but retail's Claxio was talked to at
-3853930) or the existing fixture, which also gives what the capture can't (kills, `spawns`) by matching the state each step left
+3853930) or the existing fixture, which also gives what the capture can't (`spawns`, and kills it can't name) by matching the state each step left
 the quest in. Unlocks in the step that completes a quest are left out: those are the Quest sheet's, sent by the
 server's `finish_quest`. Without a dump, the existing fixture's parameters are used.
 

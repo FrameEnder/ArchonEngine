@@ -1,0 +1,28 @@
+{
+  "quest": 3866,
+  "script": "XxaUsb208_03866",
+  "source": "Chronofoil capture 62c1dfe4 (2026-11-05, a White Mage); scenes and effects from Bob's Chronofoil capture of 2026-11-05",
+  "params": {"ACTOR0": 1006266, "ITEM0": 2003011, "ACTOR1": 1006305, "QST_ACCEPT_CHECK": 66375},
+  "steps": [
+    {
+      "talk": 1006266,
+      "layout": 4258355,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001000000000", "notices": []}
+    },
+    {
+      "talk": 1006305,
+      "layout": 4258062,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 3, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

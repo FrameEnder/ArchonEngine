@@ -1,0 +1,67 @@
+{
+  "quest": 848,
+  "script": "GaiUsb307_00848",
+  "source": "Chronofoil capture 811b6f1b (2026-11-05, an Arcanist); scenes and effects from Bob's Chronofoil capture of 2026-11-05",
+  "params": {
+    "ACTOR0": 1006312,
+    "EOBJECT0": 2002059,
+    "EVENT_ACTION_SEARCH": 1,
+    "ITEM0": 2000657,
+    "EOBJECT1": 2002060,
+    "EOBJECT2": 2002061,
+    "ACTOR1": 1006305,
+    "QST_ACCEPT_CHECK": 66383
+  },
+  "steps": [
+    {
+      "talk": 1006312,
+      "layout": 4258297,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 2002059,
+      "layout": 4293291,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 3, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "110010000080", "notices": [[0, [1, 3, 25315]]]}
+    },
+    {
+      "talk": 2002060,
+      "layout": 4293292,
+      "what": "EOBJECT1",
+      "scenes": [
+        {"scene": 4, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 5, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "2110200000c0", "notices": [[0, [2, 3, 25315]]]}
+    },
+    {
+      "talk": 2002061,
+      "layout": 4293293,
+      "what": "EOBJECT2",
+      "scenes": [
+        {"scene": 6, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 7, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "003000000000", "notices": [[0, [3, 3, 25315]]]}
+    },
+    {
+      "talk": 1006305,
+      "layout": 4258062,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 8, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 9, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

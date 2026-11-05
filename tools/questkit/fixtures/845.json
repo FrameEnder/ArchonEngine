@@ -1,0 +1,37 @@
+{
+  "quest": 845,
+  "script": "GaiUsb304_00845",
+  "source": "Chronofoil capture b766138c (2026-11-05, a Gladiator); scenes and effects from Bob's Chronofoil capture of 2026-11-05",
+  "params": {"ACTOR0": 1006305, "ITEM0": 2000655, "ACTOR1": 1006311, "ACTOR2": 1006312},
+  "steps": [
+    {
+      "talk": 1006305,
+      "layout": 4258062,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []}
+    },
+    {
+      "talk": 1006311,
+      "layout": 4258237,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1006312,
+      "layout": 4258297,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 4, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

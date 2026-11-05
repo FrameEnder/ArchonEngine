@@ -390,6 +390,9 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
                 loose.clear()
                 if battle_zone is not None and event.zone == battle_zone:
                     new = {"battle_won": state.get("sequence"), **new}
+                elif event.data.get("killed"):
+                    # The capture says who died just before (chronofoil_quest.quest_events.)
+                    new = {"kill": event.data["killed"], **new}
                 else:
                     new = {"todo": f"changed in territory {event.zone} outside an event (a kill?)", **new}
                 steps.append(new)

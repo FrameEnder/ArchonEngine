@@ -40,6 +40,11 @@ UNLOCK_INSTANCE_CONTENT = 131  # a duty unlocked (InstanceContent), e.g. Sastash
 # A zone change this soon after the quest's event finished still belongs to it (joining a quest battle: EventFinish,
 # then PrepareZoning 0.1 s later.)
 AFTER_FINISH = 1.0
+# A quest change this soon after a battle NPC's death is that kill's (retail sends the update with the death's
+# ActorControl Defeated, the same moment: Bob's Chronofoil captures of 2026-11-05, That Weight's five sprites.)
+KILL_WINDOW = 0.5
+DEFEATED = 6  # ActorControl category
+SPAWN_NPC_COMMON = 16  # SpawnNpc's own fields before CommonSpawn (BNpcBase, BNpcName, layout ID at + 48)
 
 
 @dataclass
@@ -65,6 +70,8 @@ def quest_events(captures, tables: dict, quests=None) -> dict[int, list[Event]]:
         zone = None
         open_events: list[int] = []  # quest handlers with an open event, newest last
         finished: dict[int, float] = {}  # handler -> when its event last finished
+        battle_npcs: dict[int, tuple[int, int]] = {}  # actor -> (BNpcBase, layout ID), from its SpawnNpc
+        last_death: tuple[float, int, int] | None = None  # (when, base, layout) of the latest battle NPC's death
 
         def add(handler: int, t: float, kind: str, **data):
             if handler < QUEST_HANDLER_BASE or handler >= QUEST_HANDLER_BASE + 0x10000:
@@ -119,8 +126,19 @@ def quest_events(captures, tables: dict, quests=None) -> dict[int, list[Event]]:
                 elif name == "FinishQuest":
                     add(QUEST_HANDLER_BASE + struct.unpack_from("<H", d, 0)[0], t, "finish_quest")
                 elif name == "UpdateQuest":
+                    extra = {}
+                    # Changed by a kill: the battle NPC that died just before (an open-world monster counted by its
+                    # BNpcBase, or one the quest spawned.)
+                    if last_death is not None and 0 <= t - last_death[0] <= KILL_WINDOW:
+                        extra["killed"] = [last_death[1], last_death[2]]
                     add(QUEST_HANDLER_BASE + struct.unpack_from("<H", d, 4)[0], t, "update", sequence=d[6],
-                        vars=d[14:20].hex())
+                        vars=d[14:20].hex(), **extra)
+                elif name == "SpawnNpc" and segment.dir == "out" and len(d) >= SPAWN_NPC_COMMON + 60:
+                    base, _name, layout = struct.unpack_from("<III", d, SPAWN_NPC_COMMON + 48)
+                    battle_npcs[segment.src] = (base, layout)
+                elif name in ("ActorControl", "ActorControlSelf") and segment.dir == "out" and len(d) >= 2 \
+                        and struct.unpack_from("<H", d, 0)[0] == DEFEATED and segment.src in battle_npcs:
+                    last_death = (t, *battle_npcs[segment.src])
                 elif name == "EventFinish":
                     handler = struct.unpack_from("<I", d, 0)[0]
                     add(handler, t, "finish")
