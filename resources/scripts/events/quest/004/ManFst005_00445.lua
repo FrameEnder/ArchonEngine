@@ -1,6 +1,8 @@
 -- Quest: Chasing Shadows (Gridania)
 --
--- Checked against the client's quest script (kawari-questdump):
+-- Checked against the client's quest script (kawari-questdump) and retail: Kawari Recorder exports (2026.09.15-
+-- 2026.10.06, a fresh character from the opening to quest 387) and Bob's Chronofoil captures (notices 2026.10.06,
+-- scenes and effects 2026-10-14 to 2026-10-16, the quest battle): its fixture is tools/questkit/fixtures/445.json.
 -- Sequence 0:   ACTOR0 offers the quest (scene 0, returns 1 when accepted), then explains it in a cutscene (scene 1.)
 -- Sequence 1:   examine the magicked blade, EOBJECT0 (scene 2, then EVENT_ACTION_PROCESS_SHOR), and agree to enter the
 --               quest battle (scene 3, YesNoQuestBattle returns 1.) Its todo is checked by UI8AL.

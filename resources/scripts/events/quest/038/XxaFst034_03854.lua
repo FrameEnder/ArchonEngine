@@ -1,6 +1,8 @@
 -- Quest: Eggs over Queasy (Gridania)
 --
--- Checked against the client's quest script (kawari-questdump):
+-- Checked against the client's quest script (kawari-questdump) and retail: Kawari Recorder exports (2026.09.15-
+-- 2026.10.06, a fresh character from the opening to quest 387) and Bob's Chronofoil captures (notices 2026.10.06,
+-- scenes and effects 2026-10-14 to 2026-10-16): its fixture is tools/questkit/fixtures/3854.json.
 -- Sequence 0:   ACTOR0 offers the quest (scene 0, returns 1 when accepted), then explains it (scene 1.)
 -- Sequence 1:   defeat ENEMY0 to collect three of ITEM0. The client counts ITEM0 in UI8BH, both for the journal's
 --               todo (it's done at 3) and for the items you hold. Each egg sends notice 0 [count, 3, icon].

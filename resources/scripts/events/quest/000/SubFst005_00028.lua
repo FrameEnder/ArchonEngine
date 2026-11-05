@@ -1,6 +1,8 @@
 -- Quest: To the Bannock (Gridania)
 --
--- Checked against the client's quest script (kawari-questdump):
+-- Checked against the client's quest script (kawari-questdump) and retail: Kawari Recorder exports (2026.09.15-
+-- 2026.10.06, a fresh character from the opening to quest 387) and Bob's Chronofoil captures (notices 2026.10.06,
+-- scenes and effects 2026-10-14 to 2026-10-16): its fixture is tools/questkit/fixtures/28.json.
 -- Sequence 0:   ACTOR0 offers the quest (scene 0), which returns 1 when it's accepted.
 -- Sequence 255: report to ACTOR1 at the Bannock (scene 1) to finish. It returns 1 and the reward you picked
 --               (an item id). No variables or items are used.

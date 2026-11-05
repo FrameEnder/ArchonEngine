@@ -265,8 +265,13 @@ from a pattern, found nothing). The button is off until the active build's binar
 
 Every quest from A Realm Reborn to Dawntrail from the quest index (format 2), Main Scenario when in ScenarioTree,
 side quests by journal section. **Implemented** = the active build has
-`resources/scripts/events/quest/<id/100>/<script>.lua`; **verified** = its header says it was checked against a retail
-recording. Totals per expansion and a filterable list linking to Quest Lab.
+`resources/scripts/events/quest/<id/100>/<script>.lua`; **verified** = its header says it was checked against retail
+(`kawari_core/progress.py`'s `header_status`): a "checked/verified … against …" sentence, however many comment lines it
+runs over, naming a capture, a recording or a Kawari Recorder export, or the older "recording"/"recorded on retail";
+"unverified" anywhere in the header makes it Implemented. Before 2.24.2 only the word "recording" counted, and the
+fork's headers say "Chronofoil capture": 21 of the 178 quest scripts showed as verified, 176 do now (39, never checked,
+and 3018, whose capture has only its offer, don't). The build has only `resources/`, so the questkit fixtures can't be
+the test. Totals per expansion and a filterable list linking to Quest Lab.
 
 **Misc Content** (2.17.0, `kawari_core/content_progress.py`, the second tab): every duty and open-world zone from
 `content-index.json` (`kawari-questdump content`, built from the tab), per expansion. Dungeons, Trials, Raids,

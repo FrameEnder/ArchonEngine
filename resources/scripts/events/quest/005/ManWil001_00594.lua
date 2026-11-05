@@ -1,5 +1,9 @@
 -- Quest: Coming to Ul'dah
 -- NOTE: These openings are so similar, ensure changes are synced between all of them!
+--
+-- Checked against the client's quest script (kawari-questdump) and retail: a Kawari Recorder export (2026-10-17, a
+-- fresh Ul'dah character) and Bob's Chronofoil captures of the same session (2026-10-17, re-checked 2026-10-18): its
+-- fixture is tools/questkit/fixtures/594.json.
 
 -- scene 0: show quest prompt
 -- scene 3: decline

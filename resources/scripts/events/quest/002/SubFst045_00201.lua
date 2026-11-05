@@ -1,6 +1,8 @@
 -- Quest: Passing Muster (Gridania)
 --
--- Checked against the client's quest script (kawari-questdump):
+-- Checked against the client's quest script (kawari-questdump) and retail: Kawari Recorder exports (2026.09.15-
+-- 2026.10.06, a fresh character from the opening to quest 387) and Bob's Chronofoil captures (notices 2026.10.06,
+-- scenes and effects 2026-10-14 to 2026-10-16): its fixture is tools/questkit/fixtures/201.json.
 -- Sequence 0:   ACTOR0 offers the quest (scene 0), which returns 1 when it's accepted.
 -- Sequence 255: talk to ACTOR0 again (scene 1). The client checks your head, body, hands, legs and feet are all
 --               item level 5 or above itself. If they are it shows the reward window and returns 1 and the reward

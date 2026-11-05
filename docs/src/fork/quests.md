@@ -310,8 +310,10 @@ function onYield(scene, id, results, player) sceneFinished(scene, results, playe
 function onReturn(scene, results, player) sceneFinished(scene, results, player) end
 ```
 
-Rules: the header's "Checked against…" line says what it was verified with (Kawari Web's progress page counts a quest
-as *verified* when it mentions a recording); scene numbers come from the client's script (Sapphire's when the client's
+Rules: the header's "Checked against…" sentence says what it was verified with, and is brought up to date when a
+quest is checked against a capture after it was written (Kawari Web's progress page counts a quest as *verified* when
+that sentence names a Chronofoil capture, a Kawari Recorder export or a recording, since 2.24.2, and not when the
+header says "unverified"); scene numbers come from the client's script (Sapphire's when the client's
 doesn't name them); variables and notices come from the recording; scene flags and anything else the server does
 (zone changes, unlocks) from a Chronofoil capture, which the fixture holds and replay checks; everything else (names,
 text) from game data.

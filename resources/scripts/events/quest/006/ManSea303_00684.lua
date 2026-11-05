@@ -1,7 +1,8 @@
 -- Quest: Till Sea Swallows All (main scenario)
 --
--- Written from the client's quest script (kawari-questdump, 2026-10-28) and the other two
--- companies' retail runs: none of this one has been recorded yet.
+-- Written from the client's quest script (kawari-questdump, 2026-10-28) and the other two companies' retail runs, and
+-- checked against Bob's Chronofoil capture cc62ad94 (2026-10-28, an arcanist): its fixture is
+-- tools/questkit/fixtures/684.json.
 -- The three companies' first steps (683 the Twin Adders', 684 the Maelstrom's, 685 the Immortal Flames') are the same
 -- script with each company's people and ORDER_OF_*; they enlist the player.
 -- Sequence 0:   ACTOR0 (the storm personnel officer, in Limsa Lominsa) offers it (scene 0, a yield returning 1 when
