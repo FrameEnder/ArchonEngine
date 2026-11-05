@@ -15,6 +15,23 @@ and slidecasting was impossible. Anything that must happen "when the bar ends" b
 (`QueuedTaskData` in `server/instance.rs`), not in the logic tick. Things measured in logic ticks (director scripts
 counting "updates", auto-attack timers) are half-second steps.
 
+### The world's turn (2026-11-05)
+
+The ticks run in their own task, beside the one that handles the clients' messages (`server_main_loop`'s message
+loop), and both lock the world's mutexes (`data`, `network`, `game_data`, `lua`) in no fixed order: the logic tick takes
+`data` then `network`, about 45 message handlers `network` then `data`. A message handled just as the tick started could
+leave each task holding the lock the other wanted, for good: Bob's bundle 20261105-160751, an idle character's pose
+change (ClientTrigger ReapplyPose) at 15:22:30.337 and the tick due at .338. From then on nothing in the world moved
+(the last ActorMove and rested EXP went out at 15:22:29-.84), nobody could log in (their zone connection opened, the
+capture started, and the world never answered: no "New zone client" in the log), and nothing was logged; the zone
+connection still answered pings from its own task, so the client only gave up 20 minutes later.
+
+Each task now takes the **world's turn** (`server/world_turn.rs`) for a whole step, a message or a tick with its queued
+tasks, so they never hold the world's locks at the same time, whatever order a step takes them in (neither step awaits
+while it holds the turn). A step that holds it more than 15 s is logged by a watchdog thread as an error ("The world
+server is stuck: the tick has held it for N s (since HH:MM:SS UTC)"), with a warning when it ends: a world that
+stops is no longer silent.
+
 ## Casting
 
 * An action with a cast time queues a `CastAction` task at `now + adjusted cast time` (upstream's adjusted cast times,

@@ -1201,6 +1201,14 @@ See [Grand Companies](grand-company.md). Untested in game (2026-10-29).
 Duty completion isn't saved per player; housing doesn't persist
 furniture; market board, trade, retainers, blacklist and fellowships are placeholders. See `FORK_ROADMAP.md`.
 
+## The world server's two tasks (2026-11-05)
+
+* The message loop and the tick no longer deadlock ([Timing](timing.md#the-worlds-turn-2026-11-05)), but the locks
+  inside a step are still taken in either order (`data` then `network` in about 75 places, the other way in about 45);
+  that's only safe while those two tasks are the only ones that take them, each holding the turn. A new task that
+  touches the world must take the turn too. A step that never ends (a loop that doesn't finish) still stops the world:
+  the watchdog only logs it.
+
 ## Kawari Web
 
 * Gil purchases only work while the character is logged out (by design, see [Saving](saving.md)).

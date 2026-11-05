@@ -118,6 +118,7 @@ mod social;
 mod spawn_allocator;
 mod status_floor;
 mod wipe;
+mod world_turn;
 mod zone;
 
 #[derive(Default, Debug, Clone)]
@@ -1583,6 +1584,10 @@ pub async fn server_main_loop(
     }));
     let game_data = Arc::new(Mutex::new(game_data));
     let lua = Arc::new(Mutex::new(KawariLua::new()));
+    // The message loop and the tick each hold the world's turn for a whole step, so they never deadlock over the
+    // order they take the locks above in (`world_turn`); the watchdog logs a step that never ends.
+    let turn = world_turn::WorldTurn::default();
+    turn.watch();
 
     // Run Init.lua and set up other Lua state
     {
@@ -1597,6 +1602,7 @@ pub async fn server_main_loop(
         let network = network.clone();
         let game_data = game_data.clone();
         let lua = lua.clone();
+        let turn = turn.clone();
         tokio::task::spawn(async move {
             // Queued tasks run every TASK_TICK_MILLISECONDS, the general logic every SERVER_TICK_MILLISECONDS. Be careful
             // when changing the latter, as the rested EXP may become whacky.
@@ -1607,6 +1613,8 @@ pub async fn server_main_loop(
             let mut ticks_until_logic = ticks_per_logic_tick;
             loop {
                 interval.tick().await;
+                // Held for the whole tick: the logic and the queued tasks (nothing in them awaits.)
+                let _turn = turn.take(world_turn::Step::Tick);
 
                 // Execute general server logic
                 ticks_until_logic -= 1;
@@ -2096,6 +2104,8 @@ pub async fn server_main_loop(
     }
 
     while let Some(msg) = recv.recv().await {
+        // Held while the message is handled (nothing here awaits.)
+        let _turn = turn.take(world_turn::Step::Message);
         let mut to_remove = Vec::new();
 
         let mut handled = handle_chat_messages(
