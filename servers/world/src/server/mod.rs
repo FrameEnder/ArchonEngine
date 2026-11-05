@@ -762,6 +762,10 @@ fn server_logic_tick(
 ) {
     let mut actors_to_update_hp_mp = Vec::new();
     let mut actors_to_fake_zone_jump = Vec::new();
+    // Who's at war with the players' side (auto-attacks only land on them, `action::at_war`.)
+    let players_enemies = game_data
+        .lock()
+        .get_battalion_enemies(action::PLAYER_BATTALION);
 
     {
         let mut data = data.lock();
@@ -873,7 +877,8 @@ fn server_logic_tick(
                     // (`auto_attack_target`); otherwise the swing waits, ready, until it is.
                     let should_auto_attack = *autoattack_timing >= auto_attack_delay_ms(parameters);
                     if should_auto_attack
-                        && let Some(target) = action::auto_attack_target(instance, *id)
+                        && let Some(target) =
+                            action::auto_attack_target(instance, *id, &players_enemies)
                     {
                         actors_autoattacking.push((*id, target));
                     }

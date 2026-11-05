@@ -95,7 +95,9 @@ their class, race and level in the best gear they could wear then, with retail's
 * **SpawnNpc**, object kind BattleNpc sub-kind 9 (NpcPartyMember), owned by the player, battalion 0, no layout ID,
   the duty's content handler (`INSTANCE_CONTENT` 4), display flags 0x40000, 3,000 MP, behavior 634, link range 20,
   `normal_scaling` set, spawn indexes 1–3, an empty name. The Marauder spawned with status 3124. Character data flags
-  were 0x2 (HOSTILE), which Kawari reads as an enemy's; the fork leaves it out, as for bots shown as party members.
+  were 0x2 (HOSTILE), which Kawari reads as an enemy's; the fork leaves it out, as for bots shown as party members. (Since
+  2026-11-05 the server takes sides from battalions, not that flag, [Combat](combat.md); leaving it out is no longer needed
+  for that, but stays as it was checked.)
 * **The party list** came from no PartyList at all: before the spawns, for each slot from the last, ActorControlSelf
   **257** (the player, the slot, the member's actor ID, 1, 2), **276** (the slot, 1, the member number above) and
   **1525** (the slot, an ENpcResident: 1042776 + n), then the member's **StatusEffectList** (class, level, HP, MP),

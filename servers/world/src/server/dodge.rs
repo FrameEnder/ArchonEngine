@@ -165,8 +165,10 @@ impl Danger {
     }
 }
 
-/// Every area attack a hostile NPC is casting now.
+/// Every area attack a hostile NPC is casting now: one at war with the players' side (by battalion, `action::at_war`;
+/// the HOSTILE character flag is sent for allies too.)
 pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> Vec<Danger> {
+    let players_enemies = game_data.get_battalion_enemies(crate::server::action::PLAYER_BATTALION);
     instance
         .actors
         .iter()
@@ -179,9 +181,10 @@ pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> V
             } if spawn.common.health_points > 0
                 // An enemy, or a director's helper (held, not hostile: Ifrit's, which cast his Eruption and Radiant
                 // Plumes; the bots stood in all of them, Bob's bundles of 2026-10-28.)
-                && (spawn
+                && ((spawn
                     .character_data_flags
                     .contains(CharacterDataFlag::HOSTILE)
+                    && crate::server::action::at_war(&players_enemies, actor))
                     || instance.held_npcs.contains(id))
                 && cast.until > now
                 && cast.action_id != 0 =>

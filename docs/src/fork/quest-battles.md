@@ -210,7 +210,9 @@ a quest's entering event, 0 for every other event (228 events across the capture
   (0x2001) 3.6 s later; the quest moves to 5. `questkit battle-sim 19` matches all 15 events within 0.5 s (the win 1.1 s
   early: 2.1 s after the death that time).
 * The gladiator fights up close (Fast Blade, Rampart and Fight or Flight on himself) and Cures himself at 25-35 %
-  (retail's at 52 and 74 of 211), never you. The thugs only auto-attack, the tougher one with a True Thrust; the leader
+  (retail's at 52 and 74 of 211), never you. He's on your side by his battalion (0), not his character flags (2, an
+  enemy's bit on Kawari's reading): until 2026-11-05 your area actions hit him, he hated you for it and, the thugs
+  down, turned on you (Bob's bundle 20261105-163414, [Combat](combat.md): sides). The thugs only auto-attack, the tougher one with a True Thrust; the leader
   uses Heartstopper (866) 8 s after he comes, then every 8.9 s. Timelines `QB19*` (bases 625-628).
 * The client's battle script (`ClsGla100Btl_00261`, Bob's extracted scripts of 2026-11-05) has scenes 1 and 7 (both
   just END_EVENT_SCENE_RESULT), OnSequence001 (the objective) and OnSequence002 (its message); nothing reacts to

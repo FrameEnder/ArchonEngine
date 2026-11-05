@@ -223,16 +223,18 @@ pub fn npc_behavior(
         })
         .collect();
     // Each side's living battle NPCs by BNpcBase, one of each (the lowest layout ID), for rotation entries used
-    // `on_ally` (the Akoman's drain on a yodomi, quest battle 17): (hostile, base) -> (layout, actor).
+    // `on_ally` (the Akoman's drain on a yodomi, quest battle 17): (hostile, base) -> (layout, actor). The side is
+    // the battalion's (at war with the players' or not, `action::at_war`), not the HOSTILE flag, which allies have too.
+    let players_enemies = game_data
+        .lock()
+        .get_battalion_enemies(crate::server::action::PLAYER_BATTALION);
     let mut allies_by_base: HashMap<(bool, u32), (u32, ObjectId)> = HashMap::new();
     for (id, actor) in &instance.actors {
         if let NetworkedActor::Npc { spawn, .. } = actor
             && matches!(spawn.common.object_kind, ObjectKind::BattleNpc(_))
             && spawn.common.health_points > 0
         {
-            let hostile = spawn
-                .character_data_flags
-                .contains(CharacterDataFlag::HOSTILE);
+            let hostile = crate::server::action::at_war(&players_enemies, actor);
             let key = (hostile, spawn.common.base_id);
             let layout = spawn.common.layout_id;
             if allies_by_base
@@ -1235,9 +1237,10 @@ pub fn npc_behavior(
                 && spawn.common.target_id.object_id.is_valid()
             {
                 let target = spawn.common.target_id.object_id;
-                let hostile = spawn
-                    .character_data_flags
-                    .contains(CharacterDataFlag::HOSTILE);
+                let hostile = players_enemies
+                    .get(spawn.common.battalion as usize)
+                    .copied()
+                    .unwrap_or(false);
                 let allies = if rotation.actions.iter().any(|entry| entry.on_ally.is_some()) {
                     allies_by_base
                         .iter()

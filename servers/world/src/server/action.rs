@@ -725,6 +725,8 @@ pub fn execute_action(
     from_actor_id: ObjectId,
     request: ActionRequest,
 ) {
+    // Who's at war with the players' side (`area_side`.)
+    let players_enemies = game_data.lock().get_battalion_enemies(PLAYER_BATTALION);
     let mut lua_player = LuaPlayer {
         player_data: PlayerData::default(),
         status_effects: StatusEffects::default(),
@@ -1005,10 +1007,12 @@ pub fn execute_action(
             && let NetworkedActor::Npc { cast, timeline, .. } = actor
             && request.target.object_id != from_actor_id
             && let Some(target) = instance.find_actor(request.target.object_id)
-            && effects_builder
-                .effects
-                .iter()
-                .any(|effect| is_hostile_effect(effect, area_side(target) != area_side(actor)))
+            && effects_builder.effects.iter().any(|effect| {
+                is_hostile_effect(
+                    effect,
+                    area_side(target, &players_enemies) != area_side(actor, &players_enemies),
+                )
+            })
         {
             let (rotation, aimed_at) = match own_cast(cast, request.action_id) {
                 Some(cast) => (cast.rotation, cast.target_position),
@@ -1030,15 +1034,15 @@ pub fn execute_action(
             unscaled.retain(|effect| {
                 !matches!(effect.0, TargetEffectKind::Heal { unk1, .. } if unk1[4] & EFFECT_ON_SOURCE != 0)
             });
-            let side = area_side(target);
+            let side = area_side(target, &players_enemies);
             // NPCs only where the recording says what the attack does to them: without it an NPC's hit on another
             // isn't scaled, which for an area attack nobody aimed at them would be far too much.
             let hits_npcs = timeline.recorded_amount(request.action_id, false).is_some();
             for (id, other) in &instance.actors {
                 if *id != request.target.object_id
                     && *id != from_actor_id
-                    && area_side(other).is_some()
-                    && area_side(other) == side
+                    && area_side(other, &players_enemies).is_some()
+                    && area_side(other, &players_enemies) == side
                     && (hits_npcs || hit_like_a_player(*id))
                     && other.get_common_spawn().health_points > 0
                     && caught(other.position().0)
@@ -1076,7 +1080,7 @@ pub fn execute_action(
             for (id, other) in &instance.actors {
                 // Only characters: EObjs and coffers have no CommonSpawn (asking one for it panicked the server as
                 // Kottos' first marker went off, Bob's bundle of 2026-10-26.)
-                if area_side(other).is_none() {
+                if area_side(other, &players_enemies).is_none() {
                     continue;
                 }
                 let other_spawn = other.get_common_spawn();
@@ -1317,11 +1321,11 @@ pub fn execute_action(
                 // use; players are battalion 0, monsters 4.)
                 let same_side = instance
                     .find_actor(from_actor_id)
-                    .and_then(area_side)
+                    .and_then(|caster| area_side(caster, &players_enemies))
                     .is_some_and(|caster| {
                         instance
                             .find_actor(request.target.object_id)
-                            .and_then(area_side)
+                            .and_then(|target| area_side(target, &players_enemies))
                             == Some(caster)
                     })
                     && match (
@@ -1512,6 +1516,14 @@ pub fn execute_action(
                     }
                 }
 
+                let caster_enemies = instance
+                    .find_actor(from_actor_id)
+                    .map(|caster| {
+                        game_data
+                            .lock()
+                            .get_battalion_enemies(caster.get_common_spawn().battalion as u32)
+                    })
+                    .unwrap_or_default();
                 aoe_result = Some(apply_area_of_effect(
                     network.clone(),
                     instance,
@@ -1520,6 +1532,7 @@ pub fn execute_action(
                     &info,
                     &party_members,
                     &effects_builder,
+                    &caster_enemies,
                 ));
             } else {
                 let heal_to_full = effects_builder.heal_to_full;
@@ -2209,11 +2222,18 @@ struct AreaOfEffectResult {
     shown: Vec<(ObjectId, Vec<TargetEffect>)>,
 }
 
-/// Returns true if this actor is an enemy that is still alive.
-fn is_living_enemy(actor: &NetworkedActor) -> bool {
+/// Returns true if this actor is an enemy that is still alive: a battle NPC (not a pet, chocobo or party NPC) of a
+/// battalion the caster's is at war with (`caster_enemies`, see `at_war`.)
+fn is_living_enemy(actor: &NetworkedActor, caster_enemies: &[bool]) -> bool {
     matches!(actor, NetworkedActor::Npc { .. })
-        && actor.get_common_spawn().object_kind == ObjectKind::BattleNpc(BattleNpcSubKind::Enemy)
-        && actor.get_common_spawn().health_points > 0
+        && is_living_enemy_spawn(actor.get_common_spawn(), caster_enemies)
+}
+
+/// `is_living_enemy` for a battle NPC's common spawn data.
+fn is_living_enemy_spawn(common: &CommonSpawn, caster_enemies: &[bool]) -> bool {
+    common.object_kind == ObjectKind::BattleNpc(BattleNpcSubKind::Enemy)
+        && common.health_points > 0
+        && spawn_at_war(caster_enemies, common)
 }
 
 /// Applies an area-of-effect action to everyone it hits.
@@ -2227,6 +2247,7 @@ fn apply_area_of_effect(
     info: &ActionInfo,
     party_members: &[ObjectId],
     effects_builder: &EffectsBuilder,
+    caster_enemies: &[bool],
 ) -> AreaOfEffectResult {
     let Some(caster) = instance.find_actor(from_actor_id) else {
         return AreaOfEffectResult {
@@ -2266,7 +2287,7 @@ fn apply_area_of_effect(
     let mut hostiles: Vec<(ObjectId, f32)> = instance
         .actors
         .iter()
-        .filter(|(_, actor)| is_living_enemy(actor) && distance_to(actor) <= radius)
+        .filter(|(_, actor)| is_living_enemy(actor, caster_enemies) && distance_to(actor) <= radius)
         .map(|(id, actor)| (*id, distance_to(actor)))
         .collect();
     hostiles.sort_by(|a, b| a.1.total_cmp(&b.1));
@@ -2847,7 +2868,11 @@ const UNKNOWN_HITBOX_RADIUS: f32 = 1.5;
 /// one on the player's current target, also after switching targets without turning auto-attack off and on), it's
 /// their current target, not the one they turned it on with, and only an enemy (or their duel opponent) that's alive
 /// and in reach; and none while they're casting (2 of 663 during a cast). Auto-attack stays on meanwhile.
-pub fn auto_attack_target(instance: &Instance, player_id: ObjectId) -> Option<ObjectId> {
+pub fn auto_attack_target(
+    instance: &Instance,
+    player_id: ObjectId,
+    players_enemies: &[bool],
+) -> Option<ObjectId> {
     let Some(NetworkedActor::Player {
         spawn,
         dueling_opponent_id,
@@ -2868,7 +2893,8 @@ pub fn auto_attack_target(instance: &Instance, player_id: ObjectId) -> Option<Ob
             ..
         } if npc
             .character_data_flags
-            .contains(CharacterDataFlag::HOSTILE) =>
+            .contains(CharacterDataFlag::HOSTILE)
+            && at_war(players_enemies, target) =>
         {
             if timeline.hitbox_radius > 0.0 {
                 timeline.hitbox_radius
@@ -3235,19 +3261,38 @@ pub fn faces(position: Vec3A, rotation: f32, caster: Vec3A) -> bool {
     Vec2::new(rotation.sin(), rotation.cos()).dot(to_caster) >= 0.0
 }
 
-/// Which side of a fight an actor is on, for whom an NPC's area attack catches besides its target: players and the
-/// NPCs that aren't hostile to them (`false`), or hostile NPCs (`true`). `None` for anything that isn't a fighter.
-fn area_side(actor: &NetworkedActor) -> Option<bool> {
+/// The players' battalion: retail sends 0 for players and the NPCs fighting beside them, 4 for monsters (the Battalion
+/// sheet's IsEnemyTo says which are at war with which.)
+pub const PLAYER_BATTALION: u32 = 0;
+
+/// Whether `actor` is in a battalion `at_war` (a Battalion row's IsEnemyTo, `GameData::get_battalion_enemies`) is at war
+/// with. Which side an NPC is on is its battalion, not its HOSTILE character flag or its "Enemy" subkind: retail sends
+/// both for allies too. Ul'dah's Most Wanted's gladiator came with flags 2, subkind 5 and battalion 0, the thugs with
+/// flags 3, subkind 5 and battalion 4 (Bob's Chronofoil capture a763f0a0); taken by the flag and the subkind, the
+/// gladiator was an enemy, the player's Total Eclipse hit him four times, he hated the player for it, and once the thugs
+/// were down he turned on them (Bob's bundle 20261105-163414).
+pub fn at_war(at_war: &[bool], actor: &NetworkedActor) -> bool {
+    spawn_at_war(at_war, actor.get_common_spawn())
+}
+
+/// `at_war` for a spawn's common data.
+fn spawn_at_war(at_war: &[bool], common: &CommonSpawn) -> bool {
+    at_war
+        .get(common.battalion as usize)
+        .copied()
+        .unwrap_or(false)
+}
+
+/// Which side of a fight an actor is on, for whom an NPC's area attack catches besides its target and who hates whom:
+/// players and the battle NPCs on their side (`false`), or those at war with the players (`true`), by battalion
+/// (`at_war`; `players_enemies` is the players' battalion's row.) `None` for anything that isn't a fighter.
+fn area_side(actor: &NetworkedActor, players_enemies: &[bool]) -> Option<bool> {
     match actor {
         NetworkedActor::Player { .. } => Some(false),
         NetworkedActor::Npc { spawn, .. }
             if matches!(spawn.common.object_kind, ObjectKind::BattleNpc(_)) =>
         {
-            Some(
-                spawn
-                    .character_data_flags
-                    .contains(CharacterDataFlag::HOSTILE),
-            )
+            Some(at_war(players_enemies, actor))
         }
         _ => None,
     }
@@ -3425,6 +3470,33 @@ mod combo_tests {
 #[cfg(test)]
 mod area_tests {
     use super::*;
+
+    /// Ul'dah's Most Wanted's gladiator and a thug, as retail spawned them (Bob's Chronofoil capture a763f0a0: the same
+    /// subkind, Enemy, and both with the HOSTILE flag; battalion 0 and 4.) Only the thug is someone a player's area
+    /// action lands on (Bob's bundle 20261105-163414: Total Eclipse hit the gladiator four times, and he turned on the
+    /// player.)
+    #[test]
+    fn allies_are_on_the_players_side_by_battalion() {
+        let spawn = |battalion| CommonSpawn {
+            object_kind: ObjectKind::BattleNpc(BattleNpcSubKind::Enemy),
+            battalion,
+            health_points: 200,
+            max_health_points: 200,
+            ..Default::default()
+        };
+        // The players' battalion's IsEnemyTo, as far as these two go: not at war with itself, at war with monsters'.
+        let mut players_enemies = vec![false; 8];
+        players_enemies[4] = true;
+        let gladiator = spawn(0);
+        let thug = spawn(4);
+        assert!(!is_living_enemy_spawn(&gladiator, &players_enemies));
+        assert!(is_living_enemy_spawn(&thug, &players_enemies));
+        // A battalion the row doesn't reach is no one's enemy.
+        assert!(!spawn_at_war(&players_enemies, &spawn(200)));
+        let mut dead = thug;
+        dead.health_points = 0;
+        assert!(!is_living_enemy_spawn(&dead, &players_enemies));
+    }
 
     #[test]
     fn buffs_are_not_attacks() {
