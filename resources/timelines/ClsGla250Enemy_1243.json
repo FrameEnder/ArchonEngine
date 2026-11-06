@@ -1,0 +1,44 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "recorded_amounts": {
+        "872": {
+            "players": 7.0
+        },
+        "475": {
+            "players": 8
+        }
+    },
+    "rotation": {
+        "pace": 8.8,
+        "actions": [
+            {
+                "action": 475,
+                "every": 8.8,
+                "comment": "5 uses by 2 (6.1-13.5 s apart); every 8.8 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 4.7,
+            "data": {
+                "type": "action",
+                "action_id": 476,
+                "target": "itself"
+            },
+            "comment": "476 on itself, 3 uses by 3, first 4.7 s after its pull"
+        },
+        {
+            "time": 2.7,
+            "data": {
+                "type": "action",
+                "action_id": 55,
+                "target": "itself"
+            },
+            "comment": "55 on itself, 3 uses by 3, first 2.7 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "On Holy Ground's (quest 264) three in Western Thanalan the veteran gladiator's scene brings out (BNpcBase 1243, BNpcName 1305, layouts 3986472, 3995627 and 3995631, the quest's ENEMY0-2): level 25, 445 HP; on you. From Bob's Chronofoil capture accc33a9 (2026-11-06, the quest on a gladiator, `questkit chronofoil --battle 0.2`, territory 140): `players` is the median damage to the player, times from its pull. Hitbox not recorded."
+}

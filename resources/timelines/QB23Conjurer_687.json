@@ -1,0 +1,28 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "120": {
+            "npcs": 393.5
+        }
+    },
+    "rotation": {
+        "pace": 26.8,
+        "actions": [
+            {
+                "action": 127,
+                "every": 26.8,
+                "comment": "2 uses (7.6 s apart); every 26.8 s: its time in the fight over its uses"
+            },
+            {
+                "action": 121,
+                "every": 53.6,
+                "comment": "1 use; every 53.6 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "The Rematch's (quest 265) conjurer at the camp, who speaks as it falls (quest battle 23, BNpcBase 687, BNpcName 708, layout 4011022): level 34, 285 HP, ClassJob 6; Cure (120, the director's heals) on its side, Stone and Aero at the one who speaks; never an auto-attack. From Bob's Chronofoil capture accc33a9 (2026-11-06, one run of The Rematch's quest battle 23, won, `questkit chronofoil --battle 0.15`, territory 257, duty 318; a gladiator synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

@@ -165,6 +165,14 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   Feint doesn't (nor is Slow modelled); how often the thugs' Feint and Heartstopper and the tougher thug's True Thrust
   come is a guess (each was used once). The gutless gladiator can be talked to again while his two are out (they
   aren't brought out twice); what retail does then wasn't seen.
+* **On Holy Ground (264), The Rematch (265), their quest battles 22 and 23, and Paladin's Pledge (1055)** (2026-11-06,
+  from Bob's dumps and Chronofoil capture accc33a9): untested in game, from one run each. 23's sequences 3 and 5 come
+  where retail's player was (near the third pair, near the archers below the camp), which fits that run only; whether
+  the ones along the way take the player on as they come close, and the background soldiers keep at each other, as on
+  retail, is up to Kawari's aggro and the director's targeting, unseen. In 265 the second place searched first marks
+  itself in UI8BH (a guess). The new NPC actions' statuses (59, 60, 99, 476, 829, 29167) last a guessed 15-600 s and do
+  nothing. 1055's Paladin soul crystal comes from `finish_quest` as Seer Folly's does; Paladin's Pledge's
+  GEARSET_UNLOCK (1905) isn't sent (what it unlocks wasn't looked at).
 * **That Old Familiar Feeling (262), The Face of Thal (263) and their quest battles 20 and 21** (2026-11-06, from
   Bob's dumps and Chronofoil capture 941895d2): untested in game, from one run each. What brings each wave fits that
   run only: 20's second wave on a 30 s timer after sequence 3 (its first five weren't all down), both battles' third

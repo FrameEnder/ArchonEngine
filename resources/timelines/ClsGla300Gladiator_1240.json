@@ -1,0 +1,52 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 12
+        },
+        "717": {
+            "players": 17.0
+        },
+        "718": {
+            "players": 6
+        }
+    },
+    "rotation": {
+        "pace": 15.8,
+        "actions": [
+            {
+                "action": 717,
+                "every": 15.8,
+                "comment": "5 uses by 2 (8.6-11.2 s apart); every 15.8 s: its time in the fight over its uses"
+            },
+            {
+                "action": 718,
+                "every": 27.6,
+                "comment": "3 uses by 2 (35.1 s apart); every 27.6 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 3.3,
+            "data": {
+                "type": "action",
+                "action_id": 10,
+                "target": "itself"
+            },
+            "comment": "10 on itself, 2 uses by 2, first 3.3 s after its pull"
+        },
+        {
+            "time": 21.1,
+            "data": {
+                "type": "action",
+                "action_id": 20,
+                "target": "itself"
+            },
+            "comment": "20 on itself, 2 uses by 2, first 21.1 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Rematch's (quest 265) ambush at the second place (BNpcBase 1240, BNpcName 1304, layouts 3995643 and 3995644, the quest's ENEMY4 and ENEMY5): level 30, 585 HP; on you. From Bob's Chronofoil capture accc33a9 (2026-11-06, the quest on a gladiator, `questkit chronofoil --battle 0.11`, territory 146): `players` is the median damage to the player, times from its pull. Hitbox not recorded."
+}

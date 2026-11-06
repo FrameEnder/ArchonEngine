@@ -1,0 +1,31 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "recorded_amounts": {
+        "872": {
+            "players": 14
+        }
+    },
+    "timepoints": [
+        {
+            "time": 0.0,
+            "data": {
+                "type": "action",
+                "action_id": 60,
+                "target": "itself"
+            },
+            "comment": "60 on itself, 1 use, first 0.0 s after its pull"
+        },
+        {
+            "time": 4.6,
+            "data": {
+                "type": "action",
+                "action_id": 57,
+                "target": "itself"
+            },
+            "comment": "57 on itself, 1 use, first 4.6 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Rematch's (quest 265) pairs along the way up (quest battle 23, BNpcBase 660, BNpcName 1305): level 26, 224 HP, ClassJob 2 (a pugilist); each takes the player on as they come close. From Bob's Chronofoil capture accc33a9 (2026-11-06, one run of The Rematch's quest battle 23, won, `questkit chronofoil --battle 0.15`, territory 257, duty 318; a gladiator synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

@@ -1,0 +1,65 @@
+{
+    "autoattack_action_id": 871,
+    "from_pull": true,
+    "recorded_amounts": {
+        "871": {
+            "players": 43,
+            "npcs": 50
+        },
+        "75": {
+            "players": 87,
+            "npcs": 89
+        },
+        "78": {
+            "players": 124,
+            "npcs": 61.0
+        },
+        "84": {
+            "players": 270,
+            "npcs": 49
+        }
+    },
+    "rotation": {
+        "pace": 25.6,
+        "actions": [
+            {
+                "action": 75,
+                "every": 25.6,
+                "comment": "10 uses by 4 (19.8-29.0 s apart); every 25.6 s: its time in the fight over its uses"
+            },
+            {
+                "action": 78,
+                "every": 25.6,
+                "comment": "10 uses by 4 (20.3-30.1 s apart); every 25.6 s: its time in the fight over its uses"
+            },
+            {
+                "action": 84,
+                "every": 25.6,
+                "comment": "10 uses by 4 (19.9-24.9 s apart); every 25.6 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 14.8,
+            "data": {
+                "type": "action",
+                "action_id": 83,
+                "target": "itself"
+            },
+            "comment": "83 on itself, 5 uses by 4, first 14.8 s after its pull, then about every 52.9 s",
+            "every": 52.9
+        },
+        {
+            "time": 13.1,
+            "data": {
+                "type": "action",
+                "action_id": 85,
+                "target": "itself"
+            },
+            "comment": "85 on itself, 4 uses by 4, first 13.1 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Rematch's (quest 265) lancers at the camp and in the last wave (quest battle 23, BNpcBase 663, BNpcName 929, layouts 4011021, 4011419, 4011422 and 4011426): level 34, 2055 HP, ClassJob 4; on the one who speaks. From Bob's Chronofoil capture accc33a9 (2026-11-06, one run of The Rematch's quest battle 23, won, `questkit chronofoil --battle 0.15`, territory 257, duty 318; a gladiator synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

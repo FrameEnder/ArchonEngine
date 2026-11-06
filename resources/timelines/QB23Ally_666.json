@@ -1,0 +1,65 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 28.0
+        },
+        "9": {
+            "npcs": 44
+        },
+        "11": {
+            "npcs": 65
+        },
+        "21": {
+            "npcs": 28.5
+        }
+    },
+    "rotation": {
+        "pace": 21.7,
+        "actions": [
+            {
+                "action": 14,
+                "every": 21.7,
+                "comment": "5 uses (2.6-78.6 s apart); every 21.7 s: its time in the fight over its uses"
+            },
+            {
+                "action": 9,
+                "every": 27.4,
+                "comment": "5 uses (23.9-33.1 s apart); every 27.4 s: its time in the fight over its uses"
+            },
+            {
+                "action": 11,
+                "every": 27.9,
+                "comment": "5 uses (24.9-31.0 s apart); every 27.9 s: its time in the fight over its uses"
+            },
+            {
+                "action": 21,
+                "every": 25.0,
+                "comment": "4 uses (17.9-40.3 s apart); every 25.0 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 11.3,
+            "data": {
+                "type": "action",
+                "action_id": 29167,
+                "target": "itself"
+            },
+            "comment": "29167 on itself, 1 use, first 11.3 s after its pull"
+        },
+        {
+            "time": 63.8,
+            "data": {
+                "type": "action",
+                "action_id": 85,
+                "target": "itself"
+            },
+            "comment": "85 on itself, 1 use, first 63.8 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Rematch's (quest 265) second gladiator on your side (quest battle 23, BNpcBase 666, BNpcName 934, layout 4011017): level 34, 1884 HP, ClassJob 1; on the camp's pugilists. From Bob's Chronofoil capture accc33a9 (2026-11-06, one run of The Rematch's quest battle 23, won, `questkit chronofoil --battle 0.15`, territory 257, duty 318; a gladiator synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

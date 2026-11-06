@@ -307,6 +307,11 @@ class BattleSimSpawnTest(unittest.TestCase):
         self.assertEqual(battle_sim.spawn_problems(fixture, wrong),
                          ["retail had 2 from the start: the script never brings it out", "brings 1 out 2 times, retail 1"])
 
+    def test_on_setup_spawns_count(self):
+        # Spawned in onSetup, before the opening cutscene (The Rematch's line-up): there from the start too.
+        fixture = {"npcs": {"1": {"spawn": None}}, "events": []}
+        self.assertEqual(battle_sim.spawn_problems(fixture, [(battle_sim.SETUP_CLOCK, "spawn_bnpc", (1,))]), [])
+
 
 class BattleSimPlayerTest(unittest.TestCase):
     """battle-sim gives a script the player's health as retail's last seen value (it jumps, so no interpolating), and

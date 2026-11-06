@@ -1,0 +1,56 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 137.0
+        },
+        "9": {
+            "npcs": 210
+        },
+        "11": {
+            "npcs": 282.5
+        },
+        "21": {
+            "npcs": 175.5
+        }
+    },
+    "rotation": {
+        "pace": 10.9,
+        "actions": [
+            {
+                "action": 14,
+                "every": 10.9,
+                "comment": "7 uses (2.6-35.1 s apart); every 10.9 s: its time in the fight over its uses"
+            },
+            {
+                "action": 9,
+                "every": 34.4,
+                "comment": "5 uses (23.9-40.3 s apart); every 34.4 s: its time in the fight over its uses"
+            },
+            {
+                "action": 11,
+                "every": 35.6,
+                "comment": "4 uses (33.1-40.3 s apart); every 35.6 s: its time in the fight over its uses"
+            },
+            {
+                "action": 21,
+                "every": 35.7,
+                "comment": "4 uses (31.1-40.2 s apart); every 35.7 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 80.0,
+            "data": {
+                "type": "action",
+                "action_id": 17,
+                "target": "itself"
+            },
+            "comment": "17 on itself, 1 use, first 80.0 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Rematch's (quest 265) champion on their side (quest battle 23, BNpcBase 1324, BNpcName 969, layout 4011122): level 50, 258900 HP, ClassJob 1; on yours alone, the whole fight. Its one Provoke (18) isn't in the timeline. From Bob's Chronofoil capture accc33a9 (2026-11-06, one run of The Rematch's quest battle 23, won, `questkit chronofoil --battle 0.15`, territory 257, duty 318; a gladiator synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

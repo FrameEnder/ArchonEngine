@@ -1,0 +1,71 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "recorded_amounts": {
+        "872": {
+            "players": 25.5
+        },
+        "865": {
+            "players": 84
+        }
+    },
+    "rotation": {
+        "pace": 47.7,
+        "actions": [
+            {
+                "action": 865,
+                "every": 47.7,
+                "comment": "1 use; every 47.7 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 4.1,
+            "data": {
+                "type": "action",
+                "action_id": 60,
+                "target": "itself"
+            },
+            "comment": "60 on itself, 1 use, first 4.1 s after its pull"
+        },
+        {
+            "time": 10.7,
+            "data": {
+                "type": "action",
+                "action_id": 55,
+                "target": "itself"
+            },
+            "comment": "55 on itself, 1 use, first 10.7 s after its pull"
+        },
+        {
+            "time": 13.3,
+            "data": {
+                "type": "action",
+                "action_id": 59,
+                "target": "itself"
+            },
+            "comment": "59 on itself, 1 use, first 13.3 s after its pull"
+        },
+        {
+            "time": 26.5,
+            "data": {
+                "type": "action",
+                "action_id": 57,
+                "target": "itself"
+            },
+            "comment": "57 on itself, 1 use, first 26.5 s after its pull"
+        },
+        {
+            "time": 40.1,
+            "data": {
+                "type": "action",
+                "action_id": 829,
+                "target": "itself"
+            },
+            "comment": "829 on itself, 1 use, first 40.1 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "On Holy Ground's (quest 264) duel (quest battle 22, BNpcBase 640, BNpcName 698, layout 4004491): level 25, 2079 HP, ClassJob 2 (a pugilist); on you. His Second Wind (57) took him from 33 % to 47 %; Hundred Fists (829, a 5 s cast) came at 9 %. From Bob's Chronofoil capture accc33a9 (2026-11-06, one run of On Holy Ground's quest battle 22, won, `questkit chronofoil --battle 0.6`, territory 256, duty 317; a gladiator synced to 29): `players` is the median damage to the player, times from its pull. Hitbox not recorded."
+}

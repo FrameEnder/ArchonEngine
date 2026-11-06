@@ -1,0 +1,86 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "recorded_amounts": {
+        "872": {
+            "npcs": 47
+        },
+        "53": {
+            "npcs": 126.0
+        },
+        "54": {
+            "npcs": 125.5
+        },
+        "56": {
+            "npcs": 108.0
+        },
+        "68": {
+            "npcs": 9
+        }
+    },
+    "rotation": {
+        "pace": 6.6,
+        "actions": [
+            {
+                "action": 53,
+                "every": 9.3,
+                "comment": "21 uses by 4 (4.6-50.3 s apart); every 9.3 s: its time in the fight over its uses"
+            },
+            {
+                "action": 54,
+                "every": 6.6,
+                "comment": "13 uses by 4 (2.6-70.1 s apart); every 6.6 s: its time in the fight over its uses"
+            },
+            {
+                "action": 56,
+                "every": 6.6,
+                "comment": "12 uses by 4 (2.6-35.9 s apart); every 6.6 s: its time in the fight over its uses"
+            },
+            {
+                "action": 68,
+                "every": 84.1,
+                "comment": "3 uses by 2 (47.8 s apart); every 84.1 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 2.1,
+            "data": {
+                "type": "action",
+                "action_id": 60,
+                "target": "itself"
+            },
+            "comment": "60 on itself, 4 uses by 4, first 2.1 s after its pull"
+        },
+        {
+            "time": 59.0,
+            "data": {
+                "type": "action",
+                "action_id": 57,
+                "target": "itself"
+            },
+            "comment": "57 on itself, 4 uses by 4, first 59.0 s after its pull"
+        },
+        {
+            "time": 40.1,
+            "data": {
+                "type": "action",
+                "action_id": 55,
+                "target": "itself"
+            },
+            "comment": "55 on itself, 3 uses by 3, first 40.1 s after its pull"
+        },
+        {
+            "time": 62.2,
+            "data": {
+                "type": "action",
+                "action_id": 59,
+                "target": "itself"
+            },
+            "comment": "59 on itself, 1 use, first 62.2 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Rematch's (quest 265) pugilists at the camp (quest battle 23, BNpcBase 664, BNpcName 1305, layouts 4011027-4011030): level 31, 532 HP, ClassJob 2; on the two gladiators on your side, then the one who speaks. From Bob's Chronofoil capture accc33a9 (2026-11-06, one run of The Rematch's quest battle 23, won, `questkit chronofoil --battle 0.15`, territory 257, duty 318; a gladiator synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

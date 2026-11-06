@@ -1,0 +1,102 @@
+{
+  "quest": 264,
+  "script": "ClsGla250_00264",
+  "source": "Bob's Chronofoil capture accc33a9 (2026-11-06, the three quests on a Gladiator, their quest battles won); scenes and effects from Bob's Chronofoil capture of 2026-11-06",
+  "params": {
+    "ACTOR0": 1001739,
+    "ACTOR1": 1004225,
+    "ENEMY0": 3986472,
+    "ENEMY1": 3995627,
+    "ENEMY2": 3995631,
+    "ACTOR2": 1002277,
+    "ACTOR3": 1004141,
+    "EOBJECT0": 2001742,
+    "EVENT_ACTION_SEARCH": 1,
+    "TERRITORYTYPE0": 256,
+    "QUESTBATTLE0": 22
+  },
+  "steps": [
+    {
+      "talk": 1001739,
+      "layout": 2617212,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1004225,
+      "layout": 3995623,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [1243, 3995627],
+      "expect": {"sequence": 1, "vars": "010000000000", "notices": []}
+    },
+    {
+      "kill": [1243, 3995631],
+      "expect": {"sequence": 1, "vars": "020000000000", "notices": []}
+    },
+    {
+      "kill": [1243, 3986472],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1004225,
+      "layout": 3995623,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1001739,
+      "layout": 2617212,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 4, "vars": "000000000000", "notices": [[2, []]]}
+    },
+    {
+      "talk": 1002277,
+      "layout": 3279279,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 5, "vars": "000000000000", "notices": [[3, []]]}
+    },
+    {
+      "talk": 1004141,
+      "layout": 3986484,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 6, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 256}
+      ],
+      "expect": {"sequence": 5, "vars": "000000000000", "notices": []}
+    },
+    {
+      "battle_won": 255,
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1001739,
+      "layout": 2617212,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 9, "flags": "0x2000", "results": [1, 5825, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

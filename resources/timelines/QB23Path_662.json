@@ -1,0 +1,44 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "147": {
+            "players": 44
+        },
+        "141": {
+            "players": 173
+        },
+        "148": {
+            "players": 31
+        }
+    },
+    "rotation": {
+        "pace": 5.3,
+        "actions": [
+            {
+                "action": 147,
+                "every": 16.3,
+                "comment": "1 use; every 16.3 s: its time in the fight over its uses"
+            },
+            {
+                "action": 141,
+                "every": 16.3,
+                "comment": "1 use; every 16.3 s: its time in the fight over its uses"
+            },
+            {
+                "action": 148,
+                "every": 5.3,
+                "comment": "1 use; every 5.3 s: its time in the fight over its uses"
+            },
+            {
+                "action": 146,
+                "every": 16.3,
+                "comment": "1 use; every 16.3 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "The Rematch's (quest 265) pairs along the way up (quest battle 23, BNpcBase 662, BNpcName 1307): level 29, 262 HP, ClassJob 7 (thaumaturges); each takes the player on as they come close. From Bob's Chronofoil capture accc33a9 (2026-11-06, one run of The Rematch's quest battle 23, won, `questkit chronofoil --battle 0.15`, territory 257, duty 318; a gladiator synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

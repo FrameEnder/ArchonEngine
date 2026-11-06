@@ -1,0 +1,54 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 23
+        },
+        "120": {
+            "npcs": 225
+        },
+        "9": {
+            "npcs": 34.0
+        },
+        "11": {
+            "npcs": 45.5
+        },
+        "21": {
+            "npcs": 21
+        }
+    },
+    "rotation": {
+        "pace": 53.7,
+        "actions": [
+            {
+                "action": 9,
+                "every": 53.7,
+                "comment": "3 uses (29.4-62.8 s apart); every 53.7 s: its time in the fight over its uses"
+            },
+            {
+                "action": 11,
+                "every": 53.7,
+                "comment": "3 uses (36.1-58.1 s apart); every 53.7 s: its time in the fight over its uses"
+            },
+            {
+                "action": 21,
+                "every": 53.7,
+                "comment": "3 uses (37.7-56.6 s apart); every 53.7 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 11.8,
+            "data": {
+                "type": "action",
+                "action_id": 10,
+                "target": "itself"
+            },
+            "comment": "10 on itself, 1 use, first 11.8 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Rematch's (quest 265) third gladiator on your side (quest battle 23, BNpcBase 667, BNpcName 934, layout 4011018): level 30, 1287 HP, ClassJob 1; on the camp's pugilists; Cure (120, the director's heals) on the one who speaks and the second. From Bob's Chronofoil capture accc33a9 (2026-11-06, one run of The Rematch's quest battle 23, won, `questkit chronofoil --battle 0.15`, territory 257, duty 318; a gladiator synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

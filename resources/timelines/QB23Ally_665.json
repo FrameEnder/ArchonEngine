@@ -1,0 +1,60 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 136
+        },
+        "120": {
+            "npcs": 619
+        },
+        "9": {
+            "npcs": 203.5
+        },
+        "11": {
+            "npcs": 133.5
+        },
+        "21": {
+            "npcs": 135.5
+        }
+    },
+    "rotation": {
+        "pace": 80.6,
+        "actions": [
+            {
+                "action": 9,
+                "every": 80.6,
+                "comment": "2 uses (55.8 s apart); every 80.6 s: its time in the fight over its uses"
+            },
+            {
+                "action": 11,
+                "every": 80.6,
+                "comment": "2 uses (74.6 s apart); every 80.6 s: its time in the fight over its uses"
+            },
+            {
+                "action": 21,
+                "every": 80.6,
+                "comment": "2 uses (60.6 s apart); every 80.6 s: its time in the fight over its uses"
+            },
+            {
+                "action": 14,
+                "every": 161.2,
+                "comment": "1 use; every 161.2 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 12.2,
+            "data": {
+                "type": "action",
+                "action_id": 17,
+                "target": "itself"
+            },
+            "comment": "17 on itself, 2 uses, first 12.2 s after its pull, then about every 80.6 s",
+            "every": 80.6
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Rematch's (quest 265) ally who speaks (quest battle 23, BNpcBase 665, BNpcName 689, layout 4011016): level 50, 4660 HP, ClassJob 1 (a gladiator); on the camp's lancer, then the last wave's; Cure (120, the director's heals) on himself and the other two. From Bob's Chronofoil capture accc33a9 (2026-11-06, one run of The Rematch's quest battle 23, won, `questkit chronofoil --battle 0.15`, territory 257, duty 318; a gladiator synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

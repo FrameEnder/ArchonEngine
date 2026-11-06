@@ -281,6 +281,61 @@ a quest's entering event, 0 for every other event (228 events across the capture
   at 0), and the conjurers' Fluid Aura 134 (`actions/001/FluidAura_00134.lua`: status 13 at 0, no damage), as retail's
   effects were; neither had a script. How long the stun and bind last isn't recorded (6 s).
 
+### Quest battle 22 — On Holy Ground (`content/questbattle/22.lua`)
+
+* Quest 264 (ClsGla250_00264, the Gladiators' level 25 quest) enters it (scene 6, Aldis' YesNoQuestBattle in Eastern
+  Thanalan; territory 256, duty 317). Territory 256 is a copy of Eastern Thanalan (the run's positions within 0.02
+  yalms of the same capture's visits to 145; nothing else in the capture comes near), so its one NPC is layer
+  `QB_ClsGla250_002` of `wil_w1f3_planmap.json`, retail's from Bob's Chronofoil capture accc33a9 (2026-11-06, `--battle
+  0.6`, one run, won; a gladiator synced to 29): a duel with a pugilist (4004491, base 640, BNpcName 698, level 25,
+  2079 HP). The one watching (ENpcResident 1004411) isn't in the fight: its lines go as an EventNpc's (kind 3, layout
+  0), as Victory in Peril's watcher's. Start spot (-518.39, -21.6, 120.48, facing 2.334); opening flags 0xF8412EFB.
+* The flow: sequence 2, talk 124 (the watcher) at 5.1 s. **Him at 80 %** (12.5 s): sequence 3, 127 (him) 2.5 s and 126
+  (the watcher) 10.1 s after. **Him at 40 %** (24.6 s): sequence 4, 128 (him) 3.1 s, 125 (him) and 129 (the watcher)
+  8.0 s after. His Second Wind (57) took him from 33 % back to 47 % at 29.6 s, so each threshold goes once. **Him down**
+  (48.7 s, heard 2.1 s later): "Duty Complete", sequence 5, the battle's scene 5 (a cutscene with its menu, 0xF8482EFB)
+  3.5 s later; the quest moves to 255. `questkit battle-sim 22` matches all 11 events within 1.1 s (the 80 % crossing
+  falls between two of retail's samples.) The talk runs on timers of the script's own, not `Battle:steps`, which
+  queues each step after the last: a quick kill would have waited for the talk.
+* His timeline (`QB22Pugilist_640`): auto-attacks of 25, Fists of Earth (60), 55, Internal Release (59) and Second
+  Wind at 4.1, 10.7, 13.3 and 26.5 s from his pull, one 84 hit (865), Hundred Fists (829, a 5 s cast) at 40.1 s. 59,
+  60 and 829 had no scripts (`actions/000/QuestBattleNpc_00059.lua`, `_00060.lua`, `actions/008/QuestBattleNpc_00829.lua`:
+  statuses 100, 104 and 291 on himself, as retail's effects; how long each lasts isn't recorded).
+* The client's battle script (`ClsGla250Btl_00264`) has scenes 1 (the opening), 5 (the closing cutscene with a menu)
+  and 10001, OnSequence001 and 002. The director plays 1 and 5.
+
+### Quest battle 23 — The Rematch (`content/questbattle/23.lua`)
+
+* Quest 265 (ClsGla300_00265, the Gladiators' level 30 quest) enters it (scene 11, after ACTOR2's NpcTrade in Eastern
+  Thanalan; territory 257, duty 318). Territory 257 is a copy of Eastern Thanalan too (the run's positions on its ground,
+  median 0.00 yalms off over 424 points), so its NPCs are layer `QB_ClsGla300_003` of `wil_w1f3_planmap.json`, all 43
+  of retail's (`--battle 0.15`, one run, won; a gladiator synced to 34). Out before the opening cutscene (the script's
+  `onSetup`), as retail's 39:
+  * along the way up from the start, pairs that take the player on as they come close (`passive`, aware from the fight
+    starting): a lancer (658), two conjurers (659), a pugilist (660), two archers (661), two thaumaturges (662);
+  * at the camp above, waiting (`unaware`) for sequence 5: four pugilists (664), a lancer (663) and a conjurer (687)
+    against the three on your side (4011016, base 665, BNpcName 689, who speaks; 666; 667), held back till then;
+  * two champions, yours (4011120, base 657, BNpcName 690) and theirs (4011122, 1324), level 50 and 258900 HP, fighting
+    each other only, from sequence 5;
+  * twenty soldiers in ten pairs (yours 1335 and 1336, theirs 1338-1340; level 15, 191400 HP, chipping 15-40 a hit),
+    each on its own one of the other side's from 1-2 s into the fight, the whole fight: none falls, and none counts.
+  Then the last wave: three more lancers (663) on the one who speaks and a thaumaturge (656) on you.
+* The flow: sequence 2, 145 (your champion) at 5.1 s. **The player at the third pair** (20.1 s, within 6 yalms of
+  either; they came at the player there): sequence 3. **The player at the archers below the camp** (36.2 s, within 9
+  yalms): sequence 5 and 146 (the one who speaks) at once; the camp and the champions fight. Both are where retail's
+  player was (no kill or timer fits them; the director's sequence 4 never came); the battle-sim fixture holds the run's
+  player trail (`positions`) to check them. **The conjurer down** (94.0 s): its 152 at once, as its health reached 0;
+  sequence 6 2.4 s later, the last wave 0.35 s after that, 147 10.05 s after 6. **Every one that counts down** (177.6 s,
+  0.05 s later: no death animation waited for): "Duty Complete", sequence 8, the battle's scene 8 (a cutscene,
+  0xF8402EFB) 3.1 s later; the quest moves to 255 with UI8B 0 (`QUEST_VARS_AFTER_WIN`: its two key items gone, as
+  retail's UpdateQuest). `questkit battle-sim 23` matches all 14 events within 1.1 s.
+* Heals (Cure, 120), from the run: the one who speaks on himself and the other two below 40 % (6-36 % before the heal,
+  every 6.9 s), the third on him and the second below 45 % (31-44 %, every 7.6 s), the conjurer its side below 30 %
+  (0-29 %, every 5.9 s). Timelines `QB23*` (bases 656-667, 687, 1324, 1335-1340). The second gladiator's Awareness
+  (29167) had no script (`actions/291/QuestBattleNpc_29167.lua`: status 3285 on himself); their champion's one Provoke
+  (18) is left out of its timeline (no script; the director's targeting does what it would).
+* The client's battle script (`ClsGla300Btl_00265`) has scenes 1 and 8 and OnSequence001 and 002 only.
+
 ### Quest battle 75 — Seer Folly (`content/questbattle/75.lua`)
 
 * Quest 1079 (JobWhm300_01079, the White Mage's first quest) enters it (scene 2, YesNoQuestBattle; territory 319,

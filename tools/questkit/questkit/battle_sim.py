@@ -431,8 +431,10 @@ def spawn_problems(fixture: dict, calls: list[tuple]) -> list[str]:
     20261101-221536.)"""
     problems = []
     script_count: dict[int, int] = {}
+    # onSetup's spawns count too: they're out before the opening cutscene, as retail's first line-up (The Rematch's 39,
+    # quest battle 23, fighting in the background from the start.)
     for t, name, args in calls:
-        if name == "spawn_bnpc" and args and t > SETUP_CLOCK:
+        if name == "spawn_bnpc" and args and t >= SETUP_CLOCK:
             layout = int(args[0])
             script_count[layout] = script_count.get(layout, 0) + 1
     retail_count: dict[int, int] = {}

@@ -1,0 +1,39 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "156": {
+            "players": 71.0
+        },
+        "141": {
+            "players": 87
+        },
+        "147": {
+            "players": 52
+        }
+    },
+    "rotation": {
+        "pace": 13.5,
+        "actions": [
+            {
+                "action": 156,
+                "every": 13.5,
+                "comment": "2 uses (4.2 s apart); every 13.5 s: its time in the fight over its uses"
+            },
+            {
+                "action": 141,
+                "every": 26.9,
+                "comment": "1 use; every 26.9 s: its time in the fight over its uses"
+            },
+            {
+                "action": 147,
+                "every": 26.9,
+                "comment": "1 use; every 26.9 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "The Rematch's (quest 265) thaumaturge in the last wave (quest battle 23, BNpcBase 656, BNpcName 1301, layout 4011442): level 31, 1419 HP, ClassJob 7; on you; never an auto-attack. From Bob's Chronofoil capture accc33a9 (2026-11-06, one run of The Rematch's quest battle 23, won, `questkit chronofoil --battle 0.15`, territory 257, duty 318; a gladiator synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

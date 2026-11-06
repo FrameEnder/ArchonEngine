@@ -1,0 +1,56 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 137
+        },
+        "9": {
+            "npcs": 209
+        },
+        "11": {
+            "npcs": 281
+        },
+        "21": {
+            "npcs": 143
+        }
+    },
+    "rotation": {
+        "pace": 8.6,
+        "actions": [
+            {
+                "action": 14,
+                "every": 8.6,
+                "comment": "10 uses (2.6-31.1 s apart); every 8.6 s: its time in the fight over its uses"
+            },
+            {
+                "action": 9,
+                "every": 27.5,
+                "comment": "5 uses (20.4-33.0 s apart); every 27.5 s: its time in the fight over its uses"
+            },
+            {
+                "action": 11,
+                "every": 28.5,
+                "comment": "4 uses (28.5-31.0 s apart); every 28.5 s: its time in the fight over its uses"
+            },
+            {
+                "action": 21,
+                "every": 47.6,
+                "comment": "3 uses (28.5-31.0 s apart); every 47.6 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 67.4,
+            "data": {
+                "type": "action",
+                "action_id": 17,
+                "target": "itself"
+            },
+            "comment": "17 on itself, 1 use, first 67.4 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Rematch's (quest 265) champion on your side (quest battle 23, BNpcBase 657, BNpcName 690, layout 4011120, the battle talk's first speaker): level 50, 258900 HP, ClassJob 1; on their champion alone, the whole fight, neither falling. From Bob's Chronofoil capture accc33a9 (2026-11-06, one run of The Rematch's quest battle 23, won, `questkit chronofoil --battle 0.15`, territory 257, duty 318; a gladiator synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}
