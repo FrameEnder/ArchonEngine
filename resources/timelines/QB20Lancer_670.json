@@ -1,0 +1,25 @@
+{
+    "autoattack_action_id": 871,
+    "from_pull": true,
+    "recorded_amounts": {
+        "871": {
+            "players": 10.0
+        },
+        "866": {
+            "players": 34
+        }
+    },
+    "rotation": {
+        "pace": 15.1,
+        "actions": [
+            {
+                "action": 866,
+                "every": 15.1,
+                "comment": "3 uses by 2 (10.1 s apart); every 15.1 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "That Old Familiar Feeling's (quest 262) third wave's lancers on you (quest battle 20, BNpcBase 670, BNpcName 925, layouts 3993529 and 3993544): level 15, 271 HP, ClassJob 4. From Bob's Chronofoil capture 941895d2 (2026-11-06, one run of That Old Familiar Feeling's quest battle 20, won, `questkit chronofoil --battle 0.7`, territory 254, duty 315; a gladiator synced to 19): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

@@ -1,0 +1,51 @@
+{
+    "autoattack_action_id": 871,
+    "from_pull": true,
+    "recorded_amounts": {
+        "871": {
+            "npcs": 30.0
+        },
+        "75": {
+            "npcs": 50
+        },
+        "76": {
+            "npcs": 35.0
+        },
+        "82": {
+            "npcs": 39
+        }
+    },
+    "rotation": {
+        "pace": 17.2,
+        "actions": [
+            {
+                "action": 75,
+                "every": 17.2,
+                "comment": "12 uses by 6 (6.6-8.6 s apart); every 17.2 s: its time in the fight over its uses"
+            },
+            {
+                "action": 76,
+                "every": 33.4,
+                "comment": "5 uses by 5; every 33.4 s: its time in the fight over its uses"
+            },
+            {
+                "action": 82,
+                "every": 22.2,
+                "comment": "5 uses by 5; every 22.2 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 8.2,
+            "data": {
+                "type": "action",
+                "action_id": 83,
+                "target": "itself"
+            },
+            "comment": "83 on itself, 10 uses by 10, first 8.2 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Face of Thal's (quest 263) lancers, in every wave (quest battle 21, BNpcBase 633, BNpcName 929, layouts 4001017-4001020, 4001081-4001083 and 4001104-4001106): level 22, 616 HP, ClassJob 4; all on the ally who speaks. From Bob's Chronofoil capture 941895d2 (2026-11-06, one run of The Face of Thal's quest battle 21, won, `questkit chronofoil --battle 0.14`, territory 255, duty 316; a gladiator synced to 24): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

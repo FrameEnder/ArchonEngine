@@ -1,0 +1,25 @@
+{
+    "autoattack_action_id": 873,
+    "from_pull": true,
+    "recorded_amounts": {
+        "873": {
+            "players": 5
+        },
+        "490": {
+            "players": 17
+        }
+    },
+    "rotation": {
+        "pace": 19.6,
+        "actions": [
+            {
+                "action": 490,
+                "every": 19.6,
+                "comment": "1 use; every 19.6 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "That Old Familiar Feeling's (quest 262) Qiqirn traffickers, the injured gladiator's scene brings out (BNpcBase 1244, BNpcName 1177, layouts 3982631 and 3982632, the quest's ENEMY0 and ENEMY1): level 15, 319 HP, ClassJob 5; on you. From Bob's Chronofoil capture 941895d2 (2026-11-06, the quest on a gladiator, `questkit chronofoil --battle 0.3`, territory 145): `players` is the median damage to the player, times from its pull. Hitbox not recorded."
+}

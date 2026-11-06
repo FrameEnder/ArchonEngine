@@ -1,0 +1,53 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 9.0
+        },
+        "9": {
+            "npcs": 15.5
+        },
+        "11": {
+            "npcs": 22.0
+        }
+    },
+    "rotation": {
+        "pace": 16.5,
+        "actions": [
+            {
+                "action": 9,
+                "every": 17.3,
+                "comment": "7 uses (16.2-19.8 s apart); every 17.3 s: its time in the fight over its uses"
+            },
+            {
+                "action": 11,
+                "every": 16.5,
+                "comment": "7 uses (15.2-19.8 s apart); every 16.5 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 7.8,
+            "data": {
+                "type": "action",
+                "action_id": 10,
+                "target": "itself"
+            },
+            "comment": "10 on itself, 2 uses, first 7.8 s after its pull, then about every 77.1 s",
+            "every": 77.1
+        },
+        {
+            "time": 23.0,
+            "data": {
+                "type": "action",
+                "action_id": 101,
+                "target": "itself"
+            },
+            "comment": "101 on itself, 1 use, first 23.0 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Face of Thal's (quest 263) gladiators on your side (quest battle 21, BNpcBase 870, BNpcName 933, layout 4001012): level 20, 413 HP, ClassJob 1; on the archers and gladiators, then the boss. From Bob's Chronofoil capture 941895d2 (2026-11-06, one run of The Face of Thal's quest battle 21, won, `questkit chronofoil --battle 0.14`, territory 255, duty 316; a gladiator synced to 24): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

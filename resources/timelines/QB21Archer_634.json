@@ -1,0 +1,63 @@
+{
+    "autoattack_action_id": 873,
+    "from_pull": true,
+    "recorded_amounts": {
+        "873": {
+            "players": 21.5,
+            "npcs": 46.0
+        },
+        "106": {
+            "players": 23.0,
+            "npcs": 53.0
+        },
+        "97": {
+            "npcs": 79
+        },
+        "18190": {
+            "players": 27,
+            "npcs": 75
+        },
+        "100": {
+            "players": 16,
+            "npcs": 56
+        }
+    },
+    "rotation": {
+        "pace": 21.8,
+        "actions": [
+            {
+                "action": 106,
+                "every": 21.8,
+                "comment": "11 uses by 6 (15.2-23.9 s apart); every 21.8 s: its time in the fight over its uses"
+            },
+            {
+                "action": 97,
+                "every": 43.6,
+                "comment": "4 uses by 4; every 43.6 s: its time in the fight over its uses"
+            },
+            {
+                "action": 18190,
+                "every": 40.3,
+                "comment": "4 uses by 4; every 40.3 s: its time in the fight over its uses"
+            },
+            {
+                "action": 100,
+                "every": 42.8,
+                "comment": "4 uses by 4; every 42.8 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 7.0,
+            "data": {
+                "type": "action",
+                "action_id": 101,
+                "target": "itself"
+            },
+            "comment": "101 on itself, 5 uses by 5, first 7.0 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Face of Thal's (quest 263) archers, in the first two waves (quest battle 21, BNpcBase 634, BNpcName 1306, layouts 4001025, 4001026, 4001073, 4001089, 4001091 and 4001229): level 20, 247 HP, ClassJob 5; on the gladiators on your side and you. From Bob's Chronofoil capture 941895d2 (2026-11-06, one run of The Face of Thal's quest battle 21, won, `questkit chronofoil --battle 0.14`, territory 255, duty 316; a gladiator synced to 24): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

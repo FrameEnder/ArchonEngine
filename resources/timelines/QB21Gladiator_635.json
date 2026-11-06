@@ -1,0 +1,57 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 9.0
+        },
+        "15": {
+            "npcs": 8
+        },
+        "718": {
+            "npcs": 3
+        }
+    },
+    "rotation": {
+        "pace": 22.3,
+        "actions": [
+            {
+                "action": 9,
+                "every": 35.3,
+                "comment": "3 uses by 2 (24.4 s apart); every 35.3 s: its time in the fight over its uses"
+            },
+            {
+                "action": 15,
+                "every": 35.3,
+                "comment": "3 uses by 2 (19.8 s apart); every 35.3 s: its time in the fight over its uses"
+            },
+            {
+                "action": 718,
+                "every": 22.3,
+                "comment": "2 uses (23.8 s apart); every 22.3 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 21.9,
+            "data": {
+                "type": "action",
+                "action_id": 10,
+                "target": "itself"
+            },
+            "comment": "10 on itself, 2 uses by 2, first 21.9 s after its pull"
+        },
+        {
+            "time": 16.7,
+            "data": {
+                "type": "action",
+                "action_id": 20,
+                "target": "itself"
+            },
+            "comment": "20 on itself, 1 use, first 16.7 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Face of Thal's (quest 263) first wave's gladiators (quest battle 21, BNpcBase 635, BNpcName 1304, layouts 4001028 and 4001029): level 20, 660 HP, ClassJob 1; on the ally who speaks. From Bob's Chronofoil capture 941895d2 (2026-11-06, one run of The Face of Thal's quest battle 21, won, `questkit chronofoil --battle 0.14`, territory 255, duty 316; a gladiator synced to 24): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

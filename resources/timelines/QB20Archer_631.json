@@ -1,0 +1,43 @@
+{
+    "autoattack_action_id": 873,
+    "from_pull": true,
+    "recorded_amounts": {
+        "873": {
+            "players": 5.5
+        },
+        "18190": {
+            "players": 6
+        },
+        "97": {
+            "players": 10
+        }
+    },
+    "rotation": {
+        "pace": 26.0,
+        "actions": [
+            {
+                "action": 18190,
+                "every": 26.0,
+                "comment": "1 use; every 26.0 s: its time in the fight over its uses"
+            },
+            {
+                "action": 97,
+                "every": 26.0,
+                "comment": "1 use; every 26.0 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 14.2,
+            "data": {
+                "type": "action",
+                "action_id": 101,
+                "target": "itself"
+            },
+            "comment": "101 on itself, 1 use, first 14.2 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "That Old Familiar Feeling's (quest 262) second wave's two on you (quest battle 20, BNpcBase 631, BNpcName 943, layouts 3993250 and 3993251): level 15, 223 HP, ClassJob 5. From Bob's Chronofoil capture 941895d2 (2026-11-06, one run of That Old Familiar Feeling's quest battle 20, won, `questkit chronofoil --battle 0.7`, territory 254, duty 315; a gladiator synced to 19): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

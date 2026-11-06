@@ -1,0 +1,51 @@
+{
+    "autoattack_action_id": 873,
+    "from_pull": true,
+    "recorded_amounts": {
+        "873": {
+            "npcs": 12
+        },
+        "97": {
+            "npcs": 23
+        },
+        "100": {
+            "npcs": 13
+        },
+        "18190": {
+            "npcs": 16.0
+        }
+    },
+    "rotation": {
+        "pace": 5.2,
+        "actions": [
+            {
+                "action": 97,
+                "every": 5.2,
+                "comment": "12 uses by 4 (2.6-45.7 s apart); every 5.2 s: its time in the fight over its uses"
+            },
+            {
+                "action": 100,
+                "every": 8.7,
+                "comment": "6 uses by 2 (2.6-32.5 s apart); every 8.7 s: its time in the fight over its uses"
+            },
+            {
+                "action": 18190,
+                "every": 57.0,
+                "comment": "4 uses by 4; every 57.0 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 21.3,
+            "data": {
+                "type": "action",
+                "action_id": 101,
+                "target": "itself"
+            },
+            "comment": "101 on itself, 4 uses by 4, first 21.3 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "That Old Familiar Feeling's (quest 262) first wave (quest battle 20, BNpcBase 669, BNpcName 925, layouts 3993614-3993618): level 17, 1845 HP, ClassJob 5 (archers); all on the ally. From Bob's Chronofoil capture 941895d2 (2026-11-06, one run of That Old Familiar Feeling's quest battle 20, won, `questkit chronofoil --battle 0.7`, territory 254, duty 315; a gladiator synced to 19): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

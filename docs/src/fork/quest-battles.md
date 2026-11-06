@@ -221,6 +221,66 @@ a quest's entering event, 0 for every other event (228 events across the capture
   spawned on retail for the player by the gutless gladiator's event (their SpawnNpc names him), which is why
   `questkit chronofoil --dropin` left them out ("owned by someone").
 
+### Quest battle 20 — That Old Familiar Feeling (`content/questbattle/20.lua`)
+
+* Quest 262 (ClsGla150_00262, the Gladiators' level 15 quest) enters it (scene 40, Aldis' YesNoQuestBattle; territory
+  254, duty 315). Territory 254 is a copy of Ul'dah - Steps of Nald: the run's positions stand on Steps of Nald's ground
+  (the median height difference from the same capture's visits to 130 is 0.03 yalms; from Eastern and Central
+  Thanalan's drop-in spawns nearby, 1.7 and 8.6), so its NPCs are layer `QB_ClsGla150_002` of `wil_w1t1_planmap.json`, with retail's layout IDs, levels, HP,
+  positions, gear, display flags (0x40003) and character data flags (3) from Bob's Chronofoil capture 941895d2
+  (2026-11-06, `--battle 0.7`, one run, won; a gladiator synced to 19): the ally (3993254, base 629, BNpcName 690,
+  level 50, 5178 HP, the talk's speaker); five archers out from the start (3993614-3993618, base 669, level 17, 1845
+  HP), on him; then four more on him (base 630, level 20, 1280 HP) and two on you (base 631, 223 HP); then three more
+  of 630 on him and four on you (two of 632, two lancers of 670.) The start spot (28.64, 7.21, -100.73, facing 2.876)
+  and the opening's flags (0xF841AEFB, Kawari's default) are the run's.
+* The flow (seconds from the fight starting): sequence 2, talk 122 (the ally, no portrait) at 5.1 s. **The second of
+  the first five down** (32.7 s; heard 2.0 s later, its death animation): sequence 3 and 123 at once. **30.1 s after
+  sequence 3**, whatever the first five were doing (two were still up at 1 % and 12 %): sequence 4, the second wave
+  0.45 s later; 10.1 s after that sequence 10 (sic) and 124, and 125 15.1 s later. **The fifth of the second wave
+  down** (106.8 s): sequence 5 at once, not 2 s later (as Big Trouble in Little Ala Mhigo's second wave), the third wave
+  0.44 s later, 126 5.1 s after 5. **Every enemy down** (162.0 s, heard 2.0 s later): "Duty Complete", sequence 6, the
+  battle's scene 6 (a cutscene, 0xF8402EFB) 3.6 s later; the quest moves to 255. `questkit battle-sim 20` matches all
+  25 events within 0.6 s.
+* The ally fights up close, on whichever enemy last hit him (21 of his 23 target changes); auto-attacks of 229,
+  Fast Blade, Savage Blade and Rage of Halone about every 32 s, Flash (14) every 9.9 s and Sentinel on himself. The
+  archers on him only plink (12-42), so he holds the whole fight; the ones on you hit for 1-10. Timelines `QB20*`
+  (bases 629-632, 669, 670) and `ClsGla150Trafficker_1244` for the quest's two.
+* The client's battle script (`ClsGla150Btl_00262`, Bob's extracted scripts of 2026-11-06) has scenes 1 (CUT_SCENE_01)
+  and 6 (the closing cutscene), OnSequence001 (the objective) and OnSequence002 (its message). The director plays
+  only 1 and 6.
+* Flash (14) had no script: `actions/000/Flash_00014.lua` gives status 15 at 236 to every enemy within 5 yalms (the
+  Action sheet's area), as retail's did each time (how long isn't recorded: 12 s).
+
+### Quest battle 21 — The Face of Thal (`content/questbattle/21.lua`)
+
+* Quest 263 (ClsGla200_00263, the Gladiators' level 20 quest) enters it (scene 18, Mylla's YesNoQuestBattle in
+  Western Thanalan; territory 255, duty 316). Territory 255 is a copy of Western Thanalan (the run's positions within
+  0.02 yalms of the capture's visits to 140), so its NPCs are layer `QB_ClsGla200_001` of `wil_w1f1_planmap.json`, with
+  retail's layout IDs, levels, HP, positions, gear and flags from the same capture (`--battle 0.14`, one run, won; a
+  gladiator synced to 24). On your side: the one who speaks (4000991, base 638, BNpcName 689, level 50, 1941 HP) and
+  four gladiators (4001010-4001013, bases 868-871, level 20-26). Against you: four lancers (633), three archers (634)
+  and two gladiators (635); then three lancers, three archers and two conjurers (636); then three lancers, three
+  thaumaturges (637) and their leader (4001144, base 872, level 25, 2554 HP.) Start spot (-239.7, 32.44, 395.6, facing
+  2.354); the opening is no cutscene (0x2001, over in 0.2 s).
+* The flow: sequence 2, talk 165 at 5.1 s. **The seventh of the first nine down** (42.5 s, heard 2.0 s later):
+  sequence 3, the second wave 0.45 s later. **10.05 s after 3**: sequence 4, 166 and 167 5.1 and 10.1 s after it.
+  **The sixth of the second wave down** (84.6 s): sequence 5 at once, the third wave 0.17 s later, 168 10.1 s after 5.
+  **Their leader at half health** (124.7 s): sequence 6 and 169. **Their leader down**, the rest already (136.0 s): the
+  win 0.3 s later, before his death animation (unlike 20's): "Duty Complete", sequence 7, the battle's scene 7 (a
+  cutscene, 0xF8402EFB) 3.7 s later; the quest moves to 255. `questkit battle-sim 21` matches all 27 events within
+  0.6 s.
+* Who goes for whom, from the run: every lancer and their leader on the one who speaks, the gladiators on two of the
+  four (then him), the archers on the four, him and you (Quick Nock's cone takes several), a conjurer and a
+  thaumaturge each on you, the rest on the four; the director starts each on retail's first target. The one who speaks
+  takes the lancers then their leader, the first two of the four the archers, the other two the gladiators. Heals
+  (Cure, 120): the one who speaks on the four below 70 % (615 each; 3-66 % after the heal, every 6.3 s or so, never
+  himself or you), the second of the four on him, the others and himself below 65 % (132), the conjurers on their own
+  side below 60 % (125). Timelines `QB21*` (bases 633-638, 868-872).
+* The client's battle script (`ClsGla200Btl_00263`) has OnSequence001 and 002 and scenes 1 and 7 only.
+* The enemy gladiators' Shield Bash is the NPC one, 718 (`actions/007/ShieldBash_00718.lua`: a hit and stun, status 2
+  at 0), and the conjurers' Fluid Aura 134 (`actions/001/FluidAura_00134.lua`: status 13 at 0, no damage), as retail's
+  effects were; neither had a script. How long the stun and bind last isn't recorded (6 s).
+
 ### Quest battle 75 — Seer Folly (`content/questbattle/75.lua`)
 
 * Quest 1079 (JobWhm300_01079, the White Mage's first quest) enters it (scene 2, YesNoQuestBattle; territory 319,

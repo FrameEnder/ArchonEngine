@@ -1,0 +1,59 @@
+{
+    "autoattack_action_id": 873,
+    "from_pull": true,
+    "recorded_amounts": {
+        "873": {
+            "npcs": 23.0
+        },
+        "106": {
+            "npcs": 25.5
+        },
+        "100": {
+            "npcs": 25
+        },
+        "18190": {
+            "npcs": 36
+        },
+        "97": {
+            "npcs": 42.5
+        }
+    },
+    "rotation": {
+        "pace": 29.2,
+        "actions": [
+            {
+                "action": 106,
+                "every": 29.2,
+                "comment": "9 uses by 6 (15.2-19.9 s apart); every 29.2 s: its time in the fight over its uses"
+            },
+            {
+                "action": 100,
+                "every": 42.7,
+                "comment": "7 uses by 5 (15.2-17.3 s apart); every 42.7 s: its time in the fight over its uses"
+            },
+            {
+                "action": 18190,
+                "every": 43.1,
+                "comment": "6 uses by 6; every 43.1 s: its time in the fight over its uses"
+            },
+            {
+                "action": 97,
+                "every": 32.5,
+                "comment": "6 uses by 4 (8.6-23.9 s apart); every 32.5 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 5.7,
+            "data": {
+                "type": "action",
+                "action_id": 101,
+                "target": "itself"
+            },
+            "comment": "101 on itself, 7 uses by 7, first 5.7 s after its pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "That Old Familiar Feeling's (quest 262) second and third waves' tougher archers (quest battle 20, BNpcBase 630, BNpcName 925, layouts 3993218-3993221 and 3993388-3993390): level 20, 1280 HP, ClassJob 5; all on the ally. From Bob's Chronofoil capture 941895d2 (2026-11-06, one run of That Old Familiar Feeling's quest battle 20, won, `questkit chronofoil --battle 0.7`, territory 254, duty 315; a gladiator synced to 19): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

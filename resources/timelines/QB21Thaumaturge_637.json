@@ -1,0 +1,42 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "142": {
+            "players": 79,
+            "npcs": 192
+        },
+        "141": {
+            "players": 135,
+            "npcs": 185.0
+        },
+        "146": {
+            "players": 24.0,
+            "npcs": 57.0
+        }
+    },
+    "rotation": {
+        "pace": 21.9,
+        "actions": [
+            {
+                "action": 142,
+                "every": 21.9,
+                "comment": "6 uses by 3 (4.1 s apart); every 21.9 s: its time in the fight over its uses"
+            },
+            {
+                "action": 141,
+                "every": 38.5,
+                "comment": "3 uses by 3; every 38.5 s: its time in the fight over its uses"
+            },
+            {
+                "action": 146,
+                "every": 21.9,
+                "comment": "2 uses (4.1 s apart); every 21.9 s: its time in the fight over its uses"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "The Face of Thal's (quest 263) third wave's thaumaturges (quest battle 21, BNpcBase 637, BNpcName 1307, layouts 4001113, 4001116 and 4001118): level 20, 144 HP, ClassJob 7; Fire and Blizzard on the gladiators on your side and you; never an auto-attack. From Bob's Chronofoil capture 941895d2 (2026-11-06, one run of The Face of Thal's quest battle 21, won, `questkit chronofoil --battle 0.14`, territory 255, duty 316; a gladiator synced to 24): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+}

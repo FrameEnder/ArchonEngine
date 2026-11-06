@@ -165,6 +165,16 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   Feint doesn't (nor is Slow modelled); how often the thugs' Feint and Heartstopper and the tougher thug's True Thrust
   come is a guess (each was used once). The gutless gladiator can be talked to again while his two are out (they
   aren't brought out twice); what retail does then wasn't seen.
+* **That Old Familiar Feeling (262), The Face of Thal (263) and their quest battles 20 and 21** (2026-11-06, from
+  Bob's dumps and Chronofoil capture 941895d2): untested in game, from one run each. What brings each wave fits that
+  run only: 20's second wave on a 30 s timer after sequence 3 (its first five weren't all down), both battles' third
+  waves at once on the second wave's fifth (20) or sixth (21) down, 21's win on its leader's health reaching 0; the
+  director hears of the first waves' deaths 2 s late, as 19's. Which way 254 and 255 are copies (Steps of Nald,
+  Western Thanalan) is by the run's positions on their ground, not their TerritoryType. The NPCs' rarer actions
+  (once or twice in the run) come about as often as that one run had them. Flash's blind, Fluid Aura's bind and the
+  NPC Shield Bash's stun last a guessed 12, 6 and 6 s, and what statuses 13 and 15 do isn't scripted. In 263 the
+  point of ambush found before both talks waits for them (UI8BH and BitFlag8 3, the client's todo); retail talked
+  first.
 * **Seer Folly (1079) and its quest battle 75** (2026-11-05, from Bob's dumps and Chronofoil captures 8d550e33 and
   dc565f7c): untested in game, from one run. What brings the second wave (the boss's adds down) and the third (the
   boss at 40 %) fits that run only; the QuestBattle sheet's other ten layout IDs (more raptors, bats, slugs and water
