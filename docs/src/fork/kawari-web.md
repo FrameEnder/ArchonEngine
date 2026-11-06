@@ -1,6 +1,6 @@
 # ArchonEngine ControlPanel
 
-ArchonEngine ControlPanel (`FrameEnder/Kawari-Web`, Flask, currently **2.26.0** on the `UI-Redesign` branch, **2.24.2**
+ArchonEngine ControlPanel (`FrameEnder/Kawari-Web`, Flask, currently **2.26.1** on the `UI-Redesign` branch, **2.24.2**
 on `main`; it was Kawari Web until 2.26.0) runs beside the server in its own container. Its README is the user guide
 (setup, pages, service, forges, builds); this page is about **how its features work** and how they depend on the fork.
 Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates). The repository, the Python packages
@@ -154,7 +154,7 @@ The pages themselves are redone in later commits on the same branch, from the de
 2.19.1 fixed a 500 on Quest Progress: the layout kept its page lookup in a variable named `page`, which hid the
 page number Quest Progress passes. The layout's variables are `_adm_*` now.
 
-## Branding: the ArchonEngine ControlPanel name, logo and favicon (2.26.0)
+## Branding: the ArchonEngine ControlPanel name, logo and favicon (2.26.0, the logo's shadow 2.26.1)
 
 Kawari Web became ArchonEngine ControlPanel. What a visitor sees by default:
 
@@ -166,15 +166,18 @@ Kawari Web became ArchonEngine ControlPanel. What a visitor sees by default:
   327 × 425, `#361B3D`, two outlines, 169 points). Traced with scikit-image (`find_contours` at half alpha,
   `approximate_polygon` at 0.35 px); rendered in Chromium it covers the image's pixels with an IoU of 0.977.
   `_icons.html`'s `brand_mark()` puts the same path inline wherever no logo is uploaded (top bar, admin sidebar,
-  sign-in and register), filled with `--logo`: `#361b3d` on the light theme, `#cfacd7` (the same hue, light, 9.5:1
-  on the dark ground) on the dark one, where the mark's own colour wouldn't show. It's sized by height
-  (`aspect-ratio: 327 / 425`), as it's taller than wide.
+  sign-in and register), filled with `--logo`, the mark's own `#361b3d` on both themes (Bob: the colour matters).
+  Its contrast comes from a shadow in the theme's opposite colour, `--logo-shadow` (2.26.1): white (90%) on the dark
+  theme, where the purple alone is about 1.3:1 against the ground, black (45%) on the light one; `.brand-mark`'s
+  `filter` is a 1 px halo and a 1 px offset drop shadow, in CSS pixels whatever the mark's size. (2.26.0 drew it in
+  a light tint, `#cfacd7`, on the dark theme instead.) It's sized by height (`aspect-ratio: 327 / 425`), as it's
+  taller than wide.
 * **Favicon**: `/favicon.ico` is the branding's emoji if one is set, else the uploaded logo, else
-  `static/logo/favicon.svg` (the mark on a square viewBox, its `prefers-color-scheme: dark` rule switching to the
-  tint), sent with `no-cache` so a change shows at once. `base.html` lists `static/logo/favicon-32.png` first, with
+  `static/logo/favicon.svg` (the mark on a square viewBox, `#361B3D` with two `feDropShadow`s, black, and white
+  under its `prefers-color-scheme: dark` rule), sent with `no-cache` so a change shows at once. `base.html` lists `static/logo/favicon-32.png` first, with
   its size, so browsers that can use the SVG take it, and an `apple-touch-icon` (180 px; the uploaded logo if there
-  is one). The PNGs (the mark on a light `#f4f5f8` tile, so they show on dark tab bars too) were rendered from
-  `mark.svg` in Chromium. The favicon is reachable before the first account exists (first-run setup lets it through).
+  is one). The PNGs (the mark with the light theme's black shadow on a light `#f4f5f8` tile, so they show on dark
+  tab bars too) were rendered from `mark.svg` in Chromium. The favicon is reachable before the first account exists (first-run setup lets it through).
   The default emoji is now empty; the Branding page's field says so.
 * **Accent**: `#b170c2`, the mark's hue (288°) light enough for buttons on both themes (5.4:1 on the dark ground).
 
