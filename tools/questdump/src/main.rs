@@ -66,22 +66,25 @@ COMMANDS:
               resources/scripts folder), only the scripts the server has one of the same name for. For checking the
               server's scripts against the client's: `questkit clientcheck`.
     index     Write quest-index.json: every quest's name, level, prerequisites, issuer, area, expansion, journal
-              section and whether it's main scenario, for tools that need the whole quest graph (Kawari Web
-              uses it to search, to unlock prerequisites and for its quest progress page.)
+              section and whether it's main scenario, for tools that need the whole quest graph (ArchonEngine
+              ControlPanel uses it to search, to unlock prerequisites and for its quest progress page.)
     items     Write item-index.json: every named item's ID, name, description, UI category, icon, stack size,
               whether it's unique/untradable, and what the marketboard needs (search category, rarity, levels,
-              whether it can be HQ); and marketboard-categories.json, the marketboard's search categories (Kawari
-              Web's shop links its listings to items with these, and its Marketboard page lays items out by them.)
+              whether it can be HQ); and marketboard-categories.json, the marketboard's search categories
+              (ArchonEngine ControlPanel's shop links its listings to items with these, and its Marketboard page
+              lays items out by them.)
     content   Write content-index.json: every duty (ContentFinderCondition: name, short code, content type,
               territory, levels, expansion) and every open-world zone (TerritoryType: name, region, background
-              folder, expansion), for Kawari Web's Misc Content progress (which duties the server has a script for,
-              which zones have monster spawns.)
+              folder, expansion), for ArchonEngine ControlPanel's Misc Content progress (which duties the server
+              has a script for, which zones have monster spawns.)
     classes   Write class-index.json: every combat class and job (ClassJob: name, English name, abbreviation,
-              role, base class, main stat), for Kawari Web's glamour API (the Glamour Collector's Class list.)
+              role, base class, main stat), for ArchonEngine ControlPanel's glamour API (the Glamour Collector's
+              Class list.)
     actions   Write action-index.json: every named action, and every one with an area, with its name, cast time,
               and what the client draws its area from (CastType, EffectRange, XAxisModifier, Range and its omen's
-              path), and how far each knockback pushes (Knockback: distance, speed, direction), for Kawari Web's
-              battle replay (each cast's shape on the map, as the server's area_shape, and each push.)
+              path), and how far each knockback pushes (Knockback: distance, speed, direction), for ArchonEngine
+              ControlPanel's battle replay (each cast's shape on the map, as the server's area_shape, and each
+              push.)
     disasm   Print a readable listing of a compiled script you already have.
 
 OPTIONS:

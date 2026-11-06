@@ -268,6 +268,6 @@ The aesthetician (`CmnDefBeautySalon_00148`) had the same bug: its yield 27 carr
 as 128 (Bob's 2026-10-18 bundle) and the script only took 1 as on, so everything but the highlights was saved. Fixed
 2026-10-18; the aesthetician is the in-game way to turn them back on.
 
-Or give the character a Fantasia (Kawari Web's character page, "Fantasia (remake mode)", while
+Or give the character a Fantasia (ArchonEngine ControlPanel's character page, "Fantasia (remake mode)", while
 they're logged out) and edit the appearance at the lobby: the client sends the new appearance with `"128"`, which is
 now kept.

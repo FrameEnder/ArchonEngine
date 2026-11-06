@@ -1,6 +1,6 @@
 // The list: each entry with a gender choice (ANY, male or female), the classes it's for, its lines to edit, and a
-// remove button; the whole list sent to your Kawari Web (which writes the server's glamours.txt) or exported as the
-// file (docs/src/fork/party-bots.md, "Glamours"; docs/src/fork/tools.md, "Glamour Collector").
+// remove button; the whole list sent to your ArchonEngine ControlPanel (which writes the server's glamours.txt) or
+// exported as the file (docs/src/fork/party-bots.md, "Glamours"; docs/src/fork/tools.md, "Glamour Collector").
 
 const list = document.getElementById("entries");
 const statusLine = document.getElementById("status");
@@ -73,7 +73,7 @@ function showClasses(container, names, change) {
   if (!classList) {
     const hint = document.createElement("option");
     hint.disabled = true;
-    hint.textContent = "(connect Kawari Web for the jobs)";
+    hint.textContent = "(connect ArchonEngine ControlPanel for the jobs)";
     select.appendChild(hint);
   }
   select.addEventListener("change", () => {
@@ -172,7 +172,7 @@ function render(entries) {
   }
 }
 
-// ── Kawari Web ────────────────────────────────────────────────────────────
+// ── ArchonEngine ControlPanel ────────────────────────────────────────────────────────────
 
 const serverUrl = document.getElementById("server-url");
 const serverToken = document.getElementById("server-token");
@@ -189,7 +189,7 @@ document.getElementById("connect").addEventListener("click", async () => {
   const origin = kawariWebOrigin(serverUrl.value);
   const token = serverToken.value.trim();
   if (!origin || !token) {
-    say("Type your Kawari Web's address and an administrator's token.", true);
+    say("Type your ArchonEngine ControlPanel's address and an administrator's token.", true);
     return;
   }
   // Chrome only asks from a click, so this comes first.
@@ -205,7 +205,7 @@ document.getElementById("connect").addEventListener("click", async () => {
       classList = await kawariWebRefreshClasses();
     } else {
       state += " · no class list yet";
-      say("Connected. Read the class list in Kawari Web (Dashboard → Bot glamours) to fill the dropdown.");
+      say("Connected. Read the class list in ArchonEngine ControlPanel (Dashboard → Bot glamours) to fill the dropdown.");
     }
     showServer({ url: origin, token }, state);
     if (ping.classes) say(`Connected to ${origin}; ${classList.classes.length} classes and jobs.`);
@@ -224,7 +224,7 @@ document.getElementById("forget").addEventListener("click", async () => {
   classList = null;
   showServer({ url: "", token: "" }, "");
   render(await load());
-  say("Kawari Web forgotten.");
+  say("ArchonEngine ControlPanel forgotten.");
 });
 
 document.getElementById("send").addEventListener("click", async (event) => {
@@ -240,12 +240,12 @@ document.getElementById("send").addEventListener("click", async (event) => {
     button.textContent = `Replace the server's list with ${entries.length}?`;
     setTimeout(() => {
       button.dataset.armed = "";
-      button.textContent = "Send to Kawari Web";
+      button.textContent = "Send to ControlPanel";
     }, 4000);
     return;
   }
   button.dataset.armed = "";
-  button.textContent = "Send to Kawari Web";
+  button.textContent = "Send to ControlPanel";
   try {
     const body = await kawariWebCall("/api/glamours", {
       method: "POST",

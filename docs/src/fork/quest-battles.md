@@ -1043,9 +1043,9 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
    (counted), its actions and intervals, heals with how hurt the target was, and who never acted. The Duties tab has
    the director's sequence/variable changes; the Monsters tab the enemies' HP and skills.
 2. Dump the battle's client script. It sits beside its quest's: `game_script/quest/<NNN>/<class>Btl_<number>.luab`
-   (Trial by Water's quest is `ClsCnj003_00092`, its battle `ClsCnj003Btl_00092.luab`; Bob's search of 2026-10-27).
-   When that isn't it, `kawari-questdump search ClsCnj003` (Kawari Web: Quest Lab → Scripts that mention) copies out
-   every client script that mentions the quest, under its real name. A battle script has the director's
+   (Trial by Water's quest is `ClsCnj003_00092`, its battle `ClsCnj003Btl_00092.luab`; Bob's search of 2026-10-27). When
+   that isn't it, `kawari-questdump search ClsCnj003` (ArchonEngine ControlPanel: Quest Lab → Scripts that mention)
+   copies out every client script that mentions the quest, under its real name. A battle script has the director's
    `OnSequenceNNN` (the duty objective, a message) and its own scenes: check the director script plays only those.
 3. Add the NPCs to the territory drop-in as a `QB_…` layer.
 4. Write `content/questbattle/<id>.lua` with the callbacks above; keep a timing table in its header (seconds from the

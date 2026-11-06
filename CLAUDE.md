@@ -1,7 +1,8 @@
 # FrameEnder/Kawari
 
-Bob's fork of Kawari (an FFXIV server emulator). Companion projects: Kawari Web (`FrameEnder/Kawari-Web`) and the
-private `FrameEnder/kawari-diagnostics` (bundles, recordings' analyses, the Dalamud plugins).
+Bob's fork of Kawari (an FFXIV server emulator). Companion projects: ArchonEngine ControlPanel
+(`FrameEnder/Kawari-Web`, Kawari Web before 2.26.0) and the private `FrameEnder/kawari-diagnostics` (bundles,
+recordings' analyses, the Dalamud plugins).
 
 ## Read first
 

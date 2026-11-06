@@ -44,7 +44,7 @@ Or with the debug command:
 A name is one word of 3 to 20 letters (apostrophes and hyphens allowed) starting with a capital. The retainer looks
 and sounds like the character (their CustomizeData and voice are copied) and belongs to the character's city; class
 0 and level 1 unless given. The table keeps the appearance as the 26 bytes of CustomizeData in hex (`customize`) and
-the items as JSON (`inventory`), so Kawari Web can change both later.
+the items as JSON (`inventory`), so ArchonEngine ControlPanel can change both later.
 
 ## The bell
 

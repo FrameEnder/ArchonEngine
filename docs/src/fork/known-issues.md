@@ -271,12 +271,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   away by riding one's own chocobo into a zone without mounts isn't brought back. Places within a zone where mounts
   aren't allowed aren't known to the server.
 * **The chocobo's colour** (2026-10-29): sent at login (ActorControlSelf 274); recolouring it isn't done.
-* **The Scenario Guide** (2026-10-28, [Quests](quests.md#scenario-guide)): retail's order of the Grand Companies'
-  three after 511 (681, 680, 682) is sent since 2026-10-29; whether the guide then shows 680 or 682 once accepted
-  (rather than "Select a Grand Company") isn't known, on retail or here. The quest
-  completed last is worked out from the completed quests, not recorded as retail must; a quest done out of the
-  story's order (with `!quest` or Kawari Web) could put the guide on an earlier step. Steps before the city's last
-  quests and after We Come in Peace weren't in a capture. We Come in Peace (3856) isn't scripted.
+* **The Scenario Guide** (2026-10-28, [Quests](quests.md#scenario-guide)): retail's order of the Grand Companies' three
+  after 511 (681, 680, 682) is sent since 2026-10-29; whether the guide then shows 680 or 682 once accepted (rather than
+  "Select a Grand Company") isn't known, on retail or here. The quest completed last is worked out from the completed
+  quests, not recorded as retail must; a quest done out of the story's order (with `!quest` or ArchonEngine
+  ControlPanel) could put the guide on an earlier step. Steps before the city's last quests and after We Come in Peace
+  weren't in a capture. We Come in Peace (3856) isn't scripted.
 
 * **The Waking Sands' layer filter** (2026-10-26) is known from The Scions of the Seventh Dawn (90338) to
   Sylph-management (90342, 2026-10-28); later visits get 90342 until their keys are recorded (a capture of retail
@@ -542,14 +542,15 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 ## Hunting Log
 
 * Built 2026-10-27 ([Hunting Log](hunting-log.md)): finishing a rank, the Grand Companies' logs, party kills and 543's
-  second number are guesses or not done (see its page). Auracite (Kawari) backups and Kawari Web don't carry it.
+  second number are guesses or not done (see its page). Auracite (Kawari) backups and ArchonEngine ControlPanel don't
+  carry it.
 
 ## Achievement Certificates
 
 * One certificate per 50 achievement points is the wiki's number, not checked against a retail character's points.
 * When retail plays Jonathas' greeting (scene 0) isn't recorded; Kawari plays it to someone never given a certificate.
 * The nested shop's five scene parameters (`0xF8380000, 248, 0, 0, 1`) aren't sent or understood.
-* Auracite (Kawari) backups and Kawari Web don't carry `player_currencies` (the certificate counts).
+* Auracite (Kawari) backups and ArchonEngine ControlPanel don't carry `player_currencies` (the certificate counts).
 
 ## Marketboard
 
@@ -664,10 +665,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * The Glamour Collector's page reader follows Eorzea Collection's markup as of 2026-10-23 (checked on 21 live pages,
   not yet through the installed extension); a site change will need it matched again. A glamour listing more than
   one job in "Intended for" wasn't seen, so whether those come as several icons is unknown.
-* The glamour API (Kawari Web 2.21.0, `UI-Redesign` only) and the extension's Kawari Web connection were checked
-  against a test Kawari Web in the workspace, not yet on Bob's server over the LAN or Tailscale. The server needs a
-  build with this commit's `kawari-questdump classes` for the class list, and this commit's `KAWARI_DATA` path for
-  the bots to see the list Kawari Web writes.
+* The glamour API (ArchonEngine ControlPanel 2.21.0, `UI-Redesign` only) and the extension's ArchonEngine ControlPanel
+  connection were checked against a test ArchonEngine ControlPanel in the workspace, not yet on Bob's server over the
+  LAN or Tailscale. The server needs a build with this commit's `kawari-questdump classes` for the class list, and this
+  commit's `KAWARI_DATA` path for the bots to see the list ArchonEngine ControlPanel writes.
 * The tank's spot across from the party and its keeping up with the player are untested in game.
 * Leaving out gear and glamour pieces a bot's race or sex may not wear (EquipRaceCategory, 2026-10-23) is untested in
   game.
@@ -1197,7 +1198,7 @@ See [Grand Companies](grand-company.md). Untested in game (2026-10-29).
   (no appearance in the backup to hire them with), achievements, hotbars, macros, tribal reputation, logs and records
   are only kept (`auracite_extended`) until Kawari has somewhere for them.
 * A quest's flags and accepting class aren't kept (Kawari's `PersistentQuest` has neither); the export writes them as 0.
-* Kawari Web's character snapshots and restores don't cover the `auracite_extended` row.
+* ArchonEngine ControlPanel's character snapshots and restores don't cover the `auracite_extended` row.
 
 ## Settings backup
 
@@ -1220,17 +1221,18 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
   touches the world must take the turn too. A step that never ends (a loop that doesn't finish) still stops the world:
   the watchdog only logs it.
 
-## Kawari Web
+## ArchonEngine ControlPanel
 
 * Gil purchases only work while the character is logged out (by design, see [Saving](saving.md)).
 * 162 costume sets in the Shop have no contents yet and can't be bought until an admin adds them.
 * Store items arrive as items; what they do when used depends on server support.
 * Packet captures (`data/captures`, one file per connection while capturing is on) have no limit; only Diagnostics'
   clear button removes them.
-* The battle replay (2.25.0) was checked in a test Kawari Web with an action index made from exported sheets (no Omen
-  sheet there, so every cone came out 90°), not yet on Bob's server with `kawari-questdump actions` from his own install.
-  Actors show by BNpcBase and level, not their names (no BNpcName list read from the game yet). A capture is read
-  from Kawari's decoded text, so a packet whose Debug text changes shape (a renamed field) silently drops out of it.
+* The battle replay (2.25.0) was checked in a test ArchonEngine ControlPanel with an action index made from exported
+  sheets (no Omen sheet there, so every cone came out 90°), not yet on Bob's server with `kawari-questdump actions` from
+  his own install. Actors show by BNpcBase and level, not their names (no BNpcName list read from the game yet). A
+  capture is read from Kawari's decoded text, so a packet whose Debug text changes shape (a renamed field) silently
+  drops out of it.
 * `!mark` and Kawari Probe 0.7.0's *why am I stuck* window are built and tested outside the game only (the Probe in CI,
   `!mark`'s parsing in a test); neither has been used in game yet. The Probe's three hooks (UseAction,
   ShowLogMessage, ShowLogMessageUInt) come from ClientStructs; a wrong one shows as failed in the window, the rest

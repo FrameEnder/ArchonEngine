@@ -57,6 +57,6 @@ come from the client's code instead.
 ## What would follow
 
 With a recording: a `servers/savedata` (or a part of the lobby server) answering on the port the launcher hands out,
-storing each account's client settings and each character's files, and Kawari Web importing an Auracite (Kawari)
-backup's `config_files` into that storage, so a character's gear sets and hotbars would follow it to Kawari without
-the plugin's restore.
+storing each account's client settings and each character's files, and ArchonEngine ControlPanel importing an Auracite
+(Kawari) backup's `config_files` into that storage, so a character's gear sets and hotbars would follow it to Kawari
+without the plugin's restore.

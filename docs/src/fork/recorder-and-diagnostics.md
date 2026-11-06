@@ -5,7 +5,7 @@ Bob's server** (what does happen). Both live in the private `FrameEnder/kawari-d
 the Dalamud plugins' source. GitHub Actions builds each plugin on every change (Actions → the plugin's workflow → the
 run → Artifacts).
 
-## Kawari Recorder (retail, `recorder/`, version 2.7)
+## Kawari Recorder (retail, `recorder/`, version 2.7.1)
 
 A Dalamud plugin used on the **live game**. It replaced Kawari Bestiary (and imports its data on first run). `/krec`
 opens it; **Export (zip)** or `/krec export` writes `kawari-recorder-<date>.zip`; `/krec pause|resume`; `/krec mark
@@ -55,16 +55,18 @@ On top of everyone's samples, actions, actor controls, events and layout layers 
 | `auto mark` events | You or a party member dying or getting back up, a wipe, bosses (three times your max HP or more) going below 75/50/25/10 % | Signposts without typing |
 | `Field` | Set for fights out in the world (the tab's *Also record fights out in the world*: from entering combat until 15 s after) | Open-world aggro, leash and AI per enemy |
 
-The Battles tab also has **Compare** (a battle against the previous run of the same one: each NPC's death time,
-action count and whom it went after, in order) and **Send** / *Send each battle when it ends* (to Kawari Web, below).
+The Battles tab also has **Compare** (a battle against the previous run of the same one: each NPC's death time, action
+count and whom it went after, in order) and **Send** / *Send each battle when it ends* (to ArchonEngine ControlPanel,
+below).
 
-### Sending battles to Kawari Web (2.6, Kawari Web 2.14)
+### Sending battles to ArchonEngine ControlPanel (2.6, ArchonEngine ControlPanel 2.14)
 
-In the Battles tab under *Send to Kawari Web*: the site's address and the account's character-sync token (as Kawari
-Probe's), then *Test*. Each battle goes to `POST /api/diag/battle` as its `.json.gz`; Kawari Web keeps it in
-`<web>/diag/battles` and files it in kawari-diagnostics under **`battles/`** at once, with `battles/index.json`
-(every battle with its label, job, counts and failed hooks) and `battles/latest.txt`. So retail battles reach the
-diagnostics repository without an export: `python3 tools/questkit battle ../kawari-diagnostics/battles --list`.
+In the Battles tab under *Send to ArchonEngine ControlPanel*: the site's address and the account's character-sync token
+(as Kawari Probe's), then *Test*. Each battle goes to `POST /api/diag/battle` as its `.json.gz`; ArchonEngine
+ControlPanel keeps it in `<web>/diag/battles` and files it in kawari-diagnostics under **`battles/`** at once, with
+`battles/index.json` (every battle with its label, job, counts and failed hooks) and `battles/latest.txt`. So retail
+battles reach the diagnostics repository without an export: `python3 tools/questkit battle ../kawari-diagnostics/battles
+--list`.
 
 ### What a recording can and can't tell
 
@@ -101,7 +103,7 @@ so which NPC did what had to be worked out from HP totals and hit counts (the 20
 
 A Dalamud plugin used on **Bob's server**: it reports what the client itself believes. Setup: add the DLL as a dev
 plugin, `/kprobe url http://<server>:7301`, `/kprobe token <character-sync token>`, `/kprobe test`. `/kprobe <note>`
-sends a snapshot; `/kprobe zone on` sends one after every zone change. Snapshots go to Kawari Web
+sends a snapshot; `/kprobe zone on` sends one after every zone change. Snapshots go to ArchonEngine ControlPanel
 (`POST /api/diag/snapshot`) and into the next bundle. A snapshot's `quests` list has each quest's `raw_hex` (the
 client's QuestWork in memory: an 8-byte header, then id, sequence, flags, six variables, accepting class/job), key
 items, zone, position, conditions. Also used to find client internals (e.g. where ServerRequestCallbackManager takes
@@ -136,8 +138,8 @@ The Recorder's predecessor, monsters only. Its Central Shroud recording set the 
 
 ## Diagnostics bundles
 
-Kawari Web → Dashboard → Diagnostics → *Send diagnostics* commits `bundles/<time>-<note>/`; `latest.txt` names the
-newest.
+ArchonEngine ControlPanel → Dashboard → Diagnostics → *Send diagnostics* commits `bundles/<time>-<note>/`; `latest.txt`
+names the newest.
 
 | File | Contents | How to read it |
 |---|---|---|
@@ -155,8 +157,8 @@ capture around the time of the note → the log. A bundle sent by Quest Lab's *T
 `meta.json` (quest, name, character, content_id, where it started, when), and its note starts with "Quest test".
 
 `questkit compare --capture <bundle> --recording <export>` checks the bundle's captures against a retail recording.
-Kawari Web's [battle replay](kawari-web.md#battle-replay-dashboard--battle-replay-2250) puts a capture's fight beside a
-retail one on a map.
+ArchonEngine ControlPanel's [battle replay](kawari-web.md#battle-replay-dashboard--battle-replay-2250) puts a capture's
+fight beside a retail one on a map.
 
 ## Chronofoil captures (release `1`)
 

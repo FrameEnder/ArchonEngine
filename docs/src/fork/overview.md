@@ -11,8 +11,8 @@ The rest of this book is upstream Kawari's documentation and still applies; thes
 | Project | What it is | Where |
 |---|---|---|
 | **Kawari (fork)** | The server emulator itself (Rust): login, lobby, world, patch, web services. The fork adds quests, quest battles, combat and NPC behaviour from retail recordings, saving, opcode scanning and tools. | `github.com/FrameEnder/Kawari` |
-| **Kawari Web** | A Flask site that runs beside the server: accounts, feed, character profiles, the Shop, and an admin Dashboard (server control, config, Quest Lab, quest progress, Diagnostics). | `FrameEnder/Kawari-Web` |
-| **kawari-diagnostics** | A private repository that receives debugging bundles from Kawari Web, plus the Dalamud plugins (Kawari Probe, Kawari Recorder, Kawari Bestiary) and research notes. | `FrameEnder/kawari-diagnostics` |
+| **ArchonEngine ControlPanel** | A Flask site that runs beside the server: accounts, feed, character profiles, the Shop, and an admin Dashboard (server control, config, Quest Lab, quest progress, Diagnostics). | `FrameEnder/Kawari-Web` |
+| **kawari-diagnostics** | A private repository that receives debugging bundles from ArchonEngine ControlPanel, plus the Dalamud plugins (Kawari Probe, Kawari Recorder, Kawari Bestiary) and research notes. | `FrameEnder/kawari-diagnostics` |
 | **Upstream Kawari** | Joshua Goins' (redstrate) project, now on Codeberg. The fork merges its patch updates. | `codeberg.org/redstrate/Kawari` |
 
 How they fit together:
@@ -20,7 +20,7 @@ How they fit together:
 ```text
  Retail client ── Kawari Recorder / Probe (Dalamud) ──▶ recordings, snapshots ─┐
                                                                                ▼
- Game client ◀──▶ Kawari world server ──▶ packet captures, server.log ──▶ Kawari Web ──▶ kawari-diagnostics bundle
+ Game client ◀──▶ Kawari world server ──▶ packet captures, server.log ──▶ ArchonEngine ControlPanel ──▶ kawari-diagnostics bundle
                          ▲                                                    │
                          └──── world.db / login.db (shared) ◀─────────────────┘ (Shop mail, gil, quest setup)
 ```
@@ -52,10 +52,10 @@ patch updates are merged from).
    variables and notices, step by step); Rust changes get `cargo build`/`cargo test` and `rustfmt --check` on the
    changed files only (running `cargo fmt` on the workspace reformats upstream files and must not be committed). CI
    runs these on GitHub. See [questkit and CI](questkit.md).
-5. **Bob tests in game**, ideally with Quest Lab's *Test this quest*, and sends a diagnostics bundle from Kawari Web
-   when something is off. The bundle has the server log, packet captures, the saved quest state and Kawari Probe
-   snapshots of what the client believed; `questkit triage` gives the first read of it and `questkit compare` checks
-   the capture against retail.
+5. **Bob tests in game**, ideally with Quest Lab's *Test this quest*, and sends a diagnostics bundle from ArchonEngine
+   ControlPanel when something is off. The bundle has the server log, packet captures, the saved quest state and Kawari
+   Probe snapshots of what the client believed; `questkit triage` gives the first read of it and `questkit compare`
+   checks the capture against retail.
 6. **Merge to master** only with Bob's OK.
 
 ## Rules that always apply
@@ -103,7 +103,8 @@ The fork's `CLAUDE.md` (repository root) repeats this rule for anyone working on
 * [Tools and debug commands](tools.md): `kawari-questdump`, `kawari-opcodescan`, debug and GM commands, packet capture.
 * [questkit and CI](questkit.md): bundle triage, quest replay tests, the quest scaffolder, capture/retail comparison,
   and the GitHub Actions checks.
-* [Kawari Web](kawari-web.md): what each part does, the Shop's mechanics, Quest Lab, progress, Diagnostics.
+* [ArchonEngine ControlPanel](kawari-web.md): what each part does, the Shop's mechanics, Quest Lab, progress,
+  Diagnostics.
 * [Recorder and diagnostics](recorder-and-diagnostics.md): the Dalamud plugins and the bundle format.
 * [Research notes](research.md): content not implemented yet (Palace of the Dead, Blunderville).
 * [Outside sources](sources.md): what to check when a recording leaves something unclear (Cactbot, Chronofoil,

@@ -1,9 +1,9 @@
-// Talking to your Kawari Web: its address (on your LAN or tailnet, e.g. http://192.168.1.20:8080 or
-// http://myserver.tail1234.ts.net:8080) and an administrator's token (Kawari Web → Settings → Character sync), kept in
-// chrome.storage.local as `kawariWeb`. Chrome asks once to let the extension reach that address (the manifest's
+// Talking to your ArchonEngine ControlPanel (Kawari Web before its 2.26.0): its address (on your LAN or tailnet, e.g.
+// http://192.168.1.20:8080 or http://myserver.tail1234.ts.net:8080) and an administrator's token (its Settings →
+// Character sync), kept in chrome.storage.local as `kawariWeb`. Chrome asks once to let the extension reach that address (the manifest's
 // optional host permissions), which is also what lets it call the API from the popup without CORS.
 //
-// The API (Kawari Web's glamours.py): GET /api/glamours/ping, GET /api/glamours/classes, GET and POST /api/glamours.
+// The API (kawari_web/glamours.py): GET /api/glamours/ping, GET /api/glamours/classes, GET and POST /api/glamours.
 
 async function kawariWebSettings() {
   const { kawariWeb = { url: "", token: "" } } = await chrome.storage.local.get("kawariWeb");
@@ -30,7 +30,7 @@ async function kawariWebAllow(origin) {
 // Calls the API: returns its JSON, or throws with what went wrong.
 async function kawariWebCall(path, options = {}) {
   const { url, token } = await kawariWebSettings();
-  if (!url || !token) throw new Error("Set your Kawari Web address and token first.");
+  if (!url || !token) throw new Error("Set your ArchonEngine ControlPanel address and token first.");
   let response;
   try {
     response = await fetch(`${url}${path}`, {
@@ -44,7 +44,7 @@ async function kawariWebCall(path, options = {}) {
   try {
     body = await response.json();
   } catch (error) {
-    throw new Error(`${url} answered ${response.status}, not Kawari Web's API (an old Kawari Web?)`);
+    throw new Error(`${url} answered ${response.status}, not ArchonEngine ControlPanel's API (one older than 2.21.0?)`);
   }
   if (!response.ok || !body.ok) throw new Error(body.error || `${url} answered ${response.status}`);
   return body;

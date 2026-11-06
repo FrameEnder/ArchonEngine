@@ -11,20 +11,20 @@
     </header>
 
     <details id="server">
-      <summary>Kawari Web <span id="server-state"></span></summary>
+      <summary>ArchonEngine ControlPanel <span id="server-state"></span></summary>
       <label>Address <input id="server-url" type="text" placeholder="http://192.168.1.20:8080 or http://host.tailnet.ts.net:8080" spellcheck="false" /></label>
       <label>Token <input id="server-token" type="password" placeholder="Settings → Character sync (an administrator's)" spellcheck="false" /></label>
       <div class="buttons">
         <button type="button" id="connect">Connect</button>
         <button type="button" id="forget" class="quiet">Forget</button>
       </div>
-      <p class="hint">Your Kawari Web on your LAN or tailnet. Connect asks Chrome to let the extension reach it, checks
-        the token, and fetches the Class list from your game install.</p>
+      <p class="hint">Your ArchonEngine ControlPanel on your LAN or tailnet. Connect asks Chrome to let the extension reach
+        it, checks the token, and fetches the Class list from your game install.</p>
     </details>
 
     <div id="actions">
-      <button type="button" id="send" title="Replaces the server's glamours.txt (Kawari Web keeps the old one)">Send to Kawari Web</button>
-      <button type="button" id="fetch" class="quiet" title="Adds the server's glamours that aren't in this list">Load from Kawari Web</button>
+      <button type="button" id="send" title="Replaces the server's glamours.txt (ArchonEngine ControlPanel keeps the old one)">Send to ControlPanel</button>
+      <button type="button" id="fetch" class="quiet" title="Adds the server's glamours that aren't in this list">Load from ControlPanel</button>
     </div>
     <div id="actions-file">
       <button type="button" id="export" class="quiet">Export glamours.txt</button>

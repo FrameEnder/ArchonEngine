@@ -1,4 +1,4 @@
-"""Reading a diagnostics bundle (kawari-diagnostics/bundles/<time>-<note>/, written by Kawari Web)."""
+"""Reading a diagnostics bundle (kawari-diagnostics/bundles/<time>-<note>/, written by ArchonEngine ControlPanel)."""
 
 from __future__ import annotations
 
@@ -81,7 +81,8 @@ class Bundle:
 
     @property
     def quest_test(self) -> dict | None:
-        """Set by Kawari Web's Quest Lab "Test this quest": which quest was being tested, on whom, from when."""
+        """Set by ArchonEngine ControlPanel's Quest Lab "Test this quest": which quest was being tested, on whom, from
+        when."""
         return self.meta.get("quest_test")
 
     def snapshots(self) -> list[dict]:

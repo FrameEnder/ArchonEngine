@@ -51,9 +51,9 @@ Each function gets a header and a summary:
 
 The client scripts only cover what's shown to the player. Which scene plays for which NPC in which sequence is decided by the server, so `quest.json`'s listeners and named variables (`SEQ_1_ACTOR2 = 2` means "talking to ACTOR2 during sequence 1 plays scene 2") fill in the rest.
 
-## From Kawari Web
+## From ArchonEngine ControlPanel
 
-Kawari Web's **Quest Lab** (Dashboard → Quests) runs this tool for you, using the `kawari-questdump` from
+ArchonEngine ControlPanel's **Quest Lab** (Dashboard → Quests) runs this tool for you, using the `kawari-questdump` from
 the active build against the server's own game install, and adds the parts around it:
 
 * browse dumps, with each quest's `quest.json` laid out, its listing, and the fork's own script side by side

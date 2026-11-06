@@ -110,7 +110,7 @@ def triage(bundle: Bundle, timeline_items: int = 60) -> str:
         report.add()
     report.add(f"* Bundle made {meta.get('created', '?')}, window {meta.get('window_minutes', '?')} minutes")
     report.add(f"* Build `{build.get('short', '?')}` ({build.get('message', '')}), game {build.get('game_version', '?')},"
-               f" Kawari Web {meta.get('kawari_web', '?')}")
+               f" ArchonEngine ControlPanel {meta.get('kawari_web', '?')}")
     test = bundle.quest_test
     if test:
         report.add(f"* **Quest test**: quest {test.get('quest')} ({test.get('name', '')}) on {test.get('character', '?')},"
@@ -279,7 +279,7 @@ def _captures(report: Report, bundle: Bundle, timeline_items: int, test: dict | 
     report.add("## Packet captures")
     report.add()
     if not files:
-        report.add("No packet captures (turn them on in Kawari Web's Diagnostics page).")
+        report.add("No packet captures (turn them on in ArchonEngine ControlPanel's Diagnostics page).")
         report.add()
         return
     packets = bundle.packets()

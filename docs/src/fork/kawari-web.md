@@ -1,8 +1,11 @@
-# Kawari Web
+# ArchonEngine ControlPanel
 
-Kawari Web (`FrameEnder/Kawari-Web`, Flask, currently **2.21.0** on the `UI-Redesign` branch, **2.18.1** on `master`) runs beside the server in its own container. Its
-README is the user guide (setup, pages, service, forges, builds); this page is about **how its features work** and
-how they depend on the fork. Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates).
+ArchonEngine ControlPanel (`FrameEnder/Kawari-Web`, Flask, currently **2.26.0** on the `UI-Redesign` branch, **2.24.2**
+on `main`; it was Kawari Web until 2.26.0) runs beside the server in its own container. Its README is the user guide
+(setup, pages, service, forges, builds); this page is about **how its features work** and how they depend on the fork.
+Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates). The repository, the Python packages
+(`kawari_web`, `kawari_core`), the container and the systemd unit keep their `kawari-web` names, so nothing installed
+has to move.
 
 ## What it touches on the server
 
@@ -140,7 +143,7 @@ The redesign (branch `UI-Redesign` of Kawari-Web, not yet merged) starts with th
   works offline.
 * Icons are inline SVG (`templates/_icons.html`), replacing the emoji bell.
 * `--on-accent`: `app.py`'s `on_accent()` picks dark or white text for anything painted in the Branding accent,
-  whichever has more contrast. The default accent is now `#5aa9f0`; a saved accent is kept.
+  whichever has more contrast. The default accent was `#5aa9f0` then (`#b170c2` since 2.26.0, see Branding below).
 * Admin pages extend `templates/dashboard/_layout.html`: a sidebar (`dashboard/_nav.html`) grouped Server, Build &
   config, Game data, Content and Community, and a header with the page's group and title (pages can override the
   `page_title` and `page_actions` blocks). The page for an endpoint is looked up in the layout's table. Shop
@@ -150,6 +153,43 @@ The pages themselves are redone in later commits on the same branch, from the de
 
 2.19.1 fixed a 500 on Quest Progress: the layout kept its page lookup in a variable named `page`, which hid the
 page number Quest Progress passes. The layout's variables are `_adm_*` now.
+
+## Branding: the ArchonEngine ControlPanel name, logo and favicon (2.26.0)
+
+Kawari Web became ArchonEngine ControlPanel. What a visitor sees by default:
+
+* **Name**: `webdb.BRANDING_DEFAULTS["site_name"]` is "ArchonEngine ControlPanel" (the page titles, the top bar, the
+  admin sidebar, the Home page's heading); the footer says "Powered by ArchonEngine" and How to connect "an
+  ArchonEngine server". The panel's own messages (its start-up banner, the diagnostics repository's first README,
+  Quest Lab's "Made by", the Auracite exporter it writes into a backup's metadata) use the name too.
+* **Logo**: ArchonEngine's mark, Bob's image (2026-11-06) traced into one SVG path: `static/logo/mark.svg` (viewBox
+  327 × 425, `#361B3D`, two outlines, 169 points). Traced with scikit-image (`find_contours` at half alpha,
+  `approximate_polygon` at 0.35 px); rendered in Chromium it covers the image's pixels with an IoU of 0.977.
+  `_icons.html`'s `brand_mark()` puts the same path inline wherever no logo is uploaded (top bar, admin sidebar,
+  sign-in and register), filled with `--logo`: `#361b3d` on the light theme, `#cfacd7` (the same hue, light, 9.5:1
+  on the dark ground) on the dark one, where the mark's own colour wouldn't show. It's sized by height
+  (`aspect-ratio: 327 / 425`), as it's taller than wide.
+* **Favicon**: `/favicon.ico` is the branding's emoji if one is set, else the uploaded logo, else
+  `static/logo/favicon.svg` (the mark on a square viewBox, its `prefers-color-scheme: dark` rule switching to the
+  tint), sent with `no-cache` so a change shows at once. `base.html` lists `static/logo/favicon-32.png` first, with
+  its size, so browsers that can use the SVG take it, and an `apple-touch-icon` (180 px; the uploaded logo if there
+  is one). The PNGs (the mark on a light `#f4f5f8` tile, so they show on dark tab bars too) were rendered from
+  `mark.svg` in Chromium. The favicon is reachable before the first account exists (first-run setup lets it through).
+  The default emoji is now empty; the Branding page's field says so.
+* **Accent**: `#b170c2`, the mark's hue (288°) light enough for buttons on both themes (5.4:1 on the dark ground).
+
+A panel already set up has its branding stored (the Branding page saves every field), so `webdb.init()` runs
+`_migrate_branding` once: a stored name "Kawari", globe emoji or `#5aa9f0` accent, Kawari Web's defaults, becomes
+today's default, and `branding_defaults = 2` in the `setting` table records that it ran; anything else saved is kept,
+and setting one of the old values again afterwards sticks. Checked with Flask's test client (an emoji, an uploaded
+logo, a logo whose file is gone, a restart after "Kawari" was set again) and screenshots of Home on both themes, the
+admin Overview, Branding and sign-in, the 390 px phone header and the favicon in light and dark browsers.
+
+The plugins and the Glamour Collector were renamed with it where they show the name: Kawari Probe 0.7.1 and Kawari
+Recorder 2.7.1 (messages, the *Send to ArchonEngine ControlPanel* section; their config keys `KawariWebUrl` and
+`KawariWebToken` are unchanged, so settings carry over) and the Glamour Collector 1.2.1 (its popup's section, *Send to
+ControlPanel* and *Load from ControlPanel*, short enough for the popup's buttons). The world server's `!mark` reply
+names it too.
 
 ## Player pages, announcements and shop pictures (2.20.0)
 
@@ -177,9 +217,9 @@ page number Quest Progress passes. The layout's variables are `_adm_*` now.
 ## Client compatibility (2.20.1)
 
 Overview compares the client's `.ver` files (`ffxivgame.ver`, `boot/ffxivboot.ver`, `sqpack/exN/exN.ver`) with the
-active build's supported versions (`SUPPORTED_GAME_VERSION` and friends, the *Supports* Updates shows), the same way
-the patch server does (`versions.compare_client`). Kawari Web's container mounts only the data folder, so the game
-folder usually isn't visible to it: `kawari_web/clientver.py` then starts a short-lived container from the server's
+active build's supported versions (`SUPPORTED_GAME_VERSION` and friends, the *Supports* Updates shows), the same way the
+patch server does (`versions.compare_client`). ArchonEngine ControlPanel's container mounts only the data folder, so the
+game folder usually isn't visible to it: `kawari_web/clientver.py` then starts a short-lived container from the server's
 image with the install's folder (the game path's parent, so `boot/` is included) mounted read-only at `/client`, and
 `/bin/sh` prints each `.ver` file. The answer is cached for ten minutes (one minute after a failure); **Check again**
 clears it. Without the Podman API socket or a server image it says so instead.
@@ -325,10 +365,10 @@ the Glamour Collector extension uses ([Tools](tools.md#glamour-collector-toolsgl
 | `GET /api/glamours` | `text` (the file) and its counts |
 | `POST /api/glamours` | `{"text": "..."}` (or the text as the body, up to 2 MB) replaces the list; refused (400) without a single `==` header |
 
-The extension reaches Kawari Web wherever the browser can, on the LAN or over Tailscale: it asks Chrome for that
-address (an optional host permission), which also spares the API any CORS headers. Checked with Flask's test client
-(no token 401, a non-admin's 403, a list written with its backup) and with the extension in Chromium against a test
-server (connect, the dropdown from the class list, send, load).
+The extension reaches ArchonEngine ControlPanel wherever the browser can, on the LAN or over Tailscale: it asks Chrome
+for that address (an optional host permission), which also spares the API any CORS headers. Checked with Flask's test
+client (no token 401, a non-admin's 403, a list written with its backup) and with the extension in Chromium against a
+test server (connect, the dropdown from the class list, send, load).
 
 ## Battle replay (Dashboard → Battle replay, 2.25.0)
 
@@ -369,8 +409,8 @@ the client draws it, who hit whom for how much, knockbacks, deaths and the playe
 * Actors show by numbers (BNpcBase and level), since there's no BNpcName list read from the game yet; the actions are
   named.
 * Checked against Bob's bundle 20261104-204423 (The Lominsan Way's quest battle: Rive's line at the player, the hit and
-  its knockback) and the retail run of Ul'dah's Most Wanted (Chronofoil a763f0a0), in a test Kawari Web with an action
-  index built from exported sheets; not yet on Bob's server with its own game install.
+  its knockback) and the retail run of Ul'dah's Most Wanted (Chronofoil a763f0a0), in a test ArchonEngine ControlPanel
+  with an action index built from exported sheets; not yet on Bob's server with its own game install.
 
 ## Diagnostics (Dashboard → Diagnostics)
 

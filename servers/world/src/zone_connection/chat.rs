@@ -526,7 +526,7 @@ impl ZoneConnection {
         let reply = if self.capture.is_enabled() {
             "Marked in the packet capture."
         } else {
-            "Marked in the server log only: packet capture is off (Kawari Web → Diagnostics turns it on)."
+            "Marked in the server log only: packet capture is off (ArchonEngine ControlPanel → Diagnostics turns it on)."
         };
         self.send_notice(reply).await;
     }

@@ -181,9 +181,9 @@ down one isn't recorded (with the party, or after it), so the 25 yalms and 3 s a
 ## Bots kept as friends
 
 A bot sent a friend request is **kept**: `party-bot-friends.json` in the server's data folder (beside `world.db`,
-`/kawari/data` in Kawari Web's container; kept out of git), by your content ID: its made-up content ID, name, class,
-look (its 26 customize bytes as hex) and glamour (by name), and when (`server/bot_friends.rs`). A bot isn't a
-character, so there's no row for it in the database's friend table:
+`/kawari/data` in ArchonEngine ControlPanel's container; kept out of git), by your content ID: its made-up content ID,
+name, class, look (its 26 customize bytes as hex) and glamour (by name), and when (`server/bot_friends.rs`). A bot isn't
+a character, so there's no row for it in the database's friend table:
 
 * **The friend list** adds your kept bots after your other friends (`refresh_friend_list`), each online, in your
   zone, at level 100, with the context menu, so the client offers *Invite to Party* on them.
@@ -441,13 +441,14 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
 Each bot can wear its own outfit over its gear: one picked at random, for its sex and class, from a list the server's
 owner writes (`servers/world/src/server/glamour.rs`). The Chrome extension in `tools/glamour-collector` builds the list
 from Eorzea Collection's glamour pages ([Tools](tools.md#glamour-collector-toolsglamour-collector)) and sends it to
-Kawari Web, which writes the file ([Kawari Web → Bot glamours](kawari-web.md#bot-glamours-dashboard--bot-glamours)).
-The list is **`glamours.txt` in the server's data folder**: `$KAWARI_DATA`, which in Kawari Web's container is
-`/kawari/data`, the folder mounted from the host with `world.db` and `login.db` (without `KAWARI_DATA`, the working
-directory). Before 2026-10-23's fix it was read from the working directory only, `/kawari` in the container, which
-isn't mounted, so a file put beside `config.yaml` was never seen. It's kept out of git, as the item names in it are
-the game's. The server reads it the first time a bot joins and again whenever it changes, and logs where it read it,
-how many glamours, and any item, dye or class it couldn't find.
+ArchonEngine ControlPanel, which writes the file ([ArchonEngine ControlPanel → Bot
+glamours](kawari-web.md#bot-glamours-dashboard--bot-glamours)). The list is **`glamours.txt` in the server's data
+folder**: `$KAWARI_DATA`, which in ArchonEngine ControlPanel's container is `/kawari/data`, the folder mounted from the
+host with `world.db` and `login.db` (without `KAWARI_DATA`, the working directory). Before 2026-10-23's fix it was read
+from the working directory only, `/kawari` in the container, which isn't mounted, so a file put beside `config.yaml` was
+never seen. It's kept out of git, as the item names in it are the game's. The server reads it the first time a bot joins
+and again whenever it changes, and logs where it read it, how many glamours, and any item, dye or class it couldn't
+find.
 
 ```text
 # One glamour per block. A line starting "==" names it; end it with (male) or (female) for the sex it's for, or

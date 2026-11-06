@@ -14,32 +14,35 @@ folder), or `--game <game folder>`. Full guide: [Quest Dumps](../scripting/quest
 | `dump <id/script/name>…` | `quest.json` (Quest sheet row: variables with names, todos, listeners, rewards, `previous_join`, place, class category), the `.luab`, a listing (`--listing` for every instruction) | Writing and checking quest scripts |
 | `chain <id> <n>` | The next `n` quests in the same journal genre | Dumping a stretch of the MSQ |
 | `extract <path or file name>…` | Any game file. A bare name (e.g. `OpeningGridania.luab`) is found in every game_script index by its name hash; missing paths are skipped so several guesses can be tried. The names have to be exact: a quest battle's script sits beside its quest's as `<quest class>Btl_<quest number>.luab` (`game_script/quest/000/ClsCnj002Btl_00091.luab` for Trial by Wind's, found with `search`, 2026-10-27), not `ClsCnj002Btl.luab` | Openings, scripts whose name is known |
-| `search <text>…` | Every game_script file, in any folder, whose contents mention one of the texts (case aside), with its listing; each named from its own strings when one hashes to the index's name (the `<name> loaded` a quest script prints, or the table a battle script fills, `ClsCnj003Btl`, each also with `_NNNNN` after it, as the files are `ClsCnj003_00092.luab` and `ClsCnj003Btl_00092.luab`), its hash otherwise; `search-results.txt` says which folder (numbered ones like `game_script/quest/000` included) and index each came from. Reads all of game_script, so it takes a while | Scripts whose name isn't known: quest battles' (Kawari Web: Quest Lab → Scripts that mention) |
+| `search <text>…` | Every game_script file, in any folder, whose contents mention one of the texts (case aside), with its listing; each named from its own strings when one hashes to the index's name (the `<name> loaded` a quest script prints, or the table a battle script fills, `ClsCnj003Btl`, each also with `_NNNNN` after it, as the files are `ClsCnj003_00092.luab` and `ClsCnj003Btl_00092.luab`), its hash otherwise; `search-results.txt` says which folder (numbered ones like `game_script/quest/000` included) and index each came from. Reads all of game_script, so it takes a while | Scripts whose name isn't known: quest battles' (ArchonEngine ControlPanel: Quest Lab → Scripts that mention) |
 | `scripts custom\|opening [--server resources/scripts]` | Every client script of a kind a sheet names, under `<out>/<kind>/`: CustomTalk's (`custom/<id / 100>/<Name>.luab`: NPC conversations, menus and the shops they open) or Opening's; each with its listing (`.txt`) and its row (`.json`: row and handler ID, the Lua parameters), and `index.json` (each script's path, the server script of the same name, whether the server has it, whether the game had the file). `--server` dumps only those the server has a script for | `questkit clientcheck` (checking the server's scripts against the client's) |
 | `disasm <file.luab>` | A listing from the built-in Lua 5.1 disassembler | Scripts you already have |
-| `index` | `quest-index.json` (format 2): every quest's name, level, genre, issuer, area, class restriction, prerequisites and how they combine, `main_scenario` (in ScenarioTree), `expansion_name`, journal `genre_name`/`category_name`/`section_name` | Kawari Web's quest search, prerequisite completion and Progress page |
-| `items` | `item-index.json`: every named item's `id`, `name`, `description`, `category` (ItemUICategory), `icon`, `stack_size`, `unique`, `untradable`, `search_category`, `rarity`, `level_equip`, `level_item`, `can_be_hq`, in the server's language; and `marketboard-categories.json` (every ItemSearchCategory with a tab: `id`, `name`, `tab`, `order`, `icon`, `class_job`) | Kawari Web's Shop item linking and Marketboard page |
-| `classes` | `class-index.json` (format 1): `classes`, every ClassJob with a Role (`id`, `name`, `name_english`, `abbreviation`, `role`, `parent`, `primary_stat`), in the game's UIPriority order | Kawari Web's glamour API (the Glamour Collector's Class dropdown) |
-| `actions` | `action-index.json` (format 1): `actions`, every named Action and every one with an area (`id`, `name`, `cast` in seconds, `cast_type`, `effect_range`, `x_axis`, `range`, `omen`: the Omen row's path, `player`); `knockbacks`, every Knockback row with a distance (`id`, `distance`, `speed`, `direction`, `direction_arg`) | Kawari Web's battle replay (each cast's area, as the world server's `ActionInfo::area_shape`, and each push's length) |
-| `content` | `content-index.json` (format 1): `expansions` and `content_types` (ID → name); `duties`, every ContentFinderCondition with a name and content type (`id`, `name`, `short_code`, `content_type`, `territory`, `territory_bg`, `intended_use`, `level`, `level_sync`, `item_level`, `ex_version`, `in_duty_finder`, `high_end`, `pvp`, `sort_key`); `zones`, every open-world TerritoryType (intended use 1) with a place name (`id`, `name`, `region`, `internal_name`, `bg`, `ex_version`) | Kawari Web's Progress → Misc Content |
+| `index` | `quest-index.json` (format 2): every quest's name, level, genre, issuer, area, class restriction, prerequisites and how they combine, `main_scenario` (in ScenarioTree), `expansion_name`, journal `genre_name`/`category_name`/`section_name` | ArchonEngine ControlPanel's quest search, prerequisite completion and Progress page |
+| `items` | `item-index.json`: every named item's `id`, `name`, `description`, `category` (ItemUICategory), `icon`, `stack_size`, `unique`, `untradable`, `search_category`, `rarity`, `level_equip`, `level_item`, `can_be_hq`, in the server's language; and `marketboard-categories.json` (every ItemSearchCategory with a tab: `id`, `name`, `tab`, `order`, `icon`, `class_job`) | ArchonEngine ControlPanel's Shop item linking and Marketboard page |
+| `classes` | `class-index.json` (format 1): `classes`, every ClassJob with a Role (`id`, `name`, `name_english`, `abbreviation`, `role`, `parent`, `primary_stat`), in the game's UIPriority order | ArchonEngine ControlPanel's glamour API (the Glamour Collector's Class dropdown) |
+| `actions` | `action-index.json` (format 1): `actions`, every named Action and every one with an area (`id`, `name`, `cast` in seconds, `cast_type`, `effect_range`, `x_axis`, `range`, `omen`: the Omen row's path, `player`); `knockbacks`, every Knockback row with a distance (`id`, `distance`, `speed`, `direction`, `direction_arg`) | ArchonEngine ControlPanel's battle replay (each cast's area, as the world server's `ActionInfo::area_shape`, and each push's length) |
+| `content` | `content-index.json` (format 1): `expansions` and `content_types` (ID → name); `duties`, every ContentFinderCondition with a name and content type (`id`, `name`, `short_code`, `content_type`, `territory`, `territory_bg`, `intended_use`, `level`, `level_sync`, `item_level`, `ex_version`, `in_duty_finder`, `high_end`, `pvp`, `sort_key`); `zones`, every open-world TerritoryType (intended use 1) with a place name (`id`, `name`, `region`, `internal_name`, `bg`, `ex_version`) | ArchonEngine ControlPanel's Progress → Misc Content |
 
-Kawari Web runs it in a throwaway container from the active server image (Quest Lab, Progress, Shop → Manage).
+ArchonEngine ControlPanel runs it in a throwaway container from the active server image (Quest Lab, Progress, Shop →
+Manage).
 
 ## Glamour Collector (`tools/glamour-collector`)
 
 A Chrome extension (Manifest V3, no build step) that collects Eorzea Collection glamours into a list and sends it to
-Kawari Web, which writes the party bots' `glamours.txt` ([Party bots → Glamours](party-bots.md#glamours)), or exports
-the file. Nothing of the site's is kept in git; the list is the user's, in the browser's `chrome.storage.local`.
+ArchonEngine ControlPanel, which writes the party bots' `glamours.txt` ([Party bots →
+Glamours](party-bots.md#glamours)), or exports the file. Nothing of the site's is kept in git; the list is the user's,
+in the browser's `chrome.storage.local`.
 
 * **Install:** `chrome://extensions` → Developer mode → Load unpacked → the `tools/glamour-collector` folder.
-* **Kawari Web** (1.2.0; the popup's top section): the address as the browser reaches it, on the LAN or the tailnet
-  (a bare `host:port` is taken as `http://`), and an administrator's sync token (Settings → Character sync).
-  *Connect* asks Chrome for that address (`optional_host_permissions`; only the address given is granted), pings
-  `GET /api/glamours/ping` and fetches the class list (`GET /api/glamours/classes`), kept as `classList` and fetched
-  again quietly each time the popup opens. *Send to Kawari Web* (pressed twice: "Replace the server's list with N?")
-  posts the whole list; *Load from Kawari Web* adds the server's glamours that aren't in the list (by title and
-  gender). *Forget* drops the address, token, class list and Chrome's permission. The API is described on the
-  [Kawari Web page](kawari-web.md#bot-glamours-dashboard--bot-glamours). `kawariweb.js` holds the calls.
+* **ArchonEngine ControlPanel** (1.2.0, *Kawari Web* until 1.2.1; the popup's top section): the address as the browser
+  reaches it, on the LAN or the tailnet (a bare `host:port` is taken as `http://`), and an administrator's sync token
+  (Settings → Character sync). *Connect* asks Chrome for that address (`optional_host_permissions`; only the address
+  given is granted), pings `GET /api/glamours/ping` and fetches the class list (`GET /api/glamours/classes`), kept as
+  `classList` and fetched again quietly each time the popup opens. *Send to ControlPanel* (pressed twice: "Replace the
+  server's list with N?") posts the whole list; *Load from ControlPanel* adds the server's glamours that aren't in the
+  list (by title and gender). *Forget* drops the address, token, class list and Chrome's permission. The API is
+  described on the [ArchonEngine ControlPanel page](kawari-web.md#bot-glamours-dashboard--bot-glamours). `kawariweb.js`
+  holds the calls.
 * **On a glamour page** (`ffxiv.eorzeacollection.com/glamour/…`) a panel bottom right: *Add to Kawari list* reads
   the page and adds it (again on the same page reads it again, keeping the gender and classes chosen); *Copy page
   HTML* copies the gear section's HTML, for when a page reads wrong.
@@ -113,7 +116,7 @@ object per line (`servers/world/src/capture.rs`):
 | `hex` | The IPC segment as sent, **including its 16-byte IPC header** |
 | `decoded` | Kawari's reading of it (truncated if huge) |
 
-Off by default; files grow fast. Kawari Web's Diagnostics page toggles it and ships captures in bundles.
+Off by default; files grow fast. ArchonEngine ControlPanel's Diagnostics page toggles it and ships captures in bundles.
 
 ## Debug commands (fork additions)
 

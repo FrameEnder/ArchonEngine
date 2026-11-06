@@ -91,7 +91,7 @@ function kawariParseEntryText(text, fallback) {
   return entry;
 }
 
-// A whole list's text (glamours.txt, or what Kawari Web sends back) as entries.
+// A whole list's text (glamours.txt, or what ArchonEngine ControlPanel sends back) as entries.
 function kawariParseListText(text) {
   const blocks = [];
   for (const line of text.split("\n")) {

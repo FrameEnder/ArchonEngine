@@ -1,5 +1,5 @@
-// The Class dropdown's choices. The classes and jobs come from your Kawari Web (GET /api/glamours/classes, read from
-// the server's game install), kept in chrome.storage.local as `classList` once connected, so no class names are
+// The Class dropdown's choices. The classes and jobs come from your ArchonEngine ControlPanel (GET /api/glamours/classes,
+// read from the server's game install), kept in chrome.storage.local as `classList` once connected, so no class names are
 // written into the extension. The role groups are Eorzea Collection's own words for them ("Intended for"), which the
 // server also knows (glamour.rs).
 

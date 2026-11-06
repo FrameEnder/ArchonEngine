@@ -1,15 +1,16 @@
 # Marketboard
 
 Every tradable item is on the marketboard, always with a full page of listings, at prices an administrator sets in
-Kawari Web. Players can search the categories, open an item (its listings and history) and buy, which takes the gil
-(and tax) and puts the item in their inventory. There are no players' retainers behind it: the listings are made up
-by the server from the item and the settings.
+ArchonEngine ControlPanel. Players can search the categories, open an item (its listings and history) and buy, which
+takes the gil (and tax) and puts the item in their inventory. There are no players' retainers behind it: the listings
+are made up by the server from the item and the settings.
 
 * Server: `servers/world/src/marketboard.rs` (prices, listings, history), `zone_connection/marketboard.rs` (the
   requests), `database/marketboard.rs` (the tables), `GameData::marketboard` (which items, by category).
 * Packets: `core/src/ipc/zone/server/marketboard.rs`, the `MarketBoard*` variants, two fork opcodes
   ([Fork Opcodes](opcodes.md)).
-* Admin page: Kawari Web's **Dashboard → Marketboard** ([Kawari Web](kawari-web.md#marketboard-dashboard--marketboard)).
+* Admin page: ArchonEngine ControlPanel's **Dashboard → Marketboard** ([ArchonEngine
+  ControlPanel](kawari-web.md#marketboard-dashboard--marketboard)).
 * The marketboard object's event: `events/custom/000/CmnDefMarketBoardGridania_00039.lua`.
 
 ## What's listed
@@ -52,8 +53,8 @@ The settings stack the way the board is organised:
 2. a **search category's** changes (scope `category:N`), where each NULL keeps the tab's value;
 3. an **item's own** NQ and/or HQ price (`marketboard_item`), where NULL keeps the computed one.
 
-The server reads them whenever the board is used (a few small queries per item opened), so a change in Kawari Web
-applies the next time anyone looks, with no restart. `marketboard::price` and Kawari Web's
+The server reads them whenever the board is used (a few small queries per item opened), so a change in ArchonEngine
+ControlPanel applies the next time anyone looks, with no restart. `marketboard::price` and ArchonEngine ControlPanel's
 `kawari_core/marketboard.py` `price` must stay the same formula; both are checked against the same examples
 (`marketboard::tests::bobs_prices`).
 

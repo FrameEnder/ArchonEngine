@@ -2,8 +2,9 @@
 
 [Auracite](https://github.com/redstrate/Auracite) is redstrate's Dalamud plugin that archives a retail character as
 `character.json` in a zip. Kawari imports it two ways: the world server's own importer (`servers/world/src/auracite.rs`,
-the lobby's import, which creates a new character) and Kawari Web's (`kawari_core/auracite.py`, which updates an
-existing one; see [Kawari Web](kawari-web.md#auracite-backups-2220)). Kawari Web also exports a character back out.
+the lobby's import, which creates a new character) and ArchonEngine ControlPanel's (`kawari_core/auracite.py`, which
+updates an existing one; see [ArchonEngine ControlPanel](kawari-web.md#auracite-backups-2220)). ArchonEngine
+ControlPanel also exports a character back out.
 
 ## The extended plugin
 
@@ -19,27 +20,27 @@ clearing it.
 
 ## What each importer takes
 
-Both importers read the same members (the server's `apply_extended`, Kawari Web's `build_changes`):
+Both importers read the same members (the server's `apply_extended`, ArchonEngine ControlPanel's `build_changes`):
 
 | `kawari_extended` | Kawari |
 |---|---|
 | `crystals`, `key_items` | inventory (crystals keep their slot's item ID when empty) |
-| `saddlebag` (if loaded) | `inventory.saddlebag`, both pages (Kawari Web makes them first on an inventory saved before Kawari had a saddlebag: from 2.22.3; before, it dropped the saddlebag there). From 1.8.1.3002 it is the saddlebag as last seen this session (`SaddlebagWatch`: every second while the InventoryBuddy window is open or the pages hold items), with `saddlebag_seen_at`; not seen, it's left out. Before, it was read at backup whenever the client called the container loaded, which it does with nothing in it until opened, so a backup could record a full saddlebag as empty (Kawari Web 2.22.4 keeps the server's then) |
+| `saddlebag` (if loaded) | `inventory.saddlebag`, both pages (ArchonEngine ControlPanel makes them first on an inventory saved before Kawari had a saddlebag: from 2.22.3; before, it dropped the saddlebag there). From 1.8.1.3002 it is the saddlebag as last seen this session (`SaddlebagWatch`: every second while the InventoryBuddy window is open or the pages hold items), with `saddlebag_seen_at`; not seen, it's left out. Before, it was read at backup whenever the client called the container loaded, which it does with nothing in it until opened, so a backup could record a full saddlebag as empty (ArchonEngine ControlPanel 2.22.4 keeps the server's then) |
 | `glamour.dresser`, `.plates`, `.armoire` (each if loaded) | `inventory.glamour` ([Glamour](glamour.md)) |
 | `active_quests` | `quest.active`: ID less 65536, sequence, the six variables (flags and the accepting class aren't kept) |
 | `completed_leves`, `completed_legacy_quests`, `unlocked_map_markers`, `gathering_log` | the `quest` table's bitmasks |
 | `adventurer_plate` (if loaded) | `volatile.adventurer_plate` (CharaCardData, 188 bytes), `adventurer_plate_saved` (its timestamp) and `volatile.portrait` (BannerData, 52 bytes): the client's own CharaCard, the same bytes it sends when it saves the plate (UpdateAdventurerPlate, SetAdventurerPlatePortrait) |
 | `companion` | the `buddy` row: name, rank, stars, EXP, skill points, stance (BuddyAction 3–7 only), favourite feed, colour, barding, skill lines ([Chocobo Companion](chocobo.md)) |
 
-Kawari Web puts the inventory members under *Inventory*, the quest members under *Quest progress*, and the companion
-under a new *Chocobo companion* section (also allowed for Character sync, off by default).
+ArchonEngine ControlPanel puts the inventory members under *Inventory*, the quest members under *Quest progress*, and
+the companion under a new *Chocobo companion* section (also allowed for Character sync, off by default).
 
 **Everything is kept.** The whole `kawari_extended` object is stored with the character in world.db's
 `auracite_extended` table (`content_id`, `data` as JSON text, `imported_at`; migration
-`update-2026-10-24_auracite_extended`), by both importers, replacing the one from an earlier import. Kawari Web's
-export writes it back as `kawari_extended`, with Kawari's current data for the members above (they may have changed
-in game since), so gear sets, hotbars, macros, achievements, retainers, logs and the raw blocks survive a Kawari →
-Auracite → Kawari round trip. The server deletes the row with the character.
+`update-2026-10-24_auracite_extended`), by both importers, replacing the one from an earlier import. ArchonEngine
+ControlPanel's export writes it back as `kawari_extended`, with Kawari's current data for the members above (they may
+have changed in game since), so gear sets, hotbars, macros, achievements, retainers, logs and the raw blocks survive a
+Kawari → Auracite → Kawari round trip. The server deletes the row with the character.
 
 ## Gear sets, hotbars, macros and the UI
 

@@ -38,8 +38,8 @@ the client removed. Removals are logged.
 
 * `playtime_at_login` is set from the database at login; `playtime_minutes()` = that + minutes since login.
 * Autosave, logout and `/playtime` all use it, so a session is never counted twice.
-* Because autosave writes `time_played_minutes`, Kawari Web's play coins (earned from playtime) keep up while people
-  play. See [Kawari Web](kawari-web.md#shop).
+* Because autosave writes `time_played_minutes`, ArchonEngine ControlPanel's play coins (earned from playtime) keep up
+  while people play. See [ArchonEngine ControlPanel](kawari-web.md#shop).
 
 ## Other things saved by the fork
 
@@ -74,6 +74,6 @@ keeping every field that reads and logging an error naming the ones that don't. 
 
 ## Editing a character from outside
 
-The server keeps a logged-in character in memory and saves over the database every 30 s and at logout. So anything
-that edits `world.db` directly (Kawari Web's gil purchases, Quest Lab's character setup) must only do it while the
-character is **logged out**. Mail is the exception: the server reads the `mail` table each time the mailbox opens.
+The server keeps a logged-in character in memory and saves over the database every 30 s and at logout. So anything that
+edits `world.db` directly (ArchonEngine ControlPanel's gil purchases, Quest Lab's character setup) must only do it while
+the character is **logged out**. Mail is the exception: the server reads the `mail` table each time the mailbox opens.

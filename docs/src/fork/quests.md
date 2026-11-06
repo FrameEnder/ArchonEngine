@@ -52,7 +52,7 @@ When a quest script loads, the server injects the Quest sheet's Lua parameters a
 layout ID for quest-spawned enemies), `ITEM0`, `EVENTRANGE0`, `QUESTBATTLE0`, `TERRITORYTYPE0`, `EVENT_ACTION_SEARCH`,
 `QST_ACCEPT_CHECK` and so on, plus `EVENT_ID` (the quest's handler ID) and `BASE_ID` (the NPC/object being talked
 to). The log lists them ("Variables available in event …"). A name the sheet doesn't have is silently `nil` in Lua;
-Kawari Web's Quest Lab script check flags those.
+ArchonEngine ControlPanel's Quest Lab script check flags those.
 
 ## The Lua API for quests
 
@@ -315,13 +315,13 @@ function onYield(scene, id, results, player) sceneFinished(scene, results, playe
 function onReturn(scene, results, player) sceneFinished(scene, results, player) end
 ```
 
-Rules: the header's "Checked against…" sentence says what it was verified with, and is brought up to date when a
-quest is checked against a capture after it was written (Kawari Web's progress page counts a quest as *verified* when
-that sentence names a Chronofoil capture, a Kawari Recorder export or a recording, since 2.24.2, and not when the
-header says "unverified"); scene numbers come from the client's script (Sapphire's when the client's
-doesn't name them); variables and notices come from the recording; scene flags and anything else the server does
-(zone changes, unlocks) from a Chronofoil capture, which the fixture holds and replay checks; everything else (names,
-text) from game data.
+Rules: the header's "Checked against…" sentence says what it was verified with, and is brought up to date when a quest
+is checked against a capture after it was written (ArchonEngine ControlPanel's progress page counts a quest as
+*verified* when that sentence names a Chronofoil capture, a Kawari Recorder export or a recording, since 2.24.2, and not
+when the header says "unverified"); scene numbers come from the client's script (Sapphire's when the client's doesn't
+name them); variables and notices come from the recording; scene flags and anything else the server does (zone changes,
+unlocks) from a Chronofoil capture, which the fixture holds and replay checks; everything else (names, text) from game
+data.
 
 **Retail's scene flags** (every quest in Bob's 2026-10-14 to 17 captures): talking to someone `HIDE_HOTBAR` (0x2000);
 cutscenes `SET_BASE | HIDE_HOTBAR` (0xF8402EFB, which hides other players, NPCs and objects: the fork's scripts had
@@ -338,8 +338,9 @@ name, e.g. `SubFst073_00387`).
 1. **Recording.** Bob plays it on retail with the Kawari Recorder (Quests and Quest packets tabs) and exports. The
    export has every sequence/variable change with what was targeted, the notices with their arguments, and NPC and
    object positions.
-2. **Dump** it: `kawari-questdump <id>` (or Kawari Web → Quest Lab). Read `listing.txt`: which scenes exist, what each
-   `OnScene`/`OnYield` returns, which variables tick which todo, `GetEventItems` for key items, `QST_ACCEPT_CHECK`.
+2. **Dump** it: `kawari-questdump <id>` (or ArchonEngine ControlPanel → Quest Lab). Read `listing.txt`: which scenes
+   exist, what each `OnScene`/`OnYield` returns, which variables tick which todo, `GetEventItems` for key items,
+   `QST_ACCEPT_CHECK`.
 3. **Compare** with Sapphire's script (`/home/claude/sapphire` when available) for scene meaning and battle data.
 4. **Scaffold** it: `python3 tools/questkit scaffold <id> --dumps quest-dumps --recording <export>` writes a draft in
    the pattern above and its replay fixture, and replays it. Fix the scenes marked TODO against the listing (and
@@ -349,9 +350,9 @@ name, e.g. `SubFst073_00387`).
    see [questkit](questkit.md#making-fixtures)), then `python3 tools/questkit replay <id> -v` until every step matches
    retail's scenes, flags, effects, variables and notices. The
    fixture is committed with the script, and CI replays it on every push from then on.
-6. **Test in game**: Kawari Web → Quest Lab → *Test this quest* sets the character up, turns capture on, and sends a
-   bundle tagged with the quest when you finish; `questkit triage` and `questkit compare` read it. (Or by hand:
-   `//gm quest accept|sequence|incomplete …`.)
+6. **Test in game**: ArchonEngine ControlPanel → Quest Lab → *Test this quest* sets the character up, turns capture on,
+   and sends a bundle tagged with the quest when you finish; `questkit triage` and `questkit compare` read it. (Or by
+   hand: `//gm quest accept|sequence|incomplete …`.)
 7. **Document**: add it to the table below and the [Changelog](changelog.md).
 
 **Quests without a dump.** A capture shows everything retail did on one run: who you talked to, every scene and its
