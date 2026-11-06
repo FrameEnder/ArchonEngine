@@ -1,0 +1,25 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "recorded_amounts": {
+        "872": {
+            "players": 156.0
+        },
+        "978": {
+            "players": 229.5
+        }
+    },
+    "rotation": {
+        "pace": 10.6,
+        "actions": [
+            {
+                "action": 978,
+                "every": 10.6,
+                "comment": "26 uses by 4 (8.6-17.3 s apart); every 10.6 s"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "Factual Folklore's beast (quest 927, BNpcBase 2196, BNpcName 2060, layout 4293214, weakened by the quest's key item): level 39, 14283 HP; on you. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.10, 0.8, 0.10, 0.12`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

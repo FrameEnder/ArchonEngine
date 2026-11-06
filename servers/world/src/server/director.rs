@@ -1550,6 +1550,29 @@ impl DirectorData {
         }
     }
 
+    /// A player talked to an event object of this battle's (`ToServer::QuestBattleTalk`): the script's
+    /// `onObjectTalk(director, actor_id, object_id, base_id)`, which answers it (an event action, then
+    /// `finish_gimmick`.) False if the script has none, so it gets EVENT_QIB_NOT_TALK instead.
+    pub fn object_talk(&mut self, actor_id: ObjectId, object_id: ObjectId, base_id: u32) -> bool {
+        let Ok(func) = self.lua.0.globals().get::<Function>("onObjectTalk") else {
+            return false;
+        };
+
+        let mut lua_director = self.create_lua_director();
+        let err = self.lua.0.scope(|scope| {
+            let data = scope.create_userdata_ref_mut(&mut lua_director)?;
+            func.call::<()>((data, actor_id.0, object_id.0, base_id))?;
+            Ok(())
+        });
+        self.apply_lua_director(lua_director);
+        if let Err(err) = err {
+            tracing::warn!("Syntax error during onObjectTalk: {err:?}");
+            self.tasks
+                .push(LuaDirectorTask::FinishGimmickEvent { actor_id });
+        }
+        true
+    }
+
     pub fn event_action_cast(&mut self, actor_id: ObjectId, target: ObjectId) {
         let mut run_script = || {
             let mut lua_director = self.create_lua_director();
@@ -2188,6 +2211,14 @@ pub fn director_tick(
                 if let Some(mut object) = object {
                     if let Some(position) = position {
                         object.position = *position;
+                    }
+                    // A quest battle's object with no event of its own (its EObj's Data 0) is the battle's to answer
+                    // when talked to: retail's rosary in In the Eyes of Gods and Men came with the director as its
+                    // handler (SpawnObject, Bob's Chronofoil captures 130088ec and 3c56e09f.)
+                    if object.handler_id.0 == 0
+                        && director_id.handler_type() == HandlerType::QuestBattle
+                    {
+                        object.handler_id = director_id;
                     }
                     if let Some(args2) = args2 {
                         object.args2 = *args2;
@@ -3640,6 +3671,31 @@ pub fn handle_director_messages(
                 _ => {
                     director.gimmick_accessor(*from_actor_id, base_id, params);
                 }
+            }
+
+            true
+        }
+        ToServer::QuestBattleTalk(from_actor_id, target) => {
+            let mut data = data.lock();
+            let Some(instance) = data.find_actor_instance_mut(*from_actor_id) else {
+                tracing::warn!("Somehow failed to find an instance for actor?");
+                return true;
+            };
+            // Only an event object is the director's: its event NPCs (an onlooker) aren't there to talk.
+            let base_id = instance.find_base_id_by_actor_id(*target);
+            let answered = match (base_id, instance.directors.first_mut()) {
+                (Some(base_id), Some(director)) => {
+                    director.object_talk(*from_actor_id, *target, base_id)
+                }
+                _ => false,
+            };
+            if !answered {
+                let mut network = network.lock();
+                network.send_to_by_actor_id(
+                    *from_actor_id,
+                    FromServer::QuestBattleNotTalk,
+                    DestinationNetwork::ZoneClients,
+                );
             }
 
             true

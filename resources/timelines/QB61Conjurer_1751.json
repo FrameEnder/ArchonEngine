@@ -1,0 +1,55 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "127": {
+            "npcs": 227.0
+        },
+        "121": {
+            "npcs": 59
+        },
+        "119": {
+            "npcs": 161
+        },
+        "120": {
+            "npcs": 523
+        },
+        "135": {
+            "npcs": 838
+        }
+    },
+    "rotation": {
+        "pace": 12.0,
+        "actions": [
+            {
+                "action": 127,
+                "every": 12.0,
+                "comment": "40 uses by 4 (5.6-98.4 s apart); every 12.0 s"
+            },
+            {
+                "action": 121,
+                "every": 19.3,
+                "comment": "21 uses by 4 (4.6-72.7 s apart); every 19.3 s"
+            },
+            {
+                "action": 119,
+                "every": 25.1,
+                "comment": "15 uses by 4 (10.2-143.6 s apart); every 25.1 s"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 121.6,
+            "data": {
+                "type": "action",
+                "action_id": 3669,
+                "target": "itself"
+            },
+            "comment": "3669 on itself, 3 uses by 3, first 121.6 s after its pull (median)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The quest battle (61) of quest 941: the conjurer on your side (BNpcBase 1751, BNpcName 2086, layout 4256802): level 39, 1587 HP, ClassJob 6; Cure and Cure II (120, 135, the director's heals) on the gladiator, you and itself; never an auto-attack. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.11, 0.13, 0.15, 0.17`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

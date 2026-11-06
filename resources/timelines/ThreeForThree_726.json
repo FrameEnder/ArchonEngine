@@ -1,0 +1,28 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "968": {
+            "players": 48
+        }
+    },
+    "rotation": {
+        "pace": 3.1,
+        "actions": [
+            {
+                "action": 968,
+                "every": 3.1,
+                "comment": "13 uses by 2 (3.1-3.2 s apart); every 3.1 s"
+            },
+            {
+                "action": 308,
+                "every": 33.6,
+                "comment": "1 use; every 33.6 s"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "Three for Three's ambush's caster (quest 889; BNpcBase 726, BNpcName 1989, layout 4290080): level 30, 780 HP; on you, from range; never an auto-attack. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.8, 0.6`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

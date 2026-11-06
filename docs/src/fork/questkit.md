@@ -387,6 +387,15 @@ And retail's **casts** (`casts`: `[[t, layout, action], …]`, the run's ActorCa
 written by `--make` since 2026-10-28): the script hears `onActorCast(director, layout, action, 0)` at each, as from the
 server, for steps that wait for an NPC's cast (the companies' battles' Drill Cannons).
 
+And the player **talking to an object** the script brought out (`object_talks`: `[[t, base, bar], …]`, written by
+hand from retail's StartTalkEvent on it and how long the event action that followed took; since 2026-11-06): at `t`,
+if the script has spawned that object (`spawn_eobj`), it hears `onObjectTalk(director, 1, 2, base)`, and an
+`event_action` it answers with ends `bar` seconds later (`onEventActionCast(director, 1, 2)`). In the Eyes of Gods
+and Men's rosary (quest battle 60), without which its battle never ends.
+
+`--make` writes a health of a few HP as 0.1 %, not 0 (since 2026-11-06): In the Eyes of Gods and Men's boss stood at 1
+of 9150 HP for 3 s in one run, which rounded to 0.0 and put its death 3 s early.
+
 It doesn't simulate enmity or who hits whom (the health curves are retail's whatever the script's
 targeting does), or the NPCs' casts beyond `casts` and their yells (not compared). Losing is: when the player's health (`player`) reaches 0
 the script hears `onPlayerDeath`, as from the server (since 2026-10-27: Like Mother, Like Daughter's lost run went on

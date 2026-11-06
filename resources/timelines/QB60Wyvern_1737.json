@@ -1,0 +1,26 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 96
+        },
+        "1136": {
+            "players": 236.5,
+            "npcs": 434
+        }
+    },
+    "rotation": {
+        "pace": 10.0,
+        "actions": [
+            {
+                "action": 1136,
+                "every": 10.0,
+                "comment": "20 uses by 2 (7.9-12.8 s apart); every 10.0 s"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the wyvern of the third wave (BNpcBase 1737, BNpcName 656, layout 4261305, battalion 5: at war with both sides): level 38, 15150 HP; on you, its Collapse catching everyone near. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.9, 0.7`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

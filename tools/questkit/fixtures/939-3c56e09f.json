@@ -1,0 +1,79 @@
+{
+  "quest": 939,
+  "script": "GaiUsc002_00939",
+  "source": "Bob's Chronofoil capture 3c56e09f (2026-11-06, his first character); scenes and effects from Bob's Chronofoil capture of 2026-11-06",
+  "params": {
+    "ACTOR0": 1006467,
+    "EVENTRANGE0": 4297079,
+    "EOBJECT0": 2002170,
+    "EVENT_ACTION_SEARCH": 1,
+    "ENEMY0": 4297103,
+    "ENEMY1": 4297104,
+    "ENEMY2": 4297106,
+    "EOBJECT1": 2002322,
+    "EOBJECT2": 2002590,
+    "ITEM0": 2000733,
+    "ACTOR1": 1007631
+  },
+  "steps": [
+    {
+      "talk": 1006467,
+      "layout": 4261630,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "range": 4297079,
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [46, 4297104],
+      "expect": {"sequence": 1, "vars": "010000000000", "notices": []}
+    },
+    {
+      "kill": [46, 4297106],
+      "expect": {"sequence": 1, "vars": "020000000000", "notices": []}
+    },
+    {
+      "kill": [46, 4297103],
+      "expect": {"sequence": 1, "vars": "030000000000", "notices": []}
+    },
+    {
+      "talk": 2002170,
+      "layout": 4297129,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 3, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 4, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 2002590,
+      "layout": 4330878,
+      "what": "EOBJECT2",
+      "scenes": [
+        {"scene": 7, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 8, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001000000000", "notices": [[1, [26151]]]}
+    },
+    {
+      "talk": 1006467,
+      "layout": 4261630,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 10, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 11, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

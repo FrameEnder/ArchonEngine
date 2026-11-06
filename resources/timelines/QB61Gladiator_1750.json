@@ -1,0 +1,67 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 89.0
+        },
+        "9": {
+            "npcs": 133
+        },
+        "11": {
+            "npcs": 190.0
+        },
+        "21": {
+            "npcs": 89
+        }
+    },
+    "rotation": {
+        "pace": 24.4,
+        "actions": [
+            {
+                "action": 14,
+                "every": 24.4,
+                "comment": "35 uses by 4 (2.6-61.4 s apart); every 24.4 s"
+            },
+            {
+                "action": 9,
+                "every": 28.5,
+                "comment": "28 uses by 4 (23.8-41.3 s apart); every 28.5 s"
+            },
+            {
+                "action": 11,
+                "every": 28.5,
+                "comment": "27 uses by 4 (23.8-40.3 s apart); every 28.5 s"
+            },
+            {
+                "action": 21,
+                "every": 28.5,
+                "comment": "27 uses by 4 (23.8-40.6 s apart); every 28.5 s"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 6.2,
+            "data": {
+                "type": "action",
+                "action_id": 17,
+                "target": "itself"
+            },
+            "comment": "17 on itself, 7 uses by 4, first 6.2 s after its pull (median), then about every 122.1 s",
+            "every": 122.1
+        },
+        {
+            "time": 83.0,
+            "data": {
+                "type": "action",
+                "action_id": 12,
+                "target": "itself"
+            },
+            "comment": "12 on itself, 5 uses by 4, first 83.0 s after its pull (median), then about every 206.2 s",
+            "every": 206.2
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The quest battle (61) of quest 941: the gladiator you protect (BNpcBase 1750, BNpcName 2085, layout 4256801; the battle is lost if he falls): level 40, 2401 HP, ClassJob 1; on the boss. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.11, 0.13, 0.15, 0.17`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

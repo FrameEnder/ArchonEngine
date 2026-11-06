@@ -1,0 +1,13 @@
+{
+    "comment": "What a key item does to the battle NPC it's used on, beyond starting its quest's event (server/action.rs: use_event_item; event_item_effects.rs). Retail's ActionEffect for the item listed these statuses on the NPC (GainEffect, its unk1 byte as recorded) and the EffectResult after it had them (each for `duration` seconds, from the player) and its health and maximum health at `health_percent` % of what its maximum was, rounded down; `animation_lock` is the ActionEffect's. Recorded: Factual Folklore's (quest 927) ITEM0, 2000961, on ENEMY0 (BNpcBase 2196, 14283 HP): statuses 22 and 62 for 300 s, health and maximum 2856, a 1.6 s lock, all three uses in Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06).",
+    "items": {
+        "2000961": {
+            "statuses": [
+                { "id": 22, "duration": 300.0, "unk1": 176 },
+                { "id": 62, "duration": 300.0, "unk1": 206 }
+            ],
+            "health_percent": 20,
+            "animation_lock": 1.6
+        }
+    }
+}

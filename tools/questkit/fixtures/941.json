@@ -1,0 +1,55 @@
+{
+  "quest": 941,
+  "script": "GaiUsc004_00941",
+  "source": "Bob's Chronofoil capture 130088ec (2026-11-06, his second character); scenes and effects from Bob's Chronofoil capture of 2026-11-06",
+  "params": {
+    "ACTOR0": 1006444,
+    "ACTOR1": 1006469,
+    "ACTOR2": 1006696,
+    "ACTOR3": 1006471,
+    "EOBJECT0": 2002323,
+    "EVENT_ACTION_SEARCH": 1,
+    "EOBJECT1": 2002572,
+    "EVENTRANGE0": 4330074,
+    "ACTOR4": 1006467,
+    "TERRITORYTYPE0": 302,
+    "QUESTBATTLE0": 61
+  },
+  "steps": [
+    {
+      "talk": 1006444,
+      "layout": 4261568,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1006469,
+      "layout": 4262315,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 302}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "battle_won": 255,
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1006467,
+      "layout": 4261630,
+      "what": "ACTOR4",
+      "scenes": [
+        {"scene": 10, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

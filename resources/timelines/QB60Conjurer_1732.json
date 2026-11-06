@@ -1,0 +1,56 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "120": {
+            "npcs": 458.5
+        },
+        "119": {
+            "players": 91,
+            "npcs": 159
+        },
+        "127": {
+            "players": 105.5
+        },
+        "121": {
+            "npcs": 54
+        },
+        "135": {
+            "npcs": 849
+        }
+    },
+    "rotation": {
+        "pace": 24.8,
+        "actions": [
+            {
+                "action": 119,
+                "every": 34.3,
+                "comment": "4 uses by 3 (5.6 s apart); every 34.3 s"
+            },
+            {
+                "action": 127,
+                "every": 24.8,
+                "comment": "3 uses by 3; every 24.8 s"
+            },
+            {
+                "action": 121,
+                "every": 29.9,
+                "comment": "2 uses by 2; every 29.9 s"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 13.6,
+            "data": {
+                "type": "action",
+                "action_id": 3669,
+                "target": "itself"
+            },
+            "comment": "3669 on itself, 1 use, first 13.6 s after its pull (median)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the conjurers, one in the first wave and one in the third (BNpcBase 1732, BNpcName 2077, layouts 4261275 and 4287237): level 35, 915 HP, ClassJob 6; Cure (120, the director's heals) on their side; never an auto-attack. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.9, 0.7`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

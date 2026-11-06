@@ -1,0 +1,57 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "recorded_amounts": {
+        "872": {
+            "players": 76,
+            "npcs": 70
+        },
+        "57": {
+            "npcs": 790.0
+        },
+        "865": {
+            "npcs": 200
+        }
+    },
+    "rotation": {
+        "pace": 20.7,
+        "actions": [
+            {
+                "action": 865,
+                "every": 20.7,
+                "comment": "1 use; every 20.7 s"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 0.5,
+            "data": {
+                "type": "action",
+                "action_id": 60,
+                "target": "itself"
+            },
+            "comment": "60 on itself, 2 uses by 2, first 0.3 s after its pull (median)"
+        },
+        {
+            "time": 2.3,
+            "data": {
+                "type": "action",
+                "action_id": 59,
+                "target": "itself"
+            },
+            "comment": "59 on itself, 2 uses by 2, first 2.3 s after its pull (median)"
+        },
+        {
+            "time": 3.2,
+            "data": {
+                "type": "action",
+                "action_id": 55,
+                "target": "itself"
+            },
+            "comment": "55 on itself, 1 use, first 3.2 s after its pull (median)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the second wave's pugilist (BNpcBase 1734, BNpcName 2079, layout 4261302): level 35, 732 HP, ClassJob 2; Second Wind (57) on itself when low. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.9, 0.7`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

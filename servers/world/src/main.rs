@@ -212,6 +212,7 @@ async fn initial_setup(
                     playtime_at_login: 0,
                     glamour_information: None,
                     event_handler_id: None,
+                    event_base_override: None,
                     recipe: None,
                     craft: None,
                     quick_synthesis: None,
@@ -4923,7 +4924,7 @@ async fn process_server_msg(
             FromServer::CompanionExp(exp) => {
                 connection.companion_gained_exp(exp).await;
             }
-            FromServer::EventItemUsed(item_id, target) => {
+            FromServer::EventItemUsed(item_id, target, bnpc_base) => {
                 // A key item's quest event (type EventItem, its argument the item), when its quest is underway.
                 let quest = connection
                     .game_data
@@ -4931,6 +4932,9 @@ async fn process_server_msg(
                     .get_event_item(item_id)
                     .map(|info| info.quest)
                     .unwrap_or_default();
+                // Used on a battle NPC: its BNpcBase is the event's BASE_ID (the zone's cache has only event NPCs and
+                // objects.)
+                connection.event_base_override = bnpc_base;
                 if quest == 0 || !lua_player.has_active_quest(quest) {
                     tracing::info!("Event item {item_id} used, but quest {quest} isn't underway");
                 } else if connection
@@ -5155,6 +5159,11 @@ async fn process_server_msg(
                         SceneFlags::from_bits_retain(connection.quest_battle_finish_flags),
                         Vec::new(),
                     );
+                }
+            }
+            FromServer::QuestBattleNotTalk => {
+                if !events.is_empty() {
+                    kawari_world::play_not_talk(lua_player);
                 }
             }
             FromServer::QuestBattleFailed => {

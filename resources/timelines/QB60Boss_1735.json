@@ -1,0 +1,74 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 20.0,
+            "npcs": 39.5
+        },
+        "9": {
+            "players": 34.0,
+            "npcs": 58
+        },
+        "11": {
+            "players": 16,
+            "npcs": 60
+        },
+        "21": {
+            "players": 21,
+            "npcs": 40
+        },
+        "120": {
+            "npcs": 216.0
+        }
+    },
+    "rotation": {
+        "pace": 18.0,
+        "actions": [
+            {
+                "action": 14,
+                "every": 18.0,
+                "comment": "16 uses by 2 (2.6-57.2 s apart); every 18.0 s"
+            },
+            {
+                "action": 9,
+                "every": 28.4,
+                "comment": "11 uses by 2 (23.8-44.0 s apart); every 28.4 s"
+            },
+            {
+                "action": 11,
+                "every": 28.6,
+                "comment": "11 uses by 2 (23.9-44.0 s apart); every 28.6 s"
+            },
+            {
+                "action": 21,
+                "every": 28.6,
+                "comment": "11 uses by 2 (23.8-43.6 s apart); every 28.6 s"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 18.8,
+            "data": {
+                "type": "action",
+                "action_id": 17,
+                "target": "itself"
+            },
+            "comment": "17 on itself, 3 uses by 2, first 18.8 s after its pull (median), then about every 145.5 s",
+            "every": 145.5
+        },
+        {
+            "time": 96.8,
+            "data": {
+                "type": "action",
+                "action_id": 12,
+                "target": "itself"
+            },
+            "comment": "12 on itself, 3 uses by 2, first 96.8 s after its pull (median), then about every 145.5 s",
+            "every": 145.5
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the one you fight (BNpcBase 1735, BNpcName 1454, layout 4261262): level 35, 9150 HP, ClassJob 1 (a gladiator); on you, then the gladiator on your side when he comes; Cure (120, the director's heals) on itself at the end. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.9, 0.7`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

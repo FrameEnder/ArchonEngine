@@ -262,11 +262,14 @@ pub enum FromServer {
     LeaveQuestBattle(HandlerId),
     /// The quest battle was lost, send them back to where they entered it.
     QuestBattleFailed,
+    /// Nothing in the quest battle answers what the player talked to (`ToServer::QuestBattleTalk`): its scene 10001.
+    QuestBattleNotTalk,
     /// An event action (the progress bar for examining things and such) finished casting during a quest event.
     QuestEventActionCast,
-    /// A key item's cast bar ended (an ActionRequest of type EventItem): the item, and what it was used on. The
-    /// zone connection starts its quest's event (type EventItem.)
-    EventItemUsed(u32, ObjectTypeId),
+    /// A key item's cast bar ended (an ActionRequest of type EventItem): the item, what it was used on, and its
+    /// BNpcBase when that's a battle NPC (the quest's `BASE_ID` then: Factual Folklore's ENEMY1.) The zone connection
+    /// starts its quest's event (type EventItem.)
+    EventItemUsed(u32, ObjectTypeId, Option<u32>),
     /// An action (its Action row) landed on an event NPC or object the server doesn't have as an actor: a quest that
     /// listens for it starts its event (type ActionResult.)
     ActionOnEventObject(u32, ObjectTypeId),
@@ -596,6 +599,10 @@ pub enum ToServer {
     GimmickAccessor(u32, ObjectId, ObjectId, Vec<i32>),
     /// The client's talk with a duty's ContentNpc returned (its row, the player, the event NPC, the scene's results.)
     ContentNpc(u32, ObjectId, ObjectId, Vec<i32>),
+    /// The player (first) talked to something whose handler is the quest battle they're in (second: its actor ID): an
+    /// event object the director brought out is the director's to answer (its script's `onObjectTalk`: In the Eyes of
+    /// Gods and Men's rosary), anything else gets EVENT_QIB_NOT_TALK (`FromServer::QuestBattleNotTalk`.)
+    QuestBattleTalk(ObjectId, ObjectId),
     /// The client begins fishing.
     Fish(ClientId, ObjectId),
     /// Warp to a specified pop range in a new territory.

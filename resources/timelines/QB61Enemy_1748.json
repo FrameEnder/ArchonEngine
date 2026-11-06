@@ -1,0 +1,32 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 75,
+            "npcs": 95
+        },
+        "497": {
+            "players": 226.0,
+            "npcs": 295.5
+        }
+    },
+    "rotation": {
+        "pace": 19.2,
+        "actions": [
+            {
+                "action": 497,
+                "every": 19.2,
+                "comment": "28 uses by 15 (11.3-42.9 s apart); every 19.2 s"
+            },
+            {
+                "action": 499,
+                "every": 33.5,
+                "comment": "15 uses by 14 (30.6 s apart); every 33.5 s"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "The quest battle (61) of quest 941: the adds of sequences 3 and 8 (BNpcBase 1748, BNpcName 1293, layouts 4256796-4256798 and 4292887): level 38, 1515 HP; Stone Gaze petrifies whoever faces it. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.11, 0.13, 0.15, 0.17`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

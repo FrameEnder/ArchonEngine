@@ -197,6 +197,16 @@ for where the story is with the one the client was last given (ZoneInit, ActorSe
 it changed, warps the player where they stand as retail did (`refresh_layer_filter`); a zone change the event began
 (its PrepareZoning) cancels the check, as its ZoneInit has the key.
 
+**After the Navel** (Bob's Chronofoil captures 650dbfd8, 0fd8bce0 and 48aaf6fe of 2026-11-05, and 130088ec of
+2026-11-06): **92218** in ZoneInit with All Good Things (517) at sequence 2, every time, and in the in-zone warp
+(ActorSetPos warp type 1) as it moved to 3 (the layer that carries it is QST_ManFst313, 517's); **92219** in ZoneInit
+and the in-zone warps with Bringing out the Dead (876) at sequence 2, on Bob's first character, the only visit after
+517 in the captures. 92219's layer is QST_ManFst405's (two event NPCs, 1007629 and 1007630), a quest neither capture
+had, so what brings it in (876's acceptance, or something between 517's end and 876) is a guess: the table takes it
+from 876's acceptance and 92218 from 517's. Bob's second character didn't go there in these captures. The Waking
+Sands' doors (0x20011-0x20013, in-zone warps) sent PrepareZoning warp type 1, then ActorSetPos with the key, and
+ActorControlSelf 236 `[1]`/`[2]` and 147 `[the handler]` around them.
+
 Kawari reads the key from `resources/data/layer_filters.json` (`layer_filters.rs`: per territory, the last entry whose
 quest has been accepted or completed; an entry without a quest is the default), puts it in ZoneInit, and fills it in
 any ActorSetPos to the player that has none (`ZoneConnection::send_ipc_from`). Retail picks it on its own servers, so

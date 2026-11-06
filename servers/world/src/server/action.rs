@@ -412,7 +412,10 @@ fn start_event_item(
 }
 
 /// The key item's cast bar ended: retail's ActionEffect (the EventItem's Action as the animation, no effects, a 0.1 s
-/// lock), then the quest's event, started by the zone connection (`FromServer::EventItemUsed`.)
+/// lock), then the quest's event, started by the zone connection (`FromServer::EventItemUsed`.) Used on a battle NPC,
+/// the item can do something to it (`event_item_effects`: Factual Folklore's ITEM0 on its giant, statuses and its
+/// health down to a fifth): retail's ActionEffect then lists the statuses and an EffectResult follows with its new
+/// health and them; and the quest's event gets the NPC's BNpcBase as `BASE_ID` (its ENEMY.)
 pub fn use_event_item(
     network: Arc<Mutex<NetworkState>>,
     data: Arc<Mutex<WorldServer>>,
@@ -426,38 +429,122 @@ pub fn use_event_item(
         .get_event_item(request.action_id)
         .map(|info| info.action)
         .unwrap_or_default();
-    let data = data.lock();
-    let Some(instance) = data.find_actor_instance(from_actor_id) else {
+    let mut data = data.lock();
+    let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
         return;
     };
     let Some(actor) = instance.find_actor(from_actor_id) else {
         return;
     };
-    let mut network = network.lock();
-    let ipc = ActionEffect {
-        animation_target_id: request.target,
-        targets: vec![request.target],
-        action_id: request.action_id,
-        animation_lock: EVENT_ITEM_ANIMATION_LOCK,
-        rotation: actor.rotation(),
-        spell_id,
-        source_sequence: request.sequence,
-        action_type: ActionType::EventItem,
-        global_sequence: network.global_action_sequence,
-        ..Default::default()
+    let rotation = actor.rotation();
+    let target_id = request.target.object_id;
+    let (bnpc_base, weakening) = match instance.find_actor(target_id) {
+        Some(NetworkedActor::Npc { spawn, .. }) => (
+            Some(spawn.common.base_id),
+            crate::event_item_effects::effects(request.action_id),
+        ),
+        _ => (None, None),
+    };
+    let mut effects = [TargetEffect::default(); 8];
+    if let Some(weakening) = weakening {
+        for (slot, status) in effects.iter_mut().zip(&weakening.statuses) {
+            *slot = TargetEffect(TargetEffectKind::GainEffect {
+                unk1: status.unk1,
+                unk2: 0,
+                param: 0,
+                unk3: 0,
+                effect_id: status.id,
+                duration: status.duration,
+            });
+        }
     }
-    .package()
-    .unwrap();
-    network.global_action_sequence += 1;
-    network.send_in_range_inclusive_instance(
-        from_actor_id,
-        instance,
-        FromServer::PacketSegment(ipc, from_actor_id),
-        DestinationNetwork::ZoneClients,
-    );
-    network.send_to(
+    let effect_sequence = {
+        let mut network = network.lock();
+        let effect_sequence = network.global_action_sequence;
+        let ipc = ActionEffect {
+            animation_target_id: request.target,
+            targets: vec![request.target],
+            action_id: request.action_id,
+            animation_lock: weakening
+                .and_then(|weakening| weakening.animation_lock)
+                .unwrap_or(EVENT_ITEM_ANIMATION_LOCK),
+            rotation,
+            spell_id,
+            source_sequence: request.sequence,
+            action_type: ActionType::EventItem,
+            global_sequence: effect_sequence,
+            effects,
+            ..Default::default()
+        }
+        .package()
+        .unwrap();
+        network.global_action_sequence += 1;
+        network.send_in_range_inclusive_instance(
+            from_actor_id,
+            instance,
+            FromServer::PacketSegment(ipc, from_actor_id),
+            DestinationNetwork::ZoneClients,
+        );
+        effect_sequence
+    };
+
+    if let Some(weakening) = weakening {
+        let mut entries = [EffectEntry::default(); 4];
+        for (index, status) in weakening.statuses.iter().enumerate() {
+            gain_effect_instance(
+                network.clone(),
+                from_id,
+                instance,
+                target_id,
+                status.id,
+                0,
+                status.duration,
+                from_actor_id,
+                false,
+            );
+            if let Some(entry) = entries.get_mut(index) {
+                *entry = EffectEntry {
+                    index: index as u8,
+                    id: status.id,
+                    duration: status.duration,
+                    source_actor_id: from_actor_id,
+                    ..Default::default()
+                };
+            }
+        }
+        if let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor_mut(target_id) {
+            let (health, max_health) = crate::event_item_effects::weakened(
+                weakening,
+                spawn.common.health_points,
+                spawn.common.max_health_points,
+            );
+            spawn.common.health_points = health;
+            spawn.common.max_health_points = max_health;
+            let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::EffectResult(EffectResult {
+                count: 1,
+                global_sequence: effect_sequence,
+                target_id,
+                health_points: health,
+                max_health_points: max_health,
+                resource_points: spawn.common.resource_points,
+                classjob_id: spawn.common.class_job,
+                entry_count: weakening.statuses.len().min(4) as u8,
+                statuses: entries,
+                ..Default::default()
+            }));
+            network.lock().send_in_range_inclusive_instance(
+                target_id,
+                instance,
+                FromServer::PacketSegment(ipc, target_id),
+                DestinationNetwork::ZoneClients,
+            );
+        }
+        process_effects_list(network.clone(), instance, target_id);
+    }
+
+    network.lock().send_to(
         from_id,
-        FromServer::EventItemUsed(request.action_id, request.target),
+        FromServer::EventItemUsed(request.action_id, request.target, bnpc_base),
         DestinationNetwork::ZoneClients,
     );
 }
@@ -577,7 +664,7 @@ pub fn event_item_on_ground_landed(
     if let Some(target) = landed_on {
         network.lock().send_to(
             from_id,
-            FromServer::EventItemUsed(request.action_id, target),
+            FromServer::EventItemUsed(request.action_id, target, None),
             DestinationNetwork::ZoneClients,
         );
         return;

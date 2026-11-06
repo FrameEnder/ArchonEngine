@@ -1,0 +1,40 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 162,
+            "npcs": 239
+        },
+        "737": {
+            "players": 217.5
+        },
+        "738": {
+            "players": 428,
+            "npcs": 707.5
+        }
+    },
+    "rotation": {
+        "pace": 16.2,
+        "actions": [
+            {
+                "action": 737,
+                "every": 16.2,
+                "comment": "16 uses by 4 (7.7-31.8 s apart); every 16.2 s"
+            },
+            {
+                "action": 1164,
+                "every": 26.7,
+                "comment": "14 uses by 4 (17.4-64.2 s apart); every 26.7 s"
+            },
+            {
+                "action": 738,
+                "every": 27.3,
+                "comment": "11 uses by 4 (8.8-59.0 s apart); every 27.3 s"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "The quest battle (61) of quest 941: the big one that comes at sequence 5 (BNpcBase 1747, BNpcName 2084, layout 4291248): level 41, 12772 HP; on the one you protect, or you. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.11, 0.13, 0.15, 0.17`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

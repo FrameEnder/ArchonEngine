@@ -1213,6 +1213,50 @@ function onReturn(scene, results, player) sceneFinished(scene, results, player) 
         self.assertNotIn("todo", json.dumps(steps))
 
 
+class BattleSimObjectTalkTest(unittest.TestCase):
+    """battle-sim plays the player talking to an object the script brought out (`object_talks`), and the event action
+    the script answers with ending `bar` seconds later (In the Eyes of Gods and Men's rosary.)"""
+
+    SCRIPT = """
+function onCommence(director)
+    director:set_sequence(2)
+    director:spawn_eobj(5, { x = 0, y = 0, z = 0 })
+end
+function onUpdate(director, health, player_health, info) end
+function onObjectTalk(director, actor_id, object_id, base_id)
+    if base_id == 5 then director:event_action(22, actor_id, object_id) end
+end
+function onEventActionCast(director, actor_id, target)
+    director:finish_gimmick(actor_id)
+    director:set_sequence(3)
+end
+"""
+
+    def test_talk_and_bar(self):
+        try:
+            import lupa  # noqa: F401
+        except ImportError:
+            self.skipTest("lupa isn't installed")
+        fixture = {"quest_battle": 9998, "tolerance": 1.0, "scenes": {}, "npcs": {},
+                   "events": [[0.0, "sequence", 2], [15.0, "sequence", 3]], "object_talks": [[10.0, 5, 5.0]]}
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(tmp) / "9998.lua"
+            script.write_text(self.SCRIPT)
+            result = battle_sim.simulate(fixture, script)
+            self.assertTrue(result.ok, battle_sim.format_results([result], verbose=True))
+            # Without the talk, nothing comes of the object.
+            result = battle_sim.simulate({**fixture, "object_talks": []}, script)
+            self.assertIn("sequence 3 at 15.0 s on retail: the script never did it", result.problems)
+
+    def test_a_few_hp_is_not_dead(self):
+        run = {"Events": [{"S": 1.0, "Kind": "scene", "Text": "event 0x8006003C scene 60000"}],
+               "Actors": {"7": {"Kind": "battle npc", "LayoutId": 70, "MaxHp": 9150, "Seen": 0.5}},
+               "Samples": [{"S": 5.0, "Id": 7, "Hp": 1}, {"S": 8.0, "Id": 7, "Hp": 0}], "Actions": []}
+        fixture = battle_sim.fixture_from_run(run, 60)
+        self.assertEqual(fixture["npcs"]["70"]["hp"], [[4.0, 0.1], [7.0, 0.0]])
+        self.assertEqual(fixture["npcs"]["70"]["death"], 7.0)
+
+
 class BattleSimTest(unittest.TestCase):
     """A quest battle script against a made-up retail run: a boss, a wave at half health, a line, the win."""
 

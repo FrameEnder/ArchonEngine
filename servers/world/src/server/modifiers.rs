@@ -109,10 +109,14 @@ pub fn healing_received_multiplier(statuses: &[u16]) -> f32 {
         .product()
 }
 
-/// Stun, Sleep and the Navel's Granite Gaol (292, on whomever Titan's Rock Throw hit until the gaol round them breaks:
-/// retail's gaoled Duty Support members did nothing for its 11-22 s, Bob's Chronofoil capture 650dbfd8): an NPC with
-/// one does nothing.
-const INCAPACITATED: &[u16] = &[2, 3, GRANITE_GAOL];
+/// Stun, Sleep, Petrification and the Navel's Granite Gaol (292, on whomever Titan's Rock Throw hit until the gaol
+/// round them breaks: retail's gaoled Duty Support members did nothing for its 11-22 s, Bob's Chronofoil capture
+/// 650dbfd8): an NPC with one does nothing. Petrification (1, 9 s) is quest battle 61's Stone Gaze's: retail's
+/// petrified allies did nothing for its 9 s seven times in ten (the other three acted within a second, as if it had
+/// been lifted; Bob's Chronofoil captures 130088ec and 3c56e09f.)
+const INCAPACITATED: &[u16] = &[PETRIFICATION, 2, 3, GRANITE_GAOL];
+/// Petrification.
+pub const PETRIFICATION: u16 = 1;
 /// The Navel's Granite Gaol.
 pub const GRANITE_GAOL: u16 = 292;
 /// Sleep, which ends when they're hit.

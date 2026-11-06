@@ -38,17 +38,46 @@ impl ContentEventHandler {
     }
 }
 
+/// Plays `QUEST_BATTLE_SCENE_NOT_TALK` in the talk event the player started.
+pub fn play_not_talk(player: &mut LuaPlayer) {
+    // Retail played it with 0x2000 (HIDE_HOTBAR) when Bob talked to In the Eyes of Gods and Men's onlooker (Chronofoil
+    // capture 130088ec, three times); Kawari's has NO_DEFAULT_CAMERA too, which a message scene doesn't mind.
+    player.play_scene(
+        QUEST_BATTLE_SCENE_NOT_TALK,
+        SceneFlags::HIDE_HOTBAR | SceneFlags::NO_DEFAULT_CAMERA,
+        Vec::new(),
+    );
+}
+
 #[async_trait]
 impl EventHandler for ContentEventHandler {
     async fn on_talk(&self, event: &Event, _target_id: ObjectTypeId, player: &mut LuaPlayer) {
         if event.id.handler_type() == HandlerType::QuestBattle {
-            // Its flags weren't seen on retail (no one talked to her in Bob's runs); a message scene's.
-            player.play_scene(
-                QUEST_BATTLE_SCENE_NOT_TALK,
-                SceneFlags::HIDE_HOTBAR | SceneFlags::NO_DEFAULT_CAMERA,
-                Vec::new(),
-            );
+            play_not_talk(player);
         }
+    }
+
+    /// In a quest battle, the director decides: an event object it brought out (a rosary to pick up) is its own to
+    /// answer, with no scene (retail's EventStart was followed at once by the director's event action, Bob's Chronofoil
+    /// captures 130088ec and 3c56e09f); anything else is `play_not_talk` (`ToServer::QuestBattleTalk`.)
+    async fn on_talk_connection(
+        &self,
+        event: &Event,
+        target_id: ObjectTypeId,
+        connection: &mut ZoneConnection,
+        _player: &mut LuaPlayer,
+    ) -> bool {
+        if event.id.handler_type() != HandlerType::QuestBattle {
+            return false;
+        }
+        connection
+            .handle
+            .send(ToServer::QuestBattleTalk(
+                connection.player_data.character.actor_id,
+                target_id.object_id,
+            ))
+            .await;
+        true
     }
 
     async fn on_return(

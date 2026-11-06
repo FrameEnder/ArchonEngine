@@ -1,0 +1,100 @@
+{
+  "quest": 889,
+  "script": "GaiUsb607_00889",
+  "source": "Bob's Chronofoil capture 3c56e09f (2026-11-06, his first character); scenes and effects from Bob's Chronofoil capture of 2026-11-06",
+  "params": {
+    "ACTOR0": 1006380,
+    "EVENTRANGE0": 4290068,
+    "EOBJECT0": 2002261,
+    "EVENT_ACTION_SEARCH": 1,
+    "ENEMY0": 4290078,
+    "ENEMY1": 4290079,
+    "ENEMY2": 4290080,
+    "ITEM0": 2000693,
+    "EOBJECT1": 2002111,
+    "ITEM1": 2000694,
+    "EOBJECT2": 2002110,
+    "ITEM2": 2000695,
+    "LOC_ACTOR0": 1007664,
+    "LOC_ACTOR1": 1006382,
+    "LOC_EOBJ1": 2002556,
+    "LOC_EOBJ2": 2002557,
+    "LOC_EOBJ3": 2002558,
+    "LOC_POS_EOBJ1": 4329703,
+    "LOC_POS_EOBJ2": 4329704,
+    "LOC_POS_EOBJ3": 4329705,
+    "LOC_POS_ACTOR1": 4260909,
+    "LOC_BGM1": 130
+  },
+  "steps": [
+    {
+      "talk": 1006380,
+      "layout": 4260908,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 2002111,
+      "layout": 4290066,
+      "what": "EOBJECT1",
+      "scenes": [
+        {"scene": 5, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 6, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "110001000040", "notices": [[0, [1, 3, 21003]]]}
+    },
+    {
+      "talk": 2002110,
+      "layout": 4290065,
+      "what": "EOBJECT2",
+      "scenes": [
+        {"scene": 7, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 8, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "211001100060", "notices": [[0, [2, 3, 21003]]]}
+    },
+    {
+      "range": 4290068,
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "211001100060", "notices": []}
+    },
+    {
+      "kill": [724, 4290078],
+      "expect": {"sequence": 1, "vars": "211101100060", "notices": []}
+    },
+    {
+      "kill": [725, 4290079],
+      "expect": {"sequence": 1, "vars": "211201100060", "notices": []}
+    },
+    {
+      "kill": [726, 4290080],
+      "expect": {"sequence": 1, "vars": "211301100060", "notices": []}
+    },
+    {
+      "talk": 2002261,
+      "layout": 4291275,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 3, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 4, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001110000000", "notices": [[0, [3, 3, 21003]]]}
+    },
+    {
+      "talk": 1006380,
+      "layout": 4260908,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 9, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 10, "flags": "0xf8402efb", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

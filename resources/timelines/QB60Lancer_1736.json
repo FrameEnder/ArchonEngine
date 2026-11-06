@@ -1,0 +1,51 @@
+{
+    "autoattack_action_id": 871,
+    "from_pull": true,
+    "recorded_amounts": {
+        "871": {
+            "players": 68.5
+        },
+        "75": {
+            "players": 96
+        },
+        "78": {
+            "players": 114.0
+        },
+        "84": {
+            "players": 147.0
+        }
+    },
+    "rotation": {
+        "pace": 23.0,
+        "actions": [
+            {
+                "action": 75,
+                "every": 23.0,
+                "comment": "2 uses by 2; every 23.0 s"
+            },
+            {
+                "action": 78,
+                "every": 23.0,
+                "comment": "2 uses by 2; every 23.0 s"
+            },
+            {
+                "action": 84,
+                "every": 23.0,
+                "comment": "2 uses by 2; every 23.0 s"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 9.6,
+            "data": {
+                "type": "action",
+                "action_id": 83,
+                "target": "itself"
+            },
+            "comment": "83 on itself, 2 uses by 2, first 9.6 s after its pull (median)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the second wave's lancer (BNpcBase 1736, BNpcName 2080, layout 4261303): level 38, 909 HP, ClassJob 4; on you. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.9, 0.7`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

@@ -86,7 +86,8 @@ Applied after an action's script returns, by the server, so scripts only give th
 * **Enemy hits on players** keep their own variance and criticals (`roll_npc_hit`), then get the enemy's debuffs and the
   player's defences above.
 * **Crowd control:** Stun (2) and Sleep (3) stop an enemy completely, Bind (13) keeps it in place; Sleep ends when it's
-  hit (`npc_behavior`, `action.rs`).
+  hit (`npc_behavior`, `action.rs`). Petrification (1) stops an NPC too (since 2026-11-06: quest battle 61's Stone
+  Gaze, 9 s; retail's petrified allies did nothing for it seven times in ten), as does the Navel's Granite Gaol (292).
 * **Interrupts** (Head Graze, Interject) cancel only the target's cast and send ActorControl 15 (CancelCast) to everyone
   nearby; they used to delete every queued task of the target, so its statuses never wore off.
 

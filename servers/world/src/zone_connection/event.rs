@@ -124,8 +124,9 @@ impl ZoneConnection {
             self.send_ipc_self(ipc).await;
         }
 
-        // Find the ENpc or EObj base ID which is used in some scripts.
-        let base_id = lua_player
+        // Find the ENpc or EObj base ID which is used in some scripts (or the battle NPC's a key item was used on.)
+        let base_override = self.event_base_override.take();
+        let base_id = base_override.or(lua_player
             .zone_data
             .cached_eobj_base_ids
             .get(&actor_id.object_id.0)
@@ -134,7 +135,7 @@ impl ZoneConnection {
                 .zone_data
                 .cached_npc_base_ids
                 .get(&actor_id.object_id)
-                .copied());
+                .copied()));
 
         // call into the event dispatcher, get the event
         let handler = dispatch_event(

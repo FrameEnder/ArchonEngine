@@ -1,0 +1,36 @@
+{
+  "quest": 883,
+  "script": "GaiUsb601_00883",
+  "source": "Bob's Chronofoil capture 3c56e09f (2026-11-06, his first character); scenes and effects from Bob's Chronofoil capture of 2026-11-06",
+  "params": {"ACTOR0": 1006355, "ACTOR1": 1002780, "ACTOR2": 1006371},
+  "steps": [
+    {
+      "talk": 1006355,
+      "layout": 4260832,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1002780,
+      "layout": 3656535,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1006371,
+      "layout": 4257008,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

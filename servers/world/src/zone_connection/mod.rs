@@ -215,6 +215,9 @@ pub struct ZoneConnection {
 
     /// Information about the current content.
     pub event_handler_id: Option<HandlerId>, // TODO: replace with a helper function
+    /// The base ID the next event's script gets as `BASE_ID` when it isn't an event NPC or object of the zone's (a
+    /// key item used on a battle NPC: `FromServer::EventItemUsed`); taken by `start_event`.
+    pub event_base_override: Option<u32>,
     pub recipe: Option<Recipe>,
     /// The synthesis under way (`events/crafting.rs`.)
     pub craft: Option<Box<crate::events::CraftSession>>,

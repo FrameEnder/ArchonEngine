@@ -47,6 +47,7 @@ Callbacks:
 | `onPartyWipe(director)` | A duty's party wipe (every player down, `server/wipe.rs`), as everyone is sent back to the start: reset the fight (the Bowl of Embers takes Ifrit away and brings him back). Whatever the script had `delay`ed is dropped first. Optional. |
 | `onDutyRecommence(director)` | The duty begins again after a wipe (DutyRecommence). Optional. |
 | `onSceneFinished(director, scene)` | A player finished one of the director's own scenes (`play_scene`), e.g. a cutscene halfway through. Optional. |
+| `onObjectTalk(director, actor_id, object_id, base_id)` | A player talked to an event object of a quest battle's (one it brought out with `spawn_eobj`: a quest battle's object with no event of its own gets the director as its handler, as retail's rosary in In the Eyes of Gods and Men did). The script answers with no scene, as retail: `event_action(bar, actor_id, object_id)`, then `onEventActionCast` as the bar ends, which finishes the event (`finish_gimmick`). Without it, or for anything else in the battle (an event NPC), the server plays EVENT_QIB_NOT_TALK (scene 10001) as before (`ToServer::QuestBattleTalk`, `FromServer::QuestBattleNotTalk`; since 2026-11-06). |
 | `onContentNpc(director, actor_id, id, npc, results)` | A player's talk with a duty's ContentNpc (row `id`, event NPC actor `npc`) returned: the server played its scene (4, flags 0x2000, retail's for ContentNpc 1) and the script finishes the event (`finish_gimmick(actor_id)`); without it the event just finishes. Brayflox's Longstop's key (2026-11-03). |
 
 Director methods (`servers/world/src/server/director.rs`), the ones the fork added:
@@ -337,6 +338,71 @@ a quest's entering event, 0 for every other event (228 events across the capture
   (29167) had no script (`actions/291/QuestBattleNpc_29167.lua`: status 3285 on himself); their champion's one Provoke
   (18) is left out of its timeline (no script; the director's targeting does what it would).
 * The client's battle script (`ClsGla300Btl_00265`) has scenes 1 and 8 and OnSequence001 and 002 only.
+
+### Quest battle 60 — In the Eyes of Gods and Men (`content/questbattle/60.lua`)
+
+* Quest 912 (GaiUsb803_00912) enters it (ACTOR2's YesNoQuestBattle, scene 4, or EVENTRANGE0's, scene 18; territory
+  301, duty 343). Territory 301's TerritoryType has Coerthas Central Highlands' level (r1f1), so its NPCs are layer
+  `QB_GaiUsb803_001` of `roc_r1f1`, with retail's layout IDs, levels, HP, positions, flags, looks and the start spot
+  (457.38, 303.03, -264.67, facing 2.673) from Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06,
+  `--battle 0.9` and `0.7`: one run on each of his characters, both won; level 40). On your side a conjurer (4261257,
+  base 1739, 3787 HP) and, from sequence 3, a gladiator (4261300, base 1738, 4257 HP); against you the one you fight
+  (4261262, base 1735, 9150 HP), an archer (1733) and a conjurer (1732), then a lancer (1736) and a pugilist (1734),
+  then a marauder (1731), another conjurer (1732, 4287237) and a **wyvern** (4261305, base 1737, 15150 HP, battalion
+  5: at war with both sides, and invulnerable: every hit on it was effect 7, `set_invulnerable`). An onlooker (event
+  NPC 1007071, 4261248) talks and yells; talking to him plays scene 10001 (retail's, three times).
+* The flow (seconds from scene 60000), the same in both runs: sequence 2 and the onlooker's yell 1030; talks 85 (the
+  conjurer, name 2081, portrait 73194) and 86 (the boss, 1454, 73195) at 5.0 and 10.0. The boss under **80 %** (78.7,
+  78.4): sequence 3; the gladiator 4.2-4.4 s later; sequence 4 and talk 87 5.0 s after it; the second wave 6.4-6.5 s
+  after sequence 4; sequence 5 10.0 s after sequence 4 with talk 88 (the gladiator, 2082, 73124), then 89 (the
+  onlooker, ENpcResident 1007071, 73193, kind 3) 10.1 s later and yells 1031 (the conjurer) and 1032 (the onlooker)
+  15.1 and 20.1 s later. The boss under **50 %** (48.3, 49.4): sequence 6, talk 95 (the boss) 1.0 s and yell 1033 (the
+  boss) 6.0 s later, the third wave 8.3-8.4 s later, talks 90 and 91 18.0 and 23.0 s later. Under **20 %**: the
+  gladiator's yell 1034. Health at 0: sequence 7 and the boss's talk 92 at once.
+* **The rosary.** 0.2-0.5 s after sequence 7 an event object appears (EObj 2002279, layout 4285063, at (458.88,
+  304.81, -279.59) both times, not where the boss fell), its handler the director (SpawnObject). The director's log
+  3206 5.0 s after sequence 7; the wyvern fades (FadeOut 607) 6.4 s after and goes 1.35 s later; log 3209 10.05 s after
+  (both runs), and if the rosary is still there then sequences 8 and 9 at once and the gladiator's yell 1371 12.1 s
+  later. Talking to it (4.5 s after sequence 7 in one run, 24.8 in the other): EventStart (Talk, the director's
+  event), **no scene**, the director's event action 22 at once (ActorControlTarget 3 `[1, 22]`, 5 s); as it ends,
+  EventFinish, sequence 10, the rosary fades (607) and goes 1.1 s later, log 3208; 3.0 s later "Duty Complete" and
+  sequence 11, then the battle's scene 11 (0xF8402FFF). Kawari: `onObjectTalk` (above) and `onEventActionCast`.
+* The boss's health stood at 50.1 % for 12 s in one run (the player was on the adds), which an interpolated health
+  curve crosses early: its fixtures hold health (`npc_health: held`). The opening scene 1 is a cutscene (0xF8412FFF).
+* Retail's boss Cures itself at 3-8 % (twice and four times, 3.6 s apart); the enemy conjurers heal their side under
+  50 % (every 6.2 s); yours the gladiator, you and itself at 31-58 % (every 16.7-23.4 s). Both allies went for the
+  newest enemy, and for the wyvern while it was out. Timelines `QB60*` (1731-1739).
+* Fixtures: `60.json` (130088ec) and `60-3c56e09f.json`, each with the onlooker added, held health and the rosary's
+  `object_talks` (retail's StartTalkEvent on it, [questkit](questkit.md#battle-sim)).
+
+### Quest battle 61 — The Heretic among Us (`content/questbattle/61.lua`)
+
+* Quest 941 (GaiUsc004_00941) enters it (ACTOR1's YesNoQuestBattle, scene 2, or EVENTRANGE0's, scene 9; territory
+  302, duty 344, also r1f1's level): layer `QB_GaiUsc004_001` of `roc_r1f1`, retail's layout IDs, levels, HP,
+  positions, flags, looks and the start spot (-865.98, 226.1, 14.44, facing -1.832) from the same captures
+  (`--battle 0.11`; `0.13`, `0.15`, `0.17`: four runs, the first and last won, the second lost as the gladiator fell,
+  the third as the player did; level 41). On your side a **gladiator you must keep alive** (4256801, base 1750, 2401
+  HP), a conjurer (4256802, 1751) and an archer (4256803, 1752); against you the one you fight (4256791, base 1746,
+  17030 HP), three adds (1748, 4256796-4256798), what he turns into (4291248, base 1747, 12772 HP), a wyvern (4256804,
+  1749) and one more add (4292887).
+* The flow (seconds from scene 60000), the same in all four runs: sequence 2; talks 75 (the gladiator, 2085, 73189) and
+  76 (the boss, 2083, 73193) at 5.1 and 10.1; sequence 3 at 17.4-17.5, the three adds 0.2-0.5 s later. The boss under
+  **50 %** (49.2-49.7): sequence 4, talks 77, 78 and 79 0.1, 5.1 and 10.1 s after. **Dragon's Blood**: 11.1-13.0 s
+  after sequence 4 the boss casts 1162 (3.7 s) on himself, whatever his health (31-46 %: not a health mark), and
+  sequence 5 comes 4.4-4.5 s after the cast began; he fades (607) 1.1 s later, what he turns into appears 1.3 s
+  after sequence 5 (0.6 once) and sequence 6 0.7 s after that as the boss is taken away (DeleteActor); talks 80 (it,
+  2084, 73190) and 81 4.0 and 8.0 s after sequence 6. It under **75 %**: sequence 7, the wyvern 0.2-0.5 s later,
+  talks 82 and 83 5.1 and 10.0 s after; under **40 %**: sequence 8, the last add 0.2-0.4 s later; under **20 %**: talk
+  84. It, the wyvern and the last add down: "Duty Complete" and sequence 9 2.0-2.1 s after the last one's health
+  reached 0 (with its death animation, not at once as in The Face of Thal), the battle's scene 9 (0xF8402EFB) after
+  it. The archer's and the conjurer's health at 0: their last words, 87 and 86 (name 2086; the archer fell in every
+  run). Lost: the gladiator's health at 0 (his talk 85 and sequence 0xFE at once) or yours (0xFE).
+* The director casts Dragon's Blood (`use_action`, 12.0 s after sequence 4) and does the turning; the boss's timeline
+  (`QB61Boss_1746`) has only his spells (Ruin, Ruin II, Bio, Miasma, Virus, Rotten Meat at 13.4 s); his Eye for an
+  Eye and Rouse went on his own adds, which a timeline can't aim at, so they're left out. The adds' Stone Gaze (499)
+  petrifies (status 1, 9 s) whoever faces it, and a petrified NPC does nothing (`modifiers::INCAPACITATED`).
+* Fixtures: `61.json` (130088ec, won), `61-3c56e09f.json` (won), `61-lost-13.json` (the gladiator) and
+  `61-lost-15.json` (you), all with held health.
 
 ### Quest battle 75 — Seer Folly (`content/questbattle/75.lua`)
 

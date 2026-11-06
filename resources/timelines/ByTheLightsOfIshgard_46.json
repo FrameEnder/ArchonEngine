@@ -1,0 +1,23 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "968": {
+            "players": 54.5
+        }
+    },
+    "rotation": {
+        "pace": 3.1,
+        "actions": [
+            {
+                "action": 968,
+                "every": 3.1,
+                "comment": "73 uses by 6 (3.1-4.1 s apart); every 3.1 s"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "The three guarding a place in By the Lights of Ishgard (quest 939, BNpcBase 46, BNpcName 46, layouts 4297103, 4297104 and 4297106): level 34, 1142 HP; Thunder (968) at you, never an auto-attack. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.10, 0.12`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

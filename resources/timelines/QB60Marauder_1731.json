@@ -1,0 +1,55 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 55.0,
+            "npcs": 74
+        },
+        "1003": {
+            "players": 169,
+            "npcs": 212.5
+        }
+    },
+    "rotation": {
+        "pace": 21.3,
+        "actions": [
+            {
+                "action": 1003,
+                "every": 21.3,
+                "comment": "3 uses by 2 (10.2 s apart); every 21.3 s"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 6.4,
+            "data": {
+                "type": "action",
+                "action_id": 34,
+                "target": "itself"
+            },
+            "comment": "34 on itself, 2 uses by 2, first 6.4 s after its pull (median)"
+        },
+        {
+            "time": 10.1,
+            "data": {
+                "type": "action",
+                "action_id": 32,
+                "target": "itself"
+            },
+            "comment": "32 on itself, 2 uses by 2, first 10.1 s after its pull (median)"
+        },
+        {
+            "time": 0.5,
+            "data": {
+                "type": "action",
+                "action_id": 474,
+                "target": "itself"
+            },
+            "comment": "474 on itself, 1 use, first 0.0 s after its pull (median)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the third wave's marauder (BNpcBase 1731, BNpcName 2076, layout 4287236): level 35, 976 HP, ClassJob 3; on whoever of your side it reached first. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.9, 0.7`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

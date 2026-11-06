@@ -1,0 +1,61 @@
+{
+    "autoattack_action_id": 873,
+    "from_pull": true,
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "873": {
+            "npcs": 109
+        },
+        "106": {
+            "npcs": 127.5
+        },
+        "100": {
+            "npcs": 138.5
+        },
+        "97": {
+            "npcs": 202
+        }
+    },
+    "rotation": {
+        "pace": 4.6,
+        "actions": [
+            {
+                "action": 106,
+                "every": 4.6,
+                "comment": "11 uses by 4 (2.6-18.5 s apart); every 4.6 s"
+            },
+            {
+                "action": 100,
+                "every": 60.7,
+                "comment": "2 uses by 2; every 60.7 s"
+            },
+            {
+                "action": 97,
+                "every": 51.8,
+                "comment": "1 use; every 51.8 s"
+            }
+        ]
+    },
+    "timepoints": [
+        {
+            "time": 5.2,
+            "data": {
+                "type": "action",
+                "action_id": 101,
+                "target": "itself"
+            },
+            "comment": "101 on itself, 4 uses by 4, first 5.2 s after its pull (median)"
+        },
+        {
+            "time": 9.8,
+            "data": {
+                "type": "action",
+                "action_id": 107,
+                "target": "itself"
+            },
+            "comment": "107 on itself, 4 uses by 4, first 9.8 s after its pull (median)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The quest battle (61) of quest 941: the archer on your side (BNpcBase 1752, BNpcName 2086, layout 4256803): level 39, 1587 HP, ClassJob 5; on the boss, then the adds. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.11, 0.13, 0.15, 0.17`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

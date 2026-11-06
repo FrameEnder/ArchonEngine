@@ -39,6 +39,12 @@ Casts: a fixture can hold the NPCs' casts (`casts`: `[[t, layout, action], ...]`
 their health), which the script hears as `onActorCast(director, layout, action, 0)`, as the server calls it when an
 NPC begins an action (the magitek vanguard's Drill Cannons move battles 46-48 on). Instant actions aren't in it.
 
+Object talks: a fixture can hold when the player talked to an event object the director brought out (`object_talks`:
+`[[t, base, bar], ...]`, from retail's StartTalkEvent on it, and how long the event action that followed took), which
+the script hears as `onObjectTalk(director, 1, 2, base)` if it has spawned that object by then (`spawn_eobj`); an
+`event_action` it answers with ends `bar` seconds later (`onEventActionCast(director, 1, 2)`), as the server's does (In
+the Eyes of Gods and Men's rosary, quest battle 60.)
+
 What it doesn't simulate: enmity and who hits whom (the health curves are retail's whatever the script's targeting does), and losing. The player's health
 follows retail's curve when the fixture has one (`player`, for lines said as the player's health drops), full otherwise.
 """
@@ -101,17 +107,23 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
 
     actors = {k: a for k, a in run.get("Actors", {}).items() if a.get("Kind") == "battle npc" and a.get("LayoutId")}
     curves: dict[str, list] = {k: [] for k in actors}
+
+    def percent(hp, max_hp):
+        # A few HP left isn't 0 (In the Eyes of Gods and Men's boss stood at 1 of 9150 for 3 s, Bob's Chronofoil capture
+        # 3c56e09f: rounded, it fell then.)
+        return max(round(100 * hp / max_hp, 1), 0.1) if hp > 0 else 0.0
+
     for sample in run.get("Samples", []):
         key = str(sample.get("Id"))
         if key in curves and "Hp" in sample and actors[key].get("MaxHp"):
-            pct = round(100 * sample["Hp"] / actors[key]["MaxHp"], 1)
+            pct = percent(sample["Hp"], actors[key]["MaxHp"])
             if not curves[key] or curves[key][-1][1] != pct:
                 curves[key].append([rel(sample["S"]), pct])
     for action in run.get("Actions", []):  # each hit says its target's HP too
         for target in action.get("Targets", []):
             key = str(target.get("Id"))
             if key in curves and "Hp" in target and target.get("MaxHp"):
-                curves[key].append([rel(action["S"]), round(100 * target["Hp"] / target["MaxHp"], 1)])
+                curves[key].append([rel(action["S"]), percent(target["Hp"], target["MaxHp"])])
 
     you = next((k for k, a in run.get("Actors", {}).items() if a.get("Kind") == "you" and a.get("MaxHp")), None)
     player: list = []
@@ -326,6 +338,9 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
     start = -round(sum(lead_in.values()) * 2) / 2
     known = dropin_layouts()
     cast_heard: set[tuple] = set()
+    eobjs: set[int] = set()  # the event objects the script brought out (spawn_eobj), by base
+    talks_due = [list(talk) for talk in fixture.get("object_talks", [])]
+    bars_due: list[float] = []  # when the event actions the script started on an object talk end
 
     def follow_calls(outside_update: bool = True):
         nonlocal seen_calls
@@ -343,6 +358,8 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                     result.problems.append(f"spawns {layout} at {t:.1f} s, which retail never had")
             elif name == "despawn_bnpc" and args:
                 alive.discard(int(args[0]))
+            elif name == "spawn_eobj" and args:
+                eobjs.add(int(args[0]))
             elif name == "play_scene" and args:
                 scene = int(args[0])
                 took = lead_in.get(str(scene)) if t < 0 else None
@@ -377,6 +394,20 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                     if g.onActorCast is not None:
                         g.onActorCast(director, layout, action, 0)
                     follow_calls()
+            # The player talking to an object the script brought out, and the event action it answered with.
+            for talk in [d for d in talks_due if d[0] <= t and d[1] in eobjs]:
+                talks_due.remove(talk)
+                before = len(calls)
+                if g.onObjectTalk is not None:
+                    g.onObjectTalk(director, 1, 2, talk[1])
+                if any(name == "event_action" for _, name, _ in calls[before:]):
+                    bars_due.append(t + talk[2])
+                follow_calls()
+            for due in [d for d in bars_due if d <= t]:
+                bars_due.remove(due)
+                if g.onEventActionCast is not None:
+                    g.onEventActionCast(director, 1, 2)
+                follow_calls()
             # Deaths, by retail's clock counted from when the script spawned each one.
             for layout in sorted(alive):
                 info = npcs.get(layout)

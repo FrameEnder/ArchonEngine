@@ -87,6 +87,19 @@ mod tests {
         };
         assert_eq!(filter_key(212, back_from_the_wood(2)), 90342);
         assert_eq!(filter_key(212, back_from_the_wood(255)), 90343);
+        // Wrath of the Titan (516), then 517 (92218, every visit at its sequence 2) and Bringing out the Dead (876).
+        assert_eq!(
+            filter_key(212, |quest, _| quest <= 516 || quest == 683),
+            90344
+        );
+        assert_eq!(
+            filter_key(212, |quest, _| quest <= 517 || quest == 683),
+            92218
+        );
+        assert_eq!(
+            filter_key(212, |quest, _| quest <= 518 || quest == 683 || quest == 876),
+            92219
+        );
         assert_eq!(filter_key(140, |_, _| true), 0);
     }
 }
