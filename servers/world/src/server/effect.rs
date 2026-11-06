@@ -292,6 +292,41 @@ pub fn gain_effect_instance(
     index
 }
 
+/// Ends the status `effect_id` on an actor at once, from within its instance (a director's `lose_effect`): its expiry
+/// is dropped, LoseEffect goes to everyone around (from no one, 0xE0000000, as retail's did as the Navel's gaols broke:
+/// Bob's Chronofoil capture 650dbfd8) and the status list follows. Nothing happens if it hasn't the status.
+pub fn lose_effect_instance(
+    network: Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    actor_id: ObjectId,
+    effect_id: u16,
+) {
+    instance.retain_tasks(|task| {
+        !(task.from_actor_id == actor_id
+            && matches!(task.data, QueuedTaskData::LoseStatusEffect { effect_id: id, .. } if id == effect_id))
+    });
+    let Some(effects) = instance
+        .find_actor_mut(actor_id)
+        .and_then(|actor| actor.status_effects_mut())
+    else {
+        return;
+    };
+    if effects.get(effect_id).is_none() {
+        return;
+    }
+    effects.remove(effect_id);
+    network.lock().send_ac_in_range_inclusive_instance(
+        instance,
+        actor_id,
+        ActorControlCategory::LoseEffect {
+            effect_id: effect_id as u32,
+            unk2: 0,
+            source_actor_id: ObjectId::default(),
+        },
+    );
+    process_effects_list(network.clone(), instance, actor_id);
+}
+
 /// Removes an effect from the actor.
 pub fn remove_effect(
     network: Arc<Mutex<NetworkState>>,

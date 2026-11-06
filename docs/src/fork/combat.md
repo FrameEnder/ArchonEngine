@@ -216,6 +216,11 @@ Enemies still compute damage like players do (stat × potency), which is far too
   `players_by_level` (`{"<level>": avg}`) is for a kind met at several levels (2026-10-27): the tainted earth sprite
   (BNpcBase 294) hit for 7 at level 5 in Trial by Earth and 21 at level 20 in Sylphie's Trials; the NPC's own level's
   comes first, then `players`, then the nearest level's (`Timeline::recorded_amount_at`).
+  `by_distance` (`[[yalms, amount], ...]`, 2026-11-06) is for an attack weaker the further from the caster it lands:
+  what it did to players at those distances from the caster's middle, straight between two points and the end's
+  beyond them; every hit (player or NPC) is its recorded amount times that over `players`
+  (`RecordedAmount::distance_factor`). The Navel's Geocrush: 991 at 4.7 yalms, 367 at 22 (17 hits in Bob's three runs
+  on a line, 1161 less 36.1 a yalm).
 * **Party bots and party NPCs are hit as players are** (since 2026-10-23): an enemy's hit on one is scaled as a hit on
   a player (its `players` recorded amount, or `npc_damage_scale`), with a player's defences for a bot
   (`modifiers::apply_hit_on_player`) and, for a [Party NPC](party-npcs.md#taking-hits), its member's share of a

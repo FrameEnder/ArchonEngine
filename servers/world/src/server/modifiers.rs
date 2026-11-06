@@ -109,8 +109,12 @@ pub fn healing_received_multiplier(statuses: &[u16]) -> f32 {
         .product()
 }
 
-/// Stun and Sleep: an enemy with one does nothing.
-const INCAPACITATED: &[u16] = &[2, 3];
+/// Stun, Sleep and the Navel's Granite Gaol (292, on whomever Titan's Rock Throw hit until the gaol round them breaks:
+/// retail's gaoled Duty Support members did nothing for its 11-22 s, Bob's Chronofoil capture 650dbfd8): an NPC with
+/// one does nothing.
+const INCAPACITATED: &[u16] = &[2, 3, GRANITE_GAOL];
+/// The Navel's Granite Gaol.
+pub const GRANITE_GAOL: u16 = 292;
 /// Sleep, which ends when they're hit.
 pub const SLEEP: u16 = 3;
 /// Bind: an enemy with it doesn't move (but still attacks.)

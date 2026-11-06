@@ -14,6 +14,7 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | The Bowl of Embers (Ifrit) | 56 | 1045 | `content/w1fa_re.lua` | one run with Duty Support, two attempts (2026-10-27) |
 | The Thousand Maws of Toto-Rak | 1 | 1039 | `content/f1r1_re.lua` | one run with Duty Support (caa5e908) and two Duty Finder runs (1fac2416, 2528a32d), 2026-10-30 |
 | Haukke Manor | 6 | 1040 | `content/f1d2_re.lua` | one run with Duty Support (5d9c7d7f) and three Duty Finder runs (e7580e0d: twice as the tank, once as the healer), 2026-11-02 |
+| The Navel (Titan) | 57 | 1046 | `content/s1fa_re.lua` | one run with Duty Support (650dbfd8) and two Duty Finder runs (0fd8bce0, 48aaf6fe), 2026-11-06 |
 
 ## Facing at the entrance
 
@@ -671,3 +672,67 @@ queued and calls its `onPartyWipe` (Ifrit, the Nail and the helpers taken away a
 * *Leaving:* retail sent the player on to Camp Drybone (145, ZoneInit pop range 4156164, the quest's POPRANGE1, at
   (-386.72, -59.0, 133.89)) during Lord of the Inferno, not back to Southern Thanalan: the quest's `onDutyCleared`
   sets it (`set_duty_exit`), so only for that step of the story.
+
+## The Navel
+
+From Bob's Chronofoil captures of 2026-11-06, during Lord of Crags (quest 857, which unlocks it): `650dbfd8` visit 0.1
+(5.7 minutes with Duty Support, Bob a level 36 arcanist), `0fd8bce0` visit 0.3 and `48aaf6fe` visit 0.2 (the Duty
+Finder with three other players), each won at the first attempt. Read with `questkit chronofoil --battle` and the
+visits' packets (numbers only), with Cactbot's titan-nm timeline (see [Sources](sources.md)) for what the runs don't
+show. ContentFinderCondition 57 (ShortCode `s1fa_re`), territory 1046 (`ffxiv/sea_s1/fld/s1fa`), InstanceContent
+20002: Bob's `content-index.json` (ControlPanel's *Build the content index*, 2026-11-06). The drop-in appends
+`bg/ffxiv/sea_s1/fld/s1fa/level/planmap.lgb`.
+
+**Enemies** (drop-in `s1fa_re_planmap.json`, all `nonpop`: the director spawns them; level 34): Titan (BNpcBase 246,
+layout 4039257, 25124 HP) at (0, 0, -16) facing south, toward the entrance at (0, 0, 24) (players come in facing
+-3.142, `ENTRANCE_ROTATION`); his helpers (434, all layout 4145900, hidden; four, as retail); the granite gaol (1444,
+layout 4249552, 571 HP, spawned hidden); the Heart of the Mountain (1507, 5139 HP; no layout ID on retail, which
+spawned it: the fork's 99001507).
+
+**Titan** (`TitanNavel_246.json`, `from_pull`; the three runs agree to a tenth or two), his auto-attack 872 every 3.0 s
+throughout (131 to the players' tanks, 71 to the Duty Support Marauder):
+* *From the pull* (his line 3800, battle talk under BNpcName 1801, no portrait, 5 s): Tumult (642, round him, 175 to
+  players) at 2.1 s and Rock Buster (641, on the tank, 357) at 8.3 s, each every 10.25 s.
+* *The first leap*, below 80 % and not while he casts (untargetable at 79.3, 75.5 and 79.9 %, 0.9-1.1 s after his
+  health fell below; with a Landslide being cast, 2.1 s after its hit): ActorControl 54 (untargetable) and
+  ActionTimeline 140; 2.1 s on his line 3804, ActorSetPos to the middle facing south and Geocrush (651, 4.2 s, round
+  the middle: 971-1017 to players 4.7 yalms out, 347-480 at 19-22, a line through all 17 hits: `by_distance`); 9.0 s
+  after the leap targetable again. Cactbot's 85 % isn't what the runs show.
+* *Phase 2*, from his being targetable: Tumult 2.1 s on, Rock Buster 7.3, Landslide (650, 2.7 s, a line before him,
+  634 and the Knockback sheet's row 37) 13.6, each every 18.6 s.
+* *The second leap*, below 50 % (49.4, 46.6, 49.4 %), the same, and 9.1 s after it the Heart: his line 3801,
+  ActorControl 31 `[0, 0, 0, 1]` and 30 `[0, 1, the Heart, 0]` on him, ActionTimeline 1439, and the Heart at his chest,
+  2.3 yalms before him the way he faces, moved with him as he walks and turns (`attach_bnpc`). He stays untargetable
+  (and took no damage) but fights on: Rock Throw 7.9 s on (once), Landslide 14.2, Tumult 23.3, Rock Buster 28.5, every
+  22.6 s. The Heart fell 24.7, 50.0 and about 27 s after it came.
+* *The Heart's fall*: 30 `[0, 2, the Heart, 1]` on him; 3.2 s on ActionTimeline 140, 5.3 s ActorSetPos to the middle
+  and 141, 7.3 s his line 3802 and Earthen Fury (652, instant, on everyone: 630 to players), 9.7 s ActorControl 31
+  `[0, 0, 16, 1]`, 12.2 s 31 `[0, 0, 16, 0]`, targetable, his line 3803 and his last phase. If it still stands 73.6 s
+  after the second Geocrush began (Cactbot's "Enrage"), Kawari takes it away and Earthen Fury comes the same way; what
+  retail's does then isn't recorded.
+* *Phase 4*, from his being targetable again: Tumult 2.1 s on, Weight of the Land 8.2, Rock Buster 15.4, Landslide
+  21.6, Rock Throw 32.9, every 41.0 s (Cactbot's "Tumult x2" was one hit each time here).
+* At 0 his line 3805, the closing cutscene (scene 3: 245, then 1, 18, 0, 0) and the duty complete; 2 s later he dies.
+* The director's variables (DirectorVars, sequence 1 throughout, all three runs): 32, 0 at the start; 32, 1 with the
+  first Geocrush's line, 33, 0 4.9 s later; 33, 4 with the second's, 39, 0 4.9 s later.
+
+**Rock Throw and the gaols** (six throws): instant, on someone of the party other than his target (the timeline's
+`other`), hurting no one; 2.8 s on status 292 on them (ActorControl 20); 4.0 s on the gaol spawned hidden where they
+stand, 4.8 s on brought into view (Appear 142, targetable); the party breaks it and the status goes as it does
+(ActorControl 21 `[292, 0, 0xE0000000]`, `director:lose_effect`). Gaoled, the Duty Support members did nothing for its
+11-22 s: 292 is among the statuses that stop an NPC (`modifiers::INCAPACITATED`, party bots too).
+
+**Weight of the Land** (eight casts): his 644 (2.7 s on himself) and, as it begins, two helpers' 973 (3.2 s, round
+them: 485 to players) under two of the party other than the one he fights, never his target. Retail aimed them at the
+ground (TargetArea); Kawari puts a helper there and has it cast on itself (as Ifrit's).
+
+**The Duty Support members** (the third set, 44, 47, 46 under ActorControlSelf 276 10008, 10011, 10010, at 34 with
+1607, 1103 and 1113 HP: `party_npc::DUTY_LEVELS`): the Marauder's 14361 at the pull, the Conjurer's 14366 3.0 s after
+the Heart fell; the Thaumaturge's 13975 three times and the Marauder's 13955 once were their chatter. They left Titan
+alone while he was untargetable (their targets "no one" through each leap) and broke the Heart and the gaols:
+`director:set_targetable(…, false)` now keeps bots off an NPC until it's targetable again
+(`Instance::untargetable_npcs`).
+
+**Leaving** after the clear during Lord of Crags puts the player by the beastman aetheryte in Upper La Noscea (the
+quest's `set_duty_exit`, [Quests](quests.md)).
+

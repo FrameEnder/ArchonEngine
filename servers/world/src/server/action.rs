@@ -988,14 +988,27 @@ pub fn execute_action(
             }
             _ => None,
         };
+        // An attack weaker further out (`RecordedAmount::by_distance`: the Navel's Geocrush) by how far from the caster
+        // it lands.
         let recorded_for = |id: ObjectId| match actor {
-            NetworkedActor::Npc { timeline, .. } => member_recorded(id).or_else(|| {
-                timeline.recorded_amount_at(
-                    request.action_id,
-                    hit_like_a_player(id),
-                    common_spawn.level,
-                )
-            }),
+            NetworkedActor::Npc { timeline, .. } => member_recorded(id)
+                .or_else(|| {
+                    timeline.recorded_amount_at(
+                        request.action_id,
+                        hit_like_a_player(id),
+                        common_spawn.level,
+                    )
+                })
+                .map(|amount| {
+                    let distance = instance
+                        .find_actor(id)
+                        .map(|target| {
+                            let offset = target.position().0 - actor.position().0;
+                            Vec3A::new(offset.x, 0.0, offset.z).length()
+                        })
+                        .unwrap_or(0.0);
+                    amount * timeline.distance_factor(request.action_id, distance)
+                }),
             _ => None,
         };
         // Area attacks land on everyone of the target's side inside them when the cast finishes (aimed where the

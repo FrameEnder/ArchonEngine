@@ -48,6 +48,9 @@ uses) between 26230/29303 and 29766; the Thaumaturge's and the Conjurer's kits a
 29323 with 29324 and Cure 29318). Their chatter: the Marauder's 13955 and 13956, the Thaumaturge's 13975 and 13976.
 Not taken up: the Marauder's 29295, 29297 (status 87 on itself) and 29777, the Thaumaturge's 29763 and 3269, the
 Conjurer's Medica (29320) and Esuna (25043).
+In the Navel (Bob's capture 650dbfd8 of 2026-11-06, visit 0.1) the same three (44, 47, 46, the same slot values) came
+at level 34 with 1607, 1103 and 1113 HP (`DUTY_LEVELS`; the Lancer's 1220 a guess as before); their lines there are in
+[Dungeons](dungeons.md#the-navel).
 
 **`pet_id` is the slot's**, not the member's: 1, 5 and 9 for slots 0, 1 and 2, whoever is in them (the Marauder had 1
 in slot 0 in Sastasha, the Conjurer 1 in slot 0 with a tank; the Thaumaturge 5 and the Lancer 9 in slots 1 and 2 in

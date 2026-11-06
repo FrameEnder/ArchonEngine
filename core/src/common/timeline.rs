@@ -116,6 +116,48 @@ pub struct RecordedAmount {
     /// capture b23b91ef). Its level's comes first, then `players`, then the nearest level's.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub players_by_level: BTreeMap<u8, f32>,
+    /// For an attack that's weaker the further from the caster it lands: what it did to players at distances from
+    /// the caster's middle (yalms, amount), in order; between two the amount goes straight from one to the other,
+    /// beyond the first or last it's theirs. Every hit (on a player or an NPC) is its recorded amount times this
+    /// amount over `players`. The Navel's Titan's Geocrush (651), from the arena's middle: 991 at 4.7 yalms, 367 at 22
+    /// (17 hits on players in Bob's three runs fitted to a line, 1161 − 36.1 per yalm.)
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub by_distance: Vec<(f32, f32)>,
+}
+
+impl RecordedAmount {
+    /// How much of the recorded amount lands `distance` yalms from the caster (`by_distance`): 1 without.
+    pub fn distance_factor(&self, distance: f32) -> f32 {
+        let (Some(players), Some(first), Some(last)) = (
+            self.players,
+            self.by_distance.first(),
+            self.by_distance.last(),
+        ) else {
+            return 1.0;
+        };
+        if players <= 0.0 {
+            return 1.0;
+        }
+        let amount = if distance <= first.0 {
+            first.1
+        } else if distance >= last.0 {
+            last.1
+        } else {
+            self.by_distance
+                .windows(2)
+                .find(|pair| distance <= pair[1].0)
+                .map(|pair| {
+                    let ((near, near_amount), (far, far_amount)) = (pair[0], pair[1]);
+                    if far - near <= f32::EPSILON {
+                        far_amount
+                    } else {
+                        near_amount + (far_amount - near_amount) * (distance - near) / (far - near)
+                    }
+                })
+                .unwrap_or(last.1)
+        };
+        amount / players
+    }
 }
 
 impl Timeline {
@@ -145,6 +187,14 @@ impl Timeline {
                 .min_by_key(|(recorded, _)| (**recorded as i32 - level as i32).abs())
                 .map(|(_, amount)| *amount)
         })
+    }
+
+    /// How much of `action_id`'s recorded amount lands `distance` yalms from this NPC (`RecordedAmount::by_distance`.)
+    pub fn distance_factor(&self, action_id: u32, distance: f32) -> f32 {
+        self.recorded_amounts
+            .get(&action_id)
+            .map(|recorded| recorded.distance_factor(distance))
+            .unwrap_or(1.0)
     }
 
     /// The average auto-attack damage this NPC does to players at `level`, if it's known.
@@ -321,6 +371,24 @@ mod tests {
         assert_eq!(timeline.recorded_amount_at(970, false, 20), Some(3.0));
         assert_eq!(timeline.recorded_amount_at(971, true, 18), Some(20.0)); // no `players`: the nearest level's
         assert_eq!(timeline.recorded_amount_at(1, true, 20), None);
+    }
+
+    #[test]
+    fn recorded_amount_by_distance() {
+        // The Navel's Geocrush: 991 at 4.7 yalms, 367 at 22, 443 the players' median.
+        let timeline: Timeline = serde_json::from_str(
+            r#"{"autoattack_action_id": 0, "timeline_always_plays": false, "timepoints": [],
+                "recorded_amounts": {"651": {"players": 443.0, "npcs": 391.0, "by_distance": [[4.7, 991.0], [22.0, 367.0]]},
+                                     "642": {"players": 175.0}}}"#,
+        )
+        .unwrap();
+        let at = |distance: f32| timeline.distance_factor(651, distance) * 443.0;
+        assert!((at(0.0) - 991.0).abs() < 0.1); // nearer than the first: the first's
+        assert!((at(4.7) - 991.0).abs() < 0.1);
+        assert!((at(13.35) - 679.0).abs() < 0.1); // halfway
+        assert!((at(30.0) - 367.0).abs() < 0.1); // beyond the last: the last's
+        assert_eq!(timeline.distance_factor(642, 10.0), 1.0); // none
+        assert_eq!(timeline.distance_factor(1, 10.0), 1.0);
     }
 
     #[test]

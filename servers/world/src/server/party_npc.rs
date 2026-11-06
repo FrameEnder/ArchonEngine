@@ -406,7 +406,7 @@ pub const THIRD_MEMBERS: [Member; 4] = [
 /// takes the member's own `level` and `hp`.
 /// The Conjurer (39, 43) the same (Bob's captures c99fe374 and cc62ad94 of 2026-10-28): 293 HP at 15 in Sastasha, 316 at
 /// 16, 339 at 17, 432 at 20.
-pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 7] = [
+pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 8] = [
     (4, 15, &[(36, 411), (37, 322), (38, 293), (39, 293)]),
     (2, 16, &[(36, 443), (37, 347), (38, 316), (39, 316)]),
     (3, 17, &[(36, 476), (37, 372), (38, 339), (39, 339)]),
@@ -424,6 +424,10 @@ pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 7] = [
     // Conjurer (44, 46, 47) at 32 with 1476, 1013 and 1022. The Lancer (45) wasn't there: 1120 is a guess, the
     // Marauder's HP by the Lancer's share of it at 20 (469 of 618.)
     (8, 32, &[(44, 1476), (45, 1120), (46, 1013), (47, 1022)]),
+    // The Navel (Bob's capture 650dbfd8 of 2026-11-06, visit 0.1, during Lord of Crags): the third set's Marauder,
+    // Thaumaturge and Conjurer (44, 46, 47) at 34 with 1607, 1103 and 1113. The Lancer (45) wasn't there: 1220 is a
+    // guess, the Marauder's HP by the Lancer's share of it at 20 (469 of 618.)
+    (57, 34, &[(44, 1607), (45, 1220), (46, 1103), (47, 1113)]),
 ];
 
 /// A member's level and HP in the duty `content_finder_condition`.

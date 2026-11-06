@@ -1444,14 +1444,15 @@ pub fn npc_behavior(
     }
 
     // A director that answers what a boss does hears of each action as it begins (`onActorCast`.)
-    let begun: Vec<(u32, u32, ObjectId, Option<Position>)> = new_action_requests
+    let begun: Vec<(u32, u32, ObjectId, Option<(Position, ObjectId)>)> = new_action_requests
         .iter()
         .filter_map(|(id, request, _)| {
             let layout_id = instance.find_actor(*id)?.get_common_spawn().layout_id;
-            // Where its target stands as it begins (the Thousand Maws of Toto-Rak's last boss's eggs land there.)
+            // Where its target stands as it begins (the Thousand Maws of Toto-Rak's last boss's eggs land there), and
+            // who it is (the Navel's gaols hold them.)
             let target = instance
                 .find_actor(request.target.object_id)
-                .map(|target| target.position());
+                .map(|target| (target.position(), request.target.object_id));
             Some((layout_id, request.action_id, *id, target))
         })
         .collect();

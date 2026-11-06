@@ -61,6 +61,7 @@ use crate::{
         effect::gain_effect_instance,
         glamour,
         instance::Instance,
+        modifiers,
         network::{DestinationNetwork, NetworkState},
         npc_behavior::{BEHAVIOR_TICK_SECONDS, NPC_RUN_SPEED, npc_use_action},
         party_npc,
@@ -3041,11 +3042,13 @@ fn update_party(
         .map(|actor| actor.get_common_spawn().target_id.object_id)
         .filter(|target| target.is_valid());
 
-    // Everything fighting the party: any NPC (not a bot) with one of them on its enmity list.
+    // Everything fighting the party: any NPC (not a bot) with one of them on its enmity list, unless the director has
+    // made it untargetable (`Instance::untargetable_npcs`: Titan as he leaps and behind his Heart.)
     let engaged: Vec<Engaged> = instance
         .actors
         .iter()
         .filter(|(id, _)| !instance.party_bots.contains_key(id))
+        .filter(|(id, _)| !instance.untargetable_npcs.contains(id))
         .filter_map(|(id, actor)| match actor {
             NetworkedActor::Npc {
                 enmity,
@@ -3179,12 +3182,18 @@ fn update_party(
             timeline,
             placement,
             cast,
+            status_effects,
             ..
         }) = instance.actors.get_mut(bot_id)
         else {
             continue;
         };
         if spawn.common.health_points == 0 || *state == NpcState::Dead {
+            continue;
+        }
+        // Stunned, asleep or gaoled (the Navel's Granite Gaol): it does nothing until that's over, as retail's gaoled
+        // Duty Support members (`modifiers::is_incapacitated`.)
+        if modifiers::is_incapacitated(status_effects) {
             continue;
         }
         let follow = follows(*bot_id);

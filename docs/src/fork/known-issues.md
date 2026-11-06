@@ -148,6 +148,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
+* **857, 517 and 3867** (2026-11-06, from Bob's dumps and three runs each, Chronofoil 650dbfd8, 0fd8bce0 and 48aaf6fe):
+  untested in game. Lord of Crags' sequence 255 comes as the player leaves the cleared Navel (`onDutyCleared`), where
+  retail sent it as Titan fell, as for the other duties' quests. All Good Things and You Can't Take It with You
+  complete 871, 872 and 881 with them (retail's FinishQuests, no rewards); whether the client lists those as done
+  depends on the completed-quest mask alone. Lines whose speakers retail didn't play are numbered by the client's
+  IsAcceptEvent order.
 * **850, 855 and 856** (2026-11-05, from Bob's dumps and three runs each, Chronofoil d65126c9, b4ce5e3f and 811eb9ff):
   untested in game. In the Company of Heroes has a line for everyone in every sequence, but retail was only seen
   playing the quest's own scenes: the rest are numbered as the client's IsAcceptEvent orders its targets (which fits
@@ -869,6 +875,28 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   taken as first attempt and later ones (one of each seen). Status 775 (Ifrit's during Hellfire) is only applied, with
   `set_invulnerable`; whether retail makes him untargetable then isn't recorded. Retail's 0x40000007 (0, 1) at 15 % and
   the clear's logs aren't sent.
+
+## The Navel (2026-11-06)
+
+* Untested in game, from three runs that each won at the first attempt (Bob's Chronofoil captures 650dbfd8, 0fd8bce0,
+  48aaf6fe): a wipe goes as the Bowl of Embers' (`onPartyWipe` brings Titan back), not seen on retail here; the
+  Marauder's pull line is said at the first pull only.
+* The Heart left standing: Cactbot's "Enrage" at 73.6 s after the second Geocrush began; Kawari takes the Heart away
+  then and Earthen Fury comes as after its fall, with the broken-Heart damage. What retail's does (and whether Earthen
+  Fury's damage grows with the Heart's health) isn't recorded.
+* The leaps come 1 s after his health is below 80 or 50 % (2.4 s after a cast's end while he casts); retail's were 0.9
+  to 3.3 s after, so the rule is a fit. Titan's hitbox (3.7) is a guess (the Duty Support Marauder's 6.7 yalms against
+  Ifrit's 6.5 for his 3.5). Geocrush's fall-off is a line through 17 hits at two distances (4.6-4.8 and 18.8-22.1
+  yalms); nothing between was recorded.
+* Status 292 (Granite Gaol) never ends by itself (retail's gaols were broken in 11-22 s; its own time isn't known).
+  It stops a gaoled NPC acting; whether a gaoled player can still move or act is the client's (the server doesn't stop
+  them). The gaol is spawned where the player stands 4 s after Rock Throw; retail's players were drawn a few yalms
+  (5 in 0.8 s in two throws) before it closed, which Kawari doesn't do.
+* ActorControl 30 and 31 on Titan are sent as retail's (`bnpc_control`) without knowing what they do. The Heart has no
+  display flags or spawn details of retail's beyond its position (attached 2.3 yalms before him); ActionTimeline 1439
+  is played on Titan, not checked on the Heart.
+* Weight of the Land and Rock Throw never fell on Titan's target in the runs; Kawari keeps them off it on purpose.
+  Retail's helpers cast at a point on the ground; Kawari's are put there and cast on themselves.
 
 ## Quest battles and directors
 

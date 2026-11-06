@@ -1,0 +1,191 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "hitbox_radius": 3.7,
+    "recorded_amounts": {
+        "641": {
+            "players": 357,
+            "npcs": 191
+        },
+        "642": {
+            "players": 175.5,
+            "npcs": 163
+        },
+        "650": {
+            "players": 633.5
+        },
+        "651": {
+            "players": 443,
+            "npcs": 391,
+            "by_distance": [
+                [
+                    4.7,
+                    991
+                ],
+                [
+                    22.0,
+                    367
+                ]
+            ]
+        },
+        "652": {
+            "players": 630,
+            "npcs": 597
+        },
+        "872": {
+            "players": 131,
+            "npcs": 71
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 2.1,
+            "every": 10.25,
+            "data": {
+                "type": "action",
+                "action_id": 642,
+                "target": "itself"
+            },
+            "comment": "Phase 1, from the pull (all three runs to a tenth: 2.1, 2.2, 2.1 s): Tumult round him, then every 10.25 s (2.1, 12.4, 22.6, 32.9 in the Duty Support run)"
+        },
+        {
+            "time": 8.3,
+            "every": 10.25,
+            "data": {
+                "type": "action",
+                "action_id": 641
+            },
+            "comment": "Rock Buster on his target (the tank) 8.3 s in, every 10.25 s (8.3, 18.5, 28.8)"
+        },
+        {
+            "time": 2.1,
+            "every": 18.6,
+            "after": 3804,
+            "data": {
+                "type": "action",
+                "action_id": 642,
+                "target": "itself"
+            },
+            "comment": "Phase 2, from his being targetable again after the first Geocrush (the director's): Tumult 2.1 s on (all three), then every 18.6 s"
+        },
+        {
+            "time": 7.3,
+            "every": 18.6,
+            "after": 3804,
+            "data": {
+                "type": "action",
+                "action_id": 641
+            },
+            "comment": "Rock Buster 7.3 s on (all three)"
+        },
+        {
+            "time": 13.6,
+            "every": 18.6,
+            "after": 3804,
+            "data": {
+                "type": "action",
+                "action_id": 650,
+                "target": "itself"
+            },
+            "comment": "Landslide (2.7 s, a line before him) 13.5-13.6 s on"
+        },
+        {
+            "time": 7.9,
+            "after": 3801,
+            "data": {
+                "type": "action",
+                "action_id": 645,
+                "target": "other"
+            },
+            "comment": "The Heart's phase, from the Heart of the Mountain (his line 3801, the director's): Rock Throw on someone other than his target 7.8-7.9 s on, once (the director's gaol follows)"
+        },
+        {
+            "time": 14.2,
+            "every": 22.6,
+            "after": 3801,
+            "data": {
+                "type": "action",
+                "action_id": 650,
+                "target": "itself"
+            },
+            "comment": "Landslide 14.0-14.3 s on, then every 22.6 s (36.8 in the Duty Support run)"
+        },
+        {
+            "time": 23.3,
+            "every": 22.6,
+            "after": 3801,
+            "data": {
+                "type": "action",
+                "action_id": 642,
+                "target": "itself"
+            },
+            "comment": "Tumult 23.2-23.3 s on (45.9)"
+        },
+        {
+            "time": 28.5,
+            "every": 22.6,
+            "after": 3801,
+            "data": {
+                "type": "action",
+                "action_id": 641
+            },
+            "comment": "Rock Buster 28.5 s on (the Duty Support run's; the Heart fell before it in the other two)"
+        },
+        {
+            "time": 2.1,
+            "every": 41.0,
+            "after": 3803,
+            "data": {
+                "type": "action",
+                "action_id": 642,
+                "target": "itself"
+            },
+            "comment": "Phase 4, from his being targetable again after Earthen Fury (his line 3803): Tumult 2.1 s on, then every 41.0 s (43.0, 84.0 in the Duty Support run)"
+        },
+        {
+            "time": 8.2,
+            "every": 41.0,
+            "after": 3803,
+            "data": {
+                "type": "action",
+                "action_id": 644,
+                "target": "itself"
+            },
+            "comment": "Weight of the Land (2.7 s on himself; the director's helpers mark the ground under two of the party) 8.2-8.3 s on"
+        },
+        {
+            "time": 15.4,
+            "every": 41.0,
+            "after": 3803,
+            "data": {
+                "type": "action",
+                "action_id": 641
+            },
+            "comment": "Rock Buster 15.4-15.5 s on"
+        },
+        {
+            "time": 21.6,
+            "every": 41.0,
+            "after": 3803,
+            "data": {
+                "type": "action",
+                "action_id": 650,
+                "target": "itself"
+            },
+            "comment": "Landslide 21.6-21.8 s on"
+        },
+        {
+            "time": 32.9,
+            "every": 41.0,
+            "after": 3803,
+            "data": {
+                "type": "action",
+                "action_id": 645,
+                "target": "other"
+            },
+            "comment": "Rock Throw 32.9-33.1 s on (the director's gaol follows)"
+        }
+    ],
+    "comment": "Titan in the Navel (BNpcBase 246, layout 4039257, level 34, 25124 HP). From Bob's Chronofoil captures 650dbfd8 (Duty Support), 0fd8bce0 and 48aaf6fe (Duty Finder) of 2026-11-06, `questkit chronofoil --battle`: numbers only. His phases begin as the director says (content/s1fa_re.lua: restart_timeline): his Geocrushes at 80 and 50 %, the Heart of the Mountain, Earthen Fury. Recorded amounts: the medians of all three runs' hits on players (the tanks' for Rock Buster and his auto-attack) and on the Duty Support members; Geocrush weaker further from the middle, where he lands (by_distance: 17 hits fitted to a line). The hitbox (3.7) is a guess: the Duty Support Marauder fought him from 6.7 yalms, and Ifrit (3.5) from 6.5. Cactbot's titan-nm timeline has other times and thresholds (85 and 55 %); these are the runs'."
+}

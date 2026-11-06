@@ -1,0 +1,82 @@
+{
+  "quest": 517,
+  "script": "ManFst313_00517",
+  "source": "Bob's Chronofoil capture 48aaf6fe (2026-11-06, the three quests, the Navel by the Duty Finder); scenes and effects from Bob's Chronofoil capture of 2026-11-06",
+  "params": {
+    "ACTOR0": 1006343,
+    "EVENT_ACTION_SEARCH": 1,
+    "ACTOR1": 1003281,
+    "TERRITORYTYPE0": 212,
+    "ACTOR2": 1007686,
+    "ACTOR3": 1007687,
+    "ACTOR4": 1007688,
+    "ACTOR5": 1007689,
+    "ACTOR6": 1007467,
+    "ACTOR7": 1006355,
+    "LOC_SE1": 42,
+    "LOC_ACTION1": 1002,
+    "LOC_TALKSHAPE1": 6,
+    "LOC_ACTOR0": 1003783,
+    "CUT_MANFST31310": 246,
+    "CUT_MANFST31320": 98,
+    "CUT_MANFST31330": 247,
+    "CUT_MANFST31340": 248,
+    "LOC_ACTOR1": 1002387,
+    "LOC_ACTOR2": 1002388,
+    "LOC_ACTOR3": 1003247,
+    "LOC_ACTOR4": 1002389,
+    "LOC_POS_ACTOR1": 4333952,
+    "LOC_POS_ACTOR2": 4333953,
+    "LOC_POS_ACTOR3": 4333954,
+    "LOC_POS_ACTOR4": 4333955,
+    "LOC_FACE0": 604,
+    "LOC_FACE1": 605
+  },
+  "steps": [
+    {
+      "talk": 1006343,
+      "layout": 4260022,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x6001", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x6001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1003281,
+      "layout": 4101423,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0xf8402fff", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "enter_territory": 212,
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1007467,
+      "layout": 4309225,
+      "what": "ACTOR6",
+      "scenes": [
+        {"scene": 8, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[2, []]]}
+    },
+    {
+      "talk": 1006355,
+      "layout": 4260832,
+      "what": "ACTOR7",
+      "scenes": [
+        {"scene": 9, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true},
+        {"scene": 10, "flags": "0xf8402efb", "params": [0], "results": [0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

@@ -33,7 +33,7 @@ use crate::{
     server::{
         WorldServer,
         actor::NetworkedActor,
-        effect::gain_effect_instance,
+        effect::{gain_effect_instance, lose_effect_instance},
         instance::{Instance, QueuedTaskData},
         network::{DestinationNetwork, NetworkState},
     },
@@ -99,6 +99,19 @@ pub enum LuaDirectorTask {
         id: u16,
         param: u16,
         duration: f32,
+    },
+    /// The status `id` on an actor ends now (`effect::lose_effect_instance`): the Navel's Granite Gaol (292) as the
+    /// gaol holding them breaks.
+    LoseEffect {
+        actor_id: ObjectId,
+        id: u16,
+    },
+    /// A BNpc (actor ID or layout ID) kept `distance` yalms in front of another, facing as it faces, wherever that one
+    /// goes (`Instance::attached_npcs`): the Navel's Heart of the Mountain at Titan's chest.
+    AttachBattleNpc {
+        who: u32,
+        to: u32,
+        distance: f32,
     },
     SetBGM {
         id: u32,
@@ -471,6 +484,84 @@ pub struct PendingAppearance {
 /// Mines captures of 2026-10-25.)
 pub const DEFAULT_APPEAR_DELAY: f32 = 0.75;
 
+/// How far an attached BNpc may be from its place, and how far turned from its facing (radians), before it's moved
+/// (`keep_attached`.)
+const ATTACHED_SLACK: f32 = 0.1;
+const ATTACHED_TURN_SLACK: f32 = 0.05;
+/// The speed byte of retail's ActorMoves for the Navel's Heart of the Mountain as it went with Titan (Bob's Chronofoil
+/// capture 650dbfd8.)
+const ATTACHED_MOVE_SPEED: u8 = 60;
+
+/// Puts every attached BNpc (`director:attach_bnpc`) in its place, `distance` yalms in front of the one it's attached
+/// to and facing as it faces, with an ActorMove when it has moved or turned: retail moved the Navel's Heart of the
+/// Mountain with Titan, 2.3 yalms before him the way he faced, as he walked and turned (Bob's Chronofoil captures
+/// 650dbfd8, 0fd8bce0 and 48aaf6fe.) Either one gone or dead, it's no longer attached.
+pub fn keep_attached(network: &Arc<Mutex<NetworkState>>, instance: &mut Instance) {
+    if instance.attached_npcs.is_empty() {
+        return;
+    }
+    let attached: Vec<(ObjectId, (ObjectId, f32))> = instance
+        .attached_npcs
+        .iter()
+        .map(|(child, to)| (*child, *to))
+        .collect();
+    for (child, (parent, distance)) in attached {
+        let alive = |id: ObjectId| {
+            instance
+                .find_actor(id)
+                .is_some_and(|actor| actor.get_common_spawn().health_points > 0)
+        };
+        if !alive(child) || !alive(parent) {
+            instance.attached_npcs.remove(&child);
+            continue;
+        }
+        let Some(parent_actor) = instance.find_actor(parent) else {
+            continue;
+        };
+        let rotation = parent_actor.rotation();
+        let spot = parent_actor.position().0
+            + glam::Vec3A::new(distance * rotation.sin(), 0.0, distance * rotation.cos());
+        let Some(NetworkedActor::Npc {
+            spawn,
+            navmesh_path,
+            navmesh_path_lerp,
+            last_position,
+            ..
+        }) = instance.find_actor_mut(child)
+        else {
+            continue;
+        };
+        let turned = {
+            let difference = (spawn.common.rotation - rotation).rem_euclid(std::f32::consts::TAU);
+            difference.min(std::f32::consts::TAU - difference)
+        };
+        if (spawn.common.position.0 - spot).length() <= ATTACHED_SLACK
+            && turned <= ATTACHED_TURN_SLACK
+        {
+            continue;
+        }
+        spawn.common.position = Position(spot);
+        spawn.common.rotation = rotation;
+        navmesh_path.clear();
+        *navmesh_path_lerp = 0.0;
+        *last_position = Some(spot);
+        network.lock().send_in_range_instance(
+            child,
+            instance,
+            FromServer::ActorMove(
+                child,
+                Position(spot),
+                rotation,
+                kawari::common::MoveAnimationType::empty(),
+                kawari::common::MoveAnimationState::None,
+                kawari::common::JumpState::NoneOrFalling,
+                Some(ATTACHED_MOVE_SPEED),
+            ),
+            DestinationNetwork::ZoneClients,
+        );
+    }
+}
+
 /// Brings the BNpcs whose time has come into view: `Appear` and `SetTargetable` to everyone around, and INVISIBLE
 /// dropped from their spawn, so whoever sees them spawn later sees them at once.
 pub fn update_appearances(
@@ -497,6 +588,7 @@ pub fn update_appearances(
         if let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor_mut(actor_id) {
             spawn.common.display_flags.remove(DisplayFlag::INVISIBLE);
         }
+        instance.untargetable_npcs.remove(&actor_id);
         network.send_ac_in_range_instance(
             instance,
             actor_id,
@@ -524,6 +616,10 @@ pub struct ActorInfo {
     pub target_is_player: bool,
     /// Whether it's targeting anyone at all (a party NPC has no layout ID: its target shows as "party".)
     pub has_target: bool,
+    /// Its actor ID, and its target's (0 for none): the Navel's Granite Gaol falls on whomever Titan's Rock Throw was
+    /// aimed at, and his Weight of the Land under two of the party other than the one he fights.
+    pub actor_id: u32,
+    pub target_id: u32,
 }
 
 /// A director cutscene's scene parameters after its ID, unless the script gives its own: upstream's, as retail sent
@@ -630,6 +726,21 @@ impl UserData for LuaDirector {
                     param,
                     duration,
                 });
+                Ok(())
+            },
+        );
+        methods.add_method_mut("lose_effect", |_, this, (actor_id, id): (u32, u16)| {
+            this.tasks.push(LuaDirectorTask::LoseEffect {
+                actor_id: ObjectId(actor_id),
+                id,
+            });
+            Ok(())
+        });
+        methods.add_method_mut(
+            "attach_bnpc",
+            |_, this, (who, to, distance): (u32, u32, f32)| {
+                this.tasks
+                    .push(LuaDirectorTask::AttachBattleNpc { who, to, distance });
                 Ok(())
             },
         );
@@ -1275,8 +1386,8 @@ impl DirectorData {
     }
 
     /// Called every server tick for scripts that define `onUpdate`, with the health (in percent) of every living NPC
-    /// by its layout ID, the player's, and (fourth) everyone's details: `info[layout] = { hp, max_hp, x, y, z, target }`
-    /// (`target`: the layout ID it's after, or "player"), and
+    /// by its layout ID, the player's, and (fourth) everyone's details: `info[layout] = { hp, max_hp, x, y, z, target, id,
+    /// target_id }` (`target`: the layout ID it's after, or "player"; `id` and `target_id` the actor IDs), and
     /// `info.player` the same for the player, for scripts that need real numbers or distances (content/lib/Battle.lua.)
     pub fn update(
         &mut self,
@@ -1309,6 +1420,10 @@ impl DirectorData {
                     entry.set("target", "player")?;
                 } else if actor.has_target {
                     entry.set("target", "party")?;
+                }
+                entry.set("id", actor.actor_id)?;
+                if actor.has_target {
+                    entry.set("target_id", actor.target_id)?;
                 }
                 match key.parse::<u32>() {
                     Ok(layout_id) => details.set(layout_id, entry)?,
@@ -1509,13 +1624,14 @@ impl DirectorData {
 
     /// A BNpc (`layout_id`, as `actor_id`) began an action (`onActorCast`), for scripts that answer what a boss does:
     /// the Copperbell Mines' Kottos' 28543 sets off its markers and its jumps. Where its target stood comes after
-    /// (x, y, z; nil without one): the Thousand Maws of Toto-Rak's last boss's eggs land there.
+    /// (x, y, z; nil without one): the Thousand Maws of Toto-Rak's last boss's eggs land there; then its target's actor
+    /// ID (nil without one): the Navel's Granite Gaol holds the one Titan's Rock Throw was aimed at.
     pub fn on_actor_cast(
         &mut self,
         layout_id: u32,
         action_id: u32,
         actor_id: ObjectId,
-        target: Option<Position>,
+        target: Option<(Position, ObjectId)>,
     ) {
         if self.lua.0.globals().get::<Function>("onActorCast").is_err() {
             return;
@@ -1525,11 +1641,16 @@ impl DirectorData {
             let err = self.lua.0.scope(|scope| {
                 let data = scope.create_userdata_ref_mut(&mut lua_director)?;
                 let func: Function = self.lua.0.globals().get("onActorCast")?;
-                let (x, y, z) = match target {
-                    Some(position) => (Some(position.0.x), Some(position.0.y), Some(position.0.z)),
-                    None => (None, None, None),
+                let (x, y, z, target_id) = match target {
+                    Some((position, id)) => (
+                        Some(position.0.x),
+                        Some(position.0.y),
+                        Some(position.0.z),
+                        Some(id.0),
+                    ),
+                    None => (None, None, None, None),
                 };
-                func.call::<()>((data, layout_id, action_id, actor_id.0, x, y, z))?;
+                func.call::<()>((data, layout_id, action_id, actor_id.0, x, y, z, target_id))?;
                 Ok(())
             });
             self.apply_lua_director(lua_director);
@@ -1841,7 +1962,7 @@ fn update_director(instance: &mut Instance) {
         .map(|(id, _)| *id)
         .collect();
     let mut info = HashMap::new();
-    for actor in instance.actors.values() {
+    for (actor_id, actor) in &instance.actors {
         let key = match actor {
             NetworkedActor::Npc { spawn, .. } if spawn.common.health_points > 0 => {
                 spawn.common.layout_id.to_string()
@@ -1858,6 +1979,8 @@ fn update_director(instance: &mut Instance) {
             target_layout: layout_of.get(&target).copied(),
             target_is_player: players.contains(&target),
             has_target: target.is_valid(),
+            actor_id: actor_id.0,
+            target_id: target.0,
         });
     }
     // Every player too, as "player1", "player2"... ("player" is one of them): a duty's line is crossed by whoever
@@ -1879,6 +2002,8 @@ fn update_director(instance: &mut Instance) {
                 target_layout: layout_of.get(&target).copied(),
                 target_is_player: players.contains(&target),
                 has_target: target.is_valid(),
+                actor_id: id.0,
+                target_id: target.0,
             },
         );
     }
@@ -1904,6 +2029,8 @@ fn update_director(instance: &mut Instance) {
                 target_layout: layout_of.get(&target).copied(),
                 target_is_player: players.contains(&target),
                 has_target: target.is_valid(),
+                actor_id: id.0,
+                target_id: target.0,
             },
         );
     }
@@ -1918,6 +2045,9 @@ pub fn director_tick(
     instance: &mut Instance,
     game_data: Arc<Mutex<GameData>>,
 ) {
+    // What's attached to what goes with it (`director:attach_bnpc`.)
+    keep_attached(&network, instance);
+
     // Let the script see how the fight is going, if it wants to
     let wants_update = instance
         .directors
@@ -2216,8 +2346,23 @@ pub fn director_tick(
                     *param,
                     *duration,
                     ObjectId::default(),
-                    false, // Don't need to inform players here
+                    // Everyone sees it come (ActorControl GainEffect and the status list), as retail showed Ifrit's
+                    // 775 and the Navel's gaoled players' 292 (Bob's Chronofoil captures b8432613 and 650dbfd8.)
+                    true,
                 );
+            }
+            LuaDirectorTask::LoseEffect { actor_id, id } => {
+                lose_effect_instance(network.clone(), instance, *actor_id, *id);
+            }
+            LuaDirectorTask::AttachBattleNpc { who, to, distance } => {
+                let (Some(child), Some(parent)) =
+                    (resolve_bnpc(instance, *who), resolve_bnpc(instance, *to))
+                else {
+                    tracing::warn!("Failed to find bnpc {who} or {to} to attach!");
+                    continue;
+                };
+                instance.attached_npcs.insert(child, (parent, *distance));
+                keep_attached(&network, instance);
             }
             LuaDirectorTask::SetBGM { id } => {
                 let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorControlSelf(
@@ -3042,6 +3187,11 @@ pub fn director_tick(
                     tracing::warn!("Failed to find bnpc {who} for SetTargetable!");
                     continue;
                 };
+                if *targetable {
+                    instance.untargetable_npcs.remove(&actor_id);
+                } else {
+                    instance.untargetable_npcs.insert(actor_id);
+                }
                 network.lock().send_ac_in_range_instance(
                     instance,
                     actor_id,

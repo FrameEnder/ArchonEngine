@@ -225,6 +225,13 @@ pub struct Instance {
     /// NPCs a director holds (`director:hold_bnpc`): `npc_behavior` leaves them alone, so they do only what the
     /// director has them do (warps, jumps, actions), as retail's invisible boss helpers.
     pub held_npcs: std::collections::HashSet<ObjectId>,
+    /// BNpcs a director keeps in front of another wherever it goes (`director:attach_bnpc`): each one's parent and how
+    /// far before it (`director::keep_attached`.)
+    pub attached_npcs: HashMap<ObjectId, (ObjectId, f32)>,
+    /// BNpcs a director has made untargetable (`director:set_targetable`) and not targetable again: the party's bots
+    /// leave them be, as retail's Duty Support members let Titan go as he leapt and while his Heart stood (Bob's
+    /// Chronofoil capture 650dbfd8.)
+    pub untargetable_npcs: HashSet<ObjectId>,
     /// The HP, MP and max MP last sent for each actor (`update_actor_hp_mp` sends only changes.)
     pub last_hp_mp: HashMap<ObjectId, (u32, u16, u16)>,
     /// Director tasks queued for later (`director:delay`), and when they're due.
