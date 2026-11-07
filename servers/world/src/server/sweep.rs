@@ -5,8 +5,8 @@
 //! went straight down its lane at 3.0 yalms a second (ActorMove every 0.31 s, its speed byte 30), and a helper (14544)
 //! rode with it: an ActorSetPos to the whirlwind's spot and its 28731 there (instant, a 3-yalm circle) every 0.58 s,
 //! from when the first of them set off until its own whirlwind reached the lane's end. Kawari moves the walker the same
-//! way (one ActorMove to the end, which the client walks at the speed, and its position along the line each tick on
-//! the server), puts the helper where the walker is at each of its casts and has it use the action there; and the way
+//! way (an ActorMove each tick to where it will be by the next, at the speed, and its position along the line on the
+//! server), puts the helper where the walker is at each of its casts and has it use the action there; and the way
 //! ahead of each moving walker is a danger the party gets out of (`dodge::dangers`.)
 
 use std::{
@@ -32,6 +32,9 @@ use crate::{
         network::{DestinationNetwork, NetworkState},
     },
 };
+
+/// The director's tick (`director_tick`, every 500 ms).
+const TICK: Duration = Duration::from_millis(500);
 
 /// One NPC going along a line.
 #[derive(Debug, Clone)]
@@ -138,15 +141,18 @@ pub fn update(
         let arrives = sweep.arrives();
         let at = sweep.position(now);
 
-        // Setting off: one ActorMove to the end, which the client walks at its speed.
-        if !sweep.moving && now >= sweep.sets_off {
+        // On its way: an ActorMove each tick to where it will be by the next, at its speed, as retail's every 0.31 s
+        // and as NPCs walk (one ActorMove to the end of a long line snapped it there on the client: Bob's bundle
+        // 20261107-212704, the Stone Vigil's first boss's run to its Swinge spot.)
+        if now >= sweep.sets_off {
             sweep.moving = true;
+            let ahead = sweep.position(now + TICK);
             network.lock().send_in_range_instance(
                 sweep.walker,
                 instance,
                 FromServer::ActorMove(
                     sweep.walker,
-                    Position(sweep.to),
+                    Position(ahead),
                     sweep.rotation(),
                     kawari::common::MoveAnimationType::empty(),
                     kawari::common::MoveAnimationState::None,
@@ -206,7 +212,8 @@ pub fn update(
                 );
             }
         }
-        now < arrives
+        // Kept a tick past its arrival, for the last ActorMove to its end.
+        now < arrives + TICK
     });
     // Any the director added meanwhile (an action's script) stay too.
     sweeps.append(&mut instance.sweeps);

@@ -919,9 +919,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   last boss's flights below 85 % (at once if its round isn't over), between 50 and 70 % at a round's end and below
   40 %, and a new round as it falls below 50 % mid-round (seen once). Where its
   rounds and flights stand when it's pulled again after a wipe follows the script's reset, not retail's (not seen).
-* The first boss's run to its spot is one ActorMove (the client walks it there at 90); the server has it there at
-  once, and it's kept from acting on its own for the run (`busy_bnpc`). Its Swinge is cast on itself facing its target
-  as it set off (the second turned to its target again).
+* The first boss's run to its spot is a `sweep_bnpc` at 9 yalms a second (ActorMoves every 500 ms tick, retail's
+  every 0.31 s), kept from acting on its own for the run (`busy_bnpc`); it turns to its target as it arrives.
+* After a wipe the enemies are put back where they began (an ActorSetPos), where retail spawned the bosses anew; their
+  statuses aren't cleared.
 * The whirlwinds are untargetable and held (retail's targetability isn't recorded); the helpers that hurt as they go
   cast where the whirlwind is every 0.58 s by the director's tick (500 ms), so some casts come a tick late. Retail's
   kind 62 effect on 28731's hits (173, 64) isn't sent.

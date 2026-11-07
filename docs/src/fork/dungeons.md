@@ -653,6 +653,13 @@ DutyRecommence (0x40000006: the time left, 0, 2) and the entrance circle hidden.
 party's NPCs up beside their player 6.1 s after the fall (once the player has arrived), drops what the script had
 queued and calls its `onPartyWipe` (Ifrit, the Nail and the helpers taken away and Ifrit brought back) and
 `onDutyRecommence`. Before, nothing happened until the player chose to return, and the fight went on without them.
+Since 2026-11-07, as everyone is sent back, every enemy that was fighting or hurt goes back where it began, whole,
+out of battle and with no one hated (`npc_behavior::reset_after_wipe`: an ActorSetPos, SetBattle 0 and no target from
+each; its cast, and the director's `busy_bnpc`/`root_bnpc` hold on it, gone), and every sealed or sealing boss room
+opens again (`reopen_rooms_after_wipe`: its wall hidden, log 2014, the pending seal dropped; its line stays while the
+boss lives), as retail's Stone Vigil did after each of its three wipes (log 2014 4.3 s after the fall, the bosses
+whole where they began). Before, only a script's own `onPartyWipe` reset anything, and the Stone Vigil's first boss
+stayed in battle and chased the party to the entrance (Bob's bundle 20261107-212704).
 
 
 **Fixes from Bob's bundles of 2026-10-28** (his first runs; untested since):
@@ -774,7 +781,7 @@ the start; the first two bosses (1461 at 4000969, 14535 at 9061121) are the layo
 |---|---|
 | The perched dragons (1460; layer LVD_gmmick_wyvern) | each once, as a player first came into the range ahead of it (4240064, 4240075, 4240078, 4240080): ActionTimeline 7749, its 1021 (an instant line ahead) 1.96 s later, ActionTimeline 7739 2.09 s after that |
 | The ice walls (EObjs 2001881-2001883; LVD_gmmick_ice) | as a player first came into the range in front of one (4240100, 4240136, 4240137): ActorControl 106 with 0 from it, and its three ice sprites 0.2-0.4 s later at it |
-| The first boss (1461; wall 2001873, line 2001872, PlaceName 877) | Swinge 14.4 s after the pull (14.2-14.6, three pulls), then about every 31 s (26.6-36.6); before each it runs (ActorMove at 90) to one of three spots at the room's edge ((0, 130), (15, 116), (-15, 116); never the one it's at) and casts as it arrives, facing its target; below half its health it Swinges again from there 6.3-6.4 s later at its target (every double at 45-49 % or below, every single at 68 % or above). Lion's Breath (902) and Rake (901) its timeline's |
+| The first boss (1461; wall 2001873, line 2001872, PlaceName 877) | Swinge 14.4 s after the pull (14.2-14.6, three pulls), then about every 31 s (26.6-36.6); before each it runs (ActorMoves every 0.31 s, 2.8 yalms apart, speed byte 90: `sweep_bnpc` at 9 yalms a second; a single ActorMove to the spot, `move_bnpc`, snapped it there on the client, Bob's bundle 20261107-212704) to one of three spots at the room's edge ((0, 130), (15, 116), (-15, 116); never the one it's at) and casts as it arrives, facing its target; below half its health it Swinges again from there 6.3-6.4 s later at its target (every double at 45-49 % or below, every single at 68 % or above). Lion's Breath (902) and Rake (901) its timeline's |
 | Its death | log 2014, the way on (2001878) state 7, coffers 179, 180 and 182, the tank's 14371 |
 | The second boss (14535; wall 2002872, line 2002735, PlaceName 878) | its round of 44.9 s: Typhoon, Spiked Tail (28732) 30.2 s later, Sonic Storm (29053) 37.4 s later; the first round shorter (Spiked Tail 5.1-5.2 s after the pull, Sonic Storm 12.4, Typhoon 20.5-20.7, the next 37.7 s after it), both runs |
 | Its whirlwinds | 1.5 s after each Typhoon ends, at x 57 in lanes z -72, -77.5, -82.5, -88, a helper riding with each (ActorSetPos to it, then its 28731, a 3-yalm circle, every 0.58 s from the first pair's setting off until its own arrives). Two set off 3.9 s after they came, the others 7.1 s after them, at 3.0 yalms a second (ActorMove every 0.31 s, speed byte 30) to x 30.4; gone 23.5 and 30.5 s after they came. The first Typhoon's were three: -72 and -82.5 then -88 (the first two runs), or -77.5 and -88 then -82.5 (the conjurer's); after it four, in pairs: -72 with -82.5 and -77.5 with -88, either first, or -72 with -77.5 and -82.5 with -88, either first (all four orders seen over the three runs) |

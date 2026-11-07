@@ -13,8 +13,8 @@ use kawari::{
         STRIKING_DUMMY_NAME_ID, TimepointData, TimepointFacing, TimepointTarget,
     },
     ipc::zone::{
-        ActionRequest, ActionType, ActorControlCategory, BattleNpcSubKind, CharacterDataFlag,
-        ObjectKind, ServerZoneIpcData, ServerZoneIpcSegment,
+        ActionRequest, ActionType, ActorControlCategory, ActorSetPos, BattleNpcSubKind,
+        CharacterDataFlag, ObjectKind, ServerZoneIpcData, ServerZoneIpcSegment,
     },
 };
 use parking_lot::Mutex;
@@ -1675,6 +1675,98 @@ pub fn npc_behavior(
             }
         }
     }
+}
+
+/// A party wipe in a duty (`server/wipe.rs`): every enemy that was fighting, or hurt, goes back to where it began, whole,
+/// forgetting whom it hated, out of battle, its cast and its director's hold on it (`busy_bnpc`, `root_bnpc`) gone, as
+/// everyone is sent back to the start. Retail (the Stone Vigil, Bob's Chronofoil capture 1cefedf4 of 2026-11-07, three
+/// wipes): the bosses were back where they began at full health when the party returned, and fought anew when pulled;
+/// Kawari's first boss stayed in battle with them and chased the party to the entrance (Bob's bundle 20261107-212704).
+/// Returns the NPCs reset.
+/// `players_enemies`: the battalions at war with the players' (`GameData::get_battalion_enemies`).
+pub fn reset_after_wipe(
+    network: &mut NetworkState,
+    players_enemies: &[bool],
+    instance: &mut Instance,
+) -> Vec<ObjectId> {
+    let ids: Vec<ObjectId> = instance
+        .actors
+        .iter()
+        .filter(|(id, actor)| {
+            !instance.party_bots.contains_key(id)
+                && crate::server::action::at_war(players_enemies, actor)
+                && matches!(actor, NetworkedActor::Npc { state, enmity, spawn, .. }
+                    if *state != NpcState::Dead
+                        && spawn.common.health_points > 0
+                        && (*state == NpcState::Hate
+                            || !enmity.is_empty()
+                            || spawn.common.health_points < spawn.common.max_health_points))
+        })
+        .map(|(id, _)| *id)
+        .collect();
+    for id in &ids {
+        instance.busy_npcs.remove(id);
+        instance.rooted_npcs.remove(id);
+        let Some(NetworkedActor::Npc {
+            spawn,
+            state,
+            enmity,
+            navmesh_target,
+            navmesh_path,
+            navmesh_path_lerp,
+            last_position,
+            cast,
+            home,
+            home_rotation,
+            returning_home,
+            autoattack_timing,
+            ..
+        }) = instance.actors.get_mut(id)
+        else {
+            continue;
+        };
+        enmity.clear();
+        *state = NpcState::natural_state_of(spawn);
+        *navmesh_target = None;
+        navmesh_path.clear();
+        *navmesh_path_lerp = 0.0;
+        *last_position = Some(*home);
+        *cast = None;
+        *returning_home = false;
+        *autoattack_timing = 0;
+        spawn.common.target_id = ObjectTypeId::default();
+        spawn.common.position = Position(*home);
+        spawn.common.rotation = *home_rotation;
+        spawn.common.health_points = spawn.common.max_health_points;
+        let (position, rotation) = (spawn.common.position, spawn.common.rotation);
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorSetPos(ActorSetPos {
+            position,
+            rotation,
+            ..Default::default()
+        }));
+        network.send_to_instance(
+            ObjectId::default(),
+            instance,
+            FromServer::PacketSegment(ipc, *id),
+            DestinationNetwork::ZoneClients,
+        );
+        network.send_ac_in_range_instance(
+            instance,
+            *id,
+            ActorControlCategory::SetBattle { battle: false },
+        );
+        network.send_in_range_instance(
+            *id,
+            instance,
+            FromServer::ActorControlTarget(
+                *id,
+                ObjectTypeId::default(),
+                ActorControlCategory::SetTarget,
+            ),
+            DestinationNetwork::ZoneClients,
+        );
+    }
+    ids
 }
 
 /// The fight is over (a quest battle won): every NPC stops fighting and stays out of it. Retail, the moment

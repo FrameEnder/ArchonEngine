@@ -35,7 +35,7 @@ use crate::{
     server::{
         actor::{NetworkedActor, set_character_mode},
         duty_finder,
-        instance::Instance,
+        instance::{Instance, QueuedTaskData},
         network::{DestinationNetwork, NetworkState},
         party_bot,
     },
@@ -269,6 +269,30 @@ pub fn wipe_tick(
             let mut network = network.lock();
             send_director_event(&mut network, instance, unnamed(WIPE_EVENT_11, 0, 0, 0));
             entrance_circle(&mut network, instance, true);
+        }
+
+        // The duty's enemies that were fighting go back where they began, whole (`npc_behavior::reset_after_wipe`),
+        // and its sealed boss rooms open again, their pending seals dropped (`reopen_rooms_after_wipe`).
+        // (The game data's lock let go before the network's is taken.)
+        let players_enemies = game_data
+            .lock()
+            .get_battalion_enemies(crate::server::action::PLAYER_BATTALION);
+        let reset = crate::server::npc_behavior::reset_after_wipe(
+            &mut network.lock(),
+            &players_enemies,
+            instance,
+        );
+        if !reset.is_empty() {
+            tracing::info!("Party wipe: {} enemies back where they began", reset.len());
+        }
+        let reopened = instance
+            .directors
+            .first_mut()
+            .is_some_and(|director| director.reopen_rooms_after_wipe());
+        if reopened {
+            instance
+                .queued_task
+                .retain(|task| !matches!(task.data, QueuedTaskData::SealBossWall { .. }));
         }
 
         // The script's own reset (its boss taken away and brought back); what it had queued for later was the

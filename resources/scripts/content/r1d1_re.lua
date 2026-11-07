@@ -93,14 +93,16 @@ ICE_BREAKS = 106
 SPRITES_AFTER = 0.3
 
 -- The first boss (1461): Swinge (903, 3.7 s, a 40-yalm cone) 14.4 s after the pull (14.6, 14.3, 14.2) and then about
--- every 31 s (32.4, 28.7; 33.4, 26.6, 36.6; 32.3); before each it runs (about 9 yalms a second, ActorMove's 90) to one
--- of three spots at the room's edge, never the one it's at, arriving as it begins; below half its health it Swinges
+-- every 31 s (32.4, 28.7; 33.4, 26.6, 36.6; 32.3); before each it runs (9 yalms a second: ActorMoves every 0.31 s,
+-- 2.8 yalms apart, speed byte 90) to one of three spots at the room's edge, never the one it's at, arriving as it
+-- begins (`sweep_bnpc`: one ActorMove there snapped it to the spot on the client, Bob's bundle 20261107-212704); below half its health it Swinges
 -- again from there 6.4 s later (6.3-6.4), turned to its target (every double was at 45-49 % or below, every single at
 -- 68 % or above). It faces its target as it casts.
 ACTION_SWINGE = 903
 SWINGE_FIRST = 14.4
 SWINGE_EVERY = 31.0
 SWINGE_RUN = 2.4
+SWINGE_RUN_SPEED = 9.0
 SWINGE_AGAIN_AFTER = 6.4
 SWINGE_TWICE_BELOW = 50
 SWINGE_CAST = 3.7
@@ -521,15 +523,22 @@ function swinge(director, health, info)
     swinge_spot = choices[math.random(#choices)]
     local spot = SWINGE_SPOTS[swinge_spot]
     local twice = health ~= nil and health[BNPC_BOSS1] ~= nil and health[BNPC_BOSS1] < SWINGE_TWICE_BELOW
-    local target = positionOf(info, boss.target_id)
-    local rotation = target ~= nil and facing(spot, target) or facing(spot, boss)
-    director:busy_bnpc(BNPC_BOSS1, SWINGE_RUN + SWINGE_CAST + (twice and SWINGE_AGAIN_AFTER or 0))
-    director:move_bnpc(BNPC_BOSS1, spot.x, spot.y, spot.z, rotation, RUN_SPEED)
-    after(SWINGE_RUN, function(d)
-        d:actor_use_action(boss.id, ACTION_SWINGE)
+    local run = math.max(TICK, math.sqrt((spot.x - boss.x) ^ 2 + (spot.z - boss.z) ^ 2) / SWINGE_RUN_SPEED)
+    director:busy_bnpc(BNPC_BOSS1, run + SWINGE_CAST + (twice and SWINGE_AGAIN_AFTER or 0))
+    director:sweep_bnpc(BNPC_BOSS1, spot.x, spot.y, spot.z, SWINGE_RUN_SPEED)
+    -- There, it turns to its target and Swinges.
+    after(run, function(d, _, now_info)
+        local now_boss = now_info ~= nil and now_info[BNPC_BOSS1] or nil
+        if now_boss == nil then
+            return
+        end
+        local target = positionOf(now_info, now_boss.target_id)
+        d:move_bnpc(BNPC_BOSS1, spot.x, spot.y, spot.z, target ~= nil and facing(spot, target) or facing(spot, boss),
+            RUN_SPEED)
+        d:actor_use_action(now_boss.id, ACTION_SWINGE)
     end)
     if twice then
-        after(SWINGE_RUN + SWINGE_AGAIN_AFTER, function(d, _, now_info)
+        after(run + SWINGE_AGAIN_AFTER, function(d, _, now_info)
             local now_boss = now_info ~= nil and now_info[BNPC_BOSS1] or nil
             if now_boss == nil then
                 return

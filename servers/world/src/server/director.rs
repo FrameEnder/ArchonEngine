@@ -1886,6 +1886,32 @@ impl DirectorData {
             .map(|boss| boss.arena)
     }
 
+    /// A party wipe: every boss room that was sealed (or sealing) opens again, its boss to be pulled anew. Retail, the
+    /// Stone Vigil's first boss (Bob's Chronofoil capture 1cefedf4, 2026-11-07): log 2014 for its room 4.3 s after the
+    /// party wiped (as everyone was sent back), its wall open, its line still there (the boss lives); pulled again,
+    /// 2012 and 2013 as ever. Returns whether any did (the sealing timers queued for them are dropped by the caller.)
+    pub fn reopen_rooms_after_wipe(&mut self) -> bool {
+        let mut walls: Vec<(u32, u32)> = Vec::new();
+        for boss in self.bosses.values_mut() {
+            if boss.state == DirectorBossState::Open {
+                continue;
+            }
+            boss.state = DirectorBossState::Open;
+            if !walls.iter().any(|(wall, _)| *wall == boss.wall_id) {
+                walls.push((boss.wall_id, boss.place_name));
+            }
+        }
+        for (wall_id, place_name) in &walls {
+            self.tasks
+                .push(LuaDirectorTask::HideEObj { base_id: *wall_id });
+            self.tasks.push(LuaDirectorTask::LogMessage {
+                id: LogMessageType::BossRoomUnsealed as u32,
+                params: vec![*place_name],
+            });
+        }
+        !walls.is_empty()
+    }
+
     /// Actually insert tasks to seal the boss wall.
     pub fn seal_boss_wall(&mut self, id: u32, place_name: u32) {
         if self.bosses.values().any(|boss| boss.wall_id == id) {
