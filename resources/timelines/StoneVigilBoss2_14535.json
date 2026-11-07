@@ -1,0 +1,76 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 166
+        },
+        "29053": {
+            "players": 770.5
+        },
+        "28732": {
+            "npcs": 365.5
+        }
+    },
+    "timepoints": [
+        {
+            "time": 5.2,
+            "data": {
+                "type": "action",
+                "action_id": 28732,
+                "target": "other"
+            },
+            "comment": "Spiked Tail (4.7 s, on its target) 5.2 s after the pull"
+        },
+        {
+            "time": 12.4,
+            "data": {
+                "type": "action",
+                "action_id": 29053,
+                "target": "other"
+            },
+            "comment": "Sonic Storm (2.7 s, a circle on someone) 12.4 s after the pull"
+        },
+        {
+            "time": 20.7,
+            "data": {
+                "type": "action",
+                "action_id": 28730,
+                "target": "itself"
+            },
+            "comment": "Typhoon (2.7 s, on itself) 20.7 s after the pull; the director brings the whirlwinds 1.5 s after it ends"
+        },
+        {
+            "time": 50.9,
+            "data": {
+                "type": "action",
+                "action_id": 29053,
+                "target": "other"
+            },
+            "comment": "Sonic Storm 50.9 s in (30.2 s after the first Typhoon), then Koshchei's 44.9 s round, as retail's after its first: Typhoon, Spiked Tail 30.2 s later, Sonic Storm 37.4 s later",
+            "every": 44.9
+        },
+        {
+            "time": 58.4,
+            "data": {
+                "type": "action",
+                "action_id": 28730,
+                "target": "itself"
+            },
+            "comment": "the second Typhoon 37.7 s after the first, then every 44.9 s (44.8, 44.9, 44.9)",
+            "every": 44.9
+        },
+        {
+            "time": 88.6,
+            "data": {
+                "type": "action",
+                "action_id": 28732,
+                "target": "other"
+            },
+            "comment": "Spiked Tail 30.2 s after the second Typhoon, then every 44.9 s",
+            "every": 44.9
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Stone Vigil (territory 1042, ContentFinderCondition 11): its second boss (BNpcBase 14535, BNpcName 1678, layout 9061121, level 41, 54496 HP): on its target. Typhoon (28730) brings the whirlwinds (the director's). From Bob's Chronofoil capture 1cefedf4 of 2026-11-07 (`questkit chronofoil --battle` 0.1, with Duty Support, three wipes): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

@@ -40,6 +40,8 @@ const NEAR_ENOUGH: f32 = 1.0;
 /// An enemy's area attack being cast: where it will land, and when.
 #[derive(Debug, Clone, Copy)]
 pub struct Danger {
+    /// The action (Action row; a sweep's, `sweep.rs`): what a director's authored spots go by (`AuthoredSpots`.)
+    pub action_id: u32,
     pub shape: AreaShape,
     /// Who's casting it (what Reprisal, Feint and Addle go on when there's no getting out.)
     pub caster_id: ObjectId,
@@ -191,6 +193,7 @@ pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> V
             {
                 let shape = game_data.get_action_info(cast.action_id)?.area_shape()?;
                 Some(Danger {
+                    action_id: cast.action_id,
                     shape,
                     caster_id: *id,
                     caster: spawn.common.position.0,
@@ -202,6 +205,8 @@ pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> V
             }
             _ => None,
         })
+        // And what a director sweeps along a line (`director:sweep_bnpc`): the way ahead of each moving one.
+        .chain(instance.sweeps.iter().filter_map(|sweep| sweep.danger(now)))
         .collect()
 }
 
@@ -471,12 +476,131 @@ pub fn set_off_at(now: Instant, until: Instant, distance: f32, speed: f32, roll:
     }
 }
 
+/// When a party member sets off for a spot its duty's director authored (`AuthoredSpots`, `PartyCue`) unless the
+/// director says otherwise: at once, or a moment after (retail's Duty Support members in the Stone Vigil were at
+/// theirs 0.0-0.5 s into Chudo-Yudo's Swinge and Isgebind's Cauterize, Bob's Chronofoil capture 1cefedf4 of
+/// 2026-11-07: they set off as the cast began, or as the boss leapt before it.)
+pub const AUTHORED_REACTION_SECONDS: (f32, f32) = (0.0, 0.3);
+/// How near its recorded spot a caster must be for an authored entry to go with its cast (the bosses' leap and flight
+/// spots are fixed: within 0.1 yalms over retail's runs.)
+pub const CASTER_NEAR: f32 = 3.0;
+
+/// Where each role of a party goes, on the ground (x, z): "tank", "healer", "melee", "ranged", and "dps" for either
+/// (a second DPS takes "dps2" if there is one.) Retail's Duty Support members went to the same spots, by role, every
+/// time a boss did the same thing from the same place (the Stone Vigil, Bob's capture 1cefedf4.)
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct RoleSpots(pub Vec<(String, Vec2)>);
+
+impl RoleSpots {
+    /// Where the `nth` (0-based) party member of `role` ("tank", "healer", "melee", "ranged") goes.
+    pub fn for_role(&self, role: &str, nth: usize) -> Option<Vec2> {
+        let find = |name: &str| {
+            self.0
+                .iter()
+                .find(|(spot_role, _)| spot_role == name)
+                .map(|(_, at)| *at)
+        };
+        let dps = matches!(role, "melee" | "ranged");
+        let numbered = (nth > 0).then(|| format!("{role}{}", nth + 1));
+        let numbered_dps = (dps && nth > 0).then(|| format!("dps{}", nth + 1));
+        numbered
+            .as_deref()
+            .and_then(find)
+            .or_else(|| numbered_dps.as_deref().and_then(find))
+            .or_else(|| find(role))
+            .or_else(|| if dps { find("dps") } else { None })
+    }
+}
+
+/// Where a duty's party goes as an enemy casts an action (`director:party_spots`): retail's Duty Support members
+/// didn't run from such a cast by its shape, but to spots their duty set for that cast from that place, whether it
+/// would have caught them or not.
+#[derive(Debug, Clone, PartialEq)]
+pub struct AuthoredSpots {
+    pub action: u32,
+    /// Where the caster casts it from (x, z), or anywhere.
+    pub caster: Option<Vec2>,
+    pub spots: RoleSpots,
+    /// When they set off after the cast began (`REACTION_SECONDS`' kind: a roll between the two.)
+    pub react: (f32, f32),
+}
+
+impl AuthoredSpots {
+    /// Whether these spots go with `danger`.
+    pub fn matches(&self, danger: &Danger) -> bool {
+        danger.action_id == self.action
+            && self.caster.is_none_or(|at| {
+                Vec2::new(danger.caster.x - at.x, danger.caster.z - at.y).length() <= CASTER_NEAR
+            })
+    }
+}
+
+/// Spots a director sends the party to for a while, whatever is being cast (`director:party_positions`): Isgebind's
+/// party spreading out as it took off for its Sheets of Ice (Bob's capture 1cefedf4.)
+#[derive(Debug, Clone)]
+pub struct PartyCue {
+    pub spots: RoleSpots,
+    pub from: Instant,
+    pub until: Instant,
+    pub react: (f32, f32),
+}
+
+/// Where the `nth` party member of `role` should be now by its director's authority, and until when: the spots for
+/// the soonest danger they go with (`AuthoredSpots`), else the director's cue (`PartyCue`.) None when there are
+/// none, when the role has no spot, or when its spot is in one of the dangers, to its hit edge (then it dodges by the
+/// shapes, as a second Swinge aimed at the tank where it stood moved only the tank, to the cone's edge: Bob's capture
+/// 1cefedf4.)
+pub fn authored_spot(
+    authored: &[AuthoredSpots],
+    cue: Option<&PartyCue>,
+    dangers: &[Danger],
+    role: &str,
+    nth: usize,
+    now: Instant,
+) -> Option<(Vec2, Instant, (f32, f32))> {
+    let mut soonest: Vec<&Danger> = dangers.iter().collect();
+    soonest.sort_by_key(|danger| danger.until);
+    let from_cast = soonest.iter().find_map(|danger| {
+        authored
+            .iter()
+            .find(|entry| entry.matches(danger))
+            .and_then(|entry| {
+                entry
+                    .spots
+                    .for_role(role, nth)
+                    .map(|at| (at, danger.until, entry.react))
+            })
+    });
+    let from_cue = || {
+        cue.filter(|cue| now >= cue.from && now < cue.until)
+            .and_then(|cue| {
+                cue.spots
+                    .for_role(role, nth)
+                    .map(|at| (at, cue.until, cue.react))
+            })
+    };
+    let (at, until, react) = from_cast.or_else(from_cue)?;
+    let point = Vec3A::new(at.x, 0.0, at.y);
+    // Height doesn't matter to the shapes on the ground (`in_area_with_reach` goes by x and z.) Retail's spots are
+    // trusted to their hit edge, without the dodgers' margin: some stood just outside (the Conjurer 4 yalms from a
+    // whirlwind's lane, its reach 3 and a body 0.5.)
+    let caught = dangers.iter().any(|danger| danger.catches(point, 0.0));
+    (!caught).then_some((at, until, react))
+}
+
+/// When to set off for an authored spot: `react`'s span after noticing (`roll` between 0 and 1 picks within it.)
+pub fn authored_set_off(now: Instant, react: (f32, f32), roll: f32) -> Instant {
+    let (low, high) = react;
+    now + Duration::from_secs_f32((low + (high - low) * roll.clamp(0.0, 1.0)).max(0.0))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn danger(shape: AreaShape) -> Danger {
         Danger {
+            action_id: 0,
             shape,
             caster_id: ObjectId::default(),
             caster: Vec3A::ZERO,
@@ -767,5 +891,127 @@ mod tests {
             set_off_at(now, now + Duration::from_secs(1), 8.0, 6.0, 0.5),
             now
         );
+    }
+
+    fn spots(list: &[(&str, f32, f32)]) -> RoleSpots {
+        RoleSpots(
+            list.iter()
+                .map(|(role, x, z)| (role.to_string(), Vec2::new(*x, *z)))
+                .collect(),
+        )
+    }
+
+    #[test]
+    fn role_spots_by_role() {
+        let spots = spots(&[
+            ("tank", 0.0, 1.0),
+            ("healer", 2.0, 3.0),
+            ("dps", 4.0, 5.0),
+            ("dps2", 6.0, 7.0),
+        ]);
+        assert_eq!(spots.for_role("tank", 0), Some(Vec2::new(0.0, 1.0)));
+        assert_eq!(spots.for_role("melee", 0), Some(Vec2::new(4.0, 5.0)));
+        assert_eq!(spots.for_role("ranged", 1), Some(Vec2::new(6.0, 7.0)));
+        // A second healer has no spot of its own: the healers' spot.
+        assert_eq!(spots.for_role("healer", 1), Some(Vec2::new(2.0, 3.0)));
+        assert_eq!(RoleSpots::default().for_role("tank", 0), None);
+    }
+
+    /// Chudo-Yudo's Swinge from its leap spot at (-15, 116) (Bob's capture 1cefedf4, 458.5 and 464.9 s): the first
+    /// (facing 1.693) sent all three to their spots, none of them in it; the second, aimed at the tank where it stood
+    /// (facing -2.761), caught the tank's spot, so only the tank dodged by the cone, and the others stayed.
+    #[test]
+    fn swinge_spots() {
+        let now = Instant::now();
+        let entry = AuthoredSpots {
+            action: 903,
+            caster: Some(Vec2::new(-15.0, 116.0)),
+            spots: spots(&[
+                ("tank", -17.0, 111.0),
+                ("dps", -19.0, 120.0),
+                ("healer", -18.0, 123.0),
+            ]),
+            react: AUTHORED_REACTION_SECONDS,
+        };
+        let swinge = |rotation: f32| Danger {
+            action_id: 903,
+            caster: Vec3A::new(-15.03, 0.44, 115.98),
+            rotation,
+            caster_radius: 3.0,
+            ..danger(AreaShape::Cone {
+                radius: 40.0,
+                angle: 60.0,
+            })
+        };
+        let first = [swinge(1.693)];
+        let tank = authored_spot(std::slice::from_ref(&entry), None, &first, "tank", 0, now);
+        assert_eq!(tank.map(|(at, ..)| at), Some(Vec2::new(-17.0, 111.0)));
+        let second = [swinge(-2.761)];
+        assert!(
+            authored_spot(std::slice::from_ref(&entry), None, &second, "tank", 0, now).is_none()
+        );
+        let dps = authored_spot(
+            std::slice::from_ref(&entry),
+            None,
+            &second,
+            "ranged",
+            0,
+            now,
+        );
+        assert_eq!(dps.map(|(at, ..)| at), Some(Vec2::new(-19.0, 120.0)));
+        // From elsewhere (its other leap spots), or another action: not these spots.
+        let elsewhere = [Danger {
+            caster: Vec3A::new(15.0, 0.0, 116.0),
+            ..swinge(1.693)
+        }];
+        assert!(
+            authored_spot(
+                std::slice::from_ref(&entry),
+                None,
+                &elsewhere,
+                "tank",
+                0,
+                now
+            )
+            .is_none()
+        );
+    }
+
+    /// A director's cue holds only for its time, and a cast's own spots come first.
+    #[test]
+    fn cue_spots() {
+        let now = Instant::now();
+        let cue = PartyCue {
+            spots: spots(&[
+                ("tank", 0.0, -267.0),
+                ("dps", 17.8, -253.4),
+                ("healer", 0.0, -229.0),
+            ]),
+            from: now,
+            until: now + Duration::from_secs(8),
+            react: AUTHORED_REACTION_SECONDS,
+        };
+        let healer = authored_spot(&[], Some(&cue), &[], "healer", 0, now);
+        assert_eq!(healer.map(|(at, ..)| at), Some(Vec2::new(0.0, -229.0)));
+        assert!(
+            authored_spot(
+                &[],
+                Some(&cue),
+                &[],
+                "healer",
+                0,
+                now + Duration::from_secs(9)
+            )
+            .is_none()
+        );
+        // A Sheet of Ice on the healer's spot: it dodges by the circle instead.
+        let sheet = Danger {
+            aimed_at: Vec3A::new(0.0, 0.0, -229.0),
+            ..danger(AreaShape::Circle {
+                radius: 5.0,
+                on_target: true,
+            })
+        };
+        assert!(authored_spot(&[], Some(&cue), &[sheet], "healer", 0, now).is_none());
     }
 }

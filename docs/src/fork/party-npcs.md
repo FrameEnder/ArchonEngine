@@ -171,6 +171,35 @@ second 912 the three bunched up on it (0.5–2.5 yalms), which looks like gettin
 shape isn't known here: it hit nobody in any run). The bots and party NPCs dodge alike: see
 [Party Bots](party-bots.md#how-it-fights) (`server/dodge.rs`).
 
+The Stone Vigil (Bob's capture 1cefedf4 of 2026-11-07, visit 0.1, the third set's Marauder, Thaumaturge and Conjurer at
+41) showed what that first capture couldn't: for a boss's big moves the members went to **set spots**, by role, the
+same every time the boss did the same thing from the same place, whether the attack would have caught them or not,
+setting off as it began and holding there until it had gone off, still fighting:
+
+* **Swinge** (Chudo-Yudo, a 40-yalm cone after it runs to one of three spots at its room's edge): all ten times
+  behind it, by that spot (from (0, 130): the tank (-5, 133), the Thaumaturge (5, 132), the Conjurer (6, 134)), some
+  of them running past it from 10-17 yalms in front. When it Swinged again from there at its target, the tank where it
+  stood, only the tank moved, to about 40 degrees off its facing: the cone's edge (it caught members up to 28 degrees
+  off and none at 40 or more: 60 degrees wide, `resources/data/action_areas.json`).
+* **Cauterize** (Isgebind diving across its room, five spots): the same spots for each spot, all eleven times
+  (from (0, -271.8): the tank (-11, -253), the Thaumaturge (11, -245), the Conjurer (11, -242)); from the far side ones
+  they stayed where they fought (0, -253), (4, -247), (2, -243), or stepped 2 yalms over.
+* **The Sheets of Ice** (Isgebind flying, its helpers' circles at each of the party, twice 3 s apart): all three times
+  spread out from 1.5 s into the flight to (0, -267), (17.75, -253.44) and (0, -229) (the tank, the Thaumaturge, the
+  Conjurer), stepped 7-10 yalms aside as the first circles were cast, and went back to fighting from the second's.
+* **Typhoon** (Koshchei's whirlwinds down four lanes, in two pairs): all five times waiting by the boss as they came
+  (the tank (47, -80), the others (40-41, -80/-81)), into the middle lane the first pair left alone (at z -77 or
+  -83) within a second of it setting off, and into the other middle lane, behind the first pair, as the second went.
+* Telegraphed circles on someone (Sonic Storm, a single Sheet of Ice) they left by the shape 1.0-2.4 s in, a short
+  way, and were sometimes caught.
+
+The director gives these (`director:party_spots`, `director:party_positions`, `director:sweep_bnpc`; [Party
+Bots](party-bots.md#how-it-fights)), and the bots go by them too. Their HP at 41: 2422, 1662 and 1678 (`DUTY_LEVELS`;
+the Lancer's 1838 a guess). Their lines there: the Thaumaturge's 14368 4.3 s after the duty began and 14375 as Koshchei
+fell, the tank's 14371 as Chudo-Yudo fell and 14376 as the party walked into Isgebind's room, the Conjurer's 14374 as
+they came up to Koshchei's; between fights the tank's 13954-13956, the Thaumaturge's 13978 and 13979 and the
+Conjurer's 13985 (not the lines they had at 32 in Brayflox's Longstop: not added, see known issues).
+
 ## Taking hits
 
 On retail the same enemies' attacks did about a third as much to the Marauder as to Bob (a level 17 Conjurer): the

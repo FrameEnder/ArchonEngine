@@ -738,3 +738,67 @@ alone while he was untargetable (their targets "no one" through each leap) and b
 **Leaving** after the clear during Lord of Crags puts the player by the beastman aetheryte in Upper La Noscea (the
 quest's `set_duty_exit`, [Quests](quests.md)).
 
+
+## The Stone Vigil
+
+From Bob's Chronofoil captures of 2026-11-07: `1cefedf4` visit 0.1 (39 minutes with Duty Support, during In Pursuit
+of the Past, quest 952, which unlocks it at its sequence 2; three wipes: at the first boss once, at the last twice)
+and `341808b0` visit 0.2 (16 minutes, Bob's tank through the Duty Finder with three other players), read with
+`questkit chronofoil --battle` and the visits' packets (numbers only), and the public guides (Sources below), which
+agree on the bosses' moves. ContentFinderCondition 11 (ShortCode `r1d1_re`), territory 1042
+(`ffxiv/roc_r1/dun/r1d1`), level 41 (synced 43); the drop-in's LGB is `bg/ffxiv/roc_r1/dun/r1d1/level/planmap.lgb`,
+which Bob dumped with `bg.lgb` (read with physis' `Lgb`, numbers only): the event ranges, pop ranges and map ranges
+below are its. Retail's DirectorVars were the sequence 1 alone throughout; the duty's objectives went as the bosses
+fell (ContentDirector 0x80000016 `[0, 1]` then 0x80000015 `[1, 0]`; `[1, 1]`, `[2, 0]`; `[2, 1]` at the clear: the
+script's `objective`), BGM 37 as the first and second bosses were pulled and 0 as they fell (none for the last).
+Kawari: `content/r1d1_re.lua`, drop-in `r1d1_re_planmap.json` (`questkit chronofoil --dropin 1042`: 48 battle NPCs),
+timelines `StoneVigil*`, action scripts `StoneVigil*`.
+
+**Enemies.** What the director brings is `nonpop`: the last boss (1455, 4001014), the second boss's whirlwinds
+(14536, 9061122) and their helpers (14544, 9061123), the nine ice sprites (1465) and the last boss's eight helpers
+(BNpcBase 9020, no layout ID on retail: the fork's 99009020). The four perched dragons (1460, not hostile) stand from
+the start; the first two bosses (1461 at 4000969, 14535 at 9061121) are the layout's. New action scripts: 507, 518,
+901-903, 1021-1027, 28730-28732, 29053; statuses from the captures' EffectResults: 902 267 for 15 s, 1026 268 for
+15 s, 507 18 (50) for 30 s, 28731 2656 for 4 s; 1027 knocks back (row 1). Swinge (903) has no omen: 60 degrees wide
+(`resources/data/action_areas.json`: it caught members up to 28 degrees off its facing and none at 40 or more).
+
+| What | Retail |
+|---|---|
+| The perched dragons (1460; layer LVD_gmmick_wyvern) | each once, as a player first came into the range ahead of it (4240064, 4240075, 4240078, 4240080): ActionTimeline 7749, its 1021 (an instant line ahead) 1.96 s later, ActionTimeline 7739 2.09 s after that |
+| The ice walls (EObjs 2001881-2001883; LVD_gmmick_ice) | as a player first came into the range in front of one (4240100, 4240136, 4240137): ActorControl 106 with 0 from it, and its three ice sprites 0.2-0.4 s later at it |
+| The first boss (1461; wall 2001873, line 2001872, PlaceName 877) | Swinge 14.4 s after the pull (14.2-14.6, three pulls), then about every 31 s (26.6-36.6); before each it runs (ActorMove at 90) to one of three spots at the room's edge ((0, 130), (15, 116), (-15, 116); never the one it's at) and casts as it arrives, facing its target; below half its health it Swinges again from there 6.3-6.4 s later at its target (every double at 45-49 % or below, every single at 68 % or above). Lion's Breath (902) and Rake (901) its timeline's |
+| Its death | log 2014, the way on (2001878) state 7, coffers 179, 180 and 182, the tank's 14371 |
+| The second boss (14535; wall 2002872, line 2002735, PlaceName 878) | its round of 44.9 s: Typhoon, Spiked Tail (28732) 30.2 s later, Sonic Storm (29053) 37.4 s later; the first round shorter (Spiked Tail 5.1-5.2 s after the pull, Sonic Storm 12.4, Typhoon 20.5-20.7, the next 37.7 s after it), both runs |
+| Its whirlwinds | 1.5 s after each Typhoon ends, at x 57 in lanes z -72, -77.5, -82.5, -88, a helper riding with each (ActorSetPos to it, then its 28731, a 3-yalm circle, every 0.58 s from the first pair's setting off until its own arrives). Two set off 3.9 s after they came, the others 7.1 s after them, at 3.0 yalms a second (ActorMove every 0.31 s, speed byte 30) to x 30.4; gone 23.5 and 30.5 s after they came. The first Typhoon's were three, -72 and -82.5 then -88 (both runs); after it four, in pairs: -72 with -82.5 and -77.5 with -88, either first, or -72 with -77.5 and -82.5 with -88, either first (all four orders seen) |
+| Its death | log 2014, the way on (2001879) state 7, coffers 181, 183 and 184, the Thaumaturge's 14375 |
+| The last door (2001880; GimmickAccessor 0x000F00DB) | EventAction 24 for 1.9 s, state 7; the room's cutscene (249, params 1, 38, 1, 0) as a player crossed the range past it (4239894), the boss and its helpers 2.2 s later |
+| The last boss (1455; wall 2001877, line 2001876, PlaceName 879) | its round on the ground: Rime Wreath (1025), Frost Breath (1022) 9.2 s later, Sheet of Ice (1023, on one of the party) 16.4-17.5 s after the Rime Wreath, its flight (or the next round) 26.0 s after it (30.1 in the round after the pull; the first Rime Wreath 8.1-8.2 s after the pull, the next 4.1 s after it lands or doesn't fly) |
+| Its flights | the first as soon as it was below 85 % at one of its moves (81.6-82.8 % at the first round's end in three pulls; at the first round's Frost Breath, 86-88 %, in the tank's run); one more between 50 and 70 % at a round's end (65.6-66.0 % twice; at 48-55 % it didn't, three times); then at every round's end below 40 % with the Sheets of Ice. SetTargetable off and ActionTimeline 1385; over a dive's spot 4.1 s later (ActorSetPos, ActionTimeline 142 0.1 s later, Cauterize, a 3.7 s line across the room, 0.7 s after), the next dive 7.8 s after; home (0, -248) 7.8 s after the last, Touchdown (1027) as it lands, targetable 2.2 s later. With the Sheets of Ice its helpers cast 1024 (2.7 s) at each of the party 5.8 s in and again where they stood 3.0 s later, and two dives from 13.7 s in. The dives: (23.7, -262.5) and (23.7, -233.5) facing -1.57, (0 or ±14.5, -271.8) facing 0, at random, the two of a flight different |
+| The clear | log 2014, logs 9393 `[75400]` and 2163 `[8400, 5100]` ([Clear rewards](#clear-rewards)), cutscene 300 (1, 18, 0, 0), coffer 185, the exit (2001871) shown; leaving it during quest 952 sent the player to New Gridania (the quest's `set_duty_exit`, [Quests](quests.md)) |
+| Wipes | everyone back at the start; the bosses whole again; after the last door the last boss back in its room at once (1.9 s, both times) |
+
+| Layout object (planmap.lgb) | Where | Used for |
+|---|---|---|
+| EventRanges 4240064, 4240075, 4240078, 4240080 (LVD_gmmick_wyvern) | ahead of each perched dragon, half-sizes 8 (6) × 6 × 2, the last three turned 1.5705 | the dragons' breaths |
+| EventRanges 4240100, 4240136, 4240137 (LVD_gmmick_ice) | in front of each ice wall | the ice sprites |
+| EventRange 4239894 (LVD_gimmick) | (0, 7.42, -226.05), half-sizes 10 × 8 × 2 | the last room's cutscene |
+| EventRanges 9394127, 9394128 (LVD_Faith) | the second boss's way in; the last room's floor before the boss | the Duty Support members' lines 14374 and 14376 |
+| PopRanges 11438278-11438280 (LVD_Zone_01) | outside each boss's room | the shortcut, the next as each boss is pulled |
+| MapRanges 4322871, 4322974, 4322979 (LVD_Maprange_01) | round each boss's room | the floors the party keeps to while dodging (`boss_room`/`spawn_boss`'s `arena`) |
+
+Not used: the other LVD_Faith range (9394126, by the entrance), PopRange 6543370 (in the last room), the LVD_Faith
+layout's four event NPCs (none came after either clear), and ContentDirector event 0x40000007 (`[0, 1]` 332 s and
+`[1, 1]` 932 s after the zone-in in both runs whatever the party was doing, `[0, 0]` and `[1, 0]` at the clear: a
+timer of some kind).
+
+**The Duty Support members' spots** (all from the first run, every time the same): for Swinge, Cauterize, the
+Sheets of Ice and the whirlwinds, as [Party NPCs](party-npcs.md#getting-out-of-area-attacks) gives them; the script
+hands them to the dodging (`director:party_spots` in `onSetup`, `director:party_positions` as each flight and
+Typhoon goes), and the whirlwinds go by `director:sweep_bnpc` ([Party Bots](party-bots.md#how-it-fights)).
+
+**Coffers** (one item each opening, the first run's; the tank's run where its coffer is known): 179 7033, 180 31530,
+182 10500, 181 31533, 183 31518, 184 31525, 185 10438 and 7033, or 7033 and 2176. The tank's run's first boss gave
+10438 and its second 31518 and 31527 from coffers not told apart.
+
+Sources: [The Stone Vigil (Consolegameswiki)](https://ffxiv.consolegameswiki.com/wiki/The_Stone_Vigil), [The Stone
+Vigil dungeon guide (Icy Veins)](https://icy-veins.com/ffxiv/the-stone-vigil-dungeon-guide).

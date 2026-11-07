@@ -1,0 +1,31 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 315,
+            "npcs": 106.5
+        },
+        "737": {
+            "npcs": 138
+        }
+    },
+    "rotation": {
+        "pace": 10.7,
+        "actions": [
+            {
+                "action": 737,
+                "every": 10.7,
+                "comment": "16 uses by 6 (7.7-18.1 s apart); every 10.7 s"
+            },
+            {
+                "action": 738,
+                "every": 27.1,
+                "comment": "9 uses by 6 (21.5-21.9 s apart); every 27.1 s"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "The Stone Vigil (territory 1042, ContentFinderCondition 11): an enemy of the halls before the last boss (BNpcBase 1466, BNpcName 1675, level 41, 3542 HP): on its target. From Bob's Chronofoil capture 1cefedf4 of 2026-11-07 (`questkit chronofoil --battle` 0.1, with Duty Support, three wipes): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

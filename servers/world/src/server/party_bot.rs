@@ -3159,6 +3159,29 @@ fn update_party(
     // A boss room's floor while its boss is fought: no spot off it counts (`dodge::arena`.)
     let arena = dodge::arena(instance);
     let mut dodges: Vec<(ObjectId, Option<dodge::Dodge>)> = Vec::new();
+    // Each member's role and its place among those of that role, for the spots the duty's director authored
+    // (`director:party_spots`, `director:party_positions`: retail's Duty Support members', `dodge::authored_spot`.)
+    let authoring = !instance.party_spots.is_empty() || instance.party_cue.is_some();
+    let mut roles: HashMap<ObjectId, (&'static str, usize)> = HashMap::new();
+    if authoring {
+        let mut ids: Vec<ObjectId> = bots.iter().map(|(id, _)| *id).collect();
+        ids.sort_by_key(|id| id.0);
+        let mut counts: HashMap<&'static str, usize> = HashMap::new();
+        for id in ids {
+            let Some(actor) = instance.find_actor(id) else {
+                continue;
+            };
+            let classjob = actor.get_common_spawn().class_job;
+            let role = game_data
+                .lock()
+                .classjob_role(classjob)
+                .map(|(role, _, _)| party_npc::role_name(role))
+                .unwrap_or_default();
+            let nth = counts.entry(role).or_default();
+            roles.insert(id, (role, *nth));
+            *nth += 1;
+        }
+    }
     // The party where it stands (for bracing: who an attack catches, and who's most hurt.)
     let allies: Vec<(ObjectId, Vec3A, f32)> = members
         .iter()
@@ -3210,7 +3233,39 @@ fn update_party(
             .filter(|danger| danger.catches(here, DODGE_MARGIN))
             .collect();
         let mut dodge = bot.dodge;
-        if !threats.is_empty() {
+        // Where its duty's director has it go (`dodge::authored_spot`), whether the cast would catch it or not, if
+        // a path there along the navmesh reaches it; else it dodges by the shapes, as before.
+        let authored = roles.get(bot_id).and_then(|(role, nth)| {
+            let (at, until, react) = dodge::authored_spot(
+                &instance.party_spots,
+                instance.party_cue.as_ref(),
+                &dangers,
+                role,
+                *nth,
+                now,
+            )?;
+            let flat = |a: Vec3A, b: Vec3A| Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length();
+            let to = Vec3A::new(at.x, here.y, at.y);
+            if flat(here, to) <= AT_SPOT {
+                return Some((None, until, react));
+            }
+            let path = instance_navmesh_path(navmesh, here, to);
+            let end = path.last().copied()?;
+            (flat(end, to) <= AT_SPOT).then_some((Some(end), until, react))
+        });
+        if let Some((to, until, react)) = authored {
+            let entry = dodge.get_or_insert(dodge::Dodge {
+                to: None,
+                set_off: dodge::authored_set_off(now, react, fastrand::f32()),
+                until,
+                holding: false,
+            });
+            entry.until = entry.until.max(until);
+            // Already there: it holds where it stands.
+            if to.is_some() || entry.to.is_none() {
+                entry.to = to;
+            }
+        } else if !threats.is_empty() {
             let until = threats
                 .iter()
                 .map(|danger| danger.until)
@@ -3311,7 +3366,7 @@ fn update_party(
         }
         let mut dodging = false;
         if let Some(current) = dodge {
-            if threats.is_empty() && now >= current.until + dodge::LINGER {
+            if threats.is_empty() && authored.is_none() && now >= current.until + dodge::LINGER {
                 // Over: back to fighting, from where it stands.
                 dodge = None;
                 navmesh_path.clear();

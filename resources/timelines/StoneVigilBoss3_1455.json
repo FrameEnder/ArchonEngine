@@ -1,0 +1,31 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 102
+        },
+        "1025": {
+            "players": 537,
+            "npcs": 455
+        },
+        "1022": {
+            "players": 1410,
+            "npcs": 526
+        },
+        "1023": {
+            "players": 853,
+            "npcs": 751.5
+        },
+        "1026": {
+            "players": 1070.0
+        },
+        "1027": {
+            "players": 312.0,
+            "npcs": 247.0
+        }
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "The Stone Vigil (territory 1042, ContentFinderCondition 11): its last boss (BNpcBase 1455, BNpcName 1680, layout 4001014, level 41, 47684 HP; three pulls): on its target. Everything else it does (1022, 1023, 1025 on the ground, its flights with 1024, 1026 and 1027) is the director's, by retail's clock and its health. From Bob's Chronofoil capture 1cefedf4 of 2026-11-07 (`questkit chronofoil --battle` 0.1, with Duty Support, three wipes): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

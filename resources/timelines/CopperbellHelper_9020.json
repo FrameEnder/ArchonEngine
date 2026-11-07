@@ -14,6 +14,9 @@
         },
         "28658": {
             "players": 307
+        },
+        "1024": {
+            "players": 1939
         }
     },
     "timeline_always_plays": false,
@@ -22,7 +25,8 @@
         "28544": 1.1,
         "28761": 1.1,
         "28657": 1.1,
-        "28658": 1.1
+        "28658": 1.1,
+        "1024": 1.1
     },
-    "comment": "BNpcBase 9020, the invisible helper retail used in several duties. In the Copperbell Mines: the first boss's three (layout 9054923), which the director puts on Kottos' landing spots to cast 28544, and the last boss's five (layout 9060684), which it puts round the arena to cast 28761 (w1d1_re.lua). 28544 never caught anyone in Bob's three runs (Chronofoil captures of 2026-10-25): its amounts are a stand-in, the first boss's 28546's. 28761 hit one player for 127 (the Duty Support run). In Brayflox's Longstop: the last boss's fourteen (no layout ID on retail; the fork's 99009020), two on each of the puddles' seven spots, which cast 28657 (293 on the player, Bob's capture 44df02fc of 2026-11-03) and 28658 (307) as the director says (s1d2_re.lua). No auto-attack, no timepoints: it acts only when the director says."
+    "comment": "BNpcBase 9020, the invisible helper retail used in several duties. In the Copperbell Mines: the first boss's three (layout 9054923), which the director puts on Kottos' landing spots to cast 28544, and the last boss's five (layout 9060684), which it puts round the arena to cast 28761 (w1d1_re.lua). 28544 never caught anyone in Bob's three runs (Chronofoil captures of 2026-10-25): its amounts are a stand-in, the first boss's 28546's. 28761 hit one player for 127 (the Duty Support run). In Brayflox's Longstop: the last boss's fourteen (no layout ID on retail; the fork's 99009020), two on each of the puddles' seven spots, which cast 28657 (293 on the player, Bob's capture 44df02fc of 2026-11-03) and 28658 (307) as the director says (s1d2_re.lua). In the Stone Vigil: the last boss's eight (no layout ID on retail; the fork's 99009020), four of which cast 1024 (a 2.7 s circle) at each party member at once, twice, as the boss flies (1939 on the player, Bob's Chronofoil capture 1cefedf4 of 2026-11-07 (the Stone Vigil with Duty Support, `questkit chronofoil --battle`); r1d1_re.lua). No auto-attack, no timepoints: it acts only when the director says."
 }

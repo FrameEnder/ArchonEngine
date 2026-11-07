@@ -406,7 +406,7 @@ pub const THIRD_MEMBERS: [Member; 4] = [
 /// takes the member's own `level` and `hp`.
 /// The Conjurer (39, 43) the same (Bob's captures c99fe374 and cc62ad94 of 2026-10-28): 293 HP at 15 in Sastasha, 316 at
 /// 16, 339 at 17, 432 at 20.
-pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 8] = [
+pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 9] = [
     (4, 15, &[(36, 411), (37, 322), (38, 293), (39, 293)]),
     (2, 16, &[(36, 443), (37, 347), (38, 316), (39, 316)]),
     (3, 17, &[(36, 476), (37, 372), (38, 339), (39, 339)]),
@@ -428,6 +428,10 @@ pub const DUTY_LEVELS: [(u16, u8, &[(u8, u32)]); 8] = [
     // Thaumaturge and Conjurer (44, 46, 47) at 34 with 1607, 1103 and 1113. The Lancer (45) wasn't there: 1220 is a
     // guess, the Marauder's HP by the Lancer's share of it at 20 (469 of 618.)
     (57, 34, &[(44, 1607), (45, 1220), (46, 1103), (47, 1113)]),
+    // The Stone Vigil (Bob's capture 1cefedf4 of 2026-11-07, visit 0.1, during In Pursuit of the Past): the third set's
+    // Marauder, Thaumaturge and Conjurer (44, 46, 47) at 41 with 2422, 1662 and 1678. The Lancer (45) wasn't there: 1838
+    // is a guess, the Marauder's HP by the Lancer's share of it at 20 (469 of 618.)
+    (11, 41, &[(44, 2422), (45, 1838), (46, 1662), (47, 1678)]),
 ];
 
 /// A member's level and HP in the duty `content_finder_condition`.
@@ -638,7 +642,7 @@ impl MemberState {
 }
 
 /// The party role a director names a speaker by: "tank", "healer", "melee" or "ranged" (the ClassJob sheet's Role.)
-fn role_name(role_column: u8) -> &'static str {
+pub fn role_name(role_column: u8) -> &'static str {
     match role_column {
         1 => "tank",
         2 => "melee",

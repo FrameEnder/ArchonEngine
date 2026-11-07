@@ -1,0 +1,24 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "attack_range": 25.0,
+    "recorded_amounts": {
+        "967": {
+            "players": 320,
+            "npcs": 113
+        }
+    },
+    "rotation": {
+        "pace": 3.1,
+        "actions": [
+            {
+                "action": 967,
+                "every": 3.1,
+                "comment": "150 uses by 9 (3.1-5.2 s apart); every 3.1 s"
+            }
+        ]
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "The Stone Vigil (territory 1042, ContentFinderCondition 11): the ice sprites three ice walls let out as the party comes up to them (BNpcBase 1465, BNpcName 114, level 41, 3542 HP; the director's): its spell at its target from range, never an auto-attack. From Bob's Chronofoil capture 1cefedf4 of 2026-11-07 (`questkit chronofoil --battle` 0.1, with Duty Support, three wipes): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+}

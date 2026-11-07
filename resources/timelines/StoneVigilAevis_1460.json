@@ -1,0 +1,15 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "1021": {
+            "players": 656,
+            "npcs": 594
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "animation_locks": {
+        "1021": 2.1
+    },
+    "comment": "The Stone Vigil's four perched dragons (BNpcBase 1460, layouts 4240190, 4240192, 4240197 and 4240201, level 41, 1703 HP, not hostile): each breathes 1021 (an instant line ahead of it) once, as a player first comes into the event range in front of it (layer LVD_gmmick_wyvern of planmap.lgb; the director, content/r1d1_re.lua). 1021 hit the player for 656 and the Duty Support members for 594 (medians) in Bob's Chronofoil capture 1cefedf4 of 2026-11-07 (the Stone Vigil with Duty Support, `questkit chronofoil --battle`). No auto-attack, no timepoints."
+}

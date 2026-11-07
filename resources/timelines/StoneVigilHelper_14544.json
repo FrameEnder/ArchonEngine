@@ -1,0 +1,14 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "28731": {
+            "players": 980.5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "animation_locks": {
+        "28731": 0.1
+    },
+    "comment": "The Stone Vigil's second boss's four helpers (BNpcBase 14544, layout 9061123, level 41, 1703 HP): each rides with a whirlwind, using 28731 (a 3-yalm circle round itself, instant) every 0.58 s where the whirlwind is (`director:sweep_bnpc`, content/r1d1_re.lua). 28731 hit the player for 980.5 (the median of its hits) in Bob's Chronofoil capture 1cefedf4 of 2026-11-07 (the Stone Vigil with Duty Support, `questkit chronofoil --battle`). No auto-attack, no timepoints: it acts only as the director says."
+}

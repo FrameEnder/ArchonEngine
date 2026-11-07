@@ -274,6 +274,8 @@ pub fn wipe_tick(
         // The script's own reset (its boss taken away and brought back); what it had queued for later was the
         // attempt's.
         instance.later_director_tasks.clear();
+        instance.sweeps.clear();
+        instance.party_cue = None;
         if let Some(director) = instance.directors.first_mut() {
             director.call_hook("onPartyWipe");
         }

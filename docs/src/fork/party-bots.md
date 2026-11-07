@@ -429,6 +429,25 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
     counts (half a yalm in from its edge, `ARENA_MARGIN`: retail's party never went more than 19.4 yalms from the middle
     of the 20-yalm terrace). Before, with no spot out of everything on the floor, the nearest one off it won (27
     yalms out on the terrace's rocks, Bob's bundle 20261104-204423).
+    **Where the duty puts them** (2026-11-07, Bob, of the Stone Vigil's Duty Support members: "they dodge on coming
+    hazards in intelligent ways ... we need this behavior in our bots whether party, or player NPCs"). Retail's members
+    didn't run from a boss's big moves by their shapes: for each move from each place they went to the same spots, by
+    role, every time, caught or not, setting off as the cast began (or as the boss ran to cast it) and holding there,
+    still fighting, until it had gone off (Bob's capture 1cefedf4: Chudo-Yudo's ten Swinges from three spots, Isgebind's
+    eleven Cauterizes from five, the five Typhoons' whirlwinds, the Sheets of Ice three times; [Dungeons](dungeons.md#the-stone-vigil)).
+    A duty's director now says where, and every bot and party NPC goes by it (`dodge::authored_spot`, before the
+    shapes): `director:party_spots(action, x, z, spots)` for a cast of `action` from near (x, z) (within 3 yalms,
+    `CASTER_NEAR`; anywhere without them), `director:party_positions(spots, seconds)` for a while whatever is cast (a
+    flight's spreading out, the whirlwinds' lanes). `spots` names a spot (x, z) for `tank`, `healer`, `melee`,
+    `ranged` or `dps` (either; a second DPS `dps2`); a role with none, or whose spot is in one of the attacks being cast
+    (to its hit edge: retail's spots are trusted that far, some stood 0.5 yalms out), dodges by the shapes as before (a
+    second Swinge aimed at the tank where it stood: only the tank moved, to the cone's edge, as on retail). It sets off
+    0.0-0.3 s after it notices (`AUTHORED_REACTION_SECONDS`), along a navmesh path that reaches the spot (else by the
+    shapes), and holds there until the cast has gone off, plus `LINGER`.
+    **Moving hazards** (`server/sweep.rs`): what a director sends down a line with `director:sweep_bnpc` (Koshchei's
+    whirlwinds) is a danger while it moves: the way ahead of it to its end, as wide as its action's reach each side, and
+    a little behind it (`Sweep::danger`), gone as it arrives. One that hasn't set off isn't (retail's party stood in its
+    lane meanwhile). So a dodger in its way gets out sideways or behind it, as retail's did when the second pair went.
 * **Its rotation** (`build_rotation`, a heuristic until bots' rotations are recorded), run by the NPC class rotations
   (`server/rotation.rs`, a 2.5 s pace like a player's GCD): its abilities whenever they're ready; its combos, each step
   after the one it follows (highest level first, so a combo runs to its end); its damage over time spells and

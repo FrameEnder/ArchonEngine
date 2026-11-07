@@ -1,0 +1,7 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {},
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "The Stone Vigil's second boss's whirlwinds (BNpcBase 14536, layout 9061122, level 41, 170300 HP): three or four come 1.5 s after each Typhoon and go down their lanes at 3 yalms a second (`director:sweep_bnpc`, content/r1d1_re.lua); they did nothing themselves on retail (Bob's Chronofoil capture 1cefedf4 of 2026-11-07 (the Stone Vigil with Duty Support, `questkit chronofoil --battle`)): their helpers hurt."
+}

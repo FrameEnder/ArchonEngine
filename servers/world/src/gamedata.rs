@@ -636,6 +636,23 @@ const HITBOX_FORMULAS: [&str; 4] = [
 /// Cones without an angle in their omen are 90 degrees wide, the most common.
 const DEFAULT_CONE_ANGLE: f32 = 90.0;
 
+/// A cone's width recorded on retail where the game's files don't give it (`resources/data/action_areas.json`.)
+fn recorded_cone_angle(action: u32) -> Option<f32> {
+    #[derive(serde::Deserialize)]
+    struct Areas {
+        cone_angles: HashMap<u32, f32>,
+    }
+    static AREAS: std::sync::OnceLock<Areas> = std::sync::OnceLock::new();
+    AREAS
+        .get_or_init(|| {
+            serde_json::from_str(include_str!("../../../resources/data/action_areas.json"))
+                .expect("resources/data/action_areas.json doesn't read")
+        })
+        .cone_angles
+        .get(&action)
+        .copied()
+}
+
 /// Reads a cone's angle from its omen's path, e.g. "gl_fan090_1bf" or "er_gl_fan120_1bf".
 fn cone_angle_from_omen(path: &str) -> Option<f32> {
     let start = path.find("fan")? + 3;
@@ -3753,9 +3770,8 @@ impl GameData {
         } else {
             None
         };
-        let cone_angle = omen_path
-            .as_deref()
-            .and_then(cone_angle_from_omen)
+        let cone_angle = recorded_cone_angle(id)
+            .or_else(|| omen_path.as_deref().and_then(cone_angle_from_omen))
             .unwrap_or(DEFAULT_CONE_ANGLE);
         let donut_hole = match omen_path.as_deref().and_then(donut_hole_from_omen) {
             Some(hole) => hole,
@@ -4388,6 +4404,9 @@ mod area_tests {
         assert_eq!(cone_angle_from_omen("gl_fan090_1bf"), Some(90.0));
         assert_eq!(cone_angle_from_omen("er_gl_fan120_1bf"), Some(120.0));
         assert_eq!(cone_angle_from_omen("general_1bf"), None);
+        // Swinge's, recorded (the Stone Vigil.)
+        assert_eq!(super::recorded_cone_angle(903), Some(60.0));
+        assert_eq!(super::recorded_cone_angle(1), None);
     }
 
     /// The level sync caps with the sheets' numbers: a body piece synced to item level 130 (level 50's ParamGrow), Vitality

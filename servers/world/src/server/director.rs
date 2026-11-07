@@ -246,6 +246,31 @@ pub enum LuaDirectorTask {
         duration_ms: u32,
         kind: u8,
     },
+    /// Where the party goes as an enemy casts `action` from near `caster` (x, z; anywhere if None): retail's Duty
+    /// Support members' spots for it, by role (`dodge::AuthoredSpots`.)
+    PartySpots {
+        action: u32,
+        caster: Option<(f32, f32)>,
+        spots: crate::server::dodge::RoleSpots,
+        react: (f32, f32),
+    },
+    /// Sends the party to spots for `seconds`, whatever is being cast (`dodge::PartyCue`); None calls them off.
+    PartyPositions {
+        spots: Option<crate::server::dodge::RoleSpots>,
+        seconds: f32,
+    },
+    /// Sends a BNpc along a line to `to` at `speed` yalms a second after `delay` seconds, `helper` (or itself) using
+    /// `action` where it is every `every` seconds from `cast_after` seconds on until it arrives (`server/sweep.rs`.)
+    SweepBattleNpc {
+        who: u32,
+        to: Position,
+        speed: f32,
+        delay: f32,
+        helper: Option<u32>,
+        action: u32,
+        every: f32,
+        cast_after: Option<f32>,
+    },
     /// Plays an animation (ActionTimeline) on a BNpc, as retail's Sastasha captain does as he calls his men through the
     /// gate (980.)
     PlayActionTimeline {
@@ -1267,6 +1292,68 @@ impl UserData for LuaDirector {
             },
         );
         methods.add_method_mut(
+            "party_spots",
+            |_,
+             this,
+             (action, caster_x, caster_z, spots, react_low, react_high): (
+                u32,
+                Option<f32>,
+                Option<f32>,
+                mlua::Table,
+                Option<f32>,
+                Option<f32>,
+            )| {
+                let (low, high) = crate::server::dodge::AUTHORED_REACTION_SECONDS;
+                let low = react_low.unwrap_or(low);
+                this.tasks.push(LuaDirectorTask::PartySpots {
+                    action,
+                    caster: caster_x.zip(caster_z),
+                    spots: role_spots(spots)?,
+                    react: (low, react_high.unwrap_or(high).max(low)),
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "party_positions",
+            |_, this, (spots, seconds): (Option<mlua::Table>, Option<f32>)| {
+                this.tasks.push(LuaDirectorTask::PartyPositions {
+                    spots: spots.map(role_spots).transpose()?,
+                    seconds: seconds.unwrap_or(0.0),
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "sweep_bnpc",
+            |_,
+             this,
+             (who, x, y, z, speed, delay, helper, action, every, cast_after): (
+                u32,
+                f32,
+                f32,
+                f32,
+                f32,
+                Option<f32>,
+                Option<u32>,
+                Option<u32>,
+                Option<f32>,
+                Option<f32>,
+            )| {
+                this.tasks.push(LuaDirectorTask::SweepBattleNpc {
+                    who,
+                    to: Position(glam::Vec3A::new(x, y, z)),
+                    speed,
+                    delay: delay.unwrap_or(0.0),
+                    helper,
+                    action: action.unwrap_or(0),
+                    every: every.unwrap_or(1.0),
+                    cast_after,
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
             "actor_use_action",
             |_, this, (actor_id, action_id, target): (u32, u32, Option<u32>)| {
                 this.tasks.push(LuaDirectorTask::ActorUseAction {
@@ -1304,6 +1391,19 @@ impl UserData for LuaDirector {
             },
         );
     }
+}
+
+/// A director's spots by role from Lua: `{ tank = { x, z }, healer = { x, z }, dps = { x, z }, ... }`.
+fn role_spots(table: mlua::Table) -> mlua::Result<crate::server::dodge::RoleSpots> {
+    let mut spots = Vec::new();
+    for pair in table.pairs::<String, mlua::Table>() {
+        let (role, at) = pair?;
+        let x: f32 = at.get(1)?;
+        let z: f32 = at.get(2)?;
+        spots.push((role.to_lowercase(), glam::Vec2::new(x, z)));
+    }
+    spots.sort_by(|a, b| a.0.cmp(&b.0));
+    Ok(crate::server::dodge::RoleSpots(spots))
 }
 
 /// A boss room's arena (`DirectorBoss::arena`) the zone has no range for keeps nobody in: said once, as it's set.
@@ -2070,6 +2170,9 @@ pub fn director_tick(
 ) {
     // What's attached to what goes with it (`director:attach_bnpc`.)
     keep_attached(&network, instance);
+
+    // What it's sweeping along a line moves on, and hurts where it is (`director:sweep_bnpc`.)
+    crate::server::sweep::update(&network, &game_data, instance, Instant::now());
 
     // Let the script see how the fight is going, if it wants to
     let wants_update = instance
@@ -3180,6 +3283,90 @@ pub fn director_tick(
                         DestinationNetwork::ZoneClients,
                     );
                 }
+            }
+            LuaDirectorTask::PartySpots {
+                action,
+                caster,
+                spots,
+                react,
+            } => {
+                let entry = crate::server::dodge::AuthoredSpots {
+                    action: *action,
+                    caster: caster.map(|(x, z)| glam::Vec2::new(x, z)),
+                    spots: spots.clone(),
+                    react: *react,
+                };
+                // Set again (a script's setup run twice): the same action from the same place takes the new spots.
+                instance
+                    .party_spots
+                    .retain(|old| !(old.action == entry.action && old.caster == entry.caster));
+                instance.party_spots.push(entry);
+            }
+            LuaDirectorTask::PartyPositions { spots, seconds } => {
+                let now = std::time::Instant::now();
+                instance.party_cue = spots.clone().map(|spots| crate::server::dodge::PartyCue {
+                    spots,
+                    from: now,
+                    until: now + Duration::from_secs_f32(seconds.max(0.0)),
+                    react: crate::server::dodge::AUTHORED_REACTION_SECONDS,
+                });
+            }
+            LuaDirectorTask::SweepBattleNpc {
+                who,
+                to,
+                speed,
+                delay,
+                helper,
+                action,
+                every,
+                cast_after,
+            } => {
+                let Some(walker) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to sweep!");
+                    continue;
+                };
+                let helper = match helper {
+                    Some(helper) => {
+                        let found = resolve_bnpc(instance, *helper);
+                        if found.is_none() {
+                            tracing::warn!("Failed to find bnpc {helper} to sweep with {who}!");
+                        }
+                        found
+                    }
+                    None => None,
+                };
+                let from = instance
+                    .find_actor(walker)
+                    .map(|actor| actor.position().0)
+                    .unwrap_or(to.0);
+                let radius = if *action != 0 {
+                    game_data
+                        .lock()
+                        .get_action_info(*action)
+                        .map(|info| info.effect_range as f32)
+                        .unwrap_or(0.0)
+                } else {
+                    0.0
+                };
+                let now = std::time::Instant::now();
+                let casts_from =
+                    now + Duration::from_secs_f32(cast_after.unwrap_or(*delay).max(0.0));
+                // A new sweep for the same walker replaces its old one.
+                instance.sweeps.retain(|sweep| sweep.walker != walker);
+                instance.sweeps.push(crate::server::sweep::Sweep {
+                    walker,
+                    from,
+                    to: to.0,
+                    speed: *speed,
+                    sets_off: now + Duration::from_secs_f32(delay.max(0.0)),
+                    helper,
+                    action: *action,
+                    every: Duration::from_secs_f32(every.max(0.1)),
+                    casts_from,
+                    next_cast: casts_from,
+                    radius,
+                    moving: false,
+                });
             }
             LuaDirectorTask::SetModelScale {
                 who,

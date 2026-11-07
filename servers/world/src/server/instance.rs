@@ -211,6 +211,12 @@ pub struct Instance {
     pub pending_duty_support: HashMap<ObjectId, Vec<u8>>,
     /// Story lines the director queued for the party NPCs (`director:party_npc_yell`.)
     pub party_npc_yells: Vec<crate::server::party_npc::QueuedYell>,
+    /// Where the party goes as an enemy casts what (`director:party_spots`), and where the director has sent it for a
+    /// while (`director:party_positions`): retail's Duty Support members' spots (`dodge::authored_spot`.)
+    pub party_spots: Vec<crate::server::dodge::AuthoredSpots>,
+    pub party_cue: Option<crate::server::dodge::PartyCue>,
+    /// NPCs a director is sending along a line, hurting as they go (`director:sweep_bnpc`, `server/sweep.rs`.)
+    pub sweeps: Vec<crate::server::sweep::Sweep>,
     /// Aggressive BNpcs (by layout ID) a director has told not to notice anyone who comes close: they fight only when
     /// hit or sent after someone (`director:set_notice`; Victory in Peril's boss through its cutscene.)
     pub unaware_npcs: std::collections::HashSet<u32>,

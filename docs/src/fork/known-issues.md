@@ -912,6 +912,34 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Weight of the Land and Rock Throw never fell on Titan's target in the runs; Kawari keeps them off it on purpose.
   Retail's helpers cast at a point on the ground; Kawari's are put there and cast on themselves.
 
+## The Stone Vigil (2026-11-07)
+
+* Untested in game, from two runs (Bob's Chronofoil captures 1cefedf4 with Duty Support, three wipes, and 341808b0 a
+  tank's Duty Finder run); the bosses' rules are fits to them: Swinge twice below 50 %, the last boss's flights below
+  85 %, between 50 and 70 % at a round's end (seen twice, skipped three times at 48-55 %) and below 40 %. Where its
+  rounds and flights stand when it's pulled again after a wipe follows the script's reset, not retail's (not seen).
+* The first boss's run to its spot is one ActorMove (the client walks it there at 90); the server has it there at
+  once, and it's kept from acting on its own for the run (`busy_bnpc`). Its Swinge is cast on itself facing its target
+  as it set off (the second turned to its target again).
+* The whirlwinds are untargetable and held (retail's targetability isn't recorded); the helpers that hurt as they go
+  cast where the whirlwind is every 0.58 s by the director's tick (500 ms), so some casts come a tick late. Retail's
+  kind 62 effect on 28731's hits (173, 64) isn't sent.
+* The last boss's Touchdown always comes as it lands; its targets were 0-4 on retail. Its round's Sheet of Ice goes on
+  one of the party at random (retail's on whom isn't worked out).
+* The perched dragons' ActionTimelines (7749, 7739) are retail's numbers, not checked in game; their breath is cast on
+  themselves (a line ahead, as they face in the layout).
+* ContentDirector event 0x40000007 (`[0, 1]` 332 s and `[1, 1]` 932 s after the zone-in, both runs) isn't sent; nor
+  is anything for the Duty Support members' event NPCs after the clear (none came in either run).
+* The Duty Support members' chatter at 41 (the tank's 13954, the Thaumaturge's 13978 and 13979, the Conjurer's 13985)
+  isn't added: each member has one list of lines, and whether these replace Brayflox's at 32 by level isn't known.
+* Coffer loot: one opening each, and two for 185; the tank's run's first two bosses' items (10438; 31518 and 31527)
+  aren't given to a coffer, since which coffer they came from isn't known.
+* Party dodging by the duty's spots (`director:party_spots`, `party_positions`) and the sweeps' dangers are untested
+  in game; a bot or party NPC whose spot no navmesh path reaches dodges by the shapes. Whether retail's members also
+  had spots for the trash, the dragons' breaths and the first boss's Lion's Breath isn't known (they're not set).
+* Quest 952's scene 9 (ACTOR5's yes/no) was never seen; "yes" sending the player to POPRANGE1 is a guess. The duty's
+  exit spot in New Gridania is both runs' first position there (within 0.4 yalms), the facing taken from the pop range.
+
 ## Quest battles and directors
 
 * **In the Eyes of Gods and Men's battle (60)** (2026-11-06): untested in game, from three won runs (captures 130088ec,

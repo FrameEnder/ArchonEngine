@@ -117,6 +117,7 @@ mod rotation;
 mod social;
 mod spawn_allocator;
 mod status_floor;
+mod sweep;
 mod wipe;
 mod world_turn;
 mod zone;
