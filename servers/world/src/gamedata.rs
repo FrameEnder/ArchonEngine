@@ -638,19 +638,29 @@ const DEFAULT_CONE_ANGLE: f32 = 90.0;
 
 /// A cone's width recorded on retail where the game's files don't give it (`resources/data/action_areas.json`.)
 fn recorded_cone_angle(action: u32) -> Option<f32> {
-    #[derive(serde::Deserialize)]
-    struct Areas {
-        cone_angles: HashMap<u32, f32>,
-    }
-    static AREAS: std::sync::OnceLock<Areas> = std::sync::OnceLock::new();
-    AREAS
-        .get_or_init(|| {
-            serde_json::from_str(include_str!("../../../resources/data/action_areas.json"))
-                .expect("resources/data/action_areas.json doesn't read")
-        })
-        .cone_angles
-        .get(&action)
-        .copied()
+    action_areas().cone_angles.get(&action).copied()
+}
+
+/// What `resources/data/action_areas.json` records about enemies' area attacks.
+#[derive(serde::Deserialize)]
+struct ActionAreas {
+    cone_angles: HashMap<u32, f32>,
+    #[serde(default)]
+    spares_while: HashMap<u32, u16>,
+}
+
+fn action_areas() -> &'static ActionAreas {
+    static AREAS: std::sync::OnceLock<ActionAreas> = std::sync::OnceLock::new();
+    AREAS.get_or_init(|| {
+        serde_json::from_str(include_str!("../../../resources/data/action_areas.json"))
+            .expect("resources/data/action_areas.json doesn't read")
+    })
+}
+
+/// The status whose holder an area attack leaves alone, if it has one (`action_areas.json`'s `spares_while`): the Stone
+/// Vigil's whirlwinds hit each of the party once, then nothing while the 2656 they gave lasted.
+pub fn action_spared_while(action: u32) -> Option<u16> {
+    action_areas().spares_while.get(&action).copied()
 }
 
 /// Reads a cone's angle from its omen's path, e.g. "gl_fan090_1bf" or "er_gl_fan120_1bf".
@@ -4407,6 +4417,8 @@ mod area_tests {
         // Swinge's, recorded (the Stone Vigil.)
         assert_eq!(super::recorded_cone_angle(903), Some(60.0));
         assert_eq!(super::recorded_cone_angle(1), None);
+        assert_eq!(super::action_spared_while(28731), Some(2656));
+        assert_eq!(super::action_spared_while(903), None);
     }
 
     /// The level sync caps with the sheets' numbers: a body piece synced to item level 130 (level 50's ParamGrow), Vitality

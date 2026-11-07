@@ -925,7 +925,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   statuses aren't cleared.
 * The whirlwinds are untargetable and held (retail's targetability isn't recorded); the helpers that hurt as they go
   cast where the whirlwind is every 0.58 s by the director's tick (500 ms), so some casts come a tick late. Retail's
-  kind 62 effect on 28731's hits (173, 64) isn't sent.
+  kind 62 effect on 28731's hits (173, 64; Kawari's enum calls kind 62 `SummonPet`) isn't sent; whoever has 2656 is
+  spared its next casts, as on retail.
 * The last boss's Touchdown always comes as it lands; its targets were 0-4 on retail. Its round's Sheet of Ice goes on
   one of the party at random (retail's on whom isn't worked out).
 * The perched dragons' ActionTimelines (7749, 7739) are retail's numbers, not checked in game; their breath is cast on

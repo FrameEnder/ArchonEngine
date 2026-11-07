@@ -776,7 +776,13 @@ pub fn npc_behavior(
                         continue;
                     }
 
-                    if can_notice(spawn.common.position.0, spawn.common.rotation, position.0) {
+                    // Only whom it can see (`in_sight`): a wall or a door the director keeps shut hides them. The Stone
+                    // Vigil's 1466 behind the second boss's way on (2001879, shut until the boss falls) noticed the party
+                    // through it and pulled them away from the boss to a door they couldn't pass (Bob's bundles
+                    // 20261107-214952 and 20261107-221820); on retail it waited until the door opened.
+                    if can_notice(spawn.common.position.0, spawn.common.rotation, position.0)
+                        && in_sight(sight.as_deref(), spawn.common.position.0, position.0)
+                    {
                         enmity.entry(*target_id).or_insert(1);
                         *autoattack_timing = 0;
                         *state = NpcState::Hate;

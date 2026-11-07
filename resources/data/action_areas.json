@@ -1,6 +1,9 @@
 {
-    "comment": "What an enemy's area attack covers where the game's files don't say (gamedata.rs: get_action_info). `cone_angles`: a cone's width in degrees, by Action row, for cones whose omen has no angle in its path (or that have no omen: the client draws nothing, and Kawari took 90). Recorded: Chudo-Yudo's Swinge (903, the Stone Vigil, a 40-yalm cone with no omen) caught party members up to 28 degrees off its facing and none at 40 or more over its ten casts in Bob's Chronofoil capture 1cefedf4 (2026-11-07), and retail's Duty Support tank stepped out of it to about 40 degrees: 60.",
+    "comment": "What an enemy's area attack covers where the game's files don't say (gamedata.rs: get_action_info). `cone_angles`: a cone's width in degrees, by Action row, for cones whose omen has no angle in its path (or that have no omen: the client draws nothing, and Kawari took 90). Recorded: Chudo-Yudo's Swinge (903, the Stone Vigil, a 40-yalm cone with no omen) caught party members up to 28 degrees off its facing and none at 40 or more over its ten casts in Bob's Chronofoil capture 1cefedf4 (2026-11-07), and retail's Duty Support tank stepped out of it to about 40 degrees: 60. `spares_while`: an area attack that leaves alone whoever already has this status (by Action row: the status): the Stone Vigil's whirlwinds' 28731 hit each of the party once with damage, status 2656 (4 s, which throws them into the air) and an effect of kind 62, then nothing on its next two or three casts while 2656 lasted, all eleven times in Bob's three captures of 2026-11-07 (1cefedf4, 341808b0, f842581d); Kawari hit them every 0.58 s (Bob's bundle 20261107-221820).",
     "cone_angles": {
         "903": 60.0
+    },
+    "spares_while": {
+        "28731": 2656
     }
 }

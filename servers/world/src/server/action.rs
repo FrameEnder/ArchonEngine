@@ -1177,10 +1177,19 @@ pub fn execute_action(
                 .lock()
                 .get_battalion_enemies(common_spawn.battalion as u32);
             let hits_npcs = timeline.recorded_amount(request.action_id, false).is_some();
+            // Whoever already has the status it spares leaves it unhurt (`action_spared_while`.)
+            let spared = crate::gamedata::action_spared_while(request.action_id);
             for (id, other) in &instance.actors {
                 // Only characters: EObjs and coffers have no CommonSpawn (asking one for it panicked the server as
                 // Kottos' first marker went off, Bob's bundle of 2026-10-26.)
                 if area_side(other, &players_enemies).is_none() {
+                    continue;
+                }
+                if spared.is_some_and(|status| {
+                    other
+                        .status_effects()
+                        .is_some_and(|effects| effects.time_left(status).is_some())
+                }) {
                     continue;
                 }
                 let other_spawn = other.get_common_spawn();
