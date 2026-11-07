@@ -30,7 +30,7 @@ the entrance or the rotation in the client's first position update, which came a
 and before the player could turn. Every duty entered more than once had the same facing each time (Sastasha 8 times,
 the Copperbell Mines 6, Toto-Rak 3). Six whose first update came more than 3 s in were left out (378, 522, 523, 580,
 581, 838); Haukke Manor (1040) is -1.5705, the ActorSetPos of one of its four runs (Bob's capture e7580e0d of
-2026-11-02; the other three's first updates came 8.7-22 s in); Brayflox's Longstop (1041) is -1.937, the first position update of Bob's capture 44df02fc (2026-11-03, 1.3 s in). What decides the facing, in order (`change_zone_warp_to_entrance`, coming in and
+2026-11-02; the other three's first updates came 8.7-22 s in); Brayflox's Longstop (1041) is -1.937, the first position update of Bob's capture 44df02fc (2026-11-03, 1.3 s in); the Stone Vigil (1042) -3.1416, the first position update of all three of Bob's runs of 2026-11-07 (its entrance rect faces 0). What decides the facing, in order (`change_zone_warp_to_entrance`, coming in and
 after a wipe): a duty script's `ENTRANCE_ROTATION`, the recorded facing, the entrance rect's, the entrance object's.
 The server log says which: "Players come in facing … (retail's, recorded for …)" or "The entrance rect … faces …".
 
@@ -754,6 +754,13 @@ fell (ContentDirector 0x80000016 `[0, 1]` then 0x80000015 `[1, 0]`; `[1, 1]`, `[
 script's `objective`), BGM 37 as the first and second bosses were pulled and 0 as they fell (none for the last).
 Kawari: `content/r1d1_re.lua`, drop-in `r1d1_re_planmap.json` (`questkit chronofoil --dropin 1042`: 48 battle NPCs),
 timelines `StoneVigil*`, action scripts `StoneVigil*`.
+
+**The entrance.** Its entrance circle is EObj 2001869 (layout 4239683, layer LVD_gimmick), bound to the SharedGroup
+4239670 at (0, 4.8, 306) where retail put the players (all three runs; hidden at DutyCommence, shown again after each
+wipe), not one of the circles Kawari knew (2000182, 2001710, 2007457): with none found, every entry and every return
+after a wipe went to a random pop range of the duty (Bob's bundle 20261107-205303: "teleporting in completely wrong
+spots"), and the circle never hid. `ENTRANCE_CIRCLE_IDS` (core, `common/game.rs`) now has it too; players face
+-3.1416 (`entrance_facing.json`).
 
 **Enemies.** What the director brings is `nonpop`: the last boss (1455, 4001014), the second boss's whirlwinds
 (14536, 9061122) and their helpers (14544, 9061123), the nine ice sprites (1465) and the last boss's eight helpers
