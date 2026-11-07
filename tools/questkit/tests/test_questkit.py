@@ -1212,6 +1212,20 @@ function onReturn(scene, results, player) sceneFinished(scene, results, player) 
         self.assertEqual(steps[2]["expect"]["notices"], [[1, [1, 2]]])
         self.assertNotIn("todo", json.dumps(steps))
 
+    def test_the_old_fixtures_bases_win_over_the_dumps(self):
+        # Following the Evidence (911): the dumps' todo paired layout 4293142 with 2002141, the old fixture (checked by
+        # hand) says 2002140.
+        Event = chronofoil_quest.Event
+        events = [Event(0, 155, "talk", {"actor": 4293142}),
+                  Event(0, 155, "start", {"type": 1, "actor": 4293142, "flags": 0, "arg": 0}),
+                  Event(1, 155, "scene", {"scene": 13, "flags": 0x2001, "params": []}),
+                  Event(2, 155, "answer", {"scene": 13, "yielded": False, "code": 0, "results": [0, 0]}),
+                  Event(2, 155, "finish", {})]
+        previous = {"steps": [{"talk": 2002140, "layout": 4293142, "expect": {}}]}
+        dump = {"script": "X", "params": []}
+        fixture = fixtures.build_from_chronofoil(QUEST, events, dump, {4293142: 2002141}, previous=previous)
+        self.assertEqual(fixture["steps"][0]["talk"], 2002140)
+
 
 class BattleSimObjectTalkTest(unittest.TestCase):
     """battle-sim plays the player talking to an object the script brought out (`object_talks`), and the event action

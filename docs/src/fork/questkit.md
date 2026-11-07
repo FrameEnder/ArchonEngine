@@ -135,7 +135,8 @@ its base ID comes from the server's SpawnObject packets, the Recorder export's N
 the dumps (`--dumps`: a todo's locations are the layout IDs of who it's done with, and the listeners whose
 `despawn_sequence` is the todo's index are their base IDs, taken when there are as many of each; since 2026-10-30,
 `fixtures.dump_layout_bases`. It can miss: Brotherly Love's todo 2 is at 4309068, but retail's Claxio was talked to at
-3853930) or the existing fixture, which also gives what the capture can't (`spawns`, and kills it can't name) by matching the state each step left
+3853930) or the existing fixture, whose base IDs win over the dumps' (since 2026-11-07: the dumps' pairing gave
+Following the Evidence's EOBJECT3 and 4 the wrong way round in every run, fixed by hand in `911.json` once), which also gives what the capture can't (`spawns`, and kills it can't name) by matching the state each step left
 the quest in. Unlocks in the step that completes a quest are left out: those are the Quest sheet's, sent by the
 server's `finish_quest`. Without a dump, the existing fixture's parameters are used.
 

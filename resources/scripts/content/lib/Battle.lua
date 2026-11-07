@@ -201,12 +201,18 @@ function Battle:applyPlacement(director, layout)
     end
 end
 
--- Spawns NPCs (allies or enemies), each as its role says, and points everyone at their targets.
-function Battle:spawn(director, layouts)
+-- Spawns NPCs (allies or enemies), each as its role says, and points everyone at their targets. `at` ({ x, y, z },
+-- optional) spawns them there instead of their layout's spot: quest battle 61's boss turns into another NPC where he
+-- stands (retail's spawned 0-5.5 yalms from its layout's spot, wherever he was.)
+function Battle:spawn(director, layouts, at)
     for _, layout in ipairs(layouts) do
         local role = self.roles[layout] or { side = "enemy", group = "adds" }
         self.roles[layout] = role
-        director:spawn_bnpc(layout)
+        if at ~= nil then
+            director:spawn_bnpc(layout, at.x, at.y, at.z, at.rotation)
+        else
+            director:spawn_bnpc(layout)
+        end
         self.alive[layout] = true
         if role.side == "enemy" then
             table.insert(self.arrived, layout)

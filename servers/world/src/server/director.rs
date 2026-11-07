@@ -2289,7 +2289,10 @@ pub fn director_tick(
                     ClientId::default(),
                     *actor_id,
                     Duration::from_secs(cast_time as u64),
-                    QueuedTaskData::CastEventAction { target: *target },
+                    QueuedTaskData::CastEventAction {
+                        target: *target,
+                        id: *action_id,
+                    },
                 );
             }
             LuaDirectorTask::FinishGimmickEvent { actor_id } => {

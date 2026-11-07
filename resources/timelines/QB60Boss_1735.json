@@ -3,19 +3,19 @@
     "from_pull": true,
     "recorded_amounts": {
         "870": {
-            "players": 20.0,
-            "npcs": 39.5
+            "players": 22.5,
+            "npcs": 40
         },
         "9": {
-            "players": 34.0,
-            "npcs": 58
+            "players": 40,
+            "npcs": 58.5
         },
         "11": {
-            "players": 16,
-            "npcs": 60
+            "players": 35.0,
+            "npcs": 40
         },
         "21": {
-            "players": 21,
+            "players": 20,
             "npcs": 40
         },
         "120": {
@@ -23,52 +23,52 @@
         }
     },
     "rotation": {
-        "pace": 18.0,
+        "pace": 24.7,
         "actions": [
             {
                 "action": 14,
-                "every": 18.0,
-                "comment": "16 uses by 2 (2.6-57.2 s apart); every 18.0 s"
+                "every": 24.7,
+                "comment": "22 uses by 3 (2.6-89.1 s apart); every 24.7 s"
             },
             {
                 "action": 9,
                 "every": 28.4,
-                "comment": "11 uses by 2 (23.8-44.0 s apart); every 28.4 s"
+                "comment": "18 uses by 3 (22.6-44.0 s apart); every 28.4 s"
             },
             {
                 "action": 11,
-                "every": 28.6,
-                "comment": "11 uses by 2 (23.9-44.0 s apart); every 28.6 s"
+                "every": 28.5,
+                "comment": "17 uses by 3 (23.9-70.3 s apart); every 28.5 s"
             },
             {
                 "action": 21,
-                "every": 28.6,
-                "comment": "11 uses by 2 (23.8-43.6 s apart); every 28.6 s"
+                "every": 28.4,
+                "comment": "17 uses by 3 (22.4-70.4 s apart); every 28.4 s"
             }
         ]
     },
     "timepoints": [
         {
-            "time": 18.8,
+            "time": 7.6,
             "data": {
                 "type": "action",
                 "action_id": 17,
                 "target": "itself"
             },
-            "comment": "17 on itself, 3 uses by 2, first 18.8 s after its pull (median), then about every 145.5 s",
-            "every": 145.5
+            "comment": "17 on itself, 5 uses by 3, first 7.6 s after its pull (median), then about every 115.1 s",
+            "every": 115.1
         },
         {
-            "time": 96.8,
+            "time": 101.4,
             "data": {
                 "type": "action",
                 "action_id": 12,
                 "target": "itself"
             },
-            "comment": "12 on itself, 3 uses by 2, first 96.8 s after its pull (median), then about every 145.5 s",
-            "every": 145.5
+            "comment": "12 on itself, 4 uses by 3, first 101.4 s after its pull (median), then about every 176.0 s",
+            "every": 176.0
         }
     ],
     "timeline_always_plays": false,
-    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the one you fight (BNpcBase 1735, BNpcName 1454, layout 4261262): level 35, 9150 HP, ClassJob 1 (a gladiator); on you, then the gladiator on your side when he comes; Cure (120, the director's heals) on itself at the end. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.9, 0.7`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the one you fight (BNpcBase 1735, BNpcName 1454, layout 4261262): level 35, 9150 HP, ClassJob 1 (a gladiator); on you, then the gladiator on your side when he comes; Cure (120, the director's heals) on itself at the end. From Bob's Chronofoil captures of 2026-11-06 and 07 (`questkit chronofoil --battle`: 130088ec 0.9, 3c56e09f 0.7, 21f967d2 0.9): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
 }

@@ -1,0 +1,68 @@
+{
+  "quest": 924,
+  "script": "GaiUsb901_00924",
+  "source": "Bob's Chronofoil capture 21f967d2 (2026-11-07, his third character: the whole quest); scenes and effects from Bob's Chronofoil capture of 2026-11-07",
+  "params": {
+    "ACTOR0": 1006435,
+    "ITEM0": 2000856,
+    "ITEM1": 2000858,
+    "ACTOR1": 1006441,
+    "ACTOR2": 1006442,
+    "ACTOR3": 1006443,
+    "ACTOR4": 1006444,
+    "LOC_ACTOR0": 1003855,
+    "LOC_ACTOR1": 1004145,
+    "LOC_ACTOR2": 1006902,
+    "LOC_FACE0": 604,
+    "LOC_FACE1": 617
+  },
+  "steps": [
+    {
+      "talk": 1006435,
+      "layout": 4261544,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "001100000000", "notices": []}
+    },
+    {
+      "talk": 1006441,
+      "layout": 4261590,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "001100000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1006442,
+      "layout": 4261579,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "001100000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1006443,
+      "layout": 4261565,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "001100000000", "notices": [[2, []]]}
+    },
+    {
+      "talk": 1006444,
+      "layout": 4261568,
+      "what": "ACTOR4",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 6, "flags": "0xf8402efb", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

@@ -3,51 +3,51 @@
     "from_pull": true,
     "recorded_amounts": {
         "870": {
-            "players": 40
+            "players": 45.0
         },
         "717": {
-            "players": 41
+            "players": 68.0
         }
     },
     "rotation": {
-        "pace": 20.6,
+        "pace": 6.6,
         "actions": [
             {
                 "action": 717,
-                "every": 20.6,
-                "comment": "3 uses by 2 (15.2 s apart); every 20.6 s"
+                "every": 6.6,
+                "comment": "7 uses by 3 (4.6-15.2 s apart); every 6.6 s"
             }
         ]
     },
     "timepoints": [
         {
-            "time": 1.6,
+            "time": 3.2,
             "data": {
                 "type": "action",
                 "action_id": 10,
                 "target": "itself"
             },
-            "comment": "10 on itself, 2 uses by 2, first 1.6 s after its pull (median)"
+            "comment": "10 on itself, 3 uses by 3, first 3.2 s after its pull (median)"
         },
         {
-            "time": 14.8,
+            "time": 21.0,
             "data": {
                 "type": "action",
                 "action_id": 20,
                 "target": "itself"
             },
-            "comment": "20 on itself, 2 uses by 2, first 14.8 s after its pull (median)"
+            "comment": "20 on itself, 3 uses by 3, first 21.0 s after its pull (median)"
         },
         {
-            "time": 14.3,
+            "time": 10.3,
             "data": {
                 "type": "action",
                 "action_id": 404,
                 "target": "itself"
             },
-            "comment": "404 on itself, 2 uses by 2, first 14.3 s after its pull (median)"
+            "comment": "404 on itself, 3 uses by 3, first 10.3 s after its pull (median)"
         }
     ],
     "timeline_always_plays": false,
-    "comment": "The enemy Eyes on Me's search brings out (quest 518, BNpcBase 1902, BNpcName 1988, layout 4296987): level 35, 1830 HP; on you. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.6, 0.4`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+    "comment": "The enemy Eyes on Me's search brings out (quest 518, BNpcBase 1902, BNpcName 1988, layout 4296987): level 35, 1830 HP; on you. From Bob's Chronofoil captures of 2026-11-06 and 07 (`questkit chronofoil --battle`: 130088ec 0.6, 3c56e09f 0.4, 21f967d2 0.6): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
 }

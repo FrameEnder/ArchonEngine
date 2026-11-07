@@ -266,9 +266,12 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
     battle_zone = params.get("TERRITORYTYPE0") if "QUESTBATTLE0" in params else None
     previous_steps = (previous or {}).get("steps", [])
     known = dict(bases)
+    # The existing fixture's base IDs win over the dumps' guess (a todo's locations zipped with its listeners): they
+    # were checked, and the guess can pair them the wrong way round (Following the Evidence's EOBJECT3 and 4, fixed by
+    # hand in 911.json and paired wrongly again from Bob's third run, capture 21f967d2 of 2026-11-07.)
     for step in previous_steps:
         if "talk" in step and step.get("layout"):
-            known.setdefault(step["layout"], step["talk"])
+            known[step["layout"]] = step["talk"]
 
     steps: list[dict] = []
     state: dict = {}

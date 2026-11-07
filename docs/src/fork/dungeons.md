@@ -426,7 +426,9 @@ last boss's rotation (`from_pull`) was the same to a few tenths of a second in a
 **The keys and doors** (GimmickAccessor events, 0x000F00xx). Something to pick up has no prompt: the event starts, an
 EventAction 21 runs 2 s, then log 2031 with the item, the object hidden (ActorControl 54 0 and SetEventState 7) and the
 event finished. A door is a prompt (scene 1, flags 0x2001), then EventAction 24 for 2 s, log 2059 with a parameter of its
-own, the door hidden the same way. Every run the same:
+own, the door hidden the same way. Every run the same. Kawari ends the bar with ActorControlTarget EventAction `[0, id]`
+on the object since 2026-11-07 (`QueuedTaskData::CastEventAction`), as retail does for a quest battle's (In the Eyes of
+Gods and Men's rosary) and as the quests' bars always were:
 
 | EObj | What | Retail |
 |---|---|---|

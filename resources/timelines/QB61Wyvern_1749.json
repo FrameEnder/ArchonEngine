@@ -4,10 +4,10 @@
     "recorded_amounts": {
         "1136": {
             "players": 285.0,
-            "npcs": 348.0
+            "npcs": 380
         },
         "870": {
-            "players": 95,
+            "players": 103,
             "npcs": 145
         }
     },
@@ -17,11 +17,11 @@
             {
                 "action": 1136,
                 "every": 7.9,
-                "comment": "18 uses by 4 (6.1-11.0 s apart); every 7.9 s"
+                "comment": "23 uses by 5 (6.1-12.0 s apart); every 7.9 s"
             }
         ]
     },
     "timepoints": [],
     "timeline_always_plays": false,
-    "comment": "The quest battle (61) of quest 941: the wyvern of sequence 7 (BNpcBase 1749, BNpcName 656, layout 4256804): level 39, 2380 HP. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.11, 0.13, 0.15, 0.17`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+    "comment": "The quest battle (61) of quest 941: the wyvern of sequence 7 (BNpcBase 1749, BNpcName 656, layout 4256804): level 39, 2380 HP. From Bob's Chronofoil captures of 2026-11-06 and 07 (`questkit chronofoil --battle`: 130088ec 0.11, 3c56e09f 0.13, 3c56e09f 0.15, 3c56e09f 0.17, 21f967d2 0.13): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
 }

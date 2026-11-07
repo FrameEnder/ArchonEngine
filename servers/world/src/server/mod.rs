@@ -1822,7 +1822,25 @@ pub async fn server_main_loop(
                                     }
                                 }
                             }
-                            QueuedTaskData::CastEventAction { target } => {
+                            QueuedTaskData::CastEventAction { target, id } => {
+                                // The bar ends as a quest's does (`FromServer::QuestEventActionCast`): retail's
+                                // ActorControlTarget EventAction [0, id] on the object, In the Eyes of Gods and Men's
+                                // rosary (Bob's Chronofoil captures 130088ec, 3c56e09f and 21f967d2.)
+                                {
+                                    let mut network = network.lock();
+                                    network.send_to_by_actor_id(
+                                        task.from_actor_id,
+                                        FromServer::ActorControlTarget(
+                                            task.from_actor_id,
+                                            ObjectTypeId {
+                                                object_id: *target,
+                                                object_type: ObjectTypeKind::None,
+                                            },
+                                            ActorControlCategory::EventAction { unk1: 0, id: *id },
+                                        ),
+                                        DestinationNetwork::ZoneClients,
+                                    );
+                                }
                                 let mut data = data.lock();
                                 if let Some(instance) =
                                     data.find_actor_instance_mut(task.from_actor_id)

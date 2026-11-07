@@ -109,6 +109,7 @@ LOG_OBTAINED = 3208
 LOG_WYVERN_GONE = 3209
 
 ACTION_CURE = 120
+ACTION_CURE_II = 135
 
 BATTLE = Battle.new()
 -- Both went for the newest enemy (the conjurer the boss at first, then the first wave; the gladiator the boss, then
@@ -119,29 +120,40 @@ BATTLE:ally(BNPC_CONJURER_ALLY, {
     order = "newest",
     range = 10,
     keep_near = { within = 15 },
-    -- Retail's healed the gladiator, you and itself at 31-58 % (median 40), every 16.7-23.4 s.
-    heals = { { action = ACTION_CURE, targets = { BNPC_GLADIATOR_ALLY, Battle.PLAYER, "self" }, below = 45,
-        every = 16.7 } },
+    -- Retail's healed the gladiator, you and itself at 31-79 % (median 40-47), every 16.7-23.4 s, and once Cure II on
+    -- the gladiator at 25 % (capture 21f967d2.)
+    heals = {
+        { action = ACTION_CURE_II, targets = { BNPC_GLADIATOR_ALLY, Battle.PLAYER, "self" }, below = 26, every = 19.0 },
+        { action = ACTION_CURE, targets = { BNPC_GLADIATOR_ALLY, Battle.PLAYER, "self" }, below = 45, every = 16.7 },
+    },
 })
 BATTLE:ally(BNPC_GLADIATOR_ALLY, { role = "tank", focus = { "wyvern", "adds", "boss" }, order = "newest" })
+-- The enemies' conjurers: Cure on their side under 50 % (every 5.6-21.7 s), Cure II under about 25 % (6-23 %, every
+-- 6.1-13.9 s, capture 21f967d2: the third wave's lived long enough there.)
+-- (A new table for each: Battle keeps each rule's wait in it.)
+function enemyHeals()
+    return {
+        { action = ACTION_CURE_II, targets = "allies", below = 24, every = 13.7 },
+        { action = ACTION_CURE, targets = "allies", below = 50, every = 6.2 },
+    }
+end
 -- On retail every enemy went for you first (the archer turned to the conjurer later), and the boss turned to the
 -- gladiator once he came.
 for _, layout in ipairs(WAVE_1) do
     local role = { group = "adds" }
     if ENEMY_CONJURERS[layout] then
-        role.heals = { { action = ACTION_CURE, targets = "allies", below = 50, every = 6.2 } }
+        role.heals = enemyHeals()
     end
     BATTLE:enemy(layout, role)
 end
 for _, layout in ipairs(WAVE_2) do
     BATTLE:enemy(layout, { group = "adds" })
 end
-BATTLE:enemy(4287237, { group = "adds", heals = { { action = ACTION_CURE, targets = "allies", below = 50,
-    every = 6.2 } } })
+BATTLE:enemy(4287237, { group = "adds", heals = enemyHeals() })
 BATTLE:enemy(4287236, { group = "adds" })
 BATTLE:enemy(BNPC_WYVERN, { group = "wyvern" })
--- Its own Cure at 3-8 % (twice in one run, four times in the other, 3.6 s apart.)
-BATTLE:enemy(BNPC_BOSS, { group = "boss", heals = { { action = ACTION_CURE, targets = { "self" }, below = 8,
+-- Its own Cure once it was under about 15 % (its first 0.7-8 s after it crossed 15 %, three runs), 3.6-7.6 s apart.
+BATTLE:enemy(BNPC_BOSS, { group = "boss", heals = { { action = ACTION_CURE, targets = { "self" }, below = 15,
     every = 3.6 } } })
 
 local over = false

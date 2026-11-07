@@ -130,6 +130,9 @@ local fail_in = nil
 local phase = 1
 local left = {}
 local turned_low = false
+-- Where the boss last stood: what he turns into appears there (retail's, five runs: 0-5.5 yalms from its layout's
+-- spot, wherever he was.)
+local boss_at = nil
 local timers = {}
 
 function after(updates, fn)
@@ -158,13 +161,13 @@ function sequence(director, number)
     director:set_sequence(number)
 end
 
-function bringOut(director, layouts)
+function bringOut(director, layouts, at)
     for _, layout in ipairs(layouts) do
         if LAST_ONES[layout] then
             left[layout] = true
         end
     end
-    BATTLE:spawn(director, layouts)
+    BATTLE:spawn(director, layouts, at)
 end
 
 function onSetup(director)
@@ -193,7 +196,7 @@ function bossHalf(director)
         after(SEQUENCE_5_AFTER, function(d2)
             sequence(d2, SEQUENCE_TURNING)
             after(BOSS_FADES_AFTER, function(d3) d3:fade_out_bnpc(BNPC_BOSS) end)
-            after(TURNED_AFTER, function(d3) bringOut(d3, { BNPC_TURNED }) end)
+            after(TURNED_AFTER, function(d3) bringOut(d3, { BNPC_TURNED }, boss_at) end)
             after(SEQUENCE_6_AFTER, function(d3)
                 BATTLE:remove(d3, { BNPC_BOSS })
                 sequence(d3, SEQUENCE_TURNED)
@@ -236,6 +239,9 @@ function onUpdate(director, health, player_health, info)
     end
     local boss = health[BNPC_BOSS]
     local turned = health[BNPC_TURNED]
+    if info ~= nil and info[BNPC_BOSS] ~= nil and info[BNPC_BOSS].x ~= nil then
+        boss_at = { x = info[BNPC_BOSS].x, y = info[BNPC_BOSS].y, z = info[BNPC_BOSS].z }
+    end
     if phase == SEQUENCE_ADDS and boss ~= nil and boss < BOSS_HALF then
         bossHalf(director)
     elseif phase == SEQUENCE_TURNED and turned ~= nil and turned < TURNED_WYVERN then

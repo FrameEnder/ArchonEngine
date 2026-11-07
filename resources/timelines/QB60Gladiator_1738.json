@@ -3,61 +3,61 @@
     "from_pull": true,
     "recorded_amounts": {
         "870": {
-            "npcs": 108
+            "npcs": 87
         },
         "9": {
-            "npcs": 145.0
+            "npcs": 139.0
         },
         "11": {
-            "npcs": 237.5
+            "npcs": 230
         }
     },
     "rotation": {
-        "pace": 24.8,
+        "pace": 16.8,
         "actions": [
             {
                 "action": 9,
-                "every": 28.3,
-                "comment": "12 uses by 2 (12.6-33.4 s apart); every 28.3 s"
-            },
-            {
-                "action": 14,
-                "every": 24.8,
-                "comment": "11 uses by 2 (2.6-80.8 s apart); every 24.8 s"
+                "every": 26.5,
+                "comment": "19 uses by 3 (12.6-35.6 s apart); every 26.5 s"
             },
             {
                 "action": 11,
-                "every": 32.3,
-                "comment": "9 uses by 2 (23.8-34.8 s apart); every 32.3 s"
+                "every": 29.6,
+                "comment": "15 uses by 3 (23.8-35.6 s apart); every 29.6 s"
+            },
+            {
+                "action": 14,
+                "every": 16.8,
+                "comment": "15 uses by 3 (2.6-80.8 s apart); every 16.8 s"
             },
             {
                 "action": 21,
-                "every": 27.4,
-                "comment": "8 uses by 2 (21.9-32.8 s apart); every 27.4 s"
+                "every": 26.0,
+                "comment": "13 uses by 3 (21.9-37.6 s apart); every 26.0 s"
             }
         ]
     },
     "timepoints": [
         {
-            "time": 8.9,
+            "time": 9.9,
             "data": {
                 "type": "action",
                 "action_id": 17,
                 "target": "itself"
             },
-            "comment": "17 on itself, 3 uses by 2, first 8.9 s after its pull (median), then about every 130.6 s",
-            "every": 130.6
+            "comment": "17 on itself, 4 uses by 3, first 9.9 s after its pull (median), then about every 132.3 s",
+            "every": 132.3
         },
         {
-            "time": 65.3,
+            "time": 70.5,
             "data": {
                 "type": "action",
                 "action_id": 12,
                 "target": "itself"
             },
-            "comment": "12 on itself, 1 use, first 65.3 s after its pull (median)"
+            "comment": "12 on itself, 2 uses by 2, first 70.5 s after its pull (median)"
         }
     ],
     "timeline_always_plays": false,
-    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the gladiator who joins your side at sequence 3 (BNpcBase 1738, BNpcName 2082, layout 4261300): level 41, 4257 HP, ClassJob 1; on the boss, then the adds as they come. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.9, 0.7`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the gladiator who joins your side at sequence 3 (BNpcBase 1738, BNpcName 2082, layout 4261300): level 41, 4257 HP, ClassJob 1; on the boss, then the adds as they come. From Bob's Chronofoil captures of 2026-11-06 and 07 (`questkit chronofoil --battle`: 130088ec 0.9, 3c56e09f 0.7, 21f967d2 0.9): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
 }

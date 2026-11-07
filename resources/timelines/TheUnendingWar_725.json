@@ -3,16 +3,18 @@
     "from_pull": true,
     "recorded_amounts": {
         "870": {
-            "players": 40
+            "players": 43.5,
+            "npcs": 51
         },
         "722": {
-            "players": 57
+            "players": 58.0
         },
         "866": {
-            "players": 143.5
+            "players": 134.0,
+            "npcs": 155
         },
         "76": {
-            "players": 41.0
+            "players": 52
         }
     },
     "rotation": {
@@ -20,22 +22,22 @@
         "actions": [
             {
                 "action": 722,
-                "every": 21.6,
-                "comment": "5 uses by 4 (18.7 s apart); every 21.6 s"
+                "every": 19.6,
+                "comment": "9 uses by 6 (6.6-18.7 s apart); every 19.6 s"
             },
             {
                 "action": 866,
                 "every": 17.4,
-                "comment": "5 uses by 3 (17.6-18.7 s apart); every 17.4 s"
+                "comment": "8 uses by 5 (17.6-18.7 s apart); every 17.4 s"
             },
             {
                 "action": 76,
-                "every": 28.1,
-                "comment": "2 uses by 2; every 28.1 s"
+                "every": 25.8,
+                "comment": "3 uses by 3; every 25.8 s"
             }
         ]
     },
     "timepoints": [],
     "timeline_always_plays": false,
-    "comment": "The ambushes of The Unending War and Three for Three (quests 886 and 889; BNpcBase 725, BNpcName 1989, layouts 4289905 and 4290079): level 33 (30 in 889), 1055 HP at 33; on you. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.8, 0.6`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+    "comment": "The ambushes of The Unending War and Three for Three (quests 886 and 889; BNpcBase 725, BNpcName 1989, layouts 4289905 and 4290079): level 30 (30 in 889), 780 HP at 33; on you. From Bob's Chronofoil captures of 2026-11-06 and 07 (`questkit chronofoil --battle`: 130088ec 0.8, 3c56e09f 0.6, 21f967d2 0.8): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
 }

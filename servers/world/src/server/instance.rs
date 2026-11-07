@@ -97,8 +97,8 @@ pub enum QueuedTaskData {
         actor_id: ObjectId,
         respawn_layout_id: Option<u32>,
     },
-    /// Complete an EventAction
-    CastEventAction { target: ObjectId },
+    /// Complete a director's EventAction (row `id`) on `target`
+    CastEventAction { target: ObjectId, id: u32 },
     /// Complete a quest's EventAction (its progress bar, EventAction row `id`), which moving, an enemy's attack or
     /// paralysis can interrupt (`Instance::interrupt_event_action`.)
     QuestEventAction { id: u32 },

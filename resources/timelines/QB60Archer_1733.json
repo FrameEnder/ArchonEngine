@@ -5,42 +5,50 @@
     "recorded_amounts": {
         "873": {
             "players": 62.5,
-            "npcs": 88.0
+            "npcs": 90.0
         },
         "106": {
-            "players": 30.0,
-            "npcs": 59.0
+            "players": 59,
+            "npcs": 112
         },
         "100": {
             "players": 55
+        },
+        "97": {
+            "npcs": 161
         }
     },
     "rotation": {
-        "pace": 21.8,
+        "pace": 18.0,
         "actions": [
             {
                 "action": 106,
-                "every": 21.8,
-                "comment": "4 uses by 2 (6.6-8.6 s apart); every 21.8 s"
+                "every": 18.0,
+                "comment": "6 uses by 3 (6.6-15.2 s apart); every 18.0 s"
             },
             {
                 "action": 100,
                 "every": 43.1,
                 "comment": "1 use; every 43.1 s"
+            },
+            {
+                "action": 97,
+                "every": 36.1,
+                "comment": "1 use; every 36.1 s"
             }
         ]
     },
     "timepoints": [
         {
-            "time": 4.7,
+            "time": 4.6,
             "data": {
                 "type": "action",
                 "action_id": 101,
                 "target": "itself"
             },
-            "comment": "101 on itself, 2 uses by 2, first 4.7 s after its pull (median)"
+            "comment": "101 on itself, 3 uses by 3, first 4.6 s after its pull (median)"
         }
     ],
     "timeline_always_plays": false,
-    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the first wave's archer (BNpcBase 1733, BNpcName 2078, layout 4261276): level 35, 1220 HP, ClassJob 5; on you, then the conjurer on your side. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.9, 0.7`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the first wave's archer (BNpcBase 1733, BNpcName 2078, layout 4261276): level 35, 1220 HP, ClassJob 5; on you, then the conjurer on your side. From Bob's Chronofoil captures of 2026-11-06 and 07 (`questkit chronofoil --battle`: 130088ec 0.9, 3c56e09f 0.7, 21f967d2 0.9): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
 }

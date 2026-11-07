@@ -4,54 +4,54 @@
     "recorded_amounts": {
         "872": {
             "players": 76,
-            "npcs": 70
+            "npcs": 83.5
         },
         "57": {
-            "npcs": 790.0
+            "npcs": 770
         },
         "865": {
             "npcs": 200
         }
     },
     "rotation": {
-        "pace": 20.7,
+        "pace": 25.1,
         "actions": [
             {
                 "action": 865,
-                "every": 20.7,
-                "comment": "1 use; every 20.7 s"
+                "every": 25.1,
+                "comment": "2 uses by 2; every 25.1 s"
             }
         ]
     },
     "timepoints": [
         {
-            "time": 0.5,
+            "time": 0.6,
             "data": {
                 "type": "action",
                 "action_id": 60,
                 "target": "itself"
             },
-            "comment": "60 on itself, 2 uses by 2, first 0.3 s after its pull (median)"
+            "comment": "60 on itself, 3 uses by 3, first 0.6 s after its pull (median)"
         },
         {
-            "time": 2.3,
+            "time": 4.6,
             "data": {
                 "type": "action",
                 "action_id": 59,
                 "target": "itself"
             },
-            "comment": "59 on itself, 2 uses by 2, first 2.3 s after its pull (median)"
+            "comment": "59 on itself, 3 uses by 3, first 4.6 s after its pull (median)"
         },
         {
-            "time": 3.2,
+            "time": 1.6,
             "data": {
                 "type": "action",
                 "action_id": 55,
                 "target": "itself"
             },
-            "comment": "55 on itself, 1 use, first 3.2 s after its pull (median)"
+            "comment": "55 on itself, 2 uses by 2, first 1.6 s after its pull (median)"
         }
     ],
     "timeline_always_plays": false,
-    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the second wave's pugilist (BNpcBase 1734, BNpcName 2079, layout 4261302): level 35, 732 HP, ClassJob 2; Second Wind (57) on itself when low. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.9, 0.7`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the second wave's pugilist (BNpcBase 1734, BNpcName 2079, layout 4261302): level 35, 732 HP, ClassJob 2; Second Wind (57) on itself when low. From Bob's Chronofoil captures of 2026-11-06 and 07 (`questkit chronofoil --battle`: 130088ec 0.9, 3c56e09f 0.7, 21f967d2 0.9): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
 }

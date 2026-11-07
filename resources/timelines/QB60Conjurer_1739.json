@@ -4,49 +4,52 @@
     "attack_range": 25.0,
     "recorded_amounts": {
         "127": {
-            "npcs": 224.5
+            "npcs": 237
         },
         "119": {
             "npcs": 171
         },
-        "121": {
-            "npcs": 61.0
-        },
         "120": {
-            "npcs": 499
+            "npcs": 496.5
+        },
+        "121": {
+            "npcs": 61
+        },
+        "135": {
+            "npcs": 901
         }
     },
     "rotation": {
-        "pace": 13.1,
+        "pace": 13.2,
         "actions": [
             {
                 "action": 127,
                 "every": 13.2,
-                "comment": "27 uses by 2 (5.6-34.7 s apart); every 13.2 s"
+                "comment": "35 uses by 3 (5.6-59.3 s apart); every 13.2 s"
             },
             {
                 "action": 119,
-                "every": 13.1,
-                "comment": "10 uses by 2 (5.6-51.5 s apart); every 13.1 s"
+                "every": 15.8,
+                "comment": "19 uses by 3 (5.6-59.3 s apart); every 15.8 s"
             },
             {
                 "action": 121,
                 "every": 36.0,
-                "comment": "7 uses by 2 (4.8-56.9 s apart); every 36.0 s"
+                "comment": "8 uses by 3 (4.8-56.9 s apart); every 36.0 s"
             }
         ]
     },
     "timepoints": [
         {
-            "time": 85.3,
+            "time": 129.3,
             "data": {
                 "type": "action",
                 "action_id": 3669,
                 "target": "itself"
             },
-            "comment": "3669 on itself, 2 uses by 2, first 85.3 s after its pull (median)"
+            "comment": "3669 on itself, 3 uses by 3, first 129.3 s after its pull (median)"
         }
     ],
     "timeline_always_plays": false,
-    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the conjurer on your side from the start (BNpcBase 1739, BNpcName 2081, layout 4261257): level 38, 3787 HP, ClassJob 6; Cure (120, the director's heals) on the gladiator and you; never an auto-attack. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.9, 0.7`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the conjurer on your side from the start (BNpcBase 1739, BNpcName 2081, layout 4261257): level 38, 3787 HP, ClassJob 6; Cure (120, the director's heals) on the gladiator and you; never an auto-attack. From Bob's Chronofoil captures of 2026-11-06 and 07 (`questkit chronofoil --battle`: 130088ec 0.9, 3c56e09f 0.7, 21f967d2 0.9): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
 }

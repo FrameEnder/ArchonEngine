@@ -5,11 +5,11 @@
     "recorded_amounts": {
         "31086": {
             "players": 85,
-            "npcs": 173
+            "npcs": 172.0
         },
         "31085": {
             "players": 110,
-            "npcs": 212.0
+            "npcs": 214.0
         },
         "168": {
             "npcs": 36.5
@@ -21,22 +21,22 @@
             {
                 "action": 31086,
                 "every": 9.9,
-                "comment": "23 uses by 4 (4.6-58.2 s apart); every 9.9 s"
+                "comment": "24 uses by 5 (4.6-58.2 s apart); every 9.9 s"
             },
             {
                 "action": 31085,
                 "every": 10.2,
-                "comment": "17 uses by 3 (5.6-46.8 s apart); every 10.2 s"
+                "comment": "24 uses by 4 (5.6-46.8 s apart); every 10.2 s"
             },
             {
                 "action": 169,
-                "every": 108.2,
-                "comment": "4 uses by 4; every 108.2 s"
+                "every": 103.3,
+                "comment": "5 uses by 5; every 103.3 s"
             },
             {
                 "action": 164,
-                "every": 103.3,
-                "comment": "4 uses by 3 (53.6 s apart); every 103.3 s"
+                "every": 101.3,
+                "comment": "5 uses by 4 (53.6 s apart); every 101.3 s"
             },
             {
                 "action": 168,
@@ -53,9 +53,9 @@
                 "action_id": 1163,
                 "target": "itself"
             },
-            "comment": "1163 on itself, 4 uses by 4, first 13.4 s after its pull (median)"
+            "comment": "1163 on itself, 5 uses by 5, first 13.4 s after its pull (median)"
         }
     ],
     "timeline_always_plays": false,
-    "comment": "The quest battle (61) of quest 941: the one you fight (BNpcBase 1746, BNpcName 2083, layout 4256791): level 41, 17030 HP, ClassJob 26; Ruin and Ruin II at whoever it's on, its other spells now and then; never an auto-attack. Dragon's Blood (1162) is the director's (11-13 s after sequence 4, the quest battle's script). Its Eye for an Eye (1159) and Rouse (1160) went on its own adds, which a timeline can't aim at: left out. From Bob's Chronofoil captures 130088ec and 3c56e09f (2026-11-06, `questkit chronofoil --battle 0.11, 0.13, 0.15, 0.17`): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+    "comment": "The quest battle (61) of quest 941: the one you fight (BNpcBase 1746, BNpcName 2083, layout 4256791): level 41, 17030 HP, ClassJob 26; Ruin and Ruin II at whoever it's on, its other spells now and then; never an auto-attack. Dragon's Blood (1162) is the director's (11-13 s after sequence 4, the quest battle's script). Its Eye for an Eye (1159) and Rouse (1160) went on its own adds, which a timeline can't aim at: left out. From Bob's Chronofoil captures of 2026-11-06 and 07 (`questkit chronofoil --battle`: 130088ec 0.11, 3c56e09f 0.13, 3c56e09f 0.15, 3c56e09f 0.17, 21f967d2 0.13): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
 }

@@ -150,15 +150,16 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 * **The 21 main scenario quests of 2026-11-06** (518, 876, 878, 883, 884, 886, 887, 889, 890, 897, 910, 911, 912, 924,
   927, 938, 939, 940, 941, 3868, 3869; Bob's dumps and his two characters' runs, Chronofoil 130088ec and 3c56e09f):
-  untested in game. Lines for NPCs and objects retail didn't play are numbered by the client's IsAcceptEvent order
-  (Bringing out the Dead's bodies ACTOR14-16 and 20-23 weren't visited: their bars are guesses from the others').
+  untested in game; a third character's run (Chronofoil 21f967d2, 2026-11-07, 876 before 518) matched every step,
+  bar and scene. Lines for NPCs retail didn't play are numbered by the client's IsAcceptEvent order (Bringing out the
+  Dead's ACTOR14-16 and 20-23 weren't talked to in any of the three runs).
   876, 890, 924, 3868 and 3869 complete 877, 896, 925, 926, 917 and 937 with them (retail's FinishQuests, no rewards).
   questkit's fixture for Following the Evidence (911) had EOBJECT3 and 4 the wrong way round: `fixture` matches a
   step's places to its listeners in the Quest sheet's order, which isn't always right (fixed by hand from the
-  variables and scenes). Factual Folklore's key item on the beast (`event_item_effects.json`) gives retail's statuses
+  variables and scenes; since 2026-11-07 an existing fixture's base IDs win, so later runs keep the fix). Factual Folklore's key item on the beast (`event_item_effects.json`) gives retail's statuses
   and the fifth of its health, but what statuses 22 and 62 do to it isn't modelled.
 * **The Waking Sands' 92219** (2026-11-06): it came in ZoneInit with Bringing out the Dead at sequence 2, the only visit
-  after All Good Things in the captures; the layer that carries it belongs to ManFst405, a quest neither capture had,
+  after All Good Things in the captures (the third character's, 21f967d2, didn't go there); the layer that carries it belongs to ManFst405, a quest neither capture had,
   so it's taken from 876's acceptance (`layer_filters.json`). If ManFst405 is a quest between them, the Waking Sands
   shows the wrong layers until 876 is accepted.
 * **857, 517 and 3867** (2026-11-06, from Bob's dumps and three runs each, Chronofoil 650dbfd8, 0fd8bce0 and 48aaf6fe):
@@ -913,15 +914,16 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quest battles and directors
 
-* **In the Eyes of Gods and Men's battle (60)** (2026-11-06): untested in game, from two won runs (captures 130088ec,
-  3c56e09f). Picking up the rosary is new: the director answers a talk on its object with an event action and no scene
-  (`onObjectTalk`), which the client hasn't been seen to accept from Kawari yet. Whether sequence 6 waits for sequence
-  5 (the boss reached 50 % after it in both runs) and what happens to adds still up when the boss falls (none were)
-  isn't known. The wyvern is invulnerable and leaves on its own clock; whether it could be pulled off the player
+* **In the Eyes of Gods and Men's battle (60)** (2026-11-06): untested in game, from three won runs (captures 130088ec,
+  3c56e09f, 21f967d2). Picking up the rosary is new: the director answers a talk on its object with an event action and
+  no scene (`onObjectTalk`), which the client hasn't been seen to accept from Kawari yet. Whether sequence 6 waits for
+  sequence 5 isn't known (the boss reached 50 % after it in all three runs, once 7.4 s after). The boss's own Cure
+  under 15 % fits all three runs only roughly (its first came 0.7-8 s after it crossed). The wyvern is invulnerable and leaves on its own clock; whether it could be pulled off the player
   isn't known. 1738's Provoke (18) and 1739's Stoneskin (129) aren't in their timelines (no scripts).
-* **The Heretic among Us's battle (61)** (2026-11-06): untested in game, from four runs (two won, two lost). Dragon's
-  Blood is the director's, 12.0 s after sequence 4 (retail's 11.1-13.0); whether something else timed it isn't known.
-  Whether the boss's adds of sequence 3 must be down for anything (they always were before sequence 4) isn't known.
+* **The Heretic among Us's battle (61)** (2026-11-06): untested in game, from five runs (three won, two lost). Dragon's
+  Blood is the director's, 12.0 s after sequence 4 (retail's 11.1-13.0 in five runs); whether something else timed it
+  isn't known. The boss's adds of sequence 3 needn't be down for sequence 4 (one was still up in the third character's
+  run, 21f967d2).
   The boss's Eye for an Eye and Rouse (on his own adds) and the allies' Stoneskin are left out: a timeline can't aim
   at its own side. Bio's damage over time isn't scripted (only its status).
 * **Field enemies' timelines of 2026-11-06** (724, 725, 726, 1902, 1904, 2196, 46): from the quests' fights alone (two
