@@ -1,8 +1,9 @@
 -- The Stone Vigil
 --
 -- From Bob's Chronofoil captures of 2026-11-07: 1cefedf4 visit 0.1 (39 minutes with Duty Support, during In Pursuit of
--- the Past, quest 952, which unlocks it at its sequence 2; three wipes: the first boss once, the last boss twice) and
--- 341808b0 visit 0.2 (16 minutes, a tank through the Duty Finder with three other players, two of whom fell early);
+-- the Past, quest 952, which unlocks it at its sequence 2; three wipes: the first boss once, the last boss twice),
+-- 341808b0 visit 0.2 (16 minutes, a tank through the Duty Finder with three other players, two of whom fell early) and
+-- f842581d visit 0.1 (17 minutes, a conjurer through the Duty Finder; the client crashed at the exit);
 -- `questkit chronofoil --battle` and the visits' packets (docs/src/fork/dungeons.md). Numbers only; names and text are
 -- the game's. Where the runs differ, both are given. Public guides agree on the bosses' moves (Sources in the doc).
 --
@@ -121,8 +122,9 @@ SWINGE_PARTY = {
 -- ends, at x = 57 in lanes z = -72, -77.5, -82.5 and -88, each with a helper (14544, layout 9061123) riding with it
 -- using 28731 every 0.58 s from when the first set off until it arrives. Two set off 3.9 s after they came, the others
 -- 7.1 s after them, at 3.0 yalms a second down to x = 30.4 (8.9 s), and are gone 23.5 and 30.5 s after they came. The
--- first Typhoon's were three: -72 and -82.5, then -88 (both runs); after it four, in pairs: -72 with -82.5 and -77.5
--- with -88 (either first), or -72 with -77.5 first and -82.5 with -88 (or the other way: the tank's run).
+-- first Typhoon's were three: -72 and -82.5, then -88 (the first two runs), or -77.5 and -88, then -82.5 (the
+-- conjurer's); after it four, in pairs: -72 with -82.5 and -77.5 with -88 (either first), or -72 with -77.5 and -82.5
+-- with -88 (either first): all four orders seen over the three runs.
 NPC_WHIRLWIND = 9061122
 NPC_WHIRLWIND_HELPER = 9061123
 ACTION_TYPHOON = 28730
@@ -139,7 +141,10 @@ SECOND_PAIR_GOES = 11.0
 FIRST_PAIR_GONE = 23.5
 SECOND_PAIR_GONE = 30.5
 LANES = { -72.0, -77.5, -82.5, -88.0 }
-FIRST_TYPHOON = { { -72.0, -82.5 }, { -88.0 } }
+FIRST_TYPHOONS = {
+    { { -72.0, -82.5 }, { -88.0 } },
+    { { -77.5, -88.0 }, { -82.5 } },
+}
 TYPHOONS = {
     { { -72.0, -82.5 }, { -77.5, -88.0 } },
     { { -77.5, -88.0 }, { -72.0, -82.5 } },
@@ -182,11 +187,17 @@ SHEET_AFTER = 16.8
 DECIDE_AFTER = 26.0
 FIRST_DECIDE_AFTER = 30.1
 NEXT_ROUND_AFTER = 4.1
--- When it flies (its health, in percent, in the five pulls): the first time as soon as it's below 85 % at any of its
--- moves (81.6-82.8 % at the first round's end in three pulls; 86-88 % at the first round's Frost Breath in the tank's
--- run, which it flew instead of); once more between 50 and 70 % at a round's end (65.6-66.0 % twice; at 48-55 % it
--- didn't, three times); then below 40 % at every round's end, with the Sheets of Ice (34.6-35.7 %, 16.3 %, 12.3 %).
+-- When it flies (its health, in percent, in the six pulls): the first time as soon as it's below 85 % while its round's
+-- Frost Breath or Sheet of Ice is still to come, once it isn't casting (0 and 1.8 s after it fell below in the last two
+-- runs), else at the round's end (2.8-7.1 s after, three pulls); once more between 50 and 70 % at a round's end (59.7-
+-- 66.0 % three times; at 48-55 % it didn't, three times); then below 40 % at every round's end, with the Sheets of Ice
+-- (34.6-35.7 %, 16.3 %, 12.3 %, 23.0 %). Falling below 50 % with a Frost Breath or Sheet of Ice to come, it begins a new
+-- round instead at that move's time (the conjurer's run: 4.1 s later, as after a round's end; in the other pulls it
+-- fell below 50 % after its round's last move).
 FLY_FIRST_BELOW = 85
+NEW_ROUND_BELOW = 50
+-- How long after a move it doesn't take off (the longest of its casts, Rime Wreath's 2.7 s, and a moment.)
+CASTING_FOR = 3.0
 FLY_SECOND = { 50, 70 }
 FLY_SHEETS_BELOW = 40
 -- Its flights (from SetTargetable off and ActionTimeline 1385): over the spot of each Cauterize 4.1 s later (an
@@ -219,8 +230,8 @@ SHEETS_SPREAD_AFTER = 1.5
 SHEETS_SPREAD = { tank = { 0.0, -267.0 }, dps = { 17.75, -253.44 }, healer = { 0.0, -229.0 } }
 SHEETS_ASIDE = { tank = { -7.0, -267.0 }, dps = { 19.0, -263.0 }, healer = { 7.0, -229.0 } }
 
--- What the coffers held on retail, one list per opening seen (item IDs; the Duty Support run's, then the tank's where
--- its coffer is known). 179, 180 and 182 come as the first boss falls, 181, 183 and 184 as the second does, 185 at the
+-- What the coffers held on retail, one list per opening seen (item IDs; the Duty Support run's, then the tank's and the
+-- conjurer's where its coffer is known). 179, 180 and 182 come as the first boss falls, 181, 183 and 184 as the second does, 185 at the
 -- clear.
 LOOT = {
     [179] = { { 7033 } },
@@ -229,7 +240,7 @@ LOOT = {
     [181] = { { 31533 } },
     [183] = { { 31518 } },
     [184] = { { 31525 } },
-    [185] = { { 10438, 7033 }, { 7033, 2176 } },
+    [185] = { { 10438, 7033 }, { 7033, 2176 }, { 7033, 31528, 1927 } },
 }
 COFFERS_BOSS1 = { 179, 182, 180 }
 COFFERS_BOSS2 = { 181, 184, 183 }
@@ -449,10 +460,27 @@ function onUpdate(director, health, player_health, info)
     if boss3_started and not boss3_pulled and not boss3_dead and pulled(info, BNPC_BOSS3) then
         boss3_pulled = true
         director:update_shortcut(SHORTCUT_BOSS3)
-        isgebind = { flights = 0, second = false, flying = false, next = clock + FIRST_ROUND_AFTER, step = 1, first = true }
+        isgebind = {
+            flights = 0,
+            second = false,
+            flying = false,
+            next = clock + FIRST_ROUND_AFTER,
+            step = 1,
+            first = true,
+            new_round = false,
+            moved_at = -CASTING_FOR,
+        }
     end
-    if isgebind ~= nil and not boss3_dead and not isgebind.flying and clock >= isgebind.next then
-        isgebindStep(director, health, info)
+    if isgebind ~= nil and not boss3_dead and not isgebind.flying then
+        local boss = info ~= nil and info[BNPC_BOSS3] or nil
+        local hp = health ~= nil and health[BNPC_BOSS3] or 100
+        -- Below 85 % with its Frost Breath or Sheet of Ice to come: up at once, once it isn't casting.
+        if boss ~= nil and isgebind.flights == 0 and hp < FLY_FIRST_BELOW and (isgebind.step == 2 or isgebind.step == 3)
+            and clock - isgebind.moved_at >= CASTING_FOR then
+            fly(director, false, boss.id)
+        elseif clock >= isgebind.next then
+            isgebindStep(director, health, info)
+        end
     end
 end
 
@@ -528,7 +556,8 @@ function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
             end
         end
         typhoons = typhoons + 1
-        local pairs_now = typhoons == 1 and FIRST_TYPHOON or TYPHOONS[math.random(#TYPHOONS)]
+        local pairs_now = typhoons == 1 and FIRST_TYPHOONS[math.random(#FIRST_TYPHOONS)]
+            or TYPHOONS[math.random(#TYPHOONS)]
         after(WHIRLWINDS_AFTER, function(d)
             if not boss2_dead then
                 typhoon(d, pairs_now)
@@ -580,12 +609,10 @@ function typhoon(director, lanes)
     director:delay(FIRST_PAIR_GOES)
     director:party_positions(TYPHOON_LANE[first_free], SECOND_PAIR_GOES - FIRST_PAIR_GOES)
     director:delay(SECOND_PAIR_GOES)
-    -- The first Typhoon's second "pair" is the outer lane alone: the middle lane they're in stays free.
-    if #lanes[2] > 1 then
-        director:party_positions(TYPHOON_LANE[second_free], FIRST_PAIR_GONE - SECOND_PAIR_GOES)
-    else
-        director:party_positions(TYPHOON_LANE[first_free], FIRST_PAIR_GONE - SECOND_PAIR_GOES)
-    end
+    -- Out of the lane the second set goes down, if they're in it, into the other, behind the first set (the first
+    -- Typhoon's second "set" is one lane: an outer one leaves them where they are.)
+    local stay = contains(lanes[2], first_free) and second_free or first_free
+    director:party_positions(TYPHOON_LANE[stay], FIRST_PAIR_GONE - SECOND_PAIR_GOES)
     director:delay(0)
 end
 
@@ -601,6 +628,16 @@ function isgebindStep(director, health, info)
     if state.flights == 0 and hp < FLY_FIRST_BELOW then
         fly(director, false, boss.id)
         return
+    end
+    -- Below 50 % for the first time with a move of its round to come: a new round instead.
+    if not state.new_round and hp < NEW_ROUND_BELOW and (state.step == 2 or state.step == 3) then
+        state.new_round = true
+        state.step = 1
+        state.next = clock + NEXT_ROUND_AFTER
+        return
+    end
+    if state.step ~= 4 then
+        state.moved_at = clock
     end
     if state.step == 1 then
         director:actor_use_action(boss.id, ACTION_RIME_WREATH)
@@ -620,6 +657,9 @@ function isgebindStep(director, health, info)
         state.next = state.round_at + (state.first and FIRST_DECIDE_AFTER or DECIDE_AFTER)
     else
         state.first = false
+        if hp < NEW_ROUND_BELOW then
+            state.new_round = true
+        end
         if hp < FLY_SHEETS_BELOW then
             fly(director, true, boss.id)
         elseif not state.second and state.flights >= 1 and hp >= FLY_SECOND[1] and hp < FLY_SECOND[2] then

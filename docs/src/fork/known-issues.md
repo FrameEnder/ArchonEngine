@@ -914,9 +914,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## The Stone Vigil (2026-11-07)
 
-* Untested in game, from two runs (Bob's Chronofoil captures 1cefedf4 with Duty Support, three wipes, and 341808b0 a
-  tank's Duty Finder run); the bosses' rules are fits to them: Swinge twice below 50 %, the last boss's flights below
-  85 %, between 50 and 70 % at a round's end (seen twice, skipped three times at 48-55 %) and below 40 %. Where its
+* Untested in game, from three runs (Bob's Chronofoil captures 1cefedf4 with Duty Support, three wipes, 341808b0 a
+  tank's and f842581d a conjurer's Duty Finder runs); the bosses' rules are fits to them: Swinge twice below 50 %, the
+  last boss's flights below 85 % (at once if its round isn't over), between 50 and 70 % at a round's end and below
+  40 %, and a new round as it falls below 50 % mid-round (seen once). Where its
   rounds and flights stand when it's pulled again after a wipe follows the script's reset, not retail's (not seen).
 * The first boss's run to its spot is one ActorMove (the client walks it there at 90); the server has it there at
   once, and it's kept from acting on its own for the run (`busy_bnpc`). Its Swinge is cast on itself facing its target
