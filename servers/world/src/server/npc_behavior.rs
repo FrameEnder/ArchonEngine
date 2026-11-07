@@ -1692,15 +1692,17 @@ pub fn reset_after_wipe(
     let ids: Vec<ObjectId> = instance
         .actors
         .iter()
+        // NPCs only, before anything asks for their spawn: an event object's or a coffer's has none (asking brought the
+        // world server down at a wipe in the Stone Vigil, Bob's bundle 20261107-215105.)
         .filter(|(id, actor)| {
-            !instance.party_bots.contains_key(id)
+            matches!(actor, NetworkedActor::Npc { state, enmity, spawn, .. }
+                if *state != NpcState::Dead
+                    && spawn.common.health_points > 0
+                    && (*state == NpcState::Hate
+                        || !enmity.is_empty()
+                        || spawn.common.health_points < spawn.common.max_health_points))
+                && !instance.party_bots.contains_key(id)
                 && crate::server::action::at_war(players_enemies, actor)
-                && matches!(actor, NetworkedActor::Npc { state, enmity, spawn, .. }
-                    if *state != NpcState::Dead
-                        && spawn.common.health_points > 0
-                        && (*state == NpcState::Hate
-                            || !enmity.is_empty()
-                            || spawn.common.health_points < spawn.common.max_health_points))
         })
         .map(|(id, _)| *id)
         .collect();
