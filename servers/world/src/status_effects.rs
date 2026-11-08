@@ -12,15 +12,23 @@ pub struct StatusEffects {
 }
 
 impl StatusEffects {
-    /// Adds a status, or refreshes it (new param, duration and source.) A duration of 0 never runs out.
-    pub fn add(&mut self, effect_id: u16, effect_param: u16, duration: f32, source: ObjectId) {
+    /// Adds a status, or refreshes it (new param, duration and source.) A duration of 0 never runs out. Returns its
+    /// slot in the list (where it already was when refreshed.)
+    pub fn add(
+        &mut self,
+        effect_id: u16,
+        effect_param: u16,
+        duration: f32,
+        source: ObjectId,
+    ) -> usize {
         let index = self.find_or_create_status_effect(effect_id);
         let status_effect = &mut self.status_effects[index];
         status_effect.param = effect_param;
         status_effect.duration = duration;
         status_effect.source_actor_id = source;
         self.expires[index] = expiry(duration);
-        self.dirty = true
+        self.dirty = true;
+        index
     }
 
     fn find_or_create_status_effect(&mut self, effect_id: u16) -> usize {

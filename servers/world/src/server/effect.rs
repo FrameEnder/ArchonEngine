@@ -240,13 +240,14 @@ pub fn gain_effect_instance(
         return 0;
     };
 
-    let index = status_effects.len() as u8;
-    status_effects.add(
+    // Its slot: where it already was when it's refreshed, not past the end (a second Regen on someone who had one
+    // showed two of them, its EffectResult pointing at a new slot: Bob's bundle 20261108-145830.)
+    let index = status_effects.add(
         effect_id,
         effect_param,
         effect_duration,
         effect_source_actor_id,
-    );
+    ) as u8;
 
     if inform_players {
         {

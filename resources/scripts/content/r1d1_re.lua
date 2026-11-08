@@ -97,12 +97,17 @@ SPRITES_AFTER = 0.3
 -- 2.8 yalms apart, speed byte 90) to one of three spots at the room's edge, never the one it's at, arriving as it
 -- begins (`sweep_bnpc`: one ActorMove there snapped it to the spot on the client, Bob's bundle 20261107-212704); below half its health it Swinges
 -- again from there 6.4 s later (6.3-6.4), turned to its target (every double was at 45-49 % or below, every single at
--- 68 % or above). It faces its target as it casts.
+-- 68 % or above). The first faces into the room: its target, if that's within 0.72 rad of the room's middle (0, 116),
+-- else the nearer edge of that (all 13 first Swinges in the three runs were 0.02-0.72 off the middle; the second ones
+-- 1.95-2.41 off, at the tank who had stepped round it). Facing its target wherever it stood turned it to the wall
+-- (Bob's bundle 20261108-145830).
 ACTION_SWINGE = 903
 SWINGE_FIRST = 14.4
 SWINGE_EVERY = 31.0
 SWINGE_RUN = 2.4
 SWINGE_RUN_SPEED = 9.0
+SWINGE_ROOM_MIDDLE = { x = 0.0, z = 116.0 }
+SWINGE_OFF_MIDDLE = 0.72
 SWINGE_AGAIN_AFTER = 6.4
 SWINGE_TWICE_BELOW = 50
 SWINGE_CAST = 3.7
@@ -533,8 +538,7 @@ function swinge(director, health, info)
             return
         end
         local target = positionOf(now_info, now_boss.target_id)
-        d:move_bnpc(BNPC_BOSS1, spot.x, spot.y, spot.z, target ~= nil and facing(spot, target) or facing(spot, boss),
-            RUN_SPEED)
+        d:move_bnpc(BNPC_BOSS1, spot.x, spot.y, spot.z, intoTheRoom(spot, target), RUN_SPEED)
         d:actor_use_action(now_boss.id, ACTION_SWINGE)
     end)
     if twice then
@@ -550,6 +554,18 @@ function swinge(director, health, info)
             d:actor_use_action(now_boss.id, ACTION_SWINGE)
         end)
     end
+end
+
+-- The first Swinge's facing from `spot`: at its target, kept within SWINGE_OFF_MIDDLE of the room's middle.
+function intoTheRoom(spot, target)
+    local middle = facing(spot, SWINGE_ROOM_MIDDLE)
+    if target == nil then
+        return middle
+    end
+    local off = facing(spot, target) - middle
+    off = (off + math.pi) % (2 * math.pi) - math.pi
+    off = math.max(-SWINGE_OFF_MIDDLE, math.min(SWINGE_OFF_MIDDLE, off))
+    return middle + off
 end
 
 -- The bosses' actions the director answers.

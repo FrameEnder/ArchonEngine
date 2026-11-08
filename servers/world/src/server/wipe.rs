@@ -271,6 +271,23 @@ pub fn wipe_tick(
             entrance_circle(&mut network, instance, true);
         }
 
+        // The party's NPCs come back with them, out of the fight: those still standing had fought on, and the reset
+        // boss, finding one beside it, took it up again at once (Bob's bundle 20261108-145830: "boss did not reset").
+        let bots: Vec<(ObjectId, ObjectId)> = instance
+            .party_bots
+            .iter()
+            .map(|(id, bot)| (*id, bot.leader))
+            .collect();
+        for (bot, leader) in bots {
+            party_bot::get_up_beside(&network, instance, bot, leader);
+            if let Some(bot) = instance.party_bots.get_mut(&bot) {
+                bot.pulled.clear();
+                bot.answers.clear();
+                bot.dodge = None;
+                bot.raising = None;
+            }
+        }
+
         // The duty's enemies that were fighting go back where they began, whole (`npc_behavior::reset_after_wipe`),
         // and its sealed boss rooms open again, their pending seals dropped (`reopen_rooms_after_wipe`).
         // (The game data's lock let go before the network's is taken.)
