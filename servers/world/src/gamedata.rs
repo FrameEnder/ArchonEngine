@@ -647,6 +647,16 @@ struct ActionAreas {
     cone_angles: HashMap<u32, f32>,
     #[serde(default)]
     spares_while: HashMap<u32, u16>,
+    #[serde(default)]
+    sheltered_by: HashMap<u32, Shelter>,
+}
+
+/// What shelters whom from an area attack (`action_areas.json`'s `sheltered_by`): a living battle NPC of BNpcBase
+/// `base` standing between the caster and them, within `radius` yalms of the straight line between the two.
+#[derive(Debug, Clone, Copy, serde::Deserialize)]
+pub struct Shelter {
+    pub base: u32,
+    pub radius: f32,
 }
 
 fn action_areas() -> &'static ActionAreas {
@@ -661,6 +671,12 @@ fn action_areas() -> &'static ActionAreas {
 /// Vigil's whirlwinds hit each of the party once, then nothing while the 2656 they gave lasted.
 pub fn action_spared_while(action: u32) -> Option<u16> {
     action_areas().spares_while.get(&action).copied()
+}
+
+/// What shelters whom from this area attack, if anything does (`action_areas.json`'s `sheltered_by`): the Howling
+/// Eye's Mistral Shriek, which the monoliths take for whoever hides behind them.
+pub fn action_sheltered_by(action: u32) -> Option<Shelter> {
+    action_areas().sheltered_by.get(&action).copied()
 }
 
 /// Reads a cone's angle from its omen's path, e.g. "gl_fan090_1bf" or "er_gl_fan120_1bf".

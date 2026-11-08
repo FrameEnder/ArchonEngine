@@ -1,0 +1,23 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "recorded_amounts": {
+        "665": {
+            "players": 206,
+            "npcs": 206
+        }
+    },
+    "timepoints": [
+        {
+            "time": 24.8,
+            "data": {
+                "type": "action",
+                "action_id": 665,
+                "target": "itself"
+            },
+            "comment": "its blast round itself 24.8 s after it came, if it still stood (one of eight)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Howling Eye: the satin plumes (BNpcBase 688, BNpcName 1647, layout 4246291; 200 HP), 11.4 s after Aerial Blast's cast began (the Duty Support run): each goes for the player, never attacks, and blows (665) about 24.8 s after it came unless killed first. From Bob's Chronofoil captures 6a5244ec (Duty Support), 09ecf8e7 and 6c495fc4 (the Duty Finder) of 2026-11-08, `questkit chronofoil --battle`: three runs, all won. Hitbox not recorded."
+}

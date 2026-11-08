@@ -912,6 +912,20 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Weight of the Land and Rock Throw never fell on Titan's target in the runs; Kawari keeps them off it on purpose.
   Retail's helpers cast at a point on the ground; Kawari's are put there and cast on themselves.
 
+## Quests 519 and 520 and the Howling Eye (2026-11-08)
+
+* Untested in game, from three runs (Bob's Chronofoil captures 6a5244ec with Duty Support, 09ecf8e7 and 6c495fc4 by
+  the Duty Finder).
+* Unseen on retail, so guesses: 519's Elyenora yes/no (scene 9: "yes" to POPRANGE3 in Ul'dah) and 520's (scene 2: to
+  POPRANGE0); 520's last zone change taken to be POPRANGE1 (retail's ZoneInit named another pop range, 4107477, but its
+  pop range field didn't match the quest's elsewhere either). 519's scene 2 (Lionnellais before the quest) isn't
+  played.
+* The Howling Eye: Garuda's second Mistral Shriek (64.8 s after the first) and what follows 661 come from the one run
+  that got that far; after 661 she only fights by her timeline. Her timeline after she comes back is a fit to the
+  runs (656 5.0 s on, 657 11.0, 658 18.8, 659 33.0). The monoliths shelter 2.0 yalms either side of the line (a guess).
+  Feather Rain hit no one on retail and does nothing here but its animation. The monoliths never broke in the runs;
+  whether they can isn't scripted. Her other statuses (lost on her: 9, 144, 163, 861, 1193) aren't played.
+
 ## Quests 963-975 and quest battle 86 (2026-11-08)
 
 * Scripted from three runs each (Bob's Chronofoil captures d7993cf0, 195176f8 and 0d10bf45), untested in game.

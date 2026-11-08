@@ -15,6 +15,7 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | The Thousand Maws of Toto-Rak | 1 | 1039 | `content/f1r1_re.lua` | one run with Duty Support (caa5e908) and two Duty Finder runs (1fac2416, 2528a32d), 2026-10-30 |
 | Haukke Manor | 6 | 1040 | `content/f1d2_re.lua` | one run with Duty Support (5d9c7d7f) and three Duty Finder runs (e7580e0d: twice as the tank, once as the healer), 2026-11-02 |
 | The Navel (Titan) | 57 | 1046 | `content/s1fa_re.lua` | one run with Duty Support (650dbfd8) and two Duty Finder runs (0fd8bce0, 48aaf6fe), 2026-11-06 |
+| The Howling Eye (Garuda) | 58 | 1047 | `content/r1fa_re.lua` | one run with Duty Support (6a5244ec) and two Duty Finder runs (09ecf8e7, 6c495fc4), 2026-11-08 |
 
 ## Facing at the entrance
 
@@ -747,6 +748,60 @@ alone while he was untargetable (their targets "no one" through each leap) and b
 **Leaving** after the clear during Lord of Crags puts the player by the beastman aetheryte in Upper La Noscea (the
 quest's `set_duty_exit`, [Quests](quests.md)).
 
+
+## The Howling Eye
+
+From Bob's Chronofoil captures of 2026-11-08, during Lady of the Vortex (quest 519, which unlocks it): `6a5244ec`
+visit 0.6 (Duty Support, Bob a level 44 conjurer), `09ecf8e7` visit 0.2 and `6c495fc4` visit 0.4 (the Duty Finder with
+three other players), each won at the first attempt (149, 182 and 281 s from the pull). Read with `questkit chronofoil
+--battle` and the visits' packets (numbers only); Cactbot has no timeline for it. ContentFinderCondition 58 (ShortCode
+`r1fa_re`), territory 1047 (`ffxiv/roc_r1/fld/r1fa`), InstanceContent 20003: Bob's `content-index.json`. The drop-in
+appends `bg/ffxiv/roc_r1/fld/r1fa/level/planmap.lgb`.
+
+**Who's there** (drop-in `r1fa_re_planmap.json`, from `questkit chronofoil --dropin 1047`, all `nonpop`: the director
+spawns them; level 44): Garuda (BNpcBase 239, layout 4246177, 44176 HP) at (1.14, -1.95, -18.0) facing south, toward
+the entrance (players come in facing -3.14, `ENTRANCE_ROTATION`); her helper (1570, 4246419, hidden) in the middle; the
+four monoliths (237, layouts 4246138-4246141, 7800 HP, battalion 0, display flags 0x40208: unseen and untargetable) at
+about 8 yalms from the middle; the razor plumes (238, all layout 4246290) and satin plumes (688, 4246291), 200 HP.
+
+**Garuda** (`TrialGaruda_239.json`, `from_pull`): auto-attack 870 (281 to players, 166 to Duty Support's members);
+656 at 2.3 s and every 17.2, 657 at 9.1 and every 15.2, 658 at 16.6, 659 (2.2 s round her, a 4 s stun) at 31.8, all
+three runs to a tenth. Every big move begins with her **vanishing**: untargetable, ActionTimeline 1415 (ActorControl
+407), and 3.6 s later back (targetable, 1416) where it's cast from, the cast 0.7 s after, her timeline starting again
+from then (anchor 1416: 656 3.9-7.1 s on, 657 10.8-12.4, 658 18.8-20.3):
+* *Below 80 %* (1.7-3.4 s after her health fell below, not while she casts): **Mistral Shriek** (667, 3.7 s; 4.5
+  once) from the north (-0.02, -1.85, -21.71), on everyone but those behind a monolith, and the monoliths themselves
+  (1216 to players, 719 to a monolith). Duty Support's members gather at (-8, -4), behind the monolith at (-6.37,
+  -6.36) and 0.5 yalms off the line through it, and were never hit; the Thaumaturge says 14382 as it begins. 13.0 s
+  after it began her 1412 and six razor plumes where she stands, two at a time a second apart. While she's above 50 %,
+  again 64.8 s after she vanished (the Duty Support run; the others were below 50 % by then).
+* *Below 50 %*: her line 3701 at once (0.3-1.1 s after), 1.0 s on she vanishes; back, 1412 0.7 s on and eight razor
+  plumes at the eight spots round the arena (about 20 yalms out), two every 2 s from 1.3 s on, in a different order
+  each run.
+* *Below 40 %* (0.6-0.7 s after, 3.0 once): back in the middle, her line 3702 and **Mistral Song** (662, 3.7 s, everyone:
+  1061 to players, all twelve hits); her line 3703 11.0 s after it began; 16.1 s after it her 1411 and **Feather Rain**
+  (664, her helper's, 2.7 s in the middle every 5.2 s to the end, which hit no one in 32 casts); 33.0 s after it
+  **Aerial Blast** (660, 3.7 s) from the middle; 11.4 s after that 1412 and eight **satin plumes** at the eight spots, a
+  second apart, each going for the player; 51.1 s after Aerial Blast began **661** (3.7 s) from the north. Only the
+  Duty Support run got past Aerial Blast; what comes after 661 isn't recorded.
+* At 0 her last line (3705), the closing cutscene (scene 3: 253, then 1, 18, 0, 0) and the duty complete.
+
+**The plumes** (`TrialRazorPlume_238.json`, `TrialSatinPlume_688.json`): no auto-attack; a razor plume goes for the
+nearest monolith from where it came, a satin plume for the player; one left standing blows (665, round itself: 705 to a
+monolith, about 200 to the party) 24.7 s after it came and falls 2.3 s later (ActorControl Kill; the director's
+`kill_bnpc`). 3 of 42 razor plumes and 1 of 8 satin plumes did.
+
+**Sheltering**: an area attack can spare whoever a living NPC of a given BNpcBase stands in front of
+(`action_areas.json`'s `sheltered_by`, read by `gamedata::action_sheltered_by`; `server/action.rs`'s `is_sheltered`,
+with a test): Mistral Shriek and the monoliths, 2.0 yalms either side of the line from her to them (a guess at their
+width). The party's NPCs go behind one as she casts it (`party_spots`).
+
+**The Duty Support members** (the third set, 44, 47, 46 under ActorControlSelf 276): the Conjurer's 14381 at the pull,
+the Thaumaturge's 14382 as the first Shriek begins; the Marauder's 13955 and the Thaumaturge's 13978 and 13985 were
+their chatter.
+
+**Leaving** after the clear during Lady of the Vortex puts the player at Ul'dah's airship landing (the quest's
+`set_duty_exit`, [Quests](quests.md)).
 
 ## The Stone Vigil
 

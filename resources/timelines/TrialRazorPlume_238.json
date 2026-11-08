@@ -1,0 +1,23 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "recorded_amounts": {
+        "665": {
+            "players": 191,
+            "npcs": 705
+        }
+    },
+    "timepoints": [
+        {
+            "time": 24.7,
+            "data": {
+                "type": "action",
+                "action_id": 665,
+                "target": "itself"
+            },
+            "comment": "its blast round itself 24.7 s after it came, if it still stood (three of 42 razor plumes, all three times 24.7)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Howling Eye: the razor plumes (BNpcBase 238, BNpcName 1647, layout 4246290; 200 HP): each goes for a monolith from where it comes, never attacks, and blows (665) 24.7 s after it came unless killed first, falling 2.3 s later (the director's). From Bob's Chronofoil captures 6a5244ec (Duty Support), 09ecf8e7 and 6c495fc4 (the Duty Finder) of 2026-11-08, `questkit chronofoil --battle`: three runs, all won: `npcs` the median of its blasts on the monoliths, `players` on Duty Support's members. Hitbox not recorded."
+}

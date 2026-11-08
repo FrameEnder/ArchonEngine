@@ -1178,8 +1178,11 @@ pub fn execute_action(
                 .lock()
                 .get_battalion_enemies(common_spawn.battalion as u32);
             let hits_npcs = timeline.recorded_amount(request.action_id, false).is_some();
-            // Whoever already has the status it spares leaves it unhurt (`action_spared_while`.)
+            // Whoever already has the status it spares leaves it unhurt (`action_spared_while`), and whoever hides
+            // behind what shelters from it (`action_sheltered_by`.)
             let spared = crate::gamedata::action_spared_while(request.action_id);
+            let shelter = crate::gamedata::action_sheltered_by(request.action_id);
+            let shelters = shelters_of(instance, shelter);
             for (id, other) in &instance.actors {
                 // Only characters: EObjs and coffers have no CommonSpawn (asking one for it panicked the server as
                 // Kottos' first marker went off, Bob's bundle of 2026-10-26.)
@@ -1190,6 +1193,17 @@ pub fn execute_action(
                     other
                         .status_effects()
                         .is_some_and(|effects| effects.time_left(status).is_some())
+                }) {
+                    continue;
+                }
+                if shelter.is_some_and(|shelter| {
+                    is_sheltered(
+                        &shelters,
+                        shelter.radius,
+                        *id,
+                        actor.position().0,
+                        other.position().0,
+                    )
                 }) {
                     continue;
                 }
@@ -3354,6 +3368,56 @@ pub fn execute_ornament_action(
 /// and the player alike, Bob's Chronofoil capture df6f5af9). A status on the caster itself or on its own side is a buff
 /// (Like Mother, Like Daughter's 1683s and 1687 cast 416 on themselves, its sprite 313), and a heal isn't hostile
 /// either: taken for attacks (`801f36f`), buffs with an area went to the caster's enemies instead of it.
+/// Where the living battle NPCs that shelter from an area attack stand (`action_sheltered_by`), by actor ID.
+fn shelters_of(
+    instance: &Instance,
+    shelter: Option<crate::gamedata::Shelter>,
+) -> Vec<(ObjectId, Vec3A)> {
+    let Some(shelter) = shelter else {
+        return Vec::new();
+    };
+    instance
+        .actors
+        .iter()
+        .filter_map(|(id, actor)| match actor {
+            NetworkedActor::Npc { spawn, .. }
+                if spawn.common.base_id == shelter.base && spawn.common.health_points > 0 =>
+            {
+                Some((*id, spawn.common.position.0))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// Whether someone at `victim` is behind one of `shelters` from an attack coming from `caster`: a shelter (not the
+/// victim itself) between the two on the ground, within `radius` of the line from the caster to them. The Howling Eye's
+/// monoliths take Mistral Shriek for whoever hides behind them, and are hit themselves (Bob's Chronofoil captures of
+/// 2026-11-08: Duty Support's members 0.5 yalms off the line through one, unhurt.)
+fn is_sheltered(
+    shelters: &[(ObjectId, Vec3A)],
+    radius: f32,
+    victim_id: ObjectId,
+    caster: Vec3A,
+    victim: Vec3A,
+) -> bool {
+    let to_victim = Vec2::new(victim.x - caster.x, victim.z - caster.z);
+    let length = to_victim.length();
+    if length < f32::EPSILON {
+        return false;
+    }
+    let along = to_victim / length;
+    shelters.iter().any(|(id, at)| {
+        if *id == victim_id {
+            return false;
+        }
+        let to_shelter = Vec2::new(at.x - caster.x, at.z - caster.z);
+        let ahead = to_shelter.dot(along);
+        let off_line = (to_shelter - along * ahead).length();
+        ahead > 0.0 && ahead < length && off_line <= radius
+    })
+}
+
 /// A heal for whoever the action lands on (not a drain's, which heals its user.)
 fn is_heal_on_target(effect: &TargetEffect) -> bool {
     matches!(effect.0, TargetEffectKind::Heal { unk1, .. } if unk1[4] & EFFECT_ON_SOURCE == 0)
@@ -3634,6 +3698,28 @@ mod area_tests {
         assert!(is_hostile_effect(&status, true));
         assert!(!is_hostile_effect(&status, false));
         assert!(!is_hostile_effect(&TargetEffect::default(), true));
+    }
+
+    /// The Howling Eye's Mistral Shriek from the north (0, -21.71): Duty Support's members at (-8, -4) were behind the
+    /// monolith at (-6.37, -6.36) and unhurt (Bob's Chronofoil capture 6a5244ec); someone beside it or in front isn't.
+    #[test]
+    fn behind_a_monolith() {
+        let shriek = Vec3A::new(0.0, -1.85, -21.71);
+        let monolith = (ObjectId(7), Vec3A::new(-6.37, -1.83, -6.36));
+        let shelters = [monolith];
+        let sheltered =
+            |x, z| is_sheltered(&shelters, 2.0, ObjectId(1), shriek, Vec3A::new(x, -1.7, z));
+        assert!(sheltered(-8.0, -4.0));
+        assert!(!sheltered(0.0, -4.0));
+        assert!(!sheltered(-4.0, -12.0));
+        // The monolith doesn't shelter itself.
+        assert!(!is_sheltered(
+            &shelters,
+            2.0,
+            ObjectId(7),
+            shriek,
+            monolith.1
+        ));
     }
 
     /// An area heal spreads to its target's side (quest battle 86's 1070); a drain's heal is its user's and doesn't.

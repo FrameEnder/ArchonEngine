@@ -1,0 +1,121 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 281,
+            "npcs": 166
+        },
+        "656": {
+            "players": 444.5,
+            "npcs": 408.5
+        },
+        "657": {
+            "players": 764.5,
+            "npcs": 423
+        },
+        "658": {
+            "players": 370,
+            "npcs": 357
+        },
+        "659": {
+            "players": 697
+        },
+        "660": {
+            "players": 827
+        },
+        "661": {
+            "players": 827
+        },
+        "662": {
+            "players": 1061,
+            "npcs": 1040
+        },
+        "667": {
+            "players": 1216,
+            "npcs": 719
+        }
+    },
+    "timepoints": [
+        {
+            "time": 2.3,
+            "every": 17.2,
+            "data": {
+                "type": "action",
+                "action_id": 656
+            },
+            "comment": "From the pull (all three runs to a tenth): 656 at 2.3 s, again at 19.5"
+        },
+        {
+            "time": 9.1,
+            "every": 15.2,
+            "data": {
+                "type": "action",
+                "action_id": 657
+            },
+            "comment": "657 on her target at 9.1-9.2 s, again at 24.3"
+        },
+        {
+            "time": 16.6,
+            "every": 34.0,
+            "data": {
+                "type": "action",
+                "action_id": 658
+            },
+            "comment": "658 at 16.6 s (two runs)"
+        },
+        {
+            "time": 31.8,
+            "every": 49.5,
+            "data": {
+                "type": "action",
+                "action_id": 659,
+                "target": "itself"
+            },
+            "comment": "659 (2.2 s, round her; stuns for 4 s) at 31.8 s (the Duty Support run), 49.5 s later again"
+        },
+        {
+            "time": 5.0,
+            "every": 17.2,
+            "after": 1416,
+            "data": {
+                "type": "action",
+                "action_id": 656
+            },
+            "comment": "After each time she comes back (the director's, from her cast's end or from her coming back when she casts nothing): 656 3.9-7.1 s on, then every 15.8-18.4 s"
+        },
+        {
+            "time": 11.0,
+            "every": 15.5,
+            "after": 1416,
+            "data": {
+                "type": "action",
+                "action_id": 657
+            },
+            "comment": "657 10.8-12.4 s on, then every 15-16.5 s"
+        },
+        {
+            "time": 18.8,
+            "every": 32.5,
+            "after": 1416,
+            "data": {
+                "type": "action",
+                "action_id": 658
+            },
+            "comment": "658 18.8-20.3 s on (three times), 31.8 s later again"
+        },
+        {
+            "time": 33.0,
+            "every": 49.5,
+            "after": 1416,
+            "data": {
+                "type": "action",
+                "action_id": 659,
+                "target": "itself"
+            },
+            "comment": "659 35.2 s on (once), 11.6 s on after Aerial Blast (once): a fit"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Howling Eye: Garuda (BNpcBase 239, BNpcName 1644, layout 4246177): level 44, 44176 HP; auto-attack 870 every 3.0 s from her pull (`from_pull`). Her vanishing, Mistral Shriek (667), Mistral Song (662), Aerial Blast (660), 661, the plumes and Feather Rain are the director's (content/r1fa_re.lua), and so is her timeline's restart each time she comes back (anchor 1416, the ActionTimeline she comes back with). From Bob's Chronofoil captures 6a5244ec (Duty Support), 09ecf8e7 and 6c495fc4 (the Duty Finder) of 2026-11-08, `questkit chronofoil --battle`: three runs, all won: `players` the median damage to the players, `npcs` to Duty Support's members (661 hit no one: Aerial Blast's taken). Hitbox not recorded."
+}
