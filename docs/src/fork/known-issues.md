@@ -912,6 +912,15 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Weight of the Land and Rock Throw never fell on Titan's target in the runs; Kawari keeps them off it on purpose.
   Retail's helpers cast at a point on the ground; Kawari's are put there and cast on themselves.
 
+## Quests 953-962 (2026-11-08)
+
+* Scripted from three runs each (Bob's Chronofoil captures 4bcbd425, 18a89a32 and de5beba7), untested in game.
+* Unseen on retail, so guesses: 953's Lionnellais yes/no (scene 2: "yes" sends the player to POPRANGE0 in New Gridania);
+  962's ferry skipper's yes/no in sequences 2 and 255 (scenes 5 and 8: "yes" takes the player across again); 961's
+  lines (4, 7, 10) and 962's (4) by when the client's IsAcceptEvent offers them.
+* All Due Precautions (954) is completed with 953, as retail did, with no reward and no script of its own; 957 and 958
+  weren't in the runs and have no scripts.
+
 ## The Stone Vigil (2026-11-07)
 
 * Untested in game, from three runs (Bob's Chronofoil captures 1cefedf4 with Duty Support, three wipes, 341808b0 a
