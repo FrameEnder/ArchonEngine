@@ -912,6 +912,22 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Weight of the Land and Rock Throw never fell on Titan's target in the runs; Kawari keeps them off it on purpose.
   Retail's helpers cast at a point on the ground; Kawari's are put there and cast on themselves.
 
+## Quests 963-975 and quest battle 86 (2026-11-08)
+
+* Scripted from three runs each (Bob's Chronofoil captures d7993cf0, 195176f8 and 0d10bf45), untested in game.
+* 968, 971 and 974 have no scripts: 3870 took their place and completes them, as retail did; nothing offers them.
+* Client scenes never played: 967's 4-7 and 10-13 (empty; the campfires EOBJECT0 and EOBJECT2 are listed for sequence
+  3 too, with no scene known for either), 3870's 5 and 6 (an empty scene and the pop-up message, likely for ITEM0
+  used on its enemy, which no run did).
+* Quest battle 86: territory 330 is taken to be Western La Noscea's ground (the run's spots stand on it). The one who
+  talks heals its side below 80 %, every 14 s at most: a fit (retail's came every 14-38 s, at 21-100 %). Its Regen
+  ticks only on the one the heal was aimed at. The bombs' loops are retail's positions, not the layout's own path; the
+  darting bombs' movement type (2) isn't sent. Bind from the thaumaturges' 1304 lasts 5 s (retail's ended after
+  2.5-5.7 s, perhaps when hit, which isn't scripted). The thaumaturges' spells are timed from their pull as a set
+  order; retail's nine each used a few in their own order. The fight starts as the lead-in's second scene ends, a
+  second before retail's. No lost run was recorded: losing (your health at 0) is sequence 0xFE and out 5 s later, as
+  the other battles.
+
 ## Quests 953-962 (2026-11-08)
 
 * Scripted from three runs each (Bob's Chronofoil captures 4bcbd425, 18a89a32 and de5beba7), untested in game.

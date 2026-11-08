@@ -342,6 +342,65 @@ a quest's entering event, 0 for every other event (228 events across the capture
   (18) is left out of its timeline (no script; the director's targeting does what it would).
 * The client's battle script (`ClsGla300Btl_00265`) has scenes 1 and 8 and OnSequence001 and 002 only.
 
+### Quest battle 86 — History Repeating (`content/questbattle/86.lua`)
+
+* Quest 967 (GaiUsc208_00967) enters it from the campfire (EOBJECT1: scene 8, EVENT_ACTION_WAITING2_MIDDLE's 5 s bar,
+  scene 9's YesNoQuestBattle; territory 330, duty 379). Territory 330 is taken to be a copy of Western La Noscea: the
+  run's spots stand on its ground (-42 under foot, 13 yalms from one of that zone's open-world enemies in `sea_s1f4`),
+  so its NPCs are layer `QB_GaiUsc208_001` of `sea_s1f4_planmap.json` (21 NPCs from `questkit chronofoil --dropin
+  330`, all `nonpop`), with retail's layout IDs, levels, HP, positions, display flags, character data flags (3, and 1
+  for the two below) and looks from Bob's Chronofoil captures d7993cf0, 195176f8 and 0d10bf45 (2026-11-08,
+  `--battle 0.1` of each: three runs, all won, level 44 players). Start spot (-305.5, -41.82, 697.34, facing 0) and
+  the opening's flags (0xF8402EF3) are the runs'.
+* No ally fights beside you. **The one who talks** (4294351, base 1632, BNpcName 1417, level 50, 258900 HP,
+  battalion 4, display flags 0x40008: untargetable) stands on the rise behind the enemies the whole fight; all eight
+  battle talks are its (portrait 73188) and so are the four NpcYells. **The director's helper** (4317701, base 2201,
+  0x40208: unseen) stands beside you; the one who talks throws 1329 at it once (a miss) and faces it from sequence 2
+  to 7. Both are out from `onSetup` (retail's spawned before the opening) and held.
+* **A lead-in before the fight**, as The Lominsan Way's: the director's scene 2 (0x2001, 10.1 s; its client script
+  waits 300 frames) with sequence 2, talk 81 5.1 s in and the throw 9.1 s in; scene 3 (0x2001, 270 frames) with
+  sequence 3 and talk 82 5.1 s in; scene 60000 1.0-1.1 s after scene 3 ended. Kawari starts the fight as scene 3
+  ends (`onSceneFinished`; the second's wait is left out, see below.)
+* **Five waves**, each brought in when the one before is down, the same in all three runs (seconds from the last
+  one's health reaching 0, which is the next sequence): sequence 4 and the first (a lancer, two marauders) 1.4-1.5 s
+  after the fight starts, NpcYell 1321 at 4.1; sequence 5, the second (lancer, thaumaturge, marauder) at 2.2-2.3,
+  talk 83 at 5.1, NpcYell 1342 at 10.0; sequence 6, talk 84 at 5.1, NpcYell 1343 at 10.1, the third (lancer,
+  marauder, two base 2200) at 15.3-15.5; sequence 7, talks 85 and 86 at 5.0 and 10.0, the bombs from 10.2-10.5, the
+  fourth (lancer, thaumaturge, marauder) at 15.4; sequence 8, talk 87 at 5.1, NpcYell 1344 at 10.0, the last (2202,
+  2683 HP, and a lancer and a thaumaturge who run in from behind) at 15.3-15.5; sequence 9 when it's down, talk 88
+  2.1 s later, "Duty Complete" and sequence 10 7.1 s after sequence 9, the battle's scene 10 (0x2001) 3.6 s after
+  that; the quest moves to sequence 4 with ITEM0 gone (`QUEST_VARS_AFTER_WIN`), the director to 254. The waves' timers
+  are 15.0 s where retail's waves came at 15.3-15.5: a timer set at a death fires up to half a second late on the
+  tick, and battle-sim drifted 2.0 s by the end of the first run with 15.5 (`questkit battle-sim 86`: 139 events in
+  three runs, within 0.8 s.)
+* **The one who talks heals its side** (1070: 5.7 s, an area aimed at one of them, 654 a heal, 630-978, and Regen
+  158 for about 18 s, 38-58 a tick) every 14-38 s while sequences 4-6 last, never after: `Battle`'s heal rule on its
+  side below 80 %, every 14 s, dropped at sequence 7. One cast healed three of its side (195176f8): an NPC's area heal
+  aimed at one of its own side now heals everyone of that side inside it ([Combat](combat.md)).
+* **The bombs** (sequence 7 on: one every 10 s from 10.2-10.5 s after it; from sequence 8 the clock starts again, one
+  8.3-8.5 s after it and every 8 s, the last wave's arrival not counting; none after sequence 9). Which of three
+  layouts comes is random (11, 11 and 16 bombs in the three runs, each layout often). Nobody can target them (display
+  flags 0x40008, 0x4000B). The two of base 1633 (4317589 and 4317648) wait 5 s, then run a loop each round the fight
+  at 9 yalms a second (ActorMove speed byte 90, movement type 2), the same loop every time (a patrol path of the
+  layout's that the client never sees; Kawari has retail's corners, from its positions every 0.3 s: 13 s and 22 s
+  around) and blow (1069, 200-243 on the player) when they pass within 3.2-3.8 yalms of you; 1634 (4317650) waits
+  5 s and comes for you at 1 yalm a second (speed byte 10), blowing within 3.9-5.3 yalms. Each falls 1.0 s after its
+  blast (ActorControl Kill, by itself; Defeated 3.1 s after the blast). Kawari: the director spawns and holds them,
+  moves them with `sweep_bnpc` (one line to each next corner; the creeper towards wherever you are, every tick),
+  tracks where each is itself (one layout can be out several times at once, and `info` has one entry a layout), and
+  has each blow (`actor_use_action` on you) and fall (`kill_bnpc`.)
+* Their fighting (timelines `QB86*`, from their pull): lancers (1647) auto-attack 871 and use Heartstopper (866) every
+  10.1 s, Life Surge and 477 on themselves early; marauders (1649) 870 with Heavy Swing, Fracture (33: a damage over
+  time, status 244, 18 s), 35, 34 on themselves and 47 (heals itself 4); thaumaturges (1648, 227 HP, who never
+  auto-attacked) Fire III, Fire, Scathe, Thunder II, Fire II, Manaward, Blizzard and 1304 (round itself: Bind, 13);
+  the third wave's pair (2200) 870 and 1330 (389) every 20.4 s; the last wave's leader (2202) 870 and Hell Slash (341)
+  every 8.3 s. Recorded amounts are the median damage to the player. New action scripts: `QB86Bomb_01069`,
+  `QB86Talker_01070`, `QB86Talker_01329`, `QB86Enemy_01330`, `QB86Thaumaturge_01304`, `QuestBattleNpc_00033`,
+  `QuestBattleNpc_00047`.
+* The client's battle script (`GaiUsc208Btl_00967`, Bob's extracted scripts of 2026-11-08) has scenes 1 (the opening),
+  2 and 3 (the lead-in's waits) and 10 (empty), OnSequence001 (no music), OnSequence004 (a message) and its objective
+  (TODO001 before sequence 4, TODO002 from it).
+
 ### Quest battle 60 — In the Eyes of Gods and Men (`content/questbattle/60.lua`)
 
 * Quest 912 (GaiUsb803_00912) enters it (ACTOR2's YesNoQuestBattle, scene 4, or EVENTRANGE0's, scene 18; territory

@@ -1,0 +1,26 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 46
+        },
+        "341": {
+            "players": 58
+        }
+    },
+    "timepoints": [
+        {
+            "time": 7.0,
+            "every": 8.3,
+            "data": {
+                "type": "action",
+                "action_id": 341,
+                "target": "target"
+            },
+            "comment": "Hell Slash: 6.7-7.2 s after it came out, then every 8.3 s (6.4-9.0)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "History Repeating's quest battle (86): the last wave's leader (BNpcBase 2202, BNpcName 2196, layout 4294766): level 42, 2683 HP; auto-attack 870 every 3.0 s from its pull (`from_pull`). From Bob's Chronofoil captures d7993cf0, 195176f8 and 0d10bf45 (2026-11-08, three runs of the battle, all won; level 44 players), `questkit chronofoil --battle 0.1`: `players` is the median damage to the player. Hitbox not recorded."
+}

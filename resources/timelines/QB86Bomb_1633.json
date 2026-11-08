@@ -1,0 +1,11 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "1069": {
+            "players": 230
+        }
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "History Repeating's quest battle (86): the darting bombs (BNpcBase 1633, BNpcName 2201, layouts 4317589 and 4317648; display flags 0x40008: untargetable): level 41, 1703 HP. Each ran one of two fixed loops round the fight at 9 yalms a second from about 5 s after it came out, and blew (1069) when it passed within 3.2-3.8 yalms of the player, falling 1.0 s later (Kill, by itself). The director moves it, has it blow and has it fall (content/questbattle/86.lua); 230 is the median of its 23 blasts on the player (200-243). From Bob's Chronofoil captures d7993cf0, 195176f8 and 0d10bf45 (2026-11-08, three runs of the battle, all won; level 44 players), `questkit chronofoil --battle 0.1`. Hitbox not recorded."
+}

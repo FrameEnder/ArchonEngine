@@ -1,0 +1,11 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "1069": {
+            "players": 230
+        }
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "History Repeating's quest battle (86): the creeping bomb (BNpcBase 1634, BNpcName 2201, layout 4317650; display flags 0x4000B: untargetable): level 41, 1703 HP. It came for the player at 1 yalm a second from about 5 s after it came out and blew (1069) within 3.9-5.3 yalms of them, falling 1.0 s later (Kill, by itself). The director moves it, has it blow and has it fall (content/questbattle/86.lua); 230 is the median of its 23 blasts on the player (200-243). From Bob's Chronofoil captures d7993cf0, 195176f8 and 0d10bf45 (2026-11-08, three runs of the battle, all won; level 44 players), `questkit chronofoil --battle 0.1`. Hitbox not recorded."
+}

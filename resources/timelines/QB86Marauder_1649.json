@@ -1,0 +1,77 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 15
+        },
+        "31": {
+            "players": 22.5
+        },
+        "33": {
+            "players": 13.5
+        },
+        "35": {
+            "players": 13.5
+        },
+        "37": {
+            "players": 41
+        },
+        "47": {
+            "players": 15
+        }
+    },
+    "timepoints": [
+        {
+            "time": 9.5,
+            "every": 20.0,
+            "data": {
+                "type": "action",
+                "action_id": 31,
+                "target": "target"
+            },
+            "comment": "Heavy Swing: 9.0-12.8 s after it came out"
+        },
+        {
+            "time": 11.8,
+            "every": 20.0,
+            "data": {
+                "type": "action",
+                "action_id": 33,
+                "target": "target"
+            },
+            "comment": "Fracture (its damage over time, 244, 18 s): 11.4-12.9 s after it came out"
+        },
+        {
+            "time": 15.8,
+            "every": 20.0,
+            "data": {
+                "type": "action",
+                "action_id": 35,
+                "target": "target"
+            },
+            "comment": "15.4-24.0 s after it came out"
+        },
+        {
+            "time": 22.0,
+            "data": {
+                "type": "action",
+                "action_id": 34,
+                "target": "itself"
+            },
+            "comment": "on itself (status 84): 20.0-27.8 s after it came out, in 3 of 15"
+        },
+        {
+            "time": 26.8,
+            "every": 20.0,
+            "data": {
+                "type": "action",
+                "action_id": 47,
+                "target": "target"
+            },
+            "comment": "26.6-27.0 s after it came out (a hit that heals it 4)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "History Repeating's quest battle (86): the marauders of every wave (BNpcBase 1649, BNpcName 2198, layouts 4294347, 4294348, 4294441, 4294754, 4294758): level 38, 606 HP; auto-attack 870 every 3.0 s from its pull (`from_pull`). Maim (37) came once in 15, after a Heavy Swing, and isn't here. From Bob's Chronofoil captures d7993cf0, 195176f8 and 0d10bf45 (2026-11-08, three runs of the battle, all won; level 44 players), `questkit chronofoil --battle 0.1`: `players` is the median damage to the player. Hitbox not recorded."
+}

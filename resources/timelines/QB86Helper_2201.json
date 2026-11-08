@@ -1,0 +1,6 @@
+{
+    "autoattack_action_id": 870,
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "History Repeating's quest battle (86): the director's helper (BNpcBase 2201, BNpcName 108, layout 4317701; battalion 0, display flags 0x40208: unseen and untargetable), beside where the player starts: level 40, 160100 HP. It never acted; the one who talks threw 1329 at it in the lead-in. Held (content/questbattle/86.lua). From Bob's Chronofoil captures d7993cf0, 195176f8 and 0d10bf45 (2026-11-08, three runs of the battle, all won; level 44 players), `questkit chronofoil --battle 0.1`."
+}

@@ -1,0 +1,44 @@
+{
+    "autoattack_action_id": 871,
+    "from_pull": true,
+    "recorded_amounts": {
+        "871": {
+            "players": 39
+        },
+        "866": {
+            "players": 119
+        }
+    },
+    "timepoints": [
+        {
+            "time": 4.8,
+            "data": {
+                "type": "action",
+                "action_id": 477,
+                "target": "itself"
+            },
+            "comment": "on itself (status 65), 4.7-6.8 s after it came out, in 6 of 15"
+        },
+        {
+            "time": 5.0,
+            "data": {
+                "type": "action",
+                "action_id": 83,
+                "target": "itself"
+            },
+            "comment": "Life Surge on itself (status 116), 4.9-8.9 s after it came out, in 7 of 15"
+        },
+        {
+            "time": 9.5,
+            "every": 10.1,
+            "data": {
+                "type": "action",
+                "action_id": 866,
+                "target": "target"
+            },
+            "comment": "2.2 s cast: first 9.2-14.9 s after it came out, then every 10.1 s (7.8-18.7)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "History Repeating's quest battle (86): the lancers of every wave (BNpcBase 1647, BNpcName 2200, layouts 4294343, 4294439, 4294752, 4294755, 4294764): level 38, 454 HP; auto-attack 871 every 3.0 s from its pull (`from_pull`). From Bob's Chronofoil captures d7993cf0, 195176f8 and 0d10bf45 (2026-11-08, three runs of the battle, all won; level 44 players), `questkit chronofoil --battle 0.1`: `players` is the median damage to the player. Hitbox not recorded."
+}

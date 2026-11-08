@@ -1,0 +1,11 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "1070": {
+            "npcs": 654
+        }
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "History Repeating's quest battle (86): the one who talks (BNpcBase 1632, BNpcName 1417, layout 4294351; battalion 4, untargetable: display flags 0x40008), on the rise behind the enemies the whole fight: level 50, 258900 HP. It never attacked anyone; it threw 1329 at the director's helper once in the lead-in and, while sequences 4-6 lasted, cast its area heal (1070, 5.7 s, at one of its side's NPCs) every 14-38 s: 654 the median heal (630-978), with Regen (158). The director holds it and has it do both (content/questbattle/86.lua). From Bob's Chronofoil captures d7993cf0, 195176f8 and 0d10bf45 (2026-11-08, three runs of the battle, all won; level 44 players), `questkit chronofoil --battle 0.1`. Hitbox not recorded."
+}

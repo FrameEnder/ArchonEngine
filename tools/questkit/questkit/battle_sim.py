@@ -14,8 +14,8 @@ battle, `questkit chronofoil --battle N.V`, or a Kawari Recorder battle file) an
 Times are seconds from the fight starting (the director's scene 60000, which is when Kawari calls `onCommence`).
 A battle whose director played scenes of its own between the opening and the fight (The Lominsan Way's scene 2, 16 s
 of battle talk before scene 60000) has them in `lead_in` (`{"2": 16.04}`, how long the client took over each): Kawari
-calls `onCommence` as the opening ends, so the simulator does so that long before 0, and the script plays them from
-there (`onSceneFinished` starts the fight); what retail did meanwhile (its sequence, battle talk) comes at negative
+calls `onCommence` as the opening ends, so the simulator does so when retail's first of them began (`lead_in_from`;
+without it, as long before 0 as they took together), and the script plays them from there (`onSceneFinished` starts the fight); what retail did meanwhile (its sequence, battle talk) comes at negative
 times.
 `spawn` is when the NPC appeared (null: it was there when the fight started), `death` when its health reached 0 (when
 Kawari calls `onActorDeath`; retail's Defeated comes about 2 s later), `hp` its health in percent over time. The events are retail's director sequence changes, battle talk (by text ID), the NPCs that
@@ -44,6 +44,11 @@ Object talks: a fixture can hold when the player talked to an event object the d
 the script hears as `onObjectTalk(director, 1, 2, base)` if it has spawned that object by then (`spawn_eobj`); an
 `event_action` it answers with ends `bar` seconds later (`onEventActionCast(director, 1, 2)`), as the server's does (In
 the Eyes of Gods and Men's rosary, quest battle 60.)
+
+Pools: NPCs retail brought out at random from a few, over and over (quest battle 86's bombs: one of three layouts each
+time), are listed in `pools` (`[[4317589, 4317648, 4317650]]`). A spawn of any of a pool matches a retail spawn of any
+other of it, the script can have several out at once, and they fall when the script has them fall (their retail deaths
+aren't used.)
 
 What it doesn't simulate: enmity and who hits whom (the health curves are retail's whatever the script's targeting does), and losing. The player's health
 follows retail's curve when the fixture has one (`player`, for lines said as the player's health drops), full otherwise.
@@ -211,6 +216,7 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
                "scenes": durations, "events": events}
     if lead_in:
         fixture["lead_in"] = lead_in
+        fixture["lead_in_from"] = rel(lead_in_start)
     if player:
         fixture["player"] = player
     if casts:
@@ -335,7 +341,10 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
     end = max([e[0] for e in fixture["events"]] or [0]) + AFTER_LAST_EVENT
     # Kawari's onCommence comes as the opening ends: before the director's lead-in scenes, if retail had any.
     lead_in = fixture.get("lead_in", {})
-    start = -round(sum(lead_in.values()) * 2) / 2
+    pooled = pool_of(fixture)
+    # When retail's first lead-in scene began (`lead_in_from`), else as long before the fight as they took together
+    # (fixtures made before 2026-11-08: The Lominsan Way's fight came as its scene 2 ended.)
+    start = round(fixture.get("lead_in_from", -sum(lead_in.values())) * 2) / 2
     known = dropin_layouts()
     cast_heard: set[tuple] = set()
     eobjs: set[int] = set()  # the event objects the script brought out (spawn_eobj), by base
@@ -345,7 +354,7 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
     def follow_calls(outside_update: bool = True):
         nonlocal seen_calls
         for t, name, args in calls[seen_calls:]:
-            if name == "spawn_bnpc" and args and args[0] not in spawned:
+            if name == "spawn_bnpc" and args and (args[0] not in spawned or int(args[0]) in pooled):
                 layout = int(args[0])
                 # Brought out before the fight (a lead-in): its health follows retail's from the fight's start.
                 spawned[layout] = max(t, 0.0)
@@ -411,7 +420,7 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
             # Deaths, by retail's clock counted from when the script spawned each one.
             for layout in sorted(alive):
                 info = npcs.get(layout)
-                if info is None or info.get("death") is None:
+                if info is None or info.get("death") is None or layout in pooled:
                     continue
                 offset = spawned[layout] - (info["spawn"] or 0.0)
                 if t >= info["death"] + offset:
@@ -455,18 +464,28 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
     return result
 
 
+def pool_of(fixture: dict) -> dict[int, int]:
+    """Each pooled layout's pool, by its first layout (see `pools`.)"""
+    pools = {}
+    for pool in fixture.get("pools", []):
+        for layout in pool:
+            pools[int(layout)] = int(pool[0])
+    return pools
+
+
 def spawn_problems(fixture: dict, calls: list[tuple]) -> list[str]:
     """Who the script brings out against retail's line-up: everyone retail had from the start (the timed events only
     cover later arrivals), and nobody more often than retail (Like Mother, Like Daughter's first wave, written the wrong
     way round, brought the three conjurers out a second time as enemies and never the 1683s, and passed: Bob's bundle
     20261101-221536.)"""
     problems = []
+    pooled = pool_of(fixture)  # a pool's spawns are counted together, under its first layout
     script_count: dict[int, int] = {}
     # onSetup's spawns count too: they're out before the opening cutscene, as retail's first line-up (The Rematch's 39,
     # quest battle 23, fighting in the background from the start.)
     for t, name, args in calls:
         if name == "spawn_bnpc" and args and t >= SETUP_CLOCK:
-            layout = int(args[0])
+            layout = pooled.get(int(args[0]), int(args[0]))
             script_count[layout] = script_count.get(layout, 0) + 1
     retail_count: dict[int, int] = {}
     for layout, info in fixture["npcs"].items():
@@ -474,7 +493,8 @@ def spawn_problems(fixture: dict, calls: list[tuple]) -> list[str]:
             retail_count[int(layout)] = 1
     for event in fixture["events"]:
         if event[1] == "spawn":
-            retail_count[event[2]] = retail_count.get(event[2], 0) + 1
+            layout = pooled.get(event[2], event[2])
+            retail_count[layout] = retail_count.get(layout, 0) + 1
     for layout in sorted(retail_count):
         if fixture["npcs"].get(str(layout), {}).get("spawn", 0) is None and layout not in script_count:
             problems.append(f"retail had {layout} from the start: the script never brings it out")
@@ -504,7 +524,9 @@ def script_events(calls: list[tuple]) -> list[list]:
 def compare(fixture: dict, calls: list[tuple], result: SimResult) -> list[str]:
     """Matches retail's events to the script's: the same kind and value, in order, within the tolerance."""
     tolerance = fixture.get("tolerance", DEFAULT_TOLERANCE)
-    mine = script_events(calls)
+    pooled = pool_of(fixture)
+    # A pool's spawns are one kind of event (see `pools`.)
+    mine = [[e[0], e[1], pooled.get(e[2], e[2])] if e[1] == "spawn" else e for e in script_events(calls)]
     initial = {int(k) for k, v in fixture["npcs"].items() if v.get("spawn") is None}
     mine = [e for e in mine if not (e[1] == "spawn" and e[2] in initial and e[0] <= 0.0)]
     used = [False] * len(mine)
@@ -512,6 +534,8 @@ def compare(fixture: dict, calls: list[tuple], result: SimResult) -> list[str]:
     for event in fixture["events"]:
         t, kind = event[0], event[1]
         value = event[2] if len(event) > 2 else None
+        if kind == "spawn":
+            value = pooled.get(value, value)
         found = None
         for i, other in enumerate(mine):
             if not used[i] and other[1] == kind and (other[2] if len(other) > 2 else None) == value:

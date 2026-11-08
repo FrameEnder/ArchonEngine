@@ -1101,17 +1101,18 @@ pub fn execute_action(
         // Area attacks land on everyone of the target's side inside them when the cast finishes (aimed where the
         // target was, and facing the way the enemy was, when it started casting), not just on its target: the
         // players, and in content the NPCs fighting beside them (retail's Terror Eye in Duty, Honor, Country hit the
-        // player and the allies by them, Bob's Recorder capture of 2026-10-18).
+        // player and the allies by them, Bob's Recorder capture of 2026-10-18). An area heal aimed at one of the
+        // caster's own side heals everyone of that side inside it the same way (History Repeating's quest battle,
+        // 86: one 1070 healed three of its side, Bob's Chronofoil capture 195176f8 of 2026-11-08.)
         if let Some(effects_builder) = &mut effects_builder
             && let Some(shape) = action_info.and_then(|info| info.area_shape())
             && let NetworkedActor::Npc { cast, timeline, .. } = actor
             && request.target.object_id != from_actor_id
             && let Some(target) = instance.find_actor(request.target.object_id)
             && effects_builder.effects.iter().any(|effect| {
-                is_hostile_effect(
-                    effect,
-                    area_side(target, &players_enemies) != area_side(actor, &players_enemies),
-                )
+                let other_side =
+                    area_side(target, &players_enemies) != area_side(actor, &players_enemies);
+                is_hostile_effect(effect, other_side) || (!other_side && is_heal_on_target(effect))
             })
         {
             let (rotation, aimed_at) = match own_cast(cast, request.action_id) {
@@ -1288,6 +1289,13 @@ pub fn execute_action(
                 })
                 .sum();
             let recorded = recorded_for(*id);
+            // An area heal (no damage) heals each as much as the recording says.
+            if let Some(recorded) = recorded
+                && damage == 0
+            {
+                scale_npc_heal(effects, recorded);
+                continue;
+            }
             let scale = match recorded {
                 Some(recorded) if damage > 0 => Some(recorded / damage as f32),
                 _ if is_player => Some(npc_damage_scale(actor, common_spawn.level)),
@@ -3346,6 +3354,11 @@ pub fn execute_ornament_action(
 /// and the player alike, Bob's Chronofoil capture df6f5af9). A status on the caster itself or on its own side is a buff
 /// (Like Mother, Like Daughter's 1683s and 1687 cast 416 on themselves, its sprite 313), and a heal isn't hostile
 /// either: taken for attacks (`801f36f`), buffs with an area went to the caster's enemies instead of it.
+/// A heal for whoever the action lands on (not a drain's, which heals its user.)
+fn is_heal_on_target(effect: &TargetEffect) -> bool {
+    matches!(effect.0, TargetEffectKind::Heal { unk1, .. } if unk1[4] & EFFECT_ON_SOURCE == 0)
+}
+
 fn is_hostile_effect(effect: &TargetEffect, on_the_other_side: bool) -> bool {
     match effect.0 {
         TargetEffectKind::Damage { .. } => true,
@@ -3623,6 +3636,15 @@ mod area_tests {
         assert!(!is_hostile_effect(&TargetEffect::default(), true));
     }
 
+    /// An area heal spreads to its target's side (quest battle 86's 1070); a drain's heal is its user's and doesn't.
+    #[test]
+    fn area_heals_are_for_the_target() {
+        let heal = |unk1| TargetEffect(TargetEffectKind::Heal { unk1, amount: 654 });
+        assert!(is_heal_on_target(&heal([0; 5])));
+        assert!(!is_heal_on_target(&heal([0, 0, 0, 0, EFFECT_ON_SOURCE])));
+        assert!(!is_heal_on_target(&TargetEffect::default()));
+    }
+
     #[test]
     fn a_gaze_needs_the_caster_in_front() {
         // Facing +z (rotation 0), the caster straight ahead, 58 degrees off (paralysed on retail), 94 degrees off and
@@ -3861,8 +3883,8 @@ fn roll_npc_hit(effects: &mut Vec<TargetEffect>, scale: f32, miss_percent: u8) {
 }
 
 /// Lands an enemy's area attack on another player (or NPC of the target's side) inside it: their damage (shown as
-/// flying text, since the ActionEffect packet only carries the target), any statuses, their new HP, and for an NPC
-/// enmity on the attacker as for its target.
+/// flying text, since the ActionEffect packet only carries the target), or an area heal's healing, any statuses,
+/// their new HP, and for an NPC enmity on the attacker as for its target.
 fn hit_area_bystander(
     network: Arc<Mutex<NetworkState>>,
     instance: &mut Instance,
@@ -3875,6 +3897,16 @@ fn hit_area_bystander(
         .iter()
         .filter_map(|effect| match effect.0 {
             TargetEffectKind::Damage { amount, .. } => Some(amount as u32),
+            _ => None,
+        })
+        .sum();
+    // An area heal's (see `is_heal_on_target`.)
+    let healed: u32 = effects
+        .iter()
+        .filter_map(|effect| match effect.0 {
+            TargetEffectKind::Heal { amount, .. } if is_heal_on_target(effect) => {
+                Some(amount as u32)
+            }
             _ => None,
         })
         .sum();
@@ -3895,6 +3927,10 @@ fn hit_area_bystander(
         .health_points
         .saturating_sub(damage)
         .max(floor.min(common_spawn.health_points));
+    common_spawn.health_points = common_spawn
+        .health_points
+        .saturating_add(healed)
+        .min(common_spawn.max_health_points);
 
     if damage > 0 {
         let mut network = network.lock();

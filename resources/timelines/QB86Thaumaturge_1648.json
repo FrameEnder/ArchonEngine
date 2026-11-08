@@ -1,0 +1,110 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "141": {
+            "players": 190
+        },
+        "142": {
+            "players": 121
+        },
+        "147": {
+            "players": 64
+        },
+        "148": {
+            "players": 35
+        },
+        "152": {
+            "players": 246
+        },
+        "156": {
+            "players": 80.5
+        },
+        "1304": {
+            "players": 124
+        }
+    },
+    "timepoints": [
+        {
+            "time": 8.5,
+            "every": 24.0,
+            "data": {
+                "type": "action",
+                "action_id": 152,
+                "target": "target"
+            },
+            "comment": "Fire III, 3.2 s cast: 8.5-18.5 s after it came out, again 8.0 s later"
+        },
+        {
+            "time": 10.5,
+            "every": 13.3,
+            "data": {
+                "type": "action",
+                "action_id": 141,
+                "target": "target"
+            },
+            "comment": "Fire, 1.7 s cast: 9.2-10.9 s after it came out, again 13.3 s later"
+        },
+        {
+            "time": 14.0,
+            "every": 15.8,
+            "data": {
+                "type": "action",
+                "action_id": 156,
+                "target": "target"
+            },
+            "comment": "Scathe: 10.1-45.9 s after it came out, again 11.7-19.8 s later"
+        },
+        {
+            "time": 17.8,
+            "every": 20.8,
+            "data": {
+                "type": "action",
+                "action_id": 148,
+                "target": "target"
+            },
+            "comment": "Thunder II (and its damage over time), 2.7 s cast: 17.8-37.5 s after it came out, again 20.8 s later"
+        },
+        {
+            "time": 21.0,
+            "every": 13.3,
+            "data": {
+                "type": "action",
+                "action_id": 147,
+                "target": "target"
+            },
+            "comment": "Fire II, 2.7 s cast: 10.6-51.2 s after it came out, again 6.6-9.1 s later"
+        },
+        {
+            "time": 26.1,
+            "data": {
+                "type": "action",
+                "action_id": 157,
+                "target": "itself"
+            },
+            "comment": "Manaward on itself, once (26.1 s)"
+        },
+        {
+            "time": 28.4,
+            "every": 20.5,
+            "data": {
+                "type": "action",
+                "action_id": 142,
+                "target": "target"
+            },
+            "comment": "Blizzard, 1.7 s cast: 28.4 and 48.9 s after it came out"
+        },
+        {
+            "time": 33.2,
+            "every": 8.6,
+            "data": {
+                "type": "action",
+                "action_id": 1304,
+                "target": "target"
+            },
+            "comment": "2.2 s cast round itself (Bind, 13): 33.2-34.2 s after it came out, again 8.6-8.7 s later"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "History Repeating's quest battle (86): the thaumaturges of waves two, four and five (BNpcBase 1648, BNpcName 2199, layouts 4294440, 4294756, 4294763): level 38, 227 HP; casters that never auto-attacked, their spells from their pull (`from_pull`), each of the nine fought used a few of them in its own order. From Bob's Chronofoil captures d7993cf0, 195176f8 and 0d10bf45 (2026-11-08, three runs of the battle, all won; level 44 players), `questkit chronofoil --battle 0.1`: `players` is the median damage to the player. Hitbox not recorded."
+}

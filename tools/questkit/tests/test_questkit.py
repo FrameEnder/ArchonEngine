@@ -312,6 +312,16 @@ class BattleSimSpawnTest(unittest.TestCase):
         fixture = {"npcs": {"1": {"spawn": None}}, "events": []}
         self.assertEqual(battle_sim.spawn_problems(fixture, [(battle_sim.SETUP_CLOCK, "spawn_bnpc", (1,))]), [])
 
+    def test_pools(self):
+        # Quest battle 86's bombs: one of three layouts at random each time; any of a pool matches any other.
+        fixture = {"npcs": {"7": {"spawn": 10.0}, "8": {"spawn": 20.0}}, "pools": [[7, 8, 9]],
+                   "events": [[10.0, "spawn", 7], [20.0, "spawn", 8], [30.0, "spawn", 7]]}
+        calls = [(10.0, "spawn_bnpc", (9,)), (20.0, "spawn_bnpc", (9,)), (30.5, "spawn_bnpc", (8,))]
+        self.assertEqual(battle_sim.spawn_problems(fixture, calls), [])
+        self.assertEqual(battle_sim.compare(fixture, calls, battle_sim.SimResult(86, None)), [])
+        too_many = calls + [(40.0, "spawn_bnpc", (7,))]
+        self.assertEqual(battle_sim.spawn_problems(fixture, too_many), ["brings 7 out 4 times, retail 3"])
+
 
 class BattleSimPlayerTest(unittest.TestCase):
     """battle-sim gives a script the player's health as retail's last seen value (it jumps, so no interpolating), and

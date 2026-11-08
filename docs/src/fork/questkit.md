@@ -382,7 +382,15 @@ A battle whose director played a scene of its own between the opening and the fi
 battle (59) plays scene 2 for 16 s, with sequence 2 and three lines of battle talk, before scene 60000: Kawari calls
 `onCommence` as the opening ends, so the simulator does that long before 0, the script plays the scene from there
 and starts the fight as it ends (`onSceneFinished`), and retail's sequence and talk meanwhile are matched at negative
-times. NPCs the script brings out before the fight follow retail's health from its start.
+times. NPCs the script brings out before the fight follow retail's health from its start. Since 2026-11-08 `--make`
+also writes when retail's first lead-in scene began (`lead_in_from`, seconds before the fight), and the simulator
+calls `onCommence` then: History Repeating's battle (86) has two lead-in scenes and a second's wait after them, which
+counting back their lengths alone put a second late. Older fixtures without it are as before.
+
+NPCs retail brought out **at random from a few**, over and over, are a **pool** (`pools`: `[[layout, …], …]`, written
+by hand since 2026-11-08): a spawn of any layout of a pool matches a retail spawn of any other of it, the script can
+have several of one out at once (each spawn of one is followed), the counts are checked per pool, and their retail
+deaths aren't used (the script has them fall). History Repeating's bombs, one of three layouts each time.
 
 And retail's **casts** (`casts`: `[[t, layout, action], …]`, the run's ActorCast events by the caster's layout ID,
 written by `--make` since 2026-10-28): the script hears `onActorCast(director, layout, action, 0)` at each, as from the

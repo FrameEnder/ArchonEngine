@@ -1,0 +1,36 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "recorded_amounts": {
+        "872": {
+            "players": 164
+        },
+        "399": {
+            "players": 507
+        }
+    },
+    "timepoints": [
+        {
+            "time": 5.7,
+            "every": 20.7,
+            "data": {
+                "type": "action",
+                "action_id": 400,
+                "target": "target"
+            },
+            "comment": "2.2 s cast on itself (status 53): began 5.6-5.8 s after it came out in two fights, the next 20.7-21.0 s later"
+        },
+        {
+            "time": 15.7,
+            "every": 21.1,
+            "data": {
+                "type": "action",
+                "action_id": 399,
+                "target": "target"
+            },
+            "comment": "2.2 s cast round itself: began 15.6-15.9 s after it came out in all three fights (and at 6.7 in one), the next 21.1 s later"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "The Curious Case of Giggity's (3870) enemy (BNpcBase 1894, BNpcName 1982, layout 4300668, layer QB_XxaUsc307_001 of the Central Shroud drop-in): level 43, 2269 HP; auto-attack 872 every 3.0 s, 400 and 399 by turns about every 10 s, from its pull (`from_pull`). From Bob's Chronofoil captures d7993cf0, 195176f8 and 0d10bf45 (2026-11-08, level 44 players, one fight each), `questkit chronofoil --battle 0.6`: `players` is the median damage to the player across the three (872: 108-265; 399: 507 and 763, and 192 parried). Hitbox not recorded."
+}
