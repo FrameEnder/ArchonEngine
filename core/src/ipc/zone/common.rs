@@ -127,7 +127,36 @@ pub enum TenantType {
     Personal = 2,
 }
 
-/// Represents the availability of a specific plot during the *current* lottery cycle/
+/// Represents the type of bid the player made on a specific plot during the *current* lottery cycle.
+#[binrw]
+#[brw(repr = u8)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum PlotLottoBidType {
+    #[default]
+    None = 0, // Presumed
+
+    FreeCompany = 1,
+
+    Personal = 2,
+}
+
+/// Represents the result of the bid the player placed on a specific plot during the *current* lottery cycle.
+#[binrw]
+#[brw(repr = u8)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum PlotLottoResult {
+    #[default]
+    None = 0, // Presumed, may not exist?
+    Unknown = 1, // Presumed along with None/0, may not exist?
+    /// The player won the bid on this plot.
+    BidWon = 2,
+    /// The player won the bid on this plot but failed to claim their victory in time, and thus has forfeited it.
+    BidForfeited = 3,
+    /// The player lost the bid on this plot.
+    BidLost = 4,
+}
+
+/// Represents the availability of a specific plot during the *current* lottery cycle.
 #[binrw]
 #[brw(repr = u8)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
