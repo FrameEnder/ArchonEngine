@@ -650,7 +650,7 @@ pub struct Config {
 
 pub fn get_config() -> Config {
     if let Ok(data) = std::fs::read_to_string("config.yaml") {
-        serde_yaml_ng::from_str(&data).expect("Failed to parse")
+        serde_yaml_ng::from_str(&data).expect("Failed to parse config.yaml")
     } else {
         Config::default()
     }
