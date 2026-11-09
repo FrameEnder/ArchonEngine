@@ -919,12 +919,18 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   Ifrit's 6.5 for his 3.5). Geocrush's fall-off is a line through 17 hits at two distances (4.6-4.8 and 18.8-22.1
   yalms); nothing between was recorded.
 * Status 292 (Granite Gaol) never ends by itself (retail's gaols were broken in 11-22 s; its own time isn't known).
-  It stops a gaoled NPC acting; whether a gaoled player can still move or act is the client's (the server doesn't stop
-  them). The gaol is spawned where the player stands 4 s after Rock Throw; retail's players were drawn a few yalms
-  (5 in 0.8 s in two throws) before it closed, which Kawari doesn't do.
+  It stops a gaoled NPC acting, and since 2026-11-09 holds a gaoled player as retail did (the two conditions and
+  untargetable; untested in game: Bob's bundle 20261109-195426 had the player walk out). The gaol is spawned where
+  the player stands 4 s after Rock Throw; retail's players were drawn a few yalms (5 in 0.8 s in two throws) before it
+  closed, which Kawari doesn't do. Whether enemies leave an untargetable player alone isn't modelled.
+* A wipe (Bob's bundle 20261109-195426, the first seen here): the party's NPCs got up in the arena beside the new
+  Titan and fought on before the recommencement; fixed (the player's spot at the start kept as they're sent back),
+  untested in game. Titan walked about 9 yalms after the bots during the Heart there; retail's walked 0, 5 and 11 in
+  the three runs, so that's left as it is.
 * ActorControl 30 and 31 on Titan are sent as retail's (`bnpc_control`) without knowing what they do. The Heart has no
   display flags or spawn details of retail's beyond its position (attached 2.3 yalms before him); ActionTimeline 1439
-  is played on Titan, not checked on the Heart.
+  is played on Titan, not checked on the Heart. Titan's ActorMove now goes with each of the Heart's (retail's); when
+  he turns between ticks the Heart follows on the next one, as before.
 * Weight of the Land and Rock Throw never fell on Titan's target in the runs; Kawari keeps them off it on purpose.
   Retail's helpers cast at a point on the ground; Kawari's are put there and cast on themselves.
 

@@ -1438,6 +1438,19 @@ pub fn do_change_zone(
         );
         network.send_to(from_id, msg, DestinationNetwork::ZoneClients);
     } else {
+        // Where they'll be, kept now: a client that doesn't move once it's there sends no position to say so, and
+        // what goes by the player's position in the meantime went by where they had been. After a wipe, the party's
+        // NPCs got up where the player had fallen, beside the boss brought back, and started the fight again before
+        // the recommencement (Bob's bundle 20261109-195426, the Navel.)
+        if let Some(position) = exit_position
+            && let Some(NetworkedActor::Player { spawn, .. }) =
+                target_instance.find_actor_mut(actor_id)
+        {
+            spawn.common.position = position;
+            if let Some(rotation) = exit_rotation {
+                spawn.common.rotation = rotation;
+            }
+        }
         // We want to delay sending this to give time for the client to fade out.
         let segment = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorSetPos(ActorSetPos {
             position: exit_position.unwrap_or_default(),

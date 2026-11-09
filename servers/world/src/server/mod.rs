@@ -801,6 +801,7 @@ fn server_logic_tick(
             let mut actors_now_outside_instance_entrances = Vec::new();
             let mut actors_autoattacking = Vec::new();
             let mut combat_over = Vec::new();
+            let mut incapacitation_changes = Vec::new();
             let mut enmity_updates = Vec::new();
 
             // Player area stuffs
@@ -981,6 +982,24 @@ fn server_logic_tick(
                     if !in_combat {
                         combat_over.push(*id);
                     }
+                }
+
+                // A status that stops them (`modifiers::is_incapacitated`: the Navel's Granite Gaol) holds a player as
+                // retail held them (Bob's Chronofoil captures 650dbfd8 and 48aaf6fe, gaoled twice): the conditions
+                // SufferingStatusAffliction and SufferingStatusAffliction2, which stop the client moving and acting,
+                // and untargetable (ActorControl 54) as it comes; all three undone as it goes. Kawari gave the status
+                // alone, and the gaoled player walked out of the gaol (Bob's bundle 20261109-195426.)
+                let incapacitated = actor
+                    .status_effects()
+                    .is_some_and(modifiers::is_incapacitated);
+                if incapacitated != conditions.has_condition(Condition::SufferingStatusAffliction) {
+                    for condition in [
+                        Condition::SufferingStatusAffliction,
+                        Condition::SufferingStatusAffliction2,
+                    ] {
+                        let _ = handle.send(FromServer::ToggleCondition(condition, incapacitated));
+                    }
+                    incapacitation_changes.push((*id, incapacitated));
                 }
 
                 let is_in_duel_area = overlapping_ranges.iter().filter(|x| x.duel).count() > 0;
@@ -1172,6 +1191,17 @@ fn server_logic_tick(
                 instance
                     .last_enmity_lists
                     .insert(id, (hater_list, enmity_list));
+            }
+
+            // Retail's ActorControl 54 (SetTargetable) as an incapacitating status comes and goes (above.)
+            for (id, incapacitated) in incapacitation_changes {
+                network.lock().send_ac_in_range_instance(
+                    instance,
+                    id,
+                    ActorControlCategory::SetTargetable {
+                        targetable: !incapacitated,
+                    },
+                );
             }
 
             // Their fight is over: nobody claims them any more (FirstAttack cleared, see first_attack.rs.)

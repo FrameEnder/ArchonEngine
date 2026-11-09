@@ -88,6 +88,9 @@ Applied after an action's script returns, by the server, so scripts only give th
 * **Crowd control:** Stun (2) and Sleep (3) stop an enemy completely, Bind (13) keeps it in place; Sleep ends when it's
   hit (`npc_behavior`, `action.rs`). Petrification (1) stops an NPC too (since 2026-11-06: quest battle 61's Stone
   Gaze, 9 s; retail's petrified allies did nothing for it seven times in ten), as does the Navel's Granite Gaol (292).
+  A **player** with one of these is held as retail held them (since 2026-11-09, `server/mod.rs`): the conditions
+  SufferingStatusAffliction and SufferingStatusAffliction2, which stop the client moving and acting, and
+  untargetable (ActorControl 54), until it goes ([Dungeons](dungeons.md#the-navel), the gaols).
 * **Interrupts** (Head Graze, Interject) cancel only the target's cast and send ActorControl 15 (CancelCast) to everyone
   nearby; they used to delete every queued task of the target, so its statuses never wore off.
 

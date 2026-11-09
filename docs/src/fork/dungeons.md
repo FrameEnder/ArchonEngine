@@ -663,6 +663,12 @@ standing had fought on, and the reset boss took one up again a second later: Bob
 retail's Stone Vigil did after each of its three wipes (log 2014 4.3 s after the fall, the bosses
 whole where they began). Before, only a script's own `onPartyWipe` reset anything, and the Stone Vigil's first boss
 stayed in battle and chased the party to the entrance (Bob's bundle 20261107-212704).
+Since 2026-11-09 the player's position is the start's from the moment they're sent back (`do_change_zone` keeps the
+ActorSetPos's spot): the server kept the spot they had fallen on until their client moved, so the party's NPCs got up
+there, in the arena, beside the boss brought back (the Navel: 10 yalms from the new Titan, who took them up at once,
+his Tumult 2.5 s after the reset and Rock Buster on one of them, before DutyRecommence; Bob abandoned the duty; bundle
+20261109-195426). Those NPCs were also got up a second time at the recommencement (taken away and spawned again):
+only those that fell since are now.
 
 
 **Fixes from Bob's bundles of 2026-10-28** (his first runs; untested since):
@@ -714,7 +720,11 @@ throughout (131 to the players' tanks, 71 to the Duty Support Marauder):
   634 and the Knockback sheet's row 37) 13.6, each every 18.6 s.
 * *The second leap*, below 50 % (49.4, 46.6, 49.4 %), the same, and 9.1 s after it the Heart: his line 3801,
   ActorControl 31 `[0, 0, 0, 1]` and 30 `[0, 1, the Heart, 0]` on him, ActionTimeline 1439, and the Heart at his chest,
-  2.3 yalms before him the way he faces, moved with him as he walks and turns (`attach_bnpc`). He stays untargetable
+  2.3 yalms before him the way he faces, moved with him as he walks and turns (`attach_bnpc`): retail sent Titan's
+  ActorMove with each of the Heart's, both with his facing (the Heart's model sits in his chest only as long as the
+  client has him facing that way). Since 2026-11-09 Kawari does too; it sent the Heart's alone, so when Titan turned
+  to a target with no ActorMove of his own (Rock Throw at the player), the clients saw the Heart jump to his other
+  side, out of his body, toward the player (Bob's bundle 20261109-195426). He stays untargetable
   (and took no damage) but fights on: Rock Throw 7.9 s on (once), Landslide 14.2, Tumult 23.3, Rock Buster 28.5, every
   22.6 s. The Heart fell 24.7, 50.0 and about 27 s after it came.
 * *The Heart's fall*: 30 `[0, 2, the Heart, 1]` on him; 3.2 s on ActionTimeline 140, 5.3 s ActorSetPos to the middle
@@ -732,7 +742,13 @@ throughout (131 to the players' tanks, 71 to the Duty Support Marauder):
 `other`), hurting no one; 2.8 s on status 292 on them (ActorControl 20); 4.0 s on the gaol spawned hidden where they
 stand, 4.8 s on brought into view (Appear 142, targetable); the party breaks it and the status goes as it does
 (ActorControl 21 `[292, 0, 0xE0000000]`, `director:lose_effect`). Gaoled, the Duty Support members did nothing for its
-11-22 s: 292 is among the statuses that stop an NPC (`modifiers::INCAPACITATED`, party bots too).
+11-22 s: 292 is among the statuses that stop an NPC (`modifiers::INCAPACITATED`, party bots too). **A gaoled player**
+(retail, captures 650dbfd8 and 48aaf6fe, the player gaoled each time, 13.7 and 8.8 s): as the status comes, ActorControl
+54 (SetTargetable 0) on them, Condition with SufferingStatusAffliction and SufferingStatusAffliction2 (its first
+byte 0x02 → 0x1A), then ActorControl 20 (292); as the gaol breaks, 54 (1), the conditions cleared and 21 (292). The
+two conditions are what stop the client moving and acting; since 2026-11-09 Kawari sets them (and the targetability)
+on any player with a status in `INCAPACITATED` and clears them as it goes (`server/mod.rs`); before, a gaoled player
+walked out of the gaol (Bob's bundle 20261109-195426). Retail sent the same Condition (0x1A) for status 2955 too.
 
 **Weight of the Land** (eight casts): his 644 (2.7 s on himself) and, as it begins, two helpers' 973 (3.2 s, round
 them: 485 to players) under two of the party other than the one he fights, never his target. Retail aimed them at the

@@ -544,7 +544,8 @@ pub fn keep_attached(network: &Arc<Mutex<NetworkState>>, instance: &mut Instance
             continue;
         };
         let rotation = parent_actor.rotation();
-        let spot = parent_actor.position().0
+        let parent_at = parent_actor.position();
+        let spot = parent_at.0
             + glam::Vec3A::new(distance * rotation.sin(), 0.0, distance * rotation.cos());
         let Some(NetworkedActor::Npc {
             spawn,
@@ -570,20 +571,30 @@ pub fn keep_attached(network: &Arc<Mutex<NetworkState>>, instance: &mut Instance
         navmesh_path.clear();
         *navmesh_path_lerp = 0.0;
         *last_position = Some(spot);
-        network.lock().send_in_range_instance(
-            child,
-            instance,
-            FromServer::ActorMove(
-                child,
-                Position(spot),
-                rotation,
-                kawari::common::MoveAnimationType::empty(),
-                kawari::common::MoveAnimationState::None,
-                kawari::common::JumpState::NoneOrFalling,
-                Some(ATTACHED_MOVE_SPEED),
-            ),
-            DestinationNetwork::ZoneClients,
-        );
+        // The one it's attached to as well, with the same facing: retail sent Titan's ActorMove with every one of the
+        // Heart's (Bob's Chronofoil captures 650dbfd8, 0fd8bce0 and 48aaf6fe). Kawari sent the Heart's alone, and when
+        // Titan had turned to his target without an ActorMove the clients still saw him facing the old way, the Heart
+        // in front of him on the side away from his chest (Bob's bundle 20261109-195426.)
+        let mut network = network.lock();
+        for (who, at, facing) in [
+            (child, Position(spot), rotation),
+            (parent, parent_at, rotation),
+        ] {
+            network.send_in_range_instance(
+                who,
+                instance,
+                FromServer::ActorMove(
+                    who,
+                    at,
+                    facing,
+                    kawari::common::MoveAnimationType::empty(),
+                    kawari::common::MoveAnimationState::None,
+                    kawari::common::JumpState::NoneOrFalling,
+                    Some(ATTACHED_MOVE_SPEED),
+                ),
+                DestinationNetwork::ZoneClients,
+            );
+        }
     }
 }
 

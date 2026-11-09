@@ -46,11 +46,12 @@ use kawari::common::CharacterMode;
 const PARTY_WIPE_AFTER: Duration = Duration::from_millis(1000);
 const RETURN_AFTER: Duration = Duration::from_millis(4100);
 const RECOMMENCE_AFTER: Duration = Duration::from_millis(11300);
-/// The party's NPCs get up beside the one they follow once that player has arrived at the start (retail spawned them
-/// there 0.4 s after the player's ActorSetPos): once the player's position is theirs again (their client says where
-/// they are) more than this far from where they fell, or at the recommencement at the latest. At a fixed 6.1 s they
-/// got up where the player had fallen, in the arena, before the player's client had reported its arrival (Bob's
-/// bundle of 2026-10-28.)
+/// The party's NPCs get up beside the one they follow as that player is sent back to the start (retail spawned them
+/// there 0.4 s after the player's ActorSetPos): the player's position is the start's from then on (`do_change_zone`
+/// keeps it). Any that fell again get up once the player's position is more than this far from where they lay, or at
+/// the recommencement at the latest. At a fixed 6.1 s they got up where the player had fallen, in the arena, before
+/// the player's client had reported its arrival (Bob's bundle of 2026-10-28); until 2026-11-09 the server kept the
+/// fallen player's spot until their client moved, so they got up in the arena all the same (bundle 20261109-195426.)
 const ARRIVED_DISTANCE: f32 = 1.0;
 
 /// The director events retail sent as everyone went back, with no name in Kawari yet.
@@ -356,10 +357,17 @@ pub fn wipe_tick(
     };
     if wipe.stage == 2 && (arrived || since >= RECOMMENCE_AFTER) {
         wipe.stage = 3;
-        // The party's NPCs, standing or not, back beside the one they follow.
+        // The party's NPCs that fell since, back beside the one they follow. Those got up as everyone went back
+        // (above) are there already: getting them up again took them away and brought them back a second time
+        // (Bob's bundle 20261109-195426.)
         let bots: Vec<(ObjectId, ObjectId)> = instance
             .party_bots
             .iter()
+            .filter(|(id, _)| {
+                instance
+                    .find_actor(**id)
+                    .is_none_or(|actor| actor.get_common_spawn().health_points == 0)
+            })
             .map(|(id, bot)| (*id, bot.leader))
             .collect();
         for (bot, leader) in bots {
