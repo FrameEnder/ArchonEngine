@@ -441,7 +441,11 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
     flight's spreading out, the whirlwinds' lanes). `spots` names a spot (x, z) for `tank`, `healer`, `melee`,
     `ranged` or `dps` (either; a second DPS `dps2`); a role with none, or whose spot is in one of the attacks being cast
     (to its hit edge: retail's spots are trusted that far, some stood 0.5 yalms out), dodges by the shapes as before (a
-    second Swinge aimed at the tank where it stood: only the tank moved, to the cone's edge, as on retail). It sets off
+    second Swinge aimed at the tank where it stood: only the tank moved, to the cone's edge, as on retail). An attack
+    nobody can leave (Titan's Geocrush covers the Navel, and hurts less the farther out) has its spots inside it:
+    `party_spots(…, true)` as its seventh argument (`AuthoredSpots::inside`) trusts them inside that attack, only the
+    others count. Without it, every spot was caught, so the bots dodged by the shapes, found nowhere safe and stayed by
+    the player (Bob's bundle 20261109-201914, 2026-11-09). It sets off
     0.0-0.3 s after it notices (`AUTHORED_REACTION_SECONDS`), along a navmesh path that reaches the spot (else by the
     shapes), and holds there until the cast has gone off, plus `LINGER`.
     **Moving hazards** (`server/sweep.rs`): what a director sends down a line with `director:sweep_bnpc` (Koshchei's

@@ -724,7 +724,11 @@ throughout (131 to the players' tanks, 71 to the Duty Support Marauder):
   ActorMove with each of the Heart's, both with his facing (the Heart's model sits in his chest only as long as the
   client has him facing that way). Since 2026-11-09 Kawari does too; it sent the Heart's alone, so when Titan turned
   to a target with no ActorMove of his own (Rock Throw at the player), the clients saw the Heart jump to his other
-  side, out of his body, toward the player (Bob's bundle 20261109-195426). He stays untargetable
+  side, out of his body, toward the player (Bob's bundle 20261109-195426). Retail spawned it as **a part of Titan**:
+  BattleNpcSubKind Part (1), Titan's actor ID in the spawn's `pet_id`, no layout ID, display flags 0x40003, MP 1080,
+  his facing, its target the player (all three runs); the client then draws and targets it in his chest. Kawari
+  spawned it as an ordinary enemy, whose target ring the client put where it stood, on the ground before him (Bob's
+  bundle 20261109-201914); since 2026-11-09 it's spawned as retail's (`director:spawn_bnpc_part`). He stays untargetable
   (and took no damage) but fights on: Rock Throw 7.9 s on (once), Landslide 14.2, Tumult 23.3, Rock Buster 28.5, every
   22.6 s. The Heart fell 24.7, 50.0 and about 27 s after it came.
 * *The Heart's fall*: 30 `[0, 2, the Heart, 1]` on him; 3.2 s on ActionTimeline 140, 5.3 s ActorSetPos to the middle
@@ -759,7 +763,18 @@ ground (TargetArea); Kawari puts a helper there and has it cast on itself (as If
 the Heart fell; the Thaumaturge's 13975 three times and the Marauder's 13955 once were their chatter. They left Titan
 alone while he was untargetable (their targets "no one" through each leap) and broke the Heart and the gaols:
 `director:set_targetable(…, false)` now keeps bots off an NPC until it's targetable again
-(`Instance::untargetable_npcs`).
+(`Instance::untargetable_npcs`). For both Geocrushes they went to the arena's edge, the same spots each time, 3-4 s
+into the 4.2 s cast: the Marauder (0, -19), the Conjurer (0, 19-21), the Thaumaturge (19-21, 0) (capture 650dbfd8).
+Geocrush covers the arena and hurts less the farther out, so nobody leaves it; the director gives these spots as being
+inside it (`director:party_spots(…, true)`, [Party Bots](party-bots.md#how-it-fights)), and the party's NPCs and bots
+go there (since 2026-11-09: before, they found nowhere out of it and stayed by the player, Bob's bundle
+20261109-201914).
+
+**What Titan deals, checked** (Bob's bundle 20261109-201914, two runs as a level 36 conjurer with 1035 HP, the party's
+healer): Tumult 131-179, Geocrush 307-532 (the second time nearer him), Earthen Fury 606-655, Rock Buster 344 (once, on
+him), as retail's. Retail's level 36 arcanist (capture 650dbfd8) had 963 HP, 999 with the party bonus (not given by
+Kawari: [Known Issues](known-issues.md#the-navel-2026-11-06)); Earthen Fury takes about two thirds of that, so the party
+needs to be near full health when the Heart falls.
 
 **Leaving** after the clear during Lord of Crags puts the player by the beastman aetheryte in Upper La Noscea (the
 quest's `set_duty_exit`, [Quests](quests.md)).

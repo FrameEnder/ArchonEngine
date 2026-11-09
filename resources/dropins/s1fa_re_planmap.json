@@ -86,7 +86,8 @@
                         "max_links": 0,
                         "name_id": 1802,
                         "nonpop": true,
-                        "type": "battle_npc"
+                        "type": "battle_npc",
+                        "display_flags": 262147
                     },
                     "layout_id": 99001507,
                     "position": {

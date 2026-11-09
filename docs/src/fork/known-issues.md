@@ -927,10 +927,22 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   Titan and fought on before the recommencement; fixed (the player's spot at the start kept as they're sent back),
   untested in game. Titan walked about 9 yalms after the bots during the Heart there; retail's walked 0, 5 and 11 in
   the three runs, so that's left as it is.
-* ActorControl 30 and 31 on Titan are sent as retail's (`bnpc_control`) without knowing what they do. The Heart has no
-  display flags or spawn details of retail's beyond its position (attached 2.3 yalms before him); ActionTimeline 1439
-  is played on Titan, not checked on the Heart. Titan's ActorMove now goes with each of the Heart's (retail's); when
-  he turns between ticks the Heart follows on the next one, as before.
+* ActorControl 30 and 31 on Titan are sent as retail's (`bnpc_control`) without knowing what they do. Since
+  2026-11-09 the Heart is spawned as retail's: a part of Titan (BattleNpcSubKind 1, his actor ID in `pet_id`, display
+  flags 0x40003), so the client should draw and target it in his chest (`spawn_bnpc_part`; untested in game: as an
+  ordinary enemy its target ring stood on the ground before him, Bob's bundle 20261109-201914). It still carries the
+  fork's layout ID 99001507 (retail's had none: the director finds it by that) and retail's MP 1080 and target (the
+  player) aren't sent. ActionTimeline 1439 is played on Titan, not checked on the Heart.
+* The party's NPCs go to retail's Geocrush spots at the arena's edge (tank south, healer north, DPS east; a second DPS
+  to the DPS spot, retail's run had one); untested in game. Before, they dodged by the shapes, found nowhere out of it
+  and stayed by the player (Bob's bundle 20261109-201914).
+* "Dying too easily" (Bob's bundle 20261109-201914, a level 36 conjurer, item level 24, 1035 HP, the party's healer
+  with three bots): what Titan dealt matched retail's (Tumult 131-179 against retail's 175, Geocrush 307-532 against
+  347-480 at 19-22 yalms, the nearer the more, Earthen Fury 606-655 against 630, Rock Buster 344 on him once against
+  357). Both deaths came from Earthen Fury or the Tumult after it with the player at 597 and 721 HP. Retail's level 36
+  arcanist had 963 HP, 999 with the **party bonus**, which Kawari doesn't give: about 3 s into a duty retail raised
+  Strength, Dexterity, Vitality, Intelligence and Mind by 3 % (one per role in the party: tank, healer, caster; Piety
+  unchanged; 109 → 112, 148 → 152 Vitality, capture 650dbfd8). Kawari's player keeps their unbonused stats.
 * Weight of the Land and Rock Throw never fell on Titan's target in the runs; Kawari keeps them off it on purpose.
   Retail's helpers cast at a point on the ground; Kawari's are put there and cast on themselves.
 

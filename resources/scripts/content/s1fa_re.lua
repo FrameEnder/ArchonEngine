@@ -67,6 +67,10 @@ TARGETABLE_AFTER = 9.0
 HEART_AFTER = 9.1
 ACTION_GEOCRUSH = 651
 MIDDLE = { x = 0.0, y = 0.0, z = 0.0 }
+-- Where the Duty Support members went for both Geocrushes (Bob's capture 650dbfd8, 3-4 s into each cast): the arena's
+-- edge, inside it but where it hurts least (it hurts less the farther out: 971-1017 at 4.7 yalms, 347-480 at 19-22.)
+-- The tank (0, -19), the healer (0, 19-21), the dps (19-21, 0); a second dps takes the dps spot.
+GEOCRUSH_SPOTS = { tank = { 0.0, -19.0 }, healer = { 0.0, 19.0 }, dps = { 19.0, 0.0 } }
 
 -- The director's variables (DirectorVars, sequence 1 throughout, all three runs): 32, 0 at the start; 32, 1 with
 -- the first Geocrush's line and 33, 0 4.9 s after it; 33, 4 with the second's and 39, 0 4.9 s after.
@@ -75,8 +79,9 @@ VARS_AT_LINE = { { 32, 1 }, { 33, 4 } }
 VARS_AFTER_LINE = { { 33, 0 }, { 39, 0 } }
 VARS_AFTER = 4.9
 
--- The Heart (5139 HP), 2.3 yalms before him the way he faces, wherever he goes (`attach_bnpc`); as it comes, on him
--- ActorControl 31 (0, 0, 0, 1), 30 (0, 1, the Heart, 0) and ActionTimeline 1439; as it falls 30 (0, 2, the Heart, 1).
+-- The Heart (5139 HP), 2.3 yalms before him the way he faces, wherever he goes, a part of him (`spawn_bnpc_part`);
+-- as it comes, on him ActorControl 31 (0, 0, 0, 1), 30 (0, 1, the Heart, 0) and ActionTimeline 1439; as it falls 30
+-- (0, 2, the Heart, 1).
 -- Kawari doesn't know what 30 and 31 do (the Thousand Maws of Toto-Rak's last boss had the same for its tail.)
 HEART_DISTANCE = 2.3
 HEART_TIMELINE = 1439
@@ -178,6 +183,8 @@ function onSetup(director)
     setVars(director, VARS_START)
     reset()
     bringTitan(director)
+    -- Inside Geocrush by design: there's no getting out of it.
+    director:party_spots(ACTION_GEOCRUSH, MIDDLE.x, MIDDLE.z, GEOCRUSH_SPOTS, nil, nil, true)
 end
 
 function talk(director, text)
@@ -220,14 +227,16 @@ function leap(director, which)
     end
 end
 
--- The Heart of the Mountain at his chest (he's in the middle, where he leapt: `attach_bnpc` keeps it before him.)
+-- The Heart of the Mountain in his chest: spawned as a part of him (`spawn_bnpc_part`: the client draws and targets it
+-- where his model has it), kept before him as he turns. Retail sent 31 and 30 on him and his ActionTimeline 1439 just
+-- before the Heart's SpawnNpc (30 naming the Heart before it was out); here 30 and the timeline follow the spawn, as
+-- the Heart's actor ID comes with it.
 function bringHeart(director)
     phase = "heart"
     talk(director, TALK_HEART)
     director:bnpc_control(TITAN, CONTROL_PARTS, { 0, 0, 0, 1 })
-    heart = director:spawn_bnpc(HEART, MIDDLE.x, MIDDLE.y, MIDDLE.z + HEART_DISTANCE, 0)
+    heart = director:spawn_bnpc_part(HEART, TITAN, HEART_DISTANCE)
     director:hold_bnpc(heart)
-    director:attach_bnpc(heart, TITAN, HEART_DISTANCE)
     director:set_hate(HEART, nil, 300) -- the player
     director:bnpc_control(TITAN, CONTROL_LINK, { 0, 1, heart, 0 })
     director:play_action_timeline(TITAN, HEART_TIMELINE)

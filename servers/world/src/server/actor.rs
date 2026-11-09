@@ -716,7 +716,10 @@ const KILL_GIL_HIGH: f32 = 0.532;
 /// UpdateHpMpTp, all the player's and the party NPCs', none from the 1,500 enemy results.
 fn is_enemy(actor: &NetworkedActor) -> bool {
     matches!(actor, NetworkedActor::Npc { .. })
-        && actor.get_common_spawn().object_kind == ObjectKind::BattleNpc(BattleNpcSubKind::Enemy)
+        && matches!(
+            actor.get_common_spawn().object_kind,
+            ObjectKind::BattleNpc(BattleNpcSubKind::Enemy | BattleNpcSubKind::Part)
+        )
 }
 
 /// Updates others about this actor's HP and MP after a hit an ActionEffect shows: the same as `update_actor_hp_mp`, but

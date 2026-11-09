@@ -2365,8 +2365,11 @@ fn is_living_enemy(actor: &NetworkedActor, caster_enemies: &[bool]) -> bool {
 
 /// `is_living_enemy` for a battle NPC's common spawn data.
 fn is_living_enemy_spawn(common: &CommonSpawn, caster_enemies: &[bool]) -> bool {
-    common.object_kind == ObjectKind::BattleNpc(BattleNpcSubKind::Enemy)
-        && common.health_points > 0
+    // A part of an enemy (the Navel's Heart of the Mountain) is hit as an enemy is.
+    matches!(
+        common.object_kind,
+        ObjectKind::BattleNpc(BattleNpcSubKind::Enemy | BattleNpcSubKind::Part)
+    ) && common.health_points > 0
         && spawn_at_war(caster_enemies, common)
 }
 

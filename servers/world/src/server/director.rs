@@ -17,8 +17,8 @@ use kawari::{
     config::get_config,
     ipc::chat::ChatChannelType,
     ipc::zone::{
-        ActorControlCategory, ActorControlSelf, ActorSetPos, ChatMessage, DisplayFlag,
-        DutyFinderSetting, EventLogMessage, MapEffects, ObjectKind, PrepareZoning,
+        ActorControlCategory, ActorControlSelf, ActorSetPos, BattleNpcSubKind, ChatMessage,
+        DisplayFlag, DutyFinderSetting, EventLogMessage, MapEffects, ObjectKind, PrepareZoning,
         ServerZoneIpcData, ServerZoneIpcSegment, SpawnObject, TreasureKind, WalkInEvent,
         WeatherChange,
     },
@@ -110,6 +110,17 @@ pub enum LuaDirectorTask {
     /// goes (`Instance::attached_npcs`): the Navel's Heart of the Mountain at Titan's chest.
     AttachBattleNpc {
         who: u32,
+        to: u32,
+        distance: f32,
+    },
+    /// A BNpc spawned as a part of another (BattleNpcSubKind Part, the other's actor ID in the spawn's `pet_id`), in
+    /// front of it and attached there: the client draws and targets it where the other's model has it, as retail
+    /// spawned the Navel's Heart of the Mountain in Titan's chest (Bob's Chronofoil captures 650dbfd8, 0fd8bce0 and
+    /// 48aaf6fe: subkind 1, Titan's actor ID, no layout ID, display flags 0x40003, his facing.) Spawned as an ordinary
+    /// enemy, its target ring stood on the ground before him (Bob's bundle 20261109-201914.)
+    SpawnPartBattleNpc {
+        id: u32,
+        actor_id: ObjectId,
         to: u32,
         distance: f32,
     },
@@ -253,6 +264,7 @@ pub enum LuaDirectorTask {
         caster: Option<(f32, f32)>,
         spots: crate::server::dodge::RoleSpots,
         react: (f32, f32),
+        inside: bool,
     },
     /// Sends the party to spots for `seconds`, whatever is being cast (`dodge::PartyCue`); None calls them off.
     PartyPositions {
@@ -772,6 +784,19 @@ impl UserData for LuaDirector {
             });
             Ok(())
         });
+        methods.add_method_mut(
+            "spawn_bnpc_part",
+            |_, this, (id, to, distance): (u32, u32, f32)| {
+                let actor_id = ObjectId(fastrand::u32(1..0xE000_0000));
+                this.tasks.push(LuaDirectorTask::SpawnPartBattleNpc {
+                    id,
+                    actor_id,
+                    to,
+                    distance,
+                });
+                Ok(actor_id.0)
+            },
+        );
         methods.add_method_mut(
             "attach_bnpc",
             |_, this, (who, to, distance): (u32, u32, f32)| {
@@ -1306,13 +1331,14 @@ impl UserData for LuaDirector {
             "party_spots",
             |_,
              this,
-             (action, caster_x, caster_z, spots, react_low, react_high): (
+             (action, caster_x, caster_z, spots, react_low, react_high, inside): (
                 u32,
                 Option<f32>,
                 Option<f32>,
                 mlua::Table,
                 Option<f32>,
                 Option<f32>,
+                Option<bool>,
             )| {
                 let (low, high) = crate::server::dodge::AUTHORED_REACTION_SECONDS;
                 let low = react_low.unwrap_or(low);
@@ -1321,6 +1347,7 @@ impl UserData for LuaDirector {
                     caster: caster_x.zip(caster_z),
                     spots: role_spots(spots)?,
                     react: (low, react_high.unwrap_or(high).max(low)),
+                    inside: inside.unwrap_or(false),
                 });
                 Ok(())
             },
@@ -2528,6 +2555,48 @@ pub fn director_tick(
             LuaDirectorTask::LoseEffect { actor_id, id } => {
                 lose_effect_instance(network.clone(), instance, *actor_id, *id);
             }
+            LuaDirectorTask::SpawnPartBattleNpc {
+                id,
+                actor_id,
+                to,
+                distance,
+            } => {
+                let Some(parent) = resolve_bnpc(instance, *to) else {
+                    tracing::warn!(
+                        "Failed to find bnpc {to}, which {id} is a part of; it won't spawn!"
+                    );
+                    continue;
+                };
+                let Some(mut npc) = instance.zone.get_battle_npc(*id) else {
+                    tracing::warn!(
+                        "Failed to find bnpc {id} for SpawnPartBattleNpc, it won't spawn!"
+                    );
+                    continue;
+                };
+                if let Some(parent_actor) = instance.find_actor(parent) {
+                    let rotation = parent_actor.rotation();
+                    npc.common.position = Position(
+                        parent_actor.position().0
+                            + glam::Vec3A::new(
+                                distance * rotation.sin(),
+                                0.0,
+                                distance * rotation.cos(),
+                            ),
+                    );
+                    npc.common.rotation = rotation;
+                }
+                npc.common.handler_id = director_id;
+                npc.common.object_kind = ObjectKind::BattleNpc(BattleNpcSubKind::Part);
+                npc.common.pet_id = parent.0;
+                {
+                    let config = get_config();
+                    let mut game_data = game_data.lock();
+                    instance.insert_npc(*actor_id, npc, &config, &mut game_data);
+                }
+                instance
+                    .attached_npcs
+                    .insert(*actor_id, (parent, *distance));
+            }
             LuaDirectorTask::AttachBattleNpc { who, to, distance } => {
                 let (Some(child), Some(parent)) =
                     (resolve_bnpc(instance, *who), resolve_bnpc(instance, *to))
@@ -3326,12 +3395,14 @@ pub fn director_tick(
                 caster,
                 spots,
                 react,
+                inside,
             } => {
                 let entry = crate::server::dodge::AuthoredSpots {
                     action: *action,
                     caster: caster.map(|(x, z)| glam::Vec2::new(x, z)),
                     spots: spots.clone(),
                     react: *react,
+                    inside: *inside,
                 };
                 // Set again (a script's setup run twice): the same action from the same place takes the new spots.
                 instance

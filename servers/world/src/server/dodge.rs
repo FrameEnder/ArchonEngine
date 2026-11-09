@@ -523,6 +523,10 @@ pub struct AuthoredSpots {
     pub spots: RoleSpots,
     /// When they set off after the cast began (`REACTION_SECONDS`' kind: a roll between the two.)
     pub react: (f32, f32),
+    /// The spots stand inside this attack by design: one that covers the whole arena and hurts less the farther out
+    /// you are (Titan's Geocrush; retail's Duty Support members went to the arena's edge, inside it: Bob's capture
+    /// 650dbfd8), so its own area doesn't send them to the shapes. Other attacks being cast still do.
+    pub inside: bool,
 }
 
 impl AuthoredSpots {
@@ -560,15 +564,16 @@ pub fn authored_spot(
 ) -> Option<(Vec2, Instant, (f32, f32))> {
     let mut soonest: Vec<&Danger> = dangers.iter().collect();
     soonest.sort_by_key(|danger| danger.until);
+    // The danger the spots go with, when they stand inside it by design (`AuthoredSpots::inside`.)
     let from_cast = soonest.iter().find_map(|danger| {
         authored
             .iter()
             .find(|entry| entry.matches(danger))
             .and_then(|entry| {
-                entry
-                    .spots
-                    .for_role(role, nth)
-                    .map(|at| (at, danger.until, entry.react))
+                entry.spots.for_role(role, nth).map(|at| {
+                    let inside = entry.inside.then_some(*danger);
+                    (at, danger.until, entry.react, inside)
+                })
             })
     });
     let from_cue = || {
@@ -576,15 +581,18 @@ pub fn authored_spot(
             .and_then(|cue| {
                 cue.spots
                     .for_role(role, nth)
-                    .map(|at| (at, cue.until, cue.react))
+                    .map(|at| (at, cue.until, cue.react, None))
             })
     };
-    let (at, until, react) = from_cast.or_else(from_cue)?;
+    let (at, until, react, inside) = from_cast.or_else(from_cue)?;
     let point = Vec3A::new(at.x, 0.0, at.y);
     // Height doesn't matter to the shapes on the ground (`in_area_with_reach` goes by x and z.) Retail's spots are
     // trusted to their hit edge, without the dodgers' margin: some stood just outside (the Conjurer 4 yalms from a
     // whirlwind's lane, its reach 3 and a body 0.5.)
-    let caught = dangers.iter().any(|danger| danger.catches(point, 0.0));
+    let caught = dangers
+        .iter()
+        .filter(|danger| !inside.is_some_and(|skip| std::ptr::eq(skip, *danger)))
+        .any(|danger| danger.catches(point, 0.0));
     (!caught).then_some((at, until, react))
 }
 
@@ -932,6 +940,7 @@ mod tests {
                 ("healer", -18.0, 123.0),
             ]),
             react: AUTHORED_REACTION_SECONDS,
+            inside: false,
         };
         let swinge = |rotation: f32| Danger {
             action_id: 903,
@@ -975,6 +984,50 @@ mod tests {
             )
             .is_none()
         );
+    }
+
+    /// Titan's Geocrush from the middle of the Navel covers the arena: retail's Duty Support members went to its edge
+    /// all the same (Bob's capture 650dbfd8: the tank to (0, -19), the healer (0, 19-21), the dps (19-21, 0)), so its
+    /// spots are trusted inside it (`inside`); another attack being cast on a spot still sends that one to the shapes.
+    #[test]
+    fn spots_inside_their_attack() {
+        let now = Instant::now();
+        let mut entry = AuthoredSpots {
+            action: 651,
+            caster: Some(Vec2::ZERO),
+            spots: spots(&[
+                ("tank", 0.0, -19.0),
+                ("healer", 0.0, 19.0),
+                ("dps", 19.0, 0.0),
+            ]),
+            react: AUTHORED_REACTION_SECONDS,
+            inside: false,
+        };
+        let geocrush = Danger {
+            action_id: 651,
+            caster: Vec3A::ZERO,
+            ..danger(AreaShape::Circle {
+                radius: 30.0,
+                on_target: false,
+            })
+        };
+        let only = [geocrush];
+        let tank = |entry: &AuthoredSpots, dangers: &[Danger]| {
+            authored_spot(std::slice::from_ref(entry), None, dangers, "tank", 0, now)
+                .map(|(at, ..)| at)
+        };
+        assert_eq!(tank(&entry, &only), None);
+        entry.inside = true;
+        assert_eq!(tank(&entry, &only), Some(Vec2::new(0.0, -19.0)));
+        let other = Danger {
+            action_id: 652,
+            caster: Vec3A::new(0.0, 0.0, -19.0),
+            ..danger(AreaShape::Circle {
+                radius: 5.0,
+                on_target: false,
+            })
+        };
+        assert_eq!(tank(&entry, &[geocrush, other]), None);
     }
 
     /// A director's cue holds only for its time, and a cast's own spots come first.
