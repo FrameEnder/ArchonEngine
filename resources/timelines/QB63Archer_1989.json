@@ -1,0 +1,71 @@
+{
+    "autoattack_action_id": 873,
+    "from_pull": true,
+    "recorded_amounts": {
+        "873": {
+            "players": 60,
+            "npcs": 78
+        },
+        "106": {
+            "players": 101.5,
+            "npcs": 101.5
+        },
+        "113": {
+            "npcs": 57.5
+        },
+        "100": {
+            "npcs": 97
+        }
+    },
+    "timepoints": [
+        {
+            "time": 6.5,
+            "data": {
+                "type": "action",
+                "action_id": 101,
+                "target": "itself"
+            },
+            "comment": "on itself, 6-11 s after the pull"
+        },
+        {
+            "time": 7.0,
+            "every": 16.3,
+            "data": {
+                "type": "action",
+                "action_id": 106,
+                "target": "target"
+            },
+            "comment": "first 7-10 s after the pull, then every 16.3 s (15.2-19.9)"
+        },
+        {
+            "time": 10.0,
+            "data": {
+                "type": "action",
+                "action_id": 107,
+                "target": "itself"
+            },
+            "comment": "on itself, 10-14 s after the pull"
+        },
+        {
+            "time": 25.0,
+            "every": 17.3,
+            "data": {
+                "type": "action",
+                "action_id": 113,
+                "target": "target"
+            },
+            "comment": "about 25 s after the pull, then every 17.3 s"
+        },
+        {
+            "time": 33.0,
+            "data": {
+                "type": "action",
+                "action_id": 100,
+                "target": "target"
+            },
+            "comment": "about 33 s after the pull, once a run"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Fool Me Twice's quest battle (63, quest 1004): the archers of both waves (BNpcBase 1989, BNpcName 2088, layouts 4270002, 4270003 and 4270061): level 42, 429 HP; auto-attack 873 every 3.0 s. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.195` and `9.197`: two runs, the first lost, the second won; a level 47 player): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull."
+}

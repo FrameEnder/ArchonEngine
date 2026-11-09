@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from questkit import battle, battle_sim, capture, chronofoil, chronofoil_battle, chronofoil_quest, compare, fixtures, lint, recording, replay, scaffold, triage  # noqa: E402
+from questkit import battle, battle_sim, capture, chronofoil, chronofoil_battle, chronofoil_quest, compare, fixtures, lint, recording, replay, scaffold, transcribe, triage  # noqa: E402
 from questkit.bundle import Bundle  # noqa: E402
 
 QUEST = 9999
@@ -1235,6 +1235,71 @@ function onReturn(scene, results, player) sceneFinished(scene, results, player) 
         dump = {"script": "X", "params": []}
         fixture = fixtures.build_from_chronofoil(QUEST, events, dump, {4293142: 2002141}, previous=previous)
         self.assertEqual(fixture["steps"][0]["talk"], 2002140)
+
+
+class TranscribeTest(unittest.TestCase):
+    """Bars, spawns and moves read from a capture's events, and a script transcribed from the fixture that replays."""
+
+    def events(self):
+        Event = chronofoil_quest.Event
+
+        def talk(t, actor):
+            return [Event(t, 148, "talk", {"actor": actor}),
+                    Event(t, 148, "start", {"type": 1, "actor": actor, "flags": 0, "arg": 0})]
+
+        def scene(t, number, flags, results, yielded=False, code=0):
+            return [Event(t, 148, "scene", {"scene": number, "flags": flags, "params": []}),
+                    Event(t + 1, 148, "answer", {"scene": number, "yielded": yielded, "code": code,
+                                                 "results": results})]
+
+        return (talk(0, 5) + scene(1, 0, 0x2000, [1, 0, 0], True) + scene(3, 1, 0x2000, [0, 0])
+                + [Event(4, 148, "accept", {}), Event(4, 148, "update", {"sequence": 1, "vars": "000000000000"}),
+                   Event(4, 148, "finish", {})]
+                # Talked to in combat: no event at all.
+                + [Event(8, 148, "talk", {"actor": 7})]
+                # The object: its scene, the bar broken off; then again, the bar done and enemies out.
+                + talk(10, 7) + scene(11, 2, 0x2001, [0, 0]) + [Event(13, 148, "bar", {"action": 1}),
+                                                                Event(14, 148, "finish", {})]
+                + talk(20, 7) + scene(21, 2, 0x2001, [0, 0]) + [Event(23, 148, "bar", {"action": 1})]
+                + scene(26, 3, 0x2001, [0, 0])
+                + [Event(28, 148, "spawn", {"base": 12, "layout": 4000001}),
+                   Event(28, 148, "update", {"sequence": 2, "vars": "000000000000"}), Event(28, 148, "finish", {})]
+                + [Event(30, 148, "update", {"sequence": 255, "vars": "000000000000"})]
+                # The reward, then a move to a spot of no pop range of the quest's.
+                + talk(40, 5) + scene(41, 4, 0xF8402EFB, [1, 5826, 0, 0], True)
+                + [Event(43, 148, "finish", {}),
+                   Event(43, 148, "zone", {"territory": 148, "arrival": [1.0, 2.0, 3.0, 1.57]}),
+                   Event(43, 148, "finish_quest", {})])
+
+    def test_fixture_and_script(self):
+        dump = {"quest_id": QUEST, "script": "SubTst001_09999", "name": "Test",
+                "params": [{"name": "ACTOR0", "value": 1001}, {"name": "EOBJECT0", "value": 2001},
+                           {"name": "ENEMY0", "value": 4000001}, {"name": "EVENT_ACTION_SEARCH", "value": 1}]}
+        previous = {"steps": [{"kill": [12, 4000001], "expect": {"sequence": 255, "vars": "000000000000"}}]}
+        fixture = fixtures.build_from_chronofoil(QUEST, self.events(), dump, {5: 1001, 7: 2001}, previous=previous)
+        steps = fixture["steps"]
+        self.assertEqual([s.get("talk") or s.get("kill") for s in steps], [1001, 2001, 2001, [12, 4000001], 1001])
+        self.assertTrue(steps[1]["interrupted"])
+        self.assertEqual(steps[1]["scenes"][0]["bar"], 1)
+        self.assertEqual(steps[2]["spawns"], [4000001])
+        self.assertEqual(steps[4]["arrivals"], [[1.0, 2.0, 3.0, 1.57]])
+        self.assertEqual(steps[4]["territory"], 148)
+
+        text, draft = transcribe.Transcript(dump, [("test", fixture)]), None
+        script = text.write("a made-up capture")
+        self.assertIn("player:event_action(EVENT_ACTION_SEARCH)", script)
+        self.assertIn("player:spawn_quest_bnpc(ENEMY0)", script)
+        self.assertIn("player:change_territory(148, { x = 1.0, y = 2.0, z = 3.0 }, 1.57)", script)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "script.lua"
+            path.write_text(script)
+            result = replay.run(fixture, path)
+            self.assertTrue(result.ok, replay.format_results([result]))
+
+    def test_flags(self):
+        self.assertEqual(transcribe.flags_lua(0x2001), "NO_DEFAULT_CAMERA | HIDE_HOTBAR")
+        self.assertEqual(transcribe.flags_lua(0xF8402EFB), "SET_BASE | HIDE_HOTBAR")
+        self.assertEqual(transcribe.flags_lua(0xF8402FFF), "SET_BASE | INVIS_ENPC | INVIS_AETHERYTE | HIDE_HOTBAR")
 
 
 class BattleSimObjectTalkTest(unittest.TestCase):

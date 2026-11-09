@@ -401,6 +401,33 @@ a quest's entering event, 0 for every other event (228 events across the capture
   2 and 3 (the lead-in's waits) and 10 (empty), OnSequence001 (no music), OnSequence004 (a message) and its objective
   (TODO001 before sequence 4, TODO002 from it).
 
+### Quest battle 63 — Fool Me Twice (`content/questbattle/63.lua`)
+
+* Quest 1004 (GaiUsc604_01004) enters it from EOBJECT0 (ITEM0 used on it, scene 12, YesNoQuestBattle; territory 308,
+  duty 357). Territory 308 is taken to be a copy of Mor Dhona: its spots are a few yalms from where the item is used
+  in Mor Dhona and where retail let the player out (-129.6, -2.7, -629.2), so its NPCs are layer `QB_GaiUsc604_001` of
+  `lak_l1f1_planmap.json` (10 NPCs from `questkit chronofoil --dropin 308`, all `nonpop`, character data flags 3 as
+  retail's SpawnNpc), with retail's layout IDs, levels, HP, positions, display flags and looks from Connor's Chronofoil
+  capture e834e436 (2026-11-07, `--battle 9.195` lost and `9.197` won; a level 47 player). Start spot (-127.58, -2.66,
+  -630.68, facing -0.719) and the opening's flags (0xF8412EF3) are both runs'.
+* **The ally to keep alive** (4270049, base 1987, 10560 HP) goes for whoever is after you, the adds before the boss,
+  and heals you or itself at 15-48 % (964, 395-412, every 5.7-7.2 s): a tank (`protect`) with that heal. Its weapon
+  skill 1170 (76-95) every 6.3 s. The boss (4270036, base 1988, 6540 HP) swings 1172 every 2 s instead of an
+  auto-attack and casts 1204 (2.7 s, where its target stood) every 15.7 s; under 40 % it casts 1286 on itself (status
+  61). The first wave is out from the start beside him (a gladiator, two lancers, two archers, who took the ally on at
+  once); the second (an archer, a lancer, a conjurer who cured the boss at 39 %) comes as the first is down.
+* **Flow** (seconds from the fight starting): sequence 2, talks 101 and 102 (the ally) at 5.1 and 10.1; the first
+  wave's last one's health at 0: sequence 3 4.3 s later with the second wave, talks 103 (the second wave's lancer) and
+  104 5.1 and 10.1 s after; the boss under 40 %: sequence 4, sequence 5 5.5 s later, talks 105 and 106 6.1 and 11.9 s
+  after it; the boss's health at 0: "Duty Complete" and sequence 6 2.1 s later, the battle's scene 6 (0xF8402EFB); the
+  quest moves to 255 with ITEM0 (UI8BH) gone (`QUEST_VARS_AFTER_WIN`). Lost: the ally's health at 0 (talk 107 and
+  sequence 0xFE at once, 69.6 s in, the lost run) or yours. `questkit battle-sim 63`: 19 events in both runs within
+  0.7 s (fixtures `63.json`, `63-lost.json`).
+* Timelines `QB63*` (median damage to the player and the other side); new action scripts `QB63Ally_00964`,
+  `QB63Ally_01170`, `QB63Boss_01172`, `QB63Boss_01204`, `QB63Boss_01286` (1286's status length not seen: 30 s). The
+  battle's client script (`GaiUsc604Btl_01004`, Bob's extracted scripts of 2026-11-09) has scenes 1 (the opening) and
+  6 (the finish) and OnSequence001-002 only, as played.
+
 ### Quest battle 60 — In the Eyes of Gods and Men (`content/questbattle/60.lua`)
 
 * Quest 912 (GaiUsb803_00912) enters it (ACTOR2's YesNoQuestBattle, scene 4, or EVENTRANGE0's, scene 18; territory

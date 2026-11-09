@@ -1,0 +1,96 @@
+{
+  "quest": 1448,
+  "script": "GaiUse307_01448",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1008579,
+    "EVENT_ACTION_SEARCH": 1,
+    "ACTOR1": 1009089,
+    "ACTOR2": 1000168,
+    "ACTOR3": 1008969,
+    "ACTOR4": 1003027,
+    "ACTOR5": 1009091,
+    "ACTOR6": 1009092,
+    "ACTOR7": 1009093,
+    "ACTOR8": 1009094,
+    "ACTOR9": 1009090,
+    "ACTOR10": 1000460,
+    "TERRITORYTYPE0": 205,
+    "POPRANGE0": 3877982,
+    "POPRANGE1": 3878860,
+    "ACTOR11": 1009097,
+    "CUT_SCENE_N_01": 533,
+    "ACTION_TIMELINE_EVENT_JOY": 953,
+    "LOC_ACTOR0": 1008176,
+    "LOC_ACTOR1": 1008177,
+    "LOC_ACTOR2": 1008178,
+    "LOC_ACTOR3": 1008179,
+    "LOC_ACTOR4": 4866717,
+    "ACTION_TIMELINE_FACIAL_SPEWING": 617,
+    "ACTION_TIMELINE_FACIAL_SMILE": 605,
+    "ACTION_TIMELINE_FACIAL_FEAR": 614
+  },
+  "steps": [
+    {
+      "talk": 1008579,
+      "layout": 4619818,
+      "territory": 351,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "effects": [
+        {"zone": 351}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []},
+      "arrivals": [[3.32, -2.0, -43.83, -2.263]]
+    },
+    {
+      "talk": 1000168,
+      "layout": 1141151,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "scenes": [
+        {"scene": 13, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 205}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": []},
+      "talk": 1000460,
+      "layout": 3854439,
+      "what": "ACTOR10",
+      "pop_ranges": [3877982],
+      "arrivals": [[42.68, 5.83, 39.65, -2.308]]
+    },
+    {
+      "scenes": [
+        {"scene": 6, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "effects": [
+        {"zone": 133}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []},
+      "talk": 1003027,
+      "layout": 3877984,
+      "what": "ACTOR4",
+      "pop_ranges": [3878860],
+      "arrivals": [[-157.46, 4.0, -7.1, 2.909]]
+    },
+    {
+      "talk": 1009097,
+      "layout": 4841613,
+      "what": "ACTOR11",
+      "scenes": [
+        {"scene": 14, "flags": "0x2000", "results": [1, 5825, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "quest": 3875,
+  "script": "XxaUse104_03875",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1007739,
+    "ACTOR1": 1007752,
+    "POPRANGE0": 8308471,
+    "ACTOR2": 1006693,
+    "QST_ACCEPT_CHECK": 66714,
+    "BIND_ACTOR0": 4497680,
+    "CUT_SCENE_N_01": 435
+  },
+  "steps": [
+    {
+      "scenes": [
+        {"scene": 0, "flags": "0x2001", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "effects": [
+        {"zone": 212}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []},
+      "talk": 1007739,
+      "layout": 4497684,
+      "what": "ACTOR0",
+      "pop_ranges": [8308471],
+      "arrivals": [[-11.3, 0.01, 0.0, 1.57]]
+    },
+    {
+      "talk": 1006693,
+      "layout": 4497337,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 3, "flags": "0xf8402efb", "results": [0, 0]},
+        {"scene": 4, "flags": "0x2000", "results": [1, 5824, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

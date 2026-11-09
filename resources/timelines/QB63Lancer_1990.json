@@ -1,0 +1,46 @@
+{
+    "autoattack_action_id": 871,
+    "from_pull": true,
+    "recorded_amounts": {
+        "871": {
+            "players": 68,
+            "npcs": 88.5
+        },
+        "866": {
+            "players": 119,
+            "npcs": 377
+        }
+    },
+    "timepoints": [
+        {
+            "time": 5.0,
+            "data": {
+                "type": "action",
+                "action_id": 83,
+                "target": "itself"
+            },
+            "comment": "Life Surge on itself, 3-8 s after the pull"
+        },
+        {
+            "time": 9.5,
+            "every": 10.25,
+            "data": {
+                "type": "action",
+                "action_id": 866,
+                "target": "target"
+            },
+            "comment": "2.2 s cast: first 9-17 s after the pull, then every 10.25 s (9.4-20.1)"
+        },
+        {
+            "time": 25.0,
+            "data": {
+                "type": "action",
+                "action_id": 477,
+                "target": "itself"
+            },
+            "comment": "on itself, 25-46 s after the pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Fool Me Twice's quest battle (63, quest 1004): the lancers of both waves (BNpcBase 1990, BNpcName 1811, layouts 4270007, 4270008 and 4270060): level 42, 572 HP; auto-attack 871 every 3.0 s. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.195` and `9.197`: two runs, the first lost, the second won; a level 47 player): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull."
+}

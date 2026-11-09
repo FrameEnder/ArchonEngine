@@ -1,0 +1,37 @@
+{
+  "quest": 980,
+  "script": "GaiUsc405_00980",
+  "source": "Bob's Chronofoil capture 689b15da (2026-11-09)",
+  "params": {"ACTOR0": 1006380, "ITEM0": 2000842, "ACTOR1": 1006517, "ACTOR2": 1006518},
+  "steps": [
+    {
+      "talk": 1006380,
+      "layout": 4260908,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []}
+    },
+    {
+      "talk": 1006517,
+      "layout": 4273882,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1006518,
+      "layout": 4273884,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [1, 5826, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

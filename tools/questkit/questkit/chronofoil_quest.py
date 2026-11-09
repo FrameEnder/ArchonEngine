@@ -26,6 +26,7 @@ Captures carry other players and chat; only these numbers come out of them.
 
 from __future__ import annotations
 
+import math
 import struct
 from dataclasses import dataclass, field
 
@@ -44,6 +45,7 @@ AFTER_FINISH = 1.0
 # ActorControl Defeated, the same moment: Bob's Chronofoil captures of 2026-11-05, That Weight's five sprites.)
 KILL_WINDOW = 0.5
 DEFEATED = 6  # ActorControl category
+EVENT_ACTION = 3  # ActorControl category: a progress bar starts (1, the EventAction row)
 SPAWN_NPC_COMMON = 16  # SpawnNpc's own fields before CommonSpawn (BNpcBase, BNpcName, layout ID at + 48)
 
 
@@ -72,13 +74,17 @@ def quest_events(captures, tables: dict, quests=None) -> dict[int, list[Event]]:
         finished: dict[int, float] = {}  # handler -> when its event last finished
         battle_npcs: dict[int, tuple[int, int]] = {}  # actor -> (BNpcBase, layout ID), from its SpawnNpc
         last_death: tuple[float, int, int] | None = None  # (when, base, layout) of the latest battle NPC's death
+        moving: Event | None = None  # the quest's zone change waiting for its ZoneInit (or ActorSetPos)
+        arriving: Event | None = None  # one that arrived, waiting for the client's rotation
 
-        def add(handler: int, t: float, kind: str, **data):
+        def add(handler: int, t: float, kind: str, **data) -> Event | None:
             if handler < QUEST_HANDLER_BASE or handler >= QUEST_HANDLER_BASE + 0x10000:
-                return
+                return None
             if wanted is not None and handler not in wanted:
-                return
-            flows.setdefault(handler - QUEST_HANDLER_BASE, []).append(Event(t, zone, kind, data))
+                return None
+            event = Event(t, zone, kind, data)
+            flows.setdefault(handler - QUEST_HANDLER_BASE, []).append(event)
+            return event
 
         def current(t: float) -> int | None:
             """The quest whose event is open (or just finished), for packets that don't name one."""
@@ -95,6 +101,24 @@ def quest_events(captures, tables: dict, quests=None) -> dict[int, list[Event]]:
                 if segment.dir == "out" and name in ("ZoneInit", "InitZone"):
                     zone = struct.unpack_from("<H", d, 2)[0]
                     open_events.clear()
+                    if moving is not None and len(d) >= 116:
+                        # Where the quest's zone change put the player: ZoneInit's pop range (at 12) and position (at
+                        # 104); the rotation is the client's first position update's.
+                        moving.data["pop_range"] = struct.unpack_from("<I", d, 12)[0]
+                        moving.data["arrival"] = [round(v, 2) for v in struct.unpack_from("<fff", d, 104)]
+                        arriving = moving
+                    moving = None
+                elif name == "ActorSetPos" and segment.dir == "out" and moving is not None and len(d) >= 20:
+                    # Moved within the zone (PrepareZoning to the same territory): retail's ActorSetPos, the quantized
+                    # rotation at 0 and the position at 8.
+                    rotation = struct.unpack_from("<H", d, 0)[0] / 65535 * 2 * math.pi - math.pi
+                    moving.data["arrival"] = [round(v, 2) for v in struct.unpack_from("<fff", d, 8)] + \
+                        [round(rotation, 3)]
+                    moving = None
+                elif name == "UpdatePositionHandler" and segment.dir == "in" and arriving is not None \
+                        and len(d) >= 4:
+                    arriving.data["arrival"].append(round(struct.unpack_from("<f", d, 0)[0], 3))
+                    arriving = None
                 elif name == "StartTalkEvent" and segment.dir == "in":
                     actor, handler = struct.unpack_from("<II", d, 0)[0], struct.unpack_from("<I", d, 8)[0]
                     add(handler, t, "talk", actor=actor)
@@ -136,6 +160,10 @@ def quest_events(captures, tables: dict, quests=None) -> dict[int, list[Event]]:
                 elif name == "SpawnNpc" and segment.dir == "out" and len(d) >= SPAWN_NPC_COMMON + 60:
                     base, _name, layout = struct.unpack_from("<III", d, SPAWN_NPC_COMMON + 48)
                     battle_npcs[segment.src] = (base, layout)
+                    # Brought out while a quest's event is open (or just after): the quest may have spawned it.
+                    handler = current(t)
+                    if handler is not None:
+                        add(handler, t, "spawn", base=base, layout=layout)
                 elif name in ("ActorControl", "ActorControlSelf") and segment.dir == "out" and len(d) >= 2 \
                         and struct.unpack_from("<H", d, 0)[0] == DEFEATED and segment.src in battle_npcs:
                     last_death = (t, *battle_npcs[segment.src])
@@ -148,7 +176,11 @@ def quest_events(captures, tables: dict, quests=None) -> dict[int, list[Event]]:
                 elif name == "PrepareZoning" and segment.dir == "out":
                     handler = current(t)
                     if handler is not None:
-                        add(handler, t, "zone", territory=struct.unpack_from("<H", d, 4)[0] & 0x7FFF)
+                        moving = add(handler, t, "zone", territory=struct.unpack_from("<H", d, 4)[0] & 0x7FFF)
+                elif name in ("ActorControl", "ActorControlSelf", "ActorControlTarget") and segment.dir == "out" \
+                        and open_events and struct.unpack_from("<II", d, 0) == (EVENT_ACTION, 1):
+                    # A progress bar (ActorControlTarget 3 EventAction: 1, the EventAction row) during the event.
+                    add(open_events[-1], t, "bar", action=struct.unpack_from("<I", d, 8)[0])
                 elif name == "ActorControlSelf" and segment.dir == "out" and open_events:
                     category, first = struct.unpack_from("<II", d, 0)
                     if category == LEARN_TELEPORT:

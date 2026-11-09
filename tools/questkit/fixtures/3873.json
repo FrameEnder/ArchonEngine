@@ -1,0 +1,130 @@
+{
+  "quest": 3873,
+  "script": "XxaFst502_03873",
+  "source": "Connor's Chronofoil captures e834e436 (accepted to sequence 2) and af05916c (the rest), 2026-11-07/09",
+  "params": {
+    "ACTOR0": 1006646,
+    "ACTOR1": 1006657,
+    "INSTANCEDUNGEON0": 15,
+    "ACTOR2": 5010000,
+    "POPRANGE0": 4332876,
+    "ACTOR3": 1006662,
+    "ACTOR4": 1006663,
+    "ACTOR5": 1006664,
+    "ACTOR6": 1006660,
+    "ACTOR7": 1006661,
+    "ACTOR8": 1007682,
+    "ACTOR9": 1007683,
+    "QST_ACCEPT_CHECK_01": 66582,
+    "QST_ACCEPT_CHECK_02": 66672,
+    "UNLOCK_IMAGE_DUNGEON": 98,
+    "CUT_SCENE_01": 265,
+    "CONTENT_START": 15
+  },
+  "steps": [
+    {
+      "talk": 1006646,
+      "layout": 4269938,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1006657,
+      "layout": 4270118,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        },
+        {
+          "scene": 3,
+          "flags": "0xf8406efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "effects": [
+        {
+          "content": 15
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            1,
+            []
+          ]
+        ]
+      },
+      "duty_cleared": 15,
+      "what": "the duty cleared"
+    },
+    {
+      "talk": 1006657,
+      "layout": 4270118,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 13,
+          "flags": "0x2000",
+          "results": [
+            1,
+            4280,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

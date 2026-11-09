@@ -98,7 +98,8 @@ def _fixture_chronofoil(args) -> int:
             continue
         source = args.source or (previous or {}).get("source", "")
         note = f"scenes and effects from Bob's Chronofoil capture of {', '.join(dates)}"
-        if note not in source:
+        # --source names the capture itself (someone else's, say): don't credit Bob's.
+        if not args.source and note not in source:
             source = f"{source}; {note}" if source else note
         fixture = fixtures.build_from_chronofoil(quest, flows[quest], dump, bases, source, previous)
         if path.exists() and not args.force:
@@ -190,6 +191,35 @@ def _scaffold(args) -> int:
     result = run(fixture, out)
     print(format_results([result], verbose=args.verbose))
     return 0 if result.ok else 1
+
+
+def _transcribe(args) -> int:
+    from . import fixtures, scaffold, transcribe
+    from .replay import format_results, run
+
+    dumps = Path(args.dumps)
+    dump = fixtures.load_dump(dumps, args.quest)
+    if dump is None:
+        print(f"No dump of quest {args.quest} in {dumps}: kawari-questdump dump {args.quest}")
+        return 1
+    paths = [Path(p) for p in args.fixture] if args.fixture else \
+        [p for p in fixtures.all_fixtures() if p.stem.split("-")[0] == str(args.quest)]
+    if not paths:
+        print(f"No fixtures of quest {args.quest}: questkit fixture {args.quest} --chronofoil <capture>")
+        return 1
+    source = args.source or " and ".join(
+        f"{fixtures.load(p).get('source') or 'a capture'} (fixture tools/questkit/fixtures/{p.name})" for p in paths)
+    text, draft = transcribe.transcribe(args.quest, dumps, paths, source)
+    out = Path(args.out) if args.out else scaffold.default_path(dump)
+    if out.exists() and not args.force:
+        print(f"{out} exists; --force to replace it, or --out somewhere else.")
+        return 1
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(text)
+    print(f"Wrote {out} ({len(draft.handlers)} steps{f', {len(draft.todo)} TODO' if draft.todo else ''})")
+    results = [run(fixtures.load(p), out) for p in paths]
+    print(format_results(results, verbose=args.verbose))
+    return 0 if all(r.ok for r in results) else 1
 
 
 def _lua_syntax(args) -> int:
@@ -477,6 +507,17 @@ def main(argv=None) -> int:
     p.add_argument("--force", action="store_true", help="replace an existing script/fixture")
     p.add_argument("-v", "--verbose", action="store_true", help="show every step of the check")
     p.set_defaults(run=_scaffold)
+
+    p = commands.add_parser("transcribe", help="a quest script that does what retail did, from Chronofoil fixtures")
+    p.add_argument("quest", type=int)
+    p.add_argument("--dumps", required=True, help="kawari-questdump's output folder (quest-dumps)")
+    p.add_argument("--fixture", action="append",
+                   help="a fixture to follow; repeatable (default: every fixture of the quest)")
+    p.add_argument("--source", help="what the header says it was checked against (default: the fixtures)")
+    p.add_argument("--out", help="where to write the script (default: its place in resources/scripts)")
+    p.add_argument("--force", action="store_true", help="replace an existing script")
+    p.add_argument("-v", "--verbose", action="store_true", help="show every step of the check")
+    p.set_defaults(run=_transcribe)
 
     p = commands.add_parser("battle", help="what recorded duties or quest battles show: waves, targeting, heals")
     p.add_argument("recording", nargs="+",

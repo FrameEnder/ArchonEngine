@@ -1,0 +1,64 @@
+{
+  "quest": 1037,
+  "script": "GaiUsc902_01037",
+  "source": "Connor's Chronofoil capture e834e436 (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1006578,
+    "ACTOR1": 1006638,
+    "LOC_BGM1": 82
+  },
+  "steps": [
+    {
+      "talk": 1006578,
+      "layout": 4265821,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1006638,
+      "layout": 4268906,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0xf8402efb",
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

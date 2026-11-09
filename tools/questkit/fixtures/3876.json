@@ -1,0 +1,118 @@
+{
+  "quest": 3876,
+  "script": "XxaUse106_03876",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1006693,
+    "ITEM0": 2002997,
+    "ACTOR1": 1006530,
+    "QST_ACCEPT_CHECK_01": 66715,
+    "QST_ACCEPT_CHECK_02": 66716,
+    "CUT_SCENE_N_01": 436,
+    "LOC_POS_ACTOR0": 4521181,
+    "LOC_POS_ACTOR1": 4552545,
+    "LOC_POS_ACTOR2": 4553178,
+    "LOC_ACTOR0": 1007766,
+    "LOC_ACTOR1": 1007767,
+    "LOC_ACTOR2": 1007768
+  },
+  "steps": [
+    {
+      "talk": 1006693,
+      "layout": 4497337,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        },
+        {
+          "scene": 2,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1006693,
+      "layout": 4497337,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 3,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "001000000000",
+        "notices": [
+          [
+            0,
+            [
+              25918
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006530,
+      "layout": 4264514,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 4,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 5,
+          "flags": "0x2000",
+          "results": [
+            1,
+            4384,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

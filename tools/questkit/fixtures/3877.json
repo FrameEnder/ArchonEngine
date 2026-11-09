@@ -1,0 +1,127 @@
+{
+  "quest": 3877,
+  "script": "XxaUse114_03877",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1006530,
+    "ACTOR1": 1003785,
+    "ACTOR2": 1006693,
+    "ACTOR3": 1000168,
+    "QST_ACCEPT_CHECK_01": 66717,
+    "QST_ACCEPT_CHECK_02": 66718,
+    "QST_ACCEPT_CHECK_03": 66719,
+    "QST_ACCEPT_CHECK_04": 66720,
+    "QST_ACCEPT_CHECK_05": 66721,
+    "QST_ACCEPT_CHECK_06": 66722,
+    "QST_ACCEPT_CHECK_07": 66723,
+    "QST_ACCEPT_CHECK_08": 66724,
+    "QST_ACCEPT_CHECK_09": 67097,
+    "QST_ACCEPT_CHECK_10": 67098,
+    "LOC_ACTOR10": 1008182,
+    "LOC_ACTOR0": 1007510
+  },
+  "steps": [
+    {
+      "talk": 1006530,
+      "layout": 4264514,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0xf8406efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1003785,
+      "layout": 3985698,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006693,
+      "layout": 4497337,
+      "what": "ACTOR2",
+      "scenes": [
+        {
+          "scene": 4,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            1,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1000168,
+      "layout": 1141151,
+      "what": "ACTOR3",
+      "scenes": [
+        {
+          "scene": 6,
+          "flags": "0x2000",
+          "results": [
+            1,
+            5824,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

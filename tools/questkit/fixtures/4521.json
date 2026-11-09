@@ -1,0 +1,96 @@
+{
+  "quest": 4521,
+  "script": "XxcUsc901_04521",
+  "source": "Connor's Chronofoil capture e834e436 (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1006690,
+    "ACTOR1": 1006578,
+    "ACTOR2": 1006633,
+    "ACTOR3": 1006712,
+    "ACTOR4": 1006713,
+    "EOBJECT0": 2002252,
+    "TERRITORYTYPE0": 1049,
+    "QUESTBATTLE0": 5060,
+    "TERRITORYTYPE1": 140,
+    "QST_CHECK_01": 66236,
+    "QST_CHECK_02": 66237,
+    "QST_CHECK_03": 66238,
+    "REWARD_MOUNT_OPEN": 17,
+    "CUT_SCENE_01": 117,
+    "CUT_SCENE_02": 261,
+    "CUT_SCENE_AFTER_01": 294,
+    "CUT_SCENE_AFTER_02": 264,
+    "CUT_SCENE_CONTENT_01": 262,
+    "QST_ACCEPT_CHECK_01": 66572,
+    "CONTENT_BGM_01": 151
+  },
+  "steps": [
+    {
+      "talk": 1006690,
+      "layout": 4259225,
+      "territory": 212,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "effects": [
+        {"zone": 212}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []},
+      "arrivals": [[36.7, 1.2, 2.19, 2.066]]
+    },
+    {
+      "talk": 1006578,
+      "layout": 4265821,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1006633,
+      "layout": 4265831,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 3, "flags": "0xf8406efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 2002252,
+      "layout": 4301817,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 7, "flags": "0x2001", "results": [0, 0]},
+        {"scene": 8, "flags": "0xf8406efb", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 1049}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": []},
+      "arrivals": [[-678.72, 63.67, -808.74, -1.252]]
+    },
+    {
+      "battle_won": 4,
+      "expect": {"sequence": 4, "vars": "000000000000", "notices": []}
+    },
+    {
+      "enter_territory": 140,
+      "scenes": [
+        {"scene": 11, "flags": "0xf8416efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[3, []]]}
+    },
+    {
+      "talk": 1006578,
+      "layout": 4265821,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 12, "flags": "0x2000", "results": [1, 5826, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

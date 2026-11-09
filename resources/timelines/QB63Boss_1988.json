@@ -1,0 +1,48 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "recorded_amounts": {
+        "1172": {
+            "players": 111.5,
+            "npcs": 139.5
+        },
+        "1204": {
+            "players": 381,
+            "npcs": 551
+        }
+    },
+    "timepoints": [
+        {
+            "time": 3.6,
+            "every": 2.1,
+            "data": {
+                "type": "action",
+                "action_id": 1172,
+                "target": "target"
+            },
+            "comment": "its swing in place of an auto-attack: 3.5-4.5 s after the pull, then every 2.0-2.1 s"
+        },
+        {
+            "time": 17.0,
+            "every": 15.7,
+            "data": {
+                "type": "action",
+                "action_id": 1204,
+                "target": "target"
+            },
+            "comment": "2.7 s cast where its target stood: first 15.4-19.1 s after the pull, then every 15.7 s (15.3-22.7)"
+        },
+        {
+            "time": 0.0,
+            "hp_below": 40,
+            "data": {
+                "type": "action",
+                "action_id": 1286,
+                "target": "itself"
+            },
+            "comment": "2.7 s cast on itself (status 61) 1.5 s after it fell under 40 % (the one run that got there)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Fool Me Twice's quest battle (63, quest 1004): the boss (BNpcBase 1988, BNpcName 2092, layout 4270036): level 46, 6540 HP; no auto-attack: 1172 every 2 s instead. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.195` and `9.197`: two runs, the first lost, the second won; a level 47 player): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull."
+}

@@ -1,0 +1,94 @@
+{
+  "quest": 1346,
+  "script": "GaiUse202_01346",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1008597,
+    "EVENT_ACTION_SEARCH": 1,
+    "ACTOR1": 1008702,
+    "ACTOR2": 1002058,
+    "EOBJECT0": 2003561,
+    "EVENT_ACTION_WATCHGUARD_LONG": 28,
+    "ENEMY0": 4620255,
+    "EVENT_ACTION_SEARCH_SHORT": 2,
+    "ENEMY1": 4620256,
+    "ENEMY2": 4620257,
+    "ENEMY3": 4620258,
+    "ACTOR3": 1008598,
+    "ACTOR4": 1008599,
+    "EOBJECT1": 2003562,
+    "LOC_SE1": 42,
+    "LOC_ACTION1": 1002,
+    "LOC_ACTIOR0": 1008176,
+    "LOC_ACTIOR1": 1008177,
+    "LOC_FACE0": 605,
+    "LOC_FACE1": 604,
+    "LOC_FACE2": 619
+  },
+  "steps": [
+    {
+      "talk": 1008597,
+      "layout": 4620221,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1002058,
+      "layout": 3629823,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 3, "flags": "0xf8402fff", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 2003561,
+      "layout": 4620227,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 6, "flags": "0x2001", "results": [0, 0], "bar": 28},
+        {"scene": 7, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": []},
+      "spawns": [4620256, 4620255]
+    },
+    {
+      "kill": [2853, 4620255],
+      "expect": {"sequence": 2, "vars": "010000000000", "notices": []}
+    },
+    {
+      "kill": [2853, 4620256],
+      "expect": {"sequence": 2, "vars": "020000000000", "notices": []}
+    },
+    {
+      "kill": [2877, 4620257],
+      "expect": {"sequence": 2, "vars": "030000000000", "notices": []}
+    },
+    {
+      "kill": [2877, 4620258],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1008598,
+      "layout": 4620226,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 11, "flags": "0xf8406fff", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[2, []]]}
+    },
+    {
+      "talk": 1002058,
+      "layout": 3629823,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 14, "flags": "0xf8402fff", "results": [1, 6241, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

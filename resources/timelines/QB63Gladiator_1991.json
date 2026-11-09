@@ -1,0 +1,42 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 40,
+            "npcs": 53
+        }
+    },
+    "timepoints": [
+        {
+            "time": 12.0,
+            "every": 5.9,
+            "data": {
+                "type": "action",
+                "action_id": 14,
+                "target": "itself"
+            },
+            "comment": "12 s after the pull, then every 5.9 s (2.6-7.2)"
+        },
+        {
+            "time": 18.5,
+            "data": {
+                "type": "action",
+                "action_id": 12,
+                "target": "itself"
+            },
+            "comment": "on itself, once"
+        },
+        {
+            "time": 21.5,
+            "data": {
+                "type": "action",
+                "action_id": 17,
+                "target": "itself"
+            },
+            "comment": "Sentinel on itself, once"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Fool Me Twice's quest battle (63, quest 1004): the first wave's gladiator (BNpcBase 1991, BNpcName 1809, layout 4270011): level 42, 894 HP; auto-attack 870 every 3.0 s. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.195` and `9.197`: two runs, the first lost, the second won; a level 47 player): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull."
+}

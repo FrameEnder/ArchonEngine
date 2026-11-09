@@ -1,0 +1,121 @@
+{
+  "quest": 1442,
+  "script": "GaiUse301_01442",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1008579,
+    "EVENT_ACTION_SEARCH": 1,
+    "ACTOR1": 1009239,
+    "ACTOR2": 1009240,
+    "ACTOR3": 1009241,
+    "ACTOR4": 1008623,
+    "CUT_SCENE_N_01": 484,
+    "LOC_ACTOR0": 1008266,
+    "LOC_ACTION0": 613,
+    "LOC_ACTION1": 615,
+    "LOC_ACTION2": 620,
+    "LOC_ACTION3": 605,
+    "LOC_ACTOR1": 1009240,
+    "LOC_ACTOR2": 1009241,
+    "LOC_ACTOR3": 1008175,
+    "LOC_ACTOR4": 1008182,
+    "LEVEL_ID_NPC01": 4841541,
+    "LEVEL_ID_NPC02": 4841542,
+    "LOC_ACTION4": 617,
+    "LOC_POS_ACTOR0": 4881124,
+    "LOC_POS_ACTOR1": 4892117,
+    "LOC_SE1": 39,
+    "LOC_SE0": 68,
+    "LOC_BGM1": 78,
+    "LOC_BGM0": 97,
+    "LOC_ACTOR10": 4505914,
+    "LOC_ACTOR11": 4550383
+  },
+  "steps": [
+    {
+      "talk": 1008579,
+      "layout": 4619818,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1009239,
+      "layout": 4841537,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1008623,
+      "layout": 4620907,
+      "what": "ACTOR4",
+      "scenes": [
+        {
+          "scene": 6,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        },
+        {
+          "scene": 7,
+          "flags": "0x2000",
+          "results": [
+            1,
+            5825,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "quest": 3883,
+  "script": "XxaUse303_03883",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1009049,
+    "ACTOR1": 1009050,
+    "ENEMY0": 4841637,
+    "ENEMY1": 4841638,
+    "ENEMY2": 4841640,
+    "ENEMY3": 4841641,
+    "ENEMY4": 4841642,
+    "ENEMY5": 4841643,
+    "ENEMY6": 4841644,
+    "ACTOR2": 1009051,
+    "ACTOR3": 1009052,
+    "ACTOR4": 1009053,
+    "ACTOR5": 1009054,
+    "QST_ACCEPT_CHECK": 66980
+  },
+  "steps": [
+    {
+      "talk": 1009049,
+      "layout": 4841545,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1009050,
+      "layout": 4841623,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []},
+      "spawns": [4841638, 4841637]
+    },
+    {
+      "kill": [2852, 4841637],
+      "expect": {"sequence": 1, "vars": "010000000000", "notices": []}
+    },
+    {
+      "kill": [2852, 4841638],
+      "expect": {"sequence": 1, "vars": "020000000000", "notices": []}
+    },
+    {
+      "kill": [3114, 4841640],
+      "expect": {"sequence": 1, "vars": "030000000000", "notices": []}
+    },
+    {
+      "kill": [3115, 4841642],
+      "expect": {"sequence": 1, "vars": "040000000000", "notices": []}
+    },
+    {
+      "kill": [3115, 4841641],
+      "expect": {"sequence": 1, "vars": "050000000000", "notices": []}
+    },
+    {
+      "kill": [3116, 4841643],
+      "expect": {"sequence": 1, "vars": "060000000000", "notices": []}
+    },
+    {
+      "kill": [3117, 4841644],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1009050,
+      "layout": 4841623,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 15, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1009049,
+      "layout": 4841545,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 21, "flags": "0x2000", "results": [1, 5825, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

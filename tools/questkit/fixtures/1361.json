@@ -1,0 +1,88 @@
+{
+  "quest": 1361,
+  "script": "GaiUse217_01361",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1008693,
+    "EVENT_ACTION_SEARCH": 1,
+    "INSTANCEDUNGEON0": 20017,
+    "ACTOR1": 1008891,
+    "ACTOR2": 1008892,
+    "ACTOR3": 1008893,
+    "ACTOR4": 1008894,
+    "ACTOR5": 1008895,
+    "ACTOR6": 5010000,
+    "ACTOR7": 1005409,
+    "ACTOR8": 1002694,
+    "ACTOR9": 1008691,
+    "ACTOR10": 1001029,
+    "TERRITORYTYPE0": 198,
+    "POPRANGE0": 4633262,
+    "ACTOR11": 1008676,
+    "ACTOR12": 1008677,
+    "ACTOR13": 1008678,
+    "ACTOR14": 1008679,
+    "POPRANGE1": 4628787,
+    "POPRANGE2": 4635171,
+    "CUT_SCENE_N_01": 471,
+    "CUT_SCENE_N_02": 472,
+    "BGM_NOTHING": 1,
+    "UNLOCK_DUNGEON_LEVIATHAN_HARD": 182,
+    "UNLOCK_ADD_NEW_CONTENT_TO_CF": 3702,
+    "LOC_ACTOR0": 4635444,
+    "LOC_ACTOR1": 4635445,
+    "LOC_ACTOR2": 4635446,
+    "LOC_ACTOR3": 4635447,
+    "LOC_ACTOR4": 4635448,
+    "LOC_ACTOR5": 4629182
+  },
+  "steps": [
+    {
+      "talk": 1008693,
+      "layout": 4629181,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "effects": [
+        {"content": 20017}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, []]]},
+      "duty_cleared": 20017,
+      "what": "the duty cleared"
+    },
+    {
+      "scenes": [
+        {"scene": 17, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 198}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []},
+      "talk": 1001029,
+      "layout": 4054953,
+      "what": "ACTOR10",
+      "pop_ranges": [4628787],
+      "arrivals": [[0.1, 1.0, 7.01, -3.142]]
+    },
+    {
+      "scenes": [
+        {"scene": 14, "flags": "0xf8402efb", "results": [0, 0]},
+        {"scene": 15, "flags": "0x2800", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 129}
+      ],
+      "expect": {"completed": true, "notices": []},
+      "talk": 1002694,
+      "layout": 4087076,
+      "what": "ACTOR8",
+      "pop_ranges": [4635171],
+      "arrivals": [[10.28, 21.0, -12.58, -2.217]]
+    }
+  ]
+}

@@ -15,6 +15,7 @@ pip install lupa        # Lua 5.4 for Python; replay, scaffold and lua-syntax ne
 | `replay [quests]` | Runs each scripted quest against what retail did (its fixture) |
 | `fixture <quests\|all> --recording … --dumps …` | Makes replay fixtures from a Recorder export |
 | `scaffold <quest> --dumps … --recording …` | Drafts a quest script (and its fixture) from the dump and the recording |
+| `transcribe <quest> --dumps … [--fixture …]` | Writes a quest script that does what retail did, from the quest's Chronofoil fixtures, and replays it |
 | `compare --capture … --recording … [quests]` | What Kawari sent for a quest against what retail did |
 | `lua-syntax [folder]` | Checks every Lua script compiles (Lua 5.4, like the server) |
 | `battle <exports, battles folder or files…> [--list] [--where …] [--run N,M\|all] [--summary-only] [--npc …] [--out file]` | What recorded duties and quest battles show: cast, waves, targeting rules, heals, who never acted; totals across runs of the same battle |
@@ -80,11 +81,13 @@ state after it:
 | `"expect": {"sequence", "vars", "notices"}`, `{"completed": true}` or `{"accepted": false}` | The state after the step (`accepted: false`: the offer was turned down); `notices` is left out where the recording had no packets |
 | `"scenes": [{"scene", "flags", "params", "results", "yield", "error"}, …]` | Every scene retail played in the step, in order, with its flags (hex), parameters (when it had any) and the client's answer. The script must play the same scenes with the same flags and parameters, and each gets retail's answer (a fixture from Chronofoil) |
 | `"effects": [{"zone": id}, {"aetheryte": id}, {"unlock": id}, {"content": id}]` | What retail did outside the quest while the event was open: zone changes (`change_territory`, a pop range, joining a quest battle), attunements, unlocks (ActorControlSelf 41, `unlock`), duties unlocked (ActorControlSelf 131 with the InstanceContent ID, `unlock_content`). With `scenes`, a step without `effects` must do none |
-| `"spawns": [layout, …]` | The step must bring these out (`spawn_quest_bnpc`) |
+| `"spawns": [layout, …]` | The step must bring these out (`spawn_quest_bnpc`); `fixture --chronofoil` writes the quest's `ENEMY*` layouts SpawnNpc brought out while the event was open (or just after it) |
 | `"results": {"scene": [..]}` | What the client answers a scene with, if not `[1, 0]`; `{"results": [..], "error": n}` also sets the scene's error code (`player.scene_error_code`), for yes/nos that answer through it; `"yield": true` sends it back through `onYield` as retail's client did (EventYieldHandler), even when the script has `onReturn`; a yield the server answered with EventResume has `"resume"` (its parameters, which the script's `resume_event` must match; `name_companion` counts as a resume with 1, as the server answers a usable name) and `"after"` (the client's next answer, which replay gives the script after the resume); `"yield_id"` is the yield's ID (0 if not given: a text answer's is 231) |
 | `"what"` | Which parameter the target is (for reading) |
 | `"from": {"sequence", "vars"}` | A run recorded from the middle of the quest (the capture began after it was accepted): the quest is active in that state before the first step (701's run in capture 9df4ff01) |
-| `"interrupted": true` (a step) | Retail broke the step's progress bar off (moving, a hit, paralysis: CancelCast with kind 4 in the capture): the script's `event_action` ends the event there, without `onEventActionCast` (written by hand; Seeing Eye to Winged Eye's look-out in captures 412ba91d and b166797f) |
+| `"interrupted": true` (a step) | Retail broke the step's progress bar off (moving, a hit, paralysis: CancelCast with kind 4 in the capture): the script's `event_action` ends the event there, without `onEventActionCast` (Seeing Eye to Winged Eye's look-out in captures 412ba91d and b166797f, by hand; `fixture --chronofoil` writes it since 2026-11-09 when the step's last scene was followed by a bar and nothing came of it) |
+| `"bar": action` (a scene) | A progress bar followed this scene (retail's ActorControlTarget 3, EventAction, with 1 and the EventAction row); `fixture --chronofoil` writes it, `transcribe` reads it |
+| `"pop_ranges": [id]`, `"arrivals": [[x, y, z, rotation]]` (a step) | Where the step's zone change put the player: ZoneInit's pop range, and the spot (ZoneInit's position and the client's first rotation, or retail's ActorSetPos for a move within the territory, which has no ZoneInit); written by `fixture --chronofoil`, read by `transcribe` |
 
 **The harness** (`harness.py`) runs the real script under Lua 5.4 the way the world server does:
 
@@ -130,7 +133,13 @@ a kill. A kill is named from the capture itself since 2026-11-05: the battle NPC
 SpawnNpc) whose ActorControl Defeated came at most 0.5 s before the change (`KILL_WINDOW`; retail sends them together).
 Before, kills came only from an existing fixture, matched by state, so a second run's fixture made over the first one's
 (`--force`) got the first run's sprites: That Weight's three runs each killed a different five. Talks that change nothing are steps too (agreeing to a quest battle); a progress bar broken off (a scene the
-client never answered) isn't, since nothing happened. The talked-to actor is the layout ID of an event NPC or object;
+client never answered) isn't, since nothing happened, nor a talk the server never started (no EventStart: the player
+was still in combat, 1358's first talk to ACTOR2). Since 2026-11-09 it also reads each scene's progress bar
+(ActorControlTarget 3 with 1 and the EventAction row: the scene's `bar`; a step whose bar was the last thing, with
+nothing coming of it, is `interrupted`), the quest's `ENEMY*` layouts SpawnNpc brings out during the event (`spawns`),
+and where a zone change put the player (`pop_ranges` from ZoneInit; `arrivals`, the spot and facing, from ZoneInit and
+the client's first position, or from ActorSetPos for a move within the territory, which has no ZoneInit: before, the
+next ZoneInit's pop range was taken, often a later teleport's, whose pop range field held small numbers: apparently the aetheryte's row, 9 in Ul'dah, 24 in Mor Dhona). The talked-to actor is the layout ID of an event NPC or object;
 its base ID comes from the server's SpawnObject packets, the Recorder export's NPC list (`--recording`, optional),
 the dumps (`--dumps`: a todo's locations are the layout IDs of who it's done with, and the listeners whose
 `despawn_sequence` is the todo's index are their base IDs, taken when there are as many of each; since 2026-10-30,
@@ -181,6 +190,41 @@ elsewhere) and the fixture, then replays the draft and prints the result. How it
 Checked on the 16 known quests: every draft replays against its fixture. Compared with the hand-written scripts, the
 main thing to fix by hand is guessed scene numbers (marked TODO), and steps that change nothing on retail (spawns,
 remembering an examined object).
+
+## transcribe
+
+```shell
+python3 tools/questkit transcribe 981 --dumps quest-dumps/20261109          # every fixture of 981 (981.json, 981-*.json)
+python3 tools/questkit transcribe 981 --dumps quest-dumps --fixture tools/questkit/fixtures/981.json --out /tmp/x.lua
+```
+
+For quests with Chronofoil fixtures, which hold everything retail did (`transcribe.py`): every step becomes a branch
+of the script, chosen by what started it (a talk, a key item, an emote, an event range, zoning in, a kill, a duty
+cleared) and the sequence; it plays the step's scenes with retail's flags and parameters, in order, and changes what
+retail changed when the last one ends. Header: one line per step, by sequence. In detail:
+
+* **Answers**: a scene answered with a yield of 1 that more follows (an offer, a trade, a quest battle's yes/no, a
+  reward) goes on only on 1; a closed reward window sets `REWARD_CLOSED` (0x11). The reward's item goes to the scenes
+  after it that showed it as their parameter (`{ chosen }`).
+* **Bars**: a scene followed by a progress bar (the fixture's `bar`) starts that event action, named by the quest's
+  `EVENT_ACTION_*` parameter, and plays the next scene in `onEventActionCast`.
+* **Runs merged**: the same step in several runs (fixtures) is one branch; a run broken off (a bar interrupted, a
+  scene with an error code, an offer turned down) is the start of the full one; a talk that changed nothing at first
+  (a quest battle lost) and later moved the quest on is the later one; the union of what the server did. A scene
+  retail saw broken off (an error code, nothing changed: Wedge's lines in 1005) checks `player.scene_error_code`.
+* **Moves**: the step before a `battle_won` joins `QUESTBATTLE0` in the territory retail went to; another zone change
+  goes to the pop range retail landed in when it's one of the quest's `POPRANGE*` (`move_to_pop_range` within the
+  territory, `change_territory_pop_range` elsewhere), else to retail's spot and facing (the fixture's `arrivals`) with
+  `change_territory`. Completing comes before the move, as on retail.
+* **Any order**: talks, emotes or key item uses of one sequence that count up one nibble, each setting one BitFlag8,
+  the last moving the quest on, become one group (the last one's flag is the next free one, as retail clears it):
+  any order works, notices as a `{ count, needed }` template or each target's own. Kills of one sequence that count
+  one nibble likewise (`KILLS_<sequence>`), by layout for the quest's enemies and by BNpcBase for open-world ones.
+* **Left to do by hand**: what retail didn't show (lines in sequences nobody talked in, the client's gating in
+  IsAcceptEvent) and steps whose counting doesn't fit (two counters at once, Dressed for Conquest's two hauls; a key
+  item that brings enemies out and counts when they fall, Drowning Out the Voices).
+
+Checked on the 50 quests of Connor's captures: 48 replay with no hand edits (1001 and 3871 were finished by hand).
 
 ## compare
 

@@ -1,0 +1,203 @@
+{
+  "quest": 3881,
+  "script": "XxaUse206_03881",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1008623,
+    "ACTOR1": 1008639,
+    "ACTOR2": 1008628,
+    "ACTOR3": 1008635,
+    "ACTOR4": 1008636,
+    "ACTOR5": 1008637,
+    "QST_ACCEPT_CHECK_01": 66885,
+    "QST_ACCEPT_CHECK_02": 66886
+  },
+  "steps": [
+    {
+      "talk": 1008623,
+      "layout": 4620907,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1008639,
+      "layout": 4622302,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1008628,
+      "layout": 4622194,
+      "what": "ACTOR2",
+      "scenes": [
+        {
+          "scene": 4,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000",
+        "notices": [
+          [
+            1,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "scenes": [
+        {
+          "scene": 7,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 3,
+        "vars": "010000000040",
+        "notices": [
+          [
+            2,
+            [
+              1,
+              3
+            ]
+          ]
+        ]
+      },
+      "talk": 1008636,
+      "layout": 4622270,
+      "what": "ACTOR4"
+    },
+    {
+      "scenes": [
+        {
+          "scene": 8,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 3,
+        "vars": "020000000060",
+        "notices": [
+          [
+            2,
+            [
+              2,
+              3
+            ]
+          ]
+        ]
+      },
+      "talk": 1008637,
+      "layout": 4622273,
+      "what": "ACTOR5"
+    },
+    {
+      "scenes": [
+        {
+          "scene": 6,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            2,
+            [
+              3,
+              3
+            ]
+          ]
+        ]
+      },
+      "talk": 1008635,
+      "layout": 4622262,
+      "what": "ACTOR3"
+    },
+    {
+      "talk": 1008639,
+      "layout": 4622302,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 10,
+          "flags": "0x2000",
+          "results": [
+            1,
+            6256,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

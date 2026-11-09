@@ -1,0 +1,81 @@
+{
+  "quest": 1191,
+  "script": "GaiUse117_01191",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1006751,
+    "EVENT_ACTION_SEARCH": 1,
+    "ACTOR1": 1003027,
+    "ACTOR2": 1008274,
+    "ACTOR3": 1008272,
+    "ACTOR4": 1008273,
+    "ACTOR5": 1000460,
+    "TERRITORYTYPE0": 205,
+    "POPRANGE0": 3877982,
+    "ACTOR6": 1006693,
+    "MOT_EVENT_JOY_BIG": 945,
+    "LOC_POSITION01": 4491673,
+    "LOC_POSITION02": 4491674,
+    "LOC_POSITION03": 4491675,
+    "LOC_POSITION11": 4065819,
+    "LOC_POSITION12": 4065820,
+    "LOC_POSITION13": 4065821,
+    "LOC_POSITION14": 4065822,
+    "LOC_POSITION15": 4065823,
+    "LOC_ACTOR01": 1005013,
+    "LOC_ACTOR02": 1005014,
+    "LOC_ACTOR03": 1003069,
+    "LOC_ACTOR11": 1004396,
+    "LOC_ACTOR12": 1004397,
+    "LOC_ACTOR13": 1004398,
+    "LOC_ACTOR14": 1004399,
+    "LOC_ACTOR15": 1004400,
+    "PUB_ACTOR_L": 4307833,
+    "PUB_ACTOR_R": 4307834,
+    "LOC_ACTION0": 787
+  },
+  "steps": [
+    {
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []},
+      "talk": 1006751,
+      "layout": 4254719,
+      "what": "ACTOR0"
+    },
+    {
+      "scenes": [
+        {"scene": 6, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 205}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []},
+      "talk": 1000460,
+      "layout": 3854439,
+      "what": "ACTOR5",
+      "pop_ranges": [3877982],
+      "arrivals": [[42.65, 5.82, 39.56, -2.308]]
+    },
+    {
+      "scenes": [
+        {"scene": 2, "flags": "0xf8402fff", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, [1, 1]]]},
+      "talk": 1003027,
+      "layout": 3877984,
+      "what": "ACTOR1"
+    },
+    {
+      "talk": 1006693,
+      "layout": 4497337,
+      "what": "ACTOR6",
+      "scenes": [
+        {"scene": 8, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

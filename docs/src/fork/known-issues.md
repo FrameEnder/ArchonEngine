@@ -148,6 +148,19 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quests
 
+* **The 50 quests of Connor's Chronofoil captures** (2026-11-09: 521, 522, 978-986, 1001-1005, 1037, 1175, 1189-1192,
+  1346-1363, 1442-1448, 3871-3884, 4521, 4522; Bob's dumps of 2026-11-09): untested in game, and each from one run
+  (978-983 also from Bob's capture 689b15da). Written by `questkit transcribe`, so a line retail didn't play isn't
+  there: talking to someone in a sequence where retail didn't does nothing, and the client's gating (IsAcceptEvent)
+  wasn't checked step by step. Things done in any order are only where retail's variables showed a count with a flag
+  each (talks, emotes, key items, kills); 1001 and 3871 were written by hand from their listings. Moves with no pop
+  range of the quest's go to retail's spot (`change_territory` with a position). Quest battle 63 (1004) is
+  scripted from two runs (one lost), its territory taken to be Mor Dhona's copy. **Not scripted**: quest battles 62
+  (983), 64 (1005), 65 (521), 5060 (Cape Westwind, 4521) and 5061 (Devastation, 4522), so those quests stop at their
+  battle; and the duties Castrum
+  Meridianum (InstanceContent 15, 3873), the Praetorium (86) and the Porta Decumana (20082, 4522), Thornmarch (Hard)
+  (20011, 1190) and the Whorleater (Hard) (20017, 1361): their quests move on when one is cleared and let out where
+  retail did (`set_duty_exit`), but the duties themselves don't exist yet.
 * **The 21 main scenario quests of 2026-11-06** (518, 876, 878, 883, 884, 886, 887, 889, 890, 897, 910, 911, 912, 924,
   927, 938, 939, 940, 941, 3868, 3869; Bob's dumps and his two characters' runs, Chronofoil 130088ec and 3c56e09f):
   untested in game; a third character's run (Chronofoil 21f967d2, 2026-11-07, 876 before 518) matched every step,

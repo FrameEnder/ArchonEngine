@@ -1,0 +1,114 @@
+{
+  "quest": 522,
+  "script": "ManFst408_00522",
+  "source": "Connor's Chronofoil capture e834e436 (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1006573,
+    "ACTOR1": 1004433,
+    "ACTOR2": 1001821,
+    "ACTOR3": 1006690,
+    "TERRITORYTYPE0": 130,
+    "POPRANGE0": 4103351,
+    "CUT_MANFST40810": 115,
+    "CUT_MANFST40820": 116,
+    "QST_CHECK_01": 66236,
+    "QST_CHECK_02": 66237,
+    "QST_CHECK_03": 66238,
+    "HOW_TO_JOB": 94
+  },
+  "steps": [
+    {
+      "talk": 1006573,
+      "layout": 4264487,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1001821,
+      "layout": 2621121,
+      "what": "ACTOR2",
+      "scenes": [
+        {
+          "scene": 3,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        },
+        {
+          "scene": 4,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006690,
+      "layout": 4259225,
+      "what": "ACTOR3",
+      "scenes": [
+        {
+          "scene": 5,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        },
+        {
+          "scene": 6,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

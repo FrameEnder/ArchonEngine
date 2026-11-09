@@ -40,7 +40,7 @@ those aren't listed here.
 | UpdateClassInfo | 1 | 58, 72, 17… every time | 0 | not read by the client (Kawari's struct) | left |
 | AcceptQuest | 4–5 | 3764 seven times, 678 | 0 | unknown (Kawari has it as padding) | open |
 | ZoneInit | 0 | the world server's ID | 0 | informational (Kawari's struct) | left |
-| ZoneInit | 12–15 | a layout instance in the zone | 0 | `pop_range_id`: where one comes in | open |
+| ZoneInit | 12–15 | a layout instance in the zone (a quest's POPRANGE*, a duty's exit); small numbers after a teleport (9 arriving in Ul'dah, 24 in Mor Dhona, 19, 11, 15: apparently the aetheryte's row; Connor's Chronofoil capture af05916c, 2026-11-09) | 0 | `pop_range_id`: where one comes in | open |
 | ZoneInit | 32, 36 | 5; 1 sometimes | 0 | the data centre for ranked Crystalline Conflict; limited-time bonus | left |
 | ZoneInit | 38–101 | game festival 120 (phase 2 in 72 %), UI festivals 148, 176, 256, 120 | config's `active_festivals` (none) | the seasonal events running (October 2026's) | Bob's choice: `world.active_festivals` |
 | ZoneInit | 104–115 | a position | 0 | where level streaming preloads | open |

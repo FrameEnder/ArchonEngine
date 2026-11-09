@@ -1,0 +1,118 @@
+{
+  "quest": 3880,
+  "script": "XxaUse204_03880",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1008616,
+    "ACTOR1": 1008612,
+    "ACTOR2": 1008613,
+    "ACTOR3": 1008614,
+    "ACTOR4": 1008615,
+    "ACTOR5": 1008617,
+    "ACTOR6": 1008700,
+    "ACTOR7": 1008620,
+    "ACTOR8": 1008621,
+    "ACTOR9": 1008622,
+    "ACTOR10": 1008619,
+    "ACTOR11": 1008618,
+    "ACTOR12": 1008623,
+    "QST_ACCEPT_CHECK": 66884,
+    "LEVEL_ID_NPC01": 4621005,
+    "LEVEL_ID_NPC02": 4621006,
+    "LEVEL_ID_NPC03": 4621007,
+    "LEVEL_ID_NPC04": 4621008,
+    "LEVEL_ID_NPC05": 4621009,
+    "LOC_POS_ACTOR1": 4678739,
+    "LOC_POS_ACTOR2": 4678741,
+    "LOC_ACTOR0": 4620901,
+    "LOC_ACTOR1": 4620902,
+    "LOC_ACTOR2": 4620903,
+    "LOC_ACTOR3": 4620904,
+    "LOC_ACTOR4": 4620905,
+    "LOC_ACTOR10": 3146810,
+    "LOC_ACTOR11": 1008185,
+    "LOC_ACTOR12": 1007097,
+    "LOC_ACTOR13": 1007098,
+    "LOC_ACTOR14": 1007099,
+    "LOC_ACTOR15": 1008927
+  },
+  "steps": [
+    {
+      "talk": 1008616,
+      "layout": 4620632,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2001",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1008700,
+      "layout": 4620906,
+      "what": "ACTOR6",
+      "scenes": [
+        {
+          "scene": 7,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1008623,
+      "layout": 4620907,
+      "what": "ACTOR12",
+      "scenes": [
+        {
+          "scene": 13,
+          "flags": "0xf8402efb",
+          "results": [
+            1,
+            5825,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "quest": 1360,
+  "script": "GaiUse216_01360",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1008803,
+    "EVENT_ACTION_SEARCH": 1,
+    "ACTOR1": 1002694,
+    "ACTOR2": 1001029,
+    "TERRITORYTYPE0": 198,
+    "POPRANGE0": 4628787,
+    "ACTOR3": 1008676,
+    "ACTOR4": 1008677,
+    "ACTOR5": 1008678,
+    "ACTOR6": 1008679,
+    "ACTOR7": 1008691,
+    "ACTOR8": 1008692,
+    "ACTOR9": 1008693,
+    "ACTOR10": 1008891,
+    "ACTOR11": 1008892,
+    "ACTOR12": 1008893,
+    "ACTOR13": 1008894,
+    "ACTOR14": 1008895,
+    "CUT_SCENE_N_01": 469,
+    "LEVEL_ID_NPC01": 4629168,
+    "LEVEL_ID_NPC02": 4629169,
+    "LEVEL_ID_NPC03": 4629170,
+    "LEVEL_ID_NPC04": 4629171,
+    "LOC_ACTOR0": 4087076,
+    "LOC_ACTOR1": 4628783,
+    "LOC_ACTOR2": 4628784,
+    "LOC_ACTOR3": 4628785,
+    "LOC_ACTOR4": 1008797,
+    "LOC_SE1": 70,
+    "ACTION_TIMELINE_EVENT_BASE_ATTENTION_STAND": 1013,
+    "LOC_ACTOR10": 4259850,
+    "LOC_ACTOR11": 1008175,
+    "LOC_SE10": 42,
+    "LOC_ACTION10": 1002,
+    "LOC_FACE10": 614,
+    "LOC_FACE11": 606,
+    "ACTION_TIMELINE_EVENT_BASE_SORRY": 819,
+    "LOC_FACE12": 617,
+    "LOC_BGM0": 88
+  },
+  "steps": [
+    {
+      "talk": 1008803,
+      "layout": 4629167,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x6001", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x6001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 198}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []},
+      "talk": 1001029,
+      "layout": 4054953,
+      "what": "ACTOR2",
+      "pop_ranges": [4628787],
+      "arrivals": [[0.12, 1.0, 7.55, -3.142]]
+    },
+    {
+      "scenes": [
+        {"scene": 2, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, [1, 1]]]},
+      "talk": 1002694,
+      "layout": 4087076,
+      "what": "ACTOR1"
+    },
+    {
+      "scenes": [
+        {"scene": 9, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": [[1, [1, 1]]]},
+      "talk": 1008679,
+      "layout": 4628786,
+      "what": "ACTOR6"
+    },
+    {
+      "talk": 1008692,
+      "layout": 4629227,
+      "what": "ACTOR8",
+      "scenes": [
+        {"scene": 15, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[2, []]]}
+    },
+    {
+      "talk": 1008693,
+      "layout": 4629181,
+      "what": "ACTOR9",
+      "scenes": [
+        {"scene": 21, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

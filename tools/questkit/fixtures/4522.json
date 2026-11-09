@@ -1,0 +1,144 @@
+{
+  "quest": 4522,
+  "script": "XxcFst503_04522",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1006657,
+    "ACTOR1": 1006668,
+    "INSTANCEDUNGEON0": 86,
+    "ACTOR2": 1006669,
+    "ACTOR3": 1006670,
+    "EOBJECT0": 2002544,
+    "ACTOR4": 5010000,
+    "POPRANGE0": 9168838,
+    "TERRITORYTYPE0": 1053,
+    "INSTANCEDUNGEON1": 20082,
+    "EOBJECT1": 2012580,
+    "POPRANGE1": 9163576,
+    "POPRANGE2": 9163577,
+    "ACTOR5": 1039201,
+    "TERRITORYTYPE1": 1052,
+    "QUESTBATTLE0": 5061,
+    "TERRITORYTYPE2": 212,
+    "POPRANGE3": 4332881,
+    "ACTOR6": 1006692,
+    "QST_ACCEPT_CHECK_01": 66060,
+    "LOC_ACTOR10": 1008181,
+    "CONTENT_START": 86,
+    "CONTENTBATTLE_START": 20082,
+    "UNLOCK_IMAGE_DUNGEON": 99,
+    "UNLOCK_IMAGE_BATTLE": 1094,
+    "SCREEN_IMAGE_FLYING": 909,
+    "CUT_STAFF_ROLL_BEFOR_01": 124,
+    "CUT_STAFF_ROLL_BEFOR_02": 125,
+    "CUT_STAFF_ROLL_BEFOR_03": 126,
+    "CUT_STAFF_ROLL_01": 128,
+    "CUT_STAFF_ROLL_AFTER_01": 296,
+    "CUT_STAFF_ROLL_AFTER_02": 129,
+    "CUT_STAFF_ROLL_AFTER_03": 130,
+    "CUT_STAFF_ROLL_AFTER_04": 131,
+    "UNLOCK_ADD_NEW_CONTENT_TO_CF": 3702,
+    "CUT_SCENE_CONTENT_01": 119,
+    "CUT_SCENE_CONTENT_11": 122,
+    "CUT_SCENE_CONTENT_21": 2873,
+    "CUT_SCENE_CONTENT_31": 123,
+    "QST_BGM_0": 76,
+    "QST_BGM_1": 173
+  },
+  "steps": [
+    {
+      "talk": 1006657,
+      "layout": 4270118,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1006668,
+      "layout": 4270160,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "effects": [
+        {"content": 86}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "expect": {"sequence": 3, "vars": "000000000000", "notices": []},
+      "duty_cleared": 86,
+      "what": "the duty cleared"
+    },
+    {
+      "enter_territory": 1053,
+      "scenes": [
+        {"scene": 10, "flags": "0xf8406efb", "results": [0, 0]}
+      ],
+      "effects": [
+        {"content": 20082}
+      ],
+      "expect": {"sequence": 4, "vars": "000000000000", "notices": [[2, []]]}
+    },
+    {
+      "expect": {"sequence": 5, "vars": "000000000000", "notices": []},
+      "duty_cleared": 20082,
+      "what": "the duty cleared"
+    },
+    {
+      "territory": 1053,
+      "enter_territory": 1053,
+      "scenes": [
+        {"scene": 19, "flags": "0xf8406efb", "results": [0, 0]}
+      ],
+      "effects": [
+        {"zone": 1053}
+      ],
+      "expect": {"sequence": 6, "vars": "000000000000", "notices": []},
+      "arrivals": [[-690.0, -185.73, 480.0, -1.57]]
+    },
+    {
+      "scenes": [
+        {"scene": 24, "flags": "0x2000", "results": [0, 0]},
+        {"scene": 25, "flags": "0xf8406efb", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 1052}
+      ],
+      "expect": {"sequence": 6, "vars": "000000000000", "notices": []},
+      "talk": 1039201,
+      "layout": 9164247,
+      "what": "ACTOR5",
+      "arrivals": [[-690.0, -185.73, 480.0, 1.571]]
+    },
+    {
+      "expect": {"sequence": 7, "vars": "000000000000", "notices": []},
+      "battle_won": 7,
+      "what": "the quest battle won"
+    },
+    {
+      "enter_territory": 212,
+      "scenes": [
+        {"scene": 30, "flags": "0xf8406fff", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[6, []]]}
+    },
+    {
+      "talk": 1006692,
+      "layout": 4259227,
+      "territory": 212,
+      "what": "ACTOR6",
+      "scenes": [
+        {"scene": 36, "flags": "0xf8406fff", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 212}
+      ],
+      "expect": {"completed": true, "notices": []},
+      "arrivals": [[36.68, 1.2, 2.17, 2.056]]
+    }
+  ]
+}

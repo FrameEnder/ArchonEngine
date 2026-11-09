@@ -1,0 +1,88 @@
+{
+  "quest": 1175,
+  "script": "GaiUse101_01175",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1006693,
+    "ACTOR1": 1007533,
+    "ACTOR2": 1007534,
+    "ACTOR3": 1007531,
+    "ACTOR4": 1007530,
+    "ACTOR5": 1007478,
+    "ACTOR6": 1007722,
+    "POPRANGE0": 4506764,
+    "CUT_SCENE_N_01": 433,
+    "CUT_SCENE_N_02": 434
+  },
+  "steps": [
+    {
+      "talk": 1006693,
+      "layout": 4497337,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1007533,
+      "layout": 4497361,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "110000000080", "notices": [[0, []]]}
+    },
+    {
+      "talk": 1007534,
+      "layout": 4497356,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 3, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "2110000000c0", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1007531,
+      "layout": 4497357,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "3111000000e0", "notices": [[2, []]]}
+    },
+    {
+      "talk": 1007530,
+      "layout": 4309304,
+      "what": "ACTOR4",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "4111100000f0", "notices": [[3, []]]}
+    },
+    {
+      "talk": 1007478,
+      "layout": 4330030,
+      "what": "ACTOR5",
+      "scenes": [
+        {"scene": 6, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[4, []]]}
+    },
+    {
+      "talk": 1007722,
+      "layout": 4497327,
+      "territory": 212,
+      "what": "ACTOR6",
+      "scenes": [
+        {"scene": 8, "flags": "0xf8402efb", "results": [1, 5824, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 212}
+      ],
+      "expect": {"completed": true, "notices": []},
+      "arrivals": [[33.59, 1.2, -0.7, 1.57]]
+    }
+  ]
+}

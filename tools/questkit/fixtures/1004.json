@@ -1,0 +1,96 @@
+{
+  "quest": 1004,
+  "script": "GaiUsc604_01004",
+  "source": "Connor's Chronofoil capture e834e436 (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1006531,
+    "ITEM0": 2000771,
+    "ACTOR1": 1006709,
+    "ACTOR2": 1006553,
+    "ACTOR3": 1006706,
+    "ACTOR4": 1006707,
+    "ACTOR5": 1006708,
+    "ACTOR6": 1006554,
+    "ACTOR7": 1006705,
+    "EOBJECT0": 2002329,
+    "ACTOR8": 1006555,
+    "ACTOR9": 1006530,
+    "TERRITORYTYPE0": 308,
+    "QUESTBATTLE0": 63,
+    "TERRITORYTYPE1": 156,
+    "POPRANGE0": 4321644,
+    "EQUIP_CHECK_HEAD": 6223,
+    "EQUIP_CHECK_BODY": 6224
+  },
+  "steps": [
+    {
+      "talk": 1006531,
+      "layout": 4264515,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "001000000000", "notices": []}
+    },
+    {
+      "emote": [59, 1006709],
+      "layout": 4265715,
+      "scenes": [
+        {"scene": 3, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "001000000000", "notices": [[0, []]]}
+    },
+    {
+      "scenes": [
+        {"scene": 12, "flags": "0x2001", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 308}
+      ],
+      "expect": {"sequence": 2, "vars": "001000000000", "notices": []},
+      "event_item": [2000771, 2002329],
+      "what": "EOBJECT0",
+      "arrivals": [[-127.58, -2.66, -630.68, 0.06]]
+    },
+    {
+      "scenes": [
+        {"scene": 12, "flags": "0x2001", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 308}
+      ],
+      "expect": {"sequence": 2, "vars": "001000000000", "notices": []},
+      "event_item": [2000771, 2002329],
+      "what": "EOBJECT0",
+      "arrivals": [[-127.58, -2.66, -630.68, -0.661]]
+    },
+    {
+      "battle_won": 255,
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1006530,
+      "layout": 4264514,
+      "territory": 156,
+      "what": "ACTOR9",
+      "scenes": [
+        {"scene": 21, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 156}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []},
+      "arrivals": [[0.62, -158.58, 10.42, 3.118]]
+    },
+    {
+      "scenes": [
+        {"scene": 20, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []},
+      "talk": 1006555,
+      "layout": 4321520,
+      "what": "ACTOR8"
+    }
+  ]
+}

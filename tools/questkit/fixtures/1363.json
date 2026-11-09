@@ -1,0 +1,77 @@
+{
+  "quest": 1363,
+  "script": "GaiUse219_01363",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1008696,
+    "EVENT_ACTION_SEARCH": 1,
+    "ACTOR1": 1008694,
+    "ACTOR2": 1008695,
+    "ACTOR3": 1008579,
+    "CUT_SCENE_N_01": 473,
+    "CUT_SCENE_N_02": 474,
+    "BGM_NOTHING": 1
+  },
+  "steps": [
+    {
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      },
+      "talk": 1008696,
+      "layout": 4629231,
+      "what": "ACTOR0"
+    },
+    {
+      "talk": 1008579,
+      "layout": 4619818,
+      "what": "ACTOR3",
+      "scenes": [
+        {
+          "scene": 4,
+          "flags": "0xf8402efb",
+          "results": [
+            0,
+            0
+          ]
+        },
+        {
+          "scene": 5,
+          "flags": "0x2000",
+          "results": [
+            1,
+            5825,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

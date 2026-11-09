@@ -1,0 +1,194 @@
+{
+  "quest": 3872,
+  "script": "XxaUsc908_03872",
+  "source": "Connor's Chronofoil capture e834e436 (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1006638,
+    "ACTOR1": 1006647,
+    "ACTOR2": 1006724,
+    "ACTOR3": 1006723,
+    "ACTOR4": 1006722,
+    "ACTOR5": 1006721,
+    "ACTOR6": 1006678,
+    "ACTOR7": 1006648,
+    "ACTOR8": 1006649,
+    "ACTOR9": 1006650,
+    "ACTOR10": 1006646,
+    "QST_ACCEPT_CHECK_01": 66575,
+    "QST_ACCEPT_CHECK_02": 66578,
+    "QST_ACCEPT_CHECK_03": 66579,
+    "SCREENIMAGE_GIMMICK_01": 1368,
+    "CONTENTSTUTORIAL_GIMMICK_01": 6
+  },
+  "steps": [
+    {
+      "talk": 1006638,
+      "layout": 4268906,
+      "what": "ACTOR0",
+      "scenes": [
+        {
+          "scene": 0,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0,
+            0
+          ],
+          "yield": true
+        },
+        {
+          "scene": 1,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1006647,
+      "layout": 4269927,
+      "what": "ACTOR1",
+      "scenes": [
+        {
+          "scene": 2,
+          "flags": "0x2000",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "emote": [
+        30,
+        1006648
+      ],
+      "layout": 4269961,
+      "scenes": [
+        {
+          "scene": 10,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "010000000080",
+        "notices": [
+          [
+            1,
+            [
+              1,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "emote": [
+        30,
+        1006650
+      ],
+      "layout": 4269984,
+      "scenes": [
+        {
+          "scene": 16,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "0200000000a0",
+        "notices": [
+          [
+            1,
+            [
+              2,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "emote": [
+        30,
+        1006649
+      ],
+      "layout": 4269983,
+      "scenes": [
+        {
+          "scene": 13,
+          "flags": "0x2001",
+          "results": [
+            0,
+            0
+          ]
+        }
+      ],
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            1,
+            [
+              3,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "emote": [
+        30,
+        1006646
+      ],
+      "layout": 4269938,
+      "scenes": [
+        {
+          "scene": 25,
+          "flags": "0x2001",
+          "results": [
+            1,
+            5824,
+            0,
+            0
+          ],
+          "yield": true
+        }
+      ],
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

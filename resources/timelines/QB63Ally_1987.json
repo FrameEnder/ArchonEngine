@@ -1,0 +1,26 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 67
+        },
+        "1170": {
+            "npcs": 79.5
+        }
+    },
+    "timepoints": [
+        {
+            "time": 7.0,
+            "every": 6.3,
+            "data": {
+                "type": "action",
+                "action_id": 1170,
+                "target": "target"
+            },
+            "comment": "its weapon skill, 76-95 on an enemy: first 7.0-7.4 s after the pull, then every 6.3 s (4.1-7.5)"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Fool Me Twice's quest battle (63, quest 1004): the ally you keep alive (BNpcBase 1987, BNpcName 1486, layout 4270049): level 45, 10560 HP; auto-attack 870 every 3.0 s. Its heal (964) is the director's (Battle's heals). From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.195` and `9.197`: two runs, the first lost, the second won; a level 47 player): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull."
+}

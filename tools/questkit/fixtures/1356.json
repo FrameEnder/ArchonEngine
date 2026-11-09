@@ -1,0 +1,65 @@
+{
+  "quest": 1356,
+  "script": "GaiUse212_01356",
+  "source": "Connor's Chronofoil capture af05916c (2026-11-07/09)",
+  "params": {
+    "ACTOR0": 1008542,
+    "EVENT_ACTION_SEARCH": 1,
+    "ACTOR1": 1002694,
+    "ACTOR2": 1001029,
+    "TERRITORYTYPE0": 198,
+    "POPRANGE0": 4628787,
+    "ACTOR3": 1006614,
+    "ACTOR4": 1008676,
+    "LOC_ACTOR0": 1008175,
+    "LOC_ACTOR1": 1008176,
+    "LOC_ACTOR2": 1008177,
+    "LOC_ACTOR3": 1007097,
+    "LOC_FACE0": 617,
+    "ACTION_TIMELINE_EVENT_TALK_BIG": 950
+  },
+  "steps": [
+    {
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []},
+      "talk": 1008542,
+      "layout": 4635213,
+      "what": "ACTOR0"
+    },
+    {
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 198}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []},
+      "talk": 1001029,
+      "layout": 4054953,
+      "what": "ACTOR2",
+      "pop_ranges": [4628787],
+      "arrivals": [[0.0, 1.0, 7.12, -3.142]]
+    },
+    {
+      "scenes": [
+        {"scene": 2, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, [1, 1]]]},
+      "talk": 1002694,
+      "layout": 4087076,
+      "what": "ACTOR1"
+    },
+    {
+      "talk": 1006614,
+      "layout": 4266613,
+      "what": "ACTOR3",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [1, 6246, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}
