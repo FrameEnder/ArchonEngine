@@ -1,0 +1,74 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "recorded_amounts": {
+        "872": {
+            "npcs": 159
+        },
+        "53": {
+            "npcs": 417
+        },
+        "54": {
+            "npcs": 413
+        },
+        "70": {
+            "npcs": 258.5
+        },
+        "68": {
+            "npcs": 30
+        }
+    },
+    "timepoints": [
+        {
+            "time": 6.5,
+            "data": {
+                "type": "action",
+                "action_id": 63,
+                "target": "itself"
+            },
+            "comment": "on itself, 6.5 s after the pull"
+        },
+        {
+            "time": 15.2,
+            "every": 19.3,
+            "data": {
+                "type": "action",
+                "action_id": 53,
+                "target": "target"
+            },
+            "comment": "15.1-15.4 s after the pull, then every 19.3 s"
+        },
+        {
+            "time": 23.2,
+            "every": 31.4,
+            "data": {
+                "type": "action",
+                "action_id": 68,
+                "target": "target"
+            },
+            "comment": "22-24 s after the pull, then every 31 s"
+        },
+        {
+            "time": 30.9,
+            "every": 20.5,
+            "data": {
+                "type": "action",
+                "action_id": 54,
+                "target": "target"
+            },
+            "comment": "29-31 s after the pull, then every 20.5 s"
+        },
+        {
+            "time": 37.5,
+            "every": 18.9,
+            "data": {
+                "type": "action",
+                "action_id": 70,
+                "target": "target"
+            },
+            "comment": "36-38 s after the pull, then every 18.9 s"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Notorious Biggs' quest battle (62, quest 983): the lancer-looking ally (BNpcBase 1650, BNpcName 619, layout 4264069): level 50, 15534 HP; auto-attack 872 every 3.0 s; its self-heal (57, 1310 at 40-47 %) is the director's. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.53`, won) and Bob's 689b15da (2026-11-09, `--battle 0.2` lost and `0.4` won): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull (or from coming out, for the later waves)."
+}

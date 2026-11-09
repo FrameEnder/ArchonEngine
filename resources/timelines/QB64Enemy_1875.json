@@ -1,0 +1,32 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "recorded_amounts": {
+        "872": {
+            "players": 96,
+            "npcs": 125.5
+        }
+    },
+    "timepoints": [
+        {
+            "time": 11.3,
+            "data": {
+                "type": "action",
+                "action_id": 60,
+                "target": "itself"
+            },
+            "comment": "on itself, 11.3 s after the pull"
+        },
+        {
+            "time": 23.1,
+            "data": {
+                "type": "action",
+                "action_id": 59,
+                "target": "itself"
+            },
+            "comment": "on itself, 23.1 s after the pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Every Little Thing She Does Is Magitek's quest battle (64, quest 1005): an enemy (BNpcBase 1875, BNpcName 1812, layout 4277136): level 43, 2269 HP; auto-attack 872 every 3.0 s; its heal on itself (57, 805 at 6 %) is the director's. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.202`: one run, won; a level 48 player): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull."
+}

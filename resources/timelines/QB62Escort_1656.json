@@ -1,0 +1,12 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "recorded_amounts": {
+        "872": {
+            "npcs": 54
+        }
+    },
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "Notorious Biggs' quest battle (62, quest 983): the ally to keep alive (BNpcBase 1656, BNpcName 1418, layout 4264070): level 41, 5109 HP; auto-attack 872 every 3.0 s. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.53`, won) and Bob's 689b15da (2026-11-09, `--battle 0.2` lost and `0.4` won): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull (or from coming out, for the later waves)."
+}

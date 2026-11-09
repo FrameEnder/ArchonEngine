@@ -1,0 +1,65 @@
+{
+    "autoattack_action_id": 873,
+    "from_pull": true,
+    "recorded_amounts": {
+        "873": {
+            "players": 87,
+            "npcs": 110
+        },
+        "106": {
+            "players": 124,
+            "npcs": 154.5
+        },
+        "18190": {
+            "players": 169,
+            "npcs": 185.5
+        },
+        "113": {
+            "npcs": 77.5
+        },
+        "100": {
+            "npcs": 136.5
+        }
+    },
+    "timepoints": [
+        {
+            "time": 8.0,
+            "data": {
+                "type": "action",
+                "action_id": 101,
+                "target": "itself"
+            },
+            "comment": "on itself, 5-11 s after it fought"
+        },
+        {
+            "time": 10.0,
+            "data": {
+                "type": "action",
+                "action_id": 107,
+                "target": "itself"
+            },
+            "comment": "on itself, 6-11 s after it fought"
+        },
+        {
+            "time": 11.5,
+            "every": 15.2,
+            "data": {
+                "type": "action",
+                "action_id": 106,
+                "target": "target"
+            },
+            "comment": "7-12 s after it fought, then every 15.2 s"
+        },
+        {
+            "time": 27.9,
+            "data": {
+                "type": "action",
+                "action_id": 18190,
+                "target": "target"
+            },
+            "comment": "14-48 s after it fought, once"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Notorious Biggs' quest battle (62, quest 983): the archers of every wave (BNpcBase 1653, BNpcName 2088): level 41, 561 HP; auto-attack 873 every 3.0 s. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.53`, won) and Bob's 689b15da (2026-11-09, `--battle 0.2` lost and `0.4` won): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull (or from coming out, for the later waves)."
+}

@@ -401,6 +401,48 @@ a quest's entering event, 0 for every other event (228 events across the capture
   2 and 3 (the lead-in's waits) and 10 (empty), OnSequence001 (no music), OnSequence004 (a message) and its objective
   (TODO001 before sequence 4, TODO002 from it).
 
+### Quest battle 62 — Notorious Biggs (`content/questbattle/62.lua`)
+
+* Quest 983 (GaiUsc408_00983) enters it from ACTOR2 (Cid, scene 3, YesNoQuestBattle; territory 304, duty 351).
+  Territory 304 is taken to be a copy of Coerthas Central Highlands: retail's start spot is where it let the player out
+  there afterwards (-499.6, 287.1, 166.9), so its NPCs are layer `QB_GaiUsc408_001` of `roc_r1f1_planmap.json` (17 NPCs
+  from `questkit chronofoil --dropin 304`, `nonpop`, character data flags 3), from three runs: Connor's Chronofoil
+  capture e834e436 (`--battle 9.53`, won, level 47) and Bob's 689b15da (`0.2` lost, `0.4` won, level 45). Start
+  (-498.89, 286.89, 167.44, facing -2.512) and opening flags (0xF8412FFF) the same in all three.
+* **Allies**: one to keep alive (4264070, base 1656, 5109 HP), a level 50 fighter (4264069, base 1650: holds the
+  boss, heals itself at 40-47 %) and a level 50 conjurer (4264062, base 1651: Cure at 40-57 %, 129 on someone every
+  20 s). **Enemies**: the boss (4264130, base 1652, 12038 HP, heals itself at 43-49 %) and three archers from the
+  start; a second wave of six and a third of four. Each enemy's first target is retail's (the same in every run).
+* **Flow** (seconds from the fight starting): sequence 2, talks 97-100 (the four sides' speakers) at 5.1, 10.1, 15.1
+  and 20.1; the three archers down, or the boss under 50 % first (one run): sequence 3 and the second wave, talks 101
+  and 102 5.1 and 15.1 s after; **five** of the boss and the later waves down (which five differed between runs, so
+  it's a count): sequence 4 and the third wave, talks 103 and 104 5.1 and 10.1 s after; **seven** down: sequence 5 and
+  talk 105; everyone down: "Duty Complete" and sequence 6 2.1 s after the last one's health reached 0, the battle's
+  scene 6 (0xF8402EFB); the quest moves to 255. The one to keep alive under 20 %: NpcYell 1530; its health at 0: talk
+  108 and sequence 0xFE (the lost run, 90.8 s in). `questkit battle-sim 62`: 65 events in the three runs within 1.4 s
+  (fixtures `62.json`, `62-689b15da.json`, `62-lost.json`).
+* Timelines `QB62*`; new action scripts `QuestBattleNpc_00064`, `QuestBattleNpc_00129` (status 151, 30 s: its end not
+  seen), `QB62Boss_01068`, `QB62Enemy_00527` (status 17, 10 s: likewise). The battle's client script
+  (`GaiUsc408Btl_00983`) has scenes 1 and 6 and OnSequence001-002, as played.
+
+### Quest battle 64 — Every Little Thing She Does Is Magitek (`content/questbattle/64.lua`)
+
+* Quest 1005 (GaiUsc605_01005) enters it from ACTOR6 (scene 44, YesNoQuestBattle; territory 309, duty 358).
+  Territory 309 is taken to be Mor Dhona's copy as 63's (its spots are within 50 yalms of 63's), so its NPCs are layer
+  `QB_GaiUsc605_001` of `lak_l1f1_planmap.json` (6 NPCs, `nonpop`; character data flags 3, 1 for the ally the enemies
+  wear down), from one run: Connor's Chronofoil capture e834e436 (`--battle 9.202`, won, level 48). Start (-78.43,
+  1.89, -627.73, facing -1.159), opening flags 0xF841AEFB.
+* **Allies**: one who fights (4277164, base 1876: 870, and 1170 every 6.6 s) and one the enemies wear down (4277157,
+  base 1877, 11193 HP, never seen acting). **Enemies**, all out from the start: the boss (4277127, base 1958: 526 and
+  525, an area that caught both allies, every 20 s) and three others (4277134-4277136; 4277136 cures itself at 6 %).
+  Two event NPCs talk (1007075 and 1007076: kind 3, no actor, as Victory in Peril's watcher).
+* **Flow**: sequence 2, talks 122 (4277136) and 123 (the one who fights) at 5.1 and 10.1; the worn-down ally under 90 %:
+  talk 124; 4277136's health at 0: sequence 3; the boss's: sequence 4, talks 125 and 128 1.2 and 5.0 s later;
+  everyone down: "Duty Complete" and sequence 5 2.1 s later, the battle's scene 5 (0xF8402EFB); the quest moves to 255.
+  No lost run: only your health at 0 loses it. `questkit battle-sim 64`: 10 events within 0.3 s (`64.json`).
+* Timelines `QB64*`; new action scripts `QuestBattleNpc_00091` (status 119, 18 s: its end not seen) and
+  `QB64Ally_01171`. The battle's client script (`GaiUsc605Btl_01005`) also has scenes 10001 and 10002, never played.
+
 ### Quest battle 63 — Fool Me Twice (`content/questbattle/63.lua`)
 
 * Quest 1004 (GaiUsc604_01004) enters it from EOBJECT0 (ITEM0 used on it, scene 12, YesNoQuestBattle; territory 308,

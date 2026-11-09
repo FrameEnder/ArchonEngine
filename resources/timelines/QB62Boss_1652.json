@@ -1,0 +1,65 @@
+{
+    "autoattack_action_id": 872,
+    "from_pull": true,
+    "recorded_amounts": {
+        "872": {
+            "npcs": 135
+        },
+        "1068": {
+            "players": 316.5,
+            "npcs": 407
+        },
+        "53": {
+            "npcs": 235
+        },
+        "61": {
+            "npcs": 442
+        },
+        "64": {
+            "npcs": 200
+        }
+    },
+    "timepoints": [
+        {
+            "time": 6.5,
+            "data": {
+                "type": "action",
+                "action_id": 60,
+                "target": "itself"
+            },
+            "comment": "on itself, 6.5-11 s after the pull"
+        },
+        {
+            "time": 18.0,
+            "every": 63.7,
+            "data": {
+                "type": "action",
+                "action_id": 59,
+                "target": "itself"
+            },
+            "comment": "on itself, 13-43 s after the pull, then every 63.7 s"
+        },
+        {
+            "time": 19.9,
+            "every": 18.1,
+            "data": {
+                "type": "action",
+                "action_id": 1068,
+                "target": "target"
+            },
+            "comment": "1.7 s cast: 15-23 s after the pull, then every 18.1 s (10.6-36.1)"
+        },
+        {
+            "time": 30.0,
+            "every": 19.5,
+            "data": {
+                "type": "action",
+                "action_id": 53,
+                "target": "target"
+            },
+            "comment": "25-34 s after the pull, then every 19.5 s"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Notorious Biggs' quest battle (62, quest 983): Biggs's foe, the boss (BNpcBase 1652, BNpcName 2087, layout 4264130): level 45, 12038 HP; auto-attack 872 every 3.0 s; its self-heal (57, 873 at 43-49 %) is the director's. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.53`, won) and Bob's 689b15da (2026-11-09, `--battle 0.2` lost and `0.4` won): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull (or from coming out, for the later waves)."
+}

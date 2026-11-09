@@ -1,0 +1,8 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "recorded_amounts": {},
+    "timepoints": [],
+    "timeline_always_plays": false,
+    "comment": "Every Little Thing She Does Is Magitek's quest battle (64, quest 1005): the ally the enemies wear down (BNpcBase 1877, BNpcName 2092, layout 4277157): level 45, 11193 HP; it was seen with targets but never acting. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.202`: one run, won; a level 48 player): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull."
+}

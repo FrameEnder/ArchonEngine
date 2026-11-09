@@ -1,0 +1,42 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 157,
+            "npcs": 195.5
+        },
+        "526": {
+            "players": 465,
+            "npcs": 599
+        },
+        "525": {
+            "players": 395,
+            "npcs": 481
+        }
+    },
+    "timepoints": [
+        {
+            "time": 6.6,
+            "every": 19.75,
+            "data": {
+                "type": "action",
+                "action_id": 526,
+                "target": "target"
+            },
+            "comment": "2.2 s cast: 6.3-6.8 s after it came out, then every 19.75 s"
+        },
+        {
+            "time": 15.5,
+            "every": 21.3,
+            "data": {
+                "type": "action",
+                "action_id": 525,
+                "target": "target"
+            },
+            "comment": "1.7 s cast: 15.2-15.7 s after it came out, then every 21.3 s"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Notorious Biggs' quest battle (62, quest 983): the second wave's leader (BNpcBase 1657, BNpcName 269, layout 4264384): level 44, 2108 HP; auto-attack 870 every 3.0 s. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.53`, won) and Bob's 689b15da (2026-11-09, `--battle 0.2` lost and `0.4` won): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull (or from coming out, for the later waves)."
+}

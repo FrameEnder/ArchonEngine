@@ -154,9 +154,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   there: talking to someone in a sequence where retail didn't does nothing, and the client's gating (IsAcceptEvent)
   wasn't checked step by step. Things done in any order are only where retail's variables showed a count with a flag
   each (talks, emotes, key items, kills); 1001 and 3871 were written by hand from their listings. Moves with no pop
-  range of the quest's go to retail's spot (`change_territory` with a position). Quest battle 63 (1004) is
-  scripted from two runs (one lost), its territory taken to be Mor Dhona's copy. **Not scripted**: quest battles 62
-  (983), 64 (1005), 65 (521), 5060 (Cape Westwind, 4521) and 5061 (Devastation, 4522), so those quests stop at their
+  range of the quest's go to retail's spot (`change_territory` with a position). Quest battles 62 (983, three
+  runs), 63 (1004, two) and 64 (1005, one: no lost run, and its worn-down ally never acted) are scripted, their
+  territories taken to be copies of Coerthas and Mor Dhona from where their spots stand; 64's two talking event NPCs
+  aren't put in the battle. 1651's 129, 1655's 527, 1874's 91 and 1988's 1286 give statuses whose length wasn't seen.
+  **Not scripted**: quest battles 65 (521: two parts with a cutscene between, lit by event NPCs; Connor's two runs
+  are there to do it from), 5060 (Cape Westwind, 4521) and 5061 (Devastation, 4522), so those quests stop at their
   battle; and the duties Castrum
   Meridianum (InstanceContent 15, 3873), the Praetorium (86) and the Porta Decumana (20082, 4522), Thornmarch (Hard)
   (20011, 1190) and the Whorleater (Hard) (20017, 1361): their quests move on when one is cleared and let out where

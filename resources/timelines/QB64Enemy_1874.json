@@ -1,0 +1,82 @@
+{
+    "autoattack_action_id": 871,
+    "from_pull": true,
+    "recorded_amounts": {
+        "871": {
+            "npcs": 123
+        },
+        "75": {
+            "npcs": 200
+        },
+        "78": {
+            "npcs": 297.5
+        },
+        "84": {
+            "npcs": 488
+        },
+        "91": {
+            "npcs": 202
+        }
+    },
+    "timepoints": [
+        {
+            "time": 22.0,
+            "data": {
+                "type": "action",
+                "action_id": 91,
+                "target": "target"
+            },
+            "comment": "22.0 s after the pull (status 119)"
+        },
+        {
+            "time": 28.6,
+            "every": 21.9,
+            "data": {
+                "type": "action",
+                "action_id": 75,
+                "target": "target"
+            },
+            "comment": "28.6 s after the pull, then every 21.9 s (19.8-26.4)"
+        },
+        {
+            "time": 31.2,
+            "every": 21.9,
+            "data": {
+                "type": "action",
+                "action_id": 78,
+                "target": "target"
+            },
+            "comment": "31.2 s after the pull, then every 21.9 s"
+        },
+        {
+            "time": 33.8,
+            "data": {
+                "type": "action",
+                "action_id": 85,
+                "target": "itself"
+            },
+            "comment": "on itself, 33.8 s after the pull"
+        },
+        {
+            "time": 40.4,
+            "every": 20.9,
+            "data": {
+                "type": "action",
+                "action_id": 84,
+                "target": "target"
+            },
+            "comment": "40.4 s after the pull, then every 20.9 s"
+        },
+        {
+            "time": 99.9,
+            "data": {
+                "type": "action",
+                "action_id": 83,
+                "target": "itself"
+            },
+            "comment": "Life Surge on itself, 99.9 s after the pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Every Little Thing She Does Is Magitek's quest battle (64, quest 1005): an enemy (BNpcBase 1874, BNpcName 1811, layout 4277135): level 42, 2146 HP; auto-attack 871 every 3.0 s. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.202`: one run, won; a level 48 player): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull."
+}

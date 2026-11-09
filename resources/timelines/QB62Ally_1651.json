@@ -1,0 +1,62 @@
+{
+    "autoattack_action_id": 0,
+    "from_pull": true,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 288
+        },
+        "121": {
+            "npcs": 110
+        },
+        "127": {
+            "npcs": 433
+        },
+        "132": {
+            "npcs": 114
+        }
+    },
+    "timepoints": [
+        {
+            "time": 17.1,
+            "every": 17.0,
+            "data": {
+                "type": "action",
+                "action_id": 121,
+                "target": "target"
+            },
+            "comment": "15-17 s after the pull, then every 17 s"
+        },
+        {
+            "time": 19.8,
+            "every": 18.1,
+            "data": {
+                "type": "action",
+                "action_id": 127,
+                "target": "target"
+            },
+            "comment": "Stone II: 12-44 s after the pull, then every 18 s"
+        },
+        {
+            "time": 21.6,
+            "every": 24.6,
+            "data": {
+                "type": "action",
+                "action_id": 119,
+                "target": "target"
+            },
+            "comment": "12-38 s after the pull, then every 24.6 s"
+        },
+        {
+            "time": 35.0,
+            "every": 34.6,
+            "data": {
+                "type": "action",
+                "action_id": 132,
+                "target": "target"
+            },
+            "comment": "34-40 s after the pull, then every 34.6 s"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Notorious Biggs' quest battle (62, quest 983): the conjurer ally (BNpcBase 1651, BNpcName 729, layout 4264062): level 50, 11650 HP; no auto-attack. Its Cure (120, 993) and Protect (129, status 151 on an ally, every 20 s) are the director's. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.53`, won) and Bob's 689b15da (2026-11-09, `--battle 0.2` lost and `0.4` won): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull (or from coming out, for the later waves)."
+}

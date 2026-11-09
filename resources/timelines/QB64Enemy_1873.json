@@ -1,0 +1,66 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 84.5,
+            "npcs": 91
+        },
+        "1003": {
+            "npcs": 286
+        },
+        "1135": {
+            "npcs": 283
+        }
+    },
+    "timepoints": [
+        {
+            "time": 14.2,
+            "data": {
+                "type": "action",
+                "action_id": 32,
+                "target": "itself"
+            },
+            "comment": "on itself, 14.2 s after the pull"
+        },
+        {
+            "time": 20.4,
+            "data": {
+                "type": "action",
+                "action_id": 34,
+                "target": "itself"
+            },
+            "comment": "on itself, 20.4 s after the pull"
+        },
+        {
+            "time": 27.0,
+            "every": 33.4,
+            "data": {
+                "type": "action",
+                "action_id": 1003,
+                "target": "target"
+            },
+            "comment": "3.2 s cast: 27.0 s after the pull, then every 33.4 s"
+        },
+        {
+            "time": 38.4,
+            "data": {
+                "type": "action",
+                "action_id": 720,
+                "target": "target"
+            },
+            "comment": "2.2 s cast, 38.4 s after the pull (a miss)"
+        },
+        {
+            "time": 49.8,
+            "data": {
+                "type": "action",
+                "action_id": 1135,
+                "target": "target"
+            },
+            "comment": "2.2 s cast, 49.8 s after the pull"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Every Little Thing She Does Is Magitek's quest battle (64, quest 1005): an enemy (BNpcBase 1873, BNpcName 1810, layout 4277134): level 42, 2504 HP; auto-attack 870 every 3.0 s. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.202`: one run, won; a level 48 player): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull."
+}

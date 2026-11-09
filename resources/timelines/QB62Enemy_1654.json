@@ -1,0 +1,90 @@
+{
+    "autoattack_action_id": 870,
+    "from_pull": true,
+    "recorded_amounts": {
+        "870": {
+            "players": 96,
+            "npcs": 83.5
+        },
+        "720": {
+            "npcs": 257
+        },
+        "1003": {
+            "npcs": 254
+        },
+        "1135": {
+            "players": 207,
+            "npcs": 242
+        }
+    },
+    "timepoints": [
+        {
+            "time": 7.0,
+            "data": {
+                "type": "action",
+                "action_id": 474,
+                "target": "itself"
+            },
+            "comment": "on itself, 7 s after it came out"
+        },
+        {
+            "time": 13.7,
+            "data": {
+                "type": "action",
+                "action_id": 34,
+                "target": "itself"
+            },
+            "comment": "on itself"
+        },
+        {
+            "time": 16.3,
+            "every": 21.6,
+            "data": {
+                "type": "action",
+                "action_id": 720,
+                "target": "target"
+            },
+            "comment": "2.2 s cast: 7-26 s after it came out, then every 21.6 s"
+        },
+        {
+            "time": 19.0,
+            "every": 36.5,
+            "data": {
+                "type": "action",
+                "action_id": 1003,
+                "target": "target"
+            },
+            "comment": "3.2 s cast: 8-38 s after it came out, then every 36.5 s"
+        },
+        {
+            "time": 23.6,
+            "data": {
+                "type": "action",
+                "action_id": 32,
+                "target": "itself"
+            },
+            "comment": "on itself"
+        },
+        {
+            "time": 23.7,
+            "every": 20.6,
+            "data": {
+                "type": "action",
+                "action_id": 1135,
+                "target": "target"
+            },
+            "comment": "2.2 s cast: 18-37 s after it came out, then every 20.6 s"
+        },
+        {
+            "time": 25.6,
+            "data": {
+                "type": "action",
+                "action_id": 43,
+                "target": "itself"
+            },
+            "comment": "on itself"
+        }
+    ],
+    "timeline_always_plays": false,
+    "comment": "Notorious Biggs' quest battle (62, quest 983): the second and third waves' 1654s (BNpcBase 1654, BNpcName 1810): level 42, 1019 HP; auto-attack 870 every 3.0 s. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.53`, won) and Bob's 689b15da (2026-11-09, `--battle 0.2` lost and `0.4` won): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull (or from coming out, for the later waves)."
+}
