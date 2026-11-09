@@ -120,7 +120,7 @@ Applied after an action's script returns, by the server, so scripts only give th
   effects (health, death, EXP) the moment it sends them, so from 2026-10-18 to 2026-10-21 its casts landing early took
   the target's health and killed it before the bar had ended (Bob's 2026-10-21 bundle); they land when the bar ends
   again, the result 0.5 s later, and moving in the last half second doesn't interrupt them (slidecasting,
-  `SLIDECAST_WINDOW_MS`).
+  `SLIDECAST_WINDOW_MS`). Summoning a mount isn't interrupted by moving at all ([Chocobo](chocobo.md#riding)).
 * **Recast** (ActorControlSelf 17, `SetCooldownTimerMax`: CooldownGroup − 1, the action, the recast in 10 ms units)
   is sent with every action a player uses, as retail does with the cast bar or the effect. It's worked out as the
   client does (`client_rules.rs`, ported from ActionManager.GetAdjustedRecastTime and GetMaxCharges of the 2026.10.16

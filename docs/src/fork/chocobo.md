@@ -136,7 +136,10 @@ type 13, the mount's ID, 1.0 s) and Condition 0x04; at +1.03 s the condition cle
 ID, a 0.1 s lock); at +1.6 s ActorControl 0 `[0, 1]`, ActorControl 2 `[4]`, Condition, 928 `[12]`, the Mount packet
 and 263 `[1]`. Kawari casts action 4 for every mount (`MOUNT_ACTION`; until 2026-10-29 it looked the mount's ID up as
 an Action row, so mount 1 had no cast and 412 a 2.5 s one) and sends the Mount packet 0.57 s after the cast lands
-(`MOUNT_ARRIVES_AFTER`), if still mounted. The mode ActorControls (0, 2) around it aren't sent.
+(`MOUNT_ARRIVES_AFTER`), if still mounted. The mode ActorControls (0, 2) around it aren't sent. **Moving doesn't
+interrupt it**: 266 of the 439 mount summons in Connor's Chronofoil captures (2026-11-03 to 09) were made on the run
+(2 to 5.6 yalms covered during the bar, from its first 0.1 s) and none of the 439 was cancelled; Kawari cancelled one if
+the player moved in its first half second, like a spell, until 2026-11-09 (the cast isn't `interruptible`.)
 
 **Zoning while mounted** (Bob's Chronofoil captures of 2026-10-28 and 29, every zone change made mounted): into a zone whose
 TerritoryType has no Mount (Ul'dah, the Waking Sands, the Twins' Gridania) the spawn had no mount and the Condition

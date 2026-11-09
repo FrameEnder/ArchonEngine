@@ -330,7 +330,10 @@ pub fn handle_action_messages(
         // captures: 0.50-0.54 s early for 4,165 of 4,805 casts of 1.1 to 7.7 s), but the target's side (its health,
         // aggro, death) only comes with the result, 1.07 s after that effect; Kawari applies an action's effects when
         // it sends them, so landing early took the target's health off before the bar had ended (Bob's 2026-10-21
-        // bundle). Moving in the last half second doesn't interrupt it (slidecasting, `server/mod.rs`.)
+        // bundle). Moving in the last half second doesn't interrupt it (slidecasting, `server/mod.rs`.) Moving never
+        // interrupts summoning a mount: 266 of the 439 mount summons in Connor's Chronofoil captures (2026-11-03 to 09)
+        // were made on the run, 2 to 5.6 yalms covered during the bar from its start, and none of the 439 was
+        // cancelled.
         let lands_after = adjusted_cast_time;
 
         instance.insert_task(
@@ -339,7 +342,7 @@ pub fn handle_action_messages(
             Duration::from_millis(lands_after as u64),
             QueuedTaskData::CastAction {
                 request: request.clone(),
-                interruptible: adjusted_cast_time > 0,
+                interruptible: adjusted_cast_time > 0 && request.action_type != ActionType::Mount,
             },
         );
 
