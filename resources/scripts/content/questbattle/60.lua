@@ -20,7 +20,7 @@
 --   the boss under 20 % (19.8, 18.5): the gladiator's yell 1034
 --   the boss's health at 0: sequence 7 and its talk 92 at once; a rosary (EObj 2002279) appears 0.2-0.5 s later where
 --           it always does, the director the handler; the boss's death 2.0 s later; the director's log 3206 ("...
---           drops a draconian rosary") 5.0 s after sequence 7; the wyvern fades (607) 6.4 s after and goes 1.35 s
+--           drops a draconian rosary") 5.0 s after sequence 7; the wyvern runs off, fades (607) 6.4 s after and goes 1.35 s
 --           later; log 3209 ("The wyvern takes to the skies") 10.05 s after; if the rosary is still there then,
 --           sequences 8 and 9 at once and the gladiator's yell 1371 12.1 s later
 --   lost (no lost run recorded): your health at 0, or Haurchefant's (the gladiator: Bob, from retail); sequence 0xFE
@@ -106,6 +106,11 @@ TALK_91_AFTER = 46
 ROSARY_AFTER = 1
 DROPPED_LOG_AFTER = 11
 WYVERN_FADES_AFTER = 14
+-- The wyvern runs off as the boss falls: turning at once (0.2 s after sequence 7) and running in a straight line at
+-- 5.9 yalms a second from wherever it was to the same spot in all three runs (within half a yalm), where it fades
+-- (6.4-7.0 s after sequence 7) and goes. Kawari faded it where it stood (Bob's bundle 20261110-102239.)
+WYVERN_FLEES_TO = { x = 442.25, y = 302.42, z = -324.64 }
+WYVERN_SPEED = 6
 WYVERN_GOES_AFTER = 3
 WYVERN_GONE_AFTER = 21
 YELL_1371_AFTER = 24
@@ -290,6 +295,9 @@ function bossDown(director)
     talk(director, SPEAKER_BOSS, 92)
     after(ROSARY_AFTER, function(d) d:spawn_eobj(EOBJ_ROSARY, ROSARY_POSITION) end)
     after(DROPPED_LOG_AFTER, function(d) d:log_message(LOG_DROPPED, {}) end)
+    director:hold_bnpc(BNPC_WYVERN)
+    local flees_to = WYVERN_FLEES_TO
+    director:sweep_bnpc(BNPC_WYVERN, flees_to.x, flees_to.y, flees_to.z, WYVERN_SPEED)
     after(WYVERN_FADES_AFTER, function(d)
         d:fade_out_bnpc(BNPC_WYVERN)
         after(WYVERN_GOES_AFTER, function(d2) d2:despawn_bnpc(BNPC_WYVERN) end)

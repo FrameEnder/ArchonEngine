@@ -505,7 +505,10 @@ others 1265 (seen in all 34 quest battles of Bob's captures, levels 6-45). Kawar
   third run's marauder, killed 8.5 s later); nothing waits for it.
 * **The rosary.** 0.2-0.5 s after sequence 7 an event object appears (EObj 2002279, layout 4285063, at (458.88,
   304.81, -279.59) both times, not where the boss fell), its handler the director (SpawnObject). The director's log
-  3206 5.0 s after sequence 7; the wyvern fades (FadeOut 607) 6.4 s after and goes 1.35 s later; log 3209 10.05 s after
+  3206 5.0 s after sequence 7; the wyvern runs off at once (0.2 s after sequence 7, a straight line at 5.9 yalms a
+  second from wherever it was to (442.25, 302.42, -324.64), the same spot within half a yalm in all three runs), fades
+  (FadeOut 607) as it gets there 6.4-7.0 s after and goes 1.35 s later (since 2026-11-10 `hold_bnpc` and `sweep_bnpc`
+  at 6; Kawari faded it where it stood, Bob's bundle 20261110-102239); log 3209 10.05 s after
   (both runs), and if the rosary is still there then sequences 8 and 9 at once and the gladiator's yell 1371 12.1 s
   later. Talking to it (4.5, 24.8 and 17.2 s after sequence 7): EventStart (Talk, the director's event), **no scene**,
   the director's event action 22 at once (ActorControlTarget 3 `[1, 22]`, 5 s); as it ends, EventFinish and the bar's

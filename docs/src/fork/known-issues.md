@@ -1048,7 +1048,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   Haurchefant falls is from Bob's memory of retail, not a recording: whether the conjurer ally's fall loses it too,
   and what retail says or shows then, isn't known. Haurchefant's ride in (untested in game) follows straight lines
   between retail's points at their heights (the ground rises 2 yalms on the second leg; the client may show him off
-  it).
+  it). The wyvern's run off as the boss falls (2026-11-10) is a straight line too, untested in game.
   Bob's first play (bundle 20261110-081839, a level 38 conjurer) stalled on the first wave's conjurer (915 HP): it
   Cured itself for 435-475 every 6-7 s and Cure II'd for 712-737 under 24 %, retail's amounts (one Cure took it from
   2 % to 53 %) and pace (6.3 s median between its heals, 6.6 s for this one). Retail's players hit it for 210-300 a
