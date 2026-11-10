@@ -1040,6 +1040,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quest battles and directors
 
+* **Mounted players and events** (2026-11-10): an ordinary event no longer sends SetMode, and enemies wait while their
+  target is mounted ([Quests](quests.md#an-event-leaves-the-players-mode-alone)); untested in game. Something that
+  relied on the old SetMode Normal at an event's end (a mode left set by a script) would now keep it.
+
 * **In the Eyes of Gods and Men's battle (60)** (2026-11-06): untested in game, from three won runs (captures 130088ec,
   3c56e09f, 21f967d2). Picking up the rosary is new: the director answers a talk on its object with an event action and
   no scene (`onObjectTalk`), which the client hasn't been seen to accept from Kawari yet. Whether sequence 6 waits for

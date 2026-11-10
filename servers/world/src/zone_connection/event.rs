@@ -60,8 +60,11 @@ impl ZoneConnection {
             let event_arg = event.1.event_arg;
             let event_id = event.1.id;
 
-            self.set_character_mode(CharacterMode::Normal, 0, true)
-                .await;
+            // Back to normal from what the event put them in (crafting, gathering); an ordinary event put them in none.
+            if event.0.character_mode() != CharacterMode::Normal {
+                self.set_character_mode(CharacterMode::Normal, 0, true)
+                    .await;
+            }
 
             // Remove the condition given at the start of the event
             self.conditions.remove_condition(event.1.condition);
@@ -156,7 +159,14 @@ impl ZoneConnection {
             }
             self.send_conditions().await;
 
-            self.set_character_mode(character_mode, 0, true).await;
+            // Only an event of its own (crafting, gathering) changes the player's mode. Retail sends no SetMode for an
+            // ordinary event (a talk, a walk-in: Bob's Chronofoil captures 130088ec and 1fac2416), and a player who
+            // rode into a walk-in event stayed on their mount through it. Kawari's SetMode Normal at every event's
+            // start and end left the client mounted in Normal mode: it let him cast from the saddle, and talking to an
+            // NPC no longer got him off first (Bob's bundle 20261110-120801.)
+            if character_mode != CharacterMode::Normal {
+                self.set_character_mode(character_mode, 0, true).await;
+            }
 
             if handler.disable_event_pos_rollback() {
                 self.actor_control_self(ActorControlCategory::DisableEventPosRollback {

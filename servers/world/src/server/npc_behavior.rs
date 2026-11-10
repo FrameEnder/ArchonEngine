@@ -196,6 +196,19 @@ pub fn npc_behavior(
         .filter(|id| instance.paralysis.locked(**id, now))
         .copied()
         .collect();
+    // Players on a mount: no one attacks them until they get off. Retail's ambush in Bob's capture 1fac2416 (a quest's
+    // EVENTRANGE ridden into, mounted): its enemies came out at once, and the first of them acted 2.4 s after he got off,
+    // 5.3 s after they came; none touched him meanwhile. Kawari's hit the mounted player half a second after they came
+    // (Bob's bundle 20261110-120801, By the Lights of Ishgard.)
+    let mounted_players: HashSet<ObjectId> = instance
+        .actors
+        .iter()
+        .filter(|(_, actor)| {
+            matches!(actor, NetworkedActor::Player { .. })
+                && actor.get_common_spawn().mode == kawari::common::CharacterMode::Mounted
+        })
+        .map(|(id, _)| *id)
+        .collect();
     let levels: HashMap<ObjectId, u8> = instance
         .actors
         .iter()
@@ -1037,7 +1050,8 @@ pub fn npc_behavior(
             }
             // Not for a second after seizing up with paralysis (`server/paralysis.rs`.)
             let paralysed = paralysis_locked.contains(id);
-            let can_take_action = can_take_action && !paralysed;
+            let at_mounted = mounted_players.contains(&spawn.common.target_id.object_id);
+            let can_take_action = can_take_action && !paralysed && !at_mounted;
 
             // Only update the timeline on exact second marks. A timeline that always plays (Sastasha's giant clams opening
             // and closing) runs whether or not the NPC is fighting; its actions still need a target. Nothing read the
@@ -1047,6 +1061,7 @@ pub fn npc_behavior(
             let mut used_timeline = false;
             if timeline.from_pull
                 && !paralysed
+                && !at_mounted
                 && *state == NpcState::Hate
                 && spawn.common.target_id.object_id.is_valid()
             {

@@ -280,6 +280,20 @@ director's scenes, about 150 events in Bob's Chronofoil captures of 2026-10-30 a
 walk-in and walk-out events did, to the player alone, and the weapon stayed out when you talked to someone after a
 fight (Bob's bundle 20261031-204038).
 
+### An event leaves the player's mode alone
+
+Retail sends no SetMode for an ordinary event: around every talk and walk-in in Bob's Chronofoil captures (130088ec,
+1fac2416) it's the ToggleWeapon above, EventStart, Condition and the scene, and EventFinish and Condition at the end.
+Upstream sent ActorControlSelf SetMode Normal as every event began and ended, which a mounted player's client took as
+"on foot" while it still showed the mount: riding into By the Lights of Ishgard's EVENTRANGE0, Bob cast from the saddle,
+and talking to an NPC afterwards didn't get him off first (the client asks to dismount, ClientTrigger 101, and waits
+for ActorControlSelf 915 before it sends the talk, only while it knows it's mounted). Bob's bundle 20261110-120801.
+Since 2026-11-10 only an event with a mode of its own (crafting, gathering) sets it and puts it back.
+
+**Riding into a walk-in event** starts it, mount and all, as retail did (capture 1fac2416: a quest's ambush range
+entered mounted, the scene, the enemies out 0.65 s after; he got off himself 3.6 s in). Enemies leave a mounted player
+alone ([Combat](combat.md): retail's first action came 2.4 s after he got off).
+
 ### Cutscenes that end somewhere else
 
 Some cutscenes end with the player in another zone: the client fades to black at the end (or when it's skipped) and

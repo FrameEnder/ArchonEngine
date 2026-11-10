@@ -564,6 +564,12 @@ Retail's falls (Bob's Chronofoil captures, 2026-10-28: 49 falls that hurt and 47
   their StatusEffectList. No ActionEffect.
 * Not hurt: mounted, dead, or in a gimmick jump.
 
+**A mounted player isn't attacked** (since 2026-11-10, `npc_behavior`'s `mounted_players`): an enemy after one waits,
+neither casting nor swinging, until they're off (retail's ambush ridden into, capture 1fac2416: the enemies came out
+0.65 s after the walk-in, and the first acted 2.4 s after he got off, 5.3 s in; Kawari's hit him half a second after
+they came, Bob's bundle 20261110-120801). Whether retail's enemies walk up to a mounted player meanwhile, and whether
+one already fighting can be ridden away from, wasn't seen; Kawari's walk up.
+
 ## Paralysis (`server/paralysis.rs`)
 
 Status 17, as retail played it out in Bob's Chronofoil captures (85 windows of it on players and NPCs, 2026-10-14 to
