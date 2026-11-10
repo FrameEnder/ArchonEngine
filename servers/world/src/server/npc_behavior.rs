@@ -1173,6 +1173,7 @@ pub fn npc_behavior(
                             };
                             *cast = Some(NpcCast {
                                 until: Instant::now() + Duration::from_secs_f32(cast_time_seconds),
+                                length: Duration::from_secs_f32(cast_time_seconds),
                                 target_position: at,
                                 rotation: spawn.common.rotation,
                                 action_id,
@@ -1228,6 +1229,7 @@ pub fn npc_behavior(
                                 *cast = Some(NpcCast {
                                     until: Instant::now()
                                         + Duration::from_secs_f32(cast_time_seconds),
+                                    length: Duration::from_secs_f32(cast_time_seconds),
                                     target_position: target_actor_pos
                                         .get(&spawn.common.target_id.object_id)
                                         .copied()
@@ -1306,6 +1308,7 @@ pub fn npc_behavior(
                             parameters.get_adjusted_cast_time(category, cast_time) as f32 / 1000.0;
                         *cast = Some(NpcCast {
                             until: Instant::now() + Duration::from_secs_f32(cast_time_seconds),
+                            length: Duration::from_secs_f32(cast_time_seconds),
                             target_position: target_actor_pos
                                 .get(&target)
                                 .or_else(|| positions.get(&target))
@@ -1363,6 +1366,7 @@ pub fn npc_behavior(
                 let cast_time_seconds = cast_time as f32 / 1000.0;
                 *cast = Some(NpcCast {
                     until: Instant::now() + Duration::from_secs_f32(cast_time_seconds),
+                    length: Duration::from_secs_f32(cast_time_seconds),
                     target_position: target_actor_pos
                         .get(&spawn.common.target_id.object_id)
                         .copied()
@@ -2140,6 +2144,7 @@ pub fn npc_use_action(
     if let Some(NetworkedActor::Npc { cast, .. }) = instance.find_actor_mut(actor_id) {
         *cast = Some(NpcCast {
             until: Instant::now() + Duration::from_secs_f32(cast_time),
+            length: Duration::from_secs_f32(cast_time),
             target_position,
             rotation,
             action_id,

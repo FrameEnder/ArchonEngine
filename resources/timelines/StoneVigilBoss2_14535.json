@@ -3,13 +3,15 @@
     "from_pull": true,
     "recorded_amounts": {
         "870": {
-            "npcs": 166
+            "npcs": 166,
+            "players": 478.5
         },
         "29053": {
             "players": 770.5
         },
         "28732": {
-            "npcs": 365.5
+            "npcs": 365.5,
+            "players": 543.0
         }
     },
     "timepoints": [
@@ -72,5 +74,5 @@
         }
     ],
     "timeline_always_plays": false,
-    "comment": "The Stone Vigil (territory 1042, ContentFinderCondition 11): its second boss (BNpcBase 14535, BNpcName 1678, layout 9061121, level 41, 54496 HP): on its target. Typhoon (28730) brings the whirlwinds (the director's). From Bob's Chronofoil capture 1cefedf4 of 2026-11-07 (`questkit chronofoil --battle` 0.1, with Duty Support, three wipes): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+    "comment": "The Stone Vigil (territory 1042, ContentFinderCondition 11): its second boss (BNpcBase 14535, BNpcName 1678, layout 9061121, level 41, 54496 HP): on its target. Typhoon (28730) brings the whirlwinds (the director's). From Bob's Chronofoil capture 1cefedf4 of 2026-11-07 (`questkit chronofoil --battle` 0.1, with Duty Support, three wipes): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded. `players` for 870 478.5 (319 on the tank), 28732 543.0 (362.0 on the tank): nobody but Bob's tank was hit by these in the captures (Chronofoil capture 341808b0, visit 0.2), and the actions that hit both did a median 1.5 times to the conjurer what they did to the tank (1.28-2.06, ten actions); without it they did 31-67 to a player, the unrecorded NPC damage scale (Bob's bundle 20261107-221820)."
 }

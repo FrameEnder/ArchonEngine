@@ -147,8 +147,12 @@ pub fn update(
 
         // On its way: an ActorMove each tick to where it will be by the next, at its speed, as retail's every 0.31 s
         // and as NPCs walk (one ActorMove to the end of a long line snapped it there on the client: Bob's bundle
-        // 20261107-212704, the Stone Vigil's first boss's run to its Swinge spot.)
-        if now >= sweep.sets_off {
+        // 20261107-212704, the Stone Vigil's first boss's run to its Swinge spot.) The tick that brings it to its end
+        // has sent it there already; one more ActorMove, facing the way it ran, turned Chudo-Yudo back to the wall
+        // after it had turned into the room for its Swinge, so the cone the client and its plugins drew pointed away
+        // from the one that hit (Bob's bundle 20261110-134659: ActorCast at 1.41, then an ActorMove at -1.79.)
+        let arrived = now >= arrives;
+        if now >= sweep.sets_off && !arrived {
             sweep.moving = true;
             let ahead = sweep.position(now + TICK);
             network.lock().send_in_range_instance(
@@ -175,7 +179,7 @@ pub fn update(
         }) = instance.find_actor_mut(sweep.walker)
         {
             spawn.common.position = Position(at);
-            if sweep.moving {
+            if sweep.moving && !arrived {
                 spawn.common.rotation = sweep.rotation();
             }
             navmesh_path.clear();
@@ -216,7 +220,7 @@ pub fn update(
                 );
             }
         }
-        // Kept a tick past its arrival, for the last ActorMove to its end.
+        // Kept a tick past its arrival, to put it at its end on the server.
         now < arrives + TICK
     });
     // Any the director added meanwhile (an action's script) stay too.

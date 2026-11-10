@@ -7,25 +7,27 @@
             "npcs": 106.5
         },
         "737": {
-            "npcs": 138
+            "npcs": 138,
+            "players": 396.0
         }
     },
     "rotation": {
-        "pace": 10.7,
+        "pace": 7.2,
         "actions": [
             {
                 "action": 737,
-                "every": 10.7,
-                "comment": "16 uses by 6 (7.7-18.1 s apart); every 10.7 s"
+                "every": 13.8,
+                "comment": "25 uses in 344 s out, 2 runs: one every 13.8 s (Chronofoil captures 1cefedf4 0.1 and 341808b0 0.2)"
             },
             {
                 "action": 738,
-                "every": 27.1,
-                "comment": "9 uses by 6 (21.5-21.9 s apart); every 27.1 s"
+                "every": 31.3,
+                "comment": "11 uses in 344 s out, 2 runs: one every 31.3 s (Chronofoil captures 1cefedf4 0.1 and 341808b0 0.2)"
             }
-        ]
+        ],
+        "comment": "36 of these in 344 s out: one every 9.6 s; the pace is three quarters of that, so each comes about as often as its own `every` (Chronofoil captures 1cefedf4 0.1 and 341808b0 0.2)"
     },
     "timepoints": [],
     "timeline_always_plays": false,
-    "comment": "The Stone Vigil (territory 1042, ContentFinderCondition 11): an enemy of the halls before the last boss (BNpcBase 1466, BNpcName 1675, level 41, 3542 HP): on its target. From Bob's Chronofoil capture 1cefedf4 of 2026-11-07 (`questkit chronofoil --battle` 0.1, with Duty Support, three wipes): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+    "comment": "The Stone Vigil (territory 1042, ContentFinderCondition 11): an enemy of the halls before the last boss (BNpcBase 1466, BNpcName 1675, level 41, 3542 HP): on its target. From Bob's Chronofoil capture 1cefedf4 of 2026-11-07 (`questkit chronofoil --battle` 0.1, with Duty Support, three wipes): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded. `players` for 737 396.0 (264 on the tank): nobody but Bob's tank was hit by these in the captures (Chronofoil capture 341808b0, visit 0.2), and the actions that hit both did a median 1.5 times to the conjurer what they did to the tank (1.28-2.06, ten actions); without it they did 31-67 to a player, the unrecorded NPC damage scale (Bob's bundle 20261107-221820)."
 }

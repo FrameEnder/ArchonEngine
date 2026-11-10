@@ -1016,6 +1016,14 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   rounds and flights stand when it's pulled again after a wipe follows the script's reset, not retail's (not seen).
 * The first boss's run to its spot is a `sweep_bnpc` at 9 yalms a second (ActorMoves every 500 ms tick, retail's
   every 0.31 s), kept from acting on its own for the run (`busy_bnpc`); it turns to its target as it arrives.
+* Hitboxes of the Stone Vigil's enemies aren't recorded (Kawari Recorder wasn't run there); they're their models'
+  (`npc_hitbox_radius`), which the cones' and circles' reach start from.
+* Where retail's captures had only Bob's tank hit by an action (Chudo-Yudo's and Koshchei's auto-attacks, Rake,
+  Spiked Tail, Isgebind's auto-attack, the 1464s' 504, the 1466s' 737), `players` is that times 1.5, the median of
+  what the other actions did to the conjurer over what they did to the tank (1.28-2.06); f842581d (the conjurer's
+  Duty Finder run) isn't in the release's `chronofoil.zip`, so it wasn't used.
+* How often the enemies act is now a rate over the time they fought (`every` = seconds out ÷ uses) from 1cefedf4 and
+  341808b0; the first boss's from its three pulls' fighting alone (303 s).
 * After a wipe the enemies are put back where they began (an ActorSetPos), where retail spawned the bosses anew; their
   statuses aren't cleared.
 * The whirlwinds are untargetable and held (retail's targetability isn't recorded); the helpers that hurt as they go

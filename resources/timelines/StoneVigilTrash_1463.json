@@ -12,14 +12,15 @@
         }
     },
     "rotation": {
-        "pace": 20.7,
+        "pace": 16.2,
         "actions": [
             {
                 "action": 518,
-                "every": 20.7,
-                "comment": "6 uses by 2 (20.7-22.1 s apart); every 20.7 s"
+                "every": 21.5,
+                "comment": "8 uses in 172 s out, 2 runs: one every 21.5 s (Chronofoil captures 1cefedf4 0.1 and 341808b0 0.2)"
             }
-        ]
+        ],
+        "comment": "8 of these in 172 s out: one every 21.5 s; the pace is three quarters of that, so each comes about as often as its own `every` (Chronofoil captures 1cefedf4 0.1 and 341808b0 0.2)"
     },
     "timepoints": [],
     "timeline_always_plays": false,

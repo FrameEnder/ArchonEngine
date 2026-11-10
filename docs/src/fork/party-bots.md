@@ -452,6 +452,11 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
     the player (Bob's bundle 20261109-201914, 2026-11-09). It sets off
     0.0-0.3 s after it notices (`AUTHORED_REACTION_SECONDS`), along a navmesh path that reaches the spot (else by the
     shapes), and holds there until the cast has gone off, plus `LINGER`.
+    **Too quick to get out of**: an area attack cast in under a second (`dodge::TOO_QUICK_TO_DODGE`, by the cast's own
+    length, `NpcCast::length`) isn't dodged at all: retail's Duty Support members set off 1.0-1.4 s into a cast, and
+    Chudo-Yudo's Lion's Breath (902, 0.7 s, a cone at its target) hit the tank 24 times of 25 in capture 1cefedf4.
+    Kawari's bots all got out of it at once, and it hit nobody in two runs of three (Bob's bundles 20261107-221820 and
+    20261108-145830; since 2026-11-10).
     **Moving hazards** (`server/sweep.rs`): what a director sends down a line with `director:sweep_bnpc` (Koshchei's
     whirlwinds) is a danger while it moves: the way ahead of it to its end, as wide as its action's reach each side, and
     a little behind it (`Sweep::danger`), gone as it arrives. One that hasn't set off isn't (retail's party stood in its

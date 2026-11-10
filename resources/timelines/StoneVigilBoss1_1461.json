@@ -3,35 +3,38 @@
     "from_pull": true,
     "recorded_amounts": {
         "870": {
-            "npcs": 104.5
+            "npcs": 104.5,
+            "players": 308.2
         },
         "902": {
             "players": 1156.5,
             "npcs": 422.5
         },
         "901": {
-            "npcs": 156.0
+            "npcs": 156.0,
+            "players": 262.5
         },
         "903": {
             "players": 1239.0
         }
     },
     "rotation": {
-        "pace": 11.5,
+        "pace": 6.5,
         "actions": [
             {
                 "action": 902,
-                "every": 11.5,
-                "comment": "18 uses by 2 (5.8-22.0 s apart); every 11.5 s"
+                "every": 13.2,
+                "comment": "23 uses in 303 s out, three pulls: one every 13.2 s (Chronofoil captures 1cefedf4 0.1 and 341808b0 0.2: three pulls, 303 s fighting)"
             },
             {
                 "action": 901,
-                "every": 29.7,
-                "comment": "10 uses by 2 (11.0-33.0 s apart); every 29.7 s"
+                "every": 25.3,
+                "comment": "12 uses in 303 s out, three pulls: one every 25.3 s (Chronofoil captures 1cefedf4 0.1 and 341808b0 0.2: three pulls, 303 s fighting)"
             }
-        ]
+        ],
+        "comment": "35 of these in 303 s out (Swinge is the director's): one every 8.7 s; the pace is three quarters of that, so each comes about as often as its own `every` (Chronofoil captures 1cefedf4 0.1 and 341808b0 0.2: three pulls, 303 s fighting)"
     },
     "timepoints": [],
     "timeline_always_plays": false,
-    "comment": "The Stone Vigil (territory 1042, ContentFinderCondition 11): its first boss (BNpcBase 1461, BNpcName 1677, layout 4000969, level 41, 30994 HP; two pulls): on its target. Swinge (903) is the director's (`content/r1d1_re.lua`: it runs to one of three spots first). From Bob's Chronofoil capture 1cefedf4 of 2026-11-07 (`questkit chronofoil --battle` 0.1, with Duty Support, three wipes): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+    "comment": "The Stone Vigil (territory 1042, ContentFinderCondition 11): its first boss (BNpcBase 1461, BNpcName 1677, layout 4000969, level 41, 30994 HP; two pulls): on its target. Swinge (903) is the director's (`content/r1d1_re.lua`: it runs to one of three spots first). From Bob's Chronofoil capture 1cefedf4 of 2026-11-07 (`questkit chronofoil --battle` 0.1, with Duty Support, three wipes): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded. `players` for 870 308.2 (205.5 on the tank), 901 262.5 (175.0 on the tank): nobody but Bob's tank was hit by these in the captures (Chronofoil capture 341808b0, visit 0.2), and the actions that hit both did a median 1.5 times to the conjurer what they did to the tank (1.28-2.06, ten actions); without it they did 31-67 to a player, the unrecorded NPC damage scale (Bob's bundle 20261107-221820)."
 }

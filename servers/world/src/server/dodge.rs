@@ -28,6 +28,11 @@ pub const DODGE_MARGIN: f32 = 0.5;
 /// into the cast in the capture, sampled every 0.31 s; Bob found the bots slow to react, 2026-10-26), or at once when
 /// waiting would leave too little time to get out.
 pub const REACTION_SECONDS: (f32, f32) = (0.5, 0.9);
+/// Area attacks cast quicker than this go off before anyone can get out: retail's Duty Support members never dodged
+/// Chudo-Yudo's Lion's Breath (902, a 0.7 s cone at its target), which hit the tank 24 times of 25 (Bob's Chronofoil
+/// capture 1cefedf4 of 2026-11-07); Kawari's bots all got out of it, and it hit nobody in two runs of three (Bob's
+/// bundles 20261107-221820 and 20261108-145830). Retail's members set off 1.0-1.4 s into a cast (the module.)
+pub const TOO_QUICK_TO_DODGE: Duration = Duration::from_millis(1000);
 /// How long after the attack has gone off a dodger stays out before it goes back to fighting (retail: 1.3-1.5 s.)
 pub const LINGER: Duration = Duration::from_millis(1300);
 /// How far a dodger looks for a safe spot.
@@ -189,7 +194,8 @@ pub fn dangers(instance: &Instance, game_data: &mut GameData, now: Instant) -> V
                     && crate::server::action::at_war(&players_enemies, actor))
                     || instance.held_npcs.contains(id))
                 && cast.until > now
-                && cast.action_id != 0 =>
+                && cast.action_id != 0
+                && cast.length >= TOO_QUICK_TO_DODGE =>
             {
                 let shape = game_data.get_action_info(cast.action_id)?.area_shape()?;
                 Some(Danger {

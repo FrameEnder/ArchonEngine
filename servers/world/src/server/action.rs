@@ -3633,7 +3633,12 @@ pub fn in_area_with_reach(
             if distance > radius + caster_radius + reach {
                 return false;
             }
-            if distance <= caster_radius + reach {
+            // Its width is taken from the caster's middle, inside its hitbox too: standing against a big enemy's side
+            // or back is out of its cone. Kawari caught everyone within the hitbox, so the Stone Vigil's 1463 (518)
+            // hit the player 115-167 degrees off at 2.5-5.6 yalms, and Chudo-Yudo's Swinge (903) killed them 75
+            // degrees off at 2.7 (Bob's bundle 20261110-134659); on retail nobody that far off was hit, 3.3-5.7 yalms
+            // from either (902 and 518: eleven times in Bob's Chronofoil captures 1cefedf4 and 341808b0.)
+            if distance <= reach {
                 return true;
             }
             let between = (forward.dot(offset) / distance).clamp(-1.0, 1.0).acos();
@@ -3853,6 +3858,32 @@ mod area_tests {
         assert!(!at(0.0, -4.0)); // behind it
         assert!(!at(6.0, 1.0)); // well off to the side
         assert!(!at(0.0, 9.0)); // out of reach
+    }
+
+    #[test]
+    fn a_cone_spares_the_sides_inside_the_hitbox() {
+        // Chudo-Yudo's Swinge (60 degrees, 40 yalms) from a 4-yalm hitbox: ahead, close in, is caught; 75 degrees off
+        // and behind, close in, aren't (Bob's bundle 20261110-134659).
+        let swinge = AreaShape::Cone {
+            radius: 40.0,
+            angle: 60.0,
+        };
+        let at = |degrees: f32, distance: f32| {
+            let r = degrees.to_radians();
+            in_area(
+                swinge,
+                Vec3A::ZERO,
+                0.0,
+                Vec3A::ZERO,
+                Vec3A::new(distance * r.sin(), 0.0, distance * r.cos()),
+                4.0,
+            )
+        };
+        assert!(at(0.0, 2.7));
+        assert!(at(25.0, 30.0));
+        assert!(!at(75.0, 2.7));
+        assert!(!at(160.0, 3.0));
+        assert!(at(120.0, 0.3)); // on top of its middle
     }
 
     #[test]

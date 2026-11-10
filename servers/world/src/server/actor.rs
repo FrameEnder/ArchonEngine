@@ -78,6 +78,8 @@ pub enum NpcTarget {
 pub struct NpcCast {
     /// When the cast finishes.
     pub until: Instant,
+    /// How long it is from start to finish (one too quick to get out of isn't dodged: `dodge::dangers`.)
+    pub length: std::time::Duration,
     /// Where its target was.
     pub target_position: Vec3A,
     /// Which way it was facing.
