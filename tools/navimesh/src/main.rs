@@ -497,6 +497,12 @@ fn main() {
     );
 
     let serialized_navmesh = navmesh.write_to_buffer().unwrap();
+    // The world server reads it back with Detour: say so here if Detour won't take it.
+    if Navmesh::from_existing(&serialized_navmesh).is_none() {
+        tracing::error!(
+            "Detour won't take zone {zone_id}'s navmesh: NPCs there will have no paths"
+        );
+    }
 
     let path = PathBuf::from(&destination_path);
     std::fs::create_dir_all(path.parent().unwrap()).unwrap(); // create directory structure

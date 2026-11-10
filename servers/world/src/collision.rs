@@ -41,7 +41,10 @@ use glam::Vec3A;
 
 /// The file's first bytes, and the layout's version.
 const MAGIC: &[u8; 4] = b"KCOL";
-const VERSION: u32 = 5;
+const VERSION: u32 = 6;
+/// The version beside a navmesh with 32-bit polygon references, still read (the same layout): the navmesh beside it
+/// isn't (`Navmesh`'s `KNV64`), so both are made again.
+const VERSION_BESIDE_32_BIT_NAVMESH: u32 = 5;
 /// The version with every door shut, still read (the same layout.)
 const VERSION_WITH_DOORS_SHUT: u32 = 4;
 /// The version before the simple shapes, still read (the same layout.)
@@ -291,6 +294,7 @@ impl Collision {
         let version = r.u32()?;
         if ![
             VERSION,
+            VERSION_BESIDE_32_BIT_NAVMESH,
             VERSION_WITH_DOORS_SHUT,
             VERSION_WITHOUT_SHAPES,
             VERSION_WITHOUT_MATERIALS,
@@ -1047,6 +1051,9 @@ mod tests {
         assert!(c.has_materials() && c.is_older());
         // A version 4 file (every door shut) too.
         three[4..8].copy_from_slice(&4u32.to_le_bytes());
+        assert!(Collision::from_bytes(&three).unwrap().is_older());
+        // A version 5 file (beside a navmesh with 32-bit polygon references) too.
+        three[4..8].copy_from_slice(&5u32.to_le_bytes());
         assert!(Collision::from_bytes(&three).unwrap().is_older());
         assert!(!Collision::from_bytes(&built.to_bytes()).unwrap().is_older());
     }

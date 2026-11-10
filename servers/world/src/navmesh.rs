@@ -3,9 +3,9 @@ use std::{io::Cursor, ptr::null_mut};
 use binrw::{BinRead, BinWrite, binrw};
 use glam::Vec3A;
 use recastnavigation_sys::{
-    DT_FAILURE, DT_PARTIAL_RESULT, DT_SUCCESS, dtAllocNavMesh, dtAllocNavMeshQuery, dtNavMesh,
-    dtNavMesh_addTile, dtNavMesh_init, dtNavMeshParams, dtNavMeshQuery,
-    dtNavMeshQuery_findNearestPoly, dtNavMeshQuery_findPath,
+    DT_FAILURE, DT_PARTIAL_RESULT, DT_SUCCESS, dtAllocNavMesh, dtAllocNavMeshQuery, dtFreeNavMesh,
+    dtFreeNavMeshQuery, dtNavMesh, dtNavMesh_addTile, dtNavMesh_init, dtNavMeshParams,
+    dtNavMeshQuery, dtNavMeshQuery_findNearestPoly, dtNavMeshQuery_findPath,
     dtNavMeshQuery_findRandomPointAroundCircle, dtNavMeshQuery_findStraightPath,
     dtNavMeshQuery_init, dtPolyRef, dtQueryFilter, dtQueryFilter_dtQueryFilter,
 };
@@ -34,7 +34,15 @@ pub struct NavmeshTile {
 /// Represents a navmesh for a zone.
 ///
 /// We reuse the .nvm file extension used by the retail server but these have no relations to ours.
+///
+/// Since 2026-11-10 the file starts with `KNV64`: its tiles are built with Detour's 64-bit polygon references
+/// (recastnavigation-sys' `detour_large_nav_meshes`). With 32-bit ones a navmesh holds only 2^22 tiles times polygons a
+/// tile (each rounded up to a power of two), and an open field's made with the simple shapes (2026-11-02) went over it:
+/// Detour wouldn't take it and the world server panicked loading Coerthas Central Highlands (Bob's log of 2026-11-10).
+/// The tiles' links hold polygon references, so an older file's tiles don't fit this build: it isn't read (no magic),
+/// and it's made again with its collision (collision version 6.)
 #[binrw]
+#[brw(magic = b"KNV64")]
 #[derive(Default, Debug, Clone)]
 pub struct Navmesh {
     /// The zone ID that the navmesh was generated with. Not guaranteed to be valid, it's only here for informative purposes in tools.
@@ -90,12 +98,17 @@ impl Navmesh {
     /// Reads an existing NVM file.
     pub fn from_existing(buffer: &[u8]) -> Option<Self> {
         let mut cursor = Cursor::new(buffer);
-        if let Ok(mut navmesh) = Self::read_le(&mut cursor) {
-            navmesh.initialize();
-            return Some(navmesh);
+        let mut navmesh = Self::read_le(&mut cursor).ok()?;
+        match navmesh.initialize() {
+            Ok(()) => Some(navmesh),
+            Err(why) => {
+                tracing::warn!(
+                    "Detour won't take the navmesh of zone {}: {why}",
+                    navmesh.zone_id
+                );
+                None
+            }
         }
-
-        None
     }
 
     /// Writes to the NVM file format.
@@ -110,8 +123,8 @@ impl Navmesh {
         Some(buffer)
     }
 
-    /// Initializes Detour data.
-    fn initialize(&mut self) {
+    /// Initializes Detour data, or says why Detour wouldn't take it (the navmesh is then left without it: no paths.)
+    fn initialize(&mut self) -> Result<(), String> {
         let navmesh_params = dtNavMeshParams {
             orig: self.nav_mesh_params.orig,
             tileWidth: self.nav_mesh_params.tile_width,
@@ -121,27 +134,50 @@ impl Navmesh {
         };
 
         unsafe {
-            self.navmesh = dtAllocNavMesh();
-            assert!(dtNavMesh_init(self.navmesh, &navmesh_params) == DT_SUCCESS);
-
-            for tile in &mut self.tiles {
-                // NOTE: At this point, Detour has a reference to our tile data! If it's moved or deleted, beware of confusing memory-related errors.
-                assert!(
-                    dtNavMesh_addTile(
-                        self.navmesh,
-                        tile.data.as_mut_ptr(),
-                        tile.data.len() as i32,
-                        0,
-                        0,
-                        null_mut()
-                    ) == DT_SUCCESS
-                );
+            let navmesh = dtAllocNavMesh();
+            if navmesh.is_null() {
+                return Err("out of memory".into());
+            }
+            let status = dtNavMesh_init(navmesh, &navmesh_params);
+            if status != DT_SUCCESS {
+                dtFreeNavMesh(navmesh);
+                return Err(format!(
+                    "init {status:#x} ({} tiles, {} polygons a tile at most)",
+                    navmesh_params.maxTiles, navmesh_params.maxPolys
+                ));
             }
 
-            self.navmesh_query = dtAllocNavMeshQuery();
-            assert!(!self.navmesh_query.is_null());
-            assert!(dtNavMeshQuery_init(self.navmesh_query, self.navmesh, 2048) == DT_SUCCESS);
+            for (index, tile) in self.tiles.iter_mut().enumerate() {
+                // NOTE: At this point, Detour has a reference to our tile data! If it's moved or deleted, beware of confusing memory-related errors.
+                let status = dtNavMesh_addTile(
+                    navmesh,
+                    tile.data.as_mut_ptr(),
+                    tile.data.len() as i32,
+                    0,
+                    0,
+                    null_mut(),
+                );
+                if status != DT_SUCCESS {
+                    dtFreeNavMesh(navmesh);
+                    return Err(format!("tile {index}: addTile {status:#x}"));
+                }
+            }
+
+            let query = dtAllocNavMeshQuery();
+            if query.is_null() {
+                dtFreeNavMesh(navmesh);
+                return Err("out of memory".into());
+            }
+            let status = dtNavMeshQuery_init(query, navmesh, 2048);
+            if status != DT_SUCCESS {
+                dtFreeNavMeshQuery(query);
+                dtFreeNavMesh(navmesh);
+                return Err(format!("query init {status:#x}"));
+            }
+            self.navmesh = navmesh;
+            self.navmesh_query = query;
         }
+        Ok(())
     }
 
     /// Calculates a path from `start_pos` to `end_pos`. When the navmesh doesn't reach `end_pos`, the path walks as far
@@ -336,5 +372,50 @@ impl Navmesh {
     pub fn is_available(&self) -> bool {
         // NOTE: There might be more checks desired here, but this suffices for now
         !self.navmesh.is_null()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn params(max_tiles: i32, max_polys: i32) -> NavmeshParams {
+        NavmeshParams {
+            orig: [0.0; 3],
+            tile_width: 32.0,
+            tile_height: 32.0,
+            max_tiles,
+            max_polys,
+        }
+    }
+
+    /// A navmesh too big for 32-bit polygon references (8192 tiles times 1024 polygons: 23 bits, where 22 fit) is
+    /// taken: an open field's went over (Bob's log of 2026-11-10, Coerthas Central Highlands.)
+    #[test]
+    fn a_big_navmesh_is_taken() {
+        let navmesh = Navmesh::new(155, params(5000, 600), Vec::new());
+        let bytes = navmesh.write_to_buffer().unwrap();
+        let read = Navmesh::from_existing(&bytes).unwrap();
+        assert!(read.is_available());
+    }
+
+    /// A file from before `KNV64` (32-bit polygon references in its tiles' links) isn't read: it's made again.
+    #[test]
+    fn an_older_file_is_not_read() {
+        let bytes = Navmesh::new(155, params(4, 16), Vec::new())
+            .write_to_buffer()
+            .unwrap();
+        assert!(Navmesh::from_existing(&bytes).is_some());
+        assert!(Navmesh::from_existing(&bytes[5..]).is_none());
+    }
+
+    /// One Detour won't take is left without paths (no panic: the world server panicked here.)
+    #[test]
+    fn one_detour_will_not_take_is_none() {
+        let mut tiles = vec![NavmeshTile { data: vec![0; 64] }];
+        let bytes = Navmesh::new(155, params(1, 1), std::mem::take(&mut tiles))
+            .write_to_buffer()
+            .unwrap();
+        assert!(Navmesh::from_existing(&bytes).is_none());
     }
 }

@@ -1160,6 +1160,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   workspace has no game files. The first entry into each zone on this build makes its navmesh and collision again
   (`kawari-navimesh`, in the background; open-world zones take a while), and until then NPCs keep to the navmesh's
   floor as before.
+* Since 2026-11-10 (64-bit polygon references) every zone's navmesh is made again on its first entry, and until it
+  is the zone has none: enemies and bots there walk straight at their targets over the collision for that minute or
+  so. The fix for Coerthas Central Highlands (the world server panicked loading its navmesh, Bob's log of 2026-11-10)
+  was checked by tests only (a navmesh of 5000 tiles of up to 600 polygons is taken; an older file isn't read; one
+  Detour won't take is left out without a panic): the workspace has no game files, so the zone's own numbers aren't
+  known.
 * The collision is all of a zone's collision meshes as they load, as the navmesh's is: a collision box that a
   layer switches off later (or on) is still there (or not), for NPCs as for the navmesh. Bg parts whose collision
   isn't a "replace" mesh (`ModelCollisionType::Replace`) and sphere, cylinder and plane collision boxes aren't in

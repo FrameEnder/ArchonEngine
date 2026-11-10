@@ -370,7 +370,8 @@ impl Instance {
                 // A navmesh made before the collision was written with it: made again (both), keeping this one
                 // until then. NPCs keep to the navmesh's floor meanwhile.
                 // One made before the collision had the layouts' simple shapes (version 4) or left open doors open
-                // (version 5): made again too.
+                // (version 5), or beside a navmesh with 32-bit polygon references (version 6: that navmesh isn't read):
+                // made again too.
                 let older = instance
                     .collision
                     .as_ref()
