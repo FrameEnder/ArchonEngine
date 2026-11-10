@@ -1967,6 +1967,13 @@ impl GameData {
     }
 
     /// Returns data useful for performing item actions.
+    /// An item's own cast time (the Item sheet's CastTimeSeconds), in milliseconds: 0 when it has none.
+    pub fn item_cast_time_ms(&mut self, item_id: u32) -> u32 {
+        self.item_sheet
+            .row(item_id)
+            .map_or(0, |row| row.CastTimeSeconds as u32 * 1000)
+    }
+
     pub fn lookup_item_action_data(&mut self, item_id: u32) -> Option<(u16, [u16; 9], u32)> {
         if let Some(row) = self.item_sheet.row(item_id) {
             let additional_data = row.AdditionalData;

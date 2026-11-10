@@ -61,7 +61,12 @@ paladin gets the gladiator's set), a gladiator's sword coming with its shield. `
 c99fe374 of 2026-10-28, Dags, a gladiator, opening the Level 18 Weapon Coffer: the Carnage Sword and the Iron Lantern
 Shield, the gladiator's set the script has): ActorControlSelf **527** (1232, 0, the item) for each piece, then the
 coffer's slot emptied, then for each piece the ack (0xFFFFFFFF, 6), its slot and LogMessage 789 (the "obtained"
-pop-up); retail sent no log line of its own (no EventLogMessage 750). It does nothing, keeping the coffer, in
+pop-up); retail sent no log line of its own (no EventLogMessage 750). Before all that, retail's coffer cast: ActorCast
+(spell 4647, type Item, the coffer as the action, 2.0 s) and the Casting condition, its ActionEffect half a second
+before the bar's end, and the pieces 1.65 s after that (1.1 s after the bar). Kawari cast nothing, since the bar came
+from action 4647's own cast time (none), and gave the pieces at once (Bob's bundle 20261110-091329, "coffer gave item
+before progress bar completed"): since 2026-11-10 an item casts for the Item sheet's CastTimeSeconds when it has any
+(`GameData::item_cast_time_ms`, `server/action.rs`), the action's otherwise, and the pieces come as the bar ends. It does nothing, keeping the coffer, in
 instanced content (the item's description says it can't be opened there), when the class has no set, or when the
 bags can't hold the set. A coffer not in the table says so in chat.
 

@@ -116,6 +116,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   ([Packet layouts](packet-layouts.md#several-packets-in-one-read-2026-11-10)): a second packet in the same read is
   lost (and with the zone's Oodle, the stream after it may not decode). The lobby's fix (`take_packets`) is untested
   in game: whether it ends the empty character list is for Bob's next logins to show.
+* A coffer's pieces come as its bar ends; retail's came 1.1 s after it (the opening animation). Items' own cast times
+  (CastTimeSeconds) are untested in game: if the coffers' is 0 in the sheet, they still open at once.
 * Weapon coffers: only the "Level N Weapon Coffer"s are filled in, from the wiki; the raid and tome coffers say their
   contents aren't known. Opening one on retail was recorded once (the Level 18, a gladiator's).
 

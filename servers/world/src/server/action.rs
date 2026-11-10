@@ -179,7 +179,23 @@ pub fn handle_action_messages(
                 );
                 return true;
             };
-            (category, cast_time) = cast;
+            // An item casts for its own CastTimeSeconds when it has them: retail's Level 18 Weapon Coffer (item
+            // 31329, ItemAction action 4647) cast for 2.0 s and gave its pieces 1.1 s after the bar (Bob's Chronofoil
+            // capture c99fe374), where Kawari, going by action 4647 alone, had none and gave them at once (Bob's
+            // bundle 20261110-091329: "coffer gave item before progress bar completed".)
+            let item_cast_ms = if request.action_type == ActionType::Item {
+                game_data.item_cast_time_ms(request.action_id)
+            } else {
+                0
+            };
+            (category, cast_time) = (
+                cast.0,
+                if item_cast_ms > 0 {
+                    item_cast_ms
+                } else {
+                    cast.1
+                },
+            );
             recast = game_data.get_action_recast(request.action_id);
         }
 
