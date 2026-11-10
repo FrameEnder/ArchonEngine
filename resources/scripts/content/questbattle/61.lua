@@ -108,6 +108,7 @@ BATTLE = Battle.new()
 BATTLE:ally(BNPC_GLADIATOR, { role = "tank", focus = { "boss", "turned", "last" }, order = "oldest", protect = false })
 BATTLE:ally(BNPC_CONJURER, {
     role = "dps",
+    split = false,
     focus = { "boss", "turned", "wyvern", "last", "adds" },
     order = "oldest",
     range = 15,
@@ -118,9 +119,17 @@ BATTLE:ally(BNPC_CONJURER, {
     },
 })
 -- The archer went for 4256796 as the adds came (all five runs, 0.4-1.2 s after they appeared), then 4256797.
-BATTLE:ally(BNPC_ARCHER, { role = "dps", focus = { "add96", "add97", "adds", "boss" }, order = "oldest", range = 15 })
+-- Each keeps to its own focus: as Battle's DPS they split the enemies between them, and the archer took the second
+-- in the conjurer's list (an add while the conjurer was on the boss), never the add retail's took.
+BATTLE:ally(BNPC_ARCHER, {
+    role = "dps", focus = { "add96", "add97", "adds", "boss" }, order = "oldest", range = 15, split = false,
+})
 -- Whom each went for first on retail (nil: you; the White Mage's run, 21f967d2, and three of the other four.)
-BATTLE:enemy(BNPC_BOSS, { group = "boss", attacks = BNPC_GLADIATOR })
+-- The boss stayed on the gladiator the whole fight in every run but the Paladin's (130088ec, whose tank stance took it
+-- at 31 s): a healer's or a damage dealer's enmity never got it off him. Kawari's started him at Battle's usual 300 and
+-- turned to the White Mage (Bob's bundle 20261110-131148: five Ruins on her.) A Paladin's stance still takes it.
+BOSS_ON_GLADIATOR = 10000
+BATTLE:enemy(BNPC_BOSS, { group = "boss", attacks = BNPC_GLADIATOR, enmity = BOSS_ON_GLADIATOR })
 BATTLE:enemy(4256798, { group = "adds", attacks = nil })
 BATTLE:enemy(4256797, { group = { "add97", "adds" }, attacks = BNPC_ARCHER })
 BATTLE:enemy(4256796, { group = { "add96", "adds" }, attacks = BNPC_CONJURER })
@@ -222,13 +231,21 @@ function bringOut(director, layouts, at)
             left[layout] = true
         end
     end
+    -- Away from the start, so the allies don't pick them as they appear (Battle:walk then says until when.)
+    for _, layout in ipairs(layouts) do
+        if ADD_ROUTES[layout] ~= nil then
+            BATTLE.away[layout] = math.huge
+        end
+    end
     BATTLE:spawn(director, layouts, at)
     for _, layout in ipairs(layouts) do
         local route = ADD_ROUTES[layout]
         if route ~= nil then
             local took = BATTLE:walk(director, layout, route.from, route.legs)
             if layout == 4256797 then
-                -- It fights from the ledge until it drops.
+                -- It fights from the ledge until it drops, and the allies leave it be until then (the archer went for
+                -- it only after it dropped, every run.)
+                BATTLE.away[layout] = math.huge
                 director:delay(took)
                 director:set_attack_range(layout, ADD97_LEDGE_REACH)
                 director:delay(0)

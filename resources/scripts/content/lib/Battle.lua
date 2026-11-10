@@ -97,6 +97,7 @@ function Battle.new()
     self.updates = 0
     self.context = "start"
     self.hold = {}       -- ally layout ID -> the update it may start fighting (others wait for the tank)
+    self.away = {}       -- enemy layout ID -> the update until which allies leave it be (on its way in: Battle:walk)
     self.tank_priority = 0
     self.heal_pending = {} -- target -> the update until which it's being healed by someone
     return self
@@ -307,11 +308,13 @@ end
 
 -- ---- Who's where ----
 
-function Battle:living(group)
+-- The living enemies of a group, in the order they came; `engageable`: only those allies may go for (not `away`.)
+function Battle:living(group, engageable)
     local list = {}
     for _, layout in ipairs(self.arrived) do
         local role = self.roles[layout]
-        if self.alive[layout] and role.side == "enemy" and inGroup(role, group) then
+        if self.alive[layout] and role.side == "enemy" and inGroup(role, group)
+                and (not engageable or (self.away[layout] or 0) <= self.updates) then
             table.insert(list, layout)
         end
     end
@@ -365,7 +368,7 @@ end
 function Battle:pool(ally, role)
     local pool, seen = {}, {}
     for _, group in ipairs(role.focus or { "any" }) do
-        local candidates = self:living(group)
+        local candidates = self:living(group, true)
         while #candidates > 0 do
             local best = self:pick(ally, candidates, role.order)
             for i, layout in ipairs(candidates) do
@@ -407,7 +410,7 @@ function Battle:targetFor(ally)
         end
     end
     for _, group in ipairs(role.focus or { "any" }) do
-        local candidates = self:living(group)
+        local candidates = self:living(group, true)
         if #candidates > 0 then
             return self:pick(ally, candidates, role.order)
         end
@@ -520,7 +523,7 @@ function Battle:runTanks(director)
             role.provoke_wait = (role.provoke_wait or 0) - 1
             if role.provoke_wait <= 0 then
                 local best, best_rank = nil, nil
-                for _, enemy in ipairs(self:living("any")) do
+                for _, enemy in ipairs(self:living("any", true)) do
                     local info = self.info[enemy]
                     local target = info and info.target
                     local rank = nil
@@ -560,6 +563,10 @@ end
 -- each leg is { wait = seconds } or { to = { x, y, z }, speed = yalms a second over the ground } (a drop is a leg
 -- whose speed covers the little ground it crosses as it falls, `director:sweep_bnpc` going straight from the one
 -- height to the other.) Returns how many seconds it takes.
+--
+-- Allies leave it be until it's there (`away`): quest battle 61's archer kept on the boss until the first add had
+-- dropped to the arena (every run), where Kawari's went after it on the ledge, walked into the cliff below and stopped
+-- fighting for 40 s (Bob's bundle 20261110-131148.) A script can keep one away longer (`BATTLE.away[layout]`).
 function Battle:walk(director, layout, from, legs, release)
     director:hold_bnpc(layout)
     local t, at = 0, from
@@ -577,6 +584,9 @@ function Battle:walk(director, layout, from, legs, release)
     if release ~= false then
         director:delay(t)
         director:hold_bnpc(layout, false)
+        self.away[layout] = self.updates + math.ceil(t * 2)
+    else
+        self.away[layout] = math.huge
     end
     director:delay(0)
     return t

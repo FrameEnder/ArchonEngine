@@ -612,6 +612,16 @@ others 1265 (seen in all 34 quest battles of Bob's captures, levels 6-45). Kawar
   uses, so each comes about as often as on retail.
 * The gladiator doesn't `protect` (no target but the boss, what he turned into and the last add in any run); the
   archer goes for 4256796 first, then 4256797 (all five runs).
+* **Second pass** (Bob's bundle 20261110-131148, lost: the conjurer ally fell at 62 s, the archer at 129, Bob at 280;
+  the boss reached half at 134 s against retail's 78-90). The archer went for the first add while it was still on
+  its ledge, walked into the cliff under it and didn't fight for 40 s, so that add went for the conjurer instead of
+  the archer, and with the other add's Overpower and a Stone Gaze she fell before the boss was at half. Retail's
+  archer stayed on the boss until the add had dropped (every run). Allies now leave an enemy on its way in alone
+  (`Battle.away`, set by `Battle:walk`; 4256797 until it drops). Battle's DPS split the enemies between them, which
+  gave the archer the conjurer's second choice: both keep to their own focus now (`split = false`). The boss took
+  five Ruins off the White Mage where retail's stayed on the gladiator all fight (all but the Paladin's run): he
+  starts on the gladiator at 10,000 enmity (`BOSS_ON_GLADIATOR`), which a healer's never passes and a tank's stance
+  does.
 
 ### Quest battle 75 — Seer Folly (`content/questbattle/75.lua`)
 
