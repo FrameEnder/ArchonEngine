@@ -789,6 +789,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   in Sastasha's layout as Kawari reads it isn't known (Bob's earlier Kawari run never spawned them); if not, the
   server logs that it couldn't find them. ActorControl 503 and 11 (retail's, putting them on the enemy list) aren't
   sent.
+* Boss Mod lists action 835 (no cast, on a player) for the last boss's adds (BNpcBase 418); `DennAdd_418.json` never
+  uses it (`questkit sources --audit`, 2026-11-10). Not looked for in a capture yet.
 
 ## The Tam-Tara Deepcroft
 
@@ -1579,6 +1581,16 @@ Packets whose size on retail isn't what `opcodes.yml` says, from Bob's Chronofoi
 * **StatusEffectListDouble**: 744 bytes on retail (about 22,000 packets over three versions), 720 in `opcodes.yml`.
   Kawari doesn't send it.
 * **CrossRealmListingsRequest2** (client): 64 bytes on retail, 40 in `opcodes.yml`.
+
+## Public sources (2026-11-10)
+
+* `questkit sources --duty`'s drafts have no timing for dungeons before cactbot has timelines (A Realm Reborn's have
+  triggers only), no damage, HP or levels, and the helpers' actions (the invisible 9020 actors') aren't placed: the
+  README lists them for the director. A draft isn't a duty until a capture or Bob's run checks it.
+* The Boss Mod reader takes shapes written in a component's constructor line; shapes built in code (rotating cones,
+  shapes chosen by a status) are missed, and 4 cones and some rings it read wrongly are filtered by range
+  (15-340 degrees; a hole smaller than its ring) rather than understood.
+* `public_action_areas.json` isn't checked against the captures yet (a cone's angle against who was hit and who wasn't).
 
 ## Build and tests
 

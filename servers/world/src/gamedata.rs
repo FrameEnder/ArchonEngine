@@ -641,6 +641,33 @@ fn recorded_cone_angle(action: u32) -> Option<f32> {
     action_areas().cone_angles.get(&action).copied()
 }
 
+/// What Boss Mod's modules say of enemies' area attacks (`resources/data/public_action_areas.json`, made by `questkit
+/// sources --server-data`): a cone's width and a ring's hole for some 840 and 230 actions of duties' bosses, used where
+/// neither a recording nor the omen's path says (the default was 90 degrees and half, whatever the action.)
+#[derive(serde::Deserialize)]
+struct PublicActionAreas {
+    cone_angles: HashMap<u32, f32>,
+    donut_holes: HashMap<u32, f32>,
+}
+
+fn public_action_areas() -> &'static PublicActionAreas {
+    static AREAS: std::sync::OnceLock<PublicActionAreas> = std::sync::OnceLock::new();
+    AREAS.get_or_init(|| {
+        serde_json::from_str(include_str!(
+            "../../../resources/data/public_action_areas.json"
+        ))
+        .expect("resources/data/public_action_areas.json doesn't read")
+    })
+}
+
+fn public_cone_angle(action: u32) -> Option<f32> {
+    public_action_areas().cone_angles.get(&action).copied()
+}
+
+fn public_donut_hole(action: u32) -> Option<f32> {
+    public_action_areas().donut_holes.get(&action).copied()
+}
+
 /// What `resources/data/action_areas.json` records about enemies' area attacks.
 #[derive(serde::Deserialize)]
 struct ActionAreas {
@@ -3809,8 +3836,13 @@ impl GameData {
         };
         let cone_angle = recorded_cone_angle(id)
             .or_else(|| omen_path.as_deref().and_then(cone_angle_from_omen))
+            .or_else(|| public_cone_angle(id))
             .unwrap_or(DEFAULT_CONE_ANGLE);
-        let donut_hole = match omen_path.as_deref().and_then(donut_hole_from_omen) {
+        let donut_hole = match omen_path
+            .as_deref()
+            .and_then(donut_hole_from_omen)
+            .or_else(|| public_donut_hole(id))
+        {
             Some(hole) => hole,
             None => {
                 if row.CastType == 10 {
@@ -4566,5 +4598,31 @@ mod teleport_tests {
         assert_eq!(teleport_leg((0, 0, 0, 0), (1700, 0, 0, 0), 1000), 160);
         // Later expansions cost more per distance.
         assert_eq!(teleport_leg((0, 0, 300, 0), (300, 0, 300, 0), 0), 172);
+    }
+}
+
+#[cfg(test)]
+mod public_area_tests {
+    use super::*;
+
+    #[test]
+    fn boss_mods_areas_read() {
+        let areas = public_action_areas();
+        assert!(areas.cone_angles.len() > 500);
+        assert!(areas.donut_holes.len() > 100);
+        assert!(
+            areas
+                .cone_angles
+                .values()
+                .all(|angle| (1.0..=360.0).contains(angle))
+        );
+        assert!(
+            areas
+                .donut_holes
+                .values()
+                .all(|hole| (0.0..1.0).contains(hole))
+        );
+        // What was recorded on retail comes first (Chudo-Yudo's Swinge, 60 degrees.)
+        assert_eq!(recorded_cone_angle(903), Some(60.0));
     }
 }

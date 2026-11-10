@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from questkit import battle, battle_sim, capture, chronofoil, chronofoil_battle, chronofoil_quest, compare, fixtures, lint, recording, replay, scaffold, transcribe, triage  # noqa: E402
+from questkit import battle, battle_sim, capture, chronofoil, chronofoil_battle, chronofoil_quest, compare, duty_sources, fixtures, lint, public_sources, recording, replay, scaffold, transcribe, triage  # noqa: E402
 from questkit.bundle import Bundle  # noqa: E402
 
 QUEST = 9999
@@ -1531,6 +1531,99 @@ class ClientCheckTest(unittest.TestCase):
         self.assertEqual(check.unknown_params, ["ACTOR1"])
         self.assertEqual(len(check.notes), 1)
         self.assertIn("needs a look", text)
+
+
+class PublicSourcesTest(unittest.TestCase):
+    """Boss Mod's modules and cactbot's timelines, read into numbers (made-up module and timeline)."""
+
+    MODULE = """namespace BossMod.Made.Up;
+
+public enum OID : uint
+{
+    Boss = 0x1234,
+    Helper = 0x233C,
+    SomeAdd = 0x1235,
+}
+
+public enum AID : uint
+{
+    AutoAttack = 870, // Boss->player, no cast, single-target
+    BigCone = 5001, // Boss->self, 4.0s cast, range 12 90-degree cone
+    Ring = 5002, // Helper->self, 5.0s cast, range 5-20 donut
+    Guess = 5003, // Boss->self, 3.0s cast, range 8 ?-degree cone
+    AddHit = 5004, // SomeAdd->player, no cast, single-target
+}
+
+class BigCone(BossModule module) : Components.StandardAOEs(module, AID.BigCone, new AOEShapeCone(12, 45.Degrees()));
+class Ring(BossModule module) : Components.StandardAOEs(module, AID.Ring, new AOEShapeDonut(5, 20));
+class Guess(BossModule module) : Components.StandardAOEs(module, AID.Guess, new AOEShapeCone(8, 30.Degrees())); // TODO: verify angle
+
+[ModuleInfo(BossModuleInfo.Maturity.Verified, GroupType = BossModuleInfo.GroupType.CFC, GroupID = 77, NameID = 99)]
+public class MadeUp(ModuleInit init) : BossModule(init, new(10, -20), new ArenaBoundsCircle(20));
+"""
+
+    def public(self, folder: Path) -> public_sources.Public:
+        checkout = folder / "bossmod" / "BossMod.Modules" / "Made"
+        checkout.mkdir(parents=True)
+        (checkout / "Up.cs").write_text(self.MODULE, encoding="utf-8")
+        cactbot = folder / "cactbot"
+        (cactbot / "resources").mkdir(parents=True)
+        (cactbot / "resources" / "zone_id.ts").write_text("const data = {\n  'MadeUp': 4242,\n} as const;\n")
+        data = cactbot / "ui" / "raidboss" / "data" / "00-made"
+        data.mkdir(parents=True)
+        (data / "up.ts").write_text("export default { zoneId: ZoneId.MadeUp };\n")
+        (data / "up.txt").write_text('hideall "--sync--"\n'
+                                     '10.0 "A Name" Ability { id: "1389", source: "A Boss" }\n'
+                                     '25.0 "Other Name" Ability { id: "138A", source: "A Boss" }\n'
+                                     '40.0 "A Name" Ability { id: "1389", source: "A Boss" }\n'
+                                     '70.0 "A Name" Ability { id: "1389", source: "A Boss" } jump 10.0\n')
+        out = folder / "out"
+        made = public_sources.build(folder / "bossmod", cactbot, out)
+        self.assertEqual(made, {"bossmod": 1, "cactbot": 1})
+        return public_sources.Public(out)
+
+    def test_module_is_read_as_numbers(self):
+        with tempfile.TemporaryDirectory() as folder:
+            public = self.public(Path(folder))
+            text = (Path(folder) / "out" / "bossmod.json").read_text() + (Path(folder) / "out" / "cactbot.json").read_text()
+        for name in ("BigCone", "SomeAdd", "A Name", "Other Name"):
+            self.assertNotIn(name, text)
+        module, = public.duty(77)
+        self.assertEqual(module["oids"], {"Boss": 0x1234, "Helper": 0x233C, "actor4661": 0x1235})
+        self.assertEqual(module["arena"], {"x": 10.0, "z": -20.0, "bounds": "circle", "size": [20.0]})
+        # Boss Mod's half angle is the server's whole one; a TODO line is its guess.
+        self.assertEqual(public.area(5001), {"shape": "cone", "radius": 12.0, "angle": 90.0})
+        self.assertEqual(public.cone_angles(), {5001: 90.0})
+        self.assertEqual(public.cone_angles(verified_only=False), {5001: 90.0, 5003: 60.0})
+        self.assertEqual(public.timing(4242)[0x1389]["every"], 30.0)
+
+    def test_server_data_and_draft(self):
+        with tempfile.TemporaryDirectory() as folder:
+            public = self.public(Path(folder))
+        data = duty_sources.server_data(public)
+        self.assertEqual(data["cone_angles"], {"5001": 90.0})
+        self.assertEqual(data["donut_holes"], {"5002": 0.25})
+        files = duty_sources.draft(77, 4242, public)
+        timeline = json.loads(files["Up_4660.json"])
+        self.assertEqual(timeline["autoattack_action_id"], 870)
+        # The boss's own actions: not the helper's ring, not the add's hit.
+        self.assertEqual([entry["action"] for entry in timeline["rotation"]["actions"]], [5001, 5003])
+        self.assertIn("Boss Mod's guess", files["README.md"])
+
+    def test_audit_lists_what_a_timeline_never_mentions(self):
+        with tempfile.TemporaryDirectory() as folder:
+            public = self.public(Path(folder))
+            repo = Path(folder) / "repo"
+            (repo / "resources" / "timelines").mkdir(parents=True)
+            (repo / "resources" / "scripts" / "content").mkdir(parents=True)
+            (repo / "resources" / "data").mkdir(parents=True)
+            (repo / "resources" / "timelines" / "MadeUp_4660.json").write_text(json.dumps(
+                {"autoattack_action_id": 870, "rotation": {"actions": [{"action": 5001}]}, "comment": ""}))
+            (repo / "resources" / "data" / "action_areas.json").write_text(json.dumps({"cone_angles": {"5001": 60}}))
+            report = duty_sources.audit(repo, public)
+        self.assertIn("never mentioned: 5003", report)
+        self.assertNotIn("5004", report)
+        self.assertIn("5001: recorded 60, Boss Mod 90", report)
 
 
 class LibZstdTest(unittest.TestCase):

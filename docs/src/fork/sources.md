@@ -26,8 +26,8 @@ with a comment naming the source (see `CLAUDE.md`).
 | Question | First look at | Then |
 |---|---|---|
 | How does this fight go: phases, waves, who does what | A recording | Bob's Chronofoil captures (`questkit chronofoil --duties`), Cactbot's timeline for the content |
-| Which actions an enemy has | A recording | The Fandom enemy actions page (by name), Cactbot's triggers |
-| An action's shape, size, cast time, telegraph | The Action sheet (`CastType`, `EffectRange`, `XAxisModifier`, `Cast100ms`, `Omen`) | The Fandom page, which lists the same columns by action |
+| Which actions an enemy has | A recording | Boss Mod's module (`questkit sources --duty`, `--action`), the Fandom enemy actions page (by name), Cactbot's triggers |
+| An action's shape, size, cast time, telegraph | The Action sheet (`CastType`, `EffectRange`, `XAxisModifier`, `Cast100ms`, `Omen`) | Boss Mod's shape for it (a cone's angle when the omen has none), the Fandom page, which lists the same columns by action |
 | An enemy's level, HP and where it stands | A recording | Teamcraft's `monsters.json`, Sapphire's BNpc data |
 | A packet's layout or opcode | A recording, then `kawari-opcodescan` | Bob's Chronofoil captures (sizes, every version since June), OverlayPlugin's packet structs, Machina, FFXIVOpcodes, Kawari upstream |
 | What a sheet column means | EXDSchema | XIVAPI's documentation |
@@ -114,6 +114,23 @@ That independently confirms the layout in [Quest battles](quest-battles.md#direc
 [fflogs.com](https://www.fflogs.com): logs uploaded from ACT, with every action's timing, per fight. Almost all of it is
 raids and trials at the level cap. It needs an API key (v2 GraphQL). Worth it for party content that Cactbot doesn't
 time.
+
+### Boss Mod
+
+[awgil/ffxiv_bossmod](https://github.com/awgil/ffxiv_bossmod) (BSD-3-Clause): a Dalamud plugin that draws fights'
+mechanics. `BossMod.Modules/` has a module per boss, by expansion and kind, written from its own replays of retail:
+`OID` (the actors' BNpcBase), `AID` (every action, with a comment saying who uses it on whom, its cast time and
+range), a component per mechanic (the shape with its sizes, and whether it's a raidwide, a tankbuster, a stack...),
+and `ModuleInfo` with the duty's ContentFinderCondition and the boss's BNpcName. It covers nearly every dungeon and
+trial from A Realm Reborn to Dawntrail (284 duties), where cactbot has ARR dungeons as triggers only. It has no
+timing (its state machines say the order, read by hand), no damage and no HP.
+
+The fork keeps a numbers-only extract (`tools/questkit/questkit/data/public/bossmod.json`, with cactbot's timelines
+beside it) and uses it three ways ([questkit sources](questkit.md#sources)): the audit of its own duties, the draft
+of a new duty, and the server's cone angles and ring holes where the game's files and the captures have none
+(`resources/data/public_action_areas.json`). Facts only: none of its code is copied. Shapes it marks `TODO: verify`
+are its guesses and aren't used by the server. Its job rotations (`BossMod/Autorotation`) were the action lists and
+priorities for the bots' rotations ([Party bots](party-bots.md)).
 
 ### Sapphire
 

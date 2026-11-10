@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -220,6 +221,55 @@ def _transcribe(args) -> int:
     results = [run(fixtures.load(p), out) for p in paths]
     print(format_results(results, verbose=args.verbose))
     return 0 if all(r.ok for r in results) else 1
+
+
+def _sources(args) -> int:
+    """Boss Mod's and cactbot's duties: the extracts, the audit of the fork's duties, a draft of a new one."""
+    from . import repo
+    from . import duty_sources, public_sources
+
+    if args.build:
+        made = public_sources.build(args.bossmod, args.cactbot)
+        print(f"Wrote {public_sources.DATA}: {made}")
+        return 0
+    public = public_sources.Public()
+    if not public.modules:
+        print("No extracts: questkit sources --build --bossmod <checkout> --cactbot <checkout>")
+        return 1
+    if args.server_data:
+        path = repo.ROOT / "resources" / "data" / "public_action_areas.json"
+        data = duty_sources.server_data(public)
+        path.write_text(json.dumps(data, indent=1) + "\n", encoding="utf-8")
+        print(f"Wrote {path}: {len(data['cone_angles'])} cones, {len(data['donut_holes'])} rings")
+        return 0
+    if args.audit:
+        text = duty_sources.audit(repo.ROOT, public)
+        if args.out:
+            Path(args.out).write_text(text, encoding="utf-8")
+            print(f"Wrote {args.out}")
+        else:
+            print(text)
+        return 0
+    if args.duty is not None:
+        files = duty_sources.draft(args.duty, args.territory, public)
+        if args.out:
+            out = Path(args.out)
+            out.mkdir(parents=True, exist_ok=True)
+            for name, text in files.items():
+                (out / name).write_text(text, encoding="utf-8")
+            print(f"Wrote {len(files)} files to {out}")
+        else:
+            print(files["README.md"])
+        return 0
+    if args.action is not None:
+        for module, action in public.by_action.get(args.action, []):
+            print(module["path"], json.dumps(action, sort_keys=True))
+        return 0
+    duties = sorted({m["group_id"] for m in public.modules if m.get("group_type") == "CFC" and "group_id" in m})
+    print(f"Boss Mod: {len(public.modules)} modules, {len(duties)} duties (ContentFinderCondition), "
+          f"{len(public.by_action)} actions, {len(public.cone_angles())} cones with a checked angle.")
+    print(f"cactbot: {len(public.timelines)} timelines, {len({t['territory'] for t in public.timelines})} territories.")
+    return 0
 
 
 def _lua_syntax(args) -> int:
@@ -604,6 +654,20 @@ def main(argv=None) -> int:
     p = commands.add_parser("lint", help="find what fails silently in game: unscripted NPC actions, quest battle "
                                          "NPCs without timelines, checked scripts without fixtures")
     p.set_defaults(run=_lint)
+
+    p = commands.add_parser("sources", help="what Boss Mod and cactbot know about duties: audit the fork's, draft a "
+                                            "new one")
+    p.add_argument("--build", action="store_true", help="make the extracts (questkit/data/public) from checkouts")
+    p.add_argument("--bossmod", help="a checkout of github.com/awgil/ffxiv_bossmod (with --build)")
+    p.add_argument("--cactbot", help="a checkout of github.com/OverlayPlugin/cactbot (with --build)")
+    p.add_argument("--audit", action="store_true", help="the fork's timelines against Boss Mod's modules")
+    p.add_argument("--server-data", action="store_true", help="write resources/data/public_action_areas.json (cone "
+                                                              "angles and rings' holes the server falls back on)")
+    p.add_argument("--duty", type=int, metavar="CFC", help="draft this duty's bosses (ContentFinderCondition row)")
+    p.add_argument("--territory", type=int, help="with --duty: its territory, for cactbot's timing")
+    p.add_argument("--action", type=int, help="what Boss Mod says about one action")
+    p.add_argument("--out", help="where to write the audit (a file) or the draft (a folder)")
+    p.set_defaults(run=_sources)
 
     p = commands.add_parser("lua-syntax", help="check that every Lua script compiles (Lua 5.4, like the server)")
     p.add_argument("path", nargs="?", help="a folder of scripts (default: resources/scripts)")

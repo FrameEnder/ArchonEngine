@@ -18,6 +18,7 @@ pip install lupa        # Lua 5.4 for Python; replay, scaffold and lua-syntax ne
 | `transcribe <quest> --dumps … [--fixture …]` | Writes a quest script that does what retail did, from the quest's Chronofoil fixtures, and replays it |
 | `compare --capture … --recording … [quests]` | What Kawari sent for a quest against what retail did |
 | `lua-syntax [folder]` | Checks every Lua script compiles (Lua 5.4, like the server) |
+| `sources [--audit] [--duty CFC [--territory T]] [--action N] [--server-data] [--build …]` | What Boss Mod and cactbot know: an audit of the fork's duties against them, a draft of a duty the fork hasn't, the server's fallback cone angles and ring holes |
 | `battle <exports, battles folder or files…> [--list] [--where …] [--run N,M\|all] [--summary-only] [--npc …] [--out file]` | What recorded duties and quest battles show: cast, waves, targeting rules, heals, who never acted; totals across runs of the same battle |
 
 Code: `questkit/recording.py` (Recorder exports), `capture.py` (Kawari's packet captures), `bundle.py` (diagnostics
@@ -474,6 +475,33 @@ and first lines came 8–10 s late), Sapphire's health marks where retail's diff
 not 50 %; Spirithold Broken's phases at 70 % and 45 %, not 65 % and 30 %), To Guard a Guardian's last line at 42 %
 and its "Duty Complete" 2 s after the mage falls, and the lines after a group falls 2–3 s early (see
 [Quest battles](quest-battles.md)).
+
+## sources
+
+`questkit sources` reads two public projects' knowledge of duties ([Outside sources](sources.md#boss-mod)), kept in
+the repository as numbers-only extracts so nothing needs downloading:
+
+* `questkit/data/public/bossmod.json` (`public_sources.py`, from Boss Mod's `BossMod.Modules/`): per module its duty
+  (ContentFinderCondition) and boss (BNpcName), its actors' BNpcBase, the arena, and every action with who uses it on
+  whom, its cast time, its shape (circle, cone, rectangle, ring, cross, with sizes; a cone's angle and a rectangle's
+  width are whole widths, where Boss Mod writes halves), what it is (Boss Mod's component: raidwide, tankbuster,
+  stack, spread, knockback, gaze...) and whether Boss Mod marks the shape as its guess. 902 modules, 284 duties,
+  18,683 actions (Boss Mod `6e410ef`, 2026-11-03). Boss Mod's names for actors, actions and statuses are the game's
+  text and are left out: an actor is `Boss`, `Helper` or `actor<BNpcBase>`.
+* `questkit/data/public/cactbot.json` (from cactbot's `ui/raidboss/data/**/*.txt`): each timeline's entries (time,
+  action IDs, whether it's the cast's start, where it loops) by territory. 306 timelines; ability names left out.
+
+| Option | Does |
+|---|---|
+| (none) | Counts what the extracts hold |
+| `--build --bossmod <checkout> --cactbot <checkout>` | Remakes the extracts from sparse checkouts (`git clone --depth 1 --filter=blob:none --sparse`, then `git sparse-checkout set BossMod.Modules` / `ui/raidboss/data resources/zone_id.ts`); one module or timeline a line, so the diff shows what changed |
+| `--audit [--out file]` | Every timeline in `resources/timelines/` whose BNpcBase a Boss Mod module has: the module's actions for that NPC the fork never mentions (the timeline, the duty scripts, `action_areas.json`), and cones recorded at another angle than Boss Mod's. Run on 2026-11-10: 44 timelines have a module, one action unmentioned (835, Sastasha's last boss's adds, [Known issues](known-issues.md#sastasha)), no angle differs |
+| `--duty CFC [--territory T] [--out folder]` | A draft of a duty: one timeline file per boss in the fork's format (the boss's own actions, each with its cast, shape and kind in a comment; `every` from cactbot where it has the territory) and a `README.md` saying the arena, the other actors, the helpers' actions and what's missing. Marked as a draft in its `comment`; no damage, HP or levels (a capture or the game's data) |
+| `--action N` | What Boss Mod says about one action |
+| `--server-data` | Writes `resources/data/public_action_areas.json` ([Combat](combat.md): area shapes) |
+
+Code: `public_sources.py` (the readers and `Public`), `duty_sources.py` (`audit`, `draft`, `server_data`). Tests:
+`PublicSourcesTest` (a made-up module and timeline).
 
 ## lint
 
