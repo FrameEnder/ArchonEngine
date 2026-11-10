@@ -1,8 +1,10 @@
-POTENCY = 140
+-- Split Shot (Lv. 1): 140; 5 Heat.
+-- Potencies: the official job guide (7.x), at level 100.
 
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_SLASHING, player.parameters:calc_physical_damage(POTENCY))
+    local effects = EffectsBuilder()
+    mchShot(effects, player, 140)
+    mchHeat(effects, player, 5)
 
     return effects
 end

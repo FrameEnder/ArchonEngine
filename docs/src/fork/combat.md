@@ -747,7 +747,7 @@ Second Wind, Bloodbath, True North, Addle, Leg Sweep, Sleep, Rescue, Esuna). How
     III, Blizzard III Umbral Ice III, Transpose one of the other, Umbral Soul one more Umbral Ice and an Umbral Heart
     from 58, Freeze three hearts from 58; one stack at most before 20, two before 35. Thunderhead comes with a change of
     element (or one from none), as the client's tooltip says, where it came with every Fire and Blizzard.
-* **Not there:** the HW+ jobs' gauges (and their actions past 50), pets other than Carbuncle (no egis, no Eos, no
+* **Not there:** pets other than Carbuncle (no egis, no Eos, no
   demi-summons: their attacks come with the Summoner's spells), positionals, movement actions (Thunderclap,
   Rescue...), barriers absorbing damage, Bloodbath's lifesteal, Peloton for the party. See
   [Known Issues](known-issues.md#combat).
@@ -816,6 +816,61 @@ script's header says so), and their job gauges are played out:
 How they were checked: run under lupa against each job's rotation (a harness running the real scripts with a mock
 EffectsBuilder, every level band and one or three targets, no errors) and against retail's uses in Bob's captures
 where there were some (Paladin, Warrior, Monk, Dragoon, Black Mage, Summoner, Scholar and White Mage at 80-89).
+
+## The jobs from Heavensward on, levels 1–100
+
+Since 2026-11-10 Dark Knight, Gunbreaker, Machinist, Samurai, Dancer, Reaper, Viper, Red Mage, Pictomancer,
+Astrologian and Sage have every action scripted (436 new scripts and 18 of upstream's stubs replaced, from the official job guide's 7.x text: level-100 numbers,
+with the lower ones its traits list below their levels through `tierPotency`, Maim and Mend and Increased Action Damage
+by level through `levelPotency`; status IDs from Boss Mod's lists and the statuses the actions put on in Bob's captures).
+Each job's helpers are in Global.lua (`drk*`, `gnb*`, `mch*`, `sam*`, `dnc*`, `rpr*`, `vpr*`, `rdm*`, `pct*`, `ast*`,
+`sge*`), and its gauge is played out:
+
+* **Gauge fields** (`lua::GaugeField`, 64 now): blood, darkside (tenths of a second, run down by `JobGauge::tick`),
+  dark_arts; cartridges (two, three from 88, six under Bloodfest); heat, battery; feathers, esprit, dance_steps (three
+  bits a step), step_index; kenki, sen (1 Setsu, 2 Getsu, 4 Ka), meditation, kaeshi; soul, shroud, lemure, void;
+  offerings, coils, tribute; white_mana, black_mana, mana_stacks; palette, white_paint, canvas (the motifs: 1 Pom, 2
+  Wing, 4 Claw, 8 Maw, 16 hammer, 32 starry sky), creature (depictions 1-4, portraits 16 Moogle, 32 Madeen); ast_cards
+  (three cards, four bits each), ast_arcana, ast_draw; addersgall (one every 20 s from 45, `tick`), addersgall_timer,
+  addersting, eukrasia. Three are the server's only, not shown: shadow_hits (the Dark Knight's simulacrum), pet_hits
+  and pet_potency (the Machinist's turret and queen).
+* **ActorGauge** at FFXIVClientStructs' offsets less 7 (`at`), which the Dark Knight's packets in Bob's captures
+  confirm (DarksideTimer, 0x0A, at data[3..5]: 0x7530 after an Edge of Darkness) as the Black Mage's do (ElementStance,
+  0x0A, data[3]: 0xFF in Umbral Ice I).
+* **Pets** aren't on the server, so their attacks come with the job's own weaponskills: the Dark Knight's Living
+  Shadow (six hits, 420 each, Shadowbringer's 570 and Disesteem's 620 among them), the Machinist's Rook Autoturret
+  (four, 84 a hit at 50 Battery) and Automaton Queen (six, 262 at 50 Battery, 197 before Crowned Collider at 86), twice
+  that at 100 Battery; Rook / Queen Overdrive lands what's left at once.
+* **Instant casts** (`action.rs`'s `INSTANT_CASTS`): Dualcast (the Red Mage's spells give it, `rdmDualcast`, and spend
+  it), Acceleration for Verthunder, Veraero (III), Scatter and Impact, Enhanced Harpe, Rainbow Bright for Rainbow Drip,
+  Lightspeed. The server's cast bar was the full cast before.
+* **Wildfire**: 240 for each of the Machinist's next six weaponskills, as they land (its end isn't marked on the
+  server).
+* **The Dancer's dance**: Standard / Technical Step draws its steps at random into the gauge, each step is done if
+  it's the one due, and the finish the client sends (16191-16192, 16193-16196 for one to four steps) hits for its
+  step count; Technical Finish's party buff comes with 33215-33218, which retail's client sends straight after the
+  finish (always 33218 after 16196 in Bob's captures).
+* **Retail's client IDs**: Enchanted Riposte, Zwerchhau and Redoublement under Magicked Swordplay as 45960-45962 (Bob's
+  captures, Red Mages at 80-89, four each, as many as Manafication allows; scripted as the plain ones).
+* **Combos** (`RotationState::last_combo`, party bots): only combo steps (an action with ActionCombo, or one another's
+  ActionCombo names) carry a bot's combo on or break it, as players' already did (`takes_part_in_combos`): Gnashing
+  Fang, Burst Strike, Sonic Break and the like between leave it be. Retail's Gunbreakers at 80-89 used Keen Edge 279
+  times, Brutal Shell 268, Solid Barrel 253 with 123 Gnashing Fangs among them; the bots broke the combo at each.
+* **Buffs and mitigation** (`modifiers.rs`): No Mercy, Fugetsu, Hunter's Instinct, Arcane Circle, Standard and
+  Technical Finish, Embolden, Divination, The Balance and The Spear, Starry Muse (and Brotherhood, Riddle of Fire,
+  Searing Light) on damage dealt; Death's Design on the target; Shadow Wall, Dark Mind, Oblation, Dark Missionary,
+  Camouflage, Nebula, Great Nebula, Heart of Light / Stone / Corundum, Tactician, Shield Samba, Collective
+  Unconscious, The Bole, Sun Sign, Kerachole, Taurochole, Holos, Expedient, Intervention, Passage of Arms and Divine
+  Veil on damage taken; Superbolide's invulnerability, Living Dead's HP floor; The Arrow, Krasis, Physis II and
+  Protraction on healing.
+* **Raises**: Ascend, Egeiro and Verraise offer the revive as Raise does.
+
+How they were checked: every script run under lupa at levels 1, 50, 80 and 100 with empty and full gauges (no errors),
+and each job's rotation simulated with the real scripts at every band against one and three targets (every GCD used;
+the Red Mage's casts instant under Dualcast). Against retail's players at 80-89 in Bob's captures: the Dark Knight's
+Hard Slash, Syphon Strike, Souleater and Bloodspiller about 6 a minute each (retail 216, 211, 193, 215 uses), the
+Gunbreaker's Keen Edge - Brutal Shell - Solid Barrel 4.7 / 4.3 / 4.3 with Gnashing Fang 2 (279 / 268 / 253 / 123),
+the Samurai's Hakaze 6, Shinten 6.7, Gekko 3, Yukikaze 3, Kasha 2.7, Midare 2.3 (85, 67, 44, 39, 42, 34).
 
 ## Adding a monster or skill
 

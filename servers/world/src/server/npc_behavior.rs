@@ -78,7 +78,9 @@ fn bot_choice(
         Some((action, at)) => ((recast_of(action) - since(at)).max(0.0), since(at)),
         None => (0.0, 99.0),
     };
-    let combo = last_gcd
+    // The combo goes by its combo steps (`RotationState::last_combo`): the GCD actions outside combos between leave it be.
+    let combo = state
+        .last_combo()
         .filter(|(_, at)| now.saturating_duration_since(*at) <= COMBO_WINDOW)
         .map(|(action, _)| action)
         .unwrap_or(0);

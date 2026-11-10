@@ -1308,6 +1308,20 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   speed and the demi-summons and Seraph as pets aren't done; Lightwyrm Trance uses Dreadwyrm Trance's status (no row of
   its own in Boss Mod's list). The Summoner's arcanum order and attunement counts and the Ninja's mudra IDs 18805-18807
   are from retail's captures; the rest of the mechanics are from the job guide's text.
+* **The jobs from Heavensward on** ([Combat](combat.md#the-jobs-from-heavensward-on-levels-1100), 2026-11-10,
+  untested in game): potencies are the job guide's level-100 numbers, with the lower ones its traits list below their
+  levels; under the lowest listed level the lowest listed stands (Dark Knight's, Gunbreaker's and Machinist's below 84,
+  for instance: retail's are lower still). Their gauges' offsets are FFXIVClientStructs' less 7 (only the Dark Knight's
+  is seen in Bob's captures). No pets (the simulacrum, turret and queen hit with the job's weaponskills; the Pictomancer's
+  muses hit at once), no positionals, barriers don't absorb (so The Blackest Night's Dark Arts comes at once, and the
+  Sage gets no Addersting: Toxikon is never usable), Kardia's heals, Synastry's echo, Collective Unconscious's regen,
+  Excogitation-like delayed heals (Exaltation, Catharsis of Corundum, Vigilant) land at once or not at all, haste
+  (Fuka, Swiftscaled) isn't counted, ground areas (Salted Earth, Earthly Star, Doton) go on the target or the caster,
+  movement actions (Shadowstride, Trajectory, Slither, En Avant, Smudge, Hell's Ingress, the Red Mage's Corps-a-corps,
+  Displacement) don't move anyone, Devilment's and Chain Stratagem's critical rates aren't counted, Heat Blast doesn't
+  take time off Gauss Round and Ricochet, the Scarlet Delirium chain's MP (200) is a guess, and the Red Mage's 45960-45962
+  are taken to be the Magicked Swordplay Enchanted ones. Bots of these jobs (now in the Duty Finder draw) are untested
+  in game: their gear, glamours and weapons by ClassJobCategory.
 * **Healer bots' heals** are one single-target GCD heal (`heal_action`); they don't use the healers' abilities
   (Lustrate, Excogitation, Indomitability, Tetragrammaton, Divine Benison...) or area heals, and the rotation scripts
   can't see the party's HP.

@@ -1536,11 +1536,15 @@ impl GameData {
         action_id: u32,
     ) -> Option<crate::server::ActionMechanics> {
         let row = self.action_sheet.row(action_id)?;
+        let gcd = row.CooldownGroup == crate::server::GCD_GROUP
+            || row.AdditionalCooldownGroup == crate::server::GCD_GROUP;
+        let recast = row.Recast100ms as f32 / 10.0;
+        let combo_from = row.ActionCombo as u32;
         Some(crate::server::ActionMechanics {
-            gcd: row.CooldownGroup == crate::server::GCD_GROUP
-                || row.AdditionalCooldownGroup == crate::server::GCD_GROUP,
-            recast: row.Recast100ms as f32 / 10.0,
-            combo_from: row.ActionCombo as u32,
+            gcd,
+            recast,
+            combo_from,
+            combo: combo_from != 0 || self.takes_part_in_combos(action_id),
         })
     }
 

@@ -1,0 +1,18 @@
+-- Veraero (Lv. 10): 360; 6 White Mana; Verstone Ready half the time from 30 (always with Acceleration, which it spends).
+-- Potencies: the official job guide (7.x), at level 100; its traits' lower ones below (`tierPotency`).
+
+function doAction(player, in_combo)
+    local effects = EffectsBuilder()
+    rdmMagic(effects, player, tierPotency(player, { { 62, 360 }, { 1, 310 } }))
+    rdmMana(effects, 6, 0)
+    local accelerated = player:get_effect(RDM_EFFECT_ACCELERATION) ~= nil
+    if accelerated then
+        effects:consume_effect(RDM_EFFECT_ACCELERATION)
+    end
+    if player.level >= 30 and (accelerated or math.random() < 0.5) then
+        effects:gain_effect_self(RDM_EFFECT_VERSTONE_READY, 0, 30.0)
+    end
+    rdmDualcast(effects, player, accelerated)
+
+    return effects
+end

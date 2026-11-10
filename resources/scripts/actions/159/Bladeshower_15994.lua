@@ -1,23 +1,15 @@
-POTENCY = 100
-COMBO_POTENCY = 160
+-- Bladeshower (Lv. 25): 100 to all enemies near, 160 after Windmill with Silken Flow half the time; 5 Esprit from 76.
+-- Potencies: the official job guide (7.x), at level 100.
 
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
-
-    local potency = POTENCY
+    local effects = EffectsBuilder()
     if in_combo then
-        potency = COMBO_POTENCY
+        dncDamage(effects, player, 160)
+        dncChance(effects, DNC_EFFECT_SILKEN_FLOW, 0.5)
+    else
+        dncDamage(effects, player, 100)
     end
-
-    effects:damage(DAMAGE_TYPE_SLASHING, player.parameters:calc_physical_damage(potency))
-
-    if in_combo then
-        -- Silken Flow has a 50% chance
-        local gain_silken_flow = math.random(0, 1)
-        if gain_silken_flow == 1 then
-            effects:gain_effect_self(EFFECT_SILKEN_FLOW, 0, 30.0)
-        end
-    end
+    dncEsprit(effects, player)
 
     return effects
 end

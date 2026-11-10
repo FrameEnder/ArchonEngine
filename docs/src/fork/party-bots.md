@@ -463,7 +463,8 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
     lane meanwhile). So a dodger in its way gets out sideways or behind it, as retail's did when the second pair went.
 * **Its job's rotation script** (`resources/scripts/rotations/`, `server/bot_rotation.rs`; since 2026-11-10): one
   Lua script per job and its base class (Paladin, Warrior, Monk, Dragoon, Bard, Ninja, White Mage, Black Mage,
-  Summoner, Scholar), whose `choose(b)` the server calls each tick the bot could act (`npc_behavior::bot_choice`) with
+  Summoner, Scholar; and from the stage after, Dark Knight, Gunbreaker, Machinist, Samurai, Dancer, Reaper, Viper, Red
+  Mage, Pictomancer, Astrologian, Sage), whose `choose(b)` the server calls each tick the bot could act (`npc_behavior::bot_choice`) with
   what a player's rotation goes by: its level, MP and HP, the actions it knows at its level that the server has
   scripts for (each one's cooldown left and MP cost), its statuses (procs, buffs, forms) with their time left, its
   target's statuses (its own damage over time), its last GCD action (the combo), its GCD and the abilities woven since,
@@ -489,7 +490,10 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
   critical and direct hits (they had none), and their area actions hit everything inside (only the target before).
   They get MP back as players do (200 a tick plus Piety's in combat, 600 out of it, none in Astral Fire; they never
   did, and cast on at none) and 1 % HP a tick in combat. From 30 a Duty Finder bot is its class's job (`job_at`;
-  retail's players were jobs at every level from 30), a healer a White Mage or a Scholar. A class without a script
+  retail's players were jobs at every level from 30), a healer a White Mage or a Scholar; the jobs without a class
+  (Dark Knight, Gunbreaker, Machinist, Samurai, Dancer, Reaper, Viper, Red Mage, Pictomancer, Astrologian, Sage) are
+  in the draw at every level (`DUTY_BOT_CLASSES`), synced down as retail's were. A bot's combo goes by its combo steps
+  only (`RotationState::last_combo`), so its Gnashing Fang or Bloodspiller doesn't break Keen Edge's or Hard Slash's. A class without a script
   keeps the heuristic below. Heals stay the bots' own (`heal_action`: the highest level single-target GCD heal that
   needs nothing but MP, so not Afflatus Solace or Manifestation), and take the GCD (the rotation hears of them).
 * **The heuristic rotation** (`build_rotation`, for a class without a script), run by the NPC class rotations

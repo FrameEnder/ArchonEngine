@@ -1860,10 +1860,15 @@ fn spawn_bot(
     Ok((actor_id, format!("{name} ({abbreviation})")))
 }
 
-/// The base classes Duty Finder bots are picked from (Gladiator, Pugilist, Marauder, Lancer, Archer, Conjurer,
-/// Thaumaturge, Arcanist, Rogue): the classes Kawari has action scripts for, levels 1-50. Each one's role is read from
-/// the ClassJob sheet.
-const DUTY_BOT_CLASSES: [u8; 9] = [1, 2, 3, 4, 5, 6, 7, 26, 29];
+/// The classes and jobs Duty Finder bots are picked from: the base classes (Gladiator, Pugilist, Marauder, Lancer,
+/// Archer, Conjurer, Thaumaturge, Arcanist, Rogue: their jobs from 30, `job_at`) and the jobs without one (Machinist,
+/// Dark Knight, Astrologian, Samurai, Red Mage, Gunbreaker, Dancer, Reaper, Sage, Viper, Pictomancer), all with action
+/// and rotation scripts, 1-100 (since 2026-11-10). Retail's Duty Finder had those jobs synced down to every level band
+/// in Bob's Chronofoil captures (Dark Knights, Gunbreakers, Dancers, Samurai and Vipers at 10-19.) Each one's role is
+/// read from the ClassJob sheet.
+const DUTY_BOT_CLASSES: [u8; 20] = [
+    1, 2, 3, 4, 5, 6, 7, 26, 29, 31, 32, 33, 34, 35, 37, 38, 39, 40, 41, 42,
+];
 
 /// The job a Duty Finder bot of `classjob` plays at `level`: from 30 the base class's job (Gladiator a Paladin, Pugilist
 /// a Monk, Marauder a Warrior, Lancer a Dragoon, Archer a Bard, Conjurer a White Mage, Thaumaturge a Black Mage, Arcanist

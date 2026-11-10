@@ -1,10 +1,10 @@
-POTENCY = 200
-STATUS_HONED_REAVERS = 3772
+-- Steel Fangs (Lv. 1): 200, 300 with Honed Steel; Honed Reavers (60 s).
+-- Potencies: the official job guide (7.x), at level 100; its traits' lower ones below (`tierPotency`).
 
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_SLASHING, player.parameters:calc_physical_damage(POTENCY))
-    effects:gain_effect_self(STATUS_HONED_REAVERS, 0, 60.0)
+    local effects = EffectsBuilder()
+    vprDamage(effects, player, tierPotency(player, { { 74, 200 }, { 1, 150 } }) + vprBonus(effects, player, VPR_EFFECT_HONED_STEEL, 100))
+    effects:gain_effect_self(VPR_EFFECT_HONED_REAVERS, 0, 60.0)
 
     return effects
 end

@@ -1,8 +1,9 @@
-POTENCY = 300
+-- Curing Waltz (Lv. 52): heals the Dancer and the party near 300.
+-- Potencies: the official job guide (7.x), at level 100.
 
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
-    effects:heal(player.parameters:calc_heal_amount(POTENCY))
+    local effects = EffectsBuilder()
+    effects:heal(healAmount(player, 300))
 
     return effects
 end

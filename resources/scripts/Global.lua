@@ -868,3 +868,681 @@ function ninBunshin(effects, player, area)
         ninGainNinki(effects, player, 5)
     end
 end
+
+-- The jobs from Heavensward on (stage 3, 2026-11-10). Their damage traits go by level (the job guide, 7.x): Maim and
+-- Mend for the casters and healers (+10 % at 20, +30 % at 40), Increased Action Damage for the Machinist (20, 40) and
+-- the Dancer (50, 60).
+LEVEL_MAIM_AND_MEND = { { 40, 1.3 }, { 20, 1.1 } }
+LEVEL_MCH_ACTION_DAMAGE = { { 40, 1.2 }, { 20, 1.1 } }
+LEVEL_DNC_ACTION_DAMAGE = { { 60, 1.2 }, { 50, 1.1 } }
+
+-- A potency the job's traits raise: `tiers` is { { level, potency }, ... } from the highest level down (the job guide's
+-- trait text, 7.x); below the lowest level listed the lowest potency listed stands (the guide gives none under it.)
+function tierPotency(player, tiers)
+    for _, tier in ipairs(tiers) do
+        if player.level >= tier[1] then
+            return tier[2]
+        end
+    end
+    return tiers[#tiers][2]
+end
+
+function levelPotency(player, potency, steps)
+    for _, step in ipairs(steps) do
+        if player.level >= step[1] then
+            return math.floor(potency * step[2])
+        end
+    end
+    return potency
+end
+
+-- Dark Knight. Darkside (the gauge's "darkside", tenths of a second, up to 60 s) is 10 % more damage.
+DRK_EFFECT_BLOOD_WEAPON = 742
+DRK_EFFECT_GRIT = 743
+DRK_EFFECT_SHADOW_WALL = 747
+DRK_EFFECT_DARK_MIND = 746
+DRK_EFFECT_LIVING_DEAD = 810
+DRK_EFFECT_SALTED_EARTH = 749
+DRK_EFFECT_DELIRIUM = 1972
+DRK_EFFECT_ENHANCED_DELIRIUM = 3836
+DRK_EFFECT_BLACKEST_NIGHT = 1178
+DRK_EFFECT_DARK_MISSIONARY = 1894
+DRK_EFFECT_OBLATION = 2682
+DRK_EFFECT_SCORN = 3837
+
+function drkDamage(effects, player, potency, kind)
+    if player:gauge("darkside") > 0 then
+        potency = math.floor(potency * 1.1)
+    end
+    effects:damage(kind or DAMAGE_TYPE_SLASHING, physicalDamage(player, potency))
+end
+
+-- A weaponskill or spell under Blood Weapon (35; Delirium's from 68): a stack spent for 600 MP, and 10 Blood from 62
+-- (Blackblood). The simulacrum's attacks come with them while it's out (`drkShadowHit`.)
+function drkWeaponskill(effects, player)
+    if player:get_effect(DRK_EFFECT_BLOOD_WEAPON) ~= nil then
+        effects:consume_effect_stack(DRK_EFFECT_BLOOD_WEAPON)
+        effects:restore_mp(600)
+        if player.level >= 62 then
+            effects:gauge_add("blood", 10)
+        end
+    end
+    drkShadowHit(effects, player)
+end
+
+-- Living Shadow's simulacrum (80) attacks six times in its 22 s (Abyssal Drain, Plunge, Shadowbringer from 90, Edge of
+-- Shadow, Bloodspiller, Carve and Spit, Disesteem from 100: 420 each, the job guide's numbers for its stronger ones
+-- aside); with no pets on the server they land with the Dark Knight's next six weaponskills ("shadow_hits").
+function drkShadowHit(effects, player)
+    local left = player:gauge("shadow_hits")
+    if left <= 0 then
+        return
+    end
+    local potency = 420
+    if left == 4 and player.level >= 90 then
+        potency = 570
+    elseif left == 1 and player.level >= 100 then
+        potency = 620
+    end
+    effects:damage(DAMAGE_TYPE_SLASHING, physicalDamage(player, potency))
+    effects:gauge_add("shadow_hits", -1)
+end
+
+-- Edge and Flood of Darkness / Shadow: Darkside 30 s more (up to 60), 3,000 MP or Dark Arts.
+function drkDarkside(effects, player)
+    effects:gauge_add("darkside", 300)
+    if player:gauge("dark_arts") > 0 then
+        effects:gauge_set("dark_arts", 0)
+        effects:set_mp_cost(0)
+    end
+end
+
+-- Gunbreaker: Cartridges up to two, three from 88 (Cartridge Charge II), six under Bloodfest.
+GNB_EFFECT_NO_MERCY = 1831
+GNB_EFFECT_READY_TO_BREAK = 3886
+GNB_EFFECT_BRUTAL_SHELL = 1898
+GNB_EFFECT_CAMOUFLAGE = 1832
+GNB_EFFECT_ROYAL_GUARD = 1833
+GNB_EFFECT_NEBULA = 1834
+GNB_EFFECT_GREAT_NEBULA = 3838
+GNB_EFFECT_AURORA = 1835
+GNB_EFFECT_SUPERBOLIDE = 1836
+GNB_EFFECT_SONIC_BREAK = 1837
+GNB_EFFECT_BOW_SHOCK = 1838
+GNB_EFFECT_HEART_OF_LIGHT = 1839
+GNB_EFFECT_HEART_OF_STONE = 1840
+GNB_EFFECT_HEART_OF_CORUNDUM = 2683
+GNB_EFFECT_CLARITY_OF_CORUNDUM = 2684
+GNB_EFFECT_CATHARSIS_OF_CORUNDUM = 2685
+GNB_EFFECT_READY_TO_RIP = 1842
+GNB_EFFECT_READY_TO_TEAR = 1843
+GNB_EFFECT_READY_TO_GOUGE = 1844
+GNB_EFFECT_READY_TO_BLAST = 2686
+GNB_EFFECT_READY_TO_RAZE = 3839
+GNB_EFFECT_READY_TO_REIGN = 3840
+GNB_EFFECT_BLOODFEST = 5051
+
+function gnbMaxCartridges(player)
+    if player:get_effect(GNB_EFFECT_BLOODFEST) ~= nil then
+        return 6
+    end
+    return player.level >= 88 and 3 or 2
+end
+
+function gnbAddCartridges(effects, player, count)
+    local now = player:gauge("cartridges")
+    effects:gauge_set("cartridges", math.min(now + count, gnbMaxCartridges(player)))
+end
+
+function gnbDamage(effects, player, potency)
+    effects:damage(DAMAGE_TYPE_SLASHING, physicalDamage(player, potency))
+end
+
+-- A Continuation (Jugular Rip, Abdomen Tear, Eye Gouge, Hypervelocity, Fated Brand): its Ready status spent.
+function gnbContinuation(effects, player, ready, potency, falloff)
+    if falloff then
+        effects:aoe_falloff(falloff)
+    end
+    gnbDamage(effects, player, potency)
+    effects:consume_effect(ready)
+end
+
+-- Machinist. Overheated (Hypercharge's five stacks) is 20 more potency for its single-target weaponskills.
+MCH_EFFECT_REASSEMBLED = 851
+MCH_EFFECT_OVERHEATED = 2688
+MCH_EFFECT_WILDFIRE = 1946
+MCH_EFFECT_WILDFIRE_TARGET = 861
+MCH_EFFECT_DISMANTLED = 860
+MCH_EFFECT_HYPERCHARGED = 3864
+MCH_EFFECT_FLAMETHROWER = 1205
+MCH_EFFECT_EXCAVATOR_READY = 3865
+MCH_EFFECT_FULL_METAL_MACHINIST = 3866
+MCH_EFFECT_TACTICIAN = 1951
+MCH_EFFECT_BIOBLASTER = 1866
+
+-- A Machinist weaponskill: its damage (Increased Action Damage by level, Overheated's 20 for single-target ones),
+-- Reassemble's sure critical direct hit, Wildfire's 240 for each (up to six; here as they land, since nothing marks
+-- its end), and the turret's or queen's attacks while one is out (`petHit`.)
+function mchShot(effects, player, potency, area)
+    if not area and player:get_effect(MCH_EFFECT_OVERHEATED) ~= nil then
+        potency = potency + 20
+    end
+    if player:get_effect(MCH_EFFECT_REASSEMBLED) ~= nil then
+        effects:guarantee_critical()
+        effects:guarantee_direct_hit()
+        effects:consume_effect(MCH_EFFECT_REASSEMBLED)
+    end
+    effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, levelPotency(player, potency, LEVEL_MCH_ACTION_DAMAGE)))
+    local wildfire = player:get_effect(MCH_EFFECT_WILDFIRE)
+    if wildfire ~= nil and wildfire.param > 0 then
+        effects:damage(DAMAGE_TYPE_MAGIC, physicalDamage(player, 240))
+        effects:consume_effect_stack(MCH_EFFECT_WILDFIRE)
+    end
+    petHit(effects, player)
+end
+
+function mchHeat(effects, player, amount, battery)
+    effects:gauge_add("heat", amount)
+    if battery then
+        effects:gauge_add("battery", battery)
+    end
+end
+
+-- A pet's attacks (no pets on the server): `count` hits of `potency` with the next weaponskills.
+function petSummon(effects, count, potency)
+    effects:gauge_set("pet_hits", count)
+    effects:gauge_set("pet_potency", potency)
+end
+
+function petHit(effects, player)
+    if player:gauge("pet_hits") > 0 then
+        effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, player:gauge("pet_potency")))
+        effects:gauge_add("pet_hits", -1)
+    end
+end
+
+-- Samurai. Kenki from 52 (Kenki Mastery; every weaponskill's from 62.)
+SAM_EFFECT_FUGETSU = 1298
+SAM_EFFECT_FUKA = 1299
+SAM_EFFECT_HIGANBANA = 1228
+SAM_EFFECT_MEIKYO_SHISUI = 1233
+SAM_EFFECT_THIRD_EYE = 1232
+SAM_EFFECT_ENHANCED_ENPI = 1236
+SAM_EFFECT_OGI_NAMIKIRI_READY = 2959
+SAM_EFFECT_TSUBAME_READY = 4216
+SAM_EFFECT_TENGENTSU = 3853
+SAM_EFFECT_ZANSHIN_READY = 3855
+SAM_EFFECT_TENDO = 3856
+
+function samDamage(effects, player, potency)
+    effects:damage(DAMAGE_TYPE_SLASHING, physicalDamage(player, potency))
+end
+
+function samKenki(effects, player, amount)
+    if player.level >= 52 then
+        effects:gauge_add("kenki", amount)
+    end
+end
+
+-- A combo step that finishes or builds (Jinpu, Shifu, Gekko, Kasha, Yukikaze, Mangetsu, Oka): its combo potency, Sen,
+-- Kenki and Fugetsu / Fuka in combo or under Meikyo Shisui (a stack spent; then Gekko gives Fugetsu and Kasha Fuka.)
+function samStep(effects, player, in_combo, base, combo, sen, kenki, buff)
+    local meikyo = player:get_effect(SAM_EFFECT_MEIKYO_SHISUI) ~= nil and sen ~= 0
+    if not (in_combo or meikyo) then
+        samDamage(effects, player, base)
+        return
+    end
+    samDamage(effects, player, combo)
+    if sen ~= 0 then
+        effects:gauge_set("sen", player:gauge("sen") | sen)
+    end
+    samKenki(effects, player, kenki)
+    if buff ~= nil then
+        effects:gain_effect_self(buff, 0, 40.0)
+    end
+    if meikyo then
+        effects:consume_effect_stack(SAM_EFFECT_MEIKYO_SHISUI)
+    end
+end
+
+-- An Iaijutsu: the Sen spent, a Meditation stack, and from 74 Tsubame-gaeshi ready to repeat it (`kaeshi`: 2 Goken, 3
+-- Setsugekka.)
+function samIaijutsu(effects, player, kaeshi)
+    effects:gauge_set("sen", 0)
+    effects:gauge_add("meditation", 1)
+    if kaeshi ~= nil and player.level >= 74 then
+        effects:gain_effect_self(SAM_EFFECT_TSUBAME_READY, 0, 30.0)
+        effects:gauge_set("kaeshi", kaeshi)
+    end
+end
+
+-- Dancer. The dance's steps are the gauge's ("dance_steps", three bits each; "step_index" how many are done.)
+DNC_EFFECT_SILKEN_SYMMETRY = 2693
+DNC_EFFECT_SILKEN_FLOW = 2694
+DNC_EFFECT_FLOURISHING_SYMMETRY = 3017
+DNC_EFFECT_FLOURISHING_FLOW = 3018
+DNC_EFFECT_THREEFOLD_FAN_DANCE = 1820
+DNC_EFFECT_FOURFOLD_FAN_DANCE = 2699
+DNC_EFFECT_STANDARD_STEP = 1818
+DNC_EFFECT_TECHNICAL_STEP = 1819
+DNC_EFFECT_STANDARD_FINISH = 1821
+DNC_EFFECT_TECHNICAL_FINISH = 1822
+DNC_EFFECT_STANDARD_ESPRIT = 1847
+DNC_EFFECT_TECHNICAL_ESPRIT = 1848
+DNC_EFFECT_FLOURISHING_FINISH = 2698
+DNC_EFFECT_FLOURISHING_STARFALL = 2700
+DNC_EFFECT_DEVILMENT = 1825
+DNC_EFFECT_SHIELD_SAMBA = 1826
+DNC_EFFECT_IMPROVISATION = 1827
+DNC_EFFECT_CLOSED_POSITION = 1823
+DNC_EFFECT_DANCE_PARTNER = 1824
+DNC_EFFECT_LAST_DANCE_READY = 3867
+DNC_EFFECT_FINISHING_MOVE_READY = 3868
+DNC_EFFECT_DANCE_OF_THE_DAWN_READY = 3869
+
+function dncDamage(effects, player, potency)
+    effects:damage(DAMAGE_TYPE_SLASHING, physicalDamage(player, levelPotency(player, potency, LEVEL_DNC_ACTION_DAMAGE)))
+end
+
+-- Esprit from the Dancer's own weaponskills (76: 5; the procs' 10 from 84.)
+function dncEsprit(effects, player, proc)
+    if player.level >= 76 then
+        effects:gauge_add("esprit", (proc and player.level >= 84) and 10 or 5)
+    end
+end
+
+function dncChance(effects, effect_id, chance)
+    if math.random() < chance then
+        effects:gain_effect_self(effect_id, 0, 30.0)
+    end
+end
+
+-- A proc spent (Reverse Cascade, Fountainfall, Rising Windmill, Bloodshower): the Silken one, or the Flourishing one;
+-- a Fourfold Feather half the time from 30.
+function dncProc(effects, player, silken, flourishing)
+    if player:get_effect(silken) ~= nil then
+        effects:consume_effect(silken)
+    elseif player:get_effect(flourishing) ~= nil then
+        effects:consume_effect(flourishing)
+    end
+    if player.level >= 30 and math.random() < 0.5 then
+        effects:gauge_add("feathers", 1)
+    end
+    dncEsprit(effects, player, true)
+end
+
+-- Starts a dance: `count` steps drawn at random (as the client shows them), none done yet.
+function dncStartDance(effects, status, count)
+    local steps = 0
+    for i = 0, count - 1 do
+        steps = steps | (math.random(1, 4) << (i * 3))
+    end
+    effects:gauge_set("dance_steps", steps)
+    effects:gauge_set("step_index", 0)
+    effects:gain_effect_self(status, 0, 15.0)
+end
+
+-- A step: the one due is done.
+function dncStep(effects, player, step)
+    local index = player:gauge("step_index")
+    local due = (player:gauge("dance_steps") >> (index * 3)) & 7
+    if due == step then
+        effects:gauge_add("step_index", 1)
+    end
+end
+
+-- A dance's finish: its damage, the dance over.
+function dncFinish(effects, player, status, potency)
+    effects:aoe_falloff(60)
+    dncDamage(effects, player, potency)
+    if player:get_effect(status) ~= nil then
+        effects:consume_effect(status)
+    end
+    effects:gauge_set("dance_steps", 0)
+    effects:gauge_set("step_index", 0)
+end
+
+-- Reaper.
+RPR_EFFECT_DEATHS_DESIGN = 2586
+RPR_EFFECT_SOUL_REAVER = 2587
+RPR_EFFECT_ENHANCED_GIBBET = 2588
+RPR_EFFECT_ENHANCED_GALLOWS = 2589
+RPR_EFFECT_ENHANCED_VOID_REAPING = 2590
+RPR_EFFECT_ENHANCED_CROSS_REAPING = 2591
+RPR_EFFECT_IMMORTAL_SACRIFICE = 2592
+RPR_EFFECT_ENSHROUDED = 2593
+RPR_EFFECT_SOULSOW = 2594
+RPR_EFFECT_THRESHOLD = 2595
+RPR_EFFECT_CREST_OF_TIME_BORROWED = 2596
+RPR_EFFECT_ARCANE_CIRCLE = 2599
+RPR_EFFECT_CIRCLE_OF_SACRIFICE = 2600
+RPR_EFFECT_BLOODSOWN_CIRCLE = 2972
+RPR_EFFECT_ENHANCED_HARPE = 2845
+RPR_EFFECT_IDEAL_HOST = 3905
+RPR_EFFECT_OBLATIO = 3857
+RPR_EFFECT_EXECUTIONER = 3858
+RPR_EFFECT_PERFECTIO_OCCULTA = 3859
+RPR_EFFECT_PERFECTIO_PARATA = 3860
+
+function rprDamage(effects, player, potency, magic)
+    effects:damage(magic and DAMAGE_TYPE_MAGIC or DAMAGE_TYPE_SLASHING, physicalDamage(player, potency))
+end
+
+-- Soul from 50 (the Soul Gauge trait.)
+function rprSoul(effects, player, amount)
+    if player.level >= 50 then
+        effects:gauge_add("soul", amount)
+    end
+end
+
+-- Gibbet, Gallows, Guillotine and their Executioner's: Soul Reaver's (or Executioner's) stack, the Enhanced one spent
+-- for 60 more and the other given, 10 Shroud from 80.
+function rprReaver(effects, player, base, enhanced, mine, other)
+    local potency = base
+    if mine ~= nil and player:get_effect(mine) ~= nil then
+        potency = base + 60
+        effects:consume_effect(mine)
+    end
+    rprDamage(effects, player, potency)
+    if other ~= nil then
+        effects:gain_effect_self(other, 0, 60.0)
+    end
+    if player:get_effect(RPR_EFFECT_EXECUTIONER) ~= nil then
+        effects:consume_effect_stack(RPR_EFFECT_EXECUTIONER)
+    else
+        effects:consume_effect_stack(RPR_EFFECT_SOUL_REAVER)
+    end
+    if player.level >= 80 then
+        effects:gauge_add("shroud", 10)
+    end
+end
+
+-- Void, Cross and Grim Reaping: a Lemure Shroud for a Void Shroud (86.)
+function rprReaping(effects, player)
+    effects:gauge_add("lemure", -1)
+    if player.level >= 86 then
+        effects:gauge_add("void", 1)
+    end
+end
+
+-- Viper.
+VPR_EFFECT_HUNTERS_INSTINCT = 3668
+VPR_EFFECT_SWIFTSCALED = 3669
+VPR_EFFECT_HONED_STEEL = 3672
+VPR_EFFECT_HONED_REAVERS = 3772
+VPR_EFFECT_FLANKSTUNG_VENOM = 3645
+VPR_EFFECT_FLANKSBANE_VENOM = 3646
+VPR_EFFECT_HINDSTUNG_VENOM = 3647
+VPR_EFFECT_HINDSBANE_VENOM = 3648
+VPR_EFFECT_GRIMHUNTERS_VENOM = 3649
+VPR_EFFECT_GRIMSKINS_VENOM = 3650
+VPR_EFFECT_HUNTERS_VENOM = 3657
+VPR_EFFECT_SWIFTSKINS_VENOM = 3658
+VPR_EFFECT_FELLHUNTERS_VENOM = 3659
+VPR_EFFECT_FELLSKINS_VENOM = 3660
+VPR_EFFECT_POISED_FOR_TWINFANG = 3665
+VPR_EFFECT_POISED_FOR_TWINBLOOD = 3666
+VPR_EFFECT_REAWAKENED = 3670
+VPR_EFFECT_READY_TO_REAWAKEN = 3671
+VPR_VENOMS = { 3645, 3646, 3647, 3648, 3649, 3650 }
+
+function vprDamage(effects, player, potency)
+    effects:damage(DAMAGE_TYPE_SLASHING, physicalDamage(player, potency))
+end
+
+-- A status that adds to this action: spent, its bonus added.
+function vprBonus(effects, player, status, bonus)
+    if status ~= nil and player:get_effect(status) ~= nil then
+        effects:consume_effect(status)
+        return bonus
+    end
+    return 0
+end
+
+-- A venom given: the other venoms go (one at a time.)
+function vprVenom(effects, player, status)
+    for _, other in ipairs(VPR_VENOMS) do
+        if other ~= status and player:get_effect(other) ~= nil then
+            effects:consume_effect(other)
+        end
+    end
+    effects:gain_effect_self(status, 0, 60.0)
+end
+
+-- Serpent Offerings from 90 (Serpent's Lineage.)
+function vprOfferings(effects, player, amount)
+    if player.level >= 90 then
+        effects:gauge_add("offerings", amount)
+    end
+end
+
+-- Red Mage. Dualcast: a spell cast with its cast time gives it (the next is instant, `INSTANT_CASTS` in action.rs);
+-- one cast with it spends it.
+RDM_EFFECT_VERFIRE_READY = 1234
+RDM_EFFECT_VERSTONE_READY = 1235
+RDM_EFFECT_ACCELERATION = 1238
+RDM_EFFECT_EMBOLDEN_SELF = 1239
+RDM_EFFECT_DUALCAST = 1249
+RDM_EFFECT_EMBOLDEN = 1297
+RDM_EFFECT_MANAFICATION = 1971
+RDM_EFFECT_MAGICKED_SWORDPLAY = 3875
+RDM_EFFECT_THORNED_FLOURISH = 3876
+RDM_EFFECT_GRAND_IMPACT_READY = 3877
+RDM_EFFECT_PREFULGENCE_READY = 3878
+RDM_EFFECT_SWIFTCAST = 167
+
+function rdmDualcast(effects, player, accelerated)
+    if player:get_effect(RDM_EFFECT_DUALCAST) ~= nil then
+        effects:consume_effect(RDM_EFFECT_DUALCAST)
+    elseif accelerated or player:get_effect(RDM_EFFECT_SWIFTCAST) ~= nil then
+        return
+    else
+        effects:gain_effect_self(RDM_EFFECT_DUALCAST, 0, 15.0)
+    end
+end
+
+function rdmMagic(effects, player, potency)
+    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, levelPotency(player, potency, LEVEL_MAIM_AND_MEND)))
+end
+
+function rdmMana(effects, white, black)
+    if white > 0 then
+        effects:gauge_add("white_mana", white)
+    end
+    if black > 0 then
+        effects:gauge_add("black_mana", black)
+    end
+end
+
+-- An enchanted sword skill: its White and Black Mana (or a Magicked Swordplay stack), a Mana Stack from 68.
+function rdmEnchanted(effects, player, cost, potency)
+    if player:get_effect(RDM_EFFECT_MAGICKED_SWORDPLAY) ~= nil then
+        effects:consume_effect_stack(RDM_EFFECT_MAGICKED_SWORDPLAY)
+    else
+        effects:gauge_add("white_mana", -cost)
+        effects:gauge_add("black_mana", -cost)
+    end
+    effects:damage(DAMAGE_TYPE_MAGIC, physicalDamage(player, potency))
+    if player.level >= 68 then
+        effects:gauge_add("mana_stacks", 1)
+    end
+end
+
+-- Verflare / Verholy: three Mana Stacks, the other colour's proc on 20 % (always if it's behind.)
+function rdmFinisher(effects, player, white, black, proc, behind)
+    effects:aoe_falloff(55)
+    rdmMagic(effects, player, 650)
+    rdmMana(effects, white, black)
+    effects:gauge_set("mana_stacks", 0)
+    if behind or math.random() < 0.2 then
+        effects:gain_effect_self(proc, 0, 30.0)
+    end
+end
+
+-- Pictomancer. The motifs painted are the gauge's "canvas" (1 Pom, 2 Wing, 4 Claw, 8 Maw, 16 hammer, 32 starry sky),
+-- the depictions and portraits its "creature" (1 Pom, 2 Wings, 4 Claw; 16 Moogle, 32 Madeen.)
+PCT_EFFECT_AETHERHUES = 3675
+PCT_EFFECT_AETHERHUES_II = 3676
+PCT_EFFECT_SUBTRACTIVE_PALETTE = 3674
+PCT_EFFECT_MONOCHROME_TONES = 3691
+PCT_EFFECT_HAMMER_TIME = 3680
+PCT_EFFECT_STARRY_MUSE = 3685
+PCT_EFFECT_SUBTRACTIVE_SPECTRUM = 3690
+PCT_EFFECT_HYPERPHANTASIA = 3688
+PCT_EFFECT_RAINBOW_BRIGHT = 3679
+PCT_EFFECT_STARSTRUCK = 3681
+PCT_EFFECT_TEMPERA_COAT = 3686
+PCT_EFFECT_TEMPERA_GRASSA = 3687
+PCT_EFFECT_SMUDGE = 3684
+
+function pctMagic(effects, player, potency, falloff)
+    if falloff ~= nil then
+        effects:aoe_falloff(falloff)
+    end
+    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, levelPotency(player, potency, LEVEL_MAIM_AND_MEND)))
+end
+
+-- An aetherhue spell (the Fire, Aero and Water ones, or with Subtractive Palette the Blizzard, Stone and Thunder ones):
+-- the hue it needs spent and the next given; a Hyperphantasia stack under Starry Muse, Rainbow Bright when they're gone.
+function pctHue(effects, player, needs, gives)
+    if needs ~= nil and player:get_effect(needs) ~= nil then
+        effects:consume_effect(needs)
+    end
+    if gives ~= nil then
+        effects:gain_effect_self(gives, 0, 30.0)
+    end
+    local hyper = player:get_effect(PCT_EFFECT_HYPERPHANTASIA)
+    if hyper ~= nil then
+        effects:consume_effect_stack(PCT_EFFECT_HYPERPHANTASIA)
+        if hyper.param <= 1 and player.level >= 92 then
+            effects:gain_effect_self(PCT_EFFECT_RAINBOW_BRIGHT, 0, 30.0)
+        end
+    end
+end
+
+function pctWhitePaint(effects, player)
+    if player.level >= 80 then
+        effects:gauge_add("white_paint", 1)
+    end
+end
+
+-- A creature muse: its motif off the canvas, its depiction added; Wings after Pom (and Fangs after the other three) a
+-- portrait.
+function pctMuse(effects, player, motif, depiction, potency)
+    pctMagic(effects, player, potency or 800, 70)
+    local creature = player:gauge("creature")
+    effects:gauge_set("canvas", player:gauge("canvas") & (63 - motif))
+    if motif == 2 and creature & 1 ~= 0 then
+        creature = creature | 16
+    end
+    if motif == 8 then
+        creature = (creature & 48) | 32
+    else
+        creature = creature | depiction
+    end
+    effects:gauge_set("creature", creature)
+end
+
+-- Astrologian. The cards drawn are the gauge's "ast_cards" (four bits each: 1 Balance, 2 Bole, 3 Arrow, 4 Spear, 5
+-- Ewer, 6 Spire), the minor arcanum "ast_arcana" (7 Lord, 8 Lady), the next draw "ast_draw" (0 Astral, 1 Umbral.)
+AST_EFFECT_COMBUST = 838
+AST_EFFECT_COMBUST_II = 843
+AST_EFFECT_COMBUST_III = 1881
+AST_EFFECT_ASPECTED_BENEFIC = 835
+AST_EFFECT_ASPECTED_HELIOS = 836
+AST_EFFECT_HELIOS_CONJUNCTION = 3894
+AST_EFFECT_LIGHTSPEED = 841
+AST_EFFECT_DIVINATION = 1878
+AST_EFFECT_DIVINING = 3893
+AST_EFFECT_EARTHLY_DOMINANCE = 1224
+AST_EFFECT_COLLECTIVE_UNCONSCIOUS = 849
+AST_EFFECT_SYNASTRY = 845
+AST_EFFECT_HOROSCOPE = 1890
+AST_EFFECT_NEUTRAL_SECT = 1892
+AST_EFFECT_SUNTOUCHED = 3895
+AST_EFFECT_SUN_SIGN = 3896
+AST_EFFECT_MACROCOSMOS = 2718
+AST_EFFECT_THE_BALANCE = 3887
+AST_EFFECT_THE_ARROW = 3888
+AST_EFFECT_THE_SPEAR = 3889
+AST_EFFECT_THE_BOLE = 3890
+AST_EFFECT_THE_EWER = 3891
+AST_EFFECT_THE_SPIRE = 3892
+
+function astMagic(effects, player, potency, falloff)
+    if falloff ~= nil then
+        effects:aoe_falloff(falloff)
+    end
+    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, levelPotency(player, potency, LEVEL_MAIM_AND_MEND)))
+end
+
+function astHeal(effects, player, potency)
+    if player:get_effect(AST_EFFECT_NEUTRAL_SECT) ~= nil then
+        potency = math.floor(potency * 1.2)
+    end
+    effects:heal(healAmount(player, levelPotency(player, potency, LEVEL_MAIM_AND_MEND)))
+end
+
+-- A card played: its slot emptied.
+function astPlay(effects, player, card)
+    local cards = player:gauge("ast_cards")
+    for slot = 0, 2 do
+        if (cards >> (slot * 4)) & 15 == card then
+            effects:gauge_set("ast_cards", cards & ~(15 << (slot * 4)))
+            return
+        end
+    end
+end
+
+-- Sage.
+SGE_EFFECT_KARDIA = 2604
+SGE_EFFECT_KARDION = 2605
+SGE_EFFECT_EUKRASIA = 2606
+SGE_EFFECT_EUKRASIAN_DIAGNOSIS = 2607
+SGE_EFFECT_EUKRASIAN_PROGNOSIS = 2609
+SGE_EFFECT_SOTERIA = 2610
+SGE_EFFECT_ZOE = 2611
+SGE_EFFECT_HAIMA = 2612
+SGE_EFFECT_PANHAIMA = 2613
+SGE_EFFECT_EUKRASIAN_DOSIS = 2614
+SGE_EFFECT_EUKRASIAN_DOSIS_II = 2615
+SGE_EFFECT_EUKRASIAN_DOSIS_III = 2616
+SGE_EFFECT_PHYSIS = 2617
+SGE_EFFECT_KERACHOLE = 2618
+SGE_EFFECT_TAUROCHOLE = 2619
+SGE_EFFECT_PHYSIS_II = 2620
+SGE_EFFECT_KRASIS = 2622
+SGE_EFFECT_KERAKEIA = 2938
+SGE_EFFECT_HOLOS = 3003
+SGE_EFFECT_HOLOSAKOS = 3365
+SGE_EFFECT_EUKRASIAN_DYSKRASIA = 3897
+
+function sgeMagic(effects, player, potency, falloff)
+    if falloff ~= nil then
+        effects:aoe_falloff(falloff)
+    end
+    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, levelPotency(player, potency, LEVEL_MAIM_AND_MEND)))
+end
+
+-- A heal, Zoe's 50 % more on the next spell's (`spell`.)
+function sgeHeal(effects, player, potency, spell)
+    if spell and player:get_effect(SGE_EFFECT_ZOE) ~= nil then
+        potency = math.floor(potency * 1.5)
+        effects:consume_effect(SGE_EFFECT_ZOE)
+    end
+    effects:heal(healAmount(player, levelPotency(player, potency, LEVEL_MAIM_AND_MEND)))
+end
+
+-- An Addersgall action: one spent, 7 % of the Sage's MP back.
+function sgeAddersgall(effects, player)
+    effects:gauge_add("addersgall", -1)
+    effects:restore_mp(math.floor(player.max_mp * 7 / 100))
+end
+
+-- A Eukrasian spell: Eukrasia spent.
+function sgeEukrasian(effects, player)
+    effects:gauge_set("eukrasia", 0)
+    if player:get_effect(SGE_EFFECT_EUKRASIA) ~= nil then
+        effects:consume_effect(SGE_EFFECT_EUKRASIA)
+    end
+end

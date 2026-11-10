@@ -24,6 +24,22 @@ const DAMAGE_DEALT: &[(u16, f32, f32)] = &[
     (1864, 1.10, 1.10), // Lance Charge
     (2720, 1.10, 1.10), // Power Surge
     (2677, 1.10, 1.10), // Surging Tempest
+    // The other jobs' own and party buffs, as the job guide (7.x) has them (a party buff on whoever has it; the Astrologian's
+    // Balance and Spear at their 6 %, Embolden at the party's 5 %):
+    (1185, 1.05, 1.05), // Brotherhood
+    (1181, 1.15, 1.15), // Riddle of Fire
+    (2703, 1.05, 1.05), // Searing Light
+    (1831, 1.20, 1.20), // No Mercy
+    (1298, 1.13, 1.13), // Fugetsu
+    (3668, 1.10, 1.10), // Hunter's Instinct
+    (2599, 1.03, 1.03), // Arcane Circle
+    (1821, 1.05, 1.05), // Standard Finish
+    (1822, 1.05, 1.05), // Technical Finish
+    (1297, 1.05, 1.05), // Embolden
+    (1878, 1.06, 1.06), // Divination
+    (3887, 1.06, 1.06), // The Balance
+    (3889, 1.06, 1.06), // The Spear
+    (3685, 1.05, 1.05), // Starry Muse
     // A quest battle's role statuses (`director::QUEST_BATTLE_ROLE_STATUSES`): tanks' and healers' damage +30 % (Bob's
     // Chronofoil captures: their hits in quest battles against the same characters' elsewhere, 1.26-1.31 times for
     // Gladiators and Paladins, 1.25-1.30 for Conjurers and White Mages; their heals unchanged.) The DPS one (1265)
@@ -44,24 +60,58 @@ const DAMAGE_TAKEN: &[(u16, f32)] = &[
     (89, 0.70),   // Vengeance
     (1873, 0.90), // Temperance (the party's status; 1872, the White Mage's, is healing +20 %)
     (3254, 1.10), // Trick Attack (on an enemy)
+    (2586, 1.10), // Death's Design (on an enemy: the Reaper's 10 %, here everyone's)
+    // The other jobs' mitigation (the job guide, 7.x; physical and magic halves averaged):
+    (747, 0.70),  // Shadow Wall
+    (746, 0.85),  // Dark Mind
+    (2682, 0.90), // Oblation
+    (1894, 0.92), // Dark Missionary
+    (1832, 0.90), // Camouflage
+    (1834, 0.70), // Nebula
+    (3838, 0.60), // Great Nebula
+    (1839, 0.92), // Heart of Light
+    (1840, 0.85), // Heart of Stone
+    (2683, 0.85), // Heart of Corundum
+    (2684, 0.85), // Clarity of Corundum
+    (1951, 0.85), // Tactician
+    (1826, 0.85), // Shield Samba
+    (849, 0.90),  // Collective Unconscious
+    (3890, 0.90), // The Bole
+    (3896, 0.90), // Sun Sign
+    (2618, 0.90), // Kerachole
+    (2619, 0.90), // Taurochole
+    (3003, 0.90), // Holos
+    (2711, 0.90), // Desperate Measures (Expedient)
+    (1174, 0.90), // Intervention
+    (1175, 0.85), // Passage of Arms
+    (1362, 0.90), // Divine Veil (its barrier as a reduction)
 ];
 
 /// Statuses that stop damage altogether.
 const INVULNERABLE: &[u16] = &[
     82, // Hallowed Ground
+    // The Gunbreaker's:
+    1836, // Superbolide
 ];
 
 /// Statuses that keep HP from dropping below 1.
 const HP_FLOOR: &[u16] = &[
     409, // Holmgang
+    810, // Living Dead (Walking Dead's heal back to full isn't done)
 ];
 
 /// Statuses on whoever is healed: (status, multiplier.)
 const HEALING_RECEIVED: &[(u16, f32)] = &[
     (102, 1.10), // Mantra
     (87, 1.20),  // Thrill of Battle
-                 // Rampart's +15 % healing received is a level 94 trait: retail's Rampart below that has none (58 effects in Bob's
-                 // captures), so it isn't here.
+    // Rampart's +15 % healing received is a level 94 trait: retail's Rampart below that has none (58 effects in Bob's
+    // captures), so it isn't here.
+
+    // The other jobs' (the job guide, 7.x):
+    (3888, 1.10), // The Arrow
+    (2622, 1.20), // Krasis
+    (2620, 1.10), // Physis II
+    (2710, 1.10), // Protraction
 ];
 
 /// Classes and jobs whose Tank Mastery takes 20 % off the damage they take from level 1 (GLA, MRD, PLD, WAR, DRK,

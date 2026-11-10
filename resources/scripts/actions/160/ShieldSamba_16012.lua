@@ -1,9 +1,9 @@
-EFFECT_SHIELD_SAMBA = 1826
+-- Shield Samba (Lv. 56): the party near takes 15 % less damage, 15 s.
+-- Potencies: the official job guide (7.x), at level 100.
 
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
-    -- The whole party in range gets it on retail (Bob's Chronofoil captures: 20 allies, 3 self.)
-    effects:gain_effect(EFFECT_SHIELD_SAMBA, 0, 15.0)
+    local effects = EffectsBuilder()
+    effects:gain_effect(DNC_EFFECT_SHIELD_SAMBA, 0, 15.0)
 
     return effects
 end

@@ -1,27 +1,11 @@
--- Without the "Dynamic Dancer" trait
-NORMAL_POTENCY = 200
--- With the "Dynamic Dancer trait"
-ENHANCED_POTENCY = 220
+-- Cascade (Lv. 1): 220; Silken Symmetry half the time (30 s); 5 Esprit from 76.
+-- Potencies: the official job guide (7.x), at level 100; its traits' lower ones below (`tierPotency`).
 
 function doAction(player, in_combo)
-    local potency
-    if player:has_trait(TRAIT_DYNAMIC_DANCER) then
-        potency = ENHANCED_POTENCY
-    else
-        potency = NORMAL_POTENCY
-    end
-
-    effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_SLASHING, player.parameters:calc_physical_damage(potency))
-
-    -- Undocumented, but you don't gain Silken Symmetry from Cascade until level 20
-    if player.level >= 20 then
-        -- Silken Symmetry has a 50% chance
-        local gain_silken_symmetry = math.random(0, 1)
-        if gain_silken_symmetry == 1 then
-            effects:gain_effect_self(EFFECT_SILKEN_SYMMETRY, 0, 30.0)
-        end
-    end
+    local effects = EffectsBuilder()
+    dncDamage(effects, player, tierPotency(player, { { 94, 220 }, { 1, 200 } }))
+    dncChance(effects, DNC_EFFECT_SILKEN_SYMMETRY, 0.5)
+    dncEsprit(effects, player)
 
     return effects
 end

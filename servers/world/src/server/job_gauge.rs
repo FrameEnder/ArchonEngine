@@ -28,6 +28,21 @@ pub const CLASSJOB_PALADIN: u8 = 19;
 pub const CLASSJOB_BARD: u8 = 23;
 pub const CLASSJOB_NINJA: u8 = 30;
 pub const CLASSJOB_SCHOLAR: u8 = 28;
+pub const CLASSJOB_MACHINIST: u8 = 31;
+pub const CLASSJOB_DARK_KNIGHT: u8 = 32;
+pub const CLASSJOB_ASTROLOGIAN: u8 = 33;
+pub const CLASSJOB_SAMURAI: u8 = 34;
+pub const CLASSJOB_RED_MAGE: u8 = 35;
+pub const CLASSJOB_GUNBREAKER: u8 = 37;
+pub const CLASSJOB_DANCER: u8 = 38;
+pub const CLASSJOB_REAPER: u8 = 39;
+pub const CLASSJOB_SAGE: u8 = 40;
+pub const CLASSJOB_VIPER: u8 = 41;
+pub const CLASSJOB_PICTOMANCER: u8 = 42;
+
+/// Addersgall (the Sage's trait, 45): one every 20 s, in combat or out, up to three (the job guide, 7.x).
+const ADDERSGALL_LEVEL: u8 = 45;
+const ADDERSGALL_TENTHS: i16 = 200;
 
 /// Enhanced Enochian (70): Polyglot every 30 s of Enochian.
 const ENOCHIAN_POLYGLOT_LEVEL: u8 = 70;
@@ -68,7 +83,7 @@ const DATA_OFFSET_LILY_TIMER: usize = 2;
 const DATA_OFFSET_LILY: usize = 4;
 const DATA_OFFSET_BLOOD_LILY: usize = 5;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct JobGauge {
     /// Number of Lilies available (0-3.)
     pub lilies: u8,
@@ -80,6 +95,19 @@ pub struct JobGauge {
     pub aetherflow: u8,
     /// The counters scripts change by name (`GaugeField`, in its order.)
     pub fields: [i16; GaugeField::ALL.len()],
+}
+
+// Arrays over 32 long have no derived Default.
+impl Default for JobGauge {
+    fn default() -> Self {
+        Self {
+            lilies: 0,
+            lily_timer_ms: 0,
+            blood_lily: 0,
+            aetherflow: 0,
+            fields: [0; GaugeField::ALL.len()],
+        }
+    }
 }
 
 impl JobGauge {
@@ -124,7 +152,8 @@ impl JobGauge {
         self.get(GaugeField::Element)
     }
 
-    /// What passes with time (every server tick, for players and party bots): Life of the Dragon runs down, and the
+    /// What passes with time (every server tick, for players and party bots): Life of the Dragon and Darkside run down,
+    /// the Sage gets an Addersgall every 20 s from 45, and the
     /// Black Mage's Enochian (Astral Fire or Umbral Ice held, from 70) gives a Polyglot every 30 s, up to one, two
     /// from 80 (Enhanced Polyglot) and three from 98 (the job guide, 7.x). Returns whether the client's gauge changed.
     pub fn tick(&mut self, elapsed_ms: u32, classjob: u8, level: u8) -> bool {
@@ -136,6 +165,25 @@ impl JobGauge {
             let left = self.get(GaugeField::LifeOfTheDragon) - tenths;
             *self.slot(GaugeField::LifeOfTheDragon) = left.max(0);
             changed = true;
+        }
+        if classjob == CLASSJOB_DARK_KNIGHT && self.get(GaugeField::Darkside) > 0 {
+            let left = self.get(GaugeField::Darkside) - tenths;
+            *self.slot(GaugeField::Darkside) = left.max(0);
+            changed = true;
+        }
+        if classjob == CLASSJOB_SAGE && level >= ADDERSGALL_LEVEL {
+            if self.get(GaugeField::Addersgall) >= 3 {
+                *self.slot(GaugeField::AddersgallTimer) = 0;
+            } else {
+                let timer = self.get(GaugeField::AddersgallTimer) + tenths;
+                if timer >= ADDERSGALL_TENTHS {
+                    *self.slot(GaugeField::Addersgall) += 1;
+                    *self.slot(GaugeField::AddersgallTimer) = timer - ADDERSGALL_TENTHS;
+                    changed = true;
+                } else {
+                    *self.slot(GaugeField::AddersgallTimer) = timer;
+                }
+            }
         }
         if matches!(classjob, CLASSJOB_BLACK_MAGE | CLASSJOB_THAUMATURGE)
             && level >= ENOCHIAN_POLYGLOT_LEVEL
@@ -267,6 +315,70 @@ impl JobGauge {
             // ScholarGauge: Aetherflow 0x08, FairyGauge 0x09.
             data[at(0x08)] = self.aetherflow;
             data[at(0x09)] = self.get(GaugeField::Fairy) as u8;
+        } else if classjob_id == CLASSJOB_DARK_KNIGHT {
+            // DarkKnightGauge: Blood 0x08, DarkArtsState 0x09, DarksideTimer 0x0A (ms). Retail's DarksideTimer sat at
+            // data[3..5] (0x7530, 30 s, after an Edge of Darkness; Bob's captures), as `at` has it.
+            data[at(0x08)] = self.get(GaugeField::Blood) as u8;
+            data[at(0x09)] = self.get(GaugeField::DarkArts) as u8;
+            let timer = (self.get(GaugeField::Darkside) as u16 * 100).to_le_bytes();
+            data[at(0x0A)..at(0x0A) + 2].copy_from_slice(&timer);
+        } else if classjob_id == CLASSJOB_GUNBREAKER {
+            // GunbreakerGauge: Ammo 0x08.
+            data[at(0x08)] = self.get(GaugeField::Cartridges) as u8;
+        } else if classjob_id == CLASSJOB_MACHINIST {
+            // MachinistGauge: Heat 0x0C, Battery 0x0D.
+            data[at(0x0C)] = self.get(GaugeField::Heat) as u8;
+            data[at(0x0D)] = self.get(GaugeField::Battery) as u8;
+        } else if classjob_id == CLASSJOB_DANCER {
+            // DancerGauge: Feathers 0x08, Esprit 0x09, the four steps 0x0A-0x0D, StepIndex 0x0E.
+            data[at(0x08)] = self.get(GaugeField::Feathers) as u8;
+            data[at(0x09)] = self.get(GaugeField::Esprit) as u8;
+            let steps = self.get(GaugeField::DanceSteps) as u16;
+            for step in 0..4 {
+                data[at(0x0A) + step] = ((steps >> (step * 3)) & 7) as u8;
+            }
+            data[at(0x0E)] = self.get(GaugeField::StepIndex) as u8;
+        } else if classjob_id == CLASSJOB_SAMURAI {
+            // SamuraiGauge: Kaeshi 0x0A, Kenki 0x0B, MeditationStacks 0x0C, SenFlags 0x0D.
+            data[at(0x0A)] = self.get(GaugeField::Kaeshi) as u8;
+            data[at(0x0B)] = self.get(GaugeField::Kenki) as u8;
+            data[at(0x0C)] = self.get(GaugeField::Meditation) as u8;
+            data[at(0x0D)] = self.get(GaugeField::Sen) as u8;
+        } else if classjob_id == CLASSJOB_REAPER {
+            // ReaperGauge: Soul 0x08, Shroud 0x09, LemureShroud 0x0C, VoidShroud 0x0D.
+            data[at(0x08)] = self.get(GaugeField::Soul) as u8;
+            data[at(0x09)] = self.get(GaugeField::Shroud) as u8;
+            data[at(0x0C)] = self.get(GaugeField::Lemure) as u8;
+            data[at(0x0D)] = self.get(GaugeField::Void) as u8;
+        } else if classjob_id == CLASSJOB_VIPER {
+            // ViperGauge: RattlingCoilStacks 0x08, AnguineTribute 0x09, SerpentOffering 0x0A.
+            data[at(0x08)] = self.get(GaugeField::Coils) as u8;
+            data[at(0x09)] = self.get(GaugeField::Tribute) as u8;
+            data[at(0x0A)] = self.get(GaugeField::Offerings) as u8;
+        } else if classjob_id == CLASSJOB_RED_MAGE {
+            // RedMageGauge: WhiteMana 0x08, BlackMana 0x09, ManaStacks 0x0A.
+            data[at(0x08)] = self.get(GaugeField::WhiteMana) as u8;
+            data[at(0x09)] = self.get(GaugeField::BlackMana) as u8;
+            data[at(0x0A)] = self.get(GaugeField::ManaStacks) as u8;
+        } else if classjob_id == CLASSJOB_PICTOMANCER {
+            // PictomancerGauge: PalleteGauge 0x08, Paint 0x0A, CanvasFlags 0x0B, CreatureFlags 0x0C.
+            data[at(0x08)] = self.get(GaugeField::Palette) as u8;
+            data[at(0x0A)] = self.get(GaugeField::WhitePaint) as u8;
+            data[at(0x0B)] = self.get(GaugeField::Canvas) as u8;
+            data[at(0x0C)] = self.get(GaugeField::Creature) as u8;
+        } else if classjob_id == CLASSJOB_ASTROLOGIAN {
+            // AstrologianGauge: Cards 0x08 (four bits each: three cards, then the minor arcanum), CurrentDraw 0x0A.
+            let cards = (self.get(GaugeField::AstCards) as u16 & 0x0FFF)
+                | ((self.get(GaugeField::AstArcana) as u16 & 0xF) << 12);
+            data[at(0x08)..at(0x08) + 2].copy_from_slice(&cards.to_le_bytes());
+            data[at(0x0A)] = self.get(GaugeField::AstDraw) as u8;
+        } else if classjob_id == CLASSJOB_SAGE {
+            // SageGauge: AddersgallTimer 0x08 (ms), Addersgall 0x0A, Addersting 0x0B, Eukrasia 0x0C.
+            let timer = (self.get(GaugeField::AddersgallTimer) * 100).to_le_bytes();
+            data[at(0x08)..at(0x08) + 2].copy_from_slice(&timer);
+            data[at(0x0A)] = self.get(GaugeField::Addersgall) as u8;
+            data[at(0x0B)] = self.get(GaugeField::Addersting) as u8;
+            data[at(0x0C)] = self.get(GaugeField::Eukrasia) as u8;
         }
         data
     }
@@ -283,6 +395,33 @@ impl JobGauge {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn darkside_runs_down_and_is_sent_as_retail() {
+        let mut gauge = JobGauge::default();
+        gauge.apply(GaugeOp::Set(GaugeField::Darkside, 300), 50);
+        // Retail's 30 s after an Edge of Darkness: 0x7530 at data[3..5].
+        assert_eq!(
+            gauge.to_packet_data(CLASSJOB_DARK_KNIGHT)[3..5],
+            [0x30, 0x75]
+        );
+        gauge.tick(1000, CLASSJOB_DARK_KNIGHT, 50);
+        assert_eq!(gauge.get(GaugeField::Darkside), 290);
+    }
+
+    #[test]
+    fn addersgall_every_twenty_seconds() {
+        let mut gauge = JobGauge::default();
+        for _ in 0..40 {
+            gauge.tick(500, CLASSJOB_SAGE, 90);
+        }
+        assert_eq!(gauge.get(GaugeField::Addersgall), 1);
+        for _ in 0..400 {
+            gauge.tick(500, CLASSJOB_SAGE, 90);
+        }
+        assert_eq!(gauge.get(GaugeField::Addersgall), 3);
+        gauge.tick(20_000, CLASSJOB_SAGE, 44);
+    }
 
     #[test]
     fn lilies_only_grow_in_combat_after_level_52() {

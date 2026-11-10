@@ -50,6 +50,19 @@ use kawari::{
 /// Status effect: Swiftcast. The next spell is cast immediately.
 const EFFECT_SWIFTCAST: u16 = 167;
 
+/// Statuses that make spells instant (for the actions listed, or any spell), as the job guide (7.x) has them: the Red
+/// Mage's Dualcast (the next spell after one with a cast) and Acceleration (Verthunder, Veraero and their IIIs,
+/// Scatter, Impact), the Reaper's Enhanced Harpe, the Pictomancer's Rainbow Bright (Rainbow Drip), the Astrologian's
+/// Lightspeed (2.5 s off its spells, so all of them). The action scripts use them up (`rdmDualcast`...); Swiftcast is
+/// below.
+const INSTANT_CASTS: &[(u16, &[u32])] = &[
+    (1249, &[]),
+    (1238, &[7505, 7507, 7509, 16526, 25855, 25856]),
+    (2845, &[24386]),
+    (3679, &[34688]),
+    (841, &[]),
+];
+
 /// Status effect: Presence of Mind. Reduces cast times by 20%.
 const EFFECT_PRESENCE_OF_MIND: u16 = 157;
 
@@ -237,11 +250,16 @@ pub fn handle_action_messages(
         };
         let mut adjusted_cast_time = parameters.get_adjusted_cast_time(category, cast_time);
 
-        // Swiftcast makes the next spell instant, and Presence of Mind reduces cast times by 20%.
+        // Swiftcast makes the next spell instant (and the jobs' own, `INSTANT_CASTS`), and Presence of Mind reduces cast
+        // times by 20%.
         if adjusted_cast_time > 0
             && let Some(effects) = actor.status_effects()
         {
-            if effects.get(EFFECT_SWIFTCAST).is_some() {
+            let instant = INSTANT_CASTS.iter().any(|(status, actions)| {
+                effects.get(*status).is_some()
+                    && (actions.is_empty() || actions.contains(&request.action_id))
+            });
+            if effects.get(EFFECT_SWIFTCAST).is_some() || instant {
                 adjusted_cast_time = 0;
             } else if effects.get(EFFECT_PRESENCE_OF_MIND).is_some() {
                 adjusted_cast_time = adjusted_cast_time * 80 / 100;

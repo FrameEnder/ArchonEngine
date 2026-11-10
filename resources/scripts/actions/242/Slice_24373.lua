@@ -1,10 +1,10 @@
--- Potencies: retail's for levels 1-50, measured from level-synced party members in Bob's Chronofoil captures
--- (docs/src/fork/combat.md); higher levels' traits raise them.
-POTENCY = 260
+-- Slice (Lv. 1): 420; 10 Soul.
+-- Potencies: the official job guide (7.x), at level 100; its traits' lower ones below (`tierPotency`).
 
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_SLASHING, player.parameters:calc_physical_damage(POTENCY))
+    local effects = EffectsBuilder()
+    rprDamage(effects, player, tierPotency(player, { { 94, 420 }, { 84, 320 }, { 60, 300 }, { 1, 260 } }))
+    rprSoul(effects, player, 10)
 
     return effects
 end

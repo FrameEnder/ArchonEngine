@@ -1,8 +1,9 @@
-EFFECT_STANDARD_STEP = 1818
+-- Standard Step (Lv. 15): the dance (15 s): two steps.
+-- Potencies: the official job guide (7.x), at level 100.
 
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
-    effects:gain_effect_self(EFFECT_STANDARD_STEP, 0, 15.0)
+    local effects = EffectsBuilder()
+    dncStartDance(effects, DNC_EFFECT_STANDARD_STEP, 2)
 
     return effects
 end

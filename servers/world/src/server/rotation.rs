@@ -26,6 +26,11 @@ pub struct ActionMechanics {
     pub recast: f32,
     /// The action it follows in a combo (0 for none.)
     pub combo_from: u32,
+    /// It's a combo's step (it follows one, or one follows it): only these carry a combo on or break it, as retail's
+    /// (a Gunbreaker's Gnashing Fang or Burst Strike between Brutal Shell and Solid Barrel leaves the combo be; retail's
+    /// Gunbreakers at 80-89 in Bob's captures used Keen Edge 279 times, Brutal Shell 268 and Solid Barrel 253 with 123
+    /// Gnashing Fangs, 75 Burst Strikes and 60 Sonic Breaks among them.)
+    pub combo: bool,
 }
 
 /// Where an NPC is in its rotation.
@@ -33,8 +38,12 @@ pub struct ActionMechanics {
 pub struct RotationState {
     /// Its last GCD action and when.
     last_gcd: Option<(u32, Instant)>,
-    /// The GCD action before that one and when: what the last one continues in a combo (`continues_combo`.)
+    /// The GCD action before that one and when.
     previous_gcd: Option<(u32, Instant)>,
+    /// Its last combo step and the one before (`ActionMechanics::combo`): what the last one continues
+    /// (`continues_combo`.)
+    last_combo: Option<(u32, Instant)>,
+    previous_combo: Option<(u32, Instant)>,
     /// When each action was last used.
     used: HashMap<u32, Instant>,
     /// When each action was last used on each target (for `refresh`.)
@@ -182,13 +191,18 @@ impl RotationState {
         self.weaves
     }
 
-    /// Whether its last GCD action, `action`, carries on a combo from `combo_from` (the step before it, within
+    /// Its last combo step and when (GCD actions outside combos leave it be.)
+    pub fn last_combo(&self) -> Option<(u32, Instant)> {
+        self.last_combo
+    }
+
+    /// Whether its last combo step, `action`, carries on a combo from `combo_from` (the step before it, within
     /// `COMBO_WINDOW`), so it gets the step's combo potency as a player's would. The choice is noted (`record`) before
-    /// the action goes off, so the step before is the GCD before the last.
+    /// the action goes off, so the step before is the combo step before the last.
     pub fn continues_combo(&self, action: u32, combo_from: u32, now: Instant) -> bool {
         combo_from != 0
-            && self.last_gcd.is_some_and(|(last, _)| last == action)
-            && self.previous_gcd.is_some_and(|(previous, at)| {
+            && self.last_combo.is_some_and(|(last, _)| last == action)
+            && self.previous_combo.is_some_and(|(previous, at)| {
                 previous == combo_from && now.duration_since(at) <= COMBO_WINDOW
             })
     }
@@ -205,6 +219,10 @@ impl RotationState {
         self.used.insert(action, now);
         self.used_on.insert((action, target), now);
         let gcd = mechanics.is_some_and(|m| m.gcd);
+        if gcd && mechanics.is_some_and(|m| m.combo) {
+            self.previous_combo = self.last_combo;
+            self.last_combo = Some((action, now));
+        }
         if gcd {
             self.previous_gcd = self.last_gcd;
             self.last_gcd = Some((action, now));
@@ -247,26 +265,31 @@ mod tests {
                 gcd: true,
                 recast: 2.5,
                 combo_from: 0,
+                combo: true,
             },
             VORPAL_THRUST => ActionMechanics {
                 gcd: true,
                 recast: 2.5,
                 combo_from: TRUE_THRUST,
+                combo: true,
             },
             LEG_SWEEP => ActionMechanics {
                 gcd: false,
                 recast: 20.0,
                 combo_from: 0,
+                combo: false,
             },
             LIFE_SURGE => ActionMechanics {
                 gcd: false,
                 recast: 45.0,
                 combo_from: 0,
+                combo: false,
             },
             THUNDER => ActionMechanics {
                 gcd: true,
                 recast: 2.5,
                 combo_from: 0,
+                combo: false,
             },
             _ => return None,
         })

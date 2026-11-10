@@ -1,8 +1,10 @@
-POTENCY = 150
+-- Hard Slash (Lv. 1): 300.
+-- Potencies: the official job guide (7.x), at level 100; its traits' lower ones below (`tierPotency`).
 
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_SLASHING, player.parameters:calc_physical_damage(POTENCY))
+    local effects = EffectsBuilder()
+    drkDamage(effects, player, tierPotency(player, { { 94, 300 }, { 84, 180 } }))
+    drkWeaponskill(effects, player)
 
     return effects
 end

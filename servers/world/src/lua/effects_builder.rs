@@ -101,10 +101,87 @@ pub enum GaugeField {
     Arcana,
     /// Scholar's Faerie Gauge.
     Fairy,
+    /// Dark Knight's Blood Gauge.
+    Blood,
+    /// Dark Knight: tenths of a second of Darkside left (`JobGauge::tick`).
+    Darkside,
+    /// Dark Knight's Dark Arts (The Blackest Night's barrier used up).
+    DarkArts,
+    /// Gunbreaker's Cartridges.
+    Cartridges,
+    /// Machinist's Heat Gauge.
+    Heat,
+    /// Machinist's Battery Gauge.
+    Battery,
+    /// Dancer's Fourfold Feathers.
+    Feathers,
+    /// Dancer's Esprit Gauge.
+    Esprit,
+    /// Dancer's steps to dance, three bits each (1 Emboite, 2 Entrechat, 3 Jete, 4 Pirouette), first in the lowest.
+    DanceSteps,
+    /// Dancer: how many of them are danced.
+    StepIndex,
+    /// Samurai's Kenki.
+    Kenki,
+    /// Samurai's Sen (1 Setsu, 2 Getsu, 4 Ka).
+    Sen,
+    /// Samurai's Meditation stacks.
+    Meditation,
+    /// Samurai: the Iaijutsu Tsubame-gaeshi would repeat (2 Goken, 3 Setsugekka, 4 Namikiri).
+    Kaeshi,
+    /// Reaper's Soul Gauge.
+    Soul,
+    /// Reaper's Shroud Gauge.
+    Shroud,
+    /// Reaper's Lemure Shroud.
+    Lemure,
+    /// Reaper's Void Shroud.
+    Void,
+    /// Viper's Serpent Offerings.
+    Offerings,
+    /// Viper's Rattling Coils.
+    Coils,
+    /// Viper's Anguine Tribute.
+    Tribute,
+    /// Red Mage's White Mana.
+    WhiteMana,
+    /// Red Mage's Black Mana.
+    BlackMana,
+    /// Red Mage's Mana Stacks.
+    ManaStacks,
+    /// Pictomancer's Palette Gauge.
+    Palette,
+    /// Pictomancer's White Paint.
+    WhitePaint,
+    /// Pictomancer's motifs painted (1 Pom, 2 Wing, 4 Claw, 8 Maw, 16 weapon, 32 landscape).
+    Canvas,
+    /// Pictomancer's depictions (1 Pom, 2 Wings, 4 Claw) and portraits (16 Moogle, 32 Madeen).
+    Creature,
+    /// Astrologian's three drawn cards, four bits each (1 Balance, 2 Bole, 3 Arrow, 4 Spear, 5 Ewer, 6 Spire).
+    AstCards,
+    /// Astrologian's minor arcanum (7 Lord, 8 Lady of Crowns).
+    AstArcana,
+    /// Astrologian: the next draw (0 Astral, 1 Umbral).
+    AstDraw,
+    /// Sage's Addersgall.
+    Addersgall,
+    /// Sage: tenths of a second towards the next Addersgall (`JobGauge::tick`).
+    AddersgallTimer,
+    /// Sage's Addersting.
+    Addersting,
+    /// Sage's Eukrasia.
+    Eukrasia,
+    /// Dark Knight: the simulacrum's attacks still to come (no pets: they come with the Dark Knight's own; not shown.)
+    ShadowHits,
+    /// A pet's attacks still to come (the Machinist's turret or queen: no pets, so they come with the Machinist's
+    /// weaponskills; not shown.)
+    PetHits,
+    /// Each one's potency.
+    PetPotency,
 }
 
 impl GaugeField {
-    pub const ALL: [GaugeField; 26] = [
+    pub const ALL: [GaugeField; 64] = [
         GaugeField::Beast,
         GaugeField::Chakra,
         GaugeField::Element,
@@ -131,6 +208,44 @@ impl GaugeField {
         GaugeField::AttunementType,
         GaugeField::Arcana,
         GaugeField::Fairy,
+        GaugeField::Blood,
+        GaugeField::Darkside,
+        GaugeField::DarkArts,
+        GaugeField::Cartridges,
+        GaugeField::Heat,
+        GaugeField::Battery,
+        GaugeField::Feathers,
+        GaugeField::Esprit,
+        GaugeField::DanceSteps,
+        GaugeField::StepIndex,
+        GaugeField::Kenki,
+        GaugeField::Sen,
+        GaugeField::Meditation,
+        GaugeField::Kaeshi,
+        GaugeField::Soul,
+        GaugeField::Shroud,
+        GaugeField::Lemure,
+        GaugeField::Void,
+        GaugeField::Offerings,
+        GaugeField::Coils,
+        GaugeField::Tribute,
+        GaugeField::WhiteMana,
+        GaugeField::BlackMana,
+        GaugeField::ManaStacks,
+        GaugeField::Palette,
+        GaugeField::WhitePaint,
+        GaugeField::Canvas,
+        GaugeField::Creature,
+        GaugeField::AstCards,
+        GaugeField::AstArcana,
+        GaugeField::AstDraw,
+        GaugeField::Addersgall,
+        GaugeField::AddersgallTimer,
+        GaugeField::Addersting,
+        GaugeField::Eukrasia,
+        GaugeField::ShadowHits,
+        GaugeField::PetHits,
+        GaugeField::PetPotency,
     ];
 
     pub fn name(self) -> &'static str {
@@ -161,6 +276,44 @@ impl GaugeField {
             GaugeField::AttunementType => "attunement_type",
             GaugeField::Arcana => "arcana",
             GaugeField::Fairy => "fairy",
+            GaugeField::Blood => "blood",
+            GaugeField::Darkside => "darkside",
+            GaugeField::DarkArts => "dark_arts",
+            GaugeField::Cartridges => "cartridges",
+            GaugeField::Heat => "heat",
+            GaugeField::Battery => "battery",
+            GaugeField::Feathers => "feathers",
+            GaugeField::Esprit => "esprit",
+            GaugeField::DanceSteps => "dance_steps",
+            GaugeField::StepIndex => "step_index",
+            GaugeField::Kenki => "kenki",
+            GaugeField::Sen => "sen",
+            GaugeField::Meditation => "meditation",
+            GaugeField::Kaeshi => "kaeshi",
+            GaugeField::Soul => "soul",
+            GaugeField::Shroud => "shroud",
+            GaugeField::Lemure => "lemure",
+            GaugeField::Void => "void",
+            GaugeField::Offerings => "offerings",
+            GaugeField::Coils => "coils",
+            GaugeField::Tribute => "tribute",
+            GaugeField::WhiteMana => "white_mana",
+            GaugeField::BlackMana => "black_mana",
+            GaugeField::ManaStacks => "mana_stacks",
+            GaugeField::Palette => "palette",
+            GaugeField::WhitePaint => "white_paint",
+            GaugeField::Canvas => "canvas",
+            GaugeField::Creature => "creature",
+            GaugeField::AstCards => "ast_cards",
+            GaugeField::AstArcana => "ast_arcana",
+            GaugeField::AstDraw => "ast_draw",
+            GaugeField::Addersgall => "addersgall",
+            GaugeField::AddersgallTimer => "addersgall_timer",
+            GaugeField::Addersting => "addersting",
+            GaugeField::Eukrasia => "eukrasia",
+            GaugeField::ShadowHits => "shadow_hits",
+            GaugeField::PetHits => "pet_hits",
+            GaugeField::PetPotency => "pet_potency",
         }
     }
 
@@ -202,6 +355,44 @@ impl GaugeField {
             GaugeField::AttunementType => (0, 3),
             GaugeField::Arcana => (0, 7),
             GaugeField::Fairy => (0, 100),
+            GaugeField::Blood => (0, 100),
+            GaugeField::Darkside => (0, 600),
+            GaugeField::DarkArts => (0, 1),
+            GaugeField::Cartridges => (0, 6),
+            GaugeField::Heat => (0, 100),
+            GaugeField::Battery => (0, 100),
+            GaugeField::Feathers => (0, 4),
+            GaugeField::Esprit => (0, 100),
+            GaugeField::DanceSteps => (0, 4095),
+            GaugeField::StepIndex => (0, 4),
+            GaugeField::Kenki => (0, 100),
+            GaugeField::Sen => (0, 7),
+            GaugeField::Meditation => (0, 3),
+            GaugeField::Kaeshi => (0, 4),
+            GaugeField::Soul => (0, 100),
+            GaugeField::Shroud => (0, 100),
+            GaugeField::Lemure => (0, 5),
+            GaugeField::Void => (0, 5),
+            GaugeField::Offerings => (0, 100),
+            GaugeField::Coils => (0, 3),
+            GaugeField::Tribute => (0, 5),
+            GaugeField::WhiteMana => (0, 100),
+            GaugeField::BlackMana => (0, 100),
+            GaugeField::ManaStacks => (0, 3),
+            GaugeField::Palette => (0, 100),
+            GaugeField::WhitePaint => (0, 5),
+            GaugeField::Canvas => (0, 63),
+            GaugeField::Creature => (0, 63),
+            GaugeField::AstCards => (0, 4095),
+            GaugeField::AstArcana => (0, 8),
+            GaugeField::AstDraw => (0, 1),
+            GaugeField::Addersgall => (0, 3),
+            GaugeField::AddersgallTimer => (0, 200),
+            GaugeField::Addersting => (0, 3),
+            GaugeField::Eukrasia => (0, 1),
+            GaugeField::ShadowHits => (0, 6),
+            GaugeField::PetHits => (0, 10),
+            GaugeField::PetPotency => (0, 2000),
         }
     }
 }

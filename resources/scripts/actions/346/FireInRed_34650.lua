@@ -1,10 +1,10 @@
-POTENCY = 380
-STATUS_AETHERHUES = 3675
+-- Fire In Red (Lv. 1): 490; Aetherhues (30 s).
+-- Potencies: the official job guide (7.x), at level 100; its traits' lower ones below (`tierPotency`).
 
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_MAGIC, player.parameters:calc_magical_damage(POTENCY))
-    effects:gain_effect_self(STATUS_AETHERHUES, 0, 30.0)
+    local effects = EffectsBuilder()
+    pctMagic(effects, player, tierPotency(player, { { 94, 490 }, { 84, 420 }, { 74, 380 }, { 54, 310 }, { 1, 280 } }))
+    pctHue(effects, player, nil, PCT_EFFECT_AETHERHUES)
 
     return effects
 end

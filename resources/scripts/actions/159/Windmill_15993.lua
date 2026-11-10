@@ -1,17 +1,11 @@
-POTENCY = 120
+-- Windmill (Lv. 15): 120 to all enemies near; Silken Symmetry half the time; 5 Esprit from 76.
+-- Potencies: the official job guide (7.x), at level 100.
 
 function doAction(player, in_combo)
-    effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_SLASHING, player.parameters:calc_physical_damage(POTENCY))
-
-    -- Undocumented, but you don't gain Silken Symmetry from Windmill until level 35
-    if player.level >= 35 then
-        -- Silken Symmetry has a 50% chance
-        local gain_silken_symmetry = math.random(0, 1)
-        if gain_silken_symmetry == 1 then
-            effects:gain_effect_self(EFFECT_SILKEN_SYMMETRY, 0, 30.0)
-        end
-    end
+    local effects = EffectsBuilder()
+    dncDamage(effects, player, 120)
+    dncChance(effects, DNC_EFFECT_SILKEN_SYMMETRY, 0.5)
+    dncEsprit(effects, player)
 
     return effects
 end
