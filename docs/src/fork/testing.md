@@ -49,7 +49,9 @@ python3 tools/questkit duty-sim --update-known                          # after 
 A **duty fixture** (`tools/questkit/duties/<ContentFinderCondition>-<capture>.json`, numbers only) is one retail run
 from the duty commencing (the director's 0x40000001): every NPC by layout ID with its lives (appeared, first had a
 target, fell, health a percent at a time, where a boss went), where the player and the party stood, the NPCs' casts,
-the party's wipes (0x40000005, 0x40000006), the progress bars of event actions (a door being opened), and the events
+the party's wipes (0x40000005, 0x40000006), the progress bars of event actions (a door being opened), which of the
+party were players (`players`: the script sees those as `player2`... too), event ranges the party walked into
+(`ranges`, written by hand: a capture doesn't say; Sastasha's cove), and the events
 to match: the boss music (0x80000001: 37 at a pull, 0 as the boss falls), objectives done (0x80000016), sequences and
 the completion (0x40000003).
 
@@ -59,8 +61,11 @@ retail's NPC had one, `player1`, `party1`...), `onActorDeath` and `onActorCast` 
 `onPartyWipe` and `onDutyRecommence` at retail's wipes, and at each progress bar `onGimmickAccessor` on the script's
 `EOBJ_*` objects until one answers with that event action (then its `onEventActionCast` when the bar ended). A call
 after `director:delay(n)` counts n seconds later; `os.time()` is the run's clock; `math.random` is seeded. An NPC the
-script itself brings out (`spawn_bnpc`, `spawn_boss`: found by a first pass) is there from when the script brings it
-out, and gone when the script takes it away.
+script itself brings out (`spawn_bnpc`, `spawn_boss`, `spawn_bnpc_part`: found by a first pass) is there from when the
+script brings it out, and gone when the script takes it away. One retail gave no layout ID can be kept under the
+script's ID for it (`fixture_from_run(…, unlaid={BNpcBase: id})`: the Navel's Heart of the Mountain, 1507 as
+99001507). An NPC's `spawn` is when it was first seen at all (its first position), not its latest appearance to the
+capturing player.
 
 Then two checks:
 
@@ -75,19 +80,30 @@ Then two checks:
 **What's written down** (`duties/known.json`, by fixture): the problems a run has now. `duty-sim` passes when each
 run has exactly those: a new one fails, and so does one that no longer happens until it's taken off the list
 (`--update-known`), so the list stays what's true. 21 fixtures, two a duty (three for the Bowl of Embers), 28 s.
+Bundle tests so far (`bundle_tests.rs`): `a_player_who_dies_mid_cast_stops_casting`,
+`a_player_npc_goes_back_at_a_wipe_without_leaving`, `a_cast_is_aimed_where_its_target_stands`,
+`a_whirlwind_tosses_whoever_it_hits`.
+
+**Since 2026-11-10 (second pass): 21 of 21 clean, nothing written down.** What was done for each is in the table's
+last column; the scripts' changes are in [Dungeons](dungeons.md). What the simulator had wrong this time: party
+members who were players weren't players to the script (Toto-Rak's rooms count a player crossing in: objectives
+3-12 s late), an NPC that left the capturing player's sight and came back "appeared" when it came back (Brayflox's
+third boss 66 s late), and one run's capture missed the last boss's fall (Toto-Rak 2528a32d, replaced by caa5e908,
+a Duty Support run). Brayflox 44df02fc allows its `bgm 0` 5 s (`tolerances`): the dragon came 2.4 s late in the
+simulator, by health sampled at hits.
 
 **First run, 2026-11-10** (7 of 21 clean: the Stone Vigil, the Bowl of Embers, the Howling Eye; 68 problems
 written down, all in [Known issues](known-issues.md#duty-scripts-against-duty-sim-2026-11-10)):
 
-| Duty | Script | What it found |
-|---|---|---|
-| The Thousand Maws of Toto-Rak (1) | `f1r1_re` | No `onPartyWipe`: after a wipe the boss music and the room's objective don't come again, nor the last boss's adds; objectives 3-12 s late in one run, and that run never completes |
-| The Tam-Tara Deepcroft (2) | `f1d1_re` | No `onPartyWipe`: the rooms' adds don't come again; the music stops 3-7 s before retail's |
-| Copperbell Mines (3) | `w1d1_re` | No `onPartyWipe`: the first two bosses' music doesn't start again |
-| Sastasha (4) | `s1d1_re` | Never starts the boss music (retail: 37 at each of three pulls), and stops it once, at the end |
-| Haukke Manor (6) | `f1d2_re` | No `onPartyWipe`: music not again, the last boss's adds not again |
-| Brayflox's Longstop (8) | `s1d2_re` | No `onPartyWipe`: music and the second boss's adds not again; completion 6.8 s late in one run |
-| The Navel (57) | `s1fa_re` | Never changes the music (retail: 158, 160, 156 as the phases go) |
+| Duty | Script | What it found | Since (second pass) |
+|---|---|---|---|
+| The Thousand Maws of Toto-Rak (1) | `f1r1_re` | No `onPartyWipe`: after a wipe the boss music and the room's objective don't come again, nor the last boss's adds; objectives 3-12 s late in one run, and that run never completes | `onPartyWipe`; the lateness was the simulator's (players), the run that never completed a capture's gap |
+| The Tam-Tara Deepcroft (2) | `f1d1_re` | No `onPartyWipe`: the rooms' adds don't come again; the music stops 3-7 s before retail's | `onPartyWipe`; the room's boss comes as the last of its pack falls, not its leader |
+| Copperbell Mines (3) | `w1d1_re` | No `onPartyWipe`: the first two bosses' music doesn't start again | `onPartyWipe` |
+| Sastasha (4) | `s1d1_re` | Never starts the boss music (retail: 37 at each of three pulls), and stops it once, at the end | It did start it, as each captain appeared; retail's is at his pull, and stops as he runs off: the captains run off now, Denn comes at the cove, `onPartyWipe` |
+| Haukke Manor (6) | `f1d2_re` | No `onPartyWipe`: music not again, the last boss's adds not again | `onPartyWipe` |
+| Brayflox's Longstop (8) | `s1d2_re` | No `onPartyWipe`: music and the second boss's adds not again; completion 6.8 s late in one run | `onPartyWipe`; the timings were the simulator's (an NPC's first sight) |
+| The Navel (57) | `s1fa_re` | Never changes the music (retail: 158, 160, 156 as the phases go) | 158 and 160 with the Geocrushes, 156 with Earthen Fury |
 
 What the simulator had wrong on the way, and has right now: the Bowl of Embers' Nail (taken away by the script at a
 wipe, it "fell" afterwards) and the Howling Eye's new Garuda (waited for at full health, which an interpolated

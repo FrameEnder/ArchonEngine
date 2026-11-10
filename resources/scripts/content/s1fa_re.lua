@@ -66,6 +66,11 @@ GEOCRUSH_AFTER = 2.1
 TARGETABLE_AFTER = 9.0
 HEART_AFTER = 9.1
 ACTION_GEOCRUSH = 651
+-- The music changes with his phases (director 0x80000001, four of Bob's retail runs: 0fd8bce0, 281f92fb, 48aaf6fe,
+-- 650dbfd8): 158 and 160 0.09 s before his first and second Geocrush, 156 0.09 s before Earthen Fury (7.4 s
+-- after the Heart's health reached 0.)
+BGM_GEOCRUSH = { 158, 160 }
+BGM_EARTHEN_FURY = 156
 MIDDLE = { x = 0.0, y = 0.0, z = 0.0 }
 -- Where the Duty Support members went for both Geocrushes (Bob's capture 650dbfd8, 3-4 s into each cast): the arena's
 -- edge, inside it but where it hurts least (it hurts less the farther out: 971-1017 at 4.7 yalms, 347-480 at 19-22.)
@@ -210,6 +215,7 @@ function leap(director, which)
     director:delay(GEOCRUSH_AFTER)
     talk(director, TALK_GEOCRUSH)
     director:warp_bnpc(TITAN, MIDDLE.x, MIDDLE.y, MIDDLE.z, 0)
+    director:set_bgm(BGM_GEOCRUSH[which])
     director:actor_use_action(titan, ACTION_GEOCRUSH)
     if which == 1 then
         director:delay(TARGETABLE_AFTER)
@@ -265,6 +271,7 @@ function earthenFury(director, which_heart)
     director:play_action_timeline(TITAN, FURY_TIMELINE_2)
     director:delay(FURY_AFTER)
     talk(director, TALK_EARTHEN_FURY)
+    director:set_bgm(BGM_EARTHEN_FURY)
     director:actor_use_action(titan, ACTION_EARTHEN_FURY)
     director:delay(FURY_PARTS_AFTER)
     director:bnpc_control(TITAN, CONTROL_PARTS, { 0, 0, 16, 1 })
@@ -441,6 +448,10 @@ function onPartyWipe(director)
         director:despawn_bnpc(helper)
     end
     attempts = attempts + 1
+    -- The music back to the duty's own for the new attempt (not seen on retail: no wipe here in Bob's captures.)
+    if leaps > 0 then
+        director:set_bgm(0)
+    end
     reset()
     setVars(director, VARS_START)
     waiting_for_new_titan = true

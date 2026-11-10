@@ -577,6 +577,19 @@ every level band, in CI. Its first run found the Thaumaturge idle at level 1: wi
 Fire, learnt at 2, so a level 1 bot cast nothing. It casts Blizzard until it has Fire now
 (`rotations/BlackMage.lua`).
 
+## Dodging, and fighting on (2026-11-10)
+
+From Bob's bundle 20261110-182408 (the Stone Vigil, a party of Player NPCs):
+
+* **Player NPCs dodge by the shapes; Duty Support's members keep their set spots.** A duty's `party_spots` (where
+  retail's Duty Support members stood for a cast) are for Duty Support members only now (`party_bot`'s `authored`:
+  none for a bot without a `party_npc`); a Player NPC gets out of what it sees coming, as a player would. This is how
+  his mark "party bots normally wouldn't dodge but player bots should" was read.
+* **A bot waiting somewhere still fights.** One holding a spot (walking itself there, or standing on it) had no
+  position for its target that tick, so nothing it could do was in range and it stood idle until it moved again: the
+  whole party stopped attacking through the whirlwinds, where retail's members and players kept on (both captures).
+  Its target's position is filled in for it now (`npc_behavior`'s position pass). Not tested without the game's data.
+
 ## At a wipe (2026-11-10)
 
 A Player NPC goes back to the start with its party as retail's party members do: moved (an ActorSetPos with the

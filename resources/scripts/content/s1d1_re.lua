@@ -82,11 +82,22 @@ BNPC_CAPTAIN2 = 4035056
 BNPC_GATE_CORSAIRS = { 4087815, 3988322, 4087814, 3988323 }
 EOBJ_CAPTAIN2_GATE = 2000235
 CAPTAIN2_GATE_HEALTH = 50
+-- Neither captain dies: each gives up the fight and runs off down the way on, and is gone when he gets there (eight
+-- of Bob's retail runs, captures 700cc294, c99fe374, cc62ad94 and f4316611's five: no death for either in any.) The
+-- first at half his health (the last hit before he left had him at 48.2-50.2 %), gone 21.5-22.5 s later at the spot
+-- below; the second at a fifth (18.1-20.8 %), gone 22.1-25.9 s later (15.8 in one run, further back.) The battle music
+-- (director 0x80000001: 37) starts as each is pulled and stops as he leaves, with the hit that does it.
+CAPTAIN_LEAVES = {
+    [BNPC_CAPTAIN1] = { below = 50, to = { x = -128.5, y = 17.2, z = 155.6 }, gone_after = 22.0 },
+    [BNPC_CAPTAIN2] = { below = 20, to = { x = -315.0, y = 5.9, z = 305.7 }, gone_after = 24.0 },
+}
 CAPTAIN2_CALL_TIMELINE = 980
 CAPTAIN2_CALL_YELL = 136
 
 -- Sequence 5
 BNPC_DENN = 3978771
+-- The bosses with battle music (retail: none for Denn, in eight runs.)
+MUSIC_BOSSES = { BNPC_CHOPPER, BNPC_CAPTAIN1, BNPC_CAPTAIN2 }
 -- His adds come in two waves in the four corners of his arena, the first 47 s into his fight (three of them), the
 -- second 16 s later (all four, the first wave's again beside any still standing). Bob's Chronofoil captures: Sastasha
 -- with Duty Support (2026-10-23), whose Denn fight lasted 105 s, saw both (at 47.3 and 63.0 s after the tank's pull,
@@ -163,6 +174,11 @@ local chopper_spawned
 -- The second captain's fight, and whether he has called his men through the gate yet
 captain2_fighting = false
 gate_opened = false
+-- The bosses whose battle music is playing (by layout ID), and the captains who have run off
+music = {}
+captain_left = {}
+-- Whether the way to Denn's cove is open (the second captain gone)
+denn_awaited = false
 -- Denn's fight: updates since he first went for someone (nil until then), and the waves of adds sent so far
 denn_updates = nil
 denn_waves = 0
@@ -256,6 +272,7 @@ function onGimmickAccessor(director, actor_id, id, params)
             if not chopper_spawned then
                 chopper_spawned = true
 
+                music[BNPC_CHOPPER] = true
                 beginBattleMusic(director)
                 director:spawn_boss(BNPC_CHOPPER, EOBJ_CATTERY_BOSS_WALL, EOBJ_CATTERY_BOSS_LINE, PLACE_CATTERY)
                 director:party_npc_yell("healer", PARTY_NPC_LINE_CHOPPER_HEALER, 0, "tank", PARTY_NPC_LINE_CHOPPER)
@@ -302,9 +319,14 @@ function isGimmickFunctional(id)
 end
 
 function onGimmickRect(director, target)
-    if target == EVENT_RANGE_BOSS and not seen_final_cutscene then
+    -- The cove, once the second captain has run off: Denn's cutscene, and Denn. (Retail: he first appeared as someone
+    -- of the party came into the cove, 50-77 yalms from the capturing player and 27-226 s after the captain left,
+    -- 6-29 s before he was pulled: eight runs. Before 2026-11-10 he was spawned as the captain fell.)
+    if target == EVENT_RANGE_BOSS and denn_awaited and not seen_final_cutscene then
         director:play_cutscene(175) -- Denn's cutscene
         seen_final_cutscene = true
+        director:spawn_boss(BNPC_DENN, EOBJ_MISTBEARD_COVE_BOSS_WALL, EOBJ_MISTBEARD_COVE_BOSS_LINE,
+            PLACE_NAME_MISTBEARD_COVE)
         director:party_npc_yell("tank", PARTY_NPC_LINE_DENN, PARTY_NPC_LINE_DENN_AFTER)
     end
 end
@@ -351,6 +373,18 @@ end
 -- The second captain below half his health: he calls his men through the gate. Denn's adds come in waves.
 function onUpdate(director, health, player_health, info)
     updateDenn(director, health, info)
+    -- A boss going for someone: the battle music (Chopper's starts as it appears; here after a wipe.)
+    for _, boss in ipairs(MUSIC_BOSSES) do
+        if not music[boss] and info ~= nil and info[boss] ~= nil and info[boss].target ~= nil then
+            music[boss] = true
+            beginBattleMusic(director)
+        end
+    end
+    for boss, leaves in pairs(CAPTAIN_LEAVES) do
+        if not captain_left[boss] and health[boss] ~= nil and health[boss] <= leaves.below then
+            captainLeaves(director, boss)
+        end
+    end
     if captain2_fighting and not gate_opened and health[BNPC_CAPTAIN2] ~= nil
         and health[BNPC_CAPTAIN2] < CAPTAIN2_GATE_HEALTH then
         gate_opened = true
@@ -372,34 +406,19 @@ function onActorDeath(director, bnpc_id, position)
 
         -- Update shortcut
         director:update_shortcut(SHORTCUT_AFTER_CATTERY)
-    elseif bnpc_id == BNPC_CAPTAIN1 then
-        -- Two coffers for this boss (retail: 95 and 100 together, every run)
-        director:spawn_treasure(95)
-        director:spawn_treasure(100)
-        endBattleMusic(director)
-        beginSequence3(director)
-        director:party_npc_yell("melee", PARTY_NPC_LINE_CAPTAIN1, PARTY_NPC_LINE_AFTER_CAPTAIN, "healer",
-            PARTY_NPC_LINE_CAPTAIN1_HEALER)
-
-        -- Update shortcut
-        director:update_shortcut(SHORTCUT_AFTER_CAPTAIN1)
+    elseif bnpc_id == BNPC_CAPTAIN1 or bnpc_id == BNPC_CAPTAIN2 then
+        -- (He runs off before he can fall; should he fall all the same, the way on opens as if he had.)
+        if not captain_left[bnpc_id] then
+            captain_left[bnpc_id] = true
+            captainGone(director, bnpc_id)
+        end
     elseif bnpc_id == BNPC_KEY_HOLDER_REAVER then
         director:spawn_eobj(EOBJ_CAPTAINS_QUARTERS_KEY, { x = position.x, y = position.y, z = position.z })
     elseif bnpc_id == BNPC_CAPTAINS_QUARTERS_REAVER then
         director:spawn_eobj(EOBJ_WAVERIDER_GATE_KEY, { x = position.x, y = position.y, z = position.z })
-    elseif bnpc_id == BNPC_CAPTAIN2 then
-        -- No coffer for this boss on retail (no 96 in five runs.)
-        endBattleMusic(director)
-        director:hide_eobj(EOBJ_RAMBADE_DOOR2)
-        director:party_npc_yell("ranged", PARTY_NPC_LINE_CAPTAIN2, PARTY_NPC_LINE_AFTER_CAPTAIN)
-
-        beginSequence5(director)
-
-        -- Update shortcut
-        director:update_shortcut(SHORTCUT_AFTER_CAPTAIN2)
     elseif bnpc_id == BNPC_DENN then
         director:spawn_treasure(93) -- Treasure for this boss
-        endBattleMusic(director)
+        -- (No battle music in his fight on retail, and none stopped as he fell: eight runs.)
 
         -- Update shortcut
         director:update_shortcut(SHORTCUT_AFTER_DENN)
@@ -409,6 +428,58 @@ function onActorDeath(director, bnpc_id, position)
         director:play_cutscene(176, { 1, 18, 0, 0 })
 
         director:complete_duty()
+    end
+end
+
+-- A captain gives up the fight: nobody can hurt him or hold his attention, he runs for his spot and is gone a while
+-- later (`CAPTAIN_LEAVES`); the fight is over as he turns (the music, his coffers, the way on.)
+function captainLeaves(director, boss)
+    local leaves = CAPTAIN_LEAVES[boss]
+    captain_left[boss] = true
+    director:set_invulnerable(boss, true)
+    director:set_notice(boss, false)
+    director:retreat_bnpc(boss, leaves.to.x, leaves.to.y, leaves.to.z)
+    director:leave_boss_room(boss) -- his room opens: he no longer holds it
+    captainGone(director, boss)
+    director:delay(leaves.gone_after)
+    director:despawn_bnpc(boss)
+    director:delay(0)
+end
+
+-- What follows a captain's fight.
+function captainGone(director, boss)
+    endBattleMusic(director)
+    if boss == BNPC_CAPTAIN1 then
+        -- Two coffers for this boss (retail: 95 and 100 together, every run)
+        director:spawn_treasure(95)
+        director:spawn_treasure(100)
+        beginSequence3(director)
+        director:party_npc_yell("melee", PARTY_NPC_LINE_CAPTAIN1, PARTY_NPC_LINE_AFTER_CAPTAIN, "healer",
+            PARTY_NPC_LINE_CAPTAIN1_HEALER)
+        director:update_shortcut(SHORTCUT_AFTER_CAPTAIN1)
+    else
+        -- No coffer for this boss on retail (no 96 in five runs.)
+        director:hide_eobj(EOBJ_RAMBADE_DOOR2)
+        director:party_npc_yell("ranged", PARTY_NPC_LINE_CAPTAIN2, PARTY_NPC_LINE_AFTER_CAPTAIN)
+        beginSequence5(director)
+        director:update_shortcut(SHORTCUT_AFTER_CAPTAIN2)
+    end
+end
+
+-- Everyone back at the start (a wipe; the server sends the enemies home whole): the music starts again with the next
+-- pull of a boss still there, and Denn's waves are taken away and counted again from his next pull. Not seen on
+-- retail (no wipe here in Bob's captures); found by `questkit duty-sim`'s rehearsed wipes (2026-11-10.)
+function onPartyWipe(director)
+    music = {}
+    if denn_updates ~= nil then
+        local waves = { BNPC_DENN_ADDS_FIRST, BNPC_DENN_ADDS_SECOND }
+        for wave = 1, denn_waves do
+            for _, id in ipairs(waves[wave]) do
+                director:despawn_bnpc(id)
+            end
+        end
+        denn_updates = nil
+        denn_waves = 0
     end
 end
 
@@ -513,7 +584,6 @@ function beginSequence2(director)
     director:spawn_bnpc(BNPC_REAVER1)
     director:spawn_bnpc(BNPC_REAVER2)
 
-    beginBattleMusic(director)
     director:spawn_boss(BNPC_CAPTAIN1, EOBJ_FIRST_RAMBADE_BOSS_WALL, EOBJ_FIRST_RAMBADE_BOSS_LINE, PLACE_FIRST_RAMBADE)
 end
 
@@ -547,7 +617,6 @@ function beginSequence4(director)
     -- Update shortcut
     director:update_shortcut(SHORTCUT_BEFORE_CAPTAIN2)
 
-    beginBattleMusic(director)
     director:spawn_boss(BNPC_CAPTAIN2, EOBJ_SECOND_RAMBADE_BOSS_WALL, EOBJ_SECOND_RAMBADE_BOSS_LINE, PLACE_SECOND_RAMBADE)
 end
 
@@ -556,7 +625,8 @@ function beginSequence5(director)
     -- Update shortcut
     director:update_shortcut(SHORTCUT_BEFORE_DENN)
 
-    director:spawn_boss(BNPC_DENN, EOBJ_MISTBEARD_COVE_BOSS_WALL, EOBJ_MISTBEARD_COVE_BOSS_LINE, PLACE_NAME_MISTBEARD_COVE)
+    -- Denn comes as the party reaches the cove (`onGimmickRect`.)
+    denn_awaited = true
 end
 
 function getDebugShortcut(id)

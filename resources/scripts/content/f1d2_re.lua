@@ -175,6 +175,8 @@ LINE_FINAL_AFTER = 12.6
 keys = 0
 found = 0
 boss1_pulled = false
+boss1_dead = false
+final_dead = false
 pair_pulled = false
 pair_left = 2
 eye_fled = false
@@ -341,6 +343,7 @@ function onActorDeath(director, bnpc_id, position)
     local where = { x = position.x, y = position.y, z = position.z }
 
     if bnpc_id == BNPC_BOSS1 then
+        boss1_dead = true
         -- Its arena opens (the boss room's), and the way on; it drops its key where it fell.
         director:set_bgm(0)
         director:log_message(LOG_DROPPED, { NAME_BOSS1, ITEM_BOSS1_KEY })
@@ -366,6 +369,7 @@ function onActorDeath(director, bnpc_id, position)
         -- Killed before it fled (it never was on retail): the door opens all the same.
         startFinal(director)
     elseif bnpc_id == BNPC_FINAL then
+        final_dead = true
         director:despawn_bnpc(BNPC_FINAL_ADD)
         director:spawn_treasure(FINAL_COFFER)
         director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
@@ -445,6 +449,25 @@ function onEventActionCast(director, actor_id, target)
 end
 
 -- The eye at the last room's door: the door opens, its cutscene, and the last boss and its first add are there.
+-- Everyone back at the start (a wipe; the server sends the enemies home whole): what's kept of a fight under way
+-- goes, so the next pull is a first pull again. The first boss's and the pair's music starts with it; the last
+-- boss's Void Calls and teleports are counted from the start, and the add its second call brought is taken away to
+-- come again. Not seen on retail (no wipe here in Bob's captures); found by `questkit duty-sim`'s rehearsed wipes
+-- (2026-11-10: the music and the add never came again.)
+function onPartyWipe(director)
+    boss1_pulled = boss1_dead
+    pair_pulled = pair_left == 0
+    if not final_dead then
+        final_pulled = false
+        if void_calls >= 2 then
+            director:despawn_bnpc(BNPC_FINAL_ADD2)
+        end
+        void_calls = 0
+        teleports = 0
+        eye_wall = nil
+    end
+end
+
 function startFinal(director)
     if final_started then
         return

@@ -9,9 +9,12 @@ of the duty from a Chronofoil capture (`questkit chronofoil --battle N.V`), in s
   null: there from the start), when it first had a target (`pulled`), when its health reached 0 (`death`), its health
   in percent over time (`hp`), its maximum HP and where it stood (`pos`, when it moved);
 * `player` and `party`: where the capturing player and the rest of the party (players, Duty Support members) stood
-  over time, and the player's health;
+  over time, and the player's health; `players`: which of the party were players (`info` has those as `player2`...
+  too, as the server's does);
 * `casts`: the NPCs' casts by layout ID;
 * `wipes`: when the party wiped and when the duty recommenced (the director's 0x40000005 and 0x40000006);
+* `ranges` (written by hand): when the party walked into one of the script's event ranges (`onGimmickRect`), which a
+  capture doesn't say: `[[seconds, range ID]]` (Sastasha's cove, as its boss first appeared);
 * `bars`: the progress bars of the party's event actions (a door being opened: ActorControlTarget 3 with 1 and the
   EventAction row as it began, 0 as it ended): when, the row, how long;
 * `events`, what the script must do as retail did: the boss music (`bgm`, the director's 0x80000001), objectives done
@@ -73,8 +76,9 @@ def _sparse(points: list, step: float = 0.5) -> list:
     return kept
 
 
-def fixture_from_run(run: dict, script: str, source: str = "") -> dict:
-    """A duty fixture from a battle run of a duty visit (`questkit chronofoil --battle N.V`)."""
+def fixture_from_run(run: dict, script: str, source: str = "", unlaid: dict[int, int] | None = None) -> dict:
+    """A duty fixture from a battle run of a duty visit (`questkit chronofoil --battle N.V`). `unlaid`: the script's
+    IDs for NPCs retail gave no layout ID, by BNpcBase."""
     actors = run.get("Actors", {})
     you = next((k for k, a in actors.items() if a.get("Kind") == "you"), None)
     director = [(c["S"], c["Params"]) for c in run.get("Controls", [])
@@ -108,7 +112,10 @@ def fixture_from_run(run: dict, script: str, source: str = "") -> dict:
     npcs: dict[str, list] = {}
     events: list = []
     for key, actor in sorted(actors.items(), key=lambda item: item[1].get("Seen", 0)):
-        if actor.get("Kind") != "battle npc" or not actor.get("LayoutId") or not actor.get("MaxHp"):
+        # One with no layout ID (a boss's part the script spawns under an ID of its own) is kept under the script's ID
+        # for it, when `unlaid` says so by its BNpcBase (the Navel's Heart of the Mountain.)
+        layout = actor.get("LayoutId") or (unlaid or {}).get(actor.get("BaseId"))
+        if actor.get("Kind") != "battle npc" or not layout or not actor.get("MaxHp"):
             continue
         curve: list = []
         for t, hp in sorted(health.get(key, [])):
@@ -123,21 +130,27 @@ def fixture_from_run(run: dict, script: str, source: str = "") -> dict:
             death = zero
         pulled = next((t for t, target in sorted(targets.get(key, [])) if target), None)
         path = sorted(positions.get(key, [])) or [[spawn, *[round(v, 1) for v in actor["Position"]]]]
+        # `Seen` is its latest appearance to the capturing player (one that left their sight and came back into it
+        # has a new one): it was there from its first position.
+        spawn = min(spawn, path[0][0])
         # Where it went, for one that fought a while (a boss a script may place things by); where it stood, for the rest.
         long_fight = pulled is not None and (death if death is not None else rel(actor.get("LastSeen", 0))) - pulled >= 20
         life = {"spawn": spawn if spawn > 1.0 else None, "pulled": pulled, "death": death, "hp": curve,
                 "max_hp": actor["MaxHp"], "base": actor.get("BaseId", 0),
                 "pos": _sparse(path, 2.0) if long_fight else path[:1],
                 "gone": rel(actor["LastSeen"]) if "LastSeen" in actor else None}
-        npcs.setdefault(str(actor["LayoutId"]), []).append(life)
+        npcs.setdefault(str(layout), []).append(life)
 
     party = {}
     others = [k for k, a in sorted(actors.items(), key=lambda item: item[1].get("Seen", 0))
               if k != you and (a.get("Kind") == "player"
                                or (a.get("Kind") == "battle npc" and not a.get("LayoutId") and a.get("Battalion") == 0
                                    and a.get("MaxHp", 0) > 1 and len(positions.get(k, [])) > 20))]
+    players = []
     for index, key in enumerate(others[:7], 1):
         party[f"party{index}"] = _sparse(sorted(positions.get(key, [])), 2.0)
+        if actors[key].get("Kind") == "player":
+            players.append(f"party{index}")
 
     player_health: list = []
     if you is not None and actors[you].get("MaxHp"):
@@ -193,14 +206,14 @@ def fixture_from_run(run: dict, script: str, source: str = "") -> dict:
     return {"duty": run.get("ContentFinderCondition", 0), "script": script, "source": source or run.get("Source", ""),
             "tolerance": DEFAULT_TOLERANCE, "npcs": npcs,
             "player": {"pos": _sparse(sorted(positions.get(you, [])), 1.5), "hp": player_health},
-            "party": party, "casts": casts, "wipes": wipes, "bars": sorted(bars), "events": events}
+            "party": party, "players": players, "casts": casts, "wipes": wipes, "bars": sorted(bars), "events": events}
 
 
 def save(fixture: dict, path: Path) -> Path:
     """One life, one position path a line: readable diffs, small files."""
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = ["{"]
-    for key in ("duty", "script", "source", "tolerance", "tolerances"):
+    for key in ("duty", "script", "source", "tolerance", "tolerances", "once", "ranges"):
         if key in fixture:
             lines.append(f' {json.dumps(key)}: {json.dumps(fixture[key])},')
     lines.append(' "npcs": {')
@@ -208,7 +221,9 @@ def save(fixture: dict, path: Path) -> Path:
             for layout, lives in fixture["npcs"].items()]
     lines.append(",\n".join(rows))
     lines.append(" },")
-    for key in ("player", "party", "casts", "wipes", "bars"):
+    for key in ("player", "party", "players", "casts", "wipes", "bars"):
+        if key not in fixture:
+            continue
         lines.append(f' {json.dumps(key)}: {json.dumps(fixture[key], separators=(",", ":"))},')
     lines.append(' "events": [')
     lines.append(",\n".join("  " + json.dumps(event) for event in fixture["events"]))
@@ -283,7 +298,7 @@ class Stage:
         return True
 
 
-SPAWNS = ("spawn_bnpc", "spawn_boss")
+SPAWNS = ("spawn_bnpc", "spawn_boss", "spawn_bnpc_part")
 
 
 class World:
@@ -415,6 +430,9 @@ class World:
         for index, (key, path) in enumerate(sorted(self.fixture.get("party", {}).items()), 2):
             x, y, z = _position_then(path, retail_t)
             info[key] = lua.table_from({"hp": 100, "max_hp": 100, "x": x, "y": y, "z": z, "id": index})
+            # A member who was a player (a Duty Finder run) is one to the script too, as on the server.
+            if key in self.fixture.get("players", ()):
+                info[f"player{index}"] = info[key]
         stage.call("onUpdate", lua.table_from(health), player_pct, lua.table_from(info))
         self.follow_calls()
 
@@ -429,6 +447,7 @@ class Driver:
         self.wipes = [list(w) for w in fixture.get("wipes", [])]
         self.bars = [list(b) for b in fixture.get("bars", [])]
         self.bars_due: list[tuple[float, int]] = []
+        self.ranges = [list(r) for r in fixture.get("ranges", [])]
         self.t = 0.0
         self.stage.clock = SETUP_CLOCK
         self.stage.call("onSetup")
@@ -468,6 +487,11 @@ class Driver:
                 if any(name == "event_action" and args and args[0] == bar[1] for _, name, args in stage.calls[before:]):
                     self.bars_due.append((t + bar[2], eobj))
                     break
+            world.follow_calls()
+        for entered in [r for r in self.ranges if r[0] <= retail_t]:
+            self.ranges.remove(entered)
+            stage.clock = t
+            stage.call("onGimmickRect", entered[1])
             world.follow_calls()
         for due in [d for d in self.bars_due if d[0] <= t]:
             self.bars_due.remove(due)

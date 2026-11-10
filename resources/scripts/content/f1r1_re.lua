@@ -161,6 +161,8 @@ tail_started = false
 tail_actor = nil
 tail_alive = false
 tail_next_at = nil
+-- The adds and the tail a fight has called (actor IDs), to take away at a wipe.
+called = {}
 
 function distance(a, b)
     local dx, dy, dz = a.x - b.x, a.y - b.y, a.z - b.z
@@ -234,6 +236,7 @@ function onUpdate(director, health, player_health, info)
             for _, spot in ipairs(room.adds) do
                 local add = director:spawn_bnpc(BNPC_ROOM_ADD, spot.x, spot.y, spot.z, spot.rotation)
                 director:set_hate(add, nil, 300) -- the player
+                table.insert(called, add)
             end
         end
     end
@@ -261,6 +264,7 @@ function onUpdate(director, health, player_health, info)
         for _, spot in ipairs(adds.spots) do
             local add = director:spawn_bnpc(BNPC_FINAL_ADD, spot.x, spot.y, spot.z, spot.rotation)
             director:set_hate(add, nil, 300) -- the player
+            table.insert(called, add)
         end
     end
 
@@ -284,6 +288,7 @@ function useTail(director, boss)
     local at = (boss ~= nil and boss.x ~= nil) and boss or FINAL.boss_at
     if tail_actor == nil then
         tail_actor = director:spawn_bnpc(BNPC_TAIL, at.x, at.y, at.z)
+        table.insert(called, tail_actor)
         tail_alive = true
         director:set_hate(tail_actor, nil, 300) -- the player
         director:bnpc_control(FINAL.boss, 31, { 0, 0, 0, 1 })
@@ -346,6 +351,31 @@ function onActorDeath(director, layout_id, position)
         director:play_cutscene(CUTSCENE_END, CUTSCENE_END_PARAMS)
         director:set_weather(WEATHER_AFTER, WEATHER_AFTER_FADE, false)
         director:spawn_treasure(FINAL_COFFER)
+    end
+end
+
+-- Everyone back at the start (a wipe; the server sends the enemies home whole): what a fight under way had called is
+-- taken away (its adds, the last boss's tail) and what's kept of it forgotten, so the next pull is a first pull again
+-- (the music, the adds as the boss's health falls from full, the tail at half.) Not seen on retail (no wipe here in
+-- Bob's captures; whether the last boss shows its tail again isn't known, so its model is left as it was); found by
+-- `questkit duty-sim`'s rehearsed wipes (2026-11-10.)
+function onPartyWipe(director)
+    for _, actor in ipairs(called) do
+        director:despawn_bnpc(actor)
+    end
+    called = {}
+    for index, room in ipairs(ROOMS) do
+        if dead[room.boss] == nil then
+            rooms_pulled[index] = false
+            room_adds_called[index] = false
+        end
+    end
+    if dead[FINAL.boss] == nil then
+        final_adds_called = 0
+        tail_started = false
+        tail_actor = nil
+        tail_alive = false
+        tail_next_at = nil
     end
 end
 

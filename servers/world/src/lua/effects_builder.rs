@@ -601,6 +601,15 @@ impl UserData for EffectsBuilder {
             }));
             Ok(())
         });
+        // Tosses the target into the air where it stands: the GimmickJump sheet's row and the effect's own value
+        // (`action::toss_target`; the Stone Vigil's whirlwinds' 28731: 64 and 173.) Nothing on a miss.
+        methods.add_method_mut("toss", |_, this, (gimmick_jump, value): (u8, u16)| {
+            let value = value.to_le_bytes();
+            this.effects.push(TargetEffect(TargetEffectKind::SummonPet {
+                unk: [gimmick_jump, 0, 0, 0, 0, value[0], value[1]],
+            }));
+            Ok(())
+        });
         methods.add_method_mut("summon_pet", |_, this, _: ()| {
             this.effects.push(TargetEffect(TargetEffectKind::SummonPet {
                 unk: [0, 0, 0, 0, 128, 157, 0],

@@ -6,13 +6,17 @@ use std::time::Duration;
 
 use kawari::{
     common::{CharacterMode, ObjectId, WarpType},
-    ipc::zone::{ActorControlCategory, Condition, ServerZoneIpcData},
+    ipc::zone::{
+        ActorControlCategory, Condition, ServerZoneIpcData, TargetEffect, TargetEffectKind,
+    },
 };
 
 use crate::{
     FromServer,
     server::{
+        action::{toss_target, tossed_by},
         actor::{NetworkedActor, NpcState, kill_actor},
+        npc_behavior::cast_aim,
         party_bot,
         test_world::{TestWorld, control_from, packet_from},
     },
@@ -140,4 +144,77 @@ fn a_player_npc_goes_back_at_a_wipe_without_leaving() {
     assert!(world.instance.party_bots[&bot].dead_since.is_none());
     // The enemy is untouched by this (the wipe's own reset sends it home.)
     assert!(world.instance.find_actor(enemy).is_some());
+}
+
+/// Bundle 20261110-182408, "isgebind's aoes are showing in the middle rather than their intended targeted areas":
+/// the helpers' Sheets of Ice (1024, placed on the ground) were cast at each of the party, and their ActorCasts
+/// carried the helper's own position and the target's ID. Retail's carry the spot and no target; a cast on someone
+/// carries their position and their ID.
+#[test]
+fn a_cast_is_aimed_where_its_target_stands() {
+    let member = ObjectId(BOT);
+    let spot = glam::Vec3A::new(17.75, 0.05, -253.44);
+    let (target, position) = cast_aim(true, member, spot);
+    assert_eq!(
+        target,
+        ObjectId::default(),
+        "placed on the ground: no target"
+    );
+    assert_eq!(position.0, spot);
+    let (target, position) = cast_aim(false, member, spot);
+    assert_eq!((target, position.0), (member, spot));
+}
+
+/// Bundle 20261110-182408, "tornado doesn't throw character in air when ran into": retail's whirlwind hit tossed
+/// whoever it caught where they stood (ActorControl 220, GimmickJump row 64, the toss's number in the duty.)
+#[test]
+fn a_whirlwind_tosses_whoever_it_hits() {
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [44.79, 4.0, -72.57]);
+    let watcher = world.player(PLAYER + 1, [40.0, 4.0, -77.0]);
+    let toss = TargetEffect(TargetEffectKind::SummonPet {
+        unk: [64, 0, 0, 0, 0, 173, 0],
+    });
+    // A pet's summoning (the same kind of effect, no row) tosses nobody.
+    let pet = TargetEffect(TargetEffectKind::SummonPet {
+        unk: [0, 0, 0, 0, 128, 157, 0],
+    });
+    assert_eq!(tossed_by(std::slice::from_ref(&pet)), None);
+    assert_eq!(tossed_by(&[pet, toss]), Some(64));
+    world.sent(player);
+    world.sent(watcher);
+
+    toss_target(
+        &mut world.network.lock(),
+        &mut world.instance,
+        player,
+        &[pet],
+    );
+    assert!(world.sent(player).is_empty());
+    for number in 1..=2 {
+        toss_target(
+            &mut world.network.lock(),
+            &mut world.instance,
+            player,
+            &[toss],
+        );
+        let landing = |category: &ActorControlCategory| {
+            matches!(category, ActorControlCategory::ExecuteGimmickJump {
+                landing_position_x, landing_position_z, gimmick_jump_type: 64, unk1, ..
+            } if (*landing_position_x - 44.79).abs() < 0.01
+                && (*landing_position_z + 72.57).abs() < 0.01
+                && *unk1 == number)
+        };
+        let own = world.sent(player);
+        assert!(
+            own.iter()
+                .any(|m| matches!(m, FromServer::ActorControlSelf(category) if landing(category))),
+            "the one hit is tossed where they stand: {own:?}"
+        );
+        let seen = world.sent(watcher);
+        assert!(
+            seen.iter().any(|m| control_from(m, player, landing)),
+            "and everyone sees it: {seen:?}"
+        );
+    }
 }

@@ -215,6 +215,8 @@ pub struct Instance {
     /// while (`director:party_positions`): retail's Duty Support members' spots (`dodge::authored_spot`.)
     pub party_spots: Vec<crate::server::dodge::AuthoredSpots>,
     pub party_cue: Option<crate::server::dodge::PartyCue>,
+    /// How many have been tossed into the air here (`action::toss_target`): each toss carries its number, as retail's.
+    pub tosses: u32,
     /// NPCs a director is sending along a line, hurting as they go (`director:sweep_bnpc`, `server/sweep.rs`.)
     pub sweeps: Vec<crate::server::sweep::Sweep>,
     /// Aggressive BNpcs (by layout ID) a director has told not to notice anyone who comes close: they fight only when

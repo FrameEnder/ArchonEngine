@@ -195,6 +195,7 @@ blasted = {}
 doors_set = {}
 doors_open = {}
 bosses_pulled = {}
+bosses_dead = {}
 ambushed = {}
 first_pack_left = 3
 final_started = false
@@ -544,6 +545,7 @@ function onActorDeath(director, bnpc_id, position)
     end
     -- spawn_boss opens the arena (wall and line hidden, log 2014); the music stops and the coffers appear.
     local boss = BOSSES[index]
+    bosses_dead[index] = true
     if boss.other_line ~= nil then
         director:hide_eobj(boss.other_line)
     end
@@ -577,6 +579,23 @@ GIMMICKS = {
     [EOBJ_DOOR2_SLOT] = true, [EOBJ_DOOR2] = true, [EOBJ_ITEM_E] = true, [EOBJ_ITEM_F] = true,
     [EOBJ_DOOR3_SLOT] = true, [EOBJ_DOOR3] = true,
 }
+
+-- Everyone back at the start (a wipe; the server sends the enemies home whole): what's kept of a fight under way
+-- goes, so the next pull is a first pull again: the battle music starts with it, what was due later isn't, and the
+-- second boss is its first size (its growing isn't seen reset on retail: no wipe on it in Bob's captures.) Found by
+-- `questkit duty-sim`'s rehearsed wipes (2026-11-10: the music never came again.)
+function onPartyWipe(director)
+    later = {}
+    for index, _ in ipairs(BOSSES) do
+        if not bosses_dead[index] then
+            bosses_pulled[index] = false
+        end
+    end
+    if not bosses_dead[2] and boss2_rounds > 0 then
+        boss2_rounds = 0
+        director:set_model_scale(BOSS2, BOSS2_FIRST_SCALE)
+    end
+end
 
 function onGimmickAccessor(director, actor_id, id, params)
     if GIMMICKS[id] then

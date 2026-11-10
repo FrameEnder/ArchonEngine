@@ -916,7 +916,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * The event NPCs after the clear come whenever the party had NPCs in it (Duty Support members or party bots): the
   director can't tell the two apart.
 * Not sent: the director events 0x40000007, the logs 9393 and 2163 at the clear, DirectorSetupMapEffects64 at the
-  start, opcodes 820 and 664 (unknown). Nothing resets the bosses after a wipe (`onPartyWipe` isn't defined).
+  start, opcodes 820 and 664 (unknown).
 * Duty Support's Lancer (45) at 32 has a guessed 1120 HP; the members' kits at 32 beyond the Marauder's combo and burst
   are the trials' (see [Party NPCs](party-npcs.md)).
 * Quest 832 moved to sequence 4 on retail as the player used the exit (EventNotice2 and UpdateQuest just before the
@@ -1584,27 +1584,36 @@ Packets whose size on retail isn't what `opcodes.yml` says, from Bob's Chronofoi
 
 ## Duty scripts against duty-sim (2026-11-10)
 
-What `questkit duty-sim` found on its first run and has written down (`tools/questkit/duties/known.json`, 68 problems
-in 14 of 21 runs; [Testing](testing.md#duty-sim)). None is fixed yet; none was reported from a played run.
+`questkit duty-sim` passes clean since its second pass (21 of 21 runs, `duties/known.json` empty;
+[Testing](testing.md#duty-sim)). What's left from it, none of it played:
 
-* **No `onPartyWipe`** in `f1r1_re` (Toto-Rak), `f1d1_re` (the Tam-Tara Deepcroft), `w1d1_re` (Copperbell Mines),
-  `f1d2_re` (Haukke Manor), `s1d2_re` (Brayflox's Longstop) and `s1d1_re` (Sastasha): what the script keeps of a
-  fight (a boss pulled, adds already called at a health mark, a room's objective) stays as it was after a wipe. In
-  the rehearsed wipes the boss music didn't start again (Toto-Rak's first two bosses, Copperbell's first two, Haukke's
-  first two, Brayflox's first two), and the adds a boss calls didn't come again (the Tam-Tara rooms', Toto-Rak's and
-  Haukke's last bosses', Brayflox's second boss's). The server sends the enemies home whole all the same
-  (`reset_after_wipe`), so the fight goes on, without those.
-* **Sastasha** never starts the boss music (retail: 37 at each of the three bosses' pulls, 0 as each falls); it
-  stops it once, at the end.
-* **The Navel** never changes the music (retail: 158, 160 and 156 at 26-47 s, 55-112 s and 94-176 s, as Titan's
-  phases go).
-* **Timing**: the Tam-Tara Deepcroft's music stops 3.4-6.9 s before retail's; Toto-Rak's objectives came 3-12 s late
-  in one run (2528a32d) and that run never completes in the simulator; Brayflox's completion 6.8 s late in one run
-  (392059dc), its last boss's music 63-66 s early in the other (44df02fc: pulled twice on retail). Not looked into:
-  each may be the script or what the simulator shows it.
+* The seven new or changed `onPartyWipe`s ([Dungeons](dungeons.md#at-a-wipe-duty-by-duty-2026-11-10)) were never seen
+  on retail and are only rehearsed in the simulator. Not handled: a boss that has fallen while its add or the dragon
+  still stands (Brayflox: no music at the next pull); Toto-Rak's last boss's tail model after a wipe; whether
+  Brayflox's ledge goblin calls again.
+* **Sastasha's captains run off** instead of dying (retail's, eight runs), by the simulator only: whether
+  `retreat_bnpc` finds the way down the corridor on Kawari's navmesh isn't known (he's taken away 22 or 24 s later
+  wherever he is, and the way on opens as he turns either way). What retail sends as he turns and when his coffers
+  come wasn't read. Denn now comes only as someone walks into the cove's range (`EVENT_RANGE_BOSS`, the one that has
+  played his cutscene): if that range didn't fire, he wouldn't come.
+* **The Tam-Tara rooms' boss** comes as the last of the pack falls; in three of fifteen retail rooms it came with one
+  still standing at 1-5 %, by a rule not found.
 * `duty-sim` doesn't fight: enmity, hits and the party's NPCs aren't in it, and a boss retail pulled more than once
-  isn't rehearsed. `cargo test` (with `bundle_tests.rs`) runs on PRs, pushes to master and by hand, not on every push
-  to `test-pending`.
+  isn't rehearsed. Event ranges are written into a fixture by hand (Sastasha's cove, at retail's time: it shows that
+  the range brings Denn, not that the server fires it). `cargo test` (with `bundle_tests.rs`) runs on PRs, pushes to
+  master and by hand, not on every push to `test-pending`.
+
+## Bundle 20261110-182408 (the Stone Vigil, 2026-11-10)
+
+Fixed in code and by test or simulation; none played yet.
+
+* The toss: the one hit lands where they stood (retail's ActorControl 220 said so too); ActorControlSelf 236 (3, then
+  0) isn't sent. Whether the client shows the throw from kind 62 and 220 alone isn't known until it's played.
+* "Bots don't attack during dodging": a waiting bot is given its target's position; there's no test (it needs the
+  game's data).
+* "Party bots normally wouldn't dodge but player bots should" was read as: Duty Support members keep their set
+  spots, Player NPCs dodge by the shapes they see. If he meant something else, this is the place to change
+  (`party_bot`'s `authored`).
 
 ## Public sources (2026-11-10)
 

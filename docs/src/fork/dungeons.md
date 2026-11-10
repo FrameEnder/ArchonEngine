@@ -65,6 +65,28 @@ LootMessage 9 with the amount and ActorControlSelf 42. Retail: 133 of 133 such k
 (level 15: 6-7 gil, 16: 6-8, 17: 6-9), none of the 83 boss, add and wave kills, and none of the 208 kills in Duty
 Support runs (no other player) ([Coffers and Loot](loot.md#enemies-gil)).
 
+## Sastasha
+
+`content/s1d1_re.lua` (upstream's, with the fork's changes). What eight retail runs say of its bosses (Bob's
+Chronofoil captures 700cc294, c99fe374, cc62ad94 and f4316611's five; `questkit duty-sim 4`), in the script since
+2026-11-10:
+
+* **The music** (director 0x80000001): 37 as Chopper appears, and as each captain is *pulled* (17-87 s after he
+  appeared; the script started it as he appeared); 0 as Chopper falls and as each captain leaves. None for Denn, and
+  none stopped as he falls.
+* **Neither captain dies.** The first gives up at half his health (the last hit before had him at 48.2-50.2 %) and
+  runs down the way on, gone 21.5-22.5 s later at (-128.5, 17.2, 155.6); the second at a fifth (18.1-20.8 %), gone
+  22.1-25.9 s later about (-315, 5.9, 306) (15.8 s in one run, further back). Kawari: `set_invulnerable`,
+  `set_notice` off, `retreat_bnpc` to the spot, `leave_boss_room` (his room opens), `despawn_bnpc` 22 and 24 s later
+  (`captainLeaves`); what followed his death follows his leaving (coffers 95 and 100, the next part, the members'
+  lines). Before, he fought to 0 and fell. What retail sends as he turns (a line, his being untargetable) wasn't
+  read, nor when the coffers come.
+* **Denn appears as the party reaches his cove**: first seen 50-77 yalms from the capturing player, 27-226 s after
+  the second captain left and 6-29 s before his pull. Kawari spawns him with the cove's cutscene (`onGimmickRect`,
+  once the captain has gone); before, as the captain fell.
+* **At a wipe** (`onPartyWipe`; none on retail here): the music starts again at the next pull of a boss still there;
+  Denn's waves are taken away and counted again from his next pull.
+
 ## The Tam-Tara Deepcroft
 
 From Bob's Chronofoil captures of 2026-10-24: `3ec702a8` visit 0.3 (23 minutes with Duty Support, during Fire in the
@@ -86,8 +108,12 @@ stand) with two, three and four casters (1345). Retail, in all three runs:
    0) with log 2013. The walls (2001699, 2001701, 2001703) spawn hidden (state 7); their lines (2001700, 2001702,
    2001704) visible. Kawari: `director:boss_room(boss, wall, line, place, pack)`, a boss arena sealed by any of the
    pack's pull (new; `spawn_boss` seals only on the boss's own).
-2. The leader's death (HP 0) calls the room's boss (567, 4128 HP): log 2009 (its BNpcName 455, 1) and it goes for the
-   party at once. In one run of nine it came 5 s after its leader died; the rest within a second.
+2. The pack's last death calls the room's boss (567, 4128 HP): log 2009 (its BNpcName 455, 1) and it goes for the
+   party at once. Fifteen rooms in five runs (3ec702a8, c99fe374, cc26e0ea's two, cc62ad94): it appeared 0.1-0.5 s
+   after the last of the pack fell in twelve, whichever that was (the leader had fallen up to 7.2 s before); in three
+   it came with one of the pack still standing at 1-5 % of its health, 1.5-1.8 s before that one fell (what decides
+   those isn't known). Until 2026-11-10 the script called it as the leader fell, so its music stopped 3-7 s early
+   (`questkit duty-sim 2`).
 3. The boss's death: both wall and line hidden, log 2014, the music off, log 2006, and its coffers: 118, 15 and 16
    after the first room, 17 after the second, 62 after the third (every run).
 
@@ -907,6 +933,13 @@ layout's four event NPCs (none came after either clear), and ContentDirector eve
 `[1, 1]` 932 s after the zone-in in both runs whatever the party was doing, `[0, 0]` and `[1, 0]` at the clear: a
 timer of some kind).
 
+**Since 2026-11-10** (Bob's bundle 20261110-182408, on `b0a1044b`): the whirlwinds throw whoever they hit
+(`effects:toss(64, 173)` in `StoneVigilHelper_28731.lua`: kind 62 in the hit and ActorControl 220 from the one hit,
+[Combat](combat.md): tossed into the air; before, only the status was given, and nobody left the ground), and the
+last boss's placed attacks show where they're aimed, not in the middle of its room ([Combat](combat.md): where a
+cast is aimed). His "can't execute command whilst casting" after a reset there was the death mid-cast fixed in
+`315a808`, which his build didn't have.
+
 **The Duty Support members' spots** (all from the first run, every time the same): for Swinge, Cauterize, the
 Sheets of Ice and the whirlwinds, as [Party NPCs](party-npcs.md#getting-out-of-area-attacks) gives them; the script
 hands them to the dodging (`director:party_spots` in `onSetup`, `director:party_positions` as each flight and
@@ -916,6 +949,27 @@ Typhoon goes), and the whirlwinds go by `director:sweep_bnpc` ([Party Bots](part
 10500, 181 31533, 183 31518, 184 31525, 185 10438 and 7033, 7033 and 2176, or 7033, 31528 and 1927. The tank's run's
 first boss gave 10438 and its second 31518 and 31527, the conjurer's 1927, and 31519 and 31520, from coffers not told
 apart. The conjurer's run's exit can't be read (the capture ends in the loading screen to New Gridania).
+
+## At a wipe, duty by duty (2026-11-10)
+
+Every dungeon script has an `onPartyWipe` now (found missing by `questkit duty-sim`'s rehearsed wipes,
+[Testing](testing.md#duty-sim)). The server sends the enemies home whole (`reset_after_wipe`); the script forgets
+what it kept of a fight under way, so the next pull is a first pull again. None was seen on retail (no wipe in
+these duties in Bob's captures, the Stone Vigil's and the Bowl of Embers' apart), and none has been played.
+
+| Duty | What its `onPartyWipe` does |
+|---|---|
+| Sastasha | The music again at the next pull; Denn's waves taken away, counted again from his pull |
+| The Tam-Tara Deepcroft | A room not cleared is pulled anew (music; its boss stays out if its pack had fallen; the leader's line only while it lives); the last boss's adds of the waves reached are taken away, its waves from full health again, its shield off |
+| Copperbell Mines | The bosses still alive pulled anew (music), what was due later dropped, the second boss back to its first size |
+| The Thousand Maws of Toto-Rak | The adds called and the last boss's tail taken away; the rooms' music and adds and the last boss's adds and tail again (whether it shows its tail again isn't known: its model is left as it was) |
+| Haukke Manor | The first boss and the pair pulled anew; the last boss's second add taken away, its calls, teleports and eye wall from the start |
+| Brayflox's Longstop | The first boss's waves, the second's add and the goblin fighting it, the third's blobs and the dragon taken away (while their boss lives); music, waves, add, dragon and the last boss's vomits from the start |
+| The Navel | (As before: Titan brought back.) The music back to the duty's own |
+
+The Navel's music (four runs: 0fd8bce0, 281f92fb, 48aaf6fe, 650dbfd8): 158 and 160 0.09 s before the first and
+second Geocrush, 156 0.09 s before Earthen Fury (`BGM_GEOCRUSH`, `BGM_EARTHEN_FURY` in `s1fa_re.lua`; never set
+before).
 
 Sources: [The Stone Vigil (Consolegameswiki)](https://ffxiv.consolegameswiki.com/wiki/The_Stone_Vigil), [The Stone
 Vigil dungeon guide (Icy Veins)](https://icy-veins.com/ffxiv/the-stone-vigil-dungeon-guide).

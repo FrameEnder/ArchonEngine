@@ -1897,7 +1897,8 @@ pub fn execute_action(
                         TargetEffectKind::InterruptAction => {
                             interrupt_cast(network.clone(), instance, request.target.object_id);
                         }
-                        TargetEffectKind::SummonPet { .. } => {
+                        // (With a first byte it's a toss, `toss_target`, not a pet.)
+                        TargetEffectKind::SummonPet { unk } if unk[0] == 0 => {
                             let Some(actor) = instance.find_actor(from_actor_id) else {
                                 continue;
                             };
@@ -2743,6 +2744,12 @@ fn apply_area_of_effect(
                 }
             }
         }
+        toss_target(
+            &mut network.lock(),
+            instance,
+            *target_id,
+            &effects_builder.effects,
+        );
     }
 
     for target_id in touched {
@@ -4142,6 +4149,52 @@ fn scale_damage(effects: &mut [TargetEffect], factor: f32) {
     }
 }
 
+/// The GimmickJump row an effect list tosses its target by, if it does (`EffectsBuilder::toss`: an effect of kind 62
+/// whose first parameter is the row.)
+pub fn tossed_by(effects: &[TargetEffect]) -> Option<u8> {
+    effects.iter().find_map(|effect| match effect.0 {
+        TargetEffectKind::SummonPet { unk } if unk[0] != 0 => Some(unk[0]),
+        _ => None,
+    })
+}
+
+/// Someone hit by an action that tosses them goes up into the air and comes down where they stood, as retail's Stone
+/// Vigil whirlwinds did to whoever ran into one (28731: three hits in Bob's Chronofoil captures 1cefedf4 and
+/// 341808b0): with the hit's status (its EffectResult, 0.18 s after the hit), an ActorControl 220
+/// (ExecuteGimmickJump) from the one hit to everyone, landing where they stood at the hit (to 0.04 yalms, all
+/// three), GimmickJump row 64 (the hit's effect of kind 62 carries the same 64, with 173), and a number counting the
+/// duty's tosses (9, 10; 42); the player's own came with ActorControlSelf 236 (3, then 0), not sent here. The client
+/// plays the jump. Kawari sent the damage and the status alone, and the player stood where they were hit (Bob's
+/// bundle 20261110-182408: "tornado doesn't throw character in air when ran into".)
+pub fn toss_target(
+    network: &mut NetworkState,
+    instance: &mut Instance,
+    target_id: ObjectId,
+    effects: &[TargetEffect],
+) {
+    let Some(gimmick_jump) = tossed_by(effects) else {
+        return;
+    };
+    let Some(landing) = instance
+        .find_actor(target_id)
+        .map(|actor| actor.position().0)
+    else {
+        return;
+    };
+    instance.tosses += 1;
+    network.send_ac_in_range_inclusive_instance(
+        instance,
+        target_id,
+        ActorControlCategory::ExecuteGimmickJump {
+            landing_position_x: landing.x,
+            landing_position_y: landing.y,
+            landing_position_z: landing.z,
+            gimmick_jump_type: gimmick_jump as u32,
+            unk1: instance.tosses,
+        },
+    );
+}
+
 fn roll_npc_hit(effects: &mut Vec<TargetEffect>, scale: f32, miss_percent: u8) {
     let roll = fastrand::u8(..100);
     let missed = roll < miss_percent;
@@ -4151,6 +4204,7 @@ fn roll_npc_hit(effects: &mut Vec<TargetEffect>, scale: f32, miss_percent: u8) {
         effects.retain(|effect| {
             !matches!(effect.0, TargetEffectKind::Heal { unk1, .. } if unk1[4] & EFFECT_ON_SOURCE != 0)
                 && !matches!(effect.0, TargetEffectKind::Knockback { .. })
+                && tossed_by(std::slice::from_ref(effect)).is_none()
         });
         for effect in effects.iter_mut() {
             if matches!(effect.0, TargetEffectKind::Damage { .. }) {
@@ -4288,6 +4342,7 @@ fn hit_area_bystander(
                 );
             }
         }
+        toss_target(&mut network.lock(), instance, target_id, effects);
     }
 
     update_actor_hp_mp_after_hit(network, instance, target_id);

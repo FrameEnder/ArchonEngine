@@ -96,6 +96,15 @@ impl TestWorld {
         );
         self.receivers.insert(actor_id, receiver);
         self.clients.insert(actor_id, client);
+        // Everyone has everyone else spawned, as those in range would.
+        let everyone: Vec<ObjectId> = self.instance.actors.keys().copied().collect();
+        for (handle, state) in self.network.lock().clients.values_mut() {
+            for other in &everyone {
+                if *other != handle.actor_id && !state.actor_allocator.contains(*other) {
+                    state.actor_allocator.reserve(*other);
+                }
+            }
+        }
         actor_id
     }
 

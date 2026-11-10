@@ -3421,7 +3421,13 @@ fn update_party(
         let mut dodge = bot.dodge;
         // Where its duty's director has it go (`dodge::authored_spot`), whether the cast would catch it or not, if
         // a path there along the navmesh reaches it; else it dodges by the shapes, as before.
+        // Duty Support's members only: a Player NPC gets out of what's being cast by its shape, as a player does, and
+        // fights on from there (retail's Duty Finder players kept on the Stone Vigil's second boss through its
+        // whirlwinds, stepping out of their lanes, where the Duty Support members went to their set spots: Bob's
+        // Chronofoil captures 341808b0 and 1cefedf4; his bundle 20261110-182408: "party bots normally wouldn't dodge but
+        // player bots should".)
         let authored = roles.get(bot_id).and_then(|(role, nth)| {
+            bot.party_npc.as_ref()?;
             let (at, until, react) = dodge::authored_spot(
                 &instance.party_spots,
                 instance.party_cue.as_ref(),

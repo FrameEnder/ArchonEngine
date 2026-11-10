@@ -330,6 +330,8 @@ final_started = false
 vomits = 0
 pair_first = nil
 helpers = {}
+-- What the fights have called to a spot (the first boss's waves, the third's blobs: actor IDs), to take away at a wipe.
+called = {}
 
 function contains(list, id)
     for _, value in ipairs(list) do
@@ -521,6 +523,7 @@ function sendWave(director, spots)
     for i, spot in ipairs(spots) do
         local actor = director:spawn_bnpc(kinds[i], spot[1], spot[2], spot[3], 0.0)
         director:set_hate(actor, nil, 300) -- the player
+        table.insert(called, actor)
     end
 end
 
@@ -639,6 +642,7 @@ function onActorCast(director, layout_id, action_id, actor_id, x, y, z)
         director:delay(BLOB_AFTER)
         local blob = director:spawn_bnpc(BNPC_BOSS3_BLOB, x, y, z, 0.0)
         director:set_hate(blob, nil, 300) -- the player
+        table.insert(called, blob)
         director:delay(0)
     elseif layout_id == BNPC_GOBLIN_FIGHTER and action_id == ACTION_BRAVADO then
         director:yell(BNPC_GOBLIN_FIGHTER, YELL_BRAVADO)
@@ -778,6 +782,47 @@ function onActorDeath(director, bnpc_id, position)
                 end
             end
         end
+    end
+end
+
+-- Everyone back at the start (a wipe; the server sends the enemies home whole): what a fight under way had called is
+-- taken away (the first boss's waves, the second's add and the goblin fighting it, the third's blobs and the dragon,
+-- if its boss still lives) and what's kept of it forgotten, so the next pull is a first pull again: the music, the
+-- waves from 60 s after it, the add and the dragon as the boss's health falls from full, the last boss's first
+-- vomit. A boss that has fallen stays so (the second's add or the dragon left alone in its room go on as they
+-- were, without the music starting again.) Not seen on retail (no wipe here in Bob's captures); found by
+-- `questkit duty-sim`'s rehearsed wipes (2026-11-10.)
+function onPartyWipe(director)
+    for _, actor in ipairs(called) do
+        director:despawn_bnpc(actor)
+    end
+    called = {}
+    if not boss1_dead then
+        boss1_pulled = false
+        boss1_pulled_at = nil
+        boss1_waves = 0
+    end
+    if not boss2_dead then
+        boss2_pulled = false
+        if boss2_add_came and not boss2_add_dead then
+            boss2_add_came = false
+            director:despawn_bnpc(BNPC_BOSS2_ADD)
+            director:despawn_bnpc(BNPC_GOBLIN_FIGHTER)
+        end
+    end
+    if not boss3_dead then
+        boss3_pulled = false
+        if dragon_came then
+            dragon_came = false
+            dragon_came_at = nil
+            dragon_actor = nil
+            dragon_leaving = false
+            director:despawn_bnpc(BNPC_DRAGON)
+        end
+    end
+    if cleared ~= CLEARED_FINAL then
+        vomits = 0
+        pair_first = nil
     end
 end
 

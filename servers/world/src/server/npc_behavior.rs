@@ -21,7 +21,6 @@ use parking_lot::Mutex;
 
 use crate::{
     ClientId, FromServer, GameData,
-    gamedata::AreaShape,
     navmesh::MAX_OFF_MESH_GAP,
     server::{
         actor::{NetworkedActor, NpcCast, NpcState, NpcTarget, set_shared_group_timeline_state},
@@ -445,12 +444,24 @@ pub fn npc_behavior(
         if instance.held_npcs.contains(id) {
             continue;
         }
-        // A party bot out of combat walks itself (server/party_bot.rs.)
+        // A party bot out of combat walks itself (server/party_bot.rs.) One waiting out an area attack still acts
+        // (the mut pass), so where its target stands is noted here all the same: left out, its target had no place,
+        // nothing was in its reach, and the party stood at their spots through the Stone Vigil's whirlwinds without
+        // an attack or a spell for 24 s (Bob's bundle 20261110-182408: "bots don't attack during dodging"; retail's
+        // Duty Support members and players alike kept on, 9-23 actions each in the same stretch.)
         if instance
             .party_bots
             .get(id)
             .is_some_and(|bot| bot.walking_itself)
         {
+            if let NetworkedActor::Npc {
+                navmesh_target: Some(NpcTarget::Actor(target)),
+                ..
+            } = actor
+                && let Some(target_actor) = instance.find_actor(*target)
+            {
+                target_actor_pos.insert(*target, target_actor.get_common_spawn().position.0);
+            }
             continue;
         }
         if let NetworkedActor::Npc {
@@ -1717,34 +1728,21 @@ pub fn npc_behavior(
                 },
             );
         } else {
-            // Attacks aimed at the ground (e.g. Acorn Armageddon) show their omen where the target stood.
-            let aimed_at_ground = {
-                let mut game_data = game_data.lock();
-                matches!(
-                    game_data
-                        .get_action_info(request.action_id)
-                        .and_then(|info| info.area_shape()),
-                    Some(
-                        AreaShape::Circle {
-                            on_target: true,
-                            ..
-                        } | AreaShape::Donut {
-                            on_target: true,
-                            ..
-                        }
-                    )
-                )
-            };
-            let position;
-            {
+            // The cast's position is where it's aimed, and one placed on the ground names no target (`cast_aim`.)
+            let placed = game_data
+                .lock()
+                .get_action_info(request.action_id)
+                .is_some_and(|info| info.cast_type == CAST_TYPE_PLACED);
+            let (cast_target, position) = {
                 let actor = instance.find_actor(id).unwrap();
-                position = match actor {
+                let aimed_at = match actor {
                     NetworkedActor::Npc {
                         cast: Some(cast), ..
-                    } if aimed_at_ground => Position(cast.target_position),
-                    _ => actor.position(),
+                    } => cast.target_position,
+                    _ => actor.position().0,
                 };
-            }
+                cast_aim(placed, request.target.object_id, aimed_at)
+            };
 
             // inform players that this enemy is casting
             let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
@@ -1753,7 +1751,7 @@ pub fn npc_behavior(
                 omen_delay: 0,
                 action_id: request.action_id,
                 cast_time: npc_cast_bar_time(cast_time),
-                target: request.target.object_id,
+                target: cast_target,
                 rotation: request.rotation1,
                 interruptible: false,
                 ballista_entity_id: ObjectId::default(),
@@ -2312,6 +2310,23 @@ pub fn leap_to(
 /// Has the NPC `actor_id` use `action_id` on `target_id` now, as a director's `use_action` does (and party bots'
 /// heals): it stands still while it casts (its area lands where it was aimed now), shows its cast bar, and the action
 /// lands when the cast ends.
+/// The Action sheet's CastType of an area placed on the ground where it was aimed (`ActionInfo::area_shape`.)
+const CAST_TYPE_PLACED: u8 = 7;
+
+/// What an NPC's ActorCast says of its aim, as retail's did (1,362 casts in Bob's two Stone Vigil captures, 1cefedf4
+/// and 341808b0): its position is where the cast is aimed, never the caster's own unless it's cast on itself (the
+/// target's spot in 1,164 of 1,169 casts on someone, the caster's in all 127 on itself), and an area placed on the
+/// ground names no target (0xE0000000, all 66: Isgebind's Sheet of Ice 1023 and its helpers' 1024, 738, 29053) with
+/// the spot as its position, which is where the client draws its marker. Kawari sent the caster's position and the
+/// target's ID, so the Stone Vigil's helpers' markers were all drawn where the helpers stood, in the middle of the
+/// room, while they hit where the party had stood (Bob's bundle 20261110-182408.)
+pub fn cast_aim(placed: bool, target: ObjectId, aimed_at: Vec3A) -> (ObjectId, Position) {
+    (
+        if placed { ObjectId::default() } else { target },
+        Position(aimed_at),
+    )
+}
+
 pub fn npc_use_action(
     network: &Arc<Mutex<NetworkState>>,
     game_data: &Arc<Mutex<GameData>>,
@@ -2358,15 +2373,20 @@ pub fn npc_use_action(
         });
     }
 
-    // Show the cast bar, the same way NPCs cast their own actions.
+    // Show the cast bar, the same way NPCs cast their own actions: aimed where its target stands (`cast_aim`.)
     if cast_time > 0.0 {
+        let placed = game_data
+            .lock()
+            .get_action_info(action_id)
+            .is_some_and(|info| info.cast_type == CAST_TYPE_PLACED);
+        let (cast_target, position) = cast_aim(placed, target_id, target_position);
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
             spell_id: request.action_id as u16,
             action_type: request.action_type,
             omen_delay: 0,
             action_id: request.action_id,
             cast_time: npc_cast_bar_time(cast_time),
-            target: target_id,
+            target: cast_target,
             rotation,
             interruptible: false,
             ballista_entity_id: ObjectId::default(),
