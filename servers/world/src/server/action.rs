@@ -1155,14 +1155,34 @@ pub fn execute_action(
                 !matches!(effect.0, TargetEffectKind::Heal { unk1, .. } if unk1[4] & EFFECT_ON_SOURCE != 0)
             });
             let side = area_side(target, &players_enemies);
+            // An attack lands on everyone inside it the caster's battalion is at war with, whichever side they're on,
+            // as an NPC's area attack on itself does (below); a heal on the target's side. Retail's quest battle 60
+            // wyvern (battalion 5, at war with both sides) caught the boss and its adds as well as the player and the
+            // allies with its 1136 (14-24 of its hits, three runs: 1308-2642 off the boss); Kawari's caught only
+            // the target's side, the player's (Bob's bundle 20261110-102239.)
+            let caster_enemies = (side != area_side(actor, &players_enemies)).then(|| {
+                game_data
+                    .lock()
+                    .get_battalion_enemies(common_spawn.battalion as u32)
+            });
             // NPCs only where the recording says what the attack does to them: without it an NPC's hit on another
             // isn't scaled, which for an area attack nobody aimed at them would be far too much.
             let hits_npcs = timeline.recorded_amount(request.action_id, false).is_some();
             for (id, other) in &instance.actors {
+                let other_side = area_side(other, &players_enemies);
+                let caught_side = match &caster_enemies {
+                    Some(enemies) => {
+                        other_side.is_some()
+                            && enemies
+                                .get(other.get_common_spawn().battalion as usize)
+                                .copied()
+                                .unwrap_or(false)
+                    }
+                    None => other_side.is_some() && other_side == side,
+                };
                 if *id != request.target.object_id
                     && *id != from_actor_id
-                    && area_side(other, &players_enemies).is_some()
-                    && area_side(other, &players_enemies) == side
+                    && caught_side
                     && (hits_npcs || hit_like_a_player(*id))
                     && other.get_common_spawn().health_points > 0
                     && caught(other.position().0)
@@ -1338,6 +1358,20 @@ pub fn execute_action(
                 let miss_percent =
                     npc_miss_percent(bystander.get_common_spawn().level, common_spawn.level);
                 roll_npc_hit(effects, scale, miss_percent);
+            }
+            // One that can't be hurt shows it (effect 7) and takes nothing, as a target does.
+            if matches!(
+                bystander,
+                NetworkedActor::Npc {
+                    currently_invulnerable: true,
+                    ..
+                }
+            ) {
+                for effect in effects.iter_mut() {
+                    if matches!(effect.0, TargetEffectKind::Damage { .. }) {
+                        *effect = TargetEffect(TargetEffectKind::Invincible {});
+                    }
+                }
             }
         }
 
@@ -4044,7 +4078,16 @@ fn hit_area_bystander(
     if actor.get_common_spawn().health_points == 0 {
         return;
     }
-    actor.add_enmity(from_actor_id, damage);
+    // None on one that can't be hurt, as for its target (quest battle 60's wyvern.)
+    if !matches!(
+        actor,
+        NetworkedActor::Npc {
+            currently_invulnerable: true,
+            ..
+        }
+    ) {
+        actor.add_enmity(from_actor_id, damage);
+    }
     let common_spawn = actor.get_common_spawn_mut();
     common_spawn.health_points = common_spawn
         .health_points

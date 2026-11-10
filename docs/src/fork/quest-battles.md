@@ -535,6 +535,11 @@ others 1265 (seen in all 34 quest battles of Bob's captures, levels 6-45). Kawar
   doesn't `protect` but Provokes the boss 2.5 s after he arrives (`Battle:provoke`); an invulnerable NPC isn't
   angered by hits (`server/action.rs`); and an NPC with no recorded amount against NPCs hits them as it hits players
   (`Timeline::recorded_amount_at`).
+* **The wyvern's 1136 hits everyone** (Bob's bundle 20261110-102239): on retail it caught whoever stood in it, both
+  sides: the boss 3-6 times (1308-2642 of its 9150 HP), the third wave's marauder and conjurer, the allies and the
+  player, 7-10 casts while it was out. Kawari's caught only the player's side, so the boss lost nothing to it, the
+  last phase ran longer (14 casts) and the gladiator took 12 of them (3854 of the 6001 he took; 4-5 on retail). An
+  NPC's area attack now lands on everyone its battalion is at war with ([combat](combat.md)).
 * **Haurchefant rides in** (all three runs, to a yalm): retail's SpawnNpc had him on mount 10, 4.3-4.4 s after
   sequence 3, where the drop-in puts him; he runs (6 yalms a second, speed byte 60) along his facing to (463.1, 304.3,
   -275.1) in 7.6-7.8 s, turns towards the fight and runs on to (459.5, 304.5, -307.0), getting off his mount on the way
