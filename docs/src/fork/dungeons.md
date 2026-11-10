@@ -666,6 +666,16 @@ on an enemy's list, and two 1672s came for the party's NPCs at the entrance at o
 retail's Stone Vigil did after each of its three wipes (log 2014 4.3 s after the fall, the bosses
 whole where they began). Before, only a script's own `onPartyWipe` reset anything, and the Stone Vigil's first boss
 stayed in battle and chased the party to the entrance (Bob's bundle 20261107-212704).
+Since 2026-11-10 a Player NPC (a Duty Finder bot, shown as a player) goes back as retail's party members did, not
+as its Duty Support members: three wipes in parties of players (Bob's Chronofoil captures 1aac5be2, 84cdbfb1 and
+dd09ac61) had no DeleteActor or SpawnPlayer for any member; 3.3-3.4 s after the director's PartyWipe each member's
+statuses went (ActorControl 20s), then ActorControl 212 with 1, their status list, an ActorSetPos with the player's
+own warp type and argument (25, 2), ActorControl 2 with 1 (mode normal), 60 and 1529, and 0.35 s later ActorControl
+200 with 1 (ZoneIn); no PartyList was sent again. The player's own conditions came with it, three times, without
+Casting or InCombat (BoundByDuty and 28 alone). Kawari took the bots away and spawned them again, the likeliest cause of
+the client's party list breaking (Bob's bundle 20261110-141944: "on reset the party list broke"; not yet played since): `party_bot::return_beside`
+moves them now (`back_to_the_start` picks by kind; Duty Support's members are still spawned again, as retail's
+were), and the players' Casting condition is taken off as they're sent back.
 Since 2026-11-09 the player's position is the start's from the moment they're sent back (`do_change_zone` keeps the
 ActorSetPos's spot): the server kept the spot they had fallen on until their client moved, so the party's NPCs got up
 there, in the arena, beside the boss brought back (the Navel: 10 yalms from the new Titan, who took them up at once,

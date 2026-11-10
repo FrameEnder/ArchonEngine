@@ -1582,6 +1582,30 @@ Packets whose size on retail isn't what `opcodes.yml` says, from Bob's Chronofoi
   Kawari doesn't send it.
 * **CrossRealmListingsRequest2** (client): 64 bytes on retail, 40 in `opcodes.yml`.
 
+## Duty scripts against duty-sim (2026-11-10)
+
+What `questkit duty-sim` found on its first run and has written down (`tools/questkit/duties/known.json`, 68 problems
+in 14 of 21 runs; [Testing](testing.md#duty-sim)). None is fixed yet; none was reported from a played run.
+
+* **No `onPartyWipe`** in `f1r1_re` (Toto-Rak), `f1d1_re` (the Tam-Tara Deepcroft), `w1d1_re` (Copperbell Mines),
+  `f1d2_re` (Haukke Manor), `s1d2_re` (Brayflox's Longstop) and `s1d1_re` (Sastasha): what the script keeps of a
+  fight (a boss pulled, adds already called at a health mark, a room's objective) stays as it was after a wipe. In
+  the rehearsed wipes the boss music didn't start again (Toto-Rak's first two bosses, Copperbell's first two, Haukke's
+  first two, Brayflox's first two), and the adds a boss calls didn't come again (the Tam-Tara rooms', Toto-Rak's and
+  Haukke's last bosses', Brayflox's second boss's). The server sends the enemies home whole all the same
+  (`reset_after_wipe`), so the fight goes on, without those.
+* **Sastasha** never starts the boss music (retail: 37 at each of the three bosses' pulls, 0 as each falls); it
+  stops it once, at the end.
+* **The Navel** never changes the music (retail: 158, 160 and 156 at 26-47 s, 55-112 s and 94-176 s, as Titan's
+  phases go).
+* **Timing**: the Tam-Tara Deepcroft's music stops 3.4-6.9 s before retail's; Toto-Rak's objectives came 3-12 s late
+  in one run (2528a32d) and that run never completes in the simulator; Brayflox's completion 6.8 s late in one run
+  (392059dc), its last boss's music 63-66 s early in the other (44df02fc: pulled twice on retail). Not looked into:
+  each may be the script or what the simulator shows it.
+* `duty-sim` doesn't fight: enmity, hits and the party's NPCs aren't in it, and a boss retail pulled more than once
+  isn't rehearsed. `cargo test` (with `bundle_tests.rs`) runs on PRs, pushes to master and by hand, not on every push
+  to `test-pending`.
+
 ## Public sources (2026-11-10)
 
 * `questkit sources --duty`'s drafts have no timing for dungeons before cactbot has timelines (A Realm Reborn's have

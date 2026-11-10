@@ -131,6 +131,12 @@ Applied after an action's script returns, by the server, so scripts only give th
   A **player** with one of these is held as retail held them (since 2026-11-09, `server/mod.rs`): the conditions
   SufferingStatusAffliction and SufferingStatusAffliction2, which stop the client moving and acting, and
   untargetable (ActorControl 54), until it goes ([Dungeons](dungeons.md#the-navel), the gaols).
+* **A player who dies mid-cast** stops casting (since 2026-11-10): the Casting condition goes off as they die, and no
+  CancelCast is sent, as retail (four deaths 0.4-0.8 s into Cure and Stone casts in Bob's Chronofoil captures: the
+  Condition sent at the death had InCombat and the duty's two, no Casting; no ActorControl 15 followed). Kawari
+  dropped the dead player's tasks, the cast's among them, and that task was what took Casting off, so it stayed set
+  and the client refused every action afterwards (Bob's bundle 20261110-141944: "it all sees me as casting", after a
+  wipe 1.5 s into a Cure II). `actor.rs`'s `kill_actor`; test `a_player_who_dies_mid_cast_stops_casting`.
 * **Interrupts** (Head Graze, Interject) cancel only the target's cast and send ActorControl 15 (CancelCast) to everyone
   nearby; they used to delete every queued task of the target, so its statuses never wore off.
 

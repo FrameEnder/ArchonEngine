@@ -110,6 +110,8 @@ fn navmesh_generations() -> parking_lot::MutexGuard<'static, std::collections::H
     GENERATING.get_or_init(Default::default).lock()
 }
 pub use rotation::{ActionMechanics, GCD_GROUP};
+#[cfg(test)]
+mod bundle_tests;
 mod fate;
 mod first_attack;
 mod npc_behavior;
@@ -119,6 +121,8 @@ mod social;
 mod spawn_allocator;
 mod status_floor;
 mod sweep;
+#[cfg(test)]
+mod test_world;
 mod wipe;
 mod world_turn;
 mod zone;

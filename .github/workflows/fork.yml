@@ -40,6 +40,8 @@ jobs:
         run: python tools/questkit replay -v
       - name: Every quest battle does what retail did (sequences, battle talk, waves, timing)
         run: python tools/questkit battle-sim -v
+      - name: Every dungeon and trial does what retail did, and resets at a wipe (music, objectives, completion; nothing new against duties/known.json)
+        run: python tools/questkit duty-sim
       - name: Nothing that fails silently in game (unscripted NPC actions, missing timelines and fixtures)
         run: python tools/questkit lint
 

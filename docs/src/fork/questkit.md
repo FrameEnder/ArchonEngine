@@ -18,6 +18,7 @@ pip install lupa        # Lua 5.4 for Python; replay, scaffold and lua-syntax ne
 | `transcribe <quest> --dumps … [--fixture …]` | Writes a quest script that does what retail did, from the quest's Chronofoil fixtures, and replays it |
 | `compare --capture … --recording … [quests]` | What Kawari sent for a quest against what retail did |
 | `lua-syntax [folder]` | Checks every Lua script compiles (Lua 5.4, like the server) |
+| `duty-sim [duties] [-v] [--make SCRIPT.lua --run …] [--update-known]` | Runs dungeons' and trials' director scripts against what the same duties did on retail, and rehearses a wipe in every boss fight ([Testing](testing.md#duty-sim)) |
 | `rotation <classjob> <level> [targets] [--against uses.json]`, `rotation --check` | Runs a party bot's rotation against a dummy with its real action scripts; `--check` (in the tests) is every rotation at every level band |
 | `sources [--audit] [--duty CFC [--territory T]] [--action N] [--server-data] [--build …]` | What Boss Mod and cactbot know: an audit of the fork's duties against them, a draft of a duty the fork hasn't, the server's fallback cone angles and ring holes |
 | `battle <exports, battles folder or files…> [--list] [--where …] [--run N,M\|all] [--summary-only] [--npc …] [--out file]` | What recorded duties and quest battles show: cast, waves, targeting rules, heals, who never acted; totals across runs of the same battle |
@@ -576,7 +577,7 @@ Compiles every script with Lua 5.4's `load` (nothing runs). It found upstream's 
 
 | Job | Runs on | Does |
 |---|---|---|
-| Quest replays and scripts | every push and PR | questkit's tests (with lupa and zstandard), `lua-syntax`, `replay -v`, `battle-sim -v`, `lint` |
+| Quest replays and scripts | every push and PR | questkit's tests (with lupa and zstandard), `lua-syntax`, `replay -v`, `battle-sim -v`, `duty-sim` (since 2026-11-10), `lint` |
 | Formatting and changelog | every push and PR | `tools/ci/check-changes.sh`: `rustfmt --check --edition 2024` on the changed `.rs` files only, and a changelog entry for any change outside `docs/` (skip with `[no-docs]` in a commit message, e.g. upstream merges) |
 | Documentation builds | every push and PR | `mdbook build docs` (mdBook 0.5.4) |
 | Build and test | PRs, pushes to master, by hand | `cargo build --workspace --locked`, `cargo test --workspace --locked -- --skip test_item_level` |

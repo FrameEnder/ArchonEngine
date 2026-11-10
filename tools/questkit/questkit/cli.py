@@ -571,6 +571,43 @@ def _battle_sim(args) -> int:
     return 0 if results and all(r.ok for r in results) else 1
 
 
+def _duty_sim(args) -> int:
+    from . import duty_sim
+
+    if args.make:
+        import gzip
+
+        if not args.run_file:
+            print("--make needs --run: a battle run of the duty's visit (questkit chronofoil --battle N.V --out "
+                  "run.json.gz)")
+            return 1
+        raw = Path(args.run_file).read_bytes()
+        run = json.loads(gzip.decompress(raw) if raw[:2] == b"\x1f\x8b" else raw)
+        fixture = duty_sim.fixture_from_run(run, args.make, args.source or run.get("Source", ""))
+        capture = (run.get("Source", "").split() + ["", ""])[1][:8]
+        path = duty_sim.DUTIES / f"{fixture['duty']}-{args.name or capture or 'run'}.json"
+        if path.exists() and not args.force:
+            print(f"{path} exists, --force to replace it")
+            return 1
+        duty_sim.save(fixture, path)
+        print(f"Wrote {path}: {len(fixture['npcs'])} NPCs, {len(fixture['events'])} events, "
+              f"{len(fixture['wipes'])} wipes")
+        return 0
+    results = duty_sim.run_all([int(n) for n in args.duties] if args.duties else None)
+    if args.update_known:
+        if args.duties:
+            print("--update-known writes the whole list: run it without picking duties")
+            return 1
+        print(f"Wrote {duty_sim.KNOWN}: {duty_sim.save_known(results)} problems")
+        return 0
+    known = duty_sim.load_known()
+    print(duty_sim.format_results(results, verbose=args.verbose, known=known))
+    changes, _ = duty_sim.against_known(results, known)
+    for change in changes:
+        print(change)
+    return 0 if results and not changes else 1
+
+
 def _clientcheck(args) -> int:
     from . import clientcheck
 
@@ -750,6 +787,20 @@ def main(argv=None) -> int:
     p.add_argument("--source", help="where the run came from, kept in the fixture")
     p.add_argument("--force", action="store_true", help="replace an existing fixture")
     p.set_defaults(run=_battle_sim)
+
+    p = commands.add_parser("duty-sim", help="run dungeons' and trials' director scripts against what the same duties "
+                                             "did on retail, and rehearse a wipe in every boss fight")
+    p.add_argument("duties", nargs="*", help="only these duties (ContentFinderCondition)")
+    p.add_argument("-v", "--verbose", action="store_true", help="every matched event and its timing")
+    p.add_argument("--make", metavar="SCRIPT.lua", help="make a fixture from --run for this script of "
+                                                        "resources/scripts/content/")
+    p.add_argument("--run", dest="run_file", help="a battle run (questkit chronofoil --battle N.V --out x.json.gz)")
+    p.add_argument("--name", help="the fixture's name after the duty's number (default: the capture's ID)")
+    p.add_argument("--source", help="where the run came from, kept in the fixture")
+    p.add_argument("--force", action="store_true", help="replace an existing fixture")
+    p.add_argument("--update-known", action="store_true",
+                   help="write what fails now to duties/known.json (after fixing something, or adding a fixture)")
+    p.set_defaults(run=_duty_sim)
 
     p = commands.add_parser("clientcheck", help="check the server's event scripts against the client's (scenes, "
                                                 "constants, parameters): kawari-questdump scripts' output")

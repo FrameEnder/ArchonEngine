@@ -43,6 +43,14 @@ use physis::sestring::SeString;
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash)]
 pub struct ClientId(usize);
 
+#[cfg(test)]
+impl ClientId {
+    /// A client made up for a test (`server/test_world.rs`.)
+    pub fn for_tests(id: usize) -> Self {
+        ClientId(id)
+    }
+}
+
 impl std::fmt::Debug for ClientId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "ClientId({})", self.0)

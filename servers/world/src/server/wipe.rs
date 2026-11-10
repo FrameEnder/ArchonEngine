@@ -264,6 +264,9 @@ pub fn wipe_tick(
                 0,
                 true,
             );
+            // Their conditions as they get up: retail sent them with the PrepareZoning, without Casting or InCombat
+            // (BoundByDuty and 28 alone, captures 1aac5be2 and 84cdbfb1.) InCombat goes with the haters' list.
+            crate::server::action::set_casting(&mut network.lock(), *actor_id, false);
         }
 
         {
@@ -274,13 +277,14 @@ pub fn wipe_tick(
 
         // The party's NPCs come back with them, out of the fight: those still standing had fought on, and the reset
         // boss, finding one beside it, took it up again at once (Bob's bundle 20261108-145830: "boss did not reset").
+        // Duty Support members are spawned again, Player NPCs moved (`party_bot::back_to_the_start`.)
         let bots: Vec<(ObjectId, ObjectId)> = instance
             .party_bots
             .iter()
             .map(|(id, bot)| (*id, bot.leader))
             .collect();
         for (bot, leader) in bots {
-            party_bot::get_up_beside(&network, instance, bot, leader);
+            party_bot::back_to_the_start(&network, instance, bot, leader);
             if let Some(bot) = instance.party_bots.get_mut(&bot) {
                 bot.pulled.clear();
                 bot.answers.clear();
@@ -382,7 +386,7 @@ pub fn wipe_tick(
             .map(|(id, bot)| (*id, bot.leader))
             .collect();
         for (bot, leader) in bots {
-            party_bot::get_up_beside(&network, instance, bot, leader);
+            party_bot::back_to_the_start(&network, instance, bot, leader);
         }
     }
 

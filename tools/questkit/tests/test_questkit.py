@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from questkit import battle, battle_sim, capture, chronofoil, chronofoil_battle, chronofoil_quest, compare, duty_sources, fixtures, ledger, ledger_facts, lint, public_sources, recording, replay, rotation_sim, scaffold, transcribe, triage  # noqa: E402
+from questkit import battle, battle_sim, capture, chronofoil, chronofoil_battle, chronofoil_quest, compare, duty_sim, duty_sources, fixtures, ledger, ledger_facts, lint, public_sources, recording, replay, rotation_sim, scaffold, transcribe, triage  # noqa: E402
 from questkit.bundle import Bundle  # noqa: E402
 
 QUEST = 9999
@@ -1808,6 +1808,134 @@ class RotationSimTest(unittest.TestCase):
         for action in (7427, 25820, 25805, 25806, 25807, 25823, 25824, 25825):
             self.assertIn(action, run["uses"])
         self.assertFalse(run["errors"])
+
+
+class DutySimTest(unittest.TestCase):
+    """A duty's director script against a retail run, and a wipe rehearsed in its boss fight (a made-up script and
+    run.)"""
+
+    SCRIPT = """
+BOSS = 5000001
+ADD = 5000002
+EOBJ_DOOR = 2000001
+pulled = false
+add_came = false
+door_open = false
+function onSetup(director) director:set_sequence(1) end
+function onCommence(director) end
+function onUpdate(director, health, player_health, info)
+    if not pulled and info[BOSS] ~= nil and info[BOSS].target ~= nil then
+        pulled = true
+        director:set_bgm(37)
+    end
+    if pulled and not add_came and health[BOSS] ~= nil and health[BOSS] < 80 then
+        add_came = true
+        director:delay(2)
+        director:spawn_bnpc(ADD)
+        director:delay(0)
+    end
+end
+function onGimmickAccessor(director, actor, id) if id == EOBJ_DOOR then director:event_action(24, actor, id) end end
+function onEventActionCast(director, actor, target) door_open = true director:hide_eobj(target) end
+function onActorDeath(director, layout)
+    if layout == BOSS and door_open then
+        director:set_bgm(0)
+        director:objective(0)
+        director:complete_duty()
+    end
+end
+"""
+    RESET = "function onPartyWipe(director) pulled = false add_came = false director:despawn_bnpc(ADD) end\n"
+
+    def fixture(self, script: Path) -> dict:
+        life = {"spawn": None, "pulled": 10.0, "death": 70.0, "max_hp": 1000, "base": 1, "gone": 80.0,
+                "hp": [[10.0, 99.0], [20.0, 79.0], [45.0, 40.0], [70.0, 0.0]], "pos": [[0.0, 1.0, 0.0, 2.0]]}
+        add = {"spawn": 22.0, "pulled": 22.0, "death": 30.0, "max_hp": 100, "base": 2, "gone": 40.0,
+               "hp": [[22.0, 100.0], [30.0, 0.0]], "pos": [[22.0, 3.0, 0.0, 2.0]]}
+        return {"duty": 999, "script": str(script), "source": "made up", "tolerance": 3.0,
+                "npcs": {"5000001": [life], "5000002": [add]},
+                "player": {"pos": [[0.0, 0.0, 0.0, 0.0]], "hp": []}, "party": {}, "casts": [], "wipes": [],
+                "bars": [[5.0, 24, 2.0]],
+                "events": [[10.0, "bgm", 37], [70.0, "bgm", 0], [70.0, "objective", 0], [70.0, "complete"]]}
+
+    def test_run_matches_and_a_wipe_is_rehearsed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(tmp) / "made.lua"
+            script.write_text(self.SCRIPT + self.RESET)
+            fixture = self.fixture(script)
+            run = duty_sim.simulate(fixture, "made")
+            self.assertIsNone(run.error)
+            self.assertEqual(run.problems, [])
+            self.assertEqual([(kind, value) for kind, value, _, _ in run.matched],
+                             [("bgm", 37), ("bgm", 0), ("objective", 0), ("complete", None)])
+            # The door's bar (5 s, 2 s long) opened it, and the add came 2 s after the boss went below 80 % (the delay.)
+            calls = {name: t for t, name, _ in run.calls}
+            self.assertEqual((calls["hide_eobj"], calls["spawn_bnpc"]), (7.0, 22.0))
+            wipes = duty_sim.rehearse_wipes(fixture, "made")
+            self.assertEqual((wipes.error, wipes.problems), (None, []))
+            self.assertEqual(len(wipes.matched), 1)
+            # Against what's written down: nothing new, nothing gone.
+            self.assertEqual(duty_sim.against_known([(run, wipes)], {}), ([], 0))
+            self.assertEqual(duty_sim.against_known([(run, wipes)], {"made": ["an old one"]})[0],
+                             ["made: no longer happens (take it off duties/known.json): an old one"])
+
+    def test_a_script_that_forgets_a_fight_at_a_wipe(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(tmp) / "made.lua"
+            script.write_text(self.SCRIPT)  # no onPartyWipe: `pulled` and `add_came` stay set
+            fixture = self.fixture(script)
+            self.assertEqual(duty_sim.simulate(fixture, "made").problems, [])
+            wipes = duty_sim.rehearse_wipes(fixture, "made")
+            self.assertEqual(sorted(problem.split(" (")[0] for problem in wipes.problems),
+                             ["boss 5000001: set_bgm", "boss 5000001: spawn_bnpc"])
+            changes, standing = duty_sim.against_known([(duty_sim.simulate(fixture, "made"), wipes)],
+                                                       {"made": wipes.problems})
+            self.assertEqual((changes, standing), ([], 2))
+
+    def test_late_and_missing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(tmp) / "made.lua"
+            script.write_text(self.SCRIPT + self.RESET)
+            fixture = self.fixture(script)
+            fixture["bars"] = []  # nobody opens the door: the script never completes the duty
+            fixture["events"][0][0] = 2.0  # and retail's music began 8 s before the script's
+            problems = duty_sim.simulate(fixture, "made").problems
+            self.assertIn("bgm 37: 10.0 s, retail 2.0 s", problems)
+            self.assertIn("complete at 70.0 s on retail: the script never did it", problems)
+
+    def test_fixture_from_a_run(self):
+        you, boss, mate = 0x1000_0001, 0x4000_0001, 0x1000_0002
+        def director(t, event, arg=0):
+            return {"S": t, "Id": you, "Category": 109, "Params": [0x8003_0001, event, arg, 0], "Packet": "ActorControlSelf"}
+        run = {
+            "ContentFinderCondition": 999, "Source": "chronofoil abcdef0123 2026.10.16",
+            "Actors": {str(you): {"Kind": "you", "MaxHp": 1000, "Seen": 0.0, "Position": [0, 0, 0]},
+                       str(mate): {"Kind": "player", "MaxHp": 1000, "Seen": 0.0, "Position": [0, 0, 0]},
+                       str(boss): {"Kind": "battle npc", "LayoutId": 5000001, "BaseId": 77, "MaxHp": 2000, "Seen": 12.0,
+                                   "LastSeen": 90.0, "Died": 80.0, "Position": [5.0, 0.0, 5.0], "Battalion": 4}},
+            "Samples": [{"S": 12.0, "Id": boss, "Hp": 2000, "P": [5.0, 0.0, 5.0]}, {"S": 30.0, "Id": boss, "T": you},
+                        {"S": 40.0, "Id": boss, "Hp": 1000}, {"S": 80.0, "Id": boss, "Hp": 0},
+                        {"S": 11.0, "Id": you, "P": [1.0, 0.0, 1.0]}, {"S": 20.0, "Id": mate, "P": [2.0, 0.0, 2.0]}],
+            "Actions": [],
+            "Events": [{"S": 31.0, "Kind": "cast", "Id": boss, "Text": "action 903 spell 903"}],
+            "Controls": [director(10.0, 0x40000001, 5400), director(30.0, 0x80000001, 37), director(80.0, 0x80000001),
+                         director(80.0, 0x80000016), director(80.0, 0x40000003), director(50.0, 0x40000005),
+                         director(60.0, 0x40000006),
+                         {"S": 15.0, "Id": mate, "Category": 3, "Params": [1, 24, 0, 0], "Packet": "ActorControlTarget"},
+                         {"S": 17.0, "Id": mate, "Category": 3, "Params": [0, 24, 0, 0], "Packet": "ActorControlTarget"}],
+        }
+        fixture = duty_sim.fixture_from_run(run, "made.lua")
+        life, = fixture["npcs"]["5000001"]
+        self.assertEqual((life["spawn"], life["pulled"], life["death"], life["max_hp"]), (2.0, 20.0, 70.0, 2000))
+        self.assertEqual(life["hp"], [[2.0, 100.0], [30.0, 50.0], [70.0, 0.0]])
+        self.assertEqual(fixture["events"], [[20.0, "bgm", 37], [70.0, "bgm", 0], [70.0, "complete"],
+                                             [70.0, "objective", 0]])
+        self.assertEqual((fixture["wipes"], fixture["bars"], fixture["casts"]),
+                         ([[40.0, 50.0]], [[5.0, 24, 2.0]], [[21.0, 5000001, 903]]))
+        self.assertEqual(list(fixture["party"]), ["party1"])
+        with tempfile.TemporaryDirectory() as tmp:
+            path = duty_sim.save(fixture, Path(tmp) / "999-made.json")
+            self.assertEqual(json.loads(path.read_text()), fixture)
 
 
 class LibZstdTest(unittest.TestCase):

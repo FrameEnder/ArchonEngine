@@ -576,3 +576,12 @@ Feet: <item name> | <dye>
 every level band, in CI. Its first run found the Thaumaturge idle at level 1: with full MP the rotation asked for
 Fire, learnt at 2, so a level 1 bot cast nothing. It casts Blizzard until it has Fire now
 (`rotations/BlackMage.lua`).
+
+## At a wipe (2026-11-10)
+
+A Player NPC goes back to the start with its party as retail's party members do: moved (an ActorSetPos with the
+player's warp type, its mode back to normal, ZoneIn), alive and whole, never taken away and spawned again
+(`party_bot::return_beside`; [Dungeons](dungeons.md) has retail's packets). The same when one that fell isn't raised
+within 30 s and gets up beside its player. Duty Support's members are still spawned again
+(`party_bot::get_up_beside`), as retail's were. Test: `a_player_npc_goes_back_at_a_wipe_without_leaving`
+([Testing](testing.md)).

@@ -72,6 +72,7 @@
   - [What Retail Sends That Kawari Doesn't](fork/unfilled-fields.md)
   - [Tools and Debug Commands](fork/tools.md)
   - [questkit and CI](fork/questkit.md)
+  - [Testing: What's Checked Without Playing](fork/testing.md)
   - [ArchonEngine ControlPanel](fork/kawari-web.md)
   - [Recorder and Diagnostics](fork/recorder-and-diagnostics.md)
   - [Research Notes](fork/research.md)

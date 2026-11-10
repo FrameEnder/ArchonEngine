@@ -2829,7 +2829,7 @@ fn tend_the_fallen(network: &Arc<Mutex<NetworkState>>, instance: &mut Instance, 
         } else if now.duration_since(since) >= GET_UP_AFTER {
             bot.dead_since = None;
             bot.revive_seen = None;
-            get_up_beside(network, instance, id, leader);
+            back_to_the_start(network, instance, id, leader);
         }
     }
 }
@@ -3071,6 +3071,108 @@ pub(super) fn get_up_beside(
     }
     update_actor_hp_mp(network.clone(), instance, id);
     tracing::info!("Party bot {id} got up by itself beside {leader}");
+}
+
+/// A Player NPC goes back with its party at a wipe as retail's other party members did (three wipes in parties of
+/// players, Bob's Chronofoil captures 1aac5be2, 84cdbfb1 and dd09ac61): it stays spawned (no DeleteActor or
+/// SpawnPlayer for any member), and as the player is sent back it gets an ActorSetPos of its own with the player's
+/// warp type and argument (Event, 2), its mode back to normal (ActorControl 2 with 1), ActorControls 60 and 1529, and
+/// ZoneIn (200 with 1), alive and whole. Before, it was taken away and spawned again (`get_up_beside`, as retail does
+/// the Duty Support members): the likeliest cause of the client's party list breaking at a wipe (Bob's bundle
+/// 20261110-141944: "on reset the party list broke".)
+pub(super) fn return_beside(
+    network: &Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    id: ObjectId,
+    leader: ObjectId,
+) {
+    let Some(spot) = instance.find_actor(leader).map(|actor| {
+        let mut position = actor.position();
+        let behind = actor.rotation() + std::f32::consts::PI;
+        position.0.x += FOLLOW_DISTANCE * behind.sin();
+        position.0.z += FOLLOW_DISTANCE * behind.cos();
+        (position, actor.rotation())
+    }) else {
+        return;
+    };
+    let Some(NetworkedActor::Npc {
+        spawn,
+        state,
+        navmesh_path,
+        enmity,
+        status_effects,
+        cast,
+        ..
+    }) = instance.find_actor_mut(id)
+    else {
+        return;
+    };
+    spawn.common.health_points = spawn.common.max_health_points;
+    spawn.common.resource_points = spawn.common.max_resource_points;
+    spawn.common.position = spot.0;
+    spawn.common.rotation = spot.1;
+    *state = NpcState::Follow;
+    navmesh_path.clear();
+    enmity.clear();
+    *cast = None;
+    status_effects.remove(STATUS_REVIVE_OFFER);
+    if let Some(bot) = instance.party_bots.get_mut(&id) {
+        bot.path.clear();
+        bot.walking_itself = true;
+        bot.dead_since = None;
+        bot.revive_seen = None;
+    }
+    {
+        let mut network = network.lock();
+        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorSetPos(
+            kawari::ipc::zone::ActorSetPos {
+                position: spot.0,
+                rotation: spot.1,
+                warp_type: kawari::common::WarpType::Event,
+                arg: 2,
+                ..Default::default()
+            },
+        ));
+        network.send_to_instance(
+            ObjectId::default(),
+            instance,
+            FromServer::PacketSegment(ipc, id),
+            DestinationNetwork::ZoneClients,
+        );
+        set_character_mode(instance, &mut network, id, CharacterMode::Normal, 0, true);
+        for category in [
+            ActorControlCategory::PlayIdleAnimation,
+            ActorControlCategory::UnkAnimationRelated,
+            ActorControlCategory::ZoneIn {
+                warp_finish_anim: 1,
+                raise_anim: 0,
+                unk1: 0,
+            },
+        ] {
+            network.send_ac_in_range_inclusive_instance(instance, id, category);
+        }
+    }
+    update_actor_hp_mp(network.clone(), instance, id);
+    tracing::info!("Party bot {id} went back beside {leader}");
+}
+
+/// A party's NPC back beside the one it follows at a wipe: a Duty Support member spawned again there (as retail's
+/// were), a Player NPC moved there (as retail's party members were.)
+pub(super) fn back_to_the_start(
+    network: &Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    id: ObjectId,
+    leader: ObjectId,
+) {
+    let player_npc = instance
+        .party_bots
+        .get(&id)
+        .is_some_and(|bot| bot.party_npc.is_none());
+    if player_npc {
+        return_beside(network, instance, id, leader);
+    } else {
+        get_up_beside(network, instance, id, leader);
+    }
 }
 
 fn health_percent(actor: &NetworkedActor) -> f32 {

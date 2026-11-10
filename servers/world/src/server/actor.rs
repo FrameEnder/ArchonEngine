@@ -437,6 +437,17 @@ pub fn kill_actor(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
     }
 
     let mut network = network.lock();
+    // A player who dies mid-cast isn't casting any more: retail's Condition at the death has no Casting, and no
+    // CancelCast comes (four deaths mid-cast in Bob's Chronofoil captures, 0.4-0.8 s into Cure and Stone casts.) The
+    // cast's task goes with the rest of theirs below, and it was what took Casting off: left set, the client refused
+    // every action after the wipe's reset (Bob's bundle 20261110-141944: "it all sees me as casting", 1.5 s into a
+    // Cure II.)
+    if matches!(
+        instance.find_actor(actor_id),
+        Some(NetworkedActor::Player { .. })
+    ) {
+        crate::server::action::set_casting(&mut network, actor_id, false);
+    }
     for action_id in cancelled {
         network.send_ac_in_range_inclusive_instance(
             instance,

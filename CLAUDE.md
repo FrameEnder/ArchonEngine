@@ -35,5 +35,8 @@ when no code changes.
   the Dead work goes on `Deep-Dungeon`.
 * Don't run `cargo fmt` on the workspace (it reformats upstream files); `rustfmt --check --edition 2024` the files
   you changed.
+* A fix from one of Bob's bundles gets a test that would have caught it (`docs/src/fork/testing.md`): the server's side
+  in `servers/world/src/server/bundle_tests.rs`, a script's as a fixture (`replay`, `battle-sim`, `duty-sim`). A duty
+  script change keeps `questkit duty-sim` passing (`--update-known` only for what's really still wrong).
 * Quest scripts follow the pattern in `docs/src/fork/quests.md` and are checked against the client's script and a
   retail recording (simulate with lupa before Bob tests).
