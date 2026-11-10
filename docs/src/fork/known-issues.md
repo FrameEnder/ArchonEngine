@@ -1295,12 +1295,22 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   71–75, 77–79 and 91–100 are interpolated (or extrapolated), and tanks below 50 and above 80 use a ratio. The party
   bonus (+1–5 % on retail, a few seconds after zoning) and food's HP aren't applied.
 * **Class actions 1–50** ([Combat](combat.md#class-and-role-actions-levels-150)): potencies are 7.x max-level tooltip
-  values, not checked at low level (only Conjurer/White Mage are in Bob's captures). No job gauges (BLM Astral Fire and
-  Umbral Ice, MNK chakra/furies, WAR Beast, PLD Oath, SCH Aetherflow, NIN mudras; SMN's has Aetherflow only), no egis
-  or fairy, no
+  values, not checked at low level (only Conjurer/White Mage are in Bob's captures). No egis or fairy, no
   positionals, movement actions do nothing on the server, barriers don't absorb damage, Bloodbath doesn't heal, Cover
-  doesn't redirect, Thrill of Battle doesn't raise max HP, Peloton is the caster's only. Berserk's and Perfect
-  Balance's stacks aren't used up.
+  doesn't redirect, Thrill of Battle doesn't raise max HP, Peloton is the caster's only.
+* **The ARR jobs at 51–100** ([Combat](combat.md#the-arr-jobs-levels-51100), 2026-11-10, untested in game): the
+  potencies are the job guide's level-100 values at every level; the ActorGauge offsets of the Warrior, Monk, Dragoon,
+  Bard, Ninja, Black Mage and Scholar gauges are FFXIVClientStructs' less 7 as the Paladin's and Summoner's are in Bob's
+  captures, not seen for those jobs (a gauge showing nothing or the wrong thing would be that); ground-targeted actions
+  (Liturgy of the Bell, Sacred Soil, Ley Lines, Doton, Earthly Star) put their effect on the caster or the target;
+  Ley Lines' and the Army's Paeon's speed-ups, Triplecast, the Mage's Ballad's Bloodletter resets, Ten Chi Jin's
+  three-mudra lock, Deployment Tactics' spread, Excogitation's trigger (it heals at once), Fey Union's drain, Expedient's
+  speed and the demi-summons and Seraph as pets aren't done; Lightwyrm Trance uses Dreadwyrm Trance's status (no row of
+  its own in Boss Mod's list). The Summoner's arcanum order and attunement counts and the Ninja's mudra IDs 18805-18807
+  are from retail's captures; the rest of the mechanics are from the job guide's text.
+* **Healer bots' heals** are one single-target GCD heal (`heal_action`); they don't use the healers' abilities
+  (Lustrate, Excogitation, Indomitability, Tetragrammaton, Divine Benison...) or area heals, and the rotation scripts
+  can't see the party's HP.
 * **Combat items:** HQ values aren't used; food gives Well Fed without its stat bonuses; elixirs give their caps.
 * **Cooldowns** (ActorControlSelf 17, retail sends one before every action) aren't sent; the client works recasts out
   itself. Item recasts aren't tracked.

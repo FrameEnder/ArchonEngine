@@ -7,6 +7,11 @@ local DURATION = 30.0
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
+    -- Recitation (74): free and surely critical.
+    if player:get_effect(SCH_EFFECT_RECITATION) ~= nil then
+        effects:guarantee_critical()
+        effects:consume_effect(SCH_EFFECT_RECITATION)
+    end
     effects:heal(healAmount(player, classPotency(player, POTENCY, TRAITS_ACN_MAIM_AND_MEND)))
     effects:gain_effect(EFFECT_GALVANIZE, 0, DURATION)
 

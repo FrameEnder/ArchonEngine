@@ -21,6 +21,7 @@ function doAction(player, in_combo)
 
     effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, blmFirePotency(player, classPotency(player, POTENCY, TRAITS_THM_MAIM_AND_MEND))))
     effects:set_mp_cost(blmFireCost(player, MP_COST))
+    blmUseHeart(effects, player)
     blmFireStep(effects, player)
     if player:has_trait(TRAIT_FIRESTARTER) and math.random() < FIRESTARTER_CHANCE then
         effects:gain_effect_self(EFFECT_FIRESTARTER, 0, FIRESTARTER_DURATION)

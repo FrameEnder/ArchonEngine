@@ -5,12 +5,13 @@
 -- Might in Fight or Flight or before they'd be lost; otherwise the Fast Blade - Riot Blade - Royal Authority combo, and
 -- Total Eclipse - Prominence on three or more. Retail's Paladins at 30-39 in Bob's captures (three players, 624 s)
 -- used Fast Blade, Riot Blade and Rage of Halone about five times a minute each, Total Eclipse about 7 (trash), Spirits
--- Within 1.7, Fight or Flight 1.1.
+-- Within 1.7, Fight or Flight 1.1; at 80-89 (six players) Holy Spirit 193 uses to Fast Blade's 120, Atonement 95,
+-- Supplication 89, Sepulchre 88, Intervene 80, Sheltron 30. Sheltron (Holy Sheltron) spends the Oath Gauge ("oath").
 
 local FAST_BLADE, RIOT_BLADE, RAGE_OF_HALONE, ROYAL_AUTHORITY = 9, 15, 21, 3539
 local TOTAL_ECLIPSE, PROMINENCE = 7381, 16457
 local FIGHT_OR_FLIGHT, SPIRITS_WITHIN, EXPIACION, CIRCLE_OF_SCORN = 20, 29, 25747, 23
-local SHIELD_LOB = 24
+local SHIELD_LOB, INTERVENE, SHELTRON, HOLY_SHELTRON = 24, 16461, 3542, 25746
 local GORING_BLADE, HOLY_SPIRIT, HOLY_CIRCLE = 3538, 7384, 16458
 local REQUIESCAT, IMPERATOR = 7383, 36921
 local ATONEMENT, SUPPLICATION, SEPULCHRE = 16460, 36918, 36919
@@ -36,7 +37,7 @@ local function gcd(b)
             return (b:aoe(3) and b:has(HOLY_CIRCLE)) and HOLY_CIRCLE or HOLY_SPIRIT
         end
     end
-    if b:has_status(S_GORING_READY) and b:has(GORING_BLADE) then return GORING_BLADE end
+    if b:has_status(S_GORING_READY) and b:cd(GORING_BLADE) <= 0.25 then return GORING_BLADE end
     if b:has_status(S_SEPULCHRE_READY) and b:has(SEPULCHRE) then return SEPULCHRE end
     if b:has_status(S_SUPPLICATION_READY) and b:has(SUPPLICATION) then return SUPPLICATION end
     if b:has_status(S_DIVINE_MIGHT) and b:has(HOLY_SPIRIT) and (fof > 0 or b:status(S_DIVINE_MIGHT) < 6) then
@@ -65,11 +66,16 @@ local function ogcd(b)
     local req = b:best(IMPERATOR, REQUIESCAT)
     if req and b:ready(req) and (fof > 0 or not b:has(FIGHT_OR_FLIGHT) or b:cd(FIGHT_OR_FLIGHT) > 15) then return req end
     if b:has_status(S_BLADE_OF_HONOR_READY) and b:ready(BLADE_OF_HONOR) then return BLADE_OF_HONOR end
+    -- Sheltron (Holy Sheltron from 82) with the Oath Gauge's 50, before it fills or when hurt.
+    local oath = b:gauge_of("oath")
+    local sheltron = b:best(HOLY_SHELTRON, SHELTRON)
+    if sheltron and b:ready(sheltron) and (oath >= 100 or (oath >= 50 and b.hp < 80)) then return sheltron, "self" end
     local waiting = b:has(FIGHT_OR_FLIGHT) and b:cd(FIGHT_OR_FLIGHT) < 5
     if not waiting then
         if b:ready(CIRCLE_OF_SCORN) and b.near_self >= 1 then return CIRCLE_OF_SCORN, "self" end
         local sw = b:best(EXPIACION, SPIRITS_WITHIN)
         if sw and b:ready(sw) and b:in_melee() then return sw end
+        if b:ready(INTERVENE) and fof > 0 and b:in_melee() then return INTERVENE end
     end
     return nil
 end

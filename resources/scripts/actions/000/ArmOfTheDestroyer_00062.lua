@@ -5,9 +5,12 @@ local FORM_DURATION = 30.0
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
+    if isPlayerCaster(player) then
+        mnkBeastChakra(effects, player, 1)
+    end
     mnkUsePerfectBalance(effects, player)
     effects:damage(DAMAGE_TYPE_BLUNT, physicalDamage(player, POTENCY))
-    effects:gain_effect_self(STATUS_RAPTOR_FORM, 0, FORM_DURATION)
+    mnkShift(effects, player, STATUS_RAPTOR_FORM)
 
     return effects
 end

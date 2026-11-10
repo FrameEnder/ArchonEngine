@@ -25,6 +25,9 @@ pub struct PeriodicSpec {
     pub on_self: bool,
 }
 
+/// Aetherflow stacks Energy Drain fills (Arcanist/Summoner.)
+pub const MAX_AETHERFLOW: u8 = 2;
+
 /// Changes to a job gauge requested by an action script.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GaugeOp {
@@ -32,8 +35,8 @@ pub enum GaugeOp {
     SpendLily,
     /// Spend the fully bloomed Blood Lily (White Mage.)
     SpendBloodLily,
-    /// Fill Aetherflow (Arcanist/Summoner: Energy Drain.)
-    GainAetherflow,
+    /// Fill Aetherflow to this many stacks (Arcanist/Summoner: Energy Drain, two; Scholar: Aetherflow, three.)
+    GainAetherflow(u8),
     /// Spend one Aetherflow stack (Arcanist/Summoner: Fester, Painflare.)
     SpendAetherflow,
     /// Add to (or take from) one of the job gauges' counters, within its range (`GaugeField::range`.)
@@ -42,25 +45,92 @@ pub enum GaugeOp {
     Set(GaugeField, i16),
 }
 
-/// The job gauges' counters scripts change by name (`effects:gauge_add("beast", 10)`, `player:gauge("beast")`.)
+/// The job gauges' counters scripts change by name (`effects:gauge_add("beast", 10)`, `player:gauge("beast")`); the
+/// client's gauges are FFXIVClientStructs' (`server/job_gauge.rs` packs them.)
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum GaugeField {
-    /// Warrior's Beast Gauge (0-100.)
+    /// Warrior's Beast Gauge.
     Beast,
-    /// Monk's chakra (0-5; 10 under Brotherhood's overflow isn't kept.)
+    /// Monk's chakra (up to ten under Brotherhood).
     Chakra,
-    /// Black Mage's Astral Fire (1-3) or Umbral Ice (-1 to -3); 0 for neither.
+    /// Black Mage's Astral Fire (1 to 3) or Umbral Ice (-1 to -3); 0 for neither.
     Element,
-    /// Black Mage's Umbral Hearts (0-3.)
+    /// Black Mage's Umbral Hearts.
     UmbralHearts,
+    /// Black Mage's Polyglot.
+    Polyglot,
+    /// Black Mage's Paradox (ready).
+    Paradox,
+    /// Black Mage's Astral Soul.
+    AstralSoul,
+    /// Black Mage: tenths of a second towards the next Polyglot (`JobGauge::tick`).
+    EnochianTimer,
+    /// Paladin's Oath Gauge.
+    Oath,
+    /// Monk's Opo-opo's Fury.
+    OpoFury,
+    /// Monk's Raptor's Fury.
+    RaptorFury,
+    /// Monk's Coeurl's Fury.
+    CoeurlFury,
+    /// Monk's three Beast Chakra, one in each two bits (1 Opo-opo, 2 Raptor, 3 Coeurl), first in the lowest.
+    BeastChakra,
+    /// Monk's Nadi (1 Lunar, 2 Solar).
+    Nadi,
+    /// Dragoon: tenths of a second of Life of the Dragon left.
+    LifeOfTheDragon,
+    /// Dragoon's Firstminds' Focus.
+    FirstmindsFocus,
+    /// Bard's Repertoire.
+    Repertoire,
+    /// Bard's Soul Voice.
+    SoulVoice,
+    /// Bard's Codas (1 Mage's, 2 Army's, 4 Wanderer's).
+    Coda,
+    /// Ninja's Ninki.
+    Ninki,
+    /// Ninja's Kazematoi.
+    Kazematoi,
+    /// Ninja's mudras so far, one in each two bits (1 Ten, 2 Chi, 3 Jin), first in the lowest.
+    Mudras,
+    /// Summoner's attunement stacks.
+    Attunement,
+    /// Summoner's attunement (1 Ruby / fire, 2 Topaz / earth, 3 Emerald / wind).
+    AttunementType,
+    /// Summoner's arcana left (1 Ruby, 2 Topaz, 4 Emerald).
+    Arcana,
+    /// Scholar's Faerie Gauge.
+    Fairy,
 }
 
 impl GaugeField {
-    pub const ALL: [GaugeField; 4] = [
+    pub const ALL: [GaugeField; 26] = [
         GaugeField::Beast,
         GaugeField::Chakra,
         GaugeField::Element,
         GaugeField::UmbralHearts,
+        GaugeField::Polyglot,
+        GaugeField::Paradox,
+        GaugeField::AstralSoul,
+        GaugeField::EnochianTimer,
+        GaugeField::Oath,
+        GaugeField::OpoFury,
+        GaugeField::RaptorFury,
+        GaugeField::CoeurlFury,
+        GaugeField::BeastChakra,
+        GaugeField::Nadi,
+        GaugeField::LifeOfTheDragon,
+        GaugeField::FirstmindsFocus,
+        GaugeField::Repertoire,
+        GaugeField::SoulVoice,
+        GaugeField::Coda,
+        GaugeField::Ninki,
+        GaugeField::Kazematoi,
+        GaugeField::Mudras,
+        GaugeField::Attunement,
+        GaugeField::AttunementType,
+        GaugeField::Arcana,
+        GaugeField::Fairy,
     ];
 
     pub fn name(self) -> &'static str {
@@ -69,6 +139,28 @@ impl GaugeField {
             GaugeField::Chakra => "chakra",
             GaugeField::Element => "element",
             GaugeField::UmbralHearts => "umbral_hearts",
+            GaugeField::Polyglot => "polyglot",
+            GaugeField::Paradox => "paradox",
+            GaugeField::AstralSoul => "astral_soul",
+            GaugeField::EnochianTimer => "enochian_timer",
+            GaugeField::Oath => "oath",
+            GaugeField::OpoFury => "opo_fury",
+            GaugeField::RaptorFury => "raptor_fury",
+            GaugeField::CoeurlFury => "coeurl_fury",
+            GaugeField::BeastChakra => "beast_chakra",
+            GaugeField::Nadi => "nadi",
+            GaugeField::LifeOfTheDragon => "lotd",
+            GaugeField::FirstmindsFocus => "firstminds_focus",
+            GaugeField::Repertoire => "repertoire",
+            GaugeField::SoulVoice => "soul_voice",
+            GaugeField::Coda => "coda",
+            GaugeField::Ninki => "ninki",
+            GaugeField::Kazematoi => "kazematoi",
+            GaugeField::Mudras => "mudras",
+            GaugeField::Attunement => "attunement",
+            GaugeField::AttunementType => "attunement_type",
+            GaugeField::Arcana => "arcana",
+            GaugeField::Fairy => "fairy",
         }
     }
 
@@ -76,14 +168,40 @@ impl GaugeField {
         Self::ALL.into_iter().find(|field| field.name() == name)
     }
 
-    /// The values it can take (the client's gauges: WarriorGauge.BeastGauge, MonkGauge.Chakra,
-    /// BlackMageGauge.ElementStance and UmbralHearts, FFXIVClientStructs.)
+    /// Its place among `ALL`.
+    pub fn index(self) -> usize {
+        self as usize
+    }
+
+    /// The values it can take.
     pub fn range(self) -> (i16, i16) {
         match self {
             GaugeField::Beast => (0, 100),
-            GaugeField::Chakra => (0, 5),
+            GaugeField::Chakra => (0, 10),
             GaugeField::Element => (-3, 3),
             GaugeField::UmbralHearts => (0, 3),
+            GaugeField::Polyglot => (0, 3),
+            GaugeField::Paradox => (0, 1),
+            GaugeField::AstralSoul => (0, 6),
+            GaugeField::EnochianTimer => (0, 300),
+            GaugeField::Oath => (0, 100),
+            GaugeField::OpoFury => (0, 1),
+            GaugeField::RaptorFury => (0, 1),
+            GaugeField::CoeurlFury => (0, 2),
+            GaugeField::BeastChakra => (0, 63),
+            GaugeField::Nadi => (0, 3),
+            GaugeField::LifeOfTheDragon => (0, 300),
+            GaugeField::FirstmindsFocus => (0, 2),
+            GaugeField::Repertoire => (0, 4),
+            GaugeField::SoulVoice => (0, 100),
+            GaugeField::Coda => (0, 7),
+            GaugeField::Ninki => (0, 100),
+            GaugeField::Kazematoi => (0, 5),
+            GaugeField::Mudras => (0, 63),
+            GaugeField::Attunement => (0, 4),
+            GaugeField::AttunementType => (0, 3),
+            GaugeField::Arcana => (0, 7),
+            GaugeField::Fairy => (0, 100),
         }
     }
 }
@@ -105,6 +223,10 @@ pub struct EffectsBuilder {
     pub gauge_ops: Vec<GaugeOp>,
     /// For area-of-effect damage, how much less damage (in percent) every target after the first takes.
     pub aoe_falloff_percent: u8,
+    /// Its damage is surely critical, or a direct hit (Life Surge, Inner Release's Fell Cleave, Bootshine in Opo-opo
+    /// form...): `guarantee_critical`, `guarantee_direct_hit`.
+    pub critical_guaranteed: bool,
+    pub direct_hit_guaranteed: bool,
     /// If true, heals restore the target to full HP regardless of their amount (e.g. Benediction.)
     pub heal_to_full: bool,
     /// If true, the caster goes to the top of the target's enmity (Provoke.)
@@ -444,12 +566,23 @@ impl UserData for EffectsBuilder {
             this.gauge_ops.push(GaugeOp::SpendBloodLily);
             Ok(())
         });
-        methods.add_method_mut("gain_aetherflow", |_, this, _: ()| {
-            this.gauge_ops.push(GaugeOp::GainAetherflow);
+        // Two stacks, or as many as given (`gain_aetherflow(3)` for the Scholar.)
+        methods.add_method_mut("gain_aetherflow", |_, this, stacks: Option<u8>| {
+            this.gauge_ops
+                .push(GaugeOp::GainAetherflow(stacks.unwrap_or(MAX_AETHERFLOW)));
             Ok(())
         });
         methods.add_method_mut("spend_aetherflow", |_, this, _: ()| {
             this.gauge_ops.push(GaugeOp::SpendAetherflow);
+            Ok(())
+        });
+        // Its damage is surely critical / a direct hit.
+        methods.add_method_mut("guarantee_critical", |_, this, _: ()| {
+            this.critical_guaranteed = true;
+            Ok(())
+        });
+        methods.add_method_mut("guarantee_direct_hit", |_, this, _: ()| {
+            this.direct_hit_guaranteed = true;
             Ok(())
         });
         // Changes a job gauge counter by name (`GaugeField`): `gauge_add("beast", -50)`, `gauge_set("element", 3)`.

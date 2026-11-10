@@ -5,6 +5,9 @@ local POTENCY = 160
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
+    if isPlayerCaster(player) then
+        warBerserk(effects, player)
+    end
     effects:damage(DAMAGE_TYPE_SLASHING, physicalDamage(player, POTENCY))
     warSpendBeast(effects, player)
 

@@ -6,9 +6,8 @@ local EFFECT_HAWKS_EYE = 3861
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
     effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, classPotency(player, POTENCY, TRAITS_ARC_ACTION_DAMAGE)))
-    if player:get_effect(EFFECT_HAWKS_EYE) ~= nil then
-        effects:consume_effect(EFFECT_HAWKS_EYE)
-    end
+    brdUseHawksEye(effects, player)
+    brdRepertoire(effects, player)
 
     return effects
 end

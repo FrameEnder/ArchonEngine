@@ -17,8 +17,8 @@ function doAction(player, in_combo)
         return effects
     end
 
-    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, classPotency(player, POTENCY, TRAITS_THM_MAIM_AND_MEND)))
-    effects:damage_over_time(EFFECT_THUNDER, DURATION, magicalDamage(player, classPotency(player, DOT_POTENCY, TRAITS_THM_MAIM_AND_MEND)))
+    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, math.floor(blmEnochian(player) * classPotency(player, POTENCY, TRAITS_THM_MAIM_AND_MEND))))
+    effects:damage_over_time(EFFECT_THUNDER, DURATION, magicalDamage(player, math.floor(blmEnochian(player) * classPotency(player, DOT_POTENCY, TRAITS_THM_MAIM_AND_MEND))))
     if player:get_effect(EFFECT_THUNDERHEAD) ~= nil then
         effects:consume_effect(EFFECT_THUNDERHEAD)
     end

@@ -3,13 +3,14 @@
 -- Priorities from Boss Mod's standard White Mage rotation (awgil/ffxiv_bossmod, BSD-3) and The Balance's White Mage
 -- guide (7.x): Aero / Aero II / Dia kept on the target, Stone (II-IV) / Glare (III) otherwise, Holy (III) on three or
 -- more, Afflatus Misery when the Blood Lily is full, Glare IV under Sacred Sight; Presence of Mind and Assize on
--- cooldown. Retail's White Mages at 50-59 (five players, 2172 s) cast Stone II 11.6 a minute, Aero II 3.2 (DoT on each
+-- cooldown; a Lily about to be wasted (three on the gauge) goes on Afflatus Rapture (Solace before 76), which nourishes
+-- the Blood Lily (party_bot.rs's own heals leave the Lilies alone, since they need one). Retail's White Mages at 50-59 (five players, 2172 s) cast Stone II 11.6 a minute, Aero II 3.2 (DoT on each
 -- enemy), Regen 2.1, Cure II 1.7, Presence of Mind 0.3; its Conjurers at 20-29 Stone II and Aero likewise.
 
 local STONE, STONE_II, STONE_III, STONE_IV, GLARE, GLARE_III, GLARE_IV = 119, 127, 3568, 7431, 16533, 25859, 37009
 local AERO, AERO_II, DIA = 121, 132, 16532
 local HOLY, HOLY_III = 139, 25860
-local AFFLATUS_MISERY = 16535
+local AFFLATUS_MISERY, AFFLATUS_SOLACE, AFFLATUS_RAPTURE = 16535, 16531, 16534
 local PRESENCE_OF_MIND, ASSIZE = 136, 3571
 
 local S_AERO, S_AERO_II, S_DIA, S_SACRED_SIGHT = 143, 144, 1871, 3879
@@ -17,6 +18,11 @@ local S_AERO, S_AERO_II, S_DIA, S_SACRED_SIGHT = 143, 144, 1871, 3879
 local function gcd(b)
     if b:gauge_of("blood_lily") >= 3 and b:has(AFFLATUS_MISERY) then return AFFLATUS_MISERY end
     if b:has_status(S_SACRED_SIGHT) and b:has(GLARE_IV) then return GLARE_IV end
+    -- Three Lilies: one spent before the next would be lost.
+    if b:gauge_of("lilies") >= 3 then
+        if b:has(AFFLATUS_RAPTURE) then return AFFLATUS_RAPTURE, "self" end
+        if b:has(AFFLATUS_SOLACE) then return AFFLATUS_SOLACE, "self" end
+    end
     local dot = b:best(DIA, AERO_II, AERO)
     local left = math.max(b:dot(S_AERO), b:dot(S_AERO_II), b:dot(S_DIA))
     -- Holy is a circle round the caster.

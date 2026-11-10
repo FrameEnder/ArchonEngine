@@ -747,16 +747,75 @@ Second Wind, Bloodbath, True North, Addle, Leg Sweep, Sleep, Rescue, Esuna). How
     III, Blizzard III Umbral Ice III, Transpose one of the other, Umbral Soul one more Umbral Ice and an Umbral Heart
     from 58, Freeze three hearts from 58; one stack at most before 20, two before 35. Thunderhead comes with a change of
     element (or one from none), as the client's tooltip says, where it came with every Fire and Blizzard.
-* **Not there:** the other job gauges (Paladin's Oath, Bard's songs and Soul Voice, Ninja's Ninki and Kazematoi,
-  Monk's Furies and Beast Chakra, Black Mage's Enochian, Polyglot, Paradox and Astral Soul, Summoner's arcana and
-  attunement, Dragoon's eyes and Firstminds' Focus, and every job's past 50), Ninja mudras (Ninjutsu is always one
-  spell), pets other than Carbuncle (no egis, no Eos), positionals, movement actions (Thunderclap,
+* **Not there:** the HW+ jobs' gauges (and their actions past 50), pets other than Carbuncle (no egis, no Eos, no
+  demi-summons: their attacks come with the Summoner's spells), positionals, movement actions (Thunderclap,
   Rescue...), barriers absorbing damage, Bloodbath's lifesteal, Peloton for the party. See
   [Known Issues](known-issues.md#combat).
 
 **Combat items** (`items/Items.lua`): potions (ItemAction 847: the % of max HP up to the cap), ethers (848, MP),
 elixirs (849, their caps), status removal (842), food (844–846: Well Fed 48 with the ItemFood row and duration, no stat
 bonus yet).
+
+## The ARR jobs, levels 51–100
+
+Since 2026-11-10 every action of Paladin, Warrior, Monk, Dragoon, Bard, Ninja, White Mage, Black Mage, Summoner and
+Scholar from 51 to 100 has a script (about 230 new, from the official job guide's 7.x tooltips at level 100; each
+script's header says so), and their job gauges are played out:
+
+* **Gauge fields** (`lua::GaugeField`, 26 counters an array in `JobGauge::fields`, each with its range): beast, chakra
+  (0-10), element, umbral_hearts, polyglot, paradox, astral_soul, enochian_timer, oath, opo_fury, raptor_fury,
+  coeurl_fury, beast_chakra (three 2-bit slots), nadi, lotd (tenths of a second), firstminds_focus, repertoire,
+  soul_voice, coda, ninki, kazematoi, mudras (three 2-bit slots), attunement, attunement_type, arcana, fairy; plus
+  Aetherflow (`gain_aetherflow(n)`: two for Energy Drain, three for the Scholar's Aetherflow and Dissipation) and the
+  Lilies. The server ticks two of them (`JobGauge::tick`, players and party bots, `server/mod.rs`): Life of the Dragon
+  runs down, and from 70 a Black Mage in Astral Fire or Umbral Ice gets a Polyglot every 30 s (one at most at 70, two
+  from 80, three from 98).
+* **ActorGauge layout** (`job_gauge.rs`'s `to_packet_data`, at FFXIVClientStructs' offsets): data[0] is offset 0x07
+  for the Paladin (Oath at data[1], 0x64 at 100 in Bob's captures) and the Summoner (AetherFlags at data[8]), 0x08 for
+  the White Mage (Lilies); the others are assumed to be 0x07 like the Paladin's and Summoner's (`at()`), not yet seen.
+* **Guaranteed critical and direct hits** (`effects:guarantee_critical()`, `guarantee_direct_hit()`): the hit's rolls
+  are 0 (`server/action.rs`): Opo-opo form's Bootshine/Leaping Opo, Life Surge, Recitation's heals...
+* **Paladin**: Oath 5 a landed auto-attack from 35 (`pldGainOath`, both auto-attack scripts), Sheltron, Holy Sheltron,
+  Intervention 50; Fight or Flight gives Goring Blade Ready from 54, Requiescat / Imperator the Confiteor chain and
+  Divine Might, Royal Authority the Atonement chain (`pldMagicPotency`).
+* **Warrior**: Berserk / Inner Release make the next three weaponskills sure criticals and direct hits (`warBerserk`);
+  Inner Release's Primal Rend, Primal Wrath, Primal Ruination; Infuriate's Nascent Chaos turns Fell Cleave and Decimate
+  into Inner Chaos and Chaotic Cyclone.
+* **Monk**: the Furies (Dragon Kick, Twin Snakes, Demolish give theirs, Bootshine, True Strike, Snap Punch spend them),
+  one form at a time (`mnkShift`), the Beast Chakra under Perfect Balance from 60 (`mnkBeastChakra`), Masterful Blitz
+  (three of one Elixir Field / Burst and the Lunar Nadi, three different Flint Strike / Rising Phoenix and the Solar,
+  two kinds Celestial Revolution, both Nadi Tornado Kick / Phantom Rush), chakra on four critical weaponskills in five
+  from 38 and every one from 74 (Deep Meditation II), Fire's and Wind's Reply after their Riddles.
+* **Dragoon**: Life of the Dragon (Geirskogul from 70, 20 s, 15 % more damage: `drgDamage`), Nastrond and Stardiver in
+  it, Life Surge's sure critical (`drgWeaponskill`), Dive Ready, Dragon's Flight, Starcross Ready, Firstminds' Focus
+  for Wyrmwind Thrust.
+* **Bard**: the songs (`brdStartSong`: one at a time, Repertoire from the weaponskills while one lasts with Soul Voice 5
+  from 80, the Codas from 90), Pitch Perfect at the Minuet's Repertoire, Apex Arrow's Soul Voice and Blast Arrow,
+  Hawk's Eye from Burst Shot (35 %; Burst Shot was upstream's stub without it), Barrage's Resonant Arrow, Radiant
+  Finale's Radiant Encore.
+* **Ninja**: the mudras (`ninMudra`: Ten 1, Chi 2, Jin 3, the IDs 18805-18807 retail's client sends for the second
+  and third too), Ninjutsu casts what they make (`ninNinjutsuOf`: Fuma Shuriken, Katon, Raiton, Hyoton, Huton, Doton,
+  Suiton, Goka Mekkyaku and Hyosho Ranryu under Kassatsu, Rabbit Medium for a repeated mudra), Shadow Walker for
+  Trick Attack / Kunai's Bane and Meisui, Raiju after Raiton, Ninki from 62 (Bunshin, Bhavacakra, Zesho Meppo...),
+  Kazematoi.
+* **Black Mage**: Enochian (56: 5 % more in either element, up to 27 % from 96), Polyglot (Foul, Xenoglossy,
+  Amplifier), Paradox (switching from Astral Fire III or from Umbral Ice III with three hearts, from 90), Astral Soul
+  (Fire IV, Flare three) for Flare Star, Fire IV / Despair / Blizzard IV; Manafont also gives Astral Fire III, three
+  Umbral Hearts and Paradox, as the job guide says.
+* **Summoner**: the arcana (Aethercharge, and from 58 the demi-summons' trance: `arcana`), the summons (`smnSummon`:
+  Ruby / Topaz / Emerald Carbuncle, Ifrit, Titan, Garuda, their IIs from 90) attuning it, the gem spells retail's
+  client sends (Ruby/Topaz/Emerald Ruin I-III, Rite, Outburst, Disaster, Catastrophe, 25808-25834: `smnGem`), the
+  Favors (Mountain Buster, Slipstream, Crimson Cyclone - Crimson Strike), Further Ruin for Ruin IV, Searing Light's
+  Ruby's Glimmer, Dreadwyrm / Firebird / Lightwyrm Trance's spells with the demi's own attack (`smnDemiHit`: no pets).
+* **Scholar**: Aetherflow three stacks, spent by Energy Drain, Lustrate, Sacred Soil, Indomitability and
+  Excogitation (none under Recitation, whose heals are critical: `schSpendAetherflow`), 10 Faerie Gauge each from 70
+  (Aetherpact spends it), Dissipation, Chain Stratagem's Impact Imminent for Baneful Impaction, Seraphism's
+  Manifestation and Accession. The fairy and Seraph aren't there: Fey Blessing and Consolation are the Scholar's own.
+* **White Mage**: Liturgy of the Bell ended early (28509) heals 200 a stack left.
+
+How they were checked: run under lupa against each job's rotation (a harness running the real scripts with a mock
+EffectsBuilder, every level band and one or three targets, no errors) and against retail's uses in Bob's captures
+where there were some (Paladin, Warrior, Monk, Dragoon, Black Mage, Summoner, Scholar and White Mage at 80-89).
 
 ## Adding a monster or skill
 

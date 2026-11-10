@@ -11,8 +11,9 @@ function doAction(player, in_combo)
         effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, NPC_POTENCY))
         return effects
     end
+    drgWeaponskill(effects, player)
 
-    effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, POTENCY))
+    effects:damage(DAMAGE_TYPE_PIERCING, drgDamage(player, POTENCY))
 
     return effects
 end

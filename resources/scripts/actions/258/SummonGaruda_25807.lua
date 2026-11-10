@@ -1,11 +1,13 @@
--- Summon Garuda (Lv. 45): the egi's opening attack, done here as the summoner's.
--- NOTE: Summoner's Arcanum, attunement and Aetherflow (the job gauge) and pets' attacks aren't implemented: no egi appears and no attunement is given.
--- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
-local POTENCY = 600
+-- Summon Garuda (Lv. 45): Garuda-Egi's Aerial Blast, 600 (50 % less round it); four wind attunement; Garuda's Favor from 86.
+-- Potencies: the official job guide (7.x), at level 100.
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, classPotency(player, POTENCY, TRAITS_ACN_MAIM_AND_MEND)))
+    effects:aoe_falloff(50)
+    smnSummon(effects, player, 4, 3, 4, 600)
+    if player.level >= 86 then
+        effects:gain_effect_self(SMN_EFFECT_GARUDAS_FAVOR, 0, 30.0)
+    end
 
     return effects
 end

@@ -6,6 +6,8 @@ local POTENCY = 180
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
     effects:damage(DAMAGE_TYPE_SLASHING, physicalDamage(player, POTENCY))
+    ninGainNinki(effects, player, 5)
+    ninBunshin(effects, player, false)
 
     return effects
 end

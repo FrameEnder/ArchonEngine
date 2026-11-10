@@ -9,8 +9,8 @@ local EFFECT_THUNDERHEAD = 3870
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, classPotency(player, POTENCY, TRAITS_THM_MAIM_AND_MEND)))
-    effects:damage_over_time(EFFECT_THUNDER_II, DURATION, magicalDamage(player, classPotency(player, DOT_POTENCY, TRAITS_THM_MAIM_AND_MEND)))
+    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, math.floor(blmEnochian(player) * classPotency(player, POTENCY, TRAITS_THM_MAIM_AND_MEND))))
+    effects:damage_over_time(EFFECT_THUNDER_II, DURATION, magicalDamage(player, math.floor(blmEnochian(player) * classPotency(player, DOT_POTENCY, TRAITS_THM_MAIM_AND_MEND))))
     if player:get_effect(EFFECT_THUNDERHEAD) ~= nil then
         effects:consume_effect(EFFECT_THUNDERHEAD)
     end

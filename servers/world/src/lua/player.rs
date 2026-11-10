@@ -41,6 +41,8 @@ pub struct LuaPlayer {
     pub max_hp: u32,
     pub mp: u16,
     pub max_mp: u16,
+    /// Its class or job (ClassJob row), for action scripts (`player.classjob`.)
+    pub classjob: u8,
     /// Its job gauge's counters by name (`JobGauge::named`), for action scripts (`player:gauge("beast")`.)
     pub gauge: Vec<(&'static str, i32)>,
 }
@@ -1579,6 +1581,7 @@ impl UserData for LuaPlayer {
             Ok(this.player_data.customize.chara_make.clone())
         });
         fields.add_field_method_get("level", |_, this| Ok(this.current_level));
+        fields.add_field_method_get("classjob", |_, this| Ok(this.classjob));
         fields.add_field_method_get("is_player", |_, this| Ok(this.is_player));
         fields.add_field_method_get("hp", |_, this| Ok(this.hp));
         fields.add_field_method_get("max_hp", |_, this| Ok(this.max_hp));

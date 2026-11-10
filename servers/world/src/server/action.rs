@@ -1059,6 +1059,7 @@ pub fn execute_action(
             _ => (None, false),
         };
         lua_player.current_level = common_spawn.level;
+        lua_player.classjob = common_spawn.class_job;
         // Party bots play their jobs as players do (the scripts' player branch: Thunderhead, procs, combos, their
         // potencies); Duty Support members keep their own kit (`party_npc.rs`.)
         lua_player.is_player = plays_as_player(instance, from_actor_id);
@@ -1439,13 +1440,32 @@ pub fn execute_action(
                                 .map(|target| target.get_common_spawn().class_job)
                                 .unwrap_or_default(),
                             target_is_player: matches!(target, Some(NetworkedActor::Player { .. })),
-                            rolls: [fastrand::f32(), fastrand::f32(), fastrand::f32()],
+                            rolls: [
+                                fastrand::f32(),
+                                if effects_builder.critical_guaranteed {
+                                    0.0
+                                } else {
+                                    fastrand::f32()
+                                },
+                                if effects_builder.direct_hit_guaranteed {
+                                    0.0
+                                } else {
+                                    fastrand::f32()
+                                },
+                            ],
                         },
                     );
-                    // A Monk's (or Pugilist's) critical weaponskill opens a chakra from Deep Meditation (38).
+                    // A Monk's (or Pugilist's) critical weaponskill opens a chakra: four times in five from Deep
+                    // Meditation (38), always from Deep Meditation II (74) (the job guide, 7.x).
                     let common = actor.get_common_spawn();
+                    let chance = if common.level >= DEEP_MEDITATION_II_LEVEL {
+                        1.0
+                    } else {
+                        0.8
+                    };
                     if matches!(common.class_job, 2 | 20)
                         && common.level >= DEEP_MEDITATION_LEVEL
+                        && fastrand::f32() < chance
                         && !AUTO_ATTACK_ACTIONS.contains(&request.action_id)
                         && effects_builder.effects.iter().any(|effect| {
                             matches!(effect.0, TargetEffectKind::Damage { damage_kind, .. }
@@ -3566,8 +3586,9 @@ fn is_hostile_effect(effect: &TargetEffect, on_the_other_side: bool) -> bool {
     }
 }
 
-/// The Monk's Deep Meditation: from 38 a critical weaponskill opens a chakra (Boss Mod's trait list, 7.x.)
+/// The Monk's Deep Meditation: from 38 a critical weaponskill opens a chakra, 80 % of the time; always from 74.
 const DEEP_MEDITATION_LEVEL: u8 = 38;
+const DEEP_MEDITATION_II_LEVEL: u8 = 74;
 
 /// Whether `actor` uses its actions as a player does: a player, or a party bot (not a Duty Support member, whose kit
 /// is retail's members', `party_npc.rs`): the scripts' player branch and players' area actions.

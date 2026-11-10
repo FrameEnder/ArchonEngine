@@ -18,6 +18,7 @@ function doAction(player, in_combo)
     if player:has_trait(17) and math.random() < HAWKS_EYE_CHANCE then
         effects:gain_effect_self(EFFECT_HAWKS_EYE, 0, HAWKS_EYE_DURATION)
     end
+    brdRepertoire(effects, player)
 
     return effects
 end

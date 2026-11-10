@@ -9,13 +9,14 @@ local EFFECT_CHAOS_THRUST = 118
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
+    drgWeaponskill(effects, player)
     local potency = POTENCY
     if in_combo then
         potency = COMBO_POTENCY
     end
-    effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, potency))
+    effects:damage(DAMAGE_TYPE_PIERCING, drgDamage(player, potency))
     if in_combo then
-        effects:damage_over_time(EFFECT_CHAOS_THRUST, DURATION, physicalDamage(player, DOT_POTENCY))
+        effects:damage_over_time(EFFECT_CHAOS_THRUST, DURATION, drgDamage(player, DOT_POTENCY))
     end
 
     return effects

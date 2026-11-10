@@ -3,10 +3,14 @@
 -- both damage over time effects kept up (Venomous Bite / Caustic Bite, Windbite / Stormbite, refreshed together by
 -- Iron Jaws), Straight Shot / Refulgent Arrow on Hawk's Eye, Burst Shot / Heavy Shot otherwise, Quick Nock / Ladonsbite
 -- on three or more; the songs in turn (the Wanderer's Minuet, Mage's Ballad, Army's Paeon), Raging Strikes, Battle
--- Voice and Barrage on cooldown, Bloodletter / Rain of Death, Empyreal Arrow and Sidewinder as they come up. Retail's
+-- Voice and Barrage on cooldown, Bloodletter / Rain of Death, Empyreal Arrow and Sidewinder as they come up; Pitch Perfect
+-- at three Repertoire in the Minuet (or before it ends), Apex Arrow at 80 Soul Voice (100 outside Raging Strikes) and
+-- Blast Arrow after it, Resonant Arrow and Radiant Encore after Barrage and Radiant Finale (the gauge's "repertoire",
+-- "soul_voice", "coda"). Retail's
 -- Archers at 10-19 (two players, 857 s) used Heavy Shot 10.0 a minute, Bloodletter 4.7, Venomous Bite 4.7, Quick Nock
 -- 3.8, Straight Shot 1.6; its Bards at 30-39 Quick Nock 8.9, Heavy Shot 7.5, Bloodletter 5.4, Venomous Bite 1.5,
--- Windbite 1.2, Straight Shot 1.0, Raging Strikes 0.6.
+-- Windbite 1.2, Straight Shot 1.0, Raging Strikes 0.6; at 80-89 (one player, area pulls) Quick Nock 5.6, Burst Shot
+-- 4.8, Pitch Perfect 2.6, Bloodletter 2.5, Rain of Death 2.4, Shadowbite 2.1, Empyreal Arrow 1.8.
 
 local HEAVY_SHOT, BURST_SHOT, STRAIGHT_SHOT, REFULGENT_ARROW = 97, 16495, 98, 7409
 local VENOMOUS_BITE, CAUSTIC_BITE, WINDBITE, STORMBITE, IRON_JAWS = 100, 7406, 113, 7407, 3560
@@ -37,6 +41,9 @@ local function gcd(b)
         if b:has(VENOMOUS_BITE) and poison(b) < 3 then return b:best(CAUSTIC_BITE, VENOMOUS_BITE) end
         if b:has(WINDBITE) and wind(b) < 3 then return b:best(STORMBITE, WINDBITE) end
     end
+    -- Apex Arrow with the Soul Voice built (at 80 under Raging Strikes, else full.)
+    local voice = b:gauge_of("soul_voice")
+    if b:has(APEX_ARROW) and (voice >= 100 or (voice >= 80 and b:has_status(S_RAGING_STRIKES))) then return APEX_ARROW end
     if b:has_status(S_HAWKS_EYE) or b:has_status(S_BARRAGE) then
         if b:aoe(3) then
             local area = b:best(SHADOWBITE)
@@ -66,6 +73,11 @@ end
 local function ogcd(b)
     local s = song(b)
     if s then return s end
+    -- Pitch Perfect at three Repertoire, or with what there is as the Minuet ends.
+    if b:has(PITCH_PERFECT) and b:has_status(S_WANDERERS_MINUET) and b:ready(PITCH_PERFECT) then
+        local repertoire = b:gauge_of("repertoire")
+        if repertoire >= 3 or (repertoire > 0 and b:status(S_WANDERERS_MINUET) < 3) then return PITCH_PERFECT end
+    end
     if b:ready(RAGING_STRIKES) then return RAGING_STRIKES, "self" end
     if b:ready(BATTLE_VOICE) and b:has_status(S_RAGING_STRIKES) then return BATTLE_VOICE, "self" end
     if b:ready(RADIANT_FINALE) and b:has_status(S_RAGING_STRIKES) then return RADIANT_FINALE, "self" end

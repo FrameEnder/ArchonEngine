@@ -4,7 +4,8 @@
 -- Thrust) when Power Surge or the damage over time is running low, otherwise Vorpal Thrust's (Full Thrust / Heavens'
 -- Thrust, then Fang and Claw, Drakesbane); Doom Spike - Sonic Thrust - Coerthan Torment on three or more; Lance Charge
 -- and Battle Litany on cooldown, Life Surge before the strongest finisher, the jumps and Geirskogul inside Power Surge.
--- Retail's Lancers at 20-29 (two players, 482 s) used True Thrust 8.3 a minute, Vorpal Thrust 6.1, Full Thrust 4.0,
+-- Stardiver and Nastrond in Life of the Dragon (Geirskogul's, the gauge's "lotd"), Wyrmwind Thrust at two Firstminds'
+-- Focus. Retail's Lancers at 20-29 (two players, 482 s) used True Thrust 8.3 a minute, Vorpal Thrust 6.1, Full Thrust 4.0,
 -- Disembowel 2.4, Life Surge 1.1; its Dragoons at 30-39 True Thrust 7.5, Vorpal 5.1, Full Thrust 4.8, Jump 2.3,
 -- Disembowel 1.7, Life Surge 1.3, Lance Charge 0.9.
 
@@ -80,7 +81,8 @@ local function ogcd(b)
     if b:has_status(S_DIVE_READY) and b:ready(MIRAGE_DIVE) then return MIRAGE_DIVE end
     if b:ready(DRAGONFIRE_DIVE) then return DRAGONFIRE_DIVE end
     if b:has_status(S_DRAGONS_FLIGHT) and b:ready(RISE_OF_THE_DRAGON) then return RISE_OF_THE_DRAGON end
-    if b:ready(STARDIVER) and b:has_status(S_NASTROND_READY) then return STARDIVER end
+    -- Stardiver only in Life of the Dragon (the gauge's "lotd", tenths of a second left.)
+    if b:ready(STARDIVER) and b:gauge_of("lotd") > 0 then return STARDIVER end
     if b:has_status(S_STARCROSS_READY) and b:ready(STARCROSS) then return STARCROSS end
     if b:ready(WYRMWIND_THRUST) and b:gauge_of("firstminds_focus") >= 2 then return WYRMWIND_THRUST end
     return nil

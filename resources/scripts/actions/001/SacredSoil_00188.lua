@@ -1,11 +1,10 @@
--- Sacred Soil (Lv. 50): an area where party members take 10% less damage, 15 s.
--- NOTE: the ground area isn't implemented: the caster gets the status. It doesn't spend Aetherflow.
-local EFFECT_SACRED_SOIL = 298
-local DURATION = 15.0
+-- Sacred Soil (Lv. 50): an area where the party takes 10 % less damage, 15 s (the caster gets the status: no ground areas yet), with a Regen of 100 from 78; an Aetherflow.
+-- Potencies: the official job guide (7.x), at level 100.
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
-    effects:gain_effect_self(EFFECT_SACRED_SOIL, 0, DURATION)
+    effects:gain_effect_self(298, 0, 15.0)
+    schSpendAetherflow(effects, player, false)
 
     return effects
 end

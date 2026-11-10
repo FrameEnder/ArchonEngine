@@ -7,6 +7,9 @@ local COMBO_POTENCY = 250
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
+    if isPlayerCaster(player) then
+        warBerserk(effects, player)
+    end
     local potency = POTENCY
     if in_combo then
         potency = COMBO_POTENCY

@@ -10,8 +10,15 @@ function doAction(player, in_combo)
     local potency = POTENCY
     if in_combo then
         potency = COMBO_POTENCY
+        ninGainNinki(effects, player, 15)
+    end
+    -- Each Kazematoi (Armor Crush's) adds 100 and is spent.
+    if player:gauge("kazematoi") > 0 then
+        potency = potency + 100
+        effects:gauge_add("kazematoi", -1)
     end
     effects:damage(DAMAGE_TYPE_SLASHING, physicalDamage(player, potency))
+    ninBunshin(effects, player, false)
 
     return effects
 end

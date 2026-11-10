@@ -1,11 +1,10 @@
--- Summon Titan (Lv. 35): the egi's opening attack, done here as the summoner's.
--- NOTE: Summoner's Arcanum, attunement and Aetherflow (the job gauge) and pets' attacks aren't implemented: no egi appears and no attunement is given.
--- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
-local POTENCY = 600
+-- Summon Titan (Lv. 35): Titan-Egi's Earthen Fury, 600 (50 % less round it); four earth attunement.
+-- Potencies: the official job guide (7.x), at level 100.
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, classPotency(player, POTENCY, TRAITS_ACN_MAIM_AND_MEND)))
+    effects:aoe_falloff(50)
+    smnSummon(effects, player, 2, 2, 4, 600)
 
     return effects
 end

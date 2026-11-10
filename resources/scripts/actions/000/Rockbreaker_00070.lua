@@ -8,6 +8,9 @@ local FORM_DURATION = 30.0
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
+    if isPlayerCaster(player) then
+        mnkBeastChakra(effects, player, 3)
+    end
     mnkUsePerfectBalance(effects, player)
     if not isPlayerCaster(player) then
         effects:damage(DAMAGE_TYPE_BLUNT, physicalDamage(player, NPC_POTENCY))
@@ -15,7 +18,7 @@ function doAction(player, in_combo)
     end
 
     effects:damage(DAMAGE_TYPE_BLUNT, physicalDamage(player, POTENCY))
-    effects:gain_effect_self(STATUS_OPO_OPO_FORM, 0, FORM_DURATION)
+    mnkShift(effects, player, STATUS_OPO_OPO_FORM)
 
     return effects
 end

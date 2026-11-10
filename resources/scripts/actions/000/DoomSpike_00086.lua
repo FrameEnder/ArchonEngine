@@ -4,7 +4,8 @@ local POTENCY = 110
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
-    effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, POTENCY))
+    drgWeaponskill(effects, player)
+    effects:damage(DAMAGE_TYPE_PIERCING, drgDamage(player, POTENCY))
 
     return effects
 end

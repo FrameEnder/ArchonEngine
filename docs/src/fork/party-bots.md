@@ -475,13 +475,23 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
   `questkit chronofoil --battle`: each job's uses a minute by ten-level band), and simulated against a dummy (a lupa
   harness: Paladin 35 Fast Blade - Riot Blade - Rage of Halone 8 a minute each with Spirits Within and Fight or Flight,
   as retail's 30-39 Paladins; Dragoon 35 Disembowel 2.3 a minute against retail's 1.7-2.4; Summoner 35 ten Gemshines a
-  minute against retail's nine). Party bots play as players do (`action::plays_as_player`): the scripts' player branch
+  minute against retail's nine). From 51 to 100 (since the ARR jobs' 51-100 kits, 2026-11-10) they play their jobs'
+  mechanics off the server's gauge: the Monk's Furies and Beast Chakra for Masterful Blitz, the Ninja's mudras chosen
+  for the Ninjutsu it wants (Suiton before Trick Attack, Raiton, Katon on three, Hyosho Ranryu under Kassatsu, Ten Chi
+  Jin's three), the Bard's Pitch Perfect and Apex Arrow, the Black Mage's Fire IV - Despair - Paradox - Flare Star
+  round with Manafont and Polyglot, the Summoner's demi-summons in turn and the arcana's gem spells and Favors, the
+  Dragoon's Stardiver in Life of the Dragon, the Paladin's Sheltron off the Oath Gauge, the Scholar's Baneful Impaction
+  and Dissipation, the White Mage's Afflatus Rapture before a fourth Lily would be lost. Simulated at every band against
+  the real action scripts (a lupa harness with a mock EffectsBuilder): every GCD used (Black Mage 19-21 a minute
+  for its cast times), and close to retail's 80-89 players (Summoner: Topaz and Emerald Rite 4 a minute each, Ruby Rite
+  2, Astral Impulse 4, Fester 2; retail 54, 47, 28, 36, 31 uses in 764 s). Party bots play as players do (`action::plays_as_player`): the scripts' player branch
   (Thunderhead, Firestarter, Hawk's Eye, forms; it was the NPC one, so a Thaumaturge bot never got Thunderhead), their
   critical and direct hits (they had none), and their area actions hit everything inside (only the target before).
   They get MP back as players do (200 a tick plus Piety's in combat, 600 out of it, none in Astral Fire; they never
   did, and cast on at none) and 1 % HP a tick in combat. From 30 a Duty Finder bot is its class's job (`job_at`;
   retail's players were jobs at every level from 30), a healer a White Mage or a Scholar. A class without a script
-  keeps the heuristic below. Heals stay the bots' own (`heal_action`), and take the GCD (the rotation hears of them).
+  keeps the heuristic below. Heals stay the bots' own (`heal_action`: the highest level single-target GCD heal that
+  needs nothing but MP, so not Afflatus Solace or Manifestation), and take the GCD (the rotation hears of them).
 * **The heuristic rotation** (`build_rotation`, for a class without a script), run by the NPC class rotations
   (`server/rotation.rs`, a 2.5 s pace like a player's GCD): its abilities whenever they're ready; its combos, each step
   after the one it follows (highest level first, so a combo runs to its end); its damage over time spells and

@@ -11,6 +11,10 @@ function doAction(player, in_combo)
         potency = COMBO_POTENCY
     end
     effects:damage(DAMAGE_TYPE_SLASHING, physicalDamage(player, potency))
+    if in_combo then
+        ninGainNinki(effects, player, 5)
+    end
+    ninBunshin(effects, player, false)
 
     return effects
 end

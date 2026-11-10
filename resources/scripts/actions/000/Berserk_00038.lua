@@ -1,5 +1,5 @@
 -- Berserk (Lv. 6): 3 stacks guaranteeing critical direct hits for weaponskills, 15 s.
--- NOTE: whether the engine honours the guarantee depends on its critical hit rolls.
+-- Each weaponskill under it is a critical direct hit and uses a stack (Global.lua's warBerserk).
 local EFFECT_BERSERK = 86
 local STACKS = 3
 local DURATION = 15.0

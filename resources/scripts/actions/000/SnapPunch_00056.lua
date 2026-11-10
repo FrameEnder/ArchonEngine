@@ -1,5 +1,5 @@
 -- Snap Punch (Lv. 6): changes to opo-opo form.
--- NOTE: the flank bonus (330) and Coeurl's Fury aren't implemented.
+-- Coeurl's Fury (the gauge's "coeurl_fury") adds 150. NOTE: the flank bonus (330) isn't implemented (no positionals).
 -- NPCs use this ID too (quest battles): they keep NPC_POTENCY and nothing else, see isPlayerCaster.
 -- Potencies: retail's for levels 1-50, measured from level-synced party members in Bob's Chronofoil captures
 -- (docs/src/fork/combat.md); higher levels' traits raise them.
@@ -9,15 +9,23 @@ local FORM_DURATION = 30.0
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
+    if isPlayerCaster(player) then
+        mnkBeastChakra(effects, player, 3)
+    end
     mnkUsePerfectBalance(effects, player)
     if not isPlayerCaster(player) then
         effects:damage(DAMAGE_TYPE_BLUNT, physicalDamage(player, NPC_POTENCY))
-        effects:gain_effect_self(STATUS_OPO_OPO_FORM, 0, FORM_DURATION)
+        mnkShift(effects, player, STATUS_OPO_OPO_FORM)
         return effects
     end
 
-    effects:damage(DAMAGE_TYPE_BLUNT, physicalDamage(player, POTENCY))
-    effects:gain_effect_self(STATUS_OPO_OPO_FORM, 0, FORM_DURATION)
+    local potency = POTENCY
+    -- Coeurl's Fury: 150 more (Demolish gives two.)
+    if mnkSpendFury(effects, player, "coeurl_fury") then
+        potency = potency + 150
+    end
+    effects:damage(DAMAGE_TYPE_BLUNT, physicalDamage(player, potency))
+    mnkShift(effects, player, STATUS_OPO_OPO_FORM)
 
     return effects
 end

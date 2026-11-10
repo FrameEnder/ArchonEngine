@@ -1296,15 +1296,39 @@ fn server_logic_tick(
                     if let NetworkedActor::Player {
                         spawn, job_gauge, ..
                     } = actor
-                        && spawn.common.class_job == CLASSJOB_WHITE_MAGE
                         && spawn.common.health_points > 0
-                        && job_gauge.tick_white_mage(
-                            SERVER_TICK_MILLISECONDS,
-                            haters.contains_key(id),
-                            spawn.common.level,
-                        )
                     {
-                        gauge_updates.push((*id, job_gauge.to_ipc(spawn.common.class_job)));
+                        let lilies = spawn.common.class_job == CLASSJOB_WHITE_MAGE
+                            && job_gauge.tick_white_mage(
+                                SERVER_TICK_MILLISECONDS,
+                                haters.contains_key(id),
+                                spawn.common.level,
+                            );
+                        // Life of the Dragon, Polyglot (`JobGauge::tick`.)
+                        let timed = job_gauge.tick(
+                            SERVER_TICK_MILLISECONDS,
+                            spawn.common.class_job,
+                            spawn.common.level,
+                        );
+                        if lilies || timed {
+                            gauge_updates.push((*id, job_gauge.to_ipc(spawn.common.class_job)));
+                        }
+                    }
+                }
+                // Party bots' gauges pass with time too (their own, `PartyBot::gauge`.)
+                let bot_jobs: Vec<(ObjectId, u8, u8)> = instance
+                    .party_bots
+                    .keys()
+                    .filter_map(|id| {
+                        instance.find_actor(*id).map(|actor| {
+                            let common = actor.get_common_spawn();
+                            (*id, common.class_job, common.level)
+                        })
+                    })
+                    .collect();
+                for (id, classjob, level) in bot_jobs {
+                    if let Some(bot) = instance.party_bots.get_mut(&id) {
+                        bot.gauge.tick(SERVER_TICK_MILLISECONDS, classjob, level);
                     }
                 }
 
@@ -1392,7 +1416,7 @@ fn server_logic_tick(
                 {
                     let in_combat = haters.contains_key(id);
                     // Astral Fire stops MP coming back over time (the Black Mage's job guide, 7.x.)
-                    let astral_fire = job_gauge.element > 0;
+                    let astral_fire = job_gauge.element() > 0;
                     let is_dead = spawn.common.health_points == 0;
 
                     // Auto-attacks come every weapon delay × haste / 100, as retail's (Bob's Chronofoil captures:
@@ -1502,7 +1526,7 @@ fn server_logic_tick(
                     // players' own is floor(max / 10).) Their spells cost MP and nothing gave it back, so a bot spent
                     // its 10000 and went on casting at none (2026-11-10.)
                     let in_combat = *state == NpcState::Hate || !enmity.is_empty();
-                    let astral_fire = bot.gauge.element > 0;
+                    let astral_fire = bot.gauge.element() > 0;
                     let mut updated = false;
                     if spawn.common.resource_points < spawn.common.max_resource_points
                         && !astral_fire

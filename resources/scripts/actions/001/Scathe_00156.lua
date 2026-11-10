@@ -17,7 +17,7 @@ function doAction(player, in_combo)
     if math.random() < DOUBLE_CHANCE then
         potency = POTENCY * 2
     end
-    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, classPotency(player, potency, TRAITS_THM_MAIM_AND_MEND)))
+    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, math.floor(blmEnochian(player) * classPotency(player, potency, TRAITS_THM_MAIM_AND_MEND))))
 
     return effects
 end

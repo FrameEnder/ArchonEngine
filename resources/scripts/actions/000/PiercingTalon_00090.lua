@@ -7,12 +7,13 @@ local EFFECT_ENHANCED_PIERCING_TALON = 1870
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
+    drgWeaponskill(effects, player)
     local potency = POTENCY
     if player:get_effect(EFFECT_ENHANCED_PIERCING_TALON) ~= nil then
         potency = ENHANCED_POTENCY
         effects:consume_effect(EFFECT_ENHANCED_PIERCING_TALON)
     end
-    effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, potency))
+    effects:damage(DAMAGE_TYPE_PIERCING, drgDamage(player, potency))
 
     return effects
 end

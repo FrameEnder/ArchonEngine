@@ -6,7 +6,12 @@ local FALLOFF = 50
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
     effects:aoe_falloff(FALLOFF)
-    effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, POTENCY))
+    effects:damage(DAMAGE_TYPE_PIERCING, drgDamage(player, POTENCY))
+
+    -- Dragon's Flight (30 s) for Rise of the Dragon from 92.
+    if player.level >= 92 then
+        effects:gain_effect_self(DRG_EFFECT_DRAGONS_FLIGHT, 0, 30.0)
+    end
 
     return effects
 end

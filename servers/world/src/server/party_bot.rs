@@ -890,11 +890,15 @@ fn raise_action(actions: &[ClassAction]) -> Option<(u32, f32)> {
         .map(|a| (a.id, a.range as f32))
 }
 
-/// The healer's heal: its highest level single-target heal on the GCD.
+/// Single-target GCD heals that need something the healer may not have: Afflatus Solace a Lily, Manifestation
+/// Seraphism (the job guide, 7.x). The rotation scripts use them (`rotations/WhiteMage.lua`).
+const GATED_HEALS: [u32; 2] = [16531, 37015];
+
+/// The healer's heal: its highest level single-target heal on the GCD that needs nothing but MP.
 fn heal_action(actions: &[ClassAction]) -> Option<u32> {
     actions
         .iter()
-        .filter(|a| a.heals && a.gcd && a.single_target)
+        .filter(|a| a.heals && a.gcd && a.single_target && !GATED_HEALS.contains(&a.id))
         .max_by_key(|a| (a.level, a.id))
         .map(|a| a.id)
 }
@@ -4308,6 +4312,12 @@ mod tests {
             .collect();
         assert_eq!(entries, vec![(121, Some(28.0)), (127, None)]);
         assert_eq!(heal_action(&actions), Some(120));
+
+        // Afflatus Solace needs a Lily: the higher level heal isn't the bot's.
+        let mut solace = action(16531, 52, true, 0);
+        solace.hostile = false;
+        solace.heals = true;
+        assert_eq!(heal_action(&[heal, solace]), Some(120));
     }
 
     /// The numbers come from the action scripts themselves.

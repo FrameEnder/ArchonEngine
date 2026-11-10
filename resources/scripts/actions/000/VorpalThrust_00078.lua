@@ -12,12 +12,13 @@ function doAction(player, in_combo)
         effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, NPC_POTENCY))
         return effects
     end
+    drgWeaponskill(effects, player)
 
     local potency = POTENCY
     if in_combo then
         potency = COMBO_POTENCY
     end
-    effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, potency))
+    effects:damage(DAMAGE_TYPE_PIERCING, drgDamage(player, potency))
 
     return effects
 end

@@ -18,5 +18,13 @@ function doAction(player, in_combo)
     effects:damage(DAMAGE_TYPE_PIERCING, physicalDamage(player, classPotency(player, POTENCY, TRAITS_ARC_ACTION_DAMAGE)))
     effects:damage_over_time(EFFECT_WINDBITE, DURATION, physicalDamage(player, classPotency(player, DOT_POTENCY, TRAITS_ARC_ACTION_DAMAGE)))
 
+    if isPlayerCaster(player) then
+        -- 35 % Hawk's Eye from Bite Mastery II (76).
+        if player.level >= 76 then
+            brdHawksEye(effects, 0.35)
+        end
+        brdRepertoire(effects, player)
+    end
+
     return effects
 end
