@@ -915,6 +915,7 @@ impl Zone {
                     character_data_flags,
                     behavior,
                     ref appearance,
+                    mount,
                 } = object.data
                 {
                     if stationary {
@@ -944,6 +945,7 @@ impl Zone {
                                 .map(DisplayFlag)
                                 .unwrap_or(base_npc.common.display_flags),
                             behavior: behavior.unwrap_or(base_npc.common.behavior),
+                            current_mount: mount.unwrap_or(base_npc.common.current_mount),
                             ..base_npc.common
                         },
                         ..base_npc

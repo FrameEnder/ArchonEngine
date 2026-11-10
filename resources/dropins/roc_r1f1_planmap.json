@@ -9230,6 +9230,7 @@
                         "name_id": 2082,
                         "nonpop": true,
                         "type": "battle_npc",
+                        "mount": 10,
                         "display_flags": 262144,
                         "character_data_flags": 1,
                         "appearance": {

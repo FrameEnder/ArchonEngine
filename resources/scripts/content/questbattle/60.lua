@@ -31,6 +31,18 @@
 --           battle's scene 11 (0xF8402FFF); the quest moves to sequence 255
 -- The opening scene 1 is a cutscene (0xF8412FFF.) Who fights whom and how hard is in their timelines (QB60*.)
 
+-- Haurchefant rides in (retail's SpawnNpc had him on mount 10, the drop-in's `mount`): at a run (6 yalms a second, the
+-- ActorMoves' speed byte 60) from where he appears along his facing to HAURCHEFANT_TURN in 7.6-7.8 s, then on towards
+-- the fight to HAURCHEFANT_ARRIVES, getting off his mount on the way as he says talk 88 (ActorControl 930, 10.8-11.0 s
+-- after he appeared), and fights from 13.2-13.4 s; the same path to a yalm in all three runs (Bob's Chronofoil
+-- captures 3c56e09f, 130088ec, 21f967d2.) Held meanwhile, so Battle leaves him alone until he arrives.
+HAURCHEFANT_SPEED = 6
+HAURCHEFANT_TURN = { x = 463.1, y = 304.34, z = -275.1 }
+HAURCHEFANT_ARRIVES = { x = 459.46, y = 304.46, z = -307.0 }
+-- In updates from when he appears: the turn (7.66 s at his speed from his spot) and his arrival (5.35 s more.)
+HAURCHEFANT_TURN_AFTER = 15
+HAURCHEFANT_FIGHTS_AFTER = 26
+
 -- Where retail puts the player and which way they face: their SpawnPlayer in both captures.
 START_POSITION = { x = 457.38, y = 303.03, z = -264.67 }
 START_ROTATION = 2.673
@@ -209,15 +221,27 @@ function onCommence(director)
     after(TALK_86_AFTER, function(d) talk(d, SPEAKER_BOSS, 86) end)
 end
 
+function haurchefantRidesIn(director)
+    BATTLE:spawn(director, { BNPC_GLADIATOR_ALLY })
+    director:hold_bnpc(BNPC_GLADIATOR_ALLY)
+    local turn, arrives = HAURCHEFANT_TURN, HAURCHEFANT_ARRIVES
+    director:sweep_bnpc(BNPC_GLADIATOR_ALLY, turn.x, turn.y, turn.z, HAURCHEFANT_SPEED)
+    after(HAURCHEFANT_TURN_AFTER, function(d)
+        d:sweep_bnpc(BNPC_GLADIATOR_ALLY, arrives.x, arrives.y, arrives.z, HAURCHEFANT_SPEED)
+    end)
+    after(HAURCHEFANT_FIGHTS_AFTER, function(d) d:hold_bnpc(BNPC_GLADIATOR_ALLY, false) end)
+end
+
 function gladiatorJoins(director)
     sequence(director, SEQUENCE_GLADIATOR)
-    after(GLADIATOR_AFTER, function(d) BATTLE:spawn(d, { BNPC_GLADIATOR_ALLY }) end)
+    after(GLADIATOR_AFTER, haurchefantRidesIn)
     after(SEQUENCE_4_AFTER, function(d)
         sequence(d, SEQUENCE_SECOND_WAVE)
         talk(d, SPEAKER_CONJURER, 87)
         after(SECOND_WAVE_AFTER, function(d2) BATTLE:spawn(d2, WAVE_2) end)
         after(SEQUENCE_5_AFTER, function(d2)
             sequence(d2, SEQUENCE_TALK)
+            d2:dismount_bnpc(BNPC_GLADIATOR_ALLY)
             talk(d2, SPEAKER_GLADIATOR, 88)
             after(TALK_89_AFTER, function(d3) talk(d3, SPEAKER_ONLOOKER, 89) end)
             after(YELL_1031_AFTER, function(d3) d3:yell(BNPC_CONJURER_ALLY, 1031) end)

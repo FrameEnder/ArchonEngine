@@ -427,7 +427,8 @@ first folder that has any (sorted by name), so an extra resource path still over
 SpawnNpc's character data flags (byte 8) aren't only "hostile": retail sends 0x1 for passive monsters, 0x2 for
 aggressive ones and 0x4 for guards (Ul'dah's Brass Blades and Flames, bases 791–798 and 1342; Gridania's Wood Wailers,
 580–583; Mor Dhona's 1776–1778; 22 kinds in all, Bob's Chronofoil captures). Guards also have their own Behavior row
-each (30051–30055; ordinary monsters 30246). A drop-in battle NPC can set both (`character_data_flags`, `behavior`).
+each (30051–30055; ordinary monsters 30246). A drop-in battle NPC can set both (`character_data_flags`, `behavior`), and a mount it comes out riding (`mount`,
+CommonSpawn's current_mount; `director:dismount_bnpc` gets it off, [Quest battles](quest-battles.md)).
 With 0x4 the client treats the NPC as a friendly one with a talk: clicking it asks the server for its DefaultTalk.
 
 **Guards** (all 36 in the Thanalan, Mor Dhona and Central Shroud drop-ins) are as on retail: display flags 0,

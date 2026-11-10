@@ -390,6 +390,13 @@ pub enum LuaDirectorTask {
         category: u32,
         params: [u32; 4],
     },
+    /// A BNpc (actor ID or layout ID) gets off its mount where it is: ActorControl 930 (PlayDismountAnimation) with
+    /// where it stands and faces, as retail's for a player and for In the Eyes of Gods and Men's Haurchefant (Bob's
+    /// Chronofoil captures 3c56e09f, 130088ec, 21f967d2: his x, y, then rotation and z packed), and its spawn on foot
+    /// from then on.
+    DismountBattleNpc {
+        who: u32,
+    },
     /// A BNpc (actor ID or layout ID) dies where it stands, as if its health ran out (`actor::kill_actor`): the
     /// Thousand Maws of Toto-Rak's last boss's eggs, gone with their own blast.
     KillBattleNpc {
@@ -1276,6 +1283,10 @@ impl UserData for LuaDirector {
                 Ok(())
             },
         );
+        methods.add_method_mut("dismount_bnpc", |_, this, who: u32| {
+            this.tasks.push(LuaDirectorTask::DismountBattleNpc { who });
+            Ok(())
+        });
         methods.add_method_mut("kill_bnpc", |_, this, who: u32| {
             this.tasks.push(LuaDirectorTask::KillBattleNpc { who });
             Ok(())
@@ -3549,6 +3560,24 @@ pub fn director_tick(
                         param4: params[3],
                         param5: 0,
                     },
+                );
+            }
+            LuaDirectorTask::DismountBattleNpc { who } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to dismount!");
+                    continue;
+                };
+                let Some(actor) = instance.find_actor_mut(actor_id) else {
+                    continue;
+                };
+                let common = actor.get_common_spawn_mut();
+                common.current_mount = 0;
+                let (unk1, unk2, unk3) =
+                    kawari::common::dismount_landing(&common.position, common.rotation);
+                network.lock().send_ac_in_range_instance(
+                    instance,
+                    actor_id,
+                    ActorControlCategory::PlayDismountAnimation { unk1, unk2, unk3 },
                 );
             }
             LuaDirectorTask::KillBattleNpc { who } => {

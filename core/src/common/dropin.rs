@@ -104,6 +104,11 @@ pub enum DropInObjectData {
         /// other clothes from those, a Hyur on retail (Bob's 2026-10-27 bundle against his Chronofoil capture.)
         #[serde(default, skip_serializing_if = "Option::is_none")]
         appearance: Option<DropInAppearance>,
+        /// If set, it comes out riding this Mount row (CommonSpawn's current_mount), as retail's SpawnNpc had In the
+        /// Eyes of Gods and Men's Haurchefant (mount 10; Bob's Chronofoil captures 3c56e09f, 130088ec, 21f967d2.) A
+        /// director's `dismount_bnpc` gets it off.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        mount: Option<u16>,
     },
     /// Represents a battle or event NPC.
     #[serde(rename = "event_npc")]
