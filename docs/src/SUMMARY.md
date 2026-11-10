@@ -75,6 +75,7 @@
   - [ArchonEngine ControlPanel](fork/kawari-web.md)
   - [Recorder and Diagnostics](fork/recorder-and-diagnostics.md)
   - [Research Notes](fork/research.md)
+  - [From Captures to Server Data: the Plan](fork/capture-pipeline.md)
   - [Outside Sources](fork/sources.md)
   - [Known Issues](fork/known-issues.md)
   - [Changelog](fork/changelog.md)
