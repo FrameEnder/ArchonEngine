@@ -461,14 +461,35 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
     whirlwinds) is a danger while it moves: the way ahead of it to its end, as wide as its action's reach each side, and
     a little behind it (`Sweep::danger`), gone as it arrives. One that hasn't set off isn't (retail's party stood in its
     lane meanwhile). So a dodger in its way gets out sideways or behind it, as retail's did when the second pair went.
-* **Its rotation** (`build_rotation`, a heuristic until bots' rotations are recorded), run by the NPC class rotations
+* **Its job's rotation script** (`resources/scripts/rotations/`, `server/bot_rotation.rs`; since 2026-11-10): one
+  Lua script per job and its base class (Paladin, Warrior, Monk, Dragoon, Bard, Ninja, White Mage, Black Mage,
+  Summoner, Scholar), whose `choose(b)` the server calls each tick the bot could act (`npc_behavior::bot_choice`) with
+  what a player's rotation goes by: its level, MP and HP, the actions it knows at its level that the server has
+  scripts for (each one's cooldown left and MP cost), its statuses (procs, buffs, forms) with their time left, its
+  target's statuses (its own damage over time), its last GCD action (the combo), its GCD and the abilities woven since,
+  how many enemies are within 5 yalms of its target and of itself, and its job gauge; `b.mem` keeps anything else
+  between calls. It returns the action (and `"self"` for one used on itself); the server uses it only if it's known,
+  off cooldown, a GCD action when the GCD is back and an ability between them, and affordable. The priorities are
+  the community's (Boss Mod's standard rotations, awgil/ffxiv_bossmod, BSD-3, and The Balance's guides, 7.x) checked
+  against what retail's players used at each level in Bob's Chronofoil captures (all 181 duty visits exported with
+  `questkit chronofoil --battle`: each job's uses a minute by ten-level band), and simulated against a dummy (a lupa
+  harness: Paladin 35 Fast Blade - Riot Blade - Rage of Halone 8 a minute each with Spirits Within and Fight or Flight,
+  as retail's 30-39 Paladins; Dragoon 35 Disembowel 2.3 a minute against retail's 1.7-2.4; Summoner 35 ten Gemshines a
+  minute against retail's nine). Party bots play as players do (`action::plays_as_player`): the scripts' player branch
+  (Thunderhead, Firestarter, Hawk's Eye, forms; it was the NPC one, so a Thaumaturge bot never got Thunderhead), their
+  critical and direct hits (they had none), and their area actions hit everything inside (only the target before).
+  They get MP back as players do (200 a tick plus Piety's in combat, 600 out of it, none in Astral Fire; they never
+  did, and cast on at none) and 1 % HP a tick in combat. From 30 a Duty Finder bot is its class's job (`job_at`;
+  retail's players were jobs at every level from 30), a healer a White Mage or a Scholar. A class without a script
+  keeps the heuristic below. Heals stay the bots' own (`heal_action`), and take the GCD (the rotation hears of them).
+* **The heuristic rotation** (`build_rotation`, for a class without a script), run by the NPC class rotations
   (`server/rotation.rs`, a 2.5 s pace like a player's GCD): its abilities whenever they're ready; its combos, each step
   after the one it follows (highest level first, so a combo runs to its end); its damage over time spells and
   weaponskills re-applied 2 s before they wear off (the duration in their script); and its filler: the highest level
   combo starter, or its strongest plain weaponskill or spell (the potency in its script), so Stone II replaces Stone.
   Single-target attacks only. Melee bots auto-attack (870), physical ranged ones too (872); casters don't.
   **A combo step gets its combo potency** as a player's does, when the GCD action before it was the step it follows
-  within 15 s (`RotationState::continues_combo`; since 2026-11-10). Before, a bot's combos were never in combo: Riot
+  within 30 s (since 7.0; `RotationState::continues_combo`, since 2026-11-10). Before, a bot's combos were never in combo: Riot
   Blade, Rage of Halone and Disembowel always hit for their lower potency (135, 79 and 126 where Fast Blade did 119 and
   True Thrust 153), and the bots dealt 31-45 a second in the Stone Vigil where retail's Duty Support members dealt
   45-75 (capture 1cefedf4) and its Duty Finder players 56-180 (341808b0), so pulls lasted far longer and the tank and

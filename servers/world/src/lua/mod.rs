@@ -1,5 +1,7 @@
 mod effects_builder;
-pub use effects_builder::{EFFECT_ON_SOURCE, EffectsBuilder, GaugeOp, PeriodicKind, PeriodicSpec};
+pub use effects_builder::{
+    EFFECT_ON_SOURCE, EffectsBuilder, GaugeField, GaugeOp, PeriodicKind, PeriodicSpec,
+};
 
 mod inventory;
 

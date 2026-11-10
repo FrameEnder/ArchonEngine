@@ -68,6 +68,7 @@ use super::{ClientId, FromServer, ToServer};
 mod action;
 mod actor;
 pub mod bot_friends;
+mod bot_rotation;
 mod chat;
 mod companion;
 pub use companion::{
@@ -1385,10 +1386,13 @@ fn server_logic_tick(
                     autoattack_timing,
                     autoattack_target,
                     parameters,
+                    job_gauge,
                     ..
                 } = actor
                 {
                     let in_combat = haters.contains_key(id);
+                    // Astral Fire stops MP coming back over time (the Black Mage's job guide, 7.x.)
+                    let astral_fire = job_gauge.element > 0;
                     let is_dead = spawn.common.health_points == 0;
 
                     // Auto-attacks come every weapon delay × haste / 100, as retail's (Bob's Chronofoil captures:
@@ -1416,7 +1420,9 @@ fn server_logic_tick(
 
                     if in_combat {
                         let mut updated = false;
-                        if spawn.common.resource_points < spawn.common.max_resource_points {
+                        if spawn.common.resource_points < spawn.common.max_resource_points
+                            && !astral_fire
+                        {
                             // Piety's bonus: 150 per level divisor above the level's main stat (exact for all 17 of
                             // Bob's points, e.g. 46 Piety at 14 → 203, 440 synced to 50 → 304.)
                             let piety_bonus =
@@ -1459,7 +1465,10 @@ fn server_logic_tick(
                         spawn.common.mode,
                         CharacterMode::Crafting | CharacterMode::Gathering
                     );
-                    if spawn.common.resource_points != spawn.common.max_resource_points && !busy {
+                    if spawn.common.resource_points != spawn.common.max_resource_points
+                        && !busy
+                        && !astral_fire
+                    {
                         let amount = if crate::common::is_gatherer(spawn.common.class_job) {
                             gp_regen(spawn.common.level)
                         } else {
@@ -1478,6 +1487,52 @@ fn server_logic_tick(
                     }
                 } else if let NetworkedActor::Npc {
                     spawn,
+                    parameters,
+                    enmity,
+                    state,
+                    ..
+                } = actor
+                    && regen_now
+                    && spawn.common.health_points > 0
+                    && *state != NpcState::Dead
+                    && let Some(bot) = instance.party_bots.get(id)
+                {
+                    // Party bots regain MP as players do (200 a tick plus Piety's bonus in combat, 600 out of it; none
+                    // under Astral Fire, as on retail) and in combat 1 % of their HP; between fights 10 % (a guess:
+                    // players' own is floor(max / 10).) Their spells cost MP and nothing gave it back, so a bot spent
+                    // its 10000 and went on casting at none (2026-11-10.)
+                    let in_combat = *state == NpcState::Hate || !enmity.is_empty();
+                    let astral_fire = bot.gauge.element > 0;
+                    let mut updated = false;
+                    if spawn.common.resource_points < spawn.common.max_resource_points
+                        && !astral_fire
+                    {
+                        let amount = if in_combat {
+                            MP_REGEN_IN_COMBAT
+                                + parameters.piety.saturating_sub(parameters.level_main) * 150
+                                    / parameters.level_div.max(1)
+                        } else {
+                            MP_REGEN_OUT_OF_COMBAT
+                        };
+                        spawn.common.resource_points = spawn
+                            .common
+                            .resource_points
+                            .saturating_add(amount as u16)
+                            .min(spawn.common.max_resource_points);
+                        updated = true;
+                    }
+                    if spawn.common.health_points < spawn.common.max_health_points {
+                        let share = if in_combat { 100 } else { 10 };
+                        spawn.common.health_points = (spawn.common.health_points
+                            + spawn.common.max_health_points / share)
+                            .min(spawn.common.max_health_points);
+                        updated = true;
+                    }
+                    if updated {
+                        actors_to_update_hp_mp.push(*id);
+                    }
+                } else if let NetworkedActor::Npc {
+                    spawn,
                     enmity,
                     state,
                     ..
@@ -1488,12 +1543,9 @@ fn server_logic_tick(
                     && *state != NpcState::Hate
                     && spawn.common.health_points > 0
                     && spawn.common.health_points < spawn.common.max_health_points
-                    && ((spawn.common.object_kind
-                        == ObjectKind::BattleNpc(BattleNpcSubKind::Enemy)
-                        && !spawn.common.owner_id.is_valid()
-                        && instance_is_open_world)
-                        // Party bots too, between fights, anywhere (a guess: players' own regeneration isn't this.)
-                        || instance.party_bots.contains_key(id))
+                    && spawn.common.object_kind == ObjectKind::BattleNpc(BattleNpcSubKind::Enemy)
+                    && !spawn.common.owner_id.is_valid()
+                    && instance_is_open_world
                 {
                     // Enemies out of combat (or going home after giving up a chase) get 10 % of their max HP back
                     // every 3 s (Bob's Chronofoil captures, 149 samples.)

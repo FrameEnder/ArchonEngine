@@ -29,9 +29,130 @@ use crate::{
         instance::{Instance, QueuedTaskData},
         modifiers,
         network::{DestinationNetwork, NetworkState},
-        rotation::Situation,
+        party_bot::KnownAction,
+        rotation::{COMBO_WINDOW, RotationState, Situation},
     },
+    status_effects::StatusEffects,
 };
+
+/// How far around a target (or a bot) its area attacks count enemies, in yalms: the usual 5-yalm circle.
+const BOT_AREA_REACH: f32 = 5.0;
+/// A GCD action's recast when the sheet doesn't say (2.5 s.)
+const BOT_GCD: f32 = 2.5;
+
+/// What a party bot with a rotation script sees around it (`bot_choice`), worked out before NPCs act.
+struct BotSurroundings {
+    target_statuses: Vec<(u16, f32, bool)>,
+    near_target: u32,
+    near_self: u32,
+    distance: f32,
+    gauge: Vec<(&'static str, i32)>,
+    known: Vec<KnownAction>,
+}
+
+/// What a party bot's rotation script (`bot_rotation`) picks now, if it can be used now: an action it knows, off
+/// cooldown, a GCD action only when its GCD is back and an ability only between them; on its target, or on itself
+/// for one used on itself.
+fn bot_choice(
+    id: ObjectId,
+    spawn: &kawari::ipc::zone::SpawnNpc,
+    statuses: &StatusEffects,
+    state: &RotationState,
+    around: &BotSurroundings,
+    situation: &Situation,
+    target: ObjectId,
+) -> Option<(u32, ObjectId)> {
+    let now = situation.now;
+    let since = |at: Instant| now.saturating_duration_since(at).as_secs_f32();
+    let last_gcd = state.last_gcd();
+    let recast_of = |action: u32| {
+        around
+            .known
+            .iter()
+            .find(|known| known.id == action)
+            .map(|known| known.recast)
+            .filter(|recast| *recast > 0.0)
+            .unwrap_or(BOT_GCD)
+    };
+    let (gcd_left, since_gcd) = match last_gcd {
+        Some((action, at)) => ((recast_of(action) - since(at)).max(0.0), since(at)),
+        None => (0.0, 99.0),
+    };
+    let combo = last_gcd
+        .filter(|(_, at)| now.saturating_duration_since(*at) <= COMBO_WINDOW)
+        .map(|(action, _)| action)
+        .unwrap_or(0);
+    let known: Vec<(u32, bool, f32, u32)> = around
+        .known
+        .iter()
+        .map(|known| {
+            // A GCD action's own recast is the GCD's (`gcd_left`); one with a longer recast of its own counts it.
+            let left = state
+                .used_at(known.id)
+                .filter(|_| !known.gcd || known.recast > BOT_GCD)
+                .map(|at| (known.recast - since(at)).max(0.0))
+                .unwrap_or(0.0);
+            (known.id, known.gcd, left, known.mp_cost)
+        })
+        .collect();
+    let own_statuses = statuses
+        .data()
+        .iter()
+        .map(|effect| {
+            let left = statuses
+                .time_left(effect.effect_id)
+                .map(|left| if left <= 0.0 { 999.0 } else { left })
+                .unwrap_or(0.0);
+            (effect.effect_id, left, effect.param)
+        })
+        .collect();
+    let view = crate::server::bot_rotation::BotView {
+        bot_id: id.0,
+        classjob: spawn.common.class_job,
+        level: spawn.common.level,
+        mp: spawn.common.resource_points as u32,
+        max_mp: spawn.common.max_resource_points as u32,
+        hp: situation.self_hp,
+        target_hp: situation.target_hp,
+        gcd_left,
+        since_gcd,
+        weaves: state.weaves(),
+        combo,
+        known,
+        statuses: own_statuses,
+        target_statuses: around.target_statuses.clone(),
+        near_target: around.near_target,
+        near_self: around.near_self,
+        distance: around.distance,
+        gauge: around.gauge.clone(),
+        in_combat: 0.0,
+    };
+    let (action, on_self) = crate::server::bot_rotation::choose(&view)?;
+    let known = around.known.iter().find(|known| known.id == action)?;
+    let left = view
+        .known
+        .iter()
+        .find(|(id, _, _, _)| *id == action)
+        .map(|(_, _, left, _)| *left)
+        .unwrap_or(0.0);
+    let timely = if known.gcd {
+        gcd_left <= 0.25 && left <= 0.25
+    } else {
+        left <= 0.25
+    };
+    // Its MP has to cover the cost, but for the Thaumaturge's and Black Mage's (their gauge changes it: their script
+    // checks.)
+    let gauge_costs = matches!(spawn.common.class_job, 7 | 25);
+    if !timely || (!gauge_costs && known.mp_cost > spawn.common.resource_points as u32) {
+        return None;
+    }
+    let target = if on_self || !known.hostile {
+        id
+    } else {
+        target
+    };
+    Some((action, target))
+}
 
 /// How often NPCs auto-attack, in half-second ticks: every 3 seconds, which is what Kawari Bestiary recorded enemies
 /// doing on retail (their hits landed 3.0-3.1 seconds apart.)
@@ -553,6 +674,73 @@ pub fn npc_behavior(
     let mut unreachable: Vec<(ObjectId, ObjectId)> = Vec::new();
     let now = Instant::now();
     instance.unreachable.retain(|_, until| *until > now);
+
+    // What party bots with a rotation script (`bot_rotation`) see of their targets and surroundings, worked out before
+    // the mutable pass: their target's statuses, how many enemies are close to it and to them, how far it is, and
+    // their own gauge and actions.
+    let mut bot_surroundings: HashMap<ObjectId, BotSurroundings> = HashMap::new();
+    for (id, bot) in &instance.party_bots {
+        let Some(NetworkedActor::Npc { spawn, .. }) = instance.actors.get(id) else {
+            continue;
+        };
+        if !crate::server::bot_rotation::has(spawn.common.class_job) {
+            continue;
+        }
+        let target = spawn.common.target_id.object_id;
+        let target_actor = instance.actors.get(&target);
+        let target_statuses = target_actor
+            .and_then(|actor| actor.status_effects())
+            .map(|effects| {
+                effects
+                    .data()
+                    .iter()
+                    .map(|effect| {
+                        let left = effects
+                            .time_left(effect.effect_id)
+                            .map(|left| if left <= 0.0 { 999.0 } else { left })
+                            .unwrap_or(0.0);
+                        (effect.effect_id, left, effect.source_actor_id == *id)
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        let here = spawn.common.position.0;
+        let there = target_actor.map(|actor| actor.position().0).unwrap_or(here);
+        let ground = |a: Vec3A, b: Vec3A| Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length();
+        let (mut near_target, mut near_self) = (0, 0);
+        for (other_id, other) in &instance.actors {
+            if let NetworkedActor::Npc {
+                spawn: other_spawn, ..
+            } = other
+                && matches!(other_spawn.common.object_kind, ObjectKind::BattleNpc(_))
+                && other_spawn.common.health_points > 0
+                && !instance.party_bots.contains_key(other_id)
+                && crate::server::action::at_war(&players_enemies, other)
+                && other_spawn
+                    .character_data_flags
+                    .contains(kawari::ipc::zone::CharacterDataFlag::HOSTILE)
+            {
+                let at = other_spawn.common.position.0;
+                if target_actor.is_some() && ground(at, there) <= BOT_AREA_REACH {
+                    near_target += 1;
+                }
+                if ground(at, here) <= BOT_AREA_REACH {
+                    near_self += 1;
+                }
+            }
+        }
+        bot_surroundings.insert(
+            *id,
+            BotSurroundings {
+                target_statuses,
+                near_target,
+                near_self,
+                distance: ground(here, there),
+                gauge: bot.gauge.named(),
+                known: bot.known.clone(),
+            },
+        );
+    }
 
     // Who sees whom, on the collision as it is this tick (`in_sight`.)
     let sight = instance.collision.clone();
@@ -1282,15 +1470,32 @@ pub fn npc_behavior(
                 };
                 let mut game_data = game_data.lock();
                 let mut mechanics = |action| game_data.get_action_mechanics(action);
-                if let Some(action_id) = rotation_state.choose(rotation, &situation, &mut mechanics)
-                {
-                    // Its target, or the ally an `on_ally` entry goes on.
-                    let target = rotation
-                        .actions
-                        .iter()
-                        .find(|entry| entry.action == action_id)
-                        .and_then(|entry| situation.target_for(entry))
-                        .unwrap_or(target);
+                // A party bot whose job has a rotation script (`bot_rotation`) uses what that picks; anyone else
+                // follows their timeline's rotation.
+                let chosen = match bot_surroundings.get(id) {
+                    Some(around) => bot_choice(
+                        *id,
+                        spawn,
+                        status_effects,
+                        rotation_state,
+                        around,
+                        &situation,
+                        target,
+                    ),
+                    None => rotation_state
+                        .choose(rotation, &situation, &mut mechanics)
+                        .map(|action_id| {
+                            // Its target, or the ally an `on_ally` entry goes on.
+                            let target = rotation
+                                .actions
+                                .iter()
+                                .find(|entry| entry.action == action_id)
+                                .and_then(|entry| situation.target_for(entry))
+                                .unwrap_or(target);
+                            (action_id, target)
+                        }),
+                };
+                if let Some((action_id, target)) = chosen {
                     let target_id = ObjectTypeId {
                         object_id: target,
                         ..spawn.common.target_id

@@ -1,5 +1,5 @@
 -- Manafont (Lv. 30): fully restores MP.
--- NOTE: Astral Fire and Umbral Ice (the job gauge) aren't implemented: no potency or MP changes from them. Since 7.x Thunder spells need Thunderhead; without the gauge, changing element (this) grants it.
+-- It leaves the element as it is (Astral Fire and Umbral Ice: Global.lua's blm* functions); Thunderhead as before.
 local MP = 10000
 local EFFECT_THUNDERHEAD = 3870
 local THUNDERHEAD_DURATION = 0.0 -- no time limit on retail (Bob's Chronofoil captures; the Status sheet's permanent)

@@ -41,6 +41,8 @@ pub struct LuaPlayer {
     pub max_hp: u32,
     pub mp: u16,
     pub max_mp: u16,
+    /// Its job gauge's counters by name (`JobGauge::named`), for action scripts (`player:gauge("beast")`.)
+    pub gauge: Vec<(&'static str, i32)>,
 }
 
 impl QueueSegments for LuaPlayer {
@@ -1269,6 +1271,15 @@ impl UserData for LuaPlayer {
             this.queued_tasks
                 .push(LuaTask::GatheringAction { action_id });
             Ok(())
+        });
+        // A job gauge counter by name (`GaugeField`, "lilies", "aetherflow"); 0 for one it hasn't got.
+        methods.add_method("gauge", |_, this, name: String| {
+            Ok(this
+                .gauge
+                .iter()
+                .find(|(field, _)| *field == name)
+                .map(|(_, value)| *value)
+                .unwrap_or(0))
         });
         methods.add_method("get_effect", |_, this, effect_id: u16| {
             Ok(this.status_effects.get(effect_id))

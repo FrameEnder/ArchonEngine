@@ -12,8 +12,8 @@ use kawari::common::{ObjectId, Rotation, RotationAction};
 
 /// The GCD's recast group in the Action sheet.
 pub const GCD_GROUP: u8 = 58;
-/// How long a combo stays open after its last step (as for players.)
-pub const COMBO_WINDOW: Duration = Duration::from_secs(15);
+/// How long a combo stays open after its last step: 30 s since 7.0 (as for players.)
+pub const COMBO_WINDOW: Duration = Duration::from_secs(30);
 /// An ability isn't used straight after a GCD action, but this long after (weaving, as players do.)
 pub const WEAVE_DELAY: Duration = Duration::from_millis(1000);
 
@@ -43,6 +43,8 @@ pub struct RotationState {
     next: Option<u32>,
     /// An ability was used since the last GCD action.
     weaved: bool,
+    /// How many abilities since the last GCD action (party bots' rotation scripts weave up to two.)
+    weaves: u8,
 }
 
 /// What the NPC's situation is when it's choosing.
@@ -165,6 +167,21 @@ impl RotationState {
         None
     }
 
+    /// When it last used `action`.
+    pub fn used_at(&self, action: u32) -> Option<Instant> {
+        self.used.get(&action).copied()
+    }
+
+    /// Its last GCD action and when.
+    pub fn last_gcd(&self) -> Option<(u32, Instant)> {
+        self.last_gcd
+    }
+
+    /// Abilities used since its last GCD action.
+    pub fn weaves(&self) -> u8 {
+        self.weaves
+    }
+
     /// Whether its last GCD action, `action`, carries on a combo from `combo_from` (the step before it, within
     /// `COMBO_WINDOW`), so it gets the step's combo potency as a player's would. The choice is noted (`record`) before
     /// the action goes off, so the step before is the GCD before the last.
@@ -192,11 +209,13 @@ impl RotationState {
             self.previous_gcd = self.last_gcd;
             self.last_gcd = Some((action, now));
             self.weaved = false;
+            self.weaves = 0;
             if self.next == Some(action) {
                 self.next = None;
             }
         } else {
             self.weaved = true;
+            self.weaves = self.weaves.saturating_add(1);
         }
         if let Some(then) = rotation
             .actions

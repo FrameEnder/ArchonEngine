@@ -1,5 +1,5 @@
 -- Storm's Eye (Lv. 50), after Maim. Combo bonus: Surging Tempest (+10% damage, 30 s).
--- NOTE: the job gauge isn't implemented, so the combo's Beast Gauge (+10) isn't given.
+-- Combo bonus: Beast Gauge +10 (Global.lua's warGainBeast).
 -- Potencies: retail's for levels 1-50, measured from level-synced party members in Bob's Chronofoil captures
 -- (docs/src/fork/combat.md); higher levels' traits raise them.
 local POTENCY = 220
@@ -19,6 +19,7 @@ function doAction(player, in_combo)
         -- A refresh adds to the time left, up to 60 s (retail, Bob's Chronofoil captures.)
         local left = player:effect_time_left(EFFECT_SURGING_TEMPEST) or 0
         effects:gain_effect_self(EFFECT_SURGING_TEMPEST, 0, math.min(left + DURATION, MAX_DURATION))
+        warGainBeast(effects, player, 10)
     end
 
     return effects

@@ -1,5 +1,5 @@
 -- Storm's Path (Lv. 26), after Maim. Combo bonus: restores own HP.
--- NOTE: the job gauge isn't implemented, so the combo's Beast Gauge (+20) isn't given.
+-- Combo bonus: Beast Gauge +20 (Global.lua's warGainBeast).
 -- Potencies: retail's for levels 1-50, measured from level-synced party members in Bob's Chronofoil captures
 -- (docs/src/fork/combat.md); higher levels' traits raise them.
 local POTENCY = 220
@@ -15,6 +15,7 @@ function doAction(player, in_combo)
     effects:damage(DAMAGE_TYPE_SLASHING, physicalDamage(player, potency))
     if in_combo then
         effects:heal_self(healAmount(player, HEAL_POTENCY))
+        warGainBeast(effects, player, 20)
     end
 
     return effects

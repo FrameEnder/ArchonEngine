@@ -1,8 +1,9 @@
 -- Steeled Meditation (Lv. 15): opens a chakra.
--- NOTE: the job gauge isn't implemented, so it does nothing.
+-- One more of the five chakra (the job gauge's "chakra"; critical weaponskills open them too from 38, server/action.rs).
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
+    effects:gauge_add("chakra", 1)
 
     return effects
 end

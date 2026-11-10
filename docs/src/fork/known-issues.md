@@ -150,10 +150,17 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   spawned as retail's chocobo companions are (for their nameplates' names): whether the client treats them as your
   chocobo anywhere else (the companion's bar, its commands) hasn't been checked. They run at NPCs' speed (6 yalms a
   second), so they fall behind when you sprint or ride.
-* Bots still deal less than retail's Duty Support members (2026-11-10, the Stone Vigil): their combos now count, but
-  their rotations are a heuristic. The Thaumaturge only casts Fire III (retail's member cast its own Blizzard-and-DoT
-  kit, 75 a second); the Lancer's highest-level step after True Thrust is Disembowel, so it never uses Vorpal and Full
-  Thrust; nobody uses their damage cooldowns. Pulls last longer, so the tank takes more and the healer spends more.
+* Bots' rotation scripts (2026-11-10) cover the ten jobs of A Realm Reborn and their classes; untested in game, checked
+  with a lupa simulation against a dummy and against retail players' uses a minute. Not yet: the Heavensward and later
+  jobs (Dark Knight, Astrologian, Machinist, Samurai, Red Mage, Gunbreaker, Dancer, Reaper, Sage, Viper, Pictomancer:
+  no bots of them yet either), and, for the ten, what needs a gauge or system the server hasn't got: the Ninja's
+  Ninjutsu is one spell (no Suiton before Trick Attack, no Huton, Doton, Katon by count), the Summoner's arcana and
+  attunement are counted in the script, not the server (Gemshine is always the Ruby one), the Monk's Furies are counted
+  in the script, the Bard's songs don't reset Bloodletter or build Repertoire and Soul Voice, the Paladin's Oath isn't
+  kept, nothing past 50 on any gauge (Enochian, Polyglot, Paradox, Astral Soul, Beast Chakra, the dragon's eyes,
+  Ninki, Kazematoi). Role actions (Lucid Dreaming, Second Wind, Swiftcast...) aren't used. Ability charges (Infuriate,
+  Mudras, Bloodletter) are one at a time.
+* Party bots' heals are still the bots' own choice (`heal_action`), not part of the healers' scripts.
 
 ## Quests
 

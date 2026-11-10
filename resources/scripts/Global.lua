@@ -211,3 +211,125 @@ function determineSequence(player, cutscene)
 
     return OPENING_SEQ_2
 end
+
+-- Black Mage (and Thaumaturge): Astral Fire and Umbral Ice, the job gauge's "element" (1 to 3 Astral Fire, -1 to -3
+-- Umbral Ice, 0 neither; `server/job_gauge.rs`). As the official job guide gives them for 7.x: under Astral Fire, Fire
+-- spells' potency is 40 % higher at one stack and 80 % at three (60 % at two), they cost twice the MP (without Umbral
+-- Hearts) and MP doesn't come back over time; under Umbral Ice, Ice spells cost nothing and landing one gives back 2,500
+-- MP at one stack, 10,000 at three (5,000 at two), and Fire spells cost nothing; the other element's spells are 10 %
+-- weaker a stack. Changing element (or gaining one from none) grants Thunderhead. One stack before Aspect Mastery II
+-- (20), two before Aspect Mastery III (35).
+BLM_EFFECT_THUNDERHEAD = 3870
+BLM_ICE_MP = { 2500, 5000, 10000 }
+
+function blmElement(player)
+    return player:gauge("element")
+end
+
+function blmMaxStacks(player)
+    if player.level >= 35 then
+        return 3
+    elseif player.level >= 20 then
+        return 2
+    end
+    return 1
+end
+
+function blmFirePotency(player, potency)
+    local element = blmElement(player)
+    if element > 0 then
+        return math.floor(potency * (1.2 + 0.2 * element))
+    elseif element < 0 then
+        return math.floor(potency * (1 + 0.1 * element))
+    end
+    return potency
+end
+
+function blmIcePotency(player, potency)
+    local element = blmElement(player)
+    if element > 0 then
+        return math.floor(potency * (1 - 0.1 * element))
+    end
+    return potency
+end
+
+-- A Fire spell's MP cost (its sheet's `cost`) under the element.
+function blmFireCost(player, cost)
+    local element = blmElement(player)
+    if element < 0 then
+        return 0
+    elseif element > 0 and player:gauge("umbral_hearts") == 0 then
+        return cost * 2
+    end
+    return cost
+end
+
+function blmIceCost(player, cost)
+    if blmElement(player) < 0 then
+        return 0
+    end
+    return cost
+end
+
+-- Moves the element to `new` (kept to the stacks it may have), granting Thunderhead on a change of element, and for
+-- an Ice spell landing under Umbral Ice its MP.
+function blmSetElement(effects, player, new, ice_spell)
+    local old = blmElement(player)
+    local max = blmMaxStacks(player)
+    if new > max then new = max end
+    if new < -max then new = -max end
+    effects:gauge_set("element", new)
+    if new ~= 0 and (old == 0 or (old > 0) ~= (new > 0)) and player:get_effect(BLM_EFFECT_THUNDERHEAD) == nil then
+        effects:gain_effect_self(BLM_EFFECT_THUNDERHEAD, 0, 0.0)
+    end
+    if ice_spell and new < 0 then
+        effects:restore_mp(BLM_ICE_MP[-new])
+    end
+end
+
+-- A Fire spell's step (Fire, Fire II): one more stack of Astral Fire, or Umbral Ice gone.
+function blmFireStep(effects, player)
+    local element = blmElement(player)
+    if element < 0 then
+        blmSetElement(effects, player, 0, false)
+    else
+        blmSetElement(effects, player, element + 1, false)
+    end
+end
+
+-- An Ice spell's step (Blizzard, Blizzard II): one more stack of Umbral Ice, or Astral Fire gone.
+function blmIceStep(effects, player)
+    local element = blmElement(player)
+    if element > 0 then
+        blmSetElement(effects, player, 0, true)
+    else
+        blmSetElement(effects, player, element - 1, true)
+    end
+end
+
+-- Warrior: the Beast Gauge ("beast", 0-100; `server/job_gauge.rs`). The Beast Within (35) fills it: Maim 10, Storm's
+-- Path 20, Storm's Eye 10, Mythril Tempest 20 from Mastering the Beast (74), Infuriate 50; Inner Beast, Steel Cyclone,
+-- Fell Cleave and Decimate spend 50, nothing under Inner Release (the job guide, 7.x).
+WAR_BEAST_WITHIN_LEVEL = 35
+WAR_EFFECT_INNER_RELEASE = 1177
+
+function warGainBeast(effects, player, amount)
+    if player.level >= WAR_BEAST_WITHIN_LEVEL then
+        effects:gauge_add("beast", amount)
+    end
+end
+
+function warSpendBeast(effects, player)
+    if player:get_effect(WAR_EFFECT_INNER_RELEASE) == nil then
+        effects:gauge_add("beast", -50)
+    end
+end
+
+-- Monk: Perfect Balance (110) lets three weaponskills ignore form; each uses up one of its stacks (the job guide, 7.x).
+MNK_EFFECT_PERFECT_BALANCE = 110
+
+function mnkUsePerfectBalance(effects, player)
+    if player:get_effect(MNK_EFFECT_PERFECT_BALANCE) ~= nil then
+        effects:consume_effect_stack(MNK_EFFECT_PERFECT_BALANCE)
+    end
+end

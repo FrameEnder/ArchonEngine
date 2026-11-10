@@ -1,5 +1,5 @@
 -- Blizzard (Lv. 1).
--- NOTE: Astral Fire and Umbral Ice (the job gauge) aren't implemented: no potency or MP changes from them. Since 7.x Thunder spells need Thunderhead; without the gauge, changing element (this) grants it.
+-- Astral Fire and Umbral Ice: the job gauge's element (Global.lua's blm* functions).
 -- NPCs use this ID too (quest battles): they keep NPC_POTENCY and nothing else, see isPlayerCaster.
 -- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
 local NPC_POTENCY = 180
@@ -14,11 +14,11 @@ function doAction(player, in_combo)
         return effects
     end
 
-    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, classPotency(player, POTENCY, TRAITS_THM_MAIM_AND_MEND)))
-    -- Granted when it isn't already up (retail doesn't refresh it.)
-    if player:get_effect(EFFECT_THUNDERHEAD) == nil then
-        effects:gain_effect_self(EFFECT_THUNDERHEAD, 0, THUNDERHEAD_DURATION)
+    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, blmIcePotency(player, classPotency(player, POTENCY, TRAITS_THM_MAIM_AND_MEND))))
+    if blmElement(player) < 0 then
+        effects:set_mp_cost(0)
     end
+    blmIceStep(effects, player)
 
     return effects
 end

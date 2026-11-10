@@ -169,6 +169,10 @@ impl BotRole {
 pub struct PartyBot {
     /// The player it joined.
     pub leader: ObjectId,
+    /// Its job gauge, as a player's (`server/job_gauge.rs`): its actions' scripts change it and its rotation reads it.
+    pub gauge: crate::server::job_gauge::JobGauge,
+    /// What it knows at its level that the server can do (its rotation script picks from these.)
+    pub known: Vec<KnownAction>,
     pub role: BotRole,
     /// How close it gets to what it attacks.
     pub attack_range: f32,
@@ -246,6 +250,8 @@ impl PartyBot {
         let now = Instant::now();
         Self {
             leader,
+            gauge: Default::default(),
+            known: Vec::new(),
             role,
             attack_range,
             heal_action: None,
@@ -392,6 +398,19 @@ struct ClassAction {
     /// From its script: its potency, and for a damage over time how long it lasts.
     potency: u32,
     dot_seconds: Option<f32>,
+    /// Its recast in seconds, and its MP cost (the sheet's, PrimaryCostType 3: value × 100.)
+    recast: f32,
+    mp_cost: u32,
+}
+
+/// An action a bot knows, as its rotation script sees it (`bot_rotation::BotView::known`.)
+#[derive(Debug, Clone, Copy)]
+pub struct KnownAction {
+    pub id: u32,
+    pub gcd: bool,
+    pub recast: f32,
+    pub hostile: bool,
+    pub mp_cost: u32,
 }
 
 /// What an action's script says about it, as far as choosing goes: its `POTENCY`, and its `DURATION` if it puts a
@@ -744,6 +763,12 @@ impl GameData {
                 range: row.Range,
                 potency,
                 dot_seconds,
+                recast: row.Recast100ms as f32 / 10.0,
+                mp_cost: if row.PrimaryCostType == 3 {
+                    row.PrimaryCostValue as u32 * 100
+                } else {
+                    0
+                },
             });
         }
         actions
@@ -1767,10 +1792,23 @@ fn spawn_bot(
         *state = NpcState::Follow;
         *shown_as_player = shown;
     }
+    // A new bot (its actor ID may have been another's) starts its rotation afresh.
+    crate::server::bot_rotation::forget(actor_id.0);
     instance.party_bots.insert(
         actor_id,
         PartyBot {
             leader,
+            gauge: Default::default(),
+            known: actions
+                .iter()
+                .map(|action| KnownAction {
+                    id: action.id,
+                    gcd: action.gcd,
+                    recast: action.recast,
+                    hostile: action.hostile,
+                    mp_cost: action.mp_cost,
+                })
+                .collect(),
             role,
             attack_range,
             heal_action: heal,
@@ -1822,6 +1860,30 @@ fn spawn_bot(
 /// Thaumaturge, Arcanist, Rogue): the classes Kawari has action scripts for, levels 1-50. Each one's role is read from
 /// the ClassJob sheet.
 const DUTY_BOT_CLASSES: [u8; 9] = [1, 2, 3, 4, 5, 6, 7, 26, 29];
+
+/// The job a Duty Finder bot of `classjob` plays at `level`: from 30 the base class's job (Gladiator a Paladin, Pugilist
+/// a Monk, Marauder a Warrior, Lancer a Dragoon, Archer a Bard, Conjurer a White Mage, Thaumaturge a Black Mage, Arcanist
+/// a Summoner, Rogue a Ninja), as retail's Duty Finder players were at 30 and over in Bob's Chronofoil captures (every
+/// one of them a job: Paladins, Warriors, Dragoons, Ninjas, Bards, White Mages, Scholars, Black Mages, Summoners...).
+/// A healer bot from 30 is a White Mage or, half the time, a Scholar.
+fn job_at(classjob: u8, level: u8) -> u8 {
+    if level < 30 {
+        return classjob;
+    }
+    match classjob {
+        1 => 19,
+        2 => 20,
+        3 => 21,
+        4 => 22,
+        5 => 23,
+        6 if fastrand::bool() => 28,
+        6 => 24,
+        7 => 25,
+        26 => 27,
+        29 => 30,
+        other => other,
+    }
+}
 
 /// The classes of the bots that fill a party of `roles` for a player on `player_classjob`: a role the player plays is
 /// theirs, the rest are bots, each of a random class of that role. A DPS player takes a melee or ranged place, their
@@ -1920,6 +1982,7 @@ pub fn fill_duty_party(
 
     let mut bots = Vec::new();
     for classjob in duty_bot_classes(game_data, roles, player_classjob, already) {
+        let classjob = job_at(classjob, level);
         match spawn_bot(
             data,
             game_data,
@@ -3917,6 +3980,17 @@ fn update_party(
     }
     for (bot_id, heal, patient) in heals {
         npc_use_action(network, game_data, instance, bot_id, heal, patient);
+        // Its GCD goes on the heal, so its rotation doesn't cast over it.
+        let mechanics = game_data.lock().get_action_mechanics(heal);
+        if let Some(NetworkedActor::Npc {
+            rotation_state,
+            timeline,
+            ..
+        }) = instance.actors.get_mut(&bot_id)
+            && let Some(rotation) = &timeline.rotation
+        {
+            rotation_state.record(rotation, heal, patient, now, mechanics);
+        }
         let cast = game_data
             .lock()
             .get_casttime(heal)
@@ -4171,6 +4245,8 @@ mod tests {
             range: -1,
             potency: 0,
             dot_seconds: None,
+            recast: 2.5,
+            mp_cost: 0,
         }
     }
 

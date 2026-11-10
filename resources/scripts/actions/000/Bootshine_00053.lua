@@ -9,6 +9,7 @@ local FORM_DURATION = 30.0
 
 function doAction(player, in_combo)
     local effects = EffectsBuilder()
+    mnkUsePerfectBalance(effects, player)
     if not isPlayerCaster(player) then
         effects:damage(DAMAGE_TYPE_BLUNT, physicalDamage(player, NPC_POTENCY))
         effects:gain_effect_self(STATUS_RAPTOR_FORM, 0, FORM_DURATION)

@@ -1018,6 +1018,15 @@ pub fn execute_action(
             NetworkedActor::Npc { parameters, .. } => parameters.clone(),
             _ => BaseParameters::default(),
         };
+        // Its job gauge (a player's, or a party bot's own), for scripts (`player:gauge`.)
+        lua_player.gauge = match actor {
+            NetworkedActor::Player { job_gauge, .. } => job_gauge.named(),
+            _ => instance
+                .party_bots
+                .get(&from_actor_id)
+                .map(|bot| bot.gauge.named())
+                .unwrap_or_default(),
+        };
         // Let scripts check the caster's buffs (e.g. Freecure, Sacred Sight.)
         if let Some(status_effects) = actor.status_effects() {
             lua_player.status_effects = status_effects.clone();
@@ -1050,7 +1059,9 @@ pub fn execute_action(
             _ => (None, false),
         };
         lua_player.current_level = common_spawn.level;
-        lua_player.is_player = matches!(actor, NetworkedActor::Player { .. });
+        // Party bots play their jobs as players do (the scripts' player branch: Thunderhead, procs, combos, their
+        // potencies); Duty Support members keep their own kit (`party_npc.rs`.)
+        lua_player.is_player = plays_as_player(instance, from_actor_id);
         lua_player.hp = common_spawn.health_points;
         lua_player.max_hp = common_spawn.max_health_points;
         lua_player.mp = common_spawn.resource_points;
@@ -1137,6 +1148,7 @@ pub fn execute_action(
         if let Some(effects_builder) = &mut effects_builder
             && let Some(shape) = action_info.and_then(|info| info.area_shape())
             && let NetworkedActor::Npc { cast, timeline, .. } = actor
+            && !plays_as_player(instance, from_actor_id)
             && request.target.object_id != from_actor_id
             && let Some(target) = instance.find_actor(request.target.object_id)
             && effects_builder.effects.iter().any(|effect| {
@@ -1214,6 +1226,7 @@ pub fn execute_action(
         if let Some(effects_builder) = &mut effects_builder
             && let Some(shape) = action_info.and_then(|info| info.area_shape())
             && let NetworkedActor::Npc { cast, timeline, .. } = actor
+            && !plays_as_player(instance, from_actor_id)
             && request.target.object_id == from_actor_id
             && effects_builder
                 .effects
@@ -1404,8 +1417,12 @@ pub fn execute_action(
         if let Some(effects_builder) = &mut effects_builder {
             let target = instance.find_actor(request.target.object_id);
             let caster_statuses = status_ids(actor);
+            let as_player = plays_as_player(instance, from_actor_id);
             match actor {
-                NetworkedActor::Player { parameters, .. } => {
+                NetworkedActor::Player { parameters, .. }
+                | NetworkedActor::Npc { parameters, .. }
+                    if as_player =>
+                {
                     let target_statuses = target.map(status_ids).unwrap_or_default();
                     modifiers::apply_player_hit(
                         &mut effects_builder.effects,
@@ -1425,6 +1442,20 @@ pub fn execute_action(
                             rolls: [fastrand::f32(), fastrand::f32(), fastrand::f32()],
                         },
                     );
+                    // A Monk's (or Pugilist's) critical weaponskill opens a chakra from Deep Meditation (38).
+                    let common = actor.get_common_spawn();
+                    if matches!(common.class_job, 2 | 20)
+                        && common.level >= DEEP_MEDITATION_LEVEL
+                        && !AUTO_ATTACK_ACTIONS.contains(&request.action_id)
+                        && effects_builder.effects.iter().any(|effect| {
+                            matches!(effect.0, TargetEffectKind::Damage { damage_kind, .. }
+                                if damage_kind.contains(DamageKind::CRITICAL))
+                        })
+                    {
+                        effects_builder
+                            .gauge_ops
+                            .push(crate::lua::GaugeOp::Add(crate::lua::GaugeField::Chakra, 1));
+                    }
                 }
                 NetworkedActor::Npc { .. } => {
                     // A player's defences; a party bot's as a player's, a party NPC's as retail's member took hits
@@ -1704,11 +1735,9 @@ pub fn execute_action(
                     }));
             }
 
-            // Players' area actions hit every enemy (or ally) inside; enemies' are handled above, on their target.
-            let caster_is_player = matches!(
-                instance.find_actor(from_actor_id),
-                Some(NetworkedActor::Player { .. })
-            );
+            // Players' (and party bots') area actions hit every enemy (or ally) inside; enemies' are handled above, on
+            // their target.
+            let caster_is_player = plays_as_player(instance, from_actor_id);
             if let Some(info) =
                 action_info.filter(|info| info.is_area_of_effect() && caster_is_player)
             {
@@ -2855,6 +2884,19 @@ fn apply_caster_results(
         }
     }
 
+    // A party bot's gauge is its own (its rotation reads it, `bot_rotation`.)
+    if !effects_builder.gauge_ops.is_empty() && instance.party_bots.contains_key(&from_actor_id) {
+        let level = instance
+            .find_actor(from_actor_id)
+            .map(|actor| actor.get_common_spawn().level)
+            .unwrap_or(1);
+        if let Some(bot) = instance.party_bots.get_mut(&from_actor_id) {
+            for op in &effects_builder.gauge_ops {
+                bot.gauge.apply(*op, level);
+            }
+        }
+    }
+
     // Update the job gauge
     if !effects_builder.gauge_ops.is_empty()
         && let Some(NetworkedActor::Player {
@@ -3522,6 +3564,21 @@ fn is_hostile_effect(effect: &TargetEffect, on_the_other_side: bool) -> bool {
         TargetEffectKind::GainEffect { .. } => on_the_other_side,
         _ => false,
     }
+}
+
+/// The Monk's Deep Meditation: from 38 a critical weaponskill opens a chakra (Boss Mod's trait list, 7.x.)
+const DEEP_MEDITATION_LEVEL: u8 = 38;
+
+/// Whether `actor` uses its actions as a player does: a player, or a party bot (not a Duty Support member, whose kit
+/// is retail's members', `party_npc.rs`): the scripts' player branch and players' area actions.
+pub fn plays_as_player(instance: &Instance, actor: ObjectId) -> bool {
+    matches!(
+        instance.find_actor(actor),
+        Some(NetworkedActor::Player { .. })
+    ) || instance
+        .party_bots
+        .get(&actor)
+        .is_some_and(|bot| bot.party_npc.is_none())
 }
 
 /// Whether someone at `position` facing `rotation` looks toward `caster`, within 90 degrees either way: a gaze lands

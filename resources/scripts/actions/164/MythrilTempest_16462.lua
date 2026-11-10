@@ -1,5 +1,6 @@
 -- Mythril Tempest (Lv. 40), after Overpower: all nearby enemies. Combo bonus: Surging Tempest (+10% damage, 30 s).
--- NOTE: the job gauge isn't implemented, so the combo's Beast Gauge (+20) isn't given.
+-- Combo bonus: Beast Gauge +20 from Mastering the Beast (74; Global.lua's warGainBeast).
+local MASTERING_THE_BEAST_LEVEL = 74
 -- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
 local POTENCY = 100
 local COMBO_POTENCY = 140
@@ -15,6 +16,9 @@ function doAction(player, in_combo)
     effects:damage(DAMAGE_TYPE_SLASHING, physicalDamage(player, potency))
     if in_combo then
         effects:gain_effect_self(EFFECT_SURGING_TEMPEST, 0, DURATION)
+        if player.level >= MASTERING_THE_BEAST_LEVEL then
+            warGainBeast(effects, player, 20)
+        end
     end
 
     return effects

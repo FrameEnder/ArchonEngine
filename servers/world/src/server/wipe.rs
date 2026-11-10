@@ -286,6 +286,8 @@ pub fn wipe_tick(
                 bot.answers.clear();
                 bot.dodge = None;
                 bot.raising = None;
+                // Its rotation and gauge start again, as a player's do after a wipe.
+                bot.gauge = Default::default();
             }
         }
 

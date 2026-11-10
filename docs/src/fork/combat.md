@@ -728,9 +728,29 @@ Second Wind, Bloodbath, True North, Addle, Leg Sweep, Sleep, Rescue, Esuna). How
   (as party bots do), and one more than 50 yalms behind (`PET_CATCH_UP_DISTANCE`, a guess: retail's only fell that far
   behind after teleports) is put beside its owner with an ActorSetPos, as retail puts it 1.9 yalms from its owner after
   a teleport. Other pet actions (Heel and the rest) are still only logged.
-* **Not there:** job gauges (Black Mage's Astral Fire/Umbral Ice — Thunderhead stands in so Thunder can be cast —,
-  Monk's chakra and furies, Warrior's Beast Gauge, Paladin's Oath, Scholar's Aetherflow, Ninja mudras: Ninjutsu
-  is always Fuma Shuriken), pets other than Carbuncle (no egis, no Eos), positionals, movement actions (Thunderclap,
+* **Job gauges** (`server/job_gauge.rs`, since 2026-11-10 beyond the Lilies and Aetherflow): counters the action
+  scripts change by name (`effects:gauge_add("beast", 10)`, `effects:gauge_set("element", 3)`) and read
+  (`player:gauge("beast")`), sent to the client in ActorGauge at FFXIVClientStructs' offsets (WarriorGauge.BeastGauge
+  0x08, MonkGauge.Chakra 0x08, BlackMageGauge.ElementStance 0x0A and UmbralHearts 0x0B). Party bots keep their own
+  (`PartyBot::gauge`, reset at a wipe).
+  * **Warrior's Beast Gauge** (Global.lua `warGainBeast`/`warSpendBeast`): from The Beast Within (35) Maim's combo 10,
+    Storm's Path's 20, Storm's Eye's 10, Mythril Tempest's 20 from 74, Infuriate 50; Inner Beast and Steel Cyclone
+    spend 50, nothing under Inner Release. Infuriate gives Nascent Chaos only from 72 (it gave it at 50).
+  * **Monk's chakra:** Steeled and Inspirited Meditation open one; from Deep Meditation (38) a critical weaponskill
+    opens one (`server/action.rs`, `DEEP_MEDITATION_LEVEL`); Steel Peak and Howling Fist spend five. Perfect Balance's
+    three stacks go one a weaponskill (`mnkUsePerfectBalance`; they never went before).
+  * **Black Mage's Astral Fire and Umbral Ice** (Global.lua `blm*`, the official job guide's numbers for 7.x): Fire
+    spells 40/60/80 % stronger in Astral Fire I/II/III and twice the MP without Umbral Hearts, free in Umbral Ice and
+    10 % weaker a stack there; Ice spells free in Umbral Ice, 2,500/5,000/10,000 MP back on landing one there, 10 %
+    weaker a stack in Astral Fire; no MP over time in Astral Fire (players and bots, `server/mod.rs`); Fire and Fire II
+    a stack of Astral Fire (or Umbral Ice gone), Blizzard and Blizzard II the other way, Fire III and Flare Astral Fire
+    III, Blizzard III Umbral Ice III, Transpose one of the other, Umbral Soul one more Umbral Ice and an Umbral Heart
+    from 58, Freeze three hearts from 58; one stack at most before 20, two before 35. Thunderhead comes with a change of
+    element (or one from none), as the client's tooltip says, where it came with every Fire and Blizzard.
+* **Not there:** the other job gauges (Paladin's Oath, Bard's songs and Soul Voice, Ninja's Ninki and Kazematoi,
+  Monk's Furies and Beast Chakra, Black Mage's Enochian, Polyglot, Paradox and Astral Soul, Summoner's arcana and
+  attunement, Dragoon's eyes and Firstminds' Focus, and every job's past 50), Ninja mudras (Ninjutsu is always one
+  spell), pets other than Carbuncle (no egis, no Eos), positionals, movement actions (Thunderclap,
   Rescue...), barriers absorbing damage, Bloodbath's lifesteal, Peloton for the party. See
   [Known Issues](known-issues.md#combat).
 

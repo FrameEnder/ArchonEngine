@@ -36,6 +36,56 @@ pub enum GaugeOp {
     GainAetherflow,
     /// Spend one Aetherflow stack (Arcanist/Summoner: Fester, Painflare.)
     SpendAetherflow,
+    /// Add to (or take from) one of the job gauges' counters, within its range (`GaugeField::range`.)
+    Add(GaugeField, i16),
+    /// Set one of them.
+    Set(GaugeField, i16),
+}
+
+/// The job gauges' counters scripts change by name (`effects:gauge_add("beast", 10)`, `player:gauge("beast")`.)
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum GaugeField {
+    /// Warrior's Beast Gauge (0-100.)
+    Beast,
+    /// Monk's chakra (0-5; 10 under Brotherhood's overflow isn't kept.)
+    Chakra,
+    /// Black Mage's Astral Fire (1-3) or Umbral Ice (-1 to -3); 0 for neither.
+    Element,
+    /// Black Mage's Umbral Hearts (0-3.)
+    UmbralHearts,
+}
+
+impl GaugeField {
+    pub const ALL: [GaugeField; 4] = [
+        GaugeField::Beast,
+        GaugeField::Chakra,
+        GaugeField::Element,
+        GaugeField::UmbralHearts,
+    ];
+
+    pub fn name(self) -> &'static str {
+        match self {
+            GaugeField::Beast => "beast",
+            GaugeField::Chakra => "chakra",
+            GaugeField::Element => "element",
+            GaugeField::UmbralHearts => "umbral_hearts",
+        }
+    }
+
+    pub fn from_name(name: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|field| field.name() == name)
+    }
+
+    /// The values it can take (the client's gauges: WarriorGauge.BeastGauge, MonkGauge.Chakra,
+    /// BlackMageGauge.ElementStance and UmbralHearts, FFXIVClientStructs.)
+    pub fn range(self) -> (i16, i16) {
+        match self {
+            GaugeField::Beast => (0, 100),
+            GaugeField::Chakra => (0, 5),
+            GaugeField::Element => (-3, 3),
+            GaugeField::UmbralHearts => (0, 3),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -400,6 +450,19 @@ impl UserData for EffectsBuilder {
         });
         methods.add_method_mut("spend_aetherflow", |_, this, _: ()| {
             this.gauge_ops.push(GaugeOp::SpendAetherflow);
+            Ok(())
+        });
+        // Changes a job gauge counter by name (`GaugeField`): `gauge_add("beast", -50)`, `gauge_set("element", 3)`.
+        methods.add_method_mut("gauge_add", |_, this, (name, amount): (String, i16)| {
+            let field = GaugeField::from_name(&name)
+                .ok_or_else(|| mlua::Error::runtime(format!("no job gauge counter {name}")))?;
+            this.gauge_ops.push(GaugeOp::Add(field, amount));
+            Ok(())
+        });
+        methods.add_method_mut("gauge_set", |_, this, (name, value): (String, i16)| {
+            let field = GaugeField::from_name(&name)
+                .ok_or_else(|| mlua::Error::runtime(format!("no job gauge counter {name}")))?;
+            this.gauge_ops.push(GaugeOp::Set(field, value));
             Ok(())
         });
 

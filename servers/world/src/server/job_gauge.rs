@@ -1,8 +1,11 @@
-//! Server-side job gauge state: the White Mage Healing Gauge (Lilies) and Arcanist/Summoner Aetherflow.
+//! Server-side job gauge state: the White Mage Healing Gauge (Lilies), Arcanist/Summoner Aetherflow, the Warrior's
+//! Beast Gauge, the Monk's chakra and the Black Mage's Astral Fire / Umbral Ice and Umbral Hearts. Players' and party
+//! bots' alike (a bot's is kept on it, `PartyBot::gauge`); the action scripts change and read the counters by name
+//! (`effects:gauge_add`, `player:gauge`.)
 
 use kawari::ipc::zone::{ServerZoneIpcData, ServerZoneIpcSegment};
 
-use crate::lua::GaugeOp;
+use crate::lua::{GaugeField, GaugeOp};
 
 /// ClassJob ID for White Mage.
 pub const CLASSJOB_WHITE_MAGE: u8 = 24;
@@ -10,6 +13,20 @@ pub const CLASSJOB_WHITE_MAGE: u8 = 24;
 /// ClassJob IDs for Arcanist and Summoner, whose gauge carries Aetherflow.
 pub const CLASSJOB_ARCANIST: u8 = 26;
 pub const CLASSJOB_SUMMONER: u8 = 27;
+
+/// Warrior, Monk (and Pugilist) and Black Mage (and Thaumaturge): the gauges kept for them.
+pub const CLASSJOB_WARRIOR: u8 = 21;
+pub const CLASSJOB_PUGILIST: u8 = 2;
+pub const CLASSJOB_MONK: u8 = 20;
+pub const CLASSJOB_THAUMATURGE: u8 = 7;
+pub const CLASSJOB_BLACK_MAGE: u8 = 25;
+
+/// Where their counters sit in ActorGauge's data (FFXIVClientStructs' WarriorGauge.BeastGauge at 0x08, MonkGauge.Chakra
+/// at 0x08, BlackMageGauge.ElementStance at 0x0A and UmbralHearts at 0x0B; `data[0]` is 0x08.)
+const DATA_OFFSET_BEAST: usize = 0;
+const DATA_OFFSET_CHAKRA: usize = 0;
+const DATA_OFFSET_ELEMENT: usize = 2;
+const DATA_OFFSET_UMBRAL_HEARTS: usize = 3;
 
 /// Energy Drain fills Aetherflow to two stacks.
 const MAX_AETHERFLOW: u8 = 2;
@@ -51,6 +68,11 @@ pub struct JobGauge {
     pub blood_lily: u8,
     /// Aetherflow stacks (Arcanist/Summoner, 0-2.)
     pub aetherflow: u8,
+    /// The counters scripts change by name (`GaugeField`.)
+    pub beast: i16,
+    pub chakra: i16,
+    pub element: i16,
+    pub umbral_hearts: i16,
 }
 
 impl JobGauge {
@@ -81,9 +103,49 @@ impl JobGauge {
         true
     }
 
+    /// A counter by its field.
+    pub fn get(&self, field: GaugeField) -> i16 {
+        match field {
+            GaugeField::Beast => self.beast,
+            GaugeField::Chakra => self.chakra,
+            GaugeField::Element => self.element,
+            GaugeField::UmbralHearts => self.umbral_hearts,
+        }
+    }
+
+    fn slot(&mut self, field: GaugeField) -> &mut i16 {
+        match field {
+            GaugeField::Beast => &mut self.beast,
+            GaugeField::Chakra => &mut self.chakra,
+            GaugeField::Element => &mut self.element,
+            GaugeField::UmbralHearts => &mut self.umbral_hearts,
+        }
+    }
+
+    /// Every counter by name, with the Lilies and Aetherflow (for scripts and the bots' rotations.)
+    pub fn named(&self) -> Vec<(&'static str, i32)> {
+        let mut named: Vec<(&'static str, i32)> = GaugeField::ALL
+            .into_iter()
+            .map(|field| (field.name(), self.get(field) as i32))
+            .collect();
+        named.push(("lilies", self.lilies as i32));
+        named.push(("blood_lily", self.blood_lily as i32));
+        named.push(("aetherflow", self.aetherflow as i32));
+        named
+    }
+
     /// Applies a change requested by an action script.
     pub fn apply(&mut self, op: GaugeOp, level: u8) {
         match op {
+            GaugeOp::Add(field, amount) => {
+                let (low, high) = field.range();
+                let slot = self.slot(field);
+                *slot = slot.saturating_add(amount).clamp(low, high);
+            }
+            GaugeOp::Set(field, value) => {
+                let (low, high) = field.range();
+                *self.slot(field) = value.clamp(low, high);
+            }
             GaugeOp::SpendLily => {
                 self.lilies = self.lilies.saturating_sub(1);
                 if level >= TRANSCENDENT_AFFLATUS_LEVEL {
@@ -112,6 +174,13 @@ impl JobGauge {
             data[DATA_OFFSET_BLOOD_LILY] = self.blood_lily;
         } else if classjob_id == CLASSJOB_ARCANIST || classjob_id == CLASSJOB_SUMMONER {
             data[DATA_OFFSET_AETHERFLOW] = self.aetherflow & 0x03;
+        } else if classjob_id == CLASSJOB_WARRIOR {
+            data[DATA_OFFSET_BEAST] = self.beast as u8;
+        } else if classjob_id == CLASSJOB_MONK || classjob_id == CLASSJOB_PUGILIST {
+            data[DATA_OFFSET_CHAKRA] = self.chakra as u8;
+        } else if classjob_id == CLASSJOB_BLACK_MAGE || classjob_id == CLASSJOB_THAUMATURGE {
+            data[DATA_OFFSET_ELEMENT] = self.element as i8 as u8;
+            data[DATA_OFFSET_UMBRAL_HEARTS] = self.umbral_hearts as u8;
         }
         data
     }
@@ -182,6 +251,21 @@ mod tests {
         };
         gauge.apply(GaugeOp::SpendLily, 73);
         assert_eq!(gauge.blood_lily, 0);
+    }
+
+    #[test]
+    fn named_counters_stay_in_range_and_reach_the_packet() {
+        let mut gauge = JobGauge::default();
+        gauge.apply(GaugeOp::Add(GaugeField::Beast, 60), 50);
+        gauge.apply(GaugeOp::Add(GaugeField::Beast, 60), 50);
+        assert_eq!(gauge.beast, 100);
+        gauge.apply(GaugeOp::Add(GaugeField::Beast, -50), 50);
+        assert_eq!(gauge.to_packet_data(CLASSJOB_WARRIOR)[0], 50);
+        gauge.apply(GaugeOp::Set(GaugeField::Element, -3), 50);
+        assert_eq!(gauge.to_packet_data(CLASSJOB_BLACK_MAGE)[2], 0xFD);
+        gauge.apply(GaugeOp::Set(GaugeField::Element, 7), 50);
+        assert_eq!(gauge.element, 3);
+        assert!(gauge.named().contains(&("beast", 50)));
     }
 
     #[test]

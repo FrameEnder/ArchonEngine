@@ -1,9 +1,10 @@
 -- Fire (Lv. 2): 40% chance of Firestarter (Lv. 42).
--- NOTE: Astral Fire and Umbral Ice (the job gauge) aren't implemented: no potency or MP changes from them. Since 7.x Thunder spells need Thunderhead; without the gauge, changing element (this) grants it.
+-- Astral Fire and Umbral Ice: the job gauge's element (Global.lua's blm* functions).
 -- NPCs use this ID too (quest battles): they keep NPC_POTENCY and nothing else, see isPlayerCaster.
 -- Potencies: 7.x tooltip (max level); check the in-game tooltip at your level.
 local NPC_POTENCY = 180
 local POTENCY = 180
+local MP_COST = 800
 local TRAIT_FIRESTARTER = 32
 local EFFECT_FIRESTARTER = 165
 local FIRESTARTER_CHANCE = 0.4
@@ -18,11 +19,9 @@ function doAction(player, in_combo)
         return effects
     end
 
-    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, classPotency(player, POTENCY, TRAITS_THM_MAIM_AND_MEND)))
-    -- Granted when it isn't already up (retail doesn't refresh it.)
-    if player:get_effect(EFFECT_THUNDERHEAD) == nil then
-        effects:gain_effect_self(EFFECT_THUNDERHEAD, 0, THUNDERHEAD_DURATION)
-    end
+    effects:damage(DAMAGE_TYPE_MAGIC, magicalDamage(player, blmFirePotency(player, classPotency(player, POTENCY, TRAITS_THM_MAIM_AND_MEND))))
+    effects:set_mp_cost(blmFireCost(player, MP_COST))
+    blmFireStep(effects, player)
     if player:has_trait(TRAIT_FIRESTARTER) and math.random() < FIRESTARTER_CHANCE then
         effects:gain_effect_self(EFFECT_FIRESTARTER, 0, FIRESTARTER_DURATION)
     end
