@@ -115,8 +115,88 @@ def _zstd_reader(stream):
     try:
         import zstandard
     except ImportError:
-        raise SystemExit("Reading finished Chronofoil captures needs zstd: pip install zstandard (or Python 3.14)")
-    return zstandard.ZstdDecompressor().stream_reader(stream)
+        pass
+    else:
+        return zstandard.ZstdDecompressor().stream_reader(stream)
+    reader = _LibZstdReader.open(stream)
+    if reader is None:
+        raise SystemExit("Reading finished Chronofoil captures needs zstd: pip install zstandard (or Python 3.14), "
+                         "or the system's libzstd")
+    return io.BufferedReader(reader, 1 << 20)
+
+
+class _LibZstdReader(io.RawIOBase):
+    """Streams zstd through the system's libzstd (ctypes), for a Python without `zstandard` or 3.14's module."""
+
+    def __init__(self, lib, stream):
+        import ctypes
+
+        self._ctypes = ctypes
+        self._lib = lib
+        self._stream = stream
+        self._dstream = lib.ZSTD_createDStream()
+        lib.ZSTD_initDStream(self._dstream)
+        self._chunk = b""
+        self._at = 0
+        self._ended = False
+
+    @staticmethod
+    def open(stream):
+        import ctypes
+        import ctypes.util
+
+        name = ctypes.util.find_library("zstd")
+        if not name:
+            return None
+        try:
+            lib = ctypes.CDLL(name)
+        except OSError:
+            return None
+        lib.ZSTD_createDStream.restype = ctypes.c_void_p
+        lib.ZSTD_initDStream.argtypes = [ctypes.c_void_p]
+        lib.ZSTD_initDStream.restype = ctypes.c_size_t
+        lib.ZSTD_decompressStream.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+        lib.ZSTD_decompressStream.restype = ctypes.c_size_t
+        lib.ZSTD_isError.argtypes = [ctypes.c_size_t]
+        lib.ZSTD_isError.restype = ctypes.c_uint
+        lib.ZSTD_freeDStream.argtypes = [ctypes.c_void_p]
+        return _LibZstdReader(lib, stream)
+
+    def readable(self):
+        return True
+
+    def readinto(self, buffer):
+        ctypes = self._ctypes
+
+        class Buffer(ctypes.Structure):
+            _fields_ = [("data", ctypes.c_void_p), ("size", ctypes.c_size_t), ("pos", ctypes.c_size_t)]
+
+        view = memoryview(buffer).cast("B")
+        out_array = (ctypes.c_char * len(view)).from_buffer(view)
+        out = Buffer(ctypes.cast(out_array, ctypes.c_void_p), len(view), 0)
+        while out.pos == 0:
+            if self._at >= len(self._chunk):
+                if self._ended:
+                    return 0
+                self._chunk = self._stream.read(1 << 20)
+                self._at = 0
+                if not self._chunk:
+                    self._ended = True
+            data = ctypes.create_string_buffer(self._chunk[self._at:], len(self._chunk) - self._at)
+            inp = Buffer(ctypes.cast(data, ctypes.c_void_p), len(self._chunk) - self._at, 0)
+            result = self._lib.ZSTD_decompressStream(self._dstream, ctypes.byref(out), ctypes.byref(inp))
+            if self._lib.ZSTD_isError(result):
+                raise ValueError("zstd: the capture's data is damaged")
+            self._at += inp.pos
+            if self._ended and out.pos == 0:
+                return 0
+        return out.pos
+
+    def close(self):
+        if self._dstream:
+            self._lib.ZSTD_freeDStream(self._dstream)
+            self._dstream = None
+        super().close()
 
 
 # --- captures ---

@@ -24,6 +24,12 @@ const DAMAGE_DEALT: &[(u16, f32, f32)] = &[
     (1864, 1.10, 1.10), // Lance Charge
     (2720, 1.10, 1.10), // Power Surge
     (2677, 1.10, 1.10), // Surging Tempest
+    // A quest battle's role statuses (`director::QUEST_BATTLE_ROLE_STATUSES`): tanks' and healers' damage +30 % (Bob's
+    // Chronofoil captures: their hits in quest battles against the same characters' elsewhere, 1.26-1.31 times for
+    // Gladiators and Paladins, 1.25-1.30 for Conjurers and White Mages; their heals unchanged.) The DPS one (1265)
+    // left the Arcanist's damage as it was.
+    (1264, 1.30, 1.30),
+    (1041, 1.30, 1.30),
     // On an enemy, from players:
     (1195, 0.90, 0.95), // Feint
     (1203, 0.95, 0.90), // Addle
@@ -314,6 +320,11 @@ mod tests {
         // Feint on an enemy only softens its physical hits much.
         assert_eq!(damage_dealt_multiplier(&[1195], DamageType::Blunt), 0.9);
         assert_eq!(damage_dealt_multiplier(&[1195], DamageType::Magic), 0.95);
+
+        // A quest battle's tank and healer statuses: +30 %; the DPS one changes nothing.
+        assert_eq!(damage_dealt_multiplier(&[1041], DamageType::Magic), 1.3);
+        assert_eq!(damage_dealt_multiplier(&[1264], DamageType::Slashing), 1.3);
+        assert_eq!(damage_dealt_multiplier(&[1265], DamageType::Magic), 1.0);
     }
 
     #[test]

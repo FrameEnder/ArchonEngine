@@ -161,11 +161,39 @@ pub fn level_main(level: u16) -> u32 {
     LEVEL_MAIN[(level.clamp(1, LEVEL_MAIN.len() as u16) - 1) as usize] as u32
 }
 
-/// How much attack power above the level's main stat adds: f(AP) = 1 + SCALE * (AP - main) / div / 100, as Sapphire
-/// has it. With this, Stone, Aero and Cure land within a few percent of what retail does at levels 6-9.
-const ATTACK_POWER_SCALE: f32 = 125.0;
-/// How much Determination above the level's main stat adds: f(DET) = 1 + SCALE * (DET - main) / div / 1000.
-const DETERMINATION_SCALE: f32 = 130.0;
+/// How much attack power (or healing magic potency) above the level's main stat adds, per level:
+/// f(AP) = floor(c × (AP − main) / main) + 100, in hundredths. Fitted to Bob's Chronofoil captures (2026-06 to 2026-11,
+/// 124 captures, about 24,000 of the players' own hits and heals with their PlayerStats, see
+/// docs/src/fork/combat.md): up to level 50 it's 75 over the level's main stat, for damage and healing alike, tanks
+/// too (Conjurer and White Mage 6-44, Arcanist 8-45 and Gladiator/Paladin 1-44, within 1-2 % across 40 weapons; the
+/// old 125 over ParamGrow's LevelModifier, Sapphire's, fitted worse, and at 80-90 gave a fifth of retail's damage.)
+/// Past 50 the anchors are the community's (Allagan Studies: damage 165 at 80, 195 at 90, 237 at 100; tanks 115, 156,
+/// 190; healing 569 × main / 1522 at 90), with the levels between interpolated; level 80's White Mage Glare and
+/// level 87's Cure II against Glare III agree with them.
+const ATTACK_POWER_ANCHORS: [(u16, f32); 4] = [(50, 75.0), (80, 165.0), (90, 195.0), (100, 237.0)];
+const TANK_ATTACK_POWER_ANCHORS: [(u16, f32); 4] =
+    [(50, 75.0), (80, 115.0), (90, 156.0), (100, 190.0)];
+const HEALING_POTENCY_ANCHORS: [(u16, f32); 3] = [(50, 75.0), (90, 145.8), (100, 163.5)];
+/// How much Determination above the level's main stat adds: f(DET) = floor(SCALE × (DET − main) / div) + 1000, in
+/// thousandths (retail's 140; the captures can't tell it from 130.)
+const DETERMINATION_SCALE: f32 = 140.0;
+
+/// The coefficient for a level from its anchors: the first one's up to it, straight lines between, the last one's
+/// slope past it.
+fn anchored(anchors: &[(u16, f32)], level: u16) -> f32 {
+    let first = anchors[0];
+    if level <= first.0 {
+        return first.1;
+    }
+    for pair in anchors.windows(2) {
+        let ((low, a), (high, b)) = (pair[0], pair[1]);
+        if level <= high {
+            return a + (b - a) * (level - low) as f32 / (high - low) as f32;
+        }
+    }
+    let ((low, a), (high, b)) = (anchors[anchors.len() - 2], anchors[anchors.len() - 1]);
+    b + (b - a) * (level - high) as f32 / (high - low) as f32
+}
 
 #[derive(Default, Debug, Clone)]
 pub struct BaseParameters {
@@ -250,6 +278,8 @@ pub struct BaseParameters {
     pub retail_formula: bool,
     /// The level's main stat modifier (see `LEVEL_MAIN`.)
     pub level_main: u32,
+    /// Whether the class is a tank (its attack power counts for less past level 50, `TANK_ATTACK_POWER_ANCHORS`.)
+    pub tank: bool,
     /// The level's divisor (ParamGrow's LevelModifier.)
     pub level_div: u32,
     /// The level the stats are for.
@@ -468,6 +498,7 @@ impl BaseParameters {
         if self.retail_formula
             && let Some(modifiers) = modifiers
         {
+            self.tank = modifiers.tank;
             self.hp = retail_max_hp(
                 self.level,
                 modifiers.hp as u32,
@@ -506,29 +537,50 @@ impl BaseParameters {
         (self.level_main as f32 * stat_modifier as f32 / 1000.0).floor() + weapon_damage as f32
     }
 
-    /// Retail's damage formula, as Sapphire has it: potency/100 * f(WD) * f(AP) * f(DET), where f(AP) grows with
-    /// attack power above the level's main stat and f(DET) with Determination above it. Variance, criticals and traits
-    /// are left to the caller.
-    fn retail_damage(&self, potency: u32, attack_power: u32, weapon_factor: f32) -> u16 {
-        let main = self.level_main as f32;
-        let div = self.level_div as f32;
-        let f_ap = (ATTACK_POWER_SCALE * (attack_power as f32 - main) / div + 100.0)
-            .floor()
-            .max(1.0)
-            / 100.0;
-        let f_det = (DETERMINATION_SCALE * (self.determination as f32 - main) / div + 1000.0)
-            .floor()
-            / 1000.0;
-        (potency as f32 / 100.0 * weapon_factor * f_ap * f_det)
-            .floor()
-            .max(1.0) as u16
+    /// Retail's damage and healing formula, with its roundings: floor(floor(potency × f(AP) × f(DET) / 100 / 1000)
+    /// × f(WD) / 100), where f(AP) (hundredths) grows with attack power or healing magic potency above the level's main
+    /// stat (`ATTACK_POWER_ANCHORS`) and f(DET) (thousandths) with Determination above it. Variance, criticals and
+    /// traits are left to the caller (traits come in with the potency.)
+    fn retail_damage(
+        &self,
+        potency: u32,
+        attack_power: u32,
+        weapon_factor: f32,
+        coefficient: f32,
+    ) -> u16 {
+        let main = self.level_main.max(1) as f32;
+        let div = self.level_div.max(1) as f32;
+        let f_ap =
+            ((coefficient * (attack_power as f32 - main) / main).floor() + 100.0).max(1.0) as u64;
+        let f_det = ((DETERMINATION_SCALE * (self.determination as f32 - main) / div).floor()
+            + 1000.0)
+            .max(1.0) as u64;
+        let base = potency as u64 * f_ap * f_det / 100_000;
+        (base * weapon_factor.max(0.0) as u64 / 100).clamp(1, u16::MAX as u64) as u16
+    }
+
+    /// f(AP)'s coefficient for damage at this level (`ATTACK_POWER_ANCHORS`, the tanks' own past 50.)
+    fn attack_power_coefficient(&self) -> f32 {
+        anchored(
+            if self.tank {
+                &TANK_ATTACK_POWER_ANCHORS
+            } else {
+                &ATTACK_POWER_ANCHORS
+            },
+            self.level.max(1),
+        )
     }
 
     /// Calculates amount of physical damage to apply based on potency.
     fn calc_physical_damage(&self, potency: u32) -> u16 {
         if self.retail_formula {
             let f_wd = self.weapon_factor(self.physical_stat_modifier, self.weapon_physical_damage);
-            return self.retail_damage(potency, self.physical_damage, f_wd);
+            return self.retail_damage(
+                potency,
+                self.physical_damage,
+                f_wd,
+                self.attack_power_coefficient(),
+            );
         }
         let normalized_potency = potency as f32 / 100.0;
         (normalized_potency * self.physical_damage as f32).floor() as u16
@@ -542,14 +594,24 @@ impl BaseParameters {
         }
         let f_wd = self.weapon_factor(self.physical_stat_modifier, self.weapon_physical_damage);
         let f_auto = (f_wd * self.weapon_delay_ms as f32 / 3000.0).floor();
-        self.retail_damage(potency, self.physical_damage, f_auto)
+        self.retail_damage(
+            potency,
+            self.physical_damage,
+            f_auto,
+            self.attack_power_coefficient(),
+        )
     }
 
     /// Calculates amount of magic damage to apply based on potency.
     fn calc_magical_damage(&self, potency: u32) -> u16 {
         if self.retail_formula {
             let f_wd = self.weapon_factor(self.primary_stat_modifier, self.weapon_magic_damage);
-            return self.retail_damage(potency, self.attack_magic_potency, f_wd);
+            return self.retail_damage(
+                potency,
+                self.attack_magic_potency,
+                f_wd,
+                self.attack_power_coefficient(),
+            );
         }
         let normalized_potency = potency as f32 / 100.0;
         (normalized_potency * self.attack_magic_potency as f32).floor() as u16
@@ -559,7 +621,8 @@ impl BaseParameters {
     fn calc_heal_amount(&self, potency: u32) -> u16 {
         if self.retail_formula {
             let f_wd = self.weapon_factor(self.primary_stat_modifier, self.weapon_magic_damage);
-            return self.retail_damage(potency, self.healing_magic_potency, f_wd);
+            let coefficient = anchored(&HEALING_POTENCY_ANCHORS, self.level.max(1));
+            return self.retail_damage(potency, self.healing_magic_potency, f_wd, coefficient);
         }
         let normalized_potency = potency as f32 / 100.0;
         (normalized_potency * self.healing_magic_potency as f32).floor() as u16
@@ -1296,10 +1359,12 @@ mod tests {
     #[test]
     fn damage_matches_retail() {
         let conjurer = retail_conjurer();
-        // Retail: Stone (140) about 21.7 against level 9 enemies, Aero (50) about 8.4, Cure (450) about 72.
-        assert_eq!(conjurer.calc_magical_damage(140), 22);
-        assert_eq!(conjurer.calc_magical_damage(50), 7);
-        assert_eq!(conjurer.calc_heal_amount(450), 71);
+        // Retail: Stone (140) about 21.7 against level 9 enemies, Aero (50) about 8.4, Cure (450) about 72 (the means
+        // after ±5 % variance and its rounding down, about half a point under the formula's.) At such small numbers
+        // one point is 4 %: across levels 6-44 the formula is within 1-2 % (`docs/src/fork/combat.md`.)
+        assert_eq!(conjurer.calc_magical_damage(140), 23);
+        assert_eq!(conjurer.calc_magical_damage(50), 8);
+        assert_eq!(conjurer.calc_heal_amount(450), 74);
 
         // Retail: a level 6 conjurer's auto-attack (Strength 19) hits for about 6.
         let level_6 = BaseParameters {
@@ -1310,6 +1375,62 @@ mod tests {
             ..conjurer
         };
         assert_eq!(level_6.calc_auto_attack_damage(90), 6);
+    }
+
+    /// Past level 50 attack power counts for far more than Sapphire's f(AP) gave: a White Mage synced to 80 with the
+    /// same weapon did Glare for 3533.5 on average with 1557 Mind and 4507.1 with 1933 (196 and 23 hits, Bob's
+    /// captures fefaf4cb and 10108225), 1.2755 times as much; Sapphire's f(AP) gave 1.166.
+    #[test]
+    fn attack_power_scales_as_retail_at_80() {
+        let white_mage = |mind| BaseParameters {
+            retail_formula: true,
+            level: 80,
+            level_main: level_main(80),
+            level_div: 1300,
+            weapon_magic_damage: 90,
+            primary_stat_modifier: 115,
+            attack_magic_potency: mind,
+            determination: 714,
+            ..Default::default()
+        };
+        let low = white_mage(1557).calc_magical_damage(290) as f32;
+        let high = white_mage(1933).calc_magical_damage(290) as f32;
+        assert!((high / low - 1.2755).abs() < 0.02, "{}", high / low);
+    }
+
+    /// Healing magic potency counts for less than attack power past 50: at 87 retail's Cure II (800) healed 2.0225
+    /// times what Glare III (310) did, both with 1928 Mind and Maim and Mend II (Bob's capture 281f92fb: 10 and 17
+    /// casts.) With one f(AP) for both it was the potencies' 2.58.
+    #[test]
+    fn healing_scales_as_retail_at_87() {
+        let white_mage = BaseParameters {
+            retail_formula: true,
+            level: 87,
+            level_main: level_main(87),
+            level_div: 1700,
+            weapon_magic_damage: 120,
+            primary_stat_modifier: 115,
+            attack_magic_potency: 1928,
+            healing_magic_potency: 1928,
+            determination: 749,
+            ..Default::default()
+        };
+        let cure_ii = white_mage.calc_heal_amount(800 * 13 / 10) as f32;
+        let glare_iii = white_mage.calc_magical_damage(310 * 13 / 10) as f32;
+        assert!(
+            (cure_ii / glare_iii - 2.0225).abs() < 0.03,
+            "{}",
+            cure_ii / glare_iii
+        );
+    }
+
+    #[test]
+    fn coefficients_between_anchors() {
+        assert_eq!(anchored(&ATTACK_POWER_ANCHORS, 1), 75.0);
+        assert_eq!(anchored(&ATTACK_POWER_ANCHORS, 50), 75.0);
+        assert_eq!(anchored(&ATTACK_POWER_ANCHORS, 65), 120.0);
+        assert_eq!(anchored(&ATTACK_POWER_ANCHORS, 87), 186.0);
+        assert_eq!(anchored(&TANK_ATTACK_POWER_ANCHORS, 90), 156.0);
     }
 
     // RDM lv 52 as of 7.56h1

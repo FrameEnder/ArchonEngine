@@ -1531,3 +1531,28 @@ class ClientCheckTest(unittest.TestCase):
         self.assertEqual(check.unknown_params, ["ACTOR1"])
         self.assertEqual(len(check.notes), 1)
         self.assertIn("needs a look", text)
+
+
+class LibZstdTest(unittest.TestCase):
+    """Finished Chronofoil captures read through the system's libzstd when neither `zstandard` nor Python 3.14's
+    module is there."""
+
+    def test_round_trip(self):
+        import ctypes
+        import ctypes.util
+        import io
+
+        name = ctypes.util.find_library("zstd")
+        if not name:
+            self.skipTest("no libzstd")
+        lib = ctypes.CDLL(name)
+        lib.ZSTD_compressBound.restype = ctypes.c_size_t
+        lib.ZSTD_compressBound.argtypes = [ctypes.c_size_t]
+        lib.ZSTD_compress.restype = ctypes.c_size_t
+        lib.ZSTD_compress.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int]
+        data = bytes(range(256)) * 5000
+        out = ctypes.create_string_buffer(lib.ZSTD_compressBound(len(data)))
+        size = lib.ZSTD_compress(out, len(out), data, len(data), 3)
+        reader = io.BufferedReader(chronofoil._LibZstdReader.open(io.BytesIO(out.raw[:size])))
+        self.assertEqual(reader.read(1), b"\x00")
+        self.assertEqual(reader.read(), data[1:])

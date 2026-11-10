@@ -43,21 +43,57 @@ combat (and going home after giving up a chase) regain 10 % of their max HP a ti
 Stone (200 MP) every 2.5 s went +3 or −197 a tick, so barely drained at all. Kawari regenerated nothing in combat (and
 everything every 500 ms out of it), so casters ran dry mid-fight and couldn't cast until it ended (2026-10-17 bundle).
 
-**Damage and healing** use retail's formula as Sapphire has it:
+**Damage and healing** use retail's formula, fitted to Bob's Chronofoil captures (since 2026-11-10;
+`zone_connection/stats.rs`, `retail_damage`):
 
 ```text
-damage = potency / 100 × f(WD) × f(AP) × f(DET)
+damage = floor(floor(potency × f(AP) × f(DET) / 100 / 1000) × f(WD) / 100)
 
+f(AP)  = floor(c × (attack power − level_main) / level_main) + 100        (hundredths)
+f(DET) = floor(140 × (determination − level_main) / level_div) + 1000      (thousandths)
 f(WD)  = floor(level_main × class modifier for the stat / 1000) + weapon damage (physical or magic)
-f(AP)  = floor(125 × (attack power − level_main) / level_div + 100) / 100      (ATTACK_POWER_SCALE = 125)
-f(DET) = floor(130 × (determination − level_main) / level_div + 1000) / 1000  (DETERMINATION_SCALE = 130)
 auto-attacks: f(WD) × weapon delay / 3 s, potency 90
+c: damage 75 up to level 50, 165 at 80, 195 at 90, 237 at 100 (tanks 115, 156, 190 there); healing 75 up to 50,
+   145.8 at 90; straight lines between (ATTACK_POWER_ANCHORS, TANK_ATTACK_POWER_ANCHORS, HEALING_POTENCY_ANCHORS)
 ```
 
 `level_div` is ParamGrow's `LevelModifier`. Attack power is Strength, or Dexterity for Dexterity classes; magic attack
-is Intelligence, or **Mind for healers**; healing potency is Mind. Stone, Aero, Cure and auto-attacks land within a few
-percent of the recording at levels 6–9. Traits are applied by the scripts (`whmPotency`, `classPotency`); variance,
-criticals and statuses afterwards (below).
+is Intelligence, or **Mind for healers**; healing potency is Mind. Traits are applied by the scripts (`whmPotency`,
+`classPotency`); variance, criticals and statuses afterwards (below).
+
+How it was found (`questkit chronofoil <captures> --hits hits.jsonl.gz`, [questkit](questkit.md)): 124 captures
+(June to November 2026, Bob's characters and Connor's) gave about 24,000 of the players' own hits and heals with
+their class, level, PlayerStats, main hand and the target's level. The weapon's damage isn't in a capture (only its
+item ID), so each weapon's was fitted along with the rest: a weapon used over several levels pins it (40 of them,
+level 1 to 45). Non-critical hits only, single targets at or below the player's level, and heals (no enemy in them):
+
+* **Up to level 50, c is 75 over the level's main stat**, for damage and healing alike and for tanks too: Conjurer and
+  White Mage Stone, Stone II, Cure, Medica and Cure II at 6-44 (8 weapons), Arcanist Ruin and Physick at 8-45 (8),
+  Gladiator and Paladin Fast Blade and auto-attacks at 1-44 (10) fit within 1-2 % (heals 0.5 %, the Arcanist's 1 %).
+  Sapphire's 125 over `level_div`, Kawari's before, fitted worse each time (heals 0.70 % to 0.58 %, the Arcanist 1.24 %
+  to 1.03 %). The two differ by a few percent up to 50 (at level 10 125/78 against 75/35 of a point: 5 % less
+  damage), but past it Sapphire's grows with `level_div` (1300 at 80, 1900 at 90) and fell far behind: a level 80
+  White Mage's Glare with 1557 and 1933 Mind did 3533.5 and 4507.1 (1.2755 times; Sapphire's f(AP) 1.166, this one
+  1.265), and a level 86-88 White Mage's Glare III 4700-4900 where Sapphire's gave about a third of it.
+* **Past 50 healing grows more slowly than damage:** at 87 Cure II healed 2.0225 times what Glare III did with the
+  same 1928 Mind (capture 281f92fb), which the anchors give (2.020); one f(AP) for both gave the potencies' 2.58.
+  The anchors at 80, 90 and 100 are the community's (Allagan Studies); level 80's Glare and 87's heals agree with them,
+  levels 51-79 and the tanks past 50 weren't recorded (interpolated).
+* **Determination** 140 over `level_div` (retail's; 130 fitted as well), with the level divisor table checked against
+  the MP ticks (Piety, below).
+* **Potencies** that fit: Stone 140, Stone II 190, Cure 450, Medica 300, Cure II 700 (800 at 85), Physick 400, Fast
+  Blade 150. Ruin 220 fitted a little better than the script's 240, but the Arcanist's Intelligence modifier trades
+  off against it, so it's left as it is.
+* **Variance** ±5 % on damage, about ±3.5 % on heals (Cure at 17: 104-111 around 107.3).
+* **Quest battles' role statuses:** the same characters hit 1.25-1.31 times as hard in quest battles as elsewhere (tanks
+  and healers), and healed the same: retail gives each player a status for their role as the battle begins (with
+  scene 60000, in StatusEffectList alone, from no one, with no end): tanks 1264, healers 1041, the Arcanist 1265 (its
+  damage unchanged). Kawari gives them (`director::QUEST_BATTLE_ROLE_STATUSES`) and 1264 and 1041 add 30 % to damage
+  (`modifiers::DAMAGE_DEALT`). In The Eyes of Gods and Men's battle a level 40 White Mage's Stone II did 208-224 to
+  the enemy conjurers, 1.29 times the formula's; Kawari's player did 130-150 without it (Bob's bundle
+  20261110-081839).
+* **Enemies above the player** took less: about 0.89-0.90 of it at one to three levels above, 0.86 at four or five,
+  0.81 at six or seven (open world, a few hundred hits); Kawari doesn't do this yet ([Known Issues](known-issues.md)).
 
 **Gear** (`GameData::equipped_item_stats`): an item gives its BaseParam values, defense and magic defense, plus its HQ
 bonuses (`BaseParamValueSpecial`, item flag 1) when it's HQ. Checked against retail PlayerStats (Bob's captures, a

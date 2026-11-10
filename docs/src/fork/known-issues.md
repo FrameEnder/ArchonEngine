@@ -648,6 +648,19 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   history (sent empty.) Withdrawn equipment goes to the bags (retail put a weapon in the Armoury Chest.)
 * The lobby's character list doesn't show retainers (DistRetainerInfo is still empty).
 
+## Damage formula (2026-11-10)
+
+* Untested in game: the formula was fitted to retail captures ([Combat](combat.md)); Kawari's own damage wasn't
+  checked against it with Bob's game data. Up to 50 it fits within 1-2 %; levels 51-79 and 81-89 between the anchors,
+  and tanks past 50, are interpolated from the community's numbers, not recorded. Party bots use it too, so past 50
+  they hit about three times as hard as before.
+* Enemies above the player take less on retail (about 0.89 at one to three levels, 0.86 at four or five, 0.81 at six
+  or seven, open world); Kawari doesn't do this.
+* The Arcanist's Ruin at levels 3-5 did 0.79 of the formula (three groups; 8-45 fit), and enemies vary a little among
+  themselves on retail (about ±3 % at the same level), which Kawari doesn't model.
+* A quest battle's DPS status (1265) was only seen on an Arcanist; melee and physical ranged players get it too in
+  Kawari. What it does isn't known (not damage). Whether the role statuses change damage taken isn't checked.
+
 ## Combat timing
 
 * **Limit Break** isn't there. Retail's gauge is ActorControlSelf 505 (bars, amount, 10000 a bar, reason, 3 in Trust

@@ -351,6 +351,13 @@ reads, chat left out), so `compare` and the rest can use it.
   `--one-spot` the A and B ranks). The LGB is the TerritoryType's `Bg` folder plus `planmap.lgb` (Central Thanalan:
   `bg/ffxiv/wil_w1/fld/w1f2/level/planmap.lgb`). Flying around a zone with Chronofoil running is enough; Central
   Thanalan's drop-in came out of two such sessions (see [Combat](combat.md#open-world-spawns)).
+* **`--hits OUT.jsonl.gz`** (`chronofoil_hits.py`, since 2026-11-10) writes every hit and heal the capturing player
+  dealt, one JSON line each, numbers only: the class and levels (UpdateClassInfo), PlayerStats, the main hand's item ID
+  (UpdateItem, container 1000 slot 0), the statuses on the player then, the territory, the action, the amount and its
+  flags (damage critical 0x20 / direct hit 0x40 in the first parameter, heal critical 0x20 in the second), how many it
+  hit, and the target's level and BNpcBase. The damage formula was fitted from it ([Combat](combat.md)).
+* **No `zstandard`?** Finished captures are also read through the system's libzstd (ctypes, `_LibZstdReader`) when
+  neither `zstandard` nor Python 3.14's `compression.zstd` is there (since 2026-11-10).
 * **`--dropin TERRITORY --gathering --appends <lgb>`** writes the territory's gathering points instead: every
   SpawnObject of kind 6 seen there, each position with its layout ID, GatheringPoint and retail's `args1`
   (`spawn_args`), leaving out those sent with no integrity (leve points). See [Gathering](gathering.md).

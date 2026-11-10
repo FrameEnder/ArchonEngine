@@ -471,6 +471,14 @@ a quest's entering event, 0 for every other event (228 events across the capture
   battle's client script (`GaiUsc604Btl_01004`, Bob's extracted scripts of 2026-11-09) has scenes 1 (the opening) and
   6 (the finish) and OnSequence001-002 only, as played.
 
+### Role statuses
+
+As a quest battle begins (`onCommence`, with the director's scene 60000) retail gives the player a status for their
+role, in StatusEffectList alone (no ActorControl GainEffect), from no one, with no end: tanks 1264, healers 1041,
+others 1265 (seen in all 34 quest battles of Bob's captures, levels 6-45). Kawari does too since 2026-11-10
+(`director::give_quest_battle_role_status`); the tanks' and healers' add 30 % to their damage
+([Combat](combat.md)). It goes with the instance (statuses start empty in each zone).
+
 ### Quest battle 60 — In the Eyes of Gods and Men (`content/questbattle/60.lua`)
 
 * Quest 912 (GaiUsb803_00912) enters it (ACTOR2's YesNoQuestBattle, scene 4, or EVENTRANGE0's, scene 18; territory

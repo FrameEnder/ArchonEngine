@@ -3791,6 +3791,45 @@ pub fn director_tick(
 }
 
 /// Process director-related messages.
+/// The status retail gives a player for their role as a quest battle begins (with the director's scene 60000, in
+/// StatusEffectList alone, from no one, with no end): tanks 1264, healers 1041, the rest 1265. Seen in every quest
+/// battle of Bob's Chronofoil captures (34 of them, Gladiator, Paladin, Conjurer, White Mage and Arcanist, levels 6-45);
+/// what the first two do is in `modifiers::DAMAGE_DEALT`. Melee and physical ranged players weren't recorded: they get
+/// 1265 as the Arcanist did.
+const QUEST_BATTLE_ROLE_STATUSES: [(u8, u16); 2] = [(1, 1264), (4, 1041)];
+const QUEST_BATTLE_DPS_STATUS: u16 = 1265;
+
+fn give_quest_battle_role_status(
+    network: &Arc<Mutex<NetworkState>>,
+    game_data: &Arc<Mutex<GameData>>,
+    instance: &mut Instance,
+    player: ObjectId,
+) {
+    let Some(NetworkedActor::Player { spawn, .. }) = instance.find_actor(player) else {
+        return;
+    };
+    let class_job = spawn.common.class_job;
+    let Some((role, ..)) = game_data.lock().classjob_role(class_job) else {
+        return;
+    };
+    let status = QUEST_BATTLE_ROLE_STATUSES
+        .iter()
+        .find(|(r, _)| *r == role)
+        .map_or(QUEST_BATTLE_DPS_STATUS, |(_, status)| *status);
+    gain_effect_instance(
+        network.clone(),
+        ClientId::default(),
+        instance,
+        player,
+        status,
+        0,
+        0.0,
+        ObjectId::default(),
+        false,
+    );
+    crate::server::effect::process_effects_list(network.clone(), instance, player);
+}
+
 pub fn handle_director_messages(
     data: Arc<Mutex<WorldServer>>,
     network: Arc<Mutex<NetworkState>>,
@@ -4116,6 +4155,7 @@ pub fn handle_director_messages(
                 && director.id.handler_type() == HandlerType::QuestBattle
             {
                 director.commence();
+                give_quest_battle_role_status(&network, &game_data, instance, *from_actor_id);
                 return true;
             }
 

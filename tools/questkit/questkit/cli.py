@@ -320,6 +320,13 @@ def _chronofoil(args) -> int:
         print("No Chronofoil captures found")
         return 1
     tables = chronofoil.load_opcodes()
+    if args.hits:
+        from . import chronofoil_hits
+
+        numbers = range(len(captures)) if args.which == "all" else [int(n) for n in args.which.split(",")]
+        count = chronofoil_hits.write([captures[n] for n in numbers], tables, args.hits)
+        print(f"Wrote {count} of the players' own hits and heals to {args.hits}")
+        return 0
     if args.dropin is not None:
         from . import chronofoil_dropin
 
@@ -552,6 +559,9 @@ def main(argv=None) -> int:
     p.add_argument("--gathering", action="store_true",
                    help="with --dropin: the territory's gathering points instead of its battle NPCs")
     p.add_argument("--appends", help="the drop-in's LGB, e.g. bg/ffxiv/wil_w1/fld/w1f2/level/planmap.lgb")
+    p.add_argument("--hits", metavar="OUT.jsonl.gz",
+                   help="every hit and heal the capturing player dealt, with their class, level, stats, weapon and "
+                        "statuses and the target's level (numbers only), for fitting the damage formula")
     p.add_argument("--exclude-base", type=int, action="append", default=[],
                    help="leave out this BNpcBase (repeatable)")
     p.add_argument("--one-spot", type=int, action="append", default=[],
