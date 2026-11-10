@@ -2611,7 +2611,15 @@ async fn process_packet(
                                         connection.player_data.classjob.current_class as u16,
                                     );
                                 }
-                                if let Some(id) = id
+                                let socketed =
+                                    connection.player_data.inventory.equipped.soul_crystal;
+                                if id.is_some_and(|id| {
+                                    socketed.item_id == id && socketed.quantity > 0
+                                }) {
+                                    // The crystal they wear is this weapon's job's (`class_from_equipment`): it stays. It
+                                    // was taken off, it not being in the Armoury Chest (`has_soul_crystal`), so another
+                                    // White Mage's cane made her a conjurer.
+                                } else if let Some(id) = id
                                     && connection.player_data.inventory.has_soul_crystal(id)
                                 {
                                     tracing::info!(

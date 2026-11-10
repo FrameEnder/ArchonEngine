@@ -233,7 +233,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   (the client may grey out spells itself). Which of the empty scenes 3-5 EOBJECT0 and A-Ruhn-Senna play is a guess.
   ActorControlSelf 540 (sent with the soul crystal, the quest's HOW_TO_JOB) isn't understood. Equipping the soul
   crystal sends the class change as a weapon's does, with Kawari's ack first and no map markers (retail's ack comes
-  after ActorControlSelf 57, and its map markers twice).
+  after ActorControlSelf 57, and its map markers twice). Whether retail puts a job's crystal on by itself when a
+  plain class weapon is equipped (a cane taken out while a conjurer, the White Mage's crystal in the armoury) wasn't
+  seen; Kawari doesn't (only for a job's own weapon, as before). The class from the soul crystal over a gearset
+  (2026-11-10) is untested in game.
 * **The Lominsan Way (59)'s bomb phase** (2026-11-04, Bob's report after paralysis was fixed): Rive aimed at the
   player, 1769 hiding from the bomb and coming back, and the bomb's countdown lines are retail's now, untested in game.
   The Rive retail used from the hiding place about 3 s after the bomb was gone isn't played; what 1769 does if the bomb
@@ -252,8 +255,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   ActorControlSelf 805 (after a gearset, sent) and 3103 (with five of nine retail gearsets, not sent) mean isn't
   known. A gearset's moves are retail's now ([Quests](quests.md), "A gearset's moves"), untested in game; a slot the
   gearset leaves empty is sent as a Move from Equipped to the armoury, which no retail gearset showed, and the
-  transactions' sequence is Kawari's item sequence (retail's is a counter of its own, e.g. 0x84482). A gearset
-  that changes to a job doesn't look at the soul crystal (`equip_gearset` takes the class from the weapon). The
+  transactions' sequence is Kawari's item sequence (retail's is a counter of its own, e.g. 0x84482). The
   level-31 "All Classes" armour stayed on the level-1 Gladiator (`remove_incompatible_armor` checks the class, not the
   level); whether the client takes it off itself wasn't seen. A summoned pet isn't dismissed on a class change (only
   its hotbar is cleared, as retail's packets do). Another player's Equip carries the receiver's class.

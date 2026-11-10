@@ -642,23 +642,59 @@ impl ZoneConnection {
         true
     }
 
-    /// Changes the class based on the weapon equipped.
-    pub async fn change_class_based_on_weapon(&mut self) {
-        // Check the weapon's compatible class jobs:
-        let classjobs;
-        {
-            let mut game_data = self.game_data.lock();
+    /// The class or job the equipment makes them: the equipped soul crystal's job when the weapon is one that job can
+    /// use (a conjurer's cane with the White Mage's crystal: the White Mage), else the weapon's own class (the first
+    /// its ClassJobCategory lists). `None` without a weapon the game data knows.
+    ///
+    /// The crystal's job comes first wherever the class is worked out from the equipment (a weapon or a gear set put
+    /// on), as on retail. Until 2026-11-10 it was the weapon alone: the gear set the client puts on as a soul crystal
+    /// is socketed (EquipGearset 254, crystal included) made Bob's White Mage a conjurer again a moment later, and
+    /// she stayed one, crystal socketed, for the quest battles of In the Eyes of Gods and Men (bundles 20261109-195426
+    /// and 20261110-104012.)
+    pub fn class_from_equipment(&mut self) -> Option<i32> {
+        let mut game_data = self.game_data.lock();
+        let weapon = self.player_data.inventory.equipped.main_hand.item_id;
+        let item_info = game_data.get_item_info(ItemInfoQuery::ById(weapon))?;
+        let classjobs = game_data.get_applicable_classjobs(item_info.classjob_category as u16);
+        let soul_crystal = self.player_data.inventory.equipped.soul_crystal;
+        let crystal_job = (soul_crystal.quantity > 0)
+            .then(|| game_data.get_applicable_classjob(soul_crystal.item_id))
+            .flatten()
+            .filter(|job| classjobs.contains(&(*job as u8)));
+        crystal_job
+            .map(|job| job as i32)
+            .or_else(|| classjobs.first().map(|class| *class as i32))
+            .filter(|class| *class != 0)
+    }
 
-            let weapon = self.player_data.inventory.equipped.main_hand.item_id;
-            let item_info = game_data
-                .get_item_info(ItemInfoQuery::ById(weapon))
-                .unwrap();
-            classjobs = game_data.get_applicable_classjobs(item_info.classjob_category as u16);
+    /// At zone-in, before the client is told its class: a class that doesn't match the equipment (`class_from_equipment`)
+    /// is put right and saved, quietly (no change of class to show.) A character left a conjurer with the White Mage's
+    /// crystal socketed by the old rule logs in a White Mage.
+    pub fn match_class_to_equipment(&mut self) {
+        let Some(class) = self.class_from_equipment() else {
+            return;
+        };
+        if class != self.player_data.classjob.current_class {
+            tracing::info!(
+                "Class {} doesn't match the equipment, which makes them {class}",
+                self.player_data.classjob.current_class
+            );
+            self.player_data.classjob.current_class = class;
+            self.database
+                .lock()
+                .commit_classjob_and_inventory(&self.player_data);
         }
+    }
+
+    /// Changes the class based on the weapon equipped (and the soul crystal, see `class_from_equipment`.)
+    pub async fn change_class_based_on_weapon(&mut self) {
+        let Some(class) = self.class_from_equipment() else {
+            tracing::warn!("The equipped weapon gives no class!");
+            return;
+        };
 
         let previous_class = self.player_data.classjob.current_class;
-        self.player_data.classjob.current_class = classjobs.first().copied().unwrap() as i32;
-        assert!(self.player_data.classjob.current_class != 0); // If this is 0, then something went seriously wrong.
+        self.player_data.classjob.current_class = class;
 
         // UpdateClassInfo comes with the equipment (`update_equip`), after the class change, as on retail.
         if self.player_data.classjob.current_class != previous_class {

@@ -821,6 +821,18 @@ crystal's a Move from slot 13 to ArmorySoulCrystal slot 0, the rest each to itse
 count, the equipped container again, and the class change back to 6 (*A gearset's moves* above);
 `equip_gearset` takes the class from the gearset's weapon. Putting it back from the armoury was as the first time.
 
+**The class the equipment makes** (`class_from_equipment`, since 2026-11-10): the worn soul crystal's job when the
+weapon is one that job can use (its ClassJobCategory lists the job: a conjurer's cane with the White Mage's crystal,
+24), otherwise the weapon's class (the first its category lists). A weapon put on, a gearset (crystal included or
+not) and zoning in all go by it; a weapon change keeps a worn crystal that's the new weapon's job's. Until then the
+weapon alone decided after a gearset or a weapon: socketing the crystal changed Bob's conjurer to the White Mage,
+then the gearset the client puts on just after it (EquipGearset 254, the crystal included) changed her back to 6, and
+she stayed a conjurer with the crystal on, through the In the Eyes of Gods and Men's battles, with a conjurer's
+attributes (ClassJob's modifiers) and traits (bundles 20261109-195426, line 888 to 971, and 20261110-104012). Zoning in
+(and logging in) now puts a class that doesn't match the equipment right, quietly, and saves it
+(`match_class_to_equipment`). A second cane of the same family put on while the crystal is worn used to take the
+crystal off (it isn't in the Armoury Chest, `has_soul_crystal`), so it's kept now.
+
 **Unlock links.** A quest's `REWARD…` parameters are unlock links it grants when finished (`get_quest_unlock_links`,
 `grant_quest_unlocks`): Spirithold Broken's `REWARD0 = 9` is the Recommendations window and `REWARD_LEVE = 5`
 levequests, Close to Home's `REWARD_DESION = 1` is Return (Sapphire's ManWil002 grants Return for its `Reward0 = 1`

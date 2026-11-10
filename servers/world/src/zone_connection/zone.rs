@@ -481,6 +481,7 @@ impl ZoneConnection {
         self.minimum_item_level = None;
         self.echo_multiplier = 1.0;
         self.synced_fate = None;
+        self.match_class_to_equipment();
         self.update_class_info().await;
         self.send_stats().await;
 
