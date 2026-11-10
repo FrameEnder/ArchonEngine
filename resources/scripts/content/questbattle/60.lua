@@ -23,6 +23,8 @@
 --           drops a draconian rosary") 5.0 s after sequence 7; the wyvern fades (607) 6.4 s after and goes 1.35 s
 --           later; log 3209 ("The wyvern takes to the skies") 10.05 s after; if the rosary is still there then,
 --           sequences 8 and 9 at once and the gladiator's yell 1371 12.1 s later
+--   lost (no lost run recorded): your health at 0, or Haurchefant's (the gladiator: Bob, from retail); sequence 0xFE
+--           and out 5 s later
 --   talking to the rosary (4.5 s after sequence 7 in one run, 24.8 in the other): no scene, the director's event
 --           action 22 (5 s); as it ends the event finishes, sequence 10, the rosary fades (607) and goes 1.1 s later,
 --           log 3208 ("You obtain a draconian rosary"); 3.0 s later "Duty Complete" (60001) and sequence 11, then the
@@ -128,13 +130,16 @@ BATTLE:ally(BNPC_CONJURER_ALLY, {
     },
 })
 BATTLE:ally(BNPC_GLADIATOR_ALLY, { role = "tank", focus = { "wyvern", "adds", "boss" }, order = "newest" })
--- The enemies' conjurers: Cure on their side under 50 % (every 5.6-21.7 s), Cure II under about 25 % (6-23 %, every
--- 6.1-13.9 s, capture 21f967d2: the third wave's lived long enough there.)
+-- The enemies' conjurers: one heal every 5.6-8.3 s at most, whichever it is (`heal_gap`; never two closer in the three
+-- runs: Cure, then Cure II 1.5 s later was Kawari's, Bob's bundle 20261110-091329): Cure II on one of their side
+-- under about 23 % (6-22 %; at 24-26 % Cure came), else Cure under 50 % (31-50 %). Cure healed 444-468, Cure II
+-- 695-730, as Kawari's do.
 -- (A new table for each: Battle keeps each rule's wait in it.)
+ENEMY_HEAL_GAP = 5.6
 function enemyHeals()
     return {
-        { action = ACTION_CURE_II, targets = "allies", below = 24, every = 13.7 },
-        { action = ACTION_CURE, targets = "allies", below = 50, every = 6.2 },
+        { action = ACTION_CURE_II, targets = "allies", below = 23, every = ENEMY_HEAL_GAP },
+        { action = ACTION_CURE, targets = "allies", below = 50, every = ENEMY_HEAL_GAP },
     }
 end
 -- On retail every enemy went for you first (the archer turned to the conjurer later), and the boss turned to the
@@ -143,13 +148,14 @@ for _, layout in ipairs(WAVE_1) do
     local role = { group = "adds" }
     if ENEMY_CONJURERS[layout] then
         role.heals = enemyHeals()
+        role.heal_gap = ENEMY_HEAL_GAP
     end
     BATTLE:enemy(layout, role)
 end
 for _, layout in ipairs(WAVE_2) do
     BATTLE:enemy(layout, { group = "adds" })
 end
-BATTLE:enemy(4287237, { group = "adds", heals = enemyHeals() })
+BATTLE:enemy(4287237, { group = "adds", heals = enemyHeals(), heal_gap = ENEMY_HEAL_GAP })
 BATTLE:enemy(4287236, { group = "adds" })
 BATTLE:enemy(BNPC_WYVERN, { group = "wyvern" })
 -- Its own Cure once it was under about 15 % (its first 0.7-8 s after it crossed 15 %, three runs), 3.6-7.6 s apart.
@@ -289,6 +295,13 @@ function onActorDeath(director, layout_id, position)
         return
     end
     BATTLE:died(director, layout_id)
+    -- Haurchefant falling loses the battle, as your own death does (Bob, from retail, bundle 20261110-091329: Kawari
+    -- fought on and the player fell 6 s later. No retail run lost, so it goes as the player's: sequence 0xFE at once
+    -- and out after FAIL_DELAY_UPDATES, Fool Me Twice's way.)
+    if layout_id == BNPC_GLADIATOR_ALLY then
+        lost(director)
+        return
+    end
     if layout_id == BNPC_BOSS and phase < SEQUENCE_BOSS_DOWN then
         bossDown(director)
     end
@@ -322,13 +335,17 @@ function onEventActionCast(director, actor_id, target)
     end)
 end
 
+function lost(director)
+    over = true
+    timers = {}
+    director:set_sequence(SEQUENCE_FAILED)
+    fail_in = FAIL_DELAY_UPDATES
+end
+
 -- Losing sends you back to where you entered, still on the same step of the quest, so you can try again.
 function onPlayerDeath(director)
     if over then
         return
     end
-    over = true
-    timers = {}
-    director:set_sequence(SEQUENCE_FAILED)
-    fail_in = FAIL_DELAY_UPDATES
+    lost(director)
 end

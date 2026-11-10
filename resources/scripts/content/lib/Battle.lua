@@ -34,6 +34,11 @@ Battle.PLAYER = "player"
 -- its landing, so the others see its health after the heal instead of all healing it at once (three healers on one
 -- target in the same update overhealed it by twice its Cure in Bob's 2026-10-20 runs of Duty, Honor, Country.)
 Battle.HEAL_PENDING_UPDATES = 3
+-- The least time (seconds) between two heals by one NPC, whichever of its rules they come from (a role's `heal_gap`
+-- overrides it): one heal's cast and the global cooldown after it. Each rule kept its own clock, so an enemy conjurer
+-- Cured and then Cure II'd 1.5 s later (Bob's bundle 20261110-091329); retail's never healed twice within 5.6 s (In
+-- the Eyes of Gods and Men, three runs) and no NPC casts twice within a 2.5 s global cooldown.
+Battle.HEAL_GAP_SECONDS = 2.5
 
 -- ---- Roles ----
 -- Every class belongs to one of three roles, and the role says most of what an NPC is there to do (enemies follow it
@@ -429,13 +434,16 @@ end
 -- A heal rule (in a role's `heals`): action (the heal), targets (a list of layout IDs and/or "player", or "allies"
 -- for its whole side), below (health % that calls for it), every (seconds between heals at most), say (a function
 -- called with the director when it heals, e.g. for a line.) It heals whoever of its targets is lowest, leaving one
--- another healer has just started on (Battle.HEAL_PENDING_UPDATES).
+-- another healer has just started on (Battle.HEAL_PENDING_UPDATES). The rules are tried in order (put the bigger heal
+-- with the lower mark first), and after any heal none of them heals again for the role's `heal_gap` seconds
+-- (Battle.HEAL_GAP_SECONDS.)
 function Battle:runHeals(director)
     for layout, role in pairs(self.roles) do
         if role.heals ~= nil and self.alive[layout] then
+            role.heal_gap_wait = (role.heal_gap_wait or 0) - 1
             for _, heal in ipairs(role.heals) do
                 heal.wait = (heal.wait or 0) - 1
-                if heal.wait <= 0 then
+                if heal.wait <= 0 and role.heal_gap_wait <= 0 then
                     local targets = heal.targets
                     local first = {}
                     if targets == "allies" or targets == "party" then
@@ -490,6 +498,7 @@ function Battle:runHeals(director)
                             director:use_action(layout, heal.action, best)
                         end
                         heal.wait = math.floor((heal.every or 4) * 2)
+                        role.heal_gap_wait = math.floor((role.heal_gap or Battle.HEAL_GAP_SECONDS) * 2)
                         if heal.say ~= nil then
                             heal.say(director)
                         end

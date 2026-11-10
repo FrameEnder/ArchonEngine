@@ -133,7 +133,7 @@ BATTLE:onHealth(BNPC_BOSS, 75, function(director) BATTLE:spawn(director, WAVE_1)
 
 | Part | |
 |---|---|
-| `ally(layout, role)` | `focus`: the enemy groups it goes for, in order (`"any"` is everyone); `order` within a group: `oldest`, `newest`, `highest_hp`, `lowest_hp`, `nearest`; `range` (yalms, `set_attack_range`); `keep_near` (`{ anchor, within }`, `keep_near`); `heals` (another healer doesn't pick a target one has just started healing for `HEAL_PENDING_UPDATES`, 1.5 s: three healers on one timer all Cured the same ally at once, QB 38). |
+| `ally(layout, role)` | `focus`: the enemy groups it goes for, in order (`"any"` is everyone); `order` within a group: `oldest`, `newest`, `highest_hp`, `lowest_hp`, `nearest`; `range` (yalms, `set_attack_range`); `keep_near` (`{ anchor, within }`, `keep_near`); `heals` (another healer doesn't pick a target one has just started healing for `HEAL_PENDING_UPDATES`, 1.5 s: three healers on one timer all Cured the same ally at once, QB 38); the rules are tried in order, and after any heal the NPC heals again only after its `heal_gap` (`HEAL_GAP_SECONDS`, 2.5 s, a cast's global cooldown; since 2026-11-10: each rule kept its own clock, so QB 60's enemy conjurer Cured and Cure II'd 1.5 s apart). |
 | `enemy(layout, role)` | `group` (a name or a list, e.g. `{ "lostwings", "adds" }`); `attacks`: whom it goes for first (an ally, or the player when `nil`) with `enmity` (300); `passive = true`: no one at first, it waits to be hit (To Guard a Guardian's masked mage); it can have `heals` too (the sincallers heal Quzal). |
 | heals | `{ action, targets (layout IDs, Battle.PLAYER, or "allies" for its whole side), below (%), every (s), say (a function) }`: heals whichever target is lowest under `below`. |
 | `spawn(director, layouts, at)` / `remove(director, layouts)` | Brings NPCs in as their roles say (placement, first target) / takes them out without dying. `at` (`{ x, y, z }`, since 2026-11-07) spawns them there instead of their layout's spot: what quest battle 61's boss turns into, where he stood. A heal rule keeps its own wait, so two NPCs need a table each (QB 60's `enemyHeals()`). |
@@ -513,6 +513,14 @@ others 1265 (seen in all 34 quest battles of Bob's captures, levels 6-45). Kawar
   sequence 11, then the battle's scene 11 (0xF8402FFF). Kawari: `onObjectTalk` (above) and `onEventActionCast`.
 * The boss's health stood at 50.1 % for 12 s in one run (the player was on the adds), which an interpolated health
   curve crosses early: its fixtures hold health (`npc_health: held`). The opening scene 1 is a cutscene (0xF8412FFF).
+* **The enemy conjurers' heals** (the three runs' battle exports, each Cure and Cure II with its target's health as
+  the cast began): one heal every 5.6-8.3 s, never closer, Cure II on one of their side under about 23 % (6-22 %),
+  else Cure under 50 % (31-50 %); Cure healed 444-468, Cure II 695-730. Kawari's healed as much but each rule had its
+  own clock, so a Cure II came 1.5 s after a Cure (Bob's bundle 20261110-091329, "heals twice in quick succession");
+  since 2026-11-10 they share one, `heal_gap` 5.6 s. In that run (the damage formula and role status in) the first
+  conjurer fell 81 s after it came, where retail's went in 15-35 s.
+* **Haurchefant** (the gladiator, 4261300) falling loses the battle, as yours does (Bob, from retail; no retail run
+  lost): Kawari fought on in that run and the player fell 6 s later.
 * Retail's boss Cures itself once under about 15 % (its first 0.7-8 s after crossing it; 3.6-7.6 s apart); the enemy
   conjurers Cure their side under 50 % (every 5.6-21.7 s) and Cure II under about 25 % (the third run's, which lived
   long enough: 6-23 %, every 13.7 s); yours Cures the gladiator, you and itself at 31-79 % (every 16.7-23.4 s) and
