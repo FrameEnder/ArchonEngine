@@ -94,14 +94,15 @@ local function gcd(b)
         if mp >= max - 400 then
             if b:has(FIRE_III) then return FIRE_III end
             if b:has(TRANSPOSE) then return nil end
-            return FIRE
+            -- (Level 1 has Blizzard alone.)
+            if b:has(FIRE) then return FIRE end
         end
         if b:has(BLIZZARD_III) and element > -3 then return BLIZZARD_III end
         if polyglot > 0 and b:has(FOUL) then return b:has(XENOGLOSSY) and XENOGLOSSY or FOUL end
         return BLIZZARD
     end
     -- Neither: Fire with the MP for it, else Ice to get it back.
-    if mp >= max / 2 then return b:best(FIRE_III, FIRE) end
+    if mp >= max / 2 and b:has(FIRE) then return b:best(FIRE_III, FIRE) end
     return b:best(BLIZZARD_III, BLIZZARD)
 end
 

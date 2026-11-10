@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import json
 import re
+import statistics
+from collections import Counter
 from pathlib import Path
 
 from .public_sources import Public
@@ -111,17 +113,134 @@ def _area_words(area: dict) -> str:
     return words + (" (Boss Mod's guess)" if area.get("unverified") else "")
 
 
-def draft(content_finder_condition: int, territory: int | None = None, public: Public | None = None) -> dict:
-    """The duty's bosses as timeline files (name: JSON text) and a report (`README.md`)."""
+def _median(values: list) -> float:
+    return statistics.median(values) if values else 0.0
+
+
+def capture_facts(ledgers, content_finder_condition: int) -> dict:
+    """What Bob's captures of a duty hold, from their ledgers (`ledger.py`): its territory, the runs, and each battle
+    NPC by BNpcBase: level, HP, how many were seen, and each of its actions (uses, cast time, the median time between
+    uses, the median damage to players and to NPCs, the most it hit at once)."""
+    from .ledger_facts import Cast
+
+    bases: dict[int, dict] = {}
+    runs: list[str] = []
+    territory = None
+    for capture, events in ledgers:
+        cast = Cast()
+        inside = False
+        last: dict[tuple, float] = {}
+        for event in events:
+            cast.see(event)
+            kind = event["e"]
+            if kind == "zone":
+                inside = event["content"] == content_finder_condition
+                last.clear()
+                if inside:
+                    territory = event["territory"]
+                    runs.append(capture.id[:8])
+                continue
+            if not inside:
+                continue
+            if kind == "spawn" and event["k"] == "npc" and event.get("kind") == 2:
+                entry = bases.setdefault(event["base"], {"name": event["name"], "levels": Counter(), "hp": Counter(),
+                                                         "seen": 0, "runs": set(), "actions": {}})
+                entry["levels"][event["lv"]] += 1
+                entry["hp"][event["max"]] += 1
+                entry["seen"] += 1
+                entry["runs"].add(len(runs))
+            elif kind in ("cast", "effect"):
+                source = cast.who.get(event["a"])
+                if not source or source.get("k") != "npc" or source["base"] not in bases:
+                    continue
+                if event.get("type", 1) != 1:
+                    continue
+                action = bases[source["base"]]["actions"].setdefault(event["action"], {
+                    "uses": 0, "casts": Counter(), "gaps": [], "players": [], "npcs": [], "most_hit": 0,
+                    "spots": Counter()})
+                if kind == "cast":
+                    action["casts"][event["time"]] += 1
+                    # Where it was cast from (a helper's spot is where the director puts the attack.)
+                    where = cast.who[event["a"]].get("p") if event["p"] == [0.0, 0.0, 0.0] else event["p"]
+                    if where:
+                        action["spots"][(round(where[0]), round(where[2]))] += 1
+                    continue
+                action["uses"] += 1
+                key = (event["a"], event["action"])
+                if key in last and event["t"] - last[key] < 120:
+                    action["gaps"].append(event["t"] - last[key])
+                last[key] = event["t"]
+                action["most_hit"] = max(action["most_hit"], len(event["hits"]))
+                for hit in event["hits"]:
+                    amounts = [fx[1] for fx in hit["fx"] if fx[0] == 3]
+                    if amounts:
+                        action["players" if cast.player(hit["on"]) else "npcs"].append(sum(amounts))
+    out: dict = {"territory": territory, "runs": runs, "bases": {}}
+    for base, entry in sorted(bases.items()):
+        actions = {}
+        for number, action in sorted(entry["actions"].items()):
+            if not action["uses"]:
+                continue
+            fact = {"uses": action["uses"], "most_hit": action["most_hit"]}
+            if action["casts"]:
+                fact["cast"] = action["casts"].most_common(1)[0][0]
+            if len(action["gaps"]) >= 2:
+                fact["every"] = round(_median(action["gaps"]), 1)
+            if action["spots"]:
+                fact["spots"] = [list(spot) for spot, _ in action["spots"].most_common(8)]
+                fact["spot_count"] = len(action["spots"])
+            for side in ("players", "npcs"):
+                if action[side]:
+                    fact[side] = round(_median(action[side]))
+            actions[number] = fact
+        out["bases"][base] = {"name": entry["name"], "level": entry["levels"].most_common(1)[0][0],
+                              "hp": entry["hp"].most_common(1)[0][0], "seen": entry["seen"],
+                              "runs": len(entry["runs"]), "actions": actions}
+    return out
+
+
+def _timeline(actions: dict, auto: int | None, comment: str) -> dict:
+    """A timeline in the fork's format from captured actions ({action: capture_facts' fact})."""
+    amounts, rotation, gaps = {}, [], []
+    for number, fact in actions.items():
+        dealt = {side: fact[side] for side in ("players", "npcs") if side in fact}
+        if dealt:
+            amounts[str(number)] = dealt
+        if number in AUTO_ATTACKS or number == auto:
+            continue
+        entry: dict = {"action": number}
+        if "every" in fact:
+            entry["every"] = fact["every"]
+            gaps.append(fact["every"])
+        entry["comment"] = f"{fact['uses']} uses" + (f"; {fact['cast']:g} s cast" if fact.get("cast") else "") + (
+            "" if dealt else "; no damage") + (f"; hit {fact['most_hit']} at once" if fact["most_hit"] > 1 else "")
+        rotation.append(entry)
+    return {"autoattack_action_id": auto or 870, "recorded_amounts": amounts, "timeline_always_plays": False,
+            "timepoints": [], "comment": comment,
+            "rotation": {"pace": round(min(gaps), 1) if gaps else 8.0, "actions": rotation}}
+
+
+def draft(content_finder_condition: int, territory: int | None = None, public: Public | None = None,
+          captured: dict | None = None) -> dict:
+    """The duty's bosses as timeline files (name: JSON text) and a report (`README.md`). With `captured`
+    (`capture_facts`), what retail did fills them in: each action's time between uses and its damage, the boss's level
+    and HP, and a timeline for every other enemy of the duty that fought."""
     public = public or Public()
     modules = public.duty(content_finder_condition)
+    seen = (captured or {}).get("bases", {})
+    territory = territory or (captured or {}).get("territory")
     timing = public.timing(territory) if territory else {}
     files: dict[str, str] = {}
-    report = [f"# Duty {content_finder_condition}: a draft from Boss Mod and cactbot", ""]
+    report = [f"# Duty {content_finder_condition}: a draft from Boss Mod and cactbot"
+              + (" and Bob's captures" if seen else ""), ""]
+    if captured is not None:
+        report.append(f"Captures: {len(captured['runs'])} runs ({', '.join(sorted(set(captured['runs']))) or 'none'}), "
+                      f"territory {captured['territory']}." if captured["runs"] else "Captures: no run of this duty.")
     if not modules:
         report.append("Boss Mod has no module for this duty.")
     if territory and not timing:
         report.append(f"cactbot has no timeline for territory {territory}: every `every` below is missing.")
+    used: set[int] = set()
     for module in modules:
         oids = module.get("oids", {})
         primary = module.get("primary", "Boss")
@@ -129,6 +248,12 @@ def draft(content_finder_condition: int, territory: int | None = None, public: P
         if base is None:
             continue
         report += ["", f"## `{module['path']}` (BNpcBase {base}, BNpcName {module.get('name_id', '?')})", ""]
+        retail = seen.get(base)
+        used.add(base)
+        if retail:
+            report.append(f"* Retail: level {retail['level']}, {retail['hp']} HP, in {retail['runs']} runs.")
+        elif captured is not None and captured["runs"]:
+            report.append("* Retail: this BNpcBase isn't in the captures (the duty's older or newer version?).")
         if "arena" in module:
             arena = module["arena"]
             report.append(f"* Arena: centre ({arena['x']:g}, {arena['z']:g}), {arena['bounds']} {arena['size']}.")
@@ -137,12 +262,16 @@ def draft(content_finder_condition: int, territory: int | None = None, public: P
             report.append("* Other actors (BNpcBase): " + ", ".join(f"{name} {oid}" for name, oid in others.items())
                           + ". Their actions are the director's to place (helpers) or their own timelines (adds).")
         actions, said, todo = [], [], []
+        amounts: dict = {}
         auto = None
         for action in module.get("actions", []):
             number = action["id"]
             source = action.get("source", primary)
             if number in AUTO_ATTACKS or "auto-attack" in action.get("tags", []):
                 auto = auto or number
+                swing = retail["actions"].get(number) if retail else None
+                if swing and ("players" in swing or "npcs" in swing):
+                    amounts[str(number)] = {side: swing[side] for side in ("players", "npcs") if side in swing}
                 continue
             words = [f"{action['cast']:g} s cast" if action.get("cast") else "no cast"]
             if "area" in action:
@@ -155,6 +284,26 @@ def draft(content_finder_condition: int, territory: int | None = None, public: P
             if when:
                 words.append(f"cactbot: first at {when['first']:g} s" + (f", every {when['every']:g} s" if "every" in when
                                                                          else f", {when['uses']} uses"))
+            # Whose action it is in the captures: the boss's, or the other actor's (a helper's, an add's).
+            whose = retail if source == primary else seen.get(oids.get(source.split("/")[0]))
+            did = whose["actions"].get(number) if whose else None
+            if did:
+                words.append(f"retail: {did['uses']} uses" + (f", every {did['every']:g} s" if "every" in did else "")
+                             + (f", {did['players']} to players" if "players" in did else "")
+                             + (f", {did['npcs']} to NPCs" if "npcs" in did else "")
+                             + (f", cast from {did['spot_count']} spots (x, z): "
+                                + " ".join(f"({x}, {z})" for x, z in did["spots"])
+                                if source != primary and did.get("spots") else ""))
+                if source != primary:
+                    said.append(f"  * {source}: {number} ({', '.join(words)})")
+                    continue
+                dealt = {side: did[side] for side in ("players", "npcs") if side in did}
+                if dealt:
+                    amounts[str(number)] = dealt
+                if "every" in did:
+                    when = {"every": did["every"], "first": 0}
+            elif whose:
+                words.append("retail: not used in the captures")
             line = f"{number} ({', '.join(words)})"
             if source != primary:
                 said.append(f"  * {source}: {line}")
@@ -174,11 +323,29 @@ def draft(content_finder_condition: int, territory: int | None = None, public: P
         if todo:
             report.append(f"* No timing for {', '.join(map(str, todo))}: a capture gives it (`questkit chronofoil "
                           f"--battle`), else the rotation's pace spreads them.")
-        report.append("* Not in either source: its level, HP and what each action deals (the game's data and a capture).")
+        if retail:
+            known = {a["id"] for a in module.get("actions", [])}
+            extra = {n: f for n, f in retail["actions"].items() if n not in known}
+            if extra:
+                report.append("* In the captures, not in Boss Mod's module: " + "; ".join(
+                    f"{n} ({f['uses']} uses" + (f", {f['players']} to players" if "players" in f else "") + ")"
+                    for n, f in extra.items()) + ".")
+                for number, fact in extra.items():
+                    if number in AUTO_ATTACKS:
+                        auto = auto or number
+                    else:
+                        actions.append({"action": number, **({"every": fact["every"]} if "every" in fact else {}),
+                                        "comment": f"retail: {fact['uses']} uses; not in Boss Mod's module"})
+                    dealt = {side: fact[side] for side in ("players", "npcs") if side in fact}
+                    if dealt:
+                        amounts[str(number)] = dealt
+        else:
+            report.append("* Not in either source: its level, HP and what each action deals (the game's data and a "
+                          "capture).")
         timeline = {
             "autoattack_action_id": auto or 870,
             "from_pull": True,
-            "recorded_amounts": {},
+            "recorded_amounts": amounts,
             "rotation": {"pace": 8.0, "actions": actions,
                          "comment": "A draft: the pace is a guess until a capture gives the gaps."},
             "timepoints": [],
@@ -187,10 +354,33 @@ def draft(content_finder_condition: int, territory: int | None = None, public: P
                        f"{content_finder_condition}, BNpcBase {base}, BNpcName {module.get('name_id', '?')}. Actions, "
                        f"casts and shapes from Boss Mod's {module['path']} (awgil/ffxiv_bossmod, BSD-3-Clause)"
                        + (f"; timing from cactbot's timeline for territory {territory} (OverlayPlugin/cactbot, "
-                          f"Apache-2.0)" if timing else "") + ". No damage amounts.",
+                          f"Apache-2.0)" if timing else "")
+                       + (f". Retail (Bob's Chronofoil captures {', '.join(sorted(set(captured['runs'])))}): level "
+                          f"{retail['level']}, {retail['hp']} HP; `players` and `npcs` are the median damage to each, "
+                          f"`every` the median time between uses." if retail else ". No damage amounts."),
         }
         stem = re.sub(r"\W", "", module["path"].rsplit("/", 1)[-1].removesuffix(".cs"))
         files[f"{stem}_{base}.json"] = json.dumps(timeline, indent=4) + "\n"
+    # The duty's other enemies that fought, from the captures alone.
+    # (The invisible helpers, in many modules, are the bosses' own attacks: listed with them above.)
+    helpers = {module.get("oids", {}).get("Helper") for module in modules}
+    others = {base: entry for base, entry in seen.items() if base not in used and entry["actions"]
+              and base not in helpers and len(public.by_base.get(base, [])) < SHARED_BASE}
+    if others:
+        report += ["", "## The duty's other enemies (from the captures alone)", "",
+                   "| BNpcBase | BNpcName | Level | HP | Seen | Actions (uses; every; to players) |", "|---|---|---|---|---|---|"]
+        for base, entry in others.items():
+            auto = next((n for n in entry["actions"] if n in AUTO_ATTACKS), None)
+            report.append(f"| {base} | {entry['name']} | {entry['level']} | {entry['hp']} | {entry['seen']} | " + "; ".join(
+                f"{n} ({f['uses']}" + (f"; {f['every']:g} s" if "every" in f else "") + (
+                    f"; {f['players']}" if "players" in f else "") + ")" for n, f in entry["actions"].items()) + " |")
+            files[f"Duty{content_finder_condition}Enemy_{base}.json"] = json.dumps(_timeline(
+                entry["actions"], auto,
+                f"A draft from Bob's Chronofoil captures ({', '.join(sorted(set(captured['runs'])))}), not yet checked "
+                f"in game: ContentFinderCondition {content_finder_condition}, BNpcBase {base}, BNpcName "
+                f"{entry['name']}, level {entry['level']}, {entry['hp']} HP, {entry['seen']} seen in {entry['runs']} "
+                f"runs. `players` and `npcs` are the median damage to each, `every` the median time between uses."),
+                indent=4) + "\n"
     files["README.md"] = "\n".join(report) + "\n"
     return files
 

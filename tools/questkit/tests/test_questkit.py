@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from questkit import battle, battle_sim, capture, chronofoil, chronofoil_battle, chronofoil_quest, compare, duty_sources, fixtures, lint, public_sources, recording, replay, scaffold, transcribe, triage  # noqa: E402
+from questkit import battle, battle_sim, capture, chronofoil, chronofoil_battle, chronofoil_quest, compare, duty_sources, fixtures, ledger, ledger_facts, lint, public_sources, recording, replay, rotation_sim, scaffold, transcribe, triage  # noqa: E402
 from questkit.bundle import Bundle  # noqa: E402
 
 QUEST = 9999
@@ -1610,6 +1610,47 @@ public class MadeUp(ModuleInit init) : BossModule(init, new(10, -20), new ArenaB
         self.assertEqual([entry["action"] for entry in timeline["rotation"]["actions"]], [5001, 5003])
         self.assertIn("Boss Mod's guess", files["README.md"])
 
+    def test_draft_takes_what_the_captures_hold(self):
+        class Made:
+            id = "madeupcapture"
+
+        def spawn(actor, base, hp):
+            return {"e": "spawn", "t": 1.0, "a": actor, "k": "npc", "kind": 2, "base": base, "name": 99, "lv": 50,
+                    "hp": hp, "max": hp, "job": 0, "p": [0.0, 0.0, 0.0]}
+
+        def hit(t, actor, action, amount):
+            return {"e": "effect", "t": t, "a": actor, "action": action, "type": 1, "seq": 0, "lock": 0.6, "p": None,
+                    "r": 0.0, "hits": [{"on": 0, "p": None, "fx": [[3, amount, 0, 0, 0, 0, 0]]}]}
+
+        events = [{"e": "class", "t": 0.0, "a": 0, "job": 19, "lv": 50, "class_lv": 50, "synced": 0},
+                  {"e": "zone", "t": 0.5, "territory": 4242, "content": 77},
+                  spawn(1, 0x1234, 60000), spawn(2, 0x233C, 1), spawn(3, 555, 3000),
+                  {"e": "cast", "t": 9.0, "a": 2, "action": 5002, "type": 1, "time": 5.0, "on": None,
+                   "p": [10.0, 0.0, -20.0], "r": 0.0}]
+        events += [hit(10.0 + 20 * k, 1, 5001, 900 + k) for k in range(4)]
+        events += [hit(11.0, 2, 5002, 700), hit(12.0, 3, 870, 40), hit(15.0, 3, 870, 44), hit(18.0, 3, 870, 48),
+                   hit(13.0, 1, 5999, 100), {"e": "zone", "t": 200.0, "territory": 1, "content": 0}, hit(201.0, 1, 5001, 5)]
+        with tempfile.TemporaryDirectory() as folder:
+            public = self.public(Path(folder))
+        captured = duty_sources.capture_facts([(Made, events)], 77)
+        self.assertEqual((captured["territory"], captured["runs"]), (4242, ["madeupca"]))
+        boss = captured["bases"][0x1234]
+        self.assertEqual((boss["level"], boss["hp"]), (50, 60000))
+        self.assertEqual(boss["actions"][5001], {"uses": 4, "most_hit": 1, "every": 20.0, "players": 902})
+        files = duty_sources.draft(77, None, public, captured)
+        timeline = json.loads(files["Up_4660.json"])
+        self.assertEqual(timeline["recorded_amounts"], {"5001": {"players": 902}, "5999": {"players": 100}})
+        self.assertEqual(timeline["rotation"]["actions"][0]["every"], 20.0)
+        self.assertIn("60000 HP", timeline["comment"])
+        readme = files["README.md"]
+        self.assertIn("Helper: 5002", readme)
+        self.assertIn("cast from 1 spots (x, z): (10, -20)", readme)
+        self.assertIn("not in Boss Mod's module: 5999", readme)
+        # The add fought: its own timeline, from the captures alone (the helper has none.)
+        add = json.loads(files["Duty77Enemy_555.json"])
+        self.assertEqual((add["autoattack_action_id"], add["recorded_amounts"]), (870, {"870": {"players": 44}}))
+        self.assertNotIn("Duty77Enemy_9020.json", files)
+
     def test_audit_lists_what_a_timeline_never_mentions(self):
         with tempfile.TemporaryDirectory() as folder:
             public = self.public(Path(folder))
@@ -1624,6 +1665,149 @@ public class MadeUp(ModuleInit init) : BossModule(init, new(10, -20), new ArenaB
         self.assertIn("never mentioned: 5003", report)
         self.assertNotIn("5004", report)
         self.assertIn("5001: recorded 60, Boss Mod 90", report)
+
+
+class LedgerTest(unittest.TestCase):
+    """A capture read into typed events with nobody named, and the fact tables over it (a made-up capture)."""
+
+    VERSION = "2026.10.06.0000.0000"
+    TABLES = {VERSION: {
+        "ServerZoneIpcType": {716: ("ZoneInit", 136, "t"), 1: ("SpawnNpc", 640, "t"), 2: ("SpawnPlayer", 640, "t"),
+                              3: ("ActionEffect1", 124, "t"), 4: ("EffectResult", 96, "t"), 5: ("ActorGauge", 16, "t"),
+                              6: ("ActorControl", 24, "t"), 7: ("UpdateClassInfo", 16, "t")},
+        "ClientZoneIpcType": {10: ("ActionRequest", 32, "t"), 11: ("ClientTrigger", 32, "t")}}}
+    YOU, OTHER, ENEMY = 0x1000_0001, 0x1000_0002, 0x4000_0001
+
+    def frames(self) -> bytes:
+        import struct
+
+        t = 1_760_000_000_000
+
+        def frame(ms, src, opcode, data, direction=1):
+            ipc = struct.pack("<HHHHII", 0x14, opcode, 0, 0, (t + ms) // 1000, 0) + data
+            body = struct.pack("<IIIHH", 16 + len(ipc), src, self.YOU, 3, 0) + ipc
+            header = bytes(16) + struct.pack("<QIHHBBHI", t + ms, 40 + len(body), 1, 1, 1, 0, 0, 0)
+            return _delimited(_pb([(1, _pb([(1, 1), (2, direction)])), (2, header + body)]))
+
+        def spawn(lead, job, level, base=0):
+            common = bytearray(560)
+            struct.pack_into("<II", common, 48, base, 0)
+            struct.pack_into("<II", common, 76, 1000, 1000)
+            common[113], common[118], common[119] = (2 if base else 1), level, job
+            return bytes(lead) + bytes(common) + bytes(640 - lead - 560)
+
+        def effect(action, sequence, target, kind, value):
+            data = bytearray(124)
+            struct.pack_into("<I", data, 8, action)
+            struct.pack_into("<f", data, 16, 0.6)
+            struct.pack_into("<H", data, 24, sequence)
+            data[31], data[33] = 1, 1
+            struct.pack_into("<BBBBBBH", data, 42, kind, 0, 0, 0, 0, 0, value)
+            struct.pack_into("<I", data, 112, target)
+            return bytes(data)
+
+        def result(status, seconds, source):
+            data = bytearray(96)
+            struct.pack_into("<IIH", data, 12, 900, 1000, 10000)
+            data[25] = 1
+            struct.pack_into("<BBHHHfI", data, 28, 0, 0, status, 0, 0, seconds, source)
+            return bytes(data)
+
+        def request(action, sequence, target):
+            return struct.pack("<IBBH", action, 0, 1, sequence) + bytes(8) + struct.pack("<II", target, 0) + bytes(8)
+
+        out = frame(0, self.YOU, 716, _zone_init(132, 0))
+        out += frame(10, self.YOU, 7, struct.pack("<BBHHH", 26, 0, 30, 30, 0) + bytes(8))
+        out += frame(20, self.OTHER, 2, spawn(32, 21, 50)) + frame(20, self.ENEMY, 1, spawn(16, 0, 30, base=77))
+        out += frame(30, self.YOU, 5, bytes([26]) + bytes(15))
+        for k in range(8):  # eight uses 2.5 s apart, each asked for 0.1 s before it lands
+            ms = 1000 + k * 2500
+            out += frame(ms - 100, self.YOU, 10, request(163, k + 1, self.ENEMY), direction=2)
+            out += frame(ms, self.YOU, 3, effect(163, k + 1, self.ENEMY, 3, 100))
+        out += frame(21000, self.YOU, 3, effect(164, 9, self.ENEMY, 14, 179))
+        out += frame(21100, self.ENEMY, 4, result(179, 30.0, self.YOU))
+        out += frame(21200, self.YOU, 5, bytes([26, 0, 0, 0, 0, 0, 0, 0, 2]) + bytes(7))
+        out += frame(21300, self.OTHER, 3, effect(31, 0, self.ENEMY, 3, 50))
+        out += frame(21400, self.ENEMY, 6, struct.pack("<HHIIII", 9999, 0, self.OTHER, 5, 0, 0) + bytes(4))
+        out += frame(21500, self.YOU, 11, struct.pack("<IIIIII", 8888, 1, 0, 0, 0, 0) + struct.pack("<II", 0, 0), 2)
+        out += frame(21600, self.YOU, 999, bytes(8))
+        return out
+
+    def capture(self, folder: Path):
+        folder.mkdir()
+        version_info, capture_info, _ = _capture_parts("ledgertest", self.VERSION)
+        (folder / "VersionInfo").write_bytes(version_info)
+        (folder / "CaptureInfo").write_bytes(capture_info)
+        (folder / "Data").write_bytes(self.frames())
+        return chronofoil.find_captures([folder])[0]
+
+    def test_events_name_nobody(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            capture = self.capture(Path(tmp) / "cap")
+            events = list(ledger.events(capture, self.TABLES))
+        text = json.dumps(events)
+        for entity in (self.YOU, self.OTHER, self.ENEMY):
+            self.assertNotIn(str(entity), text)
+        kinds = [event["e"] for event in events]
+        self.assertEqual(kinds[:5], ["zone", "class", "spawn", "spawn", "gauge"])
+        spawns = [event for event in events if event["e"] == "spawn"]
+        self.assertEqual([(s["a"], s["k"], s["job"], s["lv"]) for s in spawns], [(1, "player", 21, 50), (2, "npc", 0, 30)])
+        self.assertEqual(spawns[1]["base"], 77)
+        hit = next(event for event in events if event["e"] == "effect")
+        self.assertEqual((hit["a"], hit["action"], hit["seq"], hit["lock"], hit["hits"][0]["on"]), (0, 163, 1, 0.6, 2))
+        given = next(event for event in events if event["e"] == "result")
+        self.assertEqual(given["st"], [[179, 0, 30.0, 0]])
+        control = next(event for event in events if event["e"] == "control")
+        self.assertEqual((control["cat"], control["args"][:2]), (9999, ["a1", 5]))
+        self.assertEqual(events[-1]["e"], "coverage")
+        self.assertEqual(events[-1]["unnamed"]["out"], {"999/8": 1})
+
+    def test_fact_tables(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            capture = self.capture(Path(tmp) / "cap")
+            cache = Path(tmp) / "ledgers"
+
+            def ledgers():
+                return [(capture, list(ledger.events(capture, self.TABLES)))]
+
+            uses = ledger_facts.uses(ledgers())
+            self.assertEqual(uses["ACN:30"]["uses"], {"163": 8, "164": 1})
+            self.assertEqual(uses["WAR:50"]["uses"], {"31": 1})
+            statuses = ledger_facts.statuses(ledgers())
+            self.assertEqual(statuses["player"]["164"]["gives"][0]["status"], 179)
+            self.assertEqual(statuses["player"]["164"]["gives"][0]["durations"], {"30": 1})
+            gauges = ledger_facts.gauges(ledgers())
+            self.assertEqual(gauges["ACN"]["after"], {"164": [[7, 0, 2, 1]]})
+            actions = ledger_facts.actions(ledgers())
+            self.assertEqual((actions["163"]["own"], actions["163"]["lock"], actions["163"]["shortest_gap"],
+                              actions["163"]["request_to_effect"]), (8, 0.6, 2.5, 0.1))
+            controls = ledger_facts.controls(ledgers())
+            self.assertEqual([(r["category"], r["known"]) for r in controls["control"]], [(9999, False)])
+            self.assertEqual(controls["trigger"][0]["category"], 8888)
+            coverage = ledger_facts.coverage(ledgers())
+            self.assertEqual(coverage[self.VERSION]["out"]["packets"], coverage[self.VERSION]["out"]["named"] + 1)
+            self.assertIn("999/8: 1", ledger_facts.coverage_text(coverage))
+            # An unfinished capture (a folder) isn't cached.
+            self.assertEqual(len(list(ledger.cached(capture, self.TABLES, cache))), len(ledgers()[0][1]))
+            self.assertFalse(cache.exists())
+
+
+class RotationSimTest(unittest.TestCase):
+    """Every bot rotation, run with its real action scripts: no script error, no bot standing idle."""
+
+    def test_every_rotation_runs(self):
+        if rotation_sim.lua54 is None:
+            self.skipTest("lupa not installed")
+        self.assertEqual(rotation_sim.check(seconds=60), [])
+
+    def test_summoner_summons(self):
+        if rotation_sim.lua54 is None:
+            self.skipTest("lupa not installed")
+        run = rotation_sim.simulate(27, 80, 120)
+        # Bahamut, then the three arcana and their gem spells, as retail's Summoners (rotations/Summoner.lua).
+        for action in (7427, 25820, 25805, 25806, 25807, 25823, 25824, 25825):
+            self.assertIn(action, run["uses"])
+        self.assertFalse(run["errors"])
 
 
 class LibZstdTest(unittest.TestCase):

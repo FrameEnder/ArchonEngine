@@ -1590,7 +1590,26 @@ Packets whose size on retail isn't what `opcodes.yml` says, from Bob's Chronofoi
 * The Boss Mod reader takes shapes written in a component's constructor line; shapes built in code (rotating cones,
   shapes chosen by a status) are missed, and 4 cones and some rings it read wrongly are filtered by range
   (15-340 degrees; a hole smaller than its ring) rather than understood.
-* `public_action_areas.json` isn't checked against the captures yet (a cone's angle against who was hit and who wasn't).
+* `public_action_areas.json` is checked against the captures only where an enemy used the cone there: 29 of 838
+  (`questkit chronofoil --areas`). Ring holes aren't checked.
+* A draft made with `--captures` takes `every` as the median time between an enemy's uses of an action and the damage
+  as a median over every run: phases (what a boss does below some HP), the order within a rotation, who it aims at and
+  the adds' spawn times aren't worked out (`questkit battle` on the capture's `--battle` shows them). The helpers'
+  spots are listed, not turned into director calls.
+
+## The capture pipeline (2026-11-10)
+
+* `--battle`, `--hits`, `--quest` and `--dropin` still read captures themselves, not the ledger
+  ([the plan](capture-pipeline.md), stage B's "done when").
+* The ledger reads the plain StatusEffectList only (StatusEffectList3, -Double and -PlayerDouble are skipped, and
+  the Double is 9,290 to 715 times a version not its table's size), and keeps no `move` events.
+* `--actions` has no MP cost (retail doesn't send one per use) and its shortest gap is a recast only for actions used
+  back to back.
+* `--controls`: 155 ActorControl categories and 31 ClientTrigger categories in the captures have no name in Kawari's
+  enums (the tables are in the diagnostics repository, `facts/controls.json`); most of the plentiful ones are sent
+  once a zone change (57, 361, 1207, 1208, 143, 1530, 943, 383, 573 to oneself, about 1,250 each in 123 captures).
+* `questkit rotation` has no damage, so it can't say a rotation is good, only that it runs, is never idle and uses
+  what retail's players use (`--against`); `--against` fails nothing.
 
 ## Build and tests
 

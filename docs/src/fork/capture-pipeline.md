@@ -30,6 +30,27 @@ So the weak points, in the order they cost: (1) one-off extraction that isn't ke
 check that the server still agrees; (3) no way to see what the captures *don't* cover, so Bob can't aim a capture;
 (4) most packet kinds unread; (5) older versions half-named.
 
+## What's built (2026-11-10, the same day)
+
+| Stage | State |
+|---|---|
+| A.1 coverage | `questkit chronofoil --coverage` |
+| A.2 uses, statuses, gauges | `--uses`, `--statuses`, `--gauges`, and `--actions`, `--controls`, `--areas` besides |
+| A.3 rotation simulator | `questkit rotation`, `--check` in CI (`RotationSimTest`) |
+| A.4 capture registry | `--registry`; `notes/captures.json` in the diagnostics repository |
+| B the ledger | `questkit/ledger.py` with its cache; the new tables read it. `--battle`, `--hits`, `--quest`, `--dropin` aren't moved onto it yet, and `move` events aren't kept (each effect carries where its source and targets stood) |
+| C.1 actions | `--actions`: cast, lock, shortest gap, request-to-effect, most hit. No MP cost: retail sends MP only with the three-second tick (the client takes an action's cost off itself), so a use's cost is in no packet |
+| C.3 statuses | `--statuses`: what each action gives and for how long. Not yet what a status does to damage |
+| C.4 gauges | `--gauges`: which bytes move after which actions |
+| C.7 enemies | `questkit sources --duty N --captures …` (`duty_sources.capture_facts`): per BNpcBase its level, HP and kit with gaps and amounts; drafts for 83 duties in the diagnostics repository |
+| C.8 rotations | `--uses`, and `questkit rotation --against` (D.4, without a tolerance that fails) |
+| C.2, C.5, C.6, C.9, D.1-D.3, E, F | Not started |
+
+Public sources came in beside the captures ([questkit sources](questkit.md#sources)): Boss Mod's modules give the
+bosses' actions, casts and shapes the captures can't (a shape isn't in a packet), cactbot the timing where it has a
+timeline, and the captures check them (`--areas`: 29 of Boss Mod's cones were used in the captures, 233 hits, one
+outside its cone by more than a hitbox).
+
 ## The pipeline
 
 ```text

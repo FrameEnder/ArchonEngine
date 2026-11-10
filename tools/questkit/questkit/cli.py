@@ -251,7 +251,14 @@ def _sources(args) -> int:
             print(text)
         return 0
     if args.duty is not None:
-        files = duty_sources.draft(args.duty, args.territory, public)
+        captured = None
+        if args.captures:
+            from . import chronofoil, ledger
+
+            tables = chronofoil.load_opcodes()
+            captures = chronofoil.find_captures(args.captures)
+            captured = duty_sources.capture_facts(((c, ledger.cached(c, tables)) for c in captures), args.duty)
+        files = duty_sources.draft(args.duty, args.territory, public, captured)
         if args.out:
             out = Path(args.out)
             out.mkdir(parents=True, exist_ok=True)
@@ -269,6 +276,43 @@ def _sources(args) -> int:
     print(f"Boss Mod: {len(public.modules)} modules, {len(duties)} duties (ContentFinderCondition), "
           f"{len(public.by_action)} actions, {len(public.cone_angles())} cones with a checked angle.")
     print(f"cactbot: {len(public.timelines)} timelines, {len({t['territory'] for t in public.timelines})} territories.")
+    return 0
+
+
+def _rotation(args) -> int:
+    """A party bot's rotation against a dummy, by running its real scripts."""
+    from . import rotation_sim
+
+    if rotation_sim.lua54 is None:
+        print("Needs lupa: pip install lupa")
+        return 1
+    if args.check:
+        problems = rotation_sim.check()
+        for problem in problems:
+            print(problem)
+        print(f"rotations: {'ok' if not problems else f'{len(problems)} problems'}")
+        return 1 if problems else 0
+    if args.classjob is None or args.level is None:
+        print("questkit rotation <classjob> <level> [targets], or --check")
+        return 1
+    print(rotation_sim.report(args.classjob, args.level, args.targets, args.seconds))
+    if args.against:
+        # Retail's uses a minute for the job and band (`questkit chronofoil <captures> --uses --out uses.json`).
+        from . import ledger_facts
+
+        retail = json.loads(Path(args.against).read_text(encoding="utf-8"))
+        job = ledger_facts.JOBS.get(args.classjob, str(args.classjob))
+        entry = retail.get(f"{job}:{ledger_facts.band(args.level)}")
+        if not entry or not entry["per_minute"]:
+            print(f"  retail: nothing for {job} at {ledger_facts.band(args.level)}")
+            return 0
+        run = rotation_sim.simulate(args.classjob, args.level, args.seconds, args.targets)
+        minutes = args.seconds / 60
+        print(f"  against retail ({entry['actors']} players, {entry['combat_seconds']} s in combat"
+              + (", thin" if entry["thin"] else "") + "): action, the bot's uses a minute, retail's")
+        for action in sorted(set(map(int, entry["per_minute"])) | set(run["uses"]),
+                             key=lambda a: -entry["per_minute"].get(str(a), 0)):
+            print(f"    {action}: {run['uses'].get(action, 0) / minutes:.1f}, {entry['per_minute'].get(str(action), 0):g}")
     return 0
 
 
@@ -370,6 +414,44 @@ def _chronofoil(args) -> int:
         print("No Chronofoil captures found")
         return 1
     tables = chronofoil.load_opcodes()
+    fact = next((name for name in ("coverage", "uses", "statuses", "gauges", "actions", "controls", "registry", "areas")
+                 if getattr(args, name)), None)
+    if fact or args.ledger:
+        import json
+
+        from . import ledger, ledger_facts, repo
+
+        numbers = range(len(captures)) if args.which == "all" else [int(n) for n in args.which.split(",")]
+        folder = Path(args.ledgers) if args.ledgers else None
+        if args.ledger:
+            # One capture's ledger as a file (its cached one is made on the way.)
+            import gzip
+
+            count = 0
+            with gzip.open(args.ledger, "wt") as f:
+                for n in numbers:
+                    for event in ledger.cached(captures[n], tables, folder):
+                        f.write(json.dumps(event, separators=(",", ":")) + "\n")
+                        count += 1
+            print(f"Wrote {count} events to {args.ledger}")
+            return 0
+        ledgers = ((captures[n], ledger.cached(captures[n], tables, folder)) for n in numbers)
+        make, text = ledger_facts.TABLES[fact]
+        table = make(ledgers, repo.ROOT, args.sapphire) if fact == "controls" else make(ledgers)
+        if args.out:
+            Path(args.out).write_text(json.dumps(table, indent=1) + "\n", encoding="utf-8")
+            print(f"Wrote {args.out}")
+        elif fact == "uses":
+            print(text(table, args.job))
+        elif fact == "statuses":
+            print(text(table, "npc" if args.npcs else "player"))
+        elif fact == "controls":
+            print(text(table, not args.all))
+        elif fact == "actions":
+            print(text(table, not args.all))
+        else:
+            print(text(table))
+        return 0
     if args.hits:
         from . import chronofoil_hits
 
@@ -616,7 +698,32 @@ def main(argv=None) -> int:
                    help="leave out this BNpcBase (repeatable)")
     p.add_argument("--one-spot", type=int, action="append", default=[],
                    help="keep only one spawn point of this BNpcBase, e.g. a hunt mark (repeatable)")
-    p.add_argument("--out", help="where to write the index, the export, the battle or the drop-in")
+    p.add_argument("--coverage", action="store_true",
+                   help="how much of the captures the opcode tables name, by game version")
+    p.add_argument("--uses", action="store_true",
+                   help="per job and level band, each action's uses a minute in combat (--job GLA for one)")
+    p.add_argument("--statuses", action="store_true",
+                   help="the statuses each action gives, with the durations seen (--npcs for enemies' actions)")
+    p.add_argument("--gauges", action="store_true",
+                   help="the capturing player's job gauge bytes by job: which move, and after which actions")
+    p.add_argument("--actions", action="store_true",
+                   help="per action the capturing player used: cast, animation lock, shortest gap, MP (--all: "
+                        "everyone's)")
+    p.add_argument("--controls", action="store_true",
+                   help="the ActorControl and ClientTrigger categories Kawari has no name for (--all: every one)")
+    p.add_argument("--areas", action="store_true",
+                   help="enemies' cones as Boss Mod has them against who they hit in the captures")
+    p.add_argument("--registry", action="store_true",
+                   help="each capture's version, date and visits, with the capturing player's job and level")
+    p.add_argument("--sapphire", metavar="CommonActorControl.h",
+                   help="with --controls: Sapphire's header, for what it calls each category")
+    p.add_argument("--job", help="with --uses: only this job (its three letters)")
+    p.add_argument("--npcs", action="store_true", help="with --statuses: enemies' actions instead of players'")
+    p.add_argument("--all", action="store_true", help="with --actions or --controls: leave nothing out")
+    p.add_argument("--ledger", metavar="OUT.jsonl.gz", help="write the captures' ledgers (typed events, numbers only)")
+    p.add_argument("--ledgers", metavar="FOLDER",
+                   help="where cached ledgers are kept (default: $QUESTKIT_LEDGERS or ~/.cache/questkit/ledgers)")
+    p.add_argument("--out", help="where to write the index, the export, the battle, the drop-in or a fact table (JSON)")
     p.add_argument("--save-opcodes", action="store_true",
                    help="save Kawari's current opcodes for its game version (before merging a new patch)")
     p.set_defaults(run=_chronofoil)
@@ -665,9 +772,22 @@ def main(argv=None) -> int:
                                                               "angles and rings' holes the server falls back on)")
     p.add_argument("--duty", type=int, metavar="CFC", help="draft this duty's bosses (ContentFinderCondition row)")
     p.add_argument("--territory", type=int, help="with --duty: its territory, for cactbot's timing")
+    p.add_argument("--captures", nargs="+", metavar="CAPTURES",
+                   help="with --duty: Chronofoil captures or folders; what retail did in the duty fills the draft")
     p.add_argument("--action", type=int, help="what Boss Mod says about one action")
     p.add_argument("--out", help="where to write the audit (a file) or the draft (a folder)")
     p.set_defaults(run=_sources)
+
+    p = commands.add_parser("rotation", help="run a party bot's rotation against a dummy with its real action scripts")
+    p.add_argument("classjob", nargs="?", type=int, help="the ClassJob row (27 Summoner)")
+    p.add_argument("level", nargs="?", type=int)
+    p.add_argument("targets", nargs="?", type=int, default=1, help="how many enemies stand together (default 1)")
+    p.add_argument("--seconds", type=float, default=180)
+    p.add_argument("--check", action="store_true",
+                   help="every rotation at every level band: script errors, and bots that stand idle")
+    p.add_argument("--against", metavar="uses.json",
+                   help="retail's uses a minute beside the bot's (from `chronofoil --uses --out`)")
+    p.set_defaults(run=_rotation)
 
     p = commands.add_parser("lua-syntax", help="check that every Lua script compiles (Lua 5.4, like the server)")
     p.add_argument("path", nargs="?", help="a folder of scripts (default: resources/scripts)")

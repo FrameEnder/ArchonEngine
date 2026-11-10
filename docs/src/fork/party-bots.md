@@ -569,3 +569,10 @@ Feet: <item name> | <dye>
   thresholds and pull timing are guesses to be checked against a recording.
 * Nothing has been tried in game yet: the look, the gear models and how the client shows an `NpcPartyMember` outside
   a duty are the first things to check.
+
+## Checked by simulation (2026-11-10)
+
+`questkit rotation --check` ([questkit](questkit.md#rotation)) runs every rotation with its real action scripts at
+every level band, in CI. Its first run found the Thaumaturge idle at level 1: with full MP the rotation asked for
+Fire, learnt at 2, so a level 1 bot cast nothing. It casts Blizzard until it has Fire now
+(`rotations/BlackMage.lua`).

@@ -77,3 +77,24 @@ bots' stage 3 (Sastasha's route and rules) and loot:
 * **Tanks**: see [Party Bots](party-bots.md#how-it-fights).
 * Not implemented yet: bots' route through the dungeon. Upstream's Sastasha script
   (`content/s1d1_re.lua`) runs the duty itself.
+
+## What the ledger's first pass showed (2026-11-10)
+
+From `questkit chronofoil --actions`, `--controls`, `--gauges` over Bob's 124 captures ([questkit](questkit.md#chronofoil);
+the tables are in the diagnostics repository, `facts/`). Not acted on yet:
+
+* **UpdateRecastTimes** (640 bytes) is 80 floats of seconds elapsed, then 80 floats of each group's whole recast,
+  by recast group; a group not running is 0 in both. Retail sends it on arriving in a zone (19 times in a 106-minute
+  capture, twice with something running: group 60 at 3 s, 567 s ... 1,772 s of 1,800). Kawari sends it as unread bytes.
+* **MP** isn't sent after an action: the capturing player's MP came only with UpdateHpMpTp's three-second tick (and
+  status lists), already less the cost and plus the tick's 200. The client takes the cost off itself.
+* **Request to effect**, the capturing player's own: 0.05-0.07 s for an instant action; a cast's effect comes about
+  0.47 s before its cast time is up (1.5 s casts at 1.03 s, 1.92 s at 1.44-1.45 s, 2.7 s at 2.47 s, 5 s at 4.53 s).
+  Animation locks: 0.6 s for instants, 0.1 s after a cast, 2.1 s for Teleport and Return (5, 6).
+* **UnkJobGauge** (8 bytes): the twelve of one capture were all zero but one (a first byte of 14).
+* **ActorControl**: 310 categories seen, 155 without a name in Kawari's enum; **ClientTrigger**: 105 seen, 31 without.
+  The most plentiful unnamed: ActorControl 212 (6,493 times in 106 captures), 56, 47, 35, 105, 413, and to oneself 198
+  and the nine sent on every zone change. Sapphire has names for 30 and 12 of them ([Outside sources](sources.md#sapphire)).
+* **Gauges** by what moved: Gladiator/Paladin byte 1 (0 or 100), White Mage bytes 3-6 (the lily timer, lilies, blood
+  lily), Black Mage byte 3 (the element, 255 for ice), Arcanist/Summoner bytes 1-5, 7 and 8 (Fester takes byte 8
+  down by one, 274 times; the gem spells byte 7). The same offsets [Combat](combat.md) has for them.

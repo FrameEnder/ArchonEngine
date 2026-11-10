@@ -211,6 +211,37 @@ def read_bossmod(checkout: str | Path) -> dict:
             "modules": modules}
 
 
+# --- Boss Mod's job actions ---
+
+_JOB_ACTION = re.compile(r"^\s*\w+ = (\d+), // L(\d+), ([^\n]*)", re.M)
+
+
+def read_job_actions(checkout: str | Path) -> dict:
+    """Each job's actions from `BossMod/ActionQueue/<role>/<JOB>.cs`: the level it's learnt at, whether it's on the
+    global cooldown, its recast and cast in seconds, and whether it's used on oneself or a friend. What the rotation
+    simulator (`rotation_sim.py`) needs to pace a bot as the server does."""
+    jobs = {}
+    for path in sorted((Path(checkout) / "BossMod" / "ActionQueue").glob("*/*.cs")):
+        actions = []
+        for number, level, said in _JOB_ACTION.findall(path.read_text(encoding="utf-8-sig", errors="replace")):
+            recast = re.search(r"([\d.]+)s CD", said)
+            cast = re.search(r"([\d.]+)s cast", said)
+            actions.append({"id": int(number), "lv": int(level),
+                            # On the global cooldown as the server counts it (`get_action_mechanics`: the Action
+                            # row's own CooldownGroup). One with its own recast that also sets the global cooldown
+                            # off ("group 9/57": the Summoner's demi-summons, Phlegma) isn't, there or here.
+                            "gcd": "GCD" in said or not recast,
+                            "recast": float(recast.group(1)) if recast else 2.5,
+                            "cast": float(cast.group(1)) if cast else 0.0,
+                            "friendly": "Hostile" not in said})
+        if actions:
+            jobs[path.stem] = sorted(actions, key=lambda a: (a["lv"], a["id"]))
+    return {"about": "Boss Mod's job action lists (github.com/awgil/ffxiv_bossmod, BSD-3-Clause, BossMod/ActionQueue): "
+                     "by job, each action's level, whether it's on the global cooldown, its recast and cast time, "
+                     "and whether it's for oneself or friends. Numbers only. Made by `questkit sources --build`.",
+            "jobs": jobs}
+
+
 # --- cactbot ---
 
 _ZONE = re.compile(r"zoneId:\s*ZoneId\.(\w+)")
@@ -285,6 +316,14 @@ def build(bossmod: str | Path | None, cactbot: str | Path | None, out: Path = DA
         data = read_bossmod(bossmod)
         _write(out / "bossmod.json", data, "modules")
         made["bossmod"] = len(data["modules"])
+        if (Path(bossmod) / "BossMod" / "ActionQueue").is_dir():
+            jobs = read_job_actions(bossmod)
+            lines = ["{", f' "about": {json.dumps(jobs["about"])},', ' "jobs": {']
+            lines.append(",\n".join(f'  {json.dumps(job)}: ' + json.dumps(actions, separators=(",", ":"), sort_keys=True)
+                                    for job, actions in jobs["jobs"].items()))
+            lines += [" }", "}"]
+            (out / "job_actions.json").write_text("\n".join(lines) + "\n", encoding="utf-8")
+            made["jobs"] = len(jobs["jobs"])
     if cactbot:
         data = read_cactbot(cactbot)
         _write(out / "cactbot.json", data, "timelines")

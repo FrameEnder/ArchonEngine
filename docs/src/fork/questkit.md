@@ -18,6 +18,7 @@ pip install lupa        # Lua 5.4 for Python; replay, scaffold and lua-syntax ne
 | `transcribe <quest> --dumps … [--fixture …]` | Writes a quest script that does what retail did, from the quest's Chronofoil fixtures, and replays it |
 | `compare --capture … --recording … [quests]` | What Kawari sent for a quest against what retail did |
 | `lua-syntax [folder]` | Checks every Lua script compiles (Lua 5.4, like the server) |
+| `rotation <classjob> <level> [targets] [--against uses.json]`, `rotation --check` | Runs a party bot's rotation against a dummy with its real action scripts; `--check` (in the tests) is every rotation at every level band |
 | `sources [--audit] [--duty CFC [--territory T]] [--action N] [--server-data] [--build …]` | What Boss Mod and cactbot know: an audit of the fork's duties against them, a draft of a duty the fork hasn't, the server's fallback cone angles and ring holes |
 | `battle <exports, battles folder or files…> [--list] [--where …] [--run N,M\|all] [--summary-only] [--npc …] [--out file]` | What recorded duties and quest battles show: cast, waves, targeting rules, heals, who never acted; totals across runs of the same battle |
 
@@ -317,6 +318,30 @@ picks captures, and `--names` takes a JSON of territory and duty names from the 
 `--export N.V --out file.jsonl.gz` writes visit V of capture N as a Kawari packet capture (the format `capture.py`
 reads, chat left out), so `compare` and the rest can use it.
 
+* **The ledger** (`ledger.py`, since 2026-11-10; [the plan](capture-pipeline.md), stage B): one pass over a capture
+  into typed events with nobody named (an actor is a number counted per capture, 0 the capturing player; entity IDs,
+  names and chat never leave the decoder): `zone`, `class`, `spawn`, `despawn`, `request` (the client's ActionRequest),
+  `cast`, `effect` (with each target's effects and where source and targets stood), `result` and `statuses` (statuses
+  with their durations and who gave them), `vitals`, `gauge`, `recast`, `control` and `trigger` (every ActorControl and
+  ClientTrigger with its category and arguments), `condition`, `first_attack`, `loot`, `director`, and a closing
+  `coverage`. The module's docstring has each event's fields. Ledgers are cached as gzipped JSON lines
+  (`$QUESTKIT_LEDGERS`, `--ledgers FOLDER`, or `~/.cache/questkit/ledgers`; `<capture ID>.v<decoder version>`): all 124
+  captures build in 80 s into 30 MB, and a fact table over them takes 8 s. `--ledger OUT.jsonl.gz` writes one out.
+* **Fact tables** (`ledger_facts.py`), each a flag, printed as text or written as JSON with `--out` (those of
+  2026-11-10 are in the diagnostics repository, `facts/`):
+
+  | Flag | Gives |
+  |---|---|
+  | `--coverage` | Per game version: packets named of all, kinds, unnamed opcodes with their sizes, packets not their table's size |
+  | `--uses [--job SMN]` | Per job and level band: each action's uses and uses a minute in combat (gaps under 8 s), what follows what; `thin` under two minutes |
+  | `--statuses [--npcs]` | Per action: the statuses it gives its target or its user (effect kinds 14 and 15), in how many of its uses, with the durations and parameters the EffectResults carried |
+  | `--gauges` | The capturing player's ActorGauge bytes by job: which of the 15 move and between what, and which of their own actions came before each change |
+  | `--actions [--all]` | Per action the capturing player used: cast time, animation lock, the shortest gap between uses (the fifth percentile: its recast), request-to-effect time, the most it hit at once |
+  | `--areas` | Enemies' cones as Boss Mod has them against who they hit: how far off the caster's facing the people hit stood ([Combat](combat.md)) |
+  | `--controls [--all] [--sapphire CommonActorControl.h]` | The ActorControl and ClientTrigger categories Kawari's enums don't have (or all), with counts, an example's arguments, how many values each argument took, and Sapphire's name for the category when its header is given |
+  | `--registry` | Each capture: version, start, minutes, visits, duties, the capturing player's jobs and levels, their own actions (`notes/captures.json` in the diagnostics repository) |
+
+  `--battle`, `--hits`, `--quest` and `--dropin` still read the capture themselves (see [Known issues](known-issues.md)).
 * **Reading captures** (`chronofoil.py`): finished captures are a zip of `VersionInfo`, `CaptureInfo` (protobuf) and
   `Data` (zstd-compressed, delimited protobuf frames holding the game's frames, already decompressed); unfinished ones
   are a folder of the same files, `Data` not compressed. Finished captures need zstd: `pip install zstandard`, or
@@ -488,6 +513,10 @@ the repository as numbers-only extracts so nothing needs downloading:
   stack, spread, knockback, gaze...) and whether Boss Mod marks the shape as its guess. 902 modules, 284 duties,
   18,683 actions (Boss Mod `6e410ef`, 2026-11-03). Boss Mod's names for actors, actions and statuses are the game's
   text and are left out: an actor is `Boss`, `Helper` or `actor<BNpcBase>`.
+* `questkit/data/public/job_actions.json` (from Boss Mod's `BossMod/ActionQueue/<role>/<JOB>.cs`): each job's actions
+  with the level, whether it's on the global cooldown as the server counts it (the Action row's own CooldownGroup:
+  one with its own recast that also sets the global cooldown off, the Summoner's demi-summons or Phlegma, isn't), its
+  recast and cast time, and whether it's for oneself or friends. 22 jobs; what `questkit rotation` paces a bot by.
 * `questkit/data/public/cactbot.json` (from cactbot's `ui/raidboss/data/**/*.txt`): each timeline's entries (time,
   action IDs, whether it's the cast's start, where it loops) by territory. 306 timelines; ability names left out.
 
@@ -497,11 +526,31 @@ the repository as numbers-only extracts so nothing needs downloading:
 | `--build --bossmod <checkout> --cactbot <checkout>` | Remakes the extracts from sparse checkouts (`git clone --depth 1 --filter=blob:none --sparse`, then `git sparse-checkout set BossMod.Modules` / `ui/raidboss/data resources/zone_id.ts`); one module or timeline a line, so the diff shows what changed |
 | `--audit [--out file]` | Every timeline in `resources/timelines/` whose BNpcBase a Boss Mod module has: the module's actions for that NPC the fork never mentions (the timeline, the duty scripts, `action_areas.json`), and cones recorded at another angle than Boss Mod's. Run on 2026-11-10: 44 timelines have a module, one action unmentioned (835, Sastasha's last boss's adds, [Known issues](known-issues.md#sastasha)), no angle differs |
 | `--duty CFC [--territory T] [--out folder]` | A draft of a duty: one timeline file per boss in the fork's format (the boss's own actions, each with its cast, shape and kind in a comment; `every` from cactbot where it has the territory) and a `README.md` saying the arena, the other actors, the helpers' actions and what's missing. Marked as a draft in its `comment`; no damage, HP or levels (a capture or the game's data) |
+| `--duty CFC --captures <captures…>` | The same draft with what retail did in Bob's captures of the duty (from their ledgers, `capture_facts`): each boss's level and HP, each action's uses, median time between uses (`every`) and median damage to players and to NPCs (`recorded_amounts`), where the helpers cast from (the spots the director places them at), actions the captures have that Boss Mod's module hasn't, and a timeline file for every other enemy of the duty that fought (`Duty<CFC>Enemy_<BNpcBase>.json`: its auto-attack, actions, amounts, level and HP in the comment). Castrum Meridianum (15) from one capture: 3 bosses and 17 other enemies in 11 s. Drafts for the 83 duties in the captures where something fought are in the diagnostics repository (`drafts/`) |
 | `--action N` | What Boss Mod says about one action |
 | `--server-data` | Writes `resources/data/public_action_areas.json` ([Combat](combat.md): area shapes) |
 
 Code: `public_sources.py` (the readers and `Public`), `duty_sources.py` (`audit`, `draft`, `server_data`). Tests:
 `PublicSourcesTest` (a made-up module and timeline).
+
+## rotation
+
+`questkit rotation <classjob> <level> [targets]` (`rotation_sim.py`) plays a party bot's rotation for three minutes
+against a dummy as the server would: the job's script in `resources/scripts/rotations/` is asked every half second,
+and each action it picks is run from its own script in `resources/scripts/actions/` against a mock EffectsBuilder,
+whose calls (statuses on itself and its target with their durations and stacks, gauge changes within the ranges
+`effects_builder.rs` clamps them to, MP) are what the next choice sees. It has the global cooldown and cast times,
+recasts (`data/public/job_actions.json`), combos by combo steps, `action.rs`'s instant casts and the gauge's tick; it
+has no damage (every hit is 1), no enemy that dies and no movement. It prints each action's uses a minute, the first
+forty in order, the actions for enemies on the global cooldown it never used, and any script error.
+
+* `--against uses.json` puts retail's uses a minute for the job and level band beside the bot's (`questkit chronofoil
+  <captures> --uses --out uses.json`). The Summoner at 80: Astral Impulse 4.0 a minute against retail's 2.8, Topaz Rite
+  4.0 / 4.2, Emerald Rite 4.0 / 3.7, Ruin III 3.7 / 1.8, each egi 1.0 / 0.9-1.1, Bahamut 0.7 / 0.6.
+* `--check` runs every rotation for each of its ClassJobs at levels 1, 10, 15, 20, 30 ... 100 (a class to 30, a job
+  from 30 or where it starts), alone and against three, and fails on a script error or a bot using fewer than 15
+  actions on the global cooldown a minute. `RotationSimTest` runs it in CI (12 s). Its first run found the
+  Thaumaturge's rotation idle at level 1 ([Party bots](party-bots.md)).
 
 ## lint
 

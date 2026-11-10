@@ -138,6 +138,21 @@ priorities for the bots' rotations ([Party bots](party-bots.md)).
 came from captures, and its scripts (quest battles included) were written against retail. Already used for Chasing
 Shadows' layout IDs, health and waves. It's from an older patch, so check it against a recording.
 
+Its `src/common/Network/CommonActorControl.h` names the ActorControl categories (`ActorControlType`) and the client's
+triggers (`PacketCommand`); `questkit chronofoil --controls --sapphire <that file>` puts its name beside each category
+the captures have and Kawari's enums don't (from an older patch, so a name to start from: 30 of the 155 unnamed
+ActorControl categories and 12 of the 31 ClientTriggers have one). The header is read where it's checked out, never
+copied here.
+
+### Public captures
+
+There is no public archive of Chronofoil captures (searched 2026-11-10): captures hold their player's character and
+everyone near them, so they aren't shared. What's public is the tooling around them (redstrate's
+[PacketAnalyzer](https://zff.dev/redstrate/PacketAnalyzer) and
+[XIVPacketTools](https://codeberg.org/redstrate/XIVPacketTools), [ffxivmon](https://github.com/SapphireServer/ffxivmon),
+[deucalion](https://lib.rs/crates/deucalion)). Bob's own captures stay the only retail packets the fork has; the
+public projects above (Boss Mod, cactbot, Sapphire) are what others distilled from theirs.
+
 ### FFXIV Teamcraft
 
 [ffxiv-teamcraft/ffxiv-teamcraft](https://github.com/ffxiv-teamcraft/ffxiv-teamcraft),
