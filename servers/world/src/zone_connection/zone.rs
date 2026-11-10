@@ -467,6 +467,12 @@ impl ZoneConnection {
             .toggle_condition(Condition::BoundByDuty, bound_by_duty);
         self.conditions
             .toggle_condition(Condition::BoundByDuty56, bound_by_duty);
+        // No one arrives in a zone fighting or casting: the new zone's enemies set InCombat again if any are after
+        // them. A player who lost a quest battle came out with InCombat still set (the server's copy of their
+        // conditions starts empty in the new zone, so nothing there ever cleared it), and the client refused to
+        // change gear, teleport or mount out in the open (Bob's bundle 20261110-095652.)
+        self.conditions.remove_condition(Condition::InCombat);
+        self.conditions.remove_condition(Condition::Casting);
 
         self.send_conditions().await;
 

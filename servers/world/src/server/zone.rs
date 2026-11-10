@@ -1488,12 +1488,19 @@ pub fn handle_zone_messages(
 
             // replace the connection's actor in the table
             let instance = data.find_actor_instance_mut(*from_actor_id).unwrap();
-            *instance.find_actor_mut(*from_actor_id).unwrap() = NetworkedActor::Player {
+            let actor = instance.find_actor_mut(*from_actor_id).unwrap();
+            // The conditions the connection told us of as they zoned in (UpdateConditions), kept: what the tick
+            // compares against (InCombat and others) has to be what the client has.
+            let conditions = match actor {
+                NetworkedActor::Player { conditions, .. } => *conditions,
+                _ => Conditions::default(),
+            };
+            *actor = NetworkedActor::Player {
                 spawn: player_spawn.clone(),
                 status_effects: StatusEffects::default(),
                 teleport_query: TeleportQuery::default(),
                 distance_range: DistanceRange::Normal,
-                conditions: Conditions::default(),
+                conditions,
                 executing_gimmick_jump: false,
                 inside_instance_exit: false,
                 parameters: BaseParameters::default(),
