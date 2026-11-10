@@ -2499,14 +2499,25 @@ fn apply_area_of_effect(
         hostiles.insert(0, id);
     }
 
-    // The caster and any party members in range that are still alive. The primary target comes first.
+    // The caster and any party members in range that are still alive, party bots and Duty Support's members among them
+    // (they're NPCs here, and only players counted: Bob's Medica in the Stone Vigil with Duty Support healed him alone,
+    // the others 1-13 yalms away, bundle 20261110-134029.) The primary target comes first.
+    let leaders: Vec<ObjectId> = std::iter::once(from_actor_id)
+        .chain(party_members.iter().copied())
+        .collect();
+    let bots: Vec<ObjectId> = instance
+        .party_bots
+        .iter()
+        .filter(|(_, bot)| bot.in_party && leaders.contains(&bot.leader))
+        .map(|(id, _)| *id)
+        .collect();
     let mut friendlies: Vec<ObjectId> = Vec::new();
-    for id in std::iter::once(from_actor_id).chain(party_members.iter().copied()) {
+    for id in leaders.iter().copied().chain(bots.iter().copied()) {
         if friendlies.contains(&id) {
             continue;
         }
         if let Some(actor) = instance.find_actor(id)
-            && matches!(actor, NetworkedActor::Player { .. })
+            && (matches!(actor, NetworkedActor::Player { .. }) || bots.contains(&id))
             && actor.get_common_spawn().health_points > 0
             && distance_to(actor) <= radius
         {

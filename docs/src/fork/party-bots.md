@@ -328,7 +328,11 @@ The packet is 944 bytes (Kawari's `ExamineCharacterInformation`, whose two unkno
   runtime (`GameData::best_gear`): for each slot (weapon or two-handed weapon, off-hand, head, body, hands, legs, feet,
   ears, neck, wrists, two rings) the item of the highest item level whose ClassJobCategory includes the class and
   whose LevelEquip is at most the bot's level, rarity then the newest breaking ties; PvP gear left out; no off-hand with
-  a two-handed weapon; two of a ring that isn't unique, otherwise the best two.
+  a two-handed weapon; two of a ring that isn't unique, otherwise the best two. Up to level 50 its item level is at most
+  its level (A Realm Reborn's gear is the level it's worn at; since 2026-11-10: later items that any level may wear,
+  with item levels far above, made level 43 Duty Finder bots 5736, 4345 and 3919 HP in the Stone Vigil, where retail's
+  party members at 41 had 2422, 1662 and 1678, capture 1cefedf4, and a level 41 White Mage's Cure II took eight casts
+  to fill the tank, bundle 20261110-134029).
 * **Hit as a player is.** Enemies' hits on a bot are scaled as their hits on players, with a player's defences (its
   class's and statuses'); until 2026-10-23 they were unscaled, NPC against NPC, about eight times as hard (see
   [Combat](combat.md#enemy-damage-to-players)).

@@ -74,6 +74,8 @@ use crate::{
 pub const BOT_LEVEL: u8 = 100;
 
 /// How far behind the one they follow bots keep, in yalms, out of combat.
+/// The last level of A Realm Reborn's gear, whose item levels are its equip levels (`GameData::best_gear`).
+const ARR_MAX_LEVEL: u8 = 50;
 const FOLLOW_DISTANCE: f32 = 2.5;
 /// How close melee bots get to their target (as an enemy does with its attack range.)
 const MELEE_RANGE: f32 = 3.0;
@@ -589,8 +591,18 @@ impl GameData {
                 )
             })
             .collect();
+        // Up to level 50 (A Realm Reborn's gear) an item's level is its equip level, and nothing better is worn at that
+        // level: later items that any level may wear (LevelEquip 1-50) come with item levels far above it. Taken as
+        // the best, they gave level-43 Duty Finder bots in the Stone Vigil 5736, 4345 and 3919 HP, where retail's
+        // party members there had 2422, 1662 and 1678 at level 41 (Bob's Chronofoil capture 1cefedf4) and a level 41
+        // White Mage 1458: his Cure II, 682, took eight casts to fill the tank (bundle 20261110-134029).
+        let item_level_cap = if level <= ARR_MAX_LEVEL {
+            level as u16
+        } else {
+            u16::MAX
+        };
         for (id, slot, category, level_equip, item_level, rarity, pvp, unique) in rows {
-            if pvp || level_equip > level {
+            if pvp || level_equip > level || item_level > item_level_cap {
                 continue;
             }
             let slot = if slot == TWO_HANDED { MAIN_HAND } else { slot };

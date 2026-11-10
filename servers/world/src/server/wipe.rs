@@ -303,6 +303,15 @@ pub fn wipe_tick(
         if !reset.is_empty() {
             tracing::info!("Party wipe: {} enemies back where they began", reset.len());
         }
+        // Their actions under way, and the party's NPCs', are called off: one landing after the reset put the party's
+        // NPCs back on an enemy's list, and two of the Stone Vigil's 1672s came after them at the entrance at once
+        // (Bob's bundle 20261110-134029: "party NPCs didn't reset when I died").
+        let party_npcs: Vec<ObjectId> = instance.party_bots.keys().copied().collect();
+        instance.retain_tasks(|task| {
+            !(matches!(task.data, QueuedTaskData::CastAction { .. })
+                && (reset.contains(&task.from_actor_id)
+                    || party_npcs.contains(&task.from_actor_id)))
+        });
         let reopened = instance
             .directors
             .first_mut()

@@ -1040,6 +1040,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quest battles and directors
 
+* **Party bots' gear below level 50 is capped at their level** (2026-11-10), untested in game: whether the HP that
+  gives matches retail's Duty Finder players at that level (about 1500 at 40-41 in capture cc62ad94) wasn't checked
+  against the game data here.
 * **Mounted players and events** (2026-11-10): an ordinary event no longer sends SetMode, and enemies wait while their
   target is mounted ([Quests](quests.md#an-event-leaves-the-players-mode-alone)); untested in game. Something that
   relied on the old SetMode Normal at an event's end (a mode left set by a script) would now keep it.

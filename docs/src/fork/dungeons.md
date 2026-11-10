@@ -660,7 +660,9 @@ out of battle and with no one hated (`npc_behavior::reset_after_wipe`: an ActorS
 each; its cast, and the director's `busy_bnpc`/`root_bnpc` hold on it, gone), and every sealed or sealing boss room
 opens again (`reopen_rooms_after_wipe`: its wall hidden, log 2014, the pending seal dropped; its line stays while the
 boss lives), and the party's NPCs come back beside the ones they follow at once, out of the fight (those still
-standing had fought on, and the reset boss took one up again a second later: Bob's bundle 20261108-145830), as
+standing had fought on, and the reset boss took one up again a second later: Bob's bundle 20261108-145830), their
+actions and the reset enemies' under way called off (since 2026-11-10: one landing just after the reset put a bot back
+on an enemy's list, and two 1672s came for the party's NPCs at the entrance at once, bundle 20261110-134029), as
 retail's Stone Vigil did after each of its three wipes (log 2014 4.3 s after the fall, the bosses
 whole where they began). Before, only a script's own `onPartyWipe` reset anything, and the Stone Vigil's first boss
 stayed in battle and chased the party to the entrance (Bob's bundle 20261107-212704).
