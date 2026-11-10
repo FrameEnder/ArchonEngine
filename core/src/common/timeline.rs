@@ -174,7 +174,11 @@ impl Timeline {
     /// `recorded_amount` for an NPC of `level`: against players, its level's `players_by_level` when there is one.
     pub fn recorded_amount_at(&self, action_id: u32, to_player: bool, level: u8) -> Option<f32> {
         let recorded = self.recorded_amounts.get(&action_id)?;
-        if !to_player {
+        // An NPC target with no amount of its own recorded is hit as a player was: across the timelines with both,
+        // what an action did to NPCs was a median 0.98 of what it did to players. Without it the hit went unscaled,
+        // 2.4-2.8 times as hard: In the Eyes of Gods and Men's wyvern's auto-attack on the gladiator did 229 where it
+        // did 96 to players (Bob's bundle 20261110-095652.)
+        if !to_player && recorded.npcs.is_some() {
             return recorded.npcs;
         }
         if let Some(amount) = recorded.players_by_level.get(&level) {
@@ -565,6 +569,14 @@ mod tests {
         assert_eq!(timeline.recorded_amount(873, true), None);
         assert_eq!(timeline.recorded_amount(120, true), Some(95.0));
         assert_eq!(timeline.recorded_amount(7, false), None);
+        // An NPC target with nothing of its own recorded is hit as a player was (no unscaled hits.)
+        assert_eq!(timeline.recorded_amount_at(120, false, 40), Some(87.0));
+        let wyvern: Timeline = serde_json::from_str(
+            r#"{"autoattack_action_id": 870, "timeline_always_plays": false, "timepoints": [],
+                "recorded_amounts": {"870": {"players": 96.0}}}"#,
+        )
+        .unwrap();
+        assert_eq!(wyvern.recorded_amount_at(870, false, 41), Some(96.0));
     }
 
     #[test]

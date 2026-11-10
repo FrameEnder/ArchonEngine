@@ -126,11 +126,12 @@ ACTION_CURE = 120
 ACTION_CURE_II = 135
 
 BATTLE = Battle.new()
--- Both went for the newest enemy (the conjurer the boss at first, then the first wave; the gladiator the boss, then
--- the second wave as it came) and for the wyvern once it was out, until it left (both runs.)
+-- The conjurer went for the first wave's archer first (the one hitting it), then its conjurer, the boss, and the second
+-- wave's lancer as it came; the gladiator for that lancer, then the boss; both for the wyvern once it was out, until it
+-- left (all three runs.)
 BATTLE:ally(BNPC_CONJURER_ALLY, {
     role = "dps",
-    focus = { "wyvern", "adds", "boss" },
+    focus = { "wyvern", "archer", "adds", "boss" },
     order = "newest",
     range = 10,
     keep_near = { within = 15 },
@@ -141,7 +142,17 @@ BATTLE:ally(BNPC_CONJURER_ALLY, {
         { action = ACTION_CURE, targets = { BNPC_GLADIATOR_ALLY, Battle.PLAYER, "self" }, below = 45, every = 16.7 },
     },
 })
-BATTLE:ally(BNPC_GLADIATOR_ALLY, { role = "tank", focus = { "wyvern", "adds", "boss" }, order = "newest" })
+-- He Provoked (18) the boss once, 2.0-9.6 s after he began fighting (two runs 2.0 and 2.7), and never pulled anything
+-- else: the second wave's archer and the wyvern stayed on the player (all three runs.) Battle's `protect` pulled an
+-- enemy off the player every 10 s, so the archer and the wyvern fought him, and he fell (Bob's bundle 20261110-095652.)
+BATTLE:ally(BNPC_GLADIATOR_ALLY, {
+    role = "tank",
+    focus = { "wyvern", "adds", "boss" },
+    order = "newest",
+    protect = false,
+})
+ACTION_PROVOKE = 18
+HAURCHEFANT_PROVOKES_AFTER = 5
 -- The enemies' conjurers: one heal every 5.6-8.3 s at most, whichever it is (`heal_gap`; never two closer in the three
 -- runs: Cure, then Cure II 1.5 s later was Kawari's, Bob's bundle 20261110-091329): Cure II on one of their side
 -- under about 23 % (6-22 %; at 24-26 % Cure came), else Cure under 50 % (31-50 %). Cure healed 444-468, Cure II
@@ -154,10 +165,16 @@ function enemyHeals()
         { action = ACTION_CURE, targets = "allies", below = 50, every = ENEMY_HEAL_GAP },
     }
 end
--- On retail every enemy went for you first (the archer turned to the conjurer later), and the boss turned to the
--- gladiator once he came.
+-- On retail every enemy went for you first but the first wave's archer, who shot the conjurer from the start (5-12
+-- shots before it turned to you, all three runs; Kawari's shot you), and the boss turned to the gladiator once he
+-- Provoked it.
+BNPC_FIRST_ARCHER = 4261276
 for _, layout in ipairs(WAVE_1) do
     local role = { group = "adds" }
+    if layout == BNPC_FIRST_ARCHER then
+        role.group = { "archer", "adds" }
+        role.attacks = BNPC_CONJURER_ALLY
+    end
     if ENEMY_CONJURERS[layout] then
         role.heals = enemyHeals()
         role.heal_gap = ENEMY_HEAL_GAP
@@ -229,7 +246,12 @@ function haurchefantRidesIn(director)
     after(HAURCHEFANT_TURN_AFTER, function(d)
         d:sweep_bnpc(BNPC_GLADIATOR_ALLY, arrives.x, arrives.y, arrives.z, HAURCHEFANT_SPEED)
     end)
-    after(HAURCHEFANT_FIGHTS_AFTER, function(d) d:hold_bnpc(BNPC_GLADIATOR_ALLY, false) end)
+    after(HAURCHEFANT_FIGHTS_AFTER, function(d)
+        d:hold_bnpc(BNPC_GLADIATOR_ALLY, false)
+        after(HAURCHEFANT_PROVOKES_AFTER, function(d2)
+            BATTLE:provoke(d2, BNPC_GLADIATOR_ALLY, BNPC_BOSS, ACTION_PROVOKE)
+        end)
+    end)
 end
 
 function gladiatorJoins(director)

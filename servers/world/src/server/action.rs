@@ -1509,8 +1509,20 @@ pub fn execute_action(
                 let heals_target = effects_builder.effects.iter().any(|effect| {
                     matches!(effect.0, TargetEffectKind::Heal { unk1, .. } if unk1[4] & EFFECT_ON_SOURCE == 0)
                 });
+                // Hits on an NPC that can't be hurt anger it no more than they hurt it: In the Eyes of Gods and Men's
+                // wyvern (invulnerable, every hit effect 7) kept on the player in all three of Bob's retail runs while
+                // both allies and an enemy marauder hit it; Kawari's turned on the gladiator (Bob's bundle
+                // 20261110-095652.)
+                let invulnerable = matches!(
+                    actor,
+                    NetworkedActor::Npc {
+                        currently_invulnerable: true,
+                        ..
+                    }
+                );
                 if request.target.object_id != from_actor_id
                     && !same_side
+                    && !invulnerable
                     && (damage > 0 || !heals_target)
                 {
                     actor.add_enmity(from_actor_id, damage.saturating_mul(multiplier));
@@ -2513,7 +2525,10 @@ fn apply_area_of_effect(
                     }
                 })
                 .sum();
-            actor.add_enmity(from_actor_id, total.saturating_mul(multiplier));
+            // None from hits that can't hurt it (as for a single target, above.)
+            if !invulnerable {
+                actor.add_enmity(from_actor_id, total.saturating_mul(multiplier));
+            }
 
             if !invulnerable {
                 let common_spawn = actor.get_common_spawn_mut();

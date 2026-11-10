@@ -535,13 +535,22 @@ function Battle:runTanks(director)
                     end
                 end
                 if best ~= nil then
-                    self.tank_priority = self.tank_priority + Battle.TANK_ENMITY
-                    director:set_hate(best, tank, self.tank_priority)
+                    self:provoke(director, tank, best)
                     role.provoke_wait = math.floor((role.provoke_every or 10) * 2)
                 end
             end
         end
     end
+end
+
+-- A tank takes an enemy onto itself at once (above everyone else's enmity), as a Provoke: `action` (optional) is used
+-- on it for the show. For a tank that provoked once, at a set moment, rather than every so often (`protect`).
+function Battle:provoke(director, tank, enemy, action)
+    if action ~= nil then
+        director:use_action(tank, action, enemy)
+    end
+    self.tank_priority = self.tank_priority + Battle.TANK_ENMITY
+    director:set_hate(enemy, tank, self.tank_priority)
 end
 
 -- A support's buffs ({ action, every (s) } each): on the DPS first, then the tank, one after another.

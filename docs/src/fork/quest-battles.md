@@ -134,7 +134,7 @@ BATTLE:onHealth(BNPC_BOSS, 75, function(director) BATTLE:spawn(director, WAVE_1)
 
 | Part | |
 |---|---|
-| `ally(layout, role)` | `focus`: the enemy groups it goes for, in order (`"any"` is everyone); `order` within a group: `oldest`, `newest`, `highest_hp`, `lowest_hp`, `nearest`; `range` (yalms, `set_attack_range`); `keep_near` (`{ anchor, within }`, `keep_near`); `heals` (another healer doesn't pick a target one has just started healing for `HEAL_PENDING_UPDATES`, 1.5 s: three healers on one timer all Cured the same ally at once, QB 38); the rules are tried in order, and after any heal the NPC heals again only after its `heal_gap` (`HEAL_GAP_SECONDS`, 2.5 s, a cast's global cooldown; since 2026-11-10: each rule kept its own clock, so QB 60's enemy conjurer Cured and Cure II'd 1.5 s apart). |
+| `ally(layout, role)` | `focus`: the enemy groups it goes for, in order (`"any"` is everyone); `order` within a group: `oldest`, `newest`, `highest_hp`, `lowest_hp`, `nearest`; `range` (yalms, `set_attack_range`); `keep_near` (`{ anchor, within }`, `keep_near`); `heals` (another healer doesn't pick a target one has just started healing for `HEAL_PENDING_UPDATES`, 1.5 s: three healers on one timer all Cured the same ally at once, QB 38); `protect = false` for a tank that doesn't pull enemies off others (`Battle:provoke(director, tank, enemy, action)` has it take one at a set moment, above everyone's enmity, `action` used on it for the show); the rules are tried in order, and after any heal the NPC heals again only after its `heal_gap` (`HEAL_GAP_SECONDS`, 2.5 s, a cast's global cooldown; since 2026-11-10: each rule kept its own clock, so QB 60's enemy conjurer Cured and Cure II'd 1.5 s apart). |
 | `enemy(layout, role)` | `group` (a name or a list, e.g. `{ "lostwings", "adds" }`); `attacks`: whom it goes for first (an ally, or the player when `nil`) with `enmity` (300); `passive = true`: no one at first, it waits to be hit (To Guard a Guardian's masked mage); it can have `heals` too (the sincallers heal Quzal). |
 | heals | `{ action, targets (layout IDs, Battle.PLAYER, or "allies" for its whole side), below (%), every (s), say (a function) }`: heals whichever target is lowest under `below`. |
 | `spawn(director, layouts, at)` / `remove(director, layouts)` | Brings NPCs in as their roles say (placement, first target) / takes them out without dying. `at` (`{ x, y, z }`, since 2026-11-07) spawns them there instead of their layout's spot: what quest battle 61's boss turns into, where he stood. A heal rule keeps its own wait, so two NPCs need a table each (QB 60's `enemyHeals()`). |
@@ -520,6 +520,18 @@ others 1265 (seen in all 34 quest battles of Bob's captures, levels 6-45). Kawar
   own clock, so a Cure II came 1.5 s after a Cure (Bob's bundle 20261110-091329, "heals twice in quick succession");
   since 2026-11-10 they share one, `heal_gap` 5.6 s. In that run (the damage formula and role status in) the first
   conjurer fell 81 s after it came, where retail's went in 15-35 s.
+* **Who fights whom, against Kawari's play of it** (Bob's bundle 20261110-095652, "far more difficult": the
+  gladiator fell at 202 s, after 10,047 damage where retail's took 2,547-4,826 in a whole fight). Retail's first wave
+  archer shot the conjurer ally from the start (5-12 shots), and the conjurer ally went for it first; the gladiator
+  Provoked (18) the boss once, 2.0-9.6 s after he began fighting, and pulled nothing else: the second wave's archer
+  and the wyvern stayed on the player (the wyvern's 12-18 auto-attacks all on the player in two runs). Kawari's archer
+  shot the player; Battle's tank `protect` pulled an enemy off the player every 10 s, so the archer and the wyvern
+  fought the gladiator (the wyvern's 13 auto-attacks on him); hits on the invulnerable wyvern still angered it; and
+  their auto-attacks on him, recorded only against players, went unscaled (229 and 240 where the player took 96 and
+  85). Since 2026-11-10: the archer `attacks` the conjurer ally, who focuses it first (`archer` group); the gladiator
+  doesn't `protect` but Provokes the boss 2.5 s after he arrives (`Battle:provoke`); an invulnerable NPC isn't
+  angered by hits (`server/action.rs`); and an NPC with no recorded amount against NPCs hits them as it hits players
+  (`Timeline::recorded_amount_at`).
 * **Haurchefant rides in** (all three runs, to a yalm): retail's SpawnNpc had him on mount 10, 4.3-4.4 s after
   sequence 3, where the drop-in puts him; he runs (6 yalms a second, speed byte 60) along his facing to (463.1, 304.3,
   -275.1) in 7.6-7.8 s, turns towards the fight and runs on to (459.5, 304.5, -307.0), getting off his mount on the way
