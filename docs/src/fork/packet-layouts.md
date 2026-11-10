@@ -213,5 +213,11 @@ size at byte 24; a packet that hasn't all arrived waits for the next read). Bob'
 then before the game closed (exit code 1, no crash dump: Dalamud's crash handler log had nothing for it); in the
 failed login of his bundle 20261110-081839 (07:29) the lobby logged the client logging in and then nothing until it
 timed out 49 s later, and never asked the world server for the characters, where the next login (07:32) did at once:
-the client's ServiceLogin was lost. The world server's zone and chat connections still parse one packet a read
-([Known Issues](known-issues.md#client-packets-of-the-wrong-size-2026-10-30)).
+the client's ServiceLogin was lost. The world server's **zone and chat connections** do the same since 2026-11-10
+(`process_packet`, the chat loop in `servers/world/src/main.rs`). On the zone connection a dropped packet is fatal:
+the client compresses with Oodle, whose state runs from packet to packet, so the one lost put the server's out of step
+and every packet after it failed to parse ("no variants matched" on `segment_type`, "desynced with the client's Oodle
+state") until the client was dropped as timed out. Bob's bundle 20261110-111747: leaving the Brayflox's Longstop, a new
+instance of Coerthas took 0.75 s to load (its navmesh and collision), the client's packets piled up meanwhile, and the
+first read after held more than one; nine parse errors in 40 s, then "lost connection". (The chat loop parsed its
+whole receive buffer, not just what was read.)

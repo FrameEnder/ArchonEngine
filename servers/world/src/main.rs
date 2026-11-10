@@ -60,7 +60,9 @@ use kawari::constants::{
     DISCOVERY_MAPS_WITH_UP_TO_32_REGIONS_BITMASK_SIZE,
 };
 use kawari::packet::oodle::OodleNetwork;
-use kawari::packet::{ConnectionState, ConnectionType, SegmentData, parse_packet_header};
+use kawari::packet::{
+    ConnectionState, ConnectionType, SegmentData, parse_packet_header, take_packets,
+};
 use kawari_world::lua::{KawariLua, KawariLuaState, LuaPlayer};
 use kawari_world::retainer;
 use kawari_world::{
@@ -446,6 +448,7 @@ async fn client_chat_loop(
         .await;
 
     let mut buf = vec![0; RECEIVE_BUFFER_SIZE];
+    let mut pending = Vec::new();
     loop {
         tokio::select! {
             biased; // client data should always be prioritized
@@ -462,7 +465,13 @@ async fn client_chat_loop(
                             }
                         } else {
                             connection.last_keep_alive = Instant::now();
-                            let segments = connection.parse_packet(&buf);
+                            // Whole packets only, as for the zone connection (`process_packet`): this parsed the
+                            // whole buffer as one packet.
+                            pending.extend_from_slice(&buf[..n]);
+                            let segments: Vec<_> = take_packets(&mut pending)
+                                .iter()
+                                .flat_map(|packet| connection.parse_packet(packet))
+                                .collect();
                             for segment in segments {
                                 match &segment.data {
                                     SegmentData::None() => {}
@@ -609,6 +618,7 @@ async fn process_packet(
     client_handle: ClientHandle,
     n: usize,
     buf: &[u8],
+    pending: &mut Vec<u8>,
 ) -> bool {
     // if the last response was over >5 seconds, the client is probably gone
     if n == 0 {
@@ -630,7 +640,15 @@ async fn process_packet(
 
         connection.last_keep_alive = Instant::now();
 
-        let segments = connection.parse_packet(&buf[..n]);
+        // Every whole packet received so far: a read can hold several, or part of one (`take_packets`). Parsing a read
+        // as one packet dropped the rest, and the Oodle state the client compresses with went out of step for good:
+        // after a busy moment on the server (a new instance of Coerthas loading as Bob came out of the Brayflox's
+        // Longstop) every later packet failed to parse and the client was dropped (bundle 20261110-111747.)
+        pending.extend_from_slice(&buf[..n]);
+        let segments: Vec<_> = take_packets(pending)
+            .iter()
+            .flat_map(|packet| connection.parse_packet(packet))
+            .collect();
         for segment in &segments {
             match &segment.data {
                 SegmentData::None() => {}
@@ -5578,6 +5596,8 @@ async fn client_loop(
     let mut lua_player = LuaPlayer::default();
 
     let mut buf = vec![0; RECEIVE_BUFFER_SIZE];
+    // What's been received of a packet not all here yet (`process_packet`.)
+    let mut pending = Vec::new();
     let mut client_handle = client_handle.clone();
     client_handle.actor_id = connection.player_data.character.actor_id;
 
@@ -5605,7 +5625,7 @@ async fn client_loop(
             n = connection.socket.read(&mut buf) => {
                 match n {
                     Ok(n) => {
-                        if !process_packet(&mut connection, &mut lua_player, &mut events, client_handle.clone(), n, &buf).await {
+                        if !process_packet(&mut connection, &mut lua_player, &mut events, client_handle.clone(), n, &buf, &mut pending).await {
                             break;
                         }
                     },

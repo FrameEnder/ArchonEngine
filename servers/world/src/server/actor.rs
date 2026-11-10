@@ -688,13 +688,20 @@ fn credit_battle_npc_kill(
 /// bosses and the adds), with another player there. Bob's Chronofoil captures c99fe374 and cc62ad94: in the Duty Finder
 /// runs (three or four other players) every kill of the dungeons' own enemies dropped gil (133 of 133) and none of the
 /// bosses', their adds' or the scripted waves' (0 of 83); the Duty Support runs (no other player) dropped none (0 of
-/// 208 kills.)
+/// 208 kills.) Party bots stand in for the Duty Finder's other players and count as players (since 2026-11-10: Bob's
+/// roulette of the Brayflox's Longstop, alone with three bots, dropped no gil, bundle 20261110-111747); Duty Support's
+/// members (party NPCs) don't.
 fn drops_gil(instance: &Instance, actor_id: ObjectId) -> bool {
     let players = instance
         .actors
         .values()
         .filter(|actor| matches!(actor, NetworkedActor::Player { .. }))
-        .count();
+        .count()
+        + instance
+            .party_bots
+            .values()
+            .filter(|bot| bot.party_npc.is_none())
+            .count();
     instance.content_finder_condition_id != 0
         && players > 1
         && instance.layout_npcs.contains(&actor_id)

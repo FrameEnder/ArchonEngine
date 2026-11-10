@@ -112,10 +112,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   the fields of a short layout read zeros past the client's bytes. CrossRealmListingsRequest2 (878) is 64 bytes on the
   client and 40 in upstream's layout, so it warns each time the Party Finder asks. Which packet the Waking Sands' door
   click came with in Bob's bundle isn't known (nothing logged the bytes); nothing else in the captures differs.
-* The world server's zone and chat connections parse one packet per TCP read, as the lobby did until 2026-11-10
-  ([Packet layouts](packet-layouts.md#several-packets-in-one-read-2026-11-10)): a second packet in the same read is
-  lost (and with the zone's Oodle, the stream after it may not decode). The lobby's fix (`take_packets`) is untested
-  in game: whether it ends the empty character list is for Bob's next logins to show.
+* Several packets in one TCP read ([Packet layouts](packet-layouts.md#several-packets-in-one-read-2026-11-10)): the
+  lobby's fix (`take_packets`) and the zone and chat connections' (2026-11-10, the lost connection after a duty) are
+  untested in game. The first reads of a zone connection (its setup, before `client_loop`) still take one packet each.
 * A coffer's pieces come as its bar ends; retail's came 1.1 s after it (the opening animation). Items' own cast times
   (CastTimeSeconds) are untested in game: if the coffers' is 0 in the sheet, they still open at once.
 * Weapon coffers: only the "Level N Weapon Coffer"s are filled in, from the wiki; the raid and tome coffers say their
@@ -888,6 +887,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Untested in game, from two runs (one with Duty Support, one through the Duty Finder: Bob's captures 44df02fc and
   c9145fdc). The director was checked against the runs' steps with a throwaway lupa harness (its variables after the
   key, the doors and each boss, the waves, the ambushes, the dragon, the puddles).
+* The dragon killing the third boss (2026-11-10) is untested in game, and the kill is credited as any death the
+  director causes; retail's Defeated named a party member (a Duty Support member, the one fighting it).
 * The shortcut (2000700) takes the party to the layout's pop range outside the room of the boss last pulled
   (11438223-11438226): nobody used it in either run, so that order is the layout's and the other dungeons'. The
   puddles' map effects are found by their SharedGroups in ContentDirectorManagedSG (`map_effect_at`): that its layout

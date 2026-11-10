@@ -186,7 +186,7 @@ BOSS2_ADD_GONE = 991
 -- s in. It leaves as its health falls below 71 % (70.7 % in one run, 67.2-71.6 % in the other: 24.2 and 15.9 s after
 -- it came; if nobody wears it down it leaves 24.2 s in, the longest seen): untargetable, ActionTimeline 1385 1.4-2.3 s
 -- later, log 2056 7.0 s later, gone 12.1-12.2 s later. The room opens then, or as the boss falls if the dragon has gone
--- (the boss fell 4.6-4.9 s after the dragon came in both runs).
+-- (the boss fell 4.6-4.9 s after the dragon came in both runs: the dragon kills it, BOSS3_CRUSHED_AFTER).
 BNPC_BOSS3 = 3997806
 BNPC_BOSS3_BLOB = 4107077
 BNPC_DRAGON = 3977798
@@ -199,6 +199,10 @@ DRAGON_BELOW = 20
 DRAGON_APPEARS_AFTER = 0.7
 ACTION_TOUCHDOWN = 564
 DRAGON_LANDS_LOG_AFTER = 4.7
+-- The dragon comes down on the boss: it dies 4.85 s after the dragon was spawned (Kill and SetMode dead, no hit, at 18 %
+-- of its health in Bob's capture 44df02fc; 4.6-4.9 s in both runs), however much health it had left. Kawari's lived on
+-- until the party wore it down (Bob's bundle 20261110-111747.) (Delays count from the spawn, `director:delay`.)
+BOSS3_CRUSHED_AFTER = 4.85
 DRAGON_LEAVES_BELOW = 71
 DRAGON_STAYS_AT_MOST = 24.2
 DRAGON_FLIES_AFTER = 1.9
@@ -561,6 +565,8 @@ function bringDragon(director)
     director:set_hate(dragon_actor, nil, 300) -- the player
     director:delay(DRAGON_LANDS_LOG_AFTER)
     director:log_message(LOG_DRAGON_LANDS, {})
+    director:delay(BOSS3_CRUSHED_AFTER)
+    director:kill_bnpc(BNPC_BOSS3)
     director:delay(0)
 end
 
