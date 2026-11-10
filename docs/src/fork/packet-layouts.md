@@ -203,3 +203,15 @@ is (fork rule); it now only warns.
 * **Shared cases are flagged, not split.** When several opcodes share a case, the reads cover all of them.
 * **The tool can't name fields that ClientStructs doesn't describe.** Names in Kawari come from a person reading the
   handler.
+
+## Several packets in one read (2026-11-10)
+
+A connection's TCP reads don't line up with the game's packets: one read can hold two packets, or part of one.
+Upstream's servers hand each read to `parse_packet`, which reads the first packet and drops the rest. The **lobby**
+now keeps what it has received and parses every whole packet in it (`kawari::packet::take_packets`, by the header's
+size at byte 24; a packet that hasn't all arrived waits for the next read). Bob's character list came up empty now and
+then before the game closed (exit code 1, no crash dump: Dalamud's crash handler log had nothing for it); in the
+failed login of his bundle 20261110-081839 (07:29) the lobby logged the client logging in and then nothing until it
+timed out 49 s later, and never asked the world server for the characters, where the next login (07:32) did at once:
+the client's ServiceLogin was lost. The world server's zone and chat connections still parse one packet a read
+([Known Issues](known-issues.md#client-packets-of-the-wrong-size-2026-10-30)).

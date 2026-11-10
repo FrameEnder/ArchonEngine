@@ -1,7 +1,7 @@
 mod parsing;
 pub use parsing::{
     ConnectionState, ConnectionType, PACKET_SEGMENT_HEADER_SIZE, PacketHeader, PacketSegment,
-    SegmentData, SegmentType, parse_packet, parse_packet_header,
+    SegmentData, SegmentType, parse_packet, parse_packet_header, take_packets,
 };
 
 mod compression;

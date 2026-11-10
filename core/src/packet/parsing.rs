@@ -218,6 +218,35 @@ pub fn parse_packet_header(data: &[u8]) -> PacketHeader {
     }
 }
 
+/// Where `PacketHeader::size` (the whole packet's, header included) is, and the header's size.
+const PACKET_SIZE_AT: usize = 24;
+const PACKET_HEADER_SIZE: usize = 40;
+
+/// Takes the complete packets off the front of what a connection has received, leaving a packet that hasn't all
+/// arrived yet for the next read. A TCP read can hold several packets, or part of one: `parse_packet` reads only the
+/// first packet it's given, so the rest of a read was lost (FrameEnder fork, 2026-11-10: the lobby lost a client's
+/// ServiceLogin when it came in the same read as another packet, and the character list never came.) A size that
+/// can't be a packet's gives the rest as it is, so it's parsed (and reported) as before.
+pub fn take_packets(pending: &mut Vec<u8>) -> Vec<Vec<u8>> {
+    let mut packets = Vec::new();
+    while pending.len() >= PACKET_HEADER_SIZE {
+        let size = u32::from_le_bytes(
+            pending[PACKET_SIZE_AT..PACKET_SIZE_AT + 4]
+                .try_into()
+                .unwrap(),
+        ) as usize;
+        if size < PACKET_HEADER_SIZE {
+            packets.push(std::mem::take(pending));
+            break;
+        }
+        if pending.len() < size {
+            break;
+        }
+        packets.push(pending.drain(..size).collect());
+    }
+    packets
+}
+
 pub fn parse_packet<T: ReadWriteIpcSegment>(
     data: &[u8],
     state: &mut ConnectionState,
@@ -240,5 +269,27 @@ pub fn parse_packet<T: ReadWriteIpcSegment>(
 
             Vec::new()
         }
+    }
+}
+
+#[cfg(test)]
+mod take_packets_tests {
+    use super::take_packets;
+
+    fn packet(size: usize, fill: u8) -> Vec<u8> {
+        let mut bytes = vec![fill; size];
+        bytes[24..28].copy_from_slice(&(size as u32).to_le_bytes());
+        bytes
+    }
+
+    #[test]
+    fn two_in_one_read_and_one_split() {
+        let (a, b, c) = (packet(64, 1), packet(48, 2), packet(80, 3));
+        let mut pending = [a.clone(), b.clone(), c[..50].to_vec()].concat();
+        assert_eq!(take_packets(&mut pending), vec![a, b]);
+        assert_eq!(pending.len(), 50);
+        pending.extend_from_slice(&c[50..]);
+        assert_eq!(take_packets(&mut pending), vec![c]);
+        assert!(pending.is_empty());
     }
 }

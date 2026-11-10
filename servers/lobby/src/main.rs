@@ -9,7 +9,7 @@ use kawari::packet::ConnectionType;
 use kawari::packet::PacketSegment;
 use kawari::packet::SegmentType;
 use kawari::packet::send_custom_world_packet;
-use kawari::packet::{ConnectionState, SegmentData, send_keep_alive};
+use kawari::packet::{ConnectionState, SegmentData, send_keep_alive, take_packets};
 use kawari_lobby::GAME_EXE_NAME;
 use kawari_lobby::LobbyConnection;
 use std::path::MAIN_SEPARATOR_STR;
@@ -95,6 +95,7 @@ async fn main() {
 
         tokio::spawn(async move {
             let mut buf = vec![0; RECEIVE_BUFFER_SIZE];
+            let mut pending = Vec::new();
             loop {
                 match connection.socket.read(&mut buf).await {
                     Ok(n) => {
@@ -110,7 +111,13 @@ async fn main() {
                         } else {
                             connection.last_keep_alive = Instant::now();
 
-                            let segments = connection.parse_packet(&buf[..n]);
+                            // Every whole packet received so far (a read can hold several, or part of one: the
+                            // client's ServiceLogin was lost when it came with another, FrameEnder fork 2026-11-10.)
+                            pending.extend_from_slice(&buf[..n]);
+                            let segments: Vec<_> = take_packets(&mut pending)
+                                .iter()
+                                .flat_map(|packet| connection.parse_packet(packet))
+                                .collect();
                             for segment in &segments {
                                 match &segment.data {
                                     SegmentData::SecuritySetup { phrase, key } => {

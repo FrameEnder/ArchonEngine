@@ -112,6 +112,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   the fields of a short layout read zeros past the client's bytes. CrossRealmListingsRequest2 (878) is 64 bytes on the
   client and 40 in upstream's layout, so it warns each time the Party Finder asks. Which packet the Waking Sands' door
   click came with in Bob's bundle isn't known (nothing logged the bytes); nothing else in the captures differs.
+* The world server's zone and chat connections parse one packet per TCP read, as the lobby did until 2026-11-10
+  ([Packet layouts](packet-layouts.md#several-packets-in-one-read-2026-11-10)): a second packet in the same read is
+  lost (and with the zone's Oodle, the stream after it may not decode). The lobby's fix (`take_packets`) is untested
+  in game: whether it ends the empty character list is for Bob's next logins to show.
 * Weapon coffers: only the "Level N Weapon Coffer"s are filled in, from the wiki; the raid and tome coffers say their
   contents aren't known. Opening one on retail was recorded once (the Level 18, a gladiator's).
 
