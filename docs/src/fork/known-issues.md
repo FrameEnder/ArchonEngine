@@ -1041,8 +1041,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   3c56e09f, 21f967d2). Picking up the rosary is new: the director answers a talk on its object with an event action and
   no scene (`onObjectTalk`), which the client hasn't been seen to accept from Kawari yet. Whether sequence 6 waits for
   sequence 5 isn't known (the boss reached 50 % after it in all three runs, once 7.4 s after). The boss's own Cure
-  under 15 % fits all three runs only roughly (its first came 0.7-8 s after it crossed). The wyvern is invulnerable and leaves on its own clock; whether it could be pulled off the player
-  isn't known. 1738's Provoke (18) and 1739's Stoneskin (129) aren't in their timelines (no scripts). Losing as
+  under 15 % fits all three runs only roughly (its first came 0.7-8 s after it crossed). The wyvern is invulnerable and leaves on its own clock; on retail it stayed on the player (it gains no enmity
+  from hits since 2026-11-10), but whether retail's ignores Provoke too isn't known. 1738's one Provoke (18) on the
+  boss is scripted at 2.5 s after he arrives (retail 2.0-9.6 s), not from a rule; 1739's Stoneskin (129) isn't in its
+  timeline. Since 2026-11-10's targets (bundle 20261110-095652, "far more difficult" than retail) untested in game. Losing as
   Haurchefant falls is from Bob's memory of retail, not a recording: whether the conjurer ally's fall loses it too,
   and what retail says or shows then, isn't known. Haurchefant's ride in (untested in game) follows straight lines
   between retail's points at their heights (the ground rises 2 yalms on the second leg; the client may show him off
