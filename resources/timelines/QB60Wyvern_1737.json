@@ -11,14 +11,15 @@
         }
     },
     "rotation": {
-        "pace": 9.9,
+        "pace": 7.6,
         "actions": [
             {
                 "action": 1136,
-                "every": 9.9,
-                "comment": "33 uses by 3 (7.9-12.8 s apart); every 9.9 s"
+                "every": 10.2,
+                "comment": "33 uses in 335 s out, 3 runs: one every 10.2 s (rate)"
             }
-        ]
+        ],
+        "comment": "33 of these in 335 s out: one every 10.2 s; the pace is three quarters of that, so each comes about as often as its own `every` (rate)"
     },
     "timepoints": [],
     "timeline_always_plays": false,

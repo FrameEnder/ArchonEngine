@@ -135,7 +135,11 @@ pub fn update(
     }
     let mut sweeps = std::mem::take(&mut instance.sweeps);
     sweeps.retain_mut(|sweep| {
-        if instance.find_actor(sweep.walker).is_none() {
+        // Gone, or fallen on the way (a dead walker isn't carried on: one of quest battle 61's adds killed
+        // on its way down from the ledge, `Battle:walk`.)
+        if instance.find_actor(sweep.walker).is_none_or(|walker| {
+            walker.get_common_spawn().mode == kawari::common::CharacterMode::Dead
+        }) {
             return false;
         }
         let arrives = sweep.arrives();

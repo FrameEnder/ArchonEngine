@@ -16,34 +16,32 @@
         }
     },
     "rotation": {
-        "pace": 9.9,
+        "pace": 5.2,
         "actions": [
             {
+                "action": 1159,
+                "on_ally": 1748,
+                "every": 27.3,
+                "comment": "Eye for an Eye on one of its adds while there are any: 11 uses in five runs, about 300 s with adds out: one every 27 s"
+            },
+            {
+                "action": 1160,
+                "on_ally": 1748,
+                "every": 42.9,
+                "comment": "Rouse on one of its adds: 7 uses in the same 300 s"
+            },
+            {
                 "action": 31086,
-                "every": 9.9,
-                "comment": "24 uses by 5 (4.6-58.2 s apart); every 9.9 s"
+                "every": 19.2,
+                "comment": "Ruin II: 24 uses in 460 s out, five runs: one every 19.2 s (rate)"
             },
             {
                 "action": 31085,
-                "every": 10.2,
-                "comment": "24 uses by 4 (5.6-46.8 s apart); every 10.2 s"
-            },
-            {
-                "action": 169,
-                "every": 103.3,
-                "comment": "5 uses by 5; every 103.3 s"
-            },
-            {
-                "action": 164,
-                "every": 101.3,
-                "comment": "5 uses by 4 (53.6 s apart); every 101.3 s"
-            },
-            {
-                "action": 168,
-                "every": 99.2,
-                "comment": "2 uses by 2; every 99.2 s"
+                "every": 19.2,
+                "comment": "Ruin: 24 uses in 460 s out: one every 19.2 s (rate)"
             }
-        ]
+        ],
+        "comment": "66 of these in 460 s out (adds' time for 1159 and 1160): one every 7.0 s; the pace is three quarters of that (rate); its other spells are timepoints"
     },
     "timepoints": [
         {
@@ -54,8 +52,27 @@
                 "target": "itself"
             },
             "comment": "1163 on itself, 5 uses by 5, first 13.4 s after its pull (median)"
+        },
+        {
+            "time": 20.1,
+            "data": {
+                "type": "action",
+                "action_id": 169,
+                "target": "target"
+            },
+            "comment": "Virus on its target once, 1.2-12.3 s after its 1163 (6.7, median; every run)"
+        },
+        {
+            "time": 59.3,
+            "every": 53.6,
+            "data": {
+                "type": "action",
+                "action_id": 164,
+                "target": "target"
+            },
+            "comment": "Bio on its target, 28.8-54.8 s after its 1163 (45.9, median), then 53.6 s on (5 uses in 4 of 5 runs)"
         }
     ],
     "timeline_always_plays": false,
-    "comment": "The quest battle (61) of quest 941: the one you fight (BNpcBase 1746, BNpcName 2083, layout 4256791): level 41, 17030 HP, ClassJob 26; Ruin and Ruin II at whoever it's on, its other spells now and then; never an auto-attack. Dragon's Blood (1162) is the director's (11-13 s after sequence 4, the quest battle's script). Its Eye for an Eye (1159) and Rouse (1160) went on its own adds, which a timeline can't aim at: left out. From Bob's Chronofoil captures of 2026-11-06 and 07 (`questkit chronofoil --battle`: 130088ec 0.11, 3c56e09f 0.13, 3c56e09f 0.15, 3c56e09f 0.17, 21f967d2 0.13): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+    "comment": "The quest battle (61) of quest 941: the one you fight (BNpcBase 1746, BNpcName 2083, layout 4256791): level 41, 17030 HP, ClassJob 26; Ruin and Ruin II at whoever it's on, its other spells now and then; never an auto-attack. Dragon's Blood (1162) is the director's (11-13 s after sequence 4, the quest battle's script). Its Eye for an Eye (1159) and Rouse (1160) go on its own adds (`on_ally`). Miasma (168), twice in five runs, is left out. From Bob's Chronofoil captures of 2026-11-06 and 07 (`questkit chronofoil --battle`: 130088ec 0.11, 3c56e09f 0.13, 3c56e09f 0.15, 3c56e09f 0.17, 21f967d2 0.13): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
 }

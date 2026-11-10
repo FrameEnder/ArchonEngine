@@ -542,14 +542,19 @@ fn enmity_percent(enemy: &NetworkedActor, player: ObjectId) -> u32 {
     }
 }
 
-/// An enemy's list as the EnmityList shows it: the players on it, highest first, as percentages of the top.
-fn target_enmity_list(enemy: &NetworkedActor) -> EnmityList {
+/// An enemy's list as the EnmityList shows it: the players on it and the rest of their party (party bots, Duty Support's
+/// members: `shown`), highest first, as percentages of the top of them. Not NPCs outside the party fighting beside
+/// them: retail's quest battle 61 listed
+/// the player alone, at 100, while the boss was on the gladiator ally (Bob's Chronofoil captures, five runs); Kawari
+/// listed the allies too (Bob's bundle 20261110-122816).
+fn target_enmity_list(enemy: &NetworkedActor, shown: impl Fn(ObjectId) -> bool) -> EnmityList {
     let NetworkedActor::Npc { enmity, .. } = enemy else {
         return EnmityList::default();
     };
-    let top = enmity.values().copied().max().unwrap_or(0);
-    let mut list: Vec<PlayerEnmity> = enmity
-        .iter()
+    let listed: Vec<(&ObjectId, &u32)> = enmity.iter().filter(|(id, _)| shown(**id)).collect();
+    let top = listed.iter().map(|(_, amount)| **amount).max().unwrap_or(0);
+    let mut list: Vec<PlayerEnmity> = listed
+        .into_iter()
         .map(|(actor_id, amount)| PlayerEnmity {
             actor_id: *actor_id,
             enmity: if top == 0 {
@@ -861,7 +866,12 @@ fn server_logic_tick(
                 };
                 let enmity_list = instance
                     .find_actor(actor.get_common_spawn().target_id.object_id)
-                    .map(target_enmity_list)
+                    .map(|enemy| {
+                        target_enmity_list(enemy, |id| {
+                            matches!(instance.find_actor(id), Some(NetworkedActor::Player { .. }))
+                                || instance.party_bots.contains_key(&id)
+                        })
+                    })
                     .unwrap_or_default();
                 enmity_updates.push((*id, hater_list, enmity_list));
 

@@ -138,6 +138,7 @@ BATTLE:onHealth(BNPC_BOSS, 75, function(director) BATTLE:spawn(director, WAVE_1)
 | `enemy(layout, role)` | `group` (a name or a list, e.g. `{ "lostwings", "adds" }`); `attacks`: whom it goes for first (an ally, or the player when `nil`) with `enmity` (300); `passive = true`: no one at first, it waits to be hit (To Guard a Guardian's masked mage); it can have `heals` too (the sincallers heal Quzal). |
 | heals | `{ action, targets (layout IDs, Battle.PLAYER, or "allies" for its whole side), below (%), every (s), say (a function) }`: heals whichever target is lowest under `below`. |
 | `spawn(director, layouts, at)` / `remove(director, layouts)` | Brings NPCs in as their roles say (placement, first target) / takes them out without dying. `at` (`{ x, y, z }`, since 2026-11-07) spawns them there instead of their layout's spot: what quest battle 61's boss turns into, where he stood. A heal rule keeps its own wait, so two NPCs need a table each (QB 60's `enemyHeals()`). |
+| `walk(director, layout, from, legs, release)` | A set route, held (no fighting, Battle leaving it alone) until its end: legs `{ wait = s }` or `{ to = { x, y, z }, speed = yalms/s over the ground }` (`sweep_bnpc` each, queued with `director:delay`), then let go unless `release` is false; returns the seconds it takes. For an entrance retail plays the same way every time where no navmesh path leads (quest battle 61's adds dropping off their ledge). A walker that dies on the way isn't carried on (`sweep.rs`). |
 | `enemy(…, { unaware = true })` / `engage(director, layouts, target, enmity)` | An enemy that doesn't notice anyone on its own (`set_notice(npc, false)` when it spawns) / sends enemies after someone (`nil`, the player) and lets unaware ones notice people again. |
 | `holdBack(layouts)` / `release(director, layouts)` | Keeps allies out of the fight, spawned or not, until released (the tank then goes at once, the others `FOLLOW_DELAY` later): Victory in Peril's allies appear during a cutscene and wait for it to end. |
 | `change(director, name, changes)` | A new context: `changes = { [layout] = { focus = … } }` from now on (the boss gone, someone joining). |
@@ -540,6 +541,10 @@ others 1265 (seen in all 34 quest battles of Bob's captures, levels 6-45). Kawar
   player, 7-10 casts while it was out. Kawari's caught only the player's side, so the boss lost nothing to it, the
   last phase ran longer (14 casts) and the gladiator took 12 of them (3854 of the 6001 he took; 4-5 on retail). An
   NPC's area attack now lands on everyone its battalion is at war with ([combat](combat.md)).
+* **How often each acts** (since 2026-11-10, as quest battle 61's below): every `every` is the seconds out over the
+  uses in the three runs, and the pace three quarters of the seconds over all the rotation's uses. The enemies had
+  acted up to 2.3 times as often as retail's: the marauder's Overpower (1003) every 11.6 s against 26.5, the enemy
+  conjurers' Stone II every 24.8 against 55.5, the boss's Flash every 24.7 against 29.0.
 * **Haurchefant rides in** (all three runs, to a yalm): retail's SpawnNpc had him on mount 10, 4.3-4.4 s after
   sequence 3, where the drop-in puts him; he runs (6 yalms a second, speed byte 60) along his facing to (463.1, 304.3,
   -275.1) in 7.6-7.8 s, turns towards the fight and runs on to (459.5, 304.5, -307.0), getting off his mount on the way
@@ -584,11 +589,29 @@ others 1265 (seen in all 34 quest battles of Bob's captures, levels 6-45). Kawar
   it. The archer's and the conjurer's health at 0: their last words, 87 and 86 (name 2086; the archer fell in every
   run). Lost: the gladiator's health at 0 (his talk 85 and sequence 0xFE at once) or yours (0xFE).
 * The director casts Dragon's Blood (`use_action`, 12.0 s after sequence 4) and does the turning; the boss's timeline
-  (`QB61Boss_1746`) has only his spells (Ruin, Ruin II, Bio, Miasma, Virus, Rotten Meat at 13.4 s); his Eye for an
-  Eye and Rouse went on his own adds, which a timeline can't aim at, so they're left out. The adds' Stone Gaze (499)
+  (`QB61Boss_1746`) has his spells: Ruin and Ruin II (one or the other every 9.6 s), Eye for an Eye (1159) and Rouse
+  (1160) on his adds while they're out (`on_ally` 1748; statuses 185 and 187, scripts since 2026-11-10), Virus once
+  and Bio every 53.6 s (timepoints), Rotten Meat at 13.4 s. Miasma (twice in five runs) is left out. The adds' Stone Gaze (499)
   petrifies (status 1, 9 s) whoever faces it, and a petrified NPC does nothing (`modifiers::INCAPACITATED`).
 * Fixtures: `61.json` (130088ec, won), `61-3c56e09f.json` (won), `61-21f967d2.json` (won), `61-lost-13.json` (the
   gladiator) and `61-lost-15.json` (you), all with held health.
+* **The adds' way down** (since 2026-11-10; Bob's bundle 20261110-122816: Kawari's walked into the cliff under their
+  ledge, stuck 3 yalms inside it, and never reached the fight). Retail, the same in all five runs to a yalm: each
+  stood 5.0-5.4 s where it appeared; 4256796, 4256798 and the last add walked (2.7-2.8 yalms a second) to the ledge's
+  edge at (-907.4, 246.2, -18.2) and dropped 15 yalms to the arena in 1.56 s, landing 9.2-10.8 s after they
+  appeared; 4256797 walked (2.0 a second) to the ledge's front, (-899.1, 243.9, -25.9), by 9.1 s and fought from there
+  (it hit the archer 13.9 yalms off and 12 below), then took the edge at 34-39 s (36.4, median) and dropped. The
+  wyvern stood 5.2-5.6 s before it set off. `Battle:walk` plays each route (`ADD_ROUTES`; 4256797's reach 15 yalms
+  while it's up there). Simulated: 4256796 lands 9.97 s after appearing (retail 9.73-10.01), 4256798 10.72 (10.49-10.77),
+  4256797 at the front at 9.08 and down at 37.45.
+* **How often each acts** (since 2026-11-10). The timelines had each action's `every` (and the `pace`) as the median
+  gap between two of its uses, which counts only the closest ones: the archer ally's Quick Nock "every 4.6 s" (16 in
+  Kawari's 99 s) against 13 in 318 s on retail, the boss's Ruin II every 9.9 s with Ruin never (the rotation took
+  the first ready), the adds' Overpower every 19.2 s against 21.4. Each `every` is now the seconds the NPC was out
+  and fighting over its uses (all five runs), and the pace three quarters of the seconds over all its rotation's
+  uses, so each comes about as often as on retail.
+* The gladiator doesn't `protect` (no target but the boss, what he turned into and the last add in any run); the
+  archer goes for 4256796 first, then 4256797 (all five runs).
 
 ### Quest battle 75 — Seer Folly (`content/questbattle/75.lua`)
 

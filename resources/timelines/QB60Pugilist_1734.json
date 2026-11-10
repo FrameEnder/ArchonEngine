@@ -14,14 +14,15 @@
         }
     },
     "rotation": {
-        "pace": 25.1,
+        "pace": 32.9,
         "actions": [
             {
                 "action": 865,
-                "every": 25.1,
-                "comment": "2 uses by 2; every 25.1 s"
+                "every": 43.8,
+                "comment": "2 uses in 88 s out, 3 runs: one every 43.8 s (rate)"
             }
-        ]
+        ],
+        "comment": "2 of these in 88 s out: one every 43.8 s; the pace is three quarters of that, so each comes about as often as its own `every` (rate)"
     },
     "timepoints": [
         {

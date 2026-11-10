@@ -24,20 +24,21 @@
         "actions": [
             {
                 "action": 127,
-                "every": 13.2,
-                "comment": "35 uses by 3 (5.6-59.3 s apart); every 13.2 s"
+                "every": 17.9,
+                "comment": "35 uses in 626 s out, 3 runs: one every 17.9 s (rate)"
             },
             {
                 "action": 119,
-                "every": 15.8,
-                "comment": "19 uses by 3 (5.6-59.3 s apart); every 15.8 s"
+                "every": 32.9,
+                "comment": "19 uses in 626 s out, 3 runs: one every 32.9 s (rate)"
             },
             {
                 "action": 121,
-                "every": 36.0,
-                "comment": "8 uses by 3 (4.8-56.9 s apart); every 36.0 s"
+                "every": 78.2,
+                "comment": "8 uses in 626 s out, 3 runs: one every 78.2 s (rate)"
             }
-        ]
+        ],
+        "comment": "62 of these in 626 s out: one every 10.1 s; the pace is three quarters of that, so each comes about as often as its own `every` (rate)"
     },
     "timepoints": [
         {

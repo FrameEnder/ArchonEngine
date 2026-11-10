@@ -20,24 +20,25 @@
         }
     },
     "rotation": {
-        "pace": 13.0,
+        "pace": 8.1,
         "actions": [
             {
                 "action": 127,
-                "every": 13.0,
-                "comment": "48 uses by 5 (5.4-98.4 s apart); every 13.0 s"
+                "every": 21.2,
+                "comment": "48 uses in 1017 s out, 5 runs: one every 21.2 s (rate)"
             },
             {
                 "action": 121,
-                "every": 19.8,
-                "comment": "28 uses by 5 (4.6-92.1 s apart); every 19.8 s"
+                "every": 36.3,
+                "comment": "28 uses in 1017 s out, 5 runs: one every 36.3 s (rate)"
             },
             {
                 "action": 119,
-                "every": 25.1,
-                "comment": "18 uses by 5 (10.2-143.6 s apart); every 25.1 s"
+                "every": 56.5,
+                "comment": "18 uses in 1017 s out, 5 runs: one every 56.5 s (rate)"
             }
-        ]
+        ],
+        "comment": "94 of these in 1017 s out: one every 10.8 s; the pace is three quarters of that, so each comes about as often as its own `every` (rate)"
     },
     "timepoints": [
         {

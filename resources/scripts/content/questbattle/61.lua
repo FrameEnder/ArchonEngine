@@ -103,7 +103,9 @@ ACTION_CURE_II = 135
 BATTLE = Battle.new()
 -- On retail the gladiator stayed on the boss, then what he turned into, then the last add; the conjurer the same,
 -- taking the wyvern a while; the archer the boss, then the adds as they came, until he fell (every run.)
-BATTLE:ally(BNPC_GLADIATOR, { role = "tank", focus = { "boss", "turned", "last" }, order = "oldest" })
+-- He never took an enemy off you or the others (no target but those three in any run), so no `protect`: pulling one
+-- every 10 s, as Battle's tanks do, drew the adds onto him.
+BATTLE:ally(BNPC_GLADIATOR, { role = "tank", focus = { "boss", "turned", "last" }, order = "oldest", protect = false })
 BATTLE:ally(BNPC_CONJURER, {
     role = "dps",
     focus = { "boss", "turned", "wyvern", "last", "adds" },
@@ -115,15 +117,68 @@ BATTLE:ally(BNPC_CONJURER, {
         { action = ACTION_CURE, targets = { BNPC_GLADIATOR, Battle.PLAYER, "self" }, below = 42, every = 12.0 },
     },
 })
-BATTLE:ally(BNPC_ARCHER, { role = "dps", focus = { "adds", "boss" }, order = "oldest", range = 15 })
--- Whom each went for first on retail (nil: you.)
+-- The archer went for 4256796 as the adds came (all five runs, 0.4-1.2 s after they appeared), then 4256797.
+BATTLE:ally(BNPC_ARCHER, { role = "dps", focus = { "add96", "add97", "adds", "boss" }, order = "oldest", range = 15 })
+-- Whom each went for first on retail (nil: you; the White Mage's run, 21f967d2, and three of the other four.)
 BATTLE:enemy(BNPC_BOSS, { group = "boss", attacks = BNPC_GLADIATOR })
 BATTLE:enemy(4256798, { group = "adds", attacks = nil })
-BATTLE:enemy(4256797, { group = "adds", attacks = BNPC_ARCHER })
-BATTLE:enemy(4256796, { group = "adds", attacks = BNPC_CONJURER })
+BATTLE:enemy(4256797, { group = { "add97", "adds" }, attacks = BNPC_ARCHER })
+BATTLE:enemy(4256796, { group = { "add96", "adds" }, attacks = BNPC_CONJURER })
 BATTLE:enemy(BNPC_TURNED, { group = "turned", attacks = nil })
 BATTLE:enemy(BNPC_WYVERN, { group = "wyvern", attacks = BNPC_CONJURER })
 BATTLE:enemy(BNPC_LAST_ADD, { group = "last", attacks = BNPC_CONJURER })
+
+-- The adds' way down (all five runs, to a yalm; Kawari's walked into the cliff below their ledge and stayed there,
+-- Bob's bundle 20261110-122816): each stood 5.0-5.4 s where it appeared, then 4256796, 4256798 and the last add
+-- (4292887) walked to the ledge's edge (2.7-2.8 yalms a second) and dropped 15 yalms to the arena in 1.56 s, landing
+-- 8.4-10.8 s after they appeared. 4256797 walked (2.0 a second) to the front of the ledge by 9.1 s and fought from
+-- there, 14 yalms above and away from the archer it hit, then took the edge at 34-39 s (36.4, median) and dropped.
+-- The wyvern stood 5.2-5.6 s where it appeared (5.4, median) before it set off for the arena. Times from the
+-- appearance; spots and heights retail's.
+ADD_ROUTES = {
+    [BNPC_WYVERN] = { legs = { { wait = 5.4 } } },
+    [4256796] = {
+        from = { x = -909.83, y = 247.17, z = -26.83 },
+        legs = {
+            { wait = 5.2 },
+            { to = { x = -907.38, y = 246.2, z = -18.2 }, speed = 2.8 },
+            { to = { x = -906.6, y = 231.72, z = -17.2 }, speed = 0.81 },
+        },
+    },
+    [4256798] = {
+        from = { x = -915.29, y = 248.38, z = -25.96 },
+        legs = {
+            { wait = 5.05 },
+            { to = { x = -907.38, y = 246.17, z = -18.2 }, speed = 2.7 },
+            { to = { x = -906.77, y = 231.6, z = -17.0 }, speed = 0.86 },
+        },
+    },
+    [BNPC_LAST_ADD] = {
+        from = { x = -911.8, y = 248.04, z = -23.6 },
+        legs = {
+            { wait = 5.1 },
+            { to = { x = -907.35, y = 246.17, z = -18.2 }, speed = 2.7 },
+            { to = { x = -906.74, y = 231.71, z = -16.95 }, speed = 0.89 },
+        },
+    },
+    [4256797] = {
+        from = { x = -907.2, y = 246.76, z = -24.85 },
+        legs = {
+            { wait = 5.0 },
+            { to = { x = -899.11, y = 243.85, z = -25.89 }, speed = 2.0 },
+        },
+    },
+}
+ADD97_LEDGE = { x = -899.11, y = 243.85, z = -25.89 }
+ADD97_DROPS = {
+    { to = { x = -898.95, y = 243.64, z = -19.97 }, speed = 2.7 },
+    { to = { x = -898.41, y = 231.1, z = -18.45 }, speed = 1.28 },
+}
+-- From its appearance to setting off for the edge (36.4 s at the edge, less the 2.2 s walk there), in updates.
+ADD97_DROPS_AFTER = 68
+-- How far it reaches from the ledge (it hit the archer 13.9 yalms off), and its usual reach once down (melee.)
+ADD97_LEDGE_REACH = 15
+MELEE_REACH = 5
 
 local over = false
 local fail_in = nil
@@ -168,6 +223,29 @@ function bringOut(director, layouts, at)
         end
     end
     BATTLE:spawn(director, layouts, at)
+    for _, layout in ipairs(layouts) do
+        local route = ADD_ROUTES[layout]
+        if route ~= nil then
+            local took = BATTLE:walk(director, layout, route.from, route.legs)
+            if layout == 4256797 then
+                -- It fights from the ledge until it drops.
+                director:delay(took)
+                director:set_attack_range(layout, ADD97_LEDGE_REACH)
+                director:delay(0)
+                after(ADD97_DROPS_AFTER, add97Drops)
+            end
+        end
+    end
+end
+
+function add97Drops(director)
+    if not BATTLE.alive[4256797] then
+        return
+    end
+    local took = BATTLE:walk(director, 4256797, ADD97_LEDGE, ADD97_DROPS)
+    director:delay(took)
+    director:set_attack_range(4256797, MELEE_REACH)
+    director:delay(0)
 end
 
 function onSetup(director)

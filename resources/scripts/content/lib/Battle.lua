@@ -553,6 +553,35 @@ function Battle:provoke(director, tank, enemy, action)
     director:set_hate(enemy, tank, self.tank_priority)
 end
 
+-- Walks an NPC along a set route, held (not fighting, Battle leaving it alone) until the route's end, then lets it go
+-- (unless `release` is false.) For an entrance retail plays the same way every time where the navmesh doesn't lead:
+-- quest battle 61's adds stood about 5 s where they appeared, walked to the edge of their ledge and dropped 15 yalms
+-- to the arena (five runs, to a yalm), a drop no navmesh path takes. `from` is where it stands as the route begins;
+-- each leg is { wait = seconds } or { to = { x, y, z }, speed = yalms a second over the ground } (a drop is a leg
+-- whose speed covers the little ground it crosses as it falls, `director:sweep_bnpc` going straight from the one
+-- height to the other.) Returns how many seconds it takes.
+function Battle:walk(director, layout, from, legs, release)
+    director:hold_bnpc(layout)
+    local t, at = 0, from
+    for _, leg in ipairs(legs) do
+        if leg.wait ~= nil then
+            t = t + leg.wait
+        else
+            director:delay(t)
+            director:sweep_bnpc(layout, leg.to.x, leg.to.y, leg.to.z, leg.speed)
+            local dx, dz = leg.to.x - at.x, leg.to.z - at.z
+            t = t + math.sqrt(dx * dx + dz * dz) / leg.speed
+            at = leg.to
+        end
+    end
+    if release ~= false then
+        director:delay(t)
+        director:hold_bnpc(layout, false)
+    end
+    director:delay(0)
+    return t
+end
+
 -- A support's buffs ({ action, every (s) } each): on the DPS first, then the tank, one after another.
 function Battle:runBuffs(director)
     for layout, role in pairs(self.roles) do

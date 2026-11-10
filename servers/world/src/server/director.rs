@@ -3444,6 +3444,12 @@ pub fn director_tick(
                     tracing::warn!("Failed to find bnpc {who} to sweep!");
                     continue;
                 };
+                // A dead one isn't swept (a route's later leg, queued before it fell: `Battle:walk`.)
+                if instance.find_actor(walker).is_some_and(|actor| {
+                    actor.get_common_spawn().mode == kawari::common::CharacterMode::Dead
+                }) {
+                    continue;
+                }
                 let helper = match helper {
                     Some(helper) => {
                         let found = resolve_bnpc(instance, *helper);

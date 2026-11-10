@@ -1066,8 +1066,18 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   Blood is the director's, 12.0 s after sequence 4 (retail's 11.1-13.0 in five runs); whether something else timed it
   isn't known. The boss's adds of sequence 3 needn't be down for sequence 4 (one was still up in the third character's
   run, 21f967d2).
-  The boss's Eye for an Eye and Rouse (on his own adds) and the allies' Stoneskin are left out: a timeline can't aim
-  at its own side. Bio's damage over time isn't scripted (only its status).
+  The allies' Stoneskin (129) is left out; Bio's damage over time isn't scripted (only its status), nor what Eye for an
+  Eye and Rouse do (their statuses, 20 s, a guess). The adds' routes down (2026-11-10) are untested in game: they're
+  straight lines (`sweep_bnpc`), so the client may show them walking through the air on the drop, and where they land
+  has to be on the arena's navmesh for them to fight on. 4256797 fights from its ledge with a 15-yalm reach; if its
+  target moves further it walks off towards it and into the cliff as before. The archer ally's 18190 (six uses in
+  five runs) isn't in its timeline.
+* **Timelines whose `every` is the median gap between uses** (2026-11-10): QB60's and QB61's are now rates (uses over
+  the seconds out, [Quest battles](quest-battles.md#quest-battle-61--the-heretic-among-us-contentquestbattle61lua)),
+  but 41 more written the same way overstate how often their NPCs act (most by 1.2-2.5 times: QB60's marauder used
+  Overpower every 11.6 s against retail's 26.5): ByTheLightsOfIshgard_46, ClsGla250Enemy_1243, ClsGla300*, EyesOnMe_1902,
+  FactualFolklore_2196, QB20*, QB21*, QB23*, RoadToRedemption_1904, StoneVigilBoss1_1461, StoneVigilTrash_1462-1466,
+  TheUnendingWar_724 and 725, ThreeForThree_726. Their captures are needed to redo them.
 * **Field enemies' timelines of 2026-11-06** (724, 725, 726, 1902, 1904, 2196, 46): from the quests' fights alone (two
   runs each, four for 2196); base 46 and 724-726 live elsewhere in the world too, where these timelines now apply.
 
