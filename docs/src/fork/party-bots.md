@@ -467,6 +467,12 @@ Every server tick (500 ms), before NPCs move, `party_bot::update` tells each bot
   weaponskills re-applied 2 s before they wear off (the duration in their script); and its filler: the highest level
   combo starter, or its strongest plain weaponskill or spell (the potency in its script), so Stone II replaces Stone.
   Single-target attacks only. Melee bots auto-attack (870), physical ranged ones too (872); casters don't.
+  **A combo step gets its combo potency** as a player's does, when the GCD action before it was the step it follows
+  within 15 s (`RotationState::continues_combo`; since 2026-11-10). Before, a bot's combos were never in combo: Riot
+  Blade, Rage of Halone and Disembowel always hit for their lower potency (135, 79 and 126 where Fast Blade did 119 and
+  True Thrust 153), and the bots dealt 31-45 a second in the Stone Vigil where retail's Duty Support members dealt
+  45-75 (capture 1cefedf4) and its Duty Finder players 56-180 (341808b0), so pulls lasted far longer and the tank and
+  the healer's MP took the difference (Bob's bundle 20261110-134659).
 
 ## Glamours
 

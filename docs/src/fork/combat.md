@@ -118,7 +118,11 @@ Applied after an action's script returns, by the server, so scripts only give th
   −15 %, Vengeance 89 −30 %, Temperance 1872 −10 %, Trick Attack 3254 +10 %; Hallowed Ground 82 turns hits into
   "Invulnerable", Holmgang 409 keeps HP at 1 or more; healing received Mantra 102 +10 %, Thrill of Battle 87 +20 %,
   Rampart +15 %.
-* **Tank Mastery:** Gladiators, Marauders and their jobs (and DRK/GNB) take 20 % less from enemies.
+* **Tank Mastery:** Gladiators, Marauders and their jobs (and DRK/GNB) take 20 % less from enemies. Their heavier armour takes
+  a further 17 % off (`TANK_ARMOUR`, 0.83, since 2026-11-10): the amounts Kawari has for enemies' hits on players were
+  recorded on Bob's casters and healers, and in the Stone Vigil his Paladin (42, capture 341808b0) took a median 0.67
+  of what his Arcanist (41, capture 1cefedf4) took from the same actions (0.49-0.78, ten actions), Tank Mastery's 0.8
+  times 0.83. With Tank Mastery alone the party bots' tank took 1.2 times retail's (Bob's bundle 20261110-134659).
 * **Enemy hits on players** keep their own variance and criticals (`roll_npc_hit`), then get the enemy's debuffs and the
   player's defences above.
 * **Crowd control:** Stun (2) and Sleep (3) stop an enemy completely, Bind (13) keeps it in place; Sleep ends when it's

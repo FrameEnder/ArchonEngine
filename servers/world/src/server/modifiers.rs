@@ -68,6 +68,12 @@ const HEALING_RECEIVED: &[(u16, f32)] = &[
 /// GNB.)
 const TANKS: &[u8] = &[1, 3, 19, 21, 32, 37];
 const TANK_MASTERY: f32 = 0.80;
+/// What a tank's heavier armour takes off an enemy's hit besides Tank Mastery, against the amounts Kawari has: those
+/// were recorded on Bob's casters and healers (`Timeline::recorded_amounts`' `players`, and `npc_damage_scale`'s fit).
+/// The Stone Vigil's actions that hit both his tank (a Paladin at 42, capture 341808b0) and his Arcanist (41, capture
+/// 1cefedf4) did a median 0.67 as much to the tank (0.49-0.78, ten actions): Tank Mastery's 0.8 times this. With
+/// Tank Mastery alone the party bots' tank took 1.2 times what retail's did (Bob's bundle 20261110-134659).
+const TANK_ARMOUR: f32 = 0.83;
 
 fn is_physical(damage_type: DamageType) -> bool {
     !matches!(
@@ -259,9 +265,15 @@ pub fn apply_hit_on_player(
                 effect.0 = TargetEffectKind::Invincible;
                 continue;
             }
+            let armour = if TANKS.contains(&player_classjob) {
+                TANK_ARMOUR
+            } else {
+                1.0
+            };
             let damage = *amount as f32
                 * damage_dealt_multiplier(enemy_statuses, *damage_type)
-                * damage_taken_multiplier(player_statuses, player_classjob, true);
+                * damage_taken_multiplier(player_statuses, player_classjob, true)
+                * armour;
             *amount = damage.round().clamp(1.0, u16::MAX as f32) as u16;
         }
     }
@@ -369,9 +381,9 @@ mod tests {
     #[test]
     fn tanks_and_defences() {
         let mut effects = [damage(1000, DamageType::Slashing)];
-        // A Paladin under Rampart.
+        // A Paladin under Rampart: Tank Mastery, Rampart and the armour (0.8 x 0.8 x 0.83.)
         apply_hit_on_player(&mut effects, &[], &[1191], 19);
-        assert_eq!(amount(&effects[0]), 640);
+        assert_eq!(amount(&effects[0]), 531);
 
         let mut effects = [damage(1000, DamageType::Slashing)];
         apply_hit_on_player(&mut effects, &[], &[82], 19);

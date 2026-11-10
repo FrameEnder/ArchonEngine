@@ -150,6 +150,10 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   spawned as retail's chocobo companions are (for their nameplates' names): whether the client treats them as your
   chocobo anywhere else (the companion's bar, its commands) hasn't been checked. They run at NPCs' speed (6 yalms a
   second), so they fall behind when you sprint or ride.
+* Bots still deal less than retail's Duty Support members (2026-11-10, the Stone Vigil): their combos now count, but
+  their rotations are a heuristic. The Thaumaturge only casts Fire III (retail's member cast its own Blizzard-and-DoT
+  kit, 75 a second); the Lancer's highest-level step after True Thrust is Disembowel, so it never uses Vorpal and Full
+  Thrust; nobody uses their damage cooldowns. Pulls last longer, so the tank takes more and the healer spends more.
 
 ## Quests
 

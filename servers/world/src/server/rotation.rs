@@ -33,6 +33,8 @@ pub struct ActionMechanics {
 pub struct RotationState {
     /// Its last GCD action and when.
     last_gcd: Option<(u32, Instant)>,
+    /// The GCD action before that one and when: what the last one continues in a combo (`continues_combo`.)
+    previous_gcd: Option<(u32, Instant)>,
     /// When each action was last used.
     used: HashMap<u32, Instant>,
     /// When each action was last used on each target (for `refresh`.)
@@ -163,6 +165,17 @@ impl RotationState {
         None
     }
 
+    /// Whether its last GCD action, `action`, carries on a combo from `combo_from` (the step before it, within
+    /// `COMBO_WINDOW`), so it gets the step's combo potency as a player's would. The choice is noted (`record`) before
+    /// the action goes off, so the step before is the GCD before the last.
+    pub fn continues_combo(&self, action: u32, combo_from: u32, now: Instant) -> bool {
+        combo_from != 0
+            && self.last_gcd.is_some_and(|(last, _)| last == action)
+            && self.previous_gcd.is_some_and(|(previous, at)| {
+                previous == combo_from && now.duration_since(at) <= COMBO_WINDOW
+            })
+    }
+
     /// Notes that `action` was used on `target`.
     pub fn record(
         &mut self,
@@ -176,6 +189,7 @@ impl RotationState {
         self.used_on.insert((action, target), now);
         let gcd = mechanics.is_some_and(|m| m.gcd);
         if gcd {
+            self.previous_gcd = self.last_gcd;
             self.last_gcd = Some((action, now));
             self.weaved = false;
             if self.next == Some(action) {
@@ -320,6 +334,56 @@ mod tests {
                 assert!(mechanics(used[i - 1].1).unwrap().gcd);
             }
         }
+    }
+
+    #[test]
+    fn a_combo_step_knows_it_continues_one() {
+        let rotation = lancer();
+        let start = Instant::now();
+        let mut state = RotationState::default();
+        state.record(
+            &rotation,
+            TRUE_THRUST,
+            ObjectId(1),
+            start,
+            mechanics(TRUE_THRUST),
+        );
+        assert!(!state.continues_combo(TRUE_THRUST, 0, start));
+        let later = start + Duration::from_secs(3);
+        // An ability between doesn't break it.
+        state.record(
+            &rotation,
+            LIFE_SURGE,
+            ObjectId(1),
+            later,
+            mechanics(LIFE_SURGE),
+        );
+        state.record(
+            &rotation,
+            VORPAL_THRUST,
+            ObjectId(1),
+            later,
+            mechanics(VORPAL_THRUST),
+        );
+        assert!(state.continues_combo(VORPAL_THRUST, TRUE_THRUST, later));
+        // Too long after its step, it doesn't.
+        let mut late = RotationState::default();
+        late.record(
+            &rotation,
+            TRUE_THRUST,
+            ObjectId(1),
+            start,
+            mechanics(TRUE_THRUST),
+        );
+        let much_later = start + COMBO_WINDOW + Duration::from_secs(1);
+        late.record(
+            &rotation,
+            VORPAL_THRUST,
+            ObjectId(1),
+            much_later,
+            mechanics(VORPAL_THRUST),
+        );
+        assert!(!late.continues_combo(VORPAL_THRUST, TRUE_THRUST, much_later));
     }
 
     #[test]

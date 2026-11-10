@@ -967,14 +967,25 @@ pub fn execute_action(
             return;
         };
 
-        if let NetworkedActor::Player {
-            last_combo_action, ..
-        } = actor
-        {
-            in_combo = combo_action_id == *last_combo_action;
-        } else {
-            in_combo = false;
-        }
+        // A party bot's combo steps count as a player's: they never did, so its Riot Blade, Rage of Halone and
+        // Disembowel always hit for their potency out of combo (135, 79 and 126 where Fast Blade did 119 and True
+        // Thrust 153, Bob's bundle 20261110-134659), and the bots dealt 31-45 a second where retail's Duty Support
+        // members dealt 45-75 (Chronofoil capture 1cefedf4).
+        in_combo = match actor {
+            NetworkedActor::Player {
+                last_combo_action, ..
+            } => combo_action_id == *last_combo_action,
+            NetworkedActor::Npc { rotation_state, .. }
+                if instance.party_bots.contains_key(&from_actor_id) =>
+            {
+                rotation_state.continues_combo(
+                    request.action_id,
+                    combo_action_id as u32,
+                    Instant::now(),
+                )
+            }
+            _ => false,
+        };
     }
 
     let mut effects_builder;
