@@ -844,8 +844,9 @@ pub fn npc_behavior(
                 continue;
             }
 
-            // Stunned or asleep: it does nothing at all until that wears off (or, asleep, it's hit.)
-            if modifiers::is_incapacitated(status_effects) {
+            // Stunned or asleep: it does nothing at all until that wears off (or, asleep, it's hit); a party bot just
+            // raised neither (`modifiers::waits`.)
+            if modifiers::waits(status_effects) {
                 continue;
             }
 

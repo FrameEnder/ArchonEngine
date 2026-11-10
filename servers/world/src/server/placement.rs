@@ -22,6 +22,10 @@ pub struct Placement {
     /// A tank: stand on the far side of its own target from these (the party), this many yalms off it, so the
     /// enemy faces away from them and its cones and cleaves miss them.
     pub opposite: Option<(Vec<ObjectId>, f32)>,
+    /// A spot of its own in a boss fight (`boss_fight_spot`): it goes there and stays, whoever else moves, and its
+    /// chases stop there too. Its party bot keeps it while its target is in reach from it (`keeps_spot`) and picks
+    /// another when not.
+    pub hold: Option<Vec3A>,
 }
 
 /// A tank moves round to the far side only when the party is less than this far round from it (degrees, seen from
@@ -37,7 +41,10 @@ pub const RETURN_MARGIN: f32 = 3.0;
 
 impl Placement {
     pub fn is_empty(&self) -> bool {
-        self.anchors.is_empty() && self.behind.is_none() && self.opposite.is_none()
+        self.anchors.is_empty()
+            && self.behind.is_none()
+            && self.opposite.is_none()
+            && self.hold.is_none()
     }
 
     /// A tank's spot across its target (at `target`) from the party, if it isn't far enough round already.
@@ -105,6 +112,9 @@ impl Placement {
             .iter()
             .filter_map(|anchor| positions.get(anchor).copied())
             .collect();
+        if let Some(spot) = self.hold {
+            return spot;
+        }
         if anchors.is_empty() || self.within <= 0.0 {
             return target;
         }
@@ -130,6 +140,9 @@ impl Placement {
         own_target: Option<Vec3A>,
         reach: f32,
     ) -> Option<Vec3A> {
+        if let Some(spot) = self.hold {
+            return (flat(at, spot) > SPOT_TOLERANCE).then_some(spot);
+        }
         let anchors: Vec<Vec3A> = self
             .anchors
             .iter()
@@ -168,6 +181,47 @@ impl Placement {
         let in_reach = own_target.is_none_or(|target| Vec3A::distance(spot, target) <= reach);
         (keeps_near && in_reach && Vec3A::distance(at, spot) > SPOT_TOLERANCE).then_some(spot)
     }
+}
+
+/// Across the ground only.
+fn flat(a: Vec3A, b: Vec3A) -> f32 {
+    Vec3A::new(a.x - b.x, 0.0, a.z - b.z).length()
+}
+
+/// Where a party member stands to fight a boss in a boss fight: `beyond` yalms off the edge of what it fights (at
+/// `target`, its hitbox `hitbox`, facing `facing`), `angle` degrees round from where that faces (0 in front, 180
+/// behind), or the nearest that's `walkable` (round to either side by 20 degrees at a time, then nearer.) Retail's
+/// party in Bob's Chronofoil captures (129 boss fights in ten dungeons and trials, a sample a second): ranged and
+/// healers stood 9.5-11 yalms from the boss's middle (the median; 6-14 the middle half), off to its sides (the median
+/// 90-115 degrees from its facing), melee 4-6 yalms, round its back flanks (players 125 degrees).
+pub fn boss_fight_spot(
+    target: Vec3A,
+    facing: f32,
+    hitbox: f32,
+    angle: f32,
+    beyond: f32,
+    walkable: impl Fn(Vec3A) -> bool,
+) -> Option<Vec3A> {
+    for nearer in [1.0, 0.6] {
+        for turn in [0.0, 20.0, -20.0, 40.0, -40.0, 60.0, -60.0, 80.0, -80.0] {
+            let round = facing + (angle + turn).to_radians();
+            let distance = hitbox + beyond * nearer;
+            let spot = target + Vec3A::new(round.sin(), 0.0, round.cos()) * distance;
+            if walkable(spot) {
+                return Some(spot);
+            }
+        }
+    }
+    None
+}
+
+/// Whether a boss-fight spot (`boss_fight_spot`) still does: what it fights (at `target`) is no nearer than its own
+/// edge and no further than `keep` yalms off, and in its reach (`reach`, from its middle) from there. Retail's ranged
+/// and healers stood still three-quarters of a boss fight, and still half of the seconds the boss moved (Bob's
+/// captures: they stepped out of attacks, but didn't walk after the boss as it was turned.)
+pub fn keeps_spot(spot: Vec3A, target: Vec3A, hitbox: f32, keep: f32, reach: f32) -> bool {
+    let distance = flat(spot, target);
+    distance >= hitbox * 0.5 && distance <= (hitbox + keep).min(reach)
 }
 
 #[cfg(test)]
@@ -278,5 +332,69 @@ mod tests {
             both.goal(Vec3A::new(2.0, 0.0, 0.0), &positions, &targets, None, 15.0),
             None
         );
+    }
+
+    /// A spot of its own: it goes there and stays, whatever its anchors, and its chases stop there.
+    #[test]
+    fn holding_a_spot() {
+        let (positions, targets) = world();
+        let spot = Vec3A::new(5.0, 0.0, 10.0);
+        let placement = Placement {
+            hold: Some(spot),
+            anchors: vec![PLAYER],
+            within: 1.0,
+            ..Default::default()
+        };
+        assert!(!placement.is_empty());
+        let far = Vec3A::new(20.0, 0.0, 0.0);
+        assert_eq!(
+            placement.goal(far, &positions, &targets, None, 15.0),
+            Some(spot)
+        );
+        assert_eq!(placement.goal(spot, &positions, &targets, None, 15.0), None);
+        assert_eq!(placement.chase_goal(far, &positions), spot);
+    }
+
+    /// Off to the boss's side, beyond its edge; round further where that isn't walkable; kept while the boss is in
+    /// reach and not too far, given up when it isn't.
+    #[test]
+    fn a_spot_round_the_boss() {
+        let boss = Vec3A::new(0.0, 0.0, 0.0);
+        // Facing +z (rotation 0): 90 degrees round is +x.
+        let spot = boss_fight_spot(boss, 0.0, 3.5, 90.0, 6.0, |_| true).unwrap();
+        assert!((spot.x - 9.5).abs() < 0.01 && spot.z.abs() < 0.01, "{spot}");
+        // +x not walkable: the next round is 20 degrees further.
+        let spot = boss_fight_spot(boss, 0.0, 3.5, 90.0, 6.0, |at| at.z.abs() > 1.0).unwrap();
+        assert!(
+            (flat(spot, boss) - 9.5).abs() < 0.01 && spot.z.abs() > 1.0,
+            "{spot}"
+        );
+        assert!(boss_fight_spot(boss, 0.0, 3.5, 90.0, 6.0, |_| false).is_none());
+
+        let spot = Vec3A::new(9.5, 0.0, 0.0);
+        assert!(keeps_spot(spot, boss, 3.5, 12.0, 18.5));
+        // The boss turned and stepped a few yalms: kept.
+        assert!(keeps_spot(
+            spot,
+            Vec3A::new(-3.0, 0.0, 4.0),
+            3.5,
+            12.0,
+            18.5
+        ));
+        // Dragged off beyond `keep`, or onto the spot: a new one.
+        assert!(!keeps_spot(
+            spot,
+            Vec3A::new(-9.0, 0.0, 0.0),
+            3.5,
+            12.0,
+            18.5
+        ));
+        assert!(!keeps_spot(
+            spot,
+            Vec3A::new(9.0, 0.0, 0.0),
+            3.5,
+            12.0,
+            18.5
+        ));
     }
 }

@@ -65,7 +65,7 @@ use crate::{
         network::{DestinationNetwork, NetworkState},
         npc_behavior::{BEHAVIOR_TICK_SECONDS, NPC_RUN_SPEED, npc_use_action},
         party_npc,
-        placement::Placement,
+        placement::{self, Placement},
     },
     zone_connection::BaseParameters,
 };
@@ -233,6 +233,8 @@ pub struct PartyBot {
     /// One the Duty Finder added to fill a place (`fill_duty_party`): it stays in the duty when its leader goes, as a
     /// matched stranger does, where a bot of the leader's own party goes with them (`pack_for_travel`.)
     pub duty_filled: bool,
+    /// Its spot in a boss fight (`placement::boss_fight_spot`), kept while what it fights is in reach from it.
+    pub boss_spot: Option<Vec3A>,
 }
 
 impl PartyBot {
@@ -283,6 +285,7 @@ impl PartyBot {
             brace_ready: HashMap::new(),
             look_kind: BotLook::PartyMember,
             duty_filled: false,
+            boss_spot: None,
         }
     }
 }
@@ -372,6 +375,30 @@ fn instance_navmesh_path(navmesh: &crate::navmesh::Navmesh, from: Vec3A, to: Vec
         return vec![to];
     }
     navmesh.calculate_path(from, to, f32::INFINITY)
+}
+
+/// Boss fights (`boss_fight`, `placement::boss_fight_spot`): how far beyond the edge of what it fights a ranged bot or
+/// healer stands (melee: `MELEE_BEHIND`), how much further it lets that get before it takes a new spot, and how far
+/// round from where that faces (degrees; the first of a kind, the next, the third), from retail's party in Bob's
+/// captures: ranged and healers 9.5-11 yalms from the boss's middle and 90-115 degrees round (the medians), the middle
+/// half 6-14 yalms; melee players 125 degrees round. Healers and ranged on opposite sides, so one attack on a side
+/// catches no more than one of them.
+const BOSS_SPOT_RANGED: f32 = 6.0;
+const BOSS_SPOT_SLACK: f32 = 6.0;
+const BOSS_ANGLES_HEALER: [f32; 3] = [-100.0, -130.0, -70.0];
+const BOSS_ANGLES_RANGED: [f32; 3] = [100.0, 130.0, 70.0];
+const BOSS_ANGLES_MELEE: [f32; 3] = [135.0, -135.0, 160.0];
+const BOSS_KIND_HEALER: usize = 0;
+const BOSS_KIND_RANGED: usize = 1;
+const BOSS_KIND_MELEE: usize = 2;
+
+/// Which kind of spot a bot takes in a boss fight (its tank, which holds the boss, takes none.)
+fn boss_spot_kind(bot: &PartyBot) -> usize {
+    match bot.role {
+        BotRole::Healer => BOSS_KIND_HEALER,
+        _ if bot.attack_range > MELEE_RANGE => BOSS_KIND_RANGED,
+        _ => BOSS_KIND_MELEE,
+    }
 }
 
 /// A bot this close to its formation spot is there.
@@ -1844,6 +1871,7 @@ fn spawn_bot(
             brace_ready: HashMap::new(),
             look_kind: shown_look,
             duty_filled: false,
+            boss_spot: None,
         },
     );
 
@@ -2724,6 +2752,33 @@ struct Engaged {
     after: Option<ObjectId>,
     /// Its hitbox radius (its timeline's): how far from its middle its edge is.
     hitbox: f32,
+    /// Which way it faces (a boss fight's spots are round from there.)
+    rotation: f32,
+}
+
+/// Whether the party is in a boss fight: a boss its duty's director is fighting (`DirectorData::bosses_fought`, from
+/// its pull until it falls) is after one of them, or it's a trial, all of which is one. Until it's over the bots
+/// fight from spots of their own (`boss_fight_spot`) rather than keeping near the one they follow.
+fn boss_fight(
+    instance: &mut Instance,
+    game_data: &Arc<Mutex<GameData>>,
+    engaged: &[Engaged],
+) -> bool {
+    if engaged.is_empty() {
+        return false;
+    }
+    let fought: Vec<ObjectId> = instance
+        .directors
+        .iter()
+        .flat_map(|director| director.bosses_fought())
+        .collect();
+    if engaged.iter().any(|enemy| fought.contains(&enemy.id)) {
+        return true;
+    }
+    let content = instance.content_finder_condition_id;
+    *instance
+        .trial
+        .get_or_insert_with(|| content != 0 && game_data.lock().content_is_trial(content))
 }
 
 /// Tells every bot in this instance what to do this tick (see the module's description.)
@@ -2786,7 +2841,7 @@ const GET_UP_AFTER: Duration = Duration::from_secs(30);
 const STATUS_REVIVE_OFFER: u16 = 148;
 const STATUS_WEAKNESS: u16 = 43;
 const STATUS_BRINK_OF_DEATH: u16 = 44;
-const STATUS_RAISED: u16 = 418;
+const STATUS_RAISED: u16 = crate::server::action::STATUS_RAISED;
 const WEAKNESS_DURATION: f32 = 100.0;
 const RAISED_DURATION: f32 = 5.0;
 
@@ -3253,12 +3308,14 @@ fn update_party(
                     position: spawn.common.position.0,
                     after,
                     hitbox: timeline.hitbox_radius,
+                    rotation: spawn.common.rotation,
                 })
             }
             _ => None,
         })
         .collect();
     let is_engaged = |id: ObjectId| engaged.iter().any(|enemy| enemy.id == id);
+    let boss_fight = boss_fight(instance, game_data, &engaged);
 
     // Whom the healer helps first: the lowest of the party, if they're below its line (`PartyBot::heal_below`.)
     let hurt = members
@@ -3321,6 +3378,20 @@ fn update_party(
             .unwrap_or(ROLE_MELEE);
         diamond_spots(player_role, &roles)
     };
+
+    // In a boss fight, each bot's place among those of its kind (healers, ranged, melee), for its spot round the boss.
+    let mut slots: HashMap<ObjectId, usize> = HashMap::new();
+    {
+        let mut by_order: Vec<&(ObjectId, PartyBot)> = bots.iter().collect();
+        by_order.sort_by_key(|(_, bot)| bot.order);
+        let mut counts = [0_usize; 3];
+        for (id, bot) in by_order {
+            let kind = boss_spot_kind(bot);
+            slots.insert(*id, counts[kind]);
+            counts[kind] += 1;
+        }
+    }
+    let mut boss_spots: Vec<(ObjectId, Option<Vec3A>)> = Vec::new();
 
     let mut heals = Vec::new();
     let mut provokes = Vec::new();
@@ -3401,8 +3472,9 @@ fn update_party(
             continue;
         }
         // Stunned, asleep or gaoled (the Navel's Granite Gaol): it does nothing until that's over, as retail's gaoled
-        // Duty Support members (`modifiers::is_incapacitated`.)
-        if modifiers::is_incapacitated(status_effects) {
+        // Duty Support members (`modifiers::is_incapacitated`.) Just raised, it stands where it got up and does
+        // nothing until its protection ends (`modifiers::waits`.)
+        if modifiers::waits(status_effects) {
             continue;
         }
         let follow = follows(*bot_id);
@@ -3621,6 +3693,7 @@ fn update_party(
                 npc_states.push((*bot_id, state));
             }
             // Out of combat: its spot in the diamond around the player.
+            boss_spots.push((*bot_id, None));
             enmity.clear();
             if *state != NpcState::Follow {
                 *state = NpcState::Follow;
@@ -3880,18 +3953,70 @@ fn update_party(
             .map(|enemy| enemy.hitbox)
             .unwrap_or(0.0);
         timeline.attack_range = bot.attack_range + target_hitbox;
+        // A boss fight: a spot of its own round what it fights, off its sides (ranged and healers) or round its back
+        // (melee), kept while that's in reach from there and hasn't gone too far off, whoever else moves; a new one
+        // when it isn't. It no longer keeps near the one it follows until the fight's over (Bob, 2026-11-10: "have
+        // the NPCs act more freely rather than snapping onto the leader until after the death of the boss, have them
+        // stand in their spots, and move accordingly as needed to stay close to where they need to be".)
+        let spot = if boss_fight && bot.role != BotRole::Tank {
+            engaged
+                .iter()
+                .find(|enemy| enemy.id == target)
+                .and_then(|enemy| {
+                    let (angles, beyond) = match boss_spot_kind(bot) {
+                        BOSS_KIND_HEALER => (&BOSS_ANGLES_HEALER, BOSS_SPOT_RANGED),
+                        BOSS_KIND_RANGED => (&BOSS_ANGLES_RANGED, BOSS_SPOT_RANGED),
+                        _ => (&BOSS_ANGLES_MELEE, MELEE_BEHIND),
+                    };
+                    let reach = bot.attack_range + enemy.hitbox;
+                    let walkable = |point: Vec3A| {
+                        !navmesh.is_available()
+                            || (navmesh.ground_under(point).is_some()
+                                && arena.as_ref().is_none_or(|arena| arena.holds(point)))
+                    };
+                    bot.boss_spot
+                        .filter(|spot| {
+                            placement::keeps_spot(
+                                *spot,
+                                enemy.position,
+                                enemy.hitbox,
+                                beyond + BOSS_SPOT_SLACK,
+                                reach,
+                            ) && walkable(*spot)
+                        })
+                        .or_else(|| {
+                            let slot = slots.get(bot_id).copied().unwrap_or(0);
+                            placement::boss_fight_spot(
+                                enemy.position,
+                                enemy.rotation,
+                                enemy.hitbox,
+                                angles[slot % angles.len()],
+                                beyond,
+                                walkable,
+                            )
+                        })
+                })
+        } else {
+            None
+        };
+        boss_spots.push((*bot_id, spot));
         *placement = if bot.role == BotRole::Tank {
             // Across its target from the rest of the party, so cones and cleaves miss them; and with the player when
             // they've run on ahead (unless the player is the one it follows only because they're the tank.)
             let party: Vec<ObjectId> = members.iter().copied().filter(|id| id != bot_id).collect();
             Placement {
-                anchors: if leader_is_tank {
+                anchors: if leader_is_tank || boss_fight {
                     Vec::new()
                 } else {
                     vec![leader]
                 },
                 within: TANK_KEEP_UP,
                 opposite: Some((party, TANK_SPOT)),
+                ..Default::default()
+            }
+        } else if let Some(spot) = spot {
+            Placement {
+                hold: Some(spot),
                 ..Default::default()
             }
         } else if bot.attack_range > MELEE_RANGE {
@@ -3956,6 +4081,11 @@ fn update_party(
         }
     }
 
+    for (bot_id, spot) in boss_spots {
+        if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
+            bot.boss_spot = spot;
+        }
+    }
     for (bot_id, dodge) in dodges {
         if let Some(bot) = instance.party_bots.get_mut(&bot_id) {
             bot.dodge = dodge;

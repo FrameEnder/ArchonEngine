@@ -1,6 +1,6 @@
 # ArchonEngine ControlPanel
 
-ArchonEngine ControlPanel (`FrameEnder/Kawari-Web`, Flask, currently **2.26.1** on the `UI-Redesign` branch, **2.24.2**
+ArchonEngine ControlPanel (`FrameEnder/Kawari-Web`, Flask, currently **2.27.0** on the `UI-Redesign` branch, **2.24.2**
 on `main`; it was Kawari Web until 2.26.0) runs beside the server in its own container. Its README is the user guide
 (setup, pages, service, forges, builds); this page is about **how its features work** and how they depend on the fork.
 Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates). The repository, the Python packages
@@ -17,6 +17,7 @@ has to move.
 | The active server image | runs throwaway containers | `kawari-questdump` (Quest Lab, Progress index, Shop item list) |
 | `<data>/quest-dumps/` | written by questdump | `quest-index.json`, `item-index.json`, `marketboard-categories.json`, `class-index.json`, `action-index.json`, per-quest dumps |
 | `<data>/data/glamours.txt` | read/write | Bot glamours (the party bots' list; the server reads it from `/kawari/data`) |
+| `<data>/data/drop-rates.json` | read/write | Drop rates (mounts and minions per duty; the server reads it from `/kawari/data`) |
 | `<data>/captures/` | read | Diagnostics bundles |
 | The web app's own SQLite db | read/write | feed, notifications, settings, shop tables |
 
@@ -27,7 +28,7 @@ over the database, so direct edits only happen while the character is logged out
 
 Home, How to Connect, Feed (called Community in the top bar from 2.19.0) and profiles (character tile boards, private by default), Notifications, Settings,
 **Shop**, and the admin **Dashboard**: server control, config editor, database health/migrations, backups, accounts,
-Auracite import/inspect/export (extended backups from 2.22.0), branding, Quest Lab, Progress, Marketboard, Bot glamours (2.21.0), Diagnostics, Battle replay (2.25.0), Updates (which fork/forge/commit the server is
+Auracite import/inspect/export (extended backups from 2.22.0), branding, Quest Lab, Progress, Marketboard, Bot glamours (2.21.0), Drop rates (2.27.0), Diagnostics, Battle replay (2.25.0), Updates (which fork/forge/commit the server is
 built from), container logs.
 
 ## Auracite backups (2.22.0)
@@ -372,6 +373,26 @@ The extension reaches ArchonEngine ControlPanel wherever the browser can, on the
 for that address (an optional host permission), which also spares the API any CORS headers. Checked with Flask's test
 client (no token 401, a non-admin's 403, a list written with its backup) and with the extension in Chromium against a
 test server (connect, the dropdown from the class list, send, load).
+
+## Drop rates (Dashboard → Drop rates, 2.27.0)
+
+On `UI-Redesign`: `kawari_web/droprates.py`, `templates/dashboard/drop_rates.html`. How often each dungeon's and
+trial's mounts and minions drop from its coffers ([Coffers and Loot](loot.md#mounts-and-minions-2026-11-10)).
+
+* **The file** is `drop-rates.json` in `settings.db_dir` (the container's `/kawari/data`), written beside the old one
+  and renamed over it, so the server never reads half a file; the server notices the new modification time, so no
+  restart. `{"format": 1, "default": {"mounts_minions": N}, "duties": {"<ContentFinderCondition>": {"mounts_minions":
+  N}}}`, whole percents 0-100 (more is taken as 100; a blank or nonsense duty value is left out, a nonsense default is
+  90.)
+* **The page**: the default (90 to start with, the server's own without the file), and every dungeon (ContentType 2)
+  and trial (4) from `content-index.json` (`kawari-questdump content`, Content → Duties & zones builds it), by
+  expansion and level, with a box for its own rate (blank takes the default, shown as its placeholder), whether the
+  active build has its script (`content_progress`: only those have coffers), and a filter by name. No game text is
+  kept: names come from the index.
+
+Checked with Flask's test client (an index of a dungeon, a trial and a guildhest: the guildhest left out; a save with
+a default of 75 and one duty's 100 written as above; a default of "abc" saved as 90 and "150%" as 100, shown again in
+its box.)
 
 ## Battle replay (Dashboard → Battle replay, 2.25.0)
 

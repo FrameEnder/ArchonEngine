@@ -78,7 +78,9 @@ it does every other NPC (before, it was gone before anyone could raise it). Then
   2 s and gets up beside its raiser as a raised player does (`party_bot::raiser_position`, an ActorMove there first; the server's `revive_in_place`): 20 % of its HP and MP, Weakness
   (43, 100 s; Brink of Death, 44, if already weakened) and status 418 (5 s), and for everyone near, the raise's
   stand-up (ActorControl ZoneIn with its raise animation, as others see a raised player, then its mode back to
-  normal).
+  normal). While 418 lasts it **stands still and does nothing** (`modifiers::waits`, in its own tick and the NPCs'
+  walking), as a raised player does who waits to be healed rather than lose its protection by acting (Bob,
+  2026-11-10); no damage reaches it meanwhile ([Combat](combat.md): Transcendent). It carries on when 418 ends.
 * **Not raised within 30 s**: it gets up by itself beside the one it follows, at full HP and MP, and carries on
   (spawned again there: clients forget it where it lay). Unlike a player returning to their home point, it gets no
   Weakness.
@@ -589,6 +591,35 @@ From Bob's bundle 20261110-182408 (the Stone Vigil, a party of Player NPCs):
   position for its target that tick, so nothing it could do was in range and it stood idle until it moved again: the
   whole party stopped attacking through the whirlwinds, where retail's members and players kept on (both captures).
   Its target's position is filled in for it now (`npc_behavior`'s position pass). Not tested without the game's data.
+
+## Boss fights: spots of their own (2026-11-10)
+
+Bob, 2026-11-10: "have the NPCs act more freely rather than snapping onto the leader until after the death of the
+boss, have them stand in their spots, and move accordingly as needed to stay close to where they need to be."
+
+**A boss fight** (`party_bot::boss_fight`) is from a director's boss being pulled (`spawn_boss`, its room sealing or
+sealed: `DirectorData::bosses_fought`) until it falls, while it's after one of the party; and the whole of a trial
+(ContentFinderCondition's ContentType 4, `GameData::content_is_trial`, asked once per instance).
+
+In one, each bot that isn't the tank takes **a spot of its own round what it fights** (`placement::boss_fight_spot`)
+and stays there (`Placement::hold`: its walking goes to the spot, and its chases stop there), whoever else moves. It
+keeps the spot while what it fights is in its reach from there, no nearer than half its hitbox and no further than
+its edge plus the spot's distance plus 6 yalms (`placement::keeps_spot`), and the spot is on the navmesh and inside
+the boss room's floor; otherwise it takes a new one, the same way round from where the boss faces then. Getting out
+of an attack (`dodge.rs`) still comes first; the spot is taken up again after.
+
+| Who | Where | Retail (Bob's Chronofoil captures, 129 boss fights in ten dungeons and trials, a sample a second) |
+|---|---|---|
+| Healers | 6 yalms beyond the edge, 100 degrees round from the boss's facing to its left (the next 130, then 70) | 7.9 yalms from the middle (Duty Support), 11.1 (players), median; 90-115 degrees round |
+| Ranged and casters | the same to its right | 9.5-9.7 yalms; 90-110 degrees |
+| Melee | 2 yalms beyond the edge (`MELEE_BEHIND`), 135 degrees round (the next -135, then 160) | 4-6 yalms; players 125 degrees |
+| The tank | as before, across its target from the party, but no longer kept within 15 yalms of the player | |
+
+Retail's ranged and healers stood still about three-quarters of every boss fight (69-77 % of the seconds), and half
+of the seconds in which the boss moved more than a yalm; melee less (44 % players, 72 % Duty Support). The healers'
+and ranged's sides are opposite so one attack on a side catches only one of them. Outside a boss fight (and once the
+boss falls) the bots keep near the one they follow as before. Not seen in game yet; checked by the placement tests
+(`holding_a_spot`, `a_spot_round_the_boss`).
 
 ## At a wipe (2026-11-10)
 

@@ -190,10 +190,20 @@ pub fn is_incapacitated(statuses: &StatusEffects) -> bool {
     statuses.ids().any(|id| INCAPACITATED.contains(&id))
 }
 
+/// Just raised (status 418, Transcendent: `action::STATUS_RAISED`): no damage reaches them until it ends, after 5 s or
+/// at their first action. A raised party bot or party NPC keeps it so: it stands still and does nothing while it lasts,
+/// as a raised player does who waits to be healed (Bob, 2026-11-10.)
+const RAISED: u16 = crate::server::action::STATUS_RAISED;
+
+/// An NPC that does nothing this tick: incapacitated (`is_incapacitated`), or just raised (`RAISED`.)
+pub fn waits(statuses: &StatusEffects) -> bool {
+    is_incapacitated(statuses) || statuses.ids().any(|id| id == RAISED)
+}
+
 pub fn is_rooted(statuses: &StatusEffects) -> bool {
     statuses
         .ids()
-        .any(|id| id == BIND || INCAPACITATED.contains(&id))
+        .any(|id| id == BIND || id == RAISED || INCAPACITATED.contains(&id))
 }
 
 pub fn is_invulnerable(statuses: &[u16]) -> bool {

@@ -300,6 +300,9 @@ pub struct ItemRow {
     pub class_job_repair: u8,
 }
 
+/// ItemAction types: a mount's and a minion's (`items/Items.lua`.)
+const ITEM_ACTION_MOUNT: u16 = 1322;
+const ITEM_ACTION_MINION: u16 = 853;
 /// ItemUICategory for materia.
 const ITEM_UI_CATEGORY_MATERIA: u8 = 58;
 
@@ -2005,6 +2008,13 @@ impl GameData {
             .map_or(0, |row| row.CastTimeSeconds as u32 * 1000)
     }
 
+    /// Whether an item is a mount or a minion: its ItemAction's type is 1322 (a mount) or 853 (a minion), as
+    /// `items/Items.lua` names them (`loot::roll_contents`'s drop rate.)
+    pub fn is_mount_or_minion(&mut self, item_id: u32) -> bool {
+        self.lookup_item_action_data(item_id)
+            .is_some_and(|(action, ..)| action == ITEM_ACTION_MOUNT || action == ITEM_ACTION_MINION)
+    }
+
     pub fn lookup_item_action_data(&mut self, item_id: u32) -> Option<(u16, [u16; 9], u32)> {
         if let Some(row) = self.item_sheet.row(item_id) {
             let additional_data = row.AdditionalData;
@@ -3614,6 +3624,14 @@ impl GameData {
             row.RequiredExVersion,
             latest,
         ))
+    }
+
+    /// Whether a duty is a trial (ContentFinderCondition's ContentType 4): the whole of one is a boss fight
+    /// (`party_bot`'s spots.)
+    pub fn content_is_trial(&mut self, content_finder_row_id: u16) -> bool {
+        self.content_finder_condition_sheet
+            .row(content_finder_row_id as u32)
+            .is_some_and(|row| row.ContentType == CONTENT_TYPE_TRIAL)
     }
 
     /// Whether a duty lets a full party choose Greed Only or Lootmaster (its LootModeType's

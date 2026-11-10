@@ -115,6 +115,24 @@ counts the players). Retail's ten in the Tam-Tara Deepcroft and the Copperbell M
 What a coffer holds isn't chosen for the class: a gladiator's held an Acolyte's Skirt (Disciple of Magic), a Plundered
 Grimoire (arcanist) and a Plundered Cane (conjurer).
 
+## Mounts and minions (2026-11-10)
+
+A coffer's mounts and minions (an item whose ItemAction's type is 1322 or 853, read from the game at runtime:
+`GameData::is_mount_or_minion`) are set apart from its pick (`loot::set_apart`: from its recorded openings and its
+list; an opening that held only one of them goes), and each one it may hold drops on its own after the rest, at the
+duty's rate: 90 % unless the server's owner says otherwise (Bob, 2026-11-10). The rates are `drop-rates.json` in the
+server's data folder (`$KAWARI_DATA`, beside `glamours.txt`), read again whenever it changes (`drop_rates.rs`):
+
+```json
+{"format": 1, "default": {"mounts_minions": 90}, "duties": {"57": {"mounts_minions": 100}}}
+```
+
+`duties` is by ContentFinderCondition ID; a duty not in it takes `default`, and without the file (or a value) it's 90.
+ArchonEngine ControlPanel's Dashboard → Drop rates writes it ([ArchonEngine ControlPanel](kawari-web.md#drop-rates-dashboard--drop-rates-2270)).
+None of the scripts' pools (Sastasha, the Tam-Tara Deepcroft, Copperbell Mines) holds a mount or minion yet: a script
+adds one with `director:treasure_pool` (or `treasure_loot`) as any other item. Tests `mounts_and_minions_are_set_apart`
+and `a_duty_its_own_then_the_default_then_ninety`.
+
 ## Party bots
 
 Alone with bots the player gets everything at once (above). With another human in the party the items are rolled for,

@@ -246,6 +246,8 @@ pub struct Instance {
     /// Each bot party's leader: where they stood last tick and the way their formation faces (`party_bot`: it turns
     /// with them only as they move.)
     pub formation_facings: HashMap<ObjectId, (glam::Vec3A, f32)>,
+    /// Whether this instance is a trial (`GameData::content_is_trial`), once asked (`party_bot`'s boss fights.)
+    pub trial: Option<bool>,
     /// NPCs a director keeps busy until when (`director:busy_bnpc`): they don't move or act on their own, though their
     /// timelines go on.
     pub busy_npcs: HashMap<ObjectId, std::time::Instant>,

@@ -14,8 +14,9 @@ use kawari::{
 use crate::{
     FromServer,
     server::{
-        action::{toss_target, tossed_by},
+        action::{STATUS_RAISED, cannot_be_hurt, ends_protection, toss_target, tossed_by},
         actor::{NetworkedActor, NpcState, kill_actor},
+        modifiers,
         npc_behavior::cast_aim,
         party_bot,
         test_world::{TestWorld, control_from, packet_from},
@@ -217,4 +218,48 @@ fn a_whirlwind_tosses_whoever_it_hits() {
             "and everyone sees it: {seen:?}"
         );
     }
+}
+
+/// Bob, 2026-11-10: "characters do not take damage for the next indeterminate time after a revive if they stand still,
+/// and do not use actions for that period of time". Status 418 (Transcendent) was given at a raise and did nothing:
+/// a raised player or bot took every hit. Now no damage reaches whoever has it, their first action takes it off, and
+/// a raised bot stands still and does nothing while it lasts.
+#[test]
+fn someone_just_raised_takes_no_damage_until_they_act() {
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 4.0, 290.0]);
+    let bot = world.player_npc(BOT, player, [2.0, 4.0, 290.0]);
+    for id in [player, bot] {
+        let actor = world.instance.find_actor_mut(id).unwrap();
+        assert!(
+            !cannot_be_hurt(actor),
+            "nothing protects them before the raise"
+        );
+        actor
+            .status_effects_mut()
+            .unwrap()
+            .add(STATUS_RAISED, 0, 5.0, ObjectId(0xE000_0000));
+        assert!(cannot_be_hurt(world.instance.find_actor(id).unwrap()));
+    }
+    let bot_statuses = world
+        .instance
+        .find_actor(bot)
+        .unwrap()
+        .status_effects()
+        .unwrap();
+    assert!(modifiers::waits(bot_statuses), "a raised bot waits");
+    assert!(modifiers::is_rooted(bot_statuses), "and doesn't move");
+
+    world.sent(player);
+    ends_protection(&world.network, &mut world.instance, player);
+    assert!(!cannot_be_hurt(world.instance.find_actor(player).unwrap()));
+    let sent = world.sent(player);
+    assert!(
+        sent.iter().any(|message| matches!(
+            message,
+            FromServer::ActorControlSelf(ActorControlCategory::LoseEffect { effect_id, .. })
+                if *effect_id == STATUS_RAISED as u32
+        )),
+        "they see it end: {sent:?}"
+    );
 }

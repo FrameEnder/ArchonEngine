@@ -23,7 +23,7 @@ use crate::{
             update_actor_hp_mp_after_hit,
         },
         companion,
-        effect::{gain_effect, gain_effect_instance, process_effects_list},
+        effect::{self, gain_effect, gain_effect_instance, process_effects_list},
         first_attack,
         instance::{EventActionInterruption, Instance, QueuedTaskData},
         modifiers,
@@ -1403,13 +1403,7 @@ pub fn execute_action(
                 roll_npc_hit(effects, scale, miss_percent);
             }
             // One that can't be hurt shows it (effect 7) and takes nothing, as a target does.
-            if matches!(
-                bystander,
-                NetworkedActor::Npc {
-                    currently_invulnerable: true,
-                    ..
-                }
-            ) {
+            if cannot_be_hurt(bystander) {
                 for effect in effects.iter_mut() {
                     if matches!(effect.0, TargetEffectKind::Damage { .. }) {
                         *effect = TargetEffect(TargetEffectKind::Invincible {});
@@ -1573,6 +1567,8 @@ pub fn execute_action(
                 return;
             };
 
+            ends_protection(&network, instance, from_actor_id);
+
             // aggro any NPCs, more so the more damage this does
             {
                 let multiplier = enmity_multiplier(instance, from_actor_id);
@@ -1693,12 +1689,7 @@ pub fn execute_action(
                     return;
                 };
 
-                if let NetworkedActor::Npc {
-                    currently_invulnerable,
-                    ..
-                } = actor
-                    && *currently_invulnerable
-                {
+                if cannot_be_hurt(actor) {
                     effects_builder.effects = effects_builder
                         .effects
                         .iter()
@@ -2624,14 +2615,7 @@ fn apply_area_of_effect(
                 continue;
             };
 
-            let mut invulnerable = false;
-            if let NetworkedActor::Npc {
-                currently_invulnerable,
-                ..
-            } = actor
-            {
-                invulnerable = *currently_invulnerable;
-            }
+            let invulnerable = cannot_be_hurt(actor);
 
             // The first target takes full damage, everyone else may take less.
             let total: u32 = effects_builder
@@ -3029,6 +3013,39 @@ fn interrupt_cast(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
 }
 
 /// The IDs of an actor's statuses.
+/// Status 418 (Transcendent), which retail gives a raised player for 5 s: no damage reaches them while it lasts, and
+/// their first action ends it (Consolegameswiki, "Resurrect": "removed when the timer expires or if the player
+/// executes any action"; not in Bob's captures: nobody was raised in them.) Given by `revive_in_place` and to raised
+/// party bots, who stand still and do nothing while they have it (`party_bot`.)
+pub const STATUS_RAISED: u16 = 418;
+
+/// Whether a hit can't hurt `actor` (its damage shown as Invincible, effect 7, and none taken): an NPC made
+/// invulnerable, or anyone just raised (`STATUS_RAISED`.)
+pub fn cannot_be_hurt(actor: &NetworkedActor) -> bool {
+    matches!(
+        actor,
+        NetworkedActor::Npc {
+            currently_invulnerable: true,
+            ..
+        }
+    ) || status_ids(actor).contains(&STATUS_RAISED)
+}
+
+/// Acting ends a raised one's protection (`STATUS_RAISED`): it's taken off, shown to everyone near as any status
+/// that ends.
+pub fn ends_protection(
+    network: &Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    actor_id: ObjectId,
+) {
+    if instance
+        .find_actor(actor_id)
+        .is_some_and(|actor| status_ids(actor).contains(&STATUS_RAISED))
+    {
+        effect::lose_effect_instance(network.clone(), instance, actor_id, STATUS_RAISED);
+    }
+}
+
 fn status_ids(actor: &NetworkedActor) -> Vec<u16> {
     actor
         .status_effects()

@@ -1927,6 +1927,14 @@ impl DirectorData {
         }
     }
 
+    /// The bosses being fought (their rooms sealing or sealed): their actors.
+    pub fn bosses_fought(&self) -> impl Iterator<Item = ObjectId> + '_ {
+        self.bosses
+            .values()
+            .filter(|boss| boss.state != DirectorBossState::Open)
+            .map(|boss| boss.actor_id)
+    }
+
     /// The range a boss being fought keeps the party in (`DirectorBoss::arena`): its layout ID.
     pub fn arena(&self) -> Option<u32> {
         self.bosses

@@ -1615,6 +1615,17 @@ Fixed in code and by test or simulation; none played yet.
   spots, Player NPCs dodge by the shapes they see. If he meant something else, this is the place to change
   (`party_bot`'s `authored`).
 
+## Raises, boss-fight spots and drop rates (2026-11-10)
+
+None of it played yet.
+
+* **Transcendent** (418) stops hits and ends at the raised one's first action; damage over time still ticks through
+  it, and how long retail's lasts is the wiki's 5 s (nobody was raised in Bob's captures.)
+* **Boss-fight spots** are where retail's party stood on the whole (medians by role), not each boss's own: a boss with
+  attacks on its sides would catch the healer or the ranged there until they dodge. Duty Support members' authored
+  spots (`party_spots`) still come first where a duty has them.
+* **Mounts and minions** drop at 90 % (or the duty's rate), but no scripted duty's coffer lists one yet.
+
 ## Public sources (2026-11-10)
 
 * `questkit sources --duty`'s drafts have no timing for dungeons before cactbot has timelines (A Realm Reborn's have

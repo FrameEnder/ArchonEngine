@@ -78,6 +78,7 @@ pub use companion::{
 pub mod daily;
 mod director;
 mod dodge;
+mod drop_rates;
 pub mod duty_finder;
 mod effect;
 mod fall;
@@ -589,7 +590,7 @@ const REVIVE_ACCEPT_RAISE: u32 = 5;
 /// raised player (418, gone on their first action.)
 const STATUS_WEAKNESS: u16 = 43;
 const STATUS_BRINK_OF_DEATH: u16 = 44;
-const STATUS_RAISED: u16 = 418;
+const STATUS_RAISED: u16 = action::STATUS_RAISED;
 const WEAKNESS_DURATION: f32 = 100.0;
 const RAISED_DURATION: f32 = 5.0;
 

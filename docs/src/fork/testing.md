@@ -82,7 +82,8 @@ run has exactly those: a new one fails, and so does one that no longer happens u
 (`--update-known`), so the list stays what's true. 21 fixtures, two a duty (three for the Bowl of Embers), 28 s.
 Bundle tests so far (`bundle_tests.rs`): `a_player_who_dies_mid_cast_stops_casting`,
 `a_player_npc_goes_back_at_a_wipe_without_leaving`, `a_cast_is_aimed_where_its_target_stands`,
-`a_whirlwind_tosses_whoever_it_hits`.
+`a_whirlwind_tosses_whoever_it_hits`, `someone_just_raised_takes_no_damage_until_they_act` (Bob's request of
+2026-11-10, not a bundle).
 
 **Since 2026-11-10 (second pass): 21 of 21 clean, nothing written down.** What was done for each is in the table's
 last column; the scripts' changes are in [Dungeons](dungeons.md). What the simulator had wrong this time: party

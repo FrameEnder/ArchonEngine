@@ -223,6 +223,7 @@ impl TestWorld {
                 brace_ready: HashMap::new(),
                 look_kind: BotLook::Player,
                 duty_filled: true,
+                boss_spot: None,
             },
         );
         actor_id

@@ -33,6 +33,7 @@ use crate::{
     server::{
         WorldServer,
         actor::NetworkedActor,
+        drop_rates,
         instance::Instance,
         network::{DestinationNetwork, NetworkState},
     },
@@ -192,14 +193,78 @@ fn loot_message(network: &mut NetworkState, instance: &Instance, kind: u32, para
     );
 }
 
+/// What an opened coffer holds: its pick from what isn't a mount or minion (`contents`), and then each mount and
+/// minion it may hold, each at the duty's rate (`drop_rates::mounts_minions_percent`, 90 % unless ArchonEngine
+/// ControlPanel's Drop rates says otherwise: Bob, 2026-11-10.)
 fn roll_contents(instance: &Instance, game_data: &mut GameData, base_id: u32) -> Vec<u32> {
-    contents(
+    let percent = drop_rates::mounts_minions_percent(instance.content_finder_condition_id);
+    let (pools, wiki, extras) = set_apart(
         &instance.loot_pools,
         &instance.loot_wiki_pools,
         base_id,
+        |item| game_data.is_mount_or_minion(item),
+    );
+    let mut items = contents(
+        &pools,
+        &wiki,
+        base_id,
         |item| item_kind(game_data, item),
         |n| fastrand::usize(..n),
-    )
+    );
+    for extra in extras {
+        if fastrand::u8(..100) < percent {
+            items.push(extra);
+        }
+    }
+    items
+}
+
+/// The duty's pools without what `special` picks out (mounts and minions), an opening left with nothing gone too; and
+/// the special items this coffer (`base_id`) may hold, from its recorded openings and its list.
+fn set_apart(
+    pools: &HashMap<u32, Vec<Vec<u32>>>,
+    wiki: &HashMap<u32, Vec<u32>>,
+    base_id: u32,
+    mut special: impl FnMut(u32) -> bool,
+) -> (
+    HashMap<u32, Vec<Vec<u32>>>,
+    HashMap<u32, Vec<u32>>,
+    Vec<u32>,
+) {
+    let mut specials: HashMap<u32, bool> = HashMap::new();
+    let mut is = |item: u32| *specials.entry(item).or_insert_with(|| special(item));
+    let mut extras: Vec<u32> = Vec::new();
+    let mut kept_pools = HashMap::new();
+    for (coffer, openings) in pools {
+        let mut kept = Vec::new();
+        for opening in openings {
+            let (set, rest): (Vec<u32>, Vec<u32>) = opening.iter().partition(|item| is(**item));
+            if *coffer == base_id {
+                for item in set {
+                    if !extras.contains(&item) {
+                        extras.push(item);
+                    }
+                }
+            }
+            if !rest.is_empty() {
+                kept.push(rest);
+            }
+        }
+        kept_pools.insert(*coffer, kept);
+    }
+    let mut kept_wiki = HashMap::new();
+    for (coffer, items) in wiki {
+        let (set, rest): (Vec<u32>, Vec<u32>) = items.iter().partition(|item| is(**item));
+        if *coffer == base_id {
+            for item in set {
+                if !extras.contains(&item) {
+                    extras.push(item);
+                }
+            }
+        }
+        kept_wiki.insert(*coffer, rest);
+    }
+    (kept_pools, kept_wiki, extras)
 }
 
 /// What kind of thing an item is, so a coffer holds no two of a kind: its EquipSlotCategory (a weapon's one-handed
@@ -839,6 +904,23 @@ mod tests {
         assert_eq!(outcome(&choices, &[A, B, C], |_| 0), Outcome::Unrolled(C));
         let choices = HashMap::from([(A, Choice::Pass), (B, Choice::Pass), (C, Choice::Pass)]);
         assert_eq!(outcome(&choices, &[A, B, C], |_| 0), Outcome::Lost);
+    }
+
+    /// Mounts and minions are set apart from a coffer's pick, to drop at their own rate; an opening that held only
+    /// one goes.
+    #[test]
+    fn mounts_and_minions_are_set_apart() {
+        let pools = HashMap::from([
+            (94, vec![vec![3554, 7000], vec![7000]]),
+            (95, vec![vec![3034, 7001]]),
+        ]);
+        let wiki = HashMap::from([(94, vec![2684, 7002, 7000])]);
+        let special = |item: u32| item >= 7000;
+        let (kept, kept_wiki, extras) = set_apart(&pools, &wiki, 94, special);
+        assert_eq!(extras, vec![7000, 7002]);
+        assert_eq!(kept[&94], vec![vec![3554]]);
+        assert_eq!(kept[&95], vec![vec![3034]]);
+        assert_eq!(kept_wiki[&94], vec![2684]);
     }
 
     #[test]
