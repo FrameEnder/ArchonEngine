@@ -508,7 +508,10 @@ a quest's entering event, 0 for every other event (228 events across the capture
 * Retail's boss Cures itself once under about 15 % (its first 0.7-8 s after crossing it; 3.6-7.6 s apart); the enemy
   conjurers Cure their side under 50 % (every 5.6-21.7 s) and Cure II under about 25 % (the third run's, which lived
   long enough: 6-23 %, every 13.7 s); yours Cures the gladiator, you and itself at 31-79 % (every 16.7-23.4 s) and
-  once Cure II on the gladiator at 25 %. The third run's marauder used Rive (1135, two at a time) too. Both allies went for the
+  once Cure II on the gladiator at 25 %. Retail's enemy conjurers' Cures healed 435-475 (the first wave's took itself
+  from 2 % to 53 % in one) and Cure II 712-737, as Kawari's do. Your conjurer attacked every 7.6 s (the median gap of
+  74 attacks over three runs; its timeline's pace since 2026-11-10, when Bob's bundle 20261110-081839 had it at Stone
+  II's own 13.2 s, half as often). The third run's marauder used Rive (1135, two at a time) too. Both allies went for the
   newest enemy, and for the wyvern while it was out. Timelines `QB60*` (1731-1739).
 * Fixtures: `60.json` (130088ec), `60-3c56e09f.json` and `60-21f967d2.json`, each with the onlooker added, held health and the rosary's
   `object_talks` (retail's StartTalkEvent on it, [questkit](questkit.md#battle-sim)).

@@ -20,7 +20,7 @@
         }
     },
     "rotation": {
-        "pace": 13.2,
+        "pace": 7.6,
         "actions": [
             {
                 "action": 127,
@@ -51,5 +51,5 @@
         }
     ],
     "timeline_always_plays": false,
-    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the conjurer on your side from the start (BNpcBase 1739, BNpcName 2081, layout 4261257): level 38, 3787 HP, ClassJob 6; Cure (120, the director's heals) on the gladiator and you; never an auto-attack. From Bob's Chronofoil captures of 2026-11-06 and 07 (`questkit chronofoil --battle`: 130088ec 0.9, 3c56e09f 0.7, 21f967d2 0.9): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Hitbox not recorded."
+    "comment": "In the Eyes of Gods and Men's quest battle (60, quest 912): the conjurer on your side from the start (BNpcBase 1739, BNpcName 2081, layout 4261257): level 38, 3787 HP, ClassJob 6; Cure (120, the director's heals) on the gladiator and you; never an auto-attack. From Bob's Chronofoil captures of 2026-11-06 and 07 (`questkit chronofoil --battle`: 130088ec 0.9, 3c56e09f 0.7, 21f967d2 0.9): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own side), times from its pull. Its pace is the median gap between its attacks (74 in the three runs, 3.5-27.2 s apart): 7.6 s; until 2026-11-10 it was Stone II's own 13.2, so it attacked half as often as retail's (Bob's bundle 20261110-081839). Hitbox not recorded."
 }
