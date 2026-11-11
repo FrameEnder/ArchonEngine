@@ -688,6 +688,14 @@ struct ActionAreas {
     spares_while: HashMap<u32, u16>,
     #[serde(default)]
     sheltered_by: HashMap<u32, Shelter>,
+    /// Rings by Action row, where the Action sheet's shape isn't one: [inner, outer] in yalms around the caster.
+    #[serde(default)]
+    rings: HashMap<u32, [f32; 2]>,
+}
+
+/// A ring recorded for an action whose own row doesn't draw one (`action_areas.json`'s `rings`): [inner, outer].
+fn recorded_ring(action: u32) -> Option<[f32; 2]> {
+    action_areas().rings.get(&action).copied()
 }
 
 /// What shelters whom from an area attack (`action_areas.json`'s `sheltered_by`): a living battle NPC of BNpcBase
@@ -3955,6 +3963,21 @@ impl GameData {
             }
         };
 
+        // A ring the row doesn't draw (the Howling Eye's Eye of the Storm): around the caster, safe in the hole.
+        if let Some([inner, outer]) = recorded_ring(id).filter(|[_, outer]| *outer > 0.0) {
+            return Some(ActionInfo {
+                cast_type: 10,
+                effect_range: outer.round() as u8,
+                range: 0,
+                can_target_hostile: row.CanTargetHostile,
+                primary_cost_type: row.PrimaryCostType,
+                primary_cost_value: row.PrimaryCostValue,
+                x_axis_modifier: row.XAxisModifier,
+                cone_angle,
+                donut_hole: inner / outer.round(),
+            });
+        }
+
         Some(ActionInfo {
             cast_type: row.CastType,
             effect_range: row.EffectRange,
@@ -4579,6 +4602,13 @@ mod area_tests {
         assert_eq!(super::recorded_cone_angle(1), None);
         assert_eq!(super::action_spared_while(28731), Some(2656));
         assert_eq!(super::action_spared_while(903), None);
+    }
+
+    /// The Howling Eye's Eye of the Storm (664): a ring 12-25 yalms round the middle, which its row doesn't draw.
+    #[test]
+    fn a_recorded_ring() {
+        assert_eq!(super::recorded_ring(664), Some([12.0, 25.0]));
+        assert_eq!(super::recorded_ring(662), None);
     }
 
     /// The level sync caps with the sheets' numbers: a body piece synced to item level 130 (level 50's ParamGrow), Vitality

@@ -1,0 +1,12 @@
+{
+    "autoattack_action_id": 0,
+    "comment": "Garuda's helper in the Howling Eye (BNpcBase 1570, held by the director, which has it cast Feather Rain, 664: Eye of the Storm in Boss Mod's T03GarudaN). Its hit on whoever stands in its ring wasn't recorded: nobody did, in 32 casts in Bob's three Chronofoil captures of 2026-11-08 (the party stayed within 10.9 yalms of the middle). The guides call it heavy damage; 1061, Mistral Song's median to players, is a guess.",
+    "recorded_amounts": {
+        "664": {
+            "players": 1061,
+            "npcs": 1040
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": []
+}

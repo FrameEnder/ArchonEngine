@@ -1615,6 +1615,13 @@ Fixed in code and by test or simulation; none played yet.
   spots, Player NPCs dodge by the shapes they see. If he meant something else, this is the place to change
   (`party_bot`'s `authored`).
 
+## The Howling Eye, fleshed out (2026-11-11)
+
+* What Garuda does after 661 (Aerial Blast again, the satin plumes, 661) is a guess: retail's one run that got there
+  ended at 3 %. Eye of the Storm's damage (1061) is a guess: nobody was ever in its ring. 659 after a return comes
+  once a phase as recorded; when it comes again isn't known (the pull's 49.5 s).
+* A cracked monolith's threshold (65 %) is somewhere in 60.6-69.5 %, from four sightings.
+
 ## A duty's beginning (2026-11-11)
 
 * A duty waits for every player's opening before it begins, and holds its enemies and the party's bots meanwhile;

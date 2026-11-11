@@ -879,6 +879,29 @@ from then (anchor 1416: 656 3.9-7.1 s on, 657 10.8-12.4, 658 18.8-20.3):
   Duty Support run got past Aerial Blast; what comes after 661 isn't recorded.
 * At 0 her last line (3705), the closing cutscene (scene 3: 253, then 1, 18, 0, 0) and the duty complete.
 
+**The whole fight, checked** (2026-11-11, on Bob's request to flesh it out): all three runs are duty-sim fixtures
+with every battle talk, ActionTimeline and plume of the fight (`58-09ecf8e7`, `58-6c495fc4`, and the Duty Support run
+`58-6a5244ec`, 35, 39 and 49 events), and the script does each within 3 s. What that brought out and what changed:
+
+* **Her thresholds** are 80 % and 40 % as her health in whole percent reaches them (retail vanished at 80.1 % and at
+  40.2-40.4 %, which `< 80` / `< 40` missed: the song came 18-20 s late), 50 % below it (her line after 49.0-49.1 %,
+  never at 50.5-50.8 %).
+* **At 40 % she can't be hurt** from her vanishing until her line 3703 (every hit on her shows Invincible, effect 7, in
+  both runs that got there; her health stood at 40.2-40.4 % for 17-20 s.)
+* **The monoliths**: below 65 % each shows its cracks (ActionTimeline 1713, once: four times in two runs, between 69.5
+  % and 60.6 %); 5.5 s after Mistral Song began all four crumble (1715, all three runs to a tenth) and are gone 2.2 s
+  later. After a wipe they stand again whole.
+* **Her own timeline** after each return depends on what she did (all three runs, TrialGaruda_239): after a cast
+  (Mistral Shriek, Mistral Song, 661; anchor 1416, from the cast's end) 656 at 7.7 s, 657 12.6, 658 19.4, 659 begun
+  35.2; after coming back at 50 % with no cast (anchor 1412) 656 3.9, 657 10.8; after Aerial Blast (anchor 660) 657 at
+  2.4, 659 begun 11.6, 656 17.7, 658 28.0. One set of points for all of them had 656 come 2-4 s early after a cast.
+* **Eye of the Storm** (664, her helper's every 5.2 s from 16.1 s after Mistral Song): a ring 12-25 yalms round the
+  middle (Boss Mod's T03GarudaN), the arena's edge, which its Action row doesn't draw (`action_areas.json`'s `rings`).
+  Nobody stood further than 10.9 yalms from the middle in any of its 32 casts, and none was hit; whoever stands in it
+  now takes a magic hit (1061, as Mistral Song: a guess, `TrialGarudaHelper_1570.json`). It was only an animation.
+* **After 661** (one run, at 3 %) nothing more is recorded: here Aerial Blast again 33.0 s after 661 began, then the
+  satin plumes and 661 as before, over and over (a guess from the spacing of Mistral Song and Aerial Blast.)
+
 **The plumes** (`TrialRazorPlume_238.json`, `TrialSatinPlume_688.json`): no auto-attack; a razor plume goes for the
 nearest monolith from where it came, a satin plume for the player; one left standing blows (665, round itself: 705 to a
 monolith, about 200 to the party) 24.7 s after it came and falls 2.3 s later (ActorControl Kill; the director's

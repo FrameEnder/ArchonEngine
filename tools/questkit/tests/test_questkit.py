@@ -1917,8 +1917,10 @@ end
                         {"S": 40.0, "Id": boss, "Hp": 1000}, {"S": 80.0, "Id": boss, "Hp": 0},
                         {"S": 11.0, "Id": you, "P": [1.0, 0.0, 1.0]}, {"S": 20.0, "Id": mate, "P": [2.0, 0.0, 2.0]}],
             "Actions": [],
-            "Events": [{"S": 31.0, "Kind": "cast", "Id": boss, "Text": "action 903 spell 903"}],
-            "Controls": [director(10.0, 0x40000001, 5400), director(30.0, 0x80000001, 37), director(80.0, 0x80000001),
+            "Events": [{"S": 31.0, "Kind": "cast", "Id": boss, "Text": "action 903 spell 903"},
+                       {"S": 32.0, "Kind": "battle talk", "Id": boss, "Text": "text 3700 name 1644 icon 0 5000 ms"}],
+            "Controls": [{"S": 33.0, "Id": boss, "Category": 407, "Params": [1415, 0, 0, 0], "Packet": "ActorControl"},
+                         director(10.0, 0x40000001, 5400), director(30.0, 0x80000001, 37), director(80.0, 0x80000001),
                          director(80.0, 0x80000016), director(80.0, 0x40000003), director(50.0, 0x40000005),
                          director(60.0, 0x40000006),
                          {"S": 15.0, "Id": mate, "Category": 3, "Params": [1, 24, 0, 0], "Packet": "ActorControlTarget"},
@@ -1928,14 +1930,30 @@ end
         life, = fixture["npcs"]["5000001"]
         self.assertEqual((life["spawn"], life["pulled"], life["death"], life["max_hp"]), (2.0, 20.0, 70.0, 2000))
         self.assertEqual(life["hp"], [[2.0, 100.0], [30.0, 50.0], [70.0, 0.0]])
-        self.assertEqual(fixture["events"], [[20.0, "bgm", 37], [70.0, "bgm", 0], [70.0, "complete"],
-                                             [70.0, "objective", 0]])
+        # The fight's own timeline too (since 2026-11-11): the boss coming out, its battle talk and ActionTimelines.
+        self.assertEqual(fixture["events"], [[2.0, "appear", 5000001], [20.0, "bgm", 37], [22.0, "talk", 3700],
+                                             [23.0, "timeline", [5000001, 1415]], [70.0, "bgm", 0],
+                                             [70.0, "complete"], [70.0, "objective", 0]])
         self.assertEqual((fixture["wipes"], fixture["bars"], fixture["casts"]),
                          ([[40.0, 50.0]], [[5.0, 24, 2.0]], [[21.0, 5000001, 903]]))
         self.assertEqual(list(fixture["party"]), ["party1"])
         with tempfile.TemporaryDirectory() as tmp:
             path = duty_sim.save(fixture, Path(tmp) / "999-made.json")
             self.assertEqual(json.loads(path.read_text()), fixture)
+
+
+class DutySimFightKindsTest(unittest.TestCase):
+    """A fixture's talk, timeline and appear events are compared only where it has them (older fixtures don't.)"""
+
+    def test_only_the_fixtures_kinds(self):
+        calls = [(5.0, "battle_talk", [4246177, 1644, 3700, 0, 5000]), (6.0, "complete_duty", [])]
+        result = duty_sim.SimResult("x", Path("x.lua"))
+        old = {"events": [[6.0, "complete"]]}
+        self.assertEqual(duty_sim.compare(old, calls, result), [])
+        new = {"events": [[5.5, "talk", 3700], [6.0, "complete"]]}
+        self.assertEqual(duty_sim.compare(new, calls, result), [])
+        late = {"events": [[1.0, "talk", 3700], [6.0, "complete"]]}
+        self.assertEqual(duty_sim.compare(late, calls, result), ["talk 3700: 5.0 s, retail 1.0 s"])
 
 
 class LibZstdTest(unittest.TestCase):

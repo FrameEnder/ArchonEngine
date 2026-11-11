@@ -75,37 +75,37 @@
             "comment": "659 (2.2 s, round her; stuns for 4 s) at 31.8 s (the Duty Support run), 49.5 s later again"
         },
         {
-            "time": 5.0,
-            "every": 17.2,
+            "time": 7.7,
+            "every": 15.8,
             "after": 1416,
             "data": {
                 "type": "action",
                 "action_id": 656
             },
-            "comment": "After each time she comes back (the director's, from her cast's end or from her coming back when she casts nothing): 656 3.9-7.1 s on, then every 15.8-18.4 s"
+            "comment": "After a cast of hers from where she came back (Mistral Shriek, Mistral Song, 661; the director restarts this at the cast's end): 656 7.1-8.4 s on (five times in three runs), again 15.6-15.9 s later"
         },
         {
-            "time": 11.0,
+            "time": 12.6,
             "every": 15.5,
             "after": 1416,
             "data": {
                 "type": "action",
                 "action_id": 657
             },
-            "comment": "657 10.8-12.4 s on, then every 15-16.5 s"
+            "comment": "657 12.4-12.9 s on, again 15.2-16.4 s later"
         },
         {
-            "time": 18.8,
-            "every": 32.5,
+            "time": 19.4,
+            "every": 31.7,
             "after": 1416,
             "data": {
                 "type": "action",
                 "action_id": 658
             },
-            "comment": "658 18.8-20.3 s on (three times), 31.8 s later again"
+            "comment": "658 18.8-20.3 s on, again 31.7 s later (once)"
         },
         {
-            "time": 33.0,
+            "time": 35.2,
             "every": 49.5,
             "after": 1416,
             "data": {
@@ -113,7 +113,78 @@
                 "action_id": 659,
                 "target": "itself"
             },
-            "comment": "659 35.2 s on (once), 11.6 s on after Aerial Blast (once): a fit"
+            "comment": "659 (2.2 s) begun 35.1-35.3 s on (twice); when again isn't recorded: the pull's spacing"
+        },
+        {
+            "time": 3.9,
+            "every": 13.4,
+            "after": 1412,
+            "data": {
+                "type": "action",
+                "action_id": 656
+            },
+            "comment": "After she came back at 50 % and cast nothing (her plumes, 1412: the director restarts this as she's back): 656 3.9 s on, again 13.4 s later (both runs that got there)"
+        },
+        {
+            "time": 10.8,
+            "every": 11.4,
+            "after": 1412,
+            "data": {
+                "type": "action",
+                "action_id": 657
+            },
+            "comment": "657 10.8 s on, again 11.4 s later"
+        },
+        {
+            "time": 18.6,
+            "every": 31.7,
+            "after": 1412,
+            "data": {
+                "type": "action",
+                "action_id": 658
+            },
+            "comment": "658: not seen before she reached 40 % (her vanishing at 40 % came first); the cast's spacing, a guess"
+        },
+        {
+            "time": 2.4,
+            "every": 15.9,
+            "after": 660,
+            "data": {
+                "type": "action",
+                "action_id": 657
+            },
+            "comment": "After Aerial Blast (660, from the cast's end): 657 1.8-2.9 s on (three runs), again 14.2-17.7 s later"
+        },
+        {
+            "time": 11.6,
+            "every": 49.5,
+            "after": 660,
+            "data": {
+                "type": "action",
+                "action_id": 659,
+                "target": "itself"
+            },
+            "comment": "659 begun 11.6 s on (the Duty Support run)"
+        },
+        {
+            "time": 17.7,
+            "every": 20.6,
+            "after": 660,
+            "data": {
+                "type": "action",
+                "action_id": 656
+            },
+            "comment": "656 17.7 s on, again 20.6 s later (the Duty Support run)"
+        },
+        {
+            "time": 28.0,
+            "every": 31.7,
+            "after": 660,
+            "data": {
+                "type": "action",
+                "action_id": 658
+            },
+            "comment": "658 28.0 s on (the Duty Support run)"
         }
     ],
     "timeline_always_plays": false,

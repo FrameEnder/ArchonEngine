@@ -19,9 +19,19 @@
 --               end); 33.0 s after it began Aerial Blast (660, 3.7 s) from the middle; 11.4 s after that 1412 and eight
 --               satin plumes (BNpcBase 688) at the eight spots, a second apart, each going for the player; 51.1 s after
 --               Aerial Blast began 661 (3.7 s) from the north (the Duty Support run, near its end; what comes after
---               isn't recorded.)
+--               isn't recorded: here Aerial Blast again 33.0 s after 661 began, the satin plumes and 661 after it as
+--               before, over and over (a guess, from the spacing of Mistral Song and Aerial Blast).)
+-- At 40 % she can't be hurt (her hits show Invincible, effect 7) from her vanishing until her line 3703 (both runs
+-- that got there; her health stood at 40.2-40.4 % meanwhile), and 5.5 s after Mistral Song began the four monoliths
+-- crumble (ActionTimeline 1715 on each, all three runs to a tenth) and are gone 2.2 s later. A monolith below 65 %
+-- shows its cracks (ActionTimeline 1713, once; four times in two runs, as their health went from 69.5 % and above to
+-- 60.6 % and below.)
+-- Her thresholds: 80 % and 40 % as her health in whole percent reaches them (retail vanished at 80.1 and 40.2-40.4 %),
+-- 50 % below it (her line came after 49.0-49.1 %, never at 50.5-50.8 %.)
 -- Plumes left standing blow (665) 24.7 s after they came and fall 2.3 s later. Each time she's back her timeline
--- starts again (anchor 1416). Duty Support's members gather behind the monolith at (-8, -4) for Mistral Shriek, the
+-- starts again: from her cast's end (anchor 1416: 656 7.7 s on, 657 12.6, 658 19.4, 659 35.2), from her coming back
+-- at 50 % with no cast (anchor 1412: 656 3.9, 657 10.8), from Aerial Blast's end (anchor 660: 657 2.4, 659 11.6, 656
+-- 17.7, 658 28.0); every run's times in TrialGaruda_239. A monolith left after a wipe stands again whole. Duty Support's members gather behind the monolith at (-8, -4) for Mistral Shriek, the
 -- Conjurer says 14381 at the pull and the Thaumaturge 14382 as the first Shriek begins. At 0 her last line (3705),
 -- the closing cutscene and the duty complete. Everyone down is a party wipe (server/wipe.rs): it begins again.
 
@@ -57,6 +67,10 @@ TIMELINE_FEATHER_RAIN = 1411
 -- while she's away.)
 PHASE_READY = TIMELINE_BACK
 PHASE_NONE = TIMELINE_VANISH
+-- Her timeline after she came back at 50 % and cast nothing (656 3.9 s on, sooner than after a cast), and after
+-- Aerial Blast (657 at once.)
+PHASE_AFTER_HALF = TIMELINE_PLUMES
+PHASE_AFTER_BLAST = 660
 
 -- Away 3.6 s (all twelve times), the cast 0.7 s after she's back (0.6-0.8).
 AWAY = 3.6
@@ -74,9 +88,9 @@ CAST_SECONDS = { [659] = 2.2, [660] = 3.7, [661] = 3.7, [662] = 3.7, [667] = 3.7
 
 -- When she vanishes: her health below these, not while she casts (retail: 1.7-3.4 s after it fell below 80 %,
 -- 0.6-3.0 s after 40 %; 2.4 s after a cast's end at the soonest.)
-SHRIEK_BELOW = 80
+SHRIEK_AT = 80
 HALF_BELOW = 50
-SONG_BELOW = 40
+SONG_AT = 40
 SHRIEK_AFTER_CROSSING = 2.0
 SONG_AFTER_CROSSING = 0.7
 VANISH_AFTER_CAST = 2.4
@@ -112,6 +126,15 @@ FEATHER_RAIN_EVERY = 5.2
 BLAST_AFTER_SONG = 33.0
 LAST_AFTER_BLAST = 51.1
 
+-- The monoliths' ActionTimelines: cracked below 65 %, crumbling 5.5 s after Mistral Song began, gone 2.2 s after.
+MONOLITH_CRACKED = 1713
+MONOLITH_CRUMBLES = 1715
+MONOLITH_CRACKED_BELOW = 65
+CRUMBLE_AFTER_SONG = 5.5
+MONOLITHS_GONE_AFTER = 2.2
+-- Aerial Blast again after 661 began (not recorded: Mistral Song to Aerial Blast's spacing, a guess.)
+BLAST_AGAIN_AFTER_LAST = 33.0
+
 -- Mistral Shriek: Duty Support's members gathered behind the monolith at (-6.37, -6.36), at (-8, -4) (all three
 -- Shrieks; Bob's capture 6a5244ec.)
 SHRIEK_SHELTER = { x = -8.0, z = -4.0 }
@@ -138,6 +161,7 @@ cast_until = 0
 shrieks = 0
 garuda_at = nil
 feather_rain = false
+cracked = {}
 later = {}
 
 function after(seconds, fn)
@@ -154,12 +178,17 @@ function bringGaruda(director)
     director:hold_bnpc(helper)
 end
 
-function onSetup(director)
-    director:set_sequence(1)
+function bringMonoliths(director)
+    monoliths = {}
     for _, layout in ipairs(MONOLITHS) do
         monoliths[layout] = director:spawn_bnpc(layout)
         director:hold_bnpc(layout)
     end
+end
+
+function onSetup(director)
+    director:set_sequence(1)
+    bringMonoliths(director)
     local behind = { SHRIEK_SHELTER.x, SHRIEK_SHELTER.z }
     director:party_spots(ACTION_SHRIEK, NORTH.x, NORTH.z, { tank = behind, healer = behind, dps = behind })
     reset()
@@ -177,6 +206,7 @@ function reset()
     feather_rain = false
     plumes = {}
     later = {}
+    cracked = {}
 end
 
 -- She vanishes, and 3.6 s later comes back at `spot` (where she was if nil), casting `action` 0.7 s after; `back` (if
@@ -201,7 +231,7 @@ function vanish(director, spot, action, back, cast)
         end
         if action == nil then
             away = false
-            d:restart_timeline(GARUDA, PHASE_READY)
+            d:restart_timeline(GARUDA, PHASE_AFTER_HALF)
             return
         end
         after(CAST_AFTER_BACK, function(d2)
@@ -212,7 +242,11 @@ function vanish(director, spot, action, back, cast)
             cast_until = ticks + math.ceil(CAST_SECONDS[action] / TICK)
             after(CAST_SECONDS[action], function(d3)
                 away = false
-                d3:restart_timeline(GARUDA, PHASE_READY)
+                if action == ACTION_AERIAL_BLAST then
+                    d3:restart_timeline(GARUDA, PHASE_AFTER_BLAST)
+                else
+                    d3:restart_timeline(GARUDA, PHASE_READY)
+                end
             end)
         end)
     end)
@@ -303,10 +337,25 @@ end
 
 function song(director)
     phase = 3
-    vanish(director, MIDDLE, ACTION_SONG, nil, function(d)
+    vanish(director, MIDDLE, ACTION_SONG, function(d)
+        -- Still not to be hurt until her line after the song.
+        d:set_invulnerable(GARUDA, true)
+    end, function(d)
         talk(d, TALK_SONG)
         after(TALK_AFTER_SONG_AFTER, function(d2)
+            d2:set_invulnerable(GARUDA, false)
             talk(d2, TALK_AFTER_SONG)
+        end)
+        after(CRUMBLE_AFTER_SONG, function(d2)
+            for layout, _ in pairs(monoliths) do
+                d2:play_action_timeline(layout, MONOLITH_CRUMBLES)
+            end
+            after(MONOLITHS_GONE_AFTER, function(d3)
+                for layout, _ in pairs(monoliths) do
+                    d3:despawn_bnpc(layout)
+                end
+                monoliths = {}
+            end)
         end)
         after(FEATHER_RAIN_AFTER_SONG, function(d2)
             feather_rain = true
@@ -343,7 +392,14 @@ function aerialBlast(director)
         after(LAST_AFTER_BLAST, function(d2)
             if phase == 4 then
                 phase = 5
-                vanish(d2, NORTH, ACTION_LAST)
+                vanish(d2, NORTH, ACTION_LAST, nil, function(d3)
+                    after(BLAST_AGAIN_AFTER_LAST, function(d4)
+                        if phase == 5 then
+                            phase = 3
+                            aerialBlast(d4)
+                        end
+                    end)
+                end)
             end
         end)
     end)
@@ -382,6 +438,13 @@ function onUpdate(director, health, player_health, info)
     if info[GARUDA] ~= nil then
         garuda_at = { x = info[GARUDA].x, y = info[GARUDA].y, z = info[GARUDA].z, rotation = 0.0 }
     end
+    for layout, _ in pairs(monoliths) do
+        local rock = health[layout]
+        if rock ~= nil and rock < MONOLITH_CRACKED_BELOW and not cracked[layout] then
+            cracked[layout] = true
+            director:play_action_timeline(layout, MONOLITH_CRACKED)
+        end
+    end
     local hp = health[GARUDA]
     if hp == nil then
         return
@@ -404,14 +467,15 @@ function onUpdate(director, health, player_health, info)
         return
     end
     local soonest = cast_until + math.ceil(VANISH_AFTER_CAST / TICK)
-    if phase == 1 and shrieks == 0 and vanish_due == nil and hp < SHRIEK_BELOW then
+    if phase == 1 and shrieks == 0 and vanish_due == nil and hp <= SHRIEK_AT then
         vanish_due = math.max(ticks + math.ceil(SHRIEK_AFTER_CROSSING / TICK), soonest)
     elseif phase == 1 and hp < HALF_BELOW then
         vanish_due = nil
         half(director)
         return
-    elseif phase == 2 and hp < SONG_BELOW and vanish_due == nil then
+    elseif phase == 2 and hp <= SONG_AT and vanish_due == nil then
         vanish_due = math.max(ticks + math.ceil(SONG_AFTER_CROSSING / TICK), soonest)
+        director:set_invulnerable(GARUDA, true)
     end
     if phase == 1 and next_vanish ~= nil and ticks >= next_vanish and ticks >= soonest then
         shriek(director)
@@ -450,10 +514,15 @@ function onPartyWipe(director)
     end
     director:despawn_bnpc(GARUDA)
     director:despawn_bnpc(HELPER)
+    -- The monoliths stand again, whole (cracked or crumbled.)
+    for layout, _ in pairs(monoliths) do
+        director:despawn_bnpc(layout)
+    end
     attempts = attempts + 1
     reset()
     waiting_for_new_garuda = true
     bringGaruda(director)
+    bringMonoliths(director)
 end
 
 -- No shortcuts in a trial.

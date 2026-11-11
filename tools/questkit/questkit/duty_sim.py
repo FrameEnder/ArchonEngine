@@ -18,7 +18,11 @@ of the duty from a Chronofoil capture (`questkit chronofoil --battle N.V`), in s
 * `bars`: the progress bars of the party's event actions (a door being opened: ActorControlTarget 3 with 1 and the
   EventAction row as it began, 0 as it ended): when, the row, how long;
 * `events`, what the script must do as retail did: the boss music (`bgm`, the director's 0x80000001), objectives done
-  (`objective`, 0x80000016), the director's sequences, and `complete` (0x40000003).
+  (`objective`, 0x80000016), the director's sequences, and `complete` (0x40000003); in fixtures made since 2026-11-11
+  also the fight's own timeline: battle talk (`talk`, its text ID), a laid-out NPC's ActionTimelines (`timeline`,
+  `[layout, timeline]`: ActorControl 407) and every NPC the run brought out after the start (`appear`, its layout),
+  which the script must do through `battle_talk`, `play_action_timeline` and `spawn_bnpc`. Only the kinds a fixture
+  has are compared, so older fixtures go on as they were.
 
 The simulator runs the real script in Lua 5.4 as the server does: `onSetup`, `onCommence` at 0, `onUpdate` every half
 second with every living NPC's health and details (`info[layout] = { hp, max_hp, x, y, z, target, id }`, `player1`,
@@ -63,6 +67,10 @@ DIRECTOR_EVENT = 109
 DUTY_COMMENCE, DUTY_COMPLETE, PARTY_WIPE, DUTY_RECOMMENCE = 0x40000001, 0x40000003, 0x40000005, 0x40000006
 BGM, OBJECTIVE_DONE = 0x80000001, 0x80000016
 EVENT_ACTION_BAR = 3  # ActorControlTarget: 1 and the EventAction row as a progress bar begins, 0 as it ends
+ACTION_TIMELINE = 407  # ActorControl: an NPC plays an ActionTimeline (its first parameter)
+# The event kinds a fixture can have that come from the fight itself (made since 2026-11-11); compared only where a
+# fixture has them.
+FIGHT_KINDS = ("talk", "timeline", "appear")
 
 
 # --- making a fixture -----------------------------------------------------------------------------------------------
@@ -171,6 +179,20 @@ def fixture_from_run(run: dict, script: str, source: str = "", unlaid: dict[int,
             events.append([rel(t), "objective", params[2]])
         elif params[1] == DUTY_COMPLETE:
             events.append([rel(t), "complete"])
+    for event in run.get("Events", []):
+        if event.get("Kind") == "battle talk" and event["S"] >= commence:
+            text = _number_after(event.get("Text", ""), "text")
+            if text is not None:
+                events.append([rel(event["S"]), "talk", text])
+    for control in run.get("Controls", []):
+        actor = actors.get(str(control.get("Id")))
+        if (control.get("Category") == ACTION_TIMELINE and control["S"] >= commence and actor
+                and actor.get("Kind") == "battle npc" and actor.get("LayoutId")):
+            events.append([rel(control["S"]), "timeline", [actor["LayoutId"], control["Params"][0]]])
+    for layout, lives in npcs.items():
+        for life in lives:
+            if life["spawn"] is not None and life["spawn"] >= 0:
+                events.append([life["spawn"], "appear", int(layout)])
     last = None
     for event in run.get("Events", []):
         if event.get("Kind") == "sequence":
@@ -412,7 +434,9 @@ class World:
             # Held between its points (one a percent): an NPC's health moves only when it's hit, and a boss not yet
             # pulled is whole (a script may wait for that: the Howling Eye's new Garuda after a wipe.)
             pct = _health_then(life["hp"], then) if life["hp"] else 100.0
-            health[layout] = max(pct, 0.1)
+            # In whole percent, as the server gives it (`health_points * 100 / max_health_points`): a script's "at
+            # 40 %" is 40.0-40.99 there (the Howling Eye's Garuda vanished at 40.2-40.4 %.)
+            health[layout] = int(pct)
             x, y, z = _position_then(life["pos"], then)
             entry = {"hp": round(pct * life["max_hp"] / 100), "max_hp": life["max_hp"], "x": x, "y": y, "z": z,
                      "id": layout}
@@ -526,13 +550,20 @@ def script_events(calls: list[tuple]) -> list[list]:
             events.append([t, "sequence", int(args[0])])
         elif name == "complete_duty":
             events.append([t, "complete"])
+        elif name == "battle_talk" and len(args) > 2:
+            events.append([t, "talk", int(args[2])])
+        elif name == "play_action_timeline" and len(args) > 1:
+            events.append([t, "timeline", [int(args[0]), int(args[1])]])
+        elif name in SPAWNS and args and isinstance(args[0], (int, float)):
+            events.append([t, "appear", int(args[0])])
     return events
 
 
 def compare(fixture: dict, calls: list[tuple], result: SimResult) -> list[str]:
     """Retail's events against the script's: the same kind and value, in order, each within the tolerance."""
     tolerance = fixture.get("tolerance", DEFAULT_TOLERANCE)
-    mine = script_events(calls)
+    kinds = {event[1] for event in fixture["events"]}
+    mine = [event for event in script_events(calls) if event[1] not in FIGHT_KINDS or event[1] in kinds]
     used = [False] * len(mine)
     problems = []
     for event in fixture["events"]:

@@ -70,7 +70,12 @@ capturing player.
 Then two checks:
 
 * **Against retail**: the script's `set_bgm`, `objective`, `set_sequence` and `complete_duty` against retail's, in
-  order, each within 3 s (`tolerance`, `tolerances` by label).
+  order, each within 3 s (`tolerance`, `tolerances` by label). Fixtures made since 2026-11-11 carry the fight's own
+  timeline too, and it's checked the same way: battle talk (`talk`, against `battle_talk`), each laid-out NPC's
+  ActionTimelines (`timeline [layout, id]`, ActorControl 407, against `play_action_timeline`) and every NPC brought out
+  after the start (`appear`, against `spawn_bnpc`); older fixtures don't have these kinds, and they're compared only
+  where a fixture has them. The script sees an NPC's health in whole percent, as the server gives it (it was the
+  recorded percent: a threshold the server reaches at 40.2 % the simulator didn't.)
 * **A wipe rehearsed** in every boss fight retail got through in one go (the bosses: the NPCs whose fall the music or
   an objective followed): the fight to its middle, `onPartyWipe`, `onDutyRecommence`, and the same stretch again.
   Every *kind* of thing the script told the director the first time must come again (not each call: a random choice
