@@ -194,8 +194,16 @@ hate, fought from the moment the player loaded, the player InCombat before the o
 20261111-194208). Since 2026-11-11 a quest battle waits for its opening as a duty does (`waits_for_its_opening`,
 `Instance::awaiting_commence`): its NPCs neither move, notice nor act, show no target or battle stance and are on no
 hater list (`npc_behavior::out_of_the_fight`), and the director's updates wait, until the opening's return
-(`ToServer::ReadyToCommence`) begins it with `onCommence`. Test `a_quest_battle_waits_for_its_opening`. Kawari still
-sends no scene 60000 (`known-issues.md`).
+(`ToServer::ReadyToCommence`) begins it with `onCommence`. Test `a_quest_battle_waits_for_its_opening`.
+
+**The start, scene 60000.** Every one of the 60 quest battle runs in Bob's Chronofoil captures (19 battles, 2026-10-14
+to 11-09) has it as the opening ends: the opening's EventFinish, then EventStart 0x0d (GameProgress) on the battle
+from the player with no argument, and scene 60000 with flags 0x40000; the client answers 1.03 s later (0.3 s in quest
+battle 59) and the event is finished then. The fight is on from the scene's start, not its end: DirectorVars and the
+HaterList at once, and the first blow 0.05 s in (battles 12, 36, 38, 48, whose sides fight each other from the start)
+to about 2 s (Notorious Biggs: 2.0, 1.9 and 2.1 s). Kawari began the fight at the opening's return with no scene until
+2026-11-11; it now plays it there too (`events/content.rs`, `QUEST_BATTLE_SCENE_START`, its return a GameProgress
+one like 60001's), the fight beginning with it as before. Test `a_quest_battle_starts_as_retail_s_did`.
 
 The opening scene's flags differ from one quest battle to the next, always the same for one battle (Bob's Chronofoil
 captures, 14 openings of 9 battles): 0xF841AEFB for 11, 12, 15, 35 and 36 (Kawari's default,

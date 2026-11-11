@@ -73,8 +73,8 @@ use kawari_world::{
 use kawari_world::{
     CLIENT_QUEUE_SIZE, ChatConnection, CustomIpcConnection, Event, EventHandler, GameData,
     ObsfucationData, QUEST_BATTLE_SCENE_COMPLETE, QUEST_BATTLE_SCENE_FINISH,
-    QUEST_BATTLE_SCENE_FINISH_FLAGS, RIDE_SHOOTING_OPENING_FLAGS, RIDE_SHOOTING_OPENING_VALUE,
-    Roulette, TeleportReason, ZoneConnection,
+    QUEST_BATTLE_SCENE_FINISH_FLAGS, QUEST_BATTLE_SCENE_FLAGS, RIDE_SHOOTING_OPENING_FLAGS,
+    RIDE_SHOOTING_OPENING_VALUE, Roulette, TeleportReason, ZoneConnection,
 };
 
 use mlua::Function;
@@ -5167,7 +5167,7 @@ async fn process_server_msg(
                     if fanfare {
                         lua_player.play_scene(
                             QUEST_BATTLE_SCENE_COMPLETE,
-                            SceneFlags::from_bits_retain(0x40000),
+                            SceneFlags::from_bits_retain(QUEST_BATTLE_SCENE_FLAGS),
                             Vec::new(),
                         );
                     } else if stay {

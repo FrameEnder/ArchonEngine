@@ -6,6 +6,13 @@ use kawari::{
 
 use crate::{Event, EventHandler, ToServer, ZoneConnection, lua::LuaPlayer};
 
+/// A quest battle's start, played as its opening ends: EventStart 0x0d (GameProgress) on the battle with no argument,
+/// then this scene with `QUEST_BATTLE_SCENE_FLAGS`, the client answering about 1.03 s later and the event finished then.
+/// The fight is on from the scene's start (DirectorVars and HaterList at once; the first blow 0.05-2 s in): Bob's
+/// Chronofoil captures, every one of 60 quest battle runs (19 battles, 2026-10-14 to 11-09).
+pub const QUEST_BATTLE_SCENE_START: u16 = 60000;
+/// The flags retail plays `QUEST_BATTLE_SCENE_START` and `QUEST_BATTLE_SCENE_COMPLETE` with.
+pub const QUEST_BATTLE_SCENE_FLAGS: u32 = 0x40000;
 /// The "duty complete" fanfare when winning a quest battle.
 pub const QUEST_BATTLE_SCENE_COMPLETE: u16 = 60001;
 /// Played after `QUEST_BATTLE_SCENE_COMPLETE`, before the player is sent back, unless the director picks another
@@ -95,6 +102,12 @@ impl EventHandler for ContentEventHandler {
                     connection.player_data.character.actor_id,
                 ))
                 .await;
+            // A quest battle's opening is followed by its start, as retail's always was (`QUEST_BATTLE_SCENE_START`);
+            // its return is a GameProgress one, below.
+            if event.id.handler_type() == HandlerType::QuestBattle {
+                start_quest_battle(player, event.id.0);
+                return;
+            }
         }
 
         // After winning a quest battle (see FromServer::QuestBattleComplete), play its last scene and send them back.
@@ -144,6 +157,17 @@ impl EventHandler for ContentEventHandler {
 
         player.finish_event();
     }
+}
+
+/// The opening's event ends, and the quest battle's start (`QUEST_BATTLE_SCENE_START`) plays in an event of its own.
+fn start_quest_battle(player: &mut LuaPlayer, handler: u32) {
+    player.finish_event();
+    player.start_event(handler, EventType::GameProgress, 0);
+    player.play_scene(
+        QUEST_BATTLE_SCENE_START,
+        SceneFlags::from_bits_retain(QUEST_BATTLE_SCENE_FLAGS),
+        Vec::new(),
+    );
 }
 
 /// A ContentEntry event (0x2C0000): the question before a duty that's entered on the spot rather than queued for, the
@@ -199,5 +223,35 @@ impl EventHandler for ContentEntryEventHandler {
             }
         }
         player.finish_event();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lua::LuaTask;
+
+    /// Bob asked why Kawari didn't play retail's start of a quest battle: every one of 60 runs in his Chronofoil
+    /// captures had EventStart 0x0d on the battle, with no argument, and scene 60000 with flags 0x40000 as the opening
+    /// ended (Notorious Biggs' 7.3 s in, 689b15da), after the opening's EventFinish.
+    #[test]
+    fn a_quest_battle_starts_as_retail_s_did() {
+        let mut player = LuaPlayer::default();
+        start_quest_battle(&mut player, 0x8006003E);
+        let tasks = &player.queued_tasks;
+        assert!(matches!(tasks[0], LuaTask::FinishEvent));
+        assert!(matches!(
+            tasks[1],
+            LuaTask::StartEvent {
+                event_id: 0x8006003E,
+                event_type: EventType::GameProgress,
+                event_arg: 0,
+            }
+        ));
+        assert!(matches!(
+            &tasks[2],
+            LuaTask::PlayScene { scene: 60000, scene_flags, params }
+                if scene_flags.bits() == 0x40000 && params.is_empty()
+        ));
     }
 }

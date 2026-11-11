@@ -281,7 +281,7 @@ impl LuaPlayer {
         self.queued_tasks.push(LuaTask::AddExp { amount });
     }
 
-    fn start_event(&mut self, event_id: u32, event_type: EventType, event_arg: u32) {
+    pub(crate) fn start_event(&mut self, event_id: u32, event_type: EventType, event_arg: u32) {
         self.queued_tasks.push(LuaTask::StartEvent {
             event_id,
             event_type,
