@@ -344,12 +344,13 @@ impl ZoneConnection {
     /// The layer filter the client is shown `territory` with, for this character's quest progress (`layer_filters`.)
     pub fn layer_filter_key(&self, territory: u16) -> u32 {
         let quests = &self.player_data.quest;
-        crate::layer_filters::filter_key(territory, |quest, sequence| {
+        crate::layer_filters::filter_key(territory, |quest, sequence, completed| {
             quests.completed.contains(quest)
-                || quests.active.0.iter().any(|active| {
-                    active.id as u32 == quest
-                        && sequence.is_none_or(|needed| active.sequence >= needed)
-                })
+                || !completed
+                    && quests.active.0.iter().any(|active| {
+                        active.id as u32 == quest
+                            && sequence.is_none_or(|needed| active.sequence >= needed)
+                    })
         })
     }
 

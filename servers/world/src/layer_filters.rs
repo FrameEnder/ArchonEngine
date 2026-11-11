@@ -24,6 +24,10 @@ struct Entry {
     /// With `quest`: only once it has reached this sequence (or been completed), e.g. 255 after a cutscene.
     #[serde(default)]
     sequence: Option<u8>,
+    /// With `quest`: only once it has been completed (Reclamation's 92220 came with its completion, not its sequence
+    /// 255.)
+    #[serde(default)]
+    completed: bool,
 }
 
 fn table() -> &'static Table {
@@ -40,8 +44,9 @@ pub fn has_filters(territory: u16) -> bool {
 }
 
 /// The filter key for `territory` (0 if it has none), given whether each quest has been reached: `reached(quest,
-/// sequence)` is whether it has been accepted (and, with a sequence, got that far) or completed.
-pub fn filter_key(territory: u16, reached: impl Fn(u32, Option<u8>) -> bool) -> u32 {
+/// sequence, completed)` is whether it has been completed or, unless `completed` is asked for, accepted (and, with a
+/// sequence, got that far.)
+pub fn filter_key(territory: u16, reached: impl Fn(u32, Option<u8>, bool) -> bool) -> u32 {
     let Some(entries) = table().territories.get(&territory) else {
         return 0;
     };
@@ -50,7 +55,7 @@ pub fn filter_key(territory: u16, reached: impl Fn(u32, Option<u8>) -> bool) -> 
         .filter(|entry| {
             entry
                 .quest
-                .is_none_or(|quest| reached(quest, entry.sequence))
+                .is_none_or(|quest| reached(quest, entry.sequence, entry.completed))
         })
         .last()
         .map(|entry| entry.key)
@@ -63,25 +68,25 @@ mod tests {
 
     #[test]
     fn waking_sands_by_the_story() {
-        assert_eq!(filter_key(212, |_, _| false), 90338);
-        assert_eq!(filter_key(212, |quest, _| quest == 509), 90338);
+        assert_eq!(filter_key(212, |_, _, _| false), 90338);
+        assert_eq!(filter_key(212, |quest, _, _| quest == 509), 90338);
         assert_eq!(
-            filter_key(212, |quest, _| quest == 510 || quest == 509),
+            filter_key(212, |quest, _, _| quest == 510 || quest == 509),
             90339
         );
         // Bob's capture b8432613: A Hero in the Making, then the Grand Company's next step, then Sylph-management.
-        assert_eq!(filter_key(212, |quest, _| quest <= 511), 90340);
+        assert_eq!(filter_key(212, |quest, _, _| quest <= 511), 90340);
         assert_eq!(
-            filter_key(212, |quest, _| quest <= 511 || quest == 684),
+            filter_key(212, |quest, _, _| quest <= 511 || quest == 684),
             90341
         );
         assert_eq!(
-            filter_key(212, |quest, _| quest <= 513 || quest == 683),
+            filter_key(212, |quest, _, _| quest <= 513 || quest == 683),
             90342
         );
         // Back from the Wood (746): its Waking Sands cutscene (sequence 255) moves it on; accepted isn't enough.
         let back_from_the_wood = |at: u8| {
-            move |quest: u32, sequence: Option<u8>| {
+            move |quest: u32, sequence: Option<u8>, _| {
                 quest <= 513 || quest == 683 || (quest == 746 && sequence.is_none_or(|s| at >= s))
             }
         };
@@ -89,17 +94,31 @@ mod tests {
         assert_eq!(filter_key(212, back_from_the_wood(255)), 90343);
         // Wrath of the Titan (516), then 517 (92218, every visit at its sequence 2) and Bringing out the Dead (876).
         assert_eq!(
-            filter_key(212, |quest, _| quest <= 516 || quest == 683),
+            filter_key(212, |quest, _, _| quest <= 516 || quest == 683),
             90344
         );
         assert_eq!(
-            filter_key(212, |quest, _| quest <= 517 || quest == 683),
+            filter_key(212, |quest, _, _| quest <= 517 || quest == 683),
             92218
         );
         assert_eq!(
-            filter_key(212, |quest, _| quest <= 518 || quest == 683 || quest == 876),
+            filter_key(212, |quest, _, _| quest <= 518
+                || quest == 683
+                || quest == 876),
             92219
         );
-        assert_eq!(filter_key(140, |_, _| true), 0);
+        // Reclamation (520): 92220 once it's completed (Bob's Chronofoil captures 6a5244ec, 6c495fc4, 09ecf8e7),
+        // not while it's open at sequence 255.
+        let reclamation = |completed: bool| {
+            move |quest: u32, _, only_completed: bool| {
+                quest <= 519
+                    || quest == 683
+                    || quest == 876
+                    || (quest == 520 && (completed || !only_completed))
+            }
+        };
+        assert_eq!(filter_key(212, reclamation(false)), 92219);
+        assert_eq!(filter_key(212, reclamation(true)), 92220);
+        assert_eq!(filter_key(140, |_, _, _| true), 0);
     }
 }

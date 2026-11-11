@@ -207,8 +207,19 @@ from 876's acceptance and 92218 from 517's. Bob's second character didn't go the
 Sands' doors (0x20011-0x20013, in-zone warps) sent PrepareZoning warp type 1, then ActorSetPos with the key, and
 ActorControlSelf 236 `[1]`/`[2]` and 147 `[the handler]` around them.
 
+**After Reclamation** (Bob's Chronofoil captures 6a5244ec, 6c495fc4 and 09ecf8e7 of 2026-11-08, 689b15da of
+2026-11-09): **92219** in ZoneInit with Reclamation (520, ManFst405: 92219's layer is its own) open at sequence 255,
+then **92220** in the ActorSetPos (warp type 1, arg 2, to (32.3, 1.1, 0.5) in the Solar) that came with its
+completion as its last cutscene ended, and in ZoneInit at the next visit. Casing the Castrum's Y'shtola (4309241)
+stands under it. Retail moved the key at the completion, not at sequence 255 (reached a cutscene earlier, inside the
+same event), so the entry asks for that: an entry's `completed` takes only its quest's completion. Kawari had no
+92220 and kept the Solar on 92219, where nobody offers the next quest (Bob's bundle 20261111-133237: "I don't see
+anyone to accept the next quest"). Kawari's 520 script completes the quest before its warp, so that ActorSetPos
+carries the new key as retail's did; a character already past 520 gets it at the next zone-in or event there.
+
 Kawari reads the key from `resources/data/layer_filters.json` (`layer_filters.rs`: per territory, the last entry whose
-quest has been accepted or completed; an entry without a quest is the default), puts it in ZoneInit, and fills it in
+quest has been accepted (as far as its `sequence`, if it has one) or completed (only completed, with `completed`); an
+entry without a quest is the default), puts it in ZoneInit, and fills it in
 any ActorSetPos to the player that has none (`ZoneConnection::send_ipc_from`). Retail picks it on its own servers, so
 each part of the story's key has to come from a capture of it; a zone with more than one filter logs them and which
 of its layers each shows, with their event NPCs, the first time it's loaded (`log_layer_filters`), which is how the

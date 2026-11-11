@@ -192,8 +192,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   and the fifth of its health, but what statuses 22 and 62 do to it isn't modelled.
 * **The Waking Sands' 92219** (2026-11-06): it came in ZoneInit with Bringing out the Dead at sequence 2, the only visit
   after All Good Things in the captures (the third character's, 21f967d2, didn't go there); the layer that carries it belongs to ManFst405, a quest neither capture had,
-  so it's taken from 876's acceptance (`layer_filters.json`). If ManFst405 is a quest between them, the Waking Sands
-  shows the wrong layers until 876 is accepted.
+  so it's taken from 876's acceptance (`layer_filters.json`). ManFst405 is Reclamation (520), whose completion moves
+  the key on to 92220 (2026-11-11, `travel.md`; untested in game); what brings 92219 in before it is still the guess.
 * **857, 517 and 3867** (2026-11-06, from Bob's dumps and three runs each, Chronofoil 650dbfd8, 0fd8bce0 and 48aaf6fe):
   untested in game. Lord of Crags' sequence 255 comes as the player leaves the cleared Navel (`onDutyCleared`), where
   retail sent it as Titan fell, as for the other duties' quests. All Good Things and You Can't Take It with You
