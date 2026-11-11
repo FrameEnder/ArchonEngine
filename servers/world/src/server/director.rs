@@ -493,6 +493,11 @@ pub enum LuaDirectorTask {
         who: u32,
         held: bool,
     },
+    /// `director:engage_bnpc`: into a fight, after `target` (its weapon drawn, its nameplate red), or out of it.
+    EngageBattleNpc {
+        who: u32,
+        target: Option<u32>,
+    },
     /// A task for later (`director:delay`): it runs when its time comes, in a later tick.
     Later {
         at: Instant,
@@ -505,6 +510,53 @@ fn resolve_bnpc(instance: &Instance, who: u32) -> Option<ObjectId> {
     match instance.find_actor(ObjectId(who)) {
         Some(NetworkedActor::Npc { .. }) => Some(ObjectId(who)),
         _ => instance.find_npc(who).map(|(id, _)| id),
+    }
+}
+
+/// An NPC into a fight after `target`, or out of it (`director:engage_bnpc`): what clients see of it, as retail's
+/// one who talks in History Repeating showed it (`EngageBattleNpc`.)
+pub fn engage_npc(
+    network: &mut NetworkState,
+    instance: &mut Instance,
+    actor_id: ObjectId,
+    target: Option<ObjectId>,
+) {
+    let fighting = target.is_some();
+    network.send_ac_in_range_instance(
+        instance,
+        actor_id,
+        ActorControlCategory::ToggleWeapon {
+            shown: fighting,
+            unk_flag: 1,
+            unk2: if fighting { 0 } else { 1 },
+        },
+    );
+    if fighting {
+        network.send_ac_in_range_instance(
+            instance,
+            actor_id,
+            ActorControlCategory::SetEventState {
+                state: EventState::empty(),
+            },
+        );
+    }
+    network.send_ac_in_range_instance(
+        instance,
+        actor_id,
+        ActorControlCategory::SetBattle { battle: fighting },
+    );
+    let aimed = ObjectTypeId {
+        object_id: target.unwrap_or_default(),
+        object_type: ObjectTypeKind::None,
+    };
+    network.send_in_range_instance(
+        actor_id,
+        instance,
+        FromServer::ActorControlTarget(actor_id, aimed, ActorControlCategory::SetTarget),
+        DestinationNetwork::ZoneClients,
+    );
+    if let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor_mut(actor_id) {
+        spawn.common.target_id.object_id = target.unwrap_or_default();
     }
 }
 
@@ -1310,6 +1362,20 @@ impl UserData for LuaDirector {
             this.tasks.push(LuaDirectorTask::ReleaseBattleNpc { who });
             Ok(())
         });
+        // An NPC the director holds into a fight as retail's are, without its own AI: its weapon drawn, its nameplate
+        // red and `target` targeted; with no target, out of it again (weapon away, nameplate as before, no target.)
+        // Retail's History Repeating (quest battle 86): its one who talks, held all through, did this as the lead-in
+        // began, after the director's helper, and undid it as it stopped healing its side (Bob's Chronofoil capture
+        // d7993cf0: ToggleWeapon, SetEventState 0, SetBattle and SetTarget; then ToggleWeapon off, SetBattle off and
+        // the target cleared.)
+        methods.add_method_mut(
+            "engage_bnpc",
+            |_, this, (who, target): (u32, Option<u32>)| {
+                this.tasks
+                    .push(LuaDirectorTask::EngageBattleNpc { who, target });
+                Ok(())
+            },
+        );
         methods.add_method_mut("hold_bnpc", |_, this, (who, held): (u32, Option<bool>)| {
             this.tasks.push(LuaDirectorTask::HoldBattleNpc {
                 who,
@@ -3763,6 +3829,14 @@ pub fn director_tick(
                     *timeline_position = 0;
                     *timeline_checked = 0;
                 }
+            }
+            LuaDirectorTask::EngageBattleNpc { who, target } => {
+                let Some(actor_id) = resolve_bnpc(instance, *who) else {
+                    tracing::warn!("Failed to find bnpc {who} to engage!");
+                    continue;
+                };
+                let target_id = target.and_then(|target| resolve_bnpc(instance, target));
+                engage_npc(&mut network.lock(), instance, actor_id, target_id);
             }
             LuaDirectorTask::HoldBattleNpc { who, held } => {
                 let Some(actor_id) = resolve_bnpc(instance, *who) else {

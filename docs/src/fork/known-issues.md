@@ -1615,6 +1615,17 @@ Fixed in code and by test or simulation; none played yet.
   spots, Player NPCs dodge by the shapes they see. If he meant something else, this is the place to change
   (`party_bot`'s `authored`).
 
+## Bob's marks of 2026-11-11 (quest battle 86, cast aims)
+
+None of it played yet.
+
+* Quest battle 86's talker engages and leaves the fight as retail's did (`engage_bnpc`); whether the client shows its
+  red nameplate and drawn weapon from those ActorControls alone is untested.
+* Casts are aimed as retail's for the 706 actions seen on themselves or on no one; the three seen both ways (120, 129,
+  135) and every action not seen still go by CastType.
+* The win's exit (territory 138, retail's pop range 4294805) has no fixture: `battle-sim` doesn't follow the player
+  out.
+
 ## World bots (2026-11-11)
 
 Stage 1 of [World Bots](world-bots.md); nothing seen in game yet.
@@ -1624,7 +1635,9 @@ Stage 1 of [World Bots](world-bots.md); nothing seen in game yet.
   (`!worldbots` in the zone.)
 * Retail's standing spots are kept for the six city zones only; elsewhere bots stand in a ring round their place.
 * The shares of their trips, an inn's stay and a loading screen's length are guesses.
-* No weapons drawn, minions, mounts, crafting or sitting yet; they don't turn to face their place after a walk.
+* No weapons drawn, minions, mounts or crafting yet; they don't turn to face their place after a walk.
+* Sitting (2026-11-11): how often a bot goes to a seat or sits on the ground is a guess; seats are retail's in the six
+  city zones only. A bot walking to a seat off the navmesh gets as near as it can and is put on it.
 * Inviting, examining or searching for one finds no character.
 
 ## Raises, boss-fight spots and drop rates (2026-11-10)

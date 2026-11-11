@@ -9,10 +9,10 @@ Dashboard → World bots). Asked for by Bob on 2026-11-11; delivered in stages.
 |---|---|---|
 | 1 | The world's population: idlers at every big aetheryte (30 in Limsa Lominsa, 10 in Ul'dah, 20 in Gridania by default), 5-10 at each marketboard, walking between places, exits, inns, Teleport; the ControlPanel page | done (2026-11-11), not played yet |
 | 2 | Questing bots: routes from Questionable's quest paths (levels 1-100, at least 10 bots per ten levels, no more than 3 on one quest and never two on the same step), fighting quest enemies, quest-reward and dungeon gear, a new name and look after a route | to do |
-| 3 | More like players: minions, mounts, crafting in place, sitting in chairs, chat, search info | to do |
+| 3 | More like players: minions, mounts, crafting in place, chat, search info (sitting, emotes at each other: done 2026-11-11, from Bob's first marks) | to do |
 
 Code: `servers/world/src/server/world_bots.rs`; the settings page `kawari_web/worldbots.py` in ArchonEngine
-ControlPanel; retail's standing spots `resources/data/world_bot_spots.json`.
+ControlPanel; retail's standing spots `resources/data/world_bot_spots.json` and seats `resources/data/world_bot_seats.json`.
 
 ## How it works
 
@@ -56,10 +56,10 @@ spots; `cityemotes.py` counts emotes, which come as ActorControlTarget 290.)
 | What | Retail | World bots |
 |---|---|---|
 | How many in view | median 57 in Limsa Lominsa's Lower Decks (51-62), 13 in the Steps of Nald (7-21), 14 in New Gridania (6-36, up to 44) | Bob's numbers: 30 round Limsa's big aetheryte (129), 10 round Ul'dah's (130), 20 round Gridania's (132), by default; 1 at every other big aetheryte; 5-10 at each marketboard |
-| Where they stood | the busiest 3-yalm cells where players stood still for 8 s or more (each city zone's are its aetheryte plaza and markets) | a recorded spot near its place (within 30 yalms of the crystal, 10 of a board), weighted by how long players stood there, a yalm or so apart; elsewhere a ring round it (4-12 yalms from a crystal, 2-6 from a board), on the navmesh |
+| Where they stood | the busiest 3-yalm cells where players stood still for 8 s or more (each city zone's are its aetheryte plaza and markets) | a recorded spot near its place (within 30 yalms of the crystal, 10 of a board), weighted by how long players stood there, a yalm or so apart; elsewhere a ring round it (4-12 yalms from a crystal, 2-6 from a board); never within a yalm of another bot's spot or where one is walking to; on the floor near that height (below) |
 | How long they stood | median 34-59 s by zone, a tenth 3-10 minutes (10th to 90th percentiles kept per zone) | drawn from the same percentiles |
 | Idle pose changes | 29.6 per player-hour (ActorControl 295: 0, then the pose 0-6, cycled about evenly) | the same rate, the next pose each time |
-| Emotes | 2.9 per player-hour; the commonest 112, 146, 211, 216, 105, 205 | the same rate, weighted as retail's, those that play once (no EmoteMode) |
+| Emotes | 2.9 per player-hour; the commonest 112, 146, 105, 211, 216, 205; most aimed at someone (a hug, 112, always; 205 one time in seven) | the same rate, weighted as retail's, those that play once (no EmoteMode); one retail aimed at someone goes to another bot within 4 yalms (ActorControlTarget 290 naming it), or isn't used when there's none near (since 2026-11-11: hugs went to nobody, Bob's bundle 20261111-082127) |
 | Weapon drawn or sheathed | 18 per player-hour (ActorControl 0) | not done |
 | How they left | one in eight by Teleport (612 of 4,872 that left view): a 5.0 s cast (all 1,526), gone 5.9 s after it began | a trip somewhere else is a Teleport a quarter of the time: the cast shown (ActorCast, action 5), gone 5.9 s after |
 | How they arrived | ZoneIn (ActorControl 200) about a second after they appeared (median of 6,062: 0.9-1.3 s) | ZoneIn a second after it appears, after a Teleport |
@@ -69,7 +69,15 @@ spots; `cityemotes.py` counts emotes, which come as ActorControlTarget 290.)
 | Titles | two in three | two in three, any title of the Title sheet |
 | Minions | more than half had one out (4,062 of 7,495) | not yet (stage 3) |
 | Mounted when they came into view | none | none |
-| Crafting in place, sitting | mode 5 (crafting, 334 times), mode 11 (sitting in a chair, 4% as they appeared), mode 3 (a looped emote such as sitting on the ground, 3%) | not yet (stage 3) |
+| Sitting | in a chair: the emote Sit (50), then SetMode 11 with 2, 4% as they appeared; on the ground: the emote 52, then SetMode 11 with 1; mode 3 (another looped emote, 3%). 37 chairs and benches where they sat in the six city zones (`notes/world-bots/citysit.py`) | after a stay at home, 8% of the time to a free seat within 40 yalms (walk there, onto it facing its way, the emote, SetMode 11 with 2), 2% on the ground where it stands (52, SetMode 11 with 1); a seat has one bot; up (SetMode Normal) when the stay's over; shown sitting to someone who arrives (its spawn's mode). No poses or emotes while sitting. The shares are guesses near retail's |
+| Crafting in place | mode 5 (334 times) | not yet (stage 3) |
+| Crafters' and gatherers' tools | idle in town, only the main tool (no off-hand) | the same (since 2026-11-11: their off-hand, a crafter's station, showed on the floor behind them, Bob's bundle 20261111-082127) |
+
+**Its feet on the floor.** A spot is put on the zone's collision floor within a yalm of its height (a recorded spot:
+retail stood there at that height; a yalm's step up at most), or three for a spot in a ring, else the navmesh's ground
+if it's as near; a recorded spot with neither stays as recorded (`Ground::settle`). The navmesh alone put Sellenix Sele
+on the floor below New Gridania's aetheryte plaza, at -0.13 where retail's players stood at 1.28 (Bob's bundle
+20261111-082127.)
 
 **What a bot does.** At home, when a stay is over: most often another spot by its place (a short walk); three times
 in ten somewhere else, if travel is on: a Teleport to another big aetheryte (a city's three times in four), or a walk
@@ -126,7 +134,10 @@ after a route, a Teleport out and back as someone new.
 
 * Nothing has been seen in game: the places found, the spots, the bots' looks and walks, the Teleport cast and
   arrival, the inns and exits.
-* Weapons drawn and sheathed, minions, mounts, crafting in place, sitting in chairs or on the ground (stage 3).
+* Sitting, aimed emotes, spacing and the floors' heights are tested on the server (`world_bots::tests`), not yet seen
+  in game: whether the client puts a bot onto the bench by its SetMode or needs it exactly on the seat.
+* Weapons drawn and sheathed, minions, mounts, crafting in place (stage 3); sitting in looped emotes other than the
+  ground.
 * Inviting, examining or searching for a world bot finds no character (nothing happens.)
 * Bots don't turn to face their place after a walk (an ActorMove to turn on the spot makes the client play a step).
 * Questing bots (stage 2).

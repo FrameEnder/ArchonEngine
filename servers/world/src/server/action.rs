@@ -1689,6 +1689,14 @@ pub fn execute_action(
                     return;
                 };
 
+                // Someone already at 0 HP when it lands (it died during the cast) takes nothing from it but a raise's
+                // offer: retail's History Repeating heal (1070) aimed at one of its side who fell meanwhile healed
+                // nobody (Bob's Chronofoil capture d7993cf0), where Kawari's healed the corpse (bundle
+                // 20261111-072219.)
+                if actor.get_common_spawn().health_points == 0 {
+                    keep_for_the_dead(&mut effects_builder.effects);
+                }
+
                 if cannot_be_hurt(actor) {
                     effects_builder.effects = effects_builder
                         .effects
@@ -3018,6 +3026,19 @@ fn interrupt_cast(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, ac
 /// executes any action"; not in Bob's captures: nobody was raised in them.) Given by `revive_in_place` and to raised
 /// party bots, who stand still and do nothing while they have it (`party_bot`.)
 pub const STATUS_RAISED: u16 = 418;
+/// A raise's offer of a revive (Raise, Resurrection: `effects:offer_revive`), the one thing that lands on the dead.
+const STATUS_REVIVE_OFFER: u16 = 148;
+
+/// What an action does to someone already at 0 HP when it lands: nothing but a raise's offer
+/// (`STATUS_REVIVE_OFFER`.)
+pub(crate) fn keep_for_the_dead(effects: &mut Vec<TargetEffect>) {
+    effects.retain(|effect| {
+        matches!(
+            effect.0,
+            TargetEffectKind::GainEffect { effect_id, .. } if effect_id == STATUS_REVIVE_OFFER
+        )
+    });
+}
 
 /// Whether a hit can't hurt `actor` (its damage shown as Invincible, effect 7, and none taken): an NPC made
 /// invulnerable, or anyone just raised (`STATUS_RAISED`.)

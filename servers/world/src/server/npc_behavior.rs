@@ -1732,10 +1732,13 @@ pub fn npc_behavior(
             );
         } else {
             // The cast's position is where it's aimed, and one placed on the ground names no target (`cast_aim`.)
-            let placed = game_data
-                .lock()
-                .get_action_info(request.action_id)
-                .is_some_and(|info| info.cast_type == CAST_TYPE_PLACED);
+            let aim = retail_cast_aim(
+                request.action_id,
+                game_data
+                    .lock()
+                    .get_action_info(request.action_id)
+                    .map(|info| info.cast_type),
+            );
             let (cast_target, position) = {
                 let actor = instance.find_actor(id).unwrap();
                 let aimed_at = match actor {
@@ -1744,7 +1747,11 @@ pub fn npc_behavior(
                     } => cast.target_position,
                     _ => actor.position().0,
                 };
-                cast_aim(placed, request.target.object_id, aimed_at)
+                if aim == CastAim::Caster {
+                    (id, actor.position())
+                } else {
+                    cast_aim(aim, request.target.object_id, aimed_at)
+                }
             };
 
             // inform players that this enemy is casting
@@ -2323,11 +2330,55 @@ const CAST_TYPE_PLACED: u8 = 7;
 /// the spot as its position, which is where the client draws its marker. Kawari sent the caster's position and the
 /// target's ID, so the Stone Vigil's helpers' markers were all drawn where the helpers stood, in the middle of the
 /// room, while they hit where the party had stood (Bob's bundle 20261110-182408.)
-pub fn cast_aim(placed: bool, target: ObjectId, aimed_at: Vec3A) -> (ObjectId, Position) {
+pub fn cast_aim(aim: CastAim, target: ObjectId, aimed_at: Vec3A) -> (ObjectId, Position) {
     (
-        if placed { ObjectId::default() } else { target },
+        if aim == CastAim::Ground {
+            ObjectId::default()
+        } else {
+            target
+        },
         Position(aimed_at),
     )
+}
+
+/// What an NPC's cast names (`cast_aim`): its target, itself, or no one (an area placed on the ground.)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CastAim {
+    Target,
+    Caster,
+    Ground,
+}
+
+/// How retail's NPCs aimed `action`'s cast (`resources/data/cast_aims.json`: every NPC cast in Bob's 124 Chronofoil
+/// captures, 805 actions, all but three always the same way: 609 on the caster itself, 97 on no one, 99 at someone),
+/// or else by its CastType: placed on the ground (7) names no one, anything else its target. Before 2026-11-11 only the
+/// CastType decided, so an area round the caster named its target and the client drew its marker there: History
+/// Repeating's lancers' 866, retail's on themselves 437 times of 437 (Bob's bundle 20261111-072219: "some of the enemies
+/// didn't have their AOEs correctly set".)
+pub fn retail_cast_aim(action: u32, cast_type: Option<u8>) -> CastAim {
+    static AIMS: std::sync::OnceLock<HashMap<u32, CastAim>> = std::sync::OnceLock::new();
+    let aims = AIMS.get_or_init(|| {
+        let value: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../resources/data/cast_aims.json"))
+                .unwrap_or_default();
+        let mut aims = HashMap::new();
+        for (key, aim) in [("self", CastAim::Caster), ("none", CastAim::Ground)] {
+            for id in value
+                .get(key)
+                .and_then(|ids| ids.as_array())
+                .into_iter()
+                .flatten()
+                .filter_map(|id| id.as_u64())
+            {
+                aims.insert(id as u32, aim);
+            }
+        }
+        aims
+    });
+    aims.get(&action).copied().unwrap_or(match cast_type {
+        Some(CAST_TYPE_PLACED) => CastAim::Ground,
+        _ => CastAim::Target,
+    })
 }
 
 pub fn npc_use_action(
@@ -2383,11 +2434,18 @@ pub fn npc_use_action(
 
     // Show the cast bar, the same way NPCs cast their own actions: aimed where its target stands (`cast_aim`.)
     if cast_time > 0.0 {
-        let placed = game_data
-            .lock()
-            .get_action_info(action_id)
-            .is_some_and(|info| info.cast_type == CAST_TYPE_PLACED);
-        let (cast_target, position) = cast_aim(placed, target_id, target_position);
+        let aim = retail_cast_aim(
+            action_id,
+            game_data
+                .lock()
+                .get_action_info(action_id)
+                .map(|info| info.cast_type),
+        );
+        let (cast_target, position) = if aim == CastAim::Caster {
+            (actor_id, Position(position.0))
+        } else {
+            cast_aim(aim, target_id, target_position)
+        };
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorCast {
             spell_id: request.action_id as u16,
             action_type: request.action_type,

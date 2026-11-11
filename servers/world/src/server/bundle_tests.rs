@@ -14,10 +14,14 @@ use kawari::{
 use crate::{
     FromServer,
     server::{
-        action::{STATUS_RAISED, cannot_be_hurt, ends_protection, toss_target, tossed_by},
+        action::{
+            STATUS_RAISED, cannot_be_hurt, ends_protection, keep_for_the_dead, toss_target,
+            tossed_by,
+        },
         actor::{NetworkedActor, NpcState, kill_actor},
+        director::engage_npc,
         modifiers,
-        npc_behavior::cast_aim,
+        npc_behavior::{CastAim, cast_aim, retail_cast_aim},
         party_bot,
         test_world::{TestWorld, control_from, packet_from},
     },
@@ -155,14 +159,14 @@ fn a_player_npc_goes_back_at_a_wipe_without_leaving() {
 fn a_cast_is_aimed_where_its_target_stands() {
     let member = ObjectId(BOT);
     let spot = glam::Vec3A::new(17.75, 0.05, -253.44);
-    let (target, position) = cast_aim(true, member, spot);
+    let (target, position) = cast_aim(CastAim::Ground, member, spot);
     assert_eq!(
         target,
         ObjectId::default(),
         "placed on the ground: no target"
     );
     assert_eq!(position.0, spot);
-    let (target, position) = cast_aim(false, member, spot);
+    let (target, position) = cast_aim(CastAim::Target, member, spot);
     assert_eq!((target, position.0), (member, spot));
 }
 
@@ -264,5 +268,106 @@ fn someone_just_raised_takes_no_damage_until_they_act() {
                 if *effect_id == STATUS_RAISED as u32
         )),
         "they see it end: {sent:?}"
+    );
+}
+
+/// Bundle 20261111-072219, "some of the enemies didn't have their AOEs correctly set" (quest battle 86): Kawari aimed
+/// every cast at the enemy's target, where retail's NPCs cast 866 on themselves (437 of 437 casts) and 1070 and 1304 at
+/// no one. Each action's aim is retail's (`resources/data/cast_aims.json`); one not seen goes by its CastType.
+#[test]
+fn an_npc_cast_is_aimed_as_retails_was() {
+    assert_eq!(retail_cast_aim(866, Some(2)), CastAim::Caster);
+    assert_eq!(retail_cast_aim(1070, Some(1)), CastAim::Ground);
+    assert_eq!(retail_cast_aim(1304, None), CastAim::Ground);
+    assert_eq!(retail_cast_aim(999_999, Some(7)), CastAim::Ground);
+    assert_eq!(retail_cast_aim(999_999, Some(2)), CastAim::Target);
+    assert_eq!(retail_cast_aim(999_999, None), CastAim::Target);
+}
+
+/// Bundle 20261111-072219, "not all of the sirens effects are being replicated": a heal landed on someone already
+/// dead. Nothing lands on the dead but a raise's offer.
+#[test]
+fn nothing_but_a_raise_lands_on_the_dead() {
+    let mut effects = vec![
+        TargetEffect(TargetEffectKind::Heal {
+            unk1: [0; 5],
+            amount: 500,
+        }),
+        TargetEffect(TargetEffectKind::GainEffect {
+            unk1: 0,
+            unk2: 0,
+            param: 0,
+            unk3: 0,
+            effect_id: 148,
+            duration: 60.0,
+        }),
+    ];
+    keep_for_the_dead(&mut effects);
+    assert_eq!(effects.len(), 1);
+    assert!(matches!(
+        effects[0].0,
+        TargetEffectKind::GainEffect { effect_id: 148, .. }
+    ));
+}
+
+/// Bundle 20261111-072219, "not all of the sirens effects are being replicated": retail's talker of quest battle 86
+/// drew its weapon, went red and targeted its foe as the fight began, and put its weapon away after (Bob's Chronofoil
+/// captures); Kawari's never did. `engage_npc` sends what retail's did.
+#[test]
+fn an_npc_engages_and_disengages_as_retails_did() {
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let enemy = world.enemy(ENEMY, [5.0, 0.0, 0.0], 1000);
+    let helper = world.enemy(BOT, [8.0, 0.0, 0.0], 1000);
+    world.sent(player);
+    engage_npc(
+        &mut world.network.lock(),
+        &mut world.instance,
+        enemy,
+        Some(helper),
+    );
+    let sent = world.sent(player);
+    assert!(
+        sent.iter()
+            .any(|message| control_from(message, enemy, |category| matches!(
+                category,
+                ActorControlCategory::ToggleWeapon { shown: true, .. }
+            )))
+    );
+    assert!(
+        sent.iter()
+            .any(|message| control_from(message, enemy, |category| matches!(
+                category,
+                ActorControlCategory::SetBattle { battle: true }
+            )))
+    );
+    assert!(sent.iter().any(|message| matches!(message,
+        FromServer::ActorControlTarget(from, target, ActorControlCategory::SetTarget)
+            if *from == enemy && target.object_id == helper)));
+    assert_eq!(
+        world
+            .instance
+            .find_actor(enemy)
+            .unwrap()
+            .get_common_spawn()
+            .target_id
+            .object_id,
+        helper
+    );
+    engage_npc(&mut world.network.lock(), &mut world.instance, enemy, None);
+    let sent = world.sent(player);
+    assert!(
+        sent.iter()
+            .any(|message| control_from(message, enemy, |category| matches!(
+                category,
+                ActorControlCategory::ToggleWeapon { shown: false, .. }
+            )))
+    );
+    assert!(
+        sent.iter()
+            .any(|message| control_from(message, enemy, |category| matches!(
+                category,
+                ActorControlCategory::SetBattle { battle: false }
+            )))
     );
 }

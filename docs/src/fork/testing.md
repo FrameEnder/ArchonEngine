@@ -83,7 +83,10 @@ run has exactly those: a new one fails, and so does one that no longer happens u
 Bundle tests so far (`bundle_tests.rs`): `a_player_who_dies_mid_cast_stops_casting`,
 `a_player_npc_goes_back_at_a_wipe_without_leaving`, `a_cast_is_aimed_where_its_target_stands`,
 `a_whirlwind_tosses_whoever_it_hits`, `someone_just_raised_takes_no_damage_until_they_act` (Bob's request of
-2026-11-10, not a bundle).
+2026-11-10, not a bundle), `an_npc_cast_is_aimed_as_retails_was`, `nothing_but_a_raise_lands_on_the_dead`,
+`an_npc_engages_and_disengages_as_retails_did` (bundles 20261111-072219 and -072620). The world bots' marks of
+bundle 20261111-082127 are in `world_bots::tests`: `a_spot_stands_on_the_floor_near_its_height`, `bots_stand_apart`,
+`a_free_seat`, `a_bot_sits_in_a_seat_and_gets_up`, `a_hug_is_for_another_bot`.
 
 **Since 2026-11-10 (second pass): 21 of 21 clean, nothing written down.** What was done for each is in the table's
 last column; the scripts' changes are in [Dungeons](dungeons.md). What the simulator had wrong this time: party

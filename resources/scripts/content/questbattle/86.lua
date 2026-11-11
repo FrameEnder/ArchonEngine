@@ -119,6 +119,16 @@ TALK_82_AFTER = 11
 TALK_88_AFTER = 5
 WON_AFTER = 15
 ACTION_THROW = 1329
+-- Won, retail let the player out in Western La Noscea (138) at its pop range 4294805, a few yalms from the campfire
+-- where they went in, not where they went in from: within a yalm of this spot in all three of Bob's runs (captures
+-- d7993cf0, 195176f8, 0d10bf45: ZoneInit at -306.00 -41.48 688.96, -305.78 -41.47 687.88, -306.36 -41.48 689.19),
+-- facing 0 (each client's first report there). Before 2026-11-11 it was back where they went in (Bob's bundle
+-- 20261111-072620.)
+EXIT_AFTER_WIN = { territory = 138, x = -306.05, y = -41.48, z = 688.68, rotation = 0.0 }
+-- The one who talks goes into the fight as the lead-in begins (sequence 2), after the director's helper, and out of it
+-- 1.5-3.8 s after sequence 7 begins, as it stops healing: its weapon drawn and its nameplate red, then put away
+-- (`director:engage_bnpc`; all three of Bob's runs, captures d7993cf0, 195176f8 and 0d10bf45.)
+DISENGAGE_AFTER = 7
 
 SPEAKER = { layout = BNPC_TALKER, name = 1417, icon = 73188 }
 
@@ -295,6 +305,7 @@ end
 -- The opening has ended: the director's scene 2, its line and the throw at the helper.
 function onCommence(director)
     sequence(director, SEQUENCE_LEAD_IN)
+    director:engage_bnpc(BNPC_TALKER, BNPC_HELPER)
     director:play_scene(LEAD_IN_SCENE, LEAD_IN_SCENE_FLAGS)
     after(TALK_81_AFTER, function(d) talk(d, 81) end)
     after(THROW_AFTER, function(d) d:use_action(BNPC_TALKER, ACTION_THROW, BNPC_HELPER) end)
@@ -346,6 +357,7 @@ function cleared(director)
     end
     if following == 7 then
         BATTLE:change(director, "the one who talks stops healing", { [BNPC_TALKER] = { heals = {} } })
+        after(DISENGAGE_AFTER, function(d) d:engage_bnpc(BNPC_TALKER) end)
     end
 end
 

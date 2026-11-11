@@ -65,6 +65,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `sweep_bnpc(npc, x, y, z, speed, delay, helper, action, every, cast_after)` | Sends an NPC (actor ID or layout ID) down a straight line to (x, y, z) at `speed` yalms a second, `delay` seconds from now: an ActorMove each tick to where it will be by the next (byte `speed` × 10), as retail's every 0.31 s, and its position along the line on the server (a single ActorMove far off, as `move_bnpc` sends, snaps the NPC there on the client). Without `action`, just a run (the Stone Vigil's first boss to its Swinge spots). `helper` (an NPC, or the walker itself if nil) uses `action` (instant) where the walker is every `every` seconds, from `cast_after` seconds on (`delay` if nil) until it arrives, put there first with an ActorSetPos. The way ahead of it is a danger the party gets out of while it moves (`server/sweep.rs`). Retail's Koshchei's whirlwinds and their helpers in the Stone Vigil. A new sweep of the same NPC replaces its old one; a wipe ends them all. |
 | `party_spots(action, x, z, spots, react_low, react_high, inside)` | Where the party goes as an enemy casts `action` from near (x, z) (within 3 yalms; anywhere if nil): `spots = { tank = { x, z }, healer = { x, z }, dps = { x, z } }` (also `melee`, `ranged`, `dps2`), each member to its role's spot, caught or not, setting off `react_low`-`react_high` s after the cast begins (0.0-0.3 if nil), unless the spot is in an attack being cast (then by the shapes). With `inside` true the spots stand inside `action`'s own area by design (one that covers the arena and hurts less farther out: Titan's Geocrush) and only the other attacks being cast send a member to the shapes (2026-11-09). Set in `onSetup`: retail's Duty Support members' spots for a duty's big casts ([Party Bots](party-bots.md#how-it-fights)). The same action and place set again takes the new spots. |
 | `party_positions(spots, seconds)` | Sends the party to `spots` (as `party_spots`') for `seconds`, whatever is being cast; nil calls it off (a wipe does too). The Stone Vigil's flight before the Sheets of Ice, and the whirlwinds' lanes. |
+| `engage_bnpc(npc, target)` | An NPC (actor ID or layout ID) joins the fight as retail's did, without fighting on its own: ActorControl ToggleWeapon (weapon out), SetEventState 0, SetBattle and SetTarget `target` (an NPC; `director::engage_npc`). Without `target` it leaves the fight: weapon away, SetBattle off, its target cleared. Quest battle 86's talker (since 2026-11-11). |
 | `hold_bnpc(npc, held)` | Holds an NPC (actor ID or layout ID; `held` defaults to true): `npc_behavior` leaves it alone (no noticing, chasing, timeline or enmity on players), so it does only what the director has it do, as retail's boss helpers (`Instance::held_npcs`). |
 | `fade_out_bnpc(npc)` | Fades an NPC (actor ID or layout ID) out, as retail does before taking away one that leaves without dying: ActorControl `FadeOut` (607) `[itself, 1, 0, 100]` from it; despawn it a moment later (retail's DeleteActor came 0.6-1.4 s after). Brotherly Love's beast and Claxio as "Duty Complete" played. |
 | `retreat_bnpc(npc, x, y, z)` | The NPC gives up the fight and runs back to where it appeared, paying no attention to anyone (an open-world leash's return: enmity cleared every tick, its target dropped, no health back in content). Whoever was after it can chase it. Brotherly Love's beast as its friends fell. With `x, y, z` (since 2026-11-03) it runs there instead, along the navmesh (its home from then on): Haukke Manor's eye to the last room's door. A cast it was in the middle of is cancelled (CancelCast 537 `[537, 1, action, 0]`, retail's for the eye's 514). |
@@ -377,10 +378,16 @@ a quest's entering event, 0 for every other event (228 events across the capture
   are 15.0 s where retail's waves came at 15.3-15.5: a timer set at a death fires up to half a second late on the
   tick, and battle-sim drifted 2.0 s by the end of the first run with 15.5 (`questkit battle-sim 86`: 139 events in
   three runs, within 0.8 s.)
+* **The one who talks joins the fight** as it begins and leaves it after (Bob's Chronofoil captures d7993cf0,
+  195176f8 and 0d10bf45): with sequence 2 it draws its weapon, goes red (ToggleWeapon, SetEventState 0, SetBattle)
+  and targets the director's helper (SetTarget); 1.5-3.8 s after sequence 7 it puts its weapon away and leaves the
+  fight (ToggleWeapon off, SetBattle off, its target cleared). Kawari: `engage_bnpc` at the fight's start and 3 s
+  after sequence 7 (since 2026-11-11: it never did, Bob's bundle 20261111-072219, "not all of the sirens effects are
+  being replicated".)
 * **The one who talks heals its side** (1070: 5.7 s, an area aimed at one of them, 654 a heal, 630-978, and Regen
   158 for about 18 s, 38-58 a tick) every 14-38 s while sequences 4-6 last, never after: `Battle`'s heal rule on its
   side below 80 %, every 14 s, dropped at sequence 7. One cast healed three of its side (195176f8): an NPC's area heal
-  aimed at one of its own side now heals everyone of that side inside it ([Combat](combat.md)).
+  aimed at one of its own side now heals everyone of that side inside it ([Combat](combat.md)). It's cast at no one (retail's 1070 named nobody in every cast), and heals nobody already dead.
 * **The bombs** (sequence 7 on: one every 10 s from 10.2-10.5 s after it; from sequence 8 the clock starts again, one
   8.3-8.5 s after it and every 8 s, the last wave's arrival not counting; none after sequence 9). Which of three
   layouts comes is random (11, 11 and 16 bombs in the three runs, each layout often). Nobody can target them (display
@@ -404,6 +411,13 @@ a quest's entering event, 0 for every other event (228 events across the capture
 * The client's battle script (`GaiUsc208Btl_00967`, Bob's extracted scripts of 2026-11-08) has scenes 1 (the opening),
   2 and 3 (the lead-in's waits) and 10 (empty), OnSequence001 (no music), OnSequence004 (a message) and its objective
   (TODO001 before sequence 4, TODO002 from it).
+* **After the win** the player comes out in Western La Noscea (territory 138) at (-306.05, -41.48, 688.68), facing 0:
+  retail's ZoneInit there named pop range 4294805 in all three runs (`EXIT_AFTER_WIN`; since 2026-11-11, where Kawari
+  had let them out elsewhere, Bob's bundle 20261111-072620.) Retail's ZoneInit of that version is 136 bytes, the
+  position at 104 and the pop range at 12.
+* **Where each cast is aimed** is retail's ([Combat](combat.md)): the lancers' Heartstopper (866) on themselves, the
+  talker's 1070 and the thaumaturges' 1304 at no one. The thaumaturges' 1304 was never seen in Bob's runs on Kawari
+  only because they fell before its 33 s.
 
 ### Quest battle 62 — Notorious Biggs (`content/questbattle/62.lua`)
 
