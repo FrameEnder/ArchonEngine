@@ -195,6 +195,9 @@ a character, so there's no row for it in the database's friend table:
   (100 otherwise), already in the party, and the invite is accepted as for a bot that's there. Its content ID is the
   same each time (`PartyBot::content_id`), so the friend list's entry, the party list's and the character are one.
 * **Remove from Friend List** forgets it (the file loses it; FriendRemoved to you).
+* **A world bot** ([World Bots](world-bots.md)) is kept the same way when you send it a friend request, with its own
+  made-up content ID (`0x00B2…`, which `bot_friends::is_bot_content_id` takes as a bot's too); a crafter or gatherer
+  is kept as one of the fighting jobs (since 2026-11-11.)
 
 ## Party, and examining a bot
 

@@ -66,6 +66,7 @@ use crate::{
         npc_behavior::{BEHAVIOR_TICK_SECONDS, NPC_RUN_SPEED, npc_use_action},
         party_npc,
         placement::{self, Placement},
+        world_bots,
     },
     zone_connection::BaseParameters,
 };
@@ -2271,7 +2272,7 @@ fn look_from_hex(text: &str) -> Option<CustomizeData> {
 }
 
 /// A look as hex, to save.
-fn look_to_hex(look: &CustomizeData) -> String {
+pub(crate) fn look_to_hex(look: &CustomizeData) -> String {
     le_bytes(look)
         .iter()
         .map(|byte| format!("{byte:02x}"))
@@ -2280,6 +2281,25 @@ fn look_to_hex(look: &CustomizeData) -> String {
 
 /// The bot of `leader`'s with this made-up content ID, or (content ID 0, as the client's party invite from a
 /// character's menu sends) this name.
+/// A bot's answer to a friend request: accepted at once (InviteCharacterResult, then its acceptance.)
+fn befriended(network: &mut NetworkState, leader: ObjectId, content_id: u64, name: &str) {
+    network.send_to_by_actor_id(
+        leader,
+        FromServer::InviteCharacterResult(content_id, 0, InviteType::FriendList, name.to_string()),
+        DestinationNetwork::ZoneClients,
+    );
+    network.send_to_by_actor_id(
+        leader,
+        FromServer::BotInviteAccepted(
+            content_id,
+            content_id,
+            name.to_string(),
+            InviteType::PendingFriendList,
+        ),
+        DestinationNetwork::ZoneClients,
+    );
+}
+
 fn find_bot_by(
     instance: &Instance,
     leader: ObjectId,
@@ -2364,6 +2384,18 @@ pub fn handle_bot_party_messages(
                 .parties
                 .values()
                 .any(|party| party.members.iter().any(|m| m.actor_id == leader));
+            // A world bot the menu named (one of the crowd shown as players: `world_bots.rs`), as a friend would be
+            // kept.
+            let world_bot = match action {
+                BotPartyAction::Invite { content_id, name }
+                | BotPartyAction::Befriend { content_id, name } => {
+                    let territory = data
+                        .find_actor_instance(leader)
+                        .map(|instance| instance.zone.id);
+                    world_bots::as_friend(&data.world_bots, territory, *content_id, name)
+                }
+                _ => None,
+            };
             let Some(instance) = data.find_actor_instance_mut(leader) else {
                 return true;
             };
@@ -2383,7 +2415,8 @@ pub fn handle_bot_party_messages(
                     // Not here: a bot kept as a friend is called (from the friend list.)
                     let saved = match here {
                         Some(_) => None,
-                        None => bot_friends::find(leader_content_id, *content_id, name),
+                        None => bot_friends::find(leader_content_id, *content_id, name)
+                            .or(world_bot.as_ref().map(|(_, saved)| saved.clone())),
                     };
                     if here.is_none() && saved.is_none() {
                         tracing::info!(
@@ -2453,7 +2486,17 @@ pub fn handle_bot_party_messages(
                                 true,
                                 Some(&saved),
                             ) {
-                                Ok((bot, _)) => bot,
+                                Ok((bot, _)) => {
+                                    // A world bot (or a friend who's one of the crowd here) comes away from it.
+                                    if let Some((index, _)) = world_bot {
+                                        world_bots::joins_party(
+                                            &mut data.world_bots,
+                                            index,
+                                            std::time::Instant::now(),
+                                        );
+                                    }
+                                    bot
+                                }
                                 Err(error) => {
                                     tracing::warn!("Couldn't call {}: {error}", saved.name);
                                     return true;
@@ -2537,6 +2580,17 @@ pub fn handle_bot_party_messages(
                 }
                 BotPartyAction::Befriend { content_id, name } => {
                     let Some(bot) = find_bot_by(instance, leader, *content_id, name) else {
+                        // One of the world's bots: kept as a friend as a party bot is, and accepts at once.
+                        if let Some((_, saved)) = world_bot {
+                            let reply_id = saved.content_id;
+                            let new = bot_friends::add(leader_content_id, saved);
+                            befriended(&mut network, leader, reply_id, name);
+                            tracing::info!(
+                                "{leader} kept the world bot {name} as a friend (already: {})",
+                                !new
+                            );
+                            return true;
+                        }
                         tracing::info!(
                             "{leader} sent {content_id:#x} ({name}) a friend request: none of their bots"
                         );
@@ -2561,26 +2615,7 @@ pub fn handle_bot_party_messages(
                     };
                     let reply_id = saved.content_id;
                     let new = bot_friends::add(leader_content_id, saved);
-                    network.send_to_by_actor_id(
-                        leader,
-                        FromServer::InviteCharacterResult(
-                            reply_id,
-                            0,
-                            InviteType::FriendList,
-                            name.clone(),
-                        ),
-                        DestinationNetwork::ZoneClients,
-                    );
-                    network.send_to_by_actor_id(
-                        leader,
-                        FromServer::BotInviteAccepted(
-                            reply_id,
-                            reply_id,
-                            name.clone(),
-                            InviteType::PendingFriendList,
-                        ),
-                        DestinationNetwork::ZoneClients,
-                    );
+                    befriended(&mut network, leader, reply_id, name);
                     tracing::info!(
                         "{leader} kept their bot {name} as a friend (already: {})",
                         !new
@@ -2675,51 +2710,81 @@ pub fn handle_bot_party_messages(
         ToServer::ExamineCharacter(examiner, target) => {
             let data = data.lock();
             let mut network = network.lock();
-            let Some(instance) = data.find_actor_instance(*examiner) else {
+            let Some(ipc) = examine_information(&data, *examiner, *target) else {
                 return true;
             };
-            let (first, second, name) = match (
-                instance.find_actor(*target),
-                instance.party_bots.get(target),
-            ) {
-                (
-                    Some(NetworkedActor::Npc {
-                        spawn, parameters, ..
-                    }),
-                    Some(bot),
-                ) => {
-                    let (first, second) = examine_bytes(
-                        &spawn.common,
-                        0,
-                        Some(&bot.equipped),
-                        bot.item_level,
-                        Some(parameters),
-                    );
-                    (first, second, spawn.common.name.clone())
-                }
-                // A player: what their spawn shows (their gear's items and stats aren't on the server's side.)
-                (Some(NetworkedActor::Player { spawn, .. }), _) => {
-                    let (first, second) =
-                        examine_bytes(&spawn.common, spawn.title_id, None, 0, None);
-                    (first, second, spawn.common.name.clone())
-                }
-                _ => return true,
-            };
-            let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ExamineCharacterInformation {
-                unk1: first,
-                name,
-                unk2: second,
-            });
             // As retail's: from the one examined.
             network.send_to_by_actor_id(
                 *examiner,
-                FromServer::PacketSegment(ipc, *target),
+                FromServer::PacketSegment(ServerZoneIpcSegment::new(ipc), *target),
                 DestinationNetwork::ZoneClients,
             );
             true
         }
         _ => false,
     }
+}
+
+/// The Examine window `examiner` gets for `target` (ExamineCharacterInformation): a party bot's, a world bot's (what
+/// they wear and their stats) or a player's (what their spawn shows). None for anyone else.
+pub(crate) fn examine_information(
+    data: &WorldServer,
+    examiner: ObjectId,
+    target: ObjectId,
+) -> Option<ServerZoneIpcData> {
+    let instance = data.find_actor_instance(examiner)?;
+    let target = &target;
+    let (first, second, name) = match (
+        instance.find_actor(*target),
+        instance.party_bots.get(target),
+    ) {
+        (
+            Some(NetworkedActor::Npc {
+                spawn, parameters, ..
+            }),
+            Some(bot),
+        ) => {
+            let (first, second) = examine_bytes(
+                &spawn.common,
+                0,
+                Some(&bot.equipped),
+                bot.item_level,
+                Some(parameters),
+            );
+            (first, second, spawn.common.name.clone())
+        }
+        // One of the world's bots: what it wears and its stats, as a party bot's.
+        (
+            Some(NetworkedActor::Npc {
+                spawn,
+                parameters,
+                shown_as_player: Some(shown),
+                ..
+            }),
+            None,
+        ) if instance.world_bots.contains(target) => {
+            let who = world_bots::shown(&data.world_bots, *target);
+            let (first, second) = examine_bytes(
+                &spawn.common,
+                shown.title_id,
+                who.map(|who| &who.equipped),
+                who.map(|who| who.item_level).unwrap_or(0),
+                Some(parameters),
+            );
+            (first, second, spawn.common.name.clone())
+        }
+        // A player: what their spawn shows (their gear's items and stats aren't on the server's side.)
+        (Some(NetworkedActor::Player { spawn, .. }), _) => {
+            let (first, second) = examine_bytes(&spawn.common, spawn.title_id, None, 0, None);
+            (first, second, spawn.common.name.clone())
+        }
+        _ => return None,
+    };
+    Some(ServerZoneIpcData::ExamineCharacterInformation {
+        unk1: first,
+        name,
+        unk2: second,
+    })
 }
 
 /// Removes every bot that joined `leader` from their instance. Returns how many.

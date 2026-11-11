@@ -91,6 +91,20 @@ and level, a glamour from the server's list for its sex and class, `wear_gear`, 
 for its class, level and gear (`bot_parameters`). Stage 2 gives questing bots the gear their quests and dungeons
 would have.
 
+## Examine, friends and parties
+
+As other players are (since 2026-11-11: none of these did anything, Bob's bundles 20261111-084241 and -084610):
+
+* **Examine** shows what it wears, its item level, title and stats, as a party bot's
+  (`party_bot::examine_information`; `Who` keeps its gear and item level.)
+* **Add to Friend List** keeps it as a party bot is kept ([Party Bots](party-bots.md#bots-kept-as-friends)), and it
+  accepts at once; from the friend list it can be called into your party any time after.
+* **Invite to Party** (from its menu, or calling it from the friend list while it's about) brings it into your party
+  as a party bot beside you, the same name, look and glamour (a crafter or gatherer as a fighting job, as players
+  bring their combat job); the one in the crowd Teleports away (its cast shown, standing up first if it sat) and
+  someone new comes home in its place after the loading screen (`world_bots::as_friend`, `joins_party`.) The menu's
+  invite carries only the name: a world bot of that name in your zone.
+
 ## Settings
 
 `world-bots.json` in the server's data folder (`$KAWARI_DATA`, the container's `/kawari/data`, beside `world.db` and
@@ -138,6 +152,6 @@ after a route, a Teleport out and back as someone new.
   in game: whether the client puts a bot onto the bench by its SetMode or needs it exactly on the seat.
 * Weapons drawn and sheathed, minions, mounts, crafting in place (stage 3); sitting in looped emotes other than the
   ground.
-* Inviting, examining or searching for a world bot finds no character (nothing happens.)
+* Searching for a world bot (Player Search) and tells to one find no character.
 * Bots don't turn to face their place after a walk (an ActorMove to turn on the spot makes the client play a step).
 * Questing bots (stage 2).

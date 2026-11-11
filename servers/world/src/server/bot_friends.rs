@@ -2,7 +2,8 @@
 //! name, class, look and glamour) can be called again from the friend list at any time (Invite to Party there: it
 //! appears beside them and joins). The list is `party-bot-friends.json` in the server's data folder (`$KAWARI_DATA`,
 //! beside the databases; else the working directory), by player content ID. A bot isn't a character, so it has no
-//! row in the database's friend table; the friend list adds these (`docs/src/fork/party-bots.md`, "Friends").
+//! row in the database's friend table; the friend list adds these (`docs/src/fork/party-bots.md`, "Friends"). A world
+//! bot befriended is kept the same way, with its own made-up content ID (`world_bots::CONTENT_ID_BASE`.)
 
 use std::{
     collections::HashMap,
@@ -21,7 +22,8 @@ const BOT_ID_TOP: u64 = 0x00B0_0000_0000_0000;
 
 /// Whether a content ID is a bot's made-up one: no character has one like it.
 pub fn is_bot_content_id(content_id: u64) -> bool {
-    content_id & BOT_ID_MASK == BOT_ID_TOP
+    let top = content_id & BOT_ID_MASK;
+    top == BOT_ID_TOP || top == crate::server::world_bots::CONTENT_ID_BASE
 }
 
 /// A bot kept as a friend: what it takes to call the same one again.

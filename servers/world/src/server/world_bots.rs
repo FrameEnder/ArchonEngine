@@ -43,9 +43,11 @@ use kawari::common::TerritoryIntendedUse;
 use crate::{
     FromServer, GameData,
     gamedata::AetheryteRowPlace,
+    inventory::EquippedStorage,
     server::{
         WorldServer,
         actor::{NetworkedActor, NpcState, set_character_mode},
+        bot_friends::SavedBot,
         glamour,
         instance::Instance,
         network::{DestinationNetwork, NetworkState},
@@ -321,7 +323,7 @@ const MARKETBOARD_RING: (f32, f32) = (2.0, 6.0);
 const AETHERYTE_SPOTS_WITHIN: f32 = 30.0;
 const MARKETBOARD_SPOTS_WITHIN: f32 = 10.0;
 /// The actor IDs of world bots' made-up content IDs (party bots' are 0x00B0…, `party_bot::BOT_ID_BASE`.)
-const CONTENT_ID_BASE: u64 = 0x00B2_0000_0000_0000;
+pub const CONTENT_ID_BASE: u64 = 0x00B2_0000_0000_0000;
 
 /// A place in a zone: its kind and where it is.
 #[derive(Debug, Clone, Default)]
@@ -477,6 +479,11 @@ pub struct Who {
     pub online_status: OnlineStatus,
     pub title_id: u16,
     pub pose: u8,
+    /// What it wears, for Examine, and its item level.
+    pub equipped: EquippedStorage,
+    pub item_level: u16,
+    /// The server's glamour it wears, by name (kept if it's befriended.)
+    pub glamour: Option<String>,
 }
 
 /// One world bot.
@@ -504,6 +511,8 @@ pub struct WorldBot {
     /// Sitting (SetMode 11's argument: in a chair, or on the ground), and in which of its zone's seats.
     sitting: Option<u8>,
     seat: Option<usize>,
+    /// It joined a player's party (as a party bot beside them): Teleporting away, then someone new.
+    joined: bool,
 }
 
 impl WorldBot {
@@ -772,9 +781,11 @@ impl WorldBots {
         let gear = game_data.best_gear(classjob, level, &wearable);
         let mut wearing = party_bot::wear_gear(game_data, &gear);
         let glamours = glamour::glamours(game_data);
-        if let Some(chosen) = glamour::pick(&glamours, look.gender, classjob, parent) {
+        let glamour = glamour::pick(&glamours, look.gender, classjob, parent).map(|chosen| {
             party_bot::wear_glamour(game_data, &mut wearing, chosen, &wearable);
-        }
+            chosen.name.clone()
+        });
+        let item_level = wearing.equipped.calculate_item_level(game_data);
         let item_ids: Vec<u32> = gear.iter().map(|(_, id)| *id).collect();
         let weapon = gear
             .iter()
@@ -842,6 +853,9 @@ impl WorldBots {
             online_status: random_online_status(level),
             title_id,
             pose: weighted(&POSES).unwrap_or(0),
+            equipped: wearing.equipped,
+            item_level,
+            glamour,
         })
     }
 
@@ -869,6 +883,7 @@ impl WorldBots {
             cast_shown: false,
             sitting: None,
             seat: None,
+            joined: false,
         })
     }
 
@@ -1382,6 +1397,15 @@ fn step(
             if !bot.cast_shown {
                 bot.cast_shown = true;
                 if let (Some(actor), Some(instance)) = (bot.actor, instance) {
+                    // Up first if it was sitting (it joined a party from a seat.)
+                    set_character_mode(
+                        instance,
+                        &mut network.lock(),
+                        actor,
+                        CharacterMode::Normal,
+                        0,
+                        true,
+                    );
                     show_teleport_cast(actor, instance, network, bot.facing);
                 }
             }
@@ -1395,6 +1419,24 @@ fn step(
             }
         }
         Doing::Away { to, arrive } => {
+            if now >= bot.until && bot.joined {
+                // Gone to a player's party: someone new comes home in its place.
+                bot.joined = false;
+                if let Some(game_data) = game_data {
+                    let who = world_bots.make_who(&mut game_data.lock());
+                    let bot = &mut world_bots.bots[index];
+                    if let Some(who) = who {
+                        bot.who = who;
+                    }
+                }
+                let bot = &mut world_bots.bots[index];
+                bot.doing = Doing::Away {
+                    to: bot.home.0,
+                    arrive,
+                };
+                bot.until = now + Duration::from_secs(fastrand::u64(LOADING.0..=LOADING.1));
+                return;
+            }
             if now >= bot.until {
                 bot.at = to;
                 let places = world_bots.places.get(&to).cloned();
@@ -1854,6 +1896,89 @@ fn show(
     bot.path.clear();
 }
 
+/// A shown world bot's made-up content ID (its SpawnPlayer's, and what the client's menus send.)
+pub fn content_id(actor: ObjectId) -> u64 {
+    CONTENT_ID_BASE | actor.0 as u64
+}
+
+/// Who the shown world bot `actor` is (Examine.)
+pub fn shown(bots: &WorldBots, actor: ObjectId) -> Option<&Who> {
+    bots.bots
+        .iter()
+        .find(|bot| bot.actor == Some(actor))
+        .map(|bot| &bot.who)
+}
+
+/// The shown world bot a player's menu named (its content ID, or with none its name in `territory`), as a party bot
+/// would be kept (`bot_friends::SavedBot`): befriended, or called into a party. A crafter or gatherer comes as one of
+/// the fighting jobs, drawn as the others' are.
+pub fn as_friend(
+    bots: &WorldBots,
+    territory: Option<u16>,
+    content_id: u64,
+    name: &str,
+) -> Option<(usize, SavedBot)> {
+    let (index, bot) = bots.bots.iter().enumerate().find(|(_, bot)| {
+        let Some(actor) = bot.actor else {
+            return false;
+        };
+        if content_id != 0 {
+            self::content_id(actor) == content_id
+        } else {
+            !name.is_empty() && bot.who.name == name && Some(bot.at) == territory
+        }
+    })?;
+    let fighting: Vec<(u8, u16)> = JOBS
+        .iter()
+        .copied()
+        .filter(|(job, _)| !DOH_DOL.contains(job))
+        .collect();
+    let classjob = if DOH_DOL.contains(&bot.who.classjob) {
+        weighted(&fighting).unwrap_or(1)
+    } else {
+        bot.who.classjob
+    };
+    Some((
+        index,
+        SavedBot {
+            content_id: self::content_id(bot.actor?),
+            name: bot.who.name.clone(),
+            classjob,
+            look: party_bot::look_to_hex(&bot.who.look),
+            glamour: bot.who.glamour.clone(),
+            added: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|time| time.as_secs() as u32)
+                .unwrap_or_default(),
+        },
+    ))
+}
+
+/// The world bot at `index` joined a player's party (a party bot beside them now): it Teleports away, and someone new
+/// takes its place at home.
+pub fn joins_party(bots: &mut WorldBots, index: usize, now: Instant) {
+    let aetheryte = bots
+        .aetherytes
+        .iter()
+        .find(|place| place.big && place.territory == bots.bots[index].home.0)
+        .map(|place| place.id)
+        .unwrap_or(0);
+    let bot = &mut bots.bots[index];
+    let aetheryte = match bot.home.1 {
+        Anchor::Aetheryte(row) => row,
+        Anchor::Marketboard(_) => aetheryte,
+    };
+    bot.sitting = None;
+    bot.seat = None;
+    bot.joined = true;
+    bot.cast_shown = false;
+    bot.doing = Doing::Teleporting {
+        to: bot.home.0,
+        aetheryte,
+    };
+    bot.until = now + TELEPORT_GONE;
+}
+
 /// What `!worldbots` prints: whether they're on, how many and where, and the nearest to `player` with what each is
 /// doing.
 pub fn report(data: &WorldServer, player: ObjectId) -> Vec<String> {
@@ -1998,6 +2123,9 @@ mod tests {
             online_status: OnlineStatus::Offline,
             title_id: 0,
             pose: 0,
+            equipped: EquippedStorage::default(),
+            item_level: 0,
+            glamour: None,
         };
         bots.bots.push(WorldBot {
             who,
@@ -2016,6 +2144,7 @@ mod tests {
             cast_shown: false,
             sitting: None,
             seat: None,
+            joined: false,
         });
         let network = Arc::new(Mutex::new(NetworkState::default()));
         let settings = bots.settings();
@@ -2140,6 +2269,9 @@ mod tests {
                 online_status: OnlineStatus::Offline,
                 title_id: 0,
                 pose: 0,
+                equipped: EquippedStorage::default(),
+                item_level: 0,
+                glamour: None,
             },
             home: (at, Anchor::Aetheryte(2)),
             at,
@@ -2153,6 +2285,7 @@ mod tests {
             cast_shown: false,
             sitting: None,
             seat: None,
+            joined: false,
         }
     }
 
@@ -2262,6 +2395,90 @@ mod tests {
         // One not meant for anyone is at nobody.
         let (_, target) = emote_to_use(&[(5, 1, 0)], actor, &world.instance).unwrap();
         assert_eq!(target, ObjectTypeId::default());
+    }
+
+    /// Bob's bundles 20261111-084241 and -084610: "examine not working in overworld player bots", "sending friend
+    /// requests to bots don't work either anymore". A world bot is examined as a party bot is (what it wears, its
+    /// item level and title), and found from the menu's content ID or name to be kept as a friend or called into a
+    /// party; joined, it Teleports off and someone new comes home in its place.
+    #[test]
+    fn a_world_bot_is_examined_befriended_and_joins_a_party() {
+        use crate::server::{WorldServer, party_bot::examine_information, test_world::TestWorld};
+        let mut world = TestWorld::new();
+        let player = world.player(1, [0.0, 0.0, 0.0]);
+        let actor = world.player_npc(2, player, [1.0, 0.0, 0.0]);
+        world.instance.party_bots.remove(&actor);
+        world.instance.world_bots.insert(actor);
+        if let Some(NetworkedActor::Npc {
+            shown_as_player: Some(shown),
+            ..
+        }) = world.instance.find_actor_mut(actor)
+        {
+            shown.title_id = 425;
+        }
+        let name = "Nyth Jael".to_string();
+        world
+            .instance
+            .find_actor_mut(actor)
+            .unwrap()
+            .get_common_spawn_mut()
+            .name = name.clone();
+        let mut data = WorldServer::default();
+        data.instances.push(std::mem::take(&mut world.instance));
+        let mut bot = test_bot(129);
+        bot.actor = Some(actor);
+        bot.who.name = name.clone();
+        bot.who.classjob = 8;
+        bot.who.item_level = 123;
+        data.world_bots.bots.push(bot);
+
+        let Some(ServerZoneIpcData::ExamineCharacterInformation {
+            unk1, name: shown, ..
+        }) = examine_information(&data, player, actor)
+        else {
+            panic!("no Examine for a world bot");
+        };
+        assert_eq!(shown, name);
+        assert_eq!(u16::from_le_bytes([unk1[6], unk1[7]]), 425);
+        assert_eq!(u16::from_le_bytes([unk1[72], unk1[73]]), 123);
+
+        // By its content ID, or by name in its zone (a menu's invite carries only the name.)
+        let (index, saved) = as_friend(&data.world_bots, Some(129), content_id(actor), "").unwrap();
+        assert_eq!(
+            (index, saved.content_id),
+            (0, CONTENT_ID_BASE | actor.0 as u64)
+        );
+        assert!(crate::server::bot_friends::is_bot_content_id(
+            saved.content_id
+        ));
+        assert!(
+            !DOH_DOL.contains(&saved.classjob),
+            "a crafter comes as a fighter"
+        );
+        assert!(as_friend(&data.world_bots, Some(129), 0, &name).is_some());
+        assert!(as_friend(&data.world_bots, Some(132), 0, &name).is_none());
+
+        let now = Instant::now();
+        joins_party(&mut data.world_bots, 0, now);
+        let settings = data.world_bots.settings();
+        let network = Arc::new(Mutex::new(NetworkState::default()));
+        let mut clock = now;
+        for _ in 0..100 {
+            clock += Duration::from_millis(500);
+            step(
+                &mut data.world_bots,
+                0,
+                None,
+                &network,
+                None,
+                &settings,
+                clock,
+            );
+        }
+        let bot = &data.world_bots.bots[0];
+        assert!(!bot.joined);
+        assert_eq!(bot.at, 129);
+        assert_eq!(bot.doing, Doing::Standing);
     }
 
     #[test]

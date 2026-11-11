@@ -86,7 +86,8 @@ Bundle tests so far (`bundle_tests.rs`): `a_player_who_dies_mid_cast_stops_casti
 2026-11-10, not a bundle), `an_npc_cast_is_aimed_as_retails_was`, `nothing_but_a_raise_lands_on_the_dead`,
 `an_npc_engages_and_disengages_as_retails_did` (bundles 20261111-072219 and -072620). The world bots' marks of
 bundle 20261111-082127 are in `world_bots::tests`: `a_spot_stands_on_the_floor_near_its_height`, `bots_stand_apart`,
-`a_free_seat`, `a_bot_sits_in_a_seat_and_gets_up`, `a_hug_is_for_another_bot`.
+`a_free_seat`, `a_bot_sits_in_a_seat_and_gets_up`, `a_hug_is_for_another_bot`, and of bundles 20261111-084241 and
+-084610 `a_world_bot_is_examined_befriended_and_joins_a_party`.
 
 **Since 2026-11-10 (second pass): 21 of 21 clean, nothing written down.** What was done for each is in the table's
 last column; the scripts' changes are in [Dungeons](dungeons.md). What the simulator had wrong this time: party

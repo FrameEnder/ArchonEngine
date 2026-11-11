@@ -1638,7 +1638,8 @@ Stage 1 of [World Bots](world-bots.md); nothing seen in game yet.
 * No weapons drawn, minions, mounts or crafting yet; they don't turn to face their place after a walk.
 * Sitting (2026-11-11): how often a bot goes to a seat or sits on the ground is a guess; seats are retail's in the six
   city zones only. A bot walking to a seat off the navmesh gets as near as it can and is put on it.
-* Inviting, examining or searching for one finds no character.
+* Searching for one, or a tell to one, finds no character. One called into a party appears beside you at once,
+  as a kept party bot does (its copy in the crowd Teleports off).
 
 ## Raises, boss-fight spots and drop rates (2026-11-10)
 
