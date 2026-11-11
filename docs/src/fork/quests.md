@@ -273,8 +273,14 @@ position and rotation) and a timeline for its BNpcBase (`questkit lint` asks for
 uses. Without the layer the server only logs "A quest tried to spawn battle NPC …, but it isn't in this zone's
 drop-ins!" and the quest goes on with nobody to fight: Monumental Hopes (982) after the monument's bar, three enemies
 retail brought out (Bob's bundle 20261111-190723), added from Bob's capture 689b15da as `QB_GaiUsc407_001`, and quest
-1352's one (`QB_GaiUse208_001`, from 71045ef2). questkit's `QuestEnemiesInDropInsTest` checks every fixture's
-`spawns` against the drop-ins (since 2026-11-11), so a transcribed quest whose enemies were never added fails.
+1352's one (`QB_GaiUse208_001`, from 71045ef2). Ten more quests transcribed from Connor's captures had the same gap
+(46 enemies: 986, 1001 and 1002 in Mor Dhona, 1190 in the East Shroud, 1192 and 1346 in Western Thanalan, 1358 and
+1359 in Western La Noscea, 3874 in Eastern La Noscea, 3883 in Central Thanalan), added from those captures (e834e436,
+af05916c in `Connor.zip`) with retail's flags (an ally with its Behavior row, humanoids with their appearance) and a
+timeline for each of the 24 kinds that had none, from what they did there (scripts for 325, 557, 854 and the
+auto-attack 878). questkit's `QuestEnemiesInDropInsTest` checks every fixture's `spawns` against the drop-ins (since
+2026-11-11), so a transcribed quest whose enemies were never added fails; `kawari`'s `every_shipped_drop_in_reads`
+reads every drop-in as the server does.
 When editing a drop-in JSON, splice the new layer into the text: rewriting it through a JSON library changes how every
 float is written.
 

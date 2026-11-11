@@ -1,0 +1,27 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "606": {
+            "npcs": 94
+        },
+        "872": {
+            "npcs": 32
+        }
+    },
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 604,
+                "comment": "2 uses; 2.7 s cast; no damage"
+            },
+            {
+                "action": 606,
+                "comment": "1 uses; 2.2 s cast"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Quest 1190's (GaiUse116) quest enemy, BNpcBase 2488 (level 50, 3883 HP, 1 of them): auto-attacking with 872. Connor's Chronofoil capture af05916c or e834e436 (2026-11-07/09), `questkit`'s SpawnNpc and ActionEffect readings: `players` is the median damage to the player, `npcs` to the NPCs fighting beside them, `every` the median time between uses. Hitbox not recorded."
+}

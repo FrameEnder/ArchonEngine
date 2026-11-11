@@ -286,9 +286,8 @@ class QuestEnemiesInDropInsTest(unittest.TestCase):
     """Every enemy a quest's fixture saw retail bring out (`spawns`) is in a drop-in, or the server can't spawn it
     (Monumental Hopes' three revenants, Bob's bundle 20261111-190723: "isn't in this zone's drop-ins")."""
 
-    # Quests whose enemies are only in Connor's captures (e834e436, af05916c), which aren't at hand: the fixtures keep
-    # only their layout IDs. Remove a quest once its enemies are added; known-issues.md lists them.
-    NOT_YET = {986, 1001, 1002, 1190, 1192, 1346, 1358, 1359, 3874, 3883}
+    # Quests whose enemies aren't added yet (each listed in known-issues.md); none since 2026-11-11.
+    NOT_YET: set[int] = set()
 
     def test_every_spawned_enemy_has_a_drop_in(self):
         root = Path(__file__).resolve().parents[3]

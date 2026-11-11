@@ -133,6 +133,27 @@ mod tests {
 
     use super::*;
 
+    /// Every drop-in the fork ships reads as the server reads it (a broken one only logs at runtime, and its zone loses
+    /// its spawns; the quest enemies' layers of 2026-11-11 added `behavior` and `appearance` to quest layers.)
+    #[test]
+    fn every_shipped_drop_in_reads() {
+        let mut read = 0;
+        for entry in std::fs::read_dir("../resources/dropins").unwrap().flatten() {
+            let path = entry.path();
+            if path
+                .extension()
+                .is_some_and(|extension| extension == "json")
+            {
+                let json = std::fs::read_to_string(&path).unwrap();
+                if let Err(error) = serde_json::from_str::<DropIn>(&json) {
+                    panic!("{}: {error}", path.display());
+                }
+                read += 1;
+            }
+        }
+        assert!(read > 0);
+    }
+
     #[test]
     fn test_simple_example() {
         let json = std::fs::read_to_string("../resources/data/tests/example_dropin.json").unwrap();

@@ -3,13 +3,12 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
-## Quest enemies without a drop-in (2026-11-11)
+## Quest enemies from captures (2026-11-11)
 
-* Ten transcribed quests bring out enemies the server doesn't have, because their positions, levels and HP are only
-  in Connor's Chronofoil captures (e834e436, af05916c), which aren't at hand; the fixtures keep only their layout IDs:
-  986, 1001, 1002, 1190, 1192, 1346, 1358, 1359, 3874 and 3883. Each step that should bring them out goes on with
-  nobody to fight. `QuestEnemiesInDropInsTest.NOT_YET` lists them; adding their layers (and timelines) needs those
-  captures, or Bob's own of the same quests.
+* The 24 kinds of quest enemy added from Connor's captures (quests 986 to 3883, `quests.md`) have timelines from only
+  a fight or two each: how often an action came is the median of the few gaps seen, or a guess at the pace where only
+  one use was seen. 431 (BNpcBase 2893's 1.2 s cast) is left out, its effect not recorded; 878's damage type is a
+  guess (slashing). None is checked in game.
 
 ## Upstream 7.58 (merged on `upstream-sync` on 2026-11-11)
 

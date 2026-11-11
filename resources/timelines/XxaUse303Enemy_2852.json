@@ -1,0 +1,31 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "9": {
+            "players": 110
+        },
+        "870": {
+            "players": 72
+        }
+    },
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 9,
+                "comment": "1 uses"
+            },
+            {
+                "action": 10,
+                "comment": "2 uses; no damage"
+            },
+            {
+                "action": 20,
+                "comment": "1 uses; no damage"
+            }
+        ]
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Quest 3883's (XxaUse303) quest enemy, BNpcBase 2852 (level 50, 2071 HP, 2 of them): auto-attacking with 870. Connor's Chronofoil capture af05916c or e834e436 (2026-11-07/09), `questkit`'s SpawnNpc and ActionEffect readings: `players` is the median damage to the player, `npcs` to the NPCs fighting beside them, `every` the median time between uses. Hitbox not recorded."
+}

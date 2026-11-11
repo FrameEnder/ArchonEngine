@@ -1,0 +1,28 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "971": {
+            "players": 279
+        }
+    },
+    "rotation": {
+        "pace": 3.1,
+        "actions": [
+            {
+                "action": 556,
+                "comment": "1 uses; 3.2 s cast; no damage"
+            },
+            {
+                "action": 971,
+                "every": 3.1,
+                "comment": "4 uses, every 3.1 s; 0.7 s cast"
+            }
+        ]
+    },
+    "animation_locks": {
+        "971": 0.1
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Quest 1359's (GaiUse215) quest enemy, BNpcBase 2897 (level 50, 1941 HP, 1 of them): casting 971 instead of auto-attacking. Connor's Chronofoil capture af05916c or e834e436 (2026-11-07/09), `questkit`'s SpawnNpc and ActionEffect readings: `players` is the median damage to the player, `npcs` to the NPCs fighting beside them, `every` the median time between uses. Hitbox not recorded."
+}

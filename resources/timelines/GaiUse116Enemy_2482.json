@@ -1,0 +1,6 @@
+{
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Quest 1190's (GaiUse116) quest enemy, BNpcBase 2482 (level 50, 3883 HP, 1 of them): never seen acting (the default auto-attack 870). Connor's Chronofoil capture af05916c or e834e436 (2026-11-07/09), `questkit`'s SpawnNpc and ActionEffect readings: `players` is the median damage to the player, `npcs` to the NPCs fighting beside them, `every` the median time between uses. Hitbox not recorded."
+}
