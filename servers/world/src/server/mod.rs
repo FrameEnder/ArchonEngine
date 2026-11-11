@@ -1825,7 +1825,7 @@ pub async fn server_main_loop(
                     for (instance_index, task) in &tasks_to_execute {
                         // A player's cast landing: their Casting condition off first, as retail (`set_casting`.)
                         let player_cast =
-                            matches!(task.data, QueuedTaskData::CastAction { .. })
+                            action::ends_a_cast(&task.data)
                                 && data.lock().instances.get(*instance_index).is_some_and(
                                     |instance| {
                                         matches!(

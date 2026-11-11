@@ -532,8 +532,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Way Down in the Hole (320): in sequence 4 the client also offers ACTOR7–12 and EOBJECT0 with empty scenes (18–25);
   which scene goes with which isn't known, so the server just ends their events. The foreman's waiting scene (15) uses
   the usual talk flags; retail never played it.
-* Event items: only the cast, the effect and the quest's event are done; the Casting condition retail sets during the
-  cast (and clears after) isn't sent.
+* Event items: only the cast, the effect and the quest's event are done (the Casting condition with the cast, as
+  retail's, `start_event_item`; a thrown one's too since 2026-11-11).
 * Attuning to a main aetheryte outside a quest ends the event after the bar (`Aetheryte.lua`); inside Close to Home
   retail follows the bar with the aetheryte event's notice 0 (one argument, 0), which probably also gives the
   "attuned" message on its own, but a plain attunement hasn't been recorded to confirm it.
@@ -589,8 +589,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Key items thrown on the ground (2026-11-01, Rock of Rancor) are untested in game. How far from the spot the object can
   be is the EffectRange of the EventItem's Action (1276 for the firesand), which wasn't checked against the sheet (no
   game data where it was written; 2 yalms if it's 0): the server log says the radius and what it landed on at each
-  throw ("Key item … landed at …"). Retail's Condition 4 (casting) during the bar isn't sent, and whether moving
-  cancels the bar wasn't seen (Kawari doesn't).
+  throw ("Key item … landed at …"). Retail's Condition 4 (casting) during the bar is sent since 2026-11-11 (test
+  `a_thrown_key_item_s_bar_is_a_cast`); whether moving cancels the bar wasn't seen (Kawari doesn't).
 * Line of sight (`Collision::sees`, since 2026-11-02) goes from 1.5 yalms over each one's feet (a guess; retail's
   height and whether its enemies need sight for every action aren't known), to the target's middle whatever its size,
   and isn't checked for an NPC's sight aggro (`can_notice`) or for areas. Untested in game.
@@ -1357,8 +1357,13 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   (Lustrate, Excogitation, Indomitability, Tetragrammaton, Divine Benison...) or area heals, and the rotation scripts
   can't see the party's HP.
 * **Combat items:** HQ values aren't used; food gives Well Fed without its stat bonuses; elixirs give their caps.
-* **Cooldowns** (ActorControlSelf 17, retail sends one before every action) aren't sent; the client works recasts out
-  itself. Item recasts aren't tracked.
+* **Item recasts**: retail's ActorControlSelf 17 for an action (sent by Kawari since 2026-10-18, `action.rs`; 72 of
+  77 action requests in Bob's bundle 20261111-194208, the rest mounts) comes for an item too when it has a recast, with
+  its own group, an action of its own and the Item row's recast: item 8575 `(60, 2894, 180000)`, 20309
+  `(59, 8667, 1500)`, 25005 `(58, 944, 600)`, a HQ potion 1006141 `(68, 1055, 21600)` (Bob's Chronofoil captures,
+  2026-11-11 survey); most items had none. Where the group (58-68) comes from isn't in the Item or ItemAction rows
+  icarus reads, and there's no game install here to find out, so Kawari sends none for items and doesn't track their
+  recasts (the client keeps its own).
 * Retail adds up all of a target's HoTs into one tick (status 0) and shows MP ticks (Lucid Dreaming) as ActorControl 23;
   Kawari sends one tick per effect and no MP tick. Barriers' share isn't sent in EffectResult.
 * Sprint: retail gives Jog (4209, +20 % speed until combat) when Sprint runs out, and keeps Sprint over a zone change;

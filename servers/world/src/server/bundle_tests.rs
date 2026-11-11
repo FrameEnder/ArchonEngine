@@ -15,7 +15,7 @@ use crate::{
     FromServer,
     server::{
         action::{
-            STATUS_RAISED, cannot_be_hurt, ends_protection, keep_for_the_dead, toss_target,
+            STATUS_RAISED, cannot_be_hurt, ends_a_cast, ends_protection, keep_for_the_dead, toss_target,
             tossed_by,
         },
         actor::{NetworkedActor, NpcState, kill_actor},
@@ -445,6 +445,23 @@ fn a_player_s_cutscene_is_told() {
         })
         .collect();
     assert_eq!(states, vec![3, 1]);
+}
+
+/// Bob, on the known issues: a key item thrown on the ground (Rock of Rancor's firesand) had its cast bar without
+/// retail's Casting condition (Condition 4 with the ActorCast, off with the effect, as for any event item's cast: Bob's
+/// Chronofoil captures da3b6285 and 10108225). Its landing ends the cast; the event it then starts on what it landed on
+/// isn't one.
+#[test]
+fn a_thrown_key_item_s_bar_is_a_cast() {
+    use crate::server::instance::QueuedTaskData;
+    use kawari::{common::ObjectTypeId, ipc::zone::ActionRequest};
+    let throw = |landed_on| QueuedTaskData::EventItemOnGround {
+        request: ActionRequest::default(),
+        position: Default::default(),
+        landed_on,
+    };
+    assert!(ends_a_cast(&throw(None)));
+    assert!(!ends_a_cast(&throw(Some(ObjectTypeId::default()))));
 }
 
 /// Bundle 20261111-125206, "Garudo attacks the pillar that's not right": an NPC that can't be targeted (the Howling

@@ -669,6 +669,9 @@ fn start_event_item_on_ground(
             FromServer::PacketSegment(actor_cast, from_actor_id),
             DestinationNetwork::ZoneClients,
         );
+        // Casting through the bar, as any event item's cast (retail's Condition 4 with the ActorCast, off with the
+        // effect: Bob's Chronofoil captures da3b6285 and 10108225); the task's landing takes it off (`server/mod.rs`.)
+        set_casting(&mut network, from_actor_id, true);
     }
     instance.insert_task(
         from_id,
@@ -2953,6 +2956,20 @@ fn apply_caster_results(
             DestinationNetwork::ZoneClients,
         );
     }
+}
+
+/// Whether this task is the end of a cast bar (whose Casting condition comes off as it lands, `set_casting`): an
+/// action's, an event item's, or a key item thrown on the ground (its first landing; the event it starts on what it
+/// landed on comes after, with no bar.)
+pub(crate) fn ends_a_cast(task: &QueuedTaskData) -> bool {
+    matches!(
+        task,
+        QueuedTaskData::CastAction { .. }
+            | QueuedTaskData::EventItemOnGround {
+                landed_on: None,
+                ..
+            }
+    )
 }
 
 /// The player's Casting condition, as retail kept it (Bob's Chronofoil capture 44df02fc, every cast in The Lominsan
