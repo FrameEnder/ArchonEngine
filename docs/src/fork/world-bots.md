@@ -29,6 +29,13 @@ its zone or not: who it is (name, look, class, level, gear and glamour, online s
   second; retail's players ran 6.0-6.9). Clients get it as any actor in range.
 * **Elsewhere its time just runs on**: a walk takes as long as the run would (the straight line, a third longer), a
   Teleport its cast and a loading screen, an inn its stay. When a player arrives it's there, where it stood or got to.
+* **Shown after everyone else** (`world_bots::may_spawn`, `furthest_shown`; since 2026-11-11: Bob's bundle
+  20261111-100415, "npc loading needs optimization player bots need less priority over normal npcs"). Retail sent
+  every player in view at once as one came into a zone (83 in Limsa Lominsa within the first second, Bob's captures),
+  but the 70-odd bots of a city held up the NPCs the client loads itself. Now a client coming into a zone is shown
+  no world bot for 3 s, then the nearest 4 a tick (two a second at the 0.5 s tick); they never take the last 20 of
+  its 99 actor slots, and anyone else coming into view (a player, a party bot, a monster, a companion) takes the
+  furthest world bot's slot if none is free.
 * **The NPC tick leaves world bots alone** (`Instance::world_bots`: they're skipped as a director's held helpers are),
   and **enemies never go after them** (`Instance::find_possible_enemies` leaves them out.)
 

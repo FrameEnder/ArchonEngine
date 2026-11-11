@@ -2200,6 +2200,40 @@ pub fn leaves_for_party(bots: &mut WorldBots, index: usize, now: Instant) {
     bot.until = now + Duration::from_secs(INN_STAY.0);
 }
 
+/// How a client is shown world bots, after everyone else (Bob's bundle 20261111-100415: "npc loading needs optimization
+/// player bots need less priority over normal npcs"; retail sent every player in view at once as one came in, 83 in
+/// Limsa Lominsa within the first second, but its players are real, and Kawari's 70-odd bots there held up the zone's own
+/// NPCs, which the client loads itself): none for `SHOW_AFTER` after it came into the zone, then the nearest
+/// `SHOW_PER_TICK` a tick, and never into the last `KEEP_FREE` of its actor slots (a player, a party bot, a monster or
+/// a companion coming into view takes the furthest world bot's slot if it must: `furthest_shown`.)
+const SHOW_AFTER: Duration = Duration::from_secs(3);
+const SHOW_PER_TICK: usize = 4;
+const KEEP_FREE: usize = 20;
+
+/// Whether one more world bot may be shown to a client with `used` actor slots taken, `since` it came into its zone,
+/// `shown` of them already this tick.
+pub fn may_spawn(used: usize, since: Duration, shown: usize) -> bool {
+    since >= SHOW_AFTER
+        && shown < SHOW_PER_TICK
+        && used + KEEP_FREE < kawari::common::MAX_SPAWNED_ACTORS
+}
+
+/// The furthest world bot from `from` the client has been shown (`shown`), to give way to someone else.
+pub fn furthest_shown(
+    instance: &Instance,
+    from: Vec3A,
+    shown: impl Fn(ObjectId) -> bool,
+) -> Option<ObjectId> {
+    instance
+        .world_bots
+        .iter()
+        .copied()
+        .filter(|bot| shown(*bot))
+        .filter_map(|bot| Some((bot, instance.find_actor(bot)?.position().0.distance(from))))
+        .max_by(|a, b| a.1.total_cmp(&b.1))
+        .map(|(bot, _)| bot)
+}
+
 /// What `!worldbots` prints: whether they're on, how many and where, and the nearest to `player` with what each is
 /// doing.
 pub fn report(data: &WorldServer, player: ObjectId) -> Vec<String> {
@@ -2800,6 +2834,33 @@ mod tests {
         assert!(!bot.joined);
         assert_eq!(bot.at, 129);
         assert_eq!(bot.doing, Doing::Standing);
+    }
+
+    /// Bob's bundle 20261111-100415: world bots held up the zone's own NPCs. They wait a moment after the client
+    /// comes in, come a few a tick, keep slots free, and the furthest gives way to anyone else.
+    #[test]
+    fn world_bots_come_after_everyone_else() {
+        use kawari::common::MAX_SPAWNED_ACTORS;
+        assert!(!may_spawn(0, Duration::from_secs(1), 0));
+        assert!(may_spawn(0, SHOW_AFTER, 0));
+        assert!(!may_spawn(0, SHOW_AFTER, SHOW_PER_TICK));
+        assert!(!may_spawn(MAX_SPAWNED_ACTORS - KEEP_FREE, SHOW_AFTER, 0));
+        let mut world = crate::server::test_world::TestWorld::new();
+        let player = world.player(1, [0.0, 0.0, 0.0]);
+        let near = world.player_npc(2, player, [3.0, 0.0, 0.0]);
+        let far = world.player_npc(3, player, [30.0, 0.0, 0.0]);
+        for bot in [near, far] {
+            world.instance.party_bots.remove(&bot);
+            world.instance.world_bots.insert(bot);
+        }
+        assert_eq!(
+            furthest_shown(&world.instance, Vec3A::ZERO, |_| true),
+            Some(far)
+        );
+        assert_eq!(
+            furthest_shown(&world.instance, Vec3A::ZERO, |bot| bot == near),
+            Some(near)
+        );
     }
 
     #[test]

@@ -133,6 +133,8 @@ mod zone;
 struct ClientState {
     actor_allocator: SpawnAllocator<MAX_SPAWNED_ACTORS, 1>, // Indices start at 1 because the player always takes the 0 index.
     object_allocator: SpawnAllocator<MAX_SPAWNED_OBJECTS>,
+    /// When the client came into its zone (world bots are shown to it a while after: `world_bots::may_spawn`.)
+    zoned_in: Option<Instant>,
 }
 
 impl ClientState {
@@ -1058,6 +1060,12 @@ fn server_logic_tick(
                     }
                 }
 
+                // World bots come after everyone else, a few a tick, a while after the client came in, and never in the
+                // last slots (`world_bots::may_spawn`): the zone's own NPCs load first.
+                let now = Instant::now();
+                let zoned_in = *state.zoned_in.get_or_insert(now);
+                let mut world_bots_walked_in = Vec::new();
+
                 // We want to prioritize actors closest to us!
                 let mut actors_by_distance = instance.actors.iter().collect::<Vec<_>>();
                 actors_by_distance.sort_by(|a, b| {
@@ -1112,7 +1120,19 @@ fn server_logic_tick(
                                 //self.to_remove.push(id);
                             }
                         }
+                    } else if walked_in && instance.world_bots.contains(other_id) {
+                        world_bots_walked_in.push((*other_id, other_actor));
                     } else if walked_in {
+                        // No slot left: the furthest world bot shown gives way.
+                        if state.actor_allocator.used() >= MAX_SPAWNED_ACTORS
+                            && let Some(furthest) =
+                                world_bots::furthest_shown(instance, actor.position().0, |bot| {
+                                    state.actor_allocator.contains(bot)
+                                })
+                            && let Some(spawn_index) = state.actor_allocator.free(furthest)
+                        {
+                            let _ = handle.send(FromServer::DeleteActor(furthest, spawn_index));
+                        }
                         // Spawn this actor
                         if let Some(msg) = NetworkState::spawn_existing_actor_message(
                             state,
@@ -1138,6 +1158,22 @@ fn server_logic_tick(
                         && *state == NpcState::AoeTest
                     {
                         aoe_actors_to_evaluate.push(*other_id);
+                    }
+                }
+
+                for (shown, (other_id, other_actor)) in world_bots_walked_in.into_iter().enumerate()
+                {
+                    if !world_bots::may_spawn(
+                        state.actor_allocator.used(),
+                        now.duration_since(zoned_in),
+                        shown,
+                    ) {
+                        break;
+                    }
+                    if let Some(msg) =
+                        NetworkState::spawn_existing_actor_message(state, other_id, other_actor)
+                    {
+                        let _ = handle.send(msg);
                     }
                 }
 

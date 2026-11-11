@@ -1643,6 +1643,8 @@ Stage 1 of [World Bots](world-bots.md); nothing seen in game yet.
 * Friends kept from a world bot before 2026-11-11's second pass have the content ID of the actor it was then, so
   they're called as a copy, never found in the crowd.
 * Searching for one, or a tell to one, finds no character.
+* How long world bots wait after a client comes in (3 s) and how many come a tick (4) are guesses: if the zone's NPCs
+  still load late in a busy city, they want longer or fewer.
 
 ## Raises, boss-fight spots and drop rates (2026-11-10)
 

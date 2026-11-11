@@ -1436,6 +1436,7 @@ pub fn do_change_zone(
         // Clear spawn pools
         state.actor_allocator.clear();
         state.object_allocator.clear();
+        state.zoned_in = None;
 
         // now that we have all of the data needed, inform the connection of where they need to be
         let msg = FromServer::ChangeZone(

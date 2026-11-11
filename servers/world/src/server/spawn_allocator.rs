@@ -60,6 +60,11 @@ impl<const MAX_SIZE: usize, const START_INDEX: usize>
         self.pool.contains(&Some(object_id))
     }
 
+    /// How many spawn indices are taken.
+    pub fn used(&self) -> usize {
+        self.pool.iter().filter(|space| space.is_some()).count()
+    }
+
     /// Frees all objects from the pool.
     pub fn clear(&mut self) {
         self.pool = [None; MAX_SIZE];
