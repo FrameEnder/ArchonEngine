@@ -51,8 +51,9 @@ all 15 teleports in Bob's Chronofoil capture of 2026-10-21. Kawari sent warp typ
 within the zone you're in (Moraby Drydocks from Lower La Noscea, Bentbranch from the Central Shroud) left the player in
 the teleport animation after landing (2026-10-16 and 2026-10-22 bundles). Since 2026-10-22 the Teleport spell passes
 `player:warp_aetheryte(id, false, true)` and Return uses warp type 7; aethernet shards and housing exits keep type 1.
-Retail also sends ActorControlSelf 263 (1 as it starts, 0 after landing), 236 after the ActorSetPos and 253 with 0, 1
-after landing; Kawari doesn't yet.
+Retail also sends ActorControlSelf 263 (1 as it starts, 0 after landing) and 253 with 0, 1 after landing; Kawari
+doesn't yet. The 236 after the ActorSetPos is sent since 2026-11-11, as after every ActorSetPos (see [Combat](combat.md),
+"Putting the player somewhere").
 
 **Teleport costs** (`GameData::teleport_cost`), as the client's Telepo GetTeleportCost works them out and exact for
 all 87 paid teleports in Bob's Chronofoil captures: each zone has a point on a world map (TerritoryTypeTelepo: X, Y,
@@ -149,8 +150,8 @@ the ride.
   yalms from the other end's porter.
 * **At the end**: the online status back, SetMode normal (ActorControl 2 `[1]`), the Condition cleared.
 
-Not sent (what they do isn't known): ActorControlSelf 263 `[1]` with the fare and `[0]` at the end, 236 `[1]` and
-0 `[0, 1, 0]` with the ActorSetPos, 928 `[9]`, 504 `[32]` at the start and end, 930, 253 `[0, 1]` and 260
+Not sent (what they do isn't known): ActorControlSelf 263 `[1]` with the fare and `[0]` at the end, 0 `[0, 1, 0]`
+with the ActorSetPos (its 236 is, since 2026-11-11), 928 `[9]`, 504 `[32]` at the start and end, 930, 253 `[0, 1]` and 260
 `[0, 0, 0, 7]` at the end; and the EventFinish's result byte, 0x12 for the ride on retail (Kawari's 1).
 
 ## Map discovery

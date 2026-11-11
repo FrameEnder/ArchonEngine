@@ -268,6 +268,7 @@ async fn initial_setup(
                     layer_filter_shown: 0,
                     layer_filter_check: None,
                     watching_cutscene: false,
+                    position_sequence: 0,
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
                 };
 

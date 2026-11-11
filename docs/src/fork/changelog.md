@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-11-11 | — | Combat (the knockbacks in Bob's captures, all scripted).
+| 2026-11-11 | — | Combat ("Putting the player somewhere", the toss); Travel (236 sent); known issues (three entries).
+| 2026-11-11 | `e915519` | Combat (the knockbacks in Bob's captures, all scripted).
 | 2026-11-11 | `f045f8d` | Dungeons (the Bowl of Embers: Vulcan Burst's knockback); known issues.
 | 2026-11-11 | `a6d974f` | Coffers and loot (an opened coffer coming back into range; deleted after fading); known issues.
 | 2026-11-11 | `f246747` | The Gold Saucer (leaving it during a GATE); known issues (TerminateDirector sent).
@@ -484,7 +485,8 @@ Commits on `Latest-Quest` (and, since 2026-11-03, `test-pending`) since the fork
 
 | Commit | Change |
 |---|---|
-| — | Knockbacks as retail's for the rest of the NPC actions that had one in Bob's captures: Brayflox's dragon's 564 (row 1), the Copperbell gigas' 677 (16), the quest battle gladiator's 1003 (19); checked with lupa (`resources/scripts/actions/{005/BrayfloxDragon_00564,006/CopperbellGigas_00677,010/QuestBattleNpc_01003}.lua`). |
+| — | ActorControlSelf 236 after every ActorSetPos and gimmick jump of the player's, counting 1, 2, 3, 0 from each zone-in as retail's (`zone_connection::puts_the_player`, `position_sequence_after`, `ZoneConnection::position_sequence`); test `putting_the_player_somewhere_is_counted_as_retail_s_was` (`servers/world/src/zone_connection/mod.rs`, `servers/world/src/main.rs`). |
+| `e915519` | Knockbacks as retail's for the rest of the NPC actions that had one in Bob's captures: Brayflox's dragon's 564 (row 1), the Copperbell gigas' 677 (16), the quest battle gladiator's 1003 (19); checked with lupa (`resources/scripts/actions/{005/BrayfloxDragon_00564,006/CopperbellGigas_00677,010/QuestBattleNpc_01003}.lua`). |
 | `f045f8d` | Ifrit's Vulcan Burst knocks back, the Knockback sheet's row 1 as retail's on every one hit (58 in 15 uses); checked with lupa (`resources/scripts/actions/004/Ifrit_00454.lua`). |
 | `a6d974f` | An opened coffer comes back into range opened, its SpawnTreasure with the time left and its items as retail's, and goes 1 s after fading (DeleteObject) as retail's did (`loot::show_opened`, `GONE_AFTER_FADING`, `NetworkedActor::Treasure`'s `opened_at`); test `an_opened_coffer_comes_back_opened` (`servers/world/src/server/{loot,network,actor,instance,bundle_tests}.rs`). |
 | `f246747` | Leaving the Gold Saucer while a GATE is on ends its director, TerminateDirector after the PrepareZoning as retail's every time (`gate::leaves_gold_saucer`, `ZoneConnection::leave_gate`); test `leaving_the_gold_saucer_ends_the_gate_s_director` (`servers/world/src/gate.rs`, `servers/world/src/zone_connection/{gate,mod}.rs`). |

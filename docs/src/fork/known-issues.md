@@ -152,7 +152,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   seen; the rule behind it, and the stands not seen, aren't known.
 * The mount, the online status and `ChocoboTaxiStart` go as the client finishes zoning, not with the ActorSetPos
   before it as on retail. Whether the client minds isn't known.
-* ActorControlSelf 263, 236, 0, 928, 504, 930, 253 and 260 that came with retail's ride aren't sent, nor the
+* ActorControlSelf 263, 0, 928, 504, 930, 253 and 260 that came with retail's ride aren't sent, nor the
   EventFinish's 0x12.
 * Logging out or disconnecting during a ride isn't handled: the character is saved wherever it was on the route.
 * The checkpoints are only logged; nothing checks the client rode the route.
@@ -1375,7 +1375,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 * **Teleport animation stayed on** after a teleport within the same zone (Bentbranch, 2026-10-16; Moraby Drydocks,
   2026-10-22): Kawari sent warp type 1 where retail sends 4 (see [Travel](travel.md#teleporting)); fixed 2026-10-22,
-  untested in game. Retail's ActorControlSelf 263/236/253 around the warp still aren't sent.
+  untested in game. Retail's ActorControlSelf 263/253 around the warp still aren't sent.
 * Anything that keeps a player's connection busy for a second or so (a slow sheet read in a loop, say) desyncs the
   client's Oodle stream: every later packet from it fails to parse and the player is stuck (frozen, endless loading)
   until they reconnect. Why a delay breaks the stream, rather than only slowing it, isn't known.
@@ -1642,8 +1642,7 @@ Packets whose size on retail isn't what `opcodes.yml` says, from Bob's Chronofoi
 
 Fixed in code and by test or simulation; none played yet.
 
-* The toss: the one hit lands where they stood (retail's ActorControl 220 said so too); ActorControlSelf 236 (3, then
-  0) isn't sent. Whether the client shows the throw from kind 62 and 220 alone isn't known until it's played.
+* The toss: the one hit lands where they stood (retail's ActorControl 220 said so too). Whether the client shows the throw from kind 62 and 220 alone isn't known until it's played.
 * "Bots don't attack during dodging": a waiting bot is given its target's position; there's no test (it needs the
   game's data).
 * "Party bots normally wouldn't dodge but player bots should" was read as: Duty Support members keep their set

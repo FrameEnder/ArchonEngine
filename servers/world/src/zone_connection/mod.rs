@@ -20,10 +20,10 @@ use kawari::{
     common::{HandlerId, ObjectId, Position, WarpType, timestamp_secs},
     config::WorldConfig,
     ipc::zone::{
-        ApartmentList, ApartmentListEntry, CWLSMemberListEntry, ClientTriggerCommand,
-        ClientZoneIpcSegment, Condition, Conditions, DutyFinderSetting, DyeInformation,
-        GrandCompany as IpcGrandCompany, LetterPreview, PlayerEntry, ServerZoneIpcData,
-        ServerZoneIpcSegment,
+        ActorControlCategory, ApartmentList, ApartmentListEntry, CWLSMemberListEntry,
+        ClientTriggerCommand, ClientZoneIpcSegment, Condition, Conditions, DutyFinderSetting,
+        DyeInformation, GrandCompany as IpcGrandCompany, LetterPreview, PlayerEntry,
+        ServerZoneIpcData, ServerZoneIpcSegment,
     },
     opcodes::ServerZoneIpcType,
     packet::{
@@ -327,6 +327,8 @@ pub struct ZoneConnection {
     /// OccupiedInCutSceneEvent, Viewing Cutscene among their online statuses, and their party told (ActorControl 519;
     /// `set_watching_cutscene`.)
     pub watching_cutscene: bool,
+    /// The last of retail's count of the times the server put the player somewhere (`position_sequence_after`.)
+    pub position_sequence: u32,
     /// The chocobo porter's ride being warped to (ChocoboTaxi row, its Location), until the client has finished zoning.
     pub chocobo_taxi: Option<(u32, u32)>,
     /// The chocobo porter's ride under way (ChocoboTaxi row), until the client says it has arrived.
@@ -428,10 +430,14 @@ impl ZoneConnection {
         // Leaving the Gold Saucer while a GATE is on ends its director, after the PrepareZoning (`leave_gate`.)
         let leaving_gold_saucer =
             crate::gate::leaves_gold_saucer(&ipc.data, self.player_data.volatile.zone_id as u16);
+        // Putting the player somewhere is counted for the client after it (`position_sequence_after`.)
+        let puts_the_player =
+            puts_the_player(&ipc.data, source_actor, self.player_data.character.actor_id);
         // What the client shows the zone with now (`refresh_layer_filter`), and a zone change under way brings its own.
         match &ipc.data {
             ServerZoneIpcData::ZoneInit(init) => {
                 self.layer_filter_shown = init.transition_territory_filter_key;
+                self.position_sequence = 0;
             }
             ServerZoneIpcData::PrepareZoning(_) => self.layer_filter_check = None,
             _ => {}
@@ -451,6 +457,13 @@ impl ZoneConnection {
         Box::pin(self.send_segment(segment)).await;
         if leaving_gold_saucer {
             Box::pin(self.leave_gate()).await;
+        }
+        if puts_the_player {
+            self.position_sequence = position_sequence_after(self.position_sequence);
+            let category = ActorControlCategory::MovementRelatedUnk {
+                unk1: self.position_sequence,
+            };
+            Box::pin(self.actor_control_self(category)).await;
         }
     }
 
@@ -816,5 +829,67 @@ impl ZoneConnection {
 
     pub fn can_offer_teleport(&self) -> bool {
         self.party_id != 0 && self.can_share_teleport
+    }
+}
+
+/// Whether this packet puts the player somewhere: an ActorSetPos of theirs, or a gimmick jump of theirs (ActorControl
+/// 220). Retail followed each with ActorControlSelf 236 at once (`position_sequence_after`.)
+pub(crate) fn puts_the_player(
+    data: &ServerZoneIpcData,
+    source: ObjectId,
+    player: ObjectId,
+) -> bool {
+    let theirs = source == ObjectId::default() || source == player;
+    theirs
+        && match data {
+            ServerZoneIpcData::ActorSetPos(_) => true,
+            ServerZoneIpcData::ActorControl(control) => matches!(
+                control.category,
+                ActorControlCategory::ExecuteGimmickJump { .. }
+            ),
+            _ => false,
+        }
+}
+
+/// ActorControlSelf 236's count after `last`: 1 for the first after a ZoneInit, then 2, 3, 0, 1... (Bob's Chronofoil
+/// captures: all 534 ActorSetPos and 61 gimmick jumps of the player's were followed by it in the same instant, the
+/// first after each of 247 zone-ins was 1, and each next one the last plus one, modulo 4, 323 times.) What the client
+/// does with it isn't known (upstream's `MovementRelatedUnk`, in UpdatePositionHandler.)
+pub(crate) fn position_sequence_after(last: u32) -> u32 {
+    (last + 1) % 4
+}
+
+#[cfg(test)]
+mod position_sequence_tests {
+    use super::*;
+    use kawari::ipc::zone::{ActorControl, ActorSetPos};
+
+    /// Known issues, the toss: retail sent ActorControlSelf 236 after each time it put the player somewhere (an
+    /// ActorSetPos, a gimmick jump), counting 1, 2, 3, 0 from each zone-in; Kawari never sent it.
+    #[test]
+    fn putting_the_player_somewhere_is_counted_as_retail_s_was() {
+        let me = ObjectId(0x1000_0001);
+        let set_pos = ServerZoneIpcData::ActorSetPos(ActorSetPos::default());
+        assert!(puts_the_player(&set_pos, ObjectId::default(), me));
+        assert!(puts_the_player(&set_pos, me, me));
+        assert!(!puts_the_player(&set_pos, ObjectId(0x4000_0001), me));
+        let jump = ServerZoneIpcData::ActorControl(ActorControl {
+            category: ActorControlCategory::ExecuteGimmickJump {
+                landing_position_y: 0.0,
+                landing_position_x: 0.0,
+                landing_position_z: 0.0,
+                gimmick_jump_type: 64,
+                unk1: 0,
+            },
+        });
+        assert!(puts_the_player(&jump, me, me));
+        let mut sequence = 0;
+        let counted: Vec<u32> = (0..5)
+            .map(|_| {
+                sequence = position_sequence_after(sequence);
+                sequence
+            })
+            .collect();
+        assert_eq!(counted, [1, 2, 3, 0, 1]);
     }
 }
