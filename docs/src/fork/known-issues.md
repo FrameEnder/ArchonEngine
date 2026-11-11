@@ -951,9 +951,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   (the dungeons too) when every player is down. In a dungeon it sends the party back to the start but leaves the
   enemies as they are (they lose their targets and go home); retail's dungeon wipes weren't checked.
 * What happens when the Nail isn't killed is Cactbot's (Hellfire 44.3 s after the 50 % line); the first attempt wiped
-  before. Hellfire's damage then is the killed-Nail one. Vulcan Burst's knockback isn't sent, only its 1 damage:
-  knockbacks are kind 31 with a Knockback row now (`effects:knockback`), but Vulcan Burst's row wasn't read from a
-  recording.
+  before. Hellfire's damage then is the killed-Nail one.
 * Ifrit's hitbox (3.5) is a guess from the members' distances. Eruption goes under anyone of the party (retail's nine
   were never on the player). Retail's helpers cast at a point on the ground; Kawari's are put there and cast on
   themselves. Kawari spawns nine helpers where retail spawned twenty. BNpcBase 401's timeline (`IfritHelper_401`)

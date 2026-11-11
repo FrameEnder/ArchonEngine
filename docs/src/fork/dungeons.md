@@ -684,7 +684,7 @@ Kawari nine, the most that cast at once).
 
 **Ifrit** (`IfritBowlOfEmbers_207.json`, `from_pull`; both attempts alike to a few tenths): his auto-attack 872 every
 3.0 s; from the pull Incinerate (453, a 10-yalm cone, on the tank) at 7.2 s, Vulcan Burst (454, 16 yalms round him, a
-knockback that did 1) at 15.0 s and every 41.6 s, Incinerate 7.9, 20.5 and 33.6 s after each. Below 80 % (79.9 and
+knockback, the Knockback sheet's row 1 on every one hit (58 in 15 uses), that did 1; sent since 2026-11-11) at 15.0 s and every 41.6 s, Incinerate 7.9, 20.5 and 33.6 s after each. Below 80 % (79.9 and
 79.5 % as he spoke) his line 2601 (battle talk under BNpcName 1185, no portrait, 5 s) and a new phase: Incinerate 1.2
 s on, Eruption (455) 7.0, Vulcan Burst 13.6, then Incinerate and Eruption every 16.5 s from 20.5 and 26.3. Below 50 %
 his line 2602 and the next: ActionTimeline 1398 (summoning) 4.0-4.3 s on, the Nail 7.8-8.2 s on (Appear 142 and
