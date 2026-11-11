@@ -8,7 +8,7 @@ Dashboard → World bots). Asked for by Bob on 2026-11-11; delivered in stages.
 | Stage | What | Status |
 |---|---|---|
 | 1 | The world's population: idlers at every big aetheryte (30 in Limsa Lominsa, 10 in Ul'dah, 20 in Gridania by default), 5-10 at each marketboard, walking between places, exits, inns, Teleport; the ControlPanel page | done (2026-11-11), not played yet |
-| 2 | Questing bots: routes from Questionable's quest paths (levels 1-100, at least 10 bots per ten levels, no more than 3 on one quest and never two on the same step), fighting quest enemies, quest-reward and dungeon gear, a new name and look after a route | to do |
+| 2 | Questing bots: routes from Questionable's quest paths (levels 1-100, at least 10 bots per ten levels, no more than 3 on one quest and never two on the same step), fighting quest enemies, quest-reward and dungeon gear, a new name and look after a route | in progress: Questionable's paths read and routes planned (`questing.rs`), not wired in yet |
 | 3 | More like players: minions, mounts, crafting in place, chat, search info (sitting, emotes at each other: done 2026-11-11, from Bob's first marks) | to do |
 
 Code: `servers/world/src/server/world_bots.rs`; the settings page `kawari_web/worldbots.py` in ArchonEngine
@@ -155,6 +155,17 @@ Interact, 4,548 AcceptQuest, 4,307 CompleteQuest, 2,907 WalkTo, 1,571 Combat, 27
 the game's text (quest and NPC names), so nothing of it goes in git: the server reads a checkout of it at runtime
 (ArchonEngine ControlPanel will download it), as it reads the game's files. Its quest files are named by the quest's
 ID (`551_….json` is Quest row 65536 + 551.)
+
+**Built so far** (`servers/world/src/server/questing.rs`, not yet used by the bots): `QuestPaths::load` reads a
+checkout's quest files by their names' numbers only (each step's territory, position, NPC or object, and what's done
+there: talking, walking, killing listed enemies, a duty or solo duty, an emote, anything else; 4,375 files of the
+current checkout read, none failing); `Routes::plan` keeps the quests any class can take at levels 1-100 that aren't
+repeatable, a festival's, a beast tribe's, a delivery, a daily pool's, a Grand Company's or a house's, with every step
+in a town or the open world (a duty is time away); `Routes::start` and `next` keep a bot within its ten levels, follow a
+quest's chain four times in five, prefer quests where it is, and give no quest to more than `per_quest` bots;
+`questing_class` (a starting class before 30, then the jobs, a later expansion's from its story's level);
+`quest_gear` (quest rewards over a player's usual gear for the level, the best three times in four);
+`GameData::gear_among` and `party_bot::quest_attacks`. Tests in `questing.rs`.
 
 What's planned: a route per bot through quests in level order (the Quest sheet's level, class and the quests before
 it), at least 10 bots for each ten levels 1-100, no more than 3 on one quest and never two on the same step; walking

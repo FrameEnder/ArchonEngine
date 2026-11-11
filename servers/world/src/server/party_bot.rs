@@ -616,6 +616,43 @@ impl GameData {
         Some((row.Role, row.ClassJobParent, row.PrimaryStat))
     }
 
+    /// Which of `items` (a quest's rewards, say) `classjob` can wear by `level`, and where: (EquipSlotCategory, item
+    /// level, item ID), a two-handed weapon in the main hand's slot; PvP gear left out. For world bots' quest gear
+    /// (`questing`.)
+    pub fn gear_among(
+        &mut self,
+        classjob: u8,
+        level: u8,
+        wearable: &HashSet<u8>,
+        items: &[u32],
+    ) -> Vec<(u8, u16, u32)> {
+        let wears = self.classjob_categories_with(classjob);
+        let mut gear = Vec::new();
+        for id in items {
+            let Some(row) = self.item_sheet.row(*id) else {
+                continue;
+            };
+            if row.LevelEquip == 0
+                || row.LevelEquip > level
+                || row.EquipSlotCategory == 0
+                || row.IsPvP
+                || !can_wear(wearable, row.EquipRestriction)
+                || !wears.contains(&row.ClassJobCategory)
+            {
+                continue;
+            }
+            let slot = if row.EquipSlotCategory == TWO_HANDED {
+                MAIN_HAND
+            } else {
+                row.EquipSlotCategory
+            };
+            if slot == MAIN_HAND || slot == OFF_HAND || ARMOUR_SLOTS.contains(&slot) {
+                gear.push((slot, row.LevelItem, *id));
+            }
+        }
+        gear
+    }
+
     /// The best gear `classjob` can wear at `level`: for each slot, the item of the highest item level it can equip
     /// (rarity, then the newest, breaking ties), PvP gear left out. Returns (EquipSlotCategory, item ID) pairs, a
     /// ring twice.
@@ -805,6 +842,32 @@ impl GameData {
         }
         actions
     }
+}
+
+/// The attacks a world bot questing as `classjob` at `level` uses on its quest's enemies (`questing`): its single-target
+/// weaponskills and spells on the GCD that the server has scripts for, the newest three.
+#[allow(dead_code)] // Used by the questing bots as they're wired in (`questing`.)
+pub(crate) fn quest_attacks(
+    game_data: &mut GameData,
+    classjob: u8,
+    level: u8,
+    usable: &HashMap<u32, String>,
+) -> Vec<(u32, i8)> {
+    let parent = game_data
+        .classjob_role(classjob)
+        .map(|(_, parent, _)| parent)
+        .unwrap_or(classjob);
+    let mut attacks: Vec<ClassAction> = game_data
+        .class_actions(classjob, parent, level, usable)
+        .into_iter()
+        .filter(|action| action.hostile && action.single_target && action.gcd && !action.heals)
+        .collect();
+    attacks.sort_by_key(|action| std::cmp::Reverse(action.level));
+    attacks.truncate(3);
+    attacks
+        .into_iter()
+        .map(|action| (action.id, action.range))
+        .collect()
 }
 
 /// Lower case without spaces, apostrophes or hyphens, for matching class names.
