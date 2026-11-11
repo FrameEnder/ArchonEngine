@@ -407,7 +407,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   only. Retail sent no AcceptQuest for it, only the journal update; Kawari's `accept_quest` always sends one.
 * Retail tells a new Limsa Lominsa character who to talk to next (an unnamed server packet, opcode 533 on 7.57h1:
   a count, then each offer's ID, the NPC's layout ID and the quest, e.g. Close to Home and quest 111 after Coming to
-  Limsa Lominsa). Kawari doesn't send it.
+  Limsa Lominsa). Kawari doesn't send it. It's the two-marker size of upstream's UpdateMapMarkers4/8/16/32 (32 bytes:
+  the count, then two map icons, two layout IDs, two quest row IDs, 4 bytes of padding; 2,600 of them in Bob's 10.16
+  captures, in every zone, at zone-ins and after quest steps). Its icons are 71021 (732), 71001 (179), 71141 (135),
+  71151 (53) and a few others, and none of its quests was one the player had accepted (only 63 were accepted later, 61
+  of them 71001s): they look like offers to pick up. Which quests a zone shows needs the Quest sheet (the issuer and its
+  Level, the icon's EventIconType), which isn't here to check against; its 7.58 opcode isn't found either.
 * **The Gridanian Envoy** (507) and **Call of the Sea** (674) were written from Sapphire and the recording without the
   client's script: dump them in the Quest Lab to check the scene numbers. Envoy's arrival positions are Sapphire's.
 * Story quests stop after **Call of the Sea** (674), which hands over to Limsa Lominsa.
@@ -1614,7 +1619,10 @@ Packets whose size on retail isn't what `opcodes.yml` says, from Bob's Chronofoi
 * **DeepDungeonParty**: 24 bytes on retail (10.06, the Palace of the Dead), 20 in `opcodes.yml`; for the
   `Deep-Dungeon` branch.
 * **StatusEffectListDouble**: 744 bytes on retail (about 22,000 packets over three versions), 720 in `opcodes.yml`.
-  Kawari doesn't send it.
+  Kawari doesn't send it. Retail sent it for players only, never NPCs (20,537 for others, 2,221 for oneself, against
+  StatusEffectList's 44,688, 10,080 and 37,901 for NPCs), and its first byte isn't a ClassJob as StatusEffectList's is,
+  so its header differs and isn't worked out; which players get it (54 of 1,306 players only ever had it, 7 both) isn't
+  either.
 * **CrossRealmListingsRequest2** (client): 64 bytes on retail, 40 in `opcodes.yml`.
 
 ## Duty scripts against duty-sim (2026-11-10)
