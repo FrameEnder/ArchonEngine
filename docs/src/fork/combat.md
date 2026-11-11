@@ -299,6 +299,11 @@ Enemies still compute damage like players do (stat × potency), which is far too
   Silkscreen (701) knocks back the same way (row 1 in every hit: the Thousand Maws of Toto-Rak's boss's three, Seer
   Folly's quest battle boss's seven, its targets 9-10 yalms further off; `TotoRakFinalBoss_00701`). The kind-27 entry
   (`1B`, the action's ID, 0x80) came with every action that hit in both captures.
+  Every NPC action with a kind 31 in Bob's Chronofoil captures and a script here knocks back as retail's did (since
+  2026-11-11, from a sweep of the captures' effects): Vulcan Burst (454, row 1), Brayflox's dragon's 564 (1), the
+  Copperbell gigas' 677 (16), the quest battle gladiator's 1003 (19), Landslide (650, 37), Silkscreen (701, 1), the
+  Stone Vigil's 1027 (1) and Rive (1299, 1). Action 345's two (with a kind 14, on two of its eleven uses) aren't understood,
+  as 345 is also Toto-Rak's poison.
 * Drains (`heal_self` effect, e.g. Blood Drain) heal the attacker by what they took; the attacker's HP is sent after.
 
 A timeline with `timeline_always_plays` (only Sastasha's giant clams have one) runs whether or not the NPC is

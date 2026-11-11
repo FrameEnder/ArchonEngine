@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-11-11 | — | Dungeons (the Bowl of Embers: Vulcan Burst's knockback); known issues.
+| 2026-11-11 | — | Combat (the knockbacks in Bob's captures, all scripted).
+| 2026-11-11 | `f045f8d` | Dungeons (the Bowl of Embers: Vulcan Burst's knockback); known issues.
 | 2026-11-11 | `a6d974f` | Coffers and loot (an opened coffer coming back into range; deleted after fading); known issues.
 | 2026-11-11 | `f246747` | The Gold Saucer (leaving it during a GATE); known issues (TerminateDirector sent).
 | 2026-11-11 | `4a6d68a` | Dungeons ("The duty's time flags"; Haukke Manor's and the Stone Vigil's notes); known issues (0x40000007 sent, four entries).
@@ -483,7 +484,8 @@ Commits on `Latest-Quest` (and, since 2026-11-03, `test-pending`) since the fork
 
 | Commit | Change |
 |---|---|
-| — | Ifrit's Vulcan Burst knocks back, the Knockback sheet's row 1 as retail's on every one hit (58 in 15 uses); checked with lupa (`resources/scripts/actions/004/Ifrit_00454.lua`). |
+| — | Knockbacks as retail's for the rest of the NPC actions that had one in Bob's captures: Brayflox's dragon's 564 (row 1), the Copperbell gigas' 677 (16), the quest battle gladiator's 1003 (19); checked with lupa (`resources/scripts/actions/{005/BrayfloxDragon_00564,006/CopperbellGigas_00677,010/QuestBattleNpc_01003}.lua`). |
+| `f045f8d` | Ifrit's Vulcan Burst knocks back, the Knockback sheet's row 1 as retail's on every one hit (58 in 15 uses); checked with lupa (`resources/scripts/actions/004/Ifrit_00454.lua`). |
 | `a6d974f` | An opened coffer comes back into range opened, its SpawnTreasure with the time left and its items as retail's, and goes 1 s after fading (DeleteObject) as retail's did (`loot::show_opened`, `GONE_AFTER_FADING`, `NetworkedActor::Treasure`'s `opened_at`); test `an_opened_coffer_comes_back_opened` (`servers/world/src/server/{loot,network,actor,instance,bundle_tests}.rs`). |
 | `f246747` | Leaving the Gold Saucer while a GATE is on ends its director, TerminateDirector after the PrepareZoning as retail's every time (`gate::leaves_gold_saucer`, `ZoneConnection::leave_gate`); test `leaving_the_gold_saucer_ends_the_gate_s_director` (`servers/world/src/gate.rs`, `servers/world/src/zone_connection/{gate,mod}.rs`). |
 | `4a6d68a` | A duty's time flags as retail's: InstanceContentDirector event 0x40000007 `[0, 1]` 300 s and `[1, 1]` 900 s after DutyCommence (an unrestricted party's `[1, 1]` with it), both cleared with DutyCompleted (`director::DUTY_FLAG_TIMES`, `duty_flags_due`, `send_duty_flag`; `Instance::duty_flags`); test `a_duty_s_time_flags_come_when_retail_s_did` (`core/src/common/director.rs`, `servers/world/src/server/{director,instance,bundle_tests}.rs`). |
