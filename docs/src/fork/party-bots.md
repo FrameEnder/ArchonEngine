@@ -78,9 +78,10 @@ it does every other NPC (before, it was gone before anyone could raise it). Then
   2 s and gets up beside its raiser as a raised player does (`party_bot::raiser_position`, an ActorMove there first; the server's `revive_in_place`): 20 % of its HP and MP, Weakness
   (43, 100 s; Brink of Death, 44, if already weakened) and status 418 (5 s), and for everyone near, the raise's
   stand-up (ActorControl ZoneIn with its raise animation, as others see a raised player, then its mode back to
-  normal). While 418 lasts it **stands still and does nothing** (`modifiers::waits`, in its own tick and the NPCs'
-  walking), as a raised player does who waits to be healed rather than lose its protection by acting (Bob,
-  2026-11-10); no damage reaches it meanwhile ([Combat](combat.md): Transcendent). It carries on when 418 ends.
+  normal). While 418 lasts it **uses no action** (`modifiers::holds_actions`: no heal, raise, rotation, brace,
+  provoke or auto-attack; `npc_use_action` refuses one too) but walks, follows and dodges as ever, since moving
+  doesn't end the protection and acting would (Bob, 2026-11-10; for a few hours that day it stood still too). No
+  damage reaches it meanwhile ([Combat](combat.md): Transcendent). It carries on when 418 ends.
 * **Not raised within 30 s**: it gets up by itself beside the one it follows, at full HP and MP, and carries on
   (spawned again there: clients forget it where it lay). Unlike a player returning to their home point, it gets no
   Weakness.

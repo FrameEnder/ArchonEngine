@@ -191,19 +191,20 @@ pub fn is_incapacitated(statuses: &StatusEffects) -> bool {
 }
 
 /// Just raised (status 418, Transcendent: `action::STATUS_RAISED`): no damage reaches them until it ends, after 5 s or
-/// at their first action. A raised party bot or party NPC keeps it so: it stands still and does nothing while it lasts,
-/// as a raised player does who waits to be healed (Bob, 2026-11-10.)
+/// at their first action, not by moving. A raised party bot or party NPC keeps it so: it walks, follows and dodges as
+/// ever but uses no action, auto-attacks included, until it ends (Bob, 2026-11-10: "allowing the bot to move is fine,
+/// just don't have them use an action until transcendence is done".)
 const RAISED: u16 = crate::server::action::STATUS_RAISED;
 
-/// An NPC that does nothing this tick: incapacitated (`is_incapacitated`), or just raised (`RAISED`.)
-pub fn waits(statuses: &StatusEffects) -> bool {
-    is_incapacitated(statuses) || statuses.ids().any(|id| id == RAISED)
+/// An NPC that uses no action now: just raised (`RAISED`.)
+pub fn holds_actions(statuses: &StatusEffects) -> bool {
+    statuses.ids().any(|id| id == RAISED)
 }
 
 pub fn is_rooted(statuses: &StatusEffects) -> bool {
     statuses
         .ids()
-        .any(|id| id == BIND || id == RAISED || INCAPACITATED.contains(&id))
+        .any(|id| id == BIND || INCAPACITATED.contains(&id))
 }
 
 pub fn is_invulnerable(statuses: &[u16]) -> bool {

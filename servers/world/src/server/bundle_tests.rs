@@ -223,7 +223,7 @@ fn a_whirlwind_tosses_whoever_it_hits() {
 /// Bob, 2026-11-10: "characters do not take damage for the next indeterminate time after a revive if they stand still,
 /// and do not use actions for that period of time". Status 418 (Transcendent) was given at a raise and did nothing:
 /// a raised player or bot took every hit. Now no damage reaches whoever has it, their first action takes it off, and
-/// a raised bot stands still and does nothing while it lasts.
+/// a raised bot uses no action while it lasts (it still moves: moving doesn't end it.)
 #[test]
 fn someone_just_raised_takes_no_damage_until_they_act() {
     let mut world = TestWorld::new();
@@ -247,8 +247,11 @@ fn someone_just_raised_takes_no_damage_until_they_act() {
         .unwrap()
         .status_effects()
         .unwrap();
-    assert!(modifiers::waits(bot_statuses), "a raised bot waits");
-    assert!(modifiers::is_rooted(bot_statuses), "and doesn't move");
+    assert!(
+        modifiers::holds_actions(bot_statuses),
+        "a raised bot uses no action"
+    );
+    assert!(!modifiers::is_rooted(bot_statuses), "but it moves");
 
     world.sent(player);
     ends_protection(&world.network, &mut world.instance, player);

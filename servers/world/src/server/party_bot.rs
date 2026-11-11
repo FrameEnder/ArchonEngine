@@ -2920,10 +2920,20 @@ fn raise_the_fallen(
         })
         .collect();
     for (healer, leader, raise, range) in healers {
-        let Some(NetworkedActor::Npc { spawn, cast, .. }) = instance.find_actor(healer) else {
+        let Some(NetworkedActor::Npc {
+            spawn,
+            cast,
+            status_effects,
+            ..
+        }) = instance.find_actor(healer)
+        else {
             continue;
         };
-        if spawn.common.health_points == 0 || cast.is_some_and(|cast| cast.until > now) {
+        // (Not while just raised itself: `modifiers::holds_actions`.)
+        if spawn.common.health_points == 0
+            || cast.is_some_and(|cast| cast.until > now)
+            || modifiers::holds_actions(status_effects)
+        {
             continue;
         }
         let here = spawn.common.position.0;
@@ -3472,13 +3482,16 @@ fn update_party(
             continue;
         }
         // Stunned, asleep or gaoled (the Navel's Granite Gaol): it does nothing until that's over, as retail's gaoled
-        // Duty Support members (`modifiers::is_incapacitated`.) Just raised, it stands where it got up and does
-        // nothing until its protection ends (`modifiers::waits`.)
-        if modifiers::waits(status_effects) {
+        // Duty Support members (`modifiers::is_incapacitated`.) Just raised, it moves as ever but uses no action
+        // until its protection ends (`npc_use_action` won't: `modifiers::holds_actions`.)
+        if modifiers::is_incapacitated(status_effects) {
             continue;
         }
         let follow = follows(*bot_id);
         let casting = cast.is_some_and(|cast| cast.until > now);
+        // Casting, or just raised (it moves, but uses no action until its protection ends: Bob, 2026-11-10,
+        // `modifiers::holds_actions`): it chooses no action this tick.
+        let busy = casting || modifiers::holds_actions(status_effects);
 
         // An enemy's area attack over it: out of it, after a moment (retail's Duty Support members, `dodge.rs`), to
         // the nearest spot out of every one being cast, as near its target (or the player) as that allows; it waits
@@ -3594,7 +3607,9 @@ fn update_party(
                     .collect();
                 let kinds: Vec<(u32, dodge::Brace)> =
                     ready.iter().map(|(id, brace, _)| (*id, *brace)).collect();
-                if let Some((action, brace)) = dodge::choose_brace(&kinds, caught.len(), true) {
+                if !busy
+                    && let Some((action, brace)) = dodge::choose_brace(&kinds, caught.len(), true)
+                {
                     let caster = threats
                         .iter()
                         .min_by_key(|danger| danger.until)
@@ -3847,7 +3862,7 @@ fn update_party(
                 hurt.filter(|(_, percent)| *percent < bot.heal_below),
             )
             && now >= bot.next_heal
-            && !casting
+            && !busy
             && sees_actor(patient)
         {
             heals.push((*bot_id, heal, patient));
@@ -3890,7 +3905,9 @@ fn update_party(
                             .total_cmp(&b.position.distance(position))
                     })
                     .map(|enemy| enemy.id);
-                if let Some(due) = due {
+                if let Some(due) = due
+                    && !busy
+                {
                     provokes.push((*bot_id, due));
                     answers.remove(&due);
                 }
@@ -3901,7 +3918,7 @@ fn update_party(
                 // Its GCD: the ranged pull on a fresh enemy out of reach, else the area combo with enough close.
                 if let Some(target) = target
                     && now >= bot.next_special
-                    && !casting
+                    && !busy
                 {
                     let distance = engaged
                         .iter()
@@ -4051,7 +4068,7 @@ fn update_party(
             let special = specials.iter().any(|(id, ..)| id == bot_id);
             if special {
                 state.used_gcd(now);
-            } else if !casting {
+            } else if !busy {
                 let provoking = provokes
                     .iter()
                     .find(|(id, _)| id == bot_id)

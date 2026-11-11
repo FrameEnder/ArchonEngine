@@ -844,11 +844,12 @@ pub fn npc_behavior(
                 continue;
             }
 
-            // Stunned or asleep: it does nothing at all until that wears off (or, asleep, it's hit); a party bot just
-            // raised neither (`modifiers::waits`.)
-            if modifiers::waits(status_effects) {
+            // Stunned or asleep: it does nothing at all until that wears off (or, asleep, it's hit.)
+            if modifiers::is_incapacitated(status_effects) {
                 continue;
             }
+            // A party bot just raised moves but doesn't attack (`modifiers::holds_actions`.)
+            let holds_actions = modifiers::holds_actions(status_effects);
 
             // Chased too far from home: give up, go back and heal up, paying no attention to anyone on the way. That's
             // also when the one it's after is that far from its home and it hasn't reached them for a while (out of
@@ -1253,7 +1254,7 @@ pub fn npc_behavior(
             // Not for a second after seizing up with paralysis (`server/paralysis.rs`.)
             let paralysed = paralysis_locked.contains(id);
             let at_mounted = mounted_players.contains(&spawn.common.target_id.object_id);
-            let can_take_action = can_take_action && !paralysed && !at_mounted;
+            let can_take_action = can_take_action && !paralysed && !at_mounted && !holds_actions;
 
             // Only update the timeline on exact second marks. A timeline that always plays (Sastasha's giant clams opening
             // and closing) runs whether or not the NPC is fighting; its actions still need a target. Nothing read the
@@ -2339,6 +2340,11 @@ pub fn npc_use_action(
     let Some(actor) = instance.find_actor(actor_id) else {
         return;
     };
+    // Just raised: no action until its protection ends (`modifiers::holds_actions`: a party bot's heals, raises and
+    // rotation all come here.)
+    if actor.status_effects().is_some_and(modifiers::holds_actions) {
+        return;
+    }
     let position = actor.position();
     let rotation = actor.rotation();
     let cast_time = {
