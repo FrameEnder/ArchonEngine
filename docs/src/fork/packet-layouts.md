@@ -221,3 +221,19 @@ state") until the client was dropped as timed out. Bob's bundle 20261110-111747:
 instance of Coerthas took 0.75 s to load (its navmesh and collision), the client's packets piled up meanwhile, and the
 first read after held more than one; nine parse errors in 40 s, then "lost connection". (The chat loop parsed its
 whole receive buffer, not just what was read.)
+
+## Sitting in a chair (2026-11-11)
+
+From Bob's Chronofoil captures (16 players sitting down in the city zones, 4 getting up; `notes/world-bots/citysit.py`
+in the diagnostics repository), what others are sent when a player sits in a chair, all in the same moment:
+
+* **ActorSetPos** onto the seat: the seat's facing (quantized u16), warp type **19** (`WarpType::Unk19`), argument
+  **1**, the seat's position. Getting up: warp type 19 with **2**, 0.42 yalms ahead of the seat and half a yalm down.
+* **ActorControlTarget 290** (Emote) `[50, 0, hide_text, seat facing]`: the fourth parameter is the seat's facing,
+  quantized as the ActorSetPos' (8153 with `d91f` there; Kawari's `Emote::seat_facing`, which read nothing there
+  before.) Getting up: the emote 51, the same facing.
+* **ActorControl 2** (SetMode) 11 with 2 sitting; 1 (Normal) getting up, before the emote 51.
+
+On the ground there's no ActorSetPos: the emote 52 and SetMode 11 with 1; up, SetMode 1 and the emote 53, the fourth
+parameter 0. The player's own client sends WorldInteraction 501 `[50, 0, 1, seat facing]` with the seat's position as
+they sit (Bob's own /sit, bundle 20261111-091633). Test `a_seated_emote_matches_retail` (core).

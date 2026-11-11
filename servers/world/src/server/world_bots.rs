@@ -26,12 +26,13 @@ use glam::{Affine3A, Vec3A};
 use kawari::{
     common::{
         CharacterMode, JumpState, MoveAnimationState, MoveAnimationType, ObjectId, ObjectTypeId,
-        ObjectTypeKind, Position,
+        ObjectTypeKind, Position, WarpType,
     },
     config::get_config,
     ipc::zone::{
-        ActionType, ActorControlCategory, BattleNpcSubKind, CharacterDataFlag, CommonSpawn,
-        DisplayFlag, ObjectKind, OnlineStatus, ServerZoneIpcData, ServerZoneIpcSegment, SpawnNpc,
+        ActionType, ActorControlCategory, ActorSetPos, BattleNpcSubKind, CharacterDataFlag,
+        CommonSpawn, DisplayFlag, ObjectKind, OnlineStatus, ServerZoneIpcData,
+        ServerZoneIpcSegment, SpawnNpc,
     },
 };
 use parking_lot::Mutex;
@@ -193,6 +194,18 @@ const EMOTES: [(u32, u32, u8); 30] = [
 /// chair as they came into view, and 3% in a looped emote; how often a bot goes to sit is a guess near those.
 const SIT_EMOTE: u32 = 50;
 const GROUND_SIT_EMOTE: u32 = 52;
+/// Getting up: from a chair (51), from the ground (53).
+const STAND_EMOTE: u32 = 51;
+const GROUND_STAND_EMOTE: u32 = 53;
+/// Retail's ActorSetPos into and out of a seat: warp type 19, with 1 sitting down and 2 getting up; and where they're
+/// put getting up: 0.42 yalms ahead of the seat, half a yalm down (all four seen.)
+const SEAT_WARP_SIT: u8 = 1;
+const SEAT_WARP_STAND: u8 = 2;
+const SEAT_STAND_AHEAD: f32 = 0.42;
+const SEAT_STAND_DOWN: f32 = 0.5;
+/// How long a bot just arrived (by Teleport or through an exit) stands where it arrived before walking off to a spot
+/// of its own (seconds), so arrivals don't pile up where everyone lands.
+const ARRIVED_STAY: (u64, u64) = (2, 6);
 const IN_CHAIR: u8 = 2;
 const ON_GROUND: u8 = 1;
 const GOES_TO_SIT: f32 = 0.08;
@@ -413,6 +426,21 @@ impl Places {
         }
         places
     }
+
+    /// Where someone arriving in the zone stands: its first big aetheryte's landing, else that aetheryte, else its
+    /// first pop range. (A spot of a bot's own must be walkable from here: `Ground::own`.)
+    pub fn landing(&self) -> Option<Vec3A> {
+        self.aetherytes
+            .iter()
+            .find_map(|(_, _, landing)| *landing)
+            .or_else(|| self.aetherytes.first().map(|(_, at, _)| *at))
+            .or_else(|| {
+                self.pops
+                    .iter()
+                    .min_by_key(|(id, _)| **id)
+                    .map(|(_, at)| *at)
+            })
+    }
 }
 
 /// Handler types (`HandlerType`): a Warp, a CustomTalk.
@@ -484,6 +512,9 @@ pub struct Who {
     pub item_level: u16,
     /// The server's glamour it wears, by name (kept if it's befriended.)
     pub glamour: Option<String>,
+    /// Its made-up content ID (`CONTENT_ID_BASE` and a random number), the same each time it's shown: the friend
+    /// list's and the party list's, so a friend found in the crowd is the same one.
+    pub content_id: u64,
 }
 
 /// One world bot.
@@ -513,6 +544,8 @@ pub struct WorldBot {
     seat: Option<usize>,
     /// It joined a player's party (as a party bot beside them): Teleporting away, then someone new.
     joined: bool,
+    /// Just arrived where everyone lands (an aetheryte's landing, an exit's pop range): it walks off to a spot next.
+    arrived: bool,
 }
 
 impl WorldBot {
@@ -856,6 +889,7 @@ impl WorldBots {
             equipped: wearing.equipped,
             item_level,
             glamour,
+            content_id: CONTENT_ID_BASE | fastrand::u32(1..) as u64,
         })
     }
 
@@ -884,6 +918,7 @@ impl WorldBots {
             sitting: None,
             seat: None,
             joined: false,
+            arrived: false,
         })
     }
 
@@ -977,6 +1012,12 @@ struct Ground<'a> {
     collision: Option<&'a crate::collision::Collision>,
 }
 
+/// How far a spot not recorded may be moved onto the navmesh, and how near its path from the zone's landing must end
+/// to it (yalms.)
+const ON_MESH_WITHIN: f32 = 1.0;
+/// How near a recorded spot's height the collision's floor must be to be taken over it (yalms.)
+const RECORDED_FLOOR_WITHIN: f32 = 0.25;
+
 impl<'a> Ground<'a> {
     fn of(instance: &'a Instance) -> Self {
         Ground {
@@ -985,30 +1026,52 @@ impl<'a> Ground<'a> {
         }
     }
 
-    /// `spot` put on the floor near its height: the collision's floor within `reach` yalms of it (a step up at most),
-    /// else the navmesh's ground there if it's as near. A recorded spot (retail stood there at that height) stays as
-    /// it is when neither is found; another isn't stood on at all when there's a navmesh to say where the ground is.
-    /// (The navmesh alone can put it on a floor below: Bob's bundle 20261111-082127, a bot at -0.13 where retail's
-    /// players stood at 1.28.)
-    fn settle(&self, spot: Vec3A, recorded: bool) -> Option<Vec3A> {
-        let reach: f32 = if recorded { 1.0 } else { 3.0 };
-        if let Some(collision) = self.collision
-            && let Some(y) = collision.floor(
-                spot.x,
-                spot.z,
-                spot.y + reach.max(collision.climb),
-                spot.y - reach,
-            )
-        {
-            return Some(Vec3A::new(spot.x, y, spot.z));
+    fn navmesh(&self) -> Option<&'a crate::navmesh::Navmesh> {
+        self.navmesh.filter(|navmesh| navmesh.is_available())
+    }
+
+    /// The collision's floor at (x, z) within `within` of `y`.
+    fn floor_near(&self, at: Vec3A, within: f32) -> Option<f32> {
+        self.collision?
+            .floor(at.x, at.z, at.y + within, at.y - within)
+            .filter(|y| (y - at.y).abs() <= within)
+    }
+
+    /// A recorded spot (retail's players stood there, at that height): on the collision's floor only when it's within
+    /// a quarter yalm of that height, else as recorded. The navmesh and the collision can miss what was stood on: New
+    /// Gridania's bridge by the aetheryte plaza, where retail's players stood at 1.28 and Kawari put bots at -0.13 and
+    /// then 0.30, under it (Bob's bundles 20261111-082127 and -091633.)
+    fn recorded(&self, spot: Vec3A) -> Vec3A {
+        match self.floor_near(spot, RECORDED_FLOOR_WITHIN) {
+            Some(y) => Vec3A::new(spot.x, y, spot.z),
+            None => spot,
         }
-        match self.navmesh {
-            Some(navmesh) if navmesh.is_available() => navmesh
-                .ground_under(spot)
-                .filter(|ground| (ground.y - spot.y).abs() <= reach)
-                .or(recorded.then_some(spot)),
-            _ => Some(spot),
+    }
+
+    /// A spot of its own (a ring round a place): the navmesh's nearest point within a yalm, which a walker from
+    /// `from` (the zone's landing) gets to, so it's never in a wall or behind a marketboard (Bob's bundle
+    /// 20261111-091633); on the collision's floor there. Without a navmesh, the collision's floor near it, or as it is.
+    fn own(&self, spot: Vec3A, from: Option<Vec3A>) -> Option<Vec3A> {
+        let Some(navmesh) = self.navmesh() else {
+            return Some(match self.floor_near(spot, 3.0) {
+                Some(y) => Vec3A::new(spot.x, y, spot.z),
+                None => spot,
+            });
+        };
+        let point = navmesh.nearest_point(spot, [ON_MESH_WITHIN, 3.0, ON_MESH_WITHIN])?;
+        if let Some(from) = from {
+            let path = navmesh.calculate_path(from, point, f32::INFINITY);
+            let reached = path.last().is_some_and(|end| {
+                Vec3A::new(end.x - point.x, 0.0, end.z - point.z).length() <= ON_MESH_WITHIN
+            });
+            if !reached && from.distance(point) > ON_MESH_WITHIN {
+                return None;
+            }
         }
+        Some(match self.floor_near(point, 0.5) {
+            Some(y) => Vec3A::new(point.x, y, point.z),
+            None => point,
+        })
     }
 }
 
@@ -1040,8 +1103,9 @@ fn taken_seats(bots: &[WorldBot], territory: u16, except: usize) -> HashSet<usiz
 }
 
 /// A spot to stand by `anchor`: one of retail's recorded spots near it (weighted by how long players stood there, a
-/// little apart), or else somewhere in a ring round it; on the floor near that height (`Ground::settle`), and not
-/// within `APART` of the `taken` spots (else where Teleport lands, or the place itself.)
+/// little apart; `Ground::recorded`), or else somewhere in a ring round it that a walker from the zone's landing gets
+/// to (`Ground::own`), not within `APART` of the `taken` spots. Failing those, where Teleport lands by its aetheryte, or
+/// the zone's landing (never the place itself: a marketboard's middle is inside it.)
 fn spot_by(
     territory: u16,
     places: &Places,
@@ -1050,6 +1114,7 @@ fn spot_by(
     taken: &[Vec3A],
 ) -> Option<Vec3A> {
     let (center, ring, within) = anchor_point(places, anchor)?;
+    let from = places.landing();
     let recorded: Vec<([f32; 5], u16)> = recorded_spots()
         .get(&territory)
         .map(|cells| {
@@ -1060,19 +1125,20 @@ fn spot_by(
                 .collect()
         })
         .unwrap_or_default();
-    for _ in 0..12 {
+    for attempt in 0..24 {
         let spot = match weighted(&recorded) {
-            Some(cell) => ground.settle(
+            Some(cell) => Some(ground.recorded(
                 Vec3A::new(cell[0], cell[1], cell[2])
                     + Vec3A::new(fastrand::f32() - 0.5, 0.0, fastrand::f32() - 0.5) * 1.6,
-                true,
-            ),
+            )),
             None => {
+                // Further out the more it's tried (a small place hemmed in by walls.)
+                let wider = 1.0 + attempt as f32 / 12.0;
                 let angle = fastrand::f32() * std::f32::consts::TAU;
-                let distance = ring.0 + fastrand::f32() * (ring.1 - ring.0);
-                ground.settle(
+                let distance = (ring.0 + fastrand::f32() * (ring.1 - ring.0)) * wider;
+                ground.own(
                     center + Vec3A::new(angle.sin(), 0.0, angle.cos()) * distance,
-                    false,
+                    from,
                 )
             }
         };
@@ -1090,6 +1156,7 @@ fn spot_by(
             .and_then(|(_, _, landing)| *landing),
         Anchor::Marketboard(_) => None,
     }
+    .or(from)
     .or(Some(center))
 }
 
@@ -1106,6 +1173,45 @@ fn free_seat(territory: u16, here: Vec3A, taken: &HashSet<usize>) -> Option<(usi
         .map(|(index, seat)| (index, *seat))
         .collect();
     (!free.is_empty()).then(|| free[fastrand::usize(..free.len())])
+}
+
+/// Where to stand up to a seat: retail's players got up 0.42 yalms ahead of it, half a yalm down.
+fn before_seat([x, y, z, facing]: [f32; 4]) -> Vec3A {
+    Vec3A::new(
+        x + facing.sin() * SEAT_STAND_AHEAD,
+        y - SEAT_STAND_DOWN,
+        z + facing.cos() * SEAT_STAND_AHEAD,
+    )
+}
+
+/// Where to walk to, going to a place of its zone: a spot of its own 2-5 yalms from a shard, marketboard, aetheryte or
+/// innkeeper (on the navmesh, reached from the zone's landing, apart from the others: never in the place or behind a
+/// counter); an exit's own spot, or the navmesh's nearest point within 3 yalms of it.
+fn near_place(
+    ground: Ground,
+    at: Vec3A,
+    then: Then,
+    from: Option<Vec3A>,
+    taken: &[Vec3A],
+) -> Option<Vec3A> {
+    if let Then::Exit { .. } = then {
+        return ground
+            .own(at, from)
+            .or_else(|| ground.navmesh()?.nearest_point(at, [3.0, 3.0, 3.0]))
+            .or(Some(at));
+    }
+    for _ in 0..8 {
+        let angle = fastrand::f32() * std::f32::consts::TAU;
+        let distance = 2.0 + fastrand::f32() * 3.0;
+        if let Some(spot) = ground.own(
+            at + Vec3A::new(angle.sin(), 0.0, angle.cos()) * distance,
+            from,
+        ) && taken.iter().all(|other| other.distance(spot) >= APART)
+        {
+            return Some(spot);
+        }
+    }
+    None
 }
 
 /// Somewhere to go in its zone other than its place: another place of the zone (a shard, a marketboard, another big
@@ -1452,7 +1558,10 @@ fn step(
                 bot.zone_in_at =
                     matches!(arrive, Arrive::Aetheryte(_)).then_some(now + ZONE_IN_AFTER);
                 bot.doing = Doing::Standing;
-                bot.until = now + stay_length(to);
+                // A moment where it arrived, then off to a spot of its own (`decide`.)
+                bot.arrived = true;
+                bot.until =
+                    now + Duration::from_secs(fastrand::u64(ARRIVED_STAY.0..=ARRIVED_STAY.1));
             }
         }
         Doing::Inside { at } => {
@@ -1482,23 +1591,28 @@ fn decide(
     let taken = taken_spots(&world_bots.bots, territory, index);
     let seats_taken = taken_seats(&world_bots.bots, territory, index);
     let bot = &mut world_bots.bots[index];
-    // Up first, if it was sitting.
-    if bot.sitting.take().is_some() {
-        bot.seat = None;
-        if let (Some(actor), Some(instance)) = (bot.actor, instance.as_deref_mut()) {
-            set_character_mode(
-                instance,
-                &mut network.lock(),
-                actor,
-                CharacterMode::Normal,
-                0,
-                true,
-            );
-        }
-    }
+    // Up first, if it was sitting (and not straight down again.)
+    let was_sitting = stand_up(bot, instance.as_deref_mut(), network);
     let ground = instance.as_deref().map(Ground::of).unwrap_or_default();
     let navmesh = ground.navmesh;
     let here = bot.spot;
+
+    // Just arrived where everyone lands: off to a spot of its own by the zone's aetheryte (its own place, at home.)
+    if std::mem::take(&mut bot.arrived)
+        && let (Some(places), Some(here)) = (places, here)
+    {
+        let anchor = if bot.home.0 == bot.at {
+            bot.home.1
+        } else {
+            Anchor::Aetheryte(places.aetherytes.first().map(|(id, ..)| *id).unwrap_or(0))
+        };
+        if let Some(to) = spot_by(bot.at, places, anchor, ground, &taken)
+            && to.distance(here) > APART
+        {
+            start_walk(bot, here, to, Then::Stand, navmesh, now);
+            return;
+        }
+    }
     let at_home = bot.home.0 == bot.at;
     let stay = |bot: &mut WorldBot| {
         bot.doing = Doing::Standing;
@@ -1543,26 +1657,20 @@ fn decide(
         }
         if let (Some(places), Some(here)) = (places, here)
             && let Some((to, then)) = trip_in_zone(places, here)
+            && let Some(to) = near_place(ground, to, then, places.landing(), &taken)
         {
-            let to = ground.settle(to, false).unwrap_or(to);
             start_walk(bot, here, to, then, navmesh, now);
             return;
         }
     }
 
     // A seat near it, or the ground where it stands.
-    if let Some(here) = here {
+    if let Some(here) = here.filter(|_| !was_sitting) {
         if fastrand::f32() < GOES_TO_SIT
-            && let Some((seat, [x, y, z, _])) = free_seat(bot.at, here, &seats_taken)
+            && let Some((seat, place)) = free_seat(bot.at, here, &seats_taken)
         {
-            start_walk(
-                bot,
-                here,
-                Vec3A::new(x, y, z),
-                Then::Sit(seat),
-                navmesh,
-                now,
-            );
+            // Up to it (where retail's players got up), then onto it.
+            start_walk(bot, here, before_seat(place), Then::Sit(seat), navmesh, now);
             return;
         }
         if fastrand::f32() < SITS_DOWN {
@@ -1659,8 +1767,9 @@ fn walk(
     }
 }
 
-/// Sits it down where it is (in a chair: on the seat, facing as it does), as retail's players: the emote, then SetMode
-/// 11 with how (`IN_CHAIR` or `ON_GROUND`.) Unshown, it's just sitting when it's next shown.
+/// Sits it down as retail's players sat (Bob's Chronofoil captures): in a chair, an ActorSetPos onto the seat facing its
+/// way (warp type 19 with 1), the emote 50 naming that facing, then SetMode 11 with 2; on the ground, the emote 52 and
+/// SetMode 11 with 1 where it stands. Unshown, it's just sitting when it's next shown.
 fn sit(
     bot: &mut WorldBot,
     instance: Option<&mut Instance>,
@@ -1673,43 +1782,20 @@ fn sit(
     let (Some(actor), Some(instance)) = (bot.actor, instance) else {
         return;
     };
-    if let Some(spot) = bot.spot {
-        if let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor_mut(actor) {
-            spawn.common.position = Position(spot);
-            spawn.common.rotation = bot.facing;
-        }
-        network.lock().send_in_range_instance(
-            actor,
-            instance,
-            FromServer::ActorMove(
-                actor,
-                Position(spot),
-                bot.facing,
-                MoveAnimationType::empty(),
-                MoveAnimationState::None,
-                JumpState::NoneOrFalling,
-                Some((NPC_RUN_SPEED * 10.0) as u8),
-            ),
-            DestinationNetwork::ZoneClients,
-        );
+    let in_chair = how == IN_CHAIR;
+    if in_chair && let Some(spot) = bot.spot {
+        set_pos(actor, instance, network, spot, bot.facing, SEAT_WARP_SIT);
     }
-    let emote = if how == IN_CHAIR {
-        SIT_EMOTE
-    } else {
-        GROUND_SIT_EMOTE
-    };
-    network.lock().send_in_range_instance(
+    emote_seated(
         actor,
         instance,
-        FromServer::ActorControlTarget(
-            actor,
-            ObjectTypeId::default(),
-            ActorControlCategory::Emote {
-                emote,
-                hide_text: false,
-            },
-        ),
-        DestinationNetwork::ZoneClients,
+        network,
+        if in_chair {
+            SIT_EMOTE
+        } else {
+            GROUND_SIT_EMOTE
+        },
+        in_chair.then_some(bot.facing),
     );
     set_character_mode(
         instance,
@@ -1718,6 +1804,116 @@ fn sit(
         CharacterMode::InPositionLoop,
         how,
         true,
+    );
+}
+
+/// Gets it up if it's sitting, as retail's players got up: from a chair, an ActorSetPos to just ahead of the seat
+/// (warp type 19 with 2), SetMode 1, then the emote 51 naming the seat's facing; from the ground, SetMode 1 and the
+/// emote 53. Whether it was sitting.
+fn stand_up(
+    bot: &mut WorldBot,
+    instance: Option<&mut Instance>,
+    network: &Arc<Mutex<NetworkState>>,
+) -> bool {
+    let Some(how) = bot.sitting.take() else {
+        return false;
+    };
+    bot.seat = None;
+    let in_chair = how == IN_CHAIR;
+    if in_chair && let Some(spot) = bot.spot {
+        let before = before_seat([spot.x, spot.y, spot.z, bot.facing]);
+        bot.spot = Some(before);
+        if let (Some(actor), Some(instance)) = (bot.actor, instance) {
+            set_pos(
+                actor,
+                instance,
+                network,
+                before,
+                bot.facing,
+                SEAT_WARP_STAND,
+            );
+            set_character_mode(
+                instance,
+                &mut network.lock(),
+                actor,
+                CharacterMode::Normal,
+                0,
+                true,
+            );
+            emote_seated(actor, instance, network, STAND_EMOTE, Some(bot.facing));
+        }
+        return true;
+    }
+    if let (Some(actor), Some(instance)) = (bot.actor, instance) {
+        set_character_mode(
+            instance,
+            &mut network.lock(),
+            actor,
+            CharacterMode::Normal,
+            0,
+            true,
+        );
+        emote_seated(actor, instance, network, GROUND_STAND_EMOTE, None);
+    }
+    true
+}
+
+/// ActorSetPos for a seat (warp type 19, `arg` 1 sitting, 2 getting up), and the actor's spawn there.
+fn set_pos(
+    actor: ObjectId,
+    instance: &mut Instance,
+    network: &Arc<Mutex<NetworkState>>,
+    at: Vec3A,
+    facing: f32,
+    arg: u8,
+) {
+    if let Some(NetworkedActor::Npc { spawn, .. }) = instance.find_actor_mut(actor) {
+        spawn.common.position = Position(at);
+        spawn.common.rotation = facing;
+    }
+    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorSetPos(ActorSetPos {
+        rotation: facing,
+        warp_type: WarpType::Unk19,
+        arg,
+        position: Position(at),
+        ..Default::default()
+    }));
+    network.lock().send_in_range_instance(
+        actor,
+        instance,
+        FromServer::PacketSegment(ipc, actor),
+        DestinationNetwork::ZoneClients,
+    );
+}
+
+/// A sitting or getting-up emote, as retail's: its text hidden, and for a chair the seat's facing quantized as
+/// ActorSetPos' rotation (its fourth parameter.)
+fn emote_seated(
+    actor: ObjectId,
+    instance: &mut Instance,
+    network: &Arc<Mutex<NetworkState>>,
+    emote: u32,
+    facing: Option<f32>,
+) {
+    let seat_facing = facing
+        .map(|facing| {
+            (((facing + std::f32::consts::PI) / std::f32::consts::TAU) * u16::MAX as f32) as u16
+                as u32
+        })
+        .unwrap_or(0);
+    network.lock().send_in_range_instance(
+        actor,
+        instance,
+        FromServer::ActorControlTarget(
+            actor,
+            ObjectTypeId::default(),
+            ActorControlCategory::Emote {
+                emote,
+                hide_text: true,
+                seat_facing,
+            },
+        ),
+        DestinationNetwork::ZoneClients,
     );
 }
 
@@ -1768,6 +1964,7 @@ fn idle(
                 ActorControlCategory::Emote {
                     emote,
                     hide_text: false,
+                    seat_facing: 0,
                 },
             ),
             DestinationNetwork::ZoneClients,
@@ -1867,7 +2064,7 @@ fn show(
     }
     let config = get_config();
     instance.insert_npc(actor, spawn, &config, &mut game_data.lock());
-    let content_id = CONTENT_ID_BASE | actor.0 as u64;
+    let content_id = bot.who.content_id;
     if let Some(NetworkedActor::Npc {
         timeline,
         state,
@@ -1896,11 +2093,6 @@ fn show(
     bot.path.clear();
 }
 
-/// A shown world bot's made-up content ID (its SpawnPlayer's, and what the client's menus send.)
-pub fn content_id(actor: ObjectId) -> u64 {
-    CONTENT_ID_BASE | actor.0 as u64
-}
-
 /// Who the shown world bot `actor` is (Examine.)
 pub fn shown(bots: &WorldBots, actor: ObjectId) -> Option<&Who> {
     bots.bots
@@ -1909,8 +2101,8 @@ pub fn shown(bots: &WorldBots, actor: ObjectId) -> Option<&Who> {
         .map(|bot| &bot.who)
 }
 
-/// The shown world bot a player's menu named (its content ID, or with none its name in `territory`), as a party bot
-/// would be kept (`bot_friends::SavedBot`): befriended, or called into a party. A crafter or gatherer comes as one of
+/// The world bot a player's menu named (its content ID, wherever it is; with none, its name among those shown in
+/// `territory`), as a party bot would be kept (`bot_friends::SavedBot`): befriended, or called into a party. A crafter or gatherer comes as one of
 /// the fighting jobs, drawn as the others' are.
 pub fn as_friend(
     bots: &WorldBots,
@@ -1919,13 +2111,15 @@ pub fn as_friend(
     name: &str,
 ) -> Option<(usize, SavedBot)> {
     let (index, bot) = bots.bots.iter().enumerate().find(|(_, bot)| {
-        let Some(actor) = bot.actor else {
-            return false;
-        };
-        if content_id != 0 {
-            self::content_id(actor) == content_id
+        if bot.joined {
+            false
+        } else if content_id != 0 {
+            bot.who.content_id == content_id
         } else {
-            !name.is_empty() && bot.who.name == name && Some(bot.at) == territory
+            bot.actor.is_some()
+                && !name.is_empty()
+                && bot.who.name == name
+                && Some(bot.at) == territory
         }
     })?;
     let fighting: Vec<(u8, u16)> = JOBS
@@ -1941,7 +2135,7 @@ pub fn as_friend(
     Some((
         index,
         SavedBot {
-            content_id: self::content_id(bot.actor?),
+            content_id: bot.who.content_id,
             name: bot.who.name.clone(),
             classjob,
             look: party_bot::look_to_hex(&bot.who.look),
@@ -1977,6 +2171,33 @@ pub fn joins_party(bots: &mut WorldBots, index: usize, now: Instant) {
         aetheryte,
     };
     bot.until = now + TELEPORT_GONE;
+}
+
+/// The world bot at `index`, shown in the inviting player's own zone, became their party bot where it stood (its
+/// actor gone, a party bot in its place: `party_bot`'s invite): it's no longer one of the crowd, and someone new comes
+/// home in its place after a while.
+pub fn leaves_for_party(bots: &mut WorldBots, index: usize, now: Instant) {
+    let aetheryte = bots
+        .aetherytes
+        .iter()
+        .find(|place| place.big && place.territory == bots.bots[index].home.0)
+        .map(|place| place.id)
+        .unwrap_or(0);
+    let bot = &mut bots.bots[index];
+    let aetheryte = match bot.home.1 {
+        Anchor::Aetheryte(row) => row,
+        Anchor::Marketboard(_) => aetheryte,
+    };
+    bot.actor = None;
+    bot.path.clear();
+    bot.sitting = None;
+    bot.seat = None;
+    bot.joined = true;
+    bot.doing = Doing::Away {
+        to: bot.home.0,
+        arrive: Arrive::Aetheryte(aetheryte),
+    };
+    bot.until = now + Duration::from_secs(INN_STAY.0);
 }
 
 /// What `!worldbots` prints: whether they're on, how many and where, and the nearest to `player` with what each is
@@ -2126,6 +2347,7 @@ mod tests {
             equipped: EquippedStorage::default(),
             item_level: 0,
             glamour: None,
+            content_id: CONTENT_ID_BASE | 1,
         };
         bots.bots.push(WorldBot {
             who,
@@ -2145,6 +2367,7 @@ mod tests {
             sitting: None,
             seat: None,
             joined: false,
+            arrived: false,
         });
         let network = Arc::new(Mutex::new(NetworkState::default()));
         let settings = bots.settings();
@@ -2206,11 +2429,79 @@ mod tests {
             navmesh: None,
             collision: Some(&collision),
         };
-        let spot = ground.settle(Vec3A::new(19.04, 1.28, 26.06), true).unwrap();
+        let spot = ground.recorded(Vec3A::new(19.04, 1.28, 26.06));
         assert!((spot.y - 1.3).abs() < 1e-3, "{spot:?}");
         // Nothing near that height: as recorded.
-        let spot = ground.settle(Vec3A::new(19.04, 5.0, 26.06), true).unwrap();
+        let spot = ground.recorded(Vec3A::new(19.04, 5.0, 26.06));
         assert_eq!(spot.y, 5.0);
+    }
+
+    /// Bob's bundle 20261111-091633: Thalmiel Thalis spawned at 0.30 on New Gridania's bridge, where retail's players
+    /// stood at 1.28: the zone's collision has no bridge there, only the floor under it. A floor more than a quarter
+    /// yalm from the recorded height isn't taken.
+    #[test]
+    fn a_recorded_spot_keeps_its_height_over_a_floor_below() {
+        let collision = crate::collision::Collision::build(
+            vec![
+                [10.0, 0.30, 20.0],
+                [30.0, 0.30, 20.0],
+                [30.0, 0.30, 30.0],
+                [10.0, 0.30, 30.0],
+            ],
+            vec![[0, 1, 2], [0, 2, 3]],
+            Vec::new(),
+            Vec::new(),
+            0.75,
+            0.4,
+            55.0,
+        );
+        let ground = Ground {
+            navmesh: None,
+            collision: Some(&collision),
+        };
+        let spot = ground.recorded(Vec3A::new(18.36, 1.28, 25.76));
+        assert_eq!(spot.y, 1.28);
+    }
+
+    /// Bob's bundle 20261111-091633: bots that arrived stood where everyone lands, in a heap. A moment there, then off
+    /// to a spot of their own.
+    #[test]
+    fn an_arrival_walks_off_from_the_landing() {
+        fastrand::seed(5);
+        let landing = Vec3A::new(-80.0, 20.0, 0.0);
+        let mut bots = WorldBots {
+            settings: Some((None, Settings::default())),
+            ready: true,
+            ..Default::default()
+        };
+        bots.places.insert(
+            999,
+            Arc::new(Places {
+                aetherytes: vec![(8, Vec3A::new(-84.0, 20.0, 0.0), Some(landing))],
+                ..Default::default()
+            }),
+        );
+        let mut bot = test_bot(999);
+        bot.home = (999, Anchor::Aetheryte(8));
+        let now = Instant::now();
+        bot.doing = Doing::Away {
+            to: 999,
+            arrive: Arrive::Aetheryte(8),
+        };
+        bot.until = now;
+        bots.bots.push(bot);
+        let network = Arc::new(Mutex::new(NetworkState::default()));
+        let settings = bots.settings();
+        step(&mut bots, 0, None, &network, None, &settings, now);
+        assert_eq!(bots.bots[0].spot, Some(landing));
+        assert!(bots.bots[0].arrived);
+        let later = now + Duration::from_secs(ARRIVED_STAY.1 + 1);
+        step(&mut bots, 0, None, &network, None, &settings, later);
+        let Doing::Walking { to, then } = bots.bots[0].doing.clone() else {
+            panic!("still at the landing: {:?}", bots.bots[0].doing);
+        };
+        assert_eq!(then, Then::Stand);
+        assert!(to.distance(landing) > APART);
     }
 
     /// Bob's bundle 20261111-082127: bots stood in one another.
@@ -2272,6 +2563,7 @@ mod tests {
                 equipped: EquippedStorage::default(),
                 item_level: 0,
                 glamour: None,
+                content_id: CONTENT_ID_BASE | 2,
             },
             home: (at, Anchor::Aetheryte(2)),
             at,
@@ -2286,6 +2578,7 @@ mod tests {
             sitting: None,
             seat: None,
             joined: false,
+            arrived: false,
         }
     }
 
@@ -2293,7 +2586,7 @@ mod tests {
     /// SetMode 11 with 2; up again (SetMode Normal) when its stay is over.
     #[test]
     fn a_bot_sits_in_a_seat_and_gets_up() {
-        use crate::server::test_world::{TestWorld, control_from};
+        use crate::server::test_world::{TestWorld, control_from, packet_from};
         let mut world = TestWorld::new();
         let player = world.player(1, [0.0, 0.0, 0.0]);
         let actor = world.player_npc(2, player, [1.0, 0.0, 0.0]);
@@ -2337,6 +2630,18 @@ mod tests {
         assert_eq!((bot.sitting, bot.seat), (Some(IN_CHAIR), Some(0)));
         assert_eq!(bot.facing, facing);
         let sent = world.sent(player);
+        // Onto the seat facing its way, as retail's players (Bob's bundle 20261111-091633: Selis Kalomiyn sat a
+        // third of a yalm off, facing the way it walked up.)
+        assert!(
+            sent.iter()
+                .any(|message| packet_from(message, actor, |data| matches!(data,
+            ServerZoneIpcData::ActorSetPos(set)
+                if matches!(set.warp_type, WarpType::Unk19) && set.arg == SEAT_WARP_SIT
+                    && set.position.0 == Vec3A::new(x, y, z) && set.rotation == facing)))
+        );
+        assert!(sent.iter().any(|message| matches!(message,
+            FromServer::ActorControlTarget(from, _, ActorControlCategory::Emote { emote: SIT_EMOTE, seat_facing, .. })
+                if *from == actor && *seat_facing != 0)));
         assert!(sent.iter().any(|message| matches!(message,
             FromServer::ActorControlTarget(from, _, ActorControlCategory::Emote { emote: SIT_EMOTE, .. })
                 if *from == actor)));
@@ -2363,17 +2668,28 @@ mod tests {
             now,
         );
         assert_eq!(bots.bots[0].sitting, None);
-        assert!(world.sent(player).iter().any(|message| control_from(
-            message,
-            actor,
-            |category| matches!(
-                category,
-                ActorControlCategory::SetMode {
-                    mode: CharacterMode::Normal,
-                    ..
-                }
-            )
-        )));
+        let sent = world.sent(player);
+        assert!(
+            sent.iter()
+                .any(|message| control_from(message, actor, |category| matches!(
+                    category,
+                    ActorControlCategory::SetMode {
+                        mode: CharacterMode::Normal,
+                        ..
+                    }
+                )))
+        );
+        // Put just ahead of the seat, and the emote of getting up.
+        let ahead = before_seat([x, y, z, facing]);
+        assert!(
+            sent.iter()
+                .any(|message| packet_from(message, actor, |data| matches!(data,
+            ServerZoneIpcData::ActorSetPos(set)
+                if set.arg == SEAT_WARP_STAND && set.position.0 == ahead)))
+        );
+        assert!(sent.iter().any(|message| matches!(message,
+            FromServer::ActorControlTarget(from, _, ActorControlCategory::Emote { emote: STAND_EMOTE, .. })
+                if *from == actor)));
     }
 
     /// Bob's bundle 20261111-082127: an emote such as a hug goes to another bot, or isn't used.
@@ -2443,11 +2759,9 @@ mod tests {
         assert_eq!(u16::from_le_bytes([unk1[72], unk1[73]]), 123);
 
         // By its content ID, or by name in its zone (a menu's invite carries only the name.)
-        let (index, saved) = as_friend(&data.world_bots, Some(129), content_id(actor), "").unwrap();
-        assert_eq!(
-            (index, saved.content_id),
-            (0, CONTENT_ID_BASE | actor.0 as u64)
-        );
+        let content_id = data.world_bots.bots[0].who.content_id;
+        let (index, saved) = as_friend(&data.world_bots, Some(129), content_id, "").unwrap();
+        assert_eq!((index, saved.content_id), (0, content_id));
         assert!(crate::server::bot_friends::is_bot_content_id(
             saved.content_id
         ));
@@ -2459,6 +2773,13 @@ mod tests {
         assert!(as_friend(&data.world_bots, Some(132), 0, &name).is_none());
 
         let now = Instant::now();
+        // Called from the friend list while it's in the crowd here, it's the one that joins: it leaves the crowd.
+        leaves_for_party(&mut data.world_bots, 0, now);
+        assert!(data.world_bots.bots[0].actor.is_none() && data.world_bots.bots[0].joined);
+        assert!(as_friend(&data.world_bots, Some(129), content_id, "").is_none());
+        // Elsewhere, it Teleports off; someone new comes home in its place either way.
+        data.world_bots.bots[0].joined = false;
+        data.world_bots.bots[0].doing = Doing::Standing;
         joins_party(&mut data.world_bots, 0, now);
         let settings = data.world_bots.settings();
         let network = Arc::new(Mutex::new(NetworkState::default()));

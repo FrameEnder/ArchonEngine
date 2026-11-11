@@ -636,6 +636,9 @@ pub enum ActorControlCategory {
         #[br(map = read_bool_from::<u32>)]
         #[bw(map = write_bool_as::<u32>)]
         hide_text: bool,
+        /// Sitting down in a chair (50) or getting up from one (51): the seat's facing, quantized as ActorSetPos'
+        /// rotation (retail's, Bob's Chronofoil captures); 0 otherwise.
+        seat_facing: u32,
     },
 
     /// Interrupts the currently playing emote.
@@ -1430,6 +1433,29 @@ mod tests {
     use binrw::{BinRead, BinWrite};
 
     use super::*;
+
+    /// Retail's emote of a player sitting down in a chair, byte for byte (Bob's Chronofoil capture 61a9a4f3, Ul'dah):
+    /// the emote 50, its text hidden, and the seat's facing quantized as the ActorSetPos before it had it (8153.)
+    #[test]
+    fn a_seated_emote_matches_retail() {
+        let hex = "22010000320000000000000001000000d91f000000000000000000e000000000";
+        let bytes: Vec<u8> = (0..hex.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
+            .collect();
+        let read = ActorControlTarget::read_le(&mut Cursor::new(&bytes)).unwrap();
+        assert!(matches!(
+            read.category,
+            ActorControlCategory::Emote {
+                emote: 50,
+                hide_text: true,
+                seat_facing: 8153,
+            }
+        ));
+        let mut written = Cursor::new(Vec::new());
+        read.write_le(&mut written).unwrap();
+        assert_eq!(written.into_inner(), bytes);
+    }
 
     /// Retail's two ActorControls bringing an ambushing gigas into view, byte for byte (Bob's Copperbell Mines captures
     /// of 2026-10-25.)

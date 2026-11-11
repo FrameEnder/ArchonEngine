@@ -69,15 +69,24 @@ spots; `cityemotes.py` counts emotes, which come as ActorControlTarget 290.)
 | Titles | two in three | two in three, any title of the Title sheet |
 | Minions | more than half had one out (4,062 of 7,495) | not yet (stage 3) |
 | Mounted when they came into view | none | none |
-| Sitting | in a chair: the emote Sit (50), then SetMode 11 with 2, 4% as they appeared; on the ground: the emote 52, then SetMode 11 with 1; mode 3 (another looped emote, 3%). 37 chairs and benches where they sat in the six city zones (`notes/world-bots/citysit.py`) | after a stay at home, 8% of the time to a free seat within 40 yalms (walk there, onto it facing its way, the emote, SetMode 11 with 2), 2% on the ground where it stands (52, SetMode 11 with 1); a seat has one bot; up (SetMode Normal) when the stay's over; shown sitting to someone who arrives (its spawn's mode). No poses or emotes while sitting. The shares are guesses near retail's |
+| Sitting | in a chair, all at once: **ActorSetPos** onto the seat facing its way (warp type 19 with 1), the emote 50 with its text hidden and the seat's facing as its fourth parameter (quantized as ActorSetPos' rotation), SetMode 11 with 2, 4% as they appeared; getting up: ActorSetPos 0.42 yalms ahead of the seat and half a yalm down (19 with 2), SetMode 1, the emote 51 (the same facing). On the ground: the emote 52 and SetMode 11 with 1 where they stand; up: SetMode 1, the emote 53. Mode 3 (another looped emote, 3%). 47 seats in the six city zones, from those ActorSetPos and the spawns of players already sitting (`notes/world-bots/citysit.py`) | after a stay at home, 8% of the time to a free seat within 40 yalms: it walks up to just ahead of it, then sits and gets up exactly as retail's players (since 2026-11-11, second pass: it was put on the seat by an ActorMove, which the client walked it onto, facing the way it came, and a third of the seats were where players stood before sitting, Bob's bundle 20261111-091633); 2% on the ground where it stands; a seat has one bot; not straight down again after getting up; shown sitting to someone who arrives (its spawn's mode). No poses or emotes while sitting. The shares are guesses near retail's |
 | Crafting in place | mode 5 (334 times) | not yet (stage 3) |
 | Crafters' and gatherers' tools | idle in town, only the main tool (no off-hand) | the same (since 2026-11-11: their off-hand, a crafter's station, showed on the floor behind them, Bob's bundle 20261111-082127) |
 
-**Its feet on the floor.** A spot is put on the zone's collision floor within a yalm of its height (a recorded spot:
-retail stood there at that height; a yalm's step up at most), or three for a spot in a ring, else the navmesh's ground
-if it's as near; a recorded spot with neither stays as recorded (`Ground::settle`). The navmesh alone put Sellenix Sele
-on the floor below New Gridania's aetheryte plaza, at -0.13 where retail's players stood at 1.28 (Bob's bundle
-20261111-082127.)
+**Its feet on the floor, never in a wall** (`Ground`). A recorded spot (retail's players stood there, at that
+height) takes the collision's floor only within a quarter yalm of that height, else stays as recorded: the zone's
+navmesh and collision can miss what was stood on, as New Gridania's bridge by the aetheryte plaza, where retail's
+players stood at 1.28 and Kawari put bots at -0.13 (the navmesh) and then 0.30 (the collision's floor under the
+bridge) (Bob's bundles 20261111-082127 and -091633). A spot of its own (a ring round its place, or near a place it
+walks to) is the navmesh's nearest point within a yalm that a walker from the zone's landing gets to (a path from
+there ending within a yalm), on the collision's floor there; failing 24 tries, further out each time, where Teleport
+lands. Before, a spot in a ring took any floor (a marketboard's stall, a wall's foot) and, failing that, the place's
+own middle: Veyseel Morira stood behind a Limsa Lominsa marketboard and Cemia Rior walked into a wall (bundle
+20261111-091633). A trip to a shard, marketboard, aetheryte or innkeeper ends 2-5 yalms from it, on such a spot.
+
+**Arriving.** Where everyone lands (an aetheryte's landing, an exit's pop range) a bot stands 2-6 s, then walks off
+to a spot of its own by its place (at home) or by the zone's aetheryte, apart from the others (since 2026-11-11,
+second pass: arrivals stood their whole stay where they landed, in a heap, bundle 20261111-091633.)
 
 **What a bot does.** At home, when a stay is over: most often another spot by its place (a short walk); three times
 in ten somewhere else, if travel is on: a Teleport to another big aetheryte (a city's three times in four), or a walk
@@ -99,10 +108,13 @@ As other players are (since 2026-11-11: none of these did anything, Bob's bundle
   (`party_bot::examine_information`; `Who` keeps its gear and item level.)
 * **Add to Friend List** keeps it as a party bot is kept ([Party Bots](party-bots.md#bots-kept-as-friends)), and it
   accepts at once; from the friend list it can be called into your party any time after.
-* **Invite to Party** (from its menu, or calling it from the friend list while it's about) brings it into your party
-  as a party bot beside you, the same name, look and glamour (a crafter or gatherer as a fighting job, as players
-  bring their combat job); the one in the crowd Teleports away (its cast shown, standing up first if it sat) and
-  someone new comes home in its place after the loading screen (`world_bots::as_friend`, `joins_party`.) The menu's
+* **Invite to Party** (from its menu, or from the friend list) brings it into your party, the same name, look and
+  glamour (a crafter or gatherer as a fighting job, as players bring their combat job). **In your zone it's the one
+  in the crowd that joins**, where it stands: its actor gives way to a party bot at its spot and facing, which comes
+  to you (`world_bots::leaves_for_party`; since 2026-11-11, second pass: a copy was summoned beside you while the one
+  in the crowd Teleported off, Bob's bundle 20261111-091633). Elsewhere, it appears beside you and the one there
+  Teleports off. Either way someone new comes home in its place later. Each world bot has a content ID of its own
+  (`Who::content_id`, `0x00B2…`), the same however often it's shown, so a friend is found in the crowd. The menu's
   invite carries only the name: a world bot of that name in your zone.
 
 ## Settings

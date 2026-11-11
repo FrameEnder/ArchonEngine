@@ -2389,10 +2389,17 @@ pub fn handle_bot_party_messages(
             let world_bot = match action {
                 BotPartyAction::Invite { content_id, name }
                 | BotPartyAction::Befriend { content_id, name } => {
-                    let territory = data
-                        .find_actor_instance(leader)
-                        .map(|instance| instance.zone.id);
-                    world_bots::as_friend(&data.world_bots, territory, *content_id, name)
+                    let instance = data.find_actor_instance(leader);
+                    let territory = instance.map(|instance| instance.zone.id);
+                    world_bots::as_friend(&data.world_bots, territory, *content_id, name).map(
+                        |(index, saved)| {
+                            // Shown in the inviter's own zone: it's the one that joins, where it stands.
+                            let here = data.world_bots.bots[index].actor.filter(|actor| {
+                                instance.is_some_and(|instance| instance.world_bots.contains(actor))
+                            });
+                            (index, saved, here)
+                        },
+                    )
                 }
                 _ => None,
             };
@@ -2416,7 +2423,7 @@ pub fn handle_bot_party_messages(
                     let saved = match here {
                         Some(_) => None,
                         None => bot_friends::find(leader_content_id, *content_id, name)
-                            .or(world_bot.as_ref().map(|(_, saved)| saved.clone())),
+                            .or(world_bot.as_ref().map(|(_, saved, _)| saved.clone())),
                     };
                     if here.is_none() && saved.is_none() {
                         tracing::info!(
@@ -2487,13 +2494,41 @@ pub fn handle_bot_party_messages(
                                 Some(&saved),
                             ) {
                                 Ok((bot, _)) => {
-                                    // A world bot (or a friend who's one of the crowd here) comes away from it.
-                                    if let Some((index, _)) = world_bot {
-                                        world_bots::joins_party(
+                                    let now = std::time::Instant::now();
+                                    match world_bot {
+                                        // One of the crowd here: it's the one that joins, where it stood (its actor
+                                        // gives way to the party bot, at its spot and facing.)
+                                        Some((index, _, Some(actor))) => {
+                                            if let Some(instance) =
+                                                data.find_actor_instance_mut(leader)
+                                            {
+                                                let at = instance.find_actor(actor).map(|actor| {
+                                                    (actor.position(), actor.rotation())
+                                                });
+                                                if let (
+                                                    Some((position, rotation)),
+                                                    Some(NetworkedActor::Npc { spawn, .. }),
+                                                ) = (at, instance.find_actor_mut(bot))
+                                                {
+                                                    spawn.common.position = position;
+                                                    spawn.common.rotation = rotation;
+                                                }
+                                                instance.world_bots.remove(&actor);
+                                                network.remove_actor(instance, actor);
+                                            }
+                                            world_bots::leaves_for_party(
+                                                &mut data.world_bots,
+                                                index,
+                                                now,
+                                            );
+                                        }
+                                        // Elsewhere (a friend called from the list): it Teleports off there.
+                                        Some((index, _, None)) => world_bots::joins_party(
                                             &mut data.world_bots,
                                             index,
-                                            std::time::Instant::now(),
-                                        );
+                                            now,
+                                        ),
+                                        None => {}
                                     }
                                     bot
                                 }
@@ -2581,7 +2616,7 @@ pub fn handle_bot_party_messages(
                 BotPartyAction::Befriend { content_id, name } => {
                     let Some(bot) = find_bot_by(instance, leader, *content_id, name) else {
                         // One of the world's bots: kept as a friend as a party bot is, and accepts at once.
-                        if let Some((_, saved)) = world_bot {
+                        if let Some((_, saved, _)) = world_bot {
                             let reply_id = saved.content_id;
                             let new = bot_friends::add(leader_content_id, saved);
                             befriended(&mut network, leader, reply_id, name);

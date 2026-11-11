@@ -2669,6 +2669,7 @@ pub async fn server_main_loop(
                                     ActorControlCategory::Emote {
                                         emote: *emote,
                                         hide_text: *hide_text,
+                                        seat_facing: 0,
                                     },
                                 );
 

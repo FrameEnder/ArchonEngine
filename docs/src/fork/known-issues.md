@@ -1636,10 +1636,13 @@ Stage 1 of [World Bots](world-bots.md); nothing seen in game yet.
 * Retail's standing spots are kept for the six city zones only; elsewhere bots stand in a ring round their place.
 * The shares of their trips, an inn's stay and a loading screen's length are guesses.
 * No weapons drawn, minions, mounts or crafting yet; they don't turn to face their place after a walk.
-* Sitting (2026-11-11): how often a bot goes to a seat or sits on the ground is a guess; seats are retail's in the six
-  city zones only. A bot walking to a seat off the navmesh gets as near as it can and is put on it.
-* Searching for one, or a tell to one, finds no character. One called into a party appears beside you at once,
-  as a kept party bot does (its copy in the crowd Teleports off).
+* Sitting (2026-11-11): how often a bot goes to a seat or sits on the ground is a guess; seats are retail's 47 in the
+  six city zones only.
+* A spot must be reachable on the navmesh from the zone's landing: a zone whose navmesh doesn't join up (a raised
+  walkway the navmesh lacks) puts fewer spots there; recorded spots aren't checked (retail stood there.)
+* Friends kept from a world bot before 2026-11-11's second pass have the content ID of the actor it was then, so
+  they're called as a copy, never found in the crowd.
+* Searching for one, or a tell to one, finds no character.
 
 ## Raises, boss-fight spots and drop rates (2026-11-10)
 
