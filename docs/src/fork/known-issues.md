@@ -1034,8 +1034,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   used on its enemy, which no run did).
 * Quest battle 86: territory 330 is taken to be Western La Noscea's ground (the run's spots stand on it). The one who
   talks heals its side below 80 %, every 14 s at most: a fit (retail's came every 14-38 s, at 21-100 %). Its Regen
-  ticks only on the one the heal was aimed at. The bombs' loops are retail's positions, not the layout's own path; the
-  darting bombs' movement type (2) isn't sent. Bind from the thaumaturges' 1304 lasts 5 s (retail's ended after
+  ticks only on the one the heal was aimed at. The bombs' loops are retail's positions, not the layout's own path. Bind from the thaumaturges' 1304 lasts 5 s (retail's ended after
   2.5-5.7 s, perhaps when hit, which isn't scripted). The thaumaturges' spells are timed from their pull as a set
   order; retail's nine each used a few in their own order. The fight starts as the lead-in's second scene ends, a
   second before retail's. No lost run was recorded: losing (your health at 0) is sequence 0xFE and out 5 s later, as

@@ -282,6 +282,8 @@ pub enum LuaDirectorTask {
         action: u32,
         every: f32,
         cast_after: Option<f32>,
+        /// It goes with its walk (ActorMove's movement type 2) whatever its speed, as QB86's darting bombs did.
+        walking: bool,
     },
     /// Plays an animation (ActionTimeline) on a BNpc, as retail's Sastasha captain does as he calls his men through the
     /// gate (980.)
@@ -1443,7 +1445,7 @@ impl UserData for LuaDirector {
             "sweep_bnpc",
             |_,
              this,
-             (who, x, y, z, speed, delay, helper, action, every, cast_after): (
+             (who, x, y, z, speed, delay, helper, action, every, cast_after, walking): (
                 u32,
                 f32,
                 f32,
@@ -1454,6 +1456,7 @@ impl UserData for LuaDirector {
                 Option<u32>,
                 Option<f32>,
                 Option<f32>,
+                Option<bool>,
             )| {
                 this.tasks.push(LuaDirectorTask::SweepBattleNpc {
                     who,
@@ -1464,6 +1467,7 @@ impl UserData for LuaDirector {
                     action: action.unwrap_or(0),
                     every: every.unwrap_or(1.0),
                     cast_after,
+                    walking: walking.unwrap_or(false),
                 });
                 Ok(())
             },
@@ -3528,6 +3532,7 @@ pub fn director_tick(
                 action,
                 every,
                 cast_after,
+                walking,
             } => {
                 let Some(walker) = resolve_bnpc(instance, *who) else {
                     tracing::warn!("Failed to find bnpc {who} to sweep!");
@@ -3580,6 +3585,7 @@ pub fn director_tick(
                     next_cast: casts_from,
                     radius,
                     moving: false,
+                    walking: *walking,
                 });
             }
             LuaDirectorTask::SetModelScale {

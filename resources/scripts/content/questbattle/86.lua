@@ -45,12 +45,14 @@ WAVES = {
     { 4294755, 4294756, 4294758 },
     { 4294766, 4294764, 4294763 },
 }
--- The bombs: how each moves (a loop of spots, or after the player), how fast and how close it blows.
+-- The bombs: how each moves (a loop of spots, or after the player), how fast and how close it blows. The darting ones
+-- go with their walk (ActorMove's movement type 2, retail's for 2,082 of their 2,139 moves), the creeper with a run.
 BOMB_CREEPER = 4317650
 BOMBS = {
     [4317589] = {
         speed = 9.0,
         reach = 3.5,
+        walking = true,
         loop = {
             { -308.6, -41.9, 722.1 }, { -322.4, -41.9, 714.4 }, { -325.8, -41.7, 707.5 }, { -319.8, -41.6, 697.3 },
             { -308.1, -41.4, 693.8 }, { -289.6, -41.5, 695.6 }, { -286.1, -41.9, 708.5 }, { -289.1, -41.9, 715.8 },
@@ -60,6 +62,7 @@ BOMBS = {
     [4317648] = {
         speed = 9.0,
         reach = 3.5,
+        walking = true,
         loop = {
             { -327.6, -41.8, 709.6 }, { -326.8, -40.2, 660.1 }, { -284.6, -40.0, 659.5 }, { -287.9, -40.8, 679.1 },
             { -285.2, -41.1, 692.4 }, { -294.5, -41.9, 711.6 }, { -310.3, -41.9, 722.3 },
@@ -245,7 +248,7 @@ local function moveAlongLoop(director, bomb, kind)
     end
     if turned then
         local spot = kind.loop[bomb.next]
-        director:sweep_bnpc(bomb.id, spot[1], spot[2], spot[3], kind.speed)
+        director:sweep_bnpc(bomb.id, spot[1], spot[2], spot[3], kind.speed, nil, nil, nil, nil, nil, kind.walking)
     end
 end
 
@@ -279,7 +282,8 @@ function updateBombs(director, info)
             end
             if player ~= nil and player.x ~= nil and flatDistance(bomb.at, player.x, player.z) <= kind.reach then
                 -- Blown where it stands.
-                director:sweep_bnpc(bomb.id, bomb.at[1], bomb.at[2], bomb.at[3], kind.speed)
+                director:sweep_bnpc(bomb.id, bomb.at[1], bomb.at[2], bomb.at[3], kind.speed, nil, nil, nil, nil, nil,
+                    kind.walking)
                 director:actor_use_action(bomb.id, ACTION_BLAST, player.id)
                 bomb.blasted = updates
             end

@@ -57,9 +57,22 @@ pub struct Sweep {
     pub radius: f32,
     /// Whether the walker's ActorMove has gone out.
     pub moving: bool,
+    /// It goes with its walk, whatever its speed (`movement_type`.)
+    pub walking: bool,
 }
 
 impl Sweep {
+    /// Its ActorMove's movement type: 2 (walking) for one that walks, as QB86's darting bombs (BNpcBase 1633) did at 9
+    /// yalms a second (2,082 of their 2,139 ActorMoves in Bob's Chronofoil captures, the rest as they stopped), where
+    /// the creeper (1634) ran at 1 (466 of 466); otherwise 0, a run.
+    pub fn movement_type(&self) -> kawari::common::MoveAnimationType {
+        if self.walking {
+            kawari::common::MoveAnimationType::WALKING_OR_LANDING
+        } else {
+            kawari::common::MoveAnimationType::empty()
+        }
+    }
+
     fn direction(&self) -> Vec3A {
         let flat = Vec3A::new(self.to.x - self.from.x, 0.0, self.to.z - self.from.z);
         flat.try_normalize().unwrap_or(Vec3A::Z)
@@ -162,7 +175,7 @@ pub fn update(
                     sweep.walker,
                     Position(ahead),
                     sweep.rotation(),
-                    kawari::common::MoveAnimationType::empty(),
+                    sweep.movement_type(),
                     kawari::common::MoveAnimationState::None,
                     kawari::common::JumpState::NoneOrFalling,
                     Some(speed_byte(sweep.speed)),
@@ -246,7 +259,25 @@ mod tests {
             next_cast: now + Duration::from_secs_f32(3.9),
             radius: 3.0,
             moving: false,
+            walking: false,
         }
+    }
+
+    /// Known issues, quest battle 86: the darting bombs went with movement type 2 at 9 yalms a second on retail, where
+    /// Kawari's sweeps always ran (0).
+    #[test]
+    fn a_walking_sweep_walks() {
+        let now = Instant::now();
+        let mut bomb = whirlwind(now, 0.0, 0.0);
+        assert_eq!(
+            bomb.movement_type(),
+            kawari::common::MoveAnimationType::empty()
+        );
+        bomb.walking = true;
+        assert_eq!(
+            bomb.movement_type(),
+            kawari::common::MoveAnimationType::WALKING_OR_LANDING
+        );
     }
 
     /// Retail's first Typhoon (Bob's capture 1cefedf4, 1146.5 s): the whirlwinds in lanes -72 and -82.5 set off 3.9 s
