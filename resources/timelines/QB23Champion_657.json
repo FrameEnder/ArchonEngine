@@ -52,5 +52,8 @@
         }
     ],
     "timeline_always_plays": false,
-    "comment": "The Rematch's (quest 265) champion on your side (quest battle 23, BNpcBase 657, BNpcName 690, layout 4011120, the battle talk's first speaker): level 50, 258900 HP, ClassJob 1; on their champion alone, the whole fight, neither falling. From Bob's Chronofoil capture accc33a9 (2026-11-06, one run of The Rematch's quest battle 23, won, `questkit chronofoil --battle 0.15`, territory 257, duty 318; a gladiator synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded."
+    "comment": "The Rematch's (quest 265) champion on your side (quest battle 23, BNpcBase 657, BNpcName 690, layout 4011120, the battle talk's first speaker): level 50, 258900 HP, ClassJob 1; on their champion alone, the whole fight, neither falling. From Bob's Chronofoil capture accc33a9 (2026-11-06, one run of The Rematch's quest battle 23, won, `questkit chronofoil --battle 0.15`, territory 257, duty 318; a gladiator synced to 34): `players` is the median damage to the player, `npcs` to the other side's NPCs (a heal's on its own), times from its pull. Hitbox not recorded.",
+    "shouts": {
+        "21": {"lines": [1354, 2300, 1355]}
+    }
 }

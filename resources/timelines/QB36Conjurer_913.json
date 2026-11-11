@@ -41,5 +41,8 @@
     },
     "timeline_always_plays": false,
     "timepoints": [],
-    "comment": "Feint and Strike's late ally 4103188 (quest battle 36), a conjurer: level 50, 2589 HP. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334) (the won run): it takes the gargoyle, then the mage. Hitbox not recorded."
+    "comment": "Feint and Strike's late ally 4103188 (quest battle 36), a conjurer: level 50, 2589 HP. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334) (the won run): it takes the gargoyle, then the mage. Hitbox not recorded.",
+    "shouts": {
+        "132": {"lines": [1345]}
+    }
 }

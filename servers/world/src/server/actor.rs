@@ -158,6 +158,8 @@ pub enum NetworkedActor {
         cast: Option<NpcCast>,
         /// Where it is in its class rotation (`Timeline::rotation`), if it has one.
         rotation_state: RotationState,
+        /// How many times it has used each of its shouting actions (`Timeline::shouts`.)
+        shouts_used: HashMap<u32, u32>,
         /// Where it should stand beyond reaching its target: near its anchors, behind the tank's target (the
         /// director's `keep_near` and `stand_behind`.)
         placement: Placement,

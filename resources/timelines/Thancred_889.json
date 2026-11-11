@@ -28,5 +28,8 @@
             {"action": 9, "comment": "Fast Blade: 1 use"}
         ]
     },
-    "timepoints": []
+    "timepoints": [],
+    "shouts": {
+        "21": {"lines": [1336]}
+    }
 }

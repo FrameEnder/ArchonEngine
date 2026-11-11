@@ -641,6 +641,35 @@ fn a_won_quest_battle_ends_as_retail_s() {
     assert_eq!(data, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0x80]);
 }
 
+/// Known issues, Into a Copper Hell: retail's pugilist (BNpcBase 960) said line 1351 with its first Snap Punch (56)
+/// and 1352 with its second, an ActorControl 73 from it in the same instant as the ActionEffect, and nothing with the
+/// rest (seven runs in Bob's Chronofoil captures); Kawari never sent one. Its shipped timeline says so.
+#[test]
+fn an_npc_shouts_with_its_actions_as_retail_s_did() {
+    use crate::server::action::npc_shout;
+    let timeline: kawari::common::Timeline = serde_json::from_str(
+        &std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../resources/timelines/IntoACopperHellPugilist_960.json"
+        ))
+        .unwrap(),
+    )
+    .unwrap();
+    let mut world = TestWorld::new();
+    world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let pugilist = world.enemy(ENEMY, [5.0, 0.0, 5.0], 1844);
+    if let Some(NetworkedActor::Npc { timeline: own, .. }) = world.instance.find_actor_mut(pugilist)
+    {
+        *own = timeline;
+    }
+    let said: Vec<_> = (0..4)
+        .map(|_| npc_shout(&mut world.instance, pugilist, 56))
+        .collect();
+    assert_eq!(said, [Some(1351), Some(1352), None, None]);
+    // Its other actions say nothing.
+    assert_eq!(npc_shout(&mut world.instance, pugilist, 53), None);
+}
+
 /// Bundle 20261111-125206, "Garudo attacks the pillar that's not right": an NPC that can't be targeted (the Howling
 /// Eye's monoliths, display flags 0x40208) is never noticed by an enemy; retail's Garuda chose a player or a Duty
 /// Support member every time. One a director made untargetable isn't either.

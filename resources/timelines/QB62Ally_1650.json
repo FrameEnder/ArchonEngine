@@ -70,5 +70,8 @@
         }
     ],
     "timeline_always_plays": false,
-    "comment": "Notorious Biggs' quest battle (62, quest 983): the lancer-looking ally (BNpcBase 1650, BNpcName 619, layout 4264069): level 50, 15534 HP; auto-attack 872 every 3.0 s; its self-heal (57, 1310 at 40-47 %) is the director's. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.53`, won) and Bob's 689b15da (2026-11-09, `--battle 0.2` lost and `0.4` won): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull (or from coming out, for the later waves)."
+    "comment": "Notorious Biggs' quest battle (62, quest 983): the lancer-looking ally (BNpcBase 1650, BNpcName 619, layout 4264069): level 50, 15534 HP; auto-attack 872 every 3.0 s; its self-heal (57, 1310 at 40-47 %) is the director's. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.53`, won) and Bob's 689b15da (2026-11-09, `--battle 0.2` lost and `0.4` won): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull (or from coming out, for the later waves).",
+    "shouts": {
+        "70": {"lines": [1018]}
+    }
 }

@@ -609,6 +609,7 @@ impl Instance {
                 returning_home: false,
                 cast: None,
                 rotation_state: Default::default(),
+                shouts_used: Default::default(),
                 placement: Default::default(),
                 shown_as_player: None,
             },

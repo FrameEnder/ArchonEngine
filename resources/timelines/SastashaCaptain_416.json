@@ -27,5 +27,8 @@
                 "comment": "21 uses"
             }
         ]
+    },
+    "shouts": {
+        "1000": {"lines": [1350], "repeat_last": true}
     }
 }

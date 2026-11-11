@@ -30,5 +30,8 @@
         ]
     },
     "timepoints": [],
-    "comment": "Lurkers in the Grotto's ally (quest battle 35, drop-in layer QB_ManSea005_001), a conjurer: level 50, 1372 HP. From Bob's Chronofoil capture of 2026-10-21 (two runs, `questkit chronofoil --battle 0.7` and `0.9`): no auto-attack, Stone, Aero, Stone II and Aero II on the enemies from about 5 yalms (median damage), and Cure (120, cast by the director's heals) on the player, which retail recorded as up to 988 (the player has about 136 HP, so it fills them). Action 129 (on itself, 5 uses) has no script and is left out. Hitbox not recorded."
+    "comment": "Lurkers in the Grotto's ally (quest battle 35, drop-in layer QB_ManSea005_001), a conjurer: level 50, 1372 HP. From Bob's Chronofoil capture of 2026-10-21 (two runs, `questkit chronofoil --battle 0.7` and `0.9`): no auto-attack, Stone, Aero, Stone II and Aero II on the enemies from about 5 yalms (median damage), and Cure (120, cast by the director's heals) on the player, which retail recorded as up to 988 (the player has about 136 HP, so it fills them). Action 129 (on itself, 5 uses) has no script and is left out. Hitbox not recorded.",
+    "shouts": {
+        "132": {"lines": [1345, 1344]}
+    }
 }

@@ -49,6 +49,38 @@ pub struct Timeline {
     /// How this NPC fights with its class's actions, instead of (or as well as) fixed timepoints: see `Rotation`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rotation: Option<Rotation>,
+    /// What this NPC shouts with its actions, by action ID: see `Shouts`.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub shouts: BTreeMap<u32, Shouts>,
+}
+
+/// The lines an NPC shouts as it uses one of its actions, as retail sent them: ActorControl 73 `[line]` from the NPC,
+/// in the same instant as the action's ActionEffect (Bob's Chronofoil captures: 26 actions of 22 BNpcBases, all the
+/// quest battles' and Sastasha's). Retail's went through a list in order, one line per use, then said nothing: Into a
+/// Copper Hell's pugilist said 1351 with its first Snap Punch and 1352 with its second in each of seven runs; Biggs
+/// (657) said 1354, 2300 and 1355 with his first three uses of 21. The line is an index the client reads its text
+/// from, so no game text is here.
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone, Default)]
+pub struct Shouts {
+    /// The line for each use in turn (the first use's first); 0 says nothing that time (Garibald, BNpcBase 891, said
+    /// his with his fifth Heavy Swing, in the one capture of it.)
+    pub lines: Vec<u32>,
+    /// The last line is said with every use after it too (Sastasha's captain said 1350 with every use of 1000.)
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub repeat_last: bool,
+}
+
+impl Shouts {
+    /// The line said with the `nth` use (1 for the first), if any.
+    pub fn line(&self, nth: u32) -> Option<u32> {
+        let index = nth.checked_sub(1)? as usize;
+        let line = match self.lines.get(index) {
+            Some(line) => *line,
+            None if self.repeat_last => *self.lines.last()?,
+            None => 0,
+        };
+        (line != 0).then_some(line)
+    }
 }
 
 /// A class rotation: which actions an NPC uses, in priority order, by the class's own rules. The mechanics come from
@@ -362,6 +394,21 @@ mod tests {
     use super::*;
 
     #[test]
+    fn shouts_go_through_their_lines_in_order() {
+        let shouts = Shouts {
+            lines: vec![0, 1331],
+            repeat_last: false,
+        };
+        let said: Vec<_> = (1..=3).map(|nth| shouts.line(nth)).collect();
+        assert_eq!(said, [None, Some(1331), None]);
+        let every_time = Shouts {
+            lines: vec![1350],
+            repeat_last: true,
+        };
+        assert_eq!(every_time.line(5), Some(1350));
+    }
+
+    #[test]
     fn recorded_amount_by_level() {
         // The tainted earth sprite: 7 at level 5 (Trial by Earth), 21 at level 20 (Sylphie's Trials.)
         let timeline: Timeline = serde_json::from_str(
@@ -413,6 +460,7 @@ mod tests {
                 hitbox_radius: 0.0,
                 animation_locks: BTreeMap::default(),
                 rotation: None,
+                shouts: BTreeMap::default(),
                 from_pull: false,
                 timepoints: vec![Timepoint {
                     time: 20.0,

@@ -28,5 +28,9 @@
             {"action": 31, "comment": "Heavy Swing: 4-6 a run"}
         ]
     },
-    "timepoints": []
+    "timepoints": [],
+    "shouts": {
+        "31": {"lines": [0, 0, 0, 0, 1330]},
+        "37": {"lines": [0, 1331]}
+    }
 }

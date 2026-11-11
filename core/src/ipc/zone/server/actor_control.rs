@@ -343,6 +343,11 @@ pub enum ActorControlCategory {
     #[brw(magic = 60u32)]
     PlayIdleAnimation,
 
+    /// A line an NPC shouts as it uses an action, sent from the NPC in the same instant as the action's ActionEffect
+    /// (Bob's Chronofoil captures; `Timeline::shouts`). The client shows the line's text itself.
+    #[brw(magic = 73u32)]
+    NpcShout { line: u32 },
+
     // Sets the player's HP and seems to deal unique damage(?) Seen while falling off an Eden arena.
     #[brw(magic = 80u32)]
     DamageEffect {

@@ -35,5 +35,9 @@
     },
     "timeline_always_plays": false,
     "timepoints": [],
-    "comment": "Feint and Strike's boss (quest battle 36, drop-in layer QB_ManSea007_001), a marauder: level 20, 3717 HP. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334): it fights the allied 4102995 the whole time; median damage on NPCs. Actions 32, 33, 34 and 35 have no action scripts and are left out; Void Call (867) is cast by the battle's script. Hitbox not recorded."
+    "comment": "Feint and Strike's boss (quest battle 36, drop-in layer QB_ManSea007_001), a marauder: level 20, 3717 HP. From Bob's Chronofoil capture of 2026-10-21 (four runs, `questkit chronofoil --battle 0.27`, `0.29`, `0.31` lost and `0.33` won; territory 280, duty 334): it fights the allied 4102995 the whole time; median damage on NPCs. Actions 32, 33, 34 and 35 have no action scripts and are left out; Void Call (867) is cast by the battle's script. Hitbox not recorded.",
+    "shouts": {
+        "31": {"lines": [0, 0, 0, 0, 0, 1343]},
+        "37": {"lines": [0, 1331]}
+    }
 }

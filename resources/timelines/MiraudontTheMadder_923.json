@@ -27,5 +27,8 @@
         { "time": 15, "data": { "type": "action", "action_id": 78 } },
         { "time": 30, "data": { "type": "action", "action_id": 82 } },
         { "time": 45, "data": { "type": "invulnerability", "invulnerable": false }, "comment": "Marks the end of the loop" }
-    ]
+    ],
+    "shouts": {
+        "82": {"lines": [0, 0, 1328]}
+    }
 }

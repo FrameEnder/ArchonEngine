@@ -30,5 +30,8 @@
             }
         ]
     },
-    "comment": "Quest battle 46's other side's leader (BNpcBase 1020, BNpcName 996), level 22, 3204 HP. From Bob's Chronofoil capture b8432613 (2026-10-27, three runs of The Company You Keep (Twin Adder)'s quest battle 46, `questkit chronofoil --battle 0.30/0.32` lost and `0.34` won, territory 277, duty 340; a level 24 conjurer): on the lead gladiator the whole fight, Fast Blade (9) 22 every 21 s and Riot Blade (15) 38 every 25 s, and Cure (120, the director's heals) 117 on himself and his side (median 30 % when he did). No auto-attack in the capture. Flash (14), Rampart (10) and 983 aren't modelled. Hitbox not recorded."
+    "comment": "Quest battle 46's other side's leader (BNpcBase 1020, BNpcName 996), level 22, 3204 HP. From Bob's Chronofoil capture b8432613 (2026-10-27, three runs of The Company You Keep (Twin Adder)'s quest battle 46, `questkit chronofoil --battle 0.30/0.32` lost and `0.34` won, territory 277, duty 340; a level 24 conjurer): on the lead gladiator the whole fight, Fast Blade (9) 22 every 21 s and Riot Blade (15) 38 every 25 s, and Cure (120, the director's heals) 117 on himself and his side (median 30 % when he did). No auto-attack in the capture. Flash (14), Rampart (10) and 983 aren't modelled. Hitbox not recorded.",
+    "shouts": {
+        "15": {"lines": [1346]}
+    }
 }

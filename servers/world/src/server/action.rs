@@ -2188,6 +2188,14 @@ pub fn execute_action(
                     FromServer::PacketSegment(ipc, from_actor_id),
                     DestinationNetwork::ZoneClients,
                 );
+                // What it shouts with it, in the same instant (`Timeline::shouts`.)
+                if let Some(line) = npc_shout(instance, from_actor_id, request.action_id) {
+                    network.send_ac_in_range_inclusive_instance(
+                        instance,
+                        from_actor_id,
+                        ActorControlCategory::NpcShout { line },
+                    );
+                }
             }
         }
 
@@ -3733,6 +3741,22 @@ pub fn plays_as_player(instance: &Instance, actor: ObjectId) -> bool {
 /// on them (see `EffectsBuilder::gaze`). Rotation 0 faces +Z, as everywhere else.
 /// An NPC's cast record, if it's still the one for this action: another action begun the tick the cast went off (a
 /// timeline point due then) replaces it before the cast's own action runs.
+/// Counts an NPC's use of `action_id` and gives the line it shouts with it, if any (`Timeline::shouts`.)
+pub(crate) fn npc_shout(instance: &mut Instance, npc: ObjectId, action_id: u32) -> Option<u32> {
+    let Some(NetworkedActor::Npc {
+        timeline,
+        shouts_used,
+        ..
+    }) = instance.find_actor_mut(npc)
+    else {
+        return None;
+    };
+    let shouts = timeline.shouts.get(&action_id)?;
+    let used = shouts_used.entry(action_id).or_default();
+    *used += 1;
+    shouts.line(*used)
+}
+
 fn own_cast(cast: &Option<NpcCast>, action_id: u32) -> Option<&NpcCast> {
     cast.as_ref().filter(|cast| cast.action_id == action_id)
 }
