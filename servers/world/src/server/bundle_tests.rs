@@ -19,7 +19,7 @@ use crate::{
             toss_target, tossed_by,
         },
         actor::{NetworkedActor, NpcState, kill_actor},
-        director::{engage_npc, ready_to_begin, waits_for_its_opening},
+        director::{engage_npc, ready_to_begin, waits_for_its_opening, won},
         modifiers,
         npc_behavior::{CastAim, cast_aim, out_of_the_fight, retail_cast_aim, unnoticed},
         party::tell_cutscene_state,
@@ -628,6 +628,17 @@ fn a_barrier_takes_the_damage_first() {
         absorb_and_break(world.network.clone(), &mut world.instance, player, 100),
         100
     );
+}
+
+/// Bob, on the known issues: a won quest battle's last DirectorVars, as its closing scene ends, is sequence 0xFE with
+/// the last data byte's 0x80 set (every one of 32 won runs of 27 battles in Bob's Chronofoil captures; a lost one's 0xFE
+/// has it clear.) Kawari left the sequence the script had set (Into a Copper Hell's 5.)
+#[test]
+fn a_won_quest_battle_ends_as_retail_s() {
+    let (mut sequence, mut data) = (5, [0u8; 10]);
+    won(&mut sequence, &mut data);
+    assert_eq!(sequence, 0xFE);
+    assert_eq!(data, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0x80]);
 }
 
 /// Bundle 20261111-125206, "Garudo attacks the pillar that's not right": an NPC that can't be targeted (the Howling

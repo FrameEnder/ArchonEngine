@@ -1194,9 +1194,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   capped by rank.
 
 * **Into a Copper Hell (44)**: untested in game (2026-10-25). Territory 274's drop-in (`wil_w1t1`) appends a guessed LGB
-  for Ul'dah - Steps of Nald; if 274 loads other LGBs, the three adventurers won't spawn. Retail's last DirectorVars
-  (sequence 0xFE with its last data byte (9) at 0x80 as the closing cutscene ended) isn't sent that way; ActorControl 73 (1351,
-  1352) on the pugilist now and then isn't sent; statuses 71, 99 are only applied.
+  for Ul'dah - Steps of Nald; if 274 loads other LGBs, the three adventurers won't spawn. ActorControl 73 (1351, 1352)
+  on the pugilist now and then isn't sent: it's an NPC's number sent with one of its own actions at the same instant
+  (1018-1352 across Bob's captures, e.g. 1018 and 1019 with action 70), perhaps a speech balloon; which action goes with
+  which number needs the 4777fd0f capture, which isn't among those at hand, and what it shows the client's ActorControl
+  queue (opcode 0x2DF, `0x84a030` on 2026.11.03). Statuses 71, 99 are only applied.
 
 * **Battle talk**: every quest battle uses the window (DirectorPopupMessage) with retail's text IDs, except Papalymo's
   line when he heals you in Chasing Shadows, still said in `/say`: retail's text ID for it hasn't been seen (he didn't

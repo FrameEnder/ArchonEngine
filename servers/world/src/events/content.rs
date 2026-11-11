@@ -129,6 +129,13 @@ impl EventHandler for ContentEventHandler {
                 return;
             } else if connection.quest_battle_finish_scene == Some(scene) {
                 connection.quest_battle_finish_scene = None;
+                // The battle's last DirectorVars as its closing scene ends, retail's for every win (`director::won`.)
+                connection
+                    .handle
+                    .send(ToServer::QuestBattleWon(
+                        connection.player_data.character.actor_id,
+                    ))
+                    .await;
                 player.finish_event();
                 connection
                     .handle

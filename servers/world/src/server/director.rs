@@ -4275,6 +4275,23 @@ pub fn handle_director_messages(
 
             true
         }
+        ToServer::QuestBattleWon(from_actor_id) => {
+            let mut data = data.lock();
+            let Some(instance) = data.find_actor_instance_mut(*from_actor_id) else {
+                return true;
+            };
+            if let Some(director) = instance.directors.first_mut()
+                && director.id.handler_type() == HandlerType::QuestBattle
+            {
+                won(&mut director.flag, &mut director.data);
+                network.lock().send_to_by_actor_id(
+                    *from_actor_id,
+                    FromServer::PacketSegment(director.build_var_segment(), *from_actor_id),
+                    DestinationNetwork::ZoneClients,
+                );
+            }
+            true
+        }
         ToServer::ReadyToCommence(from_actor_id) => {
             let mut data = data.lock();
             let Some(instance) = data.find_actor_instance_mut(*from_actor_id) else {
@@ -4404,6 +4421,18 @@ pub fn handle_director_messages(
         _ => false,
     }
 }
+
+/// A won quest battle's last DirectorVars, as its closing scene ends: sequence 0xFE with the last data byte's 0x80 set
+/// (Bob's Chronofoil captures: every one of 32 won runs of 27 battles; a lost one's 0xFE has it clear, the script's.)
+pub(crate) fn won(sequence: &mut u8, data: &mut [u8; 10]) {
+    *sequence = QUEST_BATTLE_OVER;
+    data[9] |= QUEST_BATTLE_WON_BIT;
+}
+
+/// A quest battle's sequence once it's over, won or lost.
+const QUEST_BATTLE_OVER: u8 = 0xFE;
+/// The last data byte's bit for a win.
+const QUEST_BATTLE_WON_BIT: u8 = 0x80;
 
 /// Whether a duty of this director's kind holds its NPCs until its players have seen its opening
 /// (`Instance::awaiting_commence`): a dungeon's or trial's, and a quest battle's (since 2026-11-11, Bob's bundle

@@ -187,6 +187,12 @@ when it ends, EventStart 0x0d with scene 60000 and the fight starts (Kawari's `o
 then the finish scene, UpdateQuest, and DirectorVars with sequence `0xFE` and the byte after it `0x80`, then the
 player is sent out.
 
+**The end of a win.** As the closing scene ends retail sends the battle's last DirectorVars: sequence 0xFE with the last
+data byte's 0x80 set (every one of 32 won runs of 27 battles in Bob's Chronofoil captures); a lost battle's 0xFE has
+it clear (the scripts' `SEQUENCE_FAILED`). Kawari left a won battle on the script's last sequence until 2026-11-11; now
+the finish scene's return sends it (`ToServer::QuestBattleWon`, `director::won`) before the player leaves. Test
+`a_won_quest_battle_ends_as_retail_s`.
+
 **Nothing fights through the opening.** In Notorious Biggs (Bob's Chronofoil capture 689b15da) the opening ran
 0.9-7.2 s after ZoneInit, scene 60000 began at 7.3 s with the HaterList, and the first blow came at 9.3 s; the
 player's conditions were only BoundByDuty until then, never InCombat. Kawari's NPCs, spawned at setup with whom they
