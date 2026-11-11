@@ -827,6 +827,7 @@ fn server_logic_tick(
             let mut actors_now_outside_instance_entrances = Vec::new();
             let mut actors_autoattacking = Vec::new();
             let mut combat_over = Vec::new();
+            let mut combat_begun = Vec::new();
             let mut incapacitation_changes = Vec::new();
             let mut enmity_updates = Vec::new();
 
@@ -1010,7 +1011,9 @@ fn server_logic_tick(
                 if in_combat != conditions.has_condition(Condition::InCombat) {
                     let _ =
                         handle.send(FromServer::ToggleCondition(Condition::InCombat, in_combat));
-                    if !in_combat {
+                    if in_combat {
+                        combat_begun.push(*id);
+                    } else {
                         combat_over.push(*id);
                     }
                 }
@@ -1272,6 +1275,10 @@ fn server_logic_tick(
             // Their fight is over: nobody claims them any more (FirstAttack cleared, see first_attack.rs.)
             for id in combat_over {
                 first_attack::clear(&mut network.lock(), instance, id);
+            }
+            // Jog ends as a fight begins (`effect::jog_ends`.)
+            for id in combat_begun {
+                effect::jog_ends(network.clone(), instance, id);
             }
 
             // Process any auto-attacks
@@ -1897,6 +1904,17 @@ pub async fn server_main_loop(
                                 effect_param,
                                 effect_source_actor_id,
                             } => {
+                                // Sprint running out leaves Jog, sent before Sprint's loss as retail's.
+                                if *effect_id == effect::STATUS_SPRINT
+                                    && let Some(instance) =
+                                        data.lock().instances.get_mut(*instance_index)
+                                {
+                                    effect::sprint_ran_out(
+                                        network.clone(),
+                                        instance,
+                                        task.from_actor_id,
+                                    );
+                                }
                                 remove_effect(
                                     network.clone(),
                                     data.clone(),

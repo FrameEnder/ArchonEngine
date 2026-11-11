@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-11-11 | — | Known issues (cooldowns are sent; item recasts' groups unknown, retail's numbers; a thrown key item's Casting condition sent).
+| 2026-11-11 | — | Combat ("Sprint and Jog"); known issues (Jog given; zone changes still open).
+| 2026-11-11 | `9c98444` | Known issues (cooldowns are sent; item recasts' groups unknown, retail's numbers; a thrown key item's Casting condition sent).
 | 2026-11-11 | `df69191` | Quests ("Watching a cutscene": retail's cutscene state, condition and online status around every cutscene); Dungeons (the party's cutscene state sent).
 | 2026-11-11 | `322bc44` | `master` and `test-pending` fast-forwarded to `upstream-sync` (upstream through 7.58 and the fork on it) with Bob's OK; work continues on `test-pending` (changelog, overview).
 | 2026-11-11 | `3ce8dad` | Quest battles (scene 60000 as the opening ends, from 60 retail runs); known issues (its entry removed).
@@ -475,7 +476,8 @@ Commits on `Latest-Quest` (and, since 2026-11-03, `test-pending`) since the fork
 
 | Commit | Change |
 |---|---|
-| — | The known issues' "isn't sent": ActorControlSelf 17 was already sent for actions (since `76bbc80`, 2026-10-18), the entry corrected with retail's item recasts (8575, 20309, 25005, a HQ potion), whose groups aren't in the rows icarus reads; event items' Casting condition was already sent, a key item thrown on the ground now has it too, off as it lands (`action::ends_a_cast`; test `a_thrown_key_item_s_bar_is_a_cast`) (`server/action.rs`, `server/mod.rs`, `server/bundle_tests.rs`). |
+| — | Retail's Jog: Sprint running out gives 4209 (param 20, no end, from the player) out of combat, before Sprint's loss; any action or the start of combat ends it (LoseEffect `[4209, 20, the player]`); test `sprint_leaves_jog_until_the_player_acts` (`server/effect.rs`, `server/action.rs`, `server/mod.rs`, `server/bundle_tests.rs`). |
+| `9c98444` | The known issues' "isn't sent": ActorControlSelf 17 was already sent for actions (since `76bbc80`, 2026-10-18), the entry corrected with retail's item recasts (8575, 20309, 25005, a HQ potion), whose groups aren't in the rows icarus reads; event items' Casting condition was already sent, a key item thrown on the ground now has it too, off as it lands (`action::ends_a_cast`; test `a_thrown_key_item_s_bar_is_a_cast`) (`server/action.rs`, `server/mod.rs`, `server/bundle_tests.rs`). |
 | `df69191` | Bob: "begin working on those you found". Retail's cutscene state: around every scene with CONDITION_CUTSCENE, ActorControl 519 `[player, 3]`/`[player, 1]` to the party (ActorControlSelf alone), Viewing Cutscene in the online status (SetOnlineStatus and 504) and OccupiedInCutSceneEvent; test `a_player_s_cutscene_is_told` (`zone_connection/{event,mod,social}.rs`, `server/{mod,party,bundle_tests}.rs`, `common.rs`, `main.rs`). |
 | `3ce8dad` | Bob: "why doesn't kawari play that event, can't you implement it?" A quest battle's opening is followed by retail's start: EventStart 0x0d on the battle and scene 60000 with flags 0x40000 (every one of 60 runs in Bob's captures), the fight on from its start as before; test `a_quest_battle_starts_as_retail_s_did` (`events/content.rs`, `lua/player.rs`, `main.rs`). |
 | `79007c1` | Bob's bundle 20261111-194208 ("notorious bigs battle starts during cut-scene this should never happen, and we should have checks for this"): a quest battle holds its NPCs until its opening is over, as a duty does (`waits_for_its_opening`, `Instance::awaiting_commence`), and an NPC shows no target, stance or hater list meanwhile (`out_of_the_fight`), so the player isn't put in combat; test `a_quest_battle_waits_for_its_opening` (`server/mod.rs`, `server/director.rs`, `server/npc_behavior.rs`, `server/bundle_tests.rs`). |

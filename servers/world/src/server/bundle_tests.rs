@@ -464,6 +464,46 @@ fn a_thrown_key_item_s_bar_is_a_cast() {
     assert!(!ends_a_cast(&throw(Some(ObjectTypeId::default()))));
 }
 
+/// Bob, on the known issues: retail gives Jog (4209, +20 % speed) when Sprint runs out, out of combat, from the
+/// player with no end, and takes it away (LoseEffect `[4209, 20, the player]`) when they act or are fought (Bob's
+/// Chronofoil captures: 126 Jogs, 20.2 s after a Sprint.)
+#[test]
+fn sprint_leaves_jog_until_the_player_acts() {
+    use crate::server::effect::{STATUS_JOG, jog_ends, sprint_ran_out};
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let jog = |world: &TestWorld| {
+        world
+            .instance
+            .find_actor(player)
+            .and_then(|actor| actor.status_effects())
+            .and_then(|effects| effects.get(STATUS_JOG))
+    };
+    sprint_ran_out(world.network.clone(), &mut world.instance, player);
+    let given = jog(&world).expect("Jog after Sprint");
+    assert_eq!((given.param, given.duration), (20, 0.0));
+    assert_eq!(given.source_actor_id, player);
+
+    jog_ends(world.network.clone(), &mut world.instance, player);
+    assert!(jog(&world).is_none());
+    assert!(world.sent(player).iter().any(|message| matches!(
+        message,
+        FromServer::ActorControlSelf(ActorControlCategory::LoseEffect {
+            effect_id: 4209,
+            unk2: 20,
+            source_actor_id,
+        }) if *source_actor_id == player
+    )));
+
+    // Being fought: no Jog.
+    let enemy = world.enemy(ENEMY, [5.0, 0.0, 5.0], 1000);
+    if let Some(NetworkedActor::Npc { enmity, .. }) = world.instance.find_actor_mut(enemy) {
+        enmity.insert(player, 1);
+    }
+    sprint_ran_out(world.network.clone(), &mut world.instance, player);
+    assert!(jog(&world).is_none());
+}
+
 /// Bundle 20261111-125206, "Garudo attacks the pillar that's not right": an NPC that can't be targeted (the Howling
 /// Eye's monoliths, display flags 0x40208) is never noticed by an enemy; retail's Garuda chose a player or a Duty
 /// Support member every time. One a director made untargetable isn't either.

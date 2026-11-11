@@ -1366,9 +1366,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   recasts (the client keeps its own).
 * Retail adds up all of a target's HoTs into one tick (status 0) and shows MP ticks (Lucid Dreaming) as ActorControl 23;
   Kawari sends one tick per effect and no MP tick. Barriers' share isn't sent in EffectResult.
-* Sprint: retail gives Jog (4209, +20 % speed until combat) when Sprint runs out, and keeps Sprint over a zone change;
-  Kawari does neither (statuses are dropped on zone change). 8 of 37 retail Sprints lasted 10 s instead of 20 (all on
-  the new 2026.10.06 characters), unexplained.
+* Sprint and Jog over a zone change: Kawari drops statuses there; retail sometimes kept Jog in the new zone's list and
+  sometimes didn't (no rule found yet, [Combat](combat.md#sprint-and-jog)). 8 of 37 retail Sprints lasted 10 s instead
+  of 20 (all on the new 2026.10.06 characters), unexplained.
 * Materia isn't counted in stats.
 * No Limit Break gauge or Limit Break actions.
 

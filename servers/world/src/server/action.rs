@@ -217,6 +217,9 @@ pub fn handle_action_messages(
             return true;
         };
 
+        // Any action ends Jog, Sprint's too (retail's LoseEffect came with each; `effect::jog_ends`.)
+        crate::server::effect::jog_ends(network.clone(), instance, *from_actor_id);
+
         let Some(actor) = instance.find_actor(*from_actor_id) else {
             return true;
         };

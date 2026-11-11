@@ -621,6 +621,18 @@ Status 17, as retail played it out in Bob's Chronofoil captures (85 windows of i
 
 Before 2026-11-01 paralysis did nothing (quest battle 17's gaze and the floating eye's gave it).
 
+## Sprint and Jog
+
+Sprint (action 3) gives status 50 with param 30 for 20 s. As it runs out retail gives Jog (4209, +20 % speed) at once,
+out of combat: GainEffect `[4209, 20]` and the status list, then Sprint's LoseEffect `[50, 30, the player]` and the
+list again, to everyone around; Jog comes from the player, param 20, with no end (Bob's Chronofoil captures, 126 Jogs,
+each 20.2 s after a Sprint). It goes with LoseEffect `[4209, 20, the player]` as soon as the player uses an action
+(Sprint again, a spell, Teleport, a mount) or is fought. Kawari gave no Jog until 2026-11-11; now Sprint's expiry
+gives it (`effect::sprint_ran_out`, before Sprint's loss is sent), and any ActionRequest or the start of InCombat ends
+it (`effect::jog_ends`). Test `sprint_leaves_jog_until_the_player_acts`. Whether retail keeps either over a zone change
+is mixed in the captures (Jog was sometimes gone at a zone change, sometimes sent again in the new zone's list), so
+Kawari still drops statuses there.
+
 ## Defeating enemies
 
 When a battle NPC dies, everyone on its enmity list, and their party in the same instance, gets:

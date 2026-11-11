@@ -10,6 +10,7 @@ use crate::{
     lua::{KawariLua, KawariLuaState, LuaPlayer, LuaZone},
     server::{
         WorldServer,
+        actor::NetworkedActor,
         instance::{Instance, QueuedTaskData},
         network::{DestinationNetwork, NetworkState},
     },
@@ -291,6 +292,73 @@ pub fn gain_effect_instance(
     );
 
     index
+}
+
+/// Sprint's status.
+pub const STATUS_SPRINT: u16 = 50;
+/// Jog: +20 % speed after Sprint runs out, until the player acts or fights.
+pub const STATUS_JOG: u16 = 4209;
+/// Jog's param, its speed (+20 %), as retail's GainEffect and LoseEffect had it.
+const JOG_SPEED: u16 = 20;
+
+/// Sprint ran out on `player`: retail gives Jog at once, out of combat (Bob's Chronofoil captures: 126 times, 20.2 s
+/// after Sprint, GainEffect `[4209, 20]` and the status list, then Sprint's LoseEffect `[50, 30, the player]`), from
+/// the player, with no end. Call it before Sprint's own loss is sent.
+pub fn sprint_ran_out(
+    network: Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    player: ObjectId,
+) {
+    if !matches!(
+        instance.find_actor(player),
+        Some(NetworkedActor::Player { .. })
+    ) || is_fought(instance, player)
+    {
+        return;
+    }
+    gain_effect_instance(
+        network,
+        ClientId::default(),
+        instance,
+        player,
+        STATUS_JOG,
+        JOG_SPEED,
+        0.0,
+        player,
+        true,
+    );
+}
+
+/// The player's Jog ends: they used an action (Sprint again, a spell, Teleport, a mount) or are being fought (retail's
+/// LoseEffect `[4209, 20, the player]` came with each.) Nothing happens without it.
+pub fn jog_ends(network: Arc<Mutex<NetworkState>>, instance: &mut Instance, player: ObjectId) {
+    let Some(effects) = instance
+        .find_actor_mut(player)
+        .and_then(|actor| actor.status_effects_mut())
+    else {
+        return;
+    };
+    if effects.get(STATUS_JOG).is_none() {
+        return;
+    }
+    effects.remove(STATUS_JOG);
+    network.lock().send_ac_in_range_inclusive_instance(
+        instance,
+        player,
+        ActorControlCategory::LoseEffect {
+            effect_id: STATUS_JOG as u32,
+            unk2: JOG_SPEED as u32,
+            source_actor_id: player,
+        },
+    );
+    process_effects_list(network.clone(), instance, player);
+}
+
+/// Whether any NPC has `player` on its enmity list (retail's InCombat.)
+fn is_fought(instance: &Instance, player: ObjectId) -> bool {
+    instance.actors.values().any(
+        |actor| matches!(actor, NetworkedActor::Npc { enmity, .. } if enmity.contains_key(&player)),
+    )
 }
 
 /// Ends the status `effect_id` on an actor at once, from within its instance (a director's `lose_effect`): its expiry
