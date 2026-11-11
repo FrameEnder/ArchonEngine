@@ -899,6 +899,10 @@ with every battle talk, ActionTimeline and plume of the fight (`58-09ecf8e7`, `5
   middle (Boss Mod's T03GarudaN), the arena's edge, which its Action row doesn't draw (`action_areas.json`'s `rings`).
   Nobody stood further than 10.9 yalms from the middle in any of its 32 casts, and none was hit; whoever stands in it
   now takes a magic hit (1061, as Mistral Song: a guess, `TrialGarudaHelper_1570.json`). It was only an animation.
+* **The monoliths are in her way, not her enemies**: retail's Garuda chose a player or a Duty Support member as her
+  target every time; the monoliths took only her area attacks (656, 657, 658, 667) and the plumes' blasts (665), and
+  the razor plumes' own targets. Kawari's went for one as soon as she was out (Bob's bundle 20261111-125206: "Garudo
+  attacks the pillar"): nothing notices an NPC that can't be targeted now ([Combat](combat.md), aggro).
 * **After 661** (one run, at 3 %) nothing more is recorded: here Aerial Blast again 33.0 s after 661 began, then the
   satin plumes and 661 as before, over and over (a guess from the spacing of Mistral Song and Aerial Blast.)
 

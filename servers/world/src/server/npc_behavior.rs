@@ -311,6 +311,7 @@ pub fn npc_behavior(
     let mut actor_moves = Vec::new();
     let mut target_actor_pos = HashMap::new();
     let enemies = instance.find_possible_enemies();
+    let untargetable = unnoticed(instance);
     let now = Instant::now();
     let paralysis_locked: HashSet<ObjectId> = instance
         .actors
@@ -986,7 +987,7 @@ pub fn npc_behavior(
                     game_data.get_battalion_enemies(spawn.common.battalion as u32);
 
                 for (target_id, position, battalion) in &enemies {
-                    if !possible_enemies[*battalion as usize] {
+                    if !possible_enemies[*battalion as usize] || untargetable.contains(target_id) {
                         continue;
                     }
                     if guard && levels.contains_key(target_id) {
@@ -1931,6 +1932,24 @@ pub fn npc_behavior(
 /// wipes): the bosses were back where they began at full health when the party returned, and fought anew when pulled;
 /// Kawari's first boss stayed in battle with them and chased the party to the entrance (Bob's bundle 20261107-212704).
 /// Returns the NPCs reset.
+/// Who an NPC never notices: whoever can't be targeted (DisplayFlag 0x8 in their spawn, as retail sends it, or made so
+/// by a director's `set_targetable`). The Howling Eye's monoliths (237, display flags 0x40208) are only in the way of
+/// Garuda's attacks, and Kawari's Garuda went after one as soon as she was out (Bob's bundle 20261111-125206); retail's
+/// chose a player or a Duty Support member every time (Bob's Chronofoil captures 6a5244ec, 09ecf8e7, 6c495fc4). A
+/// director's `set_hate` still sets one on them (the razor plumes go for the monoliths, as retail's did.)
+pub(crate) fn unnoticed(instance: &Instance) -> HashSet<ObjectId> {
+    instance
+        .actors
+        .iter()
+        .filter(|(id, actor)| {
+            instance.untargetable_npcs.contains(id)
+                || matches!(actor, NetworkedActor::Npc { spawn, .. }
+                    if spawn.common.display_flags.contains(kawari::ipc::zone::DisplayFlag::UNK2))
+        })
+        .map(|(id, _)| *id)
+        .collect()
+}
+
 /// `players_enemies`: the battalions at war with the players' (`GameData::get_battalion_enemies`).
 pub fn reset_after_wipe(
     network: &mut NetworkState,

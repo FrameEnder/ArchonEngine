@@ -21,7 +21,7 @@ use crate::{
         actor::{NetworkedActor, NpcState, kill_actor},
         director::{engage_npc, ready_to_begin},
         modifiers,
-        npc_behavior::{CastAim, cast_aim, retail_cast_aim},
+        npc_behavior::{CastAim, cast_aim, retail_cast_aim, unnoticed},
         party_bot,
         test_world::{TestWorld, control_from, packet_from},
     },
@@ -392,4 +392,23 @@ fn a_duty_begins_when_everyone_has_seen_its_opening() {
         ready_to_begin(&mut world.instance, late),
         Some((vec![late], false))
     );
+}
+
+/// Bundle 20261111-125206, "Garudo attacks the pillar that's not right": an NPC that can't be targeted (the Howling
+/// Eye's monoliths, display flags 0x40208) is never noticed by an enemy; retail's Garuda chose a player or a Duty
+/// Support member every time. One a director made untargetable isn't either.
+#[test]
+fn an_untargetable_npc_is_never_noticed() {
+    let mut world = TestWorld::new();
+    world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let monolith = world.enemy(ENEMY, [5.0, 0.0, 5.0], 7800);
+    let other = world.enemy(ENEMY + 1, [6.0, 0.0, 6.0], 7800);
+    let hidden = world.enemy(ENEMY + 2, [7.0, 0.0, 7.0], 7800);
+    if let Some(NetworkedActor::Npc { spawn, .. }) = world.instance.find_actor_mut(monolith) {
+        spawn.common.display_flags = kawari::ipc::zone::DisplayFlag::from_bits_retain(0x40208);
+    }
+    world.instance.untargetable_npcs.insert(hidden);
+    let unseen = unnoticed(&world.instance);
+    assert!(unseen.contains(&monolith) && unseen.contains(&hidden));
+    assert!(!unseen.contains(&other));
 }
