@@ -1,0 +1,45 @@
+{
+ "quest": 520,
+ "script": "ManFst405_00520",
+ "source": "Bob's bundle 20261111-101422 (Lady of the Vortex's ticketer talked to before the quest was accepted); the scene from the client's quest script, unseen on retail",
+ "params": {
+  "ACTOR0": 1006730,
+  "ACTOR1": 1004433,
+  "ACTOR2": 1007630,
+  "ACTOR3": 1007629,
+  "TERRITORYTYPE0": 130,
+  "POPRANGE0": 4103351,
+  "POPRANGE1": 4148347,
+  "CUT_MANFST40510": 109,
+  "CUT_MANFST40520": 110,
+  "CUT_MANFST40530": 111,
+  "CUT_MANFST40540": 112
+ },
+ "steps": [
+  {
+   "territory": 130,
+   "talk": 1004433,
+   "what": "ACTOR1",
+   "scenes": [
+    {
+     "scene": 2,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "effects": [
+    {
+     "zone": 130
+    }
+   ],
+   "expect": {
+    "accepted": false
+   }
+  }
+ ]
+}

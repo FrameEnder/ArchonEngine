@@ -10,8 +10,11 @@
 --               0x402400, its parameter the item picked: CUT_MANFST40510-40540, ending with QuestCompleted), and as
 --               they ended the quest completed and the player went through a zone change within the Waking Sands
 --               (all three runs): POPRANGE1, the parameter nothing else uses, is taken to be where. ACTOR3 (Cid) has a
---               line meanwhile (scene 5.) ACTOR1 (Elyenora, at the landing) asks whether to go down (scene 2, a yield:
---               YesNo), unseen: "yes" is taken to send the player to POPRANGE0 in TERRITORYTYPE0 (Ul'dah; a guess.)
+--               line meanwhile (scene 5.) ACTOR1 (Elyenora, Ul'dah's airship ticketer, at the gate below the landing)
+--               asks whether to go up (scene 2, a yield: YesNo): "yes" takes the player to POPRANGE0 in TERRITORYTYPE0
+--               (4103351, Ul'dah's airship landing, where The Ul'dahn Envoy's ticketer puts you). Asked before it's
+--               accepted too, so someone who left the landing gets back to Alphinaud there (unseen on retail; Bob's
+--               bundle 20261111-101422: Lady of the Vortex's ticketer didn't.)
 
 SCENE_OFFER = 0
 SCENE_ACCEPTED = 1
@@ -45,7 +48,7 @@ function onTalk(target, player)
         play(player, SCENE_OFFER, HIDE_HOTBAR)
     elseif sequence == 255 and BASE_ID == ACTOR2 then
         play(player, SCENE_REWARD, HIDE_HOTBAR)
-    elseif sequence == 255 and BASE_ID == ACTOR1 then
+    elseif (sequence == nil or sequence == 255) and BASE_ID == ACTOR1 then
         play(player, SCENE_ELYENORA, HIDE_HOTBAR)
     elseif sequence ~= nil and LINES[sequence] ~= nil and LINES[sequence][BASE_ID] ~= nil then
         play(player, LINES[sequence][BASE_ID], HIDE_HOTBAR)

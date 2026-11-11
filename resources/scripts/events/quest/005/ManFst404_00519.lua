@@ -20,14 +20,19 @@
 --               CUT_SCENE_AFTER_01/02): notice 2, sequence 255.
 -- Sequence 255: ACTOR4 (Alphinaud, in Ul'dah) rewards it (scene 8, a yield: QuestReward, 1 and the item picked.)
 --               ACTOR5 (Elyenora) asks whether to go down (scene 9), unseen on retail: "yes" is taken to send the
---               player to POPRANGE3 in TERRITORYTYPE2 (the same spot as Reclamation's POPRANGE0; a guess.) The
---               client's scene 2 (Lionnellais' question in sequence 0) isn't played: unseen, and he has his own.
+--               player to POPRANGE3 in TERRITORYTYPE2 (the same spot as Reclamation's POPRANGE0; a guess.)
+-- Before it's accepted, ACTOR1 (Lionnellais, Gridania's airship ticketer, at the gate below the landing) asks whether
+-- to go up (scene 2, the client's sequence 0 question): "yes" takes the player to POPRANGE0 in TERRITORYTYPE0, the
+-- landing where Cid offers it, as his scene 5 does once it's accepted. Unseen on retail (every run accepted it at
+-- the landing straight after Into the Eye of the Storm left them there); without it, someone who'd left the landing
+-- couldn't get back to Cid (Bob's bundle 20261111-101422.)
 
 SCENE_OFFER = 0
 SCENE_ACCEPTED = 1
 SCENE_UNLOCK = 3
 SCENE_TO_THE_SHIP = 4
 SCENE_LIONNELLAIS = 5
+SCENE_LIONNELLAIS_BEFORE = 2
 SCENE_ALPHINAUD_LINE = 6
 SCENE_ARRIVAL = 7
 SCENE_REWARD = 8
@@ -48,7 +53,10 @@ LINES = {
     [2] = { [ACTOR2] = SCENE_ALPHINAUD_LINE },
 }
 
--- The yes/no questions and where "yes" goes: { scene, territory, pop range }.
+-- The yes/no questions and where "yes" goes: { scene, territory, pop range }; before it's accepted, and by sequence.
+RIDES_BEFORE = {
+    [ACTOR1] = { SCENE_LIONNELLAIS_BEFORE, TERRITORYTYPE0, POPRANGE0 },
+}
 RIDES = {
     [1] = {
         [ACTOR1] = { SCENE_LIONNELLAIS, TERRITORYTYPE0, POPRANGE0 },
@@ -72,6 +80,10 @@ function onTalk(target, player)
 
     if sequence == nil and BASE_ID == ACTOR0 then
         play(player, SCENE_OFFER, HIDE_HOTBAR)
+        return
+    elseif sequence == nil and RIDES_BEFORE[BASE_ID] ~= nil then
+        current_ride = RIDES_BEFORE[BASE_ID]
+        play(player, current_ride[1], HIDE_HOTBAR)
         return
     elseif sequence == 1 and BASE_ID == ACTOR2 then
         play(player, SCENE_UNLOCK, HIDE_HOTBAR)

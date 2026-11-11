@@ -1615,6 +1615,13 @@ Fixed in code and by test or simulation; none played yet.
   spots, Player NPCs dodge by the shapes they see. If he meant something else, this is the place to change
   (`party_bot`'s `authored`).
 
+## Airship landings behind the ticketers (2026-11-11)
+
+* The ticketers take you up to a landing only through a quest's own script: Lady of the Vortex (519) and Reclamation
+  (520) before they're accepted, and the quests that list a ticketer in a sequence. Their pre-acceptance questions are
+  from the client's scripts (unseen on retail). A quest not yet scripted whose NPC stands on a landing can't be reached
+  from below until it's scripted the same way.
+
 ## Bob's marks of 2026-11-11 (quest battle 86, cast aims)
 
 None of it played yet.
