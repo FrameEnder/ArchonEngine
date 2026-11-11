@@ -30,7 +30,10 @@ when no code changes.
 * Fork opcodes go in `resources/data/fork_opcodes.yml`, never upstream's `opcodes.yml`.
 * Minimal, focused changes; list every changed file when reporting.
 * Play mechanics out as retail did: when something is missing (a packet, an ActorControl, a timing), build it the way
-  retail does, as a reusable piece later content can use, not a workaround in one script (`overview.md`).
+  retail does, as a reusable piece later content can use, not a workaround in one script (`overview.md`). Build it
+  then and there: when the captures or recordings at hand show how retail does it, it isn't a known issue to note for
+  later (`known-issues.md` is for what can't be built yet: no retail data, or Bob's call). Retail's scene 60000 at a
+  quest battle's start was put there instead of built on 2026-11-11, and Bob had to ask.
 * Work on `test-pending` (since 2026-11-03; `Latest-Quest` before); merge to `master` only with Bob's OK. Palace of
   the Dead work goes on `Deep-Dungeon`.
 * Don't run `cargo fmt` on the workspace (it reformats upstream files); `rustfmt --check --edition 2024` the files
