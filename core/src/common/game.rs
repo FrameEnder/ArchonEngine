@@ -36,7 +36,7 @@ pub const INVENTORY_ACTION_ACK_SHOP: u8 = 6;
 pub const INVENTORY_ACTION_ACK_GENERAL: u8 = 7;
 
 /// EObj IDs for entrance circle event objects.
-pub const ENTRANCE_CIRCLE_IDS: [u32; 4] = [
+pub const ENTRANCE_CIRCLE_IDS: [u32; 5] = [
     // Seen in ARR instanced content.
     2000182, // Seen in guildhests.
     2001710, // Seen in at least Endwalker.
@@ -44,6 +44,9 @@ pub const ENTRANCE_CIRCLE_IDS: [u32; 4] = [
     // The Stone Vigil's (fork: layout 4239683, bound to its SharedGroup at (0, 4.8, 306), where retail put the
     // players; hidden at DutyCommence and shown again after a wipe in Bob's Chronofoil capture 1cefedf4, 2026-11-07.)
     2001869,
+    // The Howling Eye's (fork: layout 4247837; hidden at DutyCommence, ActorControl 106 with 7, in Bob's Chronofoil
+    // capture 09ecf8e7, 2026-11-08.)
+    2000274,
 ];
 
 /// EObj ID for the "shortcut" in instanced content.

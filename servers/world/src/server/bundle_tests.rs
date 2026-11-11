@@ -19,7 +19,7 @@ use crate::{
             tossed_by,
         },
         actor::{NetworkedActor, NpcState, kill_actor},
-        director::engage_npc,
+        director::{engage_npc, ready_to_begin},
         modifiers,
         npc_behavior::{CastAim, cast_aim, retail_cast_aim},
         party_bot,
@@ -369,5 +369,27 @@ fn an_npc_engages_and_disengages_as_retails_did() {
                 category,
                 ActorControlCategory::SetBattle { battle: false }
             )))
+    );
+}
+
+/// Bundle 20261111-112150, "the battle was playing out while I was in a cutscene … so long as even a single party
+/// member is viewing a cutscene there should be a ring that keeps other party members waiting": the duty began for
+/// whoever finished its opening first. It waits for every player (`Instance::awaiting_commence`, which holds its
+/// enemies and the party's bots), then begins for all; someone coming in later gets it alone.
+#[test]
+fn a_duty_begins_when_everyone_has_seen_its_opening() {
+    let mut world = TestWorld::new();
+    let first = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let second = world.player(PLAYER + 1, [2.0, 0.0, 0.0]);
+    world.instance.awaiting_commence = true;
+    assert_eq!(ready_to_begin(&mut world.instance, first), None);
+    assert!(world.instance.awaiting_commence);
+    let (to, first_time) = ready_to_begin(&mut world.instance, second).unwrap();
+    assert!(first_time && to.contains(&first) && to.contains(&second));
+    assert!(!world.instance.awaiting_commence);
+    let late = world.player(PLAYER + 2, [4.0, 0.0, 0.0]);
+    assert_eq!(
+        ready_to_begin(&mut world.instance, late),
+        Some((vec![late], false))
     );
 }

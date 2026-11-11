@@ -2196,6 +2196,10 @@ impl DirectorData {
 
 /// Calls the director's `onUpdate` with the health of every living NPC.
 fn update_director(instance: &mut Instance) {
+    // Not before the duty begins (`Instance::awaiting_commence`): its timers count from then.
+    if instance.awaiting_commence {
+        return;
+    }
     let npc_health: HashMap<u32, u32> = instance
         .actors
         .values()
@@ -3232,13 +3236,16 @@ pub fn director_tick(
                 target,
                 amount,
             } => {
+                let player = instance
+                    .actors
+                    .iter()
+                    .find(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+                    .map(|(id, _)| *id);
+                // One it was set on that's gone (the Howling Eye's monolith a razor plume was sent at, broken
+                // already: Bob's bundle 20261111-112150) leaves it on the player.
                 let target_id = match target {
-                    Some(target) => instance.find_npc(*target).map(|(id, _)| id),
-                    None => instance
-                        .actors
-                        .iter()
-                        .find(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
-                        .map(|(id, _)| *id),
+                    Some(target) => instance.find_npc(*target).map(|(id, _)| id).or(player),
+                    None => player,
                 };
                 let Some(target_id) = target_id else {
                     tracing::warn!(
@@ -4276,7 +4283,12 @@ pub fn handle_director_messages(
                 return true;
             }
 
-            // TODO: wait for all players to be ready, not just the first one!
+            // The duty begins once every player in it has finished its opening (retail's DutyCommence came to all
+            // at once); until then its enemies and the party's bots wait (`Instance::awaiting_commence`.) Someone
+            // coming in after it began gets it alone.
+            let Some((to, first_time)) = ready_to_begin(instance, *from_actor_id) else {
+                return true;
+            };
 
             // Have the director commence the duty
             let ipc =
@@ -4294,15 +4306,18 @@ pub fn handle_director_messages(
                     },
                 }));
             let mut network = network.lock();
-            network.send_to_by_actor_id(
-                *from_actor_id,
-                FromServer::PacketSegment(ipc, *from_actor_id),
-                DestinationNetwork::ZoneClients,
-            );
+            for player in &to {
+                network.send_to_by_actor_id(
+                    *player,
+                    FromServer::PacketSegment(ipc.clone(), *player),
+                    DestinationNetwork::ZoneClients,
+                );
+            }
 
             // A dungeon's script that times something from the duty's start hears it too (Brayflox's Longstop's
             // dragon flew off 3.7 s after DutyCommence: Bob's Chronofoil capture 44df02fc of 2026-11-03.)
-            if let Some(director) = instance.directors.first_mut()
+            if first_time
+                && let Some(director) = instance.directors.first_mut()
                 && director
                     .lua
                     .0
@@ -4313,36 +4328,35 @@ pub fn handle_director_messages(
                 director.commence();
             }
 
-            let entrance_actor_id;
             let state = EventState::OFF | EventState::UNK2 | EventState::UNK3;
-
-            {
-                // Find the spawned entrance circle
-                let Some(actor_id) = instance.find_entrance_circle() else {
-                    tracing::warn!("Failed to find entrance circle, it won't despawn!");
-                    return true;
-                };
-                entrance_actor_id = actor_id;
-
-                // Update invisibility flags for next spawn
-                if let Some(NetworkedActor::Object { object, .. }) =
-                    instance.find_actor_mut(entrance_actor_id)
-                {
-                    object.event_state = state;
-                    object.not_targetable = true;
-                    // The entrance's barrier goes with it (the Copperbell Mines' held the bots up.)
-                    let layout_id = object.layout_id;
-                    instance.set_gimmick_gone(layout_id, true);
+            match instance.find_entrance_circle() {
+                Some(entrance_actor_id) => {
+                    // Update invisibility flags for next spawn
+                    if let Some(NetworkedActor::Object { object, .. }) =
+                        instance.find_actor_mut(entrance_actor_id)
+                    {
+                        object.event_state = state;
+                        object.not_targetable = true;
+                        // The entrance's barrier goes with it (the Copperbell Mines' held the bots up.)
+                        let layout_id = object.layout_id;
+                        instance.set_gimmick_gone(layout_id, true);
+                    }
+                    // Make the entrance circle invisible.
+                    for player in &to {
+                        network.send_to_by_actor_id(
+                            *player,
+                            FromServer::ActorControl(
+                                entrance_actor_id,
+                                ActorControlCategory::SetEventState { state },
+                            ),
+                            DestinationNetwork::ZoneClients,
+                        );
+                    }
                 }
+                // The countdown begins all the same (it didn't, and nothing after it, where the circle wasn't
+                // known: the Howling Eye before 2026-11-11.)
+                None => tracing::warn!("Failed to find entrance circle, it won't despawn!"),
             }
-
-            // Make the entrance circle invisible.
-            let msg = FromServer::ActorControl(
-                entrance_actor_id,
-                ActorControlCategory::SetEventState { state },
-            );
-
-            network.send_to_by_actor_id(*from_actor_id, msg, DestinationNetwork::ZoneClients);
 
             // This begins the countdown
             let ipc =
@@ -4357,11 +4371,13 @@ pub fn handle_director_messages(
                         ),
                     },
                 }));
-            network.send_to_by_actor_id(
-                *from_actor_id,
-                FromServer::PacketSegment(ipc, *from_actor_id),
-                DestinationNetwork::ZoneClients,
-            );
+            for player in &to {
+                network.send_to_by_actor_id(
+                    *player,
+                    FromServer::PacketSegment(ipc.clone(), *player),
+                    DestinationNetwork::ZoneClients,
+                );
+            }
             if instance.duty_clock.is_none() {
                 let now = Instant::now();
                 instance.duty_clock = Some((now, now));
@@ -4371,6 +4387,35 @@ pub fn handle_director_messages(
         }
         _ => false,
     }
+}
+
+/// `player` has finished the duty's opening: whom the duty begins for now, and whether it's the duty's beginning. It
+/// begins for every player at once when the last of them is ready (retail's DutyCommence came to all together); until
+/// then None (`Instance::awaiting_commence` stays). Someone coming in after it began gets it alone.
+pub(crate) fn ready_to_begin(
+    instance: &mut Instance,
+    player: ObjectId,
+) -> Option<(Vec<ObjectId>, bool)> {
+    instance.ready_to_commence.insert(player);
+    if !instance.awaiting_commence {
+        return Some((vec![player], false));
+    }
+    let players: Vec<ObjectId> = instance
+        .actors
+        .iter()
+        .filter(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+        .map(|(id, _)| *id)
+        .collect();
+    let waiting = players
+        .iter()
+        .filter(|other| !instance.ready_to_commence.contains(other))
+        .count();
+    if waiting > 0 {
+        tracing::info!("{player} is ready to begin the duty: waiting for {waiting} more");
+        return None;
+    }
+    instance.awaiting_commence = false;
+    Some((players, true))
 }
 
 /// How often a duty's time left is re-sent (retail: every 300 s, Bob's Chronofoil captures.)

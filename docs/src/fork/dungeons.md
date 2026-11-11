@@ -17,6 +17,29 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | The Navel (Titan) | 57 | 1046 | `content/s1fa_re.lua` | one run with Duty Support (650dbfd8) and two Duty Finder runs (0fd8bce0, 48aaf6fe), 2026-11-06 |
 | The Howling Eye (Garuda) | 58 | 1047 | `content/r1fa_re.lua` | one run with Duty Support (6a5244ec) and two Duty Finder runs (09ecf8e7, 6c495fc4), 2026-11-08 |
 
+## The duty's beginning: everyone waits for the openings
+
+Retail begins a duty for everyone at once (DutyCommence to every player together) once each has finished its opening;
+until then the players stand inside the entrance circle, which keeps them in, and nothing fights. Retail's client
+also hears each party member's cutscene state (ActorControl 519 with the member and 3 watching, 1 done; their status
+icon, 504, Viewing Cutscene meanwhile; Bob's Chronofoil capture 09ecf8e7, the Howling Eye), which Kawari doesn't send.
+
+Kawari (since 2026-11-11; Bob's bundle 20261111-112150, "the battle was playing out while I was in a cutscene"):
+an InstanceContent instance starts `awaiting_commence`; each player's return from the opening (`ReadyToCommence`) is
+noted (`director::ready_to_begin`), and when the last player in it is ready the duty begins for all of them:
+DutyCommence, the entrance circle hidden, the time left. Until then its enemies notice no one and do nothing (the
+NPC tick passes them by), the party's bots stand where they came in and do nothing (`party_bot::update`), and the
+director's `onUpdate` waits (its timers count from the beginning). Before, the first player's return began it alone,
+and nothing held anyone back: in Bob's run the Duty Finder's bots and Garuda fought through his opening, and the
+opening took 3 minutes to end (the client didn't leave it while he was in combat, it seems: in earlier runs it ended
+3-18 s after the cutscene). Someone coming in after the beginning gets it alone. Quest battles begin by their scripts.
+The Howling Eye's entrance circle (EObj 2000274, layout 4247837; ActorControl 106 with 7 at DutyCommence in capture
+09ecf8e7) wasn't known, so its circle never hid, and nothing after the missing circle was sent (the time left) — it's
+in `ENTRANCE_CIRCLE_IDS` now, and a duty whose circle isn't known gets the rest all the same. The duty's clock never
+started either, and a wipe is only watched while it runs: that's why Bob's death there didn't reset the duty ("I died
+and it did not reset").
+Test `a_duty_begins_when_everyone_has_seen_its_opening`.
+
 ## Facing at the entrance
 
 Retail turns players the same way every time they come into a given duty. Kawari had them face the way the

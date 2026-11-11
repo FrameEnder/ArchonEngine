@@ -442,7 +442,11 @@ pub fn npc_behavior(
         }
         // A director's helper does only what it's told (`director:hold_bnpc`); a world bot only what `world_bots.rs`
         // has it do.
-        if instance.held_npcs.contains(id) || instance.world_bots.contains(id) {
+        // Before the duty begins, everyone waits (`Instance::awaiting_commence`.)
+        if instance.held_npcs.contains(id)
+            || instance.world_bots.contains(id)
+            || instance.awaiting_commence
+        {
             continue;
         }
         // A party bot out of combat walks itself (server/party_bot.rs.) One waiting out an area attack still acts
@@ -762,7 +766,11 @@ pub fn npc_behavior(
     for (id, actor) in &mut instance.actors {
         // A director's helper does only what it's told: it neither moves, notices, fights nor follows a timeline
         // (`director:hold_bnpc`; retail's boss helpers stood where they were put and only cast.) Nor does a world bot.
-        if instance.held_npcs.contains(id) || instance.world_bots.contains(id) {
+        // Before the duty begins, everyone waits (`Instance::awaiting_commence`.)
+        if instance.held_npcs.contains(id)
+            || instance.world_bots.contains(id)
+            || instance.awaiting_commence
+        {
             continue;
         }
         // A bot walking itself is left alone, unless it's waiting out an area attack, where it still acts (it doesn't

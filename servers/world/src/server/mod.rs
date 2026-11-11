@@ -372,6 +372,9 @@ impl WorldServer {
         instance.content_finder_condition_id = content_finder_condition;
 
         if let Some(director_type) = HandlerType::from_intended_use(instance.zone.intended_use) {
+            // An InstanceContent duty waits for its players' openings (`Instance::awaiting_commence`); a quest
+            // battle's script begins it itself.
+            instance.awaiting_commence = director_type == HandlerType::InstanceContent;
             instance.content_id = game_data
                 .find_content_for_content_finder_id(instance.content_finder_condition_id)
                 .unwrap();

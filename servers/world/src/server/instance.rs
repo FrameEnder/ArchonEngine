@@ -219,6 +219,12 @@ pub struct Instance {
     pub tosses: u32,
     /// The world's bots shown here (`world_bots.rs`): the NPC tick leaves them alone, and enemies never go after them.
     pub world_bots: HashSet<ObjectId>,
+    /// A duty that hasn't begun: its players are still in its opening (inside the entrance circle, which keeps them
+    /// in until DutyCommence.) Until every player is ready (`ready_to_commence`), its enemies notice no one and act
+    /// not, and the party's bots stand where they are and do nothing (Bob's bundle 20261111-112150: Garuda and the
+    /// Duty Finder's bots fought while he watched the Howling Eye's opening.)
+    pub awaiting_commence: bool,
+    pub ready_to_commence: HashSet<ObjectId>,
     /// NPCs a director is sending along a line, hurting as they go (`director:sweep_bnpc`, `server/sweep.rs`.)
     pub sweeps: Vec<crate::server::sweep::Sweep>,
     /// Aggressive BNpcs (by layout ID) a director has told not to notice anyone who comes close: they fight only when

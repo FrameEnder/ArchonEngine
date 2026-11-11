@@ -2978,6 +2978,10 @@ pub fn update(
         return;
     }
     let now = Instant::now();
+    // Before the duty begins the bots stand where they came in, inside the entrance circle, and do nothing
+    // (`Instance::awaiting_commence`): they went off and fought the Howling Eye's Garuda through Bob's opening (Bob's
+    // bundle 20261111-112150.)
+    let waiting = instance.awaiting_commence;
 
     // Bots whose player left (or that are gone themselves) leave too.
     let gone: Vec<ObjectId> = instance
@@ -3007,6 +3011,9 @@ pub fn update(
             FromServer::BotParty(None),
             DestinationNetwork::ZoneClients,
         );
+    }
+    if waiting {
+        return;
     }
 
     tend_the_fallen(network, instance, now);

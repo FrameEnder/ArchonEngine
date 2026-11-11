@@ -1615,6 +1615,16 @@ Fixed in code and by test or simulation; none played yet.
   spots, Player NPCs dodge by the shapes they see. If he meant something else, this is the place to change
   (`party_bot`'s `authored`).
 
+## A duty's beginning (2026-11-11)
+
+* A duty waits for every player's opening before it begins, and holds its enemies and the party's bots meanwhile;
+  a player who never finishes it (a crash in the opening) holds the duty until they leave and someone else is ready.
+* The party's cutscene states retail shows (ActorControl 519, the status icon 504) aren't sent.
+* A razor plume of the Howling Eye whose monolith is already broken goes for the player (`set_hate` on someone gone);
+  retail's choice then isn't recorded.
+* "Moving sometimes stutters" on the airship (bundle 20261111-112150): nothing on the server's side shows it (every
+  PingSync answered within a millisecond, no position sent to the player there.)
+
 ## Airship landings behind the ticketers (2026-11-11)
 
 * The ticketers take you up to a landing only through a quest's own script: Lady of the Vortex (519) and Reclamation

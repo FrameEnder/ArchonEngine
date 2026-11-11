@@ -89,7 +89,8 @@ bundle 20261111-082127 are in `world_bots::tests`: `a_spot_stands_on_the_floor_n
 `a_free_seat`, `a_bot_sits_in_a_seat_and_gets_up`, `a_hug_is_for_another_bot`, and of bundles 20261111-084241 and
 -084610 `a_world_bot_is_examined_befriended_and_joins_a_party`, and of bundle 20261111-091633
 `a_recorded_spot_keeps_its_height_over_a_floor_below`, `an_arrival_walks_off_from_the_landing` (and the seat's
-ActorSetPos in `a_bot_sits_in_a_seat_and_gets_up`; `a_seated_emote_matches_retail` in core), and of bundle 20261111-100415 `world_bots_come_after_everyone_else`.
+ActorSetPos in `a_bot_sits_in_a_seat_and_gets_up`; `a_seated_emote_matches_retail` in core), and of bundle 20261111-100415 `world_bots_come_after_everyone_else`; of bundle 20261111-112150
+`a_duty_begins_when_everyone_has_seen_its_opening`.
 
 **Since 2026-11-10 (second pass): 21 of 21 clean, nothing written down.** What was done for each is in the table's
 last column; the scripts' changes are in [Dungeons](dungeons.md). What the simulator had wrong this time: party
