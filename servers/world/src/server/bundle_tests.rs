@@ -19,7 +19,7 @@ use crate::{
             toss_target, tossed_by,
         },
         actor::{NetworkedActor, NpcState, kill_actor},
-        director::{engage_npc, ready_to_begin, waits_for_its_opening, won},
+        director::{duty_flags_due, engage_npc, ready_to_begin, waits_for_its_opening, won},
         modifiers,
         npc_behavior::{CastAim, cast_aim, out_of_the_fight, retail_cast_aim, unnoticed},
         party::tell_cutscene_state,
@@ -668,6 +668,21 @@ fn an_npc_shouts_with_its_actions_as_retail_s_did() {
     assert_eq!(said, [Some(1351), Some(1352), None, None]);
     // Its other actions say nothing.
     assert_eq!(npc_shout(&mut world.instance, pugilist, 53), None);
+}
+
+/// Known issues, Brayflox's Longstop and others: retail's duty director set its event 0x40000007 `[0, 1]` 300 s and
+/// `[1, 1]` 900 s after DutyCommence in every run that lasted that long (65 and 20 in Bob's Chronofoil captures); Kawari
+/// never sent either. Each goes once.
+#[test]
+fn a_duty_s_time_flags_come_when_retail_s_did() {
+    use std::time::Duration;
+    assert!(duty_flags_due(Duration::from_secs(299), 0).is_empty());
+    assert_eq!(duty_flags_due(Duration::from_secs(300), 0), [0]);
+    assert!(duty_flags_due(Duration::from_secs(600), 0b01).is_empty());
+    assert_eq!(duty_flags_due(Duration::from_secs(900), 0b01), [1]);
+    // An unrestricted party's second was set as it began.
+    assert_eq!(duty_flags_due(Duration::from_secs(300), 0b10), [0]);
+    assert!(duty_flags_due(Duration::from_secs(1000), 0b11).is_empty());
 }
 
 /// Bundle 20261111-125206, "Garudo attacks the pillar that's not right": an NPC that can't be targeted (the Howling

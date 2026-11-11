@@ -315,6 +315,8 @@ pub struct Instance {
     pub fate_participants: HashMap<u32, Vec<ObjectId>>,
     /// When the duty's clock started, and when its time left was last re-sent (retail re-sends it every 300 s.)
     pub duty_clock: Option<(Instant, Instant)>,
+    /// Which of the duty's two time flags its players have been sent (bits; `director::DUTY_FLAG_TIMES`.)
+    pub duty_flags: u8,
     /// A party wipe under way (`server/wipe.rs`.)
     pub party_wipe: Option<crate::server::wipe::PartyWipe>,
     /// Where players start in a quest battle, and which way they face.

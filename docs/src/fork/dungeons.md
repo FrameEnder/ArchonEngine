@@ -41,6 +41,15 @@ started either, and a wipe is only watched while it runs: that's why Bob's death
 and it did not reset").
 Test `a_duty_begins_when_everyone_has_seen_its_opening`.
 
+**The duty's time flags.** Retail's duty director sends its event 0x40000007 `[0, 1]` 300.0 s after DutyCommence and
+`[1, 1]` 900.0 s after it, whatever the party is doing (every one of 65 and 20 runs that lasted that long: dungeons,
+trials and raids in Bob's Chronofoil captures), and `[0, 0]` and `[1, 0]` with DutyCompleted (78 clears), set or not.
+An unrestricted party gets `[1, 1]` with DutyCommence instead (Bob at 87 in the Binding Coil's turns and two level 50
+Extreme trials, 32 runs). Quest battles' own directors never got one. What the client does with them isn't known (the
+duty's time left is re-sent at the same 300 s, `SetDutyTimeRemaining`). Kawari sends them since 2026-11-11
+(`director::DUTY_FLAG_TIMES`, checked on each tick with the time left in `resync_duty_clock`; `Instance::duty_flags`;
+someone coming in late gets those already set). Test `a_duty_s_time_flags_come_when_retail_s_did`.
+
 **The duty's music** is the opening scene's first parameter (EventScene, director 0x0C53A401): retail sends no BGM
 director event (0x80000001) in the Howling Eye, and its opening carries 155 there in all three runs (09ecf8e7, 6a5244ec,
 6c495fc4), 157 in the Navel (650dbfd8) and 0 in the Stone Vigil (1cefedf4), where the zone's own music plays until a
@@ -576,9 +585,9 @@ the last of the pair fell. Chatter: the Marauder's 13951, 13952, 13953 and 13961
 Thaumaturge's 13972.
 
 **Not here:** the stairs' locked log comes from the director after a prompt (retail: from the gimmick, with no prompt);
-the exit's log 1534 `[6]`; what 28640, 28644 and 28649 (on the last boss itself, no effects) and the eyes' gazes do; what the
-director events 0x40000007 (`[0, 1]` 0.2 s after the first door, `[1, 1]` 25 s after the first boss's key) and
-0x80000004 are; wiki loot pools.
+the exit's log 1534 `[6]`; what 28640, 28644 and 28649 (on the last boss itself, no effects) and the eyes' gazes do; wiki loot
+pools. (The director events seen there are the time left, 0x80000004, re-sent every 300 s, and the duty's time flags,
+0x40000007, both sent: above.)
 
 ## Brayflox's Longstop
 
@@ -989,9 +998,7 @@ the start; the first two bosses (1461 at 4000969, 14535 at 9061121) are the layo
 | MapRanges 4322871, 4322974, 4322979 (LVD_Maprange_01) | round each boss's room | the floors the party keeps to while dodging (`boss_room`/`spawn_boss`'s `arena`) |
 
 Not used: the other LVD_Faith range (9394126, by the entrance), PopRange 6543370 (in the last room), the LVD_Faith
-layout's four event NPCs (none came after either clear), and ContentDirector event 0x40000007 (`[0, 1]` 332 s and
-`[1, 1]` 932 s after the zone-in in both runs whatever the party was doing, `[0, 0]` and `[1, 0]` at the clear: a
-timer of some kind).
+layout's four event NPCs (none came after either clear), and ContentDirector event 0x40000007 (the duty's time flags, sent since 2026-11-11: above).
 
 **Since 2026-11-10** (Bob's bundle 20261110-182408, on `b0a1044b`): the whirlwinds throw whoever they hit
 (`effects:toss(64, 173)` in `StoneVigilHelper_28731.lua`: kind 62 in the hit and ActorControl 220 from the one hit,

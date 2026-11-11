@@ -237,7 +237,9 @@ pub enum InstanceContentDirectorEvent {
         arg3: u32,
         arg4: u32,
     },
-    /// Sets some array in InstanceContentDirector?
+    /// Sets some array in InstanceContentDirector? `arg1` is an index (0 or 1), `arg2` 1 to set it, 0 to clear it: retail
+    /// set 0 300 s and 1 900 s after DutyCommence (1 at once for an unrestricted party) and cleared both with
+    /// DutyCompleted (Bob's Chronofoil captures, FrameEnder's `director::DUTY_FLAG_TIMES`.)
     #[brw(magic = 0x40000007u32)]
     Unknown7 { arg1: u32, arg2: u32 },
     /// Shows "one or more party members have yet to complete this duty" message along with the rewards.

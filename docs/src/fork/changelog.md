@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-11-11 | — | Combat ("NPC shouts"); known issues (ActorControl 73 built; the later-use lines' triggers).
+| 2026-11-11 | — | Dungeons ("The duty's time flags"; Haukke Manor's and the Stone Vigil's notes); known issues (0x40000007 sent, four entries).
+| 2026-11-11 | `6191880` | Combat ("NPC shouts"); known issues (ActorControl 73 built; the later-use lines' triggers).
 | 2026-11-11 | `3707b0d` | Quest battles ("The end of a win"); known issues (ActorControl 73 described, not built: its capture isn't at hand).
 | 2026-11-11 | `79f46b6` | Combat ("Over-time ticks", "Barriers"); known issues (barrier sizes still the tooltips').
 | 2026-11-11 | `1ac40dd` | Combat ("Sprint and Jog"); known issues (Jog given; zone changes still open).
@@ -479,7 +480,8 @@ Commits on `Latest-Quest` (and, since 2026-11-03, `test-pending`) since the fork
 
 | Commit | Change |
 |---|---|
-| — | NPCs shout with their actions as retail's did: ActorControl 73 `[line]` (`NpcShout`) from the NPC with the action's ActionEffect, the lines in order one per use (`Timeline::shouts`, `Shouts`, `action::npc_shout`); 26 actions of 22 BNpcBases' timelines from Bob's Chronofoil captures; tests `an_npc_shouts_with_its_actions_as_retail_s_did` and `shouts_go_through_their_lines_in_order` (`core/src/common/{mod,timeline}.rs`, `core/src/ipc/zone/server/actor_control.rs`, `servers/world/src/server/{action,actor,instance,test_world,bundle_tests}.rs`, 22 `resources/timelines/*.json`). |
+| — | A duty's time flags as retail's: InstanceContentDirector event 0x40000007 `[0, 1]` 300 s and `[1, 1]` 900 s after DutyCommence (an unrestricted party's `[1, 1]` with it), both cleared with DutyCompleted (`director::DUTY_FLAG_TIMES`, `duty_flags_due`, `send_duty_flag`; `Instance::duty_flags`); test `a_duty_s_time_flags_come_when_retail_s_did` (`core/src/common/director.rs`, `servers/world/src/server/{director,instance,bundle_tests}.rs`). |
+| `6191880` | NPCs shout with their actions as retail's did: ActorControl 73 `[line]` (`NpcShout`) from the NPC with the action's ActionEffect, the lines in order one per use (`Timeline::shouts`, `Shouts`, `action::npc_shout`); 26 actions of 22 BNpcBases' timelines from Bob's Chronofoil captures; tests `an_npc_shouts_with_its_actions_as_retail_s_did` and `shouts_go_through_their_lines_in_order` (`core/src/common/{mod,timeline}.rs`, `core/src/ipc/zone/server/actor_control.rs`, `servers/world/src/server/{action,actor,instance,test_world,bundle_tests}.rs`, 22 `resources/timelines/*.json`). |
 | `3707b0d` | A won quest battle's last DirectorVars as its closing scene ends, sequence 0xFE with the last data byte's 0x80 (32 won runs of 27 battles); test `a_won_quest_battle_ends_as_retail_s` (`server/director.rs`, `events/content.rs`, `common.rs`, `server/bundle_tests.rs`). |
 | `79f46b6` | Retail's ticks: a target's over-time effects tick together, one tick per kind with their total (1540 for HoTs, 1541 for DoTs, ActorControl 23 `[0, 11, amount, target]` for MP, newly sent); barriers absorb damage (actions, areas, DoTs) before HP, one used up loses its status, and EffectResult carries what's left as a share of maximum HP (`server/barrier.rs`; scripts' `barrier`, `barrier_self`, `barrier_percent`, `barrier_percent_self`, on 15 actions); tests `a_target_s_over_time_effects_tick_together`, `a_barrier_takes_the_damage_first` (`server/{periodic,barrier,action,instance,mod,bundle_tests}.rs`, `lua/{effects_builder,mod}.rs`, `Global.lua`, 15 action scripts). |
 | `1ac40dd` | Retail's Jog: Sprint running out gives 4209 (param 20, no end, from the player) out of combat, before Sprint's loss; any action or the start of combat ends it (LoseEffect `[4209, 20, the player]`); test `sprint_leaves_jog_until_the_player_acts` (`server/effect.rs`, `server/action.rs`, `server/mod.rs`, `server/bundle_tests.rs`). |

@@ -3330,6 +3330,14 @@ pub fn director_tick(
                     FromServer::PacketSegment(ipc, ObjectId::default()), // TODO: how do we just send it from the player?
                     DestinationNetwork::ZoneClients,
                 );
+                // Its time flags are cleared with it, both whether set or not (`DUTY_FLAG_TIMES`.)
+                if director_id.handler_type() == HandlerType::InstanceContent {
+                    let players = instance_players(instance);
+                    for index in 0..DUTY_FLAG_TIMES.len() as u32 {
+                        send_duty_flag(&mut network, instance, &players, index, false);
+                    }
+                    instance.duty_flags = 0;
+                }
                 // Coffers' items still to be rolled for are decided now (retail did it as the duty ended.)
                 crate::server::loot::decide_all(&mut network, instance);
 
@@ -4346,6 +4354,20 @@ pub fn handle_director_messages(
                     DestinationNetwork::ZoneClients,
                 );
             }
+            // Its time flags: an unrestricted party's second is set as it begins; someone coming in later gets those
+            // already set (`DUTY_FLAG_TIMES`.)
+            if first_time
+                && instance.content_settings.is_some_and(|settings| {
+                    settings.contains(DutyFinderSetting::UNRESTRICTED_PARTY)
+                })
+            {
+                instance.duty_flags |= 1 << DUTY_FLAG_SET_AT_ONCE_UNRESTRICTED;
+            }
+            for index in 0..DUTY_FLAG_TIMES.len() as u32 {
+                if instance.duty_flags & (1 << index) != 0 {
+                    send_duty_flag(&mut network, instance, &to, index, true);
+                }
+            }
 
             // A dungeon's script that times something from the duty's start hears it too (Brayflox's Longstop's
             // dragon flew off 3.7 s after DutyCommence: Bob's Chronofoil capture 44df02fc of 2026-11-03.)
@@ -4481,6 +4503,68 @@ const BATTLE_TALK_KIND_BATTLE_NPC: u8 = 2;
 
 pub const DUTY_CLOCK_RESYNC: Duration = Duration::from_secs(300);
 
+/// A duty's two time flags, InstanceContentDirector event 0x40000007 `[index, 1]`, and when each is set from the
+/// duty's beginning (DutyCommence), as retail's were: `[0, 1]` 300.0 s after it and `[1, 1]` 900.0 s after it, in every
+/// one of 65 and 20 runs of dungeons, trials and raids in Bob's Chronofoil captures that lasted that long (none came in a
+/// quest battle's own director). An unrestricted party's `[1, 1]` came as it began instead (Bob at 87 in the Binding
+/// Coil's turns and two level 50 trials, 32 runs). Both are cleared, `[0, 0]` and `[1, 0]`, with DutyCompleted
+/// (78 clears). What the client does with them isn't known.
+pub const DUTY_FLAG_TIMES: [Duration; 2] = [Duration::from_secs(300), Duration::from_secs(900)];
+
+/// The flag an unrestricted party has from the duty's beginning.
+const DUTY_FLAG_SET_AT_ONCE_UNRESTRICTED: u32 = 1;
+
+/// The flags (by index) due `elapsed` into the duty and not yet sent (`sent`, bits.)
+pub(crate) fn duty_flags_due(elapsed: Duration, sent: u8) -> Vec<u32> {
+    DUTY_FLAG_TIMES
+        .iter()
+        .enumerate()
+        .filter(|(index, at)| elapsed >= **at && sent & (1 << index) == 0)
+        .map(|(index, _)| index as u32)
+        .collect()
+}
+
+/// Sends a duty's time flag (`DUTY_FLAG_TIMES`) to these players.
+fn send_duty_flag(
+    network: &mut NetworkState,
+    instance: &Instance,
+    to: &[ObjectId],
+    index: u32,
+    set: bool,
+) {
+    let Some(director) = instance.directors.first() else {
+        return;
+    };
+    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ActorControlSelf(ActorControlSelf {
+        category: ActorControlCategory::DirectorEvent {
+            handler_id: director.id,
+            event: DirectorEvent::ContentDirector(ContentDirectorEvent::InstanceContent(
+                InstanceContentDirectorEvent::Unknown7 {
+                    arg1: index,
+                    arg2: set as u32,
+                },
+            )),
+        },
+    }));
+    for player in to {
+        network.send_to_by_actor_id(
+            *player,
+            FromServer::PacketSegment(ipc.clone(), *player),
+            DestinationNetwork::ZoneClients,
+        );
+    }
+}
+
+/// The players in an instance.
+fn instance_players(instance: &Instance) -> Vec<ObjectId> {
+    instance
+        .actors
+        .iter()
+        .filter(|(_, actor)| matches!(actor, NetworkedActor::Player { .. }))
+        .map(|(id, _)| *id)
+        .collect()
+}
+
 /// Re-sends a running duty's time left to its players every `DUTY_CLOCK_RESYNC`, as retail does.
 pub fn resync_duty_clock(network: &mut NetworkState, instance: &mut Instance) {
     let (Some((started, last)), Some(duration), Some(director)) = (
@@ -4491,6 +4575,14 @@ pub fn resync_duty_clock(network: &mut NetworkState, instance: &mut Instance) {
         return;
     };
     let now = Instant::now();
+    let due = duty_flags_due(now.duration_since(started), instance.duty_flags);
+    if !due.is_empty() {
+        let players = instance_players(instance);
+        for index in due {
+            instance.duty_flags |= 1 << index;
+            send_duty_flag(network, instance, &players, index, true);
+        }
+    }
     if now.duration_since(last) < DUTY_CLOCK_RESYNC {
         return;
     }

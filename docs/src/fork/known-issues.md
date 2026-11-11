@@ -848,8 +848,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Not done from the audit of 2026-10-25: the Limit Break gauge (retail's ActorControlSelf 505, 116 in the first
   stretch; Kawari never fills it); ActorControl 13 (3, value), sent from the player every ~6 s (its handler isn't
   identified); the second gigas pair (2790237, 4023509) pulled 5 s apart where retail linked them.
-* Duty clear doesn't send retail's completion EXP and gil logs (9393 with 24200, 2163 with 2700), the director's
-  Unknown7 (0x40000007: (0, 1) and (1, 1) during the run, (0, 0) and (1, 0) at the clear), ActorControlSelf 130 (3, 1)
+* Duty clear doesn't send retail's completion EXP and gil logs (9393 with 24200, 2163 with 2700), ActorControlSelf 130 (3, 1)
   and 257 ×3, or UnkContentFinder2 (3, 4); the clear rewards need checking against the InstanceContent sheet.
 * The timelines are by BNpcBase (1395-1403, 1421, 14448, 14449, 14460, 14537, 9020).
 
@@ -887,7 +886,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   log 2004 and EventFinish result 0x65).
 * The shortcut outside the last room (11438019, from its cutscene) isn't seen on retail. 2000324 (the first boss's key) is spawned with its layout ID (retail: 0).
 * Duty Support's Lancer (41) at 28 has a guessed 779 HP. Not done: what the last boss's 28640, 28644 and 28649 and the
-  eyes' gazes (513, 29709, 29710) do; the director events 0x40000007 and 0x80000004; wiki loot pools.
+  eyes' gazes (513, 29709, 29710) do; wiki loot pools.
 * **The sunken space by the west wing** (the ground floor at x -34 to -18, z 16 to 44, at -3.2, with a strip down to the
   cellar at z 36): its edge at z 45 is closed by invisible walls whose collision is a simple shape (BgParts 3819851,
   3819852 and 3867912: boxes 5.4 and 3.9 yalms high), which `kawari-navimesh` left out before 2026-11-02. They're in the
@@ -938,7 +937,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   365, 498, 1010: 20-30 s guesses).
 * The event NPCs after the clear come whenever the party had NPCs in it (Duty Support members or party bots): the
   director can't tell the two apart.
-* Not sent: the director events 0x40000007, the logs 9393 and 2163 at the clear, DirectorSetupMapEffects64 at the
+* Not sent: the logs 9393 and 2163 at the clear, DirectorSetupMapEffects64 at the
   start, opcodes 820 and 664 (unknown).
 * Duty Support's Lancer (45) at 32 has a guessed 1120 HP; the members' kits at 32 beyond the Marauder's combo and burst
   are the trials' (see [Party NPCs](party-npcs.md)).
@@ -961,8 +960,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   applies to any 401 elsewhere.
 * The members spawn on the player (retail's a step ahead in a wedge); the Thaumaturge's and Lancer's pull lines are
   taken as first attempt and later ones (one of each seen). Status 775 (Ifrit's during Hellfire) is only applied, with
-  `set_invulnerable`; whether retail makes him untargetable then isn't recorded. Retail's 0x40000007 (0, 1) at 15 % and
-  the clear's logs aren't sent.
+  `set_invulnerable`; whether retail makes him untargetable then isn't recorded. The clear's logs aren't sent.
 
 ## A duty's music (2026-11-11)
 
@@ -1076,8 +1074,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   one of the party at random (retail's on whom isn't worked out).
 * The perched dragons' ActionTimelines (7749, 7739) are retail's numbers, not checked in game; their breath is cast on
   themselves (a line ahead, as they face in the layout).
-* ContentDirector event 0x40000007 (`[0, 1]` 332 s and `[1, 1]` 932 s after the zone-in, both runs) isn't sent; nor
-  is anything for the Duty Support members' event NPCs after the clear (none came in either run).
+* Nothing is sent for the Duty Support members' event NPCs after the clear (none came in either run).
 * The Duty Support members' chatter at 41 (the tank's 13954, the Thaumaturge's 13978 and 13979, the Conjurer's 13985)
   isn't added: each member has one list of lines, and whether these replace Brayflox's at 32 by level isn't known.
 * Coffer loot: one opening each, and two for 185; the tank's run's first two bosses' items (10438; 31518 and 31527)
