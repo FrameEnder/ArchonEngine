@@ -6701,6 +6701,2062 @@
      "kawari"
     ]
    }
+  },
+  "2026.10.16.0000.0000": {
+   "ClientChatIpcType": {
+    "100": [
+     "SendTellMessage",
+     1080,
+     "kawari"
+    ],
+    "101": [
+     "SendPartyMessage",
+     1032,
+     "kawari"
+    ],
+    "104": [
+     "GetChannelList",
+     8,
+     "kawari"
+    ],
+    "107": [
+     "SendAllianceMessage",
+     1032,
+     "kawari"
+    ],
+    "109": [
+     "SendCWLinkshellMessage",
+     1040,
+     "kawari"
+    ],
+    "111": [
+     "DiceRollParty",
+     48,
+     "kawari"
+    ],
+    "112": [
+     "DiceRollCWLS",
+     48,
+     "kawari"
+    ]
+   },
+   "ClientLobbyIpcType": {
+    "11": [
+     "CharaMake",
+     496,
+     "kawari"
+    ],
+    "3": [
+     "ServiceLogin",
+     88,
+     "kawari"
+    ],
+    "4": [
+     "GameLogin",
+     32,
+     "kawari"
+    ],
+    "5": [
+     "LoginEx",
+     1144,
+     "kawari"
+    ],
+    "6": [
+     "ShandaLogin",
+     1456,
+     "kawari"
+    ]
+   },
+   "ClientZoneIpcType": {
+    "102": [
+     "Dive",
+     32,
+     "kawari"
+    ],
+    "108": [
+     "StrategyBoardUpdate",
+     64,
+     "kawari"
+    ],
+    "1182": [
+     "SetFreeCompanyGreeting",
+     200,
+     "kawari"
+    ],
+    "1222": [
+     "EventYieldHandler16",
+     72,
+     "kawari"
+    ],
+    "1239": [
+     "EventYieldHandler128",
+     520,
+     "kawari"
+    ],
+    "127": [
+     "PerformanceNote",
+     24,
+     "kawari"
+    ],
+    "137": [
+     "EventYieldText24",
+     24,
+     "fork"
+    ],
+    "138": [
+     "RemoveFriend",
+     48,
+     "kawari"
+    ],
+    "144": [
+     "LeaveCrossworldLinkshell",
+     8,
+     "kawari"
+    ],
+    "1487": [
+     "EquipGearset2",
+     128,
+     "kawari"
+    ],
+    "156": [
+     "SaveGlamourPlate",
+     248,
+     "fork"
+    ],
+    "1665": [
+     "RequestFreeCompanyShortMessage",
+     16,
+     "kawari"
+    ],
+    "167": [
+     "RealtimeStrategyBoardFinished",
+     8,
+     "kawari"
+    ],
+    "1706": [
+     "UnkSocialEvent",
+     8,
+     "kawari"
+    ],
+    "192": [
+     "CreateFellowship",
+     64,
+     "kawari"
+    ],
+    "195": [
+     "InviteCharacterToCWLS",
+     24,
+     "kawari"
+    ],
+    "215": [
+     "PingSync",
+     32,
+     "kawari"
+    ],
+    "227": [
+     "Disconnected",
+     8,
+     "kawari"
+    ],
+    "233": [
+     "ItemOperation",
+     48,
+     "kawari"
+    ],
+    "235": [
+     "EnterTerritoryEvent",
+     8,
+     "kawari"
+    ],
+    "239": [
+     "GMCommandName2",
+     40,
+     "kawari"
+    ],
+    "242": [
+     "UnkMarketBoardRequest1",
+     8,
+     "kawari"
+    ],
+    "244": [
+     "CreateNewCrossworldLinkshell",
+     32,
+     "kawari"
+    ],
+    "245": [
+     "MarketBoardPurchaseHandler",
+     40,
+     "fork"
+    ],
+    "247": [
+     "TakeLetterAttachments",
+     64,
+     "kawari"
+    ],
+    "252": [
+     "InviteReply2",
+     48,
+     "kawari"
+    ],
+    "257": [
+     "EventReturnHandler8",
+     40,
+     "kawari"
+    ],
+    "263": [
+     "CrossRealmListingsRequest1",
+     56,
+     "kawari"
+    ],
+    "264": [
+     "StandardControlsPivot",
+     8,
+     "kawari"
+    ],
+    "270": [
+     "ActionRequest",
+     32,
+     "kawari"
+    ],
+    "277": [
+     "RequestSearchInfo",
+     24,
+     "kawari"
+    ],
+    "303": [
+     "RequestAdventurerPlate",
+     16,
+     "kawari"
+    ],
+    "307": [
+     "SendLetter",
+     688,
+     "kawari"
+    ],
+    "319": [
+     "MarketBoardOpened",
+     8,
+     "fork"
+    ],
+    "332": [
+     "OpenTreasure",
+     8,
+     "kawari"
+    ],
+    "348": [
+     "RequestPlayerRetainerInfo",
+     8,
+     "fork"
+    ],
+    "350": [
+     "UpdateAdventurerPlate",
+     200,
+     "fork"
+    ],
+    "372": [
+     "RequestRetainerSaleHistory",
+     8,
+     "fork"
+    ],
+    "377": [
+     "RequestMailbox",
+     8,
+     "kawari"
+    ],
+    "398": [
+     "WorldInteraction",
+     32,
+     "kawari"
+    ],
+    "401": [
+     "StartEmoteEvent",
+     16,
+     "fork"
+    ],
+    "410": [
+     "UpdatePositionHandlerInstance",
+     40,
+     "kawari"
+    ],
+    "411": [
+     "InviteCharacter",
+     48,
+     "kawari"
+    ],
+    "412": [
+     "PartyLeave",
+     8,
+     "kawari"
+    ],
+    "424": [
+     "EditSearchInfo",
+     216,
+     "kawari"
+    ],
+    "431": [
+     "SetAdventurerPlatePortrait",
+     56,
+     "fork"
+    ],
+    "438": [
+     "ViewCrossRealmListing",
+     16,
+     "kawari"
+    ],
+    "463": [
+     "SetRetainerAppearance",
+     32,
+     "fork"
+    ],
+    "469": [
+     "RequestBlacklist",
+     8,
+     "kawari"
+    ],
+    "492": [
+     "ActionRequestGroundTargeted",
+     24,
+     "fork"
+    ],
+    "498": [
+     "SearchFellowshipsJoin",
+     8,
+     "kawari"
+    ],
+    "513": [
+     "SetCWLSMemberRank",
+     24,
+     "kawari"
+    ],
+    "515": [
+     "LinkshellInviteReply",
+     16,
+     "kawari"
+    ],
+    "517": [
+     "DisbandCrossworldLinkshell",
+     8,
+     "kawari"
+    ],
+    "518": [
+     "ChocoboTaxiArrived",
+     8,
+     "fork"
+    ],
+    "523": [
+     "RequestCharaInfoFromContentIds",
+     80,
+     "kawari"
+    ],
+    "527": [
+     "InitiateReadyCheck",
+     8,
+     "kawari"
+    ],
+    "531": [
+     "ReadyCheckResponse",
+     8,
+     "kawari"
+    ],
+    "534": [
+     "ChocoboTaxiCheckpoint",
+     8,
+     "fork"
+    ],
+    "545": [
+     "SetClientLanguage",
+     8,
+     "kawari"
+    ],
+    "546": [
+     "StartWalkInEvent",
+     24,
+     "kawari"
+    ],
+    "552": [
+     "RequestMarketBoardItems",
+     136,
+     "kawari"
+    ],
+    "553": [
+     "EventYieldHandler4",
+     24,
+     "kawari"
+    ],
+    "555": [
+     "EventReturnHandler16",
+     72,
+     "fork"
+    ],
+    "562": [
+     "WalkOutsideEvent",
+     24,
+     "kawari"
+    ],
+    "563": [
+     "RewardDeliveryRequest",
+     8,
+     "kawari"
+    ],
+    "565": [
+     "InitRequest",
+     120,
+     "kawari"
+    ],
+    "566": [
+     "ApplyFieldMarkerPreset",
+     104,
+     "kawari"
+    ],
+    "569": [
+     "DyeInformation",
+     24,
+     "kawari"
+    ],
+    "573": [
+     "InviteReply",
+     16,
+     "kawari"
+    ],
+    "580": [
+     "ShareStrategyBoard",
+     1184,
+     "kawari"
+    ],
+    "584": [
+     "StrategyBoardReceived",
+     16,
+     "kawari"
+    ],
+    "585": [
+     "QueueRoulette",
+     24,
+     "kawari"
+    ],
+    "599": [
+     "LogOut",
+     8,
+     "kawari"
+    ],
+    "605": [
+     "EquipGearsetGlamour",
+     128,
+     "fork"
+    ],
+    "607": [
+     "RequestFellowships",
+     8,
+     "kawari"
+    ],
+    "609": [
+     "RemoveCWLSMember",
+     16,
+     "kawari"
+    ],
+    "613": [
+     "RequestRecruitingPartyCount",
+     8,
+     "kawari"
+    ],
+    "615": [
+     "RequestCrossworldLinkshells",
+     8,
+     "kawari"
+    ],
+    "617": [
+     "StartTalkEvent",
+     16,
+     "kawari"
+    ],
+    "618": [
+     "Config",
+     8,
+     "kawari"
+    ],
+    "643": [
+     "UpdatePositionHandler",
+     24,
+     "kawari"
+    ],
+    "652": [
+     "RequestOwnSearchInfo",
+     8,
+     "kawari"
+    ],
+    "664": [
+     "FallFromArena",
+     24,
+     "kawari"
+    ],
+    "665": [
+     "EventYieldHandler2",
+     16,
+     "kawari"
+    ],
+    "668": [
+     "ZoneJump",
+     24,
+     "kawari"
+    ],
+    "671": [
+     "SendChatMessage",
+     1056,
+     "kawari"
+    ],
+    "675": [
+     "GMCommandName",
+     52,
+     "kawari"
+    ],
+    "680": [
+     "CheckCWLinkshellNameAvailability",
+     40,
+     "kawari"
+    ],
+    "694": [
+     "UnkCall2",
+     8,
+     "kawari"
+    ],
+    "699": [
+     "PartyChangeLeader",
+     48,
+     "kawari"
+    ],
+    "706": [
+     "TranslateFurniture",
+     32,
+     "kawari"
+    ],
+    "713": [
+     "ContentFinderAction",
+     8,
+     "kawari"
+    ],
+    "720": [
+     "Trade",
+     16,
+     "kawari"
+    ],
+    "728": [
+     "UnkMarketBoardRequest2",
+     8,
+     "kawari"
+    ],
+    "730": [
+     "SetFriendGroupIcon",
+     16,
+     "kawari"
+    ],
+    "736": [
+     "QueueDuties",
+     40,
+     "kawari"
+    ],
+    "739": [
+     "CrossworldLinkshellMemberListRequest",
+     16,
+     "kawari"
+    ],
+    "752": [
+     "DeleteLetter",
+     16,
+     "kawari"
+    ],
+    "760": [
+     "ViewLetter",
+     16,
+     "kawari"
+    ],
+    "762": [
+     "GMCommand",
+     32,
+     "kawari"
+    ],
+    "766": [
+     "LootRoll",
+     16,
+     "fork"
+    ],
+    "774": [
+     "EquipGearset",
+     72,
+     "kawari"
+    ],
+    "780": [
+     "RequestPlaytime",
+     8,
+     "kawari"
+    ],
+    "787": [
+     "FinishLoading",
+     72,
+     "kawari"
+    ],
+    "796": [
+     "RideShootingScore",
+     16,
+     "fork"
+    ],
+    "803": [
+     "SearchPlayers",
+     176,
+     "kawari"
+    ],
+    "819": [
+     "NewDiscovery",
+     16,
+     "kawari"
+    ],
+    "827": [
+     "RenameCrossworldLinkshell",
+     40,
+     "kawari"
+    ],
+    "840": [
+     "CreateLocalLinkshellRequest",
+     40,
+     "kawari"
+    ],
+    "842": [
+     "SocialListRequest",
+     16,
+     "kawari"
+    ],
+    "861": [
+     "PartyMemberKick",
+     48,
+     "kawari"
+    ],
+    "866": [
+     "EventReturnHandler128",
+     520,
+     "fork"
+    ],
+    "872": [
+     "EventYieldHandler32",
+     136,
+     "kawari"
+    ],
+    "878": [
+     "CrossRealmListingsRequest2",
+     40,
+     "kawari"
+    ],
+    "893": [
+     "ClientTrigger",
+     32,
+     "kawari"
+    ],
+    "904": [
+     "EventReturnHandler2",
+     16,
+     "kawari"
+    ],
+    "905": [
+     "PartyDisband",
+     8,
+     "kawari"
+    ],
+    "920": [
+     "PlaceFurniture",
+     40,
+     "kawari"
+    ],
+    "939": [
+     "SearchFellowships",
+     112,
+     "kawari"
+    ],
+    "945": [
+     "EventYieldText16",
+     16,
+     "fork"
+    ],
+    "946": [
+     "StartCountdown",
+     40,
+     "kawari"
+    ]
+   },
+   "CustomIpcType": {
+    "1": [
+     "RequestCreateCharacter",
+     1064,
+     "kawari"
+    ],
+    "10": [
+     "CharacterDeleted",
+     1,
+     "kawari"
+    ],
+    "11": [
+     "ImportCharacter",
+     136,
+     "kawari"
+    ],
+    "12": [
+     "RemakeCharacter",
+     1032,
+     "kawari"
+    ],
+    "13": [
+     "CharacterRemade",
+     8,
+     "kawari"
+    ],
+    "14": [
+     "CharacterImported",
+     128,
+     "kawari"
+    ],
+    "15": [
+     "DeleteServiceAccount",
+     8,
+     "kawari"
+    ],
+    "16": [
+     "RequestFullCharacterList",
+     0,
+     "kawari"
+    ],
+    "17": [
+     "FullCharacterListResponse",
+     1024,
+     "kawari"
+    ],
+    "18": [
+     "ReloadFestivals",
+     0,
+     "kawari"
+    ],
+    "19": [
+     "SpawnBattleNpc",
+     4,
+     "kawari"
+    ],
+    "2": [
+     "CharacterCreated",
+     12,
+     "kawari"
+    ],
+    "3": [
+     "GetActorId",
+     8,
+     "kawari"
+    ],
+    "4": [
+     "ActorIdFound",
+     4,
+     "kawari"
+    ],
+    "5": [
+     "CheckNameIsAvailable",
+     32,
+     "kawari"
+    ],
+    "6": [
+     "NameIsAvailableResponse",
+     1,
+     "kawari"
+    ],
+    "7": [
+     "RequestCharacterList",
+     8,
+     "kawari"
+    ],
+    "8": [
+     "RequestCharacterListResponse",
+     9473,
+     "kawari"
+    ],
+    "9": [
+     "DeleteCharacter",
+     8,
+     "kawari"
+    ]
+   },
+   "ServerChatIpcType": {
+    "100": [
+     "TellMessage",
+     1080,
+     "kawari"
+    ],
+    "101": [
+     "PartyMessage",
+     1088,
+     "kawari"
+    ],
+    "105": [
+     "GetChannelListResponse",
+     768,
+     "kawari"
+    ],
+    "108": [
+     "AllianceMessage",
+     1056,
+     "kawari"
+    ],
+    "109": [
+     "AllianceMessageEcho",
+     1032,
+     "kawari"
+    ],
+    "112": [
+     "TellNotFoundError",
+     56,
+     "kawari"
+    ],
+    "113": [
+     "CWLinkshellMessageEcho",
+     1040,
+     "kawari"
+    ],
+    "114": [
+     "CWLinkshellMessage",
+     1096,
+     "kawari"
+    ],
+    "2": [
+     "LoginReply",
+     8,
+     "kawari"
+    ],
+    "200": [
+     "JoinChannelResult",
+     32,
+     "kawari"
+    ],
+    "300": [
+     "FreeCompanyEvent",
+     104,
+     "kawari"
+    ],
+    "301": [
+     "ChatDiceRollResult",
+     64,
+     "kawari"
+    ]
+   },
+   "ServerLobbyIpcType": {
+    "12": [
+     "LoginReply",
+     656,
+     "kawari"
+    ],
+    "13": [
+     "ServiceLoginReply",
+     2472,
+     "kawari"
+    ],
+    "14": [
+     "CharaMakeReply",
+     2568,
+     "kawari"
+    ],
+    "15": [
+     "GameLoginReply",
+     160,
+     "kawari"
+    ],
+    "2": [
+     "NackReply",
+     536,
+     "kawari"
+    ],
+    "21": [
+     "DistWorldInfo",
+     528,
+     "kawari"
+    ],
+    "22": [
+     "XiCharacterInfo",
+     496,
+     "kawari"
+    ],
+    "23": [
+     "DistRetainerInfo",
+     536,
+     "kawari"
+    ]
+   },
+   "ServerZoneIpcType": {
+    "102": [
+     "ActorSetPos",
+     24,
+     "kawari"
+    ],
+    "110": [
+     "DirectorSetupMapEffects128",
+     264,
+     "kawari"
+    ],
+    "115": [
+     "SharedFATEInformation",
+     16,
+     "kawari"
+    ],
+    "118": [
+     "EventScene255",
+     1052,
+     "kawari"
+    ],
+    "120": [
+     "EventStart",
+     24,
+     "kawari"
+    ],
+    "122": [
+     "MailboxStatus",
+     16,
+     "kawari"
+    ],
+    "127": [
+     "ActorCast",
+     32,
+     "kawari"
+    ],
+    "129": [
+     "EventScene4",
+     48,
+     "kawari"
+    ],
+    "132": [
+     "ForcedMoveTowards",
+     8,
+     "fork"
+    ],
+    "142": [
+     "EventResume2",
+     16,
+     "kawari"
+    ],
+    "148": [
+     "Fellowships",
+     808,
+     "kawari"
+    ],
+    "154": [
+     "LootMessage",
+     32,
+     "fork"
+    ],
+    "156": [
+     "ZoneInit",
+     136,
+     "kawari"
+    ],
+    "157": [
+     "CompanionName",
+     40,
+     "fork"
+    ],
+    "163": [
+     "EventScene8",
+     64,
+     "kawari"
+    ],
+    "164": [
+     "HousingEstateGreeting",
+     208,
+     "kawari"
+    ],
+    "166": [
+     "ForcedMoveEnd",
+     8,
+     "fork"
+    ],
+    "177": [
+     "SpectatorList",
+     36,
+     "kawari"
+    ],
+    "180": [
+     "EventScene2",
+     40,
+     "kawari"
+    ],
+    "185": [
+     "Playtime",
+     8,
+     "kawari"
+    ],
+    "189": [
+     "FinishQuest",
+     8,
+     "kawari"
+    ],
+    "194": [
+     "Condition",
+     16,
+     "kawari"
+    ],
+    "196": [
+     "DuelInformation",
+     64,
+     "kawari"
+    ],
+    "198": [
+     "RecruitingPartyCount",
+     968,
+     "kawari"
+    ],
+    "199": [
+     "Mogpendium",
+     144,
+     "kawari"
+    ],
+    "200": [
+     "UpdateRecastTimes",
+     640,
+     "kawari"
+    ],
+    "208": [
+     "Mount",
+     16,
+     "kawari"
+    ],
+    "212": [
+     "StatusEffectList",
+     384,
+     "kawari"
+    ],
+    "222": [
+     "LogOutComplete",
+     8,
+     "kawari"
+    ],
+    "224": [
+     "DeepDungeonMap",
+     56,
+     "kawari"
+    ],
+    "227": [
+     "StrategyBoardReceivedAck",
+     16,
+     "kawari"
+    ],
+    "231": [
+     "LevequestCompleteList",
+     232,
+     "kawari"
+    ],
+    "232": [
+     "EventScene16",
+     96,
+     "kawari"
+    ],
+    "234": [
+     "CrossworldLinkshellsEx",
+     520,
+     "kawari"
+    ],
+    "235": [
+     "EffectResultBasic",
+     24,
+     "kawari"
+    ],
+    "241": [
+     "MarketBoardItems",
+     176,
+     "kawari"
+    ],
+    "247": [
+     "ChatMessage",
+     1080,
+     "kawari"
+    ],
+    "255": [
+     "MarketBoardHits",
+     8,
+     "kawari"
+    ],
+    "257": [
+     "ActorControlSelf",
+     40,
+     "kawari"
+    ],
+    "261": [
+     "ServerNoticeMessage",
+     776,
+     "kawari"
+    ],
+    "265": [
+     "ContentFinderCommencing",
+     24,
+     "kawari"
+    ],
+    "270": [
+     "FreeCompanyActivityList",
+     528,
+     "kawari"
+    ],
+    "271": [
+     "RetainerInfo",
+     80,
+     "kawari"
+    ],
+    "272": [
+     "LootList",
+     88,
+     "fork"
+    ],
+    "279": [
+     "ContentFinderFound",
+     40,
+     "kawari"
+    ],
+    "289": [
+     "InventoryActionAck",
+     16,
+     "kawari"
+    ],
+    "290": [
+     "ItemMarketBoardSummary",
+     8,
+     "fork"
+    ],
+    "297": [
+     "UnkDirector1",
+     32,
+     "kawari"
+    ],
+    "298": [
+     "InviteUpdate",
+     72,
+     "kawari"
+    ],
+    "305": [
+     "MarketBoardOfferings",
+     1448,
+     "kawari"
+    ],
+    "309": [
+     "GatheringPointPhases",
+     160,
+     "fork"
+    ],
+    "310": [
+     "ActorMove",
+     16,
+     "kawari"
+    ],
+    "313": [
+     "InteriorFurniturePlaced",
+     32,
+     "kawari"
+    ],
+    "315": [
+     "RecordGatheringLog",
+     8,
+     "kawari"
+    ],
+    "316": [
+     "BeginStrategyBoardSession",
+     16,
+     "kawari"
+    ],
+    "318": [
+     "RideShootingEnd",
+     40,
+     "fork"
+    ],
+    "319": [
+     "FriendGroupIcon",
+     16,
+     "kawari"
+    ],
+    "323": [
+     "CharaInfoFromContentIds",
+     568,
+     "kawari"
+    ],
+    "326": [
+     "LotteryDailyBoard",
+     136,
+     "fork"
+    ],
+    "3260": [
+     "SupportDeskNotification",
+     16,
+     "kawari"
+    ],
+    "329": [
+     "DeepDungeonSetup",
+     24,
+     "kawari"
+    ],
+    "332": [
+     "StatusEffectListDouble",
+     720,
+     "kawari"
+    ],
+    "333": [
+     "HousingVacantLandInfo",
+     40,
+     "kawari"
+    ],
+    "337": [
+     "PlayerName",
+     40,
+     "kawari"
+    ],
+    "341": [
+     "SocialList",
+     1136,
+     "kawari"
+    ],
+    "343": [
+     "EorzeanTimeOffset",
+     8,
+     "kawari"
+    ],
+    "345": [
+     "DailyQuests",
+     56,
+     "kawari"
+    ],
+    "347": [
+     "CraftingActionPreviews",
+     424,
+     "fork"
+    ],
+    "353": [
+     "MarketBoardPurchase",
+     16,
+     "fork"
+    ],
+    "355": [
+     "LetterUpdate",
+     144,
+     "kawari"
+    ],
+    "366": [
+     "DeleteObject",
+     8,
+     "kawari"
+    ],
+    "369": [
+     "DeepDungeonChests",
+     32,
+     "kawari"
+    ],
+    "380": [
+     "SpawnPlayer",
+     664,
+     "kawari"
+    ],
+    "381": [
+     "SpawnNpc",
+     656,
+     "kawari"
+    ],
+    "385": [
+     "HuntingLog",
+     64,
+     "fork"
+    ],
+    "390": [
+     "NewCrossworldLinkshell",
+     64,
+     "kawari"
+    ],
+    "396": [
+     "HousingOccupiedLandInfo",
+     280,
+     "kawari"
+    ],
+    "398": [
+     "FreeCompanyHierarchy",
+     1440,
+     "kawari"
+    ],
+    "399": [
+     "UnkClassRelated",
+     8,
+     "kawari"
+    ],
+    "400": [
+     "GlamourPlates",
+     1440,
+     "fork"
+    ],
+    "404": [
+     "OtherSearchInfo",
+     424,
+     "kawari"
+    ],
+    "414": [
+     "ExamineCharacterInformation",
+     944,
+     "kawari"
+    ],
+    "423": [
+     "CrossworldLinkshellMemberLeft",
+     64,
+     "kawari"
+    ],
+    "435": [
+     "RetainerInfoEnd",
+     24,
+     "kawari"
+    ],
+    "436": [
+     "GlamourDresser",
+     2408,
+     "fork"
+    ],
+    "438": [
+     "CrossRealmListings",
+     1616,
+     "kawari"
+    ],
+    "445": [
+     "ArmoireInfo",
+     504,
+     "fork"
+    ],
+    "446": [
+     "OccultCrescentSetup",
+     160,
+     "kawari"
+    ],
+    "447": [
+     "LocationDiscovered",
+     8,
+     "kawari"
+    ],
+    "451": [
+     "EventFinish",
+     16,
+     "kawari"
+    ],
+    "457": [
+     "InventoryTransaction",
+     48,
+     "kawari"
+    ],
+    "462": [
+     "LootRollResult",
+     16,
+     "fork"
+    ],
+    "464": [
+     "UnkResponse2",
+     8,
+     "kawari"
+    ],
+    "466": [
+     "EventResume4",
+     24,
+     "kawari"
+    ],
+    "467": [
+     "EventNotice4",
+     24,
+     "fork"
+    ],
+    "471": [
+     "ItemMarketBoardInfo",
+     32,
+     "fork"
+    ],
+    "481": [
+     "Linkshells",
+     448,
+     "kawari"
+    ],
+    "486": [
+     "ApartmentList",
+     1584,
+     "kawari"
+    ],
+    "488": [
+     "CraftingLog",
+     808,
+     "kawari"
+    ],
+    "491": [
+     "InitResponse",
+     16,
+     "kawari"
+    ],
+    "493": [
+     "SpawnObject",
+     64,
+     "kawari"
+    ],
+    "494": [
+     "HousingWardInfo",
+     2416,
+     "kawari"
+    ],
+    "496": [
+     "EventScene32",
+     160,
+     "kawari"
+    ],
+    "507": [
+     "WeatherId",
+     8,
+     "kawari"
+    ],
+    "509": [
+     "FreeCompanyInfo",
+     80,
+     "kawari"
+    ],
+    "510": [
+     "DirectorMapEffect",
+     16,
+     "kawari"
+    ],
+    "520": [
+     "RecordCraftingLog",
+     8,
+     "fork"
+    ],
+    "522": [
+     "UpdateMapMarkers8",
+     112,
+     "kawari"
+    ],
+    "524": [
+     "EventResume8",
+     40,
+     "kawari"
+    ],
+    "525": [
+     "EndStrategyBoardSession",
+     16,
+     "kawari"
+    ],
+    "527": [
+     "SearchPlayersResult",
+     8,
+     "kawari"
+    ],
+    "529": [
+     "EventResume16",
+     72,
+     "fork"
+    ],
+    "532": [
+     "SetPlayerCustomizeData",
+     26,
+     "kawari"
+    ],
+    "538": [
+     "ChocoboTaxiStart",
+     16,
+     "fork"
+    ],
+    "540": [
+     "AdventurerPlate",
+     480,
+     "kawari"
+    ],
+    "545": [
+     "PingSyncReply",
+     32,
+     "kawari"
+    ],
+    "548": [
+     "CWLinkshellNameAvailability",
+     40,
+     "kawari"
+    ],
+    "551": [
+     "RetainerSaleHistory",
+     1048,
+     "fork"
+    ],
+    "553": [
+     "ActorControl",
+     24,
+     "kawari"
+    ],
+    "554": [
+     "UnkSocialResponse",
+     80,
+     "kawari"
+    ],
+    "555": [
+     "ActorControlTarget",
+     32,
+     "kawari"
+    ],
+    "566": [
+     "FirstAttack",
+     16,
+     "kawari"
+    ],
+    "569": [
+     "UpdateItem",
+     64,
+     "kawari"
+    ],
+    "571": [
+     "PartyMemberPortraits",
+     184,
+     "kawari"
+    ],
+    "583": [
+     "HaterList",
+     264,
+     "kawari"
+    ],
+    "587": [
+     "Countdown",
+     64,
+     "kawari"
+    ],
+    "592": [
+     "EventLogMessage2",
+     24,
+     "kawari"
+    ],
+    "595": [
+     "SetOnlineStatus",
+     8,
+     "kawari"
+    ],
+    "599": [
+     "UnkContentFinder2",
+     16,
+     "kawari"
+    ],
+    "606": [
+     "DailyQuestRepeatFlags",
+     8,
+     "kawari"
+    ],
+    "607": [
+     "CrossworldLinkshellJoinedSelf",
+     48,
+     "kawari"
+    ],
+    "610": [
+     "AoeEffect8",
+     636,
+     "kawari"
+    ],
+    "611": [
+     "CrossworldLinkshellMemberList",
+     464,
+     "kawari"
+    ],
+    "615": [
+     "ShowLinkshellError",
+     24,
+     "kawari"
+    ],
+    "618": [
+     "GatheringChainCount",
+     8,
+     "fork"
+    ],
+    "621": [
+     "GlamourPlateUpdated",
+     80,
+     "fork"
+    ],
+    "625": [
+     "UpdateMapMarkers32",
+     424,
+     "kawari"
+    ],
+    "626": [
+     "InventoryTransactionFinish",
+     16,
+     "kawari"
+    ],
+    "628": [
+     "SetSearchInfo",
+     216,
+     "kawari"
+    ],
+    "633": [
+     "OpenedTreasure",
+     24,
+     "kawari"
+    ],
+    "634": [
+     "HouseList",
+     1216,
+     "kawari"
+    ],
+    "639": [
+     "CrossworldLinkshellRenamed",
+     88,
+     "kawari"
+    ],
+    "643": [
+     "FreeCompanyShortMessage",
+     120,
+     "kawari"
+    ],
+    "654": [
+     "StatusEffectList3",
+     360,
+     "kawari"
+    ],
+    "663": [
+     "EventLogMessage4",
+     32,
+     "kawari"
+    ],
+    "669": [
+     "DirectorVars",
+     24,
+     "kawari"
+    ],
+    "672": [
+     "CrossworldLinkshellJoined2",
+     56,
+     "kawari"
+    ],
+    "674": [
+     "CurrencyCrystalInfo",
+     24,
+     "kawari"
+    ],
+    "676": [
+     "UpdateHpMpTp",
+     8,
+     "kawari"
+    ],
+    "678": [
+     "PlayerSetup",
+     2952,
+     "kawari"
+    ],
+    "682": [
+     "ScenarioGuide",
+     32,
+     "kawari"
+    ],
+    "701": [
+     "DutySupportContent",
+     8,
+     "fork"
+    ],
+    "702": [
+     "DeepDungeonParty",
+     20,
+     "kawari"
+    ],
+    "712": [
+     "QuestCompleteList",
+     816,
+     "kawari"
+    ],
+    "715": [
+     "PlayerRetainerInfo",
+     480,
+     "fork"
+    ],
+    "719": [
+     "SearchFellowshipsResults",
+     1520,
+     "kawari"
+    ],
+    "730": [
+     "MarketBoardHistory",
+     968,
+     "kawari"
+    ],
+    "733": [
+     "SearchFellowshipsNoResults",
+     24,
+     "kawari"
+    ],
+    "734": [
+     "CrossworldLinkshellInvite",
+     128,
+     "kawari"
+    ],
+    "735": [
+     "RetainerState",
+     56,
+     "fork"
+    ],
+    "737": [
+     "DutySupportInformation",
+     80,
+     "kawari"
+    ],
+    "741": [
+     "LegacyQuestList",
+     40,
+     "kawari"
+    ],
+    "742": [
+     "PrepareZoning",
+     16,
+     "kawari"
+    ],
+    "743": [
+     "PartyList",
+     3672,
+     "kawari"
+    ],
+    "748": [
+     "UnkJobGauge",
+     8,
+     "kawari"
+    ],
+    "750": [
+     "GoldSaucerInformation",
+     40,
+     "kawari"
+    ],
+    "754": [
+     "TreasureFadeOut",
+     8,
+     "kawari"
+    ],
+    "757": [
+     "UnkDirector2",
+     24,
+     "kawari"
+    ],
+    "764": [
+     "ExteriorFurniturePlaced",
+     32,
+     "kawari"
+    ],
+    "769": [
+     "GatheringLog",
+     104,
+     "kawari"
+    ],
+    "770": [
+     "UpdateFittingShop",
+     16,
+     "kawari"
+    ],
+    "772": [
+     "ArmoireContents",
+     136,
+     "fork"
+    ],
+    "778": [
+     "DirectorSetupMapEffects64",
+     136,
+     "kawari"
+    ],
+    "779": [
+     "HousingInteriorDetails",
+     56,
+     "kawari"
+    ],
+    "784": [
+     "UnkFate",
+     24,
+     "kawari"
+    ],
+    "797": [
+     "TrustInformation",
+     728,
+     "kawari"
+    ],
+    "806": [
+     "ActorGauge",
+     16,
+     "kawari"
+    ],
+    "807": [
+     "LootResult",
+     16,
+     "fork"
+    ],
+    "808": [
+     "PartyUpdate",
+     104,
+     "kawari"
+    ],
+    "810": [
+     "InviteCharacterResult",
+     48,
+     "kawari"
+    ],
+    "812": [
+     "EffectResult",
+     96,
+     "kawari"
+    ],
+    "816": [
+     "Equip",
+     72,
+     "kawari"
+    ],
+    "819": [
+     "FreeCompanyGreeting",
+     200,
+     "kawari"
+    ],
+    "821": [
+     "UpdateClassInfo",
+     16,
+     "kawari"
+    ],
+    "825": [
+     "PortraitsInformation",
+     56,
+     "kawari"
+    ],
+    "826": [
+     "FriendRemoved",
+     48,
+     "kawari"
+    ],
+    "829": [
+     "InviteReplyResult",
+     48,
+     "kawari"
+    ],
+    "830": [
+     "CrossworldLinkshellDisbanded",
+     40,
+     "kawari"
+    ],
+    "832": [
+     "ContainerInfo",
+     16,
+     "kawari"
+    ],
+    "834": [
+     "EventNotice2",
+     16,
+     "fork"
+    ],
+    "835": [
+     "AcceptQuest",
+     8,
+     "kawari"
+    ],
+    "836": [
+     "StrategyBoard",
+     1184,
+     "kawari"
+    ],
+    "840": [
+     "PartyMemberPositions",
+     64,
+     "kawari"
+    ],
+    "843": [
+     "SpawnTreasure",
+     112,
+     "kawari"
+    ],
+    "845": [
+     "GatheringPointPhase",
+     8,
+     "fork"
+    ],
+    "846": [
+     "InitializeObfuscation",
+     16,
+     "kawari"
+    ],
+    "852": [
+     "DeleteActor",
+     8,
+     "kawari"
+    ],
+    "855": [
+     "CrossRealmListingsOverview",
+     48,
+     "kawari"
+    ],
+    "859": [
+     "CrossworldLinkshellMemberRank",
+     64,
+     "kawari"
+    ],
+    "862": [
+     "FieldMarkerPreset",
+     104,
+     "kawari"
+    ],
+    "864": [
+     "NpcYell",
+     32,
+     "kawari"
+    ],
+    "867": [
+     "ActionEffect1",
+     124,
+     "kawari"
+    ],
+    "868": [
+     "EventScene128",
+     544,
+     "kawari"
+    ],
+    "875": [
+     "UpdateQuest",
+     24,
+     "kawari"
+    ],
+    "877": [
+     "PlayerStats",
+     144,
+     "kawari"
+    ],
+    "878": [
+     "StrategyBoardUpdate",
+     64,
+     "kawari"
+    ],
+    "881": [
+     "UnkContentFinder",
+     16,
+     "kawari"
+    ],
+    "883": [
+     "WalkInEvent",
+     24,
+     "kawari"
+    ],
+    "887": [
+     "UpdateMapMarkers16",
+     216,
+     "kawari"
+    ],
+    "892": [
+     "EventScene64",
+     288,
+     "kawari"
+    ],
+    "893": [
+     "FreeCompanyHeader",
+     80,
+     "kawari"
+    ],
+    "909": [
+     "UpdateInventorySlot",
+     64,
+     "kawari"
+    ],
+    "911": [
+     "CrossworldLinkshells",
+     456,
+     "kawari"
+    ],
+    "913": [
+     "TitleList",
+     112,
+     "kawari"
+    ],
+    "916": [
+     "Blacklist",
+     968,
+     "kawari"
+    ],
+    "934": [
+     "EnmityList",
+     72,
+     "kawari"
+    ],
+    "946": [
+     "MailboxPreview",
+     1168,
+     "kawari"
+    ],
+    "949": [
+     "UpdateMapMarkers4",
+     56,
+     "kawari"
+    ],
+    "954": [
+     "StatusEffectListPlayerDouble",
+     720,
+     "kawari"
+    ],
+    "956": [
+     "FurnitureList",
+     2416,
+     "kawari"
+    ],
+    "961": [
+     "ZoneDiceRollResult",
+     64,
+     "kawari"
+    ],
+    "964": [
+     "QuestActiveList",
+     480,
+     "kawari"
+    ],
+    "970": [
+     "Letter",
+     616,
+     "kawari"
+    ],
+    "971": [
+     "GrandCompanyInfo",
+     8,
+     "kawari"
+    ],
+    "972": [
+     "FurnitureTranslatedForObserver",
+     24,
+     "kawari"
+    ],
+    "974": [
+     "QuestTracker",
+     24,
+     "kawari"
+    ],
+    "975": [
+     "LootItem",
+     56,
+     "fork"
+    ],
+    "977": [
+     "OwnedHousing",
+     136,
+     "kawari"
+    ],
+    "985": [
+     "Achievements",
+     552,
+     "fork"
+    ],
+    "986": [
+     "WaymarkUpdate",
+     16,
+     "kawari"
+    ],
+    "987": [
+     "RetainerStateNotice",
+     8,
+     "fork"
+    ],
+    "991": [
+     "Config",
+     8,
+     "kawari"
+    ],
+    "996": [
+     "ContentFinderUpdate",
+     40,
+     "kawari"
+    ],
+    "997": [
+     "DirectorPopupMessage",
+     40,
+     "kawari"
+    ],
+    "998": [
+     "CrossRealmListingInformation",
+     464,
+     "kawari"
+    ]
+   }
   }
  }
 }

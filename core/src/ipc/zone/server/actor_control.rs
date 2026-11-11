@@ -396,6 +396,14 @@ pub enum ActorControlCategory {
         event: DirectorEvent,
     },
 
+    #[brw(magic = 123u32)]
+    ShowScreenImage {
+        /// Index into the ScreenImage Excel sheet.
+        screen_image: u32,
+        /// If INVALID_OBJECT_ID, the client will always show the ScreenImage. If not, it will only show if the client is targeting this actor.
+        target_actor_id: ObjectId,
+    },
+
     #[brw(magic = 131u32)]
     UnlockInstanceContent {
         /// Index into InstanceContent Excel sheet

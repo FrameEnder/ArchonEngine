@@ -5,7 +5,7 @@
 
 Modern server emulator for FFXIV.
 
-ArchonEngine/Kawari currently supports patch **7.57h1** (2026.10.16.0000.0000). We only support the Windows client.
+ArchonEngine/Kawari currently supports patch **7.58** (2026.11.03.0000.0000). We only support the Windows client.
 
 To get started, there is a guide to [running Kawari in our documentation](https://docs.xiv.zone/kawari/setup/overview.html), or alternatively use [ArchonEngine ControlPanel](https://github.com/FrameEnder/ArchonEngine-ControlPanel)
 a webapp running inside Podman Containers designed to allow easy set-up, and development for The ArchonEngine

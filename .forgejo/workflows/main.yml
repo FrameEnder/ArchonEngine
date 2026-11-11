@@ -194,10 +194,12 @@ jobs:
     - name: Upload artifacts
       run: |
         pushd kawari-linux-x86_64
+        chmod +x ./kawari-*
         zip -r ../kawari-linux-x86_64.zip *
         popd
 
         pushd kawari-linux-aarch64
+        chmod +x ./kawari-*
         zip -r ../kawari-linux-aarch64.zip *
         popd
 

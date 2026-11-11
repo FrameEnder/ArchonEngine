@@ -1,5 +1,4 @@
 //! Chat and command handling.
-
 use std::str::FromStr;
 
 use binrw::BinRead;
@@ -14,8 +13,12 @@ use crate::{
     lua::{KawariLuaState, LuaPlayer},
 };
 use kawari::{
-    common::{ERR_INVENTORY_ADD_FAILED, HandlerId, HandlerType, ObjectTypeId, ObjectTypeKind},
+    common::{
+        ERR_INVENTORY_ADD_FAILED, HandlerId, HandlerType, ObjectTypeId, ObjectTypeKind, Position,
+        cylinder_test,
+    },
     config::get_config,
+    ipc::chat::ChatChannelType,
     ipc::zone::{
         ActorControlCategory, ChatMessage, Condition, Conditions, EventType, GameMasterRank,
         SceneFlags, ServerNoticeFlags, ServerNoticeMessage, ServerZoneIpcData,
@@ -24,17 +27,57 @@ use kawari::{
 };
 
 impl ZoneConnection {
+    /// Reports if the local player is in range of another player's dice roll or chat message.
+    /// On retail this seems to be a 100 yalm tall cylinder, centered on the sending player's position. The radius of the cylinder varies with the chat channel.
+    pub fn chat_in_range(&self, sender_position: Position, channel: ChatChannelType) -> bool {
+        let mut cyl_top = sender_position.0;
+        let mut cyl_bottom = sender_position.0;
+
+        // The cylinder is 100 yalms tall.
+        let length_sq = f32::powi(100.0, 2);
+
+        // Center the cylinder on the sender's position.
+        cyl_top.y += 50.0;
+        cyl_bottom.y -= 50.0;
+
+        let radius_sq = match channel {
+            // Say & CustomEmote have a radius of 20 yalms.
+            ChatChannelType::Say | ChatChannelType::CustomEmote => f32::powi(20.0, 2),
+            // Yell has a radius of 100 yalms.
+            ChatChannelType::Yell => f32::powi(100.0, 2),
+            // Shout seemingly isn't subject to a distance check (tested at absurd distances of ~2,500 yalms and height differences of ~1000 yalms).
+            ChatChannelType::Shout => return true,
+            _ => {
+                tracing::error!(
+                    "ZoneConnection::send_message: unsupported ChatChannelType {:?}! This is a bug and should be investigated!",
+                    channel
+                );
+                return false;
+            }
+        };
+
+        cylinder_test(
+            cyl_top,
+            cyl_bottom,
+            length_sq,
+            radius_sq,
+            self.player_data.volatile.position.0,
+        ) != -1.0
+    }
+
     pub async fn send_message(&mut self, message: MessageInfo) {
-        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ChatMessage(ChatMessage {
-            sender_account_id: message.sender_account_id,
-            sender_actor_id: message.sender_actor_id,
-            sender_world_id: message.sender_world_id,
-            sender_name: message.sender_name,
-            channel: message.channel,
-            message: message.message,
-            ..Default::default()
-        }));
-        self.send_ipc_self(ipc).await;
+        if self.chat_in_range(message.sender_position, message.channel) {
+            let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ChatMessage(ChatMessage {
+                sender_account_id: message.sender_account_id,
+                sender_actor_id: message.sender_actor_id,
+                sender_world_id: message.sender_world_id,
+                sender_name: message.sender_name,
+                channel: message.channel,
+                message: message.message,
+                ..Default::default()
+            }));
+            self.send_ipc_self(ipc).await;
+        }
     }
 
     pub async fn send_notice(&mut self, message: &str) {

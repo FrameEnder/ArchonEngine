@@ -19,6 +19,7 @@
 - [Debug Commands](debug_commands.md)
 - [Tips](tips.md)
 - [Patching](patching.md)
+- [Troubleshooting](troubleshooting.md)
 
 # Extending Kawari
 - [Extensibility](extensibility.md)

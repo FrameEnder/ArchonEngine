@@ -7,9 +7,7 @@ use bitflags::bitflags;
 use serde_derive::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter, FromRepr};
 
-use crate::{
-    constants::BASE_INVENTORY_ACTION, festivals::festival_name, ipc::zone::DutyFinderSetting,
-};
+use crate::{festivals::festival_name, ipc::zone::DutyFinderSetting, opcodes::ClientZoneIpcType};
 
 /// Maxmimum length of a character's name.
 pub const CHAR_NAME_MAX_LENGTH: usize = 32;
@@ -744,28 +742,41 @@ impl ContainerType {
     }
 }
 
-#[binrw]
+/// The first item operation: the ItemOperation client opcode + 1 (upstream, 2026-10-31: 234 on 7.57h1, where
+/// ItemOperation was 233.) It was a constant in `constants.yml` before, found by hand each patch.
+pub const BASE_INVENTORY_ACTION: u32 =
+    ClientZoneIpcType::get_opcode(&ClientZoneIpcType::ItemOperation) as u32 + 1;
+
+/// Item operations go to and from the game as the game's numbers: the same as the generated ones unless the opcode lists
+/// were remapped at startup after a game update (`packet::remap`), when they follow ItemOperation's real opcode.
 #[derive(Debug, Clone, Default, Copy, PartialEq, FromRepr)]
-#[brw(repr = u32)]
 #[repr(u32)]
 pub enum ItemOperationKind {
     /// The operation opcode/type when the server wants the client to create a storage. Seen during login to create the HandIn storage.
-    CreateStorage = BASE_INVENTORY_ACTION,
+    CreateStorage = ClientZoneIpcType::get_opcode(&ClientZoneIpcType::ItemOperation) as u32 + 1,
+    /// Dummy placeholder.
+    Unk1,
+    /// Dummy placeholder.
+    Unk2,
+    /// Dummy placeholder.
+    Unk3,
     /// The operation opcode/type when an item is created in the inventory. Seen during currency shop transactions, and likely elsewhere.
-    Create = BASE_INVENTORY_ACTION + 4,
+    Create,
     /// The operation opcode/type when updating the inventory. Seen during all shop transactions when updating currency, and elsewhere.
-    Update = BASE_INVENTORY_ACTION + 5,
+    Update,
     /// The operation opcode/type when discarding an item from the inventory. Seen when discarding an item from the inventory, and during gilshop sell transactions.
-    Discard = BASE_INVENTORY_ACTION + 6,
+    Discard,
     #[default]
     /// The operation opcode/type when moving an item to an emtpy slot in the inventory.
-    Move = BASE_INVENTORY_ACTION + 7,
+    Move,
     /// The operation opcode/type when moving an item to a slot occupied by another in the inventory.
-    Exchange = BASE_INVENTORY_ACTION + 8,
+    Exchange,
     /// The operation opcode/type when splitting stacks of identical items.
-    SplitStack = BASE_INVENTORY_ACTION + 9,
+    SplitStack,
+    /// Seen during trading (BASE_INVENTORY_ACTION + 10; 244 on 7.57h1.)
+    UnkTrading1,
     /// The operation opcode/type when combining stacks of identical items.
-    CombineStack = BASE_INVENTORY_ACTION + 11,
+    CombineStack,
     /// The operation opcode/type when the server wants the client to equip the mannequin (character sheet/try on preview model?). Seen during login and probably elsewhere.
     /// Also what ends a gearset's moves (InventoryTransactionFinish) when it comes with no glamour plate (0xFC on
     /// 2026.10.16, the three gearsets of Bob's Chronofoil capture d3379099; `GearsetGlamour` with one.)
@@ -794,8 +805,6 @@ pub enum ItemOperationKind {
     /// 2026-10-24.)
     Repair = BASE_INVENTORY_ACTION + 12,
     UnkDiscard = 0x90,
-    /// Seen during trading (256 in 7.55)
-    UnkTrading1 = 244,
     /// Seen while equipping gearsets (upstream's, an older version's; retail's are `EquipMannequin` and
     /// `GearsetGlamour`.)
     UnkGearSetEquipped = 567,
@@ -803,6 +812,74 @@ pub enum ItemOperationKind {
     /// 2026.10.16 in all six such gearsets of Bob's Chronofoil captures cc26e0ea, ba1b86c5 and 44df02fc;
     /// `EquipMannequin`'s value for the three without one, d3379099's.)
     GearsetGlamour = BASE_INVENTORY_ACTION + 144,
+}
+
+impl ItemOperationKind {
+    /// How far the game's item operations are from the generated ones: 0 unless ItemOperation's opcode was remapped.
+    fn game_shift() -> i64 {
+        let ours = ClientZoneIpcType::get_opcode(&ClientZoneIpcType::ItemOperation);
+        let game = crate::packet::remap::game_opcode("ClientZoneIpcType", ours);
+        if game == crate::packet::remap::SWITCHED_OFF {
+            return 0;
+        }
+        game as i64 - ours as i64
+    }
+
+    /// The number the game uses for this operation (only the ones counted from BASE_INVENTORY_ACTION move.)
+    pub fn to_game(self) -> u32 {
+        self.shifted(Self::game_shift())
+    }
+
+    /// The operation the game's `value` is.
+    pub fn from_game(value: u32) -> Option<Self> {
+        Self::unshifted(value, Self::game_shift())
+    }
+
+    fn shifted(self, shift: i64) -> u32 {
+        let value = self as u32;
+        if value >= BASE_INVENTORY_ACTION {
+            (value as i64 + shift) as u32
+        } else {
+            value
+        }
+    }
+
+    fn unshifted(value: u32, shift: i64) -> Option<Self> {
+        let base = BASE_INVENTORY_ACTION as i64 + shift;
+        let ours = if value as i64 >= base {
+            value as i64 - shift
+        } else {
+            value as i64
+        };
+        u32::try_from(ours).ok().and_then(Self::from_repr)
+    }
+}
+
+impl binrw::BinRead for ItemOperationKind {
+    type Args<'a> = ();
+
+    fn read_options<R: std::io::Read + std::io::Seek>(
+        reader: &mut R,
+        endian: binrw::Endian,
+        _: Self::Args<'_>,
+    ) -> binrw::BinResult<Self> {
+        let pos = reader.stream_position()?;
+        let value = u32::read_options(reader, endian, ())?;
+        Self::from_game(value).ok_or(binrw::Error::NoVariantMatch { pos })
+    }
+}
+
+impl binrw::BinWrite for ItemOperationKind {
+    type Args<'a> = ();
+
+    fn write_options<W: std::io::Write + std::io::Seek>(
+        &self,
+        writer: &mut W,
+        endian: binrw::Endian,
+        _: Self::Args<'_>,
+    ) -> binrw::BinResult<()> {
+        self.to_game().write_options(writer, endian, ())
+    }
 }
 
 impl ItemOperationKind {
@@ -1822,6 +1899,45 @@ mod tests {
 
     use super::*;
 
+    /// Item operations count from ItemOperation's opcode + 1 (234 on 7.57h1, where it was 233), and follow it when the
+    /// opcodes are remapped after an update (`ItemOperationKind::to_game`.)
+    #[test]
+    fn item_operations_follow_item_operation() {
+        use crate::opcodes::ClientZoneIpcType;
+        assert_eq!(
+            BASE_INVENTORY_ACTION,
+            ClientZoneIpcType::ItemOperation.get_opcode() as u32 + 1
+        );
+        assert_eq!(ItemOperationKind::Move as u32, BASE_INVENTORY_ACTION + 7);
+        assert_eq!(
+            ItemOperationKind::EquipMannequin as u32,
+            BASE_INVENTORY_ACTION + 18
+        );
+        // Nothing remapped: the generated numbers.
+        assert_eq!(
+            ItemOperationKind::Move.shifted(0),
+            BASE_INVENTORY_ACTION + 7
+        );
+        // ItemOperation found 85 further on in a newer game: every counted operation moves with it, both ways.
+        assert_eq!(
+            ItemOperationKind::Move.shifted(85),
+            BASE_INVENTORY_ACTION + 92
+        );
+        assert_eq!(
+            ItemOperationKind::unshifted(BASE_INVENTORY_ACTION + 92, 85),
+            Some(ItemOperationKind::Move)
+        );
+        assert_eq!(
+            ItemOperationKind::unshifted(BASE_INVENTORY_ACTION + 85 + 144, 85),
+            Some(ItemOperationKind::GearsetGlamour)
+        );
+        // The few that aren't counted from it stay put.
+        assert_eq!(ItemOperationKind::UnkDiscard.shifted(85), 0x90);
+        assert_eq!(
+            ItemOperationKind::unshifted(0x90, 85),
+            Some(ItemOperationKind::UnkDiscard)
+        );
+    }
     #[test]
     fn test_duty_option() {
         assert_eq!(DutyOption(262152), DutyOption::UNK1 | DutyOption::UNK16);

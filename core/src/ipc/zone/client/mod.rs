@@ -874,10 +874,16 @@ mod tests {
     fn read_save_glamour_plate_with_dyes() {
         use binrw::BinRead;
         const HEX: &str = "14009c000000000000000000ae05e16a000000010101010100000000000000010301030100000000000000000000000000000000050000001d0000002e0000003b0000003d00000000000000000000000000000000000000000000000f2700000f2700000f270000030000000f270000030000000f2700000f2700000f2700000f2700000f2700000f270000ffffffffffff1d00ffff1d00ffffffffffffffffffffffff0f2700000f2700000f2700000f2700000f2700000f2700000f2700000f2700000f2700000f2700000f2700000f270000ffffffffffffffffffffffffffffffffffffffffffffffffffffff01ff06ffffffffffffffffffffffffffffffffffff00000000";
-        let bytes: Vec<u8> = (0..HEX.len())
+        let mut bytes: Vec<u8> = (0..HEX.len())
             .step_by(2)
             .map(|i| u8::from_str_radix(&HEX[i..i + 2], 16).unwrap())
             .collect();
+        // The capture's opcode was 2026.10.16's (0x9c); the layout is the same on later versions.
+        bytes[2..4].copy_from_slice(
+            &crate::opcodes::ClientZoneIpcType::SaveGlamourPlate
+                .get_opcode()
+                .to_le_bytes(),
+        );
         let size = bytes.len() as u32;
         let segment =
             ClientZoneIpcSegment::read_le_args(&mut std::io::Cursor::new(&bytes), (&size,))
@@ -915,7 +921,12 @@ mod tests {
     fn read_equip_gearset_with_plate() {
         use binrw::BinRead;
         let mut bytes = vec![0x14, 0x00];
-        bytes.extend(774u16.to_le_bytes()); // EquipGearset's opcode
+        // EquipGearset's opcode (774 on 2026.10.16, the capture's version.)
+        bytes.extend(
+            crate::opcodes::ClientZoneIpcType::EquipGearset
+                .get_opcode()
+                .to_le_bytes(),
+        );
         bytes.extend([0u8; 12]);
         const HEX: &str = "0a000000ac0d800c810c820c830c0f27850c860c870c880c890ce40ce40c0f2702000000110014000200ffff0f0011000b000800010003000c00ffff010000000000110000000000";
         bytes.extend(

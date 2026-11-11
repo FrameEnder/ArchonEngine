@@ -3,14 +3,30 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Upstream 7.58 (merged on `upstream-sync` on 2026-11-11)
+
+* The server takes a 7.58 client (2026.11.03.0000.0000) only; nothing of 7.58 has been tried in game yet. Every fork
+  opcode is found for it from Bob's executable ([Fork Opcodes](opcodes.md#finding-them-on-758)), none seen from a 7.58
+  client or in a 7.58 retail recording. EventNotice2/4, EventResume16 and LotteryDailyBoard are members of groups the
+  client handles identically, picked without a recording; a retail capture on 7.58 would say which retail uses.
+* Upstream's EditSearchInfo (424, 7.57h1's) is corrected to 645 in `fork_opcodes.yml` (`corrects`); the build says to
+  remove the correction once upstream changes theirs.
+* The item operations are counted from ItemOperation's opcode + 1 (upstream's finding, 2026-10-31), 319 on 7.58: the
+  fork's retainer, saddlebag, repair and gearset operations keep their offsets from it, unchecked on 7.58. The mail
+  actions are the letter packets' opcodes (upstream's), unchecked on 7.58 too.
+* Upstream's chat distances (Say and custom emotes 20 yalms, Yell 100, Shout everywhere, 2026-11-02) apply to players'
+  messages; the world bots' and NPCs' own lines don't go through them.
+
 ## Upstream 7.57h1 (merged into `master` on 2026-10-21)
 
 * Automatic opcodes after a game update ([Fork Opcodes](opcodes.md#every-opcode-after-a-game-update)) haven't run on a
-  live update yet, only against Bob's 10.06 and 10.16 executables. About 16 server packets come from candidate lists
-  (the notices, EventResume2/4/8, InitResponse and PingSyncReply, the inventory and market packets): a wrong pick shows
-  as that packet doing nothing (10.16 → 10.06 also leaves three Crossworld linkshell packets among 12 candidates). 14
-  client packets aren't found and wait to be learnt by size. `BASE_INVENTORY_ACTION`, the mail result codes and the
-  scrambler tables aren't found automatically (no pattern found for them).
+  live update yet, only against Bob's 10.06, 10.16 and 11.03 executables. About 17 server packets come from candidate
+  lists (the notices, EventResume2/4/8, InitResponse and PingSyncReply, the inventory packets): a wrong pick shows as
+  that packet doing nothing (10.16 → 10.06 also leaves three Crossworld linkshell packets among 12 candidates). 14
+  client packets aren't found and wait to be learnt by size. The scrambler tables aren't found automatically (no
+  pattern found for them); the item operations and the mail actions follow the found opcodes since 2026-11-11.
+* The fingerprints' second dispatchers don't read a `sub` then `cmp` on the opcode (7.58's ItemMarketBoard pair), so
+  such a pair comes back as candidates.
 * Four fork opcodes have no finder, because their code is the same as other packets': RequestPlayerRetainerInfo,
   GatheringPointPhase, ItemMarketBoardInfo and ItemMarketBoardSummary. After a patch only the fingerprints find them
   (the two ItemMarketBoards as a pair of candidates).

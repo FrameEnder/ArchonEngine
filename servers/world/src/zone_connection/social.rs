@@ -1,7 +1,8 @@
 //! Other social features, as well as invite sending and replies.
 use crate::{BotPartyAction, ToServer, ZoneConnection, common::roll_die};
 use kawari::{
-    common::{ObjectId, timestamp_secs},
+    common::{ObjectId, Position, timestamp_secs},
+    ipc::chat::ChatChannelType,
     ipc::zone::{
         InviteReply, InviteType, InviteUpdateType, OnlineStatus, OnlineStatusMask, PlayerEntry,
         SearchUIClassJobMask, SearchUIGrandCompanies, ServerZoneIpcData, ServerZoneIpcSegment,
@@ -557,6 +558,7 @@ impl ZoneConnection {
         self.handle
             .send(ToServer::ZoneDiceRoll(
                 self.player_data.character.actor_id,
+                self.player_data.volatile.position,
                 result,
             ))
             .await;
@@ -565,9 +567,13 @@ impl ZoneConnection {
     pub async fn dice_roll_received(
         &mut self,
         from_actor_id: ObjectId,
+        from_actor_position: Position,
         result: ZoneDiceRollResult,
     ) {
-        let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ZoneDiceRollResult(result));
-        self.send_ipc_from(from_actor_id, ipc).await;
+        // Zone dice rolls should use the standard short-range chat radius.
+        if self.chat_in_range(from_actor_position, ChatChannelType::Say) {
+            let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::ZoneDiceRollResult(result));
+            self.send_ipc_from(from_actor_id, ipc).await;
+        }
     }
 }

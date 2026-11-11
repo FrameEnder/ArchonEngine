@@ -197,12 +197,16 @@ pub fn handle_social_messages(
 
             true
         }
-        ToServer::ZoneDiceRoll(from_actor_id, roll_data) => {
+        ToServer::ZoneDiceRoll(from_actor_id, from_actor_position, roll_data) => {
             let mut network = network.lock();
             let data = data.lock();
 
             if let Some(instance) = data.find_actor_instance(*from_actor_id) {
-                let msg = FromServer::ZoneDiceRoll(*from_actor_id, roll_data.clone());
+                let msg = FromServer::ZoneDiceRoll(
+                    *from_actor_id,
+                    *from_actor_position,
+                    roll_data.clone(),
+                );
                 network.send_in_range_inclusive_instance(
                     *from_actor_id,
                     instance,

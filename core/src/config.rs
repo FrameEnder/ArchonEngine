@@ -16,9 +16,11 @@ fn default_listen_address() -> String {
 /// Configuration for the admin server.
 #[derive(Serialize, Deserialize)]
 pub struct AdminConfig {
+    /// Port for the server.
     #[serde(default = "AdminConfig::default_port")]
     pub port: u16,
 
+    /// Address to listen for new connections on.
     #[serde(default = "default_listen_address")]
     pub listen_address: String,
 
@@ -58,18 +60,23 @@ impl AdminConfig {
 /// Configuration for the frontier server.
 #[derive(Serialize, Deserialize)]
 pub struct FrontierConfig {
+    /// Port for the server.
     #[serde(default = "FrontierConfig::default_port")]
     pub port: u16,
 
+    /// Address to listen for new connections on.
     #[serde(default = "default_listen_address")]
     pub listen_address: String,
 
+    /// Public-facing domain of the server.
     #[serde(default = "FrontierConfig::default_server_name")]
     pub server_name: String,
 
+    /// Controls whether launchers report that the world servers are open.
     #[serde(default = "FrontierConfig::default_worlds_open")]
     pub worlds_open: bool,
 
+    /// Controls whether launchers report that logins are open.
     #[serde(default = "FrontierConfig::default_login_open")]
     pub login_open: bool,
 }
@@ -115,12 +122,15 @@ impl FrontierConfig {
 /// Configuration for the lobby server.
 #[derive(Serialize, Deserialize)]
 pub struct LobbyConfig {
+    /// Port for the server.
     #[serde(default = "LobbyConfig::default_port")]
     pub port: u16,
 
+    /// Address to listen for new connections on.
     #[serde(default = "default_listen_address")]
     pub listen_address: String,
 
+    /// Public-facing domain of the server.
     #[serde(default = "LobbyConfig::default_server_name")]
     pub server_name: String,
 }
@@ -211,9 +221,11 @@ impl LoginConfig {
 /// Configuration for the patch server.
 #[derive(Serialize, Deserialize)]
 pub struct PatchConfig {
+    /// Port for the server.
     #[serde(default = "PatchConfig::default_port")]
     pub port: u16,
 
+    /// Address to listen for new connections on.
     #[serde(default = "default_listen_address")]
     pub listen_address: String,
 
@@ -227,9 +239,11 @@ pub struct PatchConfig {
     #[serde(default = "PatchConfig::default_patches_location")]
     pub patches_location: String,
 
+    /// Public-facing domain of the server.
     #[serde(default = "PatchConfig::default_server_name")]
     pub server_name: String,
 
+    /// Determines which platform URLs are served.
     #[serde(default = "PatchConfig::default_supported_platforms")]
     pub supported_platforms: Vec<String>,
 }
@@ -279,9 +293,11 @@ impl PatchConfig {
 /// Configuration for the web server.
 #[derive(Serialize, Deserialize)]
 pub struct WebConfig {
+    /// Port for the server.
     #[serde(default = "WebConfig::default_port")]
     pub port: u16,
 
+    /// Address to listen for new connections on.
     #[serde(default = "default_listen_address")]
     pub listen_address: String,
 
@@ -321,19 +337,23 @@ impl WebConfig {
 /// Configuration for the world server.
 #[derive(Serialize, Deserialize)]
 pub struct WorldConfig {
+    /// Port for the server.
     #[serde(default = "WorldConfig::default_port")]
     pub port: u16,
 
+    /// Port for the healthcheck endpoint.
     #[serde(default = "WorldConfig::default_healthcheck_port")]
     pub healthcheck_port: u16,
 
+    /// Address to listen for new connections on.
     #[serde(default = "default_listen_address")]
     pub listen_address: String,
 
+    /// Public-facing domain of the server.
     #[serde(default = "WorldConfig::default_server_name")]
     pub server_name: String,
 
-    /// See the World Excel sheet.
+    /// What the World server is called. See the World Excel sheet.
     #[serde(default = "WorldConfig::default_world_id")]
     pub world_id: u16,
 
@@ -361,7 +381,7 @@ pub struct WorldConfig {
     #[serde(default = "WorldConfig::default_accept_new_characters")]
     pub accept_new_characters: bool,
 
-    /// Whether the World has the EXP bonus bonus.
+    /// Whether the World has the EXP bonus.
     #[serde(default = "WorldConfig::default_exp_bonus")]
     pub exp_bonus: bool,
 
@@ -645,7 +665,7 @@ pub struct Config {
 
 pub fn get_config() -> Config {
     if let Ok(data) = std::fs::read_to_string("config.yaml") {
-        serde_yaml_ng::from_str(&data).expect("Failed to parse")
+        serde_yaml_ng::from_str(&data).expect("Failed to parse config.yaml")
     } else {
         Config::default()
     }

@@ -33,7 +33,8 @@ use kawari::{
         CharacterMode, DistanceRange, DropIn, DropInLayer, DropInObjectData, ENTRANCE_CIRCLE_IDS,
         EOBJ_EXIT, EOBJ_HOUSING_ENTRANCE, EOBJ_SHORTCUT, EOBJ_SHORTCUT_EXPLORER_MODE, EventState,
         GimmickAccessorType, GimmickRectTriggerType, HandlerType, ObjectId, Position,
-        TerritoryIntendedUse, WARP_DELAY, WarpType, euler_to_direction, internal_housing_row,
+        TerritoryIntendedUse, WARP_DELAY, WarpType, cylinder_test, euler_to_direction,
+        internal_housing_row,
     },
     config::get_config,
     ipc::zone::{
@@ -1045,7 +1046,7 @@ impl Zone {
                     let radius = map_range.scale[0]; // TODO: support individual radii (if that's even a thing, assert please)
                     let radius_sq = f32::powi(radius, 2);
 
-                    if Self::cylinder_test(pt1, pt2, length_sq, radius_sq, position) != -1.0 {
+                    if cylinder_test(pt1, pt2, length_sq, radius_sq, position) != -1.0 {
                         overlapping.push(map_range);
                     }
                 }
@@ -1054,32 +1055,6 @@ impl Zone {
         }
 
         overlapping
-    }
-
-    // From https://www.flipcode.com/archives/Fast_Point-In-Cylinder_Test.shtml
-    fn cylinder_test(
-        pt1: Vec3A,
-        pt2: Vec3A,
-        length_sq: f32,
-        radius_sq: f32,
-        test_pt: Vec3A,
-    ) -> f32 {
-        let dx = pt2.x - pt1.x;
-        let dy = pt2.y - pt1.y;
-        let dz = pt2.z - pt1.z;
-
-        let pdx = test_pt.x - pt1.x;
-        let pdy = test_pt.y - pt1.y;
-        let pdz = test_pt.z - pt1.z;
-
-        let dot = pdx * dx + pdy * dy + pdz * dz;
-        if dot < 0.0 || dot > length_sq {
-            -1.0
-        } else {
-            let dsq = (pdx * pdx + pdy * pdy + pdz * pdz) - dot * dot / length_sq;
-
-            if dsq > radius_sq { -1.0 } else { dsq }
-        }
     }
 }
 

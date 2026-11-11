@@ -21,7 +21,7 @@ members = [
 resolver = "3"
 
 [workspace.package]
-version = "7.57.1"
+version = "7.58.0"
 edition = "2024"
 
 [workspace.lints.clippy]
@@ -57,22 +57,22 @@ axum = { version = "0.8", features = ["json", "tokio", "http1", "form", "query",
 axum-extra = { version = "0.12", features = ["cookie"], default-features = false }
 
 # Async runtime
-tokio = { version = "1.53", features = ["macros", "rt", "rt-multi-thread", "io-util", "process", "net"], default-features = false }
+tokio = { version = "1.54", features = ["macros", "rt", "rt-multi-thread", "io-util", "process", "net"], default-features = false }
 
 # Used for all kinds of RNG
 fastrand = { version = "2.5", features = ["std", "std"], default-features = false }
 
 # HTML templates used in the web servers
-minijinja = { version = "3.0", features = ["serde", "multi_template"], default-features = false }
+minijinja = { version = "3.1", features = ["serde", "multi_template"], default-features = false }
 
 # For server-side scripting
 mlua = { version = "0.12", features = ["lua54", "vendored", "send", "async", "userdata-wrappers", "serde"], default-features = false }
 
 # For character backup decompression
-zip = { version = "9.0", features = ["deflate", "lzma", "bzip2"], default-features = false }
+zip = { version = "9.5", features = ["deflate", "lzma", "bzip2"], default-features = false }
 
 # For inter-server HTTP communication
-ureq = { version = "3.4", default-features = false }
+ureq = { version = "3.5", default-features = false }
 
 # For serving static files on our websites
 tower-http = { version = "0.7", features = ["fs", "cors"], default-features = false }
@@ -98,7 +98,7 @@ strum_macros = { version = "0.28", default-features = false }
 binrw = { version = "0.15", features = ["std"], default-features = false }
 
 # Reading Excel sheet data
-icarus = { git = "https://github.com/redstrate/Icarus", branch = "ver/2026.09.01.0000.0000", features = ["Warp", "Tribe", "ClassJob", "TerritoryType", "Race", "Aetheryte", "EquipSlotCategory", "Action", "WeatherRate", "PlaceName", "GilShopItem", "InstanceContent", "ContentFinderCondition", "ContentMemberType", "Stain", "CharaMakeType", "CharaMakeCustomize", "EquipRaceCategory", "ItemSortCategory", "BNpcBase", "Mount", "AetherCurrentCompFlgSet", "WarpLogic", "Item", "AetherCurrentCompFlgSet", "CustomTalk", "Opening", "ItemAction", "PreHandler", "SwitchTalkVariation", "HalloweenNpcSelect", "Quest", "TopicSelect", "ParamGrow", "FateShop", "EObj", "GimmickRect", "SpecialShop", "BaseParam", "ContentDirectorManagedSG", "FittingShopCategoryItem", "RecastNavimesh", "AetheryteSystemDefine", "GatheringPoint", "GatheringPointBase", "GatheringPointBonus", "Cabinet", "BuddyEquip", "ItemRepairPrice", "ItemRepairResource", "Materia", "GatheringPointTransient", "GatheringRarePopTimeTable", "BNpcCustomize", "Recipe", "RecipeLevelTable", "GathererCrafterLvAdjustTable", "GatheringExp", "CraftAction", "GatheringItem", "OnlineStatus", "ItemLevel", "HousingAethernet", "Emote", "Battalion", "NpcYell", "HousingLandSet", "NpcEquip", "HousingFurniture", "ENpcBase", "IKDRoute", "GatheringItemLevelConvertTable", "PublicContent", "Fate", "Adventure", "AetherCurrent", "DawnContent", "FateProgressUI", "GoldSaucerContent", "GimmickAccessor", "Trait", "QuestBattle", "EventAction", "Level", "Omen", "Map", "GFATE", "GeneralAction", "Achievement", "Glasses", "ItemSearchCategory", "Status", "TelepoRelay", "TerritoryTypeTelepo", "EventItem", "ModelChara", "ModelSkeleton", "MonsterNote", "MonsterNoteTarget", "GCShop", "GCScripShopItem", "GrandCompanyRank", "WarpCondition", "GoldSaucerArcadeMachine", "GFateRideShooting", "GFateClimbing2", "RideShootingTargetType", "ChocoboTaxi", "Title"], default-features = false }
+icarus = { git = "https://github.com/redstrate/icarus", branch = "ver/2026.09.01.0000.0000", features = ["Warp", "Tribe", "ClassJob", "TerritoryType", "Race", "Aetheryte", "EquipSlotCategory", "Action", "WeatherRate", "PlaceName", "GilShopItem", "InstanceContent", "ContentFinderCondition", "ContentMemberType", "Stain", "CharaMakeType", "CharaMakeCustomize", "EquipRaceCategory", "ItemSortCategory", "BNpcBase", "Mount", "AetherCurrentCompFlgSet", "WarpLogic", "Item", "AetherCurrentCompFlgSet", "CustomTalk", "Opening", "ItemAction", "PreHandler", "SwitchTalkVariation", "HalloweenNpcSelect", "Quest", "TopicSelect", "ParamGrow", "FateShop", "EObj", "GimmickRect", "SpecialShop", "BaseParam", "ContentDirectorManagedSG", "FittingShopCategoryItem", "RecastNavimesh", "AetheryteSystemDefine", "GatheringPoint", "GatheringPointBase", "GatheringPointBonus", "Cabinet", "BuddyEquip", "ItemRepairPrice", "ItemRepairResource", "Materia", "GatheringPointTransient", "GatheringRarePopTimeTable", "BNpcCustomize", "Recipe", "RecipeLevelTable", "GathererCrafterLvAdjustTable", "GatheringExp", "CraftAction", "GatheringItem", "OnlineStatus", "ItemLevel", "HousingAethernet", "Emote", "Battalion", "NpcYell", "HousingLandSet", "NpcEquip", "HousingFurniture", "ENpcBase", "IKDRoute", "GatheringItemLevelConvertTable", "PublicContent", "Fate", "Adventure", "AetherCurrent", "DawnContent", "FateProgressUI", "GoldSaucerContent", "GimmickAccessor", "Trait", "QuestBattle", "EventAction", "Level", "Omen", "Map", "GFATE", "GeneralAction", "Achievement", "Glasses", "ItemSearchCategory", "Status", "TelepoRelay", "TerritoryTypeTelepo", "EventItem", "ModelChara", "ModelSkeleton", "MonsterNote", "MonsterNoteTarget", "GCShop", "GCScripShopItem", "GrandCompanyRank", "WarpCondition", "GoldSaucerArcadeMachine", "GFateRideShooting", "GFateClimbing2", "RideShootingTargetType", "ChocoboTaxi", "Title"], default-features = false }
 
 # Used in encryption of lobby packets
 md5 = { version = "0.8", features = ["std"], default-features = false }

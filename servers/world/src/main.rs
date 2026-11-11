@@ -11,6 +11,7 @@ use kawari::common::{
     PlayerStateFlags3, Position, QuestSpecialFlags, TAB_SHARED_FATE_COUNT, TerritoryIntendedUse,
     WarpType, calculate_max_level, in_housing_area,
 };
+
 use kawari::config::get_config;
 use kawari_world::inventory::{Item, MAX_LARGE_STORAGE};
 use physis::equipment::EquipSlot;
@@ -86,6 +87,7 @@ use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 
 use kawari::common::INVENTORY_ACTION_ACK_GENERAL;
+use kawari::packet::PredefinedOpcode;
 
 fn spawn_main_loop(
     game_data: Arc<Mutex<GameData>>,
@@ -4070,6 +4072,11 @@ async fn process_packet(
                                     *recipient_content_id,
                                     *attached_items,
                                     message.clone(),
+                                    // The mail action is the game's own opcode for this packet (remapped after an update.)
+                                    kawari::packet::remap::game_opcode(
+                                        "ClientZoneIpcType",
+                                        data.header.op_code.get_opcode(),
+                                    ) as u32,
                                 )
                                 .await;
                         }
@@ -4086,7 +4093,15 @@ async fn process_packet(
                             ..
                         } => {
                             connection
-                                .delete_letter(*sender_content_id, *timestamp)
+                                .delete_letter(
+                                    *sender_content_id,
+                                    *timestamp,
+                                    // The mail action is the game's own opcode for this packet (remapped after an update.)
+                                    kawari::packet::remap::game_opcode(
+                                        "ClientZoneIpcType",
+                                        data.header.op_code.get_opcode(),
+                                    ) as u32,
+                                )
                                 .await;
                         }
                         ClientZoneIpcData::RewardDeliveryRequest { .. } => {
@@ -4098,7 +4113,15 @@ async fn process_packet(
                             ..
                         } => {
                             connection
-                                .take_attachments_from_letter(*sender_content_id, *timestamp)
+                                .take_attachments_from_letter(
+                                    *sender_content_id,
+                                    *timestamp,
+                                    // The mail action is the game's own opcode for this packet (remapped after an update.)
+                                    kawari::packet::remap::game_opcode(
+                                        "ClientZoneIpcType",
+                                        data.header.op_code.get_opcode(),
+                                    ) as u32,
+                                )
                                 .await;
                         }
                         ClientZoneIpcData::RemoveFriend {
@@ -5550,9 +5573,9 @@ async fn process_server_msg(
             FromServer::SetCharacterMode(mode, arg) => {
                 connection.set_character_mode(mode, arg, false).await;
             }
-            FromServer::ZoneDiceRoll(from_actor_id, roll_data) => {
+            FromServer::ZoneDiceRoll(from_actor_id, from_actor_position, roll_data) => {
                 connection
-                    .dice_roll_received(from_actor_id, roll_data)
+                    .dice_roll_received(from_actor_id, from_actor_position, roll_data)
                     .await;
             }
             _ => {

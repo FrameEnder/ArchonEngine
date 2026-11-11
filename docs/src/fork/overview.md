@@ -33,7 +33,8 @@ How they fit together:
 | `test-pending` | Day-to-day work since 2026-11-03 (branched from `master` at `ba373bc`): quests, engine fixes, tools. Bob builds and tests from here first. |
 | `Latest-Quest` | Day-to-day work until 2026-11-03; left at `ba373bc` (the same as `master` then). |
 | `Deep-Dungeon` | Palace of the Dead work, branched from `master` at `d28f9cf`. Nothing on it yet beyond master. |
-| `upstream-sync`, `opcode-scan`, `white-mage-kit`, `fix/instance-cleanup` | Finished feature branches, already merged. |
+| `upstream-sync` | Upstream's updates merged into `master` (since 2026-11-11: upstream through `16ecb8c`, patch 7.58, with the fork's 7.58 opcodes); merged to `master` with Bob's OK. |
+| `opcode-scan`, `white-mage-kit`, `fix/instance-cleanup` | Finished feature branches, already merged. |
 | `diag/quest-layout`, `diag/zone-hang`, `quest/close-to-home`, `set_quest_sequence`, `Event-Test` | Old investigation branches from before the quest rollback (`3fb25fe`). Kept for reference only. |
 
 Remotes in the working copy: `origin` (the fork), `upstream` (redstrate/Kawari on GitHub, frozen since the move to

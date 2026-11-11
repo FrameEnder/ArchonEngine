@@ -59,6 +59,10 @@ const CLEAR_MARGIN: f32 = 0.05;
 pub struct Fingerprints {
     /// The game version they were recorded on.
     pub game_version: String,
+    /// How they were made: since `OWN_OPCODE_FORMAT`, a number in a lone opcode's code equal to that opcode is
+    /// recorded as "its opcode" (0 for files from before, which are compared without it.)
+    #[serde(default)]
+    pub format: u32,
     /// The zone dispatcher's start.
     pub dispatcher: Prints,
     pub dispatcher_at: usize,
@@ -215,6 +219,15 @@ pub fn known_from_yaml(
                 if fork && entry.get("found_on").and_then(|v| v.as_str()) != Some(game_version) {
                     continue;
                 }
+                // A fork correction of upstream's opcode (`corrects`, the number upstream still has; core/build.rs.)
+                if fork && let Some(wrong) = entry.get("corrects").and_then(|v| v.as_u64()) {
+                    if let Some(upstream) = known.iter_mut().find(|k: &&mut KnownOpcode| {
+                        k.kind == kind && k.name == name && k.opcode as u64 == wrong
+                    }) {
+                        upstream.opcode = opcode as u16;
+                    }
+                    continue;
+                }
                 // A name in both is upstream's.
                 if known
                     .iter()
@@ -295,6 +308,13 @@ fn hash(parts: &[u64]) -> u32 {
 }
 
 const MASKED: u64 = u64::MAX;
+/// A number equal to the packet's own opcode (`token`.)
+const OWN_OPCODE: u64 = u64::MAX - 2;
+/// Fingerprints made with `OWN_OPCODE` (`Fingerprints::format`.) Before it, small handlers that pass the client's packet
+/// code their own opcode and size (`mov r8d, opcode`, e.g. EnmityList's and HaterList's) were alike but never the same
+/// from one version to the next, and the order put 24 server packets one function off on 7.58, where a new packet's
+/// handler had been put in among them (2026-11-11.)
+pub const OWN_OPCODE_FORMAT: u32 = 2;
 
 fn is_immediate(kind: OpKind) -> bool {
     matches!(
@@ -311,9 +331,13 @@ fn is_immediate(kind: OpKind) -> bool {
     )
 }
 
-/// An instruction's shape: what it does, its registers and small numbers, without addresses.
-fn token(instruction: &Instruction, mask_from: u64) -> u32 {
+/// An instruction's shape: what it does, its registers and small numbers, without addresses; a number equal to `own`
+/// (the packet's opcode, when the code is that one packet's) as `OWN_OPCODE`.
+fn token(instruction: &Instruction, mask_from: u64, own: Option<u16>) -> u32 {
     let small = |value: u64| {
+        if own.is_some_and(|own| value == own as u64) {
+            return OWN_OPCODE;
+        }
         let magnitude = (value as i64).unsigned_abs();
         if magnitude < mask_from { value } else { MASKED }
     };
@@ -351,8 +375,14 @@ fn token(instruction: &Instruction, mask_from: u64) -> u32 {
 }
 
 /// The code from `rva` up to the first return, jump or int3 (at most `length` instructions); calls one level down
-/// count as their callee's fingerprint, `depth` levels down.
-fn fingerprint_code(code: &Code, rva: usize, depth: usize, length: usize) -> Prints {
+/// count as their callee's fingerprint, `depth` levels down. `own`: the opcode, when this is one packet's code.
+fn fingerprint_code(
+    code: &Code,
+    rva: usize,
+    depth: usize,
+    length: usize,
+    own: Option<u16>,
+) -> Prints {
     let mut prints = Vec::new();
     let mut at = rva;
     while prints.len() < length {
@@ -368,12 +398,13 @@ fn fingerprint_code(code: &Code, rva: usize, depth: usize, length: usize) -> Pri
                 instruction.near_branch64() as usize,
                 depth - 1,
                 CALLEE_LENGTH,
+                own,
             );
             let mut parts = vec![Mnemonic::Call as u64];
             parts.extend(callee.0.iter().map(|hash| *hash as u64));
             prints.push(hash(&parts));
         } else {
-            prints.push(token(&instruction, CASE_MASK_FROM));
+            prints.push(token(&instruction, CASE_MASK_FROM, own));
         }
         if matches!(
             instruction.mnemonic(),
@@ -400,7 +431,7 @@ fn fingerprint_function(code: &Code, start: usize, site: usize) -> Prints {
         prints.push(if at == site {
             0x0C0D_E000
         } else {
-            token(&instruction, FUNCTION_MASK_FROM)
+            token(&instruction, FUNCTION_MASK_FROM, None)
         });
         at = instruction.next_ip() as usize;
     }
@@ -1376,10 +1407,22 @@ pub fn fingerprint(
             kind: k.kind.clone(),
             name: k.name.clone(),
             opcode: k.opcode,
-            case: fingerprint_code(&code, case, 1, CASE_LENGTH),
+            case: fingerprint_code(
+                &code,
+                case,
+                1,
+                CASE_LENGTH,
+                (members.len() == 1).then_some(k.opcode),
+            ),
             case_group: members.len(),
             handler_at: handler(&code, case, &range),
-            end: fingerprint_code(&code, end, 1, END_LENGTH),
+            end: fingerprint_code(
+                &code,
+                end,
+                1,
+                END_LENGTH,
+                (end_group == 1).then_some(k.opcode),
+            ),
             end_group,
             sub: None,
         });
@@ -1409,7 +1452,7 @@ pub fn fingerprint(
         {
             if let Some(Some(end)) = ends.get(&print.opcode) {
                 print.sub = Some(SubPrint {
-                    end: fingerprint_code(&code, *end, 1, END_LENGTH),
+                    end: fingerprint_code(&code, *end, 1, END_LENGTH, None),
                     group: ends.values().filter(|other| **other == Some(*end)).count(),
                 });
             }
@@ -1442,7 +1485,8 @@ pub fn fingerprint(
 
     Ok(Fingerprints {
         game_version: game_version.to_string(),
-        dispatcher: fingerprint_code(&code, dispatcher, 0, CASE_LENGTH),
+        format: OWN_OPCODE_FORMAT,
+        dispatcher: fingerprint_code(&code, dispatcher, 0, CASE_LENGTH, None),
         dispatcher_at: dispatcher,
         server,
         client,
@@ -1597,7 +1641,7 @@ fn match_server(code: &Code, prints: &Fingerprints, found: &mut BTreeMap<(String
                 d,
                 similarity(
                     &prints.dispatcher.0,
-                    &fingerprint_code(code, d, 0, CASE_LENGTH).0,
+                    &fingerprint_code(code, d, 0, CASE_LENGTH, None).0,
                 ),
             )
         })
@@ -1612,9 +1656,20 @@ fn match_server(code: &Code, prints: &Fingerprints, found: &mut BTreeMap<(String
         return;
     };
     let case_groups = groups(&paths.case);
+    // A lone opcode's number in its own code counts as "its opcode", as recorded (`OWN_OPCODE_FORMAT`.)
+    let own_opcode = prints.format >= OWN_OPCODE_FORMAT;
+    let lone = |members: &[u16]| match members {
+        [only] if own_opcode => Some(*only),
+        _ => None,
+    };
     let case_prints: BTreeMap<usize, Prints> = case_groups
-        .keys()
-        .map(|&case| (case, fingerprint_code(code, case, 1, CASE_LENGTH)))
+        .iter()
+        .map(|(&case, members)| {
+            (
+                case,
+                fingerprint_code(code, case, 1, CASE_LENGTH, lone(members)),
+            )
+        })
         .collect();
     let range = case_range(&case_groups, dispatcher);
     let handlers: BTreeMap<usize, usize> = case_groups
@@ -1739,8 +1794,13 @@ fn match_server(code: &Code, prints: &Fingerprints, found: &mut BTreeMap<(String
             new_ends.entry(paths.end[member]).or_default().push(*member);
         }
         let end_prints: BTreeMap<usize, Prints> = new_ends
-            .keys()
-            .map(|&end| (end, fingerprint_code(code, end, 1, END_LENGTH)))
+            .iter()
+            .map(|(&end, members)| {
+                (
+                    end,
+                    fingerprint_code(code, end, 1, END_LENGTH, lone(members)),
+                )
+            })
             .collect();
         let mut used = HashSet::new();
         let mut ends_of: HashMap<&Prints, usize> = HashMap::new();
@@ -1793,7 +1853,7 @@ fn match_server(code: &Code, prints: &Fingerprints, found: &mut BTreeMap<(String
                     }
                     let sub_prints: BTreeMap<usize, Prints> = sub_groups
                         .keys()
-                        .map(|&end| (end, fingerprint_code(code, end, 1, END_LENGTH)))
+                        .map(|&end| (end, fingerprint_code(code, end, 1, END_LENGTH, None)))
                         .collect();
                     let mut sub_used = HashSet::new();
                     for print in &olds_here {
@@ -1985,6 +2045,22 @@ fn winner(votes: &BTreeMap<u16, usize>) -> Option<u16> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A fork correction of upstream's opcode (`corrects` in fork_opcodes.yml) replaces it while upstream still has the
+    /// number it corrects, and is ignored once upstream changes it (7.58's EditSearchInfo: upstream kept 424.)
+    #[test]
+    fn a_correction_replaces_upstreams_wrong_opcode() {
+        let upstream = "ClientZoneIpcType:\n- name: EditSearchInfo\n  opcode: 424\n  size: 216\n";
+        let fork = "ClientZoneIpcType:\n- name: EditSearchInfo\n  corrects: 424\n  opcode: 645\n  size: 216\n  found_on: v2\n";
+        let opcode = |upstream: &str, version: &str| {
+            known_from_yaml(upstream, fork, version).unwrap()[0].opcode
+        };
+        assert_eq!(opcode(upstream, "v2"), 645);
+        // Another version: the correction isn't for it.
+        assert_eq!(opcode(upstream, "v3"), 424);
+        // Upstream fixed it (or moved on): theirs.
+        assert_eq!(opcode(&upstream.replace("424", "700"), "v2"), 700);
+    }
 
     /// The shipped fingerprints (`resources/data/opcode_fingerprints.json`) are what finds every opcode after the next
     /// game update, so on the version they were recorded on they must have every fork opcode known there, at the same

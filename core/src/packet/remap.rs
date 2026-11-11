@@ -171,6 +171,13 @@ pub(crate) fn outgoing(kind: &str, opcode: u16) -> u16 {
         .unwrap_or(opcode)
 }
 
+/// The opcode the game uses for the generated enum's `opcode` of the `kind` list: itself, unless the list was remapped
+/// at startup. For numbers the game derives from an opcode: the item operations (ItemOperation's + 1) and the mail
+/// actions (the letter packets' own opcodes; upstream, 2026-10-31.)
+pub fn game_opcode(kind: &str, opcode: u16) -> u16 {
+    outgoing(kind, opcode)
+}
+
 /// Rewrites the opcode of an IPC segment (starting at its 0x14 magic) with `map`.
 pub(crate) fn rewrite_opcode(ipc: &mut [u8], kind: &str, map: fn(&str, u16) -> u16) {
     if !ANY.load(Ordering::Acquire) || ipc.len() < OPCODE_OFFSET_IN_IPC + 2 {

@@ -26,8 +26,11 @@ upstream's [Opcodes](../opcodes.md) page.
 * In game, `!forkopcodes` lists them; when an unknown client packet has an outstanding entry's size, the log says which
   it probably is.
 
-Since upstream's 7.57h1 (2026.10.16, merged on the `upstream-7.57h1` branch, in `master` since 2026-10-21) every entry is found on 2026.10.16 (see
-[Finding them on 7.57h1](#finding-them-on-757h1) below). 42 of the 51 have finders (2026-10-30; 38 of 47 on 2026-10-29, 35 of 39 on 2026-10-26, 14 before 2026-10-25), so the startup scan checks them on each start and re-finds them
+Since upstream's 7.58 (2026.11.03, merged on the `upstream-sync` branch on 2026-11-11) every entry is found on
+2026.11.03 (see [Finding them on 7.58](#finding-them-on-758) below); 7.57h1's are under "Earlier" in the table, and
+saved for reading Bob's 7.57h1 captures (`questkit chronofoil --save-opcodes`, `data/chronofoil_opcodes.json`). Before
+that, on 7.57h1 (2026.10.16, merged on `upstream-7.57h1`, in `master` since 2026-10-21), every entry was found on
+2026.10.16 ([Finding them on 7.57h1](#finding-them-on-757h1)). 42 of the 51 have finders (2026-10-30; 38 of 47 on 2026-10-29, 35 of 39 on 2026-10-26, 14 before 2026-10-25), so the startup scan checks them on each start and re-finds them
 after the next patch, and every one is in the shipped fingerprints. The four without can't have one: their code is
 the same as other packets' (RequestPlayerRetainerInfo, a request without arguments; GatheringPointPhase; the two
 ItemMarketBoards, which share a handler); after a patch only the fingerprints find them (the ItemMarketBoards as a
@@ -37,67 +40,97 @@ writes one for each on 2026.10.16. The chocobo porters' three (2026-10-30) have 
 ChocoboTaxiStart's handler reads three u32s (0, 4, 8), so its last 8 bytes aren't all padding, though retail's third
 u32 was 0 in all nine rides.
 
-## Current entries (game 2026.10.16, patch 7.57h1)
+## Current entries (game 2026.11.03, patch 7.58)
 
 | Name | Direction | Opcode | Earlier | Size | What it is |
 |---|---|---|---|---|---|
-| EventYieldText16 | client → server | 945 | | 16 | An event's text answer of up to 9 bytes: the handler, scene, yield ID, then the text from byte 7 (a chocobo's name; Bob's Chronofoil capture 0845b9a2). See [Grand Companies](grand-company.md#my-little-chocobo). |
-| EventYieldText24 | client → server | 137 | | 24 | The same for 10 to 17 bytes (capture bab8c255). |
-| CompanionName | server → client | 157 | | 40 | The chocobo's name as the server took it (0, then the name), right before the text answer's EventResume (both captures). |
-| EventResume16 | server → client | 529 | | 72 | Resumes a scene with 9 to 16 parameters: Out on a Limb's and The Finer Miner's swings (Bob's Chronofoil capture deaf7e28). See [The Gold Saucer](gold-saucer.md#arcade-machines). |
-| LotteryDailyBoard | server → client | 326 | | 136 | A Mini Cactpot ticket just bought: the day, the cell showing, the payouts (deaf7e28). See [The Gold Saucer](gold-saucer.md#the-mini-cactpot). |
-| RideShootingScore | client → server | 796 | | 16 | Air Force One's score as the ride ends: 6, the score, 0-5, the silvers, bronzes and ruby bombs hit; sent again and again until leaving (Bob's Chronofoil captures deaf7e28 and 2c98f9e8). Finder. See [The Gold Saucer](gold-saucer.md#air-force-one). |
-| RideShootingEnd | server → client | 318 | | 40 | Sent as Air Force One ends, before its result: the same 40 bytes both times, meaning unknown (the same captures). Finder. |
-| ForcedMoveTowards | server → client | 132 | | 8 | Walks the player towards an actor whatever they do (a Seduced status): the speed (a byte, the client keeps it as a float), then the actor; until ForcedMoveEnd. Retail's `[4, the boss]` to each player Lady Amandine's Beguiling Mist hit (Bob's Chronofoil captures of Haukke Manor, 2026-11-02 and -03). Its handler (0xB4E260 on 10.16) sets the client's movement controller (0x631B80). Finder. See [Combat](combat.md). |
-| ForcedMoveEnd | server → client | 166 | | 8 | Ends ForcedMoveTowards (8 bytes of 0, 3.0 s after it on retail); its handler (0xB4E320) resets the movement controller and gives the player back their controls. Finder. |
-| EventReturnHandler16 | client → server | 555 | 856 (09.15), 200 (10.06) | 72 | A scene finished with up to 16 results, e.g. a three-item NPC trade returns 12 (Surveying the Damage). Finder. |
-| EventNotice2 | server → client | 834 | 386 (10.06) | 16 | A quest/event notice with 0–2 arguments: the progress pop-up. Finder (confirms only, see below); 10.16's from a retail capture. |
-| EventNotice4 | server → client | 467 | 210 (10.06) | 24 | The same with 3–4 arguments. Finder (confirms only); 10.16's from a retail capture. |
-| SetAdventurerPlatePortrait | client → server | 431 | 107 (10.06) | 56 | The client sets its adventurer plate's portrait. Finder: the sender writing the opcode and the 72-byte size. |
-| UpdateAdventurerPlate | client → server | 350 | 795 (10.06) | 200 | The client saves its adventurer plate (CharaCardData). Finder: the sender writing the opcode, then the 216-byte size. See [Adventurer Plate](character-windows.md#adventurer-plate). |
-| MarketBoardOpened | client → server | 319 | 156 (09.15), 683 (10.06) | 8 | The marketboard window opened; answered with an empty search result. Seen in Bob's 2026-10-20 bundle as the window opened. Finder. |
-| MarketBoardPurchaseHandler | client → server | 245 | 765 (09.15), 258 (10.06) | 40 | Buying a marketboard listing. Seen in Bob's 2026-10-20 bundle (his purchases); FFXIVOpcodes' 7.57h agrees. Finder. See [Marketboard](marketboard.md). |
-| MarketBoardPurchase | server → client | 353 | 665 (09.15), 610 (10.06) | 16 | A purchase went through: item and quantity. Finder (written by `suggest-finders`; it reads 610 on 10.06). |
-| RequestPlayerRetainerInfo | client → server | 348 | 580 (09.15), 818 (10.06) | 8 | Asks for the character's retainers as a retainer's sale list opens. See [Retainers](retainers.md). |
-| RequestRetainerSaleHistory | client → server | 372 | 243 (09.15), 274 (10.06) | 8 | Asks for a retainer's sale history (their ID). Finder (written by `suggest-finders`; it reads 274 on 10.06). |
-| SetRetainerAppearance | client → server | 463 | 670 (10.06) | 32 | The new retainer's voice and CustomizeData from the vocate's editor. Finder. |
-| RetainerStateNotice | server → client | 987 | 897 (09.15), 144 (10.06) | 8 | Before every RetainerState and after a retainer's containers. Finder (written by `suggest-finders`; it reads 144 on 10.06). |
-| RetainerState | server → client | 735 | 908 (09.15), 249 (10.06) | 56 | A retainer called (4), sent away (3) or hired (1). Finder (written by `suggest-finders`; it reads 249 on 10.06). |
-| PlayerRetainerInfo | server → client | 715 | 599 (09.15), 712 (10.06) | 480 | The character's retainers for the marketboard. Finder (written by `suggest-finders`; it reads 712 on 10.06). |
-| ItemMarketBoardInfo | server → client | 471 | 313 (09.15), 387 (10.06) | 32 | The asking price of an item a retainer has on the market. |
-| ItemMarketBoardSummary | server → client | 290 | 442 (09.15), 303 (10.06) | 8 | How many items a retainer has on the market. |
-| RetainerSaleHistory | server → client | 551 | 161 (09.15), 832 (10.06) | 1048 | A retainer's sale history. Finder (written by `suggest-finders`; it reads 832 on 10.06). |
-| LootMessage | server → client | 154 | 351 (09.15), 190 (10.06) | 32 | Loot: kind 3 an item obtained directly (an enemy's drop), 9 gil, 0/1 need/greed rolls and winners. See [Combat](combat.md#defeating-enemies). Finder (written by `suggest-finders`; it reads 190 on 10.06). |
-| LootRoll | client → server | 766 | | 16 | Need, Greed or Pass on a coffer's item: the coffer, the slot, 1/2/5. From Bob's Sastasha capture (2026-10-22). See [Coffers and Loot](loot.md). Finder (written by `suggest-finders`; it reads 231 on 10.06). |
-| LootList | server → client | 272 | | 88 | An opened coffer's items and the time to roll. Same capture. Finder (written by `suggest-finders`; it reads 271 on 10.06). |
-| LootItem | server → client | 975 | | 56 | One of a coffer's items: slot, unique, time left. Same capture. Finder (written by `suggest-finders`; it reads 334 on 10.06). |
-| LootRollResult | server → client | 462 | | 16 | The answer to LootRoll: rolled (and the roll), passed or refused. Same capture. Finder (written by `suggest-finders`; it reads 285 on 10.06). |
-| DutySupportContent | server → client | 701 | | 8 | The answer to ClientTrigger 2650 (a duty's entrance asking for its Duty Support window): the DawnContent, then 0. From Bob's capture of 2026-10-23 (Sastasha's entrance: 200, 0). See [Party NPCs](party-npcs.md#registering). Finder (written by `suggest-finders`; it reads 976 on 10.06). |
-| GatheringPointPhases | server → client | 309 | 467 (06.18), 250 (09.01), 314 (09.15), 533 (10.06) | 160 | The gathering points' phase table, once at login: which position of each point the client shows. From Bob's captures (every login) and its handler in the 10.16 client. Finder: its handler. See [Gathering](gathering.md#where-the-points-are). |
-| GatheringPointPhase | server → client | 845 | | 8 | One phase slot changes (slot, phase): a used-up point comes back at another position. From its handler in the 10.16 client and Bob's capture of 2026-10-24 (with ActorControlSelf 109 as a third point is used up). No finder (its handler's code is the same as two others'). See [Gathering](gathering.md#integrity-and-moving-on). |
-| GatheringChainCount | server → client | 618 | | 8 | The gathering chain at a node (u32): after each gather from the second in a row, and 0 as the window closes. From Bob's capture of 2026-10-24. Finder: its handler. See [Gathering](gathering.md#at-the-node). |
-| CraftingActionPreviews | server → client | 347 | | 424 | What each crafting action would do now (21 entries: action, efficiencies, progress, quality, state), before the Synthesis window opens and with every step. Same capture. Finder: its handler. See [Crafting](crafting.md#craftingactionpreviews). |
-| RecordCraftingLog | server → client | 520 | | 8 | A recipe made for the first time: one byte of the completed recipes bitmask (u16 index, u8 new value). From Bob's capture of 2026-10-24 (recipe 3812: `[476, 0x08]`). Finder: its handler (2026-10-26). See [Crafting](crafting.md#the-crafting-log). |
-| GlamourDresser | server → client | 436 | | 2408 | One page of the glamour dresser (page, 400 items, their stains), twice as it opens. From Bob's capture of 2026-10-24 (the Hourglass) and its dispatcher case in the 10.16 client (vtable entry 0x1348). Finder (written by `suggest-finders`; it reads 202 on 10.06). See [Glamour](glamour.md). |
-| GlamourPlates | server → client | 400 | | 1440 | The 20 glamour plates. Same capture (vtable entry 0x1350). Finder (written by `suggest-finders`; it reads 649 on 10.06). |
-| GlamourPlateUpdated | server → client | 621 | | 80 | One plate after it was saved. Same capture (vtable entry 0x1358). Finder (written by `suggest-finders`; it reads 868 on 10.06). |
-| SaveGlamourPlate | client → server | 156 | | 248 | A glamour plate saved at the dresser. Same capture. Finder (written by `suggest-finders`; it reads 716 on 10.06). |
-| EquipGearsetGlamour | client → server | 605 | | 128 | Equipping a gearset: EquipGearset's layout with the linked plate's number (from 1, 0 for none) at byte 60, then 56 bytes; the plain EquipGearset (774) carries the plate at byte 60 too. From Bob's Chronofoil captures of 2026-10-24. Finder (written by `suggest-finders`; it reads 265 on 10.06). See [Glamour](glamour.md#applying-a-plate). |
-| ArmoireContents | server → client | 772 | | 136 | The armoire's bitmask (ClientTrigger 423). Same capture (vtable entry 0xEB8). Finder (written by `suggest-finders`; it reads 681 on 10.06). |
-| ArmoireInfo | server → client | 445 | | 504 | Sent with it (ClientTrigger 427); 1 and zeros, meaning unknown. Same capture (vtable entry 0xEC0). Finder (written by `suggest-finders`; it reads 948 on 10.06). |
-| EventReturnHandler128 | client → server | 866 | | 520 | A scene's return of up to 128 results (the craft's materials list). Same capture. Finder: the size it's sent with. See [Crafting](crafting.md#the-flow). |
-| LootResult | server → client | 807 | | 16 | Who won a coffer's item, with what roll (0xE0000000 when everyone passed). Same capture. Finder (written by `suggest-finders`; it reads 521 on 10.06). |
-| ActionRequestGroundTargeted | client → server | 492 | 891 (09.15), 846 (10.06) | 24 | A ground-targeted action (Asylum...): the action, its type, the sequence, the rotation, where on the ground. Not yet seen on Kawari; the layout is from Bob's captures. Handled as an action on oneself for now. Finder. |
-| Achievements | server → client | 985 | 991 (10.06) | 552 | The completed achievements and the last five, the reply to client trigger 1001. Finder: its handler (HandleAchievementsPacket). See [Achievements](character-windows.md). |
-| StartEmoteEvent | client → server | 401 | | 16 | An emote a quest listens for: who it was used on (an NPC, or the player's own actor in the quest's area), the quest's event, the emote; the server starts the quest's Emote event (every quest emote in Bob's Chronofoil captures; 744's on the player, capture 9df4ff01). See [Quests](quests.md#emotes-on-an-npc). Finder. |
-| ChocoboTaxiStart | server → client | 538 | | 16 | A chocobo porter's ride begins: the ChocoboTaxi row, its Location, 8 bytes of 0 (Bob's Chronofoil captures cc62ad94, 1fac2416, 2528a32d: nine rides). See [Travel](travel.md#chocobo-porters). |
-| ChocoboTaxiCheckpoint | client → server | 534 | | 8 | A point of the porter's route passed: the ChocoboTaxi row, the point's number (the same captures). |
-| ChocoboTaxiArrived | client → server | 518 | | 8 | The route's end: the last point's number, then 0 (the same captures). |
+| EventYieldText16 | client → server | 947 | 945 (10.16) | 16 | An event's text answer of up to 9 bytes: the handler, scene, yield ID, then the text from byte 7 (a chocobo's name; Bob's Chronofoil capture 0845b9a2). See [Grand Companies](grand-company.md#my-little-chocobo). |
+| EventYieldText24 | client → server | 776 | 137 (10.16) | 24 | The same for 10 to 17 bytes (capture bab8c255). |
+| CompanionName | server → client | 768 | 157 (10.16) | 40 | The chocobo's name as the server took it (0, then the name), right before the text answer's EventResume (both captures). |
+| EventResume16 | server → client | 165 | 529 (10.16) | 72 | Resumes a scene with 9 to 16 parameters: Out on a Limb's and The Finer Miner's swings (Bob's Chronofoil capture deaf7e28). See [The Gold Saucer](gold-saucer.md#arcade-machines). |
+| LotteryDailyBoard | server → client | 305 | 326 (10.16) | 136 | A Mini Cactpot ticket just bought: the day, the cell showing, the payouts (deaf7e28). See [The Gold Saucer](gold-saucer.md#the-mini-cactpot). |
+| RideShootingScore | client → server | 310 | 796 (10.16) | 16 | Air Force One's score as the ride ends: 6, the score, 0-5, the silvers, bronzes and ruby bombs hit; sent again and again until leaving (Bob's Chronofoil captures deaf7e28 and 2c98f9e8). Finder. See [The Gold Saucer](gold-saucer.md#air-force-one). |
+| RideShootingEnd | server → client | 138 | 318 (10.16) | 40 | Sent as Air Force One ends, before its result: the same 40 bytes both times, meaning unknown (the same captures). Finder. |
+| ForcedMoveTowards | server → client | 304 | 132 (10.16) | 8 | Walks the player towards an actor whatever they do (a Seduced status): the speed (a byte, the client keeps it as a float), then the actor; until ForcedMoveEnd. Retail's `[4, the boss]` to each player Lady Amandine's Beguiling Mist hit (Bob's Chronofoil captures of Haukke Manor, 2026-11-02 and -03). Its handler (0xB4E260 on 10.16) sets the client's movement controller (0x631B80). Finder. See [Combat](combat.md). |
+| ForcedMoveEnd | server → client | 835 | 166 (10.16) | 8 | Ends ForcedMoveTowards (8 bytes of 0, 3.0 s after it on retail); its handler (0xB4E320) resets the movement controller and gives the player back their controls. Finder. |
+| EventReturnHandler16 | client → server | 256 | 856 (09.15), 200 (10.06), 555 (10.16) | 72 | A scene finished with up to 16 results, e.g. a three-item NPC trade returns 12 (Surveying the Damage). Finder. |
+| EventNotice2 | server → client | 392 | 386 (10.06), 834 (10.16) | 16 | A quest/event notice with 0–2 arguments: the progress pop-up. Finder (confirms only, see below); 10.16's from a retail capture. |
+| EventNotice4 | server → client | 584 | 210 (10.06), 467 (10.16) | 24 | The same with 3–4 arguments. Finder (confirms only); 10.16's from a retail capture. |
+| SetAdventurerPlatePortrait | client → server | 557 | 107 (10.06), 431 (10.16) | 56 | The client sets its adventurer plate's portrait. Finder: the sender writing the opcode and the 72-byte size. |
+| UpdateAdventurerPlate | client → server | 448 | 795 (10.06), 350 (10.16) | 200 | The client saves its adventurer plate (CharaCardData). Finder: the sender writing the opcode, then the 216-byte size. See [Adventurer Plate](character-windows.md#adventurer-plate). |
+| MarketBoardOpened | client → server | 839 | 156 (09.15), 683 (10.06), 319 (10.16) | 8 | The marketboard window opened; answered with an empty search result. Seen in Bob's 2026-10-20 bundle as the window opened. Finder. |
+| MarketBoardPurchaseHandler | client → server | 630 | 765 (09.15), 258 (10.06), 245 (10.16) | 40 | Buying a marketboard listing. Seen in Bob's 2026-10-20 bundle (his purchases); FFXIVOpcodes' 7.57h agrees. Finder. See [Marketboard](marketboard.md). |
+| MarketBoardPurchase | server → client | 263 | 665 (09.15), 610 (10.06), 353 (10.16) | 16 | A purchase went through: item and quantity. Finder (written by `suggest-finders`; it reads 610 on 10.06). |
+| RequestPlayerRetainerInfo | client → server | 650 | 580 (09.15), 818 (10.06), 348 (10.16) | 8 | Asks for the character's retainers as a retainer's sale list opens. See [Retainers](retainers.md). |
+| RequestRetainerSaleHistory | client → server | 594 | 243 (09.15), 274 (10.06), 372 (10.16) | 8 | Asks for a retainer's sale history (their ID). Finder (written by `suggest-finders`; it reads 274 on 10.06). |
+| SetRetainerAppearance | client → server | 652 | 670 (10.06), 463 (10.16) | 32 | The new retainer's voice and CustomizeData from the vocate's editor. Finder. |
+| RetainerStateNotice | server → client | 571 | 897 (09.15), 144 (10.06), 987 (10.16) | 8 | Before every RetainerState and after a retainer's containers. Finder (written by `suggest-finders`; it reads 144 on 10.06). |
+| RetainerState | server → client | 664 | 908 (09.15), 249 (10.06), 735 (10.16) | 56 | A retainer called (4), sent away (3) or hired (1). Finder (written by `suggest-finders`; it reads 249 on 10.06). |
+| PlayerRetainerInfo | server → client | 539 | 599 (09.15), 712 (10.06), 715 (10.16) | 480 | The character's retainers for the marketboard. Finder (written by `suggest-finders`; it reads 712 on 10.06). |
+| ItemMarketBoardInfo | server → client | 762 | 313 (09.15), 387 (10.06), 471 (10.16) | 32 | The asking price of an item a retainer has on the market. |
+| ItemMarketBoardSummary | server → client | 636 | 442 (09.15), 303 (10.06), 290 (10.16) | 8 | How many items a retainer has on the market. |
+| RetainerSaleHistory | server → client | 517 | 161 (09.15), 832 (10.06), 551 (10.16) | 1048 | A retainer's sale history. Finder (written by `suggest-finders`; it reads 832 on 10.06). |
+| LootMessage | server → client | 618 | 351 (09.15), 190 (10.06), 154 (10.16) | 32 | Loot: kind 3 an item obtained directly (an enemy's drop), 9 gil, 0/1 need/greed rolls and winners. See [Combat](combat.md#defeating-enemies). Finder (written by `suggest-finders`; it reads 190 on 10.06). |
+| LootRoll | client → server | 186 | 766 (10.16) | 16 | Need, Greed or Pass on a coffer's item: the coffer, the slot, 1/2/5. From Bob's Sastasha capture (2026-10-22). See [Coffers and Loot](loot.md). Finder (written by `suggest-finders`; it reads 231 on 10.06). |
+| LootList | server → client | 372 | 272 (10.16) | 88 | An opened coffer's items and the time to roll. Same capture. Finder (written by `suggest-finders`; it reads 271 on 10.06). |
+| LootItem | server → client | 298 | 975 (10.16) | 56 | One of a coffer's items: slot, unique, time left. Same capture. Finder (written by `suggest-finders`; it reads 334 on 10.06). |
+| LootRollResult | server → client | 254 | 462 (10.16) | 16 | The answer to LootRoll: rolled (and the roll), passed or refused. Same capture. Finder (written by `suggest-finders`; it reads 285 on 10.06). |
+| DutySupportContent | server → client | 203 | 701 (10.16) | 8 | The answer to ClientTrigger 2650 (a duty's entrance asking for its Duty Support window): the DawnContent, then 0. From Bob's capture of 2026-10-23 (Sastasha's entrance: 200, 0). See [Party NPCs](party-npcs.md#registering). Finder (written by `suggest-finders`; it reads 976 on 10.06). |
+| GatheringPointPhases | server → client | 534 | 467 (06.18), 250 (09.01), 314 (09.15), 533 (10.06), 309 (10.16) | 160 | The gathering points' phase table, once at login: which position of each point the client shows. From Bob's captures (every login) and its handler in the 10.16 client. Finder: its handler. See [Gathering](gathering.md#where-the-points-are). |
+| GatheringPointPhase | server → client | 922 | 845 (10.16) | 8 | One phase slot changes (slot, phase): a used-up point comes back at another position. From its handler in the 10.16 client and Bob's capture of 2026-10-24 (with ActorControlSelf 109 as a third point is used up). No finder (its handler's code is the same as two others'). See [Gathering](gathering.md#integrity-and-moving-on). |
+| GatheringChainCount | server → client | 909 | 618 (10.16) | 8 | The gathering chain at a node (u32): after each gather from the second in a row, and 0 as the window closes. From Bob's capture of 2026-10-24. Finder: its handler. See [Gathering](gathering.md#at-the-node). |
+| CraftingActionPreviews | server → client | 686 | 347 (10.16) | 424 | What each crafting action would do now (21 entries: action, efficiencies, progress, quality, state), before the Synthesis window opens and with every step. Same capture. Finder: its handler. See [Crafting](crafting.md#craftingactionpreviews). |
+| RecordCraftingLog | server → client | 606 | 520 (10.16) | 8 | A recipe made for the first time: one byte of the completed recipes bitmask (u16 index, u8 new value). From Bob's capture of 2026-10-24 (recipe 3812: `[476, 0x08]`). Finder: its handler (2026-10-26). See [Crafting](crafting.md#the-crafting-log). |
+| GlamourDresser | server → client | 642 | 436 (10.16) | 2408 | One page of the glamour dresser (page, 400 items, their stains), twice as it opens. From Bob's capture of 2026-10-24 (the Hourglass) and its dispatcher case in the 10.16 client (vtable entry 0x1348). Finder (written by `suggest-finders`; it reads 202 on 10.06). See [Glamour](glamour.md). |
+| GlamourPlates | server → client | 346 | 400 (10.16) | 1440 | The 20 glamour plates. Same capture (vtable entry 0x1350). Finder (written by `suggest-finders`; it reads 649 on 10.06). |
+| GlamourPlateUpdated | server → client | 265 | 621 (10.16) | 80 | One plate after it was saved. Same capture (vtable entry 0x1358). Finder (written by `suggest-finders`; it reads 868 on 10.06). |
+| SaveGlamourPlate | client → server | 171 | 156 (10.16) | 248 | A glamour plate saved at the dresser. Same capture. Finder (written by `suggest-finders`; it reads 716 on 10.06). |
+| EquipGearsetGlamour | client → server | 755 | 605 (10.16) | 128 | Equipping a gearset: EquipGearset's layout with the linked plate's number (from 1, 0 for none) at byte 60, then 56 bytes; the plain EquipGearset (774) carries the plate at byte 60 too. From Bob's Chronofoil captures of 2026-10-24. Finder (written by `suggest-finders`; it reads 265 on 10.06). See [Glamour](glamour.md#applying-a-plate). |
+| ArmoireContents | server → client | 860 | 772 (10.16) | 136 | The armoire's bitmask (ClientTrigger 423). Same capture (vtable entry 0xEB8). Finder (written by `suggest-finders`; it reads 681 on 10.06). |
+| ArmoireInfo | server → client | 833 | 445 (10.16) | 504 | Sent with it (ClientTrigger 427); 1 and zeros, meaning unknown. Same capture (vtable entry 0xEC0). Finder (written by `suggest-finders`; it reads 948 on 10.06). |
+| EventReturnHandler128 | client → server | 806 | 866 (10.16) | 520 | A scene's return of up to 128 results (the craft's materials list). Same capture. Finder: the size it's sent with. See [Crafting](crafting.md#the-flow). |
+| LootResult | server → client | 439 | 807 (10.16) | 16 | Who won a coffer's item, with what roll (0xE0000000 when everyone passed). Same capture. Finder (written by `suggest-finders`; it reads 521 on 10.06). |
+| ActionRequestGroundTargeted | client → server | 623 | 891 (09.15), 846 (10.06), 492 (10.16) | 24 | A ground-targeted action (Asylum...): the action, its type, the sequence, the rotation, where on the ground. Not yet seen on Kawari; the layout is from Bob's captures. Handled as an action on oneself for now. Finder. |
+| Achievements | server → client | 994 | 991 (10.06), 985 (10.16) | 552 | The completed achievements and the last five, the reply to client trigger 1001. Finder: its handler (HandleAchievementsPacket). See [Achievements](character-windows.md). |
+| StartEmoteEvent | client → server | 713 | 401 (10.16) | 16 | An emote a quest listens for: who it was used on (an NPC, or the player's own actor in the quest's area), the quest's event, the emote; the server starts the quest's Emote event (every quest emote in Bob's Chronofoil captures; 744's on the player, capture 9df4ff01). See [Quests](quests.md#emotes-on-an-npc). Finder. |
+| ChocoboTaxiStart | server → client | 424 | 538 (10.16) | 16 | A chocobo porter's ride begins: the ChocoboTaxi row, its Location, 8 bytes of 0 (Bob's Chronofoil captures cc62ad94, 1fac2416, 2528a32d: nine rides). See [Travel](travel.md#chocobo-porters). |
+| ChocoboTaxiCheckpoint | client → server | 679 | 534 (10.16) | 8 | A point of the porter's route passed: the ChocoboTaxi row, the point's number (the same captures). |
+| HuntingLog | server → client | 980 | 385 (10.16) | 64 | One Hunting Log: its rank and index, the rank's kill counts, the targets and entries done, the ranks open; twelve at login, one after each kill that counts (Bob's Chronofoil captures). Finder: its handler. See [Hunting Log](hunting-log.md). |
+| ChocoboTaxiArrived | client → server | 779 | 518 (10.16) | 8 | The route's end: the last point's number, then 0 (the same captures). |
 
 The client picks the event return packet by result count (2, 4, 8, 16…); EventReturnHandler16's finder looks for its
 16 case writing the opcode and the 88-byte size, and uses `with: EventReturnHandler2` because the yield sender has
 identical code. All notice sizes share one handler, so their finder only confirms them; a recording said which size is
 which. The `EventNotice` packet (`core`) was checked byte for byte against retail.
+
+## Finding them on 7.58
+
+From Bob's 2026.11.03 `ffxiv_dx11.exe` (2026-11-11) and his 2026.10.16 one, with `kawari-opcodescan` and capstone:
+
+* **The finders** read 42 of the 53, and the fingerprints (recorded on 10.16) gave the same 42 and 7 more:
+  RequestPlayerRetainerInfo 650, EventYieldText16 947, EventYieldText24 776, GatheringPointPhase 922, CompanionName 768,
+  EventReturnHandler128 806 (the finder narrows it to 760 or 806; the function that builds it, at 0xb33431 on both
+  versions, wrote 866 on 10.16 and writes 806 now) and EventReturnHandler16 (finder only).
+* **ItemMarketBoardInfo and Summary** share a case that hands the packet to a function comparing its opcode (0xb50df0):
+  `sub ecx, 636; je` (Summary's branch), then `cmp ecx, 0x7e` (762), which reads 32 bytes, Info's size. On 10.16 the
+  same function compared 290 (Summary), then 471 (Info). The fingerprints' second dispatchers don't read that
+  `sub`-then-`cmp` form, so they gave the pair as candidates.
+* **The notices and EventResume16/LotteryDailyBoard**: their cases are one block each (392, 584, 633, 866, 921 for the
+  notices; 132, 165, 305, 457, 511, 603, 817, 945 for the resumes, of which upstream's EventResume2/4/8 are 511, 132
+  and 603) that passes the client's code only the packet, never the opcode, so any member is handled the same. Each
+  fork packet got its own member (EventNotice2 392, EventNotice4 584, EventResume16 165, LotteryDailyBoard 305); a
+  retail recording on 7.58 would say which retail uses.
+* **Checked by how the client reads them** (`tools/opcodescan/compare_layouts.py`, below): with these opcodes, every
+  one of the 344 packets' handlers reads exactly as far into it as on 10.16 with 10.16's, upstream's and the fork's.
+* **Upstream's EditSearchInfo** stayed on 7.57h1's 424, which nothing writes on 7.58: the function that builds the
+  232-byte packet (0x96fa13 on 10.16, writing 424) writes 645 at 0x96fa93. It's corrected in `fork_opcodes.yml`
+  (`corrects: 424`, see [After a game patch](#after-a-game-patch)) until upstream fixes it.
+* **The matcher's 24**: the fingerprints of 10.16 put 24 of upstream's 7.58 server packets one function off (Config on
+  Equip's opcode, Equip on FirstAttack's…). Their handlers are small functions that hand the client's packet code their
+  own opcode and size (`mov r8d, 0x2da`; EnmityList's at 0x84b0e0), so they were alike but never the same from one
+  version to the next, and the order (a new packet's handler, 494's, was put in among them) did the rest. Since
+  2026-11-11 a number equal to a lone packet's own opcode is fingerprinted as "its opcode" (`OWN_OPCODE_FORMAT`): the
+  same executables then give **0 wrong** both ways (below).
 
 ## Finding them on 7.57h1
 
@@ -213,7 +246,18 @@ What happens on patch day, end to end (the server needs nothing from anyone unti
      `auto-opcodes/` when it runs on the supported version);
    * re-check the finders: `kawari-opcodescan <game> suggest-finders resources/data/opcode_fingerprints.json <old exe>
      all` shows each one still reads its opcode, and writes one for any new fork opcode;
-   * `cargo test -p kawari opcode_match` (the fingerprints cover every fork opcode with the same numbers).
+   * `cargo test -p kawari opcode_match` (the fingerprints cover every fork opcode with the same numbers);
+   * check them all by how the client reads each packet: `kawari-opcodescan <exe> layouts <opcodes.yml>
+     <fork_opcodes.yml> <version> core/src <out>` on the old executable with the old files (`git show`) and on the new
+     one with the new, then `python3 tools/opcodescan/compare_layouts.py <old>/layouts.json <new>/layouts.json`: a
+     packet whose handler reads a different amount is on the wrong opcode or changed (7.58: upstream's EditSearchInfo,
+     and the matcher's 24 before its fix);
+   * where upstream's own opcode is wrong for the version, correct it in `fork_opcodes.yml` with an entry of the same
+     name, `corrects: <upstream's number>`, the right opcode and `found_on` (never by editing their `opcodes.yml`): the
+     build applies it only while upstream still has that number, and says when to remove it;
+   * re-run `tools/clientlogic/clientlogic.py <exe> --rust` and compare with `client_rules.rs` (unchanged on 7.58);
+   * save the old version's opcodes for reading its captures first: `questkit chronofoil --save-opcodes` on the old
+     files (a worktree of the commit before the merge), then copy `data/chronofoil_opcodes.json` over.
 5. Anything still not found stays switched off (or outstanding) until found by hand
    ([Finding a new one](#finding-a-new-one)), and the constants under **Not covered** below are checked by hand.
 
@@ -269,6 +313,19 @@ fingerprints were re-recorded on 10.16 on 2026-10-25 (225 server, 116 client pac
 | 10.06 → 10.16 | 195 exact, 16 among candidates (the right one always in the list), **0 wrong** | 98 exact, 14 not found, **0 wrong** |
 | 10.16 → 10.06 | 192 exact, 19 among candidates, **0 wrong** | 98 exact, 14 not found, **0 wrong** |
 
+On 7.58 (Bob's 2026.11.03 executable, 2026-11-11), with the fingerprints as they were then, 10.16 → 11.03 put **24**
+server packets on wrong opcodes (and 11.03 → 10.16 22): see [Finding them on 7.58](#finding-them-on-758). With a lone
+packet's own opcode fingerprinted as such (format 2, the shipped fingerprints since, recorded on 11.03):
+
+| | Server packets (234) | Client packets (122) |
+|---|---|---|
+| 10.16 → 11.03 | 217 exact, 17 among candidates, **0 wrong** | 108 exact, 14 not found, **0 wrong** |
+| 11.03 → 10.16 | 217 exact, 17 among candidates, **0 wrong** | 108 exact, 14 not found, **0 wrong** |
+| 10.16 → 10.06 | 192 exact, 19 among candidates, **0 wrong** | 98 exact, 14 not found, **0 wrong** |
+
+Fingerprints recorded before (format 0, e.g. `auto-opcodes/fingerprints-*.json` a server wrote itself) are still read,
+and compared without it.
+
 The candidates: the notices (EventNotice2/4, five opcodes the client handles identically), EventResume2/4/8 (eight),
 InitResponse and PingSyncReply (21: they end in the dispatcher's default case, so they're handled before it), the
 three inventory packets (UpdateItem, ContainerInfo, CurrencyCrystalInfo), the two InventoryTransactions, the two
@@ -299,7 +356,11 @@ packets (12 opcodes with the same handling). The client packets not found are bu
   as `size_changed`. `kawari-opcodescan <new exe> match <fingerprints>` prints them too. (Server packets' sizes aren't
   in the client's code in the same way, so they aren't checked.)
 
-**Not covered:** a patch also changes `BASE_INVENTORY_ACTION`, the mail result codes and the scrambler tables in
-`constants.yml`; no pattern that finds them in the client was found (2026-10-25). Obfuscation is off by default (`enable_packet_obsfucation`), so the scrambler isn't needed to play;
+**Not covered:** a patch also changes the scrambler tables in `constants.yml`; no pattern that finds them in the
+client was found (2026-10-25). `BASE_INVENTORY_ACTION` and the mail result codes were constants until upstream found
+(2026-10-31) that they are opcodes: the item operations count from ItemOperation's opcode + 1, and a LetterUpdate
+carries the opcode of the letter packet it answers. Both follow a remapped opcode now: `ItemOperationKind` is
+read and written as the game's number (`to_game`/`from_game`, shifted by however far ItemOperation moved), and the
+mail actions are the game's opcode of the packet (`remap::game_opcode`). Obfuscation is off by default (`enable_packet_obsfucation`), so the scrambler isn't needed to play;
 item moves and mail need upstream's (or a hand-found) value. Content patches can also change bitmask sizes and packet
 layouts, which no opcode table fixes.

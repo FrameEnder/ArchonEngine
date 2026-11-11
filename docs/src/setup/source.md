@@ -22,7 +22,7 @@ Place the Oodle library for your platform in a new directory called `oodle` insi
 
 ## Hosts setup
 
-{{#include hosts.md}}
+Follow this step for your operating system: [Windows](windows.md) or [Linux](linux.md).
 
 ## Running
 

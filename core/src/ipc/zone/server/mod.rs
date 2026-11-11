@@ -377,9 +377,9 @@ pub enum ServerZoneIpcData {
     InventoryTransactionFinish {
         /// Same sequence value as in InventoryTransaction.
         sequence: u32,
-        /// Repeated unk1 value. No, it's not a copy-paste error.
+        /// Repeated sequence value. No, it's not a copy-paste error.
         sequence_repeat: u32,
-        /// Unknown, seems to always be 0x00000090.
+        /// The operation that's finishing.'
         operation_type: ItemOperationKind,
         /// Unknown, seems to always be 0x00000200.
         unk2: u32,
@@ -1572,8 +1572,8 @@ pub enum ServerZoneIpcData {
     },
     Letter(Letter),
     LetterUpdate {
-        /// Seems to be a result or mode value. When a letter is sent successfully, this will be 0xDD. When a letter is deleted successfully, it will contain 0x366. When attachments are taken, it will contain 0x24E. Completely unknown purpose, as it doesn't seem to be a timestamp, actor id, or LogMessageType.
-        unk_result: u32,
+        /// The letter-related action the client just took. This is the literal client opcode corresponding to sending/deleting letters, or taking attachments.
+        mail_action: u32, // TODO: This might just be u16 since it's an opcode?
         unk1: u32, // Probably just padding, seems to always be 0.
         /// When deleting a letter, the sender's content id. When sending a letter, zeroes.
         sender_content_id: u64,
@@ -1853,6 +1853,7 @@ mod tests {
     /// cane from the armoury into the main hand, the gladius back.)
     #[test]
     fn gearset_transaction_layout() {
+        use crate::common::BASE_INVENTORY_ACTION;
         use binrw::BinWrite;
 
         let write = |data: ServerZoneIpcData| {
@@ -1883,7 +1884,19 @@ mod tests {
         assert_eq!(
             transaction,
             [
-                0x84482, 0xf2, 0x1002b65e, 0x3e8, 0, 1, 0x7dd, 0x1002b65e, 0xdac, 6, 1, 0x641
+                0x84482,
+                // 0xf2 on 2026.10.16 (the capture's version), where the base was 234.
+                BASE_INVENTORY_ACTION + 8,
+                0x1002b65e,
+                0x3e8,
+                0,
+                1,
+                0x7dd,
+                0x1002b65e,
+                0xdac,
+                6,
+                1,
+                0x641
             ]
         );
         let finish = write(ServerZoneIpcData::InventoryTransactionFinish {
@@ -1892,14 +1905,18 @@ mod tests {
             operation_type: ItemOperationKind::EquipMannequin,
             unk2: 0xc00,
         });
-        assert_eq!(finish, [0x84482, 0x84482, 0xfc, 0xc00]);
+        // 0xfc and 0x17a on 2026.10.16.
+        assert_eq!(
+            finish,
+            [0x84482, 0x84482, BASE_INVENTORY_ACTION + 18, 0xc00]
+        );
         let finish = write(ServerZoneIpcData::InventoryTransactionFinish {
             sequence: 0x73266,
             sequence_repeat: 0x73266,
             operation_type: ItemOperationKind::GearsetGlamour,
             unk2: 0xc00,
         });
-        assert_eq!(finish[2], 0x17a);
+        assert_eq!(finish[2], BASE_INVENTORY_ACTION + 144);
     }
 
     /// Where the client's handler (HandleAchievementsPacket) reads each part.

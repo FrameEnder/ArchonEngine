@@ -1,5 +1,6 @@
 #[cfg(test)]
 use binrw::BinWrite;
+use glam::Vec3A;
 use serde_derive::{Deserialize, Serialize};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -139,6 +140,32 @@ pub fn euler_to_direction(euler: (f32, f32, f32)) -> f32 {
     };
 
     f32::atan2(v2, v1)
+}
+
+// From https://www.flipcode.com/archives/Fast_Point-In-Cylinder_Test.shtml
+pub fn cylinder_test(
+    pt1: Vec3A,
+    pt2: Vec3A,
+    length_sq: f32,
+    radius_sq: f32,
+    test_pt: Vec3A,
+) -> f32 {
+    let dx = pt2.x - pt1.x;
+    let dy = pt2.y - pt1.y;
+    let dz = pt2.z - pt1.z;
+
+    let pdx = test_pt.x - pt1.x;
+    let pdy = test_pt.y - pt1.y;
+    let pdz = test_pt.z - pt1.z;
+
+    let dot = pdx * dx + pdy * dy + pdz * dz;
+    if dot < 0.0 || dot > length_sq {
+        -1.0
+    } else {
+        let dsq = (pdx * pdx + pdy * pdy + pdz * pdz) - dot * dot / length_sq;
+
+        if dsq > radius_sq { -1.0 } else { dsq }
+    }
 }
 
 /// Calculates the maximum achievable level for a given expansion.

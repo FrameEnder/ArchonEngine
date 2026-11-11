@@ -101,7 +101,10 @@ fn merge_fork_opcodes(opcodes: &mut Value) -> Vec<ForkOpcode> {
     let mut merged = Vec::new();
     for (kind, entries) in fork {
         let kind = kind.as_str().unwrap();
-        let Some(list) = opcodes.get_mut(kind).and_then(|list| list.as_sequence_mut()) else {
+        let Some(list) = opcodes
+            .get_mut(kind)
+            .and_then(|list| list.as_sequence_mut())
+        else {
             panic!("fork_opcodes.yml: {kind} isn't one of the opcode lists in opcodes.yml!");
         };
         let mut used: Vec<u64> = list
@@ -128,6 +131,35 @@ fn merge_fork_opcodes(opcodes: &mut Value) -> Vec<ForkOpcode> {
             let how_to_find = text("how_to_find").unwrap_or_default().to_string();
             let mut comment = text("comment").unwrap_or_default().to_string();
 
+            // A correction of upstream's opcode for this version (`corrects`: the opcode upstream still has.) It only
+            // applies while upstream has that number, so their next update takes over again by itself.
+            if let Some(wrong) = entry.get("corrects").and_then(|wrong| wrong.as_u64()) {
+                let upstream = list
+                    .iter_mut()
+                    .find(|known| known.get("name").and_then(|known| known.as_str()) == Some(name));
+                let Some(upstream) = upstream else {
+                    println!(
+                        "cargo::warning=fork_opcodes.yml corrects {kind}::{name}, which upstream's opcodes.yml doesn't have: remove its `corrects`."
+                    );
+                    continue;
+                };
+                let theirs = upstream.get("opcode").and_then(|opcode| opcode.as_u64());
+                match (theirs, opcode) {
+                    (Some(theirs), Some(ours))
+                        if theirs == wrong && found_on.as_deref() == Some(version.as_str()) =>
+                    {
+                        upstream["opcode"] = ours.into();
+                        used.retain(|used| *used != theirs);
+                        used.push(ours);
+                    }
+                    _ => println!(
+                        "cargo::warning=fork_opcodes.yml's correction of {kind}::{name} no longer applies (upstream has {theirs:?}, the correction was of {wrong} on {}): remove it.",
+                        found_on.as_deref().unwrap_or("no version"),
+                    ),
+                }
+                continue;
+            }
+
             if names.iter().any(|known| known == name) {
                 println!(
                     "cargo::warning=Upstream's opcodes.yml now has {kind}::{name}, so its entry in fork_opcodes.yml is ignored and can be removed."
@@ -141,7 +173,9 @@ fn merge_fork_opcodes(opcodes: &mut Value) -> Vec<ForkOpcode> {
             } else {
                 println!(
                     "cargo::warning={kind}::{name} needs finding for {version} (last found: {} on {}). How: {how_to_find}",
-                    opcode.map(|opcode| opcode.to_string()).unwrap_or("never".to_string()),
+                    opcode
+                        .map(|opcode| opcode.to_string())
+                        .unwrap_or("never".to_string()),
                     found_on.as_deref().unwrap_or("no version"),
                 );
                 comment.push_str(&format!(" OUTSTANDING: needs finding for {version}."));
@@ -244,7 +278,10 @@ pub fn outstanding_fork_opcodes(kind: &str, size: usize) -> impl Iterator<Item =
             ) else {
                 continue;
             };
-            code.push_str(&format!("({:?}, {name:?}, {number}),\n", kind.as_str().unwrap()));
+            code.push_str(&format!(
+                "({:?}, {name:?}, {number}),\n",
+                kind.as_str().unwrap()
+            ));
         }
     }
     code.push_str(
@@ -374,6 +411,26 @@ fn main() {
             output_str.push_str("}\n");
             output_str.push_str("}\n");
 
+            // Used for item ops/mail constants because const fns in traits doesn't exist yet
+            output_str.push_str(&format!("impl {key} {{\n"));
+            output_str.push_str("/// Returns the integer opcode.\n");
+            output_str.push_str("pub(crate) const fn get_opcode(&self) -> u16 {\n");
+            output_str.push_str("match self {\n");
+
+            for opcode in opcodes {
+                let opcode = opcode.as_mapping().unwrap();
+                let name = opcode.get("name").unwrap().as_str().unwrap();
+                let opcode = opcode.get("opcode").unwrap().as_u64().unwrap();
+
+                output_str.push_str(&format!("{key}::{name} => {opcode},\n"));
+            }
+
+            output_str.push_str(&format!("{key}::Unknown(opcode) => *opcode,\n"));
+
+            output_str.push_str("}\n\n");
+            output_str.push_str("}\n\n");
+            output_str.push_str("}\n");
+
             output_str.push_str(&format!("impl PredefinedOpcode for {key} {{\n"));
 
             // sizes
@@ -412,19 +469,7 @@ fn main() {
             // opcodes
             output_str.push_str("/// Returns the integer opcode.\n");
             output_str.push_str("fn get_opcode(&self) -> u16 {\n");
-            output_str.push_str("match self {\n");
-
-            for opcode in opcodes {
-                let opcode = opcode.as_mapping().unwrap();
-                let name = opcode.get("name").unwrap().as_str().unwrap();
-                let opcode = opcode.get("opcode").unwrap().as_u64().unwrap();
-
-                output_str.push_str(&format!("{key}::{name} => {opcode},\n"));
-            }
-
-            output_str.push_str(&format!("{key}::Unknown(opcode) => *opcode,\n"));
-
-            output_str.push_str("}\n\n");
+            output_str.push_str("self.get_opcode()\n");
             output_str.push_str("}\n\n");
 
             // comments
@@ -467,7 +512,6 @@ fn main() {
 
         let mut type_map: HashMap<&str, &str> = HashMap::new();
         type_map.insert("LOBBY_GAME_VERSION", "u32");
-        type_map.insert("BASE_INVENTORY_ACTION", "u32");
         type_map.insert("OBFUSCATION_ENABLED_MODE", "u8");
         type_map.insert("OBFUSCATION_TABLE_RADIXES", "[i32; 3]");
         type_map.insert("OBFUSCATION_TABLE_MAX", "[i32; 3]");
