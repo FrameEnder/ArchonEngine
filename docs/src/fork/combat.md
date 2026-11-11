@@ -621,6 +621,32 @@ Status 17, as retail played it out in Bob's Chronofoil captures (85 windows of i
 
 Before 2026-11-01 paralysis did nothing (quest battle 17's gaze and the floating eye's gave it).
 
+## Over-time ticks
+
+A target's over-time effects tick together, every 3 s, and retail shows each kind as one tick (Bob's Chronofoil
+captures): all of its DoTs as ActorControl 1541 `(0, amount, source, 0xFFFFFFFF)`, all of its HoTs as 1540
+`(0, amount, source, critical)` with status 0 (a ground effect ticking on its own has its status: Asylum 1911, Sacred
+Soil 1944), and MP restored over time (Lucid Dreaming) as ActorControl 23 `(0, 11, amount, the target)` from them (785,
+550 each). A combined tick names one of its effects' sources, even with two healers' HoTs on the target. Kawari sent
+one tick per effect, each on its own 3 s from when it was applied, and nothing for MP, until 2026-11-11; now a new
+effect joins its target's ticks and each target gets one tick per kind, its effects' total, named after the first
+one's source (`periodic::add_to_totals`, `tick_control`). Test `a_target_s_over_time_effects_tick_together`.
+
+## Barriers
+
+A barrier absorbs damage before its holder's HP, and retail's EffectResult carries what's left of all of a target's
+barriers as a share of their maximum HP (the `shield` byte, in percent; 7,270 results in Bob's Chronofoil captures,
+with Galvanize 297 among others). Since 2026-11-11 (`server/barrier.rs`): a script gives a barrier with the status
+that holds it, `effects:barrier(status, hp)` or `barrier_percent(status, percent of maximum HP)` on whoever gets the
+action's statuses, `barrier_self`/`barrier_percent_self` on the user; damage (an action's, an area's, a DoT's tick)
+takes from the barriers first, oldest first, and one used up loses its status (LoseEffect and the list); the
+EffectResult's `shield` is what's left (rounded up). Test `a_barrier_takes_the_damage_first`. The sizes are the 7.x
+tooltips': Galvanize 180 % of Adloquium's heal and 160 % of Succor's, Eukrasian Diagnosis 180 %, Divine Benison a
+500-potency heal, Divine Caress and The Spire 400, Haima 300, Manaward 30 % of maximum HP, Radiant Aegis, Shade Shift
+and Tempera Coat 20 %, Guardian 15 %, Shake It Off 15 %, Arcane Crest and Divine Veil 10 %, The Blackest Night 25 % of
+the target's. In Bob's captures nine Adloquiums left 2.43-2.50 times their heal as shield, four others 1.18-1.93, so
+retail's Galvanize isn't pinned down yet (`known-issues.md`).
+
 ## Sprint and Jog
 
 Sprint (action 3) gives status 50 with param 30 for 20 s. As it runs out retail gives Jog (4209, +20 % speed) at once,

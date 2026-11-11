@@ -504,6 +504,132 @@ fn sprint_leaves_jog_until_the_player_acts() {
     assert!(jog(&world).is_none());
 }
 
+/// Bob, on the known issues: retail ticks all of a target's HoTs as one (ActorControl 1540, status 0, their total) and
+/// its MP restored over time as ActorControl 23 `[0, 11, amount, the target]` (Bob's Chronofoil captures: 785, Lucid
+/// Dreaming's 550); Kawari sent one tick per effect, each on its own timer, and nothing for MP.
+#[test]
+fn a_target_s_over_time_effects_tick_together() {
+    use crate::lua::{PeriodicKind, PeriodicSpec};
+    use crate::server::periodic::{add_periodic_effect, periodic_tick};
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let healer = world.player(PLAYER + 1, [2.0, 0.0, 0.0]);
+    if let Some(actor) = world.instance.find_actor_mut(player) {
+        actor.get_common_spawn_mut().health_points = 100;
+        let effects = actor.status_effects_mut().unwrap();
+        effects.add(158, 0, 15.0, player);
+        effects.add(150, 0, 18.0, healer);
+        effects.add(1204, 0, 21.0, player);
+    }
+    let spec = |effect_id, kind, amount| PeriodicSpec {
+        effect_id,
+        kind,
+        amount,
+        on_self: false,
+    };
+    add_periodic_effect(
+        &mut world.instance,
+        player,
+        player,
+        &spec(158, PeriodicKind::Heal, 100),
+    );
+    add_periodic_effect(
+        &mut world.instance,
+        player,
+        healer,
+        &spec(150, PeriodicKind::Heal, 200),
+    );
+    add_periodic_effect(
+        &mut world.instance,
+        player,
+        player,
+        &spec(1204, PeriodicKind::RestoreMp, 550),
+    );
+    // All three tick together, now.
+    let ticks: Vec<_> = world
+        .instance
+        .periodic_effects
+        .iter()
+        .map(|effect| effect.next_tick)
+        .collect();
+    assert!(ticks.iter().all(|tick| *tick == ticks[0]));
+    for effect in &mut world.instance.periodic_effects {
+        effect.next_tick = std::time::Instant::now() - Duration::from_millis(1);
+    }
+    periodic_tick(world.network.clone(), &mut world.instance);
+
+    let sent = world.sent(player);
+    let heals: Vec<u32> = sent
+        .iter()
+        .filter_map(|message| match message {
+            FromServer::ActorControlSelf(ActorControlCategory::HotDot {
+                status_id: 0,
+                amount,
+                source_actor_id,
+                ..
+            }) if *source_actor_id == player => Some(*amount),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(heals.len(), 1, "one tick for both HoTs");
+    assert!(
+        (285..=315).contains(&heals[0]),
+        "100 and 200, ±5 % each: {}",
+        heals[0]
+    );
+    assert!(sent.iter().any(|message| matches!(
+        message,
+        FromServer::ActorControlSelf(ActorControlCategory::FloatingNumberVFX {
+            unk1: 0,
+            kind: 11,
+            amount: 550,
+            object_id,
+        }) if *object_id == player
+    )));
+}
+
+/// Bob, on the known issues: barriers (Galvanize...) took no damage, and retail's EffectResult tells what's left of a
+/// target's barriers as a share of their maximum HP (7,270 results in Bob's Chronofoil captures.) A barrier takes the
+/// damage first, one used up loses its status, and the share is what's left.
+#[test]
+fn a_barrier_takes_the_damage_first() {
+    use crate::server::barrier::{absorb_and_break, grant, share};
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    if let Some(actor) = world.instance.find_actor_mut(player) {
+        actor
+            .status_effects_mut()
+            .unwrap()
+            .add(297, 0, 30.0, player);
+    }
+    // 250 of their 1000 HP.
+    grant(&mut world.instance, player, 297, 250);
+    assert_eq!(share(&mut world.instance, player), 25);
+    assert_eq!(
+        absorb_and_break(world.network.clone(), &mut world.instance, player, 100),
+        0
+    );
+    assert_eq!(share(&mut world.instance, player), 15);
+    // The rest of it, and 50 through; Galvanize is gone.
+    assert_eq!(
+        absorb_and_break(world.network.clone(), &mut world.instance, player, 200),
+        50
+    );
+    assert_eq!(share(&mut world.instance, player), 0);
+    let gone = world
+        .instance
+        .find_actor(player)
+        .and_then(|actor| actor.status_effects())
+        .is_some_and(|effects| effects.get(297).is_none());
+    assert!(gone);
+    // A barrier whose status has gone holds nothing.
+    grant(&mut world.instance, player, 297, 500);
+    assert_eq!(
+        absorb_and_break(world.network.clone(), &mut world.instance, player, 100),
+        100
+    );
+}
+
 /// Bundle 20261111-125206, "Garudo attacks the pillar that's not right": an NPC that can't be targeted (the Howling
 /// Eye's monoliths, display flags 0x40208) is never noticed by an enemy; retail's Garuda chose a player or a Duty
 /// Support member every time. One a director made untargetable isn't either.

@@ -1364,8 +1364,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   2026-11-11 survey); most items had none. Where the group (58-68) comes from isn't in the Item or ItemAction rows
   icarus reads, and there's no game install here to find out, so Kawari sends none for items and doesn't track their
   recasts (the client keeps its own).
-* Retail adds up all of a target's HoTs into one tick (status 0) and shows MP ticks (Lucid Dreaming) as ActorControl 23;
-  Kawari sends one tick per effect and no MP tick. Barriers' share isn't sent in EffectResult.
+* Barriers (since 2026-11-11, [Combat](combat.md#barriers)) are the 7.x tooltips' sizes; retail's Galvanize after
+  Adloquium left 2.43-2.50 times the heal as shield nine times in Bob's captures (other players' Scholars, Duty Finder)
+  and 1.18-1.93 four times, not worked out (a critical heal's Catalyze, two barriers at once, or the tooltip being
+  another level's). Celestial Intersection and Improvised Finish give no barrier yet (their scripts give no status to
+  hold one); Haima's five Haimatinon don't renew it; Divine Caress doesn't leave Divine Aura.
 * Sprint and Jog over a zone change: Kawari drops statuses there; retail sometimes kept Jog in the new zone's list and
   sometimes didn't (no rule found yet, [Combat](combat.md#sprint-and-jog)). 8 of 37 retail Sprints lasted 10 s instead
   of 20 (all on the new 2026.10.06 characters), unexplained.

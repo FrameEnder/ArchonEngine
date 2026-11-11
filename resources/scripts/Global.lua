@@ -1480,7 +1480,9 @@ function astHeal(effects, player, potency)
     if player:get_effect(AST_EFFECT_NEUTRAL_SECT) ~= nil then
         potency = math.floor(potency * 1.2)
     end
-    effects:heal(healAmount(player, levelPotency(player, potency, LEVEL_MAIM_AND_MEND)))
+    local healed = healAmount(player, levelPotency(player, potency, LEVEL_MAIM_AND_MEND))
+    effects:heal(healed)
+    return healed
 end
 
 -- A card played: its slot emptied.
@@ -1530,7 +1532,9 @@ function sgeHeal(effects, player, potency, spell)
         potency = math.floor(potency * 1.5)
         effects:consume_effect(SGE_EFFECT_ZOE)
     end
-    effects:heal(healAmount(player, levelPotency(player, potency, LEVEL_MAIM_AND_MEND)))
+    local healed = healAmount(player, levelPotency(player, potency, LEVEL_MAIM_AND_MEND))
+    effects:heal(healed)
+    return healed
 end
 
 -- An Addersgall action: one spent, 7 % of the Sage's MP back.

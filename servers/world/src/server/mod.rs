@@ -89,6 +89,7 @@ mod job_gauge;
 mod loot;
 mod modifiers;
 use job_gauge::CLASSJOB_WHITE_MAGE;
+mod barrier;
 mod linkshell;
 mod network;
 mod paralysis;

@@ -324,6 +324,8 @@ pub struct Instance {
     pub quest_battle_win_exit: Option<(u16, Position, f32)>,
     /// Running over-time effects (DoTs, HoTs, etc.)
     pub periodic_effects: Vec<PeriodicEffect>,
+    /// Barriers on actors, by the status holding each (`server/barrier.rs`.)
+    pub barriers: crate::server::barrier::Barriers,
     /// Who is paralysed: their rolls, and NPCs that just seized up (`server/paralysis.rs`.)
     pub paralysis: Paralysis,
     /// Battle NPCs a quest brought out, which don't respawn once defeated.

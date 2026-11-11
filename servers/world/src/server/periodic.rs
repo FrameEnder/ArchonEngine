@@ -48,15 +48,86 @@ pub fn add_periodic_effect(
         !(effect.target == target && effect.source == source && effect.effect_id == spec.effect_id)
     });
 
+    // A target's over-time effects all tick together, as retail's did (one tick for all its HoTs, one for all its
+    // DoTs, below): a new one joins the target's ticks when it has any.
+    let next_tick = instance
+        .periodic_effects
+        .iter()
+        .find(|effect| effect.target == target)
+        .map_or(Instant::now() + PERIODIC_TICK_INTERVAL, |effect| {
+            effect.next_tick
+        });
+
     instance.periodic_effects.push(PeriodicEffect {
         target,
         source,
         effect_id: spec.effect_id,
         kind: spec.kind,
         amount: spec.amount,
-        next_tick: Instant::now() + PERIODIC_TICK_INTERVAL,
+        next_tick,
     });
 }
+
+/// What a target's ticks of one kind add up to, sent as one (`tick_control`.)
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct TickTotal {
+    pub target: ObjectId,
+    pub kind: PeriodicKind,
+    pub amount: u32,
+    /// The first of its effects' sources (retail named one HoT's healer even with two healers' HoTs on the target.)
+    pub source: ObjectId,
+}
+
+/// Adds a tick to its target's total of that kind.
+pub(crate) fn add_to_totals(
+    totals: &mut Vec<TickTotal>,
+    target: ObjectId,
+    kind: PeriodicKind,
+    amount: u32,
+    source: ObjectId,
+) {
+    match totals
+        .iter_mut()
+        .find(|total| total.target == target && total.kind == kind)
+    {
+        Some(total) => total.amount += amount,
+        None => totals.push(TickTotal {
+            target,
+            kind,
+            amount,
+            source,
+        }),
+    }
+}
+
+/// A target's tick of one kind as retail sent it (Bob's Chronofoil captures): all of its DoTs as ActorControl 1541
+/// `(0, amount, source, 0xFFFFFFFF)`, all of its HoTs as 1540 `(0, amount, source, critical)`, and MP restored over
+/// time (Lucid Dreaming) as 23 `(0, 11, amount, the target)`, 785 of them, 550 each.
+pub(crate) fn tick_control(total: &TickTotal) -> ActorControlCategory {
+    match total.kind {
+        PeriodicKind::Damage => ActorControlCategory::DamageFlyingText {
+            unk1: 0,
+            amount: total.amount,
+            source_actor_id: total.source,
+            unk4: u32::MAX,
+        },
+        PeriodicKind::Heal => ActorControlCategory::HotDot {
+            status_id: 0,
+            amount: total.amount,
+            source_actor_id: total.source,
+            critical: 0,
+        },
+        PeriodicKind::RestoreMp => ActorControlCategory::FloatingNumberVFX {
+            unk1: 0,
+            kind: MP_RESTORED,
+            amount: total.amount,
+            object_id: total.target,
+        },
+    }
+}
+
+/// ActorControl 23's kind for MP restored (a TargetEffectKind.)
+const MP_RESTORED: u32 = 11;
 
 /// An over-time effect's tick: its amount ±5 %, at least 1.
 fn vary_tick(amount: u32) -> u32 {
@@ -74,6 +145,8 @@ pub fn periodic_tick(network: Arc<Mutex<NetworkState>>, instance: &mut Instance)
     let mut effects = std::mem::take(&mut instance.periodic_effects);
     let mut actors_to_update = Vec::new();
     let mut heal_enmity = Vec::new();
+    let mut totals = Vec::new();
+    let mut broken = Vec::new();
 
     effects.retain_mut(|effect| {
         let Some(actor) = instance.find_actor_mut(effect.target) else {
@@ -104,12 +177,24 @@ pub fn periodic_tick(network: Arc<Mutex<NetworkState>>, instance: &mut Instance)
         if effect.kind == PeriodicKind::Damage {
             actor.add_enmity(effect.source, amount);
         }
+        // A barrier takes a damage tick first (`server/barrier.rs`); one used up loses its status, below.
+        let through = if effect.kind == PeriodicKind::Damage {
+            let (through, used_up) =
+                crate::server::barrier::absorb(instance, effect.target, amount);
+            broken.extend(used_up.into_iter().map(|status| (effect.target, status)));
+            through
+        } else {
+            amount
+        };
+        let Some(actor) = instance.find_actor_mut(effect.target) else {
+            return false;
+        };
         let common = actor.get_common_spawn_mut();
         let before = common.health_points;
         match effect.kind {
             PeriodicKind::Damage => {
                 if common.name_id != STRIKING_DUMMY_NAME_ID {
-                    common.health_points = common.health_points.saturating_sub(amount);
+                    common.health_points = common.health_points.saturating_sub(through);
                 }
             }
             PeriodicKind::Heal => {
@@ -127,29 +212,21 @@ pub fn periodic_tick(network: Arc<Mutex<NetworkState>>, instance: &mut Instance)
 
         let restored = common.health_points.saturating_sub(before);
 
-        // Retail (Bob's Chronofoil captures): a damage tick is ActorControl 1541 (0, amount, source, 0xFFFFFFFF), a heal
-        // tick 1540 (0, amount, source, critical); a heal tick used to go out as 1540 for both, with the status ID.
-        let tick = match effect.kind {
-            PeriodicKind::Damage => Some(ActorControlCategory::DamageFlyingText {
-                unk1: 0,
-                amount,
-                source_actor_id: effect.source,
-                unk4: u32::MAX,
-            }),
-            PeriodicKind::Heal => Some(ActorControlCategory::HotDot {
-                status_id: 0,
-                amount,
-                source_actor_id: effect.source,
-                critical: 0,
-            }),
-            PeriodicKind::RestoreMp => None,
+        // Shown as one tick per target and kind (`tick_control`), once everything due has ticked.
+        let shown = if effect.kind == PeriodicKind::RestoreMp {
+            effect.amount.min(u16::MAX as u32)
+        } else {
+            amount
         };
+        add_to_totals(
+            &mut totals,
+            effect.target,
+            effect.kind,
+            shown,
+            effect.source,
+        );
         if effect.kind == PeriodicKind::Heal {
             heal_enmity.push((effect.source, restored));
-        }
-        if let Some(tick) = tick {
-            let mut network = network.lock();
-            network.send_ac_in_range_inclusive_instance(instance, effect.target, tick);
         }
 
         if !actors_to_update.contains(&effect.target) {
@@ -162,6 +239,21 @@ pub fn periodic_tick(network: Arc<Mutex<NetworkState>>, instance: &mut Instance)
     // Keep any effects added while we were ticking.
     effects.append(&mut instance.periodic_effects);
     instance.periodic_effects = effects;
+
+    for (target, status) in broken {
+        crate::server::effect::lose_effect_instance(network.clone(), instance, target, status);
+    }
+
+    if !totals.is_empty() {
+        let mut network = network.lock();
+        for total in &totals {
+            network.send_ac_in_range_inclusive_instance(
+                instance,
+                total.target,
+                tick_control(total),
+            );
+        }
+    }
 
     for actor_id in actors_to_update {
         update_actor_hp_mp(network.clone(), instance, actor_id);

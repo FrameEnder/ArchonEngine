@@ -402,6 +402,9 @@ pub struct EffectsBuilder {
     pub effects: Vec<TargetEffect>,
     /// Over-time effects to start after the action resolves.
     pub periodic: Vec<PeriodicSpec>,
+    /// Barriers it gives, with the status holding each (`barrier`, `barrier_self`, `barrier_percent`,
+    /// `barrier_percent_self`; `server/barrier.rs`.)
+    pub barriers: Vec<BarrierSpec>,
     /// If Some, replaces the MP cost from the Action sheet.
     pub mp_cost_override: Option<u16>,
     /// MP restored to the caster after the action resolves.
@@ -432,6 +435,24 @@ pub struct EffectsBuilder {
     /// in a pose (ActorControl 82 with its value, retail's unknown), for a while: what a Seduced status does. Lady
     /// Amandine's Beguiling Mist (28643) in Haukke Manor (Bob's Chronofoil captures: speed 4, pose 1132, 3.0 s.)
     pub walk_to_caster: Option<WalkToCaster>,
+}
+
+/// A barrier an action gives (`EffectsBuilder::barriers`.)
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct BarrierSpec {
+    /// The status holding it.
+    pub status: u16,
+    pub size: BarrierSize,
+    /// On the one using the action, rather than whoever gets its statuses.
+    pub on_self: bool,
+}
+
+/// How big a barrier is.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum BarrierSize {
+    Hp(u32),
+    /// This share of the one who gets it's maximum HP.
+    PercentOfMaxHp(u8),
 }
 
 /// Players walked towards the one using the action (`EffectsBuilder::walk_to_caster`.)
@@ -525,6 +546,46 @@ impl UserData for EffectsBuilder {
                         unk: [0; 3],
                         effect_id,
                     }));
+                Ok(())
+            },
+        );
+        // A barrier held by `status` (given with `gain_effect` or `gain_effect_self`): of `amount` HP, or of a share of
+        // each one's maximum HP, on whoever gets the action's statuses or on the one using it.
+        methods.add_method_mut("barrier", |_, this, (status, amount): (u16, u32)| {
+            this.barriers.push(BarrierSpec {
+                status,
+                size: BarrierSize::Hp(amount),
+                on_self: false,
+            });
+            Ok(())
+        });
+        methods.add_method_mut("barrier_self", |_, this, (status, amount): (u16, u32)| {
+            this.barriers.push(BarrierSpec {
+                status,
+                size: BarrierSize::Hp(amount),
+                on_self: true,
+            });
+            Ok(())
+        });
+        methods.add_method_mut(
+            "barrier_percent",
+            |_, this, (status, percent): (u16, u8)| {
+                this.barriers.push(BarrierSpec {
+                    status,
+                    size: BarrierSize::PercentOfMaxHp(percent),
+                    on_self: false,
+                });
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "barrier_percent_self",
+            |_, this, (status, percent): (u16, u8)| {
+                this.barriers.push(BarrierSpec {
+                    status,
+                    size: BarrierSize::PercentOfMaxHp(percent),
+                    on_self: true,
+                });
                 Ok(())
             },
         );

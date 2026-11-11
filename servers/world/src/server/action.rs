@@ -1852,6 +1852,13 @@ pub fn execute_action(
                             damage_element,
                             ..
                         } => {
+                            // Barriers take it first (`server/barrier.rs`); one used up loses its status.
+                            let through = crate::server::barrier::absorb_and_break(
+                                network.clone(),
+                                instance,
+                                request.target.object_id,
+                                *amount as u32,
+                            );
                             let Some(actor) = instance.find_actor_mut(request.target.object_id)
                             else {
                                 continue;
@@ -1862,7 +1869,7 @@ pub fn execute_action(
                             if common_spawn.name_id != STRIKING_DUMMY_NAME_ID {
                                 common_spawn.health_points = common_spawn
                                     .health_points
-                                    .saturating_sub(*amount as u32)
+                                    .saturating_sub(through)
                                     .max(floor.min(common_spawn.health_points));
                             }
 
@@ -2195,6 +2202,27 @@ pub fn execute_action(
             companion::summon(&data, &network, &game_data, from_actor_id);
         }
 
+        // Barriers come with the action's statuses, before the EffectResult that shows them (`server/barrier.rs`.)
+        if !effects_builder.barriers.is_empty() {
+            let targets = aoe_result
+                .as_ref()
+                .map(|aoe| aoe.status_targets.clone())
+                .unwrap_or_else(|| vec![request.target.object_id]);
+            let mut data = data.lock();
+            if let Some(instance) = data.find_actor_instance_mut(from_actor_id) {
+                for spec in &effects_builder.barriers {
+                    let given_to = if spec.on_self {
+                        vec![from_actor_id]
+                    } else {
+                        targets.clone()
+                    };
+                    for target in given_to {
+                        crate::server::barrier::grant_spec(instance, target, spec);
+                    }
+                }
+            }
+        }
+
         // EffectResult
         // TODO: is this always sent? needs investigation
         {
@@ -2283,6 +2311,12 @@ pub fn execute_action(
 
             if num_self_entries > 0 {
                 let mut network = network.lock();
+                let mut data = data.lock();
+                let Some(instance) = data.find_actor_instance_mut(request.target.object_id) else {
+                    return;
+                };
+                // What's left of the user's barriers (`server/barrier.rs`.)
+                let shield = crate::server::barrier::share(instance, from_actor_id);
                 let ipc =
                     ServerZoneIpcSegment::new(ServerZoneIpcData::EffectResult(EffectResult {
                         count: 1,
@@ -2294,14 +2328,11 @@ pub fn execute_action(
                         max_health_points: common_spawn.max_health_points,
                         resource_points: common_spawn.resource_points,
                         classjob_id: common_spawn.class_job,
+                        shield,
                         entry_count: num_self_entries,
                         statuses: self_entries,
                         ..Default::default()
                     }));
-                let mut data = data.lock();
-                let Some(instance) = data.find_actor_instance_mut(request.target.object_id) else {
-                    return;
-                };
                 network.send_in_range_inclusive_instance(
                     from_actor_id,
                     instance,
@@ -2386,6 +2417,8 @@ pub fn execute_action(
                 let Some(instance) = data.find_actor_instance_mut(request.target.object_id) else {
                     return;
                 };
+                // What's left of the target's barriers, a share of their maximum HP (retail's EffectResult.)
+                let shield = crate::server::barrier::share(instance, request.target.object_id);
 
                 let Some(actor) = instance.find_actor(request.target.object_id) else {
                     return;
@@ -2406,6 +2439,7 @@ pub fn execute_action(
                         max_health_points: common_spawn.max_health_points,
                         resource_points: common_spawn.resource_points,
                         classjob_id: common_spawn.class_job,
+                        shield,
                         entry_count: num_target_entries,
                         statuses: target_entries,
                         ..Default::default()
@@ -2653,9 +2687,19 @@ fn apply_area_of_effect(
             }
 
             if !invulnerable {
+                // Barriers take it first (`server/barrier.rs`.)
+                let through = crate::server::barrier::absorb_and_break(
+                    network.clone(),
+                    instance,
+                    *target_id,
+                    total,
+                );
+                let Some(actor) = instance.find_actor_mut(*target_id) else {
+                    continue;
+                };
                 let common_spawn = actor.get_common_spawn_mut();
                 if common_spawn.name_id != STRIKING_DUMMY_NAME_ID {
-                    common_spawn.health_points = common_spawn.health_points.saturating_sub(total);
+                    common_spawn.health_points = common_spawn.health_points.saturating_sub(through);
                 }
 
                 // The packet shows the first eight; the rest get numbers of their own.
