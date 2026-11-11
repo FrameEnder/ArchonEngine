@@ -3,6 +3,14 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Quest enemies without a drop-in (2026-11-11)
+
+* Ten transcribed quests bring out enemies the server doesn't have, because their positions, levels and HP are only
+  in Connor's Chronofoil captures (e834e436, af05916c), which aren't at hand; the fixtures keep only their layout IDs:
+  986, 1001, 1002, 1190, 1192, 1346, 1358, 1359, 3874 and 3883. Each step that should bring them out goes on with
+  nobody to fight. `QuestEnemiesInDropInsTest.NOT_YET` lists them; adding their layers (and timelines) needs those
+  captures, or Bob's own of the same quests.
+
 ## Upstream 7.58 (merged on `upstream-sync` on 2026-11-11)
 
 * The server takes a 7.58 client (2026.11.03.0000.0000) only; nothing of 7.58 has been tried in game yet. Every fork

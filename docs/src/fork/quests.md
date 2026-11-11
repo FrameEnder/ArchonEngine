@@ -267,7 +267,14 @@ an `action: [action, base ID]` step.
    these were 0;
 5. gives it enmity on the player, so it attacks at once.
 
-New spawns need a drop-in layer with the retail position, level and HP (from a Kawari Recorder recording).
+New spawns need a drop-in layer with the retail position, level and HP (from a Kawari Recorder recording or a
+Chronofoil capture: the SpawnNpc's layout ID, BNpcBase and name, level, maximum HP, display and character flags,
+position and rotation) and a timeline for its BNpcBase (`questkit lint` asks for one), with a script for each action it
+uses. Without the layer the server only logs "A quest tried to spawn battle NPC …, but it isn't in this zone's
+drop-ins!" and the quest goes on with nobody to fight: Monumental Hopes (982) after the monument's bar, three enemies
+retail brought out (Bob's bundle 20261111-190723), added from Bob's capture 689b15da as `QB_GaiUsc407_001`, and quest
+1352's one (`QB_GaiUse208_001`, from 71045ef2). questkit's `QuestEnemiesInDropInsTest` checks every fixture's
+`spawns` against the drop-ins (since 2026-11-11), so a transcribed quest whose enemies were never added fails.
 When editing a drop-in JSON, splice the new layer into the text: rewriting it through a JSON library changes how every
 float is written.
 

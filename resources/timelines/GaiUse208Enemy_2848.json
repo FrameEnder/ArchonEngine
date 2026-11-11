@@ -1,0 +1,24 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "970": {
+            "players": 197
+        }
+    },
+    "rotation": {
+        "pace": 3.0,
+        "actions": [
+            {
+                "action": 970,
+                "every": 3.1,
+                "comment": "2 uses, 3.1 s apart; 0.7 s cast"
+            }
+        ]
+    },
+    "animation_locks": {
+        "970": 0.1
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Quest 1352's (GaiUse208) quest enemy, BNpcBase 2848 (level 50, 4660 HP): casting 970 instead of auto-attacking, twice, 3.1 s apart, the hit landing for 197. Bob's Chronofoil capture 71045ef2, a short fight: only two uses, so how often is a guess from them. Hitbox not recorded."
+}

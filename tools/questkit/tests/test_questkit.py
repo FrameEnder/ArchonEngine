@@ -282,6 +282,32 @@ class DumpLayoutBasesTest(unittest.TestCase):
             self.assertEqual(fixtures.dump_layout_bases(Path(tmp)), {2339560: 1000615})
 
 
+class QuestEnemiesInDropInsTest(unittest.TestCase):
+    """Every enemy a quest's fixture saw retail bring out (`spawns`) is in a drop-in, or the server can't spawn it
+    (Monumental Hopes' three revenants, Bob's bundle 20261111-190723: "isn't in this zone's drop-ins")."""
+
+    # Quests whose enemies are only in Connor's captures (e834e436, af05916c), which aren't at hand: the fixtures keep
+    # only their layout IDs. Remove a quest once its enemies are added; known-issues.md lists them.
+    NOT_YET = {986, 1001, 1002, 1190, 1192, 1346, 1358, 1359, 3874, 3883}
+
+    def test_every_spawned_enemy_has_a_drop_in(self):
+        root = Path(__file__).resolve().parents[3]
+        laid_out = set()
+        for path in (root / "resources" / "dropins").glob("*.json"):
+            for layer in json.loads(path.read_text())["layers"]:
+                laid_out.update(obj["layout_id"] for obj in layer["objects"])
+        missing = {}
+        for path in sorted((root / "tools" / "questkit" / "fixtures").glob("*.json")):
+            fixture = json.loads(path.read_text())
+            if not isinstance(fixture, dict) or fixture.get("quest") in self.NOT_YET:
+                continue
+            for step in fixture.get("steps", []):
+                gone = [layout for layout in step.get("spawns") or [] if layout not in laid_out]
+                if gone:
+                    missing.setdefault(path.name, []).extend(gone)
+        self.assertEqual(missing, {})
+
+
 class InZoneMoveTest(unittest.TestCase):
     """Moving the player to a pop range in the zone they're in is retail's PrepareZoning to that same territory: replay
     counts it as a zone change there when the step says where it happens (Coming to Limsa Lominsa's lift.)"""
