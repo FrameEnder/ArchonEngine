@@ -125,6 +125,7 @@ mod sweep;
 #[cfg(test)]
 mod test_world;
 mod wipe;
+mod world_bots;
 mod world_turn;
 mod zone;
 
@@ -149,6 +150,8 @@ struct WorldServer {
     /// The bots of each player's party on their way with them to another zone (`party_bot::pack_for_travel`), until
     /// the player has loaded in there (`party_bot::arrive`).
     travelling_bots: HashMap<ObjectId, Vec<party_bot::TravellingBot>>,
+    /// Bots shown as players about the world (`world_bots.rs`.)
+    world_bots: world_bots::WorldBots,
     // TODO: Eventually remove these once we can reliably and ergonomically run misc. tasks on slower intervals!
     rested_exp_counter: i32,
     party_positions_counter: i32,
@@ -785,6 +788,8 @@ fn server_logic_tick(
         let party_positions_counter = data.party_positions_counter;
 
         data.cleanup_dead_instances();
+        // Players about the world: their decisions, walks, and showing them where players are.
+        world_bots::update(&mut data, &network, &game_data);
         // Chocobo companions: their time, leaving, and following their owner into fights.
         companion::update(&mut data, &network);
 

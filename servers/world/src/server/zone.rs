@@ -507,6 +507,15 @@ impl Zone {
         None
     }
 
+    /// Every layout object in the current layer set (world bots' places: `world_bots`.)
+    pub fn layout_objects(&self) -> impl Iterator<Item = &InstanceObject> {
+        self.layer_groups
+            .iter()
+            .flat_map(|layer_group| layer_group.chunks[0].layers.iter())
+            .filter(|layer| layer.header.has_layer_set(self.layer_set as u32))
+            .flat_map(|layer| layer.objects.iter())
+    }
+
     /// Any layout object by its instance ID, in the current layer set.
     pub fn find_layout_object(&self, instance_id: u32) -> Option<&InstanceObject> {
         self.layer_groups

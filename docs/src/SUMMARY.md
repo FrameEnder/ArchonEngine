@@ -59,6 +59,7 @@
   - [Settings Backup](fork/settings-backup.md)
   - [Party Bots](fork/party-bots.md)
   - [Party NPCs (Duty Support)](fork/party-npcs.md)
+  - [World Bots](fork/world-bots.md)
   - [Duty Finder Settings](fork/duty-finder.md)
   - [Dungeons](fork/dungeons.md)
   - [Coffers and Loot](fork/loot.md)

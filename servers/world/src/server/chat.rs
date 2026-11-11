@@ -24,7 +24,7 @@ use crate::{
         fate::spawn_fate,
         instance::QueuedTaskData,
         network::{DestinationNetwork, NetworkState},
-        party_bot,
+        party_bot, world_bots,
         zone::change_zone_warp_to_pop_range,
     },
 };
@@ -236,6 +236,14 @@ fn process_debug_commands(
                     party_bot::BOT_LEVEL
                 )),
                 Err(error) => notify(error),
+            }
+            true
+        }
+        // The world's bots (docs/src/fork/world-bots.md): whether they're on, how many and where, the nearest.
+        "!worldbots" => {
+            let lines = world_bots::report(&data.lock(), from_actor_id);
+            for line in lines {
+                notify(line);
             }
             true
         }

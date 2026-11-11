@@ -233,6 +233,15 @@ pub struct MonsterNoteEntry {
     pub reward: u32,
 }
 
+/// An Aetheryte row that's somewhere (`GameData::aetheryte_places`.)
+#[derive(Debug, Clone)]
+pub struct AetheryteRowPlace {
+    pub id: u32,
+    pub territory: u16,
+    pub big: bool,
+    pub levels: Vec<u32>,
+}
+
 /// The items on the marketboard: every item with an ItemSearchCategory, by ID and by category.
 #[derive(Debug, Default)]
 pub struct MarketIndex {
@@ -1442,6 +1451,80 @@ impl GameData {
             .into_iter()
             .filter(|(_, (shards, extras))| !shards.is_empty() && !extras.is_empty())
             .map(|(group, (shards, extras))| (group, shards, extras))
+            .collect()
+    }
+
+    /// Every Aetheryte row that's somewhere (a territory) and not hidden from the aethernet's list: (row, territory, a
+    /// big aetheryte or a shard, its arrival Levels, which are pop ranges in its territory.) For world bots
+    /// (`world_bots`): the big ones are where they gather, the shards the city's other places.
+    pub fn aetheryte_places(&mut self) -> Vec<AetheryteRowPlace> {
+        let config = get_config();
+        let Ok(sheet) = AetheryteSheet::read_from(&mut self.resource, config.world.language())
+        else {
+            return Vec::new();
+        };
+        sheet
+            .into_iter()
+            .flatten_subrows()
+            .filter(|(_, row)| row.Territory != 0 && !row.Invisible)
+            .map(|(id, row)| AetheryteRowPlace {
+                id,
+                territory: row.Territory,
+                big: row.IsAetheryte,
+                levels: row
+                    .Level
+                    .iter()
+                    .copied()
+                    .filter(|level| *level != 0)
+                    .collect(),
+            })
+            .collect()
+    }
+
+    /// An ENpc's event handlers (ENpcBase's ENpcData, those set.)
+    pub fn enpc_handlers(&self, enpc_id: u32) -> Vec<u32> {
+        self.enpc_base_sheet
+            .row(enpc_id)
+            .map(|row| row.ENpcData.iter().copied().filter(|h| *h != 0).collect())
+            .unwrap_or_default()
+    }
+
+    /// A CustomTalk handler's script name (its row is the whole handler ID), or None for no such row: an internal name
+    /// like `CmnDefMarketBoard...`, not text a player reads.
+    pub fn custom_talk_script(&self, handler_id: u32) -> Option<String> {
+        self.custom_talk_sheet
+            .row(handler_id)
+            .map(|row| row.Name.to_string())
+    }
+
+    /// The Title sheet's rows that have a title (either form), for world bots' titles.
+    pub fn title_ids(&mut self) -> Vec<u16> {
+        let config = get_config();
+        let Ok(sheet) =
+            icarus::Title::TitleSheet::read_from(&mut self.resource, config.world.language())
+        else {
+            return Vec::new();
+        };
+        sheet
+            .into_iter()
+            .flatten_subrows()
+            .filter(|(id, row)| {
+                *id != 0 && *id <= u16::MAX as u32 && !row.Masculine.to_string().is_empty()
+            })
+            .map(|(id, _)| id as u16)
+            .collect()
+    }
+
+    /// Of `emotes`, those that play once (no EmoteMode: not a loop such as sitting) and that exist.
+    pub fn one_shot_emotes(&mut self, emotes: &[u32]) -> Vec<u32> {
+        let config = get_config();
+        let Ok(sheet) = EmoteSheet::read_from(&mut self.resource, config.world.language()) else {
+            return Vec::new();
+        };
+        emotes
+            .iter()
+            .copied()
+            .filter(|id| sheet.row(*id).is_some_and(|row| row.EmoteMode == 0))
             .collect()
     }
 

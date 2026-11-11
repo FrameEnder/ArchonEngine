@@ -1,6 +1,6 @@
 # ArchonEngine ControlPanel
 
-ArchonEngine ControlPanel (`FrameEnder/Kawari-Web`, Flask, currently **2.27.0** on the `UI-Redesign` branch, **2.24.2**
+ArchonEngine ControlPanel (`FrameEnder/Kawari-Web`, Flask, currently **2.28.0** on the `UI-Redesign` branch, **2.24.2**
 on `main`; it was Kawari Web until 2.26.0) runs beside the server in its own container. Its README is the user guide
 (setup, pages, service, forges, builds); this page is about **how its features work** and how they depend on the fork.
 Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates). The repository, the Python packages
@@ -18,6 +18,7 @@ has to move.
 | `<data>/quest-dumps/` | written by questdump | `quest-index.json`, `item-index.json`, `marketboard-categories.json`, `class-index.json`, `action-index.json`, per-quest dumps |
 | `<data>/data/glamours.txt` | read/write | Bot glamours (the party bots' list; the server reads it from `/kawari/data`) |
 | `<data>/data/drop-rates.json` | read/write | Drop rates (mounts and minions per duty; the server reads it from `/kawari/data`) |
+| `<data>/data/world-bots.json` | read/write | World bots (on or off, how many where; the server reads it from `/kawari/data`) |
 | `<data>/captures/` | read | Diagnostics bundles |
 | The web app's own SQLite db | read/write | feed, notifications, settings, shop tables |
 
@@ -28,7 +29,7 @@ over the database, so direct edits only happen while the character is logged out
 
 Home, How to Connect, Feed (called Community in the top bar from 2.19.0) and profiles (character tile boards, private by default), Notifications, Settings,
 **Shop**, and the admin **Dashboard**: server control, config editor, database health/migrations, backups, accounts,
-Auracite import/inspect/export (extended backups from 2.22.0), branding, Quest Lab, Progress, Marketboard, Bot glamours (2.21.0), Drop rates (2.27.0), Diagnostics, Battle replay (2.25.0), Updates (which fork/forge/commit the server is
+Auracite import/inspect/export (extended backups from 2.22.0), branding, Quest Lab, Progress, Marketboard, Bot glamours (2.21.0), Drop rates (2.27.0), World bots (2.28.0), Diagnostics, Battle replay (2.25.0), Updates (which fork/forge/commit the server is
 built from), container logs.
 
 ## Auracite backups (2.22.0)
@@ -393,6 +394,25 @@ trial's mounts and minions drop from its coffers ([Coffers and Loot](loot.md#mou
 Checked with Flask's test client (an index of a dungeon, a trial and a guildhest: the guildhest left out; a save with
 a default of 75 and one duty's 100 written as above; a default of "abc" saved as 90 and "150%" as 100, shown again in
 its box.)
+
+## World bots (Dashboard → World bots, 2.28.0)
+
+On `UI-Redesign`: `kawari_web/worldbots.py`, `templates/dashboard/world_bots.html`. The settings of the server's
+players about the world ([World Bots](world-bots.md#settings)): on or off, whether they travel, how many at every big
+aetheryte, how many at each marketboard (a range), and each town's own number round its big aetheryte.
+
+* **The file** is `world-bots.json` in `settings.db_dir` (`/kawari/data`), written beside the old one and renamed over
+  it; the server reads it again within 3 s, no restart. The page starts from the server's defaults (off; 30, 10 and
+  20 for territories 129, 130 and 132; 1 at every other; 5-10 per board; travel on.)
+* **The towns** come from `content-index.json`'s `towns` (`kawari-questdump content` from 2026-11-11, Content →
+  Duties & zones builds it): name, region and territory, each with a box (blank is "every other" big aetheryte's
+  number), and a filter by name. Without them the cities are listed by territory ID, and one can be added by ID.
+  Counts are whole numbers, at most 200 a city, 20 per other aetheryte, 50 per board; nonsense is left out (a count)
+  or the default (the others).
+
+Checked with Flask's test client (without an index: the defaults, the note; with three towns: 129's 30 in its box,
+132 listed by ID; a save of 40, 25, 5 and a new 628 at 12, 2 per aetheryte and a board range typed backwards, 9 to
+4, written as 4-9; "abc" and 999 saved as 1 and 200, the boxes unticked as off.)
 
 ## Battle replay (Dashboard → Battle replay, 2.25.0)
 

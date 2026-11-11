@@ -140,7 +140,7 @@ const ROLE_HEALER: u8 = 4;
 const PRIMARY_DEXTERITY: u8 = 2;
 
 /// Item EquipSlotCategory rows bots pick gear for, and the equipped slot each fills.
-const MAIN_HAND: u8 = 1;
+pub(crate) const MAIN_HAND: u8 = 1;
 const TWO_HANDED: u8 = 13;
 const OFF_HAND: u8 = 2;
 const ARMOUR_SLOTS: [u8; 9] = [3, 4, 5, 7, 8, 9, 10, 11, 12];
@@ -370,7 +370,11 @@ const REAIM_EVERY: Duration = Duration::from_millis(500);
 const FORMATION_MOVED: f32 = 0.1;
 
 /// A path from `from` to `to` on the navmesh (straight there where it has none: bots walk on regardless.)
-fn instance_navmesh_path(navmesh: &crate::navmesh::Navmesh, from: Vec3A, to: Vec3A) -> Vec<Vec3A> {
+pub(crate) fn instance_navmesh_path(
+    navmesh: &crate::navmesh::Navmesh,
+    from: Vec3A,
+    to: Vec3A,
+) -> Vec<Vec3A> {
     if !navmesh.is_available() {
         return vec![to];
     }
@@ -444,7 +448,7 @@ pub struct KnownAction {
 /// damage over time on the target (`damage_over_time`.)
 /// A tick's run (at `NPC_RUN_SPEED`) from `here` along `path`, taking off the points it passes: where it got to and the
 /// way it faces, on the floor under it, or None if it didn't get anywhere.
-fn run_along(
+pub(crate) fn run_along(
     navmesh: &crate::navmesh::Navmesh,
     collision: Option<&Collision>,
     here: Vec3A,
@@ -933,7 +937,7 @@ fn heal_action(actions: &[ClassAction]) -> Option<u32> {
 /// Puts a glamour's pieces over the gear's looks: each in the slot its EquipSlotCategory fills (as the gear's
 /// glamour, or as the item where the slot is empty), with its dyes, and the slots it covers (a coat over the legs)
 /// emptied. Only the models change; the bot's stats are its gear's.
-fn wear_glamour(
+pub(crate) fn wear_glamour(
     game_data: &mut GameData,
     wearing: &mut Inventory,
     glamour: &glamour::Glamour,
@@ -1304,7 +1308,7 @@ impl GameData {
 /// face, hairstyle and ears or tail from its lists, and random features and colours within the creator's smallest
 /// ranges. Without the creator's data (or a list it lacks), the first six races and the choices every one of their
 /// clans and sexes has (faces and hairstyles 1-4).
-fn random_look(game_data: &mut GameData) -> CustomizeData {
+pub(crate) fn random_look(game_data: &mut GameData) -> CustomizeData {
     look_from(&game_data.creator_looks())
 }
 
@@ -1381,7 +1385,44 @@ fn look_from(creator: &[CreatorLook]) -> CustomizeData {
 /// Hrothgar, whose hats are their own models (`chara/equipment/e<model>/model/c<race code>e<model>_met.mdl`, the race
 /// code 1501/1601 for Hrothgar men and women, 1701/1801 for Viera), and which can't wear the rest. Every other race
 /// is shown some model of any hat (others' stand in), so for them it's always true.
-fn race_has_head_model(game_data: &mut GameData, look: &CustomizeData, model: u16) -> bool {
+/// `gear` ((EquipSlotCategory, item) as `GameData::best_gear` gives it) worn on an inventory, so the model helpers work
+/// on it: a bot's (`spawn_bot`) and a world bot's (`world_bots`.)
+pub(crate) fn wear_gear(game_data: &mut GameData, gear: &[(u8, u32)]) -> Inventory {
+    let mut wearing = Inventory::default();
+    let mut rings = 0;
+    for (slot, item_id) in gear {
+        let Some(info) = game_data.get_item_info(ItemInfoQuery::ById(*item_id)) else {
+            continue;
+        };
+        let item = Item::new(&info, 1);
+        let equipped = &mut wearing.equipped;
+        match *slot {
+            MAIN_HAND => equipped.main_hand = item,
+            OFF_HAND => equipped.off_hand = item,
+            3 => equipped.head = item,
+            4 => equipped.body = item,
+            5 => equipped.hands = item,
+            7 => equipped.legs = item,
+            8 => equipped.feet = item,
+            9 => equipped.ears = item,
+            10 => equipped.neck = item,
+            11 => equipped.wrists = item,
+            RING if rings == 0 => {
+                equipped.right_ring = item;
+                rings += 1;
+            }
+            RING => equipped.left_ring = item,
+            _ => {}
+        }
+    }
+    wearing
+}
+
+pub(crate) fn race_has_head_model(
+    game_data: &mut GameData,
+    look: &CustomizeData,
+    model: u16,
+) -> bool {
     let code = match (look.race, look.gender) {
         (Race::Hrothgar, Gender::Male) => 1501,
         (Race::Hrothgar, Gender::Female) => 1601,
@@ -1394,7 +1435,7 @@ fn race_has_head_model(game_data: &mut GameData, look: &CustomizeData, model: u1
 }
 
 /// A made-up first and last name, from syllables (not from the game's text.)
-fn random_name() -> String {
+pub(crate) fn random_name() -> String {
     const START: [&str; 16] = [
         "Ka", "Ri", "Sel", "Mo", "Thal", "Ae", "Bran", "Lu", "Vey", "Or", "Ny", "Dar", "Il", "Ce",
         "Fen", "Ja",
@@ -1511,13 +1552,17 @@ pub fn set_default_look(look: BotLook) {
 }
 
 /// What a bot shown as a player carries in its SpawnPlayer: its made-up account and content ID (the party list's),
-/// the leader's world, and the leader's content handler (a duty's, as retail's Duty Finder members have.)
+/// the leader's world, and the leader's content handler (a duty's, as retail's Duty Finder members have.) A world bot
+/// (`world_bots`) also has an online status of its own (a party bot's is Party Member), a title and an idle pose.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ShownAsPlayer {
     pub account_id: u64,
     pub content_id: u64,
     pub world_id: u16,
     pub handler_id: HandlerId,
+    pub online_status: Option<OnlineStatus>,
+    pub title_id: u16,
+    pub pose: u8,
 }
 
 /// A bot's SpawnPlayer, from its NPC spawn as it is now, laid out as retail's Duty Finder members' were (Bob's
@@ -1542,7 +1587,9 @@ pub fn player_spawn(npc: &SpawnNpc, shown: &ShownAsPlayer) -> SpawnPlayer {
         content_id: shown.content_id,
         current_world_id: shown.world_id,
         home_world_id: shown.world_id,
-        online_status: OnlineStatus::PartyMember,
+        online_status: shown.online_status.unwrap_or(OnlineStatus::PartyMember),
+        title_id: shown.title_id,
+        pose: shown.pose,
         common,
         ..Default::default()
     }
@@ -1624,33 +1671,7 @@ fn spawn_bot(
 
     // Gear, worn on an inventory so the model helpers work on it.
     let gear = game_data.best_gear(classjob, level, &wearable);
-    let mut wearing = Inventory::default();
-    let mut rings = 0;
-    for (slot, item_id) in &gear {
-        let Some(info) = game_data.get_item_info(ItemInfoQuery::ById(*item_id)) else {
-            continue;
-        };
-        let item = Item::new(&info, 1);
-        let equipped = &mut wearing.equipped;
-        match *slot {
-            MAIN_HAND => equipped.main_hand = item,
-            OFF_HAND => equipped.off_hand = item,
-            3 => equipped.head = item,
-            4 => equipped.body = item,
-            5 => equipped.hands = item,
-            7 => equipped.legs = item,
-            8 => equipped.feet = item,
-            9 => equipped.ears = item,
-            10 => equipped.neck = item,
-            11 => equipped.wrists = item,
-            RING if rings == 0 => {
-                equipped.right_ring = item;
-                rings += 1;
-            }
-            RING => equipped.left_ring = item,
-            _ => {}
-        }
-    }
+    let mut wearing = wear_gear(game_data, &gear);
     let item_ids: Vec<u32> = gear.iter().map(|(_, id)| *id).collect();
     let weapon = gear
         .iter()
@@ -1802,6 +1823,9 @@ fn spawn_bot(
             content_id,
             world_id: spawn.home_world_id,
             handler_id: spawn.common.handler_id,
+            online_status: None,
+            title_id: 0,
+            pose: 0,
         }),
         _ => None,
     };
@@ -4435,6 +4459,9 @@ mod tests {
             content_id: BOT_ID_BASE | 0x1234_5678,
             world_id: 40,
             handler_id: HandlerId(0x8003_0004),
+            online_status: None,
+            title_id: 0,
+            pose: 0,
         };
         let spawn = player_spawn(&npc, &shown);
         assert_eq!(

@@ -217,6 +217,8 @@ pub struct Instance {
     pub party_cue: Option<crate::server::dodge::PartyCue>,
     /// How many have been tossed into the air here (`action::toss_target`): each toss carries its number, as retail's.
     pub tosses: u32,
+    /// The world's bots shown here (`world_bots.rs`): the NPC tick leaves them alone, and enemies never go after them.
+    pub world_bots: HashSet<ObjectId>,
     /// NPCs a director is sending along a line, hurting as they go (`director:sweep_bnpc`, `server/sweep.rs`.)
     pub sweeps: Vec<crate::server::sweep::Sweep>,
     /// Aggressive BNpcs (by layout ID) a director has told not to notice anyone who comes close: they fight only when
@@ -624,6 +626,8 @@ impl Instance {
                     // Nothing goes after a retainer called at a bell.
                     && y.get_common_spawn().object_kind != ObjectKind::Retainer
             })
+            // Nor after the world's bots (`world_bots.rs`.)
+            .filter(|(id, _)| !self.world_bots.contains(id))
             .map(|(x, y)| {
                 (
                     *x,

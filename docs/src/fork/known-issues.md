@@ -1615,6 +1615,18 @@ Fixed in code and by test or simulation; none played yet.
   spots, Player NPCs dodge by the shapes they see. If he meant something else, this is the place to change
   (`party_bot`'s `authored`).
 
+## World bots (2026-11-11)
+
+Stage 1 of [World Bots](world-bots.md); nothing seen in game yet.
+
+* The places are found from each zone's layout: whether the marketboards' CustomTalk names (`CmnDefMarketBoard…`)
+  and the innkeepers' Warps find every board and inn, and nothing else, is only known when the server logs them
+  (`!worldbots` in the zone.)
+* Retail's standing spots are kept for the six city zones only; elsewhere bots stand in a ring round their place.
+* The shares of their trips, an inn's stay and a loading screen's length are guesses.
+* No weapons drawn, minions, mounts, crafting or sitting yet; they don't turn to face their place after a walk.
+* Inviting, examining or searching for one finds no character.
+
 ## Raises, boss-fight spots and drop rates (2026-11-10)
 
 None of it played yet.

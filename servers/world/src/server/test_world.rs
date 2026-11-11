@@ -180,6 +180,9 @@ impl TestWorld {
                 content_id,
                 world_id: 0,
                 handler_id: Default::default(),
+                online_status: None,
+                title_id: 0,
+                pose: 0,
             }),
         );
         if let Some(NetworkedActor::Npc { state, .. }) = self.instance.find_actor_mut(actor_id) {

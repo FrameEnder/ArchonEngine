@@ -287,6 +287,8 @@ The packet is 944 bytes (Kawari's `ExamineCharacterInformation`, whose two unkno
   that look one up, *View Search Info* (`RequestSearchInfo`, by content ID) and *View Adventurer Plate*
   (`RequestAdventurerPlate`, by actor ID), are now answered with nothing when there's no such character, rather than
   panicking the connection as the lookups (`unwrap`) would have.
+* **Its SpawnPlayer's online status, title and pose** come from `ShownAsPlayer` (2026-11-11): a party bot's are Party
+  Member, none and 0; a world bot's ([World Bots](world-bots.md)) its own.
 * **Or an NPC with a player's look** (`kind=chocobo`, as before), spawned as retail spawns a **chocobo companion**: a battle NPC of sub-kind 3
   (`Chocobo`), owned by the player (`owner_id`), its name in the spawn's text and no BNpcName (`name_id` 0), character
   data flags 0x1, no display flags, battalion 0 (your side), ModelChara 0 (a human model built from its customize data

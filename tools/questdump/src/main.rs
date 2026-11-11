@@ -1080,6 +1080,8 @@ fn content_index(resolver: &mut ResourceResolver) -> Result<Value, String> {
         .map_err(|err| format!("couldn't read the TerritoryType sheet: {err:?}"))?;
     let mut territory_info = HashMap::new();
     let mut zones = Vec::new();
+    // Towns (TerritoryIntendedUse 0) with a name: the cities ArchonEngine ControlPanel's World bots page lists.
+    let mut towns = Vec::new();
     for (id, row) in territories.into_iter().flatten_subrows() {
         let bg = row.Bg.to_string();
         territory_info.insert(id, (row.ExVersion, bg.clone(), row.TerritoryIntendedUse));
@@ -1088,6 +1090,14 @@ fn content_index(resolver: &mut ResourceResolver) -> Result<Value, String> {
             .get(&(row.PlaceName as u32))
             .cloned()
             .unwrap_or_default();
+        if row.TerritoryIntendedUse == 0 && !name.is_empty() && !bg.is_empty() {
+            towns.push(json!({
+                "id": id,
+                "name": name,
+                "region": place_names.get(&(row.PlaceNameRegion as u32)).cloned().unwrap_or_default(),
+                "ex_version": row.ExVersion,
+            }));
+        }
         if row.TerritoryIntendedUse == 1 && !name.is_empty() && !bg.is_empty() {
             zones.push(json!({
                 "id": id,
@@ -1136,6 +1146,7 @@ fn content_index(resolver: &mut ResourceResolver) -> Result<Value, String> {
         "content_types": content_types,
         "duties": duties,
         "zones": zones,
+        "towns": towns,
     }))
 }
 
