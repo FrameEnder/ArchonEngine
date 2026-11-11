@@ -1855,10 +1855,7 @@ pub fn npc_behavior(
             ..
         } = actor
         {
-            if *state == NpcState::Dead
-                || *state == NpcState::AoeTest
-                || instance.held_npcs.contains(id)
-            {
+            if out_of_the_fight(instance, *id, state) {
                 continue;
             }
 
@@ -1924,6 +1921,17 @@ pub fn npc_behavior(
             }
         }
     }
+}
+
+/// Whether an NPC shows no fight yet: neither its target nor its battle stance, nor a place on anyone's hater list (so no
+/// one is put in combat by it). The dead and a director's helpers (`hold_bnpc`); and everyone before the duty begins
+/// (`Instance::awaiting_commence`): retail's player was out of combat through Notorious Biggs' opening (Bob's
+/// Chronofoil capture 689b15da), Kawari's in combat before it started (Bob's bundle 20261111-194208.)
+pub(crate) fn out_of_the_fight(instance: &Instance, id: ObjectId, state: &NpcState) -> bool {
+    *state == NpcState::Dead
+        || *state == NpcState::AoeTest
+        || instance.held_npcs.contains(&id)
+        || instance.awaiting_commence
 }
 
 /// A party wipe in a duty (`server/wipe.rs`): every enemy that was fighting, or hurt, goes back to where it began, whole,

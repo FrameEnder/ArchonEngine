@@ -3,6 +3,12 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Quest battles' start (2026-11-11)
+
+* Retail plays the director's scene 60000 (EventStart 0x0d) when a quest battle's opening ends, and the first blow
+  comes about 2 s into it (Notorious Biggs, Bob's capture 689b15da); Kawari begins the fight at the opening's return,
+  with no scene 60000, so its NPCs may act up to 2 s sooner than retail's.
+
 ## Quest enemies from captures (2026-11-11)
 
 * The 24 kinds of quest enemy added from Connor's captures (quests 986 to 3883, `quests.md`) have timelines from only

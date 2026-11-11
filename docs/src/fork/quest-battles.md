@@ -187,6 +187,16 @@ when it ends, EventStart 0x0d with scene 60000 and the fight starts (Kawari's `o
 then the finish scene, UpdateQuest, and DirectorVars with sequence `0xFE` and the byte after it `0x80`, then the
 player is sent out.
 
+**Nothing fights through the opening.** In Notorious Biggs (Bob's Chronofoil capture 689b15da) the opening ran
+0.9-7.2 s after ZoneInit, scene 60000 began at 7.3 s with the HaterList, and the first blow came at 9.3 s; the
+player's conditions were only BoundByDuty until then, never InCombat. Kawari's NPCs, spawned at setup with whom they
+hate, fought from the moment the player loaded, the player InCombat before the opening even began (Bob's bundle
+20261111-194208). Since 2026-11-11 a quest battle waits for its opening as a duty does (`waits_for_its_opening`,
+`Instance::awaiting_commence`): its NPCs neither move, notice nor act, show no target or battle stance and are on no
+hater list (`npc_behavior::out_of_the_fight`), and the director's updates wait, until the opening's return
+(`ToServer::ReadyToCommence`) begins it with `onCommence`. Test `a_quest_battle_waits_for_its_opening`. Kawari still
+sends no scene 60000 (`known-issues.md`).
+
 The opening scene's flags differ from one quest battle to the next, always the same for one battle (Bob's Chronofoil
 captures, 14 openings of 9 battles): 0xF841AEFB for 11, 12, 15, 35 and 36 (Kawari's default,
 `QUEST_BATTLE_OPENING_FLAGS` in `main.rs`), 0xF8412FF7 for 14, 0xF8412EFB for 24, 0xF841AF0B for 29, 0xF841AFFF for 16 (two openings, 2026-10-26), and 54's is

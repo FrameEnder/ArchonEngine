@@ -4282,11 +4282,19 @@ pub fn handle_director_messages(
                 return true;
             };
 
-            // Quest battles don't have the InstanceContent duty start, their script decides what happens.
-            if let Some(director) = instance.directors.first_mut()
-                && director.id.handler_type() == HandlerType::QuestBattle
+            // Quest battles don't have the InstanceContent duty start, their script decides what happens; like a
+            // duty's, its NPCs wait until the opening is over (`Instance::awaiting_commence`.)
+            if instance
+                .directors
+                .first()
+                .is_some_and(|director| director.id.handler_type() == HandlerType::QuestBattle)
             {
-                director.commence();
+                let Some((_, first_time)) = ready_to_begin(instance, *from_actor_id) else {
+                    return true;
+                };
+                if first_time && let Some(director) = instance.directors.first_mut() {
+                    director.commence();
+                }
                 give_quest_battle_role_status(&network, &game_data, instance, *from_actor_id);
                 return true;
             }
@@ -4395,6 +4403,16 @@ pub fn handle_director_messages(
         }
         _ => false,
     }
+}
+
+/// Whether a duty of this director's kind holds its NPCs until its players have seen its opening
+/// (`Instance::awaiting_commence`): a dungeon's or trial's, and a quest battle's (since 2026-11-11, Bob's bundle
+/// 20261111-194208: Notorious Biggs was fought through its opening.)
+pub(crate) fn waits_for_its_opening(director_type: HandlerType) -> bool {
+    matches!(
+        director_type,
+        HandlerType::InstanceContent | HandlerType::QuestBattle
+    )
 }
 
 /// `player` has finished the duty's opening: whom the duty begins for now, and whether it's the duty's beginning. It

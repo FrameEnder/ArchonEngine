@@ -5,7 +5,7 @@
 use std::time::Duration;
 
 use kawari::{
-    common::{CharacterMode, ObjectId, WarpType},
+    common::{CharacterMode, HandlerType, ObjectId, WarpType},
     ipc::zone::{
         ActorControlCategory, Condition, ServerZoneIpcData, TargetEffect, TargetEffectKind,
     },
@@ -19,9 +19,9 @@ use crate::{
             tossed_by,
         },
         actor::{NetworkedActor, NpcState, kill_actor},
-        director::{engage_npc, ready_to_begin},
+        director::{engage_npc, ready_to_begin, waits_for_its_opening},
         modifiers,
-        npc_behavior::{CastAim, cast_aim, retail_cast_aim, unnoticed},
+        npc_behavior::{CastAim, cast_aim, out_of_the_fight, retail_cast_aim, unnoticed},
         party_bot,
         test_world::{TestWorld, control_from, packet_from},
     },
@@ -392,6 +392,35 @@ fn a_duty_begins_when_everyone_has_seen_its_opening() {
         ready_to_begin(&mut world.instance, late),
         Some((vec![late], false))
     );
+}
+
+/// Bundle 20261111-194208, "notorious bigs battle starts during cut-scene this should never happen": a quest battle's
+/// NPCs, spawned with whom they hate (Biggs' archers on the player, his side on them), fought through the opening and
+/// put the player in combat before it began. A quest battle waits for its opening as a duty does
+/// (`waits_for_its_opening`), its NPCs out of the fight until then (`out_of_the_fight`: no target, stance or hater
+/// list, so no InCombat), and it begins when the player has seen it (retail: scene 60000 7.3 s in, the first blow 2 s
+/// later, Bob's Chronofoil capture 689b15da.)
+#[test]
+fn a_quest_battle_waits_for_its_opening() {
+    assert!(waits_for_its_opening(HandlerType::QuestBattle));
+    assert!(waits_for_its_opening(HandlerType::InstanceContent));
+
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    let archer = world.enemy(ENEMY, [5.0, 0.0, 5.0], 2000);
+    if let Some(NetworkedActor::Npc { enmity, state, .. }) = world.instance.find_actor_mut(archer) {
+        enmity.insert(player, 100);
+        *state = NpcState::Hate;
+    }
+    world.instance.awaiting_commence = waits_for_its_opening(HandlerType::QuestBattle);
+    assert!(out_of_the_fight(&world.instance, archer, &NpcState::Hate));
+
+    // The opening is over: the fight is on.
+    assert_eq!(
+        ready_to_begin(&mut world.instance, player),
+        Some((vec![player], true))
+    );
+    assert!(!out_of_the_fight(&world.instance, archer, &NpcState::Hate));
 }
 
 /// Bundle 20261111-125206, "Garudo attacks the pillar that's not right": an NPC that can't be targeted (the Howling

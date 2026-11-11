@@ -372,9 +372,11 @@ impl WorldServer {
         instance.content_finder_condition_id = content_finder_condition;
 
         if let Some(director_type) = HandlerType::from_intended_use(instance.zone.intended_use) {
-            // An InstanceContent duty waits for its players' openings (`Instance::awaiting_commence`); a quest
-            // battle's script begins it itself.
-            instance.awaiting_commence = director_type == HandlerType::InstanceContent;
+            // A duty waits for its players' openings (`Instance::awaiting_commence`), a quest battle too: retail's
+            // first blow in Notorious Biggs came 2 s after its opening ended and scene 60000 began, the player out of
+            // combat until then (Bob's Chronofoil capture 689b15da); Kawari's had both sides fighting through it
+            // (Bob's bundle 20261111-194208.)
+            instance.awaiting_commence = director::waits_for_its_opening(director_type);
             instance.content_id = game_data
                 .find_content_for_content_finder_id(instance.content_finder_condition_id)
                 .unwrap();
