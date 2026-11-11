@@ -941,6 +941,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   `set_invulnerable`; whether retail makes him untargetable then isn't recorded. Retail's 0x40000007 (0, 1) at 15 % and
   the clear's logs aren't sent.
 
+## A duty's music (2026-11-11)
+
+* The opening scene's first parameter is the duty's InstanceContent BGM (`dungeons.md`); untested in game, and not
+  checked against the game's sheet here (no game install): retail's numbers are 155 (the Howling Eye), 157 (the Navel)
+  and 0 (the Stone Vigil). If a duty plays the wrong music, the column is the wrong one.
+
 ## The Navel (2026-11-06)
 
 * Untested in game, from three runs that each won at the first attempt (Bob's Chronofoil captures 650dbfd8, 0fd8bce0,

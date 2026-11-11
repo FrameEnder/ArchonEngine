@@ -40,6 +40,15 @@ started either, and a wipe is only watched while it runs: that's why Bob's death
 and it did not reset").
 Test `a_duty_begins_when_everyone_has_seen_its_opening`.
 
+**The duty's music** is the opening scene's first parameter (EventScene, director 0x0C53A401): retail sends no BGM
+director event (0x80000001) in the Howling Eye, and its opening carries 155 there in all three runs (09ecf8e7, 6a5244ec,
+6c495fc4), 157 in the Navel (650dbfd8) and 0 in the Stone Vigil (1cefedf4), where the zone's own music plays until a
+boss's 0x80000001. Kawari sent 0 (Sapphire's guess, "BGM?"), so Garuda fought to the zone's music ("what about the boss
+music?"). Since 2026-11-11 it's the duty's InstanceContent BGM (`GameData::find_content_bgm`, passed with
+`PlayInitialCutscene` from `director.rs`'s EnterTerritoryEvent). That InstanceContent's BGM is the number retail sends
+is a reading of the column's name; there's no game install here to check that the Howling Eye's row says 155, so a
+duty whose music is wrong in game is the first sign it isn't.
+
 ## Facing at the entrance
 
 Retail turns players the same way every time they come into a given duty. Kawari had them face the way the

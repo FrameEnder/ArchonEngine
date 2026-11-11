@@ -5478,7 +5478,7 @@ async fn process_server_msg(
                 connection.minimum_item_level = Some(item_level);
                 connection.send_stats().await;
             }
-            FromServer::PlayInitialCutscene(duration, settings, opening_flags) => {
+            FromServer::PlayInitialCutscene(duration, settings, opening_flags, bgm) => {
                 // Quest battles play the same opening scene, but without InstanceContent's parameters (as Sapphire does.)
                 let is_quest_battle = connection
                     .content_handler_id
@@ -5489,7 +5489,7 @@ async fn process_server_msg(
                     Vec::new()
                 } else {
                     vec![
-                        0, // BGM, according to sapphire?
+                        bgm, // InstanceContent's BGM (`director.rs`, EnterTerritoryEvent)
                         0,
                         0,
                         5,

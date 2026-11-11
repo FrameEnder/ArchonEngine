@@ -4235,6 +4235,13 @@ pub fn handle_director_messages(
                 return true;
             };
 
+            // The duty's music is the opening scene's first parameter: retail sends no BGM director event in the
+            // Howling Eye, and its opening carries 155 there, 157 in the Navel and 0 in the Stone Vigil (Bob's
+            // Chronofoil captures 09ecf8e7, 6a5244ec, 6c495fc4, 650dbfd8, 1cefedf4.)
+            let bgm = game_data
+                .lock()
+                .find_content_bgm(instance.content_id)
+                .unwrap_or_default() as u32;
             let mut network = network.lock();
             for director in &instance.directors {
                 if director.id.handler_type().is_content_director() {
@@ -4248,6 +4255,7 @@ pub fn handle_director_messages(
                             )
                             .bits(),
                             director.opening_scene_flags(),
+                            bgm,
                         ),
                         DestinationNetwork::ZoneClients,
                     );

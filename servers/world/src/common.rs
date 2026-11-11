@@ -341,7 +341,9 @@ pub enum FromServer {
     EchoMultiplier(f32),
     /// Play the initial cutscene for instanced content: its duration, settings, and for a quest battle its scene
     /// flags (`OPENING_SCENE_FLAGS` in its script, if it sets them.)
-    PlayInitialCutscene(u32, u32, Option<u32>),
+    /// A duty's opening scene: its duration, DutyOption bits, the director's opening flags and the duty's
+    /// music (InstanceContent's BGM.)
+    PlayInitialCutscene(u32, u32, Option<u32>, u32),
     /// A FATE was completed. This is meant to track SHARED FATE completion and not much else yet.
     FATEComplete(u32),
     /// A FATE this player took part in was completed: give its rewards.

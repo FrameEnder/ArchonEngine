@@ -2494,6 +2494,15 @@ impl GameData {
         Some(row.TimeLimitmin)
     }
 
+    /// A duty's music: its InstanceContent's BGM, which retail sends as the opening scene's first parameter.
+    pub fn find_content_bgm(&mut self, instance_content_id: u16) -> Option<u16> {
+        let row = self
+            .instance_content_sheet
+            .row(instance_content_id as u32)?;
+
+        Some(row.BGM)
+    }
+
     /// Returns information about a specific GimmickRect.
     pub fn get_gimmick_rect_info(&mut self, gimmick_rect_id: u32) -> Option<GimmickRectRow> {
         self.gimmick_rect_sheet.row(gimmick_rect_id)
