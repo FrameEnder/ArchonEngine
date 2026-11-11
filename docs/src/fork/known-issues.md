@@ -285,8 +285,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   retail's order now ([Quests](quests.md), "Changing class"), untested in game: whether that is what let the client
   change class again isn't confirmed. Still unlike retail: the InventoryActionAck for a weapon comes first (retail's
   after Equip and ActorControlSelf 57), the Equip and the stats come once more than retail's, and what
-  ActorControlSelf 805 (after a gearset, sent) and 3103 (with five of nine retail gearsets, not sent) mean isn't
-  known. A gearset's moves are retail's now ([Quests](quests.md), "A gearset's moves"), untested in game; a slot the
+  ActorControlSelf 805 (after a gearset) and 3103 or 3101 (after its equipped container, by whether it has a glamour
+  plate), all sent, mean isn't known. A gearset's moves are retail's now ([Quests](quests.md), "A gearset's moves"), untested in game; a slot the
   gearset leaves empty is sent as a Move from Equipped to the armoury, which no retail gearset showed, and the
   transactions' sequence is Kawari's item sequence (retail's is a counter of its own, e.g. 0x84482). The
   level-31 "All Classes" armour stayed on the level-1 Gladiator (`remove_incompatible_armor` checks the class, not the

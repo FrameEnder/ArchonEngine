@@ -958,8 +958,18 @@ impl ZoneConnection {
         });
         self.send_ipc_self(ipc).await;
 
-        // Retail also re-sends the equipped container
+        // Retail also re-sends the equipped container, then ActorControlSelf 3103 (3101 for a gearset with a glamour
+        // plate), empty (`gearset_container_sent`.)
         self.send_equipped_inventory().await;
+        self.actor_control_self(ActorControlCategory::Unknown {
+            category: gearset_container_sent(with_plate),
+            param1: 0,
+            param2: 0,
+            param3: 0,
+            param4: 0,
+            param5: 0,
+        })
+        .await;
         self.inform_equip().await;
 
         // Change class as needed.
@@ -978,6 +988,25 @@ pub fn add_gil(connection: &mut ZoneConnection, gil: u32) {
 
 /// ActorControlSelf 805, retail's after every gearset (`update_equip`.)
 const GEARSET_EQUIPPED_END: u32 = 805;
+
+/// The ActorControlSelf retail sent, empty, right after a gearset's equipped container: 3103 for EquipGearset, 3101 for
+/// EquipGearsetGlamour (Bob's Chronofoil captures: 128 gearsets over three versions, one or the other every time; in
+/// the 10.16 captures, where both requests are named, all ten 3103s followed an EquipGearset and all eleven 3101s an
+/// EquipGearsetGlamour.) What either does isn't known.
+pub(crate) fn gearset_container_sent(with_plate: bool) -> u32 {
+    if with_plate { 3101 } else { 3103 }
+}
+
+#[cfg(test)]
+mod gearset_tests {
+    /// Known issues: retail's 3103 came with five of nine gearsets, "what decides it isn't known", and wasn't sent;
+    /// it's the plate: 3101 with one.
+    #[test]
+    fn a_gearset_s_container_is_followed_as_retail_s_was() {
+        assert_eq!(super::gearset_container_sent(false), 3103);
+        assert_eq!(super::gearset_container_sent(true), 3101);
+    }
+}
 
 /// LootMessage's kind for gil an enemy dropped (the amount.)
 const LOOT_MESSAGE_GIL: u32 = 9;

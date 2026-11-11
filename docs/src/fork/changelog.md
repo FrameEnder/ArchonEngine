@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-11-11 | — | Known issues (the "who to talk to next" packet is UpdateMapMarkers' two-marker size, what's in it; StatusEffectListDouble is players' only); Combat (which actions carry kind 27).
+| 2026-11-11 | — | Quests (a gearset's 3103 or 3101); known issues.
+| 2026-11-11 | `d4ed027` | Known issues (the "who to talk to next" packet is UpdateMapMarkers' two-marker size, what's in it; StatusEffectListDouble is players' only); Combat (which actions carry kind 27).
 | 2026-11-11 | `e210908` | Combat ("Putting the player somewhere", the toss); Travel (236 sent); known issues (three entries).
 | 2026-11-11 | `e915519` | Combat (the knockbacks in Bob's captures, all scripted).
 | 2026-11-11 | `f045f8d` | Dungeons (the Bowl of Embers: Vulcan Burst's knockback); known issues.
@@ -486,6 +487,7 @@ Commits on `Latest-Quest` (and, since 2026-11-03, `test-pending`) since the fork
 
 | Commit | Change |
 |---|---|
+| — | After a gearset's equipped container, ActorControlSelf 3103, or 3101 for a gearset with a glamour plate, as retail's every time (`zone_connection::item::gearset_container_sent`); test `a_gearset_s_container_is_followed_as_retail_s_was` (`servers/world/src/zone_connection/item.rs`). |
 | `e210908` | ActorControlSelf 236 after every ActorSetPos and gimmick jump of the player's, counting 1, 2, 3, 0 from each zone-in as retail's (`zone_connection::puts_the_player`, `position_sequence_after`, `ZoneConnection::position_sequence`); test `putting_the_player_somewhere_is_counted_as_retail_s_was` (`servers/world/src/zone_connection/mod.rs`, `servers/world/src/main.rs`). |
 | `e915519` | Knockbacks as retail's for the rest of the NPC actions that had one in Bob's captures: Brayflox's dragon's 564 (row 1), the Copperbell gigas' 677 (16), the quest battle gladiator's 1003 (19); checked with lupa (`resources/scripts/actions/{005/BrayfloxDragon_00564,006/CopperbellGigas_00677,010/QuestBattleNpc_01003}.lua`). |
 | `f045f8d` | Ifrit's Vulcan Burst knocks back, the Knockback sheet's row 1 as retail's on every one hit (58 in 15 uses); checked with lupa (`resources/scripts/actions/004/Ifrit_00454.lua`). |

@@ -810,9 +810,10 @@ gladius from the bags and by a gearset, and back to Conjurer by the cane from th
 UnkJobGauge for the new class, PlayerStats, the map markers, **UnkClassRelated**, ActorControl (not ActorControlSelf)
 5 with the class (the change's VFX, to the player and everyone around), SetupPet and SetPetParameters with no pet
 twice, Equip (with the class and its level), ActorControlSelf 521 (the item level) and 57, for the weapon
-InventoryActionAck, for a gearset ActorControlSelf 805, then StatusEffectList and **UpdateClassInfo last**. (A
-gearset's ActorControlSelf 3103, empty, after the equipped container, came with five of retail's nine gearsets, with
-or without a class change: what decides it isn't known, and Kawari doesn't send it.) A weapon
+InventoryActionAck, for a gearset ActorControlSelf 805, then StatusEffectList and **UpdateClassInfo last**. (After a
+gearset's equipped container retail sent ActorControlSelf 3103, empty, or 3101 for a gearset with a glamour plate
+(EquipGearsetGlamour): one or the other with all 128 gearsets in Bob's captures, with or without a class change. Kawari
+sends them since 2026-11-11, `gearset_container_sent`; what they do isn't known.) A weapon
 or gearset of the same class got none of the class packets (capture 44df02fc: PlayerStats, Equip, 521, 57, the ack,
 StatusEffectList, UpdateClassInfo). Kawari sent UpdateClassInfo first, before UnkClassRelated; `finish_changing_class`
 now follows retail's order, only when the class really changes, and UpdateClassInfo comes with the equipment
