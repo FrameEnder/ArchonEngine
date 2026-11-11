@@ -805,8 +805,13 @@ impl Instance {
     }
 
     pub fn insert_treasure(&mut self, actor_id: ObjectId, treasure: SpawnTreasure) {
-        self.actors
-            .insert(actor_id, NetworkedActor::Treasure { treasure });
+        self.actors.insert(
+            actor_id,
+            NetworkedActor::Treasure {
+                treasure,
+                opened_at: None,
+            },
+        );
     }
 
     /// Inserts a new task into the queue, with a set `duration` and given `data`.

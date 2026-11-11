@@ -174,6 +174,9 @@ pub enum NetworkedActor {
     },
     Treasure {
         treasure: SpawnTreasure,
+        /// When it was opened for rolls: someone coming into range then is sent the time left
+        /// (`loot::show_opened`.)
+        opened_at: Option<Instant>,
     },
 }
 
@@ -229,7 +232,7 @@ impl NetworkedActor {
             NetworkedActor::Player { spawn, .. } => spawn.common.position,
             NetworkedActor::Npc { spawn, .. } => spawn.common.position,
             NetworkedActor::Object { object, .. } => object.position,
-            NetworkedActor::Treasure { treasure } => treasure.position,
+            NetworkedActor::Treasure { treasure, .. } => treasure.position,
         }
     }
 
@@ -238,7 +241,7 @@ impl NetworkedActor {
             NetworkedActor::Player { spawn, .. } => spawn.common.rotation,
             NetworkedActor::Npc { spawn, .. } => spawn.common.rotation,
             NetworkedActor::Object { object, .. } => object.rotation,
-            NetworkedActor::Treasure { treasure } => treasure.rotation,
+            NetworkedActor::Treasure { treasure, .. } => treasure.rotation,
         }
     }
 

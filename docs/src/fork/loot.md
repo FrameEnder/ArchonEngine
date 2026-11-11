@@ -21,6 +21,14 @@ The first player to open it (OpenTreasure) opens it for the party. Every player 
    these again, marked as opened and with the time left (retail's had 290 s left 9.5 s on).
 3. **OpenedTreasure**, from the coffer: 300.0 three times, 1, the coffer.
 
+Someone coming into range while its items are rolled for is sent its SpawnTreasure as an opened coffer, as retail's
+were (41 in Bob's Chronofoil captures, eight dungeons, 11.6 to 255.7 s left): the time left (`countdown_time`, 300 less
+the time since it opened), 300 as `countdown_start_time` and `claim_time`, and its items (`item_count`,
+`lootable_item_ids`; every one of them still undecided then). Kawari sent it as it spawned, closed (`loot::show_opened`,
+`NetworkedActor::Treasure`'s `opened_at`, since 2026-11-11). Retail deleted a coffer (DeleteObject) 1 s after its
+TreasureFadeOut (82 of 84); Kawari kept it, so coming back showed it closed again, and deletes it now
+(`GONE_AFTER_FADING`). Test `an_opened_coffer_comes_back_opened`.
+
 ## What a coffer holds
 
 There's no loot table in the client's data, so each duty's script records what its coffers held on retail, as item

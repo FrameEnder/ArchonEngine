@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-11-11 | — | The Gold Saucer (leaving it during a GATE); known issues (TerminateDirector sent).
+| 2026-11-11 | — | Coffers and loot (an opened coffer coming back into range; deleted after fading); known issues.
+| 2026-11-11 | `f246747` | The Gold Saucer (leaving it during a GATE); known issues (TerminateDirector sent).
 | 2026-11-11 | `4a6d68a` | Dungeons ("The duty's time flags"; Haukke Manor's and the Stone Vigil's notes); known issues (0x40000007 sent, four entries).
 | 2026-11-11 | `6191880` | Combat ("NPC shouts"); known issues (ActorControl 73 built; the later-use lines' triggers).
 | 2026-11-11 | `3707b0d` | Quest battles ("The end of a win"); known issues (ActorControl 73 described, not built: its capture isn't at hand).
@@ -481,7 +482,8 @@ Commits on `Latest-Quest` (and, since 2026-11-03, `test-pending`) since the fork
 
 | Commit | Change |
 |---|---|
-| — | Leaving the Gold Saucer while a GATE is on ends its director, TerminateDirector after the PrepareZoning as retail's every time (`gate::leaves_gold_saucer`, `ZoneConnection::leave_gate`); test `leaving_the_gold_saucer_ends_the_gate_s_director` (`servers/world/src/gate.rs`, `servers/world/src/zone_connection/{gate,mod}.rs`). |
+| — | An opened coffer comes back into range opened, its SpawnTreasure with the time left and its items as retail's, and goes 1 s after fading (DeleteObject) as retail's did (`loot::show_opened`, `GONE_AFTER_FADING`, `NetworkedActor::Treasure`'s `opened_at`); test `an_opened_coffer_comes_back_opened` (`servers/world/src/server/{loot,network,actor,instance,bundle_tests}.rs`). |
+| `f246747` | Leaving the Gold Saucer while a GATE is on ends its director, TerminateDirector after the PrepareZoning as retail's every time (`gate::leaves_gold_saucer`, `ZoneConnection::leave_gate`); test `leaving_the_gold_saucer_ends_the_gate_s_director` (`servers/world/src/gate.rs`, `servers/world/src/zone_connection/{gate,mod}.rs`). |
 | `4a6d68a` | A duty's time flags as retail's: InstanceContentDirector event 0x40000007 `[0, 1]` 300 s and `[1, 1]` 900 s after DutyCommence (an unrestricted party's `[1, 1]` with it), both cleared with DutyCompleted (`director::DUTY_FLAG_TIMES`, `duty_flags_due`, `send_duty_flag`; `Instance::duty_flags`); test `a_duty_s_time_flags_come_when_retail_s_did` (`core/src/common/director.rs`, `servers/world/src/server/{director,instance,bundle_tests}.rs`). |
 | `6191880` | NPCs shout with their actions as retail's did: ActorControl 73 `[line]` (`NpcShout`) from the NPC with the action's ActionEffect, the lines in order one per use (`Timeline::shouts`, `Shouts`, `action::npc_shout`); 26 actions of 22 BNpcBases' timelines from Bob's Chronofoil captures; tests `an_npc_shouts_with_its_actions_as_retail_s_did` and `shouts_go_through_their_lines_in_order` (`core/src/common/{mod,timeline}.rs`, `core/src/ipc/zone/server/actor_control.rs`, `servers/world/src/server/{action,actor,instance,test_world,bundle_tests}.rs`, 22 `resources/timelines/*.json`). |
 | `3707b0d` | A won quest battle's last DirectorVars as its closing scene ends, sequence 0xFE with the last data byte's 0x80 (32 won runs of 27 battles); test `a_won_quest_battle_ends_as_retail_s` (`server/director.rs`, `events/content.rs`, `common.rs`, `server/bundle_tests.rs`). |

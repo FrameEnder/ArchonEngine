@@ -87,9 +87,18 @@ impl NetworkState {
                 object.spawn_index = spawn_index;
                 FromServer::SpawnObject(object)
             }
-            NetworkedActor::Treasure { treasure } => {
+            NetworkedActor::Treasure {
+                treasure,
+                opened_at,
+            } => {
                 let mut treasure = treasure.clone();
                 treasure.spawn_index = spawn_index;
+                // An opened coffer comes with its time left to roll (`loot::show_opened`.)
+                if let Some(opened_at) = opened_at {
+                    treasure.countdown_time = crate::server::loot::CLAIM_TIME
+                        .saturating_sub(opened_at.elapsed())
+                        .as_secs_f32();
+                }
                 FromServer::TreasureSpawn(treasure)
             }
         };

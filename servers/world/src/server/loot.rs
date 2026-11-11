@@ -141,7 +141,13 @@ pub struct Coffer {
     first_serial: u32,
     /// When it fades out (a personal coffer's, `PERSONAL_FADE_AFTER` after it opened.)
     fade_at: Option<Instant>,
+    /// When it's gone, once it has faded (`GONE_AFTER_FADING`.)
+    gone_at: Option<Instant>,
 }
+
+/// How long after a coffer's TreasureFadeOut retail deleted it (DeleteObject): 1 s, 82 times of 84 in Bob's Chronofoil
+/// captures. Kawari kept it, so coming back into range showed it closed again.
+const GONE_AFTER_FADING: Duration = Duration::from_secs(1);
 
 /// How long after a personal coffer (Duty Support) opened it faded out on retail.
 const PERSONAL_FADE_AFTER: Duration = Duration::from_secs(4);
@@ -439,7 +445,7 @@ pub fn open(
     opener: ObjectId,
     treasure_id: ObjectId,
 ) {
-    let Some(NetworkedActor::Treasure { treasure }) = instance.find_actor(treasure_id) else {
+    let Some(NetworkedActor::Treasure { treasure, .. }) = instance.find_actor(treasure_id) else {
         return;
     };
     let base_id = treasure.base_id;
@@ -486,6 +492,7 @@ pub fn open(
         bots_due: Vec::new(),
         first_serial,
         fade_at: None,
+        gone_at: None,
     };
     for bot in instance.party_bots.keys() {
         for slot in 0..items.len() {
@@ -538,6 +545,7 @@ pub fn open(
 
     let empty = items.is_empty();
     instance.coffers.insert(treasure_id, coffer);
+    show_opened(instance, treasure_id, &items, now);
     if empty {
         fade_out(network, instance, treasure_id);
     }
@@ -588,6 +596,7 @@ fn open_personal(
             bots_due: Vec::new(),
             first_serial: 0,
             fade_at: Some(now + PERSONAL_FADE_AFTER),
+            gone_at: None,
         },
     );
 }
@@ -780,7 +789,37 @@ fn decide(network: &mut NetworkState, instance: &mut Instance, treasure_id: Obje
     }
 }
 
-fn fade_out(network: &mut NetworkState, instance: &Instance, treasure_id: ObjectId) {
+/// An opened coffer as it's shown to someone coming into range while its items are rolled for: its SpawnTreasure with
+/// the time left (`countdown_time`, worked out as it's sent), 300 s as the start and the claim time, and its items (Bob's
+/// Chronofoil captures: 41 of them, 11.6 to 255.7 s left, in eight dungeons; the client showed it closed without.)
+pub(crate) fn show_opened(
+    instance: &mut Instance,
+    treasure_id: ObjectId,
+    items: &[u32],
+    now: Instant,
+) {
+    let Some(NetworkedActor::Treasure {
+        treasure,
+        opened_at,
+    }) = instance.find_actor_mut(treasure_id)
+    else {
+        return;
+    };
+    *opened_at = Some(now);
+    let claim = CLAIM_TIME.as_secs_f32();
+    treasure.countdown_start_time = claim;
+    treasure.claim_time = claim;
+    treasure.item_count = items.len().min(16) as u8;
+    treasure.lootable_item_ids = [0; 16];
+    for (slot, item) in items.iter().take(16).enumerate() {
+        treasure.lootable_item_ids[slot] = *item;
+    }
+}
+
+fn fade_out(network: &mut NetworkState, instance: &mut Instance, treasure_id: ObjectId) {
+    if let Some(coffer) = instance.coffers.get_mut(&treasure_id) {
+        coffer.gone_at = Some(Instant::now() + GONE_AFTER_FADING);
+    }
     let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::TreasureFadeOut { unk1: 0, unk2: 0 });
     network.send_to_instance(
         ObjectId::default(),
@@ -799,7 +838,12 @@ pub fn tick(network: &mut NetworkState, instance: &mut Instance) {
     let mut due = Vec::new();
     let mut expired = Vec::new();
     let mut fading = Vec::new();
+    let mut gone = Vec::new();
     for (treasure_id, coffer) in &mut instance.coffers {
+        if coffer.gone_at.is_some_and(|at| at <= now) {
+            gone.push(*treasure_id);
+            continue;
+        }
         if coffer.fade_at.is_some_and(|at| at <= now) {
             coffer.fade_at = None;
             fading.push(*treasure_id);
@@ -834,6 +878,10 @@ pub fn tick(network: &mut NetworkState, instance: &mut Instance) {
     }
     for treasure_id in fading {
         fade_out(network, instance, treasure_id);
+    }
+    for treasure_id in gone {
+        instance.coffers.remove(&treasure_id);
+        network.remove_actor(instance, treasure_id);
     }
 }
 

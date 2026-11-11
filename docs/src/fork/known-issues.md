@@ -762,8 +762,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * A Greed or Need on a unique item the player has already isn't refused (retail answers 8). LootItem's `bonus` (set
   on retail's Aetherial Brass Wristlets, perhaps their random stats) is left at zero.
 * Sastasha's coffers 98 and 100, the Tam-Tara Deepcroft's 15 and 119 and the Copperbell Mines' 59 and 65 were never
-  opened in a capture and hold what their wiki lists say. A reopened coffer's SpawnTreasure (retail sends it again with its items when you come back in
-  range) isn't sent.
+  opened in a capture and hold what their wiki lists say. An opened coffer coming back into range with some of its items
+  decided isn't recorded (each of retail's 41 had none decided); Kawari lists them all.
 
 ## Party bots
 

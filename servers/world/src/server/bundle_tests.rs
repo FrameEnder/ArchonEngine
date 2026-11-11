@@ -685,6 +685,37 @@ fn a_duty_s_time_flags_come_when_retail_s_did() {
     assert!(duty_flags_due(Duration::from_secs(1000), 0b11).is_empty());
 }
 
+/// Known issues, coffers: retail sent an opened coffer's SpawnTreasure again to someone coming back into range while
+/// its items were rolled for, with the time left and its items (41 in Bob's Chronofoil captures), and deleted it 1 s
+/// after it faded; Kawari's came back closed, even after fading.
+#[test]
+fn an_opened_coffer_comes_back_opened() {
+    use crate::server::{ClientState, loot::show_opened, network::NetworkState};
+    use kawari::ipc::zone::SpawnTreasure;
+    use std::time::Instant;
+    let mut world = TestWorld::new();
+    let coffer = ObjectId(0x4000_e2a7);
+    world
+        .instance
+        .insert_treasure(coffer, SpawnTreasure::default());
+    let opened = Instant::now() - Duration::from_secs(75);
+    show_opened(&mut world.instance, coffer, &[3034], opened);
+    let actor = world.instance.find_actor(coffer).unwrap();
+    let Some(FromServer::TreasureSpawn(spawn)) =
+        NetworkState::spawn_existing_actor_message(&mut ClientState::default(), coffer, actor)
+    else {
+        panic!("no SpawnTreasure");
+    };
+    // Retail's, 74.8 s after it opened: 225.2 left of 300.
+    assert!((spawn.countdown_time - 225.0).abs() < 1.0);
+    assert_eq!(
+        (spawn.countdown_start_time, spawn.claim_time),
+        (300.0, 300.0)
+    );
+    assert_eq!(spawn.item_count, 1);
+    assert_eq!(spawn.lootable_item_ids[..2], [3034, 0]);
+}
+
 /// Bundle 20261111-125206, "Garudo attacks the pillar that's not right": an NPC that can't be targeted (the Howling
 /// Eye's monoliths, display flags 0x40208) is never noticed by an enemy; retail's Garuda chose a player or a Duty
 /// Support member every time. One a director made untargetable isn't either.
