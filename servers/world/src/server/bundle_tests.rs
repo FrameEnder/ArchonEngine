@@ -15,8 +15,8 @@ use crate::{
     FromServer,
     server::{
         action::{
-            STATUS_RAISED, cannot_be_hurt, ends_a_cast, ends_protection, keep_for_the_dead, toss_target,
-            tossed_by,
+            STATUS_RAISED, cannot_be_hurt, ends_a_cast, ends_protection, keep_for_the_dead,
+            toss_target, tossed_by,
         },
         actor::{NetworkedActor, NpcState, kill_actor},
         director::{engage_npc, ready_to_begin, waits_for_its_opening},
