@@ -284,6 +284,19 @@ reads every drop-in as the server does.
 When editing a drop-in JSON, splice the new layer into the text: rewriting it through a JSON library changes how every
 float is written.
 
+### Watching a cutscene
+
+Around every scene with `SceneFlags::CONDITION_CUTSCENE` (0x400) retail puts the player in a cutscene state and takes
+them out again (Bob's Chronofoil captures 71045ef2, 41 cutscenes, 689b15da, and 09ecf8e7 in a party of four): right
+before the scene, ActorControl 519 `[the player, 3]` from them, ActorControl 504 with their status icon (15, Viewing
+Cutscene, unless one ranked above it shows), their SetOnlineStatus with Viewing Cutscene (bit 15) in the mask, and the
+condition OccupiedInCutSceneEvent (10) with the scene; when it's over (with the Condition at EventFinish, or a plain
+scene after it), the same with `1`, their usual icon and the bit and condition gone. In a party, 519 goes from them to
+every member, themselves too; alone, it's ActorControlSelf. A cutscene after a cutscene changes nothing. Kawari didn't
+send any of it until 2026-11-11 (Bob, on the known issues: "if something doesn't exist implement it"); it does now
+(`ZoneConnection::set_watching_cutscene` from `event_scene` and `event_finish`, `party::tell_cutscene_state`, the mask
+in `get_online_status_mask`). Test `a_player_s_cutscene_is_told`.
+
 ### Every event sheathes the weapon
 
 Right before every EventStart retail sends ActorControl (not ActorControlSelf) ToggleWeapon `[0, 1, 1]` from the

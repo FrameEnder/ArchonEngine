@@ -345,7 +345,12 @@ impl ZoneConnection {
     /// Determine the online status mask, with party/novice/mentor status.
     pub fn get_online_status_mask(&self) -> OnlineStatusMask {
         let mut database = self.database.lock();
-        database.determine_online_status_mask(self.player_data.character.content_id)
+        let mut mask = database.determine_online_status_mask(self.player_data.character.content_id);
+        // Viewing Cutscene (15) while they watch one (`watching_cutscene`), as retail's mask had it.
+        if self.watching_cutscene {
+            mask.set_status(OnlineStatus::ViewingCutscene);
+        }
+        mask
     }
 
     /// Grabs the correct online status, taking into account the priority of each icon.

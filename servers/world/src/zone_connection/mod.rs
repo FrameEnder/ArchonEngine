@@ -323,6 +323,10 @@ pub struct ZoneConnection {
     pub layer_filter_shown: u32,
     /// When to see whether the story moved the zone's layer filter on (after an event; `refresh_layer_filter`.)
     pub layer_filter_check: Option<std::time::Instant>,
+    /// Whether the player is watching a cutscene (a scene with `SceneFlags::CONDITION_CUTSCENE`): retail's condition
+    /// OccupiedInCutSceneEvent, Viewing Cutscene among their online statuses, and their party told (ActorControl 519;
+    /// `set_watching_cutscene`.)
+    pub watching_cutscene: bool,
     /// The chocobo porter's ride being warped to (ChocoboTaxi row, its Location), until the client has finished zoning.
     pub chocobo_taxi: Option<(u32, u32)>,
     /// The chocobo porter's ride under way (ChocoboTaxi row), until the client says it has arrived.

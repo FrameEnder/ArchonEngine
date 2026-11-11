@@ -22,6 +22,7 @@ use crate::{
         director::{engage_npc, ready_to_begin, waits_for_its_opening},
         modifiers,
         npc_behavior::{CastAim, cast_aim, out_of_the_fight, retail_cast_aim, unnoticed},
+        party::tell_cutscene_state,
         party_bot,
         test_world::{TestWorld, control_from, packet_from},
     },
@@ -421,6 +422,29 @@ fn a_quest_battle_waits_for_its_opening() {
         Some((vec![player], true))
     );
     assert!(!out_of_the_fight(&world.instance, archer, &NpcState::Hate));
+}
+
+/// Bob, on the known issues: "if something doesn't exist implement it". Retail tells a player's party that they're
+/// watching a cutscene, and when they've finished (ActorControl 519 `[them, 3]`, then `[them, 1]`, from them; the Howling
+/// Eye's party, Bob's Chronofoil capture 09ecf8e7), or the player alone with ActorControlSelf (71045ef2, 41 cutscenes.)
+#[test]
+fn a_player_s_cutscene_is_told() {
+    let mut world = TestWorld::new();
+    let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
+    tell_cutscene_state(&mut world.network.lock(), player, true);
+    tell_cutscene_state(&mut world.network.lock(), player, false);
+    let states: Vec<u32> = world
+        .sent(player)
+        .iter()
+        .filter_map(|message| match message {
+            FromServer::ActorControlSelf(ActorControlCategory::SetPartyMemberCutsceneFlags {
+                actor_id,
+                unk2,
+            }) if *actor_id == player => Some(*unk2),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(states, vec![3, 1]);
 }
 
 /// Bundle 20261111-125206, "Garudo attacks the pillar that's not right": an NPC that can't be targeted (the Howling

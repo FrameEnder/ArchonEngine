@@ -3968,6 +3968,9 @@ pub async fn server_main_loop(
                         );
                     }
                 }
+                ToServer::CutsceneState(from_actor_id, watching) => {
+                    party::tell_cutscene_state(&mut network.lock(), from_actor_id, watching);
+                }
                 ToServer::SetOnlineStatus(from_actor_id, online_status) => {
                     let mut network = network.lock();
                     let data = data.lock();

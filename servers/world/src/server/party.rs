@@ -1396,3 +1396,26 @@ pub fn handle_party_messages(
         _ => false,
     }
 }
+
+/// Retail's ActorControl 519 `[the player, 3]` as a cutscene began and `[the player, 1]` as it ended
+/// (`ZoneConnection::set_watching_cutscene`): from them to their party, themselves too (the Howling Eye's four, Bob's
+/// Chronofoil capture 09ecf8e7), or ActorControlSelf to them alone (71045ef2, 689b15da.)
+pub(crate) fn tell_cutscene_state(network: &mut NetworkState, player: ObjectId, watching: bool) {
+    let category = ActorControlCategory::SetPartyMemberCutsceneFlags {
+        actor_id: player,
+        unk2: if watching { 3 } else { 1 },
+    };
+    match get_party_id_from_actor_id(network, player) {
+        Some(party_id) => network.send_to_party(
+            party_id,
+            None,
+            FromServer::ActorControl(player, category),
+            DestinationNetwork::ZoneClients,
+        ),
+        None => network.send_to_by_actor_id(
+            player,
+            FromServer::ActorControlSelf(category),
+            DestinationNetwork::ZoneClients,
+        ),
+    }
+}

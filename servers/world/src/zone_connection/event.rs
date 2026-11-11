@@ -1,7 +1,7 @@
 //! Handling all things related to the event system.
 
 use crate::{
-    Event, ZoneConnection,
+    Event, ToServer, ZoneConnection,
     event::{EventHandler, dispatch_event},
     lua::LuaPlayer,
 };
@@ -9,8 +9,8 @@ use kawari::{
     common::{CharacterMode, HandlerId, HandlerType, ObjectTypeId},
     config::get_config,
     ipc::zone::{
-        ActorControlCategory, EventResume, EventScene, EventStart, EventType, SceneFlags,
-        ServerZoneIpcData, ServerZoneIpcSegment,
+        ActorControlCategory, Condition, EventResume, EventScene, EventStart, EventType,
+        SceneFlags, ServerZoneIpcData, ServerZoneIpcSegment,
     },
 };
 
@@ -32,6 +32,11 @@ impl ZoneConnection {
             scene_flags.remove(SceneFlags::DISABLE_SKIP);
         }
 
+        // A cutscene puts them in it before it plays, a plain scene takes them out (retail sent the ActorControl 519,
+        // 504 and SetOnlineStatus right before the cutscene's EventScene.)
+        self.set_watching_cutscene(scene_flags.contains(SceneFlags::CONDITION_CUTSCENE))
+            .await;
+
         let scene = EventScene {
             actor_id: event.actor_id,
             handler_id: event.id,
@@ -49,6 +54,34 @@ impl ZoneConnection {
                 scene
             );
         }
+    }
+
+    /// Into (`watching`) or out of a cutscene, as retail does around every scene with
+    /// `SceneFlags::CONDITION_CUTSCENE` (Bob's Chronofoil captures 71045ef2, 689b15da and 09ecf8e7: every such scene, 41
+    /// times in 71045ef2): the condition OccupiedInCutSceneEvent, ActorControl 519 `[the player, 3]` (or `1` when it's
+    /// over) to their party from them, or ActorControlSelf alone, and Viewing Cutscene in their online statuses (their
+    /// SetOnlineStatus, and ActorControl 504 with the icon to everyone around: 15, unless one ranked above it shows.)
+    /// Nothing is sent when nothing changes.
+    pub async fn set_watching_cutscene(&mut self, watching: bool) {
+        if self.watching_cutscene == watching {
+            return;
+        }
+        self.watching_cutscene = watching;
+        if watching {
+            self.conditions
+                .set_condition(Condition::OccupiedInCutSceneEvent);
+        } else {
+            self.conditions
+                .remove_condition(Condition::OccupiedInCutSceneEvent);
+        }
+        self.send_conditions().await;
+        self.handle
+            .send(ToServer::CutsceneState(
+                self.player_data.character.actor_id,
+                watching,
+            ))
+            .await;
+        self.update_online_status().await;
     }
 
     /// Finishes the current event, including resetting any conditions set during the start of said event.
@@ -72,6 +105,8 @@ impl ZoneConnection {
                 self.conditions.remove_condition(extra);
             }
             self.send_conditions().await;
+            // Out of a cutscene with the event (retail's ActorControl 519 came right after this Condition.)
+            self.set_watching_cutscene(false).await;
 
             // sent event finish
             {

@@ -685,6 +685,8 @@ pub enum ToServer {
     EnterTerritoryEvent(ObjectId),
     /// This player is now ready for the instanced content to begin.
     ReadyToCommence(ObjectId),
+    /// This player began (true) or finished watching a cutscene: ActorControl 519 for their party, or for them alone.
+    CutsceneState(ObjectId, bool),
     /// This player finished a scene the director played (`FromServer::PlayDirectorScene`.)
     DirectorSceneFinished(ObjectId, u16),
     /// The client uses the /dice command to send a dice roll to one of their ChatChannels.

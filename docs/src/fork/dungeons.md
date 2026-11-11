@@ -22,7 +22,8 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 Retail begins a duty for everyone at once (DutyCommence to every player together) once each has finished its opening;
 until then the players stand inside the entrance circle, which keeps them in, and nothing fights. Retail's client
 also hears each party member's cutscene state (ActorControl 519 with the member and 3 watching, 1 done; their status
-icon, 504, Viewing Cutscene meanwhile; Bob's Chronofoil capture 09ecf8e7, the Howling Eye), which Kawari doesn't send.
+icon, 504, Viewing Cutscene meanwhile; Bob's Chronofoil capture 09ecf8e7, the Howling Eye). Kawari sends it since
+2026-11-11, for every cutscene, not only openings (see [Quests](quests.md), "Watching a cutscene").
 
 Kawari (since 2026-11-11; Bob's bundle 20261111-112150, "the battle was playing out while I was in a cutscene"):
 an InstanceContent instance starts `awaiting_commence`; each player's return from the opening (`ReadyToCommence`) is

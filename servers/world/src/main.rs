@@ -267,6 +267,7 @@ async fn initial_setup(
                     riding_chocobo_taxi: None,
                     layer_filter_shown: 0,
                     layer_filter_check: None,
+                    watching_cutscene: false,
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
                 };
 
