@@ -14,7 +14,7 @@ a webapp running inside Podman Containers designed to allow easy set-up, and dev
 
 It's hard to write down what we support, since the project is always in flux. But here's a basic idea of where we're at:
 * All City State Intro Quests
-* Quests Up to - The Things We Do for Cheese
+* Quests Up to - Casing the Castrum
 * Basic Combat from 1-50
 * Multiplayer
 * Player Bots that Fill Instanced Party's Dynamically
