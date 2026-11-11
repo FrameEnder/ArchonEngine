@@ -164,7 +164,9 @@ GATE without asking the server: in each slot the Air Force One that slot's minut
 * **It begins**: to everyone in territory 144, NpcYell 2450 `[location, type]`, ActorControlSelf 100 (InitDirector) with
   the director and its content ID, and 109 `[11, 3]` (the phase: 3 registration, 4 starting, 5 under way; The Slice Is
   Right used 6-10 as it went; 1 over.) Coming into the zone while it's on gives the InitDirector alone, right after
-  ZoneInit; retail sent 101 (TerminateDirector) as the player left the zone for a duty (Kawari doesn't).
+  ZoneInit. **Leaving it** while a GATE is on, retail sent ActorControlSelf 101 (TerminateDirector) right after the
+  PrepareZoning, every time (12 departures in eight captures); Kawari does since 2026-11-11 (`gate::leaves_gold_saucer`,
+  the connection's `leave_gate`, as it sends the PrepareZoning).
 * **The client asks** (client trigger 808 to the director, `[1]` then `[0]`), answered after the second with 109 `[9,
   row, place]`, `[6, the entrance's pop range, when registration ends]`, once the player has played it `[8, 1, 0]` and
   `[5, 1, the start, the registration window]`, and `[11, phase]`.

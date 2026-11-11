@@ -17,7 +17,10 @@
 //! * An instanced GATE (Air Force One, Leap of Faith) is over once registration ends: 109 `[11, 1]` and
 //!   ActorControlSelf 101 (TerminateDirector.)
 
-use kawari::common::{HandlerId, HandlerType};
+use kawari::{
+    common::{HandlerId, HandlerType},
+    ipc::zone::ServerZoneIpcData,
+};
 
 use crate::{GameData, gamedata::GateRow};
 
@@ -129,6 +132,13 @@ const ROTATION: [&[&[u32]]; 3] = [&[&[96, 97, 98]], &[&[74, 75, 76]], &[&[96, 97
 /// Which twenty minutes `now` is in.
 pub fn slot_at(now: u64) -> u64 {
     now.saturating_sub(GATE_START_OFFSET) / GATE_INTERVAL
+}
+
+/// Whether this packet takes a player in the Gold Saucer (`zone`) out of it: a PrepareZoning to another territory.
+pub fn leaves_gold_saucer(data: &ServerZoneIpcData, zone: u16) -> bool {
+    zone == GATE_TERRITORY
+        && matches!(data, ServerZoneIpcData::PrepareZoning(prepare)
+            if prepare.territory_type_id != GATE_TERRITORY)
 }
 
 /// When a slot's GATE begins.
@@ -262,6 +272,23 @@ pub fn next_change(now: u64) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Known issues: retail's TerminateDirector for the GATE came right after every PrepareZoning out of the Gold
+    /// Saucer while one was on (12 in Bob's captures); Kawari never sent it.
+    #[test]
+    fn leaving_the_gold_saucer_ends_the_gate_s_director() {
+        use kawari::ipc::zone::PrepareZoning;
+        let to = |territory_type_id| {
+            ServerZoneIpcData::PrepareZoning(PrepareZoning {
+                territory_type_id,
+                ..Default::default()
+            })
+        };
+        assert!(leaves_gold_saucer(&to(832), GATE_TERRITORY));
+        // A warp within it, or a zone change elsewhere, doesn't.
+        assert!(!leaves_gold_saucer(&to(GATE_TERRITORY), GATE_TERRITORY));
+        assert!(!leaves_gold_saucer(&to(832), 130));
+    }
 
     #[test]
     fn slots_begin_past_the_twenty_minutes() {

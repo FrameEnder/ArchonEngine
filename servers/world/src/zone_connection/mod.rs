@@ -425,6 +425,9 @@ impl ZoneConnection {
             }
             self.layer_filter_shown = set_pos.transition_territory_filter_key;
         }
+        // Leaving the Gold Saucer while a GATE is on ends its director, after the PrepareZoning (`leave_gate`.)
+        let leaving_gold_saucer =
+            crate::gate::leaves_gold_saucer(&ipc.data, self.player_data.volatile.zone_id as u16);
         // What the client shows the zone with now (`refresh_layer_filter`), and a zone change under way brings its own.
         match &ipc.data {
             ServerZoneIpcData::ZoneInit(init) => {
@@ -446,6 +449,9 @@ impl ZoneConnection {
 
         // Ditto from above
         Box::pin(self.send_segment(segment)).await;
+        if leaving_gold_saucer {
+            Box::pin(self.leave_gate()).await;
+        }
     }
 
     pub async fn send_segment(&mut self, segment: PacketSegment<ServerZoneIpcSegment>) {

@@ -65,6 +65,18 @@ impl ZoneConnection {
         }
     }
 
+    /// Leaving the Gold Saucer while a GATE is on: its director goes, as retail's TerminateDirector came right after the
+    /// PrepareZoning every time (Bob's Chronofoil captures: 12 departures in eight captures, 2026-06 to 2026-10; none
+    /// left it on.) `gate::leaves_gold_saucer` says when.
+    pub async fn leave_gate(&mut self) {
+        if let Some(gate) = self.current_gate() {
+            self.actor_control_self(ActorControlCategory::TerminateDirector {
+                handler_id: gate.director(),
+            })
+            .await;
+        }
+    }
+
     /// When the next GATE begins or ends, for the connection's timer.
     pub fn next_gate_change(&self) -> u64 {
         crate::gate::next_change(self.gate_checked.max(timestamp_secs() as u64 - 1))

@@ -345,7 +345,7 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   guess (1 for S, as both runs); RideShootingEnd is retail's 40 bytes as they were. Where the duty puts the player isn't
   known (InstanceContent 62005 has no entrance; Kawari picks a pop range.) A GATE played is remembered for the
   connection only (logging out and back in lets it be played again), and from the Duty Finder's question rather than
-  entering. TerminateDirector isn't sent as the player leaves the Gold Saucer during a GATE. The
+  entering. The
   entrance's spawn lacks retail's 0x40000 display flag at the GATE's start; the place the GATE Keepers put you is 4.5
   yalms straight in front of the entrance (retail's was a little to one side.)
 * **Fixed (2026-10-29, Bob's bundles 20261030-010154, -010830, -010939)**: the GATE Keepers' warp ended at the
