@@ -317,6 +317,16 @@ pub struct PendingAction {
 /// or always running off.) Retail's walks took 3.4-4.1 s.
 const PENDING_ACTION_PATIENCE: Duration = Duration::from_secs(10);
 
+/// How near (centre to centre) an NPC with this `attack_range` gets to a target with a hitbox of `target_hitbox`:
+/// its range is measured to a player-sized target (as the timelines' were, from where retail's stopped), and a bigger
+/// one is reached that much sooner, from its edge. Retail's Notorious Biggs escort stopped 3.0-3.7 yalms from the
+/// small enemies and 5.5-5.7 from the big ones (1655, 1657), and the fighter and conjurer likewise (Bob's Chronofoil
+/// captures 689b15da, da424662, 898dd0b9: four runs); Kawari's stood 3.5 from both.
+pub fn reach_for_size(attack_range: f32, target_hitbox: Option<f32>) -> f32 {
+    let player = crate::server::action::PLAYER_HITBOX_RADIUS;
+    attack_range + target_hitbox.map_or(0.0, |radius| (radius - player).max(0.0))
+}
+
 /// An NPC at `here` walking to use a timeline action (`pending`): the action and whom it's for once they're within its
 /// reach (it's no longer pending then); nothing while it's still on its way. It gives up (no longer pending, nothing to
 /// use) when they're gone or it has walked for `PENDING_ACTION_PATIENCE`.
@@ -421,6 +431,20 @@ pub fn npc_behavior(
             }
         }
     }
+    // Every battle NPC's hitbox bigger than a player's: one going for it stops that much further off
+    // (`reach_for_size`.)
+    let big_hitboxes: HashMap<ObjectId, f32> = instance
+        .actors
+        .iter()
+        .filter_map(|(id, actor)| match actor {
+            NetworkedActor::Npc { timeline, .. }
+                if timeline.hitbox_radius > crate::server::action::PLAYER_HITBOX_RADIUS =>
+            {
+                Some((*id, timeline.hitbox_radius))
+            }
+            _ => None,
+        })
+        .collect();
     // Everyone's position, for NPCs told to stay near someone (the director's `keep_near`.)
     let positions: HashMap<ObjectId, Vec3A> = instance
         .actors
@@ -1156,7 +1180,13 @@ pub fn npc_behavior(
                         Some(positions.get(&pending.on).copied().unwrap_or(fighting)),
                         pending.reach,
                     ),
-                    (_, target_pos) => (target_pos, timeline.attack_range),
+                    (_, target_pos) => {
+                        let size = match current_target {
+                            NpcTarget::Actor(actor) => big_hitboxes.get(actor).copied(),
+                            NpcTarget::Position(_) => None,
+                        };
+                        (target_pos, reach_for_size(timeline.attack_range, size))
+                    }
                 };
                 if !reset_target && let Some(target_pos) = target_pos {
                     let distance = Vec3A::distance(spawn.common.position.0, target_pos);

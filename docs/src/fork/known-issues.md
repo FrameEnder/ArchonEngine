@@ -1131,12 +1131,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 ## Quest battles and directors
 
 * **Notorious Biggs' placement** (2026-11-12, Bob's bundle 20261112-195353): built from four retail runs, untested in
-  game ([Quest battles](quest-battles.md#quest-battle-62--notorious-biggs-contentquestbattle62lua)). Not modelled:
-  retail's reach grows with the target's size (the escort stood 3.2 yalms from a 1654 and 5.5 from a 1655 or 1657;
-  Kawari's `attack_range` is one number per NPC, so it stands 3.5 from both); an ally choosing among enemies that
-  have only just come doesn't know their health yet, so the weakest is settled on at the next look (up to 2 s,
-  `RETARGET_EVERY`); retail's was at once. Other battles' waves now stand 4.9 s too (`ARRIVAL_STAND_SECONDS`), from
-  Biggs', QB 61's and To Guard a Guardian's retail runs; a battle whose retail adds came at once would need
+  game ([Quest battles](quest-battles.md#quest-battle-62--notorious-biggs-contentquestbattle62lua)). How far off a big
+  enemy everyone stands depends on its hitbox, which comes from the game data's model sizes (`npc_hitbox_radius`)
+  when no timeline records one: if the server's log says no formula matched, the 1655s and 1657s count as player-sized
+  and are stood 3.5 yalms from, not retail's 5.5. Other battles' waves now stand 4.9 s too (`ARRIVAL_STAND_SECONDS`),
+  from Biggs', QB 61's and To Guard a Guardian's retail runs; a battle whose retail adds came at once would need
   `stands_for = 0`.
 * **Party bots' gear below level 50 is capped at their level** (2026-11-10), untested in game: whether the HP that
   gives matches retail's Duty Finder players at that level (about 1500 at 40-41 in capture cc62ad94) wasn't checked

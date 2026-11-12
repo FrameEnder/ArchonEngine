@@ -810,3 +810,17 @@ fn an_npc_walks_into_reach_before_its_action() {
     assert!(pending_action_ready(&mut gone, here, &HashMap::new()).is_none());
     assert!(gone.is_none());
 }
+
+/// Bob's bundle 20261112-195353 (Notorious Biggs): retail's escort stopped 3.0-3.7 yalms from the small enemies and
+/// 5.5-5.7 from the big ones (1655, 1657), the fighter and conjurer likewise (four runs); Kawari's `attack_range` is
+/// measured to a player-sized target, and its NPCs stood as near a big one. A bigger target is reached from its edge.
+#[test]
+fn a_big_target_is_reached_from_further_off() {
+    use crate::server::npc_behavior::reach_for_size;
+    // A player, an NPC of unknown size, or one no bigger than a player: its range as it is.
+    assert_eq!(reach_for_size(3.5, None), 3.5);
+    assert_eq!(reach_for_size(3.5, Some(0.4)), 3.5);
+    // Two yalms more of hitbox than a player's: two yalms further off, where retail's escort stood.
+    let big = reach_for_size(3.5, Some(2.5));
+    assert!((5.4..=5.7).contains(&big), "{big}");
+}

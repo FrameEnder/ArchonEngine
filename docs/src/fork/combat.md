@@ -368,7 +368,9 @@ clock again as it's used, and one `after` an action counts from that action's la
 last to restart the clock: Kottos and the Copperbell Mines' other two bosses; the director can start a phase itself,
 `restart_timeline`, as Ifrit's),
 `hitbox_radius` (reach includes it), `autoattack_action_id` (870/871/872 per kind),
-`attack_range` (default 5 yalms; Papalymo 10), `damage_to_players` (`{"level": damage}`), `recorded_amounts` (above),
+`attack_range` (default 5 yalms; Papalymo 10: centre to centre, to a player-sized target; since 2026-11-12 a target
+with a bigger hitbox is reached that much further off, from its edge, `npc_behavior::reach_for_size`, as retail's
+Notorious Biggs allies stood 3.0-3.7 yalms from the small enemies and 5.4-6.2 from the big ones), `damage_to_players` (`{"level": damage}`), `recorded_amounts` (above),
 and `timepoints` (the
 skills an enemy uses in turn). An action timepoint can carry `lockon` (a Lockon row): the marker goes over the target as
 the cast begins (ActorControl 34 from the target, `ShowLockonVfx`), as retail marked the Copperbell bosses' tank-busters

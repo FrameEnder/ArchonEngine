@@ -229,6 +229,9 @@ function Battle:spawn(director, layouts, at)
         if role.side == "enemy" then
             table.insert(self.arrived, layout)
             self.arrival[layout] = #self.arrived
+            -- Their health isn't known until the next update: look at everyone's targets again then (an ally that
+            -- goes for the weakest settles on it half a second after they come, as retail's did at once.)
+            self.retarget_soon = true
             if not role.passive then
                 director:set_hate(layout, role.attacks, role.enmity or Battle.STARTING_ENMITY) -- nil is the player
             end
@@ -769,7 +772,8 @@ function Battle:update(director, health, player_health, info)
     self:runTanks(director)
     self:runBuffs(director)
     self:checkTriggers(director)
-    if self.updates % Battle.RETARGET_EVERY == 0 then
+    if self.retarget_soon or self.updates % Battle.RETARGET_EVERY == 0 then
+        self.retarget_soon = false
         self:retarget(director)
     end
     self.wasAlive = {}

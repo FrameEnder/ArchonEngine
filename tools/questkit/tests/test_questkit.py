@@ -908,8 +908,8 @@ class BattleFrameworkTest(unittest.TestCase):
         b.spawn(b, d, self.lua.table_from([205, 206, 207]))
         self.assertIn(self.hates(105)[-1], (205, 206))
         self.update(health, {self.BOSS: {"hp": 9000}, 205: {"hp": 1019, "target": 105},
-                             206: {"hp": 561, "target": 105}, 207: {"hp": 561, "target": 101}}, 4)
-        self.assertEqual(self.hates(105)[-1], 206)
+                             206: {"hp": 561, "target": 105}, 207: {"hp": 561, "target": 101}}, 1)
+        self.assertEqual(self.hates(105)[-1], 206, "the next update, not RETARGET_EVERY later")
         # ... each of them standing a moment first.
         stood = {args[0]: args[1] for name, args in self.calls if name == "root_bnpc"}
         self.assertEqual(set(stood), {205, 206, 207})
