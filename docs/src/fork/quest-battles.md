@@ -1621,6 +1621,27 @@ early on and their carbuncle comes 7.3 s after the cast began (the director's `o
   NPC health as held, `npc_health`, so the vanguard's 30 % comes with the hit that crossed it). `questkit battle-sim
   65`: 153 events in the five runs.
 
+### Quest battle 68 — Parley in the Sagolii (`content/questbattle/68.lua`)
+
+* Quest 1059 (JobPld451_01059) enters it from EOBJECT0 (the destination: scene 2, its bar, 3, YesNoQuestBattle;
+  territory 312, duty 361). Territory 312 is taken to be a copy of Southern Thanalan: retail's start spot (-407.28,
+  7.21, 525.83, facing 0) is 3 yalms from where the player stood there using the object, so its NPCs are layer
+  `QB_JobPld451_001` of `wil_w1f4_planmap.json` (5 NPCs from the capture's SpawnNpcs, `nonpop`, display flags 0x40003,
+  their looks), from one run: Bob's Chronofoil capture da424662 of 2026-11-12 (`--battle 0.17`, won, a level 45
+  Paladin). Opening scene 1, 0xF841AEFB.
+* **No allies.** Against you, all from the start: the boss (4296937, base 1663, 5068 HP, a paladin), a gladiator
+  (4296945, base 1664) and three more (4296942-44, base 1665), all on you.
+* **Flow**: sequence 2, the boss's talk 82 at 5.1; **all four others down**: sequence 3 at once, talk 83 2.1 s later
+  (the report's death times, from Defeated, put the second's 0.25 s before sequence 3; by their ActorControl 2 it
+  came 0.04 s after the fourth); **the boss under 50 %**: sequence 4, talk 84 1.1 s later; **the boss at 10 %** (504
+  HP; three more hits left him there): 1.8 s later "Duty Complete" and sequence 5, the director kills him
+  (`kill_bnpc`), the battle's scene 5 (0xF8402EFB) 3.1 s after; the quest moves to 255. No lost run.
+  `questkit battle-sim 68`: 8 events within 0.6 s (`68.json`, `npc_health: held`).
+* Timelines `QB68Boss_1663`, `QB68Gladiator_1664`, `QB68Lackey_1665`; action scripts `QB68Boss_01056` (statuses 293
+  and 294 on himself, 3.7 s cast, at about 20 %; their length a guessed 30 s), `QB68Boss_01098`, `QB68Boss_01099`
+  (2.7 s casts on himself whose ActionEffect had no target: nothing). The battle's client script
+  (`JobPld451Btl_01059`, Bob's extracted scripts of 2026-11-12) has scenes 1 and 5 and OnSequence001-002, as played.
+
 ## Adding a quest battle
 
 1. Record it on retail with Recorder 2.4 or later, ideally two or three times played differently, marking moments

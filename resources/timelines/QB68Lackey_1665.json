@@ -1,0 +1,11 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 12
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Parley in the Sagolii's three gladiators of BNpcBase 1665 (quest battle 68, drop-in layer QB_JobPld451_001 of wil_w1f4): level 40, 640 HP. From Bob's Chronofoil capture da424662 of 2026-11-12 (questkit chronofoil --battle 0.17)."
+}

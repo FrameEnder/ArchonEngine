@@ -5,10 +5,10 @@ add one when something is found.
 
 ## Bob's Chronofoil captures of 2026-11-12
 
-* Not scripted yet: 802 (Broadening Horizons: only its last two talks are in any capture, 898dd0b9) and Parley in the
-  Sagolii's quest battle 68 (1059; duty 361, territory 312; visit 0.17 of capture da424662), whose battle script
-  (`JobPld451Btl_01059`) hasn't come. 1003 needs none: retail finishes it with 3871
-  ([Quests](quests.md#quests-finished-together)).
+* Not scripted yet: 802 (Broadening Horizons: only its last two talks are in any capture, 898dd0b9). 1003 needs none:
+  retail finishes it with 3871 ([Quests](quests.md#quests-finished-together)).
+* Quest battle 68 (Parley in the Sagolii, 2026-11-12) is from one won run: no lost run, the boss's 1098 and 1099 do
+  nothing (no effect seen) and his 1056's statuses 293 and 294 last a guessed 30 s; not played in game.
 * The Paladin's 1056-1059, the White Mage's 1080-1083 and 1162 (2026-11-12) are each from one run (1162 three), none
   played in game. Their enemies' timelines (`Lemur_6` … `Kamapuaa_1942`) are what they did in that run: the restless
   raptor and the Kamapuaa only briefly. The yarzon bleeders' 909 (cast on itself) showed no effect, so it does

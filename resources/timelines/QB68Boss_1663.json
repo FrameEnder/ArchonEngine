@@ -1,0 +1,28 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 89
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Parley in the Sagolii's boss, a paladin (quest battle 68, drop-in layer QB_JobPld451_001 of wil_w1f4): level 45, 5068 HP. From Bob's Chronofoil capture da424662 of 2026-11-12 (questkit chronofoil --battle 0.17, won, a level 45 Paladin); at 10 % he takes no more damage and the director ends it (68.lua).",
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 1056,
+                "comment": "1 uses, first 42.2-42.2 s after it came out; 3.7 s cast; no damage"
+            },
+            {
+                "action": 1098,
+                "comment": "1 uses, first 21.4-21.4 s after it came out; 2.7 s cast; no damage"
+            },
+            {
+                "action": 1099,
+                "comment": "1 uses, first 34.1-34.1 s after it came out; 2.7 s cast; no damage"
+            }
+        ]
+    }
+}
