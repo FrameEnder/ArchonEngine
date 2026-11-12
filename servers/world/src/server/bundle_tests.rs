@@ -407,13 +407,17 @@ fn a_quest_battle_waits_for_its_opening() {
     assert!(waits_for_its_opening(HandlerType::InstanceContent));
 
     let mut world = TestWorld::new();
+    // Made as a quest battle's instance is (the wait was set only for duties' until 2026-11-12, Bob's bundle
+    // 20261112-185310: this test set it by hand, so it passed while the server's quest battles never waited.) Its
+    // NPCs come out after, from the director's onSetup.
+    crate::server::prepare_quest_battle_instance(&mut world.instance);
+    assert!(world.instance.awaiting_commence);
     let player = world.player(PLAYER, [0.0, 0.0, 0.0]);
     let archer = world.enemy(ENEMY, [5.0, 0.0, 5.0], 2000);
     if let Some(NetworkedActor::Npc { enmity, state, .. }) = world.instance.find_actor_mut(archer) {
         enmity.insert(player, 100);
         *state = NpcState::Hate;
     }
-    world.instance.awaiting_commence = waits_for_its_opening(HandlerType::QuestBattle);
     assert!(out_of_the_fight(&world.instance, archer, &NpcState::Hate));
 
     // The opening is over: the fight is on.

@@ -168,6 +168,28 @@ struct WorldServer {
     party_positions_counter: i32,
 }
 
+/// A new quest battle's instance before its director is set up: quest battles often take place in a copy of an
+/// overworld zone, but nothing from the overworld happens in them (everything that fights is spawned by the script),
+/// and it waits for its opening as a duty does (`Instance::awaiting_commence`, `director::waits_for_its_opening`), so
+/// the NPCs its `onSetup` brings out neither act nor put the player in combat until the opening is over. The wait was
+/// only set where duties' instances are made (`create_instance_for_content`) until 2026-11-12, so quest battles, made
+/// here, never waited: Notorious Biggs' NPCs fought through Bob's opening and hit him three times in it (bundles
+/// 20261111-194208 and 20261112-185310).
+fn prepare_quest_battle_instance(instance: &mut Instance) {
+    instance.fates.clear();
+    instance.candiate_fates.clear();
+    instance
+        .directors
+        .retain(|x| x.id.handler_type() != HandlerType::Fate);
+    instance
+        .queued_task
+        .retain(|x| !matches!(x.data, QueuedTaskData::EndFate { .. }));
+    instance
+        .actors
+        .retain(|_, actor| !matches!(actor, NetworkedActor::Npc { .. }));
+    instance.awaiting_commence = director::waits_for_its_opening(HandlerType::QuestBattle);
+}
+
 impl WorldServer {
     /// Ensures an instance exists, and creates one if not found.
     fn ensure_exists(
@@ -238,19 +260,7 @@ impl WorldServer {
         let lua = KawariLua::new();
         instance.content_id = quest_battle_id as u16;
 
-        // Quest battles often take place in a copy of an overworld zone, but nothing from the overworld happens in them:
-        // everything that fights is spawned by the script.
-        instance.fates.clear();
-        instance.candiate_fates.clear();
-        instance
-            .directors
-            .retain(|x| x.id.handler_type() != HandlerType::Fate);
-        instance
-            .queued_task
-            .retain(|x| !matches!(x.data, QueuedTaskData::EndFate { .. }));
-        instance
-            .actors
-            .retain(|_, actor| !matches!(actor, NetworkedActor::Npc { .. }));
+        prepare_quest_battle_instance(&mut instance);
 
         let id = HandlerId::new(HandlerType::QuestBattle, quest_battle_id as u16);
         let mut director = DirectorData {

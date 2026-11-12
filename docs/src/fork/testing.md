@@ -26,6 +26,8 @@ When a mark in one of Bob's bundles is fixed, the situation that showed it is ke
   players (each with a client whose messages the test reads back: `sent`), enemies and a party's Player NPCs, all
   made by hand; `casting` queues a cast as `action.rs` does. Nothing in it reads the game's data, so what needs stats,
   sheets or the navmesh can't be tested there (say so in the fix's changelog entry instead.)
+  Set a state up the way the server does (call the function that does it), never by hand: a test that set
+  `awaiting_commence` itself passed while quest battles' instances never set it (bundle 20261112-185310).
 * **A script's side** (a quest, a quest battle, a duty): the retail run that shows the right behaviour as a fixture
   (`replay`, `battle-sim`, `duty-sim`), or a line in the fixture that failed.
 
