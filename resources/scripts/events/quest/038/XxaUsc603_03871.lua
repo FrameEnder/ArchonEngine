@@ -80,7 +80,8 @@ end
 -- The two hauls of sequence 1 (the client's GetEventItems and IsTodoChecked): ITEM0 from ENEMY0-2, counted in UI8BL,
 -- and ITEM1 from ENEMY3-4, counted in UI8CH, three of each, every kill one (retail's run: all eight kills counted).
 -- Each sends its notice with the item's icon (0 [n, 3, 42345] and 1 [n, 3, 40128]); retail set UI8AH when the first
--- haul was full, and moved both counts to UI8BH and UI8BL with sequence 2 when the second was.
+-- haul was full, whichever it was (ITEM0's in Connor's run, ITEM1's in Bob's of 2026-11-12), and moved both counts to
+-- UI8BH and UI8BL with sequence 2 when the second was.
 HAULS = {
     { enemies = { [ENEMY0] = true, [ENEMY1] = true, [ENEMY2] = true }, byte = 1, high = false, notice = 0,
       icon = 42345 },
@@ -107,8 +108,8 @@ function onBNpcKill(base_id, layout_id, player)
                 return
             end
             setVar(player, haul.byte, haul.high, count)
-            if count >= NEEDED and index == 1 then
-                setVar(player, 0, true, 1) -- UI8AH, as retail when ITEM0's haul was full
+            if count >= NEEDED then
+                setVar(player, 0, true, 1) -- UI8AH, as retail when the first haul was full, whichever it was
             end
             return
         end

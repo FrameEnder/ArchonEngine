@@ -6,6 +6,10 @@ they follow, pick their targets, die and get up as the bots do, but each one is 
 listed, fighting and talking as it did there. The made-up bots (Player NPCs) are unchanged and still fill the Duty
 Finder and come from `!spawn playernpc`.
 
+Their stats are a player's of their class, race and level in the best gear they could wear then, **weapon included**
+(f(WD), [Combat](combat.md); until 2026-11-12 the weapon wasn't passed, so their hits and heals without a recorded
+amount in their timeline, such as the Conjurer's Cure outside Sastasha's levels, got only the level's share of f(WD)).
+
 Code: `servers/world/src/server/party_npc.rs`; the members' timelines `resources/timelines/DutySupportSastasha*_<base>.json`
 and action scripts `resources/scripts/actions/*/DutySupport_<id>.lua`.
 

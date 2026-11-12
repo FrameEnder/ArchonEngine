@@ -790,18 +790,21 @@ fn spawn_member(
 
     // Its stats: a player's of its class, race and level in the best gear it could wear then, with retail's HP.
     let wearable = game_data.wearable_restrictions(look.race, look.gender);
-    let items: Vec<u32> = game_data
-        .best_gear(member.classjob, level, &wearable)
+    let best = game_data.best_gear(member.classjob, level, &wearable);
+    let items: Vec<u32> = best.iter().map(|(_, id)| *id).collect();
+    // Its weapon counts as a player's does (f(WD), `stats.rs`): without it, until 2026-11-12, its hits and heals got
+    // only the level's share of f(WD), not the weapon's damage, wherever its timeline has no recorded amount for them.
+    let weapon = best
         .iter()
-        .map(|(_, id)| *id)
-        .collect();
+        .find(|(slot, _)| *slot == party_bot::MAIN_HAND)
+        .map(|(_, id)| *id);
     let mut parameters = party_bot::bot_parameters(
         game_data,
         member.classjob,
         look.tribe as u8,
         level,
         &items,
-        None,
+        weapon,
     )?;
     parameters.hp = hp;
 

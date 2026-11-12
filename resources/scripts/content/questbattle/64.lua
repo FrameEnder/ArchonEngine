@@ -13,7 +13,10 @@
 --   0       sequence 2; battle talks 122 (4277136) and 123 (the ally who fights) at 5.1 and 10.1
 --   the worn-down ally under 90 % (89.6 %): talk 124 (1007075)
 --   4277136's health at 0: sequence 3 at once
---   the boss's health at 0: sequence 4 at once; talks 125 (1007075) and 128 (1007076) 1.2 and 5.0 s later
+--   another down after it: sequence 4 at once, talk 128 (1007076) 5.0 s later. Connor's run had the boss next, Bob's
+--           Chronofoil run of 2026-11-12 (`64-da424662.json`) 4277135, with the boss last.
+--   the boss's health at 0 with others still up: talk 125 (1007075) 1.2 s later (not in Bob's run, where he was last
+--           and the win came 1.4 s after him)
 --   all four down: "Duty Complete" (60001) and sequence 5 2.1 s after the last one's health reached 0, the battle's
 --           scene 5 (0xF8402EFB) 3.2 s after that; the quest moves to sequence 255
 --   lost (no lost run recorded): your health at 0, sequence 0xFE and out 5 s later
@@ -33,7 +36,7 @@ ENEMIES = { BNPC_BOSS, 4277134, 4277135, BNPC_FIRST }
 QUEST_SEQUENCE_AFTER_WIN = 255
 SEQUENCE_FIGHTING = 2
 SEQUENCE_FIRST_DOWN = 3
-SEQUENCE_BOSS_DOWN = 4
+SEQUENCE_SECOND_DOWN = 4
 SEQUENCE_WON = 5
 SEQUENCE_FAILED = 0xFE
 FINISH_SCENE = 5
@@ -49,7 +52,7 @@ WORN_TALK = 90
 TALK_122_AFTER = 11
 TALK_123_AFTER = 21
 TALK_125_AFTER = 3
-TALK_128_AFTER = 8
+TALK_128_AFTER = 11
 -- The win came 2.1 s after the last one's health reached 0 (its death animation.)
 WON_AFTER_DEATH = 5
 
@@ -164,22 +167,21 @@ function onActorDeath(director, layout_id, position)
         return
     end
     BATTLE:died(director, layout_id)
-    -- Retail's order: 4277136, then the boss; the sequence only goes forwards.
+    -- 4277136 first (both runs), then whoever's next; the sequence only goes forwards.
     if layout_id == BNPC_FIRST and phase < SEQUENCE_FIRST_DOWN then
         phase = SEQUENCE_FIRST_DOWN
         director:set_sequence(SEQUENCE_FIRST_DOWN)
-    elseif layout_id == BNPC_BOSS then
-        phase = SEQUENCE_BOSS_DOWN
-        director:set_sequence(SEQUENCE_BOSS_DOWN)
-        after(TALK_125_AFTER, function(d)
-            talk(d, SPEAKER_ENPC_A, 125)
-            after(TALK_128_AFTER, function(d2) talk(d2, SPEAKER_ENPC_B, 128) end)
-        end)
+    elseif phase == SEQUENCE_FIRST_DOWN and left[layout_id] then
+        phase = SEQUENCE_SECOND_DOWN
+        director:set_sequence(SEQUENCE_SECOND_DOWN)
+        after(TALK_128_AFTER, function(d) talk(d, SPEAKER_ENPC_B, 128) end)
     end
     if left[layout_id] then
         left[layout_id] = nil
         if next(left) == nil then
             after(WON_AFTER_DEATH, won)
+        elseif layout_id == BNPC_BOSS then
+            after(TALK_125_AFTER, function(d) talk(d, SPEAKER_ENPC_A, 125) end)
         end
     end
 end

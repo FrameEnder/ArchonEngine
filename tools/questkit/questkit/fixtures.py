@@ -63,8 +63,11 @@ MERGE_SECONDS = 3.0
 EVENT_ENTER_TERRITORY = 15
 EVENT_WITHIN_RANGE = 10
 EVENT_EMOTE = 2
+# A key item used on an event object (EventStart type 8: the actor is the object, the argument the item; Bob's
+# Chronofoil captures of 2026-11-12, Drowning Out the Voices and Fool Me Twice.)
+EVENT_ITEM = 8
 AFTER_FINISH = 1.0  # seconds after its event finished that a quest update still belongs to the step
-ACTIONS = ("talk", "emote", "kill", "range", "enter_territory", "battle_won", "duty_cleared")
+ACTIONS = ("talk", "event_item", "emote", "kill", "range", "enter_territory", "battle_won", "duty_cleared")
 NOTICE_LEAD = 0.5  # notices arrive just before the quest change they go with
 
 
@@ -229,7 +232,9 @@ def _fill_from(steps: list[dict], previous: list[dict]):
                 ok = all(match.get(k) == step.get(k) for k in ACTIONS if k in step) and \
                     any(k in match for k in ACTIONS if k in step) and state_matches(match, step, True)
             elif actor is not None:
-                ok = "talk" in match and state_matches(match, step, True)
+                # The same kind of action: a talk, an emote or an item used (Escape from Castrum Centri's emote on
+                # ACTOR11 took a talk's base in Bob's run of 2026-11-12.)
+                ok = step.get("_kind", "talk") in match and state_matches(match, step, True)
             else:
                 ok = any(k in match for k in ("kill", "battle_won", "enter_territory", "range")) and \
                     state_matches(match, step, False)
@@ -273,6 +278,10 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
     for step in previous_steps:
         if "talk" in step and step.get("layout"):
             known[step["layout"]] = step["talk"]
+        elif "event_item" in step and step.get("layout"):
+            known[step["layout"]] = step["event_item"][1]
+        elif "emote" in step and step.get("layout"):
+            known[step["layout"]] = step["emote"][1]
 
     steps: list[dict] = []
     state: dict = {}
@@ -353,6 +362,16 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
                 else:
                     step["todo"] = f"emote {data['arg']} on actor {actor} in territory {event.zone}: its base ID isn't known"
                     step["_actor"] = actor
+                    step["_kind"] = "emote"
+            elif data["type"] == EVENT_ITEM:
+                actor = data["actor"]
+                step["layout"] = actor
+                if actor in known:
+                    step["event_item"] = [data["arg"], known[actor]]
+                else:
+                    step["todo"] = f"item {data['arg']} used on actor {actor} in territory {event.zone}: its base ID isn't known"
+                    step["_actor"] = actor
+                    step["_kind"] = "event_item"
             else:
                 step["todo"] = f"event type {data['type']} (argument {data['arg']}) in territory {event.zone}"
         elif kind == "scene" and step is not None:
@@ -431,11 +450,11 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
     close()
     _fill_from(steps, previous_steps)
     for s in steps:
-        for key in ("_open", "_changed", "_actor", "_finished", "_zone", "_started"):
+        for key in ("_open", "_changed", "_actor", "_kind", "_finished", "_zone", "_started"):
             s.pop(key, None)
         what = None
         for name, value in params.items():
-            if value == s.get("talk") and (name.startswith(("ACTOR", "EOBJECT", "AETHERYTE"))):
+            if value in (s.get("talk"), (s.get("event_item") or [None, None])[1]) and (name.startswith(("ACTOR", "EOBJECT", "AETHERYTE"))):
                 what = name if what is None else f"{what}/{name}"
         if what:
             s["what"] = what

@@ -149,7 +149,11 @@ the dumps (`--dumps`: a todo's locations are the layout IDs of who it's done wit
 `fixtures.dump_layout_bases`. It can miss: Brotherly Love's todo 2 is at 4309068, but retail's Claxio was talked to at
 3853930) or the existing fixture, whose base IDs win over the dumps' (since 2026-11-07: the dumps' pairing gave
 Following the Evidence's EOBJECT3 and 4 the wrong way round in every run, fixed by hand in `911.json` once), which also gives what the capture can't (`spawns`, and kills it can't name) by matching the state each step left
-the quest in. Unlocks in the step that completes a quest are left out: those are the Quest sheet's, sent by the
+the quest in. A key item used on an object (EventStart type 8: the actor is the object, the argument the item) is an `event_item`
+step since 2026-11-12, its base from the existing fixture's step with the same layout (before, a todo: Drowning Out the
+Voices' five uses and Fool Me Twice's in Bob's capture da424662). A step the capture can't name takes the existing
+fixture's action of its own kind (a talk, an emote or an item used): Escape from Castrum Centri's emote on ACTOR11 took a
+talk's base before. Unlocks in the step that completes a quest are left out: those are the Quest sheet's, sent by the
 server's `finish_quest`. Without a dump, the existing fixture's parameters are used.
 
 From a **Kawari Recorder** export:
@@ -452,7 +456,9 @@ so Like Mother, Like Daughter's first wave, written the wrong way round, passed 
 in `onSetup` count as there from the start (since 2026-11-06: The Rematch's 39, out before its opening cutscene,
 as retail had them).
 
-`--make` leaves out a sequence set before the fight that another replaces by the time it starts (the script's
+`--make` takes an NPC's death from its ActorControl 2 with 2 (its status: dead) when no HP of 0 came first (since
+2026-11-12: Notorious Biggs's boss stood at 25 HP until it, and fell 2.1 s before Defeated, in Bob's capture da424662;
+before, his death came out at Defeated). `--make` leaves out a sequence set before the fight that another replaces by the time it starts (the script's
 `onSetup`: Trial by Wind's sequence 1 came 0.4 s before scene 60000, inside the second it used to keep), and when
 retail spawned one layout ID twice (Trial by Wind's 4248510, a second wind sprite while the first still stood) the
 first is the NPC and the second only a spawn event; before 2026-10-27 the second overwrote the first, so the first

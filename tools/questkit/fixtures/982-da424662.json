@@ -1,0 +1,56 @@
+{
+  "quest": 982,
+  "script": "GaiUsc407_00982",
+  "source": "Bob's Chronofoil captures da424662 and 0abe6734 (2026-11-12)",
+  "params": {
+    "ACTOR0": 1006520,
+    "ACTOR1": 1006521,
+    "EOBJECT0": 2002265,
+    "EVENT_ACTION_LOOKOUT_LONG": 41,
+    "ENEMY0": 4301775,
+    "EVENT_ACTION_SEARCH": 1,
+    "ENEMY1": 4301776,
+    "ENEMY2": 4301778
+  },
+  "steps": [
+    {
+      "talk": 1006520,
+      "layout": 4273899,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1006521,
+      "layout": 4273900,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 2002265,
+      "layout": 4301773,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 3, "flags": "0x2001", "results": [0, 0], "bar": 41},
+        {"scene": 4, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "spawns": [4301778, 4301776, 4301775],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[1, []]]}
+    },
+    {
+      "talk": 1006520,
+      "layout": 4273899,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

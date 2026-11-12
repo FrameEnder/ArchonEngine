@@ -462,8 +462,14 @@ a quest's entering event, 0 for every other event (228 events across the capture
   it's a count): sequence 4 and the third wave, talks 103 and 104 5.1 and 10.1 s after; **seven** down: sequence 5 and
   talk 105; everyone down: "Duty Complete" and sequence 6 2.1 s after the last one's health reached 0, the battle's
   scene 6 (0xF8402EFB); the quest moves to 255. The one to keep alive under 20 %: NpcYell 1530; its health at 0: talk
-  108 and sequence 0xFE (the lost run, 90.8 s in). `questkit battle-sim 62`: 65 events in the three runs within 1.4 s
-  (fixtures `62.json`, `62-689b15da.json`, `62-lost.json`).
+  108 and sequence 0xFE (the lost run, 90.8 s in). `questkit battle-sim 62`: 90 events in the four runs within 1.4 s
+  (fixtures `62.json`, `62-689b15da.json`, `62-lost.json`, and `62-da424662.json` from Bob's Chronofoil capture of
+  2026-11-12, visit 0.22, which agrees with the counts: sequence 4 at the fifth down with the boss still up, sequence
+  5 at the seventh, the boss).
+* In Bob's run of 2026-11-12 the boss's killing blow carried no HP of its own (his last was 25, 0.2 %): he fell with
+  his ActorControl 2 (status 2, dead), 0.09 s before sequence 5, and Defeated came 2.1 s after. `battle-sim --make`
+  reads that status as the death since then; before, his death came out at Defeated, 2 s late, and the run looked
+  like sequence 5 at six down.
 * Timelines `QB62*`; new action scripts `QuestBattleNpc_00064`, `QuestBattleNpc_00129` (status 151, 30 s: its end not
   seen), `QB62Boss_01068`, `QB62Enemy_00527` (status 17, 10 s: likewise). The battle's client script
   (`GaiUsc408Btl_00983`) has scenes 1 and 6 and OnSequence001-002, as played.
@@ -480,9 +486,13 @@ a quest's entering event, 0 for every other event (228 events across the capture
   525, an area that caught both allies, every 20 s) and three others (4277134-4277136; 4277136 cures itself at 6 %).
   Two event NPCs talk (1007075 and 1007076: kind 3, no actor, as Victory in Peril's watcher).
 * **Flow**: sequence 2, talks 122 (4277136) and 123 (the one who fights) at 5.1 and 10.1; the worn-down ally under 90 %:
-  talk 124; 4277136's health at 0: sequence 3; the boss's: sequence 4, talks 125 and 128 1.2 and 5.0 s later;
-  everyone down: "Duty Complete" and sequence 5 2.1 s later, the battle's scene 5 (0xF8402EFB); the quest moves to 255.
-  No lost run: only your health at 0 loses it. `questkit battle-sim 64`: 10 events within 0.3 s (`64.json`).
+  talk 124; 4277136's health at 0: sequence 3; **the next one down**, whoever it is: sequence 4, talk 128 5.0 s later;
+  the boss's health at 0 with others still up: talk 125 1.2 s later; everyone down: "Duty Complete" and sequence 5
+  2.1 s later, the battle's scene 5 (0xF8402EFB); the quest moves to 255. Connor's run had the boss second (sequence
+  4 with him, 125 and 128 after); Bob's Chronofoil run of 2026-11-12 (capture da424662, visit 0.30, `64-da424662.json`)
+  had 4277135 second (sequence 4 with it, the boss last, no 125: the win came 1.4 s after him) and the worn-down ally
+  never under 90 % (no 124). Until then the script took sequence 4 for the boss's death. No lost run: only your health
+  at 0 loses it. `questkit battle-sim 64`: 18 events in both runs within 1 s.
 * Timelines `QB64*`; new action scripts `QuestBattleNpc_00091` (status 119, 18 s: its end not seen) and
   `QB64Ally_01171`. The battle's client script (`GaiUsc605Btl_01005`) also has scenes 10001 and 10002, never played.
 
@@ -501,13 +511,18 @@ a quest's entering event, 0 for every other event (228 events across the capture
   auto-attack and casts 1204 (2.7 s, where its target stood) every 15.7 s; under 40 % it casts 1286 on itself (status
   61). The first wave is out from the start beside him (a gladiator, two lancers, two archers, who took the ally on at
   once); the second (an archer, a lancer, a conjurer who cured the boss at 39 %) comes as the first is down.
-* **Flow** (seconds from the fight starting): sequence 2, talks 101 and 102 (the ally) at 5.1 and 10.1; the first
-  wave's last one's health at 0: sequence 3 4.3 s later with the second wave, talks 103 (the second wave's lancer) and
-  104 5.1 and 10.1 s after; the boss under 40 %: sequence 4, sequence 5 5.5 s later, talks 105 and 106 6.1 and 11.9 s
-  after it; the boss's health at 0: "Duty Complete" and sequence 6 2.1 s later, the battle's scene 6 (0xF8402EFB); the
+* **Flow** (seconds from the fight starting): sequence 2, talks 101 and 102 (the ally) at 5.1 and 10.1; **the first
+  wave down and the boss under 70 %**: sequence 3 with the second wave, talks 103 (the second wave's lancer) and 104
+  5.1 and 10.1 s after; the boss under 40 %: sequence 4, sequence 5 4.8-5.5 s later, talk 105 6.1 s after it; **the
+  boss under 20 %**: talk 106 at once; the boss's health at 0: "Duty Complete" and sequence 6 2.1 s later, the battle's scene 6 (0xF8402EFB); the
   quest moves to 255 with ITEM0 (UI8BH) gone (`QUEST_VARS_AFTER_WIN`). Lost: the ally's health at 0 (talk 107 and
-  sequence 0xFE at once, 69.6 s in, the lost run) or yours. `questkit battle-sim 63`: 19 events in both runs within
-  0.7 s (fixtures `63.json`, `63-lost.json`).
+  sequence 0xFE at once, 69.6 s in, the lost run) or yours. `questkit battle-sim 63`: 34 events in the three runs
+  within 0.7 s (fixtures `63.json`, `63-lost.json`, `63-da424662.json`).
+* What Bob's Chronofoil run of 2026-11-12 (capture da424662, visit 0.25) showed: sequence 3 came 9.3 s after the first
+  wave's last fell (4.3 s in Connor's run), both times as the boss went under 70 % (72.3 → 67.9, 71.2 → 67.2); with
+  the first wave always down first, which of the two retail waits for can't be told, so the script waits for both.
+  Talk 106 came 3.6 s after sequence 5, before 105, as the boss went under 20 % (11.9 s after in Connor's, 21.0 → 18.7
+  around it). Until then the script had sequence 3 4.3 s after the first wave and 106 11.9 s after sequence 5.
 * Timelines `QB63*` (median damage to the player and the other side); new action scripts `QB63Ally_00964`,
   `QB63Ally_01170`, `QB63Boss_01172`, `QB63Boss_01204`, `QB63Boss_01286` (1286's status length not seen: 30 s). The
   battle's client script (`GaiUsc604Btl_01004`, Bob's extracted scripts of 2026-11-09) has scenes 1 (the opening) and
@@ -1579,9 +1594,18 @@ early on and their carbuncle comes 7.3 s after the cast began (the director's `o
   (`set_invulnerable` while it stands; the generators and the signifers by them wait until someone comes at them).
   **The first generator down**: sequence 10, "The magitek field surrounding the vanguard is deactivated." (LogMessage
   3216, with every generator), and **15 s later** sequence 11 and the second wave (two vanguards, both shielded until
-  both its generators fall). **The second wave down**: sequence 12, a Magitek Colossus and an optio; sequence 13 15 s
-  after. Everyone down: "Duty Complete" 1 s later (sequence 14), scene 14 (0x2001); the quest to sequence 6, and the
-  player goes on to Ul'dah - Steps of Nald (`EXIT_AFTER_WIN`), where the quest's scene 40 plays.
+  both its generators fall). **The second wave down but its vanguards** (the generators count): sequence 12, a Magitek
+  Colossus and an optio, talks 270-272 10, 15 and 20 s after; **the colossus under 60 %**: sequence 13, talk 273 5 s
+  after; **the colossus under 20 %**: talk 274. Everyone down: "Duty Complete" 1-2 s later (sequence 14), scene 14
+  (0x2001); the quest to sequence 6, and the player goes on to Ul'dah - Steps of Nald (`EXIT_AFTER_WIN`), where the
+  quest's scene 40 plays.
+* Bob's Chronofoil run of 2026-11-12 (capture da424662, visit 0.33, `65-da424662.json`) showed the marks: sequence 12
+  came 0.04 s after the last of the second wave's men fell with a vanguard still up at 6 % (0.25 s after the last of
+  them in the Recorder run, the vanguards already down), sequence 13 25.1 s after it (14.7 s in the Recorder run)
+  both times as the colossus went under 60 % (67.6 → 59.2, 68.1 → 58.7), and talk 274 39.1 s after it (30.8 s) as it
+  went under 20 % (21.0 → 8.4, 30.9 → 13.6). Until then the script waited for the whole second wave, timed sequence 13
+  and talks 273-274 from sequence 12, and could win before the last wave came out when a vanguard was the last to
+  fall (the last wave now counts as standing from sequence 12). `questkit battle-sim 65`: 84 events in the three runs.
 
 ## Adding a quest battle
 

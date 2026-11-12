@@ -338,6 +338,25 @@ pub struct SyncedItemStats {
 
 const BASE_PARAM_DEFENSE: u8 = 21;
 const BASE_PARAM_MAGIC_DEFENSE: u8 = 24;
+const BASE_PARAM_PHYSICAL_DAMAGE: u8 = 12;
+const BASE_PARAM_MAGIC_DAMAGE: u8 = 13;
+
+/// What an HQ weapon adds to its physical and magic damage: its `BaseParamValueSpecial` for Physical Damage (12) and
+/// Magic Damage (13). `equipped_item_stats` leaves those out (the weapon's damage isn't one of its attributes), so
+/// until 2026-11-12 an HQ weapon hit and healed as its NQ.
+fn hq_weapon_damage(special: &[(u8, i32)]) -> (u32, u32) {
+    let bonus = |wanted: u8| {
+        special
+            .iter()
+            .filter(|(param, _)| *param == wanted)
+            .map(|(_, value)| (*value).max(0) as u32)
+            .sum()
+    };
+    (
+        bonus(BASE_PARAM_PHYSICAL_DAMAGE),
+        bonus(BASE_PARAM_MAGIC_DAMAGE),
+    )
+}
 
 /// An attribute's cap under item level sync: ItemLevel × slot percent × MeldParam / 100000, rounded.
 fn sync_cap(item_level_value: u16, slot_percent: f64, meld_param: f64) -> i32 {
@@ -3883,6 +3902,23 @@ impl GameData {
     /// `round(ItemLevel[sync][attribute] × BaseParam[attribute].<slot>Percent × BaseParam[attribute].MeldParam[item's
     /// BaseParamModifier] / 100000)`, and defense and magic defense scale by ItemLevel[sync] / ItemLevel[item's level];
     /// items at or below the sync item level are unchanged. `None` if the item isn't in the sheet.
+    /// The extra physical and magic damage an HQ copy of `item_id` has (`hq_weapon_damage`); none for an NQ one.
+    pub fn hq_weapon_damage(&mut self, item_id: u32, hq: bool) -> (u32, u32) {
+        if !hq {
+            return (0, 0);
+        }
+        let Some(item) = self.item_sheet.row(item_id) else {
+            return (0, 0);
+        };
+        let special: Vec<(u8, i32)> = item
+            .BaseParamSpecial
+            .iter()
+            .zip(item.BaseParamValueSpecial)
+            .map(|(param, value)| (*param, value as i32))
+            .collect();
+        hq_weapon_damage(&special)
+    }
+
     pub fn equipped_item_stats(
         &mut self,
         item_id: u32,
@@ -4793,5 +4829,19 @@ mod public_area_tests {
         );
         // What was recorded on retail comes first (Chudo-Yudo's Swinge, 60 degrees.)
         assert_eq!(recorded_cone_angle(903), Some(60.0));
+    }
+}
+
+#[cfg(test)]
+mod hq_weapon_tests {
+    use super::*;
+
+    /// An HQ weapon's damage bonus is its BaseParamValueSpecial for Physical Damage (12) and Magic Damage (13); its
+    /// other HQ bonuses are attributes (`equipped_item_stats`.)
+    #[test]
+    fn an_hq_weapons_damage_bonus() {
+        let special = [(12, 2), (13, 3), (5, 4), (0, 0), (0, 0), (0, 0)];
+        assert_eq!(hq_weapon_damage(&special), (2, 3));
+        assert_eq!(hq_weapon_damage(&[(5, 4), (0, 0)]), (0, 0));
     }
 }

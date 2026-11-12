@@ -1,0 +1,70 @@
+{
+  "quest": 1002,
+  "script": "GaiUsc602_01002",
+  "source": "Bob's Chronofoil captures da424662 and 0abe6734 (2026-11-12)",
+  "params": {
+    "ACTOR0": 1006531,
+    "EVENTRANGE0": 4324033,
+    "EOBJECT0": 2002238,
+    "EVENT_ACTION_WAITING": 10,
+    "ENEMY0": 4300144,
+    "ENEMY1": 4300145,
+    "EOBJECT1": 2002546,
+    "EVENT_ACTION_SEARCH": 1,
+    "REWARD0": 23,
+    "LOC_ACTOR0": 1002910,
+    "LOC_ACTOR1": 1002910,
+    "LOC_POS_ACTOR0": 4329221,
+    "LOC_POS_ACTOR1": 4329222,
+    "LOC_ACTION1": 1014,
+    "LOC_ACTION2": 82,
+    "LOC_ACTION3": 587
+  },
+  "steps": [
+    {
+      "talk": 1006531,
+      "layout": 4264515,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "range": 4324033,
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "spawns": [4300145, 4300144],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [55, 4300145],
+      "expect": {"sequence": 1, "vars": "010000000000", "notices": []}
+    },
+    {
+      "kill": [55, 4300144],
+      "expect": {"sequence": 1, "vars": "020000000000", "notices": []}
+    },
+    {
+      "talk": 2002238,
+      "layout": 4300142,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 3, "flags": "0x2001", "results": [0, 0], "bar": 10},
+        {"scene": 4, "flags": "0xf8402efb", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, [1, 1]]]}
+    },
+    {
+      "talk": 1006531,
+      "layout": 4264515,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 7, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

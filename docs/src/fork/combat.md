@@ -96,7 +96,11 @@ level 1 to 45). Non-critical hits only, single targets at or below the player's 
   0.81 at six or seven (open world, a few hundred hits); Kawari doesn't do this yet ([Known Issues](known-issues.md)).
 
 **Gear** (`GameData::equipped_item_stats`): an item gives its BaseParam values, defense and magic defense, plus its HQ
-bonuses (`BaseParamValueSpecial`, item flag 1) when it's HQ. Checked against retail PlayerStats (Bob's captures, a
+bonuses (`BaseParamValueSpecial`, item flag 1) when it's HQ. An HQ weapon's bonuses to Physical Damage (12) and Magic Damage (13) aren't
+attributes: they add to its weapon damage in f(WD) (`GameData::hq_weapon_damage`, since 2026-11-12; before, an HQ
+weapon hit and healed as its NQ). Bots and Duty Support members get f(WD) from the main hand of the gear they're given
+(`party_bot::bot_parameters`); the Duty Support members were given none until 2026-11-12, so their spells and heals
+without a recorded amount had only the level's share of f(WD) ([Party NPCs](party-npcs.md)). Checked against retail PlayerStats (Bob's captures, a
 White Mage at 86 in HQ gear): Vitality 1757 = 370 naked + 1261 + 126 HQ, Mind 1885 = 424 + 1330 + 131, defense 1413 =
 1267 + 146, every value to the point. Materia isn't counted yet. PlayerStats' `base_*` values are the **naked** stats at
 the real level (retail: a level 6 Conjurer with 34 Mind sends 27; synced to 31, the unsynced naked 430), so the

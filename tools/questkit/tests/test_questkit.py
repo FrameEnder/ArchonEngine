@@ -1276,6 +1276,33 @@ function onReturn(scene, results, player) sceneFinished(scene, results, player) 
         self.assertEqual(steps[2]["expect"]["notices"], [[1, [1, 2]]])
         self.assertNotIn("todo", json.dumps(steps))
 
+    def test_an_item_used_on_an_object_and_an_emote(self):
+        # Drowning Out the Voices (Bob's Chronofoil capture da424662, 2026-11-12): an item used on an object is
+        # EventStart type 8 (the object, the item); the old fixture names the object. Escape from Castrum Centri: an
+        # emote on an NPC only the old fixture names stays an emote (it took a talk's base before.)
+        Event = chronofoil_quest.Event
+        events = [Event(0, 156, "start", {"type": 8, "actor": 4300105, "flags": 0, "arg": 2000766}),
+                  Event(1, 156, "scene", {"scene": 9, "flags": 0x2001, "params": []}),
+                  Event(2, 156, "answer", {"scene": 9, "yielded": False, "code": 0, "results": [0, 0]}),
+                  Event(2, 156, "finish", {}),
+                  Event(10, 156, "start", {"type": 2, "actor": 4317487, "flags": 0, "arg": 59}),
+                  Event(11, 156, "scene", {"scene": 24, "flags": 0x2001, "params": []}),
+                  Event(12, 156, "answer", {"scene": 24, "yielded": False, "code": 0, "results": [0, 0]}),
+                  Event(12, 156, "finish", {})]
+        previous = {"steps": [{"event_item": [2000766, 2002232], "layout": 4300105, "expect": {}},
+                              {"talk": 1006562, "layout": 4273822, "expect": {}},
+                              {"emote": [59, 1007611], "layout": 4317487, "expect": {}}]}
+        dump = {"script": "X", "params": [{"name": "EOBJECT3", "value": 2002232}]}
+        steps = fixtures.build_from_chronofoil(QUEST, events, dump, {}, previous=previous)["steps"]
+        self.assertEqual(steps[0]["event_item"], [2000766, 2002232])
+        self.assertEqual(steps[0]["what"], "EOBJECT3")
+        self.assertEqual(steps[1]["emote"], [59, 1007611])
+        self.assertNotIn("talk", steps[1])
+
+        # Without the old fixture, a todo naming the item.
+        steps = fixtures.build_from_chronofoil(QUEST, events[:4], dump, {})["steps"]
+        self.assertIn("item 2000766 used on actor 4300105", steps[0]["todo"])
+
     def test_the_old_fixtures_bases_win_over_the_dumps(self):
         # Following the Evidence (911): the dumps' todo paired layout 4293142 with 2002141, the old fixture (checked by
         # hand) says 2002140.
@@ -1494,6 +1521,22 @@ end
         self.assertEqual(fixture["npcs"]["22"], {"spawn": None, "death": 50.0, "hp": [[0.0, 100.0], [30.0, 50.0],
                                                                                     [50.0, 0.0]]})
         self.assertEqual(fixture["npcs"]["33"]["death"], 40.0)  # its health reached 0 before its Defeated
+
+    def test_a_death_from_its_status(self):
+        # Notorious Biggs's boss (Bob's Chronofoil capture da424662, 2026-11-12): the killing blow's HP never came, only
+        # his status (ActorControl 2 with 2: dead) and Defeated 2.1 s after it. He fell with the status.
+        run = {
+            "Actors": {"1": {"Kind": "battle npc", "LayoutId": 22, "MaxHp": 1000, "Seen": 1.0, "Died": 62.1}},
+            "Samples": [{"S": 10.0, "Id": 1, "Hp": 1000}, {"S": 59.9, "Id": 1, "Hp": 2},
+                        {"S": 62.1, "Id": 1, "Hp": 0, "Dead": True}],
+            "Actions": [],
+            "Controls": [{"S": 60.0, "Id": 1, "Category": 2, "Params": [2, 0, 0, 0], "Packet": "ActorControl"},
+                         {"S": 61.0, "Id": 1, "Category": 2, "Params": [1, 0, 0, 0], "Packet": "ActorControl"}],
+            "Events": [{"S": 10.0, "Kind": "scene", "Text": "event 0x80060025 scene 60000 flags 0x40000"},
+                       {"S": 10.0, "Kind": "sequence", "Text": "0x80060025 sequence 2"}],
+        }
+        fixture = battle_sim.fixture_from_run(run, 9999)
+        self.assertEqual(fixture["npcs"]["22"]["death"], 50.0)
 
     def test_fixture_onsetup_sequence_and_repeated_layout(self):
         # Trial by Wind: sequence 1 0.4 s before the fight starts (the script's onSetup), and a layout ID spawned a

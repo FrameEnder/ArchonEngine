@@ -68,6 +68,8 @@ QUEST_BATTLE_SCRIPTS = repo.SCRIPTS / "content" / "questbattle"
 DROPINS = repo.ROOT / "resources" / "dropins"
 TICK = 0.5
 SCENE_COMMENCE = 60000
+CONTROL_SET_STATUS = 2  # ActorControl category: the actor's status (2: dead)
+STATUS_DEAD = 2
 SCENE_COMPLETE = 60001
 DONE_SEQUENCES = (0xFE, 0xFF)  # set by the server once a battle is over, not by the script
 DEFAULT_TOLERANCE = 2.0
@@ -147,6 +149,15 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
             key = str(target.get("Id"))
             if key in curves and "Hp" in target and target.get("MaxHp"):
                 curves[key].append([rel(action["S"]), percent(target["Hp"], target["MaxHp"])])
+
+    # An ActorControl 2 with 2 (its status: dead) is when it fell, even when the killing blow's own HP never came: the
+    # boss of Notorious Biggs stood at 25 HP (0.2 %) until it, 2.1 s before Defeated (Bob's Chronofoil capture
+    # da424662 of 2026-11-12); a curve that stopped above 0 put its death at Defeated, 2 s late.
+    for control in run.get("Controls", []):
+        key = str(control.get("Id"))
+        if key in curves and control.get("Category") == CONTROL_SET_STATUS and \
+                (control.get("Params") or [None])[0] == STATUS_DEAD:
+            curves[key].append([rel(control["S"]), 0.0])
 
     you = next((k for k, a in run.get("Actors", {}).items() if a.get("Kind") == "you" and a.get("MaxHp")), None)
     player: list = []

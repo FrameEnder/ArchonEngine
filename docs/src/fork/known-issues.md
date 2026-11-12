@@ -3,6 +3,16 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Bob's Chronofoil captures of 2026-11-12
+
+* Not scripted yet, needing the client's scripts: quests 1003 (only its completion is in the captures), 1056-1059 and
+  1162 (twice, once per capture), and the quest battle 1059 enters (duty 361, territory 312; visit 0.17 of capture
+  da424662).
+* Quest battle 63's sequence 3 waits for both the first wave and the boss under 70 %: in every run the wave fell first,
+  so which one retail waits for isn't known.
+* Weapon damage under level sync is still the weapon's own ([Level Sync](level-sync.md)): no synced run has been
+  fitted yet.
+
 ## The Arcanist and Summoner quests (2026-11-12)
 
 * Fourteen quests from Bob's Kawari Recorder export of 2026-11-12 (453-461, 1091-1095, 1103, 5466; `quests.md`) have

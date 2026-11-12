@@ -22,9 +22,12 @@
 --           once its generators are down
 --   15.0 s after sequence 10: sequence 11 and the second wave 0.4 s later; Papalymo's 268 and Urianger's 269 10.1 and
 --           15.1 s after
---   the second wave down (177.6): sequence 12 at once, the colossus and the optio 0.5 s later; the optio's 270, Biggs's
---           271 (an event NPC), Minfilia's 272, Urianger's 273 and Papalymo's 274 10.1, 15.1, 20.1, 20.3 and 31.2 s
---           after, and sequence 13 15.2 s after
+--   the second wave down but its vanguards (177.6): sequence 12 at once, the colossus and the optio 0.5 s later;
+--           the optio's 270, Biggs's 271 (an event NPC) and Minfilia's 272 10.1, 15.1 and 20.1 s after
+--   the colossus under 60 % (192.7): sequence 13, Urianger's 273 5.1 s after
+--   the colossus under 20 % (208.8): Papalymo's 274 at once
+--           (Bob's Chronofoil run of 2026-11-12, `65-da424662.json`, has the same marks: sequence 12 with a vanguard
+--           still up, sequence 13 25.1 s and talk 274 39.1 s after sequence 12, where the first run had 14.7 and 30.8)
 --   everyone down: "Duty Complete" (60001) and sequence 14 1.1 s after the last fell, the battle's scene 14 (0x2001)
 --           3.1 s after that; the quest moves to sequence 6 and the player goes on to Ul'dah (the quest's scene 40
 --           there.)
@@ -51,6 +54,12 @@ BNPC_CARBUNCLE = 4308235
 WAVE_1 = { 4278558, 4286888, 4278577, 4278538, 4278569, 4278529 }
 WAVE_2 = { 4285261, 4285274, 4285317, 4286891, 4285260, 4286889, 4285278 }
 WAVE_3 = { 4287242, 4287243 }
+BNPC_COLOSSUS = 4287242
+-- The colossus's health marks (percent): sequence 13, Papalymo's talk 274.
+COLOSSUS_SEQUENCE_13 = 60
+COLOSSUS_TALK_274 = 20
+-- The second wave but its vanguards (the generators count.)
+WAVE_2_MEN = { 4285274, 4285317, 4286891, 4286889, 4285278 }
 -- Each vanguard and the generators that shield it.
 SHIELDS = {
     [4278569] = { 4286888 },
@@ -108,13 +117,12 @@ TALKS_FIRST_PART = { { 11, SPEAKER_MINFILIA_BOUND, 261 }, { 31, SPEAKER_URIANGER
     { 41, SPEAKER_PAPALYMO_BOUND, 263 } }
 TALKS_SECOND_PART = { { 11, SPEAKER_HOPLOMACHUS, 265 }, { 51, SPEAKER_URIANGER, 266 }, { 61, SPEAKER_PAPALYMO, 267 } }
 TALKS_SECOND_WAVE = { { 20, SPEAKER_PAPALYMO, 268 }, { 30, SPEAKER_URIANGER, 269 } }
-TALKS_LAST_WAVE = { { 21, SPEAKER_OPTIO, 270 }, { 31, SPEAKER_BIGGS, 271 }, { 41, SPEAKER_MINFILIA, 272 },
-    { 41, SPEAKER_URIANGER, 273 }, { 63, SPEAKER_PAPALYMO, 274 } }
+TALKS_LAST_WAVE = { { 21, SPEAKER_OPTIO, 270 }, { 31, SPEAKER_BIGGS, 271 }, { 41, SPEAKER_MINFILIA, 272 } }
+TALKS_LAST_WAVE_ON = { { 10, SPEAKER_URIANGER, 273 } }
 SECOND_PART_AFTER = 1
 CARBUNCLE_AFTER_CAST = 15
 SECOND_WAVE_AFTER = 31
 LAST_WAVE_AFTER = 2
-SEQUENCE_13_AFTER = 31
 WON_AFTER_DEATH = 3
 
 BATTLE = Battle.new()
@@ -158,6 +166,7 @@ local carbuncle_out = false
 local standing = {}
 local generators_up = {}
 local timers = {}
+local talked_274 = false
 
 function after(updates, fn)
     table.insert(timers, { updates, fn })
@@ -240,6 +249,18 @@ function onUpdate(director, health, player_health, info)
     end
     runTimers(director)
     BATTLE:update(director, health, player_health, info)
+    local colossus = health[BNPC_COLOSSUS]
+    if colossus == nil then
+        return
+    end
+    if phase == SEQUENCE_LAST_WAVE and colossus < COLOSSUS_SEQUENCE_13 then
+        sequence(director, SEQUENCE_LAST_WAVE_ON)
+        talks(TALKS_LAST_WAVE_ON)
+    end
+    if phase == SEQUENCE_LAST_WAVE_ON and not talked_274 and colossus < COLOSSUS_TALK_274 then
+        talked_274 = true
+        director:battle_talk(SPEAKER_PAPALYMO.layout, SPEAKER_PAPALYMO.name, 274, SPEAKER_PAPALYMO.icon)
+    end
 end
 
 function inWave(wave, layout_id)
@@ -307,15 +328,16 @@ function onActorDeath(director, layout_id, position)
         end
     end
 
-    if phase == SEQUENCE_SECOND_WAVE and inWave(WAVE_2, layout_id) and waveDown(WAVE_2) then
+    -- The second wave's men down (its vanguards needn't be: in Bob's Chronofoil run of 2026-11-12 sequence 12 came
+    -- 0.04 s after the last of them fell, with a vanguard still up at 6 %; in his Recorder run, 0.25 s after.)
+    if phase == SEQUENCE_SECOND_WAVE and inWave(WAVE_2, layout_id) and waveDown(WAVE_2_MEN) then
         sequence(director, SEQUENCE_LAST_WAVE)
+        -- Counted from now, so the second wave's last vanguard falling before they're out doesn't win.
+        for _, layout in ipairs(WAVE_3) do
+            standing[layout] = true
+        end
         after(LAST_WAVE_AFTER, function(d) bringOut(d, WAVE_3) end)
         talks(TALKS_LAST_WAVE)
-        after(SEQUENCE_13_AFTER, function(d)
-            if phase == SEQUENCE_LAST_WAVE then
-                sequence(d, SEQUENCE_LAST_WAVE_ON)
-            end
-        end)
     end
 
     if phase >= SEQUENCE_LAST_WAVE and next(standing) == nil and not winning then

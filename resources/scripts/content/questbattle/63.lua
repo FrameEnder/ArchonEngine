@@ -10,11 +10,13 @@
 --
 -- Retail's flow (seconds from the fight starting, the director's scene 60000):
 --   0       sequence 2; battle talks 101 and 102 (the ally) at 5.1 and 10.1
---   the first wave down (all five; the boss may live): sequence 3 4.3 s after the last one's health reached 0, the
---           second wave 0.2 s later; talk 103 (the second wave's lancer) 5.1 s after sequence 3, 104 (the ally) 10.1 s
---           after
+--   the first wave down (all five) and the boss under 70 %: sequence 3, the second wave 0.2 s later; talk 103 (the
+--           second wave's lancer) 5.1 s after sequence 3, 104 (the ally) 10.1 s after. (Both runs that got there had
+--           the first wave down first, the boss crossing 70 % 4.4 and 9.3 s later: Connor's, and Bob's Chronofoil run
+--           of 2026-11-12, `63-da424662.json`; which of the two retail waits for isn't told apart, so both.)
 --   the boss under 40 % (39.3 %, the won run): sequence 4; he casts 1286 on himself 1.5 s later (2.7 s, status 61)
---           and sequence 5 comes 5.5 s after sequence 4; talks 105 and 106 (the ally) 6.1 and 11.9 s after it
+--           and sequence 5 comes 4.8-5.5 s after sequence 4; talk 105 (the ally) 6.1 s after it
+--   the boss under 20 %, after sequence 4: talk 106 (the ally) at once (before 105 in Bob's run)
 --   the boss's health at 0: "Duty Complete" (60001) and sequence 6 2.1 s later, the battle's scene 6 (0xF8402EFB)
 --           3.7 s after that; the quest moves to sequence 255 with ITEM0 (UI8BH) gone
 --   lost: the ally's health at 0 (its last words, talk 107, and sequence 0xFE at once: the lost run, 69.6 s in) or
@@ -47,20 +49,20 @@ FINISH_SCENE = 6
 FINISH_SCENE_FLAGS = 0xF8402EFB
 FAIL_DELAY_UPDATES = 10
 
--- The boss's health mark (percent) for sequence 4.
+-- The boss's health marks (percent) for sequences 3 and 4 and talk 106.
+BOSS_SECOND_WAVE = 70
 BOSS_LOW = 40
+BOSS_TALK_106 = 20
 
 -- Timers, in updates (half a second each). A timer of n fires n / 2 s after it's set by another timer or in onUpdate
 -- (after that update's timers have run), and (n - 1) / 2 s after it's set before the next update (onCommence,
 -- onActorDeath.)
 TALK_101_AFTER = 11
 TALK_102_AFTER = 21
-SEQUENCE_3_AFTER = 10
 TALK_103_AFTER = 10
 TALK_104_AFTER = 20
 SEQUENCE_5_AFTER = 11
 TALK_105_AFTER = 12
-TALK_106_AFTER = 24
 -- The win came 2.1 s after the boss's health reached 0 (his death animation.)
 WON_AFTER_DEATH = 5
 
@@ -100,6 +102,7 @@ local over = false
 local fail_in = nil
 local phase = 1
 local first_left = {}
+local talked_106 = false
 local timers = {}
 
 function after(updates, fn)
@@ -188,8 +191,15 @@ function onUpdate(director, health, player_health, info)
         after(SEQUENCE_5_AFTER, function(d)
             sequence(d, SEQUENCE_BOSS_GUARDED)
             after(TALK_105_AFTER, function(d2) talk(d2, SPEAKER_ALLY, 105) end)
-            after(TALK_106_AFTER, function(d2) talk(d2, SPEAKER_ALLY, 106) end)
         end)
+    end
+    if phase == SEQUENCE_FIGHTING and next(first_left) == nil and boss ~= nil and boss < BOSS_SECOND_WAVE then
+        secondWave(director)
+    end
+    if phase >= SEQUENCE_BOSS_LOW and phase < SEQUENCE_WON and not talked_106 and boss ~= nil
+        and boss < BOSS_TALK_106 then
+        talked_106 = true
+        talk(director, SPEAKER_ALLY, 106)
     end
     BATTLE:update(director, health, player_health, info)
 end
@@ -213,9 +223,6 @@ function onActorDeath(director, layout_id, position)
     end
     if first_left[layout_id] then
         first_left[layout_id] = nil
-        if next(first_left) == nil and phase == SEQUENCE_FIGHTING then
-            after(SEQUENCE_3_AFTER, secondWave)
-        end
     end
 end
 
