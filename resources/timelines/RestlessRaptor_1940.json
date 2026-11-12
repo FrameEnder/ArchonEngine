@@ -1,0 +1,24 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "872": {
+            "players": 51
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Yearn for the Urn's restless raptor (quest 1083, drop-in layer QB_JobWhm451_001 of fst_f1f3). From Bob's Chronofoil capture d1c46dff of 2026-11-12 (questkit chronofoil --battle 0.9): one, briefly.",
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 55,
+                "comment": "1 uses, first 71.3-71.3 s after it came out; no damage"
+            },
+            {
+                "action": 476,
+                "comment": "1 uses, first 76.4-76.4 s after it came out; 2.2 s cast; no damage"
+            }
+        ]
+    }
+}

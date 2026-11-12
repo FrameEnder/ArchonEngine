@@ -14663,6 +14663,126 @@
                     "rotation": 1.6711
                 }
             ]
+        },
+        {
+            "name": "QB_JobPld400_001",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 383,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1587,
+                        "level": 39,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 2021,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147
+                    },
+                    "layout_id": 4302963,
+                    "position": {
+                        "x": 163.131,
+                        "y": -10.758,
+                        "z": 91.091
+                    },
+                    "rotation": 1.7456
+                },
+                {
+                    "data": {
+                        "base_id": 383,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1587,
+                        "level": 39,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 2021,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147
+                    },
+                    "layout_id": 4302966,
+                    "position": {
+                        "x": 176.207,
+                        "y": -9.74,
+                        "z": 71.041
+                    },
+                    "rotation": 0.241
+                },
+                {
+                    "data": {
+                        "base_id": 383,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1587,
+                        "level": 39,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 2021,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147
+                    },
+                    "layout_id": 4302970,
+                    "position": {
+                        "x": 190.661,
+                        "y": -9.411,
+                        "z": 84.197
+                    },
+                    "rotation": -1.7579
+                },
+                {
+                    "data": {
+                        "base_id": 383,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1587,
+                        "level": 39,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 2021,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147
+                    },
+                    "layout_id": 4302971,
+                    "position": {
+                        "x": 163.225,
+                        "y": -10.482,
+                        "z": 80.183
+                    },
+                    "rotation": 1.1339
+                },
+                {
+                    "data": {
+                        "base_id": 383,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 1587,
+                        "level": 39,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 2021,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147
+                    },
+                    "layout_id": 4302973,
+                    "position": {
+                        "x": 176.403,
+                        "y": -10.589,
+                        "z": 98.356
+                    },
+                    "rotation": -3.088
+                }
+            ]
         }
     ]
 }

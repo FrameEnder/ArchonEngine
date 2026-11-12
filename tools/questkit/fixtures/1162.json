@@ -1,0 +1,73 @@
+{
+  "quest": 1162,
+  "script": "SubFst911_01162",
+  "source": "Bob's Chronofoil capture da424662 (2026-11-12)",
+  "params": {
+    "ACTOR0": 1002754,
+    "ACTOR1": 1000471,
+    "EOBJECT0": 2001467,
+    "EVENT_ACTION_PROCESS_MIDDLE": 16,
+    "ITEM0": 2000085,
+    "RITEM0": 4868,
+    "REWARD0": 18,
+    "ENEMY0": 178,
+    "SCREENIMAGE0": 92,
+    "HOWTO_BUDDY_SUMMON": 96,
+    "HOWTO_BUDDY_BAG_UNLOCK": 252
+  },
+  "steps": [
+    {
+      "talk": 1000471,
+      "layout": 1145877,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 2, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}
+    },
+    {
+      "talk": 2001467,
+      "layout": 4331375,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 3, "flags": "0x2001", "results": [0, 0], "bar": 16},
+        {"scene": 4, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 3, "vars": "001000000000", "notices": [[1, [25218]]]}
+    },
+    {
+      "talk": 1000471,
+      "layout": 1145877,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 5, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 6, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "effects": [
+        {"unlock": 18}
+      ],
+      "expect": {"sequence": 4, "vars": "000000000000", "notices": [[2, [25218]]]}
+    },
+    {
+      "kill": [178, 1415365],
+      "expect": {"sequence": 4, "vars": "010000000000", "notices": [[3, [1, 3]]]}
+    },
+    {
+      "kill": [178, 1415364],
+      "expect": {"sequence": 4, "vars": "020000000000", "notices": [[3, [2, 3]]]}
+    },
+    {
+      "kill": [178, 1415368],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[3, [3, 3]]]}
+    },
+    {
+      "talk": 1000471,
+      "layout": 1145877,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 7, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

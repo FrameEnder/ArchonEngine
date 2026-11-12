@@ -1,0 +1,35 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "717": {
+            "players": 71
+        },
+        "718": {
+            "players": 28
+        },
+        "870": {
+            "players": 52.5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Yearn for the Urn's Kamapuaa (quest 1083, drop-in layer QB_JobWhm451_001 of fst_f1f3). From Bob's Chronofoil capture d1c46dff of 2026-11-12 (questkit chronofoil --battle 0.9).",
+    "rotation": {
+        "pace": 20.0,
+        "actions": [
+            {
+                "action": 10,
+                "comment": "1 uses, first 78.2-78.2 s after it came out; no damage"
+            },
+            {
+                "action": 717,
+                "every": 20.0,
+                "comment": "2 uses, first 73.4-73.4 s after it came out, every 20.0-20.0 s"
+            },
+            {
+                "action": 718,
+                "comment": "1 uses, first 84.8-84.8 s after it came out"
+            }
+        ]
+    }
+}

@@ -1,0 +1,39 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "717": {
+            "players": 71
+        },
+        "718": {
+            "players": 24
+        },
+        "870": {
+            "players": 52
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Poisoned Hearts' mud pie princesses (quest 1058, drop-in layer QB_JobPld450_001 of wil_w1f4). From Bob's Chronofoil capture da424662 of 2026-11-12 (questkit chronofoil --battle 0.10).",
+    "rotation": {
+        "pace": 13.3,
+        "actions": [
+            {
+                "action": 10,
+                "comment": "4 uses, first 36.3-311.2 s after it came out; no damage"
+            },
+            {
+                "action": 20,
+                "comment": "2 uses, first 55.6-328.5 s after it came out; no damage"
+            },
+            {
+                "action": 717,
+                "every": 13.3,
+                "comment": "5 uses, first 33.6-319.9 s after it came out, every 13.2-13.3 s"
+            },
+            {
+                "action": 718,
+                "comment": "1 uses, first 248.4-248.4 s after it came out"
+            }
+        ]
+    }
+}

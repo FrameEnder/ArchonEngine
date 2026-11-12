@@ -1,0 +1,40 @@
+{
+    "autoattack_action_id": 873,
+    "recorded_amounts": {
+        "97": {
+            "players": 126.0
+        },
+        "100": {
+            "players": 95.0
+        },
+        "873": {
+            "players": 65.5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Yearn for the Urn's cliffdiver (quest 1083, drop-in layer QB_JobWhm451_001 of fst_f1f3). From Bob's Chronofoil capture d1c46dff of 2026-11-12 (questkit chronofoil --battle 0.9).",
+    "rotation": {
+        "pace": 17.2,
+        "actions": [
+            {
+                "action": 97,
+                "every": 17.2,
+                "comment": "2 uses, first 81.9-81.9 s after it came out, every 17.2-17.2 s"
+            },
+            {
+                "action": 99,
+                "comment": "1 uses, first 72.7-72.7 s after it came out; no damage"
+            },
+            {
+                "action": 100,
+                "every": 17.2,
+                "comment": "2 uses, first 90.5-90.5 s after it came out, every 17.2-17.2 s"
+            },
+            {
+                "action": 101,
+                "comment": "1 uses, first 77.3-77.3 s after it came out; no damage"
+            }
+        ]
+    }
+}

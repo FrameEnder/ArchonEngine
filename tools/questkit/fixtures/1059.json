@@ -1,0 +1,61 @@
+{
+  "quest": 1059,
+  "script": "JobPld451_01059",
+  "source": "Bob's Chronofoil capture da424662 (2026-11-12)",
+  "params": {
+    "ACTOR0": 1006747,
+    "EOBJECT0": 2002356,
+    "EVENT_ACTION_WAITING2_MIDDLE": 12,
+    "EOBJECT1": 2002357,
+    "EVENT_ACTION_SEARCH": 1,
+    "TERRITORYTYPE0": 312,
+    "QUESTBATTLE0": 68,
+    "LOGMESSAGE0": 3615,
+    "LOC_ACTION0_WSGET": 995,
+    "LOC_WS": 27,
+    "LOC_VFX1": 241,
+    "LOC_VFX2": 408,
+    "LOC_LOG_MES": 3612,
+    "JOBSTONE_MODEL": 1
+  },
+  "steps": [
+    {
+      "talk": 1006747,
+      "layout": 4253800,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 2002356,
+      "layout": 4303293,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0], "bar": 12},
+        {"scene": 3, "flags": "0x2001", "results": [1, 0, 0], "yield": true}
+      ],
+      "effects": [
+        {"zone": 312}
+      ],
+      "arrivals": [[-407.28, 7.21, 525.83, -0.0]],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "battle_won": 255,
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 1006747,
+      "layout": 4253800,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true},
+        {"scene": 5, "flags": "0xf8482efb", "params": [0], "results": [0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

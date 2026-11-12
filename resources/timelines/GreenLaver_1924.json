@@ -1,0 +1,33 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "120": {
+            "npcs": 606
+        },
+        "969": {
+            "players": 52.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Poisoned Hearts' green lavers (quest 1058, drop-in layer QB_JobPld450_001 of wil_w1f4), casters: 969 is their attack. From Bob's Chronofoil capture da424662 of 2026-11-12 (questkit chronofoil --battle 0.10).",
+    "rotation": {
+        "pace": 3.1,
+        "actions": [
+            {
+                "action": 120,
+                "comment": "1 uses, first 162.1-162.1 s after it came out; 1.2 s cast"
+            },
+            {
+                "action": 316,
+                "every": 33.3,
+                "comment": "5 uses, first 44.5-320.7 s after it came out, every 33.3-33.3 s; 2.2 s cast; no damage"
+            },
+            {
+                "action": 969,
+                "every": 3.1,
+                "comment": "45 uses, first 30.7-314.5 s after it came out, every 3.1-5.7 s; 0.7 s cast"
+            }
+        ]
+    }
+}

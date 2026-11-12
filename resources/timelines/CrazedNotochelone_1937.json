@@ -1,0 +1,21 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "971": {
+            "players": 17
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Only You Can Prevent Forest Ire's crazed notochelones (quest 1080, drop-in layer QB_JobWhm350_001 of fst_f1). From Bob's Chronofoil capture 898dd0b9 of 2026-11-12 (questkit chronofoil --battle 0.9).",
+    "rotation": {
+        "pace": 3.1,
+        "actions": [
+            {
+                "action": 971,
+                "every": 3.1,
+                "comment": "10 uses, first 60.4-63.5 s after it came out, every 3.1-3.1 s; 0.7 s cast"
+            }
+        ]
+    }
+}

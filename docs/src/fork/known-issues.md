@@ -5,11 +5,14 @@ add one when something is found.
 
 ## Bob's Chronofoil captures of 2026-11-12
 
-* Not scripted yet: quests 1056-1059 (the Paladin's), 1080-1083 (the White Mage's), 1162 (in captures da424662, 0abe6734
-  and 898dd0b9) and 802 (Broadening Horizons: only its last two talks are in any capture, 898dd0b9), whose client
-  scripts came on 2026-11-12, and Parley in the Sagolii's quest battle 68 (1059; duty 361, territory 312; visit 0.17
-  of capture da424662), whose battle script (`JobPld451Btl_01059`) hasn't. 1003 needs none: retail finishes it with
-  3871 ([Quests](quests.md#quests-finished-together)).
+* Not scripted yet: 802 (Broadening Horizons: only its last two talks are in any capture, 898dd0b9) and Parley in the
+  Sagolii's quest battle 68 (1059; duty 361, territory 312; visit 0.17 of capture da424662), whose battle script
+  (`JobPld451Btl_01059`) hasn't come. 1003 needs none: retail finishes it with 3871
+  ([Quests](quests.md#quests-finished-together)).
+* The Paladin's 1056-1059, the White Mage's 1080-1083 and 1162 (2026-11-12) are each from one run (1162 three), none
+  played in game. Their enemies' timelines (`Lemur_6` … `Kamapuaa_1942`) are what they did in that run: the restless
+  raptor and the Kamapuaa only briefly. The yarzon bleeders' 909 (cast on itself) showed no effect, so it does
+  nothing; the green lavers' 316 gives status 151 for a guessed 30 s.
 * Quest battle 63's sequence 3 waits for both the first wave and the boss under 70 %: in every run the wave fell first,
   so which one retail waits for isn't known.
 

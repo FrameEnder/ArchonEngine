@@ -1,0 +1,76 @@
+{
+  "quest": 1056,
+  "script": "JobPld350_01056",
+  "source": "Bob's Chronofoil capture da424662 (2026-11-12)",
+  "params": {
+    "ACTOR0": 1006747,
+    "EOBJECT0": 2002346,
+    "EVENT_ACTION_": 31,
+    "ENEMY0": 4302894,
+    "EVENT_ACTION_SEARCH": 1,
+    "ENEMY1": 4302898,
+    "ENEMY2": 4302901,
+    "ENEMY3": 4302902,
+    "ENEMY4": 4302903,
+    "LOGMESSAGE0": 3613,
+    "LOC_ACTION0_WSGET": 995,
+    "LOC_WS": 3542,
+    "LOC_VFX1": 241,
+    "LOC_VFX2": 408,
+    "LOC_LOG_MES": 3612,
+    "JOBSTONE_MODEL": 1
+  },
+  "steps": [
+    {
+      "talk": 1006747,
+      "layout": 4253800,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 0, "flags": "0x2000", "results": [1, 0, 0], "yield": true},
+        {"scene": 1, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "talk": 2002346,
+      "layout": 4302860,
+      "what": "EOBJECT0",
+      "scenes": [
+        {"scene": 2, "flags": "0x2001", "results": [0, 0], "bar": 31},
+        {"scene": 3, "flags": "0x2001", "results": [0, 0]}
+      ],
+      "spawns": [4302898, 4302894],
+      "expect": {"sequence": 1, "vars": "000000000000", "notices": []}
+    },
+    {
+      "kill": [6, 4302898],
+      "expect": {"sequence": 1, "vars": "010000000000", "notices": []}
+    },
+    {
+      "kill": [6, 4302894],
+      "expect": {"sequence": 1, "vars": "020000000000", "notices": []}
+    },
+    {
+      "kill": [6, 4302901],
+      "expect": {"sequence": 1, "vars": "030000000000", "notices": []}
+    },
+    {
+      "kill": [6, 4302903],
+      "expect": {"sequence": 1, "vars": "040000000000", "notices": []}
+    },
+    {
+      "kill": [6, 4302902],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[0, [1, 1]]]}
+    },
+    {
+      "talk": 1006747,
+      "layout": 4253800,
+      "what": "ACTOR0",
+      "scenes": [
+        {"scene": 4, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true},
+        {"scene": 5, "flags": "0xf8482efb", "params": [0], "results": [0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}
