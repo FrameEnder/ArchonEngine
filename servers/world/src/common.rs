@@ -751,8 +751,16 @@ pub fn max_resource_points(
     points.min(u16::MAX as u32) as u16
 }
 
+/// A quest's number (its Quest row less 65536) from its row ID or its number. A number is kept as it is: quest
+/// scripts mark others done by their numbers (`mark_quest_completed(464)`), and until 2026-11-12 every one of those
+/// became 0, so the quest meant stayed unfinished and quest 0 (no quest: the journal's blank entries) was marked
+/// done instead (Bob's bundle 20261112-223259).
 pub fn adjust_quest_id(quest_id: u32) -> u32 {
-    quest_id.saturating_sub(QuestSheet::STARTING_ROW)
+    if quest_id < QuestSheet::STARTING_ROW {
+        quest_id
+    } else {
+        quest_id - QuestSheet::STARTING_ROW
+    }
 }
 
 pub fn fetch_entries<T>(

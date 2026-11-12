@@ -63,7 +63,7 @@ mod marketboard;
 mod mender;
 mod party;
 mod player_currency;
-mod quest;
+pub(crate) mod quest;
 pub use player_currency::{ACHIEVEMENT_CERTIFICATES_TOTAL, PLAYER_CURRENCIES, certificates_owed};
 pub use quest::RETAINER_UNLOCK_LINK;
 mod retainer;

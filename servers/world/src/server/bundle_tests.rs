@@ -824,3 +824,31 @@ fn a_big_target_is_reached_from_further_off() {
     let big = reach_for_size(3.5, Some(2.5));
     assert!((5.4..=5.7).contains(&big), "{big}");
 }
+
+/// Bob's bundle 20261112-223259 (blank entries in the journal): `mark_quest_completed(464)` (26 quest scripts mark
+/// another done by its number) marked quest 0 instead, so the journal showed a quest with no name and 464, 708, 717,
+/// 718 and the rest stayed unfinished. A number is kept as it is, and a character hit by it is put right at login.
+#[test]
+fn a_quest_marked_done_by_its_number_is_that_quest() {
+    use crate::common::adjust_quest_id;
+    use crate::zone_connection::quest::repair_quests_marked_as_zero;
+    use kawari::constants::COMPLETED_QUEST_BITMASK_SIZE;
+    assert_eq!(adjust_quest_id(464), 464);
+    assert_eq!(adjust_quest_id(65536 + 464), 464);
+    assert_eq!(adjust_quest_id(65536), 0);
+
+    // Bob's character: Close to Home (3856) and its successors done, 0 marked by the bug, 708 never.
+    let mut completed = crate::bitmask::QuestBitmask::<COMPLETED_QUEST_BITMASK_SIZE>::default();
+    for quest in [0, 3856, 3857, 3858, 709] {
+        completed.set(quest);
+    }
+    assert!(repair_quests_marked_as_zero(&mut completed));
+    assert!(!completed.contains(0));
+    for quest in [708, 717, 718] {
+        assert!(completed.contains(quest), "{quest}");
+    }
+    // Not the ones whose quest isn't done.
+    assert!(!completed.contains(733));
+    // Nothing to do the second time.
+    assert!(!repair_quests_marked_as_zero(&mut completed));
+}

@@ -148,6 +148,7 @@ impl ZoneConnection {
     }
 
     pub async fn send_quest_information(&mut self) {
+        repair_quests_marked_as_zero(&mut self.player_data.quest.completed);
         self.send_active_quests().await;
 
         // quest complete list
@@ -521,6 +522,10 @@ impl ZoneConnection {
     /// right after that one's (Lurkers in the Grotto's, then 464's; Bob's Chronofoil capture of 2026-10-21.)
     pub async fn mark_quest_completed(&mut self, id: u32) {
         let adjusted_id = adjust_quest_id(id);
+        // Already done (`finished_with` finishes some of the same with their quest): one FinishQuest, as retail.
+        if self.player_data.quest.completed.contains(adjusted_id) {
+            return;
+        }
         if let Some(index) = self.quest_slot(adjusted_id) {
             self.player_data.quest.active.0.remove(index);
             self.send_active_quests().await;
@@ -1166,4 +1171,64 @@ mod finished_with_tests {
         assert_eq!(finished_with(3865), vec![815, 816, 819, 820]);
         assert!(finished_with(1004).is_empty());
     }
+}
+
+/// The quests each quest script marks done with it (`player:mark_quest_completed`, their QUEST_ALSO_COMPLETED: the
+/// ones a streamlined quest replaced, or that retail finishes with it), by quest number. Until 2026-11-12 each of
+/// those calls marked quest 0 instead (`adjust_quest_id`), so `repair_quests_marked_as_zero` puts them right.
+const SCRIPTS_ALSO_COMPLETED: &[(u32, &[u32])] = &[
+    (245, &[675]),
+    (397, &[398]),
+    (402, &[404]),
+    (517, &[871]),
+    (543, &[464]),
+    (748, &[752]),
+    (846, &[847]),
+    (850, &[854]),
+    (876, &[877]),
+    (890, &[896]),
+    (924, &[925, 926]),
+    (953, &[954]),
+    (3856, &[708]),
+    (3857, &[717]),
+    (3858, &[718]),
+    (3859, &[726]),
+    (3860, &[733]),
+    (3861, &[734]),
+    (3862, &[740]),
+    (3863, &[784]),
+    (3864, &[785]),
+    (3866, &[839]),
+    (3867, &[872, 881]),
+    (3868, &[917]),
+    (3869, &[937]),
+    (3870, &[968, 971, 974]),
+];
+
+/// A character with quest 0 marked done was hit by `mark_quest_completed`'s old bug (`adjust_quest_id`): quest 0 is
+/// no quest (it showed as blank entries in the journal, Bob's bundle 20261112-223259), and the quests the scripts
+/// meant were left unfinished. Clears it and marks those of `SCRIPTS_ALSO_COMPLETED` whose quest is done. Returns
+/// whether anything changed. (A character given every quest, `finish_all_quests`, has them all already.)
+pub fn repair_quests_marked_as_zero(
+    completed: &mut crate::bitmask::QuestBitmask<COMPLETED_QUEST_BITMASK_SIZE>,
+) -> bool {
+    if !completed.contains(0) {
+        return false;
+    }
+    completed.clear(0);
+    let mut marked = Vec::new();
+    for (quest, also) in SCRIPTS_ALSO_COMPLETED {
+        if completed.contains(*quest) {
+            for other in *also {
+                if !completed.contains(*other) {
+                    completed.set(*other);
+                    marked.push(*other);
+                }
+            }
+        }
+    }
+    tracing::info!(
+        "Cleared quest 0 from the completed quests; marked {marked:?} done, as their scripts meant"
+    );
+    true
 }
