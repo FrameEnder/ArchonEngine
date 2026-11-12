@@ -201,6 +201,8 @@ async fn initial_setup(
                     queued_roulette: None,
                     entered_roulette: None,
                     bot_party_levels: Vec::new(),
+                    party_bonus: 0,
+                    well_fed: None,
                     minimum_item_level: None,
                     echo_multiplier: 1.0,
                     conditions: Conditions::default(),
@@ -5500,6 +5502,12 @@ async fn process_server_msg(
                     connection.synced_level = Some(synced_level);
                     connection.synced_item_level = synced_item_level;
                     connection.update_class_info().await;
+                    connection.send_stats().await;
+                }
+            }
+            FromServer::WellFed(param) => {
+                if connection.well_fed != param {
+                    connection.well_fed = param;
                     connection.send_stats().await;
                 }
             }

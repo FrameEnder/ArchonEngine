@@ -1561,7 +1561,7 @@ pub(super) fn bot_parameters(
     parameters.perform_calculations(primary_stat, &tribe_row, &param_grow, &modifiers);
     let stats: Vec<_> = items
         .iter()
-        .filter_map(|id| game_data.equipped_item_stats(*id, true, None))
+        .filter_map(|id| game_data.equipped_item_stats(*id, true, None, &[]))
         .collect();
     parameters.add_equipped_items(&stats);
     parameters.calculate_potencies(&param_grow, Some(&modifiers));

@@ -93,7 +93,8 @@ level 1 to 45). Non-critical hits only, single targets at or below the player's 
   the enemy conjurers, 1.29 times the formula's; Kawari's player did 130-150 without it (Bob's bundle
   20261110-081839).
 * **Enemies above the player** took less: about 0.89-0.90 of it at one to three levels above, 0.86 at four or five,
-  0.81 at six or seven (open world, a few hundred hits); Kawari doesn't do this yet ([Known Issues](known-issues.md)).
+  0.81 at six or seven (open world, a few hundred hits). Kawari does the same since 2026-11-12
+  (`modifiers::level_gap_multiplier`: 0.895, 0.86, 0.81, the last kept further up, which wasn't recorded).
 
 **Gear** (`GameData::equipped_item_stats`): an item gives its BaseParam values, defense and magic defense, plus its HQ
 bonuses (`BaseParamValueSpecial`, item flag 1) when it's HQ. An HQ weapon's bonuses to Physical Damage (12) and Magic Damage (13) aren't
@@ -103,7 +104,30 @@ Sync](level-sync.md)). Bots and Duty Support members get f(WD) from the main han
 (`party_bot::bot_parameters`); the Duty Support members were given none until 2026-11-12, so their spells and heals
 without a recorded amount had only the level's share of f(WD) ([Party NPCs](party-npcs.md)). Checked against retail PlayerStats (Bob's captures, a
 White Mage at 86 in HQ gear): Vitality 1757 = 370 naked + 1261 + 126 HQ, Mind 1885 = 424 + 1330 + 131, defense 1413 =
-1267 + 146, every value to the point. Materia isn't counted yet. PlayerStats' `base_*` values are the **naked** stats at
+1267 + 146, every value to the point. **Materia** count since 2026-11-12 (`GameData::materia_bonuses`): each its
+Materia.Value at its grade, all of one attribute on an item together up to the item's cap at its own item level
+(`round(ItemLevel[item level] × slot percent × MeldParam / 100000)` less what it has), none on an item synced down.
+Retail counted them: a level 27 Arcanist's earring with a Critical Hit, a Determination and a Direct Hit materia worth
+1 each (Bob's capture cc62ad94) had PlayerStats 164, 97 and 162, the level's 155, 85 and 155 plus the gear's 8, 11 and
+6 plus 1 each. (The newer materia rows, 438-483, are the small ones Bob's accessories had.)
+
+**The party bonus** (since 2026-11-12, `stats::party_bonus_percent`, `ZoneConnection::set_party_bonus`): in a party of
+two or more, 1 % per party bonus group among the members the party list shows (ClassJob.PartyBonus: tanks, healers,
+melee, physical ranged with the Rogue's line, casters) on Strength, Dexterity, Vitality, Intelligence and Mind, rounded
+down; Piety and the substats unchanged; sent again (PlayerStats) with each party list, as retail. From about 1,250 of
+retail's PlayerStats with a party in Bob's captures: a White Mage's Mind 1891 and Vitality 1762 were 1928 and 1797 with
+two groups and 1947 and 1814 with three, 5 groups gave 5 % (with a Ninja: the Rogue's line counts as physical ranged,
+as the sheet has it), two tanks 1 %, alone none, in the open world too. Bots don't get it.
+
+**Food** (since 2026-11-12, `GameData::food_bonuses`, `BaseParameters::add_food`): while Well Fed (status 48, its param
+the ItemFood row, plus 10000 for HQ food as retail's 10427), each of the row's bonuses: a percentage of the stat with
+gear, rounded down, up to its maximum (the HQ columns for HQ food), or a flat amount; the server tells the connection
+Well Fed's param with each status list (`FromServer::WellFed`) and the stats follow. The game data's numbers: the only
+meal in the captures came with a change of class, so the bonus itself isn't checked; it's applied before the party
+bonus (which comes first on retail isn't known; they only meet on Vitality). HQ items are used as the client asks for
+them, the ID plus 1,000,000 (`action::item_and_hq`; before, they were ignored).
+
+PlayerStats' `base_*` values are the **naked** stats at
 the real level (retail: a level 6 Conjurer with 34 Mind sends 27; synced to 31, the unsynced naked 430), so the
 character window shows the gear's bonus; `delay` is the weapon's (2400 for a Maple Wand). Under level sync items are
 capped, see [Level Sync](level-sync.md).
@@ -123,11 +147,24 @@ Applied after an action's script returns, by the server, so scripts only give th
   −15 %, Vengeance 89 −30 %, Temperance 1872 −10 %, Trick Attack 3254 +10 %; Hallowed Ground 82 turns hits into
   "Invulnerable", Holmgang 409 keeps HP at 1 or more; healing received Mantra 102 +10 %, Thrill of Battle 87 +20 %,
   Rampart +15 %.
-* **Tank Mastery:** Gladiators, Marauders and their jobs (and DRK/GNB) take 20 % less from enemies. Their heavier armour takes
-  a further 17 % off (`TANK_ARMOUR`, 0.83, since 2026-11-10): the amounts Kawari has for enemies' hits on players were
-  recorded on Bob's casters and healers, and in the Stone Vigil his Paladin (42, capture 341808b0) took a median 0.67
-  of what his Arcanist (41, capture 1cefedf4) took from the same actions (0.49-0.78, ten actions), Tank Mastery's 0.8
-  times 0.83. With Tank Mastery alone the party bots' tank took 1.2 times retail's (Bob's bundle 20261110-134659).
+* **Tank Mastery:** Gladiators, Marauders and their jobs (and DRK/GNB) take 20 % less from enemies.
+* **Defense** (since 2026-11-12, `modifiers::defence_multiplier`): a hit loses `floor(15 × defense / level divisor)` %,
+  physical hits by Defense, magic and breath by Magic Defense, unique ones by neither. Fitted to Bob's Chronofoil
+  captures (10,600 enemy hits on his characters; 149 pairs of the same enemy's auto-attack on characters with different
+  defense, 52 of other actions, levels 1-50): 15 with Tank Mastery's 0.8 is within the noise of the best fit (18.5,
+  0.86), and spells fit Magic Defense better in 6 of 7 clear pairs. The amounts Kawari scales enemy hits to were
+  recorded on Bob's casters and healers, whose gear took a median 8 % of physical and 15 % of magic damage at nearly
+  every level, so a player's mitigation counts against that (`RECORDED_PHYSICAL_MITIGATION`, `_MAGIC_`): geared like
+  them, retail's damage; less defense, more. Before, gear changed nothing, and tanks had a flat 0.83 for their armour
+  (`TANK_ARMOUR`, from the Stone Vigil, where his Paladin at 42 took a median 0.67 of what his Arcanist at 41 did from
+  the same actions; the formula gives 0.68 from their defense, about 400 against 160, with Tank Mastery).
+* **Tenacity** (since 2026-11-12, the community's formula, Allagan Studies): above the level's base it adds
+  `floor(100 × (TNC − base) / div)` thousandths to damage and healing dealt (`BaseParameters::tenacity_factor`) and takes
+  as much off hits taken. Bob's tanks below 50 had 20-30 over the base, under 1 %, inside the formula fit's 1-2 %, so
+  the captures can't check it.
+* **Damage and healing over time** (since 2026-11-12, `modifiers::scale_periodic_by_speed`): × `(1000 + floor(130 ×
+  (speed − base) / div)) / 1000`, Spell Speed for spells and Skill Speed for the rest, the community's formula (the
+  same 130 as cast times); Bob's characters below 50 had speed at or near the base, so it isn't checked either.
 * **Enemy hits on players** keep their own variance and criticals (`roll_npc_hit`), then get the enemy's debuffs and the
   player's defences above.
 * **Crowd control:** Stun (2) and Sleep (3) stop an enemy completely, Bind (13) keeps it in place; Sleep ends when it's
@@ -814,8 +851,8 @@ Second Wind, Bloodbath, True North, Addle, Leg Sweep, Sleep, Rescue, Esuna). How
   [Known Issues](known-issues.md#combat).
 
 **Combat items** (`items/Items.lua`): potions (ItemAction 847: the % of max HP up to the cap), ethers (848, MP),
-elixirs (849, their caps), status removal (842), food (844–846: Well Fed 48 with the ItemFood row and duration, no stat
-bonus yet).
+elixirs (849, their caps), status removal (842), food (844–846: Well Fed 48 with the ItemFood row, plus 10000 for HQ, and duration;
+its stats above).
 
 ## The ARR jobs, levels 51–100
 

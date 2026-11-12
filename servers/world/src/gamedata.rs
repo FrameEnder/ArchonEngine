@@ -53,6 +53,7 @@ use icarus::IKDRoute::IKDRouteSheet;
 use icarus::InstanceContent::InstanceContentSheet;
 use icarus::Item::ItemSheet;
 use icarus::ItemAction::ItemActionSheet;
+use icarus::ItemFood::ItemFoodSheet;
 use icarus::ItemLevel::ItemLevelRow;
 use icarus::ItemLevel::ItemLevelSheet;
 use icarus::ItemRepairPrice::ItemRepairPriceSheet;
@@ -174,6 +175,10 @@ pub struct GameData {
     pub bnpc_base_sheet: BNpcBaseSheet,
     pub bnpc_customize_sheet: BNpcCustomizeSheet,
     pub item_level_sheet: ItemLevelSheet,
+    /// The Materia sheet: what each kind of materia (an item's `materia`) gives at each grade (`materia_bonuses`.)
+    pub materia_sheet: MateriaSheet,
+    /// What each food gives while Well Fed (`food_bonuses`.)
+    pub item_food_sheet: ItemFoodSheet,
     pub gimmick_rect_sheet: GimmickRectSheet,
     pub base_param_sheet: BaseParamSheet,
     /// Statuses Esuna can remove (Status.CanDispel), read the first time it's needed.
@@ -332,6 +337,8 @@ impl ItemRow {
 pub struct SyncedItemStats {
     /// BaseParam IDs and their (capped) values; ID 0 is an empty slot.
     pub params: [(u8, i32); 6],
+    /// What its materia add (BaseParam ID, value), within the item's caps; none under item level sync.
+    pub materia: [(u8, i32); 5],
     pub defense: u32,
     pub magic_defense: u32,
 }
@@ -356,6 +363,26 @@ fn hq_weapon_damage(special: &[(u8, i32)]) -> (u32, u32) {
         bonus(BASE_PARAM_PHYSICAL_DAMAGE),
         bonus(BASE_PARAM_MAGIC_DAMAGE),
     )
+}
+
+/// How much of an attribute's materia (`total`) counts on an item that has `has` of it already and allows `cap`.
+fn materia_allowed(total: i32, has: i32, cap: Option<i32>) -> i32 {
+    match cap {
+        Some(cap) => total.min((cap - has).max(0)),
+        None => total,
+    }
+}
+
+/// Well Fed's param for HQ food: the ItemFood row plus this (retail's 10427, Bob's Chronofoil capture cc26e0ea.)
+pub const FOOD_HQ_PARAM: u16 = 10000;
+
+/// One of a food's bonuses: to a BaseParam, either a percentage of it up to `max` (`relative`) or `value` outright.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct FoodBonus {
+    pub base_param: u8,
+    pub relative: bool,
+    pub value: i32,
+    pub max: i32,
 }
 
 /// A weapon's damage under item level sync: its own, at most the sync item level's (`GameData::weapon_damage`.)
@@ -911,6 +938,10 @@ impl GameData {
 
         let item_level_sheet =
             ItemLevelSheet::read_from(&mut resource_resolver, Language::None).unwrap();
+        let materia_sheet =
+            MateriaSheet::read_from(&mut resource_resolver, Language::None).unwrap();
+        let item_food_sheet =
+            ItemFoodSheet::read_from(&mut resource_resolver, Language::None).unwrap();
 
         let gimmick_rect_sheet =
             GimmickRectSheet::read_from(&mut resource_resolver, Language::None).unwrap();
@@ -1010,6 +1041,8 @@ impl GameData {
             bnpc_base_sheet,
             bnpc_customize_sheet,
             item_level_sheet,
+            materia_sheet,
+            item_food_sheet,
             gimmick_rect_sheet,
             base_param_sheet,
             dispellable_statuses: None,
@@ -3064,6 +3097,15 @@ impl GameData {
     }
 
     /// Returns the ParamGrow for this level.
+    /// The party bonus group a class or job counts as (ClassJob.PartyBonus: 1 tanks, 2 healers, 3 melee, 4 physical
+    /// ranged and the Rogue's line, 5 casters), 0 for none (`party_bonus_percent`.)
+    pub fn party_bonus_group(&mut self, classjob: u8) -> u8 {
+        self.classjob_sheet
+            .row(classjob as u32)
+            .map(|row| row.PartyBonus)
+            .unwrap_or(0)
+    }
+
     pub fn get_class_job_modifiers(&mut self, classjob_id: u32) -> Option<Modifiers> {
         let row = self.classjob_sheet.row(classjob_id)?;
 
@@ -3940,6 +3982,78 @@ impl GameData {
         ))
     }
 
+    /// What Well Fed with this param gives (the ItemFood row, plus 10000 for HQ food): each (BaseParam, relative, value,
+    /// max) of the row, the HQ columns for HQ food. Applied by `BaseParameters::add_food`.
+    pub fn food_bonuses(&mut self, well_fed: u16) -> Vec<FoodBonus> {
+        let (row, hq) = if well_fed >= FOOD_HQ_PARAM {
+            (well_fed - FOOD_HQ_PARAM, true)
+        } else {
+            (well_fed, false)
+        };
+        let Some(food) = self.item_food_sheet.row(row as u32) else {
+            return Vec::new();
+        };
+        (0..3)
+            .filter(|i| food.BaseParam[*i] != 0)
+            .map(|i| FoodBonus {
+                base_param: food.BaseParam[i],
+                relative: food.IsRelative[i],
+                value: if hq { food.ValueHQ[i] } else { food.Value[i] } as i32,
+                max: if hq { food.MaxHQ[i] } else { food.Max[i] } as i32,
+            })
+            .collect()
+    }
+
+    /// What an item's materia (Materia row, grade) add: each its Materia.Value at its grade, and all of one attribute on
+    /// the item together no more than the item allows (its cap at its own item level, as under sync:
+    /// `round(ItemLevel[item level][attribute] × slot percent × MeldParam / 100000)`, less what the item already has; the
+    /// wiki's overmelding cap.) Retail counted them (Bob's Chronofoil capture cc62ad94, a level 27 Arcanist whose earring
+    /// had a Critical Hit, a Determination and a Direct Hit materia, each worth 1: PlayerStats' 164, 97 and 162 are the
+    /// level's 155, 85 and 155, the gear's 8, 11 and 6 and the materia's 1 each.) Kawari left them out until 2026-11-12.
+    fn materia_bonuses(
+        &mut self,
+        item: &icarus::Item::ItemRow,
+        params: &[(u8, i32); 6],
+        materia: &[(u16, u8)],
+    ) -> [(u8, i32); 5] {
+        let mut totals: Vec<(u8, i32)> = Vec::new();
+        for (kind, grade) in materia.iter().filter(|(kind, _)| *kind != 0) {
+            let Some(row) = self.materia_sheet.row(*kind as u32) else {
+                continue;
+            };
+            let value = row.Value.get(*grade as usize).copied().unwrap_or(0) as i32;
+            if row.BaseParam == 0 || value == 0 {
+                continue;
+            }
+            match totals.iter_mut().find(|(param, _)| *param == row.BaseParam) {
+                Some((_, total)) => *total += value,
+                None => totals.push((row.BaseParam, value)),
+            }
+        }
+        let own = self.item_level_sheet.row(item.LevelItem as u32);
+        let mut bonuses = [(0, 0); 5];
+        for (slot, (param, total)) in totals.into_iter().take(5).enumerate() {
+            let has = params
+                .iter()
+                .find(|(id, _)| *id == param)
+                .map(|(_, value)| *value)
+                .unwrap_or(0);
+            let cap = own.as_ref().and_then(|own| {
+                let base = item_level_value(own, param)?;
+                let base_param = self.base_param_sheet.row(param as u32)?;
+                let percent = slot_percent(&base_param, item.EquipSlotCategory) as f64;
+                let meld = base_param
+                    .MeldParam
+                    .get(item.BaseParamModifier as usize)
+                    .copied()
+                    .unwrap_or(100) as f64;
+                Some(sync_cap(base, percent, meld))
+            });
+            bonuses[slot] = (param, materia_allowed(total, has, cap));
+        }
+        bonuses
+    }
+
     /// What an equipped item gives: its attributes (with the HQ bonuses, BaseParamValueSpecial, when `hq`), defense
     /// and magic defense, capped under item level sync `sync_item_level` (docs/src/fork/level-sync.md). Fitted to Bob's
     /// Chronofoil captures of retail (a White Mage at 86, and synced to 50 and to 18): each attribute is capped at
@@ -3951,10 +4065,12 @@ impl GameData {
         item_id: u32,
         hq: bool,
         sync_item_level: Option<u16>,
+        materia: &[(u16, u8)],
     ) -> Option<SyncedItemStats> {
         let item = self.item_sheet.row(item_id)?;
         let mut stats = SyncedItemStats {
             params: std::array::from_fn(|i| (item.BaseParam[i], item.BaseParamValue[i] as i32)),
+            materia: [(0, 0); 5],
             defense: item.DefensePhys as u32,
             magic_defense: item.DefenseMag as u32,
         };
@@ -3981,6 +4097,7 @@ impl GameData {
             }
         }
         let Some(sync_item_level) = sync_item_level.filter(|sync| item.LevelItem > *sync) else {
+            stats.materia = self.materia_bonuses(&item, &stats.params, materia);
             return Some(stats);
         };
         let synced = self.item_level_sheet.row(sync_item_level as u32)?;
@@ -4874,6 +4991,16 @@ mod hq_weapon_tests {
 
     /// Under sync a weapon above the sync item level does ItemLevel[sync]'s damage: a White Mage's item level 400
     /// weapon (92) synced to 50 counted as ItemLevel 130's 65 (Bob's Chronofoil captures); one below keeps its own.
+    /// Materia count up to the item's cap for the attribute: an earring's +1 Critical Hit where it has none (Bob's
+    /// capture cc62ad94); five +36 where the cap leaves 20.
+    #[test]
+    fn materia_up_to_the_cap() {
+        assert_eq!(materia_allowed(1, 0, Some(5)), 1);
+        assert_eq!(materia_allowed(180, 60, Some(80)), 20);
+        assert_eq!(materia_allowed(10, 90, Some(80)), 0);
+        assert_eq!(materia_allowed(3, 0, None), 3);
+    }
+
     #[test]
     fn a_synced_weapons_damage() {
         assert_eq!(synced_weapon_damage((92, 92), (65, 65)), (65, 65));

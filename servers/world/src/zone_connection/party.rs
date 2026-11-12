@@ -13,6 +13,23 @@ use kawari::{
 const BOT_PARTY_ID_BASE: u64 = 0x00B1_0000_0000_0000;
 
 impl ZoneConnection {
+    /// The party bonus of the members a party list shows (`stats::party_bonus_percent`), and the stats again when it
+    /// changes.
+    async fn set_party_bonus(&mut self, classjobs: &[u8]) {
+        let groups: Vec<u8> = {
+            let mut game_data = self.game_data.lock();
+            classjobs
+                .iter()
+                .map(|classjob| game_data.party_bonus_group(*classjob))
+                .collect()
+        };
+        let bonus = crate::zone_connection::stats::party_bonus_percent(&groups);
+        if bonus != self.party_bonus {
+            self.party_bonus = bonus;
+            self.send_stats().await;
+        }
+    }
+
     // A party event happened, so we need to inform our client.
     pub async fn send_party_update(
         &mut self,
@@ -62,6 +79,12 @@ impl ZoneConnection {
                 }
             }
 
+            let classjobs: Vec<u8> = party_list
+                .iter()
+                .filter(|member| member.classjob_id != 0)
+                .map(|member| member.classjob_id)
+                .collect();
+
             // Ensure we have only the correct amount of entries. Possibly redundant with binrw, but it doesn't hurt to be safe.
             party_list.resize(PartyMemberEntry::NUM_ENTRIES, PartyMemberEntry::default());
 
@@ -78,6 +101,8 @@ impl ZoneConnection {
             });
 
             self.send_ipc_self(ipc).await;
+            // Retail sends PlayerStats after the list, with the party bonus of who it shows.
+            self.set_party_bonus(&classjobs).await;
 
             self.is_party_leader = self.player_data.character.actor_id == leader_actor_id;
         } else {
@@ -94,6 +119,7 @@ impl ZoneConnection {
                 },
             });
             self.send_ipc_self(ipc).await;
+            self.set_party_bonus(&[]).await;
 
             self.party_id = 0;
             self.is_party_leader = false;
@@ -177,6 +203,11 @@ impl ZoneConnection {
             None => (Vec::new(), 0),
         };
         let member_count = list.len() as u8;
+        let classjobs: Vec<u8> = list
+            .iter()
+            .filter(|member| member.classjob_id != 0)
+            .map(|member| member.classjob_id)
+            .collect();
         list.resize(PartyMemberEntry::NUM_ENTRIES, PartyMemberEntry::default());
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::PartyList {
             members: list,
@@ -190,6 +221,7 @@ impl ZoneConnection {
             },
         });
         self.send_ipc_self(ipc).await;
+        self.set_party_bonus(&classjobs).await;
 
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::PartyUpdate {
             execute_account_id: me.execute_account_id,

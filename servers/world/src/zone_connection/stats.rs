@@ -177,6 +177,25 @@ const HEALING_POTENCY_ANCHORS: [(u16, f32); 3] = [(50, 75.0), (90, 145.8), (100,
 /// How much Determination above the level's main stat adds: f(DET) = floor(SCALE × (DET − main) / div) + 1000, in
 /// thousandths (retail's 140; the captures can't tell it from 130.)
 const DETERMINATION_SCALE: f32 = 140.0;
+/// f(TNC)'s coefficient, for damage and healing dealt and damage taken (`BaseParameters::tenacity_factor`,
+/// `modifiers::defence_multiplier`.)
+pub const TENACITY_SCALE: f32 = 100.0;
+
+/// The party bonus, in percent: one for each party bonus group (`GameData::party_bonus_group`) among the members the
+/// player's party list shows (those in their zone), once there are two of them; none alone. Retail's PlayerStats in Bob's
+/// Chronofoil captures (2026-06 to 2026-11, about 1,250 with a party): Strength, Dexterity, Vitality, Intelligence and
+/// Mind ×(100 + n) / 100, rounded down, n the groups (2-5 seen; two tanks gave 1); Piety and the substats unchanged. A
+/// party with a Ninja and the other four groups gave 5 %: the Rogue's line counts with the physical ranged, as the sheet
+/// has it.
+pub fn party_bonus_percent(groups: &[u8]) -> u8 {
+    if groups.len() < 2 {
+        return 0;
+    }
+    let mut distinct: Vec<u8> = groups.iter().copied().filter(|group| *group != 0).collect();
+    distinct.sort_unstable();
+    distinct.dedup();
+    distinct.len() as u8
+}
 
 /// The coefficient for a level from its anchors: the first one's up to it, straight lines between, the last one's
 /// slope past it.
@@ -556,7 +575,18 @@ impl BaseParameters {
             + 1000.0)
             .max(1.0) as u64;
         let base = potency as u64 * f_ap * f_det / 100_000;
+        let base = base * self.tenacity_factor() / 1000;
         (base * weapon_factor.max(0.0) as u64 / 100).clamp(1, u16::MAX as u64) as u16
+    }
+
+    /// f(TNC), in thousandths: Tenacity above the level's base (ParamGrow's BaseSpeed) adds
+    /// floor(100 × (TNC − base) / divisor) to damage and healing, as the community's formula has it (Allagan Studies, from
+    /// Shadowbringers). Only tanks' gear has Tenacity; at the levels Bob's captures cover a tank's was at most 20-30
+    /// over the base (a level 42 Paladin: 287 against 263), under 1 % here, within the formula fit's 1-2 %, so the
+    /// captures can't check the coefficient.
+    fn tenacity_factor(&self) -> u64 {
+        let over = self.tenacity.saturating_sub(self.base_speed.max(0) as u32);
+        (TENACITY_SCALE * over as f32 / self.level_div.max(1) as f32).floor() as u64 + 1000
     }
 
     /// f(AP)'s coefficient for damage at this level (`ATTACK_POWER_ANCHORS`, the tanks' own past 50.)
@@ -628,13 +658,47 @@ impl BaseParameters {
         (normalized_potency * self.healing_magic_potency as f32).floor() as u16
     }
 
+    /// Food's bonuses (`GameData::food_bonuses`): a percentage of the stat as it stands, rounded down, up to the food's
+    /// maximum, or a flat amount. The game data's numbers, as the wiki describes them; no capture has the stats before
+    /// and after a meal (the only one, cc26e0ea, came with a change of class.)
+    pub fn add_food(&mut self, bonuses: &[crate::gamedata::FoodBonus]) {
+        for bonus in bonuses {
+            if bonus.base_param == 0 || bonus.base_param as usize > 73 {
+                continue;
+            }
+            let stat = self.get_mut(bonus.base_param);
+            let amount = if bonus.relative {
+                ((*stat as i64 * bonus.value as i64 / 100) as i32).min(bonus.max)
+            } else {
+                bonus.value
+            };
+            *stat = stat.saturating_add_signed(amount.max(0));
+        }
+    }
+
+    /// The party bonus (`party_bonus_percent`) on the five main attributes, rounded down.
+    pub fn add_party_bonus(&mut self, percent: u8) {
+        if percent == 0 {
+            return;
+        }
+        for stat in [
+            &mut self.strength,
+            &mut self.dexterity,
+            &mut self.vitality,
+            &mut self.intelligence,
+            &mut self.mind,
+        ] {
+            *stat = (*stat as u64 * (100 + percent as u64) / 100) as u32;
+        }
+    }
+
     /// Adds what the equipped items give (see `GameData::equipped_item_stats`): their attributes, defense and magic
     /// defense.
     pub fn add_equipped_items(&mut self, items: &[SyncedItemStats]) {
         for item in items {
             self.defense += item.defense;
             self.magic_defense += item.magic_defense;
-            for (param_id, value) in item.params {
+            for (param_id, value) in item.params.into_iter().chain(item.materia) {
                 if param_id != 0 {
                     *self.get_mut(param_id) = self.get_mut(param_id).saturating_add_signed(value);
                 }
@@ -900,10 +964,17 @@ impl ZoneConnection {
             // Gear at 0% condition gives no stats (the wiki's Gear Durability page.)
             .filter(|item| item.condition > 0)
             .filter_map(|item| {
+                let materia: Vec<(u16, u8)> = item
+                    .materia
+                    .iter()
+                    .copied()
+                    .zip(item.materia_grades.iter().copied())
+                    .collect();
                 game_data.equipped_item_stats(
                     item.item_id,
                     item.item_flags & ITEM_FLAG_HQ != 0,
                     sync_item_level,
+                    &materia,
                 )
             })
             .collect()
@@ -954,6 +1025,12 @@ impl ZoneConnection {
         if with_items {
             let items = self.equipped_item_stats(&mut game_data, sync_item_level);
             base_parameters.add_equipped_items(&items);
+            // Food on the stats with gear, then the party bonus on the attributes, before HP and attack power come
+            // from them. (Which of the two comes first on retail isn't known: they only meet on Vitality.)
+            if let Some(well_fed) = self.well_fed {
+                base_parameters.add_food(&game_data.food_bonuses(well_fed));
+            }
+            base_parameters.add_party_bonus(self.party_bonus);
         }
         // Crafters have 180 CP before their gear (Craftimizer's base stats, which it adds gear to.)
         if crate::common::is_crafter(self.player_data.classjob.current_class as u8) {
@@ -1277,6 +1354,78 @@ impl ZoneConnection {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The party bonus as retail's PlayerStats had it (Bob's Chronofoil captures): a White Mage's Mind 1891 and
+    /// Vitality 1762 became 1928 and 1797 with two groups, 1947 and 1814 with three; two tanks gave 1 %, alone none.
+    /// Food: a percentage of the stat up to its maximum, or a flat amount.
+    #[test]
+    fn food() {
+        use crate::gamedata::FoodBonus;
+        let mut parameters = BaseParameters {
+            critical_hit: 1000,
+            determination: 500,
+            vitality: 400,
+            ..Default::default()
+        };
+        parameters.add_food(&[
+            // 10 % up to 50: capped.
+            FoodBonus {
+                base_param: 27,
+                relative: true,
+                value: 10,
+                max: 50,
+            },
+            // 10 % up to 80: 50.
+            FoodBonus {
+                base_param: 44,
+                relative: true,
+                value: 10,
+                max: 80,
+            },
+            // Flat 7.
+            FoodBonus {
+                base_param: 3,
+                relative: false,
+                value: 7,
+                max: 0,
+            },
+        ]);
+        assert_eq!(
+            (
+                parameters.critical_hit,
+                parameters.determination,
+                parameters.vitality
+            ),
+            (1050, 550, 407)
+        );
+    }
+
+    #[test]
+    fn the_party_bonus() {
+        assert_eq!(party_bonus_percent(&[2]), 0);
+        assert_eq!(party_bonus_percent(&[1, 1]), 1);
+        assert_eq!(party_bonus_percent(&[2, 1]), 2);
+        assert_eq!(party_bonus_percent(&[2, 1, 4, 4]), 3);
+        assert_eq!(party_bonus_percent(&[1, 2, 3, 4, 5, 3, 4, 1]), 5);
+        let mut parameters = BaseParameters {
+            mind: 1891,
+            vitality: 1762,
+            piety: 1078,
+            ..Default::default()
+        };
+        parameters.add_party_bonus(2);
+        assert_eq!(
+            (parameters.mind, parameters.vitality, parameters.piety),
+            (1928, 1797, 1078)
+        );
+        let mut parameters = BaseParameters {
+            mind: 1891,
+            vitality: 1762,
+            ..Default::default()
+        };
+        parameters.add_party_bonus(3);
+        assert_eq!((parameters.mind, parameters.vitality), (1947, 1814));
+    }
 
     /// Rested EXP as retail gave it (Bob's Chronofoil captures): a full pool's part, the seconds it uses, a short
     /// pool's part, an empty pool nothing.

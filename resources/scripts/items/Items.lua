@@ -2,6 +2,7 @@ ITEM_ACTION_TYPE_STATUS_REMOVAL = 842
 ITEM_ACTION_TYPE_FOOD = 844
 ITEM_ACTION_TYPE_FOOD_2 = 845
 ITEM_ACTION_TYPE_FOOD_3 = 846
+FOOD_HQ_PARAM = 10000
 ITEM_ACTION_TYPE_HP_POTION = 847
 ITEM_ACTION_TYPE_MP_POTION = 848
 ITEM_ACTION_TYPE_ELIXIR = 849
@@ -42,7 +43,8 @@ LEARNED_FROM_ITEMS = {
 }
 
 -- This is called whenever the client tries to use an item
-function dispatchItem(player, id, action_type, action_data, additional_data, is_misc)
+-- `hq`: the HQ copy (the client asked for it as the ID plus 1,000,000.)
+function dispatchItem(player, id, action_type, action_data, additional_data, is_misc, hq)
     local has_vfx = action_data[1] ~= 0
     local learned = LEARNED_FROM_ITEMS[action_type]
     if action_type == ITEM_ACTION_TYPE_COFFER then
@@ -64,7 +66,9 @@ function dispatchItem(player, id, action_type, action_data, additional_data, is_
         return runAction("items/StatusRemoval.lua", action_data[1])
     elseif action_type == ITEM_ACTION_TYPE_FOOD or action_type == ITEM_ACTION_TYPE_FOOD_2
         or action_type == ITEM_ACTION_TYPE_FOOD_3 then
-        return runAction("items/Food.lua", action_data[2] + action_data[3] * 65536)
+        -- Well Fed's param is the ItemFood row, plus 10000 for HQ food (retail's 10427, Bob's capture cc26e0ea.)
+        local row = action_data[2] + (hq and FOOD_HQ_PARAM or 0)
+        return runAction("items/Food.lua", row + action_data[3] * 65536)
     elseif action_type == ITEM_ACTION_TYPE_GYSHAL_GREENS then
         return runAction("items/GyshalGreens.lua", additional_data)
     elseif action_type == ITEM_ACTION_TYPE_TELEPORT_TICKET then

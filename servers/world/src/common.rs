@@ -341,6 +341,8 @@ pub enum FromServer {
     MinimumItemLevel(u16),
     /// The Echo's multiplier on the character's maximum HP (`duty_finder::refresh_echo`.)
     EchoMultiplier(f32),
+    /// Well Fed's param (food), or None once it's gone: the player's stats follow it (`BaseParameters::add_food`.)
+    WellFed(Option<u16>),
     /// Play the initial cutscene for instanced content: its duration, settings, and for a quest battle its scene
     /// flags (`OPENING_SCENE_FLAGS` in its script, if it sets them.)
     /// A duty's opening scene: its duration, DutyOption bits, the director's opening flags and the duty's

@@ -158,7 +158,22 @@ pub fn send_effects_list(
         FromServer::PacketSegment(ipc, from_actor_id),
         DestinationNetwork::ZoneClients,
     );
+    // A player's food: their connection works their stats out, so it hears what Well Fed is now.
+    if matches!(actor, NetworkedActor::Player { .. }) {
+        let well_fed = status_data
+            .iter()
+            .find(|status| status.effect_id == STATUS_WELL_FED)
+            .map(|status| status.param);
+        network.send_to_by_actor_id(
+            from_actor_id,
+            FromServer::WellFed(well_fed),
+            DestinationNetwork::ZoneClients,
+        );
+    }
 }
+
+/// Well Fed, food's status.
+const STATUS_WELL_FED: u16 = 48;
 
 /// Sends an updated status effects list, as needed.
 pub fn process_effects_list(

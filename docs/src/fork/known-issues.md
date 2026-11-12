@@ -732,8 +732,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   checked against it with Bob's game data. Up to 50 it fits within 1-2 %; levels 51-79 and 81-89 between the anchors,
   and tanks past 50, are interpolated from the community's numbers, not recorded. Party bots use it too, so past 50
   they hit about three times as hard as before.
-* Enemies above the player take less on retail (about 0.89 at one to three levels, 0.86 at four or five, 0.81 at six
-  or seven, open world); Kawari doesn't do this.
+* Enemies more than seven levels above the player take what seven above do (0.81): further up wasn't recorded.
+* Scaling added on 2026-11-12 ([Combat](combat.md)) that the captures can't check: Tenacity's and speed's coefficients
+  (the community's 100 and 130), food's bonuses (no meal in the captures without a class change) and whether food or
+  the party bonus comes first; materia's per-item cap (the captures' materia were all well under it). Bots get neither
+  the party bonus nor food. Defense is taken against the recordings' characters' 8 % and 15 %, a median: their
+  under-geared stretches (3-4 % at 24 and 28-29) recorded hits a little higher than retail's for someone geared.
 * The Arcanist's Ruin at levels 3-5 did 0.79 of the formula (three groups; 8-45 fit), and enemies vary a little among
   themselves on retail (about ±3 % at the same level), which Kawari doesn't model.
 * A quest battle's DPS status (1265) was only seen on an Arcanist; melee and physical ranged players get it too in
@@ -1390,7 +1394,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * **Healer bots' heals** are one single-target GCD heal (`heal_action`); they don't use the healers' abilities
   (Lustrate, Excogitation, Indomitability, Tetragrammaton, Divine Benison...) or area heals, and the rotation scripts
   can't see the party's HP.
-* **Combat items:** HQ values aren't used; food gives Well Fed without its stat bonuses; elixirs give their caps.
+* **Combat items:** HQ items are used (since 2026-11-12) but give their NQ values, but for food's (Well Fed's HQ
+  param); elixirs give their caps.
 * **Item recasts**: retail's ActorControlSelf 17 for an action (sent by Kawari since 2026-10-18, `action.rs`; 72 of
   77 action requests in Bob's bundle 20261111-194208, the rest mounts) comes for an item too when it has a recast, with
   its own group, an action of its own and the Item row's recast: item 8575 `(60, 2894, 180000)`, 20309
@@ -1406,7 +1411,6 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * Sprint and Jog over a zone change: Kawari drops statuses there; retail sometimes kept Jog in the new zone's list and
   sometimes didn't (no rule found yet, [Combat](combat.md#sprint-and-jog)). 8 of 37 retail Sprints lasted 10 s instead
   of 20 (all on the new 2026.10.06 characters), unexplained.
-* Materia isn't counted in stats.
 * No Limit Break gauge or Limit Break actions.
 
 * **Teleport animation stayed on** after a teleport within the same zone (Bentbranch, 2026-10-16; Moraby Drydocks,

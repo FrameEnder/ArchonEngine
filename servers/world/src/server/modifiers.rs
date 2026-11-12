@@ -118,12 +118,83 @@ const HEALING_RECEIVED: &[(u16, f32)] = &[
 /// GNB.)
 const TANKS: &[u8] = &[1, 3, 19, 21, 32, 37];
 const TANK_MASTERY: f32 = 0.80;
-/// What a tank's heavier armour takes off an enemy's hit besides Tank Mastery, against the amounts Kawari has: those
-/// were recorded on Bob's casters and healers (`Timeline::recorded_amounts`' `players`, and `npc_damage_scale`'s fit).
-/// The Stone Vigil's actions that hit both his tank (a Paladin at 42, capture 341808b0) and his Arcanist (41, capture
-/// 1cefedf4) did a median 0.67 as much to the tank (0.49-0.78, ten actions): Tank Mastery's 0.8 times this. With
-/// Tank Mastery alone the party bots' tank took 1.2 times what retail's did (Bob's bundle 20261110-134659).
-const TANK_ARMOUR: f32 = 0.83;
+/// How much of a hit a player's defense takes off: floor(15 × defense / level divisor) percent, physical hits by
+/// Defense, magic and breath by Magic Defense, unique ones by neither. Fitted to Bob's Chronofoil captures (10,600 enemy
+/// hits on his characters, 149 pairs of the same enemy's auto-attack on characters with different defense, 52 of its
+/// other actions; levels 1-50): 15 with Tank Mastery's 0.8 is within the noise of the best fit (18.5, 0.86), and spells
+/// fit Magic Defense better than Defense in 6 of 7 clear pairs.
+const DEFENSE_COEFFICIENT: f32 = 15.0;
+/// The mitigation (percent) the amounts Kawari scales enemy hits to were recorded with: Bob's casters and healers
+/// (`Timeline::recorded_amounts`' `players`, `npc_damage_scale`), whose gear took a median 8 % of physical and 15 % of
+/// magic damage at nearly every level from 1 to 50 in the same captures (3-4 % where they were under-geared). A
+/// player's own mitigation is taken relative to it, so one geared like them takes what retail did; until 2026-11-12
+/// gear made no difference, and tanks had a flat 0.83 for their armour (the Stone Vigil's 0.67 of the Arcanist's
+/// damage on a Paladin, which this gives: about 400 defense against 160 at 42, 0.85 × Tank Mastery's 0.8.)
+const RECORDED_PHYSICAL_MITIGATION: f32 = 8.0;
+const RECORDED_MAGIC_MITIGATION: f32 = 15.0;
+
+/// f(SPD) on damage and healing over time: × (1000 + floor(130 × (speed − base) / divisor)) / 1000, the community's
+/// formula (Allagan Studies), as cast times already use the same 130 (`BaseParameters::get_adjusted_cast_time`). Bob's
+/// captures don't separate it: below 50 his characters' speed stood at or within a few points of the base.
+pub fn scale_periodic_by_speed(
+    periodic: &mut [crate::lua::PeriodicSpec],
+    speed: u32,
+    base: u32,
+    level_div: u32,
+) {
+    let factor = speed_factor(speed, base, level_div);
+    if factor == 1000 {
+        return;
+    }
+    for spec in periodic.iter_mut() {
+        if matches!(
+            spec.kind,
+            crate::lua::PeriodicKind::Damage | crate::lua::PeriodicKind::Heal
+        ) {
+            spec.amount = (spec.amount as u64 * factor / 1000) as u32;
+        }
+    }
+}
+
+/// f(SPD) in thousandths.
+fn speed_factor(speed: u32, base: u32, level_div: u32) -> u64 {
+    let over = speed.saturating_sub(base);
+    (SPEED_COEFFICIENT * over as f32 / level_div.max(1) as f32).floor() as u64 + 1000
+}
+const SPEED_COEFFICIENT: f32 = 130.0;
+
+/// A defender's Defense and Magic Defense and their level's divisor (ParamGrow's LevelModifier.)
+#[derive(Debug, Clone, Copy)]
+pub struct Defences {
+    pub defense: u32,
+    pub magic_defense: u32,
+    pub level_div: u32,
+    /// Tenacity above the level's base: takes floor(100 × it / divisor) thousandths off every hit (the community's
+    /// formula; the recordings' casters and healers had none.)
+    pub tenacity_over: u32,
+}
+
+/// What a defender's defences leave of a hit of this type, against what the recordings' characters' left.
+pub fn defence_multiplier(defences: Option<Defences>, damage_type: DamageType) -> f32 {
+    let Some(defences) = defences else {
+        return 1.0;
+    };
+    let (value, recorded) = match damage_type {
+        DamageType::Unique | DamageType::LimitBreak => return 1.0,
+        DamageType::Magic | DamageType::Breath => {
+            (defences.magic_defense, RECORDED_MAGIC_MITIGATION)
+        }
+        _ => (defences.defense, RECORDED_PHYSICAL_MITIGATION),
+    };
+    let mitigation = (DEFENSE_COEFFICIENT * value as f32 / defences.level_div.max(1) as f32)
+        .floor()
+        .min(95.0);
+    let tenacity = (crate::zone_connection::TENACITY_SCALE * defences.tenacity_over as f32
+        / defences.level_div.max(1) as f32)
+        .floor()
+        / 1000.0;
+    (100.0 - mitigation) / (100.0 - recorded) * (1.0 - tenacity)
+}
 
 fn is_physical(damage_type: DamageType) -> bool {
     !matches!(
@@ -248,8 +319,22 @@ pub struct PlayerHit<'a> {
     pub target_statuses: &'a [u16],
     pub target_classjob: u8,
     pub target_is_player: bool,
+    /// How many levels the target (an enemy) stands above the caster; 0 or less for none (`level_gap_multiplier`.)
+    pub level_gap: i32,
     /// Random numbers in [0, 1): variance, critical roll, direct hit roll (passed in so tests can fix them.)
     pub rolls: [f32; 3],
+}
+
+/// What a player's hit does to an enemy above their level: retail's players did about 0.895 as much one to three levels
+/// up, 0.86 at four or five and 0.81 at six or seven (Bob's Chronofoil captures, open world, a few hundred hits against
+/// the formula; `combat.md`). Further up wasn't recorded: the last step is kept.
+pub fn level_gap_multiplier(gap: i32) -> f32 {
+    match gap {
+        i32::MIN..=0 => 1.0,
+        1..=3 => 0.895,
+        4..=5 => 0.86,
+        _ => 0.81,
+    }
 }
 
 /// Applies variance, critical and direct hits, and the status modifiers to a player's damage and heals (the effects
@@ -269,7 +354,7 @@ pub fn apply_player_hit(effects: &mut [TargetEffect], hit: &PlayerHit) {
                 if *amount == 0 {
                     continue;
                 }
-                let mut damage = *amount as f32 * variance;
+                let mut damage = *amount as f32 * variance * level_gap_multiplier(hit.level_gap);
                 if critical {
                     damage *= hit.chances.critical_multiplier;
                     *damage_kind |= DamageKind::CRITICAL;
@@ -313,6 +398,7 @@ pub fn apply_hit_on_player(
     enemy_statuses: &[u16],
     player_statuses: &[u16],
     player_classjob: u8,
+    defences: Option<Defences>,
 ) {
     let invulnerable = is_invulnerable(player_statuses);
     for effect in effects.iter_mut() {
@@ -326,15 +412,10 @@ pub fn apply_hit_on_player(
                 effect.0 = TargetEffectKind::Invincible;
                 continue;
             }
-            let armour = if TANKS.contains(&player_classjob) {
-                TANK_ARMOUR
-            } else {
-                1.0
-            };
             let damage = *amount as f32
                 * damage_dealt_multiplier(enemy_statuses, *damage_type)
                 * damage_taken_multiplier(player_statuses, player_classjob, true)
-                * armour;
+                * defence_multiplier(defences, *damage_type);
             *amount = damage.round().clamp(1.0, u16::MAX as f32) as u16;
         }
     }
@@ -385,6 +466,7 @@ mod tests {
                 target_statuses: &[3254],
                 target_classjob: 0,
                 target_is_player: false,
+                level_gap: 0,
                 rolls: [0.5, 0.99, 0.99],
             },
         );
@@ -412,6 +494,7 @@ mod tests {
                     target_statuses: &[],
                     target_classjob: 0,
                     target_is_player: false,
+                    level_gap: 0,
                     rolls,
                 },
             );
@@ -441,19 +524,75 @@ mod tests {
 
     #[test]
     fn tanks_and_defences() {
+        // A level 42 Paladin (about 400 defense, divisor 272: 22 %) under Rampart: 0.78 / 0.92 x Tank Mastery x
+        // Rampart.
+        let paladin = Some(Defences {
+            defense: 400,
+            magic_defense: 400,
+            level_div: 272,
+            tenacity_over: 0,
+        });
         let mut effects = [damage(1000, DamageType::Slashing)];
-        // A Paladin under Rampart: Tank Mastery, Rampart and the armour (0.8 x 0.8 x 0.83.)
-        apply_hit_on_player(&mut effects, &[], &[1191], 19);
-        assert_eq!(amount(&effects[0]), 531);
+        apply_hit_on_player(&mut effects, &[], &[1191], 19, paladin);
+        assert_eq!(amount(&effects[0]), 543);
 
         let mut effects = [damage(1000, DamageType::Slashing)];
-        apply_hit_on_player(&mut effects, &[], &[82], 19);
+        apply_hit_on_player(&mut effects, &[], &[82], 19, paladin);
         assert!(matches!(effects[0].0, TargetEffectKind::Invincible));
 
-        // A White Mage takes it all.
+        // A White Mage geared as the recordings' characters were (8 % and 15 %) takes it all, by either.
+        let geared = Some(Defences {
+            defense: 146,
+            magic_defense: 273,
+            level_div: 272,
+            tenacity_over: 0,
+        });
         let mut effects = [damage(1000, DamageType::Slashing)];
-        apply_hit_on_player(&mut effects, &[], &[], 24);
+        apply_hit_on_player(&mut effects, &[], &[], 24, geared);
         assert_eq!(amount(&effects[0]), 1000);
+        let mut effects = [damage(1000, DamageType::Magic)];
+        apply_hit_on_player(&mut effects, &[], &[], 24, geared);
+        assert_eq!(amount(&effects[0]), 1000);
+
+        // Naked, more; a unique hit ignores defences.
+        let naked = Some(Defences {
+            defense: 0,
+            magic_defense: 0,
+            level_div: 272,
+            tenacity_over: 0,
+        });
+        let mut effects = [damage(1000, DamageType::Slashing)];
+        apply_hit_on_player(&mut effects, &[], &[], 24, naked);
+        assert_eq!(amount(&effects[0]), 1087);
+        let mut effects = [damage(1000, DamageType::Unique)];
+        apply_hit_on_player(&mut effects, &[], &[], 24, naked);
+        assert_eq!(amount(&effects[0]), 1000);
+    }
+
+    /// Speed above the base raises damage and healing over time; at the base nothing changes. Tenacity takes a little
+    /// off hits.
+    #[test]
+    fn speed_and_tenacity() {
+        assert_eq!(speed_factor(155, 155, 168), 1000);
+        // 400 over the base at a divisor of 1000: 52 thousandths.
+        assert_eq!(speed_factor(800, 400, 1000), 1052);
+        let tank = Some(Defences {
+            defense: 0,
+            magic_defense: 0,
+            level_div: 272,
+            tenacity_over: 27,
+        });
+        // floor(100 × 27 / 272) = 9 thousandths off, on top of defense's 1 / 0.92.
+        let multiplier = defence_multiplier(tank, DamageType::Slashing);
+        assert!((multiplier - 0.991 / 0.92).abs() < 1e-4);
+    }
+
+    #[test]
+    fn enemies_above_take_less() {
+        assert_eq!(level_gap_multiplier(-3), 1.0);
+        assert_eq!(level_gap_multiplier(2), 0.895);
+        assert_eq!(level_gap_multiplier(5), 0.86);
+        assert_eq!(level_gap_multiplier(7), 0.81);
     }
 
     #[test]

@@ -76,7 +76,7 @@ mod social;
 mod spiritbond;
 pub use spiritbond::{GearUse, MaterializeRequest};
 mod stats;
-pub use stats::BaseParameters;
+pub use stats::{BaseParameters, TENACITY_SCALE};
 mod unlock;
 mod zone;
 
@@ -202,6 +202,10 @@ pub struct ZoneConnection {
     pub entered_roulette: Option<u8>,
     /// The levels of the bots in their party (its last list, `send_bot_party_update`), for Limited Leveling Roulette.
     pub bot_party_levels: Vec<u8>,
+    /// The party bonus in percent from the last party list sent (`stats::party_bonus_percent`.)
+    pub party_bonus: u8,
+    /// Well Fed's param while the player has it (`FromServer::WellFed`), for food's stats.
+    pub well_fed: Option<u16>,
 
     pub conditions: Conditions,
 

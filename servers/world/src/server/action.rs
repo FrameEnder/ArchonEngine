@@ -175,7 +175,7 @@ pub fn handle_action_messages(
                 MOUNT_ACTION
             } else if request.action_type == ActionType::Item {
                 game_data
-                    .lookup_item_action_data(request.action_id)
+                    .lookup_item_action_data(item_and_hq(request.action_id).0)
                     .map(|(action, _, _)| action as u32)
                     .filter(|action| *action != 0)
                     .unwrap_or(request.action_id)
@@ -197,7 +197,7 @@ pub fn handle_action_messages(
             // capture c99fe374), where Kawari, going by action 4647 alone, had none and gave them at once (Bob's
             // bundle 20261110-091329: "coffer gave item before progress bar completed".)
             let item_cast_ms = if request.action_type == ActionType::Item {
-                game_data.item_cast_time_ms(request.action_id)
+                game_data.item_cast_time_ms(item_and_hq(request.action_id).0)
             } else {
                 0
             };
@@ -1458,6 +1458,13 @@ pub fn execute_action(
                                 .map(|target| target.get_common_spawn().class_job)
                                 .unwrap_or_default(),
                             target_is_player: matches!(target, Some(NetworkedActor::Player { .. })),
+                            level_gap: match target {
+                                Some(target @ NetworkedActor::Npc { .. }) => {
+                                    target.get_common_spawn().level as i32
+                                        - actor.get_common_spawn().level as i32
+                                }
+                                _ => 0,
+                            },
                             rolls: [
                                 fastrand::f32(),
                                 if effects_builder.critical_guaranteed {
@@ -1472,6 +1479,18 @@ pub fn execute_action(
                                 },
                             ],
                         },
+                    );
+                    // Damage and healing over time grow with Spell Speed (spells) or Skill Speed (the rest).
+                    let speed = if action_category == Some(ActionCategory::Spell) {
+                        parameters.spell_speed
+                    } else {
+                        parameters.skill_speed
+                    };
+                    modifiers::scale_periodic_by_speed(
+                        &mut effects_builder.periodic,
+                        speed,
+                        parameters.base_speed.max(0) as u32,
+                        parameters.level_div,
                     );
                     // A Monk's (or Pugilist's) critical weaponskill opens a chakra: four times in five from Deep
                     // Meditation (38), always from Deep Meditation II (74) (the job guide, 7.x).
@@ -1517,6 +1536,7 @@ pub fn execute_action(
                                     &caster_statuses,
                                     &status_ids(defender),
                                     defender.get_common_spawn().class_job,
+                                    defences_of(defender),
                                 )
                             }
                             _ => {}
@@ -3485,7 +3505,7 @@ pub fn execute_item_action(
 ) -> Option<EffectsBuilder> {
     let lua = lua.lock();
 
-    let key = request.action_id;
+    let (key, hq) = item_and_hq(request.action_id);
     let (action_type, action_data, additional_data);
     let is_misc;
     {
@@ -3509,6 +3529,7 @@ pub fn execute_item_action(
                 action_data,
                 additional_data,
                 is_misc,
+                hq,
             )) {
                 Ok((action_script, arg)) => {
                     lua.0
@@ -3538,6 +3559,18 @@ pub fn execute_item_action(
 
     effects_builder
 }
+
+/// An item as the client asks to use it: its ID, and whether it's the HQ copy, which retail's client sends as the ID
+/// plus 1,000,000 (Bob's Chronofoil captures: 1006141, 1027878.) Until 2026-11-12 Kawari looked the HQ ID up as it was,
+/// found no item, and ignored the request.
+pub fn item_and_hq(action_id: u32) -> (u32, bool) {
+    if action_id >= HQ_ITEM_OFFSET {
+        (action_id - HQ_ITEM_OFFSET, true)
+    } else {
+        (action_id, false)
+    }
+}
+const HQ_ITEM_OFFSET: u32 = 1_000_000;
 
 /// Handles mount-related actions.
 pub fn execute_mount_action(
@@ -3724,6 +3757,25 @@ fn is_hostile_effect(effect: &TargetEffect, on_the_other_side: bool) -> bool {
 /// The Monk's Deep Meditation: from 38 a critical weaponskill opens a chakra, 80 % of the time; always from 74.
 const DEEP_MEDITATION_LEVEL: u8 = 38;
 const DEEP_MEDITATION_II_LEVEL: u8 = 74;
+
+/// A player's (or party bot's) Defense, Magic Defense and level divisor, for `modifiers::defence_multiplier`; `None` for
+/// an NPC without a player's stats.
+fn defences_of(actor: &NetworkedActor) -> Option<modifiers::Defences> {
+    let parameters = match actor {
+        NetworkedActor::Player { parameters, .. } | NetworkedActor::Npc { parameters, .. } => {
+            parameters
+        }
+        _ => return None,
+    };
+    parameters.retail_formula.then_some(modifiers::Defences {
+        defense: parameters.defense,
+        magic_defense: parameters.magic_defense,
+        level_div: parameters.level_div,
+        tenacity_over: parameters
+            .tenacity
+            .saturating_sub(parameters.base_speed.max(0) as u32),
+    })
+}
 
 /// Whether `actor` uses its actions as a player does: a player, or a party bot (not a Duty Support member, whose kit
 /// is retail's members', `party_npc.rs`): the scripts' player branch and players' area actions.
