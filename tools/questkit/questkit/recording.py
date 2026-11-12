@@ -151,11 +151,40 @@ class Recording:
         events.sort(key=lambda e: e.time)
         return events
 
+    def notice_opcodes(self) -> set[int]:
+        """The EventNotice opcodes of the client the recording was made on: its GameVersion's, unless another known
+        version's fit its quest packets better. A Recorder build can keep an old GameVersion in packets.json (Bob's
+        export of 2026-11-12 said 2026.10.06 with 7.58's packets, its notices 633 and 921), which lost every notice."""
+        if getattr(self, "_notice_opcodes", None) is not None:
+            return self._notice_opcodes
+
+        def fits(opcodes: set[int]) -> int:
+            count = 0
+            for packet in self.packets:
+                handler_text = packet.get("Handler", "")
+                if packet.get("Opcode") not in opcodes or not handler_text.startswith("quest"):
+                    continue
+                parsed = parse_notice(bytes.fromhex(packet.get("Hex", "")))
+                quest = handler_text.split()[-1]
+                if parsed and quest.isdigit() and parsed[0] == repo.QUEST_HANDLER_BASE + int(quest):
+                    count += 1
+            return count
+
+        best = repo.notice_opcodes(self.game_version)
+        best_fit = fits(best)
+        for version in repo.known_game_versions():
+            opcodes = repo.notice_opcodes(version)
+            fit = fits(opcodes)
+            if fit > best_fit:
+                best, best_fit = opcodes, fit
+        self._notice_opcodes = best
+        return best
+
     def notices(self, quest_id: int | None = None, opcodes: set[int] | None = None) -> list[Notice]:
         """The quest notices in the packet recording. Their opcodes come from fork_opcodes.yml for the recording's
         game version, unless given."""
         if opcodes is None:
-            opcodes = repo.notice_opcodes(self.game_version)
+            opcodes = self.notice_opcodes()
         found = []
         for packet in self.packets:
             if packet.get("Opcode") not in opcodes:

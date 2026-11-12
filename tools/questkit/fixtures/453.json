@@ -1,0 +1,233 @@
+{
+  "quest": 453,
+  "script": "ClsAcn020_00453",
+  "source": "Kawari Recorder, Bob, 2026-11-12",
+  "params": {
+    "ACTOR0": 1000895,
+    "ACTOR1": 1000909,
+    "ENEMY0": 347,
+    "ENEMY1": 324,
+    "ENEMY2": 49,
+    "LOC_FACE1": 605,
+    "LOC_FACE0": 604,
+    "UNLOCK_IMAGE_MONSTER_NOTE": 32,
+    "HOW_TO_MONSTER_NOTE": 45,
+    "LOGMESSAGE_MONSTER_NOTE_PAGE_UNLOCK": 1016
+  },
+  "steps": [
+    {
+      "talk": 1000895,
+      "layout": 1673275,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        49,
+        0
+      ],
+      "what": "ENEMY2",
+      "expect": {
+        "sequence": 2,
+        "vars": "000100000000",
+        "notices": [
+          [
+            3,
+            [
+              1,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        347,
+        3760888
+      ],
+      "what": "ENEMY0",
+      "expect": {
+        "sequence": 2,
+        "vars": "010100000000",
+        "notices": [
+          [
+            1,
+            [
+              1,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        347,
+        3760883
+      ],
+      "what": "ENEMY0",
+      "expect": {
+        "sequence": 2,
+        "vars": "020100000000",
+        "notices": [
+          [
+            1,
+            [
+              2,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        347,
+        0
+      ],
+      "what": "ENEMY0",
+      "expect": {
+        "sequence": 2,
+        "vars": "130100000000",
+        "notices": [
+          [
+            1,
+            [
+              3,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        49,
+        3761036
+      ],
+      "what": "ENEMY2",
+      "expect": {
+        "sequence": 2,
+        "vars": "130200000000",
+        "notices": [
+          [
+            3,
+            [
+              2,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        49,
+        3761039
+      ],
+      "what": "ENEMY2",
+      "expect": {
+        "sequence": 2,
+        "vars": "230300000000",
+        "notices": [
+          [
+            3,
+            [
+              3,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        324,
+        0
+      ],
+      "what": "ENEMY1",
+      "expect": {
+        "sequence": 2,
+        "vars": "231300000000",
+        "notices": [
+          [
+            2,
+            [
+              1,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        324,
+        3761367
+      ],
+      "what": "ENEMY1",
+      "expect": {
+        "sequence": 2,
+        "vars": "232300000000",
+        "notices": [
+          [
+            2,
+            [
+              2,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        324,
+        3761367
+      ],
+      "what": "ENEMY1",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            2,
+            [
+              3,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR1",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

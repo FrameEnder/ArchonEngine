@@ -1,0 +1,263 @@
+{
+  "quest": 455,
+  "script": "ClsAcn050_00455",
+  "source": "Kawari Recorder, Bob, 2026-11-12",
+  "params": {
+    "ACTOR0": 1000909,
+    "ENEMY0": 339,
+    "ENEMY1": 118,
+    "EOBJECT0": 2002266,
+    "EVENT_ACTION_PROCESS_UPPER_MIDDLE": 32,
+    "ENEMY2": 4260926,
+    "EVENT_ACTION_SEARCH": 1,
+    "ENEMY3": 4260927,
+    "EOBJECT1": 2001889,
+    "EOBJECT2": 2002476,
+    "ITEM0": 2000796,
+    "LOC_FACE1": 605,
+    "LOC_FACE0": 604,
+    "LOC_POS_ACTOR0": 4310134,
+    "LOC_ACTOR0": 1005190,
+    "LOC_POS_ACTOR1": 4314130,
+    "CUT_CLSACN05010": 44
+  },
+  "steps": [
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "kill": [
+        339,
+        3766580
+      ],
+      "what": "ENEMY0",
+      "expect": {
+        "sequence": 1,
+        "vars": "010000000000",
+        "notices": [
+          [
+            0,
+            [
+              1,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        339,
+        3766581
+      ],
+      "what": "ENEMY0",
+      "expect": {
+        "sequence": 1,
+        "vars": "020000000000",
+        "notices": [
+          [
+            0,
+            [
+              2,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        339,
+        3766584
+      ],
+      "what": "ENEMY0",
+      "expect": {
+        "sequence": 1,
+        "vars": "130000000000",
+        "notices": [
+          [
+            0,
+            [
+              3,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        118,
+        3766605
+      ],
+      "what": "ENEMY1",
+      "expect": {
+        "sequence": 1,
+        "vars": "131000000000",
+        "notices": [
+          [
+            1,
+            [
+              1,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        118,
+        3766604
+      ],
+      "what": "ENEMY1",
+      "expect": {
+        "sequence": 1,
+        "vars": "132000000000",
+        "notices": [
+          [
+            1,
+            [
+              2,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        118,
+        3766604
+      ],
+      "what": "ENEMY1",
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            1,
+            [
+              3,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000",
+        "notices": [
+          [
+            2,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 2002266,
+      "what": "EOBJECT0",
+      "note": "not in the recording (no quest change): the crates' search brings out the slugs (09:53:21, an event start for the quest)",
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "kill": [
+        39,
+        4260926
+      ],
+      "what": "ENEMY2",
+      "expect": {
+        "sequence": 3,
+        "vars": "010000000000",
+        "notices": []
+      }
+    },
+    {
+      "kill": [
+        39,
+        4260927
+      ],
+      "what": "ENEMY3",
+      "expect": {
+        "sequence": 4,
+        "vars": "000000000000",
+        "notices": [
+          [
+            3,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 2002476,
+      "layout": 4314044,
+      "what": "EOBJECT2",
+      "expect": {
+        "sequence": 255,
+        "vars": "001000000000",
+        "notices": [
+          [
+            4,
+            [
+              21003
+            ]
+          ]
+        ]
+      },
+      "scenes": [
+        {
+          "scene": 7,
+          "flags": "0x2001",
+          "results": [
+            1,
+            0
+          ]
+        },
+        {
+          "scene": 8,
+          "flags": "0x2001",
+          "results": [
+            1,
+            0
+          ]
+        },
+        {
+          "scene": 9,
+          "flags": "0xF8486EFB",
+          "results": [
+            1,
+            0
+          ]
+        }
+      ],
+      "note": "scenes 8 (0x2001) and 9 (0xF8486EFB) from the field fight of 2026-11-12 09:53 (Recorder 2.7 logs EventPlay in a fight); scene 7 before the bar was before it began"
+    },
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

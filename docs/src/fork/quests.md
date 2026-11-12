@@ -75,6 +75,7 @@ Player methods (`servers/world/src/lua/player.rs`), the ones quests use:
 | `start_nested_event(handler)` / `finish_nested_event(handler)` | Sends only the packets of a nested event (EventStart / EventFinish, type Nest, on the current event's target), as retail does with the aetheryte's event while attuning in Close to Home; no handler runs for it. If an event action is interrupted, the nested event is finished too (and OccupiedInEvent removed). |
 | `event_action(id)` | Starts an event action (the progress bar: Searching, Aiding, Interacting…); the script gets `onEventActionCast(player)` when it completes, after the EventAction row's CastTime (read in the world server's language: the sheet has a Name column, and read without one it failed and every bar ended after a 2 s fallback, before the client's, until 2026-10-20). Directors' event actions (`begin_event_action`) take the same time. |
 | `spawn_quest_bnpc(layout_id)` | Brings out a battle NPC from the zone's drop-ins for this quest. |
+| `event_log_message(id, message, {params})` | Shows a LogMessage row in chat from the quest's event (EventLogMessage with the quest's handler, at most 4 parameters): retail's after a researcher's talk in Allagan Attire (1094, its LOGMESSAGE0) and as Austerities of Wind's (1095) battle was won (Bob's Kawari Recorder export of 2026-11-12, opcode 478). Since 2026-11-12. |
 | `join_quest_battle(id, zone)` | Enters a quest battle (see [Quest battles](quest-battles.md)). |
 | `take_handed_in_items()` | Takes the items handed in through the current event's trade window out of the bags (see [NPC trades](#npc-trades)). |
 | `player.inventory:count_in_bags(item_id)` | How many of an item are in the four bags. |
@@ -385,6 +386,42 @@ they came from. Moving the player within a zone (The Gridanian Envoy's ticket co
 loading screen on retail, PrepareZoning to the same territory, so the scripts use `change_territory` for it too.
 The script goes in `resources/scripts/events/quest/<id / 100, 3 digits>/<ScriptId>.lua` (the Quest sheet's script
 name, e.g. `SubFst073_00387`).
+
+### The TALKS table (2026-11-12)
+
+The Arcanist and Summoner quests of 2026-11-12 (453-461, 1091-1095, 1103) and Keyward Bound (5466) say *what* happens
+as data and share one `onTalk`/`sceneFinished` (copied into each script, as every script stands alone):
+
+```lua
+TALKS = {
+    { seq = nil, who = ACTOR0, scenes = { 0, 1 }, go_on = offered, done = accepted },
+    { seq = 3, who = EOBJECT0, scenes = { 5, 6 }, bar = EVENT_ACTION_SEARCH, flags = OBJECT_FLAGS, when = not_found,
+      done = parchment_found },
+    { seq = 5, who = EOBJECT3, emote = true, scenes = { 15 }, done = moves_on(4, 6) },
+    { seq = 255, who = ACTOR1, scenes = { 7, 8 }, scene_flags = { [2] = LEARNING_FLAGS },
+      scene_params = { [2] = LEARNING_PARAMS }, go_on = reward_taken, done = learned },
+}
+```
+
+The first entry for the sequence and the NPC (`emote` for an Emote event, `when` if it has to say yes) plays its scenes
+in turn: an object's bar after its first scene, `go_on(player, index, results)` deciding whether the next one plays
+(`offered`, `handed(n)` for an NpcTrade, `reward_taken`), and `done(player, results)` at the end (`all_played` says
+whether every scene played): `accepted`, `moves_on(notice, sequence, args)`, `into_battle`, `reward`, `learned`, or
+the quest's own. A script carries only the shared pieces it names. `questkit clientcheck` reads the table's scenes.
+
+**Scene numbers by the listeners' order.** With no Chronofoil capture, scene numbers come from the Quest sheet's
+listeners in order: an event NPC one scene, an object two (its bar between), the giver's offer two, battle NPCs none,
+an extra cutscene where the listing has one. Kawari Recorder 2.7's field fights log the EventPlays they catch, which
+checked it: Over the Rails' (458) steersman at 12, What's in the Box's (455) crate at 8 and 9, Grimoire Fandango's
+(460) box at 22 and 23, Allagan Attire's (1094) researchers at 3, 5, 6 and 8, all where the rule put them. It isn't
+exact: 458's second sequence has one scene more than its listeners (6, empty), 460's emote listeners and boxes don't
+fit it (its script takes each scene by what it does), and 461's NPC of each sequence has three (NpcTrade, a talk, an
+empty one). An emote listener (`QuestUInt8A` 2) can be an event object: 460's old wooden box.
+
+**A job quest's reward** (1091-1093, 1095, 1103, after JobWhm300_01079): the reward scene (QuestReward), then UI8AL and
+UI8AH 1 (0x11) and the learning cutscene (0xF8482EFB, parameter 0), completed as it ends. A Recorder export shows an
+UpdateQuest with 0x11 and, about ten seconds later at the same spot, the completion; `questkit fixture` makes those two
+steps, which are one talk, so these quests' fixtures merge them.
 
 ## Adding a quest, step by step
 
@@ -712,6 +749,20 @@ Every quest here has a replay fixture in `tools/questkit/fixtures/` and passes `
 | 939 | By the Lights of Ishgard | `009/GaiUsc002_00939` | client script (2026-11-06), Chronofoil captures 130088ec and 3c56e09f (2026-11-06) and 21f967d2 (2026-11-07), the whole quest on each of Bob's three characters; fixtures `939.json`, `939-3c56e09f.json`, `939-21f967d2.json` | EVENTRANGE0 brings out three guards (46, `QB_GaiUsc002_001`); with them down EOBJECT0's bar and scene 4: 2; EOBJECT2's search gives ITEM0: 255; ACTOR0 takes it and rewards it (10, 11). |
 | 940 | Blood for Blood | `009/GaiUsc003_00940` | client script (2026-11-06), Chronofoil captures 130088ec and 3c56e09f (2026-11-06) and 21f967d2 (2026-11-07), the whole quest on each of Bob's three characters; fixtures `940.json`, `940-3c56e09f.json`, `940-21f967d2.json` | ACTOR1 and ACTOR2 take ITEM0 in turn; ACTOR2 asks for an emote (12 is right: scene 7; any other 8); EOBJECT0's bar moves it on before scene 10; EOBJECT1's search gives ITEM1: 255; ACTOR3 takes it and rewards it (16, 17). |
 | 941 | The Heretic among Us | `009/GaiUsc004_00941` | client script (2026-11-06), Chronofoil captures 130088ec and 3c56e09f (2026-11-06) and 21f967d2 (2026-11-07), the whole quest on each of Bob's three characters; fixtures `941.json`, `941-3c56e09f.json`, `941-21f967d2.json` | ACTOR1's YesNoQuestBattle (2) or EVENTRANGE0's (9) enters quest battle 61 (302), again after a loss; winning it: 255; ACTOR4 rewards it (10). See [quest battle 61](quest-battles.md). |
+| 453 | Way of the Arcanist | `004/ClsAcn020_00453` | client script (2026-11-12), Kawari Recorder export (2026-11-12, the whole quest; fixture `453.json`) | Thubyrgeim's offer (0, 1): sequence 1; K'lyhia (2, a yes/no): notice 0, sequence 2; three each of three kinds of enemies (ENEMY0 in UI8AL with notice 1, ENEMY1 UI8BH notice 2, ENEMY2 UI8BL notice 3, `[count, 3]`): sequence 255; K'lyhia's reward (3). The recording's kill targets lagged, so its fixture names the kills by their notices. |
+| 455 | What's in the Box | `004/ClsAcn050_00455` | client script (2026-11-12), Kawari Recorder export (2026-11-12; fixture `455.json`) | Thubyrgeim's offer (0, 1); three tempered orators (UI8AL, notice 0) and midge swarms (UI8BH, notice 1): sequence 2; Thubyrgeim (2): notice 2, sequence 3; the crates (3, the search bar, 4) bring out two tree slugs (`QB_ClsAcn050_001` of sea_s1f1), both down: notice 3, sequence 4; a crate (7, a bar, 8 at 0x2001): ITEM0 in UI8BH, notice 4 `[21003]`, sequence 255 and K'lyhia's cutscene (9, 0xF8486EFB; 8 and 9 with their flags from the Recorder's field fight); Thubyrgeim takes it (12, NpcTrade) and rewards (13). |
+| 456 | Tactical Planning | `004/ClsAcn100_00456` | client script (2026-11-12), Kawari Recorder export (2026-11-12, its quest battle won; fixture `456.json`) | Thubyrgeim's offer; three roselets (UI8AL, notice 0) and Redbelly jacks (UI8BH, notice 1): sequence 2; Thubyrgeim (2), K'lyhia (3): sequences 3, 4; K'lyhia (4): YesNoQuestBattle into quest battle 50 (territory 285); won: sequence 5; K'lyhia (12): notice 5, sequence 255; Thubyrgeim's reward (18). |
+| 458 | Over the Rails | `004/ClsAcn150_00458` | client script (2026-11-12), Kawari Recorder export (2026-11-12, its quest battle won; fixture `458.json`) | Thubyrgeim's offer; K'lyhia (2): notice 0, sequence 2; the steersman (5) brings out two shifty-eyed vagrants (`QB_ClsAcn150_001` of sea_s1f4, retail's looks), each down in UI8AL, both: notice 1, sequence 3; the steersman (12, 0x2000 from the field fight): notice 2, sequence 4; the landing boat (18, its bar, 19): YesNoQuestBattle into quest battle 51 (territory 286); won: sequence 255; Thubyrgeim's reward (26). Scene 20 (a cutscene) wasn't seen played. |
+| 459 | Pincer Maneuver | `004/ClsAcn200_00459` | client script (2026-11-12), Kawari Recorder export (2026-11-12, its quest battle won; fixture `459.json`) | Thubyrgeim's offer; Dodozan (2), Ginnade (3), Thubyrgeim (4), K'lyhia (5), Thubyrgeim (7): notices 0-4, sequences 2-6; the destination (10, its bar, 11): YesNoQuestBattle into quest battle 52 (territory 287); won: sequence 255; Thubyrgeim's reward (13). |
+| 460 | Grimoire Fandango | `004/ClsAcn250_00460` | client script (2026-11-12), Kawari Recorder export (2026-11-12; fixture `460.json`) | The witness (2), Tanga Tonga (3): sequences 2, 3; three hidden parchments (5-6, 7-8, 9-10, a bar each), counted in UI8AH with a nibble and a flag each and ITEM0 in UI8CH, notice 2 `[n, 3, 25906]`; the third: sequence 4 with ITEM0 (3) in UI8BH; Tanga Tonga takes them (12 NpcTrade, 13): sequence 5; an emote on the old wooden box (15; retail's EventFinish was type 2, emote 11): sequence 6; the box (20, a bar, 21) brings out three tree slugs (`QB_ClsAcn250_001` of sea_s1f5): sequence 7; the box (22, a bar, 23, 0x2001 from the field fight): sequence 8; an emote on Memeroon (27, then 28 the cutscene): ITEM1, notice 7 `[26002]`, sequence 9; an emote on K'lyhia (31): sequence 10; K'lyhia (32 a yes/no, 33 NpcTrade, 34): sequence 255; Thubyrgeim's reward (35). Several scene numbers are read from what the scenes do (above). |
+| 461 | Sinking Doesmaga | `004/ClsAcn300_00461` | client script (2026-11-12), Kawari Recorder export (2026-11-12, its quest battle won; fixture `461.json`) | Thubyrgeim's offer hands over ITEM0 (UI8BH 1); a chain of NpcTrades (Rhylzirn 2-3, Opylona 11-12, Gegeruju 20 and the cutscene 21, Ealdgyth 29-30 with two items after (UI8B 0x11), Drogo 38-39), notices 0-4 with each item's icon, sequences 2-6; Hirskskrat (47 NpcTrade, 48 a yes/no, 49 the cutscene): notice 5, sequence 7; Hirskskrat (55): YesNoQuestBattle into quest battle 53 (territory 288); won: sequence 8; Thubyrgeim (63): notice 7, sequence 255; his trade (67) and reward (68). |
+| 1091 | Austerities of Flame | `010/JobSmn300_01091` | client script (2026-11-12), Kawari Recorder export (2026-11-12, its quest battle won; fixture `1091.json`) | Thubyrgeim's offer (0, 1); Y'mhitra in Old Gridania (2, a cutscene): notice 0, sequence 2; Y'mhitra in Southern Thanalan (3): YesNoQuestBattle into quest battle 79 (territory 323); won: sequence 3; Y'mhitra (6): notice 2, sequence 255; Y'mhitra's reward (7) and the soul crystal's cutscene (8), a job's reward (above). |
+| 1092 | Austerities of Earth | `010/JobSmn350_01092` | client script (2026-11-12), Kawari Recorder export (2026-11-12, its quest battle won; fixture `1092.json`) | Y'mhitra's offer (0, 1); Y'mhitra in the North Shroud (2): YesNoQuestBattle into quest battle 80 (territory 324); won: sequence 2; Y'mhitra (5): notice 1, sequence 255; the reward (6) and learning cutscene (7), a job's reward. |
+| 1093 | Shadowing the Summoner | `010/JobSmn400_01093` | client script (2026-11-12), Kawari Recorder export (2026-11-12; fixture `1093.json`) | Y'mhitra's offer (0, 1); the former Immortal Flame (2): notice 0 `[1, 1]`, sequence 255, and two hired fists and a hired bow come for you (`QB_JobSmn400_001` of wil_w1f4, retail's looks; nothing waits on them); the reward (4) and learning cutscene (5), a job's reward. |
+| 1094 | Allagan Attire | `010/JobSmn450_01094` | client script (2026-11-12), Kawari Recorder export (2026-11-12; fixture `1094.json`, scenes 3, 5, 6 and 8 from its field fights) | Y'mhitra's offer; Rammbroes (2, a cutscene): sequence 2; each researcher in turn (3, 5, 7) brings out an Allagan mirrorknight (`QB_JobSmn450_001` of lak_l1f1), whose fall is the next sequence; the researcher again (4, 6, 8): a notice with its item's icon, EventLogMessage LOGMESSAGE0 (3677) from the quest, the next sequence; Rammbroes (9): notice 7 `[41172]`, the log message, sequence 255; Y'mhitra's reward (10). |
+| 1095 | Austerities of Wind | `010/JobSmn451_01095` | client script (2026-11-12), Kawari Recorder export (2026-11-12, its quest battle lost once and won; fixture `1095.json`) | Y'mhitra's offer (0, 1); Y'mhitra in Outer La Noscea (2): YesNoQuestBattle into quest battle 81 (territory 325); won: sequence 2 and LOGMESSAGE0 (3675) from the quest; Y'mhitra (5): notice 1, sequence 255; the reward (6) and learning cutscene (7), a job's reward. |
+| 1103 | Topaz Teachings | `011/ClsAcn149_01103` | client script (2026-11-12), Kawari Recorder export (2026-11-12; fixture `1103.json`) | Thubyrgeim's offer (0, 1); K'lyhia (2, a Menu asked until it's answered right): notice 0, sequence 255; Thubyrgeim's reward (3) and the learning cutscene (4, LearningAction), a job's reward. |
+| 5466 | Keyward Bound | `054/SubGsc801_05466` | client script (2026-11-12), Kawari Recorder export (2026-11-04, the whole quest; fixture `5466.json`) | The catlike mammet's offer (0, 1); W'zazanh (2, a YesNo): sequence 2 and, on yes, Keybound Square (territory 1360) at POPRANGE0; entering it: the cutscene (3), sequence 255; the magitype master's reward (5). W'zazanh's YesNo (4, 6) takes you there again. |
 
 Upstream's own scripts cover the three city openings and the Close to Home offers. Gridania's story from Close to
 Home to The Gridanian Envoy is complete; Call of the Sea starts the next part (Limsa Lominsa). Limsa Lominsa's runs from

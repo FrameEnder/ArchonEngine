@@ -212,6 +212,14 @@ impl LuaPlayer {
         });
     }
 
+    fn event_log_message(&mut self, handler_id: u32, message_type: u32, params: Vec<u32>) {
+        self.queued_tasks.push(LuaTask::EventLogMessage {
+            handler_id,
+            message_type,
+            params,
+        });
+    }
+
     fn spawn_quest_battle_npc(&mut self, layout_id: u32) {
         self.queued_tasks
             .push(LuaTask::SpawnQuestBattleNpc { layout_id });
@@ -916,6 +924,13 @@ impl UserData for LuaPlayer {
             "event_notice",
             |_, this, (handler_id, notice_id, args): (u32, u8, Option<Vec<u32>>)| {
                 this.event_notice(handler_id, notice_id, args.unwrap_or_default());
+                Ok(())
+            },
+        );
+        methods.add_method_mut(
+            "event_log_message",
+            |_, this, (handler_id, message_type, params): (u32, u32, Option<Vec<u32>>)| {
+                this.event_log_message(handler_id, message_type, params.unwrap_or_default());
                 Ok(())
             },
         );

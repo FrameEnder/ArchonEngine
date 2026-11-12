@@ -1,0 +1,268 @@
+{
+  "quest": 1094,
+  "script": "JobSmn450_01094",
+  "source": "Kawari Recorder, Bob, 2026-11-12",
+  "params": {
+    "ACTOR0": 1006756,
+    "ACTOR1": 1006725,
+    "ACTOR2": 1006789,
+    "ENEMY0": 4302657,
+    "RITEM0": 3465,
+    "ACTOR3": 1006790,
+    "ENEMY1": 4302660,
+    "RITEM1": 3688,
+    "ACTOR4": 1006791,
+    "ENEMY2": 4302665,
+    "RITEM2": 3896,
+    "RITEM3": 2904,
+    "LOGMESSAGE0": 3677,
+    "LOC_POS_ACTOR0": 4308942,
+    "COMPLETED_QUEST_GAL": 66055,
+    "LOC_ACTION0_WSGET": 995,
+    "LOC_WS": 184,
+    "LOC_VFX1": 241,
+    "LOC_VFX2": 411,
+    "LOC_LOG_MES": 3672,
+    "COMPLETED_CONTENTS_GAL": 20003
+  },
+  "steps": [
+    {
+      "talk": 1006756,
+      "layout": 4254780,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1006725,
+      "layout": 4272588,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006789,
+      "layout": 4302642,
+      "what": "ACTOR2",
+      "note": "not a quest change: the mirrorknight came out 0.4-0.6 s after this talk's EventFinish (the field fight's spawn); scene 3 and its flags from the same fight",
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": []
+      },
+      "spawns": [
+        4302657
+      ],
+      "scenes": [
+        {
+          "scene": 3,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "kill": [
+        1948,
+        4302657
+      ],
+      "what": "ENEMY0",
+      "note": "the recording named the gigas Bob was targeting; the fight's death was ENEMY0's",
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000",
+        "notices": [
+          [
+            1,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006789,
+      "layout": 4302642,
+      "what": "ACTOR2",
+      "expect": {
+        "sequence": 4,
+        "vars": "000000000000",
+        "notices": [
+          [
+            2,
+            [
+              45333
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006790,
+      "layout": 4302644,
+      "what": "ACTOR3",
+      "note": "not a quest change: the mirrorknight came out 0.4-0.6 s after this talk's EventFinish (the field fight's spawn); scene 5 and its flags from the same fight",
+      "expect": {
+        "sequence": 4,
+        "vars": "000000000000",
+        "notices": []
+      },
+      "spawns": [
+        4302660
+      ],
+      "scenes": [
+        {
+          "scene": 5,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "kill": [
+        1948,
+        4302660
+      ],
+      "expect": {
+        "sequence": 5,
+        "vars": "000000000000",
+        "notices": [
+          [
+            3,
+            []
+          ]
+        ]
+      },
+      "what": "ENEMY1"
+    },
+    {
+      "talk": 1006790,
+      "layout": 4302644,
+      "what": "ACTOR3",
+      "expect": {
+        "sequence": 6,
+        "vars": "000000000000",
+        "notices": [
+          [
+            4,
+            [
+              44191
+            ]
+          ]
+        ]
+      },
+      "scenes": [
+        {
+          "scene": 6,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0
+          ]
+        }
+      ],
+      "note": "scene 6 and its flags from the field fight of 10:46:04"
+    },
+    {
+      "talk": 1006791,
+      "layout": 4302646,
+      "what": "ACTOR4",
+      "note": "not a quest change: the mirrorknight came out 0.4-0.6 s after this talk's EventFinish (the field fight's spawn)",
+      "expect": {
+        "sequence": 6,
+        "vars": "000000000000",
+        "notices": []
+      },
+      "spawns": [
+        4302665
+      ]
+    },
+    {
+      "kill": [
+        1948,
+        4302665
+      ],
+      "expect": {
+        "sequence": 7,
+        "vars": "000000000000",
+        "notices": [
+          [
+            5,
+            []
+          ]
+        ]
+      },
+      "what": "ENEMY2"
+    },
+    {
+      "talk": 1006791,
+      "layout": 4302646,
+      "what": "ACTOR4",
+      "expect": {
+        "sequence": 8,
+        "vars": "000000000000",
+        "notices": [
+          [
+            6,
+            [
+              46351
+            ]
+          ]
+        ]
+      },
+      "scenes": [
+        {
+          "scene": 8,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0
+          ]
+        }
+      ],
+      "note": "scene 8 and its flags from the field fight of 10:47:15"
+    },
+    {
+      "talk": 1006725,
+      "layout": 4272588,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            7,
+            [
+              41172
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006756,
+      "layout": 4254780,
+      "what": "ACTOR0",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

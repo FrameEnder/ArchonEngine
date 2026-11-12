@@ -36,3 +36,34 @@ impl EventLogMessage {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::io::Cursor;
+
+    use binrw::BinWrite;
+
+    use super::*;
+
+    /// A quest's log message as retail sent it (Bob's Kawari Recorder export of 2026-11-12, opcode 478 on 7.58): Allagan
+    /// Attire's (1094) LOGMESSAGE0, 3677, after a researcher's talk, no parameters.
+    #[test]
+    fn a_quest_s_log_message_is_retail_s() {
+        let message = EventLogMessage {
+            handler_id: HandlerId(0x0001_0446),
+            message_type: 3677,
+            params: Vec::new(),
+        };
+        let mut buffer = Cursor::new(Vec::new());
+        message
+            .write_le_args(&mut buffer, EventLogMessageBinWriteArgs { max_params: 2 })
+            .unwrap();
+        let mut retail = vec![0x46, 0x04, 0x01, 0x00, 0x5d, 0x0e, 0x00, 0x00];
+        retail.resize(24, 0);
+        assert_eq!(buffer.into_inner(), retail);
+        assert!(matches!(
+            message.package().map(|segment| segment.data),
+            Some(ServerZoneIpcData::EventLogMessage2(_))
+        ));
+    }
+}

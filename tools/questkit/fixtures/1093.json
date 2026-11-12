@@ -1,0 +1,63 @@
+{
+  "quest": 1093,
+  "script": "JobSmn400_01093",
+  "source": "Kawari Recorder, Bob, 2026-11-12",
+  "params": {
+    "ACTOR0": 1006756,
+    "ACTOR1": 1006788,
+    "ENEMY0": 4302608,
+    "ENEMY1": 4302609,
+    "ENEMY2": 4302610,
+    "LOC_ACTION0_WSGET": 995,
+    "LOC_WS": 3578,
+    "LOC_VFX1": 241,
+    "LOC_VFX2": 411,
+    "LOC_LOG_MES": 3672,
+    "JOBSTONE_MODEL": 9
+  },
+  "steps": [
+    {
+      "talk": 1006756,
+      "layout": 4254780,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1006788,
+      "layout": 4302488,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            [
+              1,
+              1
+            ]
+          ]
+        ]
+      },
+      "spawns": [
+        4302608,
+        4302609,
+        4302610
+      ]
+    },
+    {
+      "talk": 1006756,
+      "layout": 4254780,
+      "what": "ACTOR0",
+      "expect": {
+        "completed": true,
+        "notices": []
+      },
+      "note": "retail set UI8AL and UI8AH (0x11) as the reward was taken, then completed the quest as the learning cutscene ended"
+    }
+  ]
+}

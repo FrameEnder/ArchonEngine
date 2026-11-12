@@ -1,0 +1,6 @@
+{
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Over the Rails' first shifty-eyed vagrant (quest 458, drop-in layer QB_ClsAcn150_001 of sea_s1f4). From Bob's Kawari Recorder export of 2026-11-12 (the field fight of 10:01:07): level 15, 319 HP, class 0 in its spawn; it fell 4.1 s in without acting, so its auto-attack is the usual melee one (870), not recorded."
+}

@@ -1,0 +1,16 @@
+{
+    "autoattack_action_id": 873,
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 1.0,
+            "data": {
+                "type": "action",
+                "action_id": 99,
+                "target": "itself"
+            },
+            "comment": "Hawk's Eye on itself, once, as it was pulled"
+        }
+    ],
+    "comment": "Over the Rails' second shifty-eyed vagrant (quest 458, drop-in layer QB_ClsAcn150_001 of sea_s1f4), an archer (class 5 in its spawn). From Bob's Kawari Recorder export of 2026-11-12 (the field fight of 10:01:07, 6.9 s): level 15, 319 HP; its auto-attack (873) for 6 and Hawk's Eye (99) once."
+}

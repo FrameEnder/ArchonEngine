@@ -1,0 +1,167 @@
+{
+  "quest": 458,
+  "script": "ClsAcn150_00458",
+  "source": "Kawari Recorder, Bob, 2026-11-12",
+  "params": {
+    "ACTOR0": 1000909,
+    "ACTOR1": 1005208,
+    "ACTOR2": 1005209,
+    "ACTOR3": 1005210,
+    "ACTOR4": 1005211,
+    "ENEMY0": 4261265,
+    "ENEMY1": 4261272,
+    "EOBJECT0": 2001896,
+    "EVENT_ACTION_SEARCH": 1,
+    "EOBJECT1": 2002009,
+    "EVENT_ACTION_WAITING2_MIDDLE": 12,
+    "ACTOR5": 1005213,
+    "ACTOR6": 1005214,
+    "ACTOR7": 1005212,
+    "TERRITORYTYPE0": 286,
+    "QUESTBATTLE0": 51,
+    "LOC_ACTOR1": 1005193,
+    "LOC_ACTOR2": 1005194,
+    "LOC_POS_ACTOR0": 4311915,
+    "LOC_POS_ACTOR1": 4311914,
+    "LOC_POS_ACTOR2": 4311913,
+    "LOC_POS_ACTOR3": 4312306,
+    "LOC_POS_ACTOR4": 4312307,
+    "LOC_POS_ACTOR5": 4314657,
+    "LOC_POS_ACTOR6": 4314782,
+    "LOC_POS_ACTOR7": 4317395,
+    "LOC_ACTOR0": 1005190,
+    "LOC_POS_ACTOR8": 4317709,
+    "LOC_ACTION0": 995,
+    "LOC_WS": 170,
+    "LOC_VFX": 241
+  },
+  "steps": [
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1005208,
+      "layout": 4260903,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1005211,
+      "layout": 4260906,
+      "what": "ACTOR4",
+      "note": "not a quest change: the vagrants came out 0.2 s after the steersman's scene ended (the field fight of 2026-11-12 10:01:07)",
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": []
+      },
+      "spawns": [
+        4261265,
+        4261272
+      ]
+    },
+    {
+      "kill": [
+        317,
+        4261265
+      ],
+      "what": "ENEMY0",
+      "note": "the first down (the field fight's first death); the recording named the other, its target",
+      "expect": {
+        "sequence": 2,
+        "vars": "010000000000",
+        "notices": []
+      }
+    },
+    {
+      "kill": [
+        318,
+        4261272
+      ],
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000",
+        "notices": [
+          [
+            1,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1005211,
+      "layout": 4260906,
+      "what": "ACTOR4",
+      "expect": {
+        "sequence": 4,
+        "vars": "000000000000",
+        "notices": [
+          [
+            2,
+            []
+          ]
+        ]
+      },
+      "scenes": [
+        {
+          "scene": 12,
+          "flags": "0x2000",
+          "results": [
+            1,
+            0
+          ]
+        }
+      ],
+      "note": "scene and flags from the field fight of 2026-11-12 10:01:07"
+    },
+    {
+      "talk": 2002009,
+      "what": "EOBJECT1",
+      "note": "not in the recording (no quest change): the quest battle's yes",
+      "effects": [
+        {
+          "zone": 286
+        }
+      ],
+      "expect": {
+        "sequence": 4,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "battle_won": 255,
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

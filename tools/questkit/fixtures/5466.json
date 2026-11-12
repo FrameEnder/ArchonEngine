@@ -1,0 +1,59 @@
+{
+  "quest": 5466,
+  "script": "SubGsc801_05466",
+  "source": "Kawari Recorder, Bob, 2026-11-12",
+  "params": {
+    "ACTOR0": 1058756,
+    "ACTOR1": 1058754,
+    "POPRANGE0": 12479949,
+    "TERRITORYTYPE0": 1360,
+    "ACTOR2": 1058752,
+    "SCREENIMAGE_KTG_UNLOCK": 1617,
+    "SCREENIMAGE_KTG_ACCEPTED": 1618,
+    "SCREENIMAGE_KTG_COMPLETE": 1619,
+    "CUT_SCENE_01": 4022,
+    "LOC_ACTOR_01": 1058651,
+    "BIND_ACTOR01": 12479940,
+    "BIND_ACTOR02": 12479946
+  },
+  "steps": [
+    {
+      "talk": 1058756,
+      "layout": 12479849,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000"
+      }
+    },
+    {
+      "talk": 1058754,
+      "layout": 12479854,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000"
+      },
+      "effects": [
+        {
+          "zone": 1360
+        }
+      ]
+    },
+    {
+      "enter_territory": 1360,
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000"
+      }
+    },
+    {
+      "talk": 1058752,
+      "layout": 12479942,
+      "what": "ACTOR2",
+      "expect": {
+        "completed": true
+      }
+    }
+  ]
+}

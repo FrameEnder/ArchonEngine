@@ -1,0 +1,27 @@
+{
+    "autoattack_action_id": 872,
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 5.0,
+            "every": 19.8,
+            "data": {
+                "type": "action",
+                "action_id": 915,
+                "target": "target"
+            },
+            "comment": "Bearclaw: 4.4-6.0 s after it came out, again 19.8 s later"
+        },
+        {
+            "time": 13.4,
+            "every": 20.0,
+            "data": {
+                "type": "action",
+                "action_id": 917,
+                "target": "target"
+            },
+            "comment": "Gust (a 2.5 s cast on the ground, 3 yalms): landed 15.4-16.9 s in, once a fight; how often past that isn't recorded"
+        }
+    ],
+    "comment": "Allagan Attire's three Allagan mirrorknights (quest 1094, drop-in layer QB_JobSmn450_001 of lak_l1f1). From Bob's Kawari Recorder export of 2026-11-12 (three field fights, 20-35 s each): level 45, 3168 HP; auto-attacks (872) every 3.0 s for 150-234, Bearclaw (915) for 167-208, Gust (917), which he walked out of every time."
+}

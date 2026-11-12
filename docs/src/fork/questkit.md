@@ -164,7 +164,11 @@ to fill in by hand from the script's header. A change inside the quest battle's 
 `battle_won` step whoever the player was hitting, and one on arriving in another territory with nothing targeted an
 `enter_territory` step (Underneath the Sultantree's came out as a kill of the blanga and a second battle win before).
 Talk steps carry the target's layout ID. Steps that change nothing (searching the egg in Migrant Marauders,
-walking into an ambush) aren't recorded at all; add them with `spawns` when they matter.
+walking into an ambush) aren't recorded at all; add them with `spawns` when they matter. Recorder 2.7's battle files (`battles/*.json.gz`) log
+the EventPlays (scene, flags) they catch in a fight, and the export's `packets.json` every EventFinish (its type says
+an emote, type 2 with the emote, from a talk): what there is of a quest's scenes without a Chronofoil capture. A job
+quest's reward comes out as two steps, a 0x11 UpdateQuest and the completion ten seconds later; they're one talk
+(`quests.md`, the TALKS table).
 
 ## scaffold
 
@@ -358,7 +362,10 @@ reads, chat left out), so `compare` and the rest can use it.
   `fork_opcodes.yml` for the current version and from `data/chronofoil_opcodes.json` for older ones
   (`repo.notice_opcodes`). Until 2026-10-21 it read only `fork_opcodes.yml`, so once 7.57h1's opcodes replaced
   2026.10.06's every older recording lost its notices and five of questkit's own tests failed in CI (from `85124c4`,
-  2026-10-20, on every push since).
+  2026-10-20, on every push since). A Recorder export's own GameVersion isn't trusted either
+  (`Recording.notice_opcodes`, since 2026-11-12): the known version whose notice opcodes fit its quest packets best
+  (a notice to the quest's own handler) wins. Bob's export of 2026-11-12 said 2026.10.06 with 7.58's packets, so every
+  fixture made from it had no notices until then.
 * About 0.5 s per hour of play: the whole of Bob's four months (42 sessions) index in 25 s.
 * **`--dropin TERRITORY --appends <lgb>`** writes the territory's open-world battle NPCs as a drop-in
   (`chronofoil_dropin.py`): every battle NPC SpawnNpc seen there gives a spawn point with its layout ID, BNpcBase,

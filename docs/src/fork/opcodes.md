@@ -54,8 +54,8 @@ u32 was 0 in all nine rides.
 | ForcedMoveTowards | server → client | 304 | 132 (10.16) | 8 | Walks the player towards an actor whatever they do (a Seduced status): the speed (a byte, the client keeps it as a float), then the actor; until ForcedMoveEnd. Retail's `[4, the boss]` to each player Lady Amandine's Beguiling Mist hit (Bob's Chronofoil captures of Haukke Manor, 2026-11-02 and -03). Its handler (0xB4E260 on 10.16) sets the client's movement controller (0x631B80). Finder. See [Combat](combat.md). |
 | ForcedMoveEnd | server → client | 835 | 166 (10.16) | 8 | Ends ForcedMoveTowards (8 bytes of 0, 3.0 s after it on retail); its handler (0xB4E320) resets the movement controller and gives the player back their controls. Finder. |
 | EventReturnHandler16 | client → server | 256 | 856 (09.15), 200 (10.06), 555 (10.16) | 72 | A scene finished with up to 16 results, e.g. a three-item NPC trade returns 12 (Surveying the Damage). Finder. |
-| EventNotice2 | server → client | 392 | 386 (10.06), 834 (10.16) | 16 | A quest/event notice with 0–2 arguments: the progress pop-up. Finder (confirms only, see below); 10.16's from a retail capture. |
-| EventNotice4 | server → client | 584 | 210 (10.06), 467 (10.16) | 24 | The same with 3–4 arguments. Finder (confirms only); 10.16's from a retail capture. |
+| EventNotice2 | server → client | 633 | 386 (10.06), 834 (10.16) | 16 | A quest/event notice with 0–2 arguments: the progress pop-up. Finder (confirms only, see below); 10.16's from a retail capture; 633 is retail's on 7.58 (Bob's Kawari Recorder export of 2026-11-12, 108 notices; 392 until then). |
+| EventNotice4 | server → client | 921 | 210 (10.06), 467 (10.16) | 24 | The same with 3–4 arguments. Finder (confirms only); 10.16's from a retail capture; 921 is retail's on 7.58 (the same export, 10 notices of 3 arguments; 584 until then). |
 | SetAdventurerPlatePortrait | client → server | 557 | 107 (10.06), 431 (10.16) | 56 | The client sets its adventurer plate's portrait. Finder: the sender writing the opcode and the 72-byte size. |
 | UpdateAdventurerPlate | client → server | 448 | 795 (10.06), 350 (10.16) | 200 | The client saves its adventurer plate (CharaCardData). Finder: the sender writing the opcode, then the 216-byte size. See [Adventurer Plate](character-windows.md#adventurer-plate). |
 | MarketBoardOpened | client → server | 839 | 156 (09.15), 683 (10.06), 319 (10.16) | 8 | The marketboard window opened; answered with an empty search result. Seen in Bob's 2026-10-20 bundle as the window opened. Finder. |
@@ -119,7 +119,9 @@ From Bob's 2026.11.03 `ffxiv_dx11.exe` (2026-11-11) and his 2026.10.16 one, with
   notices; 132, 165, 305, 457, 511, 603, 817, 945 for the resumes, of which upstream's EventResume2/4/8 are 511, 132
   and 603) that passes the client's code only the packet, never the opcode, so any member is handled the same. Each
   fork packet got its own member (EventNotice2 392, EventNotice4 584, EventResume16 165, LotteryDailyBoard 305); a
-  retail recording on 7.58 would say which retail uses.
+  retail recording on 7.58 would say which retail uses. Bob's Kawari Recorder export of 2026-11-12 did for the
+  notices: 633 (0-2 arguments) and 921 (3), which the fork uses since. The same export has upstream's EventLogMessage2
+  (478) from quests and directors as retail's on 7.58.
 * **Checked by how the client reads them** (`tools/opcodescan/compare_layouts.py`, below): with these opcodes, every
   one of the 344 packets' handlers reads exactly as far into it as on 10.16 with 10.16's, upstream's and the fork's.
 * **Upstream's EditSearchInfo** stayed on 7.57h1's 424, which nothing writes on 7.58: the function that builds the

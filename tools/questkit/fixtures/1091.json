@@ -1,0 +1,104 @@
+{
+  "quest": 1091,
+  "script": "JobSmn300_01091",
+  "source": "Kawari Recorder, Bob, 2026-11-12",
+  "params": {
+    "ACTOR0": 1000909,
+    "ACTOR1": 1006756,
+    "ACTOR2": 1006786,
+    "EOBJECT0": 2002387,
+    "EVENT_ACTION_SEARCH": 1,
+    "TERRITORYTYPE0": 323,
+    "QUESTBATTLE0": 79,
+    "COMPLETED_QUEST_IFR": 65879,
+    "COMPLETED_QUEST_TAI": 66393,
+    "GEARSET_UNLOCK": 1905,
+    "LOC_ACTION0_WSGET": 995,
+    "LOC_WS": 25805,
+    "LOC_VFX1": 241,
+    "LOC_VFX2": 411,
+    "LOC_LOG_MES": 3671,
+    "UNLOCK_IMAGE_CLASS": 61,
+    "COMPLETED_CONTENTS_IFR": 20001,
+    "COMPLETED_CONTENTS_TAI": 20002,
+    "JOBSTONE_MODEL": 9,
+    "HOW_TO_CLASS_CHANGE": 10,
+    "HOW_TO_JOB": 94,
+    "UNLOCK_IMAGE_JOBCHANGE": 1207
+  },
+  "steps": [
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1006756,
+      "layout": 4254780,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006786,
+      "what": "ACTOR2",
+      "note": "not in the recording (no quest change): the quest battle's yes",
+      "effects": [
+        {
+          "zone": 323
+        }
+      ],
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "battle_won": 3,
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1006786,
+      "layout": 4302291,
+      "what": "ACTOR2",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            2,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006756,
+      "layout": 4254780,
+      "what": "ACTOR1",
+      "expect": {
+        "completed": true,
+        "notices": []
+      },
+      "note": "retail set UI8AL and UI8AH (0x11) as the reward was taken, then completed the quest as the learning cutscene ended"
+    }
+  ]
+}

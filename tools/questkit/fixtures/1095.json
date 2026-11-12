@@ -1,0 +1,82 @@
+{
+  "quest": 1095,
+  "script": "JobSmn451_01095",
+  "source": "Kawari Recorder, Bob, 2026-11-12",
+  "params": {
+    "ACTOR0": 1006756,
+    "ACTOR1": 1006792,
+    "EOBJECT0": 2002389,
+    "EVENT_ACTION_SEARCH": 1,
+    "TERRITORYTYPE0": 325,
+    "QUESTBATTLE0": 81,
+    "LOGMESSAGE0": 3675,
+    "COMPLETED_QUEST_GAL": 66055,
+    "LOC_ACTION0_WSGET": 995,
+    "LOC_WS": 25807,
+    "LOC_VFX1": 241,
+    "LOC_VFX2": 411,
+    "LOC_LOG_MES": 3672,
+    "COMPLETED_CONTENTS_GAL": 20003,
+    "JOBSTONE_MODEL": 9
+  },
+  "steps": [
+    {
+      "talk": 1006756,
+      "layout": 4254780,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1006792,
+      "what": "ACTOR1",
+      "note": "not in the recording (no quest change): the quest battle's yes",
+      "effects": [
+        {
+          "zone": 325
+        }
+      ],
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "battle_won": 2,
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1006792,
+      "layout": 4302711,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            1,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006756,
+      "layout": 4254780,
+      "what": "ACTOR0",
+      "expect": {
+        "completed": true,
+        "notices": []
+      },
+      "note": "retail set UI8AL and UI8AH (0x11) as the reward was taken, then completed the quest as the learning cutscene ended"
+    }
+  ]
+}

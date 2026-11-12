@@ -79,6 +79,17 @@ def fork_opcodes() -> list[dict]:
     return entries
 
 
+def known_game_versions() -> list[str]:
+    """Every game version whose opcodes are known: fork_opcodes.yml's and those saved before an update."""
+    versions = {entry["found_on"] for entry in fork_opcodes() if entry.get("found_on")}
+    try:
+        saved = json.loads((Path(__file__).parent / "data" / "chronofoil_opcodes.json").read_text())
+    except (OSError, json.JSONDecodeError):
+        saved = {}
+    versions.update(saved.get("versions", {}))
+    return sorted(versions)
+
+
 def notice_opcodes(game_version: str | None) -> set[int]:
     """The EventNotice opcodes (every size) for a game version, from fork_opcodes.yml. Empty if that version's
     aren't known."""

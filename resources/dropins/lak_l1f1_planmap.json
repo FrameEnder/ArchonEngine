@@ -5968,6 +5968,80 @@
                     "rotation": 1.8768
                 }
             ]
+        },
+        {
+            "name": "QB_JobSmn450_001",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 1948,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 3168,
+                        "level": 45,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 2054,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147
+                    },
+                    "layout_id": 4302657,
+                    "position": {
+                        "x": 505.255,
+                        "y": -11.299,
+                        "z": -349.949
+                    },
+                    "rotation": -0.4061
+                },
+                {
+                    "data": {
+                        "base_id": 1948,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 3168,
+                        "level": 45,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 2054,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147
+                    },
+                    "layout_id": 4302660,
+                    "position": {
+                        "x": 494.804,
+                        "y": -2.536,
+                        "z": -479.24
+                    },
+                    "rotation": 0.1846
+                },
+                {
+                    "data": {
+                        "base_id": 1948,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 3168,
+                        "level": 45,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 2054,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147
+                    },
+                    "layout_id": 4302665,
+                    "position": {
+                        "x": 365.293,
+                        "y": -3.381,
+                        "z": -494.128
+                    },
+                    "rotation": 0.4369
+                }
+            ]
         }
     ]
 }

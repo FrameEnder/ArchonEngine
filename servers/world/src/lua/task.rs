@@ -64,6 +64,14 @@ pub enum LuaTask {
         notice_id: u8,
         args: Vec<u32>,
     },
+    /// A LogMessage row shown in chat from an event (EventLogMessage, the event's handler with it): retail's after a
+    /// talk in Allagan Attire (1094) and Austerities of Wind (1095), their LOGMESSAGE0 (Bob's Kawari Recorder export of
+    /// 2026-11-12.)
+    EventLogMessage {
+        handler_id: u32,
+        message_type: u32,
+        params: Vec<u32>,
+    },
     /// Only the packets of a nested event (EventStart/EventFinish with type Nest, on the current event's target):
     /// retail starts the aetheryte's event inside Close to Home's while attuning. Kawari doesn't run a handler for it.
     NestedEventPacket {

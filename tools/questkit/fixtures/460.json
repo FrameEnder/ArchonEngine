@@ -1,0 +1,318 @@
+{
+  "quest": 460,
+  "script": "ClsAcn250_00460",
+  "source": "Kawari Recorder, Bob, 2026-11-12",
+  "params": {
+    "ACTOR0": 1000909,
+    "ACTOR1": 1005227,
+    "ACTOR2": 1006195,
+    "EOBJECT0": 2001892,
+    "EVENT_ACTION_SEARCH_MIDDLE": 3,
+    "ITEM0": 2000883,
+    "EOBJECT1": 2001893,
+    "EOBJECT2": 2001894,
+    "EOBJECT3": 2002478,
+    "EOBJECT4": 2001895,
+    "EVENT_ACTION_SEARCH": 1,
+    "ENEMY0": 4264454,
+    "ENEMY1": 4264456,
+    "ENEMY2": 4264457,
+    "ACTOR3": 1005249,
+    "ITEM1": 2000884,
+    "ACTOR4": 1005228,
+    "LOC_FACE1": 605,
+    "LOC_FACE0": 604,
+    "CUT_CLSACN25010": 47
+  },
+  "steps": [
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1005227,
+      "layout": 4264014,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006195,
+      "layout": 4250537,
+      "what": "ACTOR2",
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000",
+        "notices": [
+          [
+            1,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 2001892,
+      "layout": 4264402,
+      "what": "EOBJECT0",
+      "expect": {
+        "sequence": 3,
+        "vars": "110010000080",
+        "notices": [
+          [
+            2,
+            [
+              1,
+              3,
+              25906
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 2001894,
+      "layout": 4264414,
+      "what": "EOBJECT2",
+      "expect": {
+        "sequence": 3,
+        "vars": "2101200000a0",
+        "notices": [
+          [
+            2,
+            [
+              2,
+              3,
+              25906
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 2001893,
+      "layout": 4264413,
+      "what": "EOBJECT1",
+      "expect": {
+        "sequence": 4,
+        "vars": "003000000000",
+        "notices": [
+          [
+            2,
+            [
+              3,
+              3,
+              25906
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006195,
+      "layout": 4250537,
+      "what": "ACTOR2",
+      "expect": {
+        "sequence": 5,
+        "vars": "000000000000",
+        "notices": [
+          [
+            3,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "emote": [
+        11,
+        2002478
+      ],
+      "layout": 4314621,
+      "what": "EOBJECT3",
+      "expect": {
+        "sequence": 6,
+        "vars": "000000000000",
+        "notices": [
+          [
+            4,
+            []
+          ]
+        ]
+      },
+      "note": "an emote (retail's EventFinish was type 2, emote 11): the box listens for one in sequence 5"
+    },
+    {
+      "talk": 2002478,
+      "layout": 4314621,
+      "what": "EOBJECT3",
+      "expect": {
+        "sequence": 7,
+        "vars": "000000000000",
+        "notices": [
+          [
+            5,
+            []
+          ]
+        ]
+      },
+      "spawns": [
+        4264454,
+        4264456,
+        4264457
+      ],
+      "note": "the slugs were out as the field fight began, 0.1 s after this talk's EventFinish"
+    },
+    {
+      "kill": [
+        39,
+        4264457
+      ],
+      "what": "ENEMY2",
+      "note": "the field fight's deaths (no quest change)",
+      "expect": {
+        "sequence": 7,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "kill": [
+        39,
+        4264456
+      ],
+      "what": "ENEMY1",
+      "note": "the field fight's deaths (no quest change)",
+      "expect": {
+        "sequence": 7,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "kill": [
+        39,
+        4264454
+      ],
+      "what": "ENEMY0",
+      "note": "the field fight's deaths (no quest change)",
+      "expect": {
+        "sequence": 7,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 2002478,
+      "layout": 4314621,
+      "what": "EOBJECT3",
+      "expect": {
+        "sequence": 8,
+        "vars": "000000000000",
+        "notices": [
+          [
+            6,
+            []
+          ]
+        ]
+      },
+      "scenes": [
+        {
+          "scene": 22,
+          "flags": "0x2001",
+          "results": [
+            1,
+            0
+          ]
+        },
+        {
+          "scene": 23,
+          "flags": "0x2001",
+          "results": [
+            1,
+            0
+          ]
+        }
+      ],
+      "note": "scenes and flags from the field fight of 10:13:41 (the slugs; scene 23 2.3 s after 22, its bar between)"
+    },
+    {
+      "emote": [
+        11,
+        1005249
+      ],
+      "layout": 4273866,
+      "what": "ACTOR3",
+      "expect": {
+        "sequence": 9,
+        "vars": "001000000000",
+        "notices": [
+          [
+            7,
+            [
+              26002
+            ]
+          ]
+        ]
+      },
+      "note": "an emote (EventFinish type 2, emote 11)"
+    },
+    {
+      "emote": [
+        11,
+        1005228
+      ],
+      "layout": 4265958,
+      "what": "ACTOR4",
+      "expect": {
+        "sequence": 10,
+        "vars": "001000000000",
+        "notices": [
+          [
+            8,
+            []
+          ]
+        ]
+      },
+      "note": "an emote (EventFinish type 2, emote 11)"
+    },
+    {
+      "talk": 1005228,
+      "layout": 4265958,
+      "what": "ACTOR4",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            9,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

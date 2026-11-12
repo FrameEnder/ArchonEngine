@@ -1,0 +1,148 @@
+{
+  "quest": 459,
+  "script": "ClsAcn200_00459",
+  "source": "Kawari Recorder, Bob, 2026-11-12",
+  "params": {
+    "ACTOR0": 1000909,
+    "ACTOR1": 1003505,
+    "ACTOR2": 1000938,
+    "ACTOR3": 1005215,
+    "ACTOR4": 1005216,
+    "ACTOR5": 1005217,
+    "EOBJECT0": 2002010,
+    "EVENT_ACTION_WAITING2_MIDDLE": 12,
+    "ACTOR6": 1005220,
+    "ACTOR7": 1005221,
+    "ACTOR8": 1005222,
+    "ACTOR9": 1005223,
+    "ACTOR10": 1005224,
+    "ACTOR11": 1005225,
+    "ACTOR12": 1005226,
+    "ACTOR13": 1005257,
+    "ACTOR14": 1005258,
+    "EOBJECT1": 2001891,
+    "EVENT_ACTION_SEARCH": 1,
+    "TERRITORYTYPE0": 287,
+    "QUESTBATTLE0": 52,
+    "LOC_FACE1": 611
+  },
+  "steps": [
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1003505,
+      "layout": 4165335,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1000938,
+      "layout": 1673103,
+      "what": "ACTOR2",
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000",
+        "notices": [
+          [
+            1,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 4,
+        "vars": "000000000000",
+        "notices": [
+          [
+            2,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1005215,
+      "layout": 4263459,
+      "what": "ACTOR3",
+      "expect": {
+        "sequence": 5,
+        "vars": "000000000000",
+        "notices": [
+          [
+            3,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1005217,
+      "layout": 4263516,
+      "what": "ACTOR5",
+      "expect": {
+        "sequence": 6,
+        "vars": "000000000000",
+        "notices": [
+          [
+            4,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 2002010,
+      "what": "EOBJECT0",
+      "note": "not in the recording (no quest change): the quest battle's yes",
+      "effects": [
+        {
+          "zone": 287
+        }
+      ],
+      "expect": {
+        "sequence": 6,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "battle_won": 255,
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

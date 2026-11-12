@@ -20,8 +20,9 @@ use kawari::{
         ORNAMENT_BITMASK_SIZE, TRIPLE_TRIAD_CARDS_BITMASK_SIZE,
     },
     ipc::zone::{
-        ActorControlCategory, ClientTriggerCommand, DutyFinderSetting, EventNotice, EventStart,
-        EventType, ItemInfo, SceneFlags, ServerZoneIpcData, ServerZoneIpcSegment,
+        ActorControlCategory, ClientTriggerCommand, DutyFinderSetting, EventLogMessage,
+        EventNotice, EventStart, EventType, ItemInfo, SceneFlags, ServerZoneIpcData,
+        ServerZoneIpcSegment,
     },
 };
 
@@ -237,6 +238,21 @@ impl ZoneConnection {
                             "An event notice can have at most 4 numbers, not {}: {notice:?}",
                             args.len()
                         ),
+                    }
+                }
+                LuaTask::EventLogMessage {
+                    handler_id,
+                    message_type,
+                    params,
+                } => {
+                    let message = EventLogMessage {
+                        handler_id: HandlerId(*handler_id),
+                        message_type: *message_type,
+                        params: params.clone(),
+                    };
+                    match message.package() {
+                        Some(ipc) => self.send_ipc_self(ipc).await,
+                        None => tracing::warn!("Couldn't send event log message {message:?}"),
                     }
                 }
                 LuaTask::NestedEventPacket { handler_id, start } => {

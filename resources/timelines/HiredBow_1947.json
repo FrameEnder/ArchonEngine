@@ -1,0 +1,6 @@
+{
+    "autoattack_action_id": 873,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Shadowing the Summoner's hired bow (quest 1093, drop-in layer QB_JobSmn400_001 of wil_w1f4), an archer (class 5 in its spawn). From Bob's Kawari Recorder export of 2026-11-12 (the field fight of 10:41:14): level 40, 1200 HP. Bob teleported away before it acted, so only the archers' auto-attack (873), not recorded."
+}

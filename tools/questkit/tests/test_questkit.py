@@ -158,6 +158,20 @@ class Fixtures(unittest.TestCase):
         self.assertTrue(covered)
         self.assertEqual([n.as_list() for n in notices], [[0, []], [1, [1, 2]], [1, [2, 2]]])
 
+    def test_notices_under_a_stale_game_version(self):
+        # A Recorder export whose packets.json kept an older GameVersion than its packets (Bob's of 2026-11-12 said
+        # 2026.10.06 with 7.58's notices, 633): the version whose opcodes fit its quest packets wins.
+        rec = self.dir / "stale"
+        rec.mkdir()
+        (rec / "quests.json").write_text(json.dumps(
+            {"Version": 1, "Quests": {str(QUEST): {"Name": "Test", "Events": RETAIL_EVENTS}}}))
+        packets = [dict(p, Opcode=633) if p["Opcode"] == 386 else p for p in RETAIL_PACKETS]
+        (rec / "packets.json").write_text(json.dumps(
+            {"Version": 1, "GameVersion": "2026.10.06.0000.0000", "Timeline": packets}))
+        notices, covered = recording.Recordings.open([rec]).notices(QUEST)
+        self.assertTrue(covered)
+        self.assertEqual([n.as_list() for n in notices], [[0, []], [1, [1, 2]], [1, [2, 2]]])
+
     def test_build_and_replay(self):
         fixture = fixtures.build(QUEST, self.recordings, self.dump)
         self.assertEqual([("talk" in s, s["expect"].get("sequence")) for s in fixture["steps"]],
@@ -1538,6 +1552,18 @@ class ClientCheckTest(unittest.TestCase):
         self.assertEqual(len(checks), 1)
         self.assertFalse(checks[0].issues, checks[0])
         self.assertEqual(checks[0].played, [0, 1, 2])
+
+    def test_talks_table(self):
+        # A script that plays its scenes from a TALKS table (the Arcanist and Summoner quests of 2026-11-12.)
+        from questkit import clientcheck
+
+        lua = ("TALKS = {\n    { seq = nil, who = ACTOR0, scenes = { 0, 1 }, go_on = offered },\n"
+               "    { seq = 1, who = ACTOR0, scenes = { 2 } },\n}\n")
+        with tempfile.TemporaryDirectory() as tmp:
+            scripts = self._setup(Path(tmp), lua)
+            checks, _ = clientcheck.collect(Path(tmp) / "dumps", scripts)
+        self.assertEqual(checks[0].played, [0, 1, 2])
+        self.assertEqual(checks[0].unplayed, [])
 
     def test_finds_what_disagrees(self):
         from questkit import clientcheck

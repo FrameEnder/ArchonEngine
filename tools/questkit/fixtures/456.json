@@ -1,0 +1,236 @@
+{
+  "quest": 456,
+  "script": "ClsAcn100_00456",
+  "source": "Kawari Recorder, Bob, 2026-11-12",
+  "params": {
+    "ACTOR0": 1000909,
+    "ENEMY0": 22,
+    "ENEMY1": 138,
+    "ACTOR1": 1005199,
+    "ACTOR2": 1005200,
+    "EOBJECT0": 2001890,
+    "EVENT_ACTION_SEARCH": 1,
+    "EOBJECT1": 2002008,
+    "ACTOR3": 1005202,
+    "ACTOR4": 1005203,
+    "ACTOR5": 1005204,
+    "ACTOR6": 1005201,
+    "ACTOR7": 1005205,
+    "ACTOR8": 1005206,
+    "ACTOR9": 1005207,
+    "TERRITORYTYPE0": 285,
+    "QUESTBATTLE0": 50,
+    "HOW_TO_GEAR_SET": 38,
+    "UNLOCK_IMAGE_GEAR_SET": 29,
+    "UNLOCK_IMAGE_CLASS_CANGE": 22
+  },
+  "steps": [
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "kill": [
+        22,
+        3969864
+      ],
+      "what": "ENEMY0",
+      "expect": {
+        "sequence": 1,
+        "vars": "010000000000",
+        "notices": [
+          [
+            0,
+            [
+              1,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        22,
+        3969860
+      ],
+      "what": "ENEMY0",
+      "expect": {
+        "sequence": 1,
+        "vars": "020000000000",
+        "notices": [
+          [
+            0,
+            [
+              2,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        22,
+        3969860
+      ],
+      "what": "ENEMY0",
+      "expect": {
+        "sequence": 1,
+        "vars": "130000000000",
+        "notices": [
+          [
+            0,
+            [
+              3,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        138,
+        3969505
+      ],
+      "what": "ENEMY1",
+      "expect": {
+        "sequence": 1,
+        "vars": "131000000000",
+        "notices": [
+          [
+            1,
+            [
+              1,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        138,
+        3969499
+      ],
+      "what": "ENEMY1",
+      "expect": {
+        "sequence": 1,
+        "vars": "132000000000",
+        "notices": [
+          [
+            1,
+            [
+              2,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "kill": [
+        138,
+        3969499
+      ],
+      "what": "ENEMY1",
+      "expect": {
+        "sequence": 2,
+        "vars": "000000000000",
+        "notices": [
+          [
+            1,
+            [
+              3,
+              3
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 3,
+        "vars": "000000000000",
+        "notices": [
+          [
+            2,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1005199,
+      "layout": 4260826,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 4,
+        "vars": "000000000000",
+        "notices": [
+          [
+            3,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1005200,
+      "what": "ACTOR2",
+      "note": "not in the recording (no quest change): the quest battle's yes",
+      "effects": [
+        {
+          "zone": 285
+        }
+      ],
+      "expect": {
+        "sequence": 4,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "battle_won": 5,
+      "expect": {
+        "sequence": 5,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1005201,
+      "layout": 4260872,
+      "what": "ACTOR6",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            5,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

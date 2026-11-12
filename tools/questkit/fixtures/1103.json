@@ -1,0 +1,49 @@
+{
+  "quest": 1103,
+  "script": "ClsAcn149_01103",
+  "source": "Kawari Recorder, Bob, 2026-11-12",
+  "params": {
+    "ACTOR0": 1000909,
+    "ACTOR1": 1005199,
+    "LOC_ACTION0_WSGET": 995,
+    "LOC_WS": 25803,
+    "LOC_VFX": 241
+  },
+  "steps": [
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "000000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1005199,
+      "layout": 4260826,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [
+          [
+            0,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "completed": true,
+        "notices": []
+      },
+      "note": "retail set UI8AL and UI8AH (0x11) as the reward was taken, then completed the quest as the learning cutscene ended"
+    }
+  ]
+}

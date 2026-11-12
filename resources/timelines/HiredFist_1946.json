@@ -1,0 +1,6 @@
+{
+    "autoattack_action_id": 870,
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Shadowing the Summoner's two hired fists (quest 1093, drop-in layer QB_JobSmn400_001 of wil_w1f4). From Bob's Kawari Recorder export of 2026-11-12 (the field fight of 10:41:14): level 40, 1200 HP, class 0 in their spawn. Bob teleported away before they reached him, so what they do isn't recorded: the usual melee auto-attack (870)."
+}

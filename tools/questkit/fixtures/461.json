@@ -1,0 +1,206 @@
+{
+  "quest": 461,
+  "script": "ClsAcn300_00461",
+  "source": "Kawari Recorder, Bob, 2026-11-12",
+  "params": {
+    "ACTOR0": 1000909,
+    "ITEM0": 2000885,
+    "ACTOR1": 1005251,
+    "ITEM1": 2000886,
+    "ACTOR2": 1005229,
+    "ACTOR3": 1005230,
+    "ACTOR4": 1005231,
+    "ACTOR5": 1005232,
+    "ACTOR6": 1005233,
+    "ACTOR7": 1005234,
+    "ACTOR8": 1005252,
+    "ITEM2": 2000887,
+    "ACTOR9": 1006273,
+    "ITEM3": 2000888,
+    "ACTOR10": 1005253,
+    "ITEM4": 2000889,
+    "ITEM5": 2000890,
+    "ACTOR11": 1005254,
+    "ITEM6": 2000891,
+    "ACTOR12": 1005235,
+    "ACTOR13": 1005236,
+    "ACTOR14": 1005255,
+    "ACTOR15": 1005256,
+    "EOBJECT0": 2001897,
+    "EVENT_ACTION_SEARCH": 1,
+    "EOBJECT1": 2002012,
+    "ACTOR16": 1005237,
+    "EOBJECT2": 2002274,
+    "TERRITORYTYPE0": 288,
+    "QUESTBATTLE0": 53,
+    "LOC_ACTION0": 995,
+    "LOC_WS": 172,
+    "LOC_VFX": 241,
+    "LOC_POS_ACTOR0": 4329947,
+    "LOC_ACTOR0": 1006271,
+    "LOC_FACE0": 619,
+    "LOC_ACTOR1": 1005191,
+    "LOC_POS_ACTOR1": 4330016,
+    "LOC_ACTION1": 929,
+    "LOC_FACE1": 605
+  },
+  "steps": [
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 1,
+        "vars": "001000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1005251,
+      "layout": 4277063,
+      "what": "ACTOR1",
+      "expect": {
+        "sequence": 2,
+        "vars": "001000000000",
+        "notices": [
+          [
+            0,
+            [
+              29010
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1005252,
+      "layout": 4277065,
+      "what": "ACTOR8",
+      "expect": {
+        "sequence": 3,
+        "vars": "001000000000",
+        "notices": [
+          [
+            1,
+            [
+              24305
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1006273,
+      "layout": 4258385,
+      "what": "ACTOR9",
+      "expect": {
+        "sequence": 4,
+        "vars": "001000000000",
+        "notices": [
+          [
+            2,
+            [
+              26001
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1005253,
+      "layout": 4277067,
+      "what": "ACTOR10",
+      "expect": {
+        "sequence": 5,
+        "vars": "001100000000",
+        "notices": [
+          [
+            3,
+            [
+              25919
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1005254,
+      "layout": 4277068,
+      "what": "ACTOR11",
+      "expect": {
+        "sequence": 6,
+        "vars": "001100000000",
+        "notices": [
+          [
+            4,
+            [
+              25057
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1005229,
+      "layout": 4265597,
+      "what": "ACTOR2",
+      "expect": {
+        "sequence": 7,
+        "vars": "001000000000",
+        "notices": [
+          [
+            5,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1005235,
+      "what": "ACTOR12",
+      "note": "not in the recording (no quest change): the quest battle's yes",
+      "effects": [
+        {
+          "zone": 288
+        }
+      ],
+      "expect": {
+        "sequence": 7,
+        "vars": "001000000000",
+        "notices": []
+      }
+    },
+    {
+      "battle_won": 8,
+      "expect": {
+        "sequence": 8,
+        "vars": "001000000000",
+        "notices": []
+      }
+    },
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "sequence": 255,
+        "vars": "001000000000",
+        "notices": [
+          [
+            7,
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "talk": 1000909,
+      "layout": 2470123,
+      "what": "ACTOR0",
+      "expect": {
+        "completed": true,
+        "notices": []
+      }
+    }
+  ]
+}

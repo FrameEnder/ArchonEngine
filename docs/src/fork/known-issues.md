@@ -3,6 +3,22 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## The Arcanist and Summoner quests (2026-11-12)
+
+* Fourteen quests from Bob's Kawari Recorder export of 2026-11-12 (453-461, 1091-1095, 1103, 5466; `quests.md`) have
+  no Chronofoil capture: their variables and notices are retail's, but most scene numbers come from the listeners'
+  order and their flags are the fork's usual ones; the ones the export's field fights caught (455's 8 and 9, 458's 12,
+  460's 22 and 23, 1094's 3, 5, 6 and 8) agreed. Grimoire Fandango's (460) scenes 14-36 are read from what each does,
+  not that order; Over the Rails' (458) scene 20, a cutscene, and Shadowing the Summoner's (1093) 3, a
+  ScenarioMessage, aren't played (nothing showed where); the bars of 458's and 459's landing boats are the sheet's
+  EVENT_ACTION_WAITING2_MIDDLE, not seen. None is checked in game.
+* **Their quest battles aren't scripted yet**: 50 (456), 51 (458), 52 (459), 53 (461), 79 (1091), 80 (1092) and 81
+  (1095). Bob sent the battles' client scripts and the export has a won run of each (81 a lost one too); until they're
+  done those quests stop at the battle.
+* The hired fists and bow of 1093 (BNpcBase 1946, 1947) were never seen acting (Bob teleported away): their timelines
+  are just the melee and archers' auto-attacks. The Allagan mirrorknights' Gust (917) never hit anyone, so its
+  potency is a guess.
+
 ## Quest enemies from captures (2026-11-11)
 
 * The 24 kinds of quest enemy added from Connor's captures (quests 986 to 3883, `quests.md`) have timelines from only

@@ -25,6 +25,8 @@ from . import repo
 
 _SCENE_FN = re.compile(r":OnScene(\d+)\b")
 _PLAY_ARG = re.compile(r"\bplay_scene\s*\(\s*([A-Za-z_][\w.]*|\d+)")
+# A TALKS-table script's entries (`{ seq = 1, who = ACTOR1, scenes = { 2, 3 }, ... }`): the scenes each plays in turn.
+_TALK_SCENES = re.compile(r"\bscenes\s*=\s*\{([\d\s,]*)\}")
 _NUM_CONST = re.compile(
     r"^\s*(?:local\s+)?([A-Z][A-Z0-9_]*)\s*(?:<const>)?\s*=\s*(0[xX][0-9a-fA-F]+|-?\d+)\s*(?:--.*)?$", re.M)
 _LUA_ASSIGN = re.compile(r"^\s*(?:local\s+)?([A-Z][A-Z0-9_]*)\s*(?:<const>)?\s*=(?!=)", re.M)
@@ -98,6 +100,8 @@ def check(kind: str, name: str, server_script: Path, listing: str, params: dict[
             played.add(int(constants[arg]))
         elif arg in params:
             played.add(int(params[arg]))
+    for numbers in _TALK_SCENES.findall(code):
+        played |= {int(n) for n in re.findall(r"\d+", numbers)}
     # The sheet's scene parameters (SEQ_2_EOBJECT0_EVENTACTIONOK...), however the script plays them.
     for token in set(_TOKEN.findall(code)):
         if token.startswith("SEQ_") and token in params:

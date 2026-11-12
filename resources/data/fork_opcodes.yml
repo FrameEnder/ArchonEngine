@@ -665,8 +665,8 @@ ServerZoneIpcType:
   comment: A notice from an event with up to 2 arguments, e.g. a quest's progress pop-up as an enemy is defeated.
   # 386 on 2026.10.06; 834 on 2026.10.16 (one of the five notice opcodes (467, 561, 834, 927, 928) - see below; Bob's
   # Chronofoil capture of 2026-10-20 has the 16-byte notices as 834: Close to Home's, and the aetheryte's.)
-  # 392 on 2026.11.03 (7.58): one of the five notice opcodes (392, 584, 633, 866, 921), whose case is one and passes the client only the packet (the argument count is in it), so any of them is handled the same; a retail recording would say which retail uses.
-  opcode: 392
+  # 633 on 2026.11.03 (7.58): one of the five notice opcodes (392, 584, 633, 866, 921), whose case is one and passes the client only the packet (the argument count is in it), so any of them is handled the same. Retail uses 633 for notices of 0 to 2 arguments (108 in Bob's Kawari Recorder export of 2026-11-12: the Arcanist and Summoner quests); 392 until then.
+  opcode: 633
   size: 16
   found_on: 2026.11.03.0000.0000
   how_to_find: On retail with the Kawari Recorder, kill an enemy a quest counts (e.g. You Shall Not Trespass) - its pop-up is this packet, sent to the quest's handler with 2 args or fewer.
@@ -682,8 +682,9 @@ ServerZoneIpcType:
   comment: A notice from an event with 3 or 4 arguments.
   # 210 on 2026.10.06; 467 on 2026.10.16 (one of the five notice opcodes (467, 561, 834, 927, 928) - see EventNotice2;
   # the 24-byte notices are 467 in Bob's Chronofoil capture of 2026-10-20, with 3 arguments.)
-  # 584 on 2026.11.03 (7.58): see EventNotice2.
-  opcode: 584
+  # 921 on 2026.11.03 (7.58): see EventNotice2. Retail uses 921 for notices of 3 arguments (10 in Bob's Kawari Recorder
+  # export of 2026-11-12: Grimoire Fandango's and Escape from Castrum Centri's); 584 until then.
+  opcode: 921
   size: 24
   found_on: 2026.11.03.0000.0000
   how_to_find: On retail with the Kawari Recorder, a quest notice with 3 arguments (e.g. in Salvaging the Scene) - sent to the quest's handler.
