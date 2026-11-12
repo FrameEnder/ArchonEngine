@@ -456,8 +456,20 @@ pub(crate) fn run_along(
     path: &mut std::collections::VecDeque<Vec3A>,
     walled_for: Duration,
 ) -> (Option<(Vec3A, f32)>, bool) {
+    run_along_at(navmesh, collision, here, path, walled_for, NPC_RUN_SPEED)
+}
+
+/// `run_along` at `speed` yalms a second (a world bot on its mount: `world_bot_life::RIDE_SPEED`.)
+pub(crate) fn run_along_at(
+    navmesh: &crate::navmesh::Navmesh,
+    collision: Option<&Collision>,
+    here: Vec3A,
+    path: &mut std::collections::VecDeque<Vec3A>,
+    walled_for: Duration,
+    speed: f32,
+) -> (Option<(Vec3A, f32)>, bool) {
     let mut at = here;
-    let mut left = NPC_RUN_SPEED * BEHAVIOR_TICK_SECONDS;
+    let mut left = speed * BEHAVIOR_TICK_SECONDS;
     while left > 0.0
         && let Some(next) = path.front().copied()
     {

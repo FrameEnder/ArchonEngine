@@ -9,9 +9,9 @@ Dashboard → World bots). Asked for by Bob on 2026-11-11; delivered in stages.
 |---|---|---|
 | 1 | The world's population: idlers at every big aetheryte (30 in Limsa Lominsa, 10 in Ul'dah, 20 in Gridania by default), 5-10 at each marketboard, walking between places, exits, inns, Teleport; the ControlPanel page | done (2026-11-11), not played yet |
 | 2 | Questing bots: routes from Questionable's quest paths (levels 1-100, at least 10 bots per ten levels, no more than 3 on one quest and never two on the same step), fighting quest enemies, quest-reward and dungeon gear, a new name and look after a route | in progress: Questionable's paths read and routes planned (`questing.rs`), not wired in yet |
-| 3 | More like players: minions, mounts, crafting in place, chat, search info (sitting, emotes at each other: done 2026-11-11, from Bob's first marks) | to do |
+| 3 | More like players: minions, mounts, crafting in place, chat, search info (sitting, emotes at each other: done 2026-11-11, from Bob's first marks) | in progress: minions, weapons drawn and sheathed, mounts done (2026-11-11, `world_bot_life.rs`) |
 
-Code: `servers/world/src/server/world_bots.rs`; the settings page `kawari_web/worldbots.py` in ArchonEngine
+Code: `servers/world/src/server/world_bots.rs`, stage 3's pieces in `world_bot_life.rs`; the settings page `kawari_web/worldbots.py` in ArchonEngine
 ControlPanel; retail's standing spots `resources/data/world_bot_spots.json` and seats `resources/data/world_bot_seats.json`.
 
 ## How it works
@@ -67,15 +67,15 @@ spots; `cityemotes.py` counts emotes, which come as ActorControlTarget 290.)
 | How long they stood | median 34-59 s by zone, a tenth 3-10 minutes (10th to 90th percentiles kept per zone) | drawn from the same percentiles |
 | Idle pose changes | 29.6 per player-hour (ActorControl 295: 0, then the pose 0-6, cycled about evenly) | the same rate, the next pose each time |
 | Emotes | 2.9 per player-hour; the commonest 112, 146, 105, 211, 216, 205; most aimed at someone (a hug, 112, always; 205 one time in seven) | the same rate, weighted as retail's, those that play once (no EmoteMode); one retail aimed at someone goes to another bot within 4 yalms (ActorControlTarget 290 naming it), or isn't used when there's none near (since 2026-11-11: hugs went to nobody, Bob's bundle 20261111-082127) |
-| Weapon drawn or sheathed | 18 per player-hour (ActorControl 0) | not done |
+| Weapon drawn or sheathed | ActorControl 0 `[1, 1]` drawing it 1.6 times a player-hour in the cities (641), 2.6 elsewhere (469), out for 3.3 s at the median in the cities (1.2-19.8, 10th to 90th percentile), 7.3 elsewhere (1.4-81.0), then `[0, 1]`; `[0, 1]` also came with every mounting and dismounting (the rest of its 18 an hour) | the same rates and lengths while it stands, put away first when it sits, Teleports or mounts (`world_bot_life::stand`) |
 | How they left | one in eight by Teleport (612 of 4,872 that left view): a 5.0 s cast (all 1,526), gone 5.9 s after it began | a trip somewhere else is a Teleport a quarter of the time: the cast shown (ActorCast, action 5), gone 5.9 s after |
 | How they arrived | ZoneIn (ActorControl 200) about a second after they appeared (median of 6,062: 0.9-1.3 s) | ZoneIn a second after it appears, after a Teleport |
 | Jobs | all of them, White Mage, Warrior, Paladin, Sage, Black Mage the commonest; crafters and gatherers 1% each | drawn from the same shares |
 | Levels | 55% at 100, 3-7% in each ten below | the same |
 | Online status | none 32%, New Adventurer 23%, Away 16%, Mentor 6%, Waiting for the Duty Finder 6%, Trade Mentor, Returner, PvE Mentor, Viewing a Cutscene… | the same shares, less a party's and Disconnected; the sprout only under 60, a mentor's crown only from 80 |
 | Titles | two in three | two in three, any title of the Title sheet |
-| Minions | more than half had one out (4,062 of 7,495) | not yet (stage 3) |
-| Mounted when they came into view | none | none |
+| Minions | more than half had one out as they came into view (6,627 of 12,295 in the cities, 2,223 of 3,878 elsewhere), 497 different ones; MinionSpawnControl (ActorControl 270) calling one 0.66 times a player-hour in the cities, 0.58 elsewhere, sending it away 6 times in all | 55% have one, drawn from retail's by how many had each (`resources/data/world_bot_companions.json`: the 497 Companion rows and their counts, numbers only); a new one called 0.63 times an hour, sent away 0.01 (its spawn's ActiveMinion, so the client brings it) |
+| Mounted when they came into view | none in the cities; elsewhere 473 of 3,878, 137 different mounts | a walk of 40 yalms or more where the zone allows mounts (TerritoryType's Mount) is ridden, on a mount drawn from retail's (the same file), as retail's players were seen mounting: ActorCast of the mount (action type 13, a 0.98 s bar), its ActionEffect as the bar ends, then 0.58 s later ToggleWeapon `[0, 1]`, SetMode 4 and the Mount packet; it rides at 12 yalms a second (retail's mounted players' moves: 11.7 at the median, 5.2-19.9; speed byte 120 the commonest), and gets off where it's going (SetMode 1, PlayDismountAnimation where it stands, ToggleWeapon `[0, 1]`), or rides on through an exit. Shown on its way, it's on its mount (SpawnPlayer's mode 4 and CurrentMount). The 40 yalms is a guess (retail's captures don't show where a rider set off from) (`world_bot_life::mount_up`, `mounting`, `dismount`) |
 | Sitting | in a chair, all at once: **ActorSetPos** onto the seat facing its way (warp type 19 with 1), the emote 50 with its text hidden and the seat's facing as its fourth parameter (quantized as ActorSetPos' rotation), SetMode 11 with 2, 4% as they appeared; getting up: ActorSetPos 0.42 yalms ahead of the seat and half a yalm down (19 with 2), SetMode 1, the emote 51 (the same facing). On the ground: the emote 52 and SetMode 11 with 1 where they stand; up: SetMode 1, the emote 53. Mode 3 (another looped emote, 3%). 47 seats in the six city zones, from those ActorSetPos and the spawns of players already sitting (`notes/world-bots/citysit.py`) | after a stay at home, 8% of the time to a free seat within 40 yalms: it walks up to just ahead of it, then sits and gets up exactly as retail's players (since 2026-11-11, second pass: it was put on the seat by an ActorMove, which the client walked it onto, facing the way it came, and a third of the seats were where players stood before sitting, Bob's bundle 20261111-091633); 2% on the ground where it stands; a seat has one bot; not straight down again after getting up; shown sitting to someone who arrives (its spawn's mode). No poses or emotes while sitting. The shares are guesses near retail's |
 | Crafting in place | mode 5 (334 times) | not yet (stage 3) |
 | Crafters' and gatherers' tools | idle in town, only the main tool (no off-hand) | the same (since 2026-11-11: their off-hand, a crafter's station, showed on the floor behind them, Bob's bundle 20261111-082127) |
@@ -180,8 +180,8 @@ after a route, a Teleport out and back as someone new.
   arrival, the inns and exits.
 * Sitting, aimed emotes, spacing and the floors' heights are tested on the server (`world_bots::tests`), not yet seen
   in game: whether the client puts a bot onto the bench by its SetMode or needs it exactly on the seat.
-* Weapons drawn and sheathed, minions, mounts, crafting in place (stage 3); sitting in looped emotes other than the
-  ground.
+* Crafting in place, chat and Player Search (stage 3); sitting in looped emotes other than the ground. Minions,
+  weapons and mounts aren't seen in game yet.
 * Searching for a world bot (Player Search) and tells to one find no character.
 * Bots don't turn to face their place after a walk (an ActorMove to turn on the spot makes the client play a step).
 * Questing bots (stage 2).

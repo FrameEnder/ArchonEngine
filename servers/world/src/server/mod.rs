@@ -129,6 +129,7 @@ mod wipe;
 // Stage 2 of the world bots, being wired into `world_bots` (docs/src/fork/world-bots.md.)
 #[allow(dead_code)]
 mod questing;
+mod world_bot_life;
 mod world_bots;
 mod world_turn;
 mod zone;

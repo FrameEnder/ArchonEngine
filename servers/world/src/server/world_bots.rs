@@ -54,6 +54,7 @@ use crate::{
         network::{DestinationNetwork, NetworkState},
         npc_behavior::NPC_RUN_SPEED,
         party_bot::{self, ShownAsPlayer},
+        world_bot_life,
         zone::Zone,
     },
 };
@@ -352,6 +353,8 @@ pub struct Places {
     pub exits: Vec<(Vec3A, u16, u32)>,
     /// The zone's pop ranges (where an exit from elsewhere leaves you.)
     pub pops: HashMap<u32, Vec3A>,
+    /// Whether mounts may be ridden here (TerritoryType's Mount): a long walk is ridden (`world_bot_life::RIDES_FROM`.)
+    pub rides: bool,
 }
 
 impl Places {
@@ -366,6 +369,7 @@ impl Places {
                 .iter()
                 .map(|(id, (position, _))| (*id, position.0))
                 .collect(),
+            rides: game_data.zone_allows_mounts(zone.id),
             ..Default::default()
         };
         for object in zone.layout_objects() {
@@ -546,6 +550,11 @@ pub struct WorldBot {
     joined: bool,
     /// Just arrived where everyone lands (an aetheryte's landing, an exit's pop range): it walks off to a spot next.
     arrived: bool,
+    /// Its weapon, while it stands (`world_bot_life::stand`.)
+    standing: world_bot_life::Standing,
+    /// On its mount, or getting on, for a long walk (`world_bot_life::Riding`); `to_ride`: it gets on as it sets off.
+    riding: Option<world_bot_life::Riding>,
+    to_ride: bool,
 }
 
 impl WorldBot {
@@ -867,6 +876,8 @@ impl WorldBots {
                 name: name.clone(),
                 look: look.clone(),
                 target_id: ObjectTypeId::default(),
+                // A minion out more than half the time, as retail's (`world_bot_life::random_minion`.)
+                active_minion: world_bot_life::random_minion(),
                 ..Default::default()
             },
             character_data_flags: CharacterDataFlag::from_bits_retain(0x1),
@@ -919,6 +930,9 @@ impl WorldBots {
             seat: None,
             joined: false,
             arrived: false,
+            standing: Default::default(),
+            riding: None,
+            to_ride: false,
         })
     }
 
@@ -1459,13 +1473,43 @@ fn step(
             }
         }
         Doing::Walking { to, then } => {
+            // On its mount first, for a long way (`world_bot_life::mount_up`.)
+            if std::mem::take(&mut bot.to_ride) && bot.riding.is_none() {
+                let shown = match (bot.actor, instance.as_deref_mut()) {
+                    (Some(actor), Some(instance)) => {
+                        world_bot_life::put_weapon_away(
+                            &mut bot.standing,
+                            actor,
+                            instance,
+                            network,
+                        );
+                        Some((actor, instance))
+                    }
+                    _ => None,
+                };
+                bot.riding = world_bot_life::mount_up(shown, bot.facing, network, now);
+            }
+            let getting_on = match (&mut bot.riding, bot.actor, instance.as_deref_mut()) {
+                (Some(riding), Some(actor), Some(instance)) => {
+                    world_bot_life::mounting(riding, actor, instance, network, bot.facing, now)
+                }
+                _ => false,
+            };
             let arrived = match (bot.actor, instance.as_deref_mut()) {
+                (Some(_), Some(_)) if getting_on => false,
                 (Some(actor), Some(instance)) => walk(bot, actor, instance, network, to),
                 _ => now >= bot.until,
             };
             if arrived {
                 bot.spot = Some(to);
                 bot.path.clear();
+                // Off its mount where it got to (through an exit it rides on, out of sight.)
+                if bot.riding.take().is_some()
+                    && !matches!(then, Then::Exit { .. })
+                    && let (Some(actor), Some(instance)) = (bot.actor, instance.as_deref_mut())
+                {
+                    world_bot_life::dismount(actor, instance, network);
+                }
                 match then {
                     Then::Stand => {
                         bot.doing = Doing::Standing;
@@ -1512,6 +1556,7 @@ fn step(
                         0,
                         true,
                     );
+                    world_bot_life::put_weapon_away(&mut bot.standing, actor, instance, network);
                     show_teleport_cast(actor, instance, network, bot.facing);
                 }
             }
@@ -1596,6 +1641,7 @@ fn decide(
     let ground = instance.as_deref().map(Ground::of).unwrap_or_default();
     let navmesh = ground.navmesh;
     let here = bot.spot;
+    let rides = places.is_some_and(|places| places.rides);
 
     // Just arrived where everyone lands: off to a spot of its own by the zone's aetheryte (its own place, at home.)
     if std::mem::take(&mut bot.arrived)
@@ -1609,7 +1655,7 @@ fn decide(
         if let Some(to) = spot_by(bot.at, places, anchor, ground, &taken)
             && to.distance(here) > APART
         {
-            start_walk(bot, here, to, Then::Stand, navmesh, now);
+            start_walk(bot, here, to, Then::Stand, navmesh, rides, now);
             return;
         }
     }
@@ -1659,7 +1705,7 @@ fn decide(
             && let Some((to, then)) = trip_in_zone(places, here)
             && let Some(to) = near_place(ground, to, then, places.landing(), &taken)
         {
-            start_walk(bot, here, to, then, navmesh, now);
+            start_walk(bot, here, to, then, navmesh, rides, now);
             return;
         }
     }
@@ -1670,7 +1716,15 @@ fn decide(
             && let Some((seat, place)) = free_seat(bot.at, here, &seats_taken)
         {
             // Up to it (where retail's players got up), then onto it.
-            start_walk(bot, here, before_seat(place), Then::Sit(seat), navmesh, now);
+            start_walk(
+                bot,
+                here,
+                before_seat(place),
+                Then::Sit(seat),
+                navmesh,
+                false,
+                now,
+            );
             return;
         }
         if fastrand::f32() < SITS_DOWN {
@@ -1685,7 +1739,7 @@ fn decide(
         && let Some(to) = spot_by(bot.at, places, bot.home.1, ground, &taken)
         && to.distance(here) > 1.0
     {
-        start_walk(bot, here, to, Then::Stand, navmesh, now);
+        start_walk(bot, here, to, Then::Stand, navmesh, rides, now);
         return;
     }
     stay(bot);
@@ -1698,6 +1752,7 @@ fn start_walk(
     to: Vec3A,
     then: Then,
     navmesh: Option<&crate::navmesh::Navmesh>,
+    rides: bool,
     now: Instant,
 ) {
     bot.doing = Doing::Walking { to, then };
@@ -1706,7 +1761,14 @@ fn start_walk(
         _ => VecDeque::new(),
     };
     let length = from.distance(to) * 1.3;
-    bot.until = now + Duration::from_secs_f32(length / NPC_RUN_SPEED + 1.0);
+    // A long way where mounts are allowed is ridden (`world_bot_life::RIDES_FROM`): on it as it sets off.
+    bot.to_ride = rides && from.distance(to) >= world_bot_life::RIDES_FROM;
+    let (speed, getting_on) = if bot.to_ride {
+        (world_bot_life::RIDE_SPEED, 1.6)
+    } else {
+        (NPC_RUN_SPEED, 0.0)
+    };
+    bot.until = now + Duration::from_secs_f32(length / speed + 1.0 + getting_on);
 }
 
 /// A tick of its walk while shown: a run along its path, sent to those who see it. Returns whether it got there.
@@ -1729,12 +1791,17 @@ fn walk(
             bot.path.push_back(to);
         }
     }
-    let (moved, _) = party_bot::run_along(
+    let speed = match bot.riding {
+        Some(world_bot_life::Riding::Riding { .. }) => world_bot_life::RIDE_SPEED,
+        _ => NPC_RUN_SPEED,
+    };
+    let (moved, _) = party_bot::run_along_at(
         &instance.navmesh,
         instance.collision.as_deref(),
         here,
         &mut bot.path,
         Duration::ZERO,
+        speed,
     );
     match moved {
         Some((position, facing)) => {
@@ -1753,7 +1820,7 @@ fn walk(
                     MoveAnimationType::empty(),
                     MoveAnimationState::None,
                     JumpState::NoneOrFalling,
-                    Some((NPC_RUN_SPEED * 10.0) as u8),
+                    Some((speed * 10.0) as u8),
                 ),
                 DestinationNetwork::ZoneClients,
             );
@@ -1782,6 +1849,7 @@ fn sit(
     let (Some(actor), Some(instance)) = (bot.actor, instance) else {
         return;
     };
+    world_bot_life::put_weapon_away(&mut bot.standing, actor, instance, network);
     let in_chair = how == IN_CHAIR;
     if in_chair && let Some(spot) = bot.spot {
         set_pos(actor, instance, network, spot, bot.facing, SEAT_WARP_SIT);
@@ -1952,6 +2020,16 @@ fn idle(
             DestinationNetwork::ZoneClients,
         );
     }
+    // Its minion and weapon (`world_bot_life::stand`.)
+    world_bot_life::stand(
+        &mut bot.standing,
+        &mut bot.who.spawn.common.active_minion,
+        bot.at,
+        actor,
+        instance,
+        network,
+        Instant::now(),
+    );
     if fastrand::f32() < EMOTES_PER_HOUR * tick_hours
         && let Some((emote, target)) = emote_to_use(emotes, actor, instance)
     {
@@ -2061,6 +2139,15 @@ fn show(
     if let Some(how) = bot.sitting {
         spawn.common.mode = CharacterMode::InPositionLoop;
         spawn.common.mode_arg = how;
+    }
+    // Riding, it comes into view on its mount (retail's players riding as they came into view: SpawnPlayer's mode 4
+    // and CurrentMount); getting on, it's just on.
+    if let Some(riding) = &mut bot.riding {
+        *riding = world_bot_life::Riding::Riding {
+            mount: riding.mount(),
+        };
+        spawn.common.mode = CharacterMode::Mounted;
+        spawn.common.current_mount = riding.mount();
     }
     let config = get_config();
     instance.insert_npc(actor, spawn, &config, &mut game_data.lock());
@@ -2402,6 +2489,9 @@ mod tests {
             seat: None,
             joined: false,
             arrived: false,
+            standing: Default::default(),
+            riding: None,
+            to_ride: false,
         });
         let network = Arc::new(Mutex::new(NetworkState::default()));
         let settings = bots.settings();
@@ -2613,7 +2703,127 @@ mod tests {
             seat: None,
             joined: false,
             arrived: false,
+            standing: Default::default(),
+            riding: None,
+            to_ride: false,
         }
+    }
+
+    /// Stage 3: a long walk where mounts are allowed is ridden, as retail's players rode: the mount's cast (action
+    /// type 13), its ActionEffect as the bar ends, then SetMode 4 and the Mount packet 0.58 s later; off where it got
+    /// to, SetMode 1 and PlayDismountAnimation.
+    #[test]
+    fn a_long_walk_is_ridden() {
+        use crate::server::test_world::{TestWorld, control_from, packet_from};
+        let mut world = TestWorld::new();
+        let player = world.player(1, [0.0, 0.0, 0.0]);
+        let actor = world.player_npc(2, player, [1.0, 0.0, 0.0]);
+        world.instance.party_bots.remove(&actor);
+        world.instance.world_bots.insert(actor);
+        let mut bots = WorldBots {
+            settings: Some((None, Settings::default())),
+            ready: true,
+            ..Default::default()
+        };
+        let mut bot = test_bot(135);
+        bot.actor = Some(actor);
+        let now = Instant::now();
+        let to = Vec3A::new(1.0, 0.0, 90.0);
+        start_walk(
+            &mut bot,
+            Vec3A::new(1.0, 0.0, 0.0),
+            to,
+            Then::Stand,
+            None,
+            true,
+            now,
+        );
+        assert!(bot.to_ride);
+        bots.bots.push(bot);
+        let network = world.network.clone();
+        let settings = bots.settings();
+        world.sent(player);
+        let mut tick = |at: Instant, world: &mut TestWorld| {
+            step(
+                &mut bots,
+                0,
+                Some(&mut world.instance),
+                &network,
+                None,
+                &settings,
+                at,
+            );
+            world.sent(player)
+        };
+        let sent = tick(now, &mut world);
+        assert!(
+            sent.iter()
+                .any(|message| packet_from(message, actor, |data| matches!(
+                    data,
+                    ServerZoneIpcData::ActorCast {
+                        action_type: ActionType::Mount,
+                        ..
+                    }
+                )))
+        );
+        let sent = tick(now + Duration::from_millis(1000), &mut world);
+        assert!(
+            sent.iter()
+                .any(|message| packet_from(message, actor, |data| matches!(data,
+            ServerZoneIpcData::ActionEffect1(effect) if effect.action_type == ActionType::Mount)))
+        );
+        let sent = tick(now + Duration::from_millis(1600), &mut world);
+        assert!(
+            sent.iter()
+                .any(|message| control_from(message, actor, |category| matches!(
+                    category,
+                    ActorControlCategory::SetMode {
+                        mode: CharacterMode::Mounted,
+                        ..
+                    }
+                )))
+        );
+        assert!(
+            sent.iter()
+                .any(|message| packet_from(message, actor, |data| matches!(
+                    data,
+                    ServerZoneIpcData::Mount { .. }
+                )))
+        );
+        // It gets where it was going (the test's instance has no navmesh: as far as it gets): off where it is.
+        world
+            .instance
+            .find_actor_mut(actor)
+            .unwrap()
+            .get_common_spawn_mut()
+            .position = Position(to);
+        let sent = tick(now + Duration::from_millis(2100), &mut world);
+        assert!(
+            sent.iter()
+                .any(|message| control_from(message, actor, |category| matches!(
+                    category,
+                    ActorControlCategory::PlayDismountAnimation { .. }
+                )))
+        );
+        assert!(bots.bots[0].riding.is_none());
+
+        // Unseen, it's just on its mount and there sooner.
+        let mut away = test_bot(135);
+        start_walk(&mut away, Vec3A::ZERO, to, Then::Stand, None, true, now);
+        let ridden = away.until - now;
+        start_walk(&mut away, Vec3A::ZERO, to, Then::Stand, None, false, now);
+        assert!(ridden < away.until - now);
+        // A short way isn't ridden.
+        start_walk(
+            &mut away,
+            Vec3A::ZERO,
+            Vec3A::new(0.0, 0.0, 10.0),
+            Then::Stand,
+            None,
+            true,
+            now,
+        );
+        assert!(!away.to_ride);
     }
 
     /// Bob's bundle 20261111-082127: bots should sit on benches. Sitting as retail's players: the emote Sit, then
