@@ -358,6 +358,11 @@ fn hq_weapon_damage(special: &[(u8, i32)]) -> (u32, u32) {
     )
 }
 
+/// A weapon's damage under item level sync: its own, at most the sync item level's (`GameData::weapon_damage`.)
+fn synced_weapon_damage(own: (u32, u32), cap: (u32, u32)) -> (u32, u32) {
+    (own.0.min(cap.0), own.1.min(cap.1))
+}
+
 /// An attribute's cap under item level sync: ItemLevel × slot percent × MeldParam / 100000, rounded.
 fn sync_cap(item_level_value: u16, slot_percent: f64, meld_param: f64) -> i32 {
     (item_level_value as f64 * slot_percent * meld_param / 100000.0).round() as i32
@@ -3896,29 +3901,51 @@ impl GameData {
         ]
     }
 
+    /// A weapon's physical and magic damage as it counts in f(WD): its own (`DamagePhys`, `DamageMag`), plus its HQ
+    /// bonus when `hq` (`hq_weapon_damage`), and under item level sync `sync_item_level`, for a weapon above it, no more
+    /// than ItemLevel[sync]'s PhysicalDamage and MagicalDamage. Fitted to Bob's Chronofoil captures (a White Mage's
+    /// item level 400 weapon, 92 magic damage, synced to 18, 20, 31, 36 and 50: its f(WD) less the level's share came out
+    /// 26, 28, 37, 39 and 66 against ItemLevel 18, 20, 31, 36 and 130's 26, 28, 37, 40 and 65; weapons below the sync,
+    /// their own damage.) `None` if the item isn't in the sheet.
+    pub fn weapon_damage(
+        &mut self,
+        item_id: u32,
+        hq: bool,
+        sync_item_level: Option<u16>,
+    ) -> Option<(u32, u32)> {
+        let item = self.item_sheet.row(item_id)?;
+        let special: Vec<(u8, i32)> = if hq {
+            item.BaseParamSpecial
+                .iter()
+                .zip(item.BaseParamValueSpecial)
+                .map(|(param, value)| (*param, value as i32))
+                .collect()
+        } else {
+            Vec::new()
+        };
+        let bonus = hq_weapon_damage(&special);
+        let own = (
+            item.DamagePhys as u32 + bonus.0,
+            item.DamageMag as u32 + bonus.1,
+        );
+        let Some(sync_item_level) = sync_item_level.filter(|sync| item.LevelItem > *sync) else {
+            return Some(own);
+        };
+        let Some(synced) = self.item_level_sheet.row(sync_item_level as u32) else {
+            return Some(own);
+        };
+        Some(synced_weapon_damage(
+            own,
+            (synced.PhysicalDamage as u32, synced.MagicalDamage as u32),
+        ))
+    }
+
     /// What an equipped item gives: its attributes (with the HQ bonuses, BaseParamValueSpecial, when `hq`), defense
     /// and magic defense, capped under item level sync `sync_item_level` (docs/src/fork/level-sync.md). Fitted to Bob's
     /// Chronofoil captures of retail (a White Mage at 86, and synced to 50 and to 18): each attribute is capped at
     /// `round(ItemLevel[sync][attribute] × BaseParam[attribute].<slot>Percent × BaseParam[attribute].MeldParam[item's
     /// BaseParamModifier] / 100000)`, and defense and magic defense scale by ItemLevel[sync] / ItemLevel[item's level];
     /// items at or below the sync item level are unchanged. `None` if the item isn't in the sheet.
-    /// The extra physical and magic damage an HQ copy of `item_id` has (`hq_weapon_damage`); none for an NQ one.
-    pub fn hq_weapon_damage(&mut self, item_id: u32, hq: bool) -> (u32, u32) {
-        if !hq {
-            return (0, 0);
-        }
-        let Some(item) = self.item_sheet.row(item_id) else {
-            return (0, 0);
-        };
-        let special: Vec<(u8, i32)> = item
-            .BaseParamSpecial
-            .iter()
-            .zip(item.BaseParamValueSpecial)
-            .map(|(param, value)| (*param, value as i32))
-            .collect();
-        hq_weapon_damage(&special)
-    }
-
     pub fn equipped_item_stats(
         &mut self,
         item_id: u32,
@@ -4843,5 +4870,13 @@ mod hq_weapon_tests {
         let special = [(12, 2), (13, 3), (5, 4), (0, 0), (0, 0), (0, 0)];
         assert_eq!(hq_weapon_damage(&special), (2, 3));
         assert_eq!(hq_weapon_damage(&[(5, 4), (0, 0)]), (0, 0));
+    }
+
+    /// Under sync a weapon above the sync item level does ItemLevel[sync]'s damage: a White Mage's item level 400
+    /// weapon (92) synced to 50 counted as ItemLevel 130's 65 (Bob's Chronofoil captures); one below keeps its own.
+    #[test]
+    fn a_synced_weapons_damage() {
+        assert_eq!(synced_weapon_damage((92, 92), (65, 65)), (65, 65));
+        assert_eq!(synced_weapon_damage((24, 24), (28, 28)), (24, 24));
     }
 }

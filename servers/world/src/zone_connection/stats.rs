@@ -937,14 +937,19 @@ impl ZoneConnection {
 
         let main_hand = &self.player_data.inventory.equipped.main_hand;
         let weapon = game_data.get_item_info(ItemInfoQuery::ById(main_hand.item_id));
-        let hq_damage =
-            game_data.hq_weapon_damage(main_hand.item_id, main_hand.item_flags & ITEM_FLAG_HQ != 0);
+        // Its HQ bonus counts, and under sync it's capped at the sync item level's (`GameData::weapon_damage`.)
+        let weapon_damage = game_data.weapon_damage(
+            main_hand.item_id,
+            main_hand.item_flags & ITEM_FLAG_HQ != 0,
+            sync_item_level.filter(|_| with_items),
+        );
 
         let mut base_parameters = BaseParameters::default();
         base_parameters.use_retail_formula(level, &param_grow, weapon.as_ref());
-        // An HQ weapon's damage is its HQ bonus higher (`GameData::hq_weapon_damage`.)
-        base_parameters.weapon_physical_damage += hq_damage.0;
-        base_parameters.weapon_magic_damage += hq_damage.1;
+        if let Some((physical, magic)) = weapon_damage {
+            base_parameters.weapon_physical_damage = physical;
+            base_parameters.weapon_magic_damage = magic;
+        }
         base_parameters.perform_calculations(primary_stat, &tribe_row, &param_grow, &modifiers);
         if with_items {
             let items = self.equipped_item_stats(&mut game_data, sync_item_level);

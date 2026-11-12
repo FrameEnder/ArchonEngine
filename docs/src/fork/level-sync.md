@@ -54,6 +54,21 @@ attribute = min(item's value (HQ bonus included), cap)
 defense = round(defense × ItemLevel[S].Defense / ItemLevel[item level].Defense)   (magic defense likewise)
 ```
 
+**Weapon damage** (f(WD), [Combat](combat.md)) under sync, for a weapon above S: ItemLevel[S]'s PhysicalDamage or
+MagicalDamage, if lower than its own (HQ bonus included), with no slot share (`GameData::weapon_damage`, since
+2026-11-12). Fitted to the White Mage's item level 400 weapon (92 magic damage) in Bob's Chronofoil captures: its
+f(WD) less the level's share came out 26, 28, 37, 39 and 66 synced to 18, 20, 31, 36 and 50, where ItemLevel 18, 20,
+31, 36 and 130 have 26, 28, 37, 40 and 65 (xivapi); weapons below the sync (item levels 11, 17, 26) kept their own
+15, 24, 30 and 33. Before, a synced weapon kept its full damage: at sync 50 that weapon healed and hit about 1.3 times
+retail.
+
+**Which level**: a duty syncs to its ContentFinderCondition.ClassJobLevelSync and a FATE to its Fate.ClassJobLevelMax,
+read from the game data, not a fixed offset from the listed level. On today's retail the leveling dungeons' sync is
+their listed level: the Duty Support members stood at 15 in Sastasha, 16 in the Tam-Tara Deepcroft, 17 in Copperbell,
+20 in the Bowl of Embers, 24 in Toto-Rak and 28 in Haukke Manor, as listed (Bob's captures, `party_npc::DUTY_LEVELS`;
+older guides give ranges like Sastasha 15-18 from before Shadowbringers). FATEs usually sync to five over their level (the
+wiki; a level 13 FATE synced Bob's 87 to 18).
+
 ItemLevel's columns are in BaseParam ID order. This matches retail exactly at sync 50 (Vitality 373, Mind 387, Piety
 238, Critical Hit 207, Determination 131, Spell Speed 148 from the gear) and within one point at sync 18; the MeldParam
 factor is what makes Vitality 90 % on a healer's gear. Kawari used to cap by the attribute's **position** on the item
@@ -78,6 +93,5 @@ nothing before.
 
 ## Not done
 
-* Weapon damage under sync (presumably ItemLevel[S]'s Physical/MagicalDamage) isn't capped.
 * StatusEffectList's header bytes 2–3 (the real level and the synced level on retail) aren't sent that way.
 * Leaving a FATE's area while synced (not in the captures), FATE EXP under sync.

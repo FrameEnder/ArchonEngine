@@ -10,8 +10,6 @@ add one when something is found.
   da424662).
 * Quest battle 63's sequence 3 waits for both the first wave and the boss under 70 %: in every run the wave fell first,
   so which one retail waits for isn't known.
-* Weapon damage under level sync is still the weapon's own ([Level Sync](level-sync.md)): no synced run has been
-  fitted yet.
 
 ## The Arcanist and Summoner quests (2026-11-12)
 

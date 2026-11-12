@@ -97,8 +97,9 @@ level 1 to 45). Non-critical hits only, single targets at or below the player's 
 
 **Gear** (`GameData::equipped_item_stats`): an item gives its BaseParam values, defense and magic defense, plus its HQ
 bonuses (`BaseParamValueSpecial`, item flag 1) when it's HQ. An HQ weapon's bonuses to Physical Damage (12) and Magic Damage (13) aren't
-attributes: they add to its weapon damage in f(WD) (`GameData::hq_weapon_damage`, since 2026-11-12; before, an HQ
-weapon hit and healed as its NQ). Bots and Duty Support members get f(WD) from the main hand of the gear they're given
+attributes: they add to its weapon damage in f(WD) (`GameData::weapon_damage`, since 2026-11-12; before, an HQ
+weapon hit and healed as its NQ), and under sync the weapon's damage is capped at the sync item level's ([Level
+Sync](level-sync.md)). Bots and Duty Support members get f(WD) from the main hand of the gear they're given
 (`party_bot::bot_parameters`); the Duty Support members were given none until 2026-11-12, so their spells and heals
 without a recorded amount had only the level's share of f(WD) ([Party NPCs](party-npcs.md)). Checked against retail PlayerStats (Bob's captures, a
 White Mage at 86 in HQ gear): Vitality 1757 = 370 naked + 1261 + 126 HQ, Mind 1885 = 424 + 1330 + 131, defense 1413 =
