@@ -1,0 +1,38 @@
+{
+  "quest": 986,
+  "script": "GaiUsc411_00986",
+  "source": "Bob's Chronofoil capture d1c46dff (2026-11-12)",
+  "params": {
+    "ACTOR0": 1006531,
+    "EOBJECT0": 2002201,
+    "EVENT_ACTION_SEARCH": 1,
+    "ENEMY0": 4301976,
+    "ENEMY1": 4301980,
+    "ENEMY2": 4301981,
+    "ENEMY3": 4301983,
+    "EOBJECT1": 2002202,
+    "ACTOR1": 1006534,
+    "ACTOR2": 1006535
+  },
+  "from": {"sequence": 3, "vars": "000000000000"},
+  "steps": [
+    {
+      "talk": 1006534,
+      "layout": 4277015,
+      "what": "ACTOR1",
+      "scenes": [
+        {"scene": 6, "flags": "0x2000", "results": [0, 0]}
+      ],
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[2, []]]}
+    },
+    {
+      "talk": 1006535,
+      "layout": 4277017,
+      "what": "ACTOR2",
+      "scenes": [
+        {"scene": 7, "flags": "0x2000", "results": [1, 0, 0, 0], "yield": true}
+      ],
+      "expect": {"completed": true, "notices": []}
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 {
   "quest_battle": 65,
   "source": "Bob's Kawari Recorder run of 2026-11-12 (Escape from Castrum Centri's quest battle 65, won)",
+  "npc_health": "held",
   "tolerance": 2.0,
   "scenes": {
     "8": 3.83

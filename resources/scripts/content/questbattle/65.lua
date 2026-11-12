@@ -20,9 +20,12 @@
 --   the first generator down (107.7): sequence 10 at once and "The magitek field surrounding the vanguard is
 --           deactivated." (LogMessage 3216) from the director, as with every generator; the vanguard takes damage only
 --           once its generators are down
---   15.0 s after sequence 10: sequence 11 and the second wave 0.4 s later; Papalymo's 268 and Urianger's 269 10.1 and
---           15.1 s after
---   the second wave down but its vanguards (177.6): sequence 12 at once, the colossus and the optio 0.5 s later;
+--   the first wave's vanguard (4278569) under 30 % (122.8: 33.4 → 18.8 %): sequence 11 and the second wave 0.4 s
+--           later; Papalymo's 268 and Urianger's 269 10.1 and 15.1 s after (15.0 s after sequence 10 here and 15.4 s in
+--           Bob's Chronofoil run of 2026-11-12, but 13.3 s in his second, `65-d1c46dff.json`, each time as it went
+--           under 30 %: 31.7 → 22.4, 40.1 → 26.2)
+--   six of the second wave's seven down (177.6): sequence 12 at once, the colossus and the optio 0.5 s later (0.04 and
+--           0.05 s after the sixth in Bob's two Chronofoil runs, a vanguard or a man still up; 1.2 s here);
 --           the optio's 270, Biggs's 271 (an event NPC) and Minfilia's 272 10.1, 15.1 and 20.1 s after
 --   the colossus under 60 % (192.7): sequence 13, Urianger's 273 5.1 s after
 --   the colossus under 20 % (208.8): Papalymo's 274 at once
@@ -58,8 +61,11 @@ BNPC_COLOSSUS = 4287242
 -- The colossus's health marks (percent): sequence 13, Papalymo's talk 274.
 COLOSSUS_SEQUENCE_13 = 60
 COLOSSUS_TALK_274 = 20
--- The second wave but its vanguards (the generators count.)
-WAVE_2_MEN = { 4285274, 4285317, 4286891, 4286889, 4285278 }
+-- How many of the second wave's seven have to fall for the last wave.
+WAVE_2_DOWN_FOR_LAST = 6
+-- The first wave's vanguard and its health mark (percent) for sequence 11.
+BNPC_FIRST_VANGUARD = 4278569
+FIRST_VANGUARD_SECOND_WAVE = 30
 -- Each vanguard and the generators that shield it.
 SHIELDS = {
     [4278569] = { 4286888 },
@@ -121,7 +127,6 @@ TALKS_LAST_WAVE = { { 21, SPEAKER_OPTIO, 270 }, { 31, SPEAKER_BIGGS, 271 }, { 41
 TALKS_LAST_WAVE_ON = { { 10, SPEAKER_URIANGER, 273 } }
 SECOND_PART_AFTER = 1
 CARBUNCLE_AFTER_CAST = 15
-SECOND_WAVE_AFTER = 31
 LAST_WAVE_AFTER = 2
 WON_AFTER_DEATH = 3
 
@@ -249,6 +254,12 @@ function onUpdate(director, health, player_health, info)
     end
     runTimers(director)
     BATTLE:update(director, health, player_health, info)
+    local vanguard = health[BNPC_FIRST_VANGUARD]
+    if phase == SEQUENCE_GENERATOR and vanguard ~= nil and vanguard < FIRST_VANGUARD_SECOND_WAVE then
+        sequence(director, SEQUENCE_SECOND_WAVE)
+        bringOut(director, WAVE_2)
+        talks(TALKS_SECOND_WAVE)
+    end
     local colossus = health[BNPC_COLOSSUS]
     if colossus == nil then
         return
@@ -272,13 +283,14 @@ function inWave(wave, layout_id)
     return false
 end
 
-function waveDown(wave)
+function downOf(wave)
+    local down = 0
     for _, layout in ipairs(wave) do
-        if standing[layout] then
-            return false
+        if not standing[layout] then
+            down = down + 1
         end
     end
-    return true
+    return down
 end
 
 function onActorDeath(director, layout_id, position)
@@ -320,17 +332,11 @@ function onActorDeath(director, layout_id, position)
         end
         if phase == SEQUENCE_SECOND_PART then
             sequence(director, SEQUENCE_GENERATOR)
-            after(SECOND_WAVE_AFTER, function(d)
-                sequence(d, SEQUENCE_SECOND_WAVE)
-                bringOut(d, WAVE_2)
-                talks(TALKS_SECOND_WAVE)
-            end)
         end
     end
 
-    -- The second wave's men down (its vanguards needn't be: in Bob's Chronofoil run of 2026-11-12 sequence 12 came
-    -- 0.04 s after the last of them fell, with a vanguard still up at 6 %; in his Recorder run, 0.25 s after.)
-    if phase == SEQUENCE_SECOND_WAVE and inWave(WAVE_2, layout_id) and waveDown(WAVE_2_MEN) then
+    -- Six of the second wave's seven down.
+    if phase == SEQUENCE_SECOND_WAVE and inWave(WAVE_2, layout_id) and downOf(WAVE_2) >= WAVE_2_DOWN_FOR_LAST then
         sequence(director, SEQUENCE_LAST_WAVE)
         -- Counted from now, so the second wave's last vanguard falling before they're out doesn't win.
         for _, layout in ipairs(WAVE_3) do

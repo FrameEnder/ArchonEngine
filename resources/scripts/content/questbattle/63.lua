@@ -17,7 +17,9 @@
 --   the boss under 40 % (39.3 %, the won run): sequence 4; he casts 1286 on himself 1.5 s later (2.7 s, status 61)
 --           and sequence 5 comes 4.8-5.5 s after sequence 4; talk 105 (the ally) 6.1 s after it
 --   the boss under 20 %, after sequence 4: talk 106 (the ally) at once (before 105 in Bob's run)
---   the boss's health at 0: "Duty Complete" (60001) and sequence 6 2.1 s later, the battle's scene 6 (0xF8402EFB)
+--   everyone down, the boss and both waves (he was last in Connor's run and Bob's first of 2026-11-12, an archer 2.8 s
+--           after him in the second, `63-d1c46dff.json`): "Duty Complete" (60001) and sequence 6 2.1 s after the last,
+--           the battle's scene 6 (0xF8402EFB)
 --           3.7 s after that; the quest moves to sequence 255 with ITEM0 (UI8BH) gone
 --   lost: the ally's health at 0 (its last words, talk 107, and sequence 0xFE at once: the lost run, 69.6 s in) or
 --           yours
@@ -102,6 +104,8 @@ local over = false
 local fail_in = nil
 local phase = 1
 local first_left = {}
+-- The enemies still up: the boss and both waves (the win waits for all of them.)
+local standing = {}
 local talked_106 = false
 local timers = {}
 
@@ -136,7 +140,9 @@ function onSetup(director)
     -- Everyone is out before the opening, as on retail.
     for _, layout in ipairs(FIRST_WAVE) do
         first_left[layout] = true
+        standing[layout] = true
     end
+    standing[BNPC_BOSS] = true
     BATTLE:spawn(director, { BNPC_ALLY, BNPC_BOSS })
     BATTLE:spawn(director, FIRST_WAVE)
 end
@@ -149,6 +155,9 @@ end
 
 function secondWave(director)
     sequence(director, SEQUENCE_SECOND_WAVE)
+    for _, layout in ipairs(SECOND_WAVE) do
+        standing[layout] = true
+    end
     BATTLE:spawn(director, SECOND_WAVE)
     after(TALK_103_AFTER, function(d) talk(d, SPEAKER_LANCER, 103) end)
     after(TALK_104_AFTER, function(d) talk(d, SPEAKER_ALLY, 104) end)
@@ -215,14 +224,21 @@ function onActorDeath(director, layout_id, position)
         return
     end
     if layout_id == BNPC_BOSS then
-        -- Nothing else comes once he's down: only the win, with his death animation.
+        -- Nothing more he says or does once he's down.
         timers = {}
-        phase = SEQUENCE_WON
-        after(WON_AFTER_DEATH, won)
-        return
     end
     if first_left[layout_id] then
         first_left[layout_id] = nil
+    end
+    if not standing[layout_id] then
+        return
+    end
+    standing[layout_id] = nil
+    -- Everyone down, the boss and both waves: the win, 2.1 s after the last (his death animation, or theirs: in Bob's
+    -- run of 2026-11-12 an archer of the second wave outlived him by 2.8 s.)
+    if next(standing) == nil then
+        phase = SEQUENCE_WON
+        after(WON_AFTER_DEATH, won)
     end
 end
 

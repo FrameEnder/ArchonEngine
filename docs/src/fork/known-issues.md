@@ -5,9 +5,10 @@ add one when something is found.
 
 ## Bob's Chronofoil captures of 2026-11-12
 
-* Not scripted yet, needing the client's scripts: quests 1003 (only its completion is in the captures), 1056-1059 and
-  1162 (twice, once per capture), and the quest battle 1059 enters (duty 361, territory 312; visit 0.17 of capture
-  da424662).
+* Not scripted yet, needing the client's scripts: quests 1003 (only its completion is in the captures), 1056-1059,
+  1162 (in captures da424662, 0abe6734 and 898dd0b9), 802 (its last two talks, capture 898dd0b9) and 1080-1083 (the
+  Conjurer/White Mage line, capture 898dd0b9), and the quest battle 1059 enters (duty 361, territory 312; visit 0.17 of
+  capture da424662).
 * Quest battle 63's sequence 3 waits for both the first wave and the boss under 70 %: in every run the wave fell first,
   so which one retail waits for isn't known.
 
