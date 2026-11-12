@@ -217,6 +217,8 @@ const SEAT_WITHIN: f32 = 40.0;
 const APART: f32 = 1.0;
 /// Crafters' and gatherers' classes (ClassJob rows 8-18.)
 const DOH_DOL: std::ops::RangeInclusive<u8> = 8..=18;
+/// The crafters (Carpenter to Culinarian.)
+const CRAFTERS: std::ops::RangeInclusive<u8> = 8..=15;
 /// How near another bot must be for an emote aimed at it (yalms.)
 const EMOTE_AT_WITHIN: f32 = 4.0;
 
@@ -473,6 +475,8 @@ enum Doing {
     Away { to: u16, arrive: Arrive },
     /// In an inn room, coming out at `until` where it went in.
     Inside { at: Vec3A },
+    /// Crafting where it stands (`WorldBot::crafting`.)
+    Crafting,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -555,6 +559,8 @@ pub struct WorldBot {
     /// On its mount, or getting on, for a long walk (`world_bot_life::Riding`); `to_ride`: it gets on as it sets off.
     riding: Option<world_bot_life::Riding>,
     to_ride: bool,
+    /// Crafting where it stands (`world_bot_life::Crafting`.)
+    crafting: Option<world_bot_life::Crafting>,
 }
 
 impl WorldBot {
@@ -562,7 +568,7 @@ impl WorldBot {
     fn visible(&self) -> bool {
         matches!(
             self.doing,
-            Doing::Standing | Doing::Walking { .. } | Doing::Teleporting { .. }
+            Doing::Standing | Doing::Walking { .. } | Doing::Teleporting { .. } | Doing::Crafting
         )
     }
 }
@@ -579,6 +585,8 @@ pub struct WorldBots {
     aetherytes: Vec<AetheryteRowPlace>,
     titles: Vec<u16>,
     emotes: Vec<(u32, u32, u8)>,
+    /// Every crafter's recipes (`GameData::crafter_recipes`), for crafting in place.
+    recipes: HashMap<u8, Vec<(u8, u32, u8, bool)>>,
     ready: bool,
     /// Territories whose marketboards have had their bots made.
     markets_made: HashSet<u16>,
@@ -796,6 +804,7 @@ impl WorldBots {
                 )
         });
         self.titles = game_data.title_ids();
+        self.recipes = game_data.crafter_recipes();
         let ids: Vec<u32> = EMOTES.iter().map(|(id, ..)| *id).collect();
         let one_shot = game_data.one_shot_emotes(&ids);
         self.emotes = EMOTES
@@ -933,6 +942,7 @@ impl WorldBots {
             standing: Default::default(),
             riding: None,
             to_ride: false,
+            crafting: None,
         })
     }
 
@@ -1617,6 +1627,28 @@ fn step(
                 bot.until = now + Duration::from_secs(fastrand::u64(3..=10));
             }
         }
+        Doing::Crafting => {
+            let recipes = world_bot_life::recipes_near(
+                &world_bots.recipes,
+                world_bots.bots[index].who.classjob,
+                world_bots.bots[index].who.level,
+            );
+            let bot = &mut world_bots.bots[index];
+            let recipe = (!recipes.is_empty()).then(|| recipes[fastrand::usize(..recipes.len())]);
+            let main_tool = u64::from(bot.who.spawn.common.main_weapon_model);
+            let shown = match (bot.actor, instance) {
+                (Some(actor), Some(instance)) => Some((actor, instance)),
+                _ => None,
+            };
+            let still = bot.crafting.as_mut().is_some_and(|craft| {
+                world_bot_life::crafting(craft, shown, network, recipe, main_tool, now)
+            });
+            if !still {
+                bot.crafting = None;
+                bot.doing = Doing::Standing;
+                bot.until = now + stay_length(bot.at);
+            }
+        }
     }
 }
 
@@ -1733,6 +1765,37 @@ fn decide(
             return;
         }
     }
+
+    // A crafter at home in a city now and then crafts where it stands (`world_bot_life::CRAFTS_INSTEAD`.)
+    if world_bot_life::is_city(bot.at)
+        && CRAFTERS.contains(&bot.who.classjob)
+        && here.is_some()
+        && fastrand::f32() < world_bot_life::CRAFTS_INSTEAD
+    {
+        let recipes =
+            world_bot_life::recipes_near(&world_bots.recipes, bot.who.classjob, bot.who.level);
+        let bot = &mut world_bots.bots[index];
+        if !recipes.is_empty() {
+            let recipe = recipes[fastrand::usize(..recipes.len())];
+            let shown = match (bot.actor, instance.as_deref_mut()) {
+                (Some(actor), Some(instance)) => {
+                    world_bot_life::put_weapon_away(&mut bot.standing, actor, instance, network);
+                    Some((actor, instance))
+                }
+                _ => None,
+            };
+            bot.crafting = Some(world_bot_life::start_crafting(
+                shown,
+                network,
+                recipe,
+                u64::from(bot.who.spawn.common.main_weapon_model),
+                now,
+            ));
+            bot.doing = Doing::Crafting;
+            return;
+        }
+    }
+    let bot = &mut world_bots.bots[index];
 
     // Another spot by its place.
     if let (Some(places), Some(here)) = (places, here)
@@ -2140,6 +2203,11 @@ fn show(
         spawn.common.mode = CharacterMode::InPositionLoop;
         spawn.common.mode_arg = how;
     }
+    // Crafting, it comes into view crafting (retail's: SpawnPlayer's mode 5, 116 of them); its next synthesis shows the
+    // tools.
+    if bot.crafting.is_some() {
+        spawn.common.mode = CharacterMode::Crafting;
+    }
     // Riding, it comes into view on its mount (retail's players riding as they came into view: SpawnPlayer's mode 4
     // and CurrentMount); getting on, it's just on.
     if let Some(riding) = &mut bot.riding {
@@ -2374,10 +2442,12 @@ pub fn report(data: &WorldServer, player: ObjectId) -> Vec<String> {
     for (distance, bot) in near.iter().take(5) {
         let doing = match &bot.doing {
             Doing::Standing => "standing".to_string(),
+            Doing::Walking { then, .. } if bot.riding.is_some() => format!("riding ({then:?})"),
             Doing::Walking { then, .. } => format!("walking ({then:?})"),
             Doing::Teleporting { to, .. } => format!("teleporting to {to}"),
             Doing::Away { to, .. } => format!("on the way to {to}"),
             Doing::Inside { .. } => "in an inn room".to_string(),
+            Doing::Crafting => "crafting".to_string(),
         };
         lines.push(format!(
             "{} (class {}, level {}, home {}): {doing}, {distance:.0} yalms away",
@@ -2492,6 +2562,7 @@ mod tests {
             standing: Default::default(),
             riding: None,
             to_ride: false,
+            crafting: None,
         });
         let network = Arc::new(Mutex::new(NetworkState::default()));
         let settings = bots.settings();
@@ -2706,6 +2777,7 @@ mod tests {
             standing: Default::default(),
             riding: None,
             to_ride: false,
+            crafting: None,
         }
     }
 

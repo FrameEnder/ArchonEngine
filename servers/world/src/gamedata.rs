@@ -3532,6 +3532,35 @@ impl GameData {
         }
     }
 
+    /// Every crafter's recipes, by ClassJob (8-15, the Recipe sheet's CraftType 0-7): the recipe level's ClassJobLevel,
+    /// the item made, how many and whether it can be HQ. A world bot crafting in place makes one near its level
+    /// (`world_bot_life`.) Expert recipes are left out.
+    pub fn crafter_recipes(&mut self) -> HashMap<u8, Vec<(u8, u32, u8, bool)>> {
+        let mut recipes: HashMap<u8, Vec<(u8, u32, u8, bool)>> = HashMap::new();
+        let Ok(sheet) = RecipeSheet::read_from(&mut self.resource, Language::None) else {
+            return recipes;
+        };
+        let Ok(levels) = RecipeLevelTableSheet::read_from(&mut self.resource, Language::None)
+        else {
+            return recipes;
+        };
+        for (_, row) in sheet.into_iter().flatten_subrows() {
+            if row.ItemResult <= 0 || row.IsExpert || !(0..8).contains(&row.CraftType) {
+                continue;
+            }
+            let Some(level) = levels.row(row.RecipeLevelTable as u32) else {
+                continue;
+            };
+            recipes.entry(row.CraftType as u8 + 8).or_default().push((
+                level.ClassJobLevel,
+                row.ItemResult as u32,
+                row.AmountResult.max(1),
+                row.CanHq,
+            ));
+        }
+        recipes
+    }
+
     /// A recipe's numbers for a crafter of `crafter_level`, or None if there's no such recipe.
     pub fn get_recipe_info(&mut self, id: u32, crafter_level: u8) -> Option<RecipeInfo> {
         let sheet = RecipeSheet::read_from(&mut self.resource, Language::None).ok()?;
