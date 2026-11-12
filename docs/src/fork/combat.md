@@ -359,7 +359,11 @@ Timeline fields the fork uses: `from_pull` (times from the NPC's pull to the hal
 its spawn; each point fires when due, in reach or not, and may repeat every `every` seconds; an action point's
 `target` is `target` (default), `other` (someone else on its enmity list at random), `itself` or `nobody`, and one on
 `itself` goes the way of `facing`: `target` (default, the one it's fighting) or `player` (the nearest player, whoever
-it's fighting: The Lominsan Way's Rive); a point with `hp_below` comes once as its health falls to that percentage instead of at a time, one with `restarts` starts the
+it's fighting: The Lominsan Way's Rive); an action point with `reach` (yalms, centre to centre) is used only within
+that of whom it's for: further away, the NPC walks to them first (`npc_behavior::PendingAction`: no auto-attacks and
+nothing else from its timeline meanwhile, which comes after as after a cast; given up after 10 s or if they're gone),
+as retail's Notorious Biggs boss left the fighter for whoever its 1068 was for and cast it from 9.1-10.5 yalms (four
+runs, since 2026-11-12; before, every point fired wherever its target was); a point with `hp_below` comes once as its health falls to that percentage instead of at a time, one with `restarts` starts the
 clock again as it's used, and one `after` an action counts from that action's last use and comes only while it's the
 last to restart the clock: Kottos and the Copperbell Mines' other two bosses; the director can start a phase itself,
 `restart_timeline`, as Ifrit's),

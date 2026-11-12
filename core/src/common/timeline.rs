@@ -372,6 +372,12 @@ pub enum TimepointData {
         /// For one cast on itself, which way it faces (its target unless said.)
         #[serde(default, skip_serializing_if = "is_default_facing")]
         facing: TimepointFacing,
+        /// How near (yalms, centre to centre) it has to be to whom it's used on: further away, it walks there first and
+        /// uses it once in reach (the rest of its timeline waiting meanwhile), as retail's Notorious Biggs boss left
+        /// the fighter it fought to walk to whoever its 1068 was for and cast it from 9.1-10.5 yalms (Bob's Chronofoil
+        /// captures 689b15da, da424662, 898dd0b9: four runs.) None: used wherever they are.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        reach: Option<f32>,
     },
     /// Animates timelines for the gimmick this actor is bound to, such as Giant Clams.
     #[serde(rename = "timeline_state")]
@@ -473,6 +479,7 @@ mod tests {
                         lockon: None,
                         target: TimepointTarget::Target,
                         facing: TimepointFacing::Target,
+                        reach: None,
                     }
                 }]
             }

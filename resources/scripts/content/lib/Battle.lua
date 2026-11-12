@@ -80,6 +80,11 @@ Battle.FOLLOW_DELAY = 4
 Battle.TANK_ENMITY = 50000
 -- Whom a tank protects first, then next...
 Battle.PROTECT_ORDER = { support = 1, dps = 2, player = 3 }
+-- How long (seconds) enemies that arrive once the fight is on stand where they appear before they set off (they act
+-- if someone comes into reach): retail's quest battle waves stood 4.8-5.0 s, Notorious Biggs' second and third waves
+-- in all four of Bob's runs (Chronofoil captures 689b15da, da424662, 898dd0b9), quest battle 61's adds and To Guard a
+-- Guardian's gargoyle alike. A role's `stands_for` overrides it (0: off at once.)
+Battle.ARRIVAL_STAND_SECONDS = 4.9
 
 function Battle.new()
     local self = setmetatable({}, Battle)
@@ -112,7 +117,8 @@ local function merge(into, from)
     return into
 end
 
--- An NPC on the player's side. role: focus (the groups it goes for, in order; "any" is every enemy), order (which
+-- An NPC on the player's side. role: focus (the groups it goes for, in order; "any" is every enemy, "mine" the ones
+-- after it), order (which
 -- one of a group: "oldest", "newest", "highest_hp", "lowest_hp", "nearest"), range (how close it gets, in yalms),
 -- keep_near ({ anchor = layout ID or nil for the player, within = yalms }), heals (see Battle:heal.)
 function Battle:ally(layout, role)
@@ -226,6 +232,11 @@ function Battle:spawn(director, layouts, at)
             if not role.passive then
                 director:set_hate(layout, role.attacks, role.enmity or Battle.STARTING_ENMITY) -- nil is the player
             end
+            -- Arriving once the fight is on, it stands a moment first (Battle.ARRIVAL_STAND_SECONDS.)
+            local stands = role.stands_for or Battle.ARRIVAL_STAND_SECONDS
+            if self.updates > 0 and stands > 0 and not role.passive and not role.unaware then
+                director:root_bnpc(layout, stands)
+            end
             if role.unaware then
                 director:set_notice(layout, false)
             end
@@ -308,12 +319,35 @@ end
 
 -- ---- Who's where ----
 
+-- Whom an enemy is after (an ally's layout ID, or Battle.PLAYER): as the server last said, or, for one that has only
+-- just arrived, whom it was sent after (its `attacks`).
+function Battle:afterWhom(enemy)
+    local info = self.info[enemy]
+    if info ~= nil and info.target ~= nil then
+        return info.target
+    end
+    local role = self.roles[enemy]
+    if role ~= nil and not role.passive then
+        return role.attacks or Battle.PLAYER
+    end
+    return nil
+end
+
 -- The living enemies of a group, in the order they came; `engageable`: only those allies may go for (not `away`.)
-function Battle:living(group, engageable)
+-- The group "mine" is the enemies after `ally` (Battle:afterWhom): an ally whose focus starts with it meets whoever
+-- comes for it, as Notorious Biggs' escort and conjurer ran out to each wave's enemies that came for them, the moment
+-- they appeared (Bob's Chronofoil captures 689b15da, da424662, 898dd0b9: four runs.)
+function Battle:living(group, engageable, ally)
     local list = {}
     for _, layout in ipairs(self.arrived) do
         local role = self.roles[layout]
-        if self.alive[layout] and role.side == "enemy" and inGroup(role, group)
+        local in_group
+        if group == "mine" then
+            in_group = ally ~= nil and self:afterWhom(layout) == ally
+        else
+            in_group = inGroup(role, group)
+        end
+        if self.alive[layout] and role.side == "enemy" and in_group
                 and (not engageable or (self.away[layout] or 0) <= self.updates) then
             table.insert(list, layout)
         end
@@ -368,7 +402,7 @@ end
 function Battle:pool(ally, role)
     local pool, seen = {}, {}
     for _, group in ipairs(role.focus or { "any" }) do
-        local candidates = self:living(group, true)
+        local candidates = self:living(group, true, ally)
         while #candidates > 0 do
             local best = self:pick(ally, candidates, role.order)
             for i, layout in ipairs(candidates) do
@@ -410,7 +444,7 @@ function Battle:targetFor(ally)
         end
     end
     for _, group in ipairs(role.focus or { "any" }) do
-        local candidates = self:living(group, true)
+        local candidates = self:living(group, true, ally)
         if #candidates > 0 then
             return self:pick(ally, candidates, role.order)
         end

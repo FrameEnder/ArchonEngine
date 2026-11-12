@@ -1,6 +1,7 @@
 {
     "autoattack_action_id": 870,
     "from_pull": true,
+    "attack_range": 5.5,
     "recorded_amounts": {
         "870": {
             "players": 157,
@@ -38,5 +39,5 @@
         }
     ],
     "timeline_always_plays": false,
-    "comment": "Notorious Biggs' quest battle (62, quest 983): the second wave's leader (BNpcBase 1657, BNpcName 269, layout 4264384): level 44, 2108 HP; auto-attack 870 every 3.0 s. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.53`, won) and Bob's 689b15da (2026-11-09, `--battle 0.2` lost and `0.4` won): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull (or from coming out, for the later waves)."
+    "comment": "Notorious Biggs' quest battle (62, quest 983): the second wave's leader (BNpcBase 1657, BNpcName 269, layout 4264384): level 44, 2108 HP; auto-attack 870 every 3.0 s. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.53`, won) and Bob's 689b15da (2026-11-09, `--battle 0.2` lost and `0.4` won): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull (or from coming out, for the later waves). attack_range: retail's stopped 5.3-5.8 yalms from whom it was after (Bob's Chronofoil captures 689b15da (0.2, 0.4), da424662 (0.22) and 898dd0b9 (0.12), `questkit battle`'s \"Stopped ... yalms from whom it was after\", three walks)."
 }

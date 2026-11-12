@@ -35,6 +35,8 @@ DAMAGE_EFFECTS = (3, 5, 6)
 DEATH_WINDOW = 1.5
 SPAWN_WINDOW = 3.0
 HIT_WINDOW = 6.0
+# A position change bigger than this between two samples is walking (yalms.)
+MOVE_STEP = 0.3
 WAVE_GAP = 2.0
 
 
@@ -287,10 +289,83 @@ class Battle:
             if ally != i and not self.hostile(i, ally) and self.hits_on(ally, new, t, HIT_WINDOW):
                 reasons.append(f"new one had just hit {self.name(ally)}")
                 break
-        new_target = self.target[new].at(t)
-        if new_target and not self.hostile(i, new_target) and new_target != i:
+        new_target = self.target[new].at(t + 0.5)
+        if new_target == i:
+            reasons.append("new one was after it")
+        elif new_target and not self.hostile(i, new_target):
             reasons.append(f"new one was after {self.name(new_target)}")
         return reasons
+
+    # ---- where NPCs stand to fight (for timelines' `attack_range`, actions' `reach` and waves' hold) ----
+
+    def fight_start(self) -> float | None:
+        """When the fight began: the director's scene 60000, if the run has it."""
+        return next((e["S"] for e in self.events if e.get("Kind") == "scene" and "scene 60000" in e.get("Text", "")),
+                    None)
+
+    def legs(self, i: int) -> list[tuple[float, float]]:
+        """When NPC i walked: (start, end) of each run of position changes under a second apart."""
+        track = self.pos[i]
+        out, current = [], None
+        for k in range(1, len(track.times)):
+            t0, t1 = track.times[k - 1], track.times[k]
+            if math.dist(track.values[k - 1], track.values[k]) > MOVE_STEP and t1 - t0 < 1.0:
+                current = [t0, t1] if current is None else [current[0], t1]
+            elif current is not None:
+                out.append(tuple(current))
+                current = None
+        if current is not None:
+            out.append(tuple(current))
+        return out
+
+    def stood_after_appearing(self, i: int) -> float | None:
+        """For an NPC that appeared after the fight began: how long it stood where it appeared before it first
+        walked (retail's quest battle waves stand 4.8-5.0 s: Notorious Biggs' in four runs, 2026-11-12.)"""
+        start, seen = self.fight_start(), self.actors.get(i, {}).get("Seen")
+        if start is None or seen is None or seen < start + 1:
+            return None
+        legs = [s for s, _e in self.legs(i) if s >= seen]
+        return round(legs[0] - seen, 1) if legs else None
+
+    def stop_distances(self, i: int) -> list[float]:
+        """How far from whom it was after NPC i stopped walking, each time they stood still meanwhile: its reach
+        (center to center, in 3D, as Kawari's `attack_range`.)"""
+        out = []
+        for _s, end in self.legs(i):
+            target = self.target[i].at(end)
+            if not target or target == i:
+                continue
+            before, after = self.pos[target].at(end - 0.6), self.pos[target].at(end)
+            if before is None or after is None or math.dist(before, after) > MOVE_STEP:
+                continue
+            d = self.distance(i, target, end)
+            if d is not None:
+                out.append(round(d, 1))
+        return out
+
+    def off_target_uses(self, i: int, action: int) -> tuple[int, list[float], int]:
+        """NPC i's uses of `action` on someone other than whom it was fighting: how many, from how far each, and how
+        many it walked towards them for first (in the 6 s before), as Notorious Biggs' boss walked to whoever its
+        1068 was for, leaving the fighter it fought, and cast it from 9.1-10.5 yalms (four runs.)"""
+        count, distances, walked = 0, [], 0
+        legs = self.legs(i)
+        for x in self.actions:
+            if x["Source"] != i or x["Action"] != action or not x["Targets"]:
+                continue
+            on = x["Targets"][0]["Id"]
+            if on == i or on == self.target[i].at(x["S"] - 2.0):
+                continue
+            count += 1
+            # Where it was as it began (a cast lands up to ~2 s after it began.)
+            began = max((e["S"] for e in self.events if e.get("Kind") == "cast"
+                         and f"action {action} " in e.get("Text", "") and x["S"] - 4 <= e["S"] <= x["S"]),
+                        default=x["S"])
+            d = self.distance(i, on, began)
+            if d is not None:
+                distances.append(round(d, 1))
+            if any(began - 6.0 <= end <= began + 0.3 for _s, end in legs):
+                walked += 1
+        return count, distances, walked
 
 
 # ---- Class mechanics: NPCs fight with their class's actions, by its rules ----
@@ -446,7 +521,7 @@ def class_profile(b: "Battle", i: int) -> dict | None:
 
 # A target-choice explanation, and the Battle.lua order it means.
 ORDERS = {"oldest enemy": "oldest", "newest enemy": "newest", "nearest enemy": "nearest",
-          "most hurt enemy": "lowest_hp", "healthiest enemy": "highest_hp"}
+          "most hurt enemy": "lowest_hp", "healthiest enemy": "highest_hp", "weakest enemy": "lowest_hp"}
 
 
 # ClassJob's Role column: what each class is for.
@@ -562,6 +637,7 @@ def ally_outline(b: "Battle", ally: int, start: float, end: float) -> dict:
     # Order: which explanation fits its target choices here, judged within the group it was choosing from (the adds,
     # when it picked an add: the boss arriving first doesn't make every pick "not the oldest".)
     reasons, switches, previous = Counter(), 0, b.target[ally].at(start - 0.01) or 0
+    after_it = 0
     for s0, _e, target in b.target_segments(ally):
         if s0 < start or s0 >= end:
             previous = target
@@ -569,6 +645,9 @@ def ally_outline(b: "Battle", ally: int, start: float, end: float) -> dict:
         if target and target != previous:
             switches += 1
             boss, adds = _boss_at(b, ally, s0)
+            # (The boss after it says nothing: "boss" first picks it anyway.)
+            if target != boss and b.target[target].at(s0 + 0.5) == ally:
+                after_it += 1
             group = adds if target in adds else [target]
             if len(group) > 1:
                 reasons.update(_order_reasons(b, ally, s0, target, group))
@@ -583,6 +662,13 @@ def ally_outline(b: "Battle", ally: int, start: float, end: float) -> dict:
             role["order"] = order
     if switches:
         facts.append(f"its {switches} target changes: " + ", ".join(f"{r} {c}/{switches}" for r, c in reasons.most_common(5)))
+    # Going for whoever is after it (Battle.lua's "mine" group): Notorious Biggs' escort and conjurer met each wave's
+    # enemies that came for them, wherever they were (three runs.)
+    if after_it and after_it / switches >= 0.5:
+        rest = [g for g in role.get("focus", ["boss", "adds"]) if g != "mine"]
+        # One that kept to the boss takes the ones after it once the boss is down (Biggs' fighter.)
+        role["focus"] = ["boss", "mine"] + rest[1:] if total >= 6 and on_boss / total >= 0.7 else ["mine"] + rest
+        facts.append(f"{after_it} of its {switches} target changes were to an enemy after it")
     # Range: how far from its target when it acted.
     distances = []
     for x in b.actions:
@@ -656,6 +742,10 @@ def _order_reasons(b: "Battle", ally: int, t: float, new: int, group: list[int])
     current = {c: v for c, v in current.items() if v is not None}
     if current and len(set(current.values())) > 1 and max(current, key=current.get) == new:
         reasons.append("healthiest enemy")
+    # The least health left (Battle.lua's lowest_hp): Notorious Biggs' conjurer took its archer before its marauders,
+    # all at full health (three runs.)
+    if current and len(set(current.values())) > 1 and min(current, key=current.get) == new:
+        reasons.append("weakest enemy")
     return reasons
 
 
@@ -943,6 +1033,13 @@ def report(run: dict, npc_filter: str | None = None) -> str:
             w(f"* **Never acted** (moved at most {roam:.1f} yalms from where it appeared).")
         else:
             w(f"* {len(mine)} actions; moved at most {roam:.1f} yalms from where it appeared.")
+        stood = b.stood_after_appearing(i)
+        if stood is not None:
+            w(f"* Appeared {a['Seen'] - b.fight_start():.1f} s into the fight and stood {stood:.1f} s before it walked.")
+        stops = b.stop_distances(i)
+        if stops:
+            w(f"* Stopped {_median(stops):.1f} yalms from whom it was after (median of {len(stops)}, "
+              f"{min(stops):.1f}–{max(stops):.1f}; center to center): its timeline's `attack_range`.")
 
         segments = b.target_segments(i)
         if any(t for _s, _e, t in segments):
@@ -1009,6 +1106,15 @@ def report(run: dict, npc_filter: str | None = None) -> str:
                 else:
                     parts.append(f"{kind} {min(values)}–{max(values)} (median {_median(values)})")
             w("* " + " · ".join(parts))
+            off, distances, walked = b.off_target_uses(i, action)
+            if off >= 2 and off * 2 >= len(uses):
+                line = f"  * on someone other than whom it was fighting {off}/{len(uses)} times"
+                if distances:
+                    line += f", from {min(distances):.1f}–{max(distances):.1f} yalms"
+                if walked:
+                    line += (f"; it walked to them first {walked} times: its timepoint's `target: other` and `reach` "
+                             f"({max(distances):.1f})" if distances else f"; it walked to them first {walked} times")
+                w(line)
             if heals:
                 percents = []
                 most_hurt = 0

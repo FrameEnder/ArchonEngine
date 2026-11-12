@@ -297,6 +297,46 @@ const KEEP_CAST_FACING: f32 = 0.6;
 /// How many NPCs that can't wander an instance logs (the rest are only counted.)
 const STUCK_WANDERERS_LOGGED: usize = 5;
 
+/// A timeline action an NPC is walking into reach to use (`TimepointData::Action`'s `reach`): retail's Notorious Biggs
+/// boss left the fighter it fought, walked 3.4-4.1 s to whoever its 1068 was for and cast it from 9.1-10.5 yalms (Bob's
+/// Chronofoil captures 689b15da, da424662, 898dd0b9: four runs.) While it's walking it neither auto-attacks nor
+/// uses the rest of its timeline, which comes once it's done, as after a cast.
+#[derive(Debug, Clone)]
+pub struct PendingAction {
+    /// The timepoint's action.
+    pub data: TimepointData,
+    /// Whom it's for (chosen when it came due: `TimepointTarget::Other` picks once.)
+    pub on: ObjectId,
+    /// How near it has to be (yalms, centre to centre.)
+    pub reach: f32,
+    /// When it came due.
+    pub since: Instant,
+}
+
+/// How long an NPC keeps walking to use a timeline action before it gives it up (whom it's for out of its way: rooted,
+/// or always running off.) Retail's walks took 3.4-4.1 s.
+const PENDING_ACTION_PATIENCE: Duration = Duration::from_secs(10);
+
+/// An NPC at `here` walking to use a timeline action (`pending`): the action and whom it's for once they're within its
+/// reach (it's no longer pending then); nothing while it's still on its way. It gives up (no longer pending, nothing to
+/// use) when they're gone or it has walked for `PENDING_ACTION_PATIENCE`.
+pub fn pending_action_ready(
+    pending: &mut Option<PendingAction>,
+    here: Vec3A,
+    positions: &HashMap<ObjectId, Vec3A>,
+) -> Option<(TimepointData, ObjectId)> {
+    let waiting = pending.as_ref()?;
+    let there = positions.get(&waiting.on).copied();
+    if there.is_some_and(|at| Vec3A::distance(here, at) <= waiting.reach) {
+        let done = pending.take()?;
+        return Some((done.data, done.on));
+    }
+    if there.is_none() || waiting.since.elapsed() >= PENDING_ACTION_PATIENCE {
+        *pending = None;
+    }
+    None
+}
+
 /// Updates NPCs in this instance.
 pub fn npc_behavior(
     network: Arc<Mutex<NetworkState>>,
@@ -807,6 +847,7 @@ pub fn npc_behavior(
             rotation_state,
             placement,
             status_effects,
+            pending_action,
             ..
         } = actor
             && *state != NpcState::Dead
@@ -1108,6 +1149,15 @@ pub fn npc_behavior(
                     }
                 }
 
+                // Walking into reach to use a timeline action (`PendingAction`): towards whom it's for, as near as
+                // its reach, rather than whom it fights.
+                let (target_pos, reach) = match (pending_action.as_ref(), target_pos) {
+                    (Some(pending), Some(fighting)) => (
+                        Some(positions.get(&pending.on).copied().unwrap_or(fighting)),
+                        pending.reach,
+                    ),
+                    (_, target_pos) => (target_pos, timeline.attack_range),
+                };
                 if !reset_target && let Some(target_pos) = target_pos {
                     let distance = Vec3A::distance(spawn.common.position.0, target_pos);
                     // Somewhere it should be first (near its anchors, behind the tank's target): go there.
@@ -1124,7 +1174,7 @@ pub fn npc_behavior(
                     };
                     // In reach: in range, and in sight (`in_sight`): out of sight it walks on towards them (a player
                     // round a corner draws a caster after them, as on retail) and doesn't act on them.
-                    let in_reach = distance <= timeline.attack_range
+                    let in_reach = distance <= reach
                         && (matches!(current_target, NpcTarget::Position(_))
                             || in_sight(sight.as_deref(), spawn.common.position.0, target_pos));
                     let needs_repath = match current_target {
@@ -1133,7 +1183,7 @@ pub fn npc_behavior(
                         }
                         NpcTarget::Position(_) => current_path.is_empty(),
                     };
-                    can_take_action = in_reach;
+                    can_take_action = in_reach && pending_action.is_none();
 
                     let current_pos = spawn.common.position.0;
                     // Standing in range of who it's after: forget the path, so it sets off from where it stands when
@@ -1278,31 +1328,48 @@ pub fn npc_behavior(
                 && *state == NpcState::Hate
                 && spawn.common.target_id.object_id.is_valid()
             {
-                let from = *timeline_checked as f32 * BEHAVIOR_TICK_SECONDS;
-                let to = *timeline_position as f32 * BEHAVIOR_TICK_SECONDS;
-                *timeline_checked = *timeline_position;
-                // A health threshold crossed comes first, and only one a tick (it's a cast); one that restarts the
-                // clock takes the timed points' place this tick.
-                let hp = health_percent.get(id).copied().unwrap_or(100.0);
-                let crossed = timeline
-                    .timepoints
-                    .iter()
-                    .enumerate()
-                    .find(|(index, point)| {
-                        point.hp_below.is_some_and(|below| hp <= below)
-                            && *timeline_hp_done & (1 << index) == 0
-                    });
-                let due: Vec<(TimepointData, bool)> = if let Some((index, point)) = crossed {
-                    *timeline_hp_done |= 1 << index;
-                    vec![(point.data.clone(), point.restarts)]
-                } else {
-                    timeline
-                        .points_between_after(from, to, *timeline_anchor)
-                        .into_iter()
-                        .map(|point| (point.data.clone(), point.restarts))
-                        .collect()
-                };
-                for (data, restarts) in due {
+                // An action it's been walking into reach for (`PendingAction`): used once there, given up after a
+                // while; until then nothing else from its timeline comes (it comes after, as after a cast.)
+                let ready =
+                    pending_action_ready(pending_action, spawn.common.position.0, &positions);
+                if ready.is_some() {
+                    // It casts where it got to (retail's stayed there, the fighter coming to it.)
+                    current_path.clear();
+                }
+                let mut due: Vec<(TimepointData, bool)> = Vec::new();
+                if pending_action.is_none() {
+                    let from = *timeline_checked as f32 * BEHAVIOR_TICK_SECONDS;
+                    let to = *timeline_position as f32 * BEHAVIOR_TICK_SECONDS;
+                    *timeline_checked = *timeline_position;
+                    // A health threshold crossed comes first, and only one a tick (it's a cast); one that restarts
+                    // the clock takes the timed points' place this tick.
+                    let hp = health_percent.get(id).copied().unwrap_or(100.0);
+                    let crossed = timeline
+                        .timepoints
+                        .iter()
+                        .enumerate()
+                        .find(|(index, point)| {
+                            point.hp_below.is_some_and(|below| hp <= below)
+                                && *timeline_hp_done & (1 << index) == 0
+                        });
+                    due = if let Some((index, point)) = crossed {
+                        *timeline_hp_done |= 1 << index;
+                        vec![(point.data.clone(), point.restarts)]
+                    } else {
+                        timeline
+                            .points_between_after(from, to, *timeline_anchor)
+                            .into_iter()
+                            .map(|point| (point.data.clone(), point.restarts))
+                            .collect()
+                    };
+                }
+                let forced = ready.map(|(data, on)| {
+                    due.insert(0, (data, false));
+                    on
+                });
+                for (index, (data, restarts)) in due.into_iter().enumerate() {
+                    let forced_on = if index == 0 { forced } else { None };
+                    let original = data.clone();
                     if restarts && let TimepointData::Action { action_id, .. } = &data {
                         *timeline_anchor = Some(*action_id);
                         *timeline_position = 0;
@@ -1314,9 +1381,10 @@ pub fn npc_behavior(
                             lockon,
                             target,
                             facing: faces,
+                            reach,
                         } => {
                             let fighting = spawn.common.target_id.object_id;
-                            let on = match target {
+                            let on = forced_on.unwrap_or_else(|| match target {
                                 TimepointTarget::Target => fighting,
                                 TimepointTarget::Itself | TimepointTarget::Nobody => *id,
                                 TimepointTarget::Other => {
@@ -1327,7 +1395,24 @@ pub fn npc_behavior(
                                         .collect();
                                     fastrand::choice(&others).copied().unwrap_or(fighting)
                                 }
-                            };
+                            });
+                            // Out of its reach: it walks there first (`PendingAction`.)
+                            if forced_on.is_none()
+                                && let Some(reach) = reach
+                                && on != *id
+                                && positions.get(&on).is_some_and(|at| {
+                                    Vec3A::distance(spawn.common.position.0, *at) > reach
+                                })
+                            {
+                                *pending_action = Some(PendingAction {
+                                    data: original,
+                                    on,
+                                    reach,
+                                    since: Instant::now(),
+                                });
+                                current_path.clear();
+                                continue;
+                            }
                             if let Some(lockon) = lockon {
                                 new_lockons.push((on, lockon));
                             }

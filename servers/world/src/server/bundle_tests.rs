@@ -738,3 +738,75 @@ fn an_untargetable_npc_is_never_noticed() {
     assert!(unseen.contains(&monolith) && unseen.contains(&hidden));
     assert!(!unseen.contains(&other));
 }
+
+/// Bob's bundle 20261112-195353 (Notorious Biggs): retail's boss left the fighter it fought, walked 3.4-4.1 s to
+/// whoever its 1068 was for and cast it from 9.1-10.5 yalms (four runs); Kawari's cast it on the fighter wherever
+/// everyone was. An action out of reach waits for the walk, comes once within reach, and is given up when its target
+/// is gone or after `PENDING_ACTION_PATIENCE`.
+#[test]
+fn an_npc_walks_into_reach_before_its_action() {
+    use crate::server::npc_behavior::{PendingAction, pending_action_ready};
+    use kawari::common::{TimepointData, TimepointFacing, TimepointTarget};
+    use std::collections::HashMap;
+    use std::time::{Duration, Instant};
+    let timeline: kawari::common::Timeline = serde_json::from_str(
+        &std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../resources/timelines/QB62Boss_1652.json"
+        ))
+        .unwrap(),
+    )
+    .unwrap();
+    // The shipped boss walks for its 1068, on anyone but the one it fights.
+    let data = timeline
+        .timepoints
+        .iter()
+        .map(|point| point.data.clone())
+        .find(|data| {
+            matches!(
+                data,
+                TimepointData::Action {
+                    action_id: 1068,
+                    ..
+                }
+            )
+        })
+        .unwrap();
+    assert!(matches!(
+        data,
+        TimepointData::Action {
+            target: TimepointTarget::Other,
+            facing: TimepointFacing::Target,
+            reach: Some(reach),
+            ..
+        } if (9.0..=10.5).contains(&reach)
+    ));
+    let escort = ObjectId(0x4000_0001);
+    let pending = |since| {
+        Some(PendingAction {
+            data: data.clone(),
+            on: escort,
+            reach: 9.5,
+            since,
+        })
+    };
+    let mut positions = HashMap::new();
+    // Retail's: the boss by the fighter, the escort 33 yalms off down the slope.
+    positions.insert(escort, glam::Vec3A::new(-506.0, 278.4, 192.0));
+    let mut waiting = pending(Instant::now());
+    let here = glam::Vec3A::new(-501.0, 289.6, 160.4);
+    assert!(pending_action_ready(&mut waiting, here, &positions).is_none());
+    assert!(waiting.is_some(), "still on its way");
+    // Within its reach (retail's stopped 9.3-9.6 yalms off.)
+    let there = glam::Vec3A::new(-504.2, 282.5, 184.0);
+    let (used, on) = pending_action_ready(&mut waiting, there, &positions).unwrap();
+    assert_eq!((used, on), (data.clone(), escort));
+    assert!(waiting.is_none());
+    // Given up: too long, or the one it's for gone.
+    let mut stale = pending(Instant::now() - Duration::from_secs(11));
+    assert!(pending_action_ready(&mut stale, here, &positions).is_none());
+    assert!(stale.is_none());
+    let mut gone = pending(Instant::now());
+    assert!(pending_action_ready(&mut gone, here, &HashMap::new()).is_none());
+    assert!(gone.is_none());
+}

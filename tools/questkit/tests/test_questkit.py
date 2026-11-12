@@ -885,6 +885,41 @@ class BattleFrameworkTest(unittest.TestCase):
         heals = [args for name, args in self.calls if name == "use_action" and args[1] == 120]
         self.assertEqual(heals[0][2], self.DPS1)
 
+    def test_allies_meet_whoever_comes_for_them(self):
+        """Bob's bundle 20261112-195353 (Notorious Biggs): retail's escort and conjurer ran out to the wave's enemies
+        that came for them the moment they appeared, the weakest first (four runs); Kawari's stayed on the boss and
+        the wave walked 45-54 yalms to them. And the wave stood 4.9 s where it appeared first."""
+        b, d = self.battle, self.director
+        self.lua.execute("""
+            B:ally(105, { focus = { "mine", "boss", "adds" }, order = "lowest_hp" })
+            B:enemy(205, { group = "adds", attacks = 105 })
+            B:enemy(206, { group = "adds", attacks = 105 })
+            B:enemy(207, { group = "adds", attacks = 101 })
+        """)
+        b.spawn(b, d, self.lua.table_from([105, self.BOSS]))
+        self.assertEqual(self.hates(105), [self.BOSS])
+        # Spawned before the fight: nobody stands.
+        self.assertFalse([args for name, args in self.calls if name == "root_bnpc"])
+        health = {105: 100, self.BOSS: 100}
+        self.update(health, {self.BOSS: {"hp": 9000}}, 1)
+        # The wave: 105 goes for one of the two after it at once (whom they were sent after), not 207 (after the
+        # tank), and settles on the one with less health once their health is known.
+        self.calls.clear()
+        b.spawn(b, d, self.lua.table_from([205, 206, 207]))
+        self.assertIn(self.hates(105)[-1], (205, 206))
+        self.update(health, {self.BOSS: {"hp": 9000}, 205: {"hp": 1019, "target": 105},
+                             206: {"hp": 561, "target": 105}, 207: {"hp": 561, "target": 101}}, 4)
+        self.assertEqual(self.hates(105)[-1], 206)
+        # ... each of them standing a moment first.
+        stood = {args[0]: args[1] for name, args in self.calls if name == "root_bnpc"}
+        self.assertEqual(set(stood), {205, 206, 207})
+        self.assertAlmostEqual(stood[205], 4.9)
+        # Once they're down it's back to the boss.
+        b.died(b, d, 206)
+        self.assertEqual(self.hates(105)[-1], 205)
+        b.died(b, d, 205)
+        self.assertEqual(self.hates(105)[-1], self.BOSS)
+
 
 # --- Chronofoil captures, built by hand (protobuf as Chronofoil writes it) ---
 

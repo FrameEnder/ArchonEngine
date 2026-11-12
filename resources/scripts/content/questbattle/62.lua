@@ -22,7 +22,9 @@
 --           scene 6 (0xF8402EFB) 3.1-3.7 s after that; the quest moves to sequence 255
 --   the one to keep alive under 20 % (19 %, 0.2): NpcYell 1530 from it
 --   lost: its health at 0 (talk 108 and sequence 0xFE at once: 0.2, 90.8 s in) or yours
--- The opening scene 1 is a cutscene (0xF8412FFF). Who fights whom and how hard is in their timelines (QB62*.)
+-- The opening scene 1 is a cutscene (0xF8412FFF). How hard each fights is in their timelines (QB62*), with how near
+-- each gets (`attack_range`) and the boss's 1068 walk (`reach`); the later waves stand 4.9 s where they appear first
+-- (Battle.ARRIVAL_STAND_SECONDS: 4.8-5.0 s on retail, both waves, four runs.)
 
 -- Where retail puts the player and which way they face: their spawn in the three runs.
 START_POSITION = { x = -498.89, y = 286.89, z = 167.44 }
@@ -81,23 +83,30 @@ ACTION_CURE = 120
 ACTION_PROTECT = 129
 
 BATTLE = Battle.new()
--- On retail the fighter held the boss, the archers and the second wave's 1653s; the conjurer went from the boss to
--- the adds as they came (the archers, then the 1654s, the 1655s) and kept everyone up (Cure at 40-57 %, mostly on the
--- most hurt) with 129 on someone every 20 s; the one to keep alive stayed on the boss, then the 1657 and the 1655s.
+-- Who went for whom on retail (four runs: Bob's Chronofoil captures 689b15da 0.2 and 0.4, da424662 0.22, 898dd0b9 0.12,
+-- `questkit battle`), and from how near (centre to centre, where they stopped walking):
+-- * the fighter held the boss until it fell (3.0-3.7 yalms), then took the ones after it, the weakest first (the
+--   archer 4264378 before the 1655), then the rest; it never pulled anyone off the others (every enemy kept whom it
+--   was sent after unless the player drew it), so it doesn't `protect`;
+-- * the conjurer and the escort met whoever came for them: each wave's enemies after them, the moment they appeared
+--   (they set off 0.2-1.6 s after, and ran 25-35 yalms to meet them), the weakest first (the conjurer's archer before
+--   its marauders), and the boss or the other adds when no one was after them. The conjurer fought from 6.0-7.1 yalms,
+--   like the rest, not from afar; Cure at 40-57 %, mostly on the most hurt, and 129 on someone every 20 s.
 BATTLE:ally(BNPC_FIGHTER, {
     role = "tank",
-    focus = { "boss", "adds" },
-    order = "oldest",
+    protect = false,
+    focus = { "boss", "mine", "adds" },
+    order = "lowest_hp",
     heals = { { action = ACTION_SELF_HEAL, targets = { "self" }, below = 45, every = 30.0 } },
 })
 BATTLE:ally(BNPC_CONJURER, {
-    role = "support",
-    focus = { "adds", "boss" },
-    order = "oldest",
+    focus = { "mine", "adds", "boss" },
+    order = "lowest_hp",
+    range = 6.5,
     heals = { { action = ACTION_CURE, targets = "party", below = 50, every = 10.0 } },
     buffs = { { action = ACTION_PROTECT, every = 20.0 } },
 })
-BATTLE:ally(BNPC_ESCORT, { role = "dps", focus = { "boss", "adds" }, order = "highest_hp" })
+BATTLE:ally(BNPC_ESCORT, { role = "dps", focus = { "mine", "boss", "adds" }, order = "lowest_hp", range = 3.5 })
 -- Whom each went for first on retail (nil: you), the same in every run.
 BATTLE:enemy(BNPC_BOSS, {
     group = "boss",

@@ -12,6 +12,7 @@ use crate::{
         instance::{Instance, QueuedTaskData},
         job_gauge::JobGauge,
         network::{DestinationNetwork, NetworkState},
+        npc_behavior::PendingAction,
         party::get_party_id_from_actor_id,
         party_bot::ShownAsPlayer,
         placement::Placement,
@@ -166,6 +167,8 @@ pub enum NetworkedActor {
         /// A party bot shown to clients as another player (a SpawnPlayer, `party_bot::player_spawn`) rather than an
         /// NPC; the server still treats it as this NPC. None for every other NPC.
         shown_as_player: Option<ShownAsPlayer>,
+        /// A timeline action it's walking into reach to use (`npc_behavior::PendingAction`.)
+        pending_action: Option<PendingAction>,
     },
     Object {
         object: SpawnObject,

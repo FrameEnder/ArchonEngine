@@ -612,6 +612,7 @@ impl Instance {
                 cast: None,
                 rotation_state: Default::default(),
                 shouts_used: Default::default(),
+                pending_action: None,
                 placement: Default::default(),
                 shown_as_player: None,
             },

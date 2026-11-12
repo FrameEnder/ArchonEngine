@@ -276,9 +276,16 @@ For each battle:
 * **Each NPC**: its targets over time and, for every change of target, which explanations fit, counted over all of
   them: the old target died or left; the new one had just appeared; it's the newest / oldest / nearest / most hurt
   enemy; the player, or an NPC over the player; it had just hit this NPC, or one of its allies; it was after one of
-  its allies. A rule that holds 6 times out of 6 is a rule; 3 out of 6 is a coincidence. Then each action: how many,
-  how often (median and range), on whom, damage or heal amounts, and for heals how hurt the target was and whether it
-  was the most hurt of its side.
+  its allies, or after this NPC itself. A rule that holds 6 times out of 6 is a rule; 3 out of 6 is a coincidence. Then
+  each action: how many, how often (median and range), on whom, damage or heal amounts, and for heals how hurt the
+  target was and whether it was the most hurt of its side.
+  Since 2026-11-12 also where it stands to fight, for the timelines and the director (Bob's bundle 20261112-195353:
+  Notorious Biggs' placement wasn't retail's): **"Appeared N s into the fight and stood M s before it walked"** for one
+  that came once the fight was on (retail's waves stand 4.8-5.0 s: `Battle.ARRIVAL_STAND_SECONDS`); **"Stopped N
+  yalms from whom it was after"** (median and range of where its walks ended while they stood still, centre to centre:
+  its timeline's `attack_range`); and under an action used on someone other than whom it was fighting, half the time
+  or more, how far away they were and how often it walked to them first (an action point's `target: other` and
+  `reach`). Kawari's own capture reads the same way once it's a battle run, so the two can be set side by side.
 * **Never acted**: battle NPCs that never used an action (scenery, or a script Kawari is missing).
 
 **Class and rotation** (Recorder 2.7 files): for each NPC, which class it fights as (the class its actions belong
@@ -294,8 +301,9 @@ and the one it played: taking half or more of its side's hits is the tank's part
 plays it too); healing at least half as often as it attacks is a support's; a DPS that heals now and then is still a
 DPS, "with some support"; when class and part differ it says so), its focus (on the boss or the adds, by how much of its time
 while there were both; the boss being the standing enemy with the most max HP), its order within that group (which
-of oldest, newest, nearest, most hurt or healthiest fits its target changes, judged among the enemies it was choosing
-from), its range (median distance to its target when it acted, melee or to the nearest 5 yalms), how near it stayed to
+of oldest, newest, nearest, most hurt, healthiest or weakest (the least health left) fits its target changes, judged
+among the enemies it was choosing from; and when half or more of its changes were to an enemy after it, the boss aside,
+`"mine"` first in its focus, or right after `"boss"` for one that kept to the boss), its range (median distance to its target when it acted, melee or to the nearest 5 yalms), how near it stayed to
 you (90th percentile), and its heals (whom, with what, how low they were). As `content/lib/Battle.lua` roles: a
 `BATTLE:ally` line each for the start, then a `"change"` step for each phase where a role changed.
 

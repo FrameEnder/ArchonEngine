@@ -1,6 +1,7 @@
 {
     "autoattack_action_id": 872,
     "from_pull": true,
+    "attack_range": 3.5,
     "recorded_amounts": {
         "872": {
             "npcs": 135
@@ -45,9 +46,10 @@
             "data": {
                 "type": "action",
                 "action_id": 1068,
-                "target": "target"
+                "target": "other",
+                "reach": 9.5
             },
-            "comment": "1.7 s cast: 15-23 s after the pull, then every 18.1 s (10.6-36.1)"
+            "comment": "1.7 s cast: 15-23 s after the pull, then every 18.1 s (10.6-36.1); on anyone but the one it fights, walking to within 9.5 yalms of them first (retail cast from 9.1-10.5, having walked 3.4-4.1 s when they were further: four runs)"
         },
         {
             "time": 30.0,
@@ -61,5 +63,5 @@
         }
     ],
     "timeline_always_plays": false,
-    "comment": "Notorious Biggs' quest battle (62, quest 983): Biggs's foe, the boss (BNpcBase 1652, BNpcName 2087, layout 4264130): level 45, 12038 HP; auto-attack 872 every 3.0 s; its self-heal (57, 873 at 43-49 %) is the director's. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.53`, won) and Bob's 689b15da (2026-11-09, `--battle 0.2` lost and `0.4` won): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull (or from coming out, for the later waves)."
+    "comment": "Notorious Biggs' quest battle (62, quest 983): Biggs's foe, the boss (BNpcBase 1652, BNpcName 2087, layout 4264130): level 45, 12038 HP; auto-attack 872 every 3.0 s; its self-heal (57, 873 at 43-49 %) is the director's. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.53`, won) and Bob's 689b15da (2026-11-09, `--battle 0.2` lost and `0.4` won): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull (or from coming out, for the later waves). attack_range: retail's stopped 3.0-3.7 yalms from the fighter (Bob's Chronofoil captures 689b15da (0.2, 0.4), da424662 (0.22) and 898dd0b9 (0.12), `questkit battle`'s \"Stopped ... yalms from whom it was after\"). Its 1068 is for anyone but the one it fights (the escort 7 times, the conjurer 5, the player 2-3 in four runs) from 9.1-10.5 yalms: it walked there first when they were further (`reach`)."
 }

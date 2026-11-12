@@ -1,6 +1,7 @@
 {
     "autoattack_action_id": 873,
     "from_pull": true,
+    "attack_range": 12.5,
     "recorded_amounts": {
         "873": {
             "players": 87,
@@ -61,5 +62,5 @@
         }
     ],
     "timeline_always_plays": false,
-    "comment": "Notorious Biggs' quest battle (62, quest 983): the archers of every wave (BNpcBase 1653, BNpcName 2088): level 41, 561 HP; auto-attack 873 every 3.0 s. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.53`, won) and Bob's 689b15da (2026-11-09, `--battle 0.2` lost and `0.4` won): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull (or from coming out, for the later waves)."
+    "comment": "Notorious Biggs' quest battle (62, quest 983): the archers of every wave (BNpcBase 1653, BNpcName 2088): level 41, 561 HP; auto-attack 873 every 3.0 s. From Connor's Chronofoil capture e834e436 (2026-11-07, `questkit chronofoil --battle 9.53`, won) and Bob's 689b15da (2026-11-09, `--battle 0.2` lost and `0.4` won): `players`/`npcs` are the median damage to the player and to the other side, times are from the pull (or from coming out, for the later waves). attack_range: retail's archers stopped 11.0-11.2 yalms from whom they were after, having been 11.7-13.1 the step before, and the first wave's stood still 11.6 from theirs (Bob's Chronofoil captures 689b15da (0.2, 0.4), da424662 (0.22) and 898dd0b9 (0.12), `questkit battle`'s \"Stopped ... yalms from whom it was after\", six walks)."
 }
