@@ -7,7 +7,8 @@ commit, under today's date. A commit can't contain its own hash, so write `—` 
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-11-11 | — | World Bots (Player Search).
+| 2026-11-11 | — | World Bots (chat; stage 3 done); ArchonEngine ControlPanel (World bots' Chat, 2.29.0).
+| 2026-11-11 | `5d2845c` | World Bots (Player Search).
 | 2026-11-11 | `3a8462e` | World Bots (stage 3: crafting in place).
 | 2026-11-11 | `3275c90` | World Bots (stage 3: minions, weapons, mounts).
 | 2026-11-11 | `296fb3b` | Quest battles (86: the darting bombs walk); known issues.
@@ -491,7 +492,8 @@ Commits on `Latest-Quest` (and, since 2026-11-03, `test-pending`) since the fork
 
 | Commit | Change |
 |---|---|
-| — | Player Search finds world bots, filtered as players are, and their search info shows their level (`world_bot_life::publish`, `listed`, `search_entry`; `ZoneConnection::world_bot_search_info`, `search_players`); test `a_world_bot_is_a_search_result` (`servers/world/src/{main.rs,server/mod.rs,server/world_bots.rs,server/world_bot_life.rs,zone_connection/social.rs}`). |
+| — | World bots chat: the owner's lines from `world-bots.json`'s `chat` said and shouted at retail's players' rates as players' ChatMessages; a change to them alone keeps the population (`world_bot_life::ChatLines`, `chat`, `send_chat`; `Settings::chat`, `same_population`); tests `a_world_bot_says_the_owner_s_lines`, `chat_lines_don_t_make_a_new_population` (`servers/world/src/server/{world_bots,world_bot_life}.rs`). ArchonEngine ControlPanel 2.29.0 writes them (`UI-Redesign`). |
+| `5d2845c` | Player Search finds world bots, filtered as players are, and their search info shows their level (`world_bot_life::publish`, `listed`, `search_entry`; `ZoneConnection::world_bot_search_info`, `search_players`); test `a_world_bot_is_a_search_result` (`servers/world/src/{main.rs,server/mod.rs,server/world_bots.rs,server/world_bot_life.rs,zone_connection/social.rs}`). |
 | `3a8462e` | World bots craft in place: a crafter at home in a city crafts where it stands 12% of the time, sessions and syntheses sent as retail's players' looked to others (SetMode 5, LiveEvents 38, 39, 8/9, 10, 12, 16/19/17 or 15/18, 11, then 14 and 40 and SetMode 1), a recipe of its class near its level (`world_bot_life::start_crafting`, `crafting`, `synthesis`; `GameData::crafter_recipes`); tests `a_crafter_crafts_where_it_stands`, `a_synthesis_as_retail_s` (`servers/world/src/{gamedata.rs,server/world_bots.rs,server/world_bot_life.rs}`). |
 | `3275c90` | World bots' stage 3, first part: minions out as often as retail's players had one (called and sent away now and then), weapons drawn and sheathed at retail's rates, and long walks where mounts are allowed ridden, mounting and getting off as retail's players were seen to (`server/world_bot_life.rs`, `resources/data/world_bot_companions.json` from Bob's captures, `party_bot::run_along_at`, `Places::rides`); tests `a_long_walk_is_ridden`, `retail_s_minions_and_mounts_are_read`, `percentiles_stay_within_their_ends` (`servers/world/src/server/{mod,party_bot,world_bots,world_bot_life}.rs`). |
 | `296fb3b` | `director:sweep_bnpc` takes `walking` (its ActorMoves' movement type 2, `Sweep::movement_type`); quest battle 86's darting bombs walk as retail's (2,082 of 2,139 moves); test `a_walking_sweep_walks` (`servers/world/src/server/{director,sweep}.rs`, `resources/scripts/content/questbattle/86.lua`). |

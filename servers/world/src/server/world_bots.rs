@@ -74,7 +74,7 @@ pub fn settings_path() -> PathBuf {
 ///
 /// ```json
 /// {"format": 1, "enabled": true, "cities": {"129": 30, "130": 10, "132": 20}, "per_aetheryte": 1,
-///  "per_marketboard": [5, 10], "travel": true}
+///  "per_marketboard": [5, 10], "travel": true, "chat": {"say": ["…"], "shout": ["…"]}}
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 pub struct Settings {
@@ -87,6 +87,9 @@ pub struct Settings {
     pub per_marketboard: (u32, u32),
     /// Whether they walk between places, through exits, into inns and teleport (otherwise they stay put.)
     pub travel: bool,
+    /// What they say and shout, written by the server's owner (none by default: retail's players' chat can't be kept;
+    /// `world_bot_life::chat`.) Changing them doesn't make a new population.
+    pub chat: world_bot_life::ChatLines,
 }
 
 /// Bob's numbers, 2026-11-11: about 30 round Limsa Lominsa's aetheryte (Lower Decks, 129), 10 round Ul'dah's (Steps of
@@ -100,6 +103,7 @@ impl Default for Settings {
             per_aetheryte: 1,
             per_marketboard: (5, 10),
             travel: true,
+            chat: Default::default(),
         }
     }
 }
@@ -135,7 +139,21 @@ impl Settings {
         if let Some(travel) = value.get("travel").and_then(Value::as_bool) {
             settings.travel = travel;
         }
+        if let Some(chat) = value.get("chat") {
+            settings.chat = world_bot_life::ChatLines::from_json(chat);
+        }
         settings
+    }
+
+    /// Whether `other` makes a different population (everything but the chat.)
+    fn same_population(&self, other: &Settings) -> bool {
+        Settings {
+            chat: Default::default(),
+            ..self.clone()
+        } == Settings {
+            chat: Default::default(),
+            ..other.clone()
+        }
     }
 }
 
@@ -764,7 +782,7 @@ impl WorldBots {
         let changed = self
             .settings
             .as_ref()
-            .is_none_or(|(_, old)| *old != settings);
+            .is_none_or(|(_, old)| !old.same_population(&settings));
         if changed {
             tracing::info!(
                 "World bots: {} from {} ({} cities, {} per other aetheryte, {}-{} per marketboard, travel {})",
@@ -1489,6 +1507,7 @@ fn step(
         Doing::Standing => {
             if let (Some(actor), Some(instance)) = (bot.actor, instance.as_deref_mut()) {
                 idle(bot, actor, instance, network, &world_bots.emotes);
+                world_bot_life::chat(&settings.chat, &bot.who, bot.at, actor, instance, network);
             }
             if now >= bot.until {
                 decide(
@@ -2496,6 +2515,18 @@ mod tests {
         assert!(!settings.travel);
         assert_eq!(Settings::from_json(&Value::Null), Settings::default());
         assert!(!Settings::default().enabled);
+    }
+
+    /// Stage 3: changing the chat lines keeps everyone where they are; changing a number makes a new population.
+    #[test]
+    fn chat_lines_don_t_make_a_new_population() {
+        let before = Settings::from_json(&serde_json::json!({"enabled": true}));
+        let chatty =
+            Settings::from_json(&serde_json::json!({"enabled": true, "chat": {"say": ["Hi"]}}));
+        assert_eq!(chatty.chat.say, ["Hi"]);
+        assert!(before.same_population(&chatty));
+        let more = Settings::from_json(&serde_json::json!({"enabled": true, "per_aetheryte": 3}));
+        assert!(!before.same_population(&more));
     }
 
     #[test]

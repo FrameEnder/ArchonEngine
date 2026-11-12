@@ -414,6 +414,12 @@ Checked with Flask's test client (without an index: the defaults, the note; with
 132 listed by ID; a save of 40, 25, 5 and a new 628 at 12, 2 per aetheryte and a board range typed backwards, 9 to
 4, written as 4-9; "abc" and 999 saved as 1 and 200, the boxes unticked as off.)
 
+**Chat** (2.29.0): two boxes, one line a message, saved as `chat` `{"say": [...], "shout": [...]}` (blank lines left
+out, trimmed, at most 200 lines of 400 characters, as the server takes them: [World Bots](world-bots.md#chat)). The
+server doesn't make a new population for a change to them alone. Checked with Flask's test client: two say lines
+typed with a blank line and spaces between, one shout, saved as `["Hello there", "Anyone for Sastasha?"]` and
+`["WTS materia"]`, and shown again in the boxes.
+
 ## Battle replay (Dashboard → Battle replay, 2.25.0)
 
 A retail fight and a Kawari one side by side on a top-down map, on one clock (`kawari_web/replay.py`,

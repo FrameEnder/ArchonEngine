@@ -9,7 +9,7 @@ Dashboard → World bots). Asked for by Bob on 2026-11-11; delivered in stages.
 |---|---|---|
 | 1 | The world's population: idlers at every big aetheryte (30 in Limsa Lominsa, 10 in Ul'dah, 20 in Gridania by default), 5-10 at each marketboard, walking between places, exits, inns, Teleport; the ControlPanel page | done (2026-11-11), not played yet |
 | 2 | Questing bots: routes from Questionable's quest paths (levels 1-100, at least 10 bots per ten levels, no more than 3 on one quest and never two on the same step), fighting quest enemies, quest-reward and dungeon gear, a new name and look after a route | in progress: Questionable's paths read and routes planned (`questing.rs`), not wired in yet |
-| 3 | More like players: minions, mounts, crafting in place, chat, search info (sitting, emotes at each other: done 2026-11-11, from Bob's first marks) | in progress: minions, weapons drawn and sheathed, mounts, crafting in place, Player Search and search info done (2026-11-11, `world_bot_life.rs`) |
+| 3 | More like players: minions, mounts, crafting in place, chat, search info (sitting, emotes at each other: done 2026-11-11, from Bob's first marks) | done (2026-11-11, `world_bot_life.rs`): minions, weapons drawn and sheathed, mounts, crafting in place, Player Search and search info, chat (the owner's lines); not played yet |
 
 Code: `servers/world/src/server/world_bots.rs`, stage 3's pieces in `world_bot_life.rs`; the settings page `kawari_web/worldbots.py` in ArchonEngine
 ControlPanel; retail's standing spots `resources/data/world_bot_spots.json` and seats `resources/data/world_bot_seats.json`.
@@ -134,6 +134,18 @@ name, class, level, status and area filters find it as they would a player. Its 
 `ZoneConnection::world_bot_search_info`) has its class's and job's level and nothing else: no comment, no Grand Company
 rank. Since 2026-11-11.
 
+## Chat
+
+What they say is the server owner's: retail's players' chat can't be kept (the captures hold other players' words),
+so `world-bots.json`'s `chat` holds lines written for the server (ArchonEngine ControlPanel's World bots page, **Chat**),
+none by default. A standing bot that's shown says one of the `say` lines now and then (heard nearby) and shouts one of
+the `shout` lines (heard across the zone), picked at random, as often as retail's players chatted: ChatMessages from
+other players per player-hour in view, Say 0.084 in the cities (34 in 404 hours) and 0.40 elsewhere (71 in 179), Shout
+0.14 and 0.69 (high for one bot: a shout is heard from players out of view). Each is a player's ChatMessage
+(`FromServer::Message` from the bot, its name, content ID and the server's world), which each connection hears by the
+channel's range as it does a player's (`world_bot_life::chat`, `send_chat`). Changing the lines keeps the population
+(`Settings::same_population`); at most 200 lines of each, 400 characters a line.
+
 ## Settings
 
 `world-bots.json` in the server's data folder (`$KAWARI_DATA`, the container's `/kawari/data`, beside `world.db` and
@@ -141,13 +153,14 @@ rank. Since 2026-11-11.
 
 ```json
 {"format": 1, "enabled": true, "cities": {"129": 30, "130": 10, "132": 20}, "per_aetheryte": 1,
- "per_marketboard": [5, 10], "travel": true}
+ "per_marketboard": [5, 10], "travel": true, "chat": {"say": ["…"], "shout": ["…"]}}
 ```
 
 * `cities`: by TerritoryType, how many gather round that town's big aetheryte (at most 200 each).
 * `per_aetheryte`: every other big aetheryte in a town or the open world (at most 20).
 * `per_marketboard`: between the two, drawn for each board, as its zone is first seen (at most 50).
 * `travel`: off, they stay by their place.
+* `chat`: the lines they say and shout (above); a change to them alone doesn't make a new population.
 
 Without the file (or with `enabled` false) there are none. ArchonEngine ControlPanel's
 [Dashboard → World bots](kawari-web.md#world-bots-dashboard--world-bots-2280) writes it.
@@ -190,7 +203,7 @@ after a route, a Teleport out and back as someone new.
   arrival, the inns and exits.
 * Sitting, aimed emotes, spacing and the floors' heights are tested on the server (`world_bots::tests`), not yet seen
   in game: whether the client puts a bot onto the bench by its SetMode or needs it exactly on the seat.
-* Chat (stage 3); sitting in looped emotes other than the ground. Minions, weapons, mounts and
+* Sitting in looped emotes other than the ground. Minions, weapons, mounts and
   crafting aren't seen in game yet. Crafting's 8/9 second argument is one retail value (`START_CRAFT_UNKNOWN`), not the
   recipe's.
 * Tells to a world bot find no character.

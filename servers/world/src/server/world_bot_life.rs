@@ -21,8 +21,11 @@ use kawari::{
 use parking_lot::Mutex;
 use serde_json::Value;
 
+use kawari::{config::get_config, ipc::chat::ChatChannelType};
+use physis::sestring::SeString;
+
 use crate::{
-    FromServer,
+    FromServer, MessageInfo,
     server::{
         actor::{NetworkedActor, set_character_mode},
         instance::Instance,
@@ -769,6 +772,114 @@ pub fn search_entry(listed: &Listed, world_id: u16) -> PlayerEntry {
     }
 }
 
+// ----------------------------------------------------------------------------------------------------------------
+// Chat: what they say and shout is the server owner's (`world-bots.json`'s "chat"), at retail's players' rates.
+
+/// Retail's other players' ChatMessages per player-hour in view (Bob's Chronofoil captures, counted, never kept): Say
+/// 34 in the cities' 404 player-hours (0.084) and 71 in 179 elsewhere (0.40); Shout 58 (0.14) and 124 (0.69), though
+/// a shout is heard across the zone, so those are high for one player.
+const SAYS_PER_HOUR_CITY: f32 = 0.084;
+const SAYS_PER_HOUR_ELSEWHERE: f32 = 0.40;
+const SHOUTS_PER_HOUR_CITY: f32 = 0.14;
+const SHOUTS_PER_HOUR_ELSEWHERE: f32 = 0.69;
+/// At most this many lines of each, this long.
+const CHAT_LINES: usize = 200;
+const CHAT_LENGTH: usize = 400;
+
+/// The server owner's lines.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct ChatLines {
+    pub say: Vec<String>,
+    pub shout: Vec<String>,
+}
+
+impl ChatLines {
+    /// `{"say": [...], "shout": [...]}`; blank lines left out.
+    pub fn from_json(value: &Value) -> Self {
+        let lines = |key: &str| -> Vec<String> {
+            value
+                .get(key)
+                .and_then(Value::as_array)
+                .map(|lines| {
+                    lines
+                        .iter()
+                        .filter_map(Value::as_str)
+                        .map(|line| line.trim().chars().take(CHAT_LENGTH).collect::<String>())
+                        .filter(|line| !line.is_empty())
+                        .take(CHAT_LINES)
+                        .collect()
+                })
+                .unwrap_or_default()
+        };
+        Self {
+            say: lines("say"),
+            shout: lines("shout"),
+        }
+    }
+}
+
+/// Now and then a line said (heard nearby) or shouted (across the zone), as often as retail's players chatted: a
+/// ChatMessage from it as a player's (`FromServer::Message`, which each connection hears by the channel's range.)
+pub fn chat(
+    lines: &ChatLines,
+    who: &crate::server::world_bots::Who,
+    territory: u16,
+    actor: ObjectId,
+    instance: &mut Instance,
+    network: &Arc<Mutex<NetworkState>>,
+) {
+    let city = is_city(territory);
+    let (say_rate, shout_rate) = if city {
+        (SAYS_PER_HOUR_CITY, SHOUTS_PER_HOUR_CITY)
+    } else {
+        (SAYS_PER_HOUR_ELSEWHERE, SHOUTS_PER_HOUR_ELSEWHERE)
+    };
+    let (channel, chosen) = if !lines.say.is_empty() && this_tick(say_rate) {
+        (ChatChannelType::Say, &lines.say)
+    } else if !lines.shout.is_empty() && this_tick(shout_rate) {
+        (ChatChannelType::Shout, &lines.shout)
+    } else {
+        return;
+    };
+    send_chat(
+        who,
+        actor,
+        instance,
+        network,
+        channel,
+        &chosen[fastrand::usize(..chosen.len())],
+    );
+}
+
+/// A line from a world bot on `channel`.
+pub fn send_chat(
+    who: &crate::server::world_bots::Who,
+    actor: ObjectId,
+    instance: &mut Instance,
+    network: &Arc<Mutex<NetworkState>>,
+    channel: ChatChannelType,
+    line: &str,
+) {
+    let Some(position) = instance.find_actor(actor).map(|actor| actor.position()) else {
+        return;
+    };
+    let message = MessageInfo {
+        sender_actor_id: actor,
+        sender_account_id: who.content_id,
+        sender_world_id: get_config().world.world_id,
+        sender_name: who.name.clone(),
+        sender_position: position,
+        channel,
+        message: SeString::from(line),
+    };
+    network.lock().send_to_instance(
+        actor,
+        instance,
+        FromServer::Message(message),
+        DestinationNetwork::ZoneClients,
+    );
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -920,6 +1031,46 @@ mod tests {
                 .has_status(OnlineStatus::NewAdventurer)
         );
         assert_eq!(entry.name, "Test Bot");
+    }
+
+    /// Stage 3: the owner's lines, and a line from a world bot is a player's ChatMessage to the zone.
+    #[test]
+    fn a_world_bot_says_the_owner_s_lines() {
+        use crate::server::test_world::TestWorld;
+        let lines =
+            ChatLines::from_json(&serde_json::json!({"say": ["Hello", "  ", 3], "shout": ["WTS"]}));
+        assert_eq!(lines.say, ["Hello"]);
+        assert_eq!(lines.shout, ["WTS"]);
+        let mut world = TestWorld::new();
+        let player = world.player(1, [0.0, 0.0, 0.0]);
+        let actor = world.player_npc(2, player, [1.0, 0.0, 0.0]);
+        let network = world.network.clone();
+        world.sent(player);
+        let who = crate::server::world_bots::Who {
+            name: "Test Bot".into(),
+            classjob: 1,
+            level: 10,
+            look: Default::default(),
+            spawn: Default::default(),
+            online_status: OnlineStatus::Offline,
+            title_id: 0,
+            pose: 0,
+            equipped: Default::default(),
+            item_level: 0,
+            glamour: None,
+            content_id: 0x00B2_0000_0000_0002,
+        };
+        send_chat(
+            &who,
+            actor,
+            &mut world.instance,
+            &network,
+            ChatChannelType::Say,
+            "Hello",
+        );
+        assert!(world.sent(player).iter().any(|message| matches!(message,
+            FromServer::Message(info) if info.sender_actor_id == actor
+                && info.channel == ChatChannelType::Say && info.sender_name == who.name)));
     }
 
     #[test]
