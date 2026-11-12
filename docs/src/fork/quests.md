@@ -831,6 +831,20 @@ three runs, every step from the city's last quests to We Come in Peace):
   Kawari's My Little Chocobo ended the event first and its name stayed under the guide once done (Bob's bundle
   20261029-152644), so `process_lua_player` now ends an event after the quests finished in the same batch.
 
+## Quests finished together
+
+Retail finishes some quests the moment another is finished, quests the player never plays: mostly the main scenario
+quests the streamlined ones replaced (Dressed for Conquest, 3871, finishes the old Dressed for Conquest, 1003; Trial
+by Turtle, 3865, finishes 815, 816, 819 and 820). Its FinishQuest for the played one comes first, then one for each of
+the others in ascending order, back to back, flags 1 and 1. Kawari does the same since 2026-11-12
+(`zone_connection::quest::finished_with`, after `finish_quest`'s own FinishQuest; nothing else, no rewards or unlocks
+for them), from `resources/data/quests_finished_with.json`: 30 quests and the 39 they finish, read from Bob's
+Chronofoil captures (June to November 2026; a FinishQuest at the same moment as another's for a quest with no talk,
+scene or update of its own in the capture, seen in one to three captures each). Before, they stayed unfinished: none
+of the fork's quests needs them (Fool Me Twice, 1004, follows 3871, not 1003), but the journal and anything else that
+asks saw them as never done. A pair that only happened once in the captures could in principle be chance; none looked
+like it.
+
 ## Quest rewards and EXP
 
 `finish_quest` gives the Quest sheet's gil, EXP, fixed items and crystals (crystals go to the crystal bag), its

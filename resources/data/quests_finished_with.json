@@ -1,0 +1,102 @@
+{
+  "about": "Quests retail finishes together with another: when the first (the key) is completed, the server finishes each of the listed ones too, which the player never plays (most are the main scenario quests the streamlined ones replaced: Dressed for Conquest 3871 finishes the old 1003). Read from Bob's Chronofoil captures (June to November 2026): every FinishQuest that came at the same moment as another quest's, for a quest with no talk, scene or update of its own in the capture; seen in one to three captures each. Retail sends the key's FinishQuest first, then the others' in ascending order, back to back. Numbers only; `zone_connection::quest::finished_with`.",
+  "quests": {
+    "445": [
+      196
+    ],
+    "517": [
+      871
+    ],
+    "543": [
+      464
+    ],
+    "748": [
+      752
+    ],
+    "846": [
+      847
+    ],
+    "850": [
+      854
+    ],
+    "876": [
+      877
+    ],
+    "890": [
+      896
+    ],
+    "924": [
+      925,
+      926
+    ],
+    "953": [
+      954
+    ],
+    "3852": [
+      306
+    ],
+    "3853": [
+      331
+    ],
+    "3854": [
+      128
+    ],
+    "3855": [
+      125
+    ],
+    "3856": [
+      708
+    ],
+    "3857": [
+      717
+    ],
+    "3858": [
+      718
+    ],
+    "3859": [
+      726
+    ],
+    "3860": [
+      733
+    ],
+    "3861": [
+      734
+    ],
+    "3862": [
+      740
+    ],
+    "3863": [
+      784
+    ],
+    "3864": [
+      785
+    ],
+    "3865": [
+      815,
+      816,
+      819,
+      820
+    ],
+    "3866": [
+      839
+    ],
+    "3867": [
+      872,
+      881
+    ],
+    "3868": [
+      917
+    ],
+    "3869": [
+      937
+    ],
+    "3870": [
+      968,
+      971,
+      974
+    ],
+    "3871": [
+      1003
+    ]
+  }
+}

@@ -339,6 +339,31 @@ impl ZoneConnection {
         });
         self.send_ipc_self(ipc).await;
 
+        // The quests retail finishes with this one (`finished_with`), right after it, in ascending order.
+        for retired in finished_with(adjusted_id as u16) {
+            if self.player_data.quest.completed.contains(retired as u32) {
+                continue;
+            }
+            if let Some(index) = self
+                .player_data
+                .quest
+                .active
+                .0
+                .iter()
+                .position(|x| x.id == retired)
+            {
+                self.player_data.quest.active.0.remove(index);
+                self.send_active_quests().await;
+            }
+            self.player_data.quest.completed.set(retired as u32);
+            let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::FinishQuest {
+                quest_id: retired,
+                flag1: 1,
+                flag2: 1,
+            });
+            self.send_ipc_self(ipc).await;
+        }
+
         self.send_quest_tracker().await;
 
         self.check_achievements(true).await;
@@ -1099,5 +1124,46 @@ mod exp_tests {
         assert_eq!(kill_exp_percent(-20), 0);
         // Retail: a level 6 conjurer got 38 of 55 for a level 2 enemy.
         assert_eq!(55 * kill_exp_percent(2 - 6) / 100, 38);
+    }
+}
+
+/// The quests retail finishes together with `quest` (`resources/data/quests_finished_with.json`: Dressed for Conquest,
+/// 3871, finishes the old 1003 of the same name; Trial by Turtle, 3865, finishes 815, 816, 819 and 820), which the
+/// player never plays. Read from Bob's Chronofoil captures; until 2026-11-12 Kawari left them unfinished, so the quest
+/// journal and anything waiting for them saw them as never done.
+pub fn finished_with(quest: u16) -> Vec<u16> {
+    #[derive(serde::Deserialize)]
+    struct Table {
+        quests: std::collections::HashMap<String, Vec<u16>>,
+    }
+    static TABLE: std::sync::OnceLock<std::collections::HashMap<u16, Vec<u16>>> =
+        std::sync::OnceLock::new();
+    let table = TABLE.get_or_init(|| {
+        let table: Table = serde_json::from_str(include_str!(
+            "../../../../resources/data/quests_finished_with.json"
+        ))
+        .expect("resources/data/quests_finished_with.json doesn't read");
+        table
+            .quests
+            .into_iter()
+            .filter_map(|(key, mut quests)| {
+                quests.sort_unstable();
+                key.parse().ok().map(|key| (key, quests))
+            })
+            .collect()
+    });
+    table.get(&quest).cloned().unwrap_or_default()
+}
+
+#[cfg(test)]
+mod finished_with_tests {
+    use super::finished_with;
+
+    /// Retail's FinishQuests in Bob's captures: 3871 then 1003 (da424662), 3865 then 815, 816, 819, 820 (44df02fc).
+    #[test]
+    fn quests_retail_finishes_together() {
+        assert_eq!(finished_with(3871), vec![1003]);
+        assert_eq!(finished_with(3865), vec![815, 816, 819, 820]);
+        assert!(finished_with(1004).is_empty());
     }
 }

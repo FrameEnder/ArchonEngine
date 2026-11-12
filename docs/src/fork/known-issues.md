@@ -5,10 +5,11 @@ add one when something is found.
 
 ## Bob's Chronofoil captures of 2026-11-12
 
-* Not scripted yet, needing the client's scripts: quests 1003 (only its completion is in the captures), 1056-1059,
-  1162 (in captures da424662, 0abe6734 and 898dd0b9), 802 (its last two talks, capture 898dd0b9) and 1080-1083 (the
-  Conjurer/White Mage line, capture 898dd0b9), and the quest battle 1059 enters (duty 361, territory 312; visit 0.17 of
-  capture da424662).
+* Not scripted yet: quests 1056-1059 (the Paladin's), 1080-1083 (the White Mage's), 1162 (in captures da424662, 0abe6734
+  and 898dd0b9) and 802 (Broadening Horizons: only its last two talks are in any capture, 898dd0b9), whose client
+  scripts came on 2026-11-12, and Parley in the Sagolii's quest battle 68 (1059; duty 361, territory 312; visit 0.17
+  of capture da424662), whose battle script (`JobPld451Btl_01059`) hasn't. 1003 needs none: retail finishes it with
+  3871 ([Quests](quests.md#quests-finished-together)).
 * Quest battle 63's sequence 3 waits for both the first wave and the boss under 70 %: in every run the wave fell first,
   so which one retail waits for isn't known.
 
