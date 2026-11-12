@@ -1,0 +1,39 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "9": {
+            "npcs": 107.0
+        },
+        "11": {
+            "npcs": 141
+        },
+        "21": {
+            "npcs": 66
+        },
+        "870": {
+            "npcs": 71.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Escape from Castrum Centri's 5th Cohort hoplomachus (quest battle 65, drop-in layer QB_ManFst407_001 of lak_l1f1). From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 46, 1090 HP.",
+    "rotation": {
+        "pace": 23.8,
+        "actions": [
+            {
+                "action": 9,
+                "every": 23.8,
+                "comment": "Fast Blade: 2 uses, first 10.9-10.9 s after it came out, every 23.8-23.8 s"
+            },
+            {
+                "action": 11,
+                "every": 23.9,
+                "comment": "Savage Blade: 2 uses, first 13.5-13.5 s after it came out, every 23.9-23.9 s"
+            },
+            {
+                "action": 21,
+                "comment": "Rage of Halone: 1 uses, first 22.2-22.2 s after it came out"
+            }
+        ]
+    }
+}

@@ -1,0 +1,23 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "120": {
+            "npcs": 303
+        },
+        "127": {
+            "npcs": 47
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Sinking Doesmaga's Barber Hirskskrat (quest battle 53, drop-in layer QB_ClsAcn300_001 of ocn_o1e2), a conjurer. From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 30, 312 HP; Stone II on K'lyhia, Cure (the director's heal) on the crew.",
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 127,
+                "comment": "Stone II: 1 uses, first 18.3-18.3 s after it came out; 1.2 s cast"
+            }
+        ]
+    }
+}

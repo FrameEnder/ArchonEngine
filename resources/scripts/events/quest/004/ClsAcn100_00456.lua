@@ -125,12 +125,17 @@ function onReturn(scene, results, player)
     sceneFinished(scene, results, player)
 end
 
--- What every quest's reward does: QuestReward returns 1 and the optional item picked.
+-- What every quest's reward does: QuestReward returns 1 and the optional item picked. Closed instead, the quest stays
+-- open with UI8AL and UI8AH 1 (0x11), as retail sets it (414, 521, 680, 840, 855, 960.)
+REWARD_CLOSED = 0x11
 function reward(player, results)
     if results[1] == 1 then
         player:finish_event()
         player:finish_quest(EVENT_ID, results[2] or 0)
         return true
+    end
+    if player:get_quest_var(EVENT_ID, 0) ~= REWARD_CLOSED then
+        player:set_quest_var(EVENT_ID, 0, REWARD_CLOSED)
     end
 end
 

@@ -111,6 +111,24 @@ def notice_opcodes(game_version: str | None) -> set[int]:
     return found
 
 
+def server_opcodes(name: str, game_version: str | None) -> set[int]:
+    """A server zone packet's opcode(s) for a game version: those saved for it before an update
+    (data/chronofoil_opcodes.json), else the current ones (upstream's opcodes.yml and fork_opcodes.yml)."""
+    try:
+        saved = json.loads((Path(__file__).parent / "data" / "chronofoil_opcodes.json").read_text())
+    except (OSError, json.JSONDecodeError):
+        saved = {}
+    zone = saved.get("versions", {}).get(game_version or "", {}).get("ServerZoneIpcType", {})
+    found = {int(opcode) for opcode, entry in zone.items() if entry[0] == name}
+    if found:
+        return found
+    found = {entry["opcode"] for entry in fork_opcodes() if entry["name"] == name and "opcode" in entry}
+    upstream = (ROOT / "resources" / "data" / "opcodes.yml").read_text()
+    for match in re.finditer(rf"^- name: {re.escape(name)}\n(?:  .*\n)*?  opcode: (\d+)", upstream, re.M):
+        found.add(int(match.group(1)))
+    return found
+
+
 def actor_control_names() -> dict[int, str]:
     """ActorControl categories by number, from Kawari's ActorControlCategory (each variant's brw magic)."""
     try:

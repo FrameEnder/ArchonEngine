@@ -1,0 +1,21 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 102.5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Austerities of Earth's stone shiver (quest battle 80, drop-in layer QB_JobSmn350_001 of fst_f1f4), out as Titan-Egi fell under 80 %. From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 32, 386 HP.",
+    "rotation": {
+        "pace": 5.6,
+        "actions": [
+            {
+                "action": 119,
+                "every": 5.6,
+                "comment": "Stone: 2 uses, first 6.4-6.4 s after it came out, every 5.6-5.6 s; 1.2 s cast"
+            }
+        ]
+    }
+}

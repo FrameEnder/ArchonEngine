@@ -431,7 +431,12 @@ python3 tools/questkit battle-sim --make 12 --run run.json.gz --source "…"   #
 in seconds from the fight starting (the director's scene 60000, Kawari's `onCommence`): each NPC's health curve, when
 it appeared (or `null`: there from the start) and when its health reached 0, how long the client took over each of
 the director's own scenes, and the events to match: the director's sequence changes (not the 0xFE the server sets
-when it's over), battle talk by text ID, the NPCs that arrived during the fight, and "won" (scene 60001). An NPC
+when it's over), battle talk by text ID, the NPCs that arrived during the fight, and "won" (scene 60001). From a
+Kawari Recorder battle file (`--run battles/….json.gz`) the battle talk is read from its DirectorPopupMessage packets
+(236 on 7.58; Recorder 2.7 logs no "battle talk" event, `_talk_events`, since 2026-11-12), and the director's scenes'
+lengths aren't in it (no scene end): give `scenes` by hand from its EventFinish packets (Austerities of Earth's scene
+6, 3.33 s). One of a pool counts as retail's when another of it is (Austerities of Wind's plumes, one of three at
+random each time, only two of which came in the won run.) An NPC
 the script spawns outside `onUpdate` (in `onCommence`, `onActorDeath`, `onSceneFinished`) has no health on the next
 update, as on the server, which runs the director's spawns after `onUpdate`.
 

@@ -1,0 +1,20 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "872": {
+            "npcs": 89
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Austerities of Earth's moraine golem (quest battle 80, drop-in layer QB_JobSmn350_001 of fst_f1f4), out as Titan-Egi fell under 25 %. From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 32, 579 HP.",
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 482,
+                "comment": "Plaincracker: 1 uses, first 10.8-10.8 s after it came out; 3.2 s cast; no damage"
+            }
+        ]
+    }
+}

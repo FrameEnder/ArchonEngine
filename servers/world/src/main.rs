@@ -250,6 +250,7 @@ async fn initial_setup(
                     nested_event: None,
                     quest_battle_stay: false,
                     quest_battle_finish_scene: None,
+                    quest_battle_finish_log: None,
                     quest_battle_finish_flags: QUEST_BATTLE_SCENE_FINISH_FLAGS,
                     can_share_teleport: false,
                     exp_chain: (0, None),
@@ -5140,6 +5141,7 @@ async fn process_server_msg(
                 variables,
                 fanfare,
                 exit,
+                quest_log,
             ) => {
                 // A win that sends them on elsewhere (the script's `EXIT_AFTER_WIN`): from now on that's where they
                 // leave to (and where a logout puts them.)
@@ -5156,6 +5158,7 @@ async fn process_server_msg(
                 connection.quest_battle_stay = stay;
                 connection.quest_battle_finish_scene = Some(finish_scene);
                 connection.quest_battle_finish_flags = finish_flags;
+                connection.quest_battle_finish_log = quest_log.map(|log| (quest_id, log));
 
                 connection
                     .start_event(

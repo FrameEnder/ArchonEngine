@@ -1,0 +1,25 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "792": {
+            "players": 32
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Austerities of Wind's Suparna-Egi (quest battle 81, drop-in layer QB_JobSmn451_001 of sea_s1f6), out as Garuda-Egi fell under 40 %. From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 44, 1124 HP.",
+    "rotation": {
+        "pace": 7.6,
+        "actions": [
+            {
+                "action": 792,
+                "every": 7.6,
+                "comment": "Wind Blade: 3 uses, first 7.6-7.6 s after it came out, every 5.3-10.0 s; 0.7 s cast"
+            },
+            {
+                "action": 1334,
+                "comment": "Shockwave: 1 uses, first 12.2-12.2 s after it came out; 1.7 s cast; no damage"
+            }
+        ]
+    }
+}

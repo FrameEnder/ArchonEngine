@@ -1,0 +1,33 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "787": {
+            "players": 55.5,
+            "npcs": 75
+        },
+        "872": {
+            "players": 98,
+            "npcs": 131.5
+        },
+        "1332": {
+            "npcs": 1243
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Austerities of Earth's Titan-Egi (quest battle 80, drop-in layer QB_JobSmn350_001 of fst_f1f4), the first part's. From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 36, 7183 HP.",
+    "rotation": {
+        "pace": 5.8,
+        "actions": [
+            {
+                "action": 787,
+                "every": 5.8,
+                "comment": "Rock Buster: 7 uses, first 12.0-12.0 s after it came out, every 4.6-24.9 s"
+            },
+            {
+                "action": 1332,
+                "comment": "Earthen Fury: 1 uses, first 53.5-53.5 s after it came out; 5.7 s cast"
+            }
+        ]
+    }
+}

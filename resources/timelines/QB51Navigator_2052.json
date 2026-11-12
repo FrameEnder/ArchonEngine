@@ -1,0 +1,29 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 14,
+            "npcs": 24.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Over the Rails' Morningstar navigator, a marauder (quest battle 51, drop-in layer QB_ClsAcn150_001 of ocn_o1e2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 16, 1032 HP; auto-attacks (870), Overpower, Foresight and Bloodbath; it waited on the upper deck until 41 s in.",
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 32,
+                "comment": "Foresight: 1 uses, first 61.5-61.5 s after it came out; no damage"
+            },
+            {
+                "action": 34,
+                "comment": "Bloodbath: 1 uses, first 44.9-44.9 s after it came out; no damage"
+            },
+            {
+                "action": 720,
+                "comment": "Overpower: 1 uses, first 57.7-57.7 s after it came out; 2.2 s cast; no damage"
+            }
+        ]
+    }
+}

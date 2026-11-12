@@ -205,6 +205,9 @@ pub enum LuaDirectorTask {
         /// Whether "Duty Complete" and its fanfare (`QUEST_BATTLE_SCENE_COMPLETE`) play before the finish scene.
         /// Retail skips them when the battle ends on a timer into a cutscene (Lord of the Inferno's: scene 7 at once.)
         fanfare: bool,
+        /// A LogMessage row the quest's own event shows as the finish scene ends (Austerities of Wind's LOGMESSAGE0,
+        /// 3675: retail's EventLogMessage from quest 1095 then, Bob's Kawari Recorder export of 2026-11-12.)
+        quest_log: Option<u32>,
     },
     /// Play one of the director's scenes for every player (e.g. a cutscene halfway through a quest battle), with
     /// these scene flags. The script's `onSceneFinished(director, scene)` is called when a player finishes it.
@@ -1012,13 +1015,14 @@ impl UserData for LuaDirector {
             "complete_quest_battle",
             |_,
              this,
-             (sequence, stay, finish_scene, finish_flags, variables, fanfare): (
+             (sequence, stay, finish_scene, finish_flags, variables, fanfare, quest_log): (
                 u8,
                 Option<bool>,
                 Option<u16>,
                 Option<u32>,
                 Option<mlua::Table>,
                 Option<bool>,
+                Option<u32>,
             )| {
                 // `variables` is a table of quest variable index (0-5) to value, e.g. { [1] = 0x10 }.
                 let mut set = Vec::new();
@@ -1035,6 +1039,7 @@ impl UserData for LuaDirector {
                     finish_flags: finish_flags.unwrap_or(QUEST_BATTLE_SCENE_FINISH_FLAGS),
                     variables: set,
                     fanfare: fanfare.unwrap_or(true),
+                    quest_log,
                 });
                 Ok(())
             },
@@ -2861,6 +2866,7 @@ pub fn director_tick(
                 finish_flags,
                 variables,
                 fanfare,
+                quest_log,
             } => {
                 let quest_id = instance.directors.first().unwrap().quest_battle_quest_id;
                 let exit = instance.quest_battle_win_exit;
@@ -2880,6 +2886,7 @@ pub fn director_tick(
                         variables.clone(),
                         *fanfare,
                         exit,
+                        *quest_log,
                     ),
                     DestinationNetwork::ZoneClients,
                 );
@@ -4882,6 +4889,28 @@ mod tests {
         director.tasks.iter().any(|task| {
             matches!(task, LuaDirectorTask::LogMessage { id, .. } if *id == LogMessageType::BossRoomUnsealed as u32)
         })
+    }
+
+    /// Austerities of Wind's (1095) battle ends with the quest's own LogMessage (3675) as its closing scene ends (Bob's
+    /// Kawari Recorder export of 2026-11-12): `complete_quest_battle`'s seventh argument carries it to the win.
+    #[test]
+    fn a_won_quest_battle_carries_its_quest_s_log() {
+        let lua = mlua::Lua::new();
+        let director = lua.create_userdata(LuaDirector::default()).unwrap();
+        lua.globals().set("director", &director).unwrap();
+        lua.load("director:complete_quest_battle(2, false, 9, 0xF8402EFB, nil, true, 3675)")
+            .exec()
+            .unwrap();
+        let director = director.borrow::<LuaDirector>().unwrap();
+        assert!(director.tasks.iter().any(|task| matches!(
+            task,
+            LuaDirectorTask::CompleteQuestBattle {
+                sequence: 2,
+                finish_scene: 9,
+                quest_log: Some(3675),
+                ..
+            }
+        )));
     }
 
     /// A room's floor keeps the party in from the pull on, not before (Brayflox's Longstop's last boss's terrace.)

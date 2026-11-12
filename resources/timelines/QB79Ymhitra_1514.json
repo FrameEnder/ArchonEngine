@@ -1,0 +1,42 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 91.0
+        },
+        "121": {
+            "npcs": 35
+        },
+        "127": {
+            "npcs": 128
+        },
+        "132": {
+            "npcs": 51
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Austerities of Flame's Y'mhitra the Learned, on your side, a conjurer (quest battle 79, drop-in layer QB_JobSmn300_001 of wil_w1f4). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 30, 2340 HP; Stone, Stone II, Aero and Aero II; her Stoneskin (129) on you isn't played (barriers aren't given by an NPC's rotation).",
+    "rotation": {
+        "pace": 40.2,
+        "actions": [
+            {
+                "action": 119,
+                "every": 40.2,
+                "comment": "Stone: 2 uses, first 18.3-18.3 s after it came out, every 40.2-40.2 s; 1.2 s cast"
+            },
+            {
+                "action": 121,
+                "comment": "Aero: 1 uses, first 30.1-30.1 s after it came out"
+            },
+            {
+                "action": 127,
+                "comment": "Stone II: 1 uses, first 26.0-26.0 s after it came out; 1.2 s cast"
+            },
+            {
+                "action": 132,
+                "comment": "Aero II: 1 uses, first 41.0-41.0 s after it came out"
+            }
+        ]
+    }
+}

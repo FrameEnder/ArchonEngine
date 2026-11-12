@@ -1,0 +1,41 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "525": {
+            "npcs": 547.0
+        },
+        "526": {
+            "npcs": 554
+        },
+        "527": {
+            "npcs": 568
+        },
+        "870": {
+            "players": 140,
+            "npcs": 188
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Escape from Castrum Centri's Magitek Vanguard H-1s (quest battle 65, drop-in layer QB_ManFst407_001 of lak_l1f1), each shielded while its field generators stand. From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 47, 3933 HP.",
+    "rotation": {
+        "pace": 10.9,
+        "actions": [
+            {
+                "action": 525,
+                "every": 19.8,
+                "comment": "Drill Cannons: 6 uses, first 20.4-40.8 s after it came out, every 18.5-21.5 s; 1.7 s cast; hit 2 at once"
+            },
+            {
+                "action": 526,
+                "every": 20.0,
+                "comment": "Cermet Drill: 6 uses, first 10.9-29.6 s after it came out, every 18.9-20.5 s; 2.2 s cast; hit 2 at once"
+            },
+            {
+                "action": 527,
+                "every": 10.9,
+                "comment": "Overcharge: 3 uses, first 9.8-10.6 s after it came out, every 10.9-10.9 s; 2.2 s cast"
+            }
+        ]
+    }
+}

@@ -1,0 +1,33 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 216
+        },
+        "120": {
+            "npcs": 853
+        },
+        "127": {
+            "npcs": 260
+        },
+        "135": {
+            "npcs": 1307
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Escape from Castrum Centri's 5th Cohort medicus (quest battle 65, drop-in layer QB_ManFst407_001 of lak_l1f1), a conjurer. From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 46, 436 HP; Cure and Cure II (the director's heals) on the others.",
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 119,
+                "comment": "Stone: 1 uses, first 26.0-26.0 s after it came out; 1.2 s cast"
+            },
+            {
+                "action": 127,
+                "comment": "Stone II: 1 uses, first 8.0-8.0 s after it came out; 1.2 s cast"
+            }
+        ]
+    }
+}

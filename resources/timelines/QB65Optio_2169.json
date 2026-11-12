@@ -1,0 +1,48 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 184,
+            "npcs": 236.0
+        },
+        "1003": {
+            "npcs": 709.0
+        },
+        "1135": {
+            "npcs": 689.5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Escape from Castrum Centri's first 5th Cohort optio, the first part's (quest battle 65, drop-in layer QB_ManFst407_001 of lak_l1f1). From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 47, 8793 HP.",
+    "rotation": {
+        "pace": 23.5,
+        "actions": [
+            {
+                "action": 32,
+                "comment": "Foresight: 1 uses, first 28.2-28.2 s after it came out; no damage"
+            },
+            {
+                "action": 34,
+                "comment": "Bloodbath: 2 uses, first 12.0-33.7 s after it came out; no damage"
+            },
+            {
+                "action": 43,
+                "comment": "Holmgang: 2 uses, first 9.4-34.2 s after it came out; no damage"
+            },
+            {
+                "action": 720,
+                "comment": "Overpower: 1 uses, first 38.1-38.1 s after it came out; 2.2 s cast; no damage"
+            },
+            {
+                "action": 1003,
+                "every": 23.5,
+                "comment": "Iron Tempest: 4 uses, first 18.6-24.1 s after it came out, every 10.4-36.7 s; 3.2 s cast; hit 2 at once"
+            },
+            {
+                "action": 1135,
+                "comment": "Rive: 1 uses, first 49.2-49.2 s after it came out; 2.2 s cast; hit 2 at once"
+            }
+        ]
+    }
+}

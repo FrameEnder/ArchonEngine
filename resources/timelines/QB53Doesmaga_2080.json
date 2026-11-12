@@ -1,0 +1,33 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 100,
+            "npcs": 47.5
+        },
+        "1003": {
+            "npcs": 250.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Sinking Doesmaga's Doesmaga Poisonheart (quest battle 53, drop-in layer QB_ClsAcn300_001 of ocn_o1e2), the boss of the third wave. From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 31, 2661 HP.",
+    "rotation": {
+        "pace": 12.1,
+        "actions": [
+            {
+                "action": 32,
+                "comment": "Foresight: 1 uses, first 3.5-3.5 s after it came out; no damage"
+            },
+            {
+                "action": 34,
+                "comment": "Bloodbath: 1 uses, first 8.2-8.2 s after it came out; no damage"
+            },
+            {
+                "action": 1003,
+                "every": 12.1,
+                "comment": "Iron Tempest: 2 uses, first 16.2-16.2 s after it came out, every 12.1-12.1 s; 3.2 s cast; hit 2 at once"
+            }
+        ]
+    }
+}

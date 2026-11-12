@@ -1,0 +1,11 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 4.5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Tactical Planning's goblin picaroons (quest battle 50, drop-in layer QB_ClsAcn100_001 of sea_s1f1). From Bob's Kawari Recorder run of 2026-11-12 (won): level 9, 192 HP; only auto-attacks (870, every 3.0 s) on the player for 4-5."
+}

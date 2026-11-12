@@ -250,7 +250,8 @@ pub enum FromServer {
     /// The quest battle was won: its director, and the quest and sequence it advances.
     /// Whether the players stay afterwards (until `LeaveQuestBattle`), and the scene played before they leave, with its
     /// scene flags; quest variables (index, value) set with the sequence; whether "Duty Complete" plays first; and
-    /// where the players go when they leave it, if not back where they entered it from (territory, position, rotation.)
+    /// where the players go when they leave it, if not back where they entered it from (territory, position, rotation);
+    /// a LogMessage row the quest shows as the finish scene ends.
     QuestBattleComplete(
         HandlerId,
         u32,
@@ -261,6 +262,7 @@ pub enum FromServer {
         Vec<(u8, u8)>,
         bool,
         Option<(u16, Position, f32)>,
+        Option<u32>,
     ),
     /// The player won this item from a coffer (`server/loot.rs`): it goes in their inventory.
     LootWon(u32),

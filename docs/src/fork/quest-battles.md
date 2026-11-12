@@ -73,7 +73,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `set_model_scale(npc, row)` | Draws an NPC at another ModelScale row (ActorControl 48, `SetModelScale`), as retail grew the second Copperbell boss (16, 17, 18). |
 | `actor_use_action(actor_id, action, target_actor_id)` | `use_action` by actor IDs; with no target the NPC casts on itself, as retail's helpers do (an area attack cast on oneself lands on everyone inside it the caster's battalion is at war with, `action.rs`). |
 | `set_sequence(n)` | Sets the director's sequence and sends DirectorVars (its first byte is the sequence). The client's own battle script reacts to it (e.g. `OnSequence001` sets the duty objective). `0xFE` = lost, shows "Duty Failed". |
-| `complete_quest_battle(quest_sequence, stay, finish_scene, finish_flags, variables)` | Wins: the quest moves to `quest_sequence` (with `variables`, a table of quest variable index 0–5 to value, in the same journal update: Lurkers in the Grotto's UI8BH, `{ [1] = 0x10 }`, as retail sets it; replay reads the battle script's `QUEST_VARS_AFTER_WIN` for its `battle_won` step), "Duty Complete" and the victory fanfare (60001) play (unless `fanfare`, the sixth argument, is `false`: Lord of the Inferno's battle goes straight into its cutscene, as retail's), then `finish_scene` (default 6, `QUEST_BATTLE_SCENE_FINISH`; retail plays 6 in Chasing Shadows and Leia's Legacy, 11 in To Guard a Guardian, 9 in Spirithold Broken) with `finish_flags` (default 0x2001, HIDE_HOTBAR and NO_DEFAULT_CAMERA, as retail plays all of them but Spirithold Broken's, a cutscene with 0xF8402EFB), and the players go back when it ends. With `stay = true` the players remain (for closing lines) until `leave_quest_battle()`. |
+| `complete_quest_battle(quest_sequence, stay, finish_scene, finish_flags, variables, fanfare, quest_log)` | Wins: the quest moves to `quest_sequence` (with `variables`, a table of quest variable index 0–5 to value, in the same journal update: Lurkers in the Grotto's UI8BH, `{ [1] = 0x10 }`, as retail sets it; replay reads the battle script's `QUEST_VARS_AFTER_WIN` for its `battle_won` step), "Duty Complete" and the victory fanfare (60001) play (unless `fanfare`, the sixth argument, is `false`: Lord of the Inferno's battle goes straight into its cutscene, as retail's), then `finish_scene` (default 6, `QUEST_BATTLE_SCENE_FINISH`; retail plays 6 in Chasing Shadows and Leia's Legacy, 11 in To Guard a Guardian, 9 in Spirithold Broken) with `finish_flags` (default 0x2001, HIDE_HOTBAR and NO_DEFAULT_CAMERA, as retail plays all of them but Spirithold Broken's, a cutscene with 0xF8402EFB), and the players go back when it ends. With `stay = true` the players remain (for closing lines) until `leave_quest_battle()`. `quest_log` (since 2026-11-12) is a LogMessage row the quest's own event shows as the finish scene ends: Austerities of Wind's LOGMESSAGE0 (3675), as retail sent it then from quest 1095 (Bob's Kawari Recorder export of 2026-11-12). |
 | `leave_quest_battle()` | Sends the players back where they entered. |
 | `fail_quest_battle()` | Loses: players go back where they entered, the quest stays on the same step to retry. Retail sets sequence `0xFE` first and sends them out about 6 s later. |
 | `set_hate(npc, target, amount)` | Gives NPC `npc` (a layout ID, or since 2026-10-27 an actor ID from `spawn_bnpc` for one of several sharing a layout ID, as Trial by Wind's two 4248510 wind sprites) enmity on `target` (another NPC's layout ID, or the player when `nil`). Used to make allies and enemies fight each other. |
@@ -1476,6 +1476,112 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
   z, rotation)` does it now.
 * Every battle talk line is retail's text ID, speaker and portrait, at the recorded times (the header of the script
   has the table).
+
+### The Arcanist and Summoner battles (2026-11-12): 50-53, 79-81
+
+Bob's Kawari Recorder export of 2026-11-12 has a won run of each (81 a lost one before it), with the clients' battle
+scripts he extracted that day (`ClsAcn100Btl_00456` …: the opening scene, the objective, the closing scene; nothing
+in them reacts to the sequences). Each battle's NPCs are a drop-in layer named after its quest's script, made from
+the run's SpawnNpcs (levels, HP, positions, display and character data flags, humanoids' looks; `QB_ClsAcn100_001` of
+sea_s1f1 and so on), every kind's timeline from what it did (`QB50*` … `QB81*`), and its battle talk from the run's
+DirectorPopupMessages (text, BNpcName, portrait). `questkit battle-sim 50 51 52 53 79 80 81` matches every event of
+each run within 0.5 s or so. The pattern they share: K'lyhia, Thubyrgeim and Urianger cast Summon II (1307, 5.7 s)
+early on and their carbuncle comes 7.3 s after the cast began (the director's `onActorCast`); talks come at whole
+5-second steps from the sequence that brings them.
+
+### Quest battle 50 — Tactical Planning (`content/questbattle/50.lua`)
+
+* Quest 456 (ClsAcn100_00456) enters it (K'lyhia, scene 4; territory 285, Middle La Noscea's level). K'lyhia
+  (4255768, base 2048) on your side, later her Topaz Carbuncle (4255788, 2049); goblin picaroons (2047) and traders
+  (2046) in three waves.
+* Sequence 2: three picaroons; talks 86 and 87 at 5 and 10 s. **Two of them down**: sequence 3 and the second wave (a
+  trader, two picaroons); talks 88 and 89 4.6 and 5.1 s later, **sequence 4 10.4 s after sequence 3** (on time, not
+  on a death). **Both of the second wave's picaroons down**: sequence 5, talk 92, the third wave 0.6 s later (a trader,
+  a picaroon), talks 90, 93, 91, 94 0.8-10 s after, **sequence 6 15.1 s after sequence 5**. Everything down: "Duty
+  Complete" and sequence 7 2 s later, scene 7 (0xF8402EFB); the quest to sequence 5.
+* K'lyhia never attacks (her timeline has no auto-attack, only Summon II at 6.7 s and 26.1 s after); the traders only
+  toss bombs (405, 6.4 s after they come, then every 11 s, 69-85 on K'lyhia and her carbuncle).
+
+### Quest battle 51 — Over the Rails (`content/questbattle/51.lua`)
+
+* Quest 458 (ClsAcn150_00458) enters it (the landing boat; territory 286, the Morningstar, level ocn_o1/evt/o1e2,
+  whose drop-in `ocn_o1e2_planmap.json` was new). On your side K'lyhia (4256134, 2055), Geissfryn (4256136, 2053, a
+  conjurer) and Aersthota (4256137, 2054, a marauder); against you three boatswains and four falmadairs on deck and
+  the navigator above (4256168, 2052), who waits until hit (`passive`).
+* Sequence 2; talks 99 and 100 at 3.1 and 8.1 s. **Six of the first seven down**: sequence 3, the second wave 0.7 s
+  later (two gunners, two falmadairs), talk 103 15.1 s after. **The navigator down**: sequence 4, the third wave
+  (two falmadairs, a gromet). Everything down: "Duty Complete" 1 s later (sequence 5), scene 5; the quest to 255.
+  Geissfryn's Cure and K'lyhia's Physick go to Aersthota, who takes most of the hits.
+
+### Quest battle 52 — Pincer Maneuver (`content/questbattle/52.lua`)
+
+* Quest 459 (ClsAcn200_00459) enters it (territory 287, Lower La Noscea's level). Thubyrgeim (4256744, 2061) on your
+  side with his carbuncle; Aersthota and Geissfryn (2064, 2063) come from behind the mercenaries 15 s in; three waves
+  of mercenaries, the second wave's Mamool Ja curing the others below 40 %. Talks from Thubyrgeim and the Qiqirn
+  trader (an event NPC, kind 3).
+* **Three of the first five down**: sequence 3, the second wave (8); talks 5.1, 15.1, 20.1 s after. **Six of the
+  second wave down**: sequence 4, the third (7); talks likewise. **All down**: sequence 5, K'lyhia's grimoire (EObj
+  2002521) 0.7 s later and talk 107. **Picking it up** (the director's object talk, a 2 s bar, 31): sequence 6,
+  ActorControl 607 on it, "You obtain K'lyhia's grimoire!" (LogMessage 3223), gone 1.5 s later; "Duty Complete" and
+  sequence 7 5 s after sequence 6, scene 7; the quest to 255. Its fixture holds the pickup (`object_talks`).
+
+### Quest battle 53 — Sinking Doesmaga (`content/questbattle/53.lua`)
+
+* Quest 461 (ClsAcn300_00461) enters it (Hirskskrat; territory 288, the Morningstar again). K'lyhia (4256368, 2075,
+  5460 HP) on your side with her carbuncle and the glowing grimoire (4263912, 2077), a magicked circle that stands
+  still and never acts (`hold_bnpc`); the player gets Vulnerability Down (63, 30 s) as the fight begins, and the
+  director's "The magicked circle grants you…" (LogMessage 3225) at 5 s.
+* **Four of the first six down**: sequence 3, the second wave (6); Doesmaga's talk (the event NPC) 15 s after.
+  **Everything down**: 2 s later sequence 4 and the battle's scene 4 (0xF8412FFF, his arrival); as it ends sequence
+  5 and the third wave (Doesmaga Poisonheart, 4256716, 2080, 2661 HP, with three); talks 123 and 124. **Doesmaga under
+  50 %**: sequence 6. Everything down: "Duty Complete" (sequence 7) 0.5 s later, scene 7; the quest to sequence 8.
+
+### Quest battle 79 — Austerities of Flame (`content/questbattle/79.lua`)
+
+* Quest 1091 (JobSmn300_01091) enters it (territory 323, Southern Thanalan's level). Y'mhitra (4300437, 1514) on
+  your side; Ifrit-Egi (4300450, 1513, 4435 HP). **Under 80 %**: sequence 3, a flame shiver (on Y'mhitra), talk 85
+  10 s after. **Under 50 %**: sequence 4, three crimson nails that stand still and never act, Ifrit-Egi's Radiant
+  Shield (1323, status 313 for 30 s), "Ifrit-Egi invokes crimson nails." (LogMessage 3222) 3 s after, talk 86 8 s
+  after, sequence 5 10 s after if they still stand. **The nails down**: sequence 7, talk 87 2 s after. **Ifrit-Egi
+  down**: "Duty Complete" at once (sequence 8), scene 8; the quest to sequence 3.
+
+### Quest battle 80 — Austerities of Earth (`content/questbattle/80.lua`)
+
+* Quest 1092 (JobSmn350_01092) enters it (territory 324, the North Shroud's level). Two parts. Titan-Egi (4301700,
+  2203): **under 80 %** a stone shiver, **50 %** sequence 4, **25 %** a moraine golem. **Titan-Egi down**: sequence 6
+  and the battle's scene 6 (0xF8402EFB) at once, the others taken away; as it ends sequence 7 (the client's own
+  OnSequence007 sets "Defeat the dark summoner!") and the dark summoner (4301698, 2206) with his Ifrit-Egi (4301699,
+  2207, 8540 HP), Y'mhitra back where she began. **Ifrit-Egi under 75 %**: sequence 8; **under 30 %**: sequence 9,
+  and **5 s later** (Ifrit-Egi at 20-21 %, no health mark) sequence 10 and scene 10 with **no "Duty Complete"**
+  (`complete_quest_battle(…, nil, false)`): neither falls. The quest to sequence 2.
+
+### Quest battle 81 — Austerities of Wind (`content/questbattle/81.lua`)
+
+* Quest 1095 (JobSmn451_01095) enters it (territory 325, Outer La Noscea's level). Y'mhitra (4302425, 2211) on your
+  side; Garuda-Egi (4302448, 2209, 20056 HP). **Under 80 %**: sequence 3; an Egi plume (one of 4302452, 4302454,
+  4302455 at random, 80 HP) 7.4 s later and every 7 s after, each held where it comes out; talk 69 20 s after.
+  **Under 40 %**: sequence 7, Chirada-Egi and Suparna-Egi (2212, 2213); no more plumes, and every one left dives
+  (Featherlance, 665, round itself: 300-314 on the player) 2-6 s later and falls 2.3 s after: five of them killed Bob
+  in the lost run. All three down: "Duty Complete" 1.5 s later (sequence 9), scene 9; the quest to sequence 2 and,
+  as scene 9 ends, the quest's own LOGMESSAGE0 (3675) (`complete_quest_battle`'s `quest_log`). Its fixtures:
+  `81.json` (won), `81-lost.json`.
+
+### Quest battle 65 — Escape from Castrum Centri (`content/questbattle/65.lua`)
+
+* Quest 521 (ManFst407_00521) enters it (the steel door; territory 305, Mor Dhona's level, layer
+  `QB_ManFst407_001` of lak_l1f1), from Bob's two Kawari Recorder runs of 2026-11-12 (lost in the first part, then
+  won; `65-lost.json`, `65.json`). **First part**: Wedge and Biggs (4278227, 4278226) on your side, a signifer, an
+  eques and an optio (4278232, 2169, 8793 HP) against you, by the bound Scions, whose talks (event NPCs, with
+  portraits) come at 5, 15 and 20 s. **The optio down**: sequence 8 and the battle's scene 8 (0xF8402EFB) at once,
+  the first part's NPCs gone.
+* **Second part** (sequence 9, as scene 8 ends): Urianger and Papalymo (4278521, 4278513, level 50) on your side,
+  Urianger's Amber Carbuncle 12.6 s later; a wave with a Magitek Vanguard H-1 shielded by a Magitek Field Generator
+  (`set_invulnerable` while it stands; the generators and the signifers by them wait until someone comes at them).
+  **The first generator down**: sequence 10, "The magitek field surrounding the vanguard is deactivated." (LogMessage
+  3216, with every generator), and **15 s later** sequence 11 and the second wave (two vanguards, both shielded until
+  both its generators fall). **The second wave down**: sequence 12, a Magitek Colossus and an optio; sequence 13 15 s
+  after. Everyone down: "Duty Complete" 1 s later (sequence 14), scene 14 (0x2001); the quest to sequence 6, and the
+  player goes on to Ul'dah - Steps of Nald (`EXIT_AFTER_WIN`), where the quest's scene 40 plays.
 
 ## Adding a quest battle
 

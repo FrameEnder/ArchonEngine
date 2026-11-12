@@ -1,0 +1,43 @@
+{
+    "autoattack_action_id": 871,
+    "recorded_amounts": {
+        "75": {
+            "players": 39.5,
+            "npcs": 76.5
+        },
+        "78": {
+            "npcs": 111
+        },
+        "84": {
+            "npcs": 127
+        },
+        "871": {
+            "players": 34.0,
+            "npcs": 32.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Sinking Doesmaga's Morningstar boatswains (quest battle 53, drop-in layer QB_ClsAcn300_001 of ocn_o1e2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 27, 406 HP.",
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 75,
+                "comment": "True Thrust: 5 uses, first 8.8-22.2 s after it came out"
+            },
+            {
+                "action": 78,
+                "comment": "Vorpal Thrust: 3 uses, first 13.9-17.3 s after it came out"
+            },
+            {
+                "action": 83,
+                "comment": "Life Surge: 2 uses, first 16.5-21.1 s after it came out; no damage"
+            },
+            {
+                "action": 84,
+                "comment": "Full Thrust: 2 uses, first 23.2-25.7 s after it came out"
+            }
+        ]
+    }
+}

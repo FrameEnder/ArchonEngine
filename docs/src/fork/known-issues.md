@@ -12,9 +12,18 @@ add one when something is found.
   not that order; Over the Rails' (458) scene 20, a cutscene, and Shadowing the Summoner's (1093) 3, a
   ScenarioMessage, aren't played (nothing showed where); the bars of 458's and 459's landing boats are the sheet's
   EVENT_ACTION_WAITING2_MIDDLE, not seen. None is checked in game.
-* **Their quest battles aren't scripted yet**: 50 (456), 51 (458), 52 (459), 53 (461), 79 (1091), 80 (1092) and 81
-  (1095). Bob sent the battles' client scripts and the export has a won run of each (81 a lost one too); until they're
-  done those quests stop at the battle.
+* **Their quest battles** (50-53, 79-81, and 65 for 521; `quest-battles.md`) come from one or two Recorder runs each:
+  the rules that move them on (how many down, which health mark, how long after) are the ones that fit that run, and
+  the enemies' timelines are what they did in it (an action seen once has no `every`). Not played: Sinking Doesmaga's
+  (53) Doesmaga and his lackeys as event NPCs at the bow before his cutscene (the zone's own; retail took them away),
+  Pincer Maneuver's (52) other grimoire (EObj 2002520) fading with the one picked up, Austerities of Earth's (80) dark
+  summoner's Light Succor on his Ifrit-Egi (it heals only him), Y'mhitra's Stoneskin on you (79-81), the Echo's
+  "strength beyond your limits" on a retry (81, 65; LogMessage 3212). Sequences retail never reached in these runs
+  aren't scripted: 81's 4-6, 79's 6, Over the Rails' (51) talks 101 and 102. Statuses whose length wasn't seen: the
+  Topaz Carbuncles' Curl (310) and Storm's stun, 80's Gravity Force's Heavy. Austerities of Wind's (81) quest line
+  (LogMessage 3675) comes as its closing scene ends, as retail's; Escape from Castrum Centri's exit to Ul'dah faces
+  rotation 0 (retail's facing isn't recorded). The ocn_o1e2 drop-in (51, 53: aboard the Morningstar) is new and assumes the
+  level's LGB is `planmap.lgb`; none is checked in game.
 * The hired fists and bow of 1093 (BNpcBase 1946, 1947) were never seen acting (Bob teleported away): their timelines
   are just the melee and archers' auto-attacks. The Allagan mirrorknights' Gust (917) never hit anyone, so its
   potency is a guess.
@@ -213,9 +222,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   runs), 63 (1004, two) and 64 (1005, one: no lost run, and its worn-down ally never acted) are scripted, their
   territories taken to be copies of Coerthas and Mor Dhona from where their spots stand; 64's two talking event NPCs
   aren't put in the battle. 1651's 129, 1655's 527, 1874's 91 and 1988's 1286 give statuses whose length wasn't seen.
-  **Not scripted**: quest battles 65 (521: two parts with a cutscene between, lit by event NPCs; Connor's two runs
-  are there to do it from), 5060 (Cape Westwind, 4521) and 5061 (Devastation, 4522), so those quests stop at their
-  battle; and the duties Castrum
+  **Not scripted**: quest battles 5060 (Cape Westwind, 4521) and 5061 (Devastation, 4522), so those quests stop at
+  their battle (65 is since 2026-11-12, `quest-battles.md`); and the duties Castrum
   Meridianum (InstanceContent 15, 3873), the Praetorium (86) and the Porta Decumana (20082, 4522), Thornmarch (Hard)
   (20011, 1190) and the Whorleater (Hard) (20017, 1361): their quests move on when one is cleared and let out where
   retail did (`set_duty_exit`), but the duties themselves don't exist yet.

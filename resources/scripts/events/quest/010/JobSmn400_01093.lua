@@ -125,15 +125,6 @@ function onReturn(scene, results, player)
     sceneFinished(scene, results, player)
 end
 
--- What every quest's reward does: QuestReward returns 1 and the optional item picked.
-function reward(player, results)
-    if results[1] == 1 then
-        player:finish_event()
-        player:finish_quest(EVENT_ID, results[2] or 0)
-        return true
-    end
-end
-
 -- An offer: QuestOffer returns 1 when accepted, then the acceptance scene plays.
 function offered(player, scene_index, results)
     return scene_index ~= 1 or results[1] == 1

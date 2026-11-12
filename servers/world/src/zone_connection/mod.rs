@@ -295,6 +295,9 @@ pub struct ZoneConnection {
     /// The scene a won quest battle plays before sending us back (`QUEST_BATTLE_SCENE_FINISH` unless its director
     /// picks another), or `None` while it hasn't been won.
     pub quest_battle_finish_scene: Option<u16>,
+    /// A LogMessage row the won battle's quest shows (from its own event) as the finish scene ends: the quest and the
+    /// row (`complete_quest_battle`'s `quest_log`.)
+    pub quest_battle_finish_log: Option<(u32, u32)>,
     /// The scene flags `quest_battle_finish_scene` is played with (`QUEST_BATTLE_SCENE_FINISH_FLAGS` unless its
     /// director gives others.)
     pub quest_battle_finish_flags: u32,

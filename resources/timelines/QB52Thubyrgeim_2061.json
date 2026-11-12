@@ -1,0 +1,51 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "190": {
+            "npcs": 414.5
+        },
+        "31085": {
+            "npcs": 139.5
+        },
+        "31086": {
+            "npcs": 117.5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 5.1,
+            "data": {
+                "type": "action",
+                "action_id": 1307,
+                "target": "itself"
+            },
+            "comment": "Summon II (5.7 s cast), once, 5.1 s in"
+        }
+    ],
+    "comment": "Pincer Maneuver's Thubyrgeim the Transpicuous, on your side (quest battle 52, drop-in layer QB_ClsAcn200_001 of sea_s1f2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 40, 2401 HP; Summon II once (a 5.7 s cast 5.1 s in: his Topaz Carbuncle, the director's doing), Ruin on the mercenaries, Physick (the director's heal) on Aersthota and Geissfryn.",
+    "rotation": {
+        "pace": 9.9,
+        "actions": [
+            {
+                "action": 164,
+                "comment": "Bio: 1 uses, first 64.7-64.7 s after it came out; no damage"
+            },
+            {
+                "action": 1159,
+                "every": 25.0,
+                "comment": "Eye for an Eye: 5 uses, first 20.6-20.6 s after it came out, every 21.8-41.5 s; no damage"
+            },
+            {
+                "action": 31085,
+                "every": 9.9,
+                "comment": "Ruin: 4 uses, first 33.2-33.2 s after it came out, every 9.0-46.9 s; 1.2 s cast"
+            },
+            {
+                "action": 31086,
+                "every": 36.7,
+                "comment": "Ruin II: 4 uses, first 35.3-35.3 s after it came out, every 8.6-42.1 s"
+            }
+        ]
+    }
+}

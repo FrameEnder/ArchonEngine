@@ -1,0 +1,38 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 5.5
+        },
+        "633": {
+            "npcs": 1.25
+        },
+        "18202": {
+            "npcs": 3.5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 8.3,
+            "every": 17.4,
+            "data": {
+                "type": "action",
+                "action_id": 18202,
+                "target": "itself"
+            },
+            "comment": "Shining Topaz: 8.3 s after it came out, again 17.4 s later"
+        },
+        {
+            "time": 9.8,
+            "every": 4.6,
+            "data": {
+                "type": "action",
+                "action_id": 633,
+                "target": "target"
+            },
+            "comment": "Gouge: every 3.4-4.8 s"
+        }
+    ],
+    "comment": "Tactical Planning's Topaz Carbuncle (quest battle 50, drop-in layer QB_ClsAcn100_001 of sea_s1f1), K'lyhia's, on your side. From Bob's Kawari Recorder run of 2026-11-12 (won): level 10, 192 HP; auto-attacks (870, every 3.1 s) for 5-6, Gouge (633) for 1-2, Shining Topaz (18202) for 3-4, all on the goblins."
+}

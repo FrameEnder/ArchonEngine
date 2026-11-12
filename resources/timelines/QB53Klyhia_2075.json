@@ -1,0 +1,39 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "31085": {
+            "npcs": 62.0
+        },
+        "31086": {
+            "npcs": 49.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 5.1,
+            "data": {
+                "type": "action",
+                "action_id": 1307,
+                "target": "itself"
+            },
+            "comment": "Summon II (5.7 s cast), once, 5.1 s in"
+        }
+    ],
+    "comment": "Sinking Doesmaga's Foreseer K'lyhia, on your side (quest battle 53, drop-in layer QB_ClsAcn300_001 of ocn_o1e2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 30, 5460 HP; Summon II once (a 5.7 s cast 5.1 s in: her Topaz Carbuncle, the director's doing) and Ruin on the crew.",
+    "rotation": {
+        "pace": 33.4,
+        "actions": [
+            {
+                "action": 31085,
+                "every": 33.4,
+                "comment": "Ruin: 2 uses, first 31.1-31.1 s after it came out, every 33.4-33.4 s; 1.2 s cast"
+            },
+            {
+                "action": 31086,
+                "every": 40.4,
+                "comment": "Ruin II: 2 uses, first 41.6-41.6 s after it came out, every 40.4-40.4 s"
+            }
+        ]
+    }
+}

@@ -1,0 +1,55 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "31": {
+            "npcs": 24.5
+        },
+        "33": {
+            "npcs": 17
+        },
+        "35": {
+            "npcs": 46.0
+        },
+        "41": {
+            "npcs": 18.5
+        },
+        "870": {
+            "npcs": 17.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Over the Rails' Aersthota Morningcalm, on your side, a marauder (quest battle 51, drop-in layer QB_ClsAcn150_001 of ocn_o1e2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 15, 510 HP; she took most of the hits.",
+    "rotation": {
+        "pace": 19.3,
+        "actions": [
+            {
+                "action": 31,
+                "every": 40.8,
+                "comment": "Heavy Swing: 2 uses, first 34.8-34.8 s after it came out, every 40.8-40.8 s"
+            },
+            {
+                "action": 32,
+                "comment": "Foresight: 1 uses, first 15.6-15.6 s after it came out; no damage"
+            },
+            {
+                "action": 33,
+                "every": 19.3,
+                "comment": "Fracture: 3 uses, first 28.2-28.2 s after it came out, every 6.5-32.1 s"
+            },
+            {
+                "action": 34,
+                "comment": "Bloodbath: 1 uses, first 86.9-86.9 s after it came out; no damage"
+            },
+            {
+                "action": 35,
+                "every": 36.8,
+                "comment": "Skull Sunder: 2 uses, first 43.4-43.4 s after it came out, every 36.8-36.8 s"
+            },
+            {
+                "action": 41,
+                "comment": "Overpower: 1 uses, first 48.1-48.1 s after it came out; hit 2 at once"
+            }
+        ]
+    }
+}

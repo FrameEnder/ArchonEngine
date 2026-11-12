@@ -1,0 +1,26 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "798": {
+            "players": 35,
+            "npcs": 54
+        },
+        "870": {
+            "players": 48,
+            "npcs": 81.5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Austerities of Earth's Ifrit-Egi (quest battle 80, drop-in layer QB_JobSmn350_001 of fst_f1f4), the dark summoner's, the second part's. From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 35, 8540 HP.",
+    "rotation": {
+        "pace": 10.7,
+        "actions": [
+            {
+                "action": 798,
+                "every": 10.7,
+                "comment": "Burning Strike: 5 uses, first 10.5-10.5 s after it came out, every 10.6-11.1 s"
+            }
+        ]
+    }
+}

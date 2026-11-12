@@ -1,0 +1,53 @@
+{
+    "autoattack_action_id": 871,
+    "recorded_amounts": {
+        "75": {
+            "npcs": 396.0
+        },
+        "76": {
+            "npcs": 274
+        },
+        "78": {
+            "npcs": 246.0
+        },
+        "84": {
+            "npcs": 0
+        },
+        "871": {
+            "players": 141,
+            "npcs": 181
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Escape from Castrum Centri's 5th Cohort equites (quest battle 65, drop-in layer QB_ManFst407_001 of lak_l1f1). From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 46, 1962 HP.",
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 75,
+                "comment": "True Thrust: 2 uses, first 12.4-20.7 s after it came out"
+            },
+            {
+                "action": 76,
+                "comment": "Feint: 1 uses, first 13.0-13.0 s after it came out"
+            },
+            {
+                "action": 78,
+                "comment": "Vorpal Thrust: 2 uses, first 15.0-23.3 s after it came out"
+            },
+            {
+                "action": 83,
+                "comment": "Life Surge: 1 uses, first 22.2-22.2 s after it came out; no damage"
+            },
+            {
+                "action": 84,
+                "comment": "Full Thrust: 1 uses, first 26.8-26.8 s after it came out"
+            },
+            {
+                "action": 85,
+                "comment": "Lance Charge: 1 uses, first 15.6-15.6 s after it came out; no damage"
+            }
+        ]
+    }
+}

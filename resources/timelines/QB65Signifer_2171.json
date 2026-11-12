@@ -1,0 +1,90 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "141": {
+            "players": 533.5
+        },
+        "142": {
+            "players": 364
+        },
+        "144": {
+            "players": 204
+        },
+        "147": {
+            "players": 172.5,
+            "npcs": 275.0
+        },
+        "148": {
+            "players": 107
+        },
+        "152": {
+            "players": 624.5
+        },
+        "154": {
+            "players": 568.0
+        },
+        "156": {
+            "players": 203.0
+        },
+        "1304": {
+            "npcs": 612.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Escape from Castrum Centri's 5th Cohort signifers (quest battle 65, drop-in layer QB_ManFst407_001 of lak_l1f1); those by a field generator wait until attacked. From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 46, 1417 HP.",
+    "rotation": {
+        "pace": 3.1,
+        "actions": [
+            {
+                "action": 141,
+                "comment": "Fire: 2 uses, first 45.2-109.3 s after it came out; 1.7 s cast"
+            },
+            {
+                "action": 142,
+                "comment": "Blizzard: 3 uses, first 37.9-137.9 s after it came out; 1.7 s cast"
+            },
+            {
+                "action": 144,
+                "comment": "Thunder: 1 uses, first 35.4-35.4 s after it came out"
+            },
+            {
+                "action": 147,
+                "every": 9.1,
+                "comment": "Fire II: 4 uses, first 17.6-166.5 s after it came out, every 9.1-9.1 s; 2.7 s cast; hit 2 at once"
+            },
+            {
+                "action": 148,
+                "every": 81.3,
+                "comment": "Thunder II: 3 uses, first 17.2-78.1 s after it came out, every 81.3-81.3 s; 2.7 s cast"
+            },
+            {
+                "action": 151,
+                "comment": "Lethargy: 4 uses, first 30.8-140.0 s after it came out; no damage"
+            },
+            {
+                "action": 152,
+                "every": 8.1,
+                "comment": "Fire III: 7 uses, first 30.3-73.5 s after it came out, every 5.6-40.6 s; 3.2 s cast"
+            },
+            {
+                "action": 154,
+                "every": 20.3,
+                "comment": "Blizzard III: 4 uses, first 34.4-129.8 s after it came out, every 20.3-20.3 s; 3.2 s cast"
+            },
+            {
+                "action": 156,
+                "comment": "Scathe: 2 uses, first 51.8-104.9 s after it came out"
+            },
+            {
+                "action": 157,
+                "comment": "Manaward: 2 uses, first 42.0-80.2 s after it came out; no damage"
+            },
+            {
+                "action": 1304,
+                "every": 3.1,
+                "comment": "Dark Blizzard III: 3 uses, first 45.7-94.0 s after it came out, every 3.1-3.1 s; 2.2 s cast; hit 2 at once"
+            }
+        ]
+    }
+}

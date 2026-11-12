@@ -57,6 +57,7 @@ follows retail's curve when the fixture has one (`player`, for lines said as the
 from __future__ import annotations
 
 import json
+import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -78,6 +79,23 @@ SETUP_CLOCK = -1000.0  # onSetup's time: before the opening, never compared
 
 def _director_events(run: dict, kind: str) -> list[tuple[float, str]]:
     return [(e["S"], e["Text"]) for e in run.get("Events", []) if e.get("Kind") == kind]
+
+
+def _talk_events(run: dict) -> list[tuple[float, str]]:
+    """The battle talks: the run's own "battle talk" events (a Chronofoil battle has them), or, in a Kawari Recorder
+    battle file (2.7 logs no such event), its DirectorPopupMessage packets (by its game version's opcode), read as
+    chronofoil_battle does."""
+    talks = _director_events(run, "battle talk")
+    if talks or not run.get("Packets"):
+        return talks
+    opcodes = repo.server_opcodes("DirectorPopupMessage", run.get("GameVersion"))
+    for packet in run["Packets"]:
+        data = bytes.fromhex(packet.get("Hex", ""))
+        if packet.get("Op") not in opcodes or len(data) < 28:
+            continue
+        npc_name, text, duration, icon = struct.unpack_from("<IIII", data, 12)
+        talks.append((packet["S"], f"text {text} name {npc_name} icon {icon} {duration} ms"))
+    return sorted(talks)
 
 
 def _number_after(text: str, word: str) -> int | None:
@@ -187,7 +205,7 @@ def fixture_from_run(run: dict, quest_battle: int, source: str = "") -> dict:
             continue
         last_sequence = sequence
         events.append([rel(t) if in_lead_in else max(rel(t), 0.0), "sequence", sequence])
-    for t, text in _director_events(run, "battle talk"):
+    for t, text in _talk_events(run):
         events.append([rel(t), "talk", _number_after(text, "text")])
     won = next((t for t, n in scenes if n == SCENE_COMPLETE), None)
     if won is not None:
@@ -363,7 +381,10 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                     not_yet.add(layout)
                 if layout not in known:
                     result.problems.append(f"spawns {layout}, which no drop-in has")
-                elif layout not in npcs:
+                elif layout not in npcs and not any(
+                        other in npcs for other, root in pooled.items() if layout in pooled and root == pooled[layout]):
+                    # (One of a pool counts as retail's when another of it is: retail drew one at random each time,
+                    # Austerities of Wind's plumes.)
                     result.problems.append(f"spawns {layout} at {t:.1f} s, which retail never had")
             elif name == "despawn_bnpc" and args:
                 alive.discard(int(args[0]))

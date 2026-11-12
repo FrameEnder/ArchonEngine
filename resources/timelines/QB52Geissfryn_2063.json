@@ -1,0 +1,37 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 38.5
+        },
+        "120": {
+            "npcs": 125
+        },
+        "121": {
+            "npcs": 14
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Pincer Maneuver's Geissfryn Eveningcalm, on your side, a conjurer, coming from behind the mercenaries 15 s in (quest battle 52, drop-in layer QB_ClsAcn200_001 of sea_s1f2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 20, 826 HP.",
+    "rotation": {
+        "pace": 6.7,
+        "actions": [
+            {
+                "action": 119,
+                "every": 6.7,
+                "comment": "Stone: 6 uses, first 15.2-15.2 s after it came out, every 4.5-71.3 s; 1.2 s cast"
+            },
+            {
+                "action": 121,
+                "every": 30.6,
+                "comment": "Aero: 3 uses, first 43.7-43.7 s after it came out, every 4.6-56.5 s"
+            },
+            {
+                "action": 134,
+                "every": 73.3,
+                "comment": "Fluid Aura: 2 uses, first 22.3-22.3 s after it came out, every 73.3-73.3 s; no damage"
+            }
+        ]
+    }
+}

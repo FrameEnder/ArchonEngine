@@ -1,0 +1,20 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 9
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Over the Rails' Morningstar gromet (quest battle 51, drop-in layer QB_ClsAcn150_001 of ocn_o1e2), the third wave. From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 14, 249 HP; one auto-attack and Bloodbath before it fell.",
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 34,
+                "comment": "Bloodbath: 1 uses, first 6.1-6.1 s after it came out; no damage"
+            }
+        ]
+    }
+}

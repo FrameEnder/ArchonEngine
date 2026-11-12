@@ -1,0 +1,50 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "9": {
+            "npcs": 27
+        },
+        "15": {
+            "players": 15,
+            "npcs": 38.0
+        },
+        "718": {
+            "npcs": 9.0
+        },
+        "870": {
+            "players": 19.5,
+            "npcs": 17.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Pincer Maneuver's menacing mercenaries (quest battle 52, drop-in layer QB_ClsAcn200_001 of sea_s1f2), mostly on Thubyrgeim. From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 22, 788 HP.",
+    "rotation": {
+        "pace": 6.6,
+        "actions": [
+            {
+                "action": 9,
+                "every": 15.8,
+                "comment": "Fast Blade: 8 uses, first 14.3-32.8 s after it came out, every 15.8-15.8 s"
+            },
+            {
+                "action": 10,
+                "comment": "Rampart: 7 uses, first 4.5-39.3 s after it came out; no damage"
+            },
+            {
+                "action": 15,
+                "every": 15.2,
+                "comment": "Riot Blade: 6 uses, first 17.5-38.3 s after it came out, every 15.2-15.2 s"
+            },
+            {
+                "action": 20,
+                "comment": "Fight or Flight: 6 uses, first 15.0-31.4 s after it came out; no damage"
+            },
+            {
+                "action": 718,
+                "every": 6.6,
+                "comment": "Shield Bash: 7 uses, first 15.6-50.1 s after it came out, every 6.6-6.6 s"
+            }
+        ]
+    }
+}

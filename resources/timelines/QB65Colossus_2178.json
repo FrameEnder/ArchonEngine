@@ -1,0 +1,25 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "players": 123.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Escape from Castrum Centri's Magitek Colossus (quest battle 65, drop-in layer QB_ManFst407_001 of lak_l1f1), the last wave's. From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 48, 7863 HP.",
+    "rotation": {
+        "pace": 20.3,
+        "actions": [
+            {
+                "action": 534,
+                "every": 20.3,
+                "comment": "Grand Sword: 2 uses, first 11.0-11.0 s after it came out, every 20.3-20.3 s; 2.2 s cast; no damage"
+            },
+            {
+                "action": 537,
+                "comment": "Magitek Ray: 1 uses, first 20.6-20.6 s after it came out; 2.7 s cast; no damage"
+            }
+        ]
+    }
+}

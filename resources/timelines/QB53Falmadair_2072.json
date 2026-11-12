@@ -1,0 +1,20 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "870": {
+            "npcs": 15
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Sinking Doesmaga's Morningstar falmadair (quest battle 53, drop-in layer QB_ClsAcn300_001 of ocn_o1e2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 27, 541 HP.",
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 14,
+                "comment": "Flash: 1 uses, first 14.1-14.1 s after it came out; no damage; hit 3 at once"
+            }
+        ]
+    }
+}

@@ -1,0 +1,41 @@
+{
+    "autoattack_action_id": 873,
+    "recorded_amounts": {
+        "97": {
+            "npcs": 53
+        },
+        "106": {
+            "players": 50.0,
+            "npcs": 55.0
+        },
+        "873": {
+            "players": 41.0,
+            "npcs": 29.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Sinking Doesmaga's Morningstar topmen (quest battle 53, drop-in layer QB_ClsAcn300_001 of ocn_o1e2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 27, 406 HP.",
+    "rotation": {
+        "pace": 12.1,
+        "actions": [
+            {
+                "action": 97,
+                "comment": "Heavy Shot: 1 uses, first 25.8-25.8 s after it came out"
+            },
+            {
+                "action": 100,
+                "comment": "Venomous Bite: 1 uses, first 36.4-36.4 s after it came out; no damage"
+            },
+            {
+                "action": 101,
+                "comment": "Raging Strikes: 3 uses, first 4.7-24.0 s after it came out; no damage"
+            },
+            {
+                "action": 106,
+                "every": 12.1,
+                "comment": "Quick Nock: 8 uses, first 7.0-11.5 s after it came out, every 4.6-15.3 s; hit 3 at once"
+            }
+        ]
+    }
+}

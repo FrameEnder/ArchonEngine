@@ -332,6 +332,21 @@ class InZoneMoveTest(unittest.TestCase):
         self.assertIsNone(_effect(task, None))
 
 
+class BattleSimRecorderTalkTest(unittest.TestCase):
+    """A Kawari Recorder battle file (2.7) logs no "battle talk" events: battle-sim reads its DirectorPopupMessage
+    packets (236 on 7.58) instead, as Tactical Planning's K'lyhia's talks (Bob's run of 2026-11-12)."""
+
+    def test_talks_from_packets(self):
+        data = bytes.fromhex("7d7601400000000032000680d505000056000000a00f0000") + bytes(16)
+        run = {"GameVersion": "2026.11.03.0000.0000",
+               "Packets": [{"S": 7.693, "Op": 236, "Actor": 1, "Hex": data.hex()},
+                           {"S": 8.0, "Op": 735, "Actor": 1, "Hex": data.hex()}]}
+        talks = battle_sim._talk_events(run)
+        self.assertEqual(len(talks), 1)
+        self.assertEqual(battle_sim._number_after(talks[0][1], "text"), 86)
+        self.assertEqual(battle_sim._number_after(talks[0][1], "name"), 1493)
+
+
 class BattleSimSpawnTest(unittest.TestCase):
     """battle-sim checks the opening line-up too: everyone retail had from the start must be brought out, and nobody
     more often than retail (Like Mother, Like Daughter's first wave, written the wrong way round.)"""

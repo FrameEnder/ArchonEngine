@@ -99,6 +99,28 @@ impl ZoneConnection {
         owed
     }
 
+    /// A log message from a quest's event (EventLogMessage with the quest's handler), as retail's at the end of
+    /// Austerities of Wind's (1095) battle.
+    pub(crate) async fn send_quest_log_message(
+        &mut self,
+        quest_id: u32,
+        message_type: u32,
+        params: Vec<u32>,
+    ) {
+        let Some(ipc) = kawari::ipc::zone::EventLogMessage {
+            handler_id: kawari::common::HandlerId::new(
+                kawari::common::HandlerType::Quest,
+                quest_id as u16,
+            ),
+            message_type,
+            params,
+        }
+        .package() else {
+            return;
+        };
+        self.send_ipc_self(ipc).await;
+    }
+
     /// A log message with no event (handler 0), as retail's EventLogMessage for the certificates.
     pub(crate) async fn send_event_log_message(&mut self, message_type: u32, params: Vec<u32>) {
         let Some(ipc) = kawari::ipc::zone::EventLogMessage {

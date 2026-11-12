@@ -1,0 +1,36 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 26
+        },
+        "120": {
+            "npcs": 86
+        },
+        "121": {
+            "npcs": 9.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Over the Rails' Geissfryn Eveningcalm, on your side, a conjurer (quest battle 51, drop-in layer QB_ClsAcn150_001 of ocn_o1e2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 15, 430 HP; Stone, Aero, Fluid Aura on the crew, Cure (the director's heal) on Aersthota.",
+    "rotation": {
+        "pace": 7.0,
+        "actions": [
+            {
+                "action": 119,
+                "every": 7.0,
+                "comment": "Stone: 7 uses, first 21.9-21.9 s after it came out, every 5.6-17.2 s; 1.2 s cast"
+            },
+            {
+                "action": 121,
+                "every": 51.0,
+                "comment": "Aero: 2 uses, first 33.6-33.6 s after it came out, every 51.0-51.0 s"
+            },
+            {
+                "action": 134,
+                "comment": "Fluid Aura: 1 uses, first 39.8-39.8 s after it came out; no damage"
+            }
+        ]
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "405": {
+            "npcs": 73
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 6.4,
+            "every": 11.0,
+            "data": {
+                "type": "action",
+                "action_id": 405,
+                "target": "target"
+            },
+            "comment": "Bomb Toss (a 2.2 s cast on the ground, 3 yalms): 6.3-6.5 s after it came out, then every 10.8-11.3 s"
+        }
+    ],
+    "comment": "Tactical Planning's goblin traders (quest battle 50, drop-in layer QB_ClsAcn100_001 of sea_s1f1). From Bob's Kawari Recorder run of 2026-11-12 (won): level 10, 249 HP; no auto-attack, only Bomb Toss (405), which landed on K'lyhia and her carbuncle for 69-85."
+}

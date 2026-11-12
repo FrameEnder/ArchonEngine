@@ -1,0 +1,27 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "57": {
+            "npcs": 85
+        },
+        "872": {
+            "npcs": 12.5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Over the Rails' Morningstar gunners (quest battle 51, drop-in layer QB_ClsAcn150_001 of ocn_o1e2), the second wave. From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 14, 219 HP; auto-attacks (872), Gutripper, Second Wind.",
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 57,
+                "comment": "Second Wind: 1 uses, first 10.8-10.8 s after it came out"
+            },
+            {
+                "action": 865,
+                "comment": "Gutripper: 2 uses, first 7.7-10.7 s after it came out; 2.2 s cast; no damage"
+            }
+        ]
+    }
+}

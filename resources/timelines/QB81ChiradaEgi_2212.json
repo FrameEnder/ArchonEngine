@@ -1,0 +1,27 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "792": {
+            "players": 24,
+            "npcs": 32
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Austerities of Wind's Chirada-Egi (quest battle 81, drop-in layer QB_JobSmn451_001 of sea_s1f6), out as Garuda-Egi fell under 40 %. From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 44, 1124 HP.",
+    "rotation": {
+        "pace": 3.8,
+        "actions": [
+            {
+                "action": 792,
+                "every": 3.8,
+                "comment": "Wind Blade: 6 uses, first 8.8-9.0 s after it came out, every 3.6-9.2 s; 0.7 s cast"
+            },
+            {
+                "action": 1334,
+                "every": 15.6,
+                "comment": "Shockwave: 2 uses, first 16.2-16.2 s after it came out, every 15.6-15.6 s; 1.7 s cast; no damage"
+            }
+        ]
+    }
+}

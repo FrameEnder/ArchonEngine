@@ -1,0 +1,11 @@
+{
+    "autoattack_action_id": 1172,
+    "recorded_amounts": {
+        "1172": {
+            "npcs": 72.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Escape from Castrum Centri's Wedge, on your side in the first part (quest battle 65, drop-in layer QB_ManFst407_001 of lak_l1f1). From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 41, 11239 HP; Photon Stream (1172) is all he does, as an auto-attack."
+}

@@ -1,0 +1,40 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "9": {
+            "npcs": 15.5
+        },
+        "15": {
+            "npcs": 27
+        },
+        "870": {
+            "npcs": 10
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Over the Rails' Morningstar falmadairs, gladiators (quest battle 51, drop-in layer QB_ClsAcn150_001 of ocn_o1e2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 14, 249 HP; auto-attacks (870), Fast Blade and Riot Blade, Rampart and Fight or Flight, mostly on Aersthota and Geissfryn.",
+    "rotation": {
+        "pace": 19.0,
+        "actions": [
+            {
+                "action": 9,
+                "every": 21.0,
+                "comment": "Fast Blade: 6 uses, first 8.3-28.1 s after it came out, every 21.0-21.0 s"
+            },
+            {
+                "action": 10,
+                "comment": "Rampart: 4 uses, first 14.8-17.5 s after it came out; no damage"
+            },
+            {
+                "action": 15,
+                "every": 19.0,
+                "comment": "Riot Blade: 5 uses, first 12.9-35.3 s after it came out, every 19.0-19.0 s"
+            },
+            {
+                "action": 20,
+                "comment": "Fight or Flight: 2 uses, first 13.5-30.7 s after it came out; no damage"
+            }
+        ]
+    }
+}

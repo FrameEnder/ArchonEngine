@@ -1,0 +1,43 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "633": {
+            "npcs": 1
+        },
+        "636": {
+            "npcs": 4
+        },
+        "870": {
+            "npcs": 8.0
+        },
+        "18202": {
+            "npcs": 5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Over the Rails' Topaz Carbuncle, K'lyhia's, on your side (quest battle 51, drop-in layer QB_ClsAcn150_001 of ocn_o1e2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 15, 382 HP.",
+    "rotation": {
+        "pace": 4.7,
+        "actions": [
+            {
+                "action": 633,
+                "every": 4.7,
+                "comment": "Gouge: 13 uses, first 8.4-8.4 s after it came out, every 3.6-7.8 s"
+            },
+            {
+                "action": 635,
+                "comment": "Curl: 1 uses, first 51.0-51.0 s after it came out; no damage"
+            },
+            {
+                "action": 636,
+                "comment": "Storm: 1 uses, first 31.6-31.6 s after it came out"
+            },
+            {
+                "action": 18202,
+                "every": 17.7,
+                "comment": "Shining Topaz: 4 uses, first 4.8-4.8 s after it came out, every 15.3-19.6 s; hit 3 at once"
+            }
+        ]
+    }
+}

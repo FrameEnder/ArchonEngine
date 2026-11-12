@@ -1,0 +1,20 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "141": {
+            "npcs": 102
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Pincer Maneuver's melancholy mercenary of the third wave (quest battle 52, drop-in layer QB_ClsAcn200_001 of sea_s1f2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 20, 206 HP.",
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 141,
+                "comment": "Fire: 1 uses, first 10.4-10.4 s after it came out; 1.7 s cast"
+            }
+        ]
+    }
+}

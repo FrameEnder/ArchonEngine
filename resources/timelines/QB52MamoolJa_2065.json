@@ -1,0 +1,36 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 47
+        },
+        "120": {
+            "npcs": 209
+        },
+        "561": {
+            "npcs": 45.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Pincer Maneuver's Mamool Ja mercenaries of the second wave, conjurers (quest battle 52, drop-in layer QB_ClsAcn200_001 of sea_s1f2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 20, 206 HP; Stone, Aero's Fluid Aura and Spinning Kick on the allies, Cure (the director's heal) on the other mercenaries.",
+    "rotation": {
+        "pace": 22.0,
+        "actions": [
+            {
+                "action": 119,
+                "every": 22.0,
+                "comment": "Stone: 6 uses, first 8.2-13.4 s after it came out, every 5.6-32.6 s; 1.2 s cast"
+            },
+            {
+                "action": 134,
+                "comment": "Fluid Aura: 2 uses, first 13.8-14.3 s after it came out; no damage"
+            },
+            {
+                "action": 561,
+                "every": 39.2,
+                "comment": "Spinning Kick: 2 uses, first 23.5-23.5 s after it came out, every 39.2-39.2 s; 2.7 s cast"
+            }
+        ]
+    }
+}

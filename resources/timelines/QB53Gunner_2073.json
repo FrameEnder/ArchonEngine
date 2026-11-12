@@ -1,0 +1,44 @@
+{
+    "autoattack_action_id": 872,
+    "recorded_amounts": {
+        "57": {
+            "npcs": 391.0
+        },
+        "865": {
+            "npcs": 97
+        },
+        "872": {
+            "players": 50,
+            "npcs": 32
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Sinking Doesmaga's Morningstar gunners (quest battle 53, drop-in layer QB_ClsAcn300_001 of ocn_o1e2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 28, 428 HP.",
+    "rotation": {
+        "pace": 19.4,
+        "actions": [
+            {
+                "action": 55,
+                "comment": "Featherfoot: 2 uses, first 4.7-5.3 s after it came out; no damage"
+            },
+            {
+                "action": 57,
+                "comment": "Second Wind: 2 uses, first 25.1-28.8 s after it came out"
+            },
+            {
+                "action": 59,
+                "comment": "Internal Release: 2 uses, first 19.2-25.7 s after it came out; no damage"
+            },
+            {
+                "action": 60,
+                "comment": "Fists of Earth: 3 uses, first 4.7-13.5 s after it came out; no damage"
+            },
+            {
+                "action": 865,
+                "every": 19.4,
+                "comment": "Gutripper: 3 uses, first 16.5-16.5 s after it came out, every 19.4-19.4 s; 2.2 s cast; hit 2 at once"
+            }
+        ]
+    }
+}

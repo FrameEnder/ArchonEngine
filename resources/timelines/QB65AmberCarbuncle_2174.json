@@ -1,0 +1,45 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "633": {
+            "npcs": 15.0
+        },
+        "636": {
+            "npcs": 41
+        },
+        "870": {
+            "npcs": 69
+        },
+        "18202": {
+            "npcs": 44.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Escape from Castrum Centri's Amber Carbuncle, Urianger's, on your side (quest battle 65, drop-in layer QB_ManFst407_001 of lak_l1f1). From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 46, 2180 HP.",
+    "rotation": {
+        "pace": 4.6,
+        "actions": [
+            {
+                "action": 633,
+                "every": 4.6,
+                "comment": "Gouge: 28 uses, first 11.0-11.0 s after it came out, every 3.9-8.3 s"
+            },
+            {
+                "action": 635,
+                "every": 123.1,
+                "comment": "Curl: 2 uses, first 32.9-32.9 s after it came out, every 123.1-123.1 s; no damage"
+            },
+            {
+                "action": 636,
+                "every": 72.2,
+                "comment": "Storm: 3 uses, first 7.8-7.8 s after it came out, every 65.8-78.6 s"
+            },
+            {
+                "action": 18202,
+                "every": 15.7,
+                "comment": "Shining Topaz: 9 uses, first 9.3-9.3 s after it came out, every 15.2-20.6 s; hit 3 at once"
+            }
+        ]
+    }
+}

@@ -1,0 +1,57 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "120": {
+            "players": 734,
+            "npcs": 730
+        },
+        "144": {
+            "npcs": 489
+        },
+        "148": {
+            "npcs": 249
+        },
+        "154": {
+            "npcs": 1373
+        },
+        "156": {
+            "npcs": 847.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Escape from Castrum Centri's Papalymo, on your side in the second part, a thaumaturge (quest battle 65, drop-in layer QB_ManFst407_001 of lak_l1f1). From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 50, 18123 HP; his Cure (the director's heal) on the others.",
+    "rotation": {
+        "pace": 19.3,
+        "actions": [
+            {
+                "action": 144,
+                "comment": "Thunder: 1 uses, first 20.4-20.4 s after it came out"
+            },
+            {
+                "action": 148,
+                "every": 26.5,
+                "comment": "Thunder II: 2 uses, first 61.4-61.4 s after it came out, every 26.5-26.5 s; 2.7 s cast"
+            },
+            {
+                "action": 151,
+                "comment": "Lethargy: 1 uses, first 113.0-113.0 s after it came out; no damage"
+            },
+            {
+                "action": 154,
+                "every": 49.6,
+                "comment": "Blizzard III: 3 uses, first 9.7-9.7 s after it came out, every 22.6-76.6 s; 3.2 s cast"
+            },
+            {
+                "action": 156,
+                "every": 19.3,
+                "comment": "Scathe: 4 uses, first 37.8-37.8 s after it came out, every 16.0-86.5 s"
+            },
+            {
+                "action": 157,
+                "every": 120.2,
+                "comment": "Manaward: 2 uses, first 11.8-11.8 s after it came out, every 120.2-120.2 s; no damage"
+            }
+        ]
+    }
+}

@@ -129,6 +129,12 @@ impl EventHandler for ContentEventHandler {
                 return;
             } else if connection.quest_battle_finish_scene == Some(scene) {
                 connection.quest_battle_finish_scene = None;
+                // The quest's own line as the closing scene ends, as retail's Austerities of Wind (1095) showed it.
+                if let Some((quest_id, log)) = connection.quest_battle_finish_log.take() {
+                    connection
+                        .send_quest_log_message(quest_id, log, Vec::new())
+                        .await;
+                }
                 // The battle's last DirectorVars as its closing scene ends, retail's for every win (`director::won`.)
                 connection
                     .handle

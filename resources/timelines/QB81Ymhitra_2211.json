@@ -1,0 +1,48 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 241
+        },
+        "120": {
+            "players": 828,
+            "npcs": 813
+        },
+        "121": {
+            "npcs": 92
+        },
+        "127": {
+            "npcs": 342
+        },
+        "132": {
+            "npcs": 90.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Austerities of Wind's Y'mhitra the Learned, on your side, a conjurer (quest battle 81, drop-in layer QB_JobSmn451_001 of sea_s1f6). From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 45, 3168 HP.",
+    "rotation": {
+        "pace": 5.6,
+        "actions": [
+            {
+                "action": 119,
+                "every": 7.6,
+                "comment": "Stone: 3 uses, first 52.5-57.5 s after it came out, every 7.6-7.6 s; 1.2 s cast"
+            },
+            {
+                "action": 121,
+                "comment": "Aero: 1 uses, first 61.6-61.6 s after it came out"
+            },
+            {
+                "action": 127,
+                "every": 5.6,
+                "comment": "Stone II: 7 uses, first 19.0-27.5 s after it came out, every 5.6-12.2 s; 1.2 s cast"
+            },
+            {
+                "action": 132,
+                "every": 33.0,
+                "comment": "Aero II: 4 uses, first 35.2-36.3 s after it came out, every 32.0-34.0 s"
+            }
+        ]
+    }
+}

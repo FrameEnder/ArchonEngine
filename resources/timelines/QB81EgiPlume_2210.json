@@ -1,0 +1,12 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "665": {
+            "players": 312.5,
+            "npcs": 414
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Austerities of Wind's Egi plumes (quest battle 81, drop-in layer QB_JobSmn451_001 of sea_s1f6): they wait where they come out until Garuda-Egi falls under 40 %, then each dives with Featherlance (665, the director's doing) and falls. From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 44, 80 HP; 300-314 on the player, 402-424 on Y'mhitra."
+}

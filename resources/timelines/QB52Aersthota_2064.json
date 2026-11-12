@@ -1,0 +1,48 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "31": {
+            "npcs": 33
+        },
+        "35": {
+            "npcs": 46
+        },
+        "41": {
+            "npcs": 23
+        },
+        "870": {
+            "npcs": 22
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Pincer Maneuver's Aersthota Morningcalm, on your side, a marauder, coming from behind the mercenaries 15 s in (quest battle 52, drop-in layer QB_ClsAcn200_001 of sea_s1f2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 20, 1032 HP.",
+    "rotation": {
+        "pace": 22.1,
+        "actions": [
+            {
+                "action": 31,
+                "every": 23.5,
+                "comment": "Heavy Swing: 5 uses, first 16.9-16.9 s after it came out, every 20.5-28.5 s"
+            },
+            {
+                "action": 32,
+                "comment": "Foresight: 1 uses, first 55.2-55.2 s after it came out; no damage"
+            },
+            {
+                "action": 34,
+                "comment": "Bloodbath: 1 uses, first 30.2-30.2 s after it came out; no damage"
+            },
+            {
+                "action": 35,
+                "every": 22.1,
+                "comment": "Skull Sunder: 4 uses, first 27.6-27.6 s after it came out, every 16.4-28.8 s"
+            },
+            {
+                "action": 41,
+                "every": 24.8,
+                "comment": "Overpower: 4 uses, first 30.8-30.8 s after it came out, every 21.8-26.6 s; hit 5 at once"
+            }
+        ]
+    }
+}

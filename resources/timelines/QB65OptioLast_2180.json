@@ -1,0 +1,30 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "119": {
+            "npcs": 341
+        },
+        "127": {
+            "npcs": 428
+        },
+        "135": {
+            "npcs": 1387
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Escape from Castrum Centri's last 5th Cohort optio (quest battle 65, drop-in layer QB_ManFst407_001 of lak_l1f1), with the colossus, a conjurer. From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 47, 1157 HP; Cure II (the director's heal) on the colossus.",
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 119,
+                "comment": "Stone: 1 uses, first 10.2-10.2 s after it came out; 1.2 s cast"
+            },
+            {
+                "action": 127,
+                "comment": "Stone II: 1 uses, first 15.8-15.8 s after it came out; 1.2 s cast"
+            }
+        ]
+    }
+}

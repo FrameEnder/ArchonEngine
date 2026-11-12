@@ -1,0 +1,48 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "1287": {
+            "npcs": 366.5
+        },
+        "1289": {
+            "npcs": 1067.0
+        },
+        "31086": {
+            "npcs": 128
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Austerities of Earth's dark summoner (quest battle 80, drop-in layer QB_JobSmn350_001 of fst_f1f4), the second part's. From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 36, 5224 HP.",
+    "rotation": {
+        "pace": 7.1,
+        "actions": [
+            {
+                "action": 164,
+                "comment": "Bio: 1 uses, first 10.6-10.6 s after it came out; no damage"
+            },
+            {
+                "action": 169,
+                "comment": "Virus: 1 uses, first 17.2-17.2 s after it came out; no damage"
+            },
+            {
+                "action": 1159,
+                "comment": "Eye for an Eye: 1 uses, first 4.7-4.7 s after it came out; no damage"
+            },
+            {
+                "action": 1287,
+                "every": 23.3,
+                "comment": "Light Succor: 2 uses, first 24.8-24.8 s after it came out, every 23.3-23.3 s; 2.7 s cast; hit 2 at once"
+            },
+            {
+                "action": 1289,
+                "every": 7.1,
+                "comment": "Gravity Force: 2 uses, first 33.9-33.9 s after it came out, every 7.1-7.1 s; 2.7 s cast"
+            },
+            {
+                "action": 31086,
+                "comment": "Ruin II: 1 uses, first 54.2-54.2 s after it came out"
+            }
+        ]
+    }
+}

@@ -1,0 +1,24 @@
+{
+    "autoattack_action_id": 871,
+    "recorded_amounts": {
+        "866": {
+            "npcs": 48
+        },
+        "871": {
+            "players": 8,
+            "npcs": 16.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Over the Rails' Morningstar boatswains (quest battle 51, drop-in layer QB_ClsAcn150_001 of ocn_o1e2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 14, 219 HP; auto-attacks (871) and Heartstopper (866).",
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 866,
+                "comment": "Heartstopper: 1 uses, first 22.8-22.8 s after it came out; 2.2 s cast; hit 2 at once"
+            }
+        ]
+    }
+}

@@ -1,0 +1,55 @@
+{
+    "autoattack_action_id": 873,
+    "recorded_amounts": {
+        "97": {
+            "npcs": 35
+        },
+        "100": {
+            "players": 15,
+            "npcs": 22.5
+        },
+        "106": {
+            "players": 15.5,
+            "npcs": 24
+        },
+        "873": {
+            "players": 12.0,
+            "npcs": 20
+        },
+        "18190": {
+            "npcs": 29
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Pincer Maneuver's mindful mercenaries (quest battle 52, drop-in layer QB_ClsAcn200_001 of sea_s1f2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 20, 330 HP.",
+    "rotation": {
+        "pace": 12.2,
+        "actions": [
+            {
+                "action": 97,
+                "every": 30.5,
+                "comment": "Heavy Shot: 6 uses, first 11.5-13.1 s after it came out, every 24.0-49.8 s"
+            },
+            {
+                "action": 100,
+                "every": 24.0,
+                "comment": "Venomous Bite: 7 uses, first 4.6-43.1 s after it came out, every 15.3-32.6 s"
+            },
+            {
+                "action": 101,
+                "comment": "Raging Strikes: 7 uses, first 4.5-13.9 s after it came out; no damage"
+            },
+            {
+                "action": 106,
+                "every": 15.3,
+                "comment": "Quick Nock: 13 uses, first 17.7-36.9 s after it came out, every 15.2-17.3 s; hit 3 at once"
+            },
+            {
+                "action": 18190,
+                "every": 12.2,
+                "comment": "Straight Shot: 5 uses, first 10.1-24.4 s after it came out, every 8.6-15.7 s"
+            }
+        ]
+    }
+}

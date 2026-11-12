@@ -1,0 +1,53 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "120": {
+            "players": 790,
+            "npcs": 773
+        },
+        "31085": {
+            "npcs": 544.5
+        },
+        "31086": {
+            "npcs": 394.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [
+        {
+            "time": 4.8,
+            "data": {
+                "type": "action",
+                "action_id": 1307,
+                "target": "itself"
+            },
+            "comment": "Summon II (5.7 s cast), once, 4.8 s after he came"
+        }
+    ],
+    "comment": "Escape from Castrum Centri's Urianger, on your side in the second part, an arcanist (quest battle 65, drop-in layer QB_ManFst407_001 of lak_l1f1). From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 50, 18123 HP; Summon II 4.8 s after he came (his Amber Carbuncle, the director's doing), Cure (the director's heal).",
+    "rotation": {
+        "pace": 14.2,
+        "actions": [
+            {
+                "action": 164,
+                "every": 47.9,
+                "comment": "Bio: 3 uses, first 47.4-47.4 s after it came out, every 34.7-61.1 s; no damage"
+            },
+            {
+                "action": 1159,
+                "every": 23.9,
+                "comment": "Eye for an Eye: 6 uses, first 11.2-11.2 s after it came out, every 22.1-39.1 s; no damage"
+            },
+            {
+                "action": 31085,
+                "every": 39.7,
+                "comment": "Ruin: 4 uses, first 27.3-27.3 s after it came out, every 13.7-85.0 s; 1.2 s cast"
+            },
+            {
+                "action": 31086,
+                "every": 14.2,
+                "comment": "Ruin II: 7 uses, first 58.0-58.0 s after it came out, every 4.6-33.0 s"
+            }
+        ]
+    }
+}

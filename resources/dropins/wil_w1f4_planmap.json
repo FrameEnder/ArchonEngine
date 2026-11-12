@@ -12924,6 +12924,248 @@
                     "rotation": -3.0318
                 }
             ]
+        },
+        {
+            "name": "QB_JobSmn300_001",
+            "objects": [
+                {
+                    "data": {
+                        "base_id": 1514,
+                        "gimmick_id": 0,
+                        "hostile": false,
+                        "hp": 2340,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1640,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262145,
+                        "character_data_flags": 3,
+                        "appearance": {
+                            "class_job": 6,
+                            "main_weapon": [
+                                189,
+                                2,
+                                1,
+                                0,
+                                7,
+                                0,
+                                0,
+                                0
+                            ],
+                            "sec_weapon": [
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0
+                            ],
+                            "models": [
+                                0,
+                                0,
+                                0,
+                                0,
+                                4,
+                                0,
+                                40,
+                                61,
+                                175,
+                                38,
+                                1,
+                                0,
+                                7,
+                                0,
+                                89,
+                                0,
+                                43,
+                                0,
+                                1,
+                                1,
+                                1,
+                                0,
+                                2,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0
+                            ],
+                            "look": [
+                                4,
+                                1,
+                                1,
+                                50,
+                                7,
+                                3,
+                                12,
+                                1,
+                                12,
+                                169,
+                                49,
+                                16,
+                                0,
+                                0,
+                                1,
+                                169,
+                                129,
+                                3,
+                                1,
+                                131,
+                                171,
+                                50,
+                                1,
+                                25,
+                                0,
+                                0
+                            ]
+                        }
+                    },
+                    "layout_id": 4300437,
+                    "position": {
+                        "x": -347.13,
+                        "y": 0.95,
+                        "z": 741.42
+                    },
+                    "rotation": -1.215
+                },
+                {
+                    "data": {
+                        "base_id": 1513,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 4435,
+                        "level": 31,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1402,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262144,
+                        "character_data_flags": 1
+                    },
+                    "layout_id": 4300450,
+                    "position": {
+                        "x": -356.75,
+                        "y": 1.089,
+                        "z": 743.358
+                    },
+                    "rotation": 1.9879
+                },
+                {
+                    "data": {
+                        "base_id": 1515,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 234,
+                        "level": 30,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 1970,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262147,
+                        "character_data_flags": 2
+                    },
+                    "layout_id": 4300454,
+                    "position": {
+                        "x": -364.382,
+                        "y": 1.266,
+                        "z": 736.972
+                    },
+                    "rotation": -0.0
+                },
+                {
+                    "data": {
+                        "base_id": 1516,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 384,
+                        "level": 26,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 2104,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262184,
+                        "character_data_flags": 1
+                    },
+                    "layout_id": 4300459,
+                    "position": {
+                        "x": -343.95,
+                        "y": 0.95,
+                        "z": 747.727
+                    },
+                    "rotation": -0.0
+                },
+                {
+                    "data": {
+                        "base_id": 1516,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 384,
+                        "level": 26,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 2104,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262184,
+                        "character_data_flags": 1
+                    },
+                    "layout_id": 4300461,
+                    "position": {
+                        "x": -361.66,
+                        "y": 1.51,
+                        "z": 750.379
+                    },
+                    "rotation": -0.0
+                },
+                {
+                    "data": {
+                        "base_id": 1516,
+                        "gimmick_id": 0,
+                        "hostile": true,
+                        "hp": 384,
+                        "level": 26,
+                        "link_family": 0,
+                        "link_range": 20,
+                        "max_links": 4,
+                        "name_id": 2104,
+                        "nonpop": true,
+                        "type": "battle_npc",
+                        "display_flags": 262184,
+                        "character_data_flags": 1
+                    },
+                    "layout_id": 4300462,
+                    "position": {
+                        "x": -355.137,
+                        "y": 1.305,
+                        "z": 734.173
+                    },
+                    "rotation": -0.0
+                }
+            ]
         }
     ]
 }

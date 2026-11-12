@@ -1,0 +1,38 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "146": {
+            "npcs": 40
+        },
+        "148": {
+            "npcs": 61
+        },
+        "156": {
+            "npcs": 141
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Sinking Doesmaga's Morningstar cosier (quest battle 53, drop-in layer QB_ClsAcn300_001 of ocn_o1e2), the second wave. From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 30, 390 HP.",
+    "rotation": {
+        "pace": 8.0,
+        "actions": [
+            {
+                "action": 146,
+                "comment": "Blizzard II: 1 uses, first 32.6-32.6 s after it came out; 1.7 s cast"
+            },
+            {
+                "action": 148,
+                "comment": "Thunder II: 1 uses, first 19.4-19.4 s after it came out; 2.7 s cast"
+            },
+            {
+                "action": 156,
+                "comment": "Scathe: 1 uses, first 13.5-13.5 s after it came out"
+            },
+            {
+                "action": 157,
+                "comment": "Manaward: 1 uses, first 25.7-25.7 s after it came out; no damage"
+            }
+        ]
+    }
+}

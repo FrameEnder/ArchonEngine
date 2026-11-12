@@ -1,0 +1,43 @@
+{
+    "autoattack_action_id": 870,
+    "recorded_amounts": {
+        "633": {
+            "npcs": 7.0
+        },
+        "636": {
+            "npcs": 23
+        },
+        "870": {
+            "npcs": 32
+        },
+        "18202": {
+            "npcs": 19.0
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Pincer Maneuver's Topaz Carbuncle, Thubyrgeim's, on your side (quest battle 52, drop-in layer QB_ClsAcn200_001 of sea_s1f2). From Bob's Kawari Recorder run of 2026-11-12 (won; questkit battle): level 30, 780 HP.",
+    "rotation": {
+        "pace": 4.6,
+        "actions": [
+            {
+                "action": 633,
+                "every": 4.6,
+                "comment": "Gouge: 22 uses, first 6.5-6.5 s after it came out, every 3.4-9.7 s"
+            },
+            {
+                "action": 635,
+                "comment": "Curl: 1 uses, first 16.9-16.9 s after it came out; no damage"
+            },
+            {
+                "action": 636,
+                "comment": "Storm: 1 uses, first 65.7-65.7 s after it came out"
+            },
+            {
+                "action": 18202,
+                "every": 16.2,
+                "comment": "Shining Topaz: 8 uses, first 4.8-4.8 s after it came out, every 15.7-18.1 s; hit 7 at once"
+            }
+        ]
+    }
+}

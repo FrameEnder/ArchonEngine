@@ -1,0 +1,34 @@
+{
+    "autoattack_action_id": 0,
+    "recorded_amounts": {
+        "792": {
+            "players": 58.0,
+            "npcs": 79
+        },
+        "794": {
+            "players": 297.5
+        }
+    },
+    "timeline_always_plays": false,
+    "timepoints": [],
+    "comment": "Austerities of Wind's Garuda-Egi (quest battle 81, drop-in layer QB_JobSmn451_001 of sea_s1f6). From Bob's Kawari Recorder runs of 2026-11-12 (one lost, one won; questkit battle): level 46, 20056 HP.",
+    "rotation": {
+        "pace": 6.6,
+        "actions": [
+            {
+                "action": 792,
+                "every": 6.6,
+                "comment": "Wind Blade: 22 uses, first 12.6-13.2 s after it came out, every 3.6-10.5 s; 0.7 s cast; hit 2 at once"
+            },
+            {
+                "action": 794,
+                "comment": "Aerial Slash: 2 uses, first 67.4-68.7 s after it came out"
+            },
+            {
+                "action": 1334,
+                "every": 14.1,
+                "comment": "Shockwave: 10 uses, first 17.3-19.5 s after it came out, every 10.2-19.1 s; 1.7 s cast; no damage"
+            }
+        ]
+    }
+}
