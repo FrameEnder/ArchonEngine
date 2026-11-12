@@ -1169,6 +1169,10 @@ async fn process_packet(
                                     connection.send_ipc_self(ipc).await;
                                 }
                                 ClientTriggerCommand::FinishZoning => {
+                                    // The quests to take up here: retail's markers a moment after entering a zone.
+                                    connection
+                                        .send_map_markers(kawari_world::MAP_MARKERS_ZONE_IN)
+                                        .await;
                                     // The server needs the chocobo companion to bring it along or say it isn't out.
                                     connection.send_companion().await;
                                     connection
@@ -1798,18 +1802,12 @@ async fn process_packet(
                                 ClientTriggerCommand::WithdrawFromArmoire { cabinet_id } => {
                                     connection.withdraw_from_armoire(cabinet_id).await;
                                 }
-                                // After every inventory change retail answered with an empty map marker update
-                                // (Bob's Chronofoil capture of 2026-10-24.)
+                                // After every inventory change (a class change's equipment among them) retail
+                                // answered with the map markers (Bob's Chronofoil captures of 2026-10-24, da424662
+                                // and d3379099; empty where no quest could be taken up.)
                                 ClientTriggerCommand::InventoryChanged => {
                                     connection
-                                        .actor_control_self(
-                                            ActorControlCategory::MapMarkerUpdateBegin { flags: 1 },
-                                        )
-                                        .await;
-                                    connection
-                                        .actor_control_self(
-                                            ActorControlCategory::MapMarkerUpdateEnd,
-                                        )
+                                        .send_map_markers(kawari_world::MAP_MARKERS_CHANGED)
                                         .await;
                                 }
                                 ClientTriggerCommand::RequestInventorySlot { container, slot } => {

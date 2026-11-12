@@ -18,6 +18,7 @@ use diesel::sql_types::Text;
 use diesel::sqlite::Sqlite;
 use kawari::constants::{CLASSJOB_ARRAY_SIZE, SHARED_FATES_SIZE};
 use serde::{Deserialize, Serialize};
+pub use zone_connection::quest::{MAP_MARKERS_CHANGED, MAP_MARKERS_ZONE_IN};
 pub use zone_connection::{
     GearUse, MaterializeRequest, ObsfucationData, PlayerData, RIDE_SHOOTING_OPENING_FLAGS,
     RIDE_SHOOTING_OPENING_VALUE, TeleportReason, ZoneConnection,

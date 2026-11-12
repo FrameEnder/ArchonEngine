@@ -1130,6 +1130,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Quest battles and directors
 
+* **Map markers** (2026-11-12, [Quests](quests.md#map-markers)): built from retail's captures to fix the guide's class
+  quest staying on one just completed (Bob's bundle 20261112-222427); not seen in game yet, so whether it does is
+  open. Which quests retail lists isn't checked against the sheets (Kawari's conditions are the Scenario Guide's plus
+  class, level and the kinds left out), nor the icons beyond the startup check; retail's other events in the list
+  (handler types like 0xB0147) aren't sent.
+
 * **Notorious Biggs' placement** (2026-11-12, Bob's bundle 20261112-195353): built from four retail runs, untested in
   game ([Quest battles](quest-battles.md#quest-battle-62--notorious-biggs-contentquestbattle62lua)). How far off a big
   enemy everyone stands depends on its hitbox, which comes from the game data's model sizes (`npc_hitbox_radius`)

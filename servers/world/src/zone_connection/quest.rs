@@ -19,8 +19,8 @@ use kawari::{
     config::get_config,
     constants::COMPLETED_QUEST_BITMASK_SIZE,
     ipc::zone::{
-        ActiveQuest, ActorControlCategory, EventLogMessage, QuestActiveList, QuestTracker,
-        ServerZoneIpcData, ServerZoneIpcSegment, TrackedQuest,
+        ActiveQuest, ActorControlCategory, EventLogMessage, MapMarkers, QuestActiveList,
+        QuestTracker, ServerZoneIpcData, ServerZoneIpcSegment, TrackedQuest,
     },
 };
 
@@ -145,6 +145,46 @@ impl ZoneConnection {
         });
         self.send_ipc_self(ipc).await;
         self.scenario_guide_sent = Some((last_completed, next));
+    }
+
+    /// The map markers for the quests the player could take up in this zone (`GameData::quest_map_markers`), as
+    /// retail sends them (Bob's Chronofoil captures da424662 and d3379099): ActorControlSelf 511 with `flags`, the
+    /// markers in the smallest UpdateMapMarkers that holds them (4, 8, 16 or 32; none when there are none), then 512.
+    /// Retail's flags: 63 a moment after entering a zone, 27 as a quest is completed (before its journal update, the
+    /// list without it and with what it opened), 1 otherwise: twice on a class change and after inventory changes.
+    /// The client works out from them more than the map: Kawari sent none at all, and the guide's class quest below
+    /// the Main Scenario Guide kept the quest just completed until the next login, on a class change too (Bob's
+    /// bundle 20261112-222427: O Brother, Where Art Thou after it was done, Following in His Footsteps underway).
+    pub async fn send_map_markers(&mut self, flags: u32) {
+        let territory = self.player_data.volatile.zone_id as u16;
+        let markers = {
+            let level = self.current_level(&self.game_data.lock());
+            let completed = &self.player_data.quest.completed;
+            let active = &self.player_data.quest.active.0;
+            self.game_data.lock().quest_map_markers(
+                territory,
+                |id| completed.contains(id),
+                |id| active.iter().any(|quest| quest.id as u32 == id),
+                self.player_data.classjob.current_class as u8,
+                level,
+                self.player_data.grand_company.active_company as u8,
+            )
+        };
+        tracing::debug!("Map markers ({flags}) in {territory}: {markers:?}");
+        self.actor_control_self(ActorControlCategory::MapMarkerUpdateBegin { flags })
+            .await;
+        for chunk in markers.chunks(32) {
+            let list = MapMarkers::new(chunk);
+            let data = match chunk.len() {
+                0..=4 => ServerZoneIpcData::UpdateMapMarkers4(list),
+                5..=8 => ServerZoneIpcData::UpdateMapMarkers8(list),
+                9..=16 => ServerZoneIpcData::UpdateMapMarkers16(list),
+                _ => ServerZoneIpcData::UpdateMapMarkers32(list),
+            };
+            self.send_ipc_self(ServerZoneIpcSegment::new(data)).await;
+        }
+        self.actor_control_self(ActorControlCategory::MapMarkerUpdateEnd)
+            .await;
     }
 
     pub async fn send_quest_information(&mut self) {
@@ -325,10 +365,13 @@ impl ZoneConnection {
         // A job's first quest gives its soul crystal, after the EXP as retail.
         self.give_job_soul_crystal(id).await;
 
+        // Retail's map markers come before the journal's update, already without this quest and with what it
+        // opened (flags 27: `send_map_markers`.)
+        self.player_data.quest.completed.set(adjusted_id);
+        self.send_map_markers(MAP_MARKERS_QUEST_COMPLETED).await;
+
         // The quests after it moved up a slot, so send the whole journal again
         self.send_active_quests().await;
-
-        self.player_data.quest.completed.set(adjusted_id);
         self.grant_quest_unlocks(id, true).await;
         // An aethernet destination that waited for this quest (the White Wolf Gate's.)
         self.learn_aethernet_extras().await;
@@ -1172,6 +1215,11 @@ mod finished_with_tests {
         assert!(finished_with(1004).is_empty());
     }
 }
+
+/// `send_map_markers`' flags as a zone is entered, as a quest is completed, and otherwise (retail's.)
+pub const MAP_MARKERS_ZONE_IN: u32 = 63;
+pub const MAP_MARKERS_QUEST_COMPLETED: u32 = 27;
+pub const MAP_MARKERS_CHANGED: u32 = 1;
 
 /// The quests each quest script marks done with it (`player:mark_quest_completed`, their QUEST_ALSO_COMPLETED: the
 /// ones a streamlined quest replaced, or that retail finishes with it), by quest number. Until 2026-11-12 each of

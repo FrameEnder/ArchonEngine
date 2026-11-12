@@ -840,6 +840,33 @@ three runs, every step from the city's last quests to We Come in Peace):
   Kawari's My Little Chocobo ended the event first and its name stayed under the guide once done (Bob's bundle
   20261029-152644), so `process_lua_player` now ends an event after the quests finished in the same batch.
 
+## Map markers
+
+Retail tells the client which quests can be taken up in the zone and from whom: ActorControlSelf 511
+(MapMarkerUpdateBegin) with flags, UpdateMapMarkers (4, 8, 16 or 32 entries: the count, then each entry's map icon,
+the issuer's layout ID and the quest's event ID, then a byte each, 0), then 512 (MapMarkerUpdateEnd). Bob's Chronofoil
+captures da424662 and d3379099 (2026-11): flags 63 a moment after every zone change (the zone's whole list, nothing
+between 511 and 512 where there's none), **27 as a quest is completed** (before its journal update, already without it
+and with the quests it opened: Honor Lost's Jenlyns then offered 1057), and 1 after inventory changes and **twice on a
+class change** (after PlayerStats, before UnkClassRelated, and after the equipment). Their icons were 71021 (most),
+71141 (job quests) and 71151; entries with other handler types (0xB0147 and the like, some with icon 0 and the last
+byte 1) are other events.
+
+Kawari sent only 511 and 512 with nothing between, after inventory changes, until 2026-11-12, when the guide's class
+quest below the Main Scenario Guide kept showing the quest just completed (O Brother, Where Art Thou, with Following in
+His Footsteps underway) until the next login, also through class changes (Bob's bundle 20261112-222427; it's an old
+one). The client works that line out itself (AgentScenarioTree's job quests); retail's markers at exactly those
+moments are the one thing Kawari didn't send, so Kawari now does (`ZoneConnection::send_map_markers`, at
+FinishZoning, in `finish_quest` and `finish_changing_class`, and on InventoryChanged), with what
+`GameData::quest_map_markers` works out: every quest whose IssuerLocation (a Level row) is in the zone, not done or
+underway, following on from those done (PreviousQuest, PreviousQuestJoin), not locked (QuestLock, QuestLockJoin), of
+the player's Grand Company if any, for their class (ClassJobCategory0) at their level (ClassJobLevel0), and not a
+festival's, a beast tribe's, a repeatable or a house's; the issuer is the Level row's Object, the icon the
+EventIconType's MapIconAvailable plus the offset retail's icons sit at (checked at startup against three of retail's:
+152 71151, 165 71021, 1057 71141; logged). The packet's layout is retail's byte for byte (test `writes_as_retail` in
+`core/src/ipc/zone/server/map_markers.rs`). Whether this is what refreshes the guide's class quest is still to be seen
+in game.
+
 ## Quests finished together
 
 Retail finishes some quests the moment another is finished, quests the player never plays: mostly the main scenario

@@ -896,6 +896,10 @@ impl ZoneConnection {
         let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::UnkJobGauge { unk: [0; 8] });
         self.send_ipc_self(ipc).await;
         self.send_stats().await;
+        // The quests to take up depend on the class: retail's markers come here, before UnkClassRelated (Bob's
+        // Chronofoil capture d3379099), and again after the equipment.
+        self.send_map_markers(crate::zone_connection::quest::MAP_MARKERS_CHANGED)
+            .await;
 
         let ipc;
         {

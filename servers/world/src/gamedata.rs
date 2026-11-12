@@ -189,6 +189,8 @@ pub struct GameData {
     model_skeleton_sheet: Option<ModelSkeletonSheet>,
     /// Which of `HITBOX_FORMULAS` matches what Kawari Recorder measured on retail (None: none does), found once.
     hitbox_formula: Option<Option<usize>>,
+    /// Every quest by where its issuer stands (`quest_map_markers`), read the first time it's needed.
+    quest_issuers: Option<HashMap<u16, Vec<QuestIssuer>>>,
     /// Actions some other action continues from (another row's ActionCombo), filled in on first use.
     combo_starters: Option<std::collections::HashSet<u16>>,
     pub classjob_sheet: ClassJobSheet,
@@ -1050,6 +1052,7 @@ impl GameData {
             model_chara_sheet: None,
             model_skeleton_sheet: None,
             hitbox_formula: None,
+            quest_issuers: None,
             combo_starters: None,
             classjob_sheet,
             battalion_sheet,
@@ -3032,6 +3035,160 @@ impl GameData {
         Some((adjust_quest_id(*last), next))
     }
 
+    /// The map markers for the quests a player could take up in `territory` now, as retail sends them in
+    /// UpdateMapMarkers (Bob's Chronofoil captures da424662 and d3379099, 2026-11): for each quest not done and not
+    /// underway whose issuer stands here (its IssuerLocation's Level row), that follows on from those done (its
+    /// PreviousQuest, all or any by PreviousQuestJoin 2), isn't locked (QuestLock), suits the Grand Company and the
+    /// class at its level (ClassJobCategory0 and ClassJobLevel0), and isn't a festival's, a beast tribe's or a
+    /// repeatable one: its map icon, the issuer's layout ID and the quest's event ID, in quest order. Retail's
+    /// lists also hold other events (handler types other than quests, e.g. 0xB0147) which Kawari leaves out.
+    pub fn quest_map_markers(
+        &mut self,
+        territory: u16,
+        is_completed: impl Fn(u32) -> bool,
+        is_active: impl Fn(u32) -> bool,
+        classjob: u8,
+        level: u16,
+        grand_company: u8,
+    ) -> Vec<(u32, u32, u32)> {
+        if self.quest_issuers.is_none() {
+            self.quest_issuers = Some(self.read_quest_issuers());
+        }
+        let Some(here) = self
+            .quest_issuers
+            .as_ref()
+            .and_then(|issuers| issuers.get(&territory))
+            .cloned()
+        else {
+            return Vec::new();
+        };
+        let done = |id: u32| id != 0 && is_completed(adjust_quest_id(id));
+        let mut markers = Vec::new();
+        for issuer in here {
+            let Some(row) = self.quest_sheet.row(issuer.quest) else {
+                continue;
+            };
+            if done(issuer.quest) || is_active(adjust_quest_id(issuer.quest)) {
+                continue;
+            }
+            let previous: Vec<u32> = row
+                .PreviousQuest
+                .iter()
+                .copied()
+                .filter(|x| *x != 0)
+                .collect();
+            let follows_on = previous.is_empty()
+                || if row.PreviousQuestJoin == 2 {
+                    previous.iter().any(|x| done(*x))
+                } else {
+                    previous.iter().all(|x| done(*x))
+                };
+            let locks: Vec<u32> = row.QuestLock.iter().copied().filter(|x| *x != 0).collect();
+            let locked = !locks.is_empty()
+                && if row.QuestLockJoin == 2 {
+                    locks.iter().any(|x| done(*x))
+                } else {
+                    locks.iter().all(|x| done(*x))
+                };
+            if !follows_on || locked {
+                continue;
+            }
+            if row.GrandCompany != 0 && row.GrandCompany != grand_company {
+                continue;
+            }
+            if row.Festival != 0 || row.BeastTribe != 0 || row.IsRepeatable || row.IsHouseRequired {
+                continue;
+            }
+            let category = row.ClassJobCategory0;
+            if category > 1
+                && !self
+                    .get_applicable_classjobs(category as u16)
+                    .contains(&classjob)
+            {
+                continue;
+            }
+            if level < row.ClassJobLevel[0] {
+                continue;
+            }
+            markers.push((issuer.icon, issuer.layout, issuer.quest));
+        }
+        markers
+    }
+
+    /// Every quest's issuer by territory, with its map icon (`quest_map_markers`): the IssuerLocation's Level row
+    /// (its Territory and Object, the issuer's layout ID) and the EventIconType's MapIconAvailable plus the offset
+    /// retail's icons sit at (`RETAIL_QUEST_MAP_ICONS`).
+    fn read_quest_issuers(&mut self) -> HashMap<u16, Vec<QuestIssuer>> {
+        let mut by_territory: HashMap<u16, Vec<QuestIssuer>> = HashMap::new();
+        let (Ok(levels), Ok(icons)) = (
+            icarus::Level::LevelSheet::read_from(&mut self.resource, Language::None),
+            icarus::EventIconType::EventIconTypeSheet::read_from(
+                &mut self.resource,
+                Language::None,
+            ),
+        ) else {
+            tracing::warn!("Couldn't read the Level or EventIconType sheet: no quest map markers");
+            return by_territory;
+        };
+        // How retail's icons sit against the sheet's (`RETAIL_QUEST_MAP_ICONS`): the same offset for each, or 1.
+        let offsets: Vec<i64> = RETAIL_QUEST_MAP_ICONS
+            .iter()
+            .filter_map(|(quest, retail)| {
+                let row = self.quest_sheet.row(QuestSheet::STARTING_ROW + quest)?;
+                let icon = icons.row(row.EventIconType as u32)?;
+                Some(*retail as i64 - icon.MapIconAvailable as i64)
+            })
+            .collect();
+        let offset = match offsets.first() {
+            Some(first) if offsets.iter().all(|x| x == first) && (0..=5).contains(first) => {
+                *first as u32
+            }
+            _ => {
+                tracing::warn!(
+                    "Quest map markers: retail's icons don't sit at one offset from the sheet's ({offsets:?}), using 1"
+                );
+                1
+            }
+        };
+        tracing::info!(
+            "Quest map markers: retail's icons are the sheet's MapIconAvailable + {offset} ({offsets:?})"
+        );
+        let quests: Vec<(u32, u32, u8)> = self
+            .quest_sheet
+            .clone()
+            .into_iter()
+            .flatten_subrows()
+            .filter(|(_, row)| row.IssuerLocation != 0)
+            .map(|(id, row)| (id, row.IssuerLocation, row.EventIconType))
+            .collect();
+        for (quest, location, icon_type) in quests {
+            let (Some(level), Some(icon)) = (levels.row(location), icons.row(icon_type as u32))
+            else {
+                continue;
+            };
+            if level.Object == 0 || icon.MapIconAvailable == 0 {
+                continue;
+            }
+            by_territory
+                .entry(level.Territory)
+                .or_default()
+                .push(QuestIssuer {
+                    quest,
+                    layout: level.Object,
+                    icon: icon.MapIconAvailable + offset,
+                });
+        }
+        for issuers in by_territory.values_mut() {
+            issuers.sort_by_key(|issuer| issuer.quest);
+        }
+        tracing::info!(
+            "Quest map markers: {} quests' issuers in {} territories",
+            by_territory.values().map(Vec::len).sum::<usize>(),
+            by_territory.len()
+        );
+        by_territory
+    }
+
     /// Returns the list of applicable classjob IDs based on the ClassJobCategory.
     pub fn get_applicable_classjobs(&mut self, classjob_category_id: u16) -> Vec<u8> {
         let config = get_config();
@@ -5007,3 +5164,19 @@ mod hq_weapon_tests {
         assert_eq!(synced_weapon_damage((24, 24), (28, 28)), (24, 24));
     }
 }
+
+/// A quest and where its issuer stands (`GameData::quest_map_markers`.)
+#[derive(Debug, Clone)]
+struct QuestIssuer {
+    /// Its Quest row.
+    quest: u32,
+    /// The issuer's layout ID (its Level row's Object.)
+    layout: u32,
+    /// The map icon for a quest that can be taken up.
+    icon: u32,
+}
+
+/// Quests and the map icon retail's UpdateMapMarkers gave their issuers (Bob's Chronofoil capture da424662,
+/// 2026-11-12: 152 71151, 165 71021, 1057 71141), against which the sheet's MapIconAvailable is checked at startup to
+/// find the offset (Questionable takes NPC icons as NpcIconAvailable plus one.)
+const RETAIL_QUEST_MAP_ICONS: [(u32, u32); 3] = [(152, 71151), (165, 71021), (1057, 71141)];
