@@ -391,6 +391,32 @@ impl ZoneConnection {
             .await;
     }
 
+    /// A world bot's search info (`server::world_bot_life::listed_by_content_id`): its class at its level, the others
+    /// at 0, no comment, no Grand Company rank.
+    pub fn world_bot_search_info(&self, content_id: u64) -> Option<ServerZoneIpcData> {
+        let listed = crate::server::world_bot_listed(content_id)?;
+        // Its class and job share a level (the ClassJob sheet's EXP index), as a player's do.
+        let exp_indexes = self.game_data.lock().classjob_exp_indexes.clone();
+        let its_index = exp_indexes.get(listed.classjob as usize).copied();
+        let mut classjob_levels = [(0u16, 0u16); kawari::constants::AVAILABLE_CLASSJOBS];
+        for (i, (index, level)) in classjob_levels.iter_mut().enumerate() {
+            *index = i as u16 + 1;
+            if its_index.is_some_and(|its| its != -1 && exp_indexes.get(i + 1) == Some(&its)) {
+                *level = listed.level as u16;
+            }
+        }
+        Some(ServerZoneIpcData::OtherSearchInfo {
+            content_id,
+            unk1: [0; 26],
+            world_id: self.config.world_id,
+            comment: String::new(),
+            unk2: [0; 157],
+            grand_company_rank: 0,
+            unk3: [0; 2],
+            classjob_levels,
+        })
+    }
+
     /// Searches for online players.
     pub async fn search_players(
         &mut self,
@@ -413,6 +439,13 @@ impl ZoneConnection {
                 db.find_online_players(&mut game_data, self.player_data.character.content_id);
             self.search_index = 0;
         }
+        // The world bots are online players too (`server::world_bot_life::listed`), filtered as anyone is below.
+        let world_id = self.config.world_id;
+        self.search_results.extend(
+            crate::server::world_bots_listed()
+                .iter()
+                .map(|listed| crate::server::world_bot_search_entry(listed, world_id)),
+        );
 
         // The Online Status portion of the client's search, broken into individual OnlineStatuses.
         let search_onlinestatus_masks = online_status.mask();

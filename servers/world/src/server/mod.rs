@@ -130,6 +130,10 @@ mod wipe;
 #[allow(dead_code)]
 mod questing;
 mod world_bot_life;
+pub(crate) use world_bot_life::{
+    listed as world_bots_listed, listed_by_content_id as world_bot_listed,
+    search_entry as world_bot_search_entry,
+};
 mod world_bots;
 mod world_turn;
 mod zone;

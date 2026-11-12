@@ -13,8 +13,9 @@ use std::{
 use kawari::{
     common::CharacterMode,
     ipc::zone::{
-        ActionEffect, ActionType, ActorControlCategory, LiveEventType, ServerZoneIpcData,
-        ServerZoneIpcSegment, TargetEffect,
+        ActionEffect, ActionType, ActorControlCategory, LiveEventType, OnlineStatus,
+        OnlineStatusMask, PlayerEntry, ServerZoneIpcData, ServerZoneIpcSegment, SocialListUIFlags,
+        SocialListUILanguages, TargetEffect,
     },
 };
 use parking_lot::Mutex;
@@ -707,6 +708,67 @@ pub fn crafting(
     true
 }
 
+// ----------------------------------------------------------------------------------------------------------------
+// Player Search: world bots are online players, listed where they are.
+
+/// A world bot as Player Search and its search info see it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Listed {
+    pub content_id: u64,
+    pub name: String,
+    pub classjob: u8,
+    pub level: u8,
+    /// The territory it's in (or going to.)
+    pub territory: u16,
+    pub online_status: OnlineStatus,
+}
+
+fn directory() -> &'static Mutex<Vec<Listed>> {
+    static DIRECTORY: std::sync::OnceLock<Mutex<Vec<Listed>>> = std::sync::OnceLock::new();
+    DIRECTORY.get_or_init(Default::default)
+}
+
+/// Every world bot as it is now, for the zone connections' searches (kept by `world_bots::update`.)
+pub fn publish(listed: Vec<Listed>) {
+    *directory().lock() = listed;
+}
+
+/// The world bots to search among.
+pub fn listed() -> Vec<Listed> {
+    directory().lock().clone()
+}
+
+/// A world bot by its content ID (`CONTENT_ID_BASE`), for its search info.
+pub fn listed_by_content_id(content_id: u64) -> Option<Listed> {
+    directory()
+        .lock()
+        .iter()
+        .find(|listed| listed.content_id == content_id)
+        .cloned()
+}
+
+/// A world bot as a Player Search result: online (and its own status), where it is, its class and level, the
+/// server's world. Its languages are English (retail's players' aren't in the captures.)
+pub fn search_entry(listed: &Listed, world_id: u16) -> PlayerEntry {
+    let mut online_status_mask = OnlineStatusMask::from_online_status(OnlineStatus::Online);
+    if listed.online_status != OnlineStatus::Offline {
+        online_status_mask.set_status(listed.online_status);
+    }
+    PlayerEntry {
+        content_id: listed.content_id,
+        current_world_id: world_id,
+        ui_flags: SocialListUIFlags::ENABLE_CONTEXT_MENU,
+        zone_id: listed.territory,
+        social_ui_languages: SocialListUILanguages::ENGLISH,
+        online_status_mask,
+        classjob_id: listed.classjob,
+        classjob_level: listed.level,
+        home_world_id: world_id,
+        name: listed.name.clone(),
+        ..Default::default()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -828,6 +890,36 @@ mod tests {
                 }
             )
         )));
+    }
+
+    /// Stage 3: Player Search finds world bots (it found none, `world-bots.md`'s "Not done yet").
+    #[test]
+    fn a_world_bot_is_a_search_result() {
+        let listed = Listed {
+            content_id: 0x00B2_0000_0000_0042,
+            name: "Test Bot".into(),
+            classjob: 24,
+            level: 87,
+            territory: 132,
+            online_status: OnlineStatus::NewAdventurer,
+        };
+        publish(vec![listed.clone()]);
+        assert_eq!(
+            listed_by_content_id(0x00B2_0000_0000_0042),
+            Some(listed.clone())
+        );
+        let entry = search_entry(&listed, 99);
+        assert_eq!(
+            (entry.classjob_id, entry.classjob_level, entry.zone_id),
+            (24, 87, 132)
+        );
+        assert!(entry.online_status_mask.has_status(OnlineStatus::Online));
+        assert!(
+            entry
+                .online_status_mask
+                .has_status(OnlineStatus::NewAdventurer)
+        );
+        assert_eq!(entry.name, "Test Bot");
     }
 
     #[test]

@@ -1348,6 +1348,7 @@ pub fn update(
         }
     }
     if !settings.enabled {
+        world_bot_life::publish(Vec::new());
         return;
     }
 
@@ -1389,6 +1390,25 @@ pub fn update(
             }
         }
     }
+
+    // Who's online, for Player Search (`world_bot_life::publish`.)
+    world_bot_life::publish(
+        world_bots
+            .bots
+            .iter()
+            .map(|bot| world_bot_life::Listed {
+                content_id: bot.who.content_id,
+                name: bot.who.name.clone(),
+                classjob: bot.who.classjob,
+                level: bot.who.level,
+                territory: match bot.doing {
+                    Doing::Away { to, .. } => to,
+                    _ => bot.at,
+                },
+                online_status: bot.who.online_status,
+            })
+            .collect(),
+    );
 
     // Each bot: its time, and what comes next.
     let count = world_bots.bots.len();

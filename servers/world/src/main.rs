@@ -3482,12 +3482,17 @@ async fn process_packet(
                         }
                         ClientZoneIpcData::RequestSearchInfo { content_id, .. } => {
                             let search_info;
+                            // A world bot: its class's level, no comment (`ZoneConnection::world_bot_search_info`.)
+                            let world_bot = connection.world_bot_search_info(*content_id);
                             {
                                 let mut database = connection.database.lock();
                                 let mut game_data = connection.game_data.lock();
                                 // A party bot shown as a player has a made-up content ID and nothing in the
                                 // database, which the lookup would panic on.
-                                if database.find_character(Some(*content_id), None).is_none() {
+                                if world_bot.is_some() {
+                                    search_info = world_bot;
+                                } else if database.find_character(Some(*content_id), None).is_none()
+                                {
                                     tracing::info!(
                                         "Search info asked for {content_id:#x}, no such character (a party bot?)"
                                     );

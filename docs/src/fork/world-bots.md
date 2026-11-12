@@ -9,7 +9,7 @@ Dashboard → World bots). Asked for by Bob on 2026-11-11; delivered in stages.
 |---|---|---|
 | 1 | The world's population: idlers at every big aetheryte (30 in Limsa Lominsa, 10 in Ul'dah, 20 in Gridania by default), 5-10 at each marketboard, walking between places, exits, inns, Teleport; the ControlPanel page | done (2026-11-11), not played yet |
 | 2 | Questing bots: routes from Questionable's quest paths (levels 1-100, at least 10 bots per ten levels, no more than 3 on one quest and never two on the same step), fighting quest enemies, quest-reward and dungeon gear, a new name and look after a route | in progress: Questionable's paths read and routes planned (`questing.rs`), not wired in yet |
-| 3 | More like players: minions, mounts, crafting in place, chat, search info (sitting, emotes at each other: done 2026-11-11, from Bob's first marks) | in progress: minions, weapons drawn and sheathed, mounts, crafting in place done (2026-11-11, `world_bot_life.rs`) |
+| 3 | More like players: minions, mounts, crafting in place, chat, search info (sitting, emotes at each other: done 2026-11-11, from Bob's first marks) | in progress: minions, weapons drawn and sheathed, mounts, crafting in place, Player Search and search info done (2026-11-11, `world_bot_life.rs`) |
 
 Code: `servers/world/src/server/world_bots.rs`, stage 3's pieces in `world_bot_life.rs`; the settings page `kawari_web/worldbots.py` in ArchonEngine
 ControlPanel; retail's standing spots `resources/data/world_bot_spots.json` and seats `resources/data/world_bot_seats.json`.
@@ -124,6 +124,16 @@ As other players are (since 2026-11-11: none of these did anything, Bob's bundle
   (`Who::content_id`, `0x00B2…`), the same however often it's shown, so a friend is found in the crowd. The menu's
   invite carries only the name: a world bot of that name in your zone.
 
+## Player Search
+
+World bots are online players: Player Search lists them with everyone else (`world_bot_life::publish`, kept by
+`world_bots::update` every tick; the connection's `search_players` adds them before its filters), each with its
+class and level, where it is (its territory, or where it's going while between zones), its online status beside
+Online, the server's world and English as its language (retail's players' languages aren't in the captures), so the
+name, class, level, status and area filters find it as they would a player. Its search info (`RequestSearchInfo`,
+`ZoneConnection::world_bot_search_info`) has its class's and job's level and nothing else: no comment, no Grand Company
+rank. Since 2026-11-11.
+
 ## Settings
 
 `world-bots.json` in the server's data folder (`$KAWARI_DATA`, the container's `/kawari/data`, beside `world.db` and
@@ -180,9 +190,9 @@ after a route, a Teleport out and back as someone new.
   arrival, the inns and exits.
 * Sitting, aimed emotes, spacing and the floors' heights are tested on the server (`world_bots::tests`), not yet seen
   in game: whether the client puts a bot onto the bench by its SetMode or needs it exactly on the seat.
-* Chat and Player Search (stage 3); sitting in looped emotes other than the ground. Minions, weapons, mounts and
+* Chat (stage 3); sitting in looped emotes other than the ground. Minions, weapons, mounts and
   crafting aren't seen in game yet. Crafting's 8/9 second argument is one retail value (`START_CRAFT_UNKNOWN`), not the
   recipe's.
-* Searching for a world bot (Player Search) and tells to one find no character.
+* Tells to a world bot find no character.
 * Bots don't turn to face their place after a walk (an ActorMove to turn on the spot makes the client play a step).
 * Questing bots (stage 2).
