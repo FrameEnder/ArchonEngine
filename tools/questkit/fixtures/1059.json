@@ -45,7 +45,7 @@
     },
     {
       "battle_won": 255,
-      "expect": {"sequence": 255, "vars": "000000000000", "notices": []}
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [], "logs": [[3615, []]]}
     },
     {
       "talk": 1006747,

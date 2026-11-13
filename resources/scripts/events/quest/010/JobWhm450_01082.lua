@@ -17,6 +17,8 @@
 --   emote 58 on EOBJECT6 (epitaph to expiry): scene 21 (NO_DEFAULT_CAMERA | HIDE_HOTBAR) -> sequence 255, vars 00 00 00 00 00 00, notices [[6, [40616]]]
 -- Sequence 255:
 --   ACTOR0 (Raya-O-Senna): scene 22 (HIDE_HOTBAR, a yield), 23 (HIDE_HOTBAR, a yield) -> completed
+-- Each prayer (scenes 3, 5, 7 and 21) gives its armour piece, RITEM0..3 (`obtain_item`: the slot, the pop-up, the log
+-- line), then the quest's LOGMESSAGE0, as both captures did; at scene 21 retail sent the notice before LOGMESSAGE0.
 -- The 3 emotes of sequence 1 work in any order: UI8AH counts them and each sets its BitFlag8 (retail's), the last moves the quest on.
 
 -- What retail sets UI8A to when a reward window is closed (414, 680, 840, 855, 960.)
@@ -133,6 +135,8 @@ function sceneFinished(scene, results, player)
         player:quest_sequence(EVENT_ID, 1)
     elseif step == 2 and scene == 3 then
         local count = getVar(player, 0, true) + 1
+        player:obtain_item(RITEM0, 1)
+        player:event_log_message(EVENT_ID, LOGMESSAGE0, {})
         player:event_notice(EVENT_ID, 0, { 48242 })
         if count >= 3 then
             player:set_quest_var(EVENT_ID, 0, 0x00)
@@ -150,6 +154,8 @@ function sceneFinished(scene, results, player)
         end
     elseif step == 3 and scene == 5 then
         local count = getVar(player, 0, true) + 1
+        player:obtain_item(RITEM1, 1)
+        player:event_log_message(EVENT_ID, LOGMESSAGE0, {})
         player:event_notice(EVENT_ID, 1, { 46219 })
         if count >= 3 then
             player:set_quest_var(EVENT_ID, 0, 0x00)
@@ -167,6 +173,8 @@ function sceneFinished(scene, results, player)
         end
     elseif step == 4 and scene == 7 then
         local count = getVar(player, 0, true) + 1
+        player:obtain_item(RITEM2, 1)
+        player:event_log_message(EVENT_ID, LOGMESSAGE0, {})
         player:event_notice(EVENT_ID, 2, { 45189 })
         if count >= 3 then
             player:set_quest_var(EVENT_ID, 0, 0x00)
@@ -198,7 +206,9 @@ function sceneFinished(scene, results, player)
         player:event_notice(EVENT_ID, 5, { 21611 })
         player:quest_sequence(EVENT_ID, 5)
     elseif step == 8 and scene == 21 then
+        player:obtain_item(RITEM3, 1)
         player:event_notice(EVENT_ID, 6, { 40616 })
+        player:event_log_message(EVENT_ID, LOGMESSAGE0, {})
         player:set_quest_var(EVENT_ID, 1, 0x00) -- UI8B
         player:quest_sequence(EVENT_ID, 255)
     elseif step == 9 and scene == 22 then

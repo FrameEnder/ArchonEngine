@@ -17,6 +17,9 @@ packets around them. The packet layouts are Kawari's (core/src/ipc/zone):
 * EventResume* (server, the answer to a yield the scene goes on after): handler u32, scene u16 @4, resume ID u8 @6,
   parameter count u8 @7, parameters u32 from @8 (the Grand Companies' enlistment: 230, [1].)
 * EventNotice*: handler u32, notice u8 @4, argument count u8 @5, arguments u32 from @8.
+* EventLogMessage*: handler u32, LogMessage u32 @4, parameter count u8 @8, parameters u32 from @12. An item an event
+  gives is LogMessage 750 [item] with handler 0 (the open event's: `obtain_item`); the quest's own lines carry its
+  handler (1082's LOGMESSAGE0 after each piece, captures d1c46dff and 898dd0b9.)
 * AcceptQuest / FinishQuest: quest u16. UpdateQuest: quest u16 @4, sequence u8 @6, variables @14..20.
 * PrepareZoning: territory u16 @4. ActorControlSelf: category u32, then u32 parameters (509 LearnTeleport: aetheryte;
   41 ToggleUnlock: UnlockLink).
@@ -37,6 +40,7 @@ EVENT_TALK = 1
 EVENT_ENTER_TERRITORY = 15
 LEARN_TELEPORT = 509
 TOGGLE_UNLOCK = 41
+LOG_MESSAGE_ITEM_OBTAINED = 750  # EventLogMessage: an item an event gave (Kawari's obtain_event_item)
 UNLOCK_INSTANCE_CONTENT = 131  # a duty unlocked (InstanceContent), e.g. Sastasha by It's Probably Pirates
 # A zone change this soon after the quest's event finished still belongs to it (joining a quest battle: EventFinish,
 # then PrepareZoning 0.1 s later.)
@@ -53,7 +57,7 @@ SPAWN_NPC_COMMON = 16  # SpawnNpc's own fields before CommonSpawn (BNpcBase, BNp
 class Event:
     t: float
     zone: int | None
-    kind: str  # talk, start, scene, answer, accept, update, notice, finish_quest, finish, zone, aetheryte, unlock
+    kind: str  # talk, start, scene, answer, accept, update, notice, item, log, finish_quest, finish, zone, aetheryte, unlock
     data: dict = field(default_factory=dict)
 
 
@@ -145,6 +149,13 @@ def quest_events(captures, tables: dict, quests=None) -> dict[int, list[Event]]:
                 elif name.startswith("EventNotice"):
                     handler = struct.unpack_from("<I", d, 0)[0]
                     add(handler, t, "notice", notice=d[4], args=_u32s(d, 8, d[5]))
+                elif name.startswith("EventLogMessage") and segment.dir == "out" and len(d) >= 12:
+                    handler, message = struct.unpack_from("<II", d, 0)
+                    params = _u32s(d, 12, d[8])
+                    if handler == 0 and message == LOG_MESSAGE_ITEM_OBTAINED and params and open_events:
+                        add(open_events[-1], t, "item", item=params[0], quantity=params[1] if len(params) > 1 else 1)
+                    else:
+                        add(handler, t, "log", message=message, params=params)
                 elif name == "AcceptQuest":
                     add(QUEST_HANDLER_BASE + struct.unpack_from("<H", d, 0)[0], t, "accept")
                 elif name == "FinishQuest":

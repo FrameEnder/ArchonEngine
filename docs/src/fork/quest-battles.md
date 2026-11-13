@@ -1655,7 +1655,8 @@ early on and their carbuncle comes 7.3 s after the cast began (the director's `o
   (the report's death times, from Defeated, put the second's 0.25 s before sequence 3; by their ActorControl 2 it
   came 0.04 s after the fourth); **the boss under 50 %**: sequence 4, talk 84 1.1 s later; **the boss at 10 %** (504
   HP; three more hits left him there): 1.8 s later "Duty Complete" and sequence 5, the director kills him
-  (`kill_bnpc`), the battle's scene 5 (0xF8402EFB) 3.1 s after; the quest moves to 255. No lost run.
+  (`kill_bnpc`), the battle's scene 5 (0xF8402EFB) 3.1 s after; the quest moves to 255, and back outside the
+  quest's own LOGMESSAGE0 (3615, `QUEST_LOG`, `complete_quest_battle`'s `quest_log`; since 2026-11-13). No lost run.
   `questkit battle-sim 68`: 8 events within 0.6 s (`68.json`, `npc_health: held`).
 * Timelines `QB68Boss_1663`, `QB68Gladiator_1664`, `QB68Lackey_1665`; action scripts `QB68Boss_01056` (statuses 293
   and 294 on himself, 3.7 s cast, at about 20 %; their length a guessed 30 s), `QB68Boss_01098`, `QB68Boss_01099`

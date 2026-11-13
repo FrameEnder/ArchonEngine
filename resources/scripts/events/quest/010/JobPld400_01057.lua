@@ -77,6 +77,7 @@ function onBNpcKill(base_id, layout_id, player)
         local count = getVar(player, 0, false) + 1
         if count >= 5 then
             player:event_notice(EVENT_ID, 0, { 1, 1 })
+            player:event_log_message(EVENT_ID, LOGMESSAGE0, {})
             player:set_quest_var(EVENT_ID, 0, 0x00) -- UI8A
             player:quest_sequence(EVENT_ID, 255)
         else

@@ -46,7 +46,7 @@
       "effects": [
         {"unlock": 18}
       ],
-      "expect": {"sequence": 4, "vars": "000000000000", "notices": [[2, [25218]]]}
+      "expect": {"sequence": 4, "vars": "000000000000", "notices": [[2, [25218]]], "items": [[4868, 1]]}
     },
     {
       "kill": [178, 1415365],

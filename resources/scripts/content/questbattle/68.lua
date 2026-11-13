@@ -12,7 +12,7 @@
 --   the boss under 50 % (23.0: 50.1 → 48.3): sequence 4, talk 84 1.1 s later
 --   the boss down to 10 % (36.6: 504 HP): he takes no more damage (three more hits left him at 504); 1.8 s later "Duty
 --           Complete" (60001) and sequence 5, and the director kills him; the battle's scene 5 (0xF8402EFB) 3.1 s after
---           that; the quest moves to sequence 255
+--           that; the quest moves to sequence 255, and when the player is back the quest's own LOGMESSAGE0 (3615)
 --   lost (no lost run recorded): your health at 0, sequence 0xFE and out 5 s later
 -- The battle's client script (`JobPld451Btl_01059`, Bob's extracted scripts of 2026-11-12) has scenes 1 (the opening
 -- cutscene, 0xF841AEFB) and 5 (the finish) and OnSequence001-002 only, as played. What each one does is in their
@@ -27,6 +27,9 @@ BNPC_BOSS = 4296937
 OTHERS = { 4296945, 4296944, 4296943, 4296942 }
 
 QUEST_SEQUENCE_AFTER_WIN = 255
+-- Parley in the Sagolii's LOGMESSAGE0, the quest's line as the battle's closing scene ends and the player is back
+-- (LogMessage 3615 from quest 1059's handler, Bob's Chronofoil capture da424662.)
+QUEST_LOG = 3615
 SEQUENCE_FIGHTING = 2
 SEQUENCE_OTHERS_DOWN = 3
 SEQUENCE_BOSS_HALF = 4
@@ -112,7 +115,8 @@ function won(director)
     timers = {}
     sequence(director, SEQUENCE_WON)
     director:kill_bnpc(BNPC_BOSS)
-    director:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN, false, FINISH_SCENE, FINISH_SCENE_FLAGS)
+    director:complete_quest_battle(QUEST_SEQUENCE_AFTER_WIN, false, FINISH_SCENE, FINISH_SCENE_FLAGS, nil, true,
+        QUEST_LOG)
 end
 
 function lost(director)

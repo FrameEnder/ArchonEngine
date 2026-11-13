@@ -9,7 +9,7 @@
 -- Sequence 2:
 --   EOBJECT0 (gysahl greens): scene 3 (NO_DEFAULT_CAMERA | HIDE_HOTBAR), the bar (EVENT_ACTION_PROCESS_MIDDLE), 4 (NO_DEFAULT_CAMERA | HIDE_HOTBAR) -> sequence 3, vars 00 10 00 00 00 00, notices [[1, [25218]]]
 -- Sequence 3:
---   ACTOR1 (Luquelot): scene 5 (HIDE_HOTBAR, a yield), 6 (HIDE_HOTBAR) -> sequence 4, vars 00 00 00 00 00 00, notices [[2, [25218]]], unlock 18
+--   ACTOR1 (Luquelot): scene 5 (HIDE_HOTBAR, a yield), 6 (HIDE_HOTBAR) -> sequence 4, vars 00 00 00 00 00 00, notices [[2, [25218]]], unlock 18; RITEM0 given before the unlock (capture da424662)
 -- Sequence 4:
 --   defeating ENEMY0, vars 01 00 00 00 00 00, notices [[3, [1, 3]]]
 --   defeating ENEMY0, vars 02 00 00 00 00 00, notices [[3, [2, 3]]]
@@ -131,6 +131,7 @@ function sceneFinished(scene, results, player)
         play(player, 6, HIDE_HOTBAR)
         return
     elseif step == 4 and scene == 6 then
+        player:obtain_item(RITEM0, 1)
         player:unlock(18)
         player:event_notice(EVENT_ID, 2, { 25218 })
         player:set_quest_var(EVENT_ID, 1, 0x00) -- UI8B

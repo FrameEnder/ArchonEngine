@@ -23,7 +23,9 @@ A fixture (tools/questkit/fixtures/<quest>.json) is made from a Kawari Recorder 
 
 `expect` is the quest's state after the step: its sequence and its six variable bytes (UI8A..UI8F) as hex, or
 "completed". `notices` is the notices the step sends, as [notice, [args]]; it's left out (not checked) where the
-recording didn't capture packets. A step without `expect` only has to run without errors.
+recording didn't capture packets. `items` ([[item, quantity], ...]) and `logs` ([[LogMessage, [params]], ...]) are the
+items the script gives and the quest's own log lines, in order (from Chronofoil: left out where retail had none). A
+step without `expect` only has to run without errors.
 
 `results` sets what the client answers to a scene (every scene answers [1, 0] otherwise): a list, or
 {"results": [...], "error": n} for a scene whose answer is its error code (50 is "No" in The Gridanian Envoy's
@@ -290,6 +292,7 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
     yielded: dict | None = None  # the last scene entry answered with a yield, which the server may resume
     resumed: dict | None = None  # a resumed scene entry, waiting for the client's next answer
     loose: list = []  # notices sent outside an event
+    loose_logs: list = []  # and the quest's log lines (a kill's: 1056's LOGMESSAGE0 before its update)
 
     def close():
         nonlocal step, pending
@@ -319,6 +322,12 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
             if not step[key]:
                 del step[key]
         step["expect"] = dict(state or {"accepted": False}, notices=step.pop("notices"))
+        # Checked only where retail had some: a finished quest's reward is the server's, not the script's.
+        items, logs = step.pop("_items", []), step.pop("_logs", [])
+        if items and not state.get("completed"):
+            step["expect"]["items"] = items
+        if logs:
+            step["expect"]["logs"] = logs
         steps.append(step)
         step = None
 
@@ -403,6 +412,14 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
                 step["notices"].append([data["notice"], data["args"]])
             else:
                 loose.append([data["notice"], data["args"]])  # e.g. a kill's, before its update
+        elif kind == "log" and not (step is not None and step.get("_open")):
+            loose_logs.append([data["message"], data["params"]])
+        elif kind in ("item", "log") and step is not None and step.get("_open"):
+            # What the script gave (`obtain_item`) and the quest's own log lines (`event_log_message`), in order.
+            if kind == "item":
+                step.setdefault("_items", []).append([data["item"], data["quantity"]])
+            else:
+                step.setdefault("_logs", []).append([data["message"], data["params"]])
         elif kind == "bar" and step is not None and step.get("_open"):
             # The progress bar after a scene (ActorControl EventAction): the scene it followed says so.
             if step["scenes"]:
@@ -435,6 +452,9 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
                 update(event)
                 new = {"expect": dict(state, notices=list(loose))}
                 loose.clear()
+                if loose_logs:
+                    new["expect"]["logs"] = list(loose_logs)
+                    loose_logs.clear()
                 if battle_zone is not None and event.zone == battle_zone:
                     new = {"battle_won": state.get("sequence"), **new}
                 elif event.data.get("killed"):

@@ -131,6 +131,9 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
                 got = outcome.get("notices", [])
                 if got != expect["notices"]:
                     problems.append(f"notices {got}, retail {expect['notices']}")
+            for key, what in (("items", "gave items"), ("logs", "log messages")):
+                if key in expect and outcome.get(key, []) != expect[key]:
+                    problems.append(f"{what} {outcome.get(key, [])}, retail {expect[key]}")
         if "scenes" in step and not problems:
             problems += compare_scenes(outcome.get("played", []), step["scenes"])
         if "effects" in step and not problems:

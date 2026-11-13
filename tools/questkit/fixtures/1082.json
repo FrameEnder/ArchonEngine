@@ -52,7 +52,7 @@
       "scenes": [
         {"scene": 3, "flags": "0x2001", "results": [0, 0]}
       ],
-      "expect": {"sequence": 1, "vars": "110001100080", "notices": [[0, [48242]]]}
+      "expect": {"sequence": 1, "vars": "110001100080", "notices": [[0, [48242]]], "items": [[3687, 1]], "logs": [[3657, []]]}
     },
     {
       "emote": [58, 2002397],
@@ -60,7 +60,7 @@
       "scenes": [
         {"scene": 5, "flags": "0x2001", "results": [0, 0]}
       ],
-      "expect": {"sequence": 1, "vars": "2110010000c0", "notices": [[1, [46219]]]}
+      "expect": {"sequence": 1, "vars": "2110010000c0", "notices": [[1, [46219]]], "items": [[3894, 1]], "logs": [[3657, []]]}
     },
     {
       "emote": [58, 2002398],
@@ -68,7 +68,7 @@
       "scenes": [
         {"scene": 7, "flags": "0x2001", "results": [0, 0]}
       ],
-      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[2, [45189]]]}
+      "expect": {"sequence": 2, "vars": "000000000000", "notices": [[2, [45189]]], "items": [[3463, 1]], "logs": [[3657, []]]}
     },
     {
       "talk": 1006751,
@@ -104,7 +104,13 @@
       "scenes": [
         {"scene": 21, "flags": "0x2001", "results": [0, 0]}
       ],
-      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[6, [40616]]]}
+      "expect": {
+        "sequence": 255,
+        "vars": "000000000000",
+        "notices": [[6, [40616]]],
+        "items": [[2902, 1]],
+        "logs": [[3657, []]]
+      }
     },
     {
       "talk": 1006751,

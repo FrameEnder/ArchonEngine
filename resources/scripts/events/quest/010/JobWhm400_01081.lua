@@ -138,6 +138,7 @@ function sceneFinished(scene, results, player)
         return
     elseif step == 8 and scene == 9 then
         player:event_notice(EVENT_ID, 1, {})
+        player:event_log_message(EVENT_ID, LOGMESSAGE0, {})
         player:set_quest_var(EVENT_ID, 0, 0x00) -- UI8A
         player:quest_sequence(EVENT_ID, 255)
     elseif step == 9 and scene == 13 then

@@ -1442,6 +1442,69 @@ function onReturn(scene, results, player) sceneFinished(scene, results, player) 
         self.assertEqual(steps[2]["expect"]["notices"], [[1, [1, 2]]])
         self.assertNotIn("todo", json.dumps(steps))
 
+    def test_items_and_log_lines_a_step_gives(self):
+        # Following in His Footsteps (Bob's Chronofoil captures d1c46dff and 898dd0b9): each prayer gives an armour
+        # piece (EventLogMessage 750 [item] with handler 0 while the quest's event is open) and the quest's
+        # LOGMESSAGE0; the transcription missed both (Bob's bundle 20261113-092701).
+        import struct
+        handler = 0x10000 + QUEST
+        tables = {self.VERSION: {"ServerZoneIpcType": {10: ("EventStart", 24, "t"), 17: ("EventLogMessage2", 24, "t"),
+                                                       14: ("EventFinish", 16, "t")}, "ClientZoneIpcType": {}}}
+        t = 1_760_000_000_000
+
+        def out(ms, opcode, data):
+            return _frame(t + ms, 1, [(opcode, 0, data)])
+
+        def log(h, message, params):
+            return struct.pack("<IIB3x", h, message, len(params)) + struct.pack(f"<{len(params)}I", *params) \
+                + bytes(4 * (2 - len(params)) + 4)
+
+        data = (out(0, 10, struct.pack("<QIBBHII", 7, handler, 2, 0, 0, 58, 0))
+                + out(100, 17, log(0, 750, [3687])) + out(100, 17, log(handler, 3657, []))
+                + out(200, 14, struct.pack("<I", handler) + bytes(12))
+                + out(300, 17, log(0, 750, [5])))  # after the event: not the quest's
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "cap"
+            folder.mkdir()
+            version_info, capture_info, _ = _capture_parts("cap", self.VERSION)
+            (folder / "VersionInfo").write_bytes(version_info)
+            (folder / "CaptureInfo").write_bytes(capture_info)
+            (folder / "Data").write_bytes(data)
+            flows = chronofoil_quest.quest_events(chronofoil.find_captures([folder]), tables, [QUEST])
+        self.assertEqual([(e.kind, e.data) for e in flows[QUEST] if e.kind in ("item", "log")],
+                         [("item", {"item": 3687, "quantity": 1}), ("log", {"message": 3657, "params": []})])
+
+        Event = chronofoil_quest.Event
+        events = [Event(0, 138, "start", {"type": 2, "actor": 7, "flags": 0, "arg": 58}),
+                  Event(1, 138, "scene", {"scene": 3, "flags": 0x2001, "params": []}),
+                  Event(2, 138, "answer", {"scene": 3, "yielded": False, "code": 0, "results": [0, 0]}),
+                  Event(2, 138, "item", {"item": 3687, "quantity": 1}),
+                  Event(2, 138, "log", {"message": 3657, "params": []}),
+                  Event(2, 138, "finish", {})]
+        fixture = fixtures.build_from_chronofoil(QUEST, events, {"script": "X", "params": []}, {},
+                                                 previous={"steps": [{"emote": [58, 2002396], "layout": 7}]})
+        expect = fixture["steps"][0]["expect"]
+        self.assertEqual((expect["items"], expect["logs"]), ([[3687, 1]], [[3657, []]]))
+
+        script = """
+function onEmote(target, emote, player) player:accept_quest(EVENT_ID); player:play_scene(3, 0x2001, {}) end
+function onReturn(scene, results, player)
+    GIVE
+    player:finish_event()
+end
+"""
+        step = {"emote": [58, 2002396], "layout": 7, "scenes": [{"scene": 3, "flags": "0x2001", "results": [0, 0]}],
+                "expect": {"items": [[3687, 1]], "logs": [[3657, []]]}}
+        quest = {"quest": QUEST, "script": "X", "params": {}, "steps": [step]}
+        with tempfile.TemporaryDirectory() as tmp:
+            good, bare = Path(tmp) / "good.lua", Path(tmp) / "bare.lua"
+            good.write_text(script.replace("GIVE", "player:obtain_item(3687, 1)\n"
+                                           "    player:event_log_message(EVENT_ID, 3657, {})"))
+            bare.write_text(script.replace("GIVE", ""))
+            self.assertTrue(replay.run(quest, good).ok, replay.format_results([replay.run(quest, good)]))
+            result = replay.run(quest, bare)
+            self.assertIn("gave items [], retail [[3687, 1]]", result.steps[-1].problems[0])
+
     def test_an_item_used_on_an_object_and_an_emote(self):
         # Drowning Out the Voices (Bob's Chronofoil capture da424662, 2026-11-12): an item used on an object is
         # EventStart type 8 (the object, the item); the old fixture names the object. Escape from Castrum Centri: an

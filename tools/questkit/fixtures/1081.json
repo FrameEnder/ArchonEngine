@@ -75,7 +75,7 @@
         {"scene": 8, "flags": "0x2001", "results": [0, 0], "bar": 44},
         {"scene": 9, "flags": "0xf8402efb", "results": [0, 0]}
       ],
-      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[1, []]]}
+      "expect": {"sequence": 255, "vars": "000000000000", "notices": [[1, []]], "logs": [[3654, []]]}
     },
     {
       "talk": 1006751,

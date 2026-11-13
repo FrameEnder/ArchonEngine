@@ -22,6 +22,8 @@
 --   EOBJECT2 (Sultansworn coffer): scene 9 (NO_DEFAULT_CAMERA | HIDE_HOTBAR), the bar (EVENT_ACTION_SEARCH), 10 (NO_DEFAULT_CAMERA | HIDE_HOTBAR) -> sequence 255, vars 00 00 00 00 00 00, notices [[0, [4, 4, 46845]]]
 -- Sequence 255:
 --   ACTOR0 (Jenlyns): scene 14 (HIDE_HOTBAR, a yield) -> completed
+-- Each search (scenes 7, 4, 13 and 10) gives its armour piece (RITEM1, RITEM0, RITEM3, RITEM2: `obtain_item`), then the
+-- quest's LOGMESSAGE0 and the notice, as Bob's Chronofoil capture da424662 did.
 -- The 4 talks of sequence 1 work in any order: UI8AH counts them and each sets its BitFlag8 (retail's), the last moves the quest on.
 
 -- What retail sets UI8A to when a reward window is closed (414, 680, 840, 855, 960.)
@@ -178,6 +180,8 @@ function sceneFinished(scene, results, player)
         return
     elseif step == 5 and scene == 7 then
         local count = getVar(player, 0, true) + 1
+        player:obtain_item(RITEM1, 1)
+        player:event_log_message(EVENT_ID, LOGMESSAGE0, {})
         player:event_notice(EVENT_ID, 0, { 1, 4, 48340 })
         if count >= 4 then
             player:set_quest_var(EVENT_ID, 0, 0x00)
@@ -201,6 +205,8 @@ function sceneFinished(scene, results, player)
         return
     elseif step == 9 and scene == 4 then
         local count = getVar(player, 0, true) + 1
+        player:obtain_item(RITEM0, 1)
+        player:event_log_message(EVENT_ID, LOGMESSAGE0, {})
         player:event_notice(EVENT_ID, 0, { 2, 4, 45192 })
         if count >= 4 then
             player:set_quest_var(EVENT_ID, 0, 0x00)
@@ -224,6 +230,8 @@ function sceneFinished(scene, results, player)
         return
     elseif step == 13 and scene == 13 then
         local count = getVar(player, 0, true) + 1
+        player:obtain_item(RITEM3, 1)
+        player:event_log_message(EVENT_ID, LOGMESSAGE0, {})
         player:event_notice(EVENT_ID, 0, { 3, 4, 40617 })
         if count >= 4 then
             player:set_quest_var(EVENT_ID, 0, 0x00)
@@ -247,6 +255,8 @@ function sceneFinished(scene, results, player)
         return
     elseif step == 17 and scene == 10 then
         local count = getVar(player, 0, true) + 1
+        player:obtain_item(RITEM2, 1)
+        player:event_log_message(EVENT_ID, LOGMESSAGE0, {})
         player:event_notice(EVENT_ID, 0, { 4, 4, 46845 })
         if count >= 4 then
             player:set_quest_var(EVENT_ID, 0, 0x00)

@@ -320,6 +320,11 @@ class Harness:
                     outcome["spawned"].append(task.args[0])
                 elif task.kind in ("call", "join_battle"):
                     outcome["calls"].append(task.kind if task.kind != "call" else task.args[0])
+                    # The items it gives and the quest's log lines, in order (a fixture's "items" and "logs".)
+                    if task.kind == "call" and task.args[0] == "obtain_item":
+                        outcome.setdefault("items", []).append([task.args[1], task.args[2]])
+                    elif task.kind == "call" and task.args[0] == "event_log_message":
+                        outcome.setdefault("logs", []).append([task.args[2], list(task.args[3] or [])])
                     if task.kind == "call" and task.args[0] == "resume_event":
                         resumed = task.args
                     elif task.kind == "call" and task.args[0] == "name_companion":
@@ -473,25 +478,29 @@ class Harness:
             raise HarnessError("battle_won for a quest that isn't active")
         quest.sequence = sequence
         # What the battle's script sets with the sequence (`complete_quest_battle`'s variables), if it says.
-        for index, value in self._battle_variables().items():
+        variables, quest_log = self._battle_script()
+        for index, value in variables.items():
             quest.variables[index] = value
         self.world.battle = None
         return {"notices": [], "scenes": [], "played": [], "effects": [], "finished": True, "calls": [],
-                "spawned": []}
+                "spawned": [], "logs": [[quest_log, []]] if quest_log is not None else []}
 
-    def _battle_variables(self) -> dict[int, int]:
-        """The quest battle script's QUEST_VARS_AFTER_WIN (variable index to value), read by running it with
-        content/lib/Battle.lua as battle-sim does."""
+    def _battle_script(self) -> tuple[dict[int, int], int | None]:
+        """The quest battle script's QUEST_VARS_AFTER_WIN (variable index to value) and QUEST_LOG (the quest's log line
+        at the win, `complete_quest_battle`'s `quest_log`), read by running it with content/lib/Battle.lua as
+        battle-sim does."""
         number = self.params.get("QUESTBATTLE0")
         script = repo.SCRIPTS / "content" / "questbattle" / f"{number}.lua"
         if number is None or not script.exists():
-            return {}
+            return {}, None
         lua = LuaRuntime(unpack_returned_tuples=True)
         lua.globals().LOG = lambda *args: None
         lua.execute((repo.SCRIPTS / "content" / "lib" / "Battle.lua").read_text())
         lua.execute(script.read_text())
         table = lua.globals().QUEST_VARS_AFTER_WIN
-        return {int(k): int(v) for k, v in table.items()} if table is not None else {}
+        quest_log = lua.globals().QUEST_LOG
+        return ({int(k): int(v) for k, v in table.items()} if table is not None else {},
+                int(quest_log) if quest_log is not None else None)
 
     def state(self) -> dict:
         quest = self.world.quests.get(self.quest)
