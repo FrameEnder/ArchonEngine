@@ -560,6 +560,34 @@ the repository as numbers-only extracts so nothing needs downloading:
 Code: `public_sources.py` (the readers and `Public`), `duty_sources.py` (`audit`, `draft`, `server_data`). Tests:
 `PublicSourcesTest` (a made-up module and timeline).
 
+## questionable
+
+`questkit questionable <Questionable checkout>` checks every quest script against
+[Questionable](https://github.com/PunishXIV/Questionable)'s path for its quest ([Outside Sources](sources.md)): every
+ENpc and EObj a step talks to or uses must be one of the script's constants that the script refers to (the values
+from the quest's fixtures' `params` or its quest dump), every key item used on something one of its ITEMs, and every
+sequence the path goes through one the script's header speaks of ("Sequences 2, 4, 6:"). Steps for another quest
+(PickUpQuestId, TurnInQuestId) or for getting somewhere (TargetTerritoryId) and items used on nothing (Gysahl greens, a
+ticket) are left out. `--quest N ...` checks only those, `--out FILE` writes the report (outside the repository: the
+paths hold game text), `--hints N` prints a quest's steps as numbers (targets, positions, items, the variables after
+each step as seen on retail) before it's scripted. Code: `questkit/questionable.py`; tests `QuestionableTest`.
+
+## autoduty
+
+`questkit autoduty <AutoDuty checkout>` checks the duty scripts in `dungeons.md`'s table against
+[AutoDuty](https://github.com/ffxivcode/AutoDuty)'s route for their territory: every EObj it uses and every key item a
+door waits on must be a number the script has. `--draft TERRITORY` prints a duty's route for starting one: its objects
+in order with positions, the keys, where each boss was fought (and its arena), the coffers. AutoDuty is unlicensed:
+nothing of it goes in git, reports included. Code: `questkit/autoduty.py`; tests `AutoDutyTest`.
+
+## fishing
+
+`questkit fishing <AutoHook checkout>` remakes `resources/data/fishing/fishing.json` from AutoHook's fish data
+(BSD-3; Teamcraft's catch logs and FF14 Fish Tracker's, MIT): per fishing spot and bait the fish caught there with
+their counts and bite seconds (minimum, tenth, median, ninetieth, maximum; no lures; nothing caught only once), and
+per fish its tug, hookset, bait, mooch, predators, weathers, window (Eorzea minutes), least Gathering, Fish Eyes and
+intuition. Code: `questkit/fishing_data.py`; test `FishingDataTest`.
+
 ## rotation
 
 `questkit rotation <classjob> <level> [targets]` (`rotation_sim.py`) plays a party bot's rotation for three minutes

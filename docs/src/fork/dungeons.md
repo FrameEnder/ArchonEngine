@@ -16,6 +16,13 @@ Support members in [Party NPCs](party-npcs.md); coffers in [Coffers and Loot](lo
 | Haukke Manor | 6 | 1040 | `content/f1d2_re.lua` | one run with Duty Support (5d9c7d7f) and three Duty Finder runs (e7580e0d: twice as the tank, once as the healer), 2026-11-02 |
 | The Navel (Titan) | 57 | 1046 | `content/s1fa_re.lua` | one run with Duty Support (650dbfd8) and two Duty Finder runs (0fd8bce0, 48aaf6fe), 2026-11-06 |
 | The Howling Eye (Garuda) | 58 | 1047 | `content/r1fa_re.lua` | one run with Duty Support (6a5244ec) and two Duty Finder runs (09ecf8e7, 6c495fc4), 2026-11-08 |
+| Brayflox's Longstop | 8 | 1041 | `content/s1d2_re.lua` | one run with Duty Support (44df02fc) and one Duty Finder run (c9145fdc), 2026-11-03 |
+| The Stone Vigil | 11 | 1042 | `content/r1d1_re.lua` | one run with Duty Support (1cefedf4) and one Duty Finder run (341808b0), 2026-11-07 |
+
+Every duty script in this table is checked against AutoDuty's route for its territory (`questkit autoduty`, see
+[questkit](questkit.md)): on 2026-11-13 each names every object AutoDuty uses, and Sastasha's keys are the one
+difference (see `known-issues.md`). Brayflox's Longstop and the Stone Vigil joined the table that day; they were
+scripted already.
 
 ## The duty's beginning: everyone waits for the openings
 

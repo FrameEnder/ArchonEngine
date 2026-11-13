@@ -11,6 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from questkit import battle, battle_sim, capture, chronofoil, chronofoil_battle, chronofoil_quest, compare, duty_sim, duty_sources, fixtures, ledger, ledger_facts, lint, public_sources, recording, replay, rotation_sim, scaffold, transcribe, triage  # noqa: E402
+from questkit import autoduty, fishing_data, questionable  # noqa: E402
 from questkit.bundle import Bundle  # noqa: E402
 
 QUEST = 9999
@@ -126,6 +127,136 @@ LISTING = """; scenes: X:OnScene00000
    fields   TEXT_SUBTST001_09999_ALPHA_000_2
 == X:GetEventItems  [function 0.0.6, 2 params, 0 upvalues, stack 9, 3 instructions]
 """
+
+
+class QuestionableTest(unittest.TestCase):
+    """`questkit questionable`: a quest script against a Questionable path, made up here (Questionable's files hold
+    game text and stay out of git)."""
+
+    def path(self, folder: Path) -> Path:
+        steps = {
+            "QuestSequence": [
+                {"Sequence": 0, "Steps": [{"DataId": 1000001, "InteractionType": "AcceptQuest", "TerritoryId": 1,
+                                           "Position": {"X": 1, "Y": 2, "Z": 3}}]},
+                {"Sequence": 1, "Steps": [
+                    {"DataId": 1000009, "InteractionType": "AcceptQuest", "PickUpQuestId": 9},
+                    {"DataId": 2000002, "InteractionType": "UseItem", "ItemId": 2000500,
+                     "CompletionQuestVariablesFlags": [None, None, None, None, None, 128], "$": "QW: 16 0 0 0 0 128"},
+                    {"InteractionType": "UseItem", "ItemId": 4868},
+                    {"DataId": 2000003, "InteractionType": "Interact", "TargetTerritoryId": 2}]},
+                {"Sequence": 3, "Steps": [{"DataId": 1000004, "InteractionType": "Interact"}]},
+                {"Sequence": 255, "Steps": [{"DataId": 1000001, "InteractionType": "CompleteQuest"}]},
+            ]
+        }
+        (folder / "QuestPaths" / "x").mkdir(parents=True)
+        (folder / "QuestPaths" / "x" / "4000_Made Up.json").write_text("\ufeff" + json.dumps(steps), encoding="utf-8")
+        return folder
+
+    def test_finds_what_the_script_leaves_out(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = self.path(Path(tmp))
+            paths = questionable.read_paths(folder)
+            self.assertEqual(paths[4000].sequences, [0, 1, 3, 255])
+            script = folder / "Made_04000.lua"
+            script.write_text("-- Sequence 0: ACTOR0 offers it.\n-- Sequences 1, 2: EOBJECT0 with ITEM0.\n"
+                              "-- Sequence 255: ACTOR0.\n\nfunction onTalk() return ACTOR0, EOBJECT0, ITEM0 end\n")
+            dumps = folder / "dumps" / "Made_04000"
+            dumps.mkdir(parents=True)
+            (dumps / "quest.json").write_text(json.dumps({"params": [
+                {"name": "ACTOR0", "value": 1000001}, {"name": "ACTOR1", "value": 1000004},
+                {"name": "EOBJECT0", "value": 2000002}, {"name": "ITEM0", "value": 2000500}]}))
+            findings, targets = questionable.check_quest(4000, script, paths[4000], folder / "dumps")
+        self.assertTrue(targets)
+        kinds = sorted((f.kind, f.detail.split(":")[0]) for f in findings)
+        # ACTOR1 in sequence 3 is never used, and sequence 3 isn't in the header; the other quest's NPC, the door,
+        # and the item used on nothing aren't this quest's.
+        self.assertEqual(kinds, [("sequence", "Questionable goes through sequence 3; the script's header doesn't "
+                                              "speak of it (it does of [0, 1, 2, 255])"),
+                                 ("target unused", "sequence 3")])
+
+    def test_header_sequences(self):
+        text = "-- Sequences 1, 3, 5: soil.\n-- Sequences 2-4: talk.\n-- Sequence 255: reward.\nx = 1\n-- Sequence 9\n"
+        self.assertEqual(questionable.header_sequences(text), {1, 2, 3, 4, 5, 255})
+
+    def test_hints_keep_numbers_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            hints = questionable.retail_hints(self.path(Path(tmp)), 4000)
+        self.assertIn("sequence 1: UseItem 2000002 (item 2000500; variables after [None, None, None, None, None, 128]; "
+                      "QW: 16 0 0 0 0 128)", hints)
+        self.assertIn("sequence 0: AcceptQuest 1000001 at (1.0, 2.0, 3.0) in 1", hints)
+
+
+class AutoDutyTest(unittest.TestCase):
+    """`questkit autoduty`: a made-up path in AutoDuty's format (AutoDuty is unlicensed and stays out of git)."""
+
+    def write(self, folder: Path) -> Path:
+        actions = [
+            {"Tag": "None", "Name": "Interactable", "Position": {"X": 1.0, "Y": 2.0, "Z": 3.0},
+             "Arguments": ["2000250"], "Note": ""},
+            {"Tag": "None", "Name": "ConditionAction", "Position": {"X": 0.0, "Y": 0.0, "Z": 0.0},
+             "Arguments": ["ItemCount;2000512;<;1&ModifyIndex;7"], "Note": ""},
+            {"Tag": "None", "Name": "Interactable", "Position": {"X": 4.0, "Y": 5.0, "Z": 6.0},
+             "Arguments": ["2000227"], "Note": ""},
+            {"Tag": "None", "Name": "Boss", "Position": {"X": 7.0, "Y": 8.0, "Z": 9.0}, "Arguments": ["<-31,24,63>"]},
+            {"Tag": "Treasure", "Name": "TreasureCoffer", "Position": {"X": 10.0, "Y": 0.0, "Z": 0.0},
+             "Arguments": [""]},
+        ]
+        paths = folder / "AutoDuty" / "Paths"
+        paths.mkdir(parents=True)
+        (paths / "(4321) Made Up.json").write_text("\ufeff" + json.dumps({"Actions": actions, "Meta": {}}),
+                                                  encoding="utf-8")
+        (paths / "(4321) 「Tank W2W」 Made Up.json").write_text(json.dumps({"actions": [], "meta": {}}))
+        return folder
+
+    def test_reads_a_route(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = self.write(Path(tmp))
+            path = autoduty.read_paths(folder)[4321][0]
+            self.assertEqual(path.file, "(4321) Made Up.json", "the main path before the variants")
+            self.assertEqual(path.eobjs, [2000250, 2000227])
+            self.assertEqual(path.key_items, [2000512])
+            draft = autoduty.draft(folder, 4321)
+        self.assertIn("* object 2000250 at (1.0, 2.0, 3.0)", draft)
+        self.assertIn("* needs key item 2000512 here", draft)
+        self.assertIn("* boss 1 fought at (7.0, 8.0, 9.0), arena <-31,24,63>", draft)
+        self.assertIn("* treasure coffer at (10.0, 0.0, 0.0)", draft)
+
+    def test_every_dungeon_in_the_table(self):
+        """The check finds the fork's duty scripts in dungeons.md's table, each one that exists."""
+        duties = autoduty.fork_duties()
+        self.assertEqual(duties[1036].name, "s1d1_re.lua")
+        self.assertIn(1041, duties)
+        self.assertIn(1042, duties)
+        for script in duties.values():
+            self.assertTrue(script.exists(), script)
+
+
+class FishingDataTest(unittest.TestCase):
+    """`questkit fishing`: AutoHook's fish data, made up here, into fishing.json's shape."""
+
+    def test_extract(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp) / "AutoHook" / "Data" / "FishData"
+            data.mkdir(parents=True)
+            (data / "spot_pools.json").write_text(json.dumps({"Spots": {"7": {
+                "Catches": [[2586, 4927, 0, 0, 10], [2586, -1, 0, 0, 3], [2586, 4925, 1, 0, 50], [2586, 9999, 0, 0, 1]],
+                "BiteTimes": [[2586, 4927, 5, 1, 10, 8, 20, 1]]}}}))
+            (data / "fish_list.json").write_text(json.dumps([
+                {"ItemId": 4927, "BiteType": 36, "HookType": 4179, "InitialBait": 2586, "Mooches": [],
+                 "Predators": [{"ItemId": 1, "Quantity": 2}], "Weathers": [2], "WeathersFrom": [], "Spawn": 18.5,
+                 "Duration": 9, "MinGathering": None, "Snagging": False, "IsSpearFish": False},
+                {"ItemId": 5000, "BiteType": 0, "HookType": 0, "IsSpearFish": True}]))
+            (data / "fish_tracker.json").write_text(json.dumps({"Fish": {"4927": {"FishEyes": True,
+                                                                                  "IntuitionSeconds": 300}}}))
+            out = Path(tmp) / "fishing.json"
+            made = fishing_data.build(tmp, out)
+            result = json.loads(out.read_text())
+        self.assertEqual(made, {"spots": 1, "fish": 1})
+        # No lures, nothing caught once; the bite times' minimum, tenth, median, ninetieth and maximum.
+        self.assertEqual(result["spots"]["7"]["2586"], [[4927, 10, [5.0, 5.0, 10.0, 10.0, 20.0]], [-1, 3, None]])
+        self.assertEqual(result["fish"]["4927"], {"tug": 36, "hookset": 4179, "bait": 2586, "predators": [[1, 2]],
+                                                  "weathers": [2], "minutes": [1110, 210], "fish_eyes": True,
+                                                  "intuition": 300})
 
 
 class Fixtures(unittest.TestCase):

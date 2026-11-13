@@ -87,6 +87,12 @@ pub mod spiritbond;
 /// Disciples of the Land: the rules at a node.
 pub mod gathering;
 
+/// What bites where (the community's catch logs), for fishing.
+pub mod fishing;
+
+/// Triple Triad's rules.
+pub mod triple_triad;
+
 mod gamedata;
 
 /// Rules the client works out itself, ported from its code (`tools/clientlogic`).

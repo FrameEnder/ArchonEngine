@@ -223,6 +223,44 @@ def _transcribe(args) -> int:
     return 0 if all(r.ok for r in results) else 1
 
 
+def _questionable(args) -> int:
+    from . import questionable
+    if args.hints:
+        print("\n".join(questionable.retail_hints(args.checkout, args.hints)))
+        return 0
+    result = questionable.check(args.checkout, args.quest or None, Path(args.dumps) if args.dumps else None)
+    text = questionable.report(result, args.all)
+    if args.out:
+        Path(args.out).write_text(text, encoding="utf-8")
+        print(f"{len(result['findings'])} findings in {len({f.quest for f in result['findings']})} quests; "
+              f"{len(result['checked'])} checked by target, {len(result['unchecked'])} by sequence only, "
+              f"{len(result['no_path'])} without a path: {args.out}")
+    else:
+        print(text)
+    return 0
+
+
+def _autoduty(args) -> int:
+    from . import autoduty
+    if args.draft:
+        text = autoduty.draft(args.checkout, args.draft)
+    else:
+        text = autoduty.report(autoduty.check(args.checkout, args.territory or None))
+    if args.out:
+        Path(args.out).write_text(text, encoding="utf-8")
+        print(f"written: {args.out}")
+    else:
+        print(text)
+    return 0
+
+
+def _fishing(args) -> int:
+    from . import fishing_data
+    made = fishing_data.build(args.autohook)
+    print(f"{made['spots']} fishing spots, {made['fish']} fish: {fishing_data.OUT}")
+    return 0
+
+
 def _sources(args) -> int:
     """Boss Mod's and cactbot's duties: the extracts, the audit of the fork's duties, a draft of a new one."""
     from . import repo
@@ -828,6 +866,31 @@ def main(argv=None) -> int:
     p.add_argument("--action", type=int, help="what Boss Mod says about one action")
     p.add_argument("--out", help="where to write the audit (a file) or the draft (a folder)")
     p.set_defaults(run=_sources)
+
+    p = commands.add_parser("questionable", help="the quest scripts against Questionable's quest paths (targets, "
+                                                 "key items, sequences), or a quest's steps as hints")
+    p.add_argument("checkout", help="a checkout of github.com/PunishXIV/Questionable (or its QuestPaths)")
+    p.add_argument("--quest", type=int, nargs="+", help="only these quests")
+    p.add_argument("--dumps", help="kawari-questdump's quest-dumps folder (default: the repository's, ignored by git)")
+    p.add_argument("--hints", type=int, metavar="QUEST", help="a quest's steps from Questionable, numbers only")
+    p.add_argument("--all", action="store_true", help="also list the scripts with no path")
+    p.add_argument("--out", help="write the report to this file (keep it out of the repository)")
+    p.set_defaults(run=_questionable)
+
+    p = commands.add_parser("autoduty", help="the duty scripts against AutoDuty's duty paths (objects, keys), or a "
+                                             "draft route for a duty not yet scripted")
+    p.add_argument("checkout", help="a checkout of github.com/ffxivcode/AutoDuty (unlicensed: keep it and what this "
+                                    "writes out of git)")
+    p.add_argument("--territory", type=int, nargs="+", help="only these duties (TerritoryType)")
+    p.add_argument("--draft", type=int, metavar="TERRITORY", help="a duty's route: objects, keys, bosses, coffers")
+    p.add_argument("--out", help="write it to this file (outside the repository)")
+    p.set_defaults(run=_autoduty)
+
+    p = commands.add_parser("fishing", help="remake resources/data/fishing/fishing.json from AutoHook's fish data "
+                                            "(BSD-3: spots' catches and bite times, each fish's tug, hookset, bait, "
+                                            "hours and weather)")
+    p.add_argument("autohook", help="a checkout of github.com/PunishXIV/AutoHook (its AutoHook/Data/FishData)")
+    p.set_defaults(run=_fishing)
 
     p = commands.add_parser("rotation", help="run a party bot's rotation against a dummy with its real action scripts")
     p.add_argument("classjob", nargs="?", type=int, help="the ClassJob row (27 Summoner)")

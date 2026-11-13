@@ -849,6 +849,12 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Sastasha
 
+* **Its keys as key items** (2026-11-13, `questkit autoduty`): AutoDuty's route waits at the Captain's Quarters and
+  the Waverider Gate until the party has key items 2000512 and 2000513, so retail gives them when the keys are taken;
+  `s1d1_re.lua` only remembers that the key was taken (`has_captains_quarters_key` and the like) and gives nothing.
+  How retail gives and takes them (the packets) needs one of Bob's Sastasha captures of 2026-10-22 (f4316611) or
+  2026-10-23 (700cc294), which aren't in the release's `chronofoil.zip`.
+
 * Bosses' timelines (Chopper, the quarters' reaver, both captains, Denn, Denn's adds) are from six runs' medians
   (2026-10-22/23); their actions that did no damage (351, 1000) are only animations, and when the bosses first use
   each action isn't recorded (Denn's 556 comes about 14 s in, retail's 18). Denn's adds come by time from his first
@@ -1511,6 +1517,13 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   (the client greys those actions; the server doesn't check), crafting leves.
 
 ## Gathering
+
+* **Fishing** (2026-11-13): what bites, when and how hard is built from the community's catch logs
+  (`fishing.rs`, [Gathering](gathering.md#fishing)); the packets aren't, for want of a retail capture of some fishing.
+  Lures, Patience, Chum, Identical Cast, Surface Slap, ocean fishing and spearfishing aren't in the rules.
+* **Triple Triad** (2026-11-13): the match's rules are built (`triple_triad.rs`, [Gold Saucer](gold-saucer.md#triple-triad));
+  the packets, the NPCs' decks read from the TripleTriad sheet, retail's NPC choice of move and the rewards aren't,
+  for want of a retail capture of a match.
 
 * Rewritten to Bob's retail capture of 2026-10-24 and untested in game since. Actions at a node go through the action
   pipeline as if the client had sent an ActionRequest; whether the pipeline lets them through while at a node isn't

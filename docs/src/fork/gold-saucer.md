@@ -252,6 +252,21 @@ the run (perhaps the other players reaching the goal), One Small Leap (2126) as 
 object's event (0xF0304) and the director's GameProgress scene 4 (argument 2, 0x08002001) `[0, 2000, 0, 500, 300, 100]`
 with 4,000 MGP and What Happens in the Saucer II. Its platforms and cactuars need more than the captures show.
 
+## Triple Triad
+
+Not playable yet: no retail capture of a match exists, so the match's packets (the event, each card placed, the
+NPC's moves, the result and the rewards) aren't known, and Triple Triad Trial (437) isn't scripted. The rules are
+built (2026-11-13), after FFTriadBuddy's game simulation (MIT, © MgAl2O4; [Outside Sources](sources.md)):
+`servers/world/src/triple_triad.rs`'s `Match` plays a match on the 3x3 board with each card's four numbers
+(TripleTriadCardResident's, top, right, bottom, left) and type, a card taking each neighbour of the other side whose
+facing number is lower; Same and Plus (the card just placed only; what they take captures on as a plain card would,
+the combo), Reverse (in force through the combo), Fallen Ace (the placed card: a 1 takes a 10, or with Reverse a 10
+can't take a 1), Ascension and Descension (a type's cards up or down by one for each of its type on the board,
+between 1 and 10), Order (the hand in order) and Sudden Death (a draw replayed with the cards each side holds, up to
+three times; the side that went second first). The count adds the unplayed card. Roulette, Chaos, Swap, Random, Draft
+and the open rules are the match's setup (the caller's). `best_move` is Kawari's NPC (the move that leaves it the most
+cards); retail's isn't known. The NPCs' decks and rules are the game's TripleTriad sheet. Tests in `triple_triad.rs`.
+
 ## Known gaps
 
 Every GATE but Air Force One (Cliffhanger, Any Way the Wind Blows, Leap of Faith, The Slice Is Right); chocobo racing; Triple Triad (437, Triple Triad Trial, isn't scripted); the Jumbo Cactpot's claim scene and

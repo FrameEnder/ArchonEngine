@@ -2,8 +2,8 @@
 
 The open world's gathering points, where they are, which of their positions is shown and how they move on, the timed
 ones, and what happens at a node: the window, each gather (chance, yield, boon), integrity, GP and the gatherer's
-actions. Unlocking the classes is the quests' business (Bob's); this is what a gatherer has once unlocked. Fishing
-isn't covered.
+actions. Unlocking the classes is the quests' business (Bob's); this is what a gatherer has once unlocked. Fishing has
+its rules only so far (see Fishing, below).
 
 Code: `servers/world/src/gathering.rs` (the rules: actions, boon and Bountiful Yield, Eorzea time windows; unit tests),
 `servers/world/src/zone_connection/gathering.rs` (a player at a node: the window, gathers, actions, the phase table),
@@ -133,6 +133,19 @@ Giving Land, Tidings, Wise to the World (+1 attempt, uses Eureka Moment). Each g
 825, 756, 1286, 219, 1802, 2667; GatherBuddy Reborn's IDs; param 0, as retail) and the window is sent in mode 5; the
 node's statuses come off when the window closes. Away from a node, Prospect / Triangulate, Truth of Mountains / Forests and Sneak toggle their
 statuses (225/217, 222/221, 47).
+
+## Fishing
+
+Not playable yet: no retail capture of a fisher exists, so casting, the bite, the hook and the catch's packets aren't
+known. What is built (2026-11-13) is the part no packet would tell: what bites. `servers/world/src/fishing.rs` reads
+`resources/data/fishing/fishing.json` (`questkit fishing`, from AutoHook's fish data: Teamcraft's catch logs and FF14
+Fish Tracker's, see that folder's README): `bite(spot, bait, conditions, roll)` draws what bites at a FishingSpot on a
+bait as often as players caught it there (nothing on the line too), leaving out the fish that can't bite now (outside
+their window in Eorzea minutes, in the wrong weather or after the wrong one, with too little Gathering, or without
+their intuition), with the fish's tug (36 light, 37 medium, 38 heavy) and the hookset that lands it (4103 Powerful,
+4179 Precision), and a bite time between where a tenth and nine tenths of its logged bites fell. `fish(id)` and
+`baits_at(spot)` answer the rest. Tests in `fishing.rs` (spot 2 on bait 2586; 8769's window, weathers and intuition).
+Wiring it up needs a Chronofoil capture of some fishing (casting, a few bites, hooking, Mooch, a catch and a miss).
 
 ## Not done yet
 

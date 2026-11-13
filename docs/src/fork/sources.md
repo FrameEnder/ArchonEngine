@@ -34,6 +34,10 @@ with a comment naming the source (see `CLAUDE.md`).
 | A client structure (for the Recorder or Probe) | FFXIVClientStructs | |
 | Crafting rules (formulas, actions, conditions) | raphael-rs, then Teamcraft's simulator and Craftimizer (where they agree) | The client's craft event handler for packets and CP rules |
 | Gathering points, timed windows, boon and yield | A recording (`--dropin --gathering`) | GatherBuddy / GatherBuddy Reborn, Teamcraft's node data |
+| A quest's steps: whom to talk to, what to use, which sequence, its variables | A recording (`questkit replay`) | Questionable's path (`questkit questionable`: checks every quest script, `--hints` for a new one) |
+| A duty's doors, switches, keys, coffers and boss spots | A recording | AutoDuty's path (`questkit autoduty`: checks the duty scripts, `--draft` for a new duty) |
+| What bites where, its tug and hookset, its hours and weather | A recording of a fisher (none yet) | AutoHook's fish data with Teamcraft's catch logs (`resources/data/fishing/`) |
+| Triple Triad's rules | The game's TripleTriadRule sheet (names) | FFTriadBuddy's game simulation (`servers/world/src/triple_triad.rs`) |
 
 ## The sources
 
@@ -210,6 +214,60 @@ licence, so it's read for how the game's collision is put together, never copied
   material ID and mask are 64 bits (two 32-bit halves). Used for `kawari-navimesh`'s simple shapes (2026-11-02).
 * **Limits**: it works on the client's loaded scene, not on the files; Kawari's builder reads the LGB, so the two can
   differ (a layer the client hasn't loaded, a shape's unknown fields).
+
+### Questionable
+
+[PunishXIV/Questionable](https://github.com/PunishXIV/Questionable) (AGPL-3.0, as Kawari is): a Dalamud plugin that
+does quests. `QuestPaths/` has a path for 4,375 quests (2026-11-06): each sequence's steps, with the ENpc or EObj
+talked to or used, where, the key item, the enemies, and the quest's variables after a step as its authors saw them
+on retail (`CompletionQuestVariablesFlags`, comments starting "QW:"). Its files hold the game's text (names), so it's
+read from a checkout: the world bots' routes (`server/questing.rs`) and `questkit questionable`.
+
+* **Answers**: which NPCs and objects a quest uses in which sequence, for every quest, recorded or not; the variables
+  a step leaves. `questkit questionable <checkout>` checks every quest script against it (each target a constant the
+  script uses, each key item, each sequence spoken of in the header); `--hints QUEST` prints a quest's steps, numbers
+  only, before scripting it. On 2026-11-13 it checked 305 scripts (303 with their constants' values from fixtures and
+  dumps) and flagged three, all accounted for: the openings 39 and 594 talk to their NPCs by layout ID and are
+  accepted on arrival, and Color Your World (699) has no sequence 1 on retail any more (Bob's capture afe32479).
+* **Limits**: it takes the quickest way, so a script may rightly do more; it doesn't say what a scene plays or what
+  the server sends; some steps are out of date (Color Your World's sequence 1, which retail no longer has).
+
+### AutoDuty
+
+[ffxivcode/AutoDuty](https://github.com/ffxivcode/AutoDuty) (unlicensed: its README says default copyright): a Dalamud
+plugin that runs duties. `AutoDuty/Paths/(<TerritoryType>) <name>.json` has 254 routes (185 duties): where the player
+walked, the EObjs used in order (switches, keys, doors), the key items a door waits for (`ConditionAction`
+"ItemCount;<item>"), where each boss was fought and the treasure coffers on the way. Unlicensed, so nothing of it
+goes in git; `questkit autoduty <checkout>` reads it and writes outside the repository.
+
+* **Answers**: a duty's objects and keys before it's recorded (`--draft TERRITORY`), and whether the fork's duty
+  scripts name every object and key AutoDuty uses (the check, against `dungeons.md`'s table).
+* **Limits**: one player's route: their positions, not the enemies'; no timings, no packets.
+
+### AutoHook, with Teamcraft's catch logs and FF14 Fish Tracker
+
+[PunishXIV/AutoHook](https://github.com/PunishXIV/AutoHook) (BSD-3-Clause, © Puni.sh): a Dalamud fishing plugin.
+Its `AutoHook/Data/FishData/` gathers FFXIV Teamcraft's catch logs (gubal.ffxivteamcraft.com: for each fishing spot
+and bait, what thousands of players caught and after how many seconds each bit), its own fish list (each fish's tug,
+hookset, bait, mooch, intuition, hours and weather, least Gathering) and
+[FF14 Fish Tracker](https://github.com/icykoneko/ff14-fish-tracker-app)'s (MIT). None of this is in the game's sheets.
+`questkit fishing <checkout>` makes the numbers-only `resources/data/fishing/fishing.json` (its README carries the
+licences), which the world server reads (`fishing.rs`).
+
+* **Answers**: what bites at a spot on a bait and how often, the bite times, the tug and hookset, the windows.
+* **Limits**: catch logs, not the game's tables (rare fish are logged less); nothing about fishing's packets.
+
+### FFTriadBuddy
+
+[MgAl2O4/FFTriadBuddy](https://github.com/MgAl2O4/FFTriadBuddy) (MIT, © 2019 MgAl2O4): a Triple Triad solver.
+`sources/gamelogic/` simulates a match (`TriadGameSimulation.cs`, `TriadGameModifier.cs`: captures, Same, Plus, the
+combo, Reverse, Fallen Ace, Ascension, Descension, Order, Sudden Death); `assets/data/` has the cards, NPCs' decks and
+rules and the tournaments as of 2025-06, which the game's sheets also have (TripleTriadCardResident, TripleTriad).
+`servers/world/src/triple_triad.rs` follows its rules, with its notice.
+
+* **Answers**: the order the rules apply in (Same and Plus on the card placed only, the combo with Reverse in force,
+  Fallen Ace on the placed card, the count with the unplayed card).
+* **Limits**: how retail's NPCs choose a move isn't in it (its agents are solvers for the player); no packets.
 
 ### Wikis
 
