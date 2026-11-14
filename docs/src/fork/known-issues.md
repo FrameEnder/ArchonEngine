@@ -1842,6 +1842,15 @@ yet; all unseen on retail (where they go is a recorded ride's).
   sequence 3 (which two of the three speak), and the scenes that are more than a talk, whose flags are a guess from
   like scenes: 1005's sequences 9 and 10, 1190's Kuplo Kopp in 4, 1358's private and corpses, 3874's F'lhaminn.
 * 3872's privates have a line for after the salute that may never be seen: their salute's scene walks them off.
+* Escape from Castrum Centri's battle (65): that Biggs or Wedge falling loses it is Bob's, from the story, with no
+  retail run of it; Urianger and Papalymo falling in the second part doesn't lose it (not known either way). Its two
+  event objects by the bound Scions are spawned as retail's were, unseen in game: if they aren't in the instance's
+  layout as the server reads it, they come without their layout ID and show nothing.
+* The quest battle prompt's reply counts losses since logging in only, and the easier battle the client then offers
+  isn't acted on (the Echo isn't played). SpawnObject's third byte has a flag 4 on retail that Kawari doesn't send.
+* An ally with a tank's role `protect`s unless told not to: where retail's ally only fights its own enemy (Biggs),
+  that takes everyone off the player and onto the ally. `battle-sim` doesn't model who attacks whom, so it can't
+  tell; the other quest battles' tanks weren't looked at again.
 * `questkit travel` writes `quest_travel.json` from the dump folders it's given alone, so run with fewer dumps than
   last time it drops the other quests' rides (`questkit sidetalk` keeps them; travel should).
 

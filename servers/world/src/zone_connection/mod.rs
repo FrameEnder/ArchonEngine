@@ -296,6 +296,11 @@ pub struct ZoneConnection {
     pub nested_event: Option<HandlerId>,
     /// Whether to stay in a won quest battle after "Duty Complete", until its director sends us back.
     pub quest_battle_stay: bool,
+    /// The QuestBattle the client last asked to show its prompt for (client trigger 9003, command 10.)
+    pub quest_battle_asked: Option<u32>,
+    /// How many times each QuestBattle has been lost since logging in, for its prompt's reply (retail counted 0 to 5
+    /// over five losses of one; whether a win or a logout clears it there isn't known: a win does here.)
+    pub quest_battle_losses: std::collections::HashMap<u32, u32>,
     /// The scene a won quest battle plays before sending us back (`QUEST_BATTLE_SCENE_FINISH` unless its director
     /// picks another), or `None` while it hasn't been won.
     pub quest_battle_finish_scene: Option<u16>,

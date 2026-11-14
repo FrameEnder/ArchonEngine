@@ -203,7 +203,9 @@ def spawn_differences(registry: dict | None = None, dropins: dict | None = None)
                                 f"retail spawned it with {retail[key]} (territory {zone})")
     for zone in sorted(territories, key=int):
         for layout, retail in registry[zone].items():
-            if int(layout) not in in_dropins:
+            # (An event object, kind 7, is the zone's own layout's: `battle_sim.line_up_problems` holds the script
+            # to it.)
+            if int(layout) not in in_dropins and retail.get("kind") != 7:
                 problems.append(f"territory {zone}: retail spawned battle NPC {layout} (BNpcBase {retail['base']}, "
                                 f"BNpcName {retail['name']}), which no drop-in has")
     return problems

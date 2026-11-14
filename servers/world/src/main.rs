@@ -41,6 +41,8 @@ const QUEST_BATTLE_OPENING_FLAGS: u32 = 0xF841AEFB;
 /// How often a player's progress is saved while they play, besides when they log out.
 /// TeleportStart's value for a teleport the character can't afford (Sapphire's; retail sends 0 when they can.)
 const TELEPORT_INSUFFICIENT_GIL: u32 = 2;
+/// The ServerRequestCallbackManager command of the quest battle prompt (YesNoQuestBattle).
+const QUEST_BATTLE_PROMPT: u32 = 10;
 
 const AUTOSAVE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(30);
 
@@ -257,6 +259,8 @@ async fn initial_setup(
                     event_action_id: 0,
                     nested_event: None,
                     quest_battle_stay: false,
+                    quest_battle_asked: None,
+                    quest_battle_losses: std::collections::HashMap::new(),
                     quest_battle_finish_scene: None,
                     quest_battle_finish_log: None,
                     quest_battle_finish_flags: QUEST_BATTLE_SCENE_FINISH_FLAGS,
@@ -1697,21 +1701,34 @@ async fn process_packet(
                                     }
                                     connection.update_online_status().await;
                                 }
-                                ClientTriggerCommand::OpenUnk1 { unk1, unk2, .. }
-                                    if events.last().is_some_and(|x| {
-                                        x.1.id.handler_type() == HandlerType::Quest
-                                    }) =>
+                                ClientTriggerCommand::OpenUnk1 {
+                                    unk1, unk2, unk3, ..
+                                } if events.last().is_some_and(|x| {
+                                    x.1.id.handler_type() == HandlerType::Quest
+                                }) =>
                                 {
                                     // During a quest, this is a ServerRequestCallbackManager request: the quest battle
                                     // prompt (YesNoQuestBattle) asks with command 10 and waits for a reply, where 0
                                     // means it can be shown. unk1 is the callback slot and unk2 the command.
+                                    // Retail's reply names the battle again (the prompt's level is read from it)
+                                    // and counts the player's losses of it (`quest_battle_prompt`.)
                                     // TODO: retail probably checks whether the player can enter, we always allow it.
+                                    let (argument, result) = if unk2 == QUEST_BATTLE_PROMPT {
+                                        connection.quest_battle_asked = Some(unk3);
+                                        kawari_world::quest_battle_prompt(
+                                            &connection.quest_battle_losses,
+                                            unk3,
+                                        )
+                                    } else {
+                                        (0, 0)
+                                    };
                                     connection
                                         .actor_control_self(
                                             ActorControlCategory::ServerRequestReply {
                                                 callback_index: unk1,
                                                 command: unk2,
-                                                result: 0,
+                                                argument,
+                                                result,
                                             },
                                         )
                                         .await;
@@ -1760,6 +1777,7 @@ async fn process_packet(
                                                     ActorControlCategory::ServerRequestReply {
                                                         callback_index: unk1,
                                                         command,
+                                                        argument: 0,
                                                         result: 0,
                                                     },
                                                 )
@@ -5236,6 +5254,10 @@ async fn process_server_msg(
                 exit,
                 quest_log,
             ) => {
+                // Won: its prompt counts no losses the next time.
+                connection
+                    .quest_battle_losses
+                    .remove(&handler_id.event_id());
                 // A win that sends them on elsewhere (the script's `EXIT_AFTER_WIN`): from now on that's where they
                 // leave to (and where a logout puts them.)
                 if let Some((zone_id, position, rotation)) = exit {
@@ -5319,6 +5341,10 @@ async fn process_server_msg(
                 }
             }
             FromServer::QuestBattleFailed => {
+                // The next prompt for this battle counts the loss, as retail's did.
+                if let Some(battle) = connection.quest_battle_asked {
+                    *connection.quest_battle_losses.entry(battle).or_insert(0) += 1;
+                }
                 // Zoning back in gives them a fresh spawn, which also brings them back to life.
                 connection
                     .handle

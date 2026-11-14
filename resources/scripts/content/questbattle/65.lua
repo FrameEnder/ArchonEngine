@@ -111,6 +111,15 @@ LOG_FIELD_DOWN = 3216
 -- 1007079-1007081 from the cutscene's end.)
 ENPCS_BOUND = { 4278275, 4278277, 4307929, 4307930 }
 ENPCS_SECOND_PART = { 4288515, 4288517, 4288518 }
+-- The two event objects by them (EObjs 2002427 and 2002428, the director's): retail's SpawnObject had event state 1
+-- and the object's own layout ID as its second argument, and nothing was sent to them after (Bob's Chronofoil
+-- capture d1c46dff, the lost run and the won one; "missing effects behind captives from what retail showed", his
+-- mark of 2026-11-14.)
+EOBJS_BONDS = {
+    { eobj = 2002427, layout = 4307829, position = { x = -393.33, y = -1.11, z = -268.54 } },
+    { eobj = 2002428, layout = 4307830, position = { x = -392.63, y = -0.6, z = -270.44 } },
+}
+EOBJ_BOND_STATE = 1
 SPEAKER_MINFILIA_BOUND = { layout = 4278275, name = 1007077, icon = 73177, kind = 3 }
 SPEAKER_URIANGER_BOUND = { layout = 4307929, name = 1007084, icon = 73178, kind = 3 }
 SPEAKER_PAPALYMO_BOUND = { layout = 4307930, name = 1007083, icon = 73164, kind = 3 }
@@ -136,7 +145,11 @@ WON_AFTER_DEATH = 3
 
 BATTLE = Battle.new()
 BATTLE:ally(BNPC_WEDGE, { role = "dps", focus = { "first" }, order = "oldest", range = 10 })
-BATTLE:ally(BNPC_BIGGS, { role = "tank", focus = { "first" }, range = 3 })
+-- Biggs fights the optio and pulls no one off anyone (`protect = false`): in retail's five runs the eques stayed on
+-- Wedge and the signifer on the player, and each enemy turned on the player once the player hit it. As a tank that
+-- protects, he took all three for the whole fight and fell 63 s in (Bob's marks of 2026-11-14: "biggs was also
+-- taking too much damage"; retail's lost 22 to 38 % of his health in a minute.)
+BATTLE:ally(BNPC_BIGGS, { role = "tank", focus = { "first" }, range = 3, protect = false })
 BATTLE:ally(BNPC_URIANGER, {
     role = "dps",
     focus = { "second" },
@@ -238,6 +251,10 @@ function onSetup(director)
     for _, layout in ipairs(ENPCS_BOUND) do
         director:spawn_bnpc(layout)
     end
+    -- What holds them: two event objects of the battle's, there from the start to the end in retail's runs.
+    for _, bond in ipairs(EOBJS_BONDS) do
+        director:spawn_eobj(bond.eobj, bond.position, bond.layout, EOBJ_BOND_STATE)
+    end
 end
 
 function onCommence(director)
@@ -314,6 +331,13 @@ function onActorDeath(director, layout_id, position)
         return
     end
     BATTLE:died(director, layout_id)
+    -- Wedge or Biggs falling loses the battle, as yours does (Bob, from the story, 2026-11-14: "if he or wedge does
+    -- that should count as a defeat"; neither fell in any of retail's five runs, so what's said or shown then isn't
+    -- known: the duty fails as it does for you.) Kawari fought on: Biggs fell 63 s in and Wedge 145 s in.
+    if (layout_id == BNPC_WEDGE or layout_id == BNPC_BIGGS) and phase == SEQUENCE_FIRST_PART then
+        lost(director)
+        return
+    end
     if not standing[layout_id] then
         return
     end
@@ -392,7 +416,7 @@ function onSceneFinished(director, scene)
 end
 
 -- Losing sends you back to where you entered, still on the same step of the quest, so you can try again.
-function onPlayerDeath(director)
+function lost(director)
     if over or winning then
         return
     end
@@ -400,4 +424,8 @@ function onPlayerDeath(director)
     timers = {}
     director:set_sequence(SEQUENCE_FAILED)
     fail_in = FAIL_DELAY_UPDATES
+end
+
+function onPlayerDeath(director)
+    lost(director)
 end

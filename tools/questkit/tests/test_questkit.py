@@ -567,6 +567,28 @@ class BattleSimLineUpTest(unittest.TestCase):
         self.assertEqual(battle_sim.line_up_problems(lost, calls, self.REGISTRY), [])
         self.assertEqual(len(battle_sim.line_up_problems(self.FIXTURE, calls, self.REGISTRY)), 1)
 
+    def test_a_battle_s_own_event_objects(self):
+        # Escape from Castrum Centri's battle (65), Bob's mark of 2026-11-14 ("missing effects behind captives"):
+        # retail had two event objects of the battle's by the bound Scions in all five runs, each with event state 1
+        # and its own layout ID as the second argument; the script brought neither out and passed. One that comes
+        # during a battle (In the Eyes of Gods and Men's rosary) is held to the same state and argument.
+        registry = {"305": {
+            "4278226": {"base": 2172, "visits": 5, "moved": True, "acted": True},
+            "4307829": {"kind": 7, "base": 2002427, "state": 1, "args2": 4307829, "visits": 5},
+            "4285063": {"kind": 7, "base": 2002279, "state": 1, "args2": 4285063, "late": True, "visits": 4},
+        }}
+        fixture = {"npcs": {"4278226": {}}, "events": [[60.0, "won"]]}
+        start = battle_sim.SETUP_CLOCK
+        calls = [(start, "spawn_bnpc", (4278226,))]
+        problems = battle_sim.line_up_problems(fixture, calls, registry)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("event object 4307829 (EObj 2002427)", problems[0])
+        calls.append((start, "spawn_eobj", (2002427, None, 4307829, 1)))
+        self.assertEqual(battle_sim.line_up_problems(fixture, calls, registry), [])
+        problems = battle_sim.line_up_problems(fixture, calls + [(9.0, "spawn_eobj", (2002279, None))], registry)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("event state 1 and second argument 4285063", problems[0])
+
     def test_still_role_holds(self):
         # The framework's `still = true`: held as it comes out, never sent after anyone.
         script = repo.ROOT / "resources" / "scripts" / "content" / "questbattle" / "64.lua"

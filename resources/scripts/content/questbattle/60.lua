@@ -62,6 +62,10 @@ ENEMY_CONJURERS = { [4261275] = true, [4287237] = true }
 -- The rosary the boss drops, and where it appears (retail's SpawnObject, the same in both runs.)
 EOBJ_ROSARY = 2002279
 ROSARY_POSITION = { x = 458.884, y = 304.806, z = -279.591 }
+-- Retail's SpawnObject for it had event state 1 and its own layout ID as the second argument, as every object of a
+-- quest battle's own does (four runs; `retail_spawns.json`.)
+ROSARY_LAYOUT = 4285063
+ROSARY_STATE = 1
 -- Picking it up: the event action (its EventAction row; 5 s.)
 PICK_UP_BAR = 22
 
@@ -293,7 +297,9 @@ end
 function bossDown(director)
     sequence(director, SEQUENCE_BOSS_DOWN)
     talk(director, SPEAKER_BOSS, 92)
-    after(ROSARY_AFTER, function(d) d:spawn_eobj(EOBJ_ROSARY, ROSARY_POSITION) end)
+    after(ROSARY_AFTER, function(d)
+        d:spawn_eobj(EOBJ_ROSARY, ROSARY_POSITION, ROSARY_LAYOUT, ROSARY_STATE)
+    end)
     after(DROPPED_LOG_AFTER, function(d) d:log_message(LOG_DROPPED, {}) end)
     director:hold_bnpc(BNPC_WYVERN)
     local flees_to = WYVERN_FLEES_TO

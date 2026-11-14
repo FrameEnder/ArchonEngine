@@ -18,6 +18,11 @@ Since 2026-11-14 also what the first registry left out, which Every Little Thing
   beside the reaper in all three runs, and the script had them as voices with no one there;
 * whether a battle NPC ever **moved** (an ActorMove from it) or **acted** (an action's effect from it) in any visit:
   the reaper did neither in three runs, and the script had it as a tank that walked up to the boss.
+
+And the **event objects of a quest battle's own** (SpawnObject with the battle's director as its handler and a layout
+ID), `"kind": 7` with their EObj, event state and second argument: the two by the bound Scions of Escape from Castrum
+Centri's battle (65) were there in every run and the script brought neither out (Bob's mark of 2026-11-14: "missing
+effects behind captives from what retail showed"). `late` as for event NPCs: not there as a visit began.
 """
 
 from __future__ import annotations
@@ -33,6 +38,9 @@ OUT = repo.ROOT / "tools" / "questkit" / "retail_spawns.json"
 COMMON = 16  # CommonSpawn in SpawnNpc
 BATTLE_NPC = 2
 EVENT_NPC = 3
+EVENT_OBJECT = 7
+# The high half of a quest battle director's handler ID (0x8006003F is QuestBattle 63's.)
+QUEST_BATTLE_HANDLER = 0x8006
 FROM_THE_START = 5.0  # seconds into a visit: there as it began
 NO_OWNER = (0, 0xE0000000)
 
@@ -88,6 +96,21 @@ def collect(captures, tables: dict) -> dict[str, dict[str, dict]]:
                         fields = dict(spawn_fields(data), moved=False, acted=False)
                     entry = spots[str(layout)] = dict(fields, visits=0)
                 actors[segment.src] = entry
+                if layout not in seen_here:
+                    seen_here.add(layout)
+                    entry["visits"] += 1
+                    if entry.get("late") and segment.t - entered <= FROM_THE_START:
+                        del entry["late"]
+            elif name == "SpawnObject" and content and len(data) >= 48 and data[1] == EVENT_OBJECT:
+                base, _, layout, handler = struct.unpack_from("<IIII", data, 4)
+                if not layout or handler >> 16 != QUEST_BATTLE_HANDLER:
+                    continue
+                spots = out.setdefault(str(zone), {})
+                entry = spots.get(str(layout))
+                if entry is None:
+                    entry = spots[str(layout)] = {"kind": EVENT_OBJECT, "base": base, "state": data[38],
+                                                  "args2": struct.unpack_from("<I", data, 48)[0], "late": True,
+                                                  "visits": 0}
                 if layout not in seen_here:
                     seen_here.add(layout)
                     entry["visits"] += 1

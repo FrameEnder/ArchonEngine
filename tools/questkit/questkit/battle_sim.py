@@ -71,7 +71,8 @@ SCENE_COMMENCE = 60000
 CONTROL_SET_STATUS = 2  # ActorControl category: the actor's status (2: dead)
 STATUS_DEAD = 2
 SCENE_COMPLETE = 60001
-DONE_SEQUENCES = (0xFE, 0xFF)  # set by the server once a battle is over, not by the script
+LOST_SEQUENCE = 0xFE
+DONE_SEQUENCES = (LOST_SEQUENCE, 0xFF)  # set by the server once a battle is over, not by the script
 DEFAULT_TOLERANCE = 2.0
 AFTER_LAST_EVENT = 30.0  # how long to keep simulating after retail's last event
 SETUP_CLOCK = -1000.0  # onSetup's time: before the opening, never compared
@@ -509,6 +510,7 @@ def pool_of(fixture: dict) -> dict[int, int]:
 
 RETAIL_SPAWNS = repo.ROOT / "tools" / "questkit" / "retail_spawns.json"
 EVENT_NPC = 3
+EVENT_OBJECT = 7
 
 
 def retail_line_up(fixture: dict, registry: dict | None = None) -> tuple[dict[int, int], dict[int, int]]:
@@ -562,6 +564,33 @@ def line_up_problems(fixture: dict, calls: list[tuple], registry: dict | None = 
         if layout in out and layout not in held:
             problems.append(f"retail's {layout} never moved or acted ({runs} runs): the script doesn't hold it "
                             "(director:hold_bnpc, or `still = true` in its role)")
+    # The battle's own event objects (the registry's kind 7), brought out as retail's SpawnObject had them: with
+    # their event state and second argument. Escape from Castrum Centri's two by the bound Scions weren't at all
+    # (Bob's mark of 2026-11-14.)
+    mine = set(fixture.get("npcs", {}))
+    zone = max(registry.values(), key=lambda spots: len(mine & set(spots)), default={})
+    runs = max((zone[layout]["visits"] for layout in mine & set(zone)), default=0)
+    brought = {int(args[0]): list(args[1:]) for _, name, args in calls if name == "spawn_eobj" and args}
+    for layout, entry in sorted(zone.items()):
+        if entry.get("kind") != EVENT_OBJECT or not runs:
+            continue
+        if entry.get("late"):
+            # One that comes during the battle: asked for as retail's, if the script brings it out.
+            if entry["base"] not in brought:
+                continue
+        elif entry["visits"] < runs:
+            continue
+        args = brought.get(entry["base"])
+        if args is None:
+            problems.append(f"retail had event object {layout} (EObj {entry['base']}) there in every run: the script "
+                            "never brings it out (director:spawn_eobj)")
+            continue
+        args2 = args[1] if len(args) > 1 else None
+        state = args[2] if len(args) > 2 else None
+        if (args2 or 0) != entry["args2"] or (state or 0) != entry["state"]:
+            problems.append(f"retail's event object {layout} (EObj {entry['base']}) came with event state "
+                            f"{entry['state']} and second argument {entry['args2']}: the script's spawn_eobj gives "
+                            f"{state} and {args2}")
     return problems
 
 
@@ -603,6 +632,10 @@ def script_events(calls: list[tuple]) -> list[list]:
             continue
         if name == "set_sequence" and args and args[0] not in DONE_SEQUENCES:
             events.append([t, "sequence", int(args[0])])
+        elif name == "set_sequence" and args and args[0] == LOST_SEQUENCE \
+                and not any(e[1] == "lost" for e in events):
+            # The script losing the battle ("Duty Failed"): held to a fixture that has a "lost" event (`compare`.)
+            events.append([t, "lost"])
         elif name == "battle_talk" and len(args) >= 3:
             events.append([t, "talk", int(args[2])])
         elif name == "spawn_bnpc" and args:
@@ -624,6 +657,10 @@ def compare(fixture: dict, calls: list[tuple], result: SimResult) -> list[str]:
             if not (e[1] == "spawn" and e[2] in standing)]
     initial = {int(k) for k, v in fixture["npcs"].items() if v.get("spawn") is None}
     mine = [e for e in mine if not (e[1] == "spawn" and e[2] in initial and e[0] <= 0.0)]
+    # When the script lost it is checked where a fixture says when (a retail run's own end isn't one of its events,
+    # so the fixtures made from lost runs don't.)
+    if not any(event[1] == "lost" for event in fixture["events"]):
+        mine = [e for e in mine if e[1] != "lost"]
     used = [False] * len(mine)
     problems = []
     for event in fixture["events"]:

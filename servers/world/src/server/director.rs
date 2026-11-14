@@ -52,11 +52,14 @@ pub enum LuaDirectorTask {
     },
     /// Spawn an event object of the zone's layout (moved to `position`), or, when the layout has none, one made from
     /// its EObj row alone, as retail spawned Haukke Manor's dropped keys (layout ID 0, the director's handler; Bob's
-    /// Chronofoil captures of 2026-11-02.) `args2` is SpawnObject's, as retail sent it (EObj-specific.)
+    /// Chronofoil captures of 2026-11-02.) `args2` is SpawnObject's, as retail sent it (EObj-specific.) `state` is
+    /// its event state, when it isn't the layout's: the two objects by the bound Scions of Escape from Castrum
+    /// Centri's battle came with 1 and their own layout IDs as `args2` (Bob's Chronofoil capture d1c46dff.)
     SpawnEObj {
         base_id: u32,
         position: Option<Position>,
         args2: Option<u32>,
+        state: Option<u8>,
     },
     SendVariables,
     AbandonDuty {
@@ -765,12 +768,15 @@ impl UserData for LuaDirector {
         });
         methods.add_method_mut(
             "spawn_eobj",
-            |lua, this, (base_id, position, args2): (u32, Value, Option<u32>)| {
+            |lua,
+             this,
+             (base_id, position, args2, state): (u32, Value, Option<u32>, Option<u8>)| {
                 let position: Option<Position> = lua.from_value(position).ok();
                 this.tasks.push(LuaDirectorTask::SpawnEObj {
                     base_id,
                     position,
                     args2,
+                    state,
                 });
                 Ok(())
             },
@@ -2460,6 +2466,7 @@ pub fn director_tick(
                 base_id,
                 position,
                 args2,
+                state,
             } => {
                 let object = instance.zone.get_event_object(*base_id).or_else(|| {
                     let targetable = game_data.lock().eobj_targetable(*base_id)?;
@@ -2487,6 +2494,9 @@ pub fn director_tick(
                     }
                     if let Some(args2) = args2 {
                         object.args2 = *args2;
+                    }
+                    if let Some(state) = state {
+                        object.event_state = EventState::from_bits_retain(*state);
                     }
                     instance.insert_object(object.entity_id, object, String::default()); // TODO: insert layer name
                 } else {

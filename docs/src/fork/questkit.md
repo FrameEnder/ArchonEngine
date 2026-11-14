@@ -474,7 +474,16 @@ can, for the territory the fixture's NPCs are in. `battle-sim` fails when:
   visit begins (the registry's `late`: the three who come as Escape from Castrum Centri's cutscene ends) isn't
   asked of a lost run;
 * a battle NPC **never moved and never acted** in any run and the script brings it out without holding it
-  (`director:hold_bnpc`, which a role's `still = true` does), or lets it go again.
+  (`director:hold_bnpc`, which a role's `still = true` does), or lets it go again;
+* retail had an **event object of the battle's own** there in every run (SpawnObject with the quest battle's
+  director as its handler and a layout ID; the registry's `"kind": 7`, with its EObj, event state and second
+  argument) and the script never brings it out, or brings one out (one there from the start, or one that comes
+  later) with another state or argument than retail's (`director:spawn_eobj(eobj, position, args2, state)`).
+  Escape from Castrum Centri's two by the bound Scions, 2026-11-14.
+
+A fixture can say **when the battle is lost**: an event `[t, "lost"]` is the script setting sequence 0xFE. Retail's
+lost runs don't have one (a run's end isn't one of its events), so it's for a made-up fixture of a rule no run
+shows (`"made_up": true`, its `source` saying so: `65-biggs-falls.json`).
 
 The first run found 17 in four battles that had passed: Every Little Thing She Does Is Magitek (64: two event NPCs,
 the reaper), Escape from Castrum Centri (65: seven event NPCs, three field generators), On Holy Ground (22) and

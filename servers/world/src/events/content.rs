@@ -45,6 +45,19 @@ impl ContentEventHandler {
     }
 }
 
+/// What the quest battle prompt's request (client trigger 9003, command 10, the QuestBattle) is answered with
+/// (`ServerRequestReply`'s argument and result): the battle again, and how many times the player has lost it. Retail's
+/// 60 prompts in Bob's and Connor's Chronofoil captures all named the battle (65 for Escape from Castrum Centri's),
+/// with 0 the first time and 1 after a loss (d1c46dff: lost, then won), up to 5 over five losses of battle 59. The
+/// client reads the prompt's level sync from the battle named: Kawari answered 0 and every prompt said "Level: 1"
+/// (Bob, 2026-11-14).
+pub fn quest_battle_prompt(
+    losses: &std::collections::HashMap<u32, u32>,
+    battle: u32,
+) -> (u32, u32) {
+    (battle, losses.get(&battle).copied().unwrap_or(0))
+}
+
 /// Plays `QUEST_BATTLE_SCENE_NOT_TALK` in the talk event the player started.
 pub fn play_not_talk(player: &mut LuaPlayer) {
     // Retail played it with 0x2000 (HIDE_HOTBAR) when Bob talked to In the Eyes of Gods and Men's onlooker (Chronofoil
@@ -243,6 +256,33 @@ impl EventHandler for ContentEntryEventHandler {
 mod tests {
     use super::*;
     use crate::lua::LuaTask;
+
+    /// The prompt for Escape from Castrum Centri's battle said "Level: 1" (Bob's screenshot of 2026-11-14): the
+    /// reply named battle 0. Retail's names the battle and counts the losses.
+    #[test]
+    fn the_prompt_s_reply_names_the_battle_and_counts_losses() {
+        let mut losses = std::collections::HashMap::new();
+        assert_eq!(quest_battle_prompt(&losses, 65), (65, 0));
+        losses.insert(65, 2);
+        assert_eq!(quest_battle_prompt(&losses, 65), (65, 2));
+        assert_eq!(quest_battle_prompt(&losses, 59), (59, 0));
+        // As it goes out: ActorControlSelf 925 with [callback, command, battle, losses].
+        use kawari::ipc::zone::ActorControlCategory;
+        let reply = ActorControlCategory::ServerRequestReply {
+            callback_index: 0,
+            command: 10,
+            argument: 65,
+            result: 2,
+        };
+        let mut bytes = std::io::Cursor::new(Vec::new());
+        binrw::BinWrite::write_le(&reply, &mut bytes).unwrap();
+        let bytes = bytes.into_inner();
+        let words: Vec<u32> = bytes[..20]
+            .chunks(4)
+            .map(|w| u32::from_le_bytes(w.try_into().unwrap()))
+            .collect();
+        assert_eq!(words, [925, 0, 10, 65, 2]);
+    }
 
     /// Bob asked why Kawari didn't play retail's start of a quest battle: every one of 60 runs in his Chronofoil
     /// captures had EventStart 0x0d on the battle, with no argument, and scene 60000 with flags 0x40000 as the opening

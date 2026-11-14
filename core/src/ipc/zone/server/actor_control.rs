@@ -1019,7 +1019,11 @@ pub enum ActorControlCategory {
         callback_index: u32,
         /// The command from the request.
         command: u32,
-        /// The reply itself, 0 means OK for the quest battle prompt.
+        /// What was asked about, from the request: the QuestBattle for the quest battle prompt (command 10), which
+        /// the client reads the prompt's level from (with 0 here it showed "Level: 1"; Bob, 2026-11-14.)
+        argument: u32,
+        /// The reply itself. For the quest battle prompt, how many times the player has lost that battle: 0, then
+        /// 1 to 5 over five losses of one (60 prompts in Bob's and Connor's Chronofoil captures.)
         result: u32,
     },
 

@@ -9,8 +9,14 @@ Guardian, Underneath the Sultantree). The fork added them on top of upstream's c
    asks the client to show **YesNoQuestBattle**. The client first sends client trigger **9003** (Kawari's
    `ClientTriggerCommand::OpenUnk1`; `unk1` is the callback slot, `unk2` the command, 10 for this prompt) and waits.
    During a quest event the server answers with actor control **925**, `ServerRequestReply { callback_index, command,
-   result: 0 }` (`main.rs`), which the client hands to `ServerRequestCallbackManager`; 0 means "show it". Only then
-   does the prompt open. Outside quests, 9003 still gets upstream's retainer list. (Found with Kawari Probe in
+   argument, result }` (`main.rs`, `events::content::quest_battle_prompt`), which the client hands to
+   `ServerRequestCallbackManager`. Only then does the prompt open. Retail's reply (60 prompts in Bob's and Connor's
+   Chronofoil captures) is `[0, 10, the QuestBattle, losses]`: **the battle named again**, which the client reads the
+   prompt's level sync from, and **how many times the player has lost it** (0 the first time, 1 after a loss, up to
+   5 over five losses of battle 59). Kawari answered `[0, 10, 0, 0]` until 2026-11-14 and every prompt said "Level:
+   1" (Bob's screenshot of Escape from Castrum Centri's, which syncs to 50). The losses are counted since logging in
+   and cleared by a win (what clears them on retail isn't known); what the client offers for them (an easier
+   battle) isn't acted on. Outside quests, 9003 still gets upstream's retainer list. (Found with Kawari Probe in
    `f4e7ad8`; the first attempt used Sapphire's EventBattleDialog, actor control 924.) The server always allows entry;
    retail presumably checks something first.
 2. The scene returns `1` if the player agreed; the quest script calls
@@ -99,7 +105,7 @@ Director methods (`servers/world/src/server/director.rs`), the ones the fork add
 | `leave_boss_room(boss)` | A boss that leaves its room without dying (despawned, not killed): it no longer holds the room, which opens (wall and line hidden, log 2014) if none of the room's other bosses is left. Brayflox's Longstop's dragon (429), which holds the third room with its boss (`boss_room` for both with one wall) and flies off (2026-11-03). |
 | `map_effect(index, timeline, state)` | DirectorMapEffect: a map effect to `timeline` and `state` (1 unless given; Brayflox's Longstop's puddles go to 4 with timeline 8 as they burst). |
 | `map_effect_at(layout_id, timeline, state, otherwise)` | The same for the map effect on a layout object (a SharedGroup of the duty's LGB): its index is where the ID stands in the InstanceContent's ContentDirectorManagedSG (`GameData::get_map_effects`, the list the director's DirectorSetupMapEffects follows), or `otherwise` if it isn't there (Brayflox's Longstop's puddles.) |
-| `spawn_eobj(eobj, position, args2)` | Spawns an event object of the zone's layout (at `position`, a table with x, y, z, if given), or, when the layout has none, one made from its EObj row alone (layout ID 0, the director's handler, radius 1: Haukke Manor's pair's key, as retail spawned it). `args2` is SpawnObject's, as retail sent it (EObj-specific: 1282 and 66818 for Haukke Manor's two dropped keys). |
+| `spawn_eobj(eobj, position, args2, state)` | `state` (since 2026-11-14) is SpawnObject's event state when it isn't the layout's: a quest battle's own objects came with 1 and their layout ID as `args2` (65's two, 60's rosary). Spawns an event object of the zone's layout (at `position`, a table with x, y, z, if given), or, when the layout has none, one made from its EObj row alone (layout ID 0, the director's handler, radius 1: Haukke Manor's pair's key, as retail spawned it). `args2` is SpawnObject's, as retail sent it (EObj-specific: 1282 and 66818 for Haukke Manor's two dropped keys). |
 | `warp_to_pop_range(actor_id, pop_range)` | Sends that player to a pop range of the duty, as a shortcut does (PrepareZoning to the same territory, then ActorSetPos): a gimmick of the script's own that warps. |
 | `set_attack_range(npc, yalms)` | How close the NPC gets to its target before attacking: melee (3) or a caster's distance. |
 | `keep_near(npc, anchors, yalms)` | Keeps the NPC within `yalms` of every anchor (one, or a list: NPC layout IDs, `"player"` or `nil` for the player): it heads back to the middle of them when it's further from any, whatever it's fighting (Papalymo near Yda and you). `yalms` `nil` stops it. |
@@ -1640,6 +1646,28 @@ early on and their carbuncle comes 7.3 s after the cast began (the director's `o
   `81.json` (won), `81-lost.json`.
 
 ### Quest battle 65 — Escape from Castrum Centri (`content/questbattle/65.lua`)
+
+* **Bob's marks of 2026-11-14** (on `58b722d`, read through the harness: Biggs fell 63 s in, Wedge 145 s in, and
+  the battle went on).
+  * *"biggs was also taking too much damage"*: all three enemies were on him from 3 s in, the eques and the
+    signifer with the optio, and stayed on him while the player hit them: he was a tank that `protect`s, pulling
+    each one off Wedge and the player. Retail's five runs (who hit whom, `d1c46dff`'s two): the eques on Wedge, the
+    optio on Biggs, the signifer on the player; each turned on the player once the player hit it (the eques 11 s
+    after, the optio 6 s after), and Biggs only ever hit the optio. He lost 22 to 38 % of his health in a minute
+    (three or four of the optio's blows at 221 to 240 and its 1135 at about 700, which hits Wedge too). Now
+    `protect = false`. Kawari's hits on him were near retail's each (the optio's 243 to 366, 1135 at 710 to 994).
+  * *"if he or wedge does that should count as a defeat"*: Wedge or Biggs falling in the first part loses the
+    battle, as the player's fall does (Bob, from the story; neither fell in any retail run, so anything said or
+    shown then isn't known). `65-biggs-falls.json` is made up to hold it (`"made_up": true`: Bob's lost Recorder
+    run with Biggs falling 30 s in). Urianger and Papalymo falling in the second part still doesn't.
+  * *"missing effects behind captives from what retail showed"*: retail spawned two event objects of the battle's
+    by the bound Scions as the instance began, there to the end in all five runs: EObjs 2002427 (layout 4307829, at
+    -393.33, -1.11, -268.54) and 2002428 (4307830, at -392.63, -0.60, -270.44), SpawnObject with the director as
+    handler, event state 1 and the object's own layout ID as its second argument; nothing was sent to them after.
+    The server spawns a layout's objects that pop by themselves, which these don't: `onSetup` brings them out
+    (`spawn_eobj`, which now takes the event state). In the Eyes of Gods and Men's rosary (60) came the same way
+    (state 1, its layout ID) and is spawned so now. Retail's third byte of SpawnObject was 4 for these and 5 for
+    the layout's untargetable 2000608 (Kawari writes 0 or 1 there, `not_targetable`): a flag not looked into.
 
 * Since 2026-11-14 (found by `battle-sim`'s line-up check; five retail runs agree): the four bound Scions stand
   there from the start (event NPCs 4278275, 4278277, 4307929, 4307930; ENpcBases 1007077, 1007078, 1007084, 1007083,
