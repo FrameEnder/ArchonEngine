@@ -93,6 +93,9 @@ pub mod fishing;
 /// Triple Triad's rules.
 pub mod triple_triad;
 
+/// Which main scenario quest the Scenario Guide shows.
+pub mod scenario_guide;
+
 mod gamedata;
 
 /// Rules the client works out itself, ported from its code (`tools/clientlogic`).

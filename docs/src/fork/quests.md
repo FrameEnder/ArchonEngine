@@ -822,8 +822,17 @@ three runs, every step from the city's last quests to We Come in Peace):
   PreviousQuestJoin 2, as 513 after any company's enlistment), that isn't locked (QuestLock: any done by QuestLockJoin
   2; each company's The Company You Keep is locked by the other two) and that suits the class and the Grand Company.
 * **The quest completed last** is the latest done one (by Expansion, then SortKey) none of whose followers is done and
-  that has an available one after it. Kawari keeps no record of the order quests were done in, so this is worked out
-  from the completed quests; every step of the three runs comes out as retail's.
+  that has something next. Kawari keeps no record of the order quests were done in, so this is worked out from the
+  completed quests; every step of the three runs comes out as retail's (`scenario_guide.rs`, with tests).
+* **A split** (two quests both to be done before the one that joins them): retail names one branch at a time, and
+  treats the other branch as what's next once one is done. In Mor Dhona (Bob's Chronofoil capture da424662,
+  2026-11-12) 986 opens Drowning Out the Voices (1001) and Acting the Part (1002), 1002 opens Dressed for Conquest
+  (3871), and Fool Me Twice (1004) waits on 1001 and 3871; retail sent 986 then 1001 alone, 1001 then 1002, 1002 then
+  3871, 3871 then 1004. So what's next after a done quest is what's available after it, or else the available quests
+  sharing a PreviousQuest with it; and of quests next that aren't versions of one step (versions: one locks the
+  other, or a different ClassJobRequired, ClassJobUnlock or GrandCompany), only the first in the story is named.
+  Until 2026-11-13 Kawari found no quest completed last once 1001 was done (nothing available after it), sent
+  nothing, and the guide stayed on 1001 (Bob's bundle of 2026-11-13). Doing 1002 first isn't in a capture.
 * Between variants (Close to Home per starting class) the starting class's comes first; between the three cities'
   (The Company You Keep), Limsa Lominsa's, Gridania's, then Ul'dah's, by the city in the quest's script name (`Sea`,
   `Fst`, `Wil`): retail put them as 681, 680, 682 in all three runs (three different start cities, three different

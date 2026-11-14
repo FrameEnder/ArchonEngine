@@ -852,3 +852,33 @@ fn a_quest_marked_done_by_its_number_is_that_quest() {
     // Nothing to do the second time.
     assert!(!repair_quests_marked_as_zero(&mut completed));
 }
+
+/// Bob's report and bundle of 2026-11-13: with Drowning Out the Voices (1001) and Acting the Part (1002) both underway,
+/// 1001 stayed on the Main Scenario Guide once done. Fool Me Twice (1004) after it also waits on Dressed for Conquest
+/// (3871, after 1002), so nothing was available after 1001 and no guide was sent. Retail (Bob's Chronofoil capture
+/// da424662) sent 1001 as completed last and 1002 as next.
+#[test]
+fn a_split_main_scenario_moves_on_to_its_other_branch() {
+    use crate::scenario_guide::{GuideQuest, scenario_guide_step};
+    use std::collections::HashSet;
+    let quest = |id: u32, previous: &[u32], sort: u16| GuideQuest {
+        id,
+        previous: previous.to_vec(),
+        order: (0, sort),
+        ..Default::default()
+    };
+    let quests = [
+        quest(986, &[984], 1),
+        quest(1001, &[986], 2),
+        quest(1002, &[986], 3),
+        quest(3871, &[1002], 4),
+        quest(1004, &[1001, 3871], 5),
+    ];
+    // 1002 accepted, not done: still available as far as the guide goes (accepting changes nothing on retail).
+    let done = |id: u32| [984, 986, 1001].contains(&id);
+    let available: HashSet<u32> = [1002].into();
+    assert_eq!(
+        scenario_guide_step(&quests, done, &available),
+        Some((1001, vec![1002]))
+    );
+}

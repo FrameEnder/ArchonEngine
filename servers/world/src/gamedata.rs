@@ -1,4 +1,5 @@
 use crate::common::adjust_quest_id;
+use crate::scenario_guide::{GuideQuest, scenario_guide_step};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
@@ -2909,9 +2910,9 @@ impl GameData {
     /// The main scenario is every quest in the ScenarioTree sheet. A quest follows one that's done when its
     /// PreviousQuest are (all of them, or any by PreviousQuestJoin 2), it isn't locked by one that's done (QuestLock:
     /// any by QuestLockJoin 2, as each Grand Company's The Company You Keep is by the other two), and it suits the
-    /// player's class and Grand Company. The quest completed last is the latest done (by Expansion and SortKey) that
-    /// has such a quest after it and none of whose followers is done. Accepting a quest doesn't change it, as on
-    /// retail.
+    /// player's class and Grand Company. Which of them is next, and the quest completed last, is
+    /// `scenario_guide::scenario_guide_step` (a split's branches one at a time, as retail). Accepting a quest doesn't
+    /// change it, as on retail.
     pub fn get_scenario_guide(
         &mut self,
         is_completed: impl Fn(u32) -> bool,
@@ -2985,30 +2986,13 @@ impl GameData {
             available.insert(*id);
         }
 
-        // The quest completed last: the latest done one with an available quest after it and none done after it.
-        let followers = |id: u32| -> Vec<&(u32, QuestRow)> {
-            quests
-                .iter()
-                .filter(|(_, row)| row.PreviousQuest.contains(&id))
-                .collect()
-        };
-        let (last, _) = quests
-            .iter()
-            .filter(|(id, _)| done(*id))
-            .filter(|(id, _)| {
-                let after = followers(*id);
-                !after.iter().any(|(next, _)| done(*next))
-                    && after.iter().any(|(next, _)| available.contains(next))
-            })
-            .max_by_key(|(_, row)| (row.Expansion, row.SortKey))?;
-
         // Between variants for different classes (Gridania's three Close to Home), the one for the class they started
         // with first (which of these two fields says so isn't confirmed, so either counts). Between the three cities'
         // variants (The Company You Keep), Limsa Lominsa's, Gridania's, then Ul'dah's, by the city in the quest's
         // script name (Sea, Fst, Wil): retail sent 681, 680, 682 in all three of Bob's runs (Chronofoil captures
         // b8432613, c99fe374 and cc62ad94), whichever company was chosen. With the sheet's 680 first, a Maelstrom
         // player on 681 saw "Select a Grand Company" (Bob's bundle 20261029-160828): the client seems to take the
-        // first path for the one being followed. Otherwise the sheet's order.
+        // first path for the one being followed. Otherwise the story's order.
         let city = |row: &QuestRow| {
             let name = row.Id.to_string();
             ["Sea", "Fst", "Wil"]
@@ -3016,23 +3000,30 @@ impl GameData {
                 .position(|city| name.get(3..6) == Some(*city))
                 .unwrap_or(3)
         };
-        let mut next: Vec<&(u32, QuestRow)> = followers(*last)
-            .into_iter()
-            .filter(|(id, _)| available.contains(id))
+        let guide_quests: Vec<GuideQuest> = quests
+            .iter()
+            .map(|(id, row)| GuideQuest {
+                id: *id,
+                previous: listed(&row.PreviousQuest),
+                locks: listed(&row.QuestLock),
+                order: (row.Expansion, row.SortKey),
+                variant: (row.ClassJobRequired, row.ClassJobUnlock, row.GrandCompany),
+                rank: (
+                    !(row.ClassJobRequired == first_class || row.ClassJobUnlock == first_class),
+                    city(row),
+                ),
+            })
             .collect();
-        next.sort_by_key(|(_, row)| {
-            (
-                !(row.ClassJobRequired == first_class || row.ClassJobUnlock == first_class),
-                city(row),
-            )
-        });
+        let (last, next) = scenario_guide_step(&guide_quests, done, &available)?;
         let next = next
             .into_iter()
-            .take(3)
-            .map(|(id, row)| (adjust_quest_id(*id), row.IssuerLocation))
+            .filter_map(|id| {
+                let (_, row) = quests.iter().find(|(quest, _)| *quest == id)?;
+                Some((adjust_quest_id(id), row.IssuerLocation))
+            })
             .collect();
 
-        Some((adjust_quest_id(*last), next))
+        Some((adjust_quest_id(last), next))
     }
 
     /// The map markers for the quests a player could take up in `territory` now, as retail sends them in
