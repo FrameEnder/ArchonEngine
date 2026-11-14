@@ -73,6 +73,57 @@ impl ZoneConnection {
         true
     }
 
+    /// Puts the player on `mount` as a quest's event does, without the summoning cast: Every Little Thing She Does Is
+    /// Magitek's reaper (MOUNT0, 14) as Wedge's scene 9 ends, and again from Wedge after a dismount. Retail's (Bob's
+    /// Chronofoil capture da424662): ActorControlSelf 928 `[9]` (12 when the player summons one), the Mount packet, then
+    /// 263 `[1]` (`[1]` after a summoned one too); the mount goes in the spawn others see, the mode is Mounted, and the
+    /// player gets off as from any mount. See `docs/src/fork/chocobo.md` (Riding).
+    pub async fn mount_by_event(&mut self, mount: u16) {
+        use kawari::ipc::zone::ActorControlCategory;
+        self.actor_control_self(ActorControlCategory::PillionPassengerRelatedUnk { unk: 9 })
+            .await;
+        self.set_character_mode(CharacterMode::Mounted, 0, true)
+            .await;
+        self.player_data.volatile.current_mount = mount as i32;
+        self.handle
+            .send(ToServer::ChocoboTaxiMount(
+                self.player_data.character.actor_id,
+                mount,
+            ))
+            .await;
+        self.actor_control_self(ActorControlCategory::SetPetEntityId { unk1: 1 })
+            .await;
+    }
+
+    /// Takes the player off their mount for an event (`answer_dismount_yield`: the client's yield 232, as Every Little
+    /// Thing She Does Is Magitek's scene 27 makes on the reaper). Retail's (Bob's Chronofoil capture da424662):
+    /// ActorControl 2 (SetMode) `[1]`, then 930 (PlayDismountAnimation) with where they land, both from the player; the
+    /// mount leaves the spawn others see.
+    pub async fn dismount_by_event(&mut self) {
+        use kawari::ipc::zone::ActorControlCategory;
+        if self.player_data.volatile.current_mount == 0 {
+            return;
+        }
+        self.set_character_mode(CharacterMode::Normal, 0, true)
+            .await;
+        self.player_data.volatile.current_mount = 0;
+        self.handle
+            .send(ToServer::ChocoboTaxiMount(
+                self.player_data.character.actor_id,
+                0,
+            ))
+            .await;
+        let (unk1, unk2, unk3) = kawari::common::dismount_landing(
+            &self.player_data.volatile.position,
+            self.player_data.volatile.rotation as f32,
+        );
+        self.actor_control(
+            self.player_data.character.actor_id,
+            ActorControlCategory::PlayDismountAnimation { unk1, unk2, unk3 },
+        )
+        .await;
+    }
+
     /// The client has finished the warp to the route's start: on the porter's chocobo, and the ride begins.
     pub async fn start_chocobo_taxi(&mut self) {
         let Some((taxi, location)) = self.chocobo_taxi else {

@@ -1309,6 +1309,12 @@ impl UserData for LuaPlayer {
             this.start_talk_event();
             Ok(())
         });
+        // Puts the player on a mount as retail does in a quest (Every Little Thing She Does Is Magitek's reaper,
+        // MOUNT0), without the summoning cast: `ZoneConnection::mount_by_event`.
+        methods.add_method_mut("mount", |_, this, mount: u16| {
+            this.queued_tasks.push(LuaTask::MountByEvent { mount });
+            Ok(())
+        });
         methods.add_method_mut("accept_quest", |_, this, quest_id: u32| {
             this.accept_quest(quest_id);
             Ok(())

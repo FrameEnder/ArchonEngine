@@ -1836,6 +1836,48 @@ class LintTest(unittest.TestCase):
         self.assertIn(870, lint.scripted_actions())
 
 
+class MountTest(unittest.TestCase):
+    # Every Little Thing She Does Is Magitek (1005): Wedge's scene 9 puts the player on the reaper (Mount 14, retail's
+    # Mount packet as it ends); the third event range's scene yields 232 and the server takes them off, then resumes
+    # (Bob's Chronofoil captures da424662 and d1c46dff; bundle 20261114-033457).
+    SCRIPT = """
+function onTalk(target, player) player:play_scene(9, 0x2000, {}) end
+function onEnterTrigger(player, arg) player:play_scene(27, 0x2001, {}) end
+function onReturn(scene, results, player)
+    if scene == 9 then MOUNT_SCRIPT(player) end
+    if scene == 27 then player:quest_sequence(EVENT_ID, 8) end
+    player:finish_event()
+end
+function onYield(scene, id, results, player) error("the server answers yield 232, not the script") end
+"""
+
+    def run_steps(self, mounts: bool):
+        script = self.SCRIPT.replace("MOUNT_SCRIPT(player)", "player:mount(14)" if mounts else "")
+        quest = {"quest": QUEST, "script": "X", "params": {}, "from": {"sequence": 4}, "steps": [
+            {"talk": 1006559, "scenes": [{"scene": 9, "flags": "0x2000", "results": [0, 0]}],
+             "effects": [{"mount": 14}] if mounts else [], "expect": {"sequence": 4}},
+            {"range": 4322858, "scenes": [{"scene": 27, "flags": "0x2001", "results": [], "yield": True,
+                                           "yield_id": 232, "resume": [], "after": {"results": [0, 0]}}],
+             "effects": [{"dismount": 1}] if mounts else [], "expect": {"sequence": 8}}]}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "x.lua"
+            path.write_text(script)
+            return replay.run(quest, path)
+
+    def test_mounted_by_the_event_and_off_at_yield_232(self):
+        result = self.run_steps(mounts=True)
+        self.assertTrue(result.ok, replay.format_results([result]))
+
+    def test_yield_232_on_foot_only_resumes(self):
+        result = self.run_steps(mounts=False)
+        self.assertTrue(result.ok, replay.format_results([result]))
+
+    def test_a_script_that_never_mounts_is_caught(self):
+        script_result = self.run_steps(mounts=False)
+        quest_effects = [{"mount": 14}]
+        self.assertNotEqual(script_result.steps[0].outcome.get("effects", []), quest_effects)
+
+
 class TravelTest(unittest.TestCase):
     # Every Little Thing She Does Is Magitek (1005), as kawari-questdump lists the client's script: Slafborn's question
     # is scenes 2, 4 and 8 (and 51), the client accepts him in sequences 0, 1, 3 and 255; Connor's capture e834e436

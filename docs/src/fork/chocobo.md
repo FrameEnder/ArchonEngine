@@ -156,6 +156,24 @@ summon.) Dismounting brings it back: 264, 263 `[1]`, SetupPet, its StatusEffectL
 CompanionUpdate, SetPetParameters, then its spawn (a new actor.) Others see the barding in the rider's spawn
 (`mount_head/body/feet/color`: the BuddyEquip rows.)
 
+**Put on a mount by an event** (2026-11-14; Bob's Chronofoil captures da424662 and d1c46dff, Connor's e834e436):
+Every Little Thing She Does Is Magitek (1005) seats the player on a magitek reaper (MOUNT0, 14) as Wedge's scene 9 ends,
+without a cast: ActorControlSelf 928 `[9]` (as after a zone change made mounted; 12 when the player summons one), the
+Mount packet, then the notice, UpdateQuest and EventFinish, and 263 `[1]`. `player:mount(id)` in a quest script
+(`ZoneConnection::mount_by_event`, `chocobo_taxi.rs`) sends them, makes the mode Mounted and puts the mount in the spawn
+others see (`ToServer::ChocoboTaxiMount`, the porter's path, now any mount the server seats the player on). The player
+gets off as from any mount. The client hides the reaper itself (ACTOR7, an event NPC from the zone's layout, which
+retail never spawns) in the sequences of the ride, 5 to 7, mounted or not (its listener table lists it in 4 and 8-10);
+Wedge, listed in each of 5-7, puts the player back on (the client's scenes 17, 23, 30; unseen on retail).
+
+**Yield 232: off the mount before a scene goes on.** A scene can open by asking to take the player off whatever they
+ride: the client yields with ID 232. Retail answered all six in the captures itself: the five mounted with SetMode 1 and
+PlayDismountAnimation (ActorControl 2 `[1]`, 930 with where they land, from the player), then EventResume with nothing;
+the one on foot with the resume alone (1005's scene 27 on the reaper at its third event range; 1190's scene 3 and
+1192's scene 4, and 3885's 12, on Connor's chocobo). The server answers it before the event's script sees it
+(`ZoneConnection::answer_dismount_yield`, `dismount_by_event`, `events` in `main.rs`): the script gets the scene's return
+as for any other. Until 2026-11-14 the transcribed scripts took that yield as the scene's end, and nobody was taken off.
+
 ## The saddlebag
 
 Client trigger 444 opens it: UpdateItem for each item of containers 4000 and 4001 (35 slots each) and their

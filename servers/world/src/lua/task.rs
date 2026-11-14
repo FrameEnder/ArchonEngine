@@ -293,6 +293,10 @@ pub enum LuaTask {
     AcceptQuest {
         id: u32,
     },
+    /// Puts the player on a mount as a quest does (`ZoneConnection::mount_by_event`.)
+    MountByEvent {
+        mount: u16,
+    },
     FinishQuest {
         id: u32,
         /// The optional reward the player picked, as an item id. 0 if there's none.

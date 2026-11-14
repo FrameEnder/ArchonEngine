@@ -2873,7 +2873,16 @@ async fn process_packet(
                         ClientZoneIpcData::EventYieldHandler2(handler) => {
                             tracing::info!(message = "Event yielded", handler_id = %handler.handler_id, yield_id = handler.yield_id, scene = handler.scene, params = ?&handler.params[..handler.num_results as usize]);
 
-                            if let Some(event) = events.last() {
+                            // A yield the server answers itself (the client asking to be taken off its mount.)
+                            if connection
+                                .answer_dismount_yield(
+                                    handler.handler_id,
+                                    handler.scene,
+                                    handler.yield_id,
+                                )
+                                .await
+                            {
+                            } else if let Some(event) = events.last() {
                                 event
                                     .0
                                     .on_yield(
@@ -2892,7 +2901,16 @@ async fn process_packet(
                         ClientZoneIpcData::EventYieldHandler4(handler) => {
                             tracing::info!(message = "Event yielded", handler_id = %handler.handler_id, yield_id = handler.yield_id, scene = handler.scene, params = ?&handler.params[..handler.num_results as usize]);
 
-                            if let Some(event) = events.last() {
+                            // A yield the server answers itself (the client asking to be taken off its mount.)
+                            if connection
+                                .answer_dismount_yield(
+                                    handler.handler_id,
+                                    handler.scene,
+                                    handler.yield_id,
+                                )
+                                .await
+                            {
+                            } else if let Some(event) = events.last() {
                                 event
                                     .0
                                     .on_yield(
@@ -2911,7 +2929,16 @@ async fn process_packet(
                         ClientZoneIpcData::EventYieldHandler16(handler) => {
                             tracing::info!(message = "Event yielded", handler_id = %handler.handler_id, yield_id = handler.yield_id, scene = handler.scene, params = ?&handler.params[..handler.num_results as usize]);
 
-                            if let Some(event) = events.last() {
+                            // A yield the server answers itself (the client asking to be taken off its mount.)
+                            if connection
+                                .answer_dismount_yield(
+                                    handler.handler_id,
+                                    handler.scene,
+                                    handler.yield_id,
+                                )
+                                .await
+                            {
+                            } else if let Some(event) = events.last() {
                                 event
                                     .0
                                     .on_yield(
@@ -2930,7 +2957,16 @@ async fn process_packet(
                         ClientZoneIpcData::EventYieldHandler32(handler) => {
                             tracing::info!(message = "Event yielded", handler_id = %handler.handler_id, yield_id = handler.yield_id, scene = handler.scene, params = ?&handler.params[..handler.num_results as usize]);
 
-                            if let Some(event) = events.last() {
+                            // A yield the server answers itself (the client asking to be taken off its mount.)
+                            if connection
+                                .answer_dismount_yield(
+                                    handler.handler_id,
+                                    handler.scene,
+                                    handler.yield_id,
+                                )
+                                .await
+                            {
+                            } else if let Some(event) = events.last() {
                                 event
                                     .0
                                     .on_yield(
@@ -2949,7 +2985,16 @@ async fn process_packet(
                         ClientZoneIpcData::EventYieldHandler128(handler) => {
                             tracing::info!(message = "Event yielded", handler_id = %handler.handler_id, yield_id = handler.yield_id, scene = handler.scene, params = ?&handler.params[..handler.num_results as usize]);
 
-                            if let Some(event) = events.last() {
+                            // A yield the server answers itself (the client asking to be taken off its mount.)
+                            if connection
+                                .answer_dismount_yield(
+                                    handler.handler_id,
+                                    handler.scene,
+                                    handler.yield_id,
+                                )
+                                .await
+                            {
+                            } else if let Some(event) = events.last() {
                                 event
                                     .0
                                     .on_yield(

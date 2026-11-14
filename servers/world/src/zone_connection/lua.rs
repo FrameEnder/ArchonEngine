@@ -789,6 +789,9 @@ impl ZoneConnection {
                 LuaTask::AcceptQuest { id } => {
                     self.accept_quest(*id).await;
                 }
+                LuaTask::MountByEvent { mount } => {
+                    self.mount_by_event(*mount).await;
+                }
                 LuaTask::MarkQuestCompleted { id } => {
                     self.mark_quest_completed(*id).await;
                 }

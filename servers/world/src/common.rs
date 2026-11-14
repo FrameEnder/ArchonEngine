@@ -625,7 +625,9 @@ pub enum ToServer {
     ReloadScripts,
     /// The client dismounted.
     Dismounted(ObjectId, Option<u64>),
-    /// A chocobo porter's chocobo (its Mount, or 0 as the ride ends; `zone_connection/chocobo_taxi.rs`.)
+    /// A mount the server puts the player on, or 0 to take them off: a chocobo porter's chocobo
+    /// (`zone_connection/chocobo_taxi.rs`) or a quest's (`ZoneConnection::mount_by_event`). In their spawn, and the
+    /// Mount packet to everyone around.
     ChocoboTaxiMount(ObjectId, u16),
     /// Inform the server of this actor's new online status.
     SetOnlineStatus(ObjectId, OnlineStatus),

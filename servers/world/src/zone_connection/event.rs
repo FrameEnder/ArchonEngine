@@ -250,6 +250,27 @@ impl ZoneConnection {
         }
     }
 
+    /// The client's yield 232: before the scene goes on, take the player off whatever they ride. The server answers
+    /// it, not the event's script: off the mount if riding (`dismount_by_event`), then the scene resumed with nothing,
+    /// as retail answered all six in Bob's and Connor's Chronofoil captures (five mounted: SetMode 1 and
+    /// PlayDismountAnimation, then EventResume; one on foot: the resume.) Every Little Thing She Does Is Magitek's
+    /// reaper comes off this way at its third event range (scene 27), a chocobo before 1190's and 1192's scenes. True
+    /// if it was this yield.
+    pub async fn answer_dismount_yield(
+        &mut self,
+        handler_id: HandlerId,
+        scene: u16,
+        yield_id: u8,
+    ) -> bool {
+        if yield_id != DISMOUNT_YIELD {
+            return false;
+        }
+        self.dismount_by_event().await;
+        self.resume_event(handler_id.0, scene, yield_id, Vec::new())
+            .await;
+        true
+    }
+
     /// Resumes the current event.
     pub async fn resume_event(
         &mut self,
@@ -274,6 +295,9 @@ impl ZoneConnection {
         }
     }
 }
+
+/// The yield a client makes to be taken off its mount before a scene goes on (`answer_dismount_yield`.)
+pub const DISMOUNT_YIELD: u8 = 232;
 
 /// EventStart's flags byte. Retail sets it to 1 for the content directors' (InstanceContent, PublicContent,
 /// QuestBattle) entering and progress events and a quest's entering event, 0 for every other event (Bob's Chronofoil

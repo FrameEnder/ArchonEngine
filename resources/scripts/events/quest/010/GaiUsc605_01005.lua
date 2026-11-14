@@ -11,13 +11,20 @@
 --   ACTOR1 (Slafborn): scene 8 (HIDE_HOTBAR, a yield), zone 156
 --   ACTOR2 (Wedge): scene 6 (HIDE_HOTBAR, a yield), 7 (SET_BASE | INVIS_ENPC | INVIS_AETHERYTE | HIDE_HOTBAR) -> sequence 4, vars 00 00 00 00 00 00, notices [[2, [1, 1]]], zone 156
 -- Sequence 4:
---   ACTOR4 (Wedge): scene 9 (HIDE_HOTBAR) -> sequence 5, notices [[3, []]]
+--   ACTOR4 (Wedge): scene 9 (HIDE_HOTBAR) -> mounted on the reaper (MOUNT0), sequence 5, notices [[3, []]]
+-- Sequences 5-7 (the ride: the client hides the reaper, ACTOR7, in these):
+--   ACTOR4 (Wedge): scenes 17, 23, 30 (HIDE_HOTBAR) -> back on the reaper after getting off (the client's script; unseen
+--   on retail: scene 9's mount without the quest moving on)
 -- Sequence 5:
 --   walking into EVENTRANGE0: scene 14 (NO_DEFAULT_CAMERA | HIDE_HOTBAR), 15 (HIDE_HOTBAR) -> sequence 6, notices [[4, []]]
 -- Sequence 6:
 --   walking into EVENTRANGE1: scene 21 (NO_DEFAULT_CAMERA | HIDE_HOTBAR) -> sequence 7, notices [[5, []]]
 -- Sequence 7:
---   walking into EVENTRANGE2: scene 27 (NO_DEFAULT_CAMERA | HIDE_HOTBAR, a yield) -> sequence 8, notices [[6, []]]
+--   walking into EVENTRANGE2: scene 27 (NO_DEFAULT_CAMERA | HIDE_HOTBAR; its yield 232 is the server's: off the reaper,
+--   resumed) -> sequence 8, notices [[6, []]]
+-- The mount is retail's (Bob's Chronofoil captures da424662 and d1c46dff): the Mount packet as scene 9 ends, before its
+-- notice (`player:mount`; Bob's bundle 20261114-033457: not put on the reaper, nor by Wedge after). Getting off at scene
+-- 27 is the server's answer to the client's yield 232 (`events/lua.rs`), as for any scene that asks it.
 -- Sequence 8:
 --   ACTOR4 (Wedge): scene 34 (HIDE_HOTBAR) -> sequence 9, notices [[7, []]]
 -- Sequence 9:
@@ -29,6 +36,9 @@
 
 -- What retail sets UI8A to when a reward window is closed (414, 680, 840, 855, 960.)
 REWARD_CLOSED = 0x11
+
+-- Wedge puts the player back on the reaper in the ride's sequences (the client's scenes for him there.)
+WEDGE_REMOUNT = { [5] = 17, [6] = 23, [7] = 30 }
 
 -- Only the scene we last played may finish, in case the client reports a scene through both yield and return.
 current_scene = nil
@@ -69,6 +79,10 @@ function onTalk(target, player)
     elseif sequence == 4 and BASE_ID == ACTOR4 then
         step = 6
         play(player, 9, HIDE_HOTBAR)
+        return
+    elseif sequence ~= nil and sequence >= 5 and sequence <= 7 and BASE_ID == ACTOR4 then
+        step = 14
+        play(player, WEDGE_REMOUNT[sequence], HIDE_HOTBAR)
         return
     elseif sequence == 8 and BASE_ID == ACTOR4 then
         step = 10
@@ -164,6 +178,7 @@ function sceneFinished(scene, results, player)
         player:change_territory(TERRITORYTYPE0, { x = -62.82, y = 3.38, z = -633.49 }, 2.524)
         return
     elseif step == 6 and scene == 9 then
+        player:mount(MOUNT0)
         player:event_notice(EVENT_ID, 3, {})
         player:quest_sequence(EVENT_ID, 5)
     elseif step == 7 and scene == 14 then
@@ -178,6 +193,9 @@ function sceneFinished(scene, results, player)
     elseif step == 9 and scene == 27 then
         player:event_notice(EVENT_ID, 6, {})
         player:quest_sequence(EVENT_ID, 8)
+    elseif step == 14 then
+        -- As scene 9 does: the Mount, then the event's end.
+        player:mount(MOUNT0)
     elseif step == 10 and scene == 34 then
         if player.scene_error_code ~= 0 then
             -- Broken off (retail's error code): nothing happens.

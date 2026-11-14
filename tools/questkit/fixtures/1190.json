@@ -82,6 +82,7 @@
           "flags": "0xf8402fff",
           "results": [],
           "yield": true,
+          "yield_id": 232,
           "resume": [],
           "after": {"results": [0, 0]}
         }

@@ -1740,6 +1740,14 @@ Fixed in code and by test or simulation; none played yet.
 * "Moving sometimes stutters" on the airship (bundle 20261111-112150): nothing on the server's side shows it (every
   PingSync answered within a millisecond, no position sent to the player there.)
 
+## Mounts in quests (2026-11-14)
+
+* Not played in game yet. Wedge putting the player back on the reaper in 1005's ride (scenes 17, 23, 30) is the
+  client's script with scene 9's retail ending; no capture got off the reaper in those sequences.
+* `fixture --chronofoil` now keeps mounts, dismounts and yield IDs; older fixtures have them only where the captures
+  showed them (1005's three, 1190, 1192); a fixture made before from a capture with others lacks them. The captures
+  at hand were all read: no other quest put the player on a mount.
+
 ## Quest travel (2026-11-14; the airship ticketers of 2026-11-11)
 
 Rides are answered in every sequence the client offers them ([Quests](quests.md), Quest travel). None played in game

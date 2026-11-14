@@ -64,6 +64,7 @@ class World:
     spawned: list[int] = field(default_factory=list)
     aetherytes: set[int] = field(default_factory=set)
     battle: tuple | None = None  # (quest battle, territory) while one is joined
+    mounted: int = 0  # the Mount a script put the player on (`player:mount`), 0 when off
     log: list[str] = field(default_factory=list)
 
 
@@ -92,6 +93,9 @@ def _values(table) -> list:
 
 
 MOVES = ("change_territory", "change_territory_pop_range", "move_to_pop_range")
+# A yield the client makes to be taken off whatever they ride before the scene goes on; the server answers it (Bob's and
+# Connor's Chronofoil captures: 5 of 5 mounted got PlayDismountAnimation then EventResume, the one on foot the resume.)
+DISMOUNT_YIELD = 232
 QUEST_TRAVEL = repo.ROOT / "resources" / "data" / "quest_travel.json"
 
 
@@ -119,10 +123,12 @@ def _plain(value):
 
 def _effect(task: Task, territory: int | None = None) -> dict | None:
     """What a task does outside the quest, in a fixture's "effects" terms: a zone change (to a quest battle too), an
-    aetheryte attuned, an unlock. `territory` is where the step happens (its fixture's `territory`): moving the player
+    aetheryte attuned, an unlock, a mount the player is put on or taken off. `territory` is where the step happens (its fixture's `territory`): moving the player
     to a pop range there (`move_to_pop_range`) is retail's PrepareZoning to the same territory."""
     if task.kind == "call" and task.args and task.args[0] == "move_to_pop_range" and territory is not None:
         return {"zone": int(territory)}
+    if task.kind == "call" and task.args and task.args[0] == "dismount":
+        return {"dismount": 1}
     if task.kind == "join_battle":
         return {"zone": int(task.args[1])}
     if task.kind == "aetheryte":
@@ -133,6 +139,8 @@ def _effect(task: Task, territory: int | None = None) -> dict | None:
             return {"zone": int(first)}
         if name == "unlock":
             return {"unlock": int(first)}
+        if name == "mount":
+            return {"mount": int(first)}
         if name == "unlock_content":
             return {"content": int(first)}
     return None
@@ -323,6 +331,10 @@ class Harness:
                 world.aetherytes.add(task.args[0])
             elif kind == "join_battle":
                 world.battle = (task.args[0], task.args[1])
+            elif kind == "call" and task.args and task.args[0] == "mount":
+                world.mounted = int(task.args[1])
+            elif kind == "call" and task.args and task.args[0] == "dismount":
+                world.mounted = 0
 
     def _drive(self, first: list[Task], results: dict, trace: list) -> dict:
         """Plays the client's side of an event until the script finishes it."""
@@ -415,6 +427,22 @@ class Harness:
                     values = values.get("results", DEFAULT_RESULTS)
                 self.player.scene_error_code = error
                 table = self.lua.table(*values)
+                if yielded and yield_id == DISMOUNT_YIELD:
+                    # The server's, not the script's (`events/lua.rs`): off the mount if riding, then the scene
+                    # resumed with nothing, as retail answered every yield 232.
+                    if self.world.mounted:
+                        self.world.mounted = 0
+                        outcome["effects"].append({"dismount": 1})
+                    yielded_from = entry if unused is not None and isinstance(entry, dict) else {}
+                    after = yielded_from.get("after", {"results": DEFAULT_RESULTS})
+                    self.player.scene_error_code = after.get("error", 0)
+                    table = self.lua.table(*after.get("results", DEFAULT_RESULTS))
+                    if self.lua.globals().onReturn is not None and not after.get("yield", False):
+                        pending = self._call("onReturn", scene, table, self.player)
+                    else:
+                        pending = self._call("onYield", scene, 0, table, self.player)
+                    callbacks += 1
+                    continue
                 if self.lua.globals().onReturn is not None and not yielded:
                     pending = self._call("onReturn", scene, table, self.player)
                 else:

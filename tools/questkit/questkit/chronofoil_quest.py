@@ -20,6 +20,9 @@ packets around them. The packet layouts are Kawari's (core/src/ipc/zone):
 * EventLogMessage*: handler u32, LogMessage u32 @4, parameter count u8 @8, parameters u32 from @12. An item an event
   gives is LogMessage 750 [item] with handler 0 (the open event's: `obtain_item`); the quest's own lines carry its
   handler (1082's LOGMESSAGE0 after each piece, captures d1c46dff and 898dd0b9.)
+* Mount (from and to the player, u16 mount), ActorControl 930 PlayDismountAnimation from the player: a mount the
+  event puts them on or takes them off (Every Little Thing She Does Is Magitek's reaper, captures da424662 and
+  d1c46dff.)
 * AcceptQuest / FinishQuest: quest u16. UpdateQuest: quest u16 @4, sequence u8 @6, variables @14..20.
 * PrepareZoning: territory u16 @4. ActorControlSelf: category u32, then u32 parameters (509 LearnTeleport: aetheryte;
   41 ToggleUnlock: UnlockLink).
@@ -40,6 +43,7 @@ EVENT_TALK = 1
 EVENT_ENTER_TERRITORY = 15
 LEARN_TELEPORT = 509
 TOGGLE_UNLOCK = 41
+PLAY_DISMOUNT = 930  # ActorControl PlayDismountAnimation
 LOG_MESSAGE_ITEM_OBTAINED = 750  # EventLogMessage: an item an event gave (Kawari's obtain_event_item)
 UNLOCK_INSTANCE_CONTENT = 131  # a duty unlocked (InstanceContent), e.g. Sastasha by It's Probably Pirates
 # A zone change this soon after the quest's event finished still belongs to it (joining a quest battle: EventFinish,
@@ -57,7 +61,7 @@ SPAWN_NPC_COMMON = 16  # SpawnNpc's own fields before CommonSpawn (BNpcBase, BNp
 class Event:
     t: float
     zone: int | None
-    kind: str  # talk, start, scene, answer, accept, update, notice, item, log, finish_quest, finish, zone, aetheryte, unlock
+    kind: str  # talk, start, scene, answer, accept, update, notice, item, log, mount, dismount, finish_quest, finish, zone, aetheryte, unlock
     data: dict = field(default_factory=dict)
 
 
@@ -188,6 +192,14 @@ def quest_events(captures, tables: dict, quests=None) -> dict[int, list[Event]]:
                     handler = current(t)
                     if handler is not None:
                         moving = add(handler, t, "zone", territory=struct.unpack_from("<H", d, 4)[0] & 0x7FFF)
+                elif name == "Mount" and segment.dir == "out" and open_events and segment.src == segment.dst \
+                        and len(d) >= 2 and struct.unpack_from("<H", d, 0)[0]:
+                    # The player put on a mount by the event (1005's reaper: the Mount packet as scene 9 ends.)
+                    add(open_events[-1], t, "mount", mount=struct.unpack_from("<H", d, 0)[0])
+                elif name == "ActorControl" and segment.dir == "out" and open_events and segment.src == segment.dst \
+                        and len(d) >= 4 and struct.unpack_from("<H", d, 0)[0] == PLAY_DISMOUNT:
+                    # And taken off (PlayDismountAnimation from the player: 1005's reaper at scene 27's yield.)
+                    add(open_events[-1], t, "dismount", dismount=1)
                 elif name in ("ActorControl", "ActorControlSelf", "ActorControlTarget") and segment.dir == "out" \
                         and open_events and struct.unpack_from("<II", d, 0) == (EVENT_ACTION, 1):
                     # A progress bar (ActorControlTarget 3 EventAction: 1, the EventAction row) during the event.

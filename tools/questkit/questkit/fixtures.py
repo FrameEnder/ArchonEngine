@@ -207,6 +207,9 @@ def _scene_entry(scene: dict, answer: dict | None) -> dict:
         entry["results"] = answer["results"]
         if answer["yielded"]:
             entry["yield"] = True
+            if answer["code"]:
+                # The yield's ID: 232 is the client asking to be taken off their mount, which the server answers.
+                entry["yield_id"] = answer["code"]
         elif answer["code"]:
             entry["error"] = answer["code"]
     return entry
@@ -428,8 +431,9 @@ def build_from_chronofoil(quest: int, events: list, dump: dict, bases: dict[int,
             # One of the quest's ENEMY layouts brought out during its event (a search that makes them appear.)
             if data["layout"] not in step.setdefault("spawns", []):
                 step["spawns"].append(data["layout"])
-        elif kind in ("zone", "aetheryte", "unlock", "content") and step is not None:
-            value = data.get("territory", data.get("aetheryte", data.get("unlock", data.get("content"))))
+        elif kind in ("zone", "aetheryte", "unlock", "content", "mount", "dismount") and step is not None:
+            value = data.get("territory", data.get("aetheryte", data.get("unlock", data.get(
+                "content", data.get("mount", data.get("dismount"))))))
             step["effects"].append({kind: value})
             if kind == "zone" and data.get("pop_range"):
                 # Where it put the player (ZoneInit's pop range): what a script's change_territory_pop_range names.
