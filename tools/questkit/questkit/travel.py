@@ -133,8 +133,9 @@ def fixtures_for(quest: int) -> list[dict]:
     for path in sorted(repo.FIXTURES.glob(f"{quest}*.json")):
         if re.fullmatch(rf"{quest}(-[\w-]+)?", path.stem):
             fixture = json.loads(path.read_text())
-            # A fixture of a ride this module gave (`"travel": true`) isn't a recording of one.
-            if not fixture.get("travel"):
+            # A fixture of a ride this module gave (`"travel": true`), or of talks no recording has (`"unseen": true`),
+            # isn't a recording of one.
+            if not fixture.get("travel") and not fixture.get("unseen"):
                 out.append(fixture)
     return out
 

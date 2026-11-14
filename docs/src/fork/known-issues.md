@@ -13,6 +13,10 @@ add one when something is found.
   (drop-in layers, FATE ranges). Anything keyed by the level's map ranges (sanctuaries, discoveries) is still shared.
 * Retail's ZoneInit for 335 named the pop range the player arrived at (4304063) and flags 0xaa; Kawari's names
   neither (as everywhere).
+* Escape from Castrum Centri (521) lets the player in without the imperial disguise on: retail's Cid has lines for
+  that (scene 9), and the soldiers' scenes read what's worn themselves, but the server never checks it (no Lua call
+  for what's equipped, and no recording of being turned away). Its talks that aren't steps, and Cid taking the
+  player back in, are from the client's script alone and unplayed (`quests.md`).
 * Ten upstream gathering drop-ins name no territory and still come out in every territory of their level.
 
 ## A territory's own navmesh (2026-11-14)

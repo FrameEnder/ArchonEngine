@@ -17,6 +17,8 @@
 --   EOBJECT0 (steel door): scene 34 (NO_DEFAULT_CAMERA | HIDE_HOTBAR), the bar (EVENT_ACTION_TOUCH_MIDDLE), 35 (NO_DEFAULT_CAMERA | HIDE_HOTBAR, a yield), into the quest battle, zone 305
 -- Sequence 6:
 --   entering the zone: scene 40 (SET_BASE | HIDE_HOTBAR) -> sequence 255, notices [[5, []]]
+-- Not recorded (see `idleScene`): a talk to a soldier before and after the salute, Glaumunt's line, and Cid taking
+-- the player back in.
 -- Sequence 255:
 --   ACTOR15 (Minfilia): scene 41 (HIDE_HOTBAR, a yield) -> completed
 -- The 3 emotes of sequence 2 work in any order: UI8AH counts them and each sets its BitFlag8 (retail's), the last moves the quest on.
@@ -65,6 +67,47 @@ function setFlag(player, flag)
     player:set_quest_var(EVENT_ID, 5, player:get_quest_var(EVENT_ID, 5) | (0x80 >> (flag - 1)))
 end
 
+-- The talks that aren't steps. No retail recording has one (the three runs only saluted); these are the scenes the
+-- client's script has for them, who says each from its text constants' names, and the Quest sheet's listeners for
+-- who can be talked to in which sequence. Played with HIDE_HOTBAR, as retail played the same kind of talk in
+-- Double Dealing (466, "won't talk until you salute"). Bob, 2026-11-14: "I faintly recalled NPCs giving dialogue
+-- when you talked to them without a emote ... the Imperial NPCs don't seem to have those dialogues".
+--
+-- A soldier has a scene for before the salute (the client itself gives another line to someone out of the
+-- disguise) and one for after; which of the three in sequence 2 were saluted is in the bit flags `onEmote` sets.
+SOLDIERS = {
+    { actor = "ACTOR7", from = 2, saluted_flag = 1, before = 11, after = 13 }, -- the decurion
+    { actor = "ACTOR9", from = 2, saluted_flag = 5, before = 17, after = 19 }, -- the courier
+    { actor = "ACTOR10", from = 2, saluted_flag = 2, before = 20, after = 22 }, -- the guard
+    { actor = "ACTOR11", from = 3, before = 23, after = 25 }, -- the centurion
+}
+-- Glaumunt's line in each sequence (five copies of one scene.)
+GLAUMUNT_SCENES = { [1] = 10, [2] = 15, [3] = 27, [4] = 32, [5] = 37 }
+-- Cid outside, once the player has been in: a question (asked by the client only of someone in the disguise), and on
+-- yes back into the castrum (four copies of one scene.) Where to isn't in any recording: where the quest put the
+-- player in that sequence, the way in up to sequence 4, and past the gate where Biggs left them in 5.
+CID_BACK_IN = { [2] = 14, [3] = 26, [4] = 31, [5] = 36 }
+STEP_BACK_IN = 11
+
+local function idleScene(player, sequence)
+    if sequence == nil then
+        return nil
+    end
+    for _, soldier in ipairs(SOLDIERS) do
+        if BASE_ID == _G[soldier.actor] and sequence >= soldier.from and sequence <= 5 then
+            local saluted = sequence > soldier.from
+            if not saluted and soldier.saluted_flag ~= nil then
+                saluted = hasFlag(player, soldier.saluted_flag)
+            end
+            return saluted and soldier.after or soldier.before
+        end
+    end
+    if BASE_ID == ACTOR6 then
+        return GLAUMUNT_SCENES[sequence]
+    end
+    return nil
+end
+
 function onTalk(target, player)
     local sequence = player:get_quest_sequence(EVENT_ID)
     step = nil
@@ -87,6 +130,15 @@ function onTalk(target, player)
     elseif sequence == 255 and BASE_ID == ACTOR15 then
         step = 10
         play(player, 41, HIDE_HOTBAR)
+        return
+    elseif sequence ~= nil and BASE_ID == ACTOR5 and CID_BACK_IN[sequence] ~= nil then
+        step = STEP_BACK_IN
+        play(player, CID_BACK_IN[sequence], HIDE_HOTBAR)
+        return
+    end
+    local idle = idleScene(player, sequence)
+    if idle ~= nil then
+        play(player, idle, HIDE_HOTBAR)
         return
     end
     player:finish_event()
@@ -242,6 +294,16 @@ function sceneFinished(scene, results, player)
     elseif step == 9 and scene == 40 then
         player:event_notice(EVENT_ID, 5, {})
         player:quest_sequence(EVENT_ID, 255)
+    elseif step == STEP_BACK_IN then
+        player:finish_event()
+        if results[1] == 1 then
+            if player:get_quest_sequence(EVENT_ID) == 5 then
+                player:change_territory(TERRITORYTYPE1, { x = -494.72, y = -3.22, z = -273.3 }, 1.57)
+            else
+                player:change_territory_pop_range(TERRITORYTYPE1, POPRANGE1)
+            end
+        end
+        return
     elseif step == 10 and scene == 41 then
         if results[1] ~= 1 then
             -- The reward window closed: the quest stays open.

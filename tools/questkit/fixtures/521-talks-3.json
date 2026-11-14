@@ -1,0 +1,164 @@
+{
+ "quest": 521,
+ "script": "ManFst407_00521",
+ "source": "talks that aren't steps, from the client's quest script and the Quest sheet's listeners; unseen on retail (the three recorded runs only saluted): sequence 3",
+ "unseen": true,
+ "params": {
+  "ACTOR0": 1006555,
+  "ACTOR1": 1006530,
+  "ACTOR2": 1007538,
+  "ACTOR3": 1007539,
+  "ACTOR4": 1007670,
+  "ACTOR5": 1007537,
+  "RITEM0": 6223,
+  "RITEM1": 6224,
+  "ACTOR6": 1006531,
+  "ACTOR7": 1006567,
+  "ACTOR8": 1007614,
+  "ACTOR9": 1006568,
+  "ACTOR10": 1006569,
+  "ACTOR11": 1007611,
+  "ITEM0": 2000773,
+  "ACTOR12": 1006562,
+  "EOBJECT0": 2002376,
+  "EVENT_ACTION_TOUCH_MIDDLE": 46,
+  "ACTOR13": 1007694,
+  "ACTOR14": 1007696,
+  "TERRITORYTYPE3": 130,
+  "ACTOR15": 1006573,
+  "ACTOR16": 1004433,
+  "TERRITORYTYPE0": 156,
+  "POPRANGE0": 4321644,
+  "POPRANGE1": 4304063,
+  "TERRITORYTYPE1": 335,
+  "POPRANGE2": 4305281,
+  "TERRITORYTYPE2": 305,
+  "QUESTBATTLE0": 65,
+  "POPRANGE3": 4103351,
+  "CUT_SCENE_01": 293,
+  "CUT_SCENE_02": 113,
+  "LOC_ACTOR0": 1007697,
+  "CUT_SCENE_AFTER_00": 456,
+  "LOC_FACE1": 617,
+  "LOC_FACE2": 620,
+  "LOC_SE1": 44,
+  "LOC_SE2": 45,
+  "CUT_SCENE_AFTER_01": 287,
+  "CUT_SCENE_AFTER_02": 114,
+  "CUT_SCENE_AFTER_03": 288,
+  "CUT_SCENE_AFTER_04": 260,
+  "LOC_ACTOR1": 1007006,
+  "LOC_ACTOR2": 1007023,
+  "LOC_ACTOR8": 1006563,
+  "LOC_ACTOR9": 1007614,
+  "LOC_POS_ACTOR0": 4332128,
+  "LOC_POS_ACTOR1": 4332129,
+  "LOC_ACTION1": 990
+ },
+ "from": {
+  "sequence": 3,
+  "vars": "000000000000"
+ },
+ "steps": [
+  {
+   "territory": 335,
+   "talk": 1006567,
+   "what": "ACTOR7",
+   "scenes": [
+    {
+     "scene": 13,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 3,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "territory": 335,
+   "talk": 1006568,
+   "what": "ACTOR9",
+   "scenes": [
+    {
+     "scene": 19,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 3,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "territory": 335,
+   "talk": 1006569,
+   "what": "ACTOR10",
+   "scenes": [
+    {
+     "scene": 22,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 3,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "territory": 335,
+   "talk": 1007611,
+   "what": "ACTOR11",
+   "scenes": [
+    {
+     "scene": 23,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 3,
+    "vars": "000000000000",
+    "notices": []
+   }
+  },
+  {
+   "territory": 156,
+   "talk": 1006531,
+   "what": "ACTOR6",
+   "scenes": [
+    {
+     "scene": 27,
+     "flags": "0x2000",
+     "results": [
+      0,
+      0
+     ]
+    }
+   ],
+   "expect": {
+    "sequence": 3,
+    "vars": "000000000000",
+    "notices": []
+   }
+  }
+ ]
+}
