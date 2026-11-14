@@ -99,8 +99,15 @@ DISMOUNT_YIELD = 232
 QUEST_TRAVEL = repo.ROOT / "resources" / "data" / "quest_travel.json"
 
 
+QUEST_SIDE_TALKS = repo.ROOT / "resources" / "data" / "quest_side_talks.json"
+
+
 def _quest_travel() -> dict:
     return json.loads(QUEST_TRAVEL.read_text()) if QUEST_TRAVEL.exists() else {}
+
+
+def _quest_side_talks() -> dict:
+    return json.loads(QUEST_SIDE_TALKS.read_text()) if QUEST_SIDE_TALKS.exists() else {}
 
 
 def _lua_value(lua, value):
@@ -207,6 +214,13 @@ class FakePlayer:
     def finish_event(self):
         self._h.tasks.append(Task("finish_event"))
 
+    def event_unanswered(self):
+        """As the server's: whether the script has only ended the event so far; the end is taken back when so."""
+        unanswered = all(task.kind == "finish_event" for task in self._h.tasks)
+        if unanswered:
+            del self._h.tasks[:]
+        return unanswered
+
     def event_action(self, action):
         self._h.tasks.append(Task("event_action", action))
 
@@ -279,7 +293,12 @@ class Harness:
             globals_[name] = value
         lua.execute(self._source)
         globals_.EVENT_ID = repo.QUEST_HANDLER_BASE + self.quest
-        # As the server does (`events/lua.rs`): the quest's rides, answered by Travel.lua after its script.
+        # As the server does (`events/lua.rs`): the quest's side talks, played by SideTalk.lua when its script is
+        # silent, then the quest's rides, answered by Travel.lua before either.
+        side = _quest_side_talks().get(str(self.quest))
+        if side:
+            globals_.QUEST_SIDE_TALKS = _lua_value(lua, side)
+            lua.execute((repo.QUEST_SCRIPTS / "SideTalk.lua").read_text())
         travel = _quest_travel().get(str(self.quest))
         if travel:
             globals_.QUEST_TRAVEL = _lua_value(lua, travel)

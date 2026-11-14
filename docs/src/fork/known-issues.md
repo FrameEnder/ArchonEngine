@@ -1835,8 +1835,13 @@ yet; all unseen on retail (where they go is a recorded ride's).
   1000460's in 1189, 1191 and 1448's sequence 255 (no copy of the question left for it). L'nophlo, Limsa Lominsa's
   ticketer, has no recorded ride in any quest.
 * A quest not yet scripted can't be travelled through at all.
-* 577 talks the client offers go unanswered by their scripts (`questkit travel --silent`, 73 quests): mostly NPCs'
-  lines for each sequence, which retail plays. Nothing blocks on them.
+* 67 talks the client offers still go unanswered by their scripts (`tools/questkit/sidetalk_known.json`;
+  `questkit sidetalk --left`), each to be written in its quest's script: 1359 (15), 256 (7), 1005 (6), 3883 (5),
+  4522 (5), 1190 (4) and 15 more quests with one to three. The other 494 of the 561 are answered: 246 with a line
+  from the client's script (`quest_side_talks.json`), 248 NPCs with nothing to say. None of the 246 has a recording
+  or has been played in game; a wrong one would be an NPC saying a neighbour's line (`quests.md`, Side talk).
+* `questkit travel` writes `quest_travel.json` from the dump folders it's given alone, so run with fewer dumps than
+  last time it drops the other quests' rides (`questkit sidetalk` keeps them; travel should).
 
 ## Bob's marks of 2026-11-11 (quest battle 86, cast aims)
 

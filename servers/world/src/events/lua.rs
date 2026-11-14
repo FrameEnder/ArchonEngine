@@ -61,31 +61,49 @@ impl LuaEventHandler {
         }
         lua.0.globals().set("GAME_DATA", game_data).unwrap();
 
+        // What this quest's NPCs say when talked to outside its steps, played when its own script is silent
+        // (`quest_side_talks.rs`, `events/quest/SideTalk.lua` after the quest's own script.)
+        if id.handler_type() == HandlerType::Quest
+            && let Some(entries) = crate::quest_side_talks::entries(id.0 & 0xFFFF)
+        {
+            Self::load_layer(
+                &lua.0,
+                "QUEST_SIDE_TALKS",
+                entries,
+                "events/quest/SideTalk.lua",
+                &file_name,
+            );
+        }
+
         // The NPCs this quest offers rides with, answered in every sequence the client offers them
-        // (`quest_travel.rs`, `events/quest/Travel.lua` after the quest's own script.)
+        // (`quest_travel.rs`, `events/quest/Travel.lua` after the quest's own script and its side talks.)
         if id.handler_type() == HandlerType::Quest
             && let Some(entries) = crate::quest_travel::entries(id.0 & 0xFFFF)
         {
-            Self::load_travel(&lua.0, entries, &file_name);
+            Self::load_layer(
+                &lua.0,
+                "QUEST_TRAVEL",
+                entries,
+                "events/quest/Travel.lua",
+                &file_name,
+            );
         }
 
         Some(Self { file_name, lua })
     }
 
-    /// Sets `QUEST_TRAVEL` and runs `events/quest/Travel.lua`, which wraps the quest script's onTalk, onYield and
-    /// onReturn to answer its rides.
-    fn load_travel(lua: &Lua, entries: &serde_json::Value, script: &str) {
+    /// Sets `global` to a quest's entries and runs `layer` (`events/quest/Travel.lua`, `SideTalk.lua`), which wraps
+    /// the quest script's onTalk, onYield and onReturn to answer what the entries are of.
+    fn load_layer(lua: &Lua, global: &str, entries: &serde_json::Value, layer: &str, script: &str) {
         use mlua::LuaSerdeExt;
-        let travel = get_config()
-            .filesystem
-            .locate_script_file("events/quest/Travel.lua");
+        let path = get_config().filesystem.locate_script_file(layer);
         let result = lua.to_value(entries).and_then(|table| {
-            lua.globals().set("QUEST_TRAVEL", table)?;
-            let code = std::fs::read(&travel).map_err(mlua::Error::external)?;
-            lua.load(code).set_name("@".to_string() + &travel).exec()
+            lua.globals().set(global, table)?;
+            let code = std::fs::read(&path).map_err(mlua::Error::external)?;
+            lua.load(code).set_name("@".to_string() + &path).exec()
         });
         if let Err(err) = result {
-            tracing::warn!("Couldn't load quest travel for {script}: {err:?}");
+            tracing::warn!("Couldn't load {layer} for {script}: {err:?}");
         }
     }
 

@@ -678,7 +678,8 @@ def _travel(args) -> int:
     for kind in ("inferred", "unknown", "questions") + (("silent",) if args.silent else ()):
         for line in result[kind]:
             print(f"{kind}: {line}")
-    print(f"{len(result['silent'])} talks the client offers go unanswered by their scripts (--silent lists them)")
+    print(f"{len(result['silent'])} talks the client offers go unanswered by their scripts (--silent lists them; "
+          "questkit sidetalk gives them their lines)")
     rides = sum(len(e["scenes"]) for entries in result["quests"].values() for e in entries)
     if args.check:
         import json
@@ -691,6 +692,48 @@ def _travel(args) -> int:
     out = travel.save(result)
     print(f"{rides} rides for {len(result['quests'])} quests written to {out}")
     return 0
+
+
+def _sidetalk(args) -> int:
+    import json
+
+    from . import sidetalk, travel
+
+    roots = [Path(d) for d in args.dumps] or [travel.DUMPS]
+    result = sidetalk.build(roots)
+    quests = sidetalk.merged(result)
+    known = set(json.loads(sidetalk.KNOWN.read_text())) if sidetalk.KNOWN.exists() else set()
+    new = [line for line in result["left"] if line not in known]
+    for line in (result["left"] if args.left else new):
+        print(f"by hand: {line}")
+    print(f"{result['given']} lines given to talks the scripts leave unanswered, {result['nothing']} NPCs with "
+          f"nothing to say, {len(result['left'])} talks left to write by hand ({len(new)} not in "
+          f"{sidetalk.KNOWN.name}; --left lists them all)")
+    if result["undumped"]:
+        print(f"no quest.json in the dumps of quests {result['undumped']}")
+    if args.check:
+        current = json.loads(sidetalk.OUT.read_text()) if sidetalk.OUT.exists() else {}
+        problems = sidetalk.played_problems()
+        for line in problems:
+            print(f"not played: {line}")
+        if current != quests:
+            print("quest_side_talks.json isn't what the dumps give: run questkit sidetalk")
+        if new:
+            print("talks the client offers have no answer: write them in the quest's script (or, for what really "
+                  "can't be told yet, questkit sidetalk --update-known)")
+        return 1 if problems or current != quests or new else 0
+    out = sidetalk.save(quests)
+    if args.update_known:
+        kept = {line for line in known if int(line.split()[1].rstrip(":")) not in
+                {quest for quest, *_ in result["talks"]}}
+        sidetalk.KNOWN.write_text(json.dumps(sorted(kept | set(result["left"]), key=sidetalk.left_order),
+                                             indent=1) + "\n")
+    lines = sum(len(e["scenes"]) for entries in quests.values() for e in entries)
+    print(f"{lines} lines for {len(quests)} quests written to {out}")
+    problems = sidetalk.played_problems()
+    for line in problems:
+        print(f"not played: {line}")
+    return 1 if problems else 0
 
 
 def _lint(args) -> int:
@@ -892,6 +935,18 @@ def main(argv=None) -> int:
                    help="also list every talk the client offers that the quest's script doesn't answer (probed with "
                         "the variables at zero: mostly NPCs' lines for each sequence)")
     p.set_defaults(run=_travel)
+
+    p = commands.add_parser("sidetalk", help="what quests' NPCs say when talked to outside the quests' steps: writes "
+                                             "resources/data/quest_side_talks.json for the talks the scripts leave "
+                                             "unanswered, and reports the ones to write by hand")
+    p.add_argument("dumps", nargs="*", help="folders of kawari-questdump output (default: quest-dumps/)")
+    p.add_argument("--check", action="store_true",
+                   help="fail if quest_side_talks.json isn't what the dumps give, a line doesn't play, or a talk is "
+                        "left unanswered that the known list doesn't have")
+    p.add_argument("--left", action="store_true", help="list every talk left to write by hand")
+    p.add_argument("--update-known", action="store_true",
+                   help="write the talks left by hand to the known list (for what can't be told yet)")
+    p.set_defaults(run=_sidetalk)
 
     p = commands.add_parser("lint", help="find what fails silently in game: unscripted NPC actions, quest battle "
                                          "NPCs without timelines, checked scripts without fixtures, quest "

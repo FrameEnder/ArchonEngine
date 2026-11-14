@@ -450,7 +450,10 @@ steps, which are one talk, so these quests' fixtures merge them.
 6. **Test in game**: ArchonEngine ControlPanel → Quest Lab → *Test this quest* sets the character up, turns capture on,
    and sends a bundle tagged with the quest when you finish; `questkit triage` and `questkit compare` read it. (Or by
    hand: `//gm quest accept|sequence|incomplete …`.)
-7. **Document**: add it to the table below and the [Changelog](changelog.md).
+7. **Side talk**: `python3 tools/questkit sidetalk quest-dumps` gives the quest's NPCs their lines for the talks
+   that aren't steps, and lists the ones to write in the script by hand ([Side talk](#side-talk)). Write those;
+   `--update-known` is for what really can't be told.
+8. **Document**: add it to the table below and the [Changelog](changelog.md).
 
 **Quests without a dump.** A capture shows everything retail did on one run: who you talked to, every scene and its
 flags and answers, the variables, notices, items and rewards. What it can't show is what the client's script would do
@@ -848,6 +851,59 @@ three runs, every step from the city's last quests to We Come in Peace):
   (clearing its slot), FinishQuest, QuestTracker, then EventFinish (Bob's Chronofoil captures bab8c255 and 0845b9a2).
   Kawari's My Little Chocobo ended the event first and its name stayed under the guide once done (Bob's bundle
   20261029-152644), so `process_lua_player` now ends an event after the quests finished in the same batch.
+
+## Side talk
+
+**The policy (Bob, 2026-11-14): a quest's NPCs say what retail's say, whether or not it's a step.** "It may not break
+the flow, but that's no excuse to ignore retail behavior if we can implement it." A quest isn't done until every talk
+the client offers in it is answered: by the quest's script, by a line in `resources/data/quest_side_talks.json`, or
+by the NPC having nothing to say on retail either. `questkit sidetalk --check` holds it
+([questkit](questkit.md#sidetalk)).
+
+A quest's NPCs can be talked to in every sequence the client offers them (`IsAcceptEvent`), and most have a line for
+it: the bystanders while someone else is the objective, an NPC who has said their piece, the camp's soldiers before
+they're saluted. A recording has the steps a player took, so a transcribed script answered those and ended every
+other talk without a word: 561 talks in 73 of the scripted quests (Bob, of Escape from Castrum Centri's imperials: "I
+faintly recalled NPCs giving dialogue when you talked to them without a emote").
+
+**Where a line's scene comes from.** Which scene is whose isn't written in the client's script. It follows from how
+the scripts are laid out, found on 2026-11-14 and checked against every recording:
+
+* The Quest sheet's listeners (`quest.json`'s `listeners`) have a row for each NPC, object or enemy in each sequence
+  (two when an NPC is both talked to and emoted at). **The client's scenes are numbered in the rows' order**, after
+  the offer's: every NPC's row has a scene at least (an object's too, in all but one quest, 1190, whose last row has
+  none), a step's has as many as the step plays, and **an NPC with nothing to say has an empty scene** (one
+  instruction, no calls) to keep the count. Scenes numbered apart (50, 90, 98 to 100: an offer turned down, an
+  object looked at) aren't in that order.
+* A recorded step pins its scenes to its NPC and sequence (the fixtures), and the scenes between two pins are lined
+  up with the rows between them: each scene's possible rows are worked out over every way of lining them up
+  (`sidetalk.line_up`), and a scene is someone's only when every way agrees.
+* What's left is narrowed by the scenes' speakers, the name in a line's text constant
+  (`TEXT_MANFST407_00521_IMPERIALSOLDIER_A_000_050`): an NPC who speaks under one name wherever it's sure doesn't
+  speak under another, and a speaker named as one of the quest's NPCs is (the sheet's label, spelling aside: HOUMEI
+  is Homei).
+
+Held out one at a time, 847 recorded scenes of the 303 scripted quests with dumps were put back where their
+recordings have them and one wasn't (1190's last, the object with no scene, which its recording is what shows); the
+other 564 were left unsure, which is what the method says when it can't tell. The 246 lines given all turned out to
+be spoken by the NPC they were given to, by name (CID to Cid, NPCA to the amiable imperial every time, YUGIRI to the
+refugee leader before she's named), though names only settle ties.
+
+**What's given.** A talk gets a scene when exactly one fits: a plain talk (turning, an animation, lines; no question,
+trade, cutscene or reward) in that NPC's row, that the script doesn't play itself. 246 talks in 41 quests have one;
+248 are NPCs with an empty scene, silent on retail too. 67 are left for the quest's script, by hand
+(`tools/questkit/sidetalk_known.json` lists them): a line before an emote and another after it (the script's flags
+tell which, as 521's soldiers' do), a scene that's more than a talk (1005's sequence 9 and 10, where the NPCs are
+bound to the reaper), and scenes that could be an NPC's or a neighbour's.
+
+**How it's played.** `events/quest/SideTalk.lua` is loaded after a quest's script when the file has entries for it
+(`quest_side_talks.rs`, `events/lua.rs`; before `Travel.lua`, whose rides come first). It asks the script first; when
+the script has done nothing with the talk but end it (`player:event_unanswered()`, which takes the end back), it
+plays the line with `HIDE_HOTBAR`, as retail played the same kind of talk in quest 466, and ends the talk when the
+scene returns. A script that answers a talk keeps its answer, so writing one by hand needs nothing removed here, and
+`questkit sidetalk` drops a line the script plays itself. The replay harness loads it the same way.
+
+All of it is from the client's script: no recording has these talks, and none is played in game yet.
 
 ## Quest travel
 

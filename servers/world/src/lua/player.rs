@@ -171,6 +171,20 @@ impl LuaPlayer {
         self.queued_tasks.push(LuaTask::FinishEvent {});
     }
 
+    /// Whether the event's script has so far done nothing but end it (or nothing at all). The end is taken back
+    /// when so, for something to be played in its place: a quest NPC's line when the quest's script has none for
+    /// them (`events/quest/SideTalk.lua`).
+    pub fn event_unanswered(&mut self) -> bool {
+        let unanswered = self
+            .queued_tasks
+            .iter()
+            .all(|task| matches!(task, LuaTask::FinishEvent {}));
+        if unanswered {
+            self.queued_tasks.clear();
+        }
+        unanswered
+    }
+
     /// Opens the gathering window of the node being talked to.
     pub fn open_gathering_window(&mut self) {
         self.queued_tasks.push(LuaTask::OpenGatheringWindow);
@@ -903,6 +917,9 @@ impl UserData for LuaPlayer {
         methods.add_method_mut("finish_event", |_, this, _: ()| {
             this.finish_event();
             Ok(())
+        });
+        methods.add_method_mut("event_unanswered", |_, this, _: ()| {
+            Ok(this.event_unanswered())
         });
         methods.add_method_mut("unlock_classjob", |_, this, classjob_id: u8| {
             this.unlock_classjob(classjob_id);

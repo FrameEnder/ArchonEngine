@@ -199,19 +199,20 @@ def listings(roots) -> dict[str, Path]:
 
 def answers(script: Path, quest: int, params: dict, sequence: int, base: int) -> list[int] | None:
     """The scenes the quest's own script plays when the player talks to `base` in `sequence` (0: not accepted), the
-    variables at zero and every question answered no (Travel.lua left out). None when the probe can't tell (a Lua
-    error, a talk that needs more than that)."""
+    variables at zero and every question answered no (Travel.lua and SideTalk.lua left out). None when the probe
+    can't tell (a Lua error, a talk that needs more than that)."""
     from . import harness as harness_module
 
     try:
         probe = harness_module.Harness(script, quest, params)
         if sequence:
             probe.world.quests[quest] = harness_module.Quest(sequence, [0] * 6)
-        saved, harness_module.QUEST_TRAVEL = harness_module.QUEST_TRAVEL, Path("/nonexistent")
+        saved = harness_module.QUEST_TRAVEL, harness_module.QUEST_SIDE_TALKS
+        harness_module.QUEST_TRAVEL = harness_module.QUEST_SIDE_TALKS = Path("/nonexistent")
         try:
             outcome = probe.talk(base, {}, [])
         finally:
-            harness_module.QUEST_TRAVEL = saved
+            harness_module.QUEST_TRAVEL, harness_module.QUEST_SIDE_TALKS = saved
     except Exception:
         return None
     return [played["scene"] for played in outcome.get("played", [])]
@@ -252,6 +253,7 @@ def build(roots=(DUMPS,)) -> dict:
     by_quest, by_npc = rides(quests)
 
     data, unknown, questions, inferred, silent = {}, [], [], [], []
+    silent_talks, answered = [], {}
     for quest, (script, client, fixtures) in sorted(quests.items()):
         params = next((f.get("params") for f in fixtures if f.get("params")), {})
         # What the script answers: each NPC the client accepts a talk with, in each sequence.
@@ -261,6 +263,7 @@ def build(roots=(DUMPS,)) -> dict:
                 if actor in params:
                     played[(actor, sequence)] = answers(script, quest, params, sequence, params[actor])
         answered_scenes = {n for scenes in played.values() if scenes for n in scenes}
+        answered[quest] = sorted(answered_scenes)
 
         def unanswered(actor: str) -> list[int]:
             return sorted(s for (a, s), scenes in played.items() if a == actor and scenes == [])
@@ -315,7 +318,10 @@ def build(roots=(DUMPS,)) -> dict:
             if scenes == [] and not any(e["actor"] == params[actor] and str(sequence) in e["scenes"]
                                         for e in entries):
                 silent.append(f"quest {quest}: sequence {sequence}: {actor} ({params[actor]})")
-    return {"quests": data, "unknown": unknown, "questions": questions, "inferred": inferred, "silent": silent}
+                silent_talks.append((quest, sequence, actor, params[actor]))
+    # `silent_talks` and `answered` (the scenes each script plays, by quest) are `sidetalk`'s to work from.
+    return {"quests": data, "unknown": unknown, "questions": questions, "inferred": inferred, "silent": silent,
+            "silent_talks": silent_talks, "answered": answered}
 
 
 def save(result: dict, out: Path = OUT) -> Path:

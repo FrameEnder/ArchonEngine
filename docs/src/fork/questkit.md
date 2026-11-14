@@ -634,6 +634,25 @@ script for what it answers. It prints the rides given from another quest's (`inf
 script doesn't answer. `--check` fails if the file isn't what the dumps give. A fixture with `"travel": true` tests a
 ride it gave and isn't read as a recording.
 
+## sidetalk
+
+`questkit sidetalk <dump folders>` writes `resources/data/quest_side_talks.json`: the scene each quest NPC says when
+talked to outside the quest's steps, for the talks the quest's script leaves unanswered, played by
+`events/quest/SideTalk.lua` ([Quests](quests.md#side-talk), which has how the scenes are worked out). It needs each
+quest's client script and `quest.json` (kawari-questdump), its fixtures and its script; quests whose dumps aren't in
+the folders given keep the lines they had. It prints how many talks got a line, how many NPCs have nothing to say,
+and the talks left to write by hand that `tools/questkit/sidetalk_known.json` doesn't already list (`--left`: all of
+them).
+
+`--check` fails when the file isn't what the dumps give, when a line doesn't play through its quest's script (talking
+to the NPC in that sequence plays that scene with `HIDE_HOTBAR` and ends), or when a talk is left unanswered that
+the known list doesn't have: a new quest's unanswered talks are written in its script, not let through.
+`--update-known` rewrites the list for the quests at hand, for what can't be told yet. The test suite plays every
+shipped line (`SideTalkTest`), with no dumps needed.
+
+A fixture with `"unseen": true` is of talks no recording has (521's, 1005's Wedge): it replays, and isn't read as a
+recording when scenes are pinned.
+
 ## lint
 
 `questkit lint` finds what fails silently in game:

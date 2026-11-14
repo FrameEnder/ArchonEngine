@@ -2012,6 +2012,101 @@ class TravelTest(unittest.TestCase):
             self.assertIn(int(quest), travel_fixtures, f"quest {quest}'s rides have no travel fixture")
 
 
+class SideTalkTest(unittest.TestCase):
+    """questkit sidetalk: the scene of each talk a script leaves unanswered, from a made-up quest laid out as the
+    client's scripts are (343's shape: the objective's NPC then the bystanders, sequence by sequence)."""
+
+    @staticmethod
+    def _client(scenes: dict):
+        from questkit import travel
+        text = ""
+        for number, (methods, speaker) in scenes.items():
+            fields = f"TEXT_MADEUP000_00001_{speaker}_000_00{number % 10}" if speaker else ""
+            text += (f"== MadeUp000:OnScene{number:05d}  [function 0.0.{number}, 3 params]\n"
+                     + (f"   methods  {methods}\n" if methods else "") + (f"   fields   {fields}\n" if fields else ""))
+        return travel.read_client_script(text)
+
+    @staticmethod
+    def _sheet(rows: list, labels: dict):
+        return {"listeners": [{"listener": base, "spawn_sequence": sequence, "quest_uint8a": kind}
+                              for sequence, base, kind in rows],
+                "params": [{"name": f"ACTOR{i}", "value": base, "label": label}
+                           for i, (base, label) in enumerate(labels.items())],
+                "issuer_start": {"value": 1000001}}
+
+    PLAIN = "TurnTo, WaitForTurn, PlayActionTimeline, Talk"
+    OFFER = [{"talk": 1000001, "scenes": [{"scene": 0}, {"scene": 1}], "expect": {"sequence": 1}}]
+
+    def test_lining_up(self):
+        from questkit import sidetalk
+        blocks = [{"base": None}, {"base": 1000002}, {"base": 5000000}, {"base": 1000003}]
+        # Three scenes: the offer's, then one for each NPC (the listener that isn't one may have none.)
+        self.assertEqual(sidetalk.line_up(3, blocks, lambda i, j: True), [{0, 1}, {1, 2, 3}, {3}])
+        self.assertEqual(sidetalk.line_up(3, blocks, lambda i, j: (i, j) != (0, 1)), [{0}, {1}, {3}])
+        # Fewer scenes than NPCs don't line up.
+        self.assertIsNone(sidetalk.line_up(1, blocks, lambda i, j: True))
+
+    def test_bystanders_lines_and_silences(self):
+        from questkit import sidetalk
+        # Sequence 1: the sergeant (a recorded step), a private with a line, one with none. Sequence 2: the same
+        # three with the sergeant's and the first private's lines, no step recorded.
+        sheet = self._sheet([(1, 1000002, 1), (1, 1000003, 1), (1, 1000004, 1),
+                             (2, 5000000, 10), (2, 1000002, 1), (2, 1000003, 1), (2, 1000004, 1),
+                             (255, 1000005, 1)],
+                            {1000002: "sergeant", 1000003: "private", 1000004: "private", 1000005: "captain"})
+        client = self._client({0: ("QuestOffer", None), 1: ("Talk, QuestAccepted", "CAPTAIN"),
+                               2: (self.PLAIN, "SGT"), 3: (self.PLAIN, "PVT"), 4: ("", None),
+                               5: (self.PLAIN, "SGT"), 6: (self.PLAIN, "PVT"), 7: ("", None),
+                               8: ("Talk, QuestReward", "CAPTAIN")})
+        fixtures = [{"steps": self.OFFER + [
+            {"talk": 1000002, "scenes": [{"scene": 2}], "expect": {"sequence": 2}},
+            {"scenes": [], "expect": {"sequence": 255}},
+            {"talk": 1000005, "scenes": [{"scene": 8}], "expect": {"sequence": 255}}]}]
+        wanted = [(1, 1000003), (1, 1000004), (2, 1000002), (2, 1000003), (2, 1000004)]
+        scenes, why, sure = sidetalk.infer(sheet, client, fixtures, "", set(), wanted)
+        self.assertEqual(why, [])
+        self.assertEqual(scenes, {(1, 1000003): 3, (1, 1000004): None, (2, 1000002): 5, (2, 1000003): 6,
+                                  (2, 1000004): None})
+        # A line the script plays itself isn't given again.
+        scenes, _, _ = sidetalk.infer(sheet, client, fixtures, "play(player, 6, HIDE_HOTBAR)", set(), wanted)
+        self.assertIsNone(scenes[(2, 1000003)])
+
+    def test_what_cant_be_told_is_left(self):
+        from questkit import sidetalk
+        # Two NPCs, three scenes, no names to go by: the middle one could be either's.
+        sheet = self._sheet([(1, 1000002, 1), (1, 1000003, 1)], {})
+        client = self._client({0: ("QuestOffer", None), 1: (self.PLAIN, "NPC"), 2: (self.PLAIN, "NPC"),
+                               3: (self.PLAIN, "NPC")})
+        fixtures = [{"steps": [{"talk": 1000001, "scenes": [{"scene": 0}], "expect": {"sequence": 1}}]}]
+        scenes, why, _ = sidetalk.infer(sheet, client, fixtures, "", set(), [(1, 1000002), (1, 1000003)])
+        self.assertEqual(scenes, {})
+        self.assertEqual(len(why), 2)
+        # An emote's NPC with a line before it and one after: the script's to tell apart.
+        sheet = self._sheet([(1, 1000002, 1), (1, 1000002, 2)], {})
+        fixtures = [{"steps": [{"talk": 1000001, "scenes": [{"scene": 0}], "expect": {"sequence": 1}},
+                               {"emote": [59, 1000002], "scenes": [{"scene": 2}], "expect": {"sequence": 1}}]}]
+        scenes, why, _ = sidetalk.infer(sheet, client, fixtures, "", set(), [(1, 1000002)])
+        self.assertEqual(scenes, {})
+        self.assertIn("around their emote", why[0])
+
+    def test_shipped_lines_play(self):
+        # Every line in resources/data/quest_side_talks.json, talked to through its quest's script as the server
+        # runs it (SideTalk.lua after it): that scene, with HIDE_HOTBAR, and the talk ends.
+        from questkit import sidetalk
+        self.assertEqual(sidetalk.played_problems(), [])
+        self.assertGreater(len(json.loads(sidetalk.OUT.read_text())), 30)
+
+    def test_a_script_that_answers_keeps_its_answer(self):
+        # Biggs in 1005's sequence 4 has a side line (scene 11); Wedge there is the step (scene 9), the script's.
+        from questkit import harness
+        script = next(repo.QUEST_SCRIPTS.rglob("*_01005.lua"))
+        params = json.loads((repo.FIXTURES / "1005.json").read_text())["params"]
+        for base, scene in ((params["ACTOR6"], 11), (params["ACTOR4"], 9)):
+            probe = harness.Harness(script, 1005, params)
+            probe.world.quests[1005] = harness.Quest(4, [0] * 6)
+            self.assertEqual([p["scene"] for p in probe.talk(base, {}, [])["played"]][:1], [scene])
+
+
 class ClientCheckTest(unittest.TestCase):
     """questkit clientcheck against a made-up client listing laid out as kawari-questdump writes them."""
 
