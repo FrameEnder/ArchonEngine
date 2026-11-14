@@ -109,6 +109,8 @@ impl ZoneConnection {
 
         // Generate obsfucation-related keys if needed.
         if self.config.enable_packet_obsfucation {
+            // What's queued was sent under the keys the client has now.
+            self.flush_segments().await;
             let seed1 = fastrand::u8(..);
             let seed2 = fastrand::u8(..);
             let seed3 = fastrand::u32(..);
@@ -157,6 +159,8 @@ impl ZoneConnection {
                 seed3: !self.obsfucation_data.seed3,
             });
             self.send_ipc_self(ipc).await;
+            // In a frame that ends with it: what follows is written with the keys it tells the client to make.
+            self.flush_segments().await;
         } else {
             let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::InitializeObfuscation {
                 unk_before: [0; 6],

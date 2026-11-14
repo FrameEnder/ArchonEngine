@@ -64,6 +64,10 @@ async fn main() {
 
     loop {
         let (socket, addr) = listener.accept().await.unwrap();
+        // Small writes go out at once (`docs/src/fork/networking.md`.)
+        if let Err(err) = socket.set_nodelay(true) {
+            tracing::warn!("Couldn't set TCP_NODELAY for {addr}: {err}");
+        }
 
         tracing::info!("New connection from {addr}");
 

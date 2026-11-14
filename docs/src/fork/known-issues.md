@@ -3,6 +3,19 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Networking (2026-11-14)
+
+* **Not played yet**: segments sent as one frame per turn of a connection's loop, `TCP_NODELAY`, the capture written
+  out every 250 ms, sheets kept, the world's larger inbox (`networking.md`). The first thing to watch is a login and
+  a zone change (the largest bursts, now a few frames instead of hundreds), and a zone change with packet obfuscation
+  on, which no test covers.
+* A capture can miss a connection's last 250 ms when a bundle is made or the server is killed (a `!mark` is written
+  at once).
+* Others' movement is still sent every 500 ms; retail's is about every 313 ms. It needs movement taken out of the
+  behaviour tick into its own step (`networking.md`, "Not built"), to do by itself after the above has been played.
+* About seventy game-data lookups still read their sheet on every call (`GameData::kept_sheet` is there for them);
+  the database is written on the connection's task.
+
 ## Bob's Chronofoil captures of 2026-11-12
 
 * Not scripted yet: 802 (Broadening Horizons: only its last two talks are in any capture, 898dd0b9). 1003 needs none:

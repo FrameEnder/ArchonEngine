@@ -93,7 +93,9 @@ fn spawn_main_loop(
     game_data: Arc<Mutex<GameData>>,
     database: Arc<Mutex<WorldDatabase>>,
 ) -> (ServerHandle, JoinHandle<()>) {
-    let (send, recv) = channel(64);
+    // Room for a busy moment: every connection's send waits when it's full, behind whatever the world is doing (64
+    // until 2026-11-14.)
+    let (send, recv) = channel(CLIENT_QUEUE_SIZE);
 
     let handle = ServerHandle {
         chan: send,
@@ -273,6 +275,8 @@ async fn initial_setup(
                     watching_cutscene: false,
                     position_sequence: 0,
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
+                    outgoing: Default::default(),
+                    batching: false,
                 };
 
                 // Handle setup before passing off control to the zone connection.
@@ -5705,7 +5709,14 @@ async fn client_loop(
     let mut autosave = tokio::time::interval(AUTOSAVE_INTERVAL);
     autosave.tick().await; // the first tick is immediate, there's nothing new to save yet
 
+    // From here what a turn of the loop sends goes out together, as one frame (`ZoneConnection::send_segment`.)
+    connection.batching = true;
+
     loop {
+        // What the last turn sent: one frame.
+        connection.flush_segments().await;
+        connection.capture.flush_if_due();
+
         let gate_wait = until_unix_time(connection.next_gate_change());
         tokio::select! {
             biased; // client data should always be prioritized
@@ -5740,6 +5751,10 @@ async fn client_loop(
             _ = tokio::time::sleep(gate_wait) => {
                 connection.gate_changed().await;
             }
+            // Captured packets waiting to be written out, when nothing else has woken the loop.
+            _ = tokio::time::sleep(kawari_world::capture::FLUSH_INTERVAL), if connection.capture.is_dirty() => {
+                connection.capture.flush();
+            }
             // A connection that dropped without closing (the network went away, the PC lost power) never reads 0 bytes,
             // so it would wait here forever without logging the player out and saving them. The client talks to us
             // every few seconds while it's connected, even on loading screens.
@@ -5749,6 +5764,11 @@ async fn client_loop(
             }
         }
     }
+
+    // What's left goes out, and the rest as it's sent.
+    connection.flush_segments().await;
+    connection.batching = false;
+    connection.capture.flush();
 
     // forcefully log out the player if they weren't logging out but force D/C'd
     if connection.player_data.character.actor_id.is_valid() {
@@ -5834,6 +5854,11 @@ async fn main() {
 
     loop {
         if let Ok((socket, addr)) = listener.accept().await {
+            // Small writes go out at once: with Nagle's algorithm on (the default), one waits while an earlier one is
+            // unacknowledged, which a Windows client may leave for up to 200 ms (`docs/src/fork/networking.md`.)
+            if let Err(err) = socket.set_nodelay(true) {
+                tracing::warn!("Couldn't set TCP_NODELAY for {addr}: {err}");
+            }
             let id = handle.next_id();
             tracing::info!("New connection from {addr}, now referring to it as {id:?}");
 

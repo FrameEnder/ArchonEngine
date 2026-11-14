@@ -342,6 +342,118 @@ pub struct ZoneConnection {
     pub riding_chocobo_taxi: Option<u32>,
     /// Packet capture for debugging, if enabled in the config.
     pub capture: crate::capture::PacketCapture,
+    /// Segments waiting to go out together as one frame (`send_segment`, `flush_segments`.)
+    pub outgoing: OutgoingFrame<ServerZoneIpcSegment>,
+    /// Whether segments wait in `outgoing` for the end of what's being handled (the connection's loop turns it on),
+    /// or go out one a frame as they're sent (before the loop and after it.)
+    pub batching: bool,
+}
+
+/// The most a frame of queued segments holds before it's sent: retail's largest frames (16,312 bytes, 186 segments,
+/// in Bob's Chronofoil capture da424662; a zone-in's).
+const FRAME_BYTES: usize = 16_000;
+
+/// The segments of the frame being put together, in the order they were sent.
+#[derive(Debug)]
+pub struct OutgoingFrame<T: kawari::packet::ReadWriteIpcSegment> {
+    segments: Vec<PacketSegment<T>>,
+    bytes: usize,
+}
+
+impl<T: kawari::packet::ReadWriteIpcSegment> Default for OutgoingFrame<T> {
+    fn default() -> Self {
+        Self {
+            segments: Vec::new(),
+            bytes: 0,
+        }
+    }
+}
+
+impl<T: kawari::packet::ReadWriteIpcSegment> OutgoingFrame<T> {
+    /// Adds a segment. When the frame would pass `FRAME_BYTES` with it, gives the frame so far to send first (the
+    /// segment starts the next one); a segment bigger than that by itself is a frame of its own.
+    pub fn push(&mut self, segment: PacketSegment<T>) -> Option<Vec<PacketSegment<T>>> {
+        let size = segment.calc_size() as usize;
+        let full = if !self.segments.is_empty() && self.bytes + size > FRAME_BYTES {
+            Some(self.take())
+        } else {
+            None
+        };
+        self.bytes += size;
+        self.segments.push(segment);
+        full
+    }
+
+    /// The frame so far, leaving none.
+    pub fn take(&mut self) -> Vec<PacketSegment<T>> {
+        self.bytes = 0;
+        std::mem::take(&mut self.segments)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.segments.is_empty()
+    }
+}
+
+#[cfg(test)]
+mod outgoing_frame_tests {
+    use super::*;
+
+    fn segment(n: u32) -> PacketSegment<ServerZoneIpcSegment> {
+        PacketSegment {
+            segment_type: SegmentType::KeepAliveResponse,
+            data: SegmentData::KeepAliveResponse {
+                id: n,
+                timestamp: 0,
+            },
+            ..Default::default()
+        }
+    }
+
+    fn ids(frame: &[PacketSegment<ServerZoneIpcSegment>]) -> Vec<u32> {
+        frame
+            .iter()
+            .map(|segment| match &segment.data {
+                SegmentData::KeepAliveResponse { id, .. } => *id,
+                _ => unreachable!(),
+            })
+            .collect()
+    }
+
+    /// What one handler sends is one frame, in order (Kawari wrote a frame a segment; retail packs them.)
+    #[test]
+    fn segments_wait_for_one_frame_in_order() {
+        let mut frame = OutgoingFrame::default();
+        assert!(frame.is_empty());
+        for n in 0..113 {
+            // A login's inventory was 113 frames (Bob's bundle 20261114-033457.)
+            assert!(frame.push(segment(n)).is_none());
+        }
+        assert_eq!(ids(&frame.take()), (0..113).collect::<Vec<_>>());
+        assert!(frame.is_empty());
+        assert!(frame.take().is_empty());
+    }
+
+    /// A frame stops at retail's largest, well under what one read takes (`RECEIVE_BUFFER_SIZE`.)
+    #[test]
+    fn a_full_frame_goes_first() {
+        let size = segment(0).calc_size() as usize;
+        let fits = FRAME_BYTES / size;
+        let mut frame = OutgoingFrame::default();
+        let mut sent = Vec::new();
+        for n in 0..(fits as u32 * 2 + 3) {
+            if let Some(full) = frame.push(segment(n)) {
+                assert_eq!(full.len(), fits);
+                assert!(full.len() * size <= FRAME_BYTES);
+                sent.extend(ids(&full));
+            }
+        }
+        let rest = frame.take();
+        assert_eq!(rest.len(), 3);
+        sent.extend(ids(&rest));
+        assert_eq!(sent, (0..(fits as u32 * 2 + 3)).collect::<Vec<_>>());
+        assert!(FRAME_BYTES + 0x2000 < kawari::common::RECEIVE_BUFFER_SIZE);
+    }
 }
 
 impl ZoneConnection {
@@ -474,16 +586,49 @@ impl ZoneConnection {
         }
     }
 
+    /// Sends a segment: with the others of what's being handled, as one frame, when the connection's loop is running
+    /// (`batching`), as retail packs them (2 a frame on average, 20 and more at a zone-in; Kawari wrote each as its own
+    /// frame until 2026-11-14: a header, a compression and a write to the socket apiece, 113 for a login's
+    /// inventory). The frame goes out when it's full or when the handler is done (`flush_segments`). See
+    /// `docs/src/fork/networking.md`.
     pub async fn send_segment(&mut self, segment: PacketSegment<ServerZoneIpcSegment>) {
         self.capture.record_outgoing(&segment);
 
-        // Ditto as above
+        if !self.batching {
+            // Ditto as above
+            Box::pin(send_packet(
+                &mut self.socket,
+                &mut self.state,
+                ConnectionType::Zone,
+                self.config.compression(),
+                &[segment],
+            ))
+            .await;
+            return;
+        }
+        if let Some(full) = self.outgoing.push(segment) {
+            self.send_frame(&full).await;
+        }
+    }
+
+    /// Sends the queued segments as one frame, in the order they were sent. Called when a client packet, a server
+    /// message or a timer has been handled, when a frame is full, and before anything that changes how packets are
+    /// written (new obfuscation keys) or writes to the socket itself (a keep-alive's reply).
+    pub async fn flush_segments(&mut self) {
+        if self.outgoing.is_empty() {
+            return;
+        }
+        let segments = self.outgoing.take();
+        self.send_frame(&segments).await;
+    }
+
+    async fn send_frame(&mut self, segments: &[PacketSegment<ServerZoneIpcSegment>]) {
         Box::pin(send_packet(
             &mut self.socket,
             &mut self.state,
             ConnectionType::Zone,
             self.config.compression(),
-            &[segment],
+            segments,
         ))
         .await;
     }
@@ -606,6 +751,8 @@ impl ZoneConnection {
     }
 
     pub async fn send_keep_alive(&mut self, id: u32, timestamp: u32) {
+        // In order with what's queued.
+        self.flush_segments().await;
         send_keep_alive::<ServerZoneIpcSegment>(
             &mut self.socket,
             &mut self.state,

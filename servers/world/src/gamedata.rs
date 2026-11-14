@@ -188,6 +188,8 @@ pub struct GameData {
     omen_sheet: Option<OmenSheet>,
     model_chara_sheet: Option<ModelCharaSheet>,
     model_skeleton_sheet: Option<ModelSkeletonSheet>,
+    /// Sheets read whole the first time a lookup asks for one, and kept (`kept_sheet`.)
+    kept_sheets: HashMap<std::any::TypeId, std::sync::Arc<dyn std::any::Any + Send + Sync>>,
     /// Which of `HITBOX_FORMULAS` matches what Kawari Recorder measured on retail (None: none does), found once.
     hitbox_formula: Option<Option<usize>>,
     /// Every quest by where its issuer stands (`quest_map_markers`), read the first time it's needed.
@@ -1065,6 +1067,7 @@ impl GameData {
             omen_sheet: None,
             model_chara_sheet: None,
             model_skeleton_sheet: None,
+            kept_sheets: HashMap::new(),
             hitbox_formula: None,
             quest_issuers: None,
             combo_starters: None,
@@ -1746,12 +1749,25 @@ impl GameData {
 
     /// A key item's EventItem row: the quest it belongs to (Quest row, e.g. 65843), its cast time in milliseconds and
     /// the Action row its use animates as.
+    /// A sheet that isn't read at start, read the first time it's asked for and kept. These lookups read their sheet
+    /// from the game's files on every call before (2026-11-14), with the game data's mutex held: every connection and
+    /// the world's task wait behind that one (`networking.md`.) A read that fails isn't kept, so it's tried again.
+    fn kept_sheet<S: std::any::Any + Send + Sync>(
+        &mut self,
+        read: impl FnOnce(&mut ResourceResolver) -> Result<S, physis::Error>,
+    ) -> Option<&S> {
+        let key = std::any::TypeId::of::<S>();
+        if !self.kept_sheets.contains_key(&key) {
+            let sheet = read(&mut self.resource).ok()?;
+            self.kept_sheets.insert(key, std::sync::Arc::new(sheet));
+        }
+        self.kept_sheets.get(&key)?.downcast_ref::<S>()
+    }
+
     pub fn get_event_item(&mut self, item_id: u32) -> Option<EventItemInfo> {
-        let sheet = icarus::EventItem::EventItemSheet::read_from(
-            &mut self.resource,
-            get_config().world.language(),
-        )
-        .ok()?;
+        let sheet = self.kept_sheet(|resource| {
+            icarus::EventItem::EventItemSheet::read_from(resource, get_config().world.language())
+        })?;
         let row = sheet.row(item_id)?;
         Some(EventItemInfo {
             quest: row.Quest,
@@ -2023,11 +2039,9 @@ impl GameData {
     /// A Grand Company rank's seal cap and what being promoted from it costs (GrandCompanyRank: MaxSeals,
     /// RequiredSeals; rank 1 holds 10,000 and its promotion costs 2,000.)
     pub fn get_gc_rank_seals(&mut self, rank: u8) -> Option<(u32, u32)> {
-        let sheet = icarus::GrandCompanyRank::GrandCompanyRankSheet::read_from(
-            &mut self.resource,
-            Language::None,
-        )
-        .ok()?;
+        let sheet = self.kept_sheet(|resource| {
+            icarus::GrandCompanyRank::GrandCompanyRankSheet::read_from(resource, Language::None)
+        })?;
         let row = sheet.row(rank as u32)?;
         Some((row.MaxSeals, row.RequiredSeals))
     }
@@ -2237,7 +2251,7 @@ impl GameData {
             let additional_data = row.AdditionalData;
 
             let item_action_sheet =
-                ItemActionSheet::read_from(&mut self.resource, Language::None).ok()?;
+                self.kept_sheet(|resource| ItemActionSheet::read_from(resource, Language::None))?;
             let item_action_row = item_action_sheet.row(row.ItemAction as u32)?;
 
             return Some((
@@ -2372,11 +2386,12 @@ impl GameData {
     pub fn get_event_action_cast_time(&mut self, id: u32) -> u8 {
         // It has a Name column, so it only exists per language: read without one it failed and every bar finished
         // after the fallback's 2 s, before the client's (Bob's 2026-10-20 bundle: aethernet shards, 551's destination.)
-        EventActionSheet::read_from(&mut self.resource, get_config().world.language())
-            .ok()
-            .and_then(|sheet| sheet.row(id))
-            .map(|row| row.CastTime)
-            .unwrap_or(2)
+        self.kept_sheet(|resource| {
+            EventActionSheet::read_from(resource, get_config().world.language())
+        })
+        .and_then(|sheet| sheet.row(id))
+        .map(|row| row.CastTime)
+        .unwrap_or(2)
     }
 
     /// Every achievement with a type, read from the Achievement sheet the first time.
@@ -2467,7 +2482,8 @@ impl GameData {
 
     /// Returns the quest this QuestBattle belongs to, its time limit and its variables.
     pub fn get_quest_battle(&mut self, quest_battle_id: u32) -> Option<QuestBattleInfo> {
-        let sheet = QuestBattleSheet::read_from(&mut self.resource, Language::None).ok()?;
+        let sheet =
+            self.kept_sheet(|resource| QuestBattleSheet::read_from(resource, Language::None))?;
         let row = sheet.row(quest_battle_id)?;
 
         let variables = row
@@ -3351,8 +3367,9 @@ impl GameData {
         let instance_content_row = self.instance_content_sheet.row(content_id)?;
         let content_id = instance_content_row.ContentDirectorManagedSG;
 
-        let sheet =
-            ContentDirectorManagedSGSheet::read_from(&mut self.resource, Language::None).ok()?;
+        let sheet = self.kept_sheet(|resource| {
+            ContentDirectorManagedSGSheet::read_from(resource, Language::None)
+        })?;
         let subrows = sheet
             .into_iter()
             .find(|(row_id, _)| *row_id == content_id as u32)?;
@@ -4560,8 +4577,9 @@ impl GameData {
 
     /// Returns the emote mode (if any), really only relevant for persistent/loopable emotes.
     pub fn get_emote_mode(&mut self, emote_id: u32) -> Option<u8> {
-        let config = get_config();
-        let sheet = EmoteSheet::read_from(&mut self.resource, config.world.language()).ok()?;
+        let sheet = self.kept_sheet(|resource| {
+            EmoteSheet::read_from(resource, get_config().world.language())
+        })?;
         let row = sheet.row(emote_id)?;
 
         let mode = row.EmoteMode;
@@ -4625,8 +4643,9 @@ impl GameData {
 
     /// Returns the name ID for a given NpcYell.
     pub fn get_npc_yell_name_id(&mut self, npc_yell_id: u32) -> Option<u32> {
-        let config = get_config();
-        let sheet = NpcYellSheet::read_from(&mut self.resource, config.world.language()).ok()?;
+        let sheet = self.kept_sheet(|resource| {
+            NpcYellSheet::read_from(resource, get_config().world.language())
+        })?;
         let row = sheet.row(npc_yell_id)?;
 
         Some(row.Name)

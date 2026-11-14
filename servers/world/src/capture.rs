@@ -30,9 +30,18 @@ use serde_json::json;
 /// Longest `decoded` text kept per packet, so huge lists don't bloat the capture.
 const MAX_DECODED_LENGTH: usize = 8192;
 
+/// How long recorded lines may wait before they're written out. Until 2026-11-14 each line was flushed as it was
+/// recorded: a write to disk for every packet, on the connection's task, before the packet was sent
+/// (`docs/src/fork/networking.md`). A bundle is made from a running server, so it misses at most this much; a note
+/// (Bob's `!mark`) is still written at once, and everything when the connection ends.
+pub const FLUSH_INTERVAL: std::time::Duration = std::time::Duration::from_millis(250);
+
 #[derive(Default)]
 pub struct PacketCapture {
     writer: Option<BufWriter<File>>,
+    /// When lines were last written out, and whether any have been recorded since.
+    flushed: Option<std::time::Instant>,
+    dirty: bool,
 }
 
 impl std::fmt::Debug for PacketCapture {
@@ -66,6 +75,8 @@ impl PacketCapture {
                 tracing::info!("Capturing packets to {path:?}");
                 Self {
                     writer: Some(BufWriter::new(file)),
+                    flushed: None,
+                    dirty: false,
                 }
             }
             Err(err) => {
@@ -77,6 +88,27 @@ impl PacketCapture {
 
     pub fn is_enabled(&self) -> bool {
         self.writer.is_some()
+    }
+
+    /// Whether lines are waiting to be written out.
+    pub fn is_dirty(&self) -> bool {
+        self.dirty
+    }
+
+    /// Writes out what's been recorded.
+    pub fn flush(&mut self) {
+        if let Some(writer) = &mut self.writer {
+            let _ = writer.flush();
+        }
+        self.flushed = Some(std::time::Instant::now());
+        self.dirty = false;
+    }
+
+    /// Writes out what's been recorded if it's waited `FLUSH_INTERVAL` (the connection's loop asks every turn.)
+    pub fn flush_if_due(&mut self) {
+        if self.dirty && self.flushed.is_none_or(|at| at.elapsed() >= FLUSH_INTERVAL) {
+            self.flush();
+        }
     }
 
     /// Records a segment the server sent.
@@ -113,7 +145,8 @@ impl PacketCapture {
 
         let line = json!({ "t": unix_millis(), "dir": "note", "text": text });
         let _ = writeln!(writer, "{line}");
-        let _ = writer.flush();
+        // At once: a mark is what a bundle made right after is about.
+        self.flush();
     }
 
     fn record<T: kawari::packet::ReadWriteIpcSegment>(
@@ -167,8 +200,8 @@ impl PacketCapture {
             "decoded": decoded,
         });
         let _ = writeln!(writer, "{line}");
-        // Flush right away, so the capture is complete even if the server is killed.
-        let _ = writer.flush();
+        // Written out by the connection's loop (`flush_if_due`, at most `FLUSH_INTERVAL` later), not here.
+        self.dirty = true;
     }
 }
 
@@ -273,6 +306,60 @@ mod tests {
 
         let note: serde_json::Value = serde_json::from_str(lines.next().unwrap()).unwrap();
         assert_eq!(note["text"], "hello");
+
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    /// A packet's line waits (no write to disk on the send path); the loop's `flush_if_due` writes it once it's
+    /// waited `FLUSH_INTERVAL`, a note at once.
+    #[test]
+    fn lines_are_written_out_on_a_timer_not_per_packet() {
+        let dir = std::env::temp_dir().join(format!("kawari-capture-flush-{}", unix_millis()));
+        let config = WorldConfig {
+            packet_capture: true,
+            packet_capture_dir: dir.to_string_lossy().to_string(),
+            ..Default::default()
+        };
+        let mut capture = PacketCapture::new(&config, "ClientId(8)");
+        let file = std::fs::read_dir(&dir)
+            .unwrap()
+            .next()
+            .unwrap()
+            .unwrap()
+            .path();
+        let lines = || std::fs::read_to_string(&file).unwrap().lines().count();
+        let segment = PacketSegment::<ServerZoneIpcSegment> {
+            segment_type: kawari::packet::SegmentType::KeepAliveResponse,
+            data: SegmentData::KeepAliveResponse {
+                id: 1,
+                timestamp: 2,
+            },
+            ..Default::default()
+        };
+
+        assert!(!capture.is_dirty());
+        capture.record_outgoing(&segment);
+        assert!(capture.is_dirty());
+        assert_eq!(lines(), 0);
+        // Nothing written out yet: due at once.
+        capture.flush_if_due();
+        assert!(!capture.is_dirty());
+        assert_eq!(lines(), 1);
+
+        // Just written out: the next waits.
+        capture.record_outgoing(&segment);
+        capture.flush_if_due();
+        assert!(capture.is_dirty());
+        assert_eq!(lines(), 1);
+        std::thread::sleep(FLUSH_INTERVAL);
+        capture.flush_if_due();
+        assert_eq!(lines(), 2);
+
+        // A note doesn't wait, and takes what waited with it.
+        capture.record_outgoing(&segment);
+        capture.note("MARK here");
+        assert!(!capture.is_dirty());
+        assert_eq!(lines(), 4);
 
         let _ = std::fs::remove_dir_all(dir);
     }
