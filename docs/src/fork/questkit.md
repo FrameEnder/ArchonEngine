@@ -644,6 +644,12 @@ the folders given keep the lines they had. It prints how many talks got a line, 
 and the talks left to write by hand that `tools/questkit/sidetalk_known.json` doesn't already list (`--left`: all of
 them).
 
+`tools/questkit/sidetalk_hand.json` has the talks read by hand, by quest: `why` (the reading) and `lines`, an NPC's
+line in each sequence: a scene; `null` for an NPC with nothing to say; or `{"scene", "flags", "after", "var", "mask"}`
+for other flags than `HIDE_HOTBAR` and a second scene played once the quest's variable `var` has a bit of `mask` set
+(a line for before a salute and one for after). A hand reading is used before anything is worked out, and one whose
+scene isn't in the client's script is reported.
+
 `--check` fails when the file isn't what the dumps give, when a line doesn't play through its quest's script (talking
 to the NPC in that sequence plays that scene with `HIDE_HOTBAR` and ends), or when a talk is left unanswered that
 the known list doesn't have: a new quest's unanswered talks are written in its script, not let through.

@@ -107,7 +107,7 @@ mod tests {
             onReturn(9, { 0 }, player)
             QUEUED = {}
             ANSWERS = false
-            SEQUENCE = 9
+            SEQUENCE = 10
             onTalk(nil, player)
             "#,
         )
@@ -127,6 +127,59 @@ mod tests {
             ]
         );
         assert!(super::entries(1).is_none());
+    }
+
+    /// A line read by hand with one for after (`tools/questkit/sidetalk_hand.json`): the flame private second class
+    /// (1006648) of 3872's sequence 2 says scene 9 until saluted and 11 after, which BitFlag8's first flag (0x80 of
+    /// UI8F, as the script's onEmote sets it) tells; a soldier's corpse of 1358's sequence 2 has its pop-up message
+    /// played with the flags its scenes in sequence 3 had on retail (0x2001).
+    #[test]
+    fn a_line_for_after_and_other_flags() {
+        use mlua::{Lua, LuaSerdeExt};
+        for (quest, actor, sequence, var, expected) in [
+            (3872, 1006648, 2, 0x00, "scene 9 8192"),
+            (3872, 1006648, 2, 0x80, "scene 11 8192"),
+            (3872, 1006648, 2, 0x20, "scene 9 8192"),
+            (1358, 1008684, 2, 0x00, "scene 10 8193"),
+        ] {
+            let lua = Lua::new();
+            lua.globals()
+                .set(
+                    "QUEST_SIDE_TALKS",
+                    lua.to_value(entries(quest).unwrap()).unwrap(),
+                )
+                .unwrap();
+            lua.globals().set("EVENT_ID", 0x10000 + quest).unwrap();
+            lua.globals().set("BASE_ID", actor).unwrap();
+            lua.globals().set("HIDE_HOTBAR", 0x2000).unwrap();
+            lua.globals().set("SEQUENCE", sequence).unwrap();
+            lua.globals().set("VAR5", var).unwrap();
+            lua.load(
+                r#"
+                LOG = {}
+                player = {
+                    get_quest_sequence = function(_, id) return SEQUENCE end,
+                    get_quest_var = function(_, id, index) return index == 5 and VAR5 or 0 end,
+                    play_scene = function(_, scene, flags, params)
+                        table.insert(LOG, "scene " .. scene .. " " .. flags)
+                    end,
+                    finish_event = function(_) end,
+                    event_unanswered = function(_) return true end,
+                }
+                "#,
+            )
+            .exec()
+            .unwrap();
+            let side_talk = std::fs::read_to_string(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../../resources/scripts/events/quest/SideTalk.lua"
+            ))
+            .unwrap();
+            lua.load(side_talk).exec().unwrap();
+            lua.load("onTalk(nil, player)").exec().unwrap();
+            let log: Vec<String> = lua.globals().get("LOG").unwrap();
+            assert_eq!(log, [expected], "quest {quest}, {actor}");
+        }
     }
 
     /// What SideTalk.lua asks of the player: a talk the script only ended is unanswered and its end taken back; one

@@ -2096,6 +2096,23 @@ class SideTalkTest(unittest.TestCase):
         self.assertEqual(sidetalk.played_problems(), [])
         self.assertGreater(len(json.loads(sidetalk.OUT.read_text())), 30)
 
+    def test_hand_readings(self):
+        # Every talk read by hand is in the shipped file as read (a line, or nothing for an NPC with none), and
+        # nothing is left unanswered.
+        from questkit import sidetalk
+        hand = json.loads(sidetalk.HAND.read_text())
+        data = json.loads(sidetalk.OUT.read_text())
+        for quest, reading in hand.items():
+            self.assertTrue(reading["why"])
+            shipped = {str(e["actor"]): e["scenes"] for e in data.get(quest, [])}
+            for actor, lines in reading["lines"].items():
+                for sequence, line in lines.items():
+                    self.assertEqual(shipped.get(actor, {}).get(sequence), line, f"quest {quest}: {actor}")
+        self.assertEqual(json.loads(sidetalk.KNOWN.read_text()), [])
+        # A line for before a salute and one for after it (3872's privates), told apart by the quest's flags.
+        private = next(e for e in data["3872"] if e["actor"] == 1006648)
+        self.assertEqual(private["scenes"]["2"], {"scene": 9, "after": 11, "var": 5, "mask": 0x80})
+
     def test_a_script_that_answers_keeps_its_answer(self):
         # Biggs in 1005's sequence 4 has a side line (scene 11); Wedge there is the step (scene 9), the script's.
         from questkit import harness

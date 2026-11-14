@@ -451,8 +451,9 @@ steps, which are one talk, so these quests' fixtures merge them.
    and sends a bundle tagged with the quest when you finish; `questkit triage` and `questkit compare` read it. (Or by
    hand: `//gm quest accept|sequence|incomplete …`.)
 7. **Side talk**: `python3 tools/questkit sidetalk quest-dumps` gives the quest's NPCs their lines for the talks
-   that aren't steps, and lists the ones to write in the script by hand ([Side talk](#side-talk)). Write those;
-   `--update-known` is for what really can't be told.
+   that aren't steps, and lists the ones it can't settle ([Side talk](#side-talk)). Read those from the client's
+   script and write them in `tools/questkit/sidetalk_hand.json` with the reading (or in the quest's script, when a
+   line needs more than a scene and a flag); `--update-known` is for what really can't be told.
 8. **Document**: add it to the table below and the [Changelog](changelog.md).
 
 **Quests without a dump.** A capture shows everything retail did on one run: who you talked to, every scene and its
@@ -890,17 +891,36 @@ be spoken by the NPC they were given to, by name (CID to Cid, NPCA to the amiabl
 refugee leader before she's named), though names only settle ties.
 
 **What's given.** A talk gets a scene when exactly one fits: a plain talk (turning, an animation, lines; no question,
-trade, cutscene or reward) in that NPC's row, that the script doesn't play itself. 246 talks in 41 quests have one;
-248 are NPCs with an empty scene, silent on retail too. 67 are left for the quest's script, by hand
-(`tools/questkit/sidetalk_known.json` lists them): a line before an emote and another after it (the script's flags
-tell which, as 521's soldiers' do), a scene that's more than a talk (1005's sequence 9 and 10, where the NPCs are
-bound to the reaper), and scenes that could be an NPC's or a neighbour's.
+trade, cutscene or reward) in that NPC's row, that the script doesn't play itself. 247 talks have one that way and
+249 are NPCs with an empty scene, silent on retail too.
+
+**Read by hand.** The other 65, and two the method has since settled the same way, are in
+`tools/questkit/sidetalk_hand.json`, each quest with the reading that gives them (`why`): 26 lines and 41 NPCs with
+nothing to say, in 21 quests. They're what lining up alone leaves open, read from the client's script:
+
+* *A sequence's shape repeating.* 1359's sequences each end with the storm sergeant's line and four empty scenes;
+  4522's with Biggs, Wedge and an object as three empty scenes; 1190's with an object's scene and one more. Rows
+  that aren't NPCs (enemies, ranges) have a scene, or none, or two, which is what leaves the count open.
+* *A line before an emote and one after it.* 3872's three privates: which were saluted is in BitFlag8, as the
+  script's `onEmote` sets it, so the file's line has `after`, `var` and `mask` and `SideTalk.lua` reads the quest's
+  variable. Where the emote moves the quest on (1004's centurion, 1005's reaper, 1443's refugee) the line before
+  it is the only one ever reached.
+* *A scene that's more than a plain talk.* 1005's sequences 9 and 10 (Wedge, Cid and Biggs wave at the reaper:
+  `BindCharacter`, then a talk); 1190's Kuplo Kopp in sequence 4 (a copy of his recorded scene 8); 1358's private
+  (a refusal with an inventory check) and its corpses (a pop-up message, played with the flags their scenes in
+  sequence 3 had, 0x2001); 3874's F'lhaminn (a log message that she can't be talked to).
+* *The least sure*: 782's three youths in sequence 3 (nine scenes for eight rows; read with the object having two
+  scenes, as that quest's recorded objects do, which gives the hesitant and hurried youths a line each and the
+  hot-blooded one none; the other reading moves both lines one youth along).
+
+With them every one of the 561 talks is answered: 272 with a line (43 quests), 289 NPCs with nothing to say.
+`sidetalk_known.json` is for talks that really can't be told, and is empty.
 
 **How it's played.** `events/quest/SideTalk.lua` is loaded after a quest's script when the file has entries for it
 (`quest_side_talks.rs`, `events/lua.rs`; before `Travel.lua`, whose rides come first). It asks the script first; when
 the script has done nothing with the talk but end it (`player:event_unanswered()`, which takes the end back), it
-plays the line with `HIDE_HOTBAR`, as retail played the same kind of talk in quest 466, and ends the talk when the
-scene returns. A script that answers a talk keeps its answer, so writing one by hand needs nothing removed here, and
+plays the line with `HIDE_HOTBAR`, as retail played the same kind of talk in quest 466 (or the flags a hand reading
+gives it), and ends the talk when the scene returns. A script that answers a talk keeps its answer, so writing one by hand needs nothing removed here, and
 `questkit sidetalk` drops a line the script plays itself. The replay harness loads it the same way.
 
 All of it is from the client's script: no recording has these talks, and none is played in game yet.

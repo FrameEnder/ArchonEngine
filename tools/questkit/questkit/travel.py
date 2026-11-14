@@ -35,7 +35,8 @@ SCENE = re.compile(r"^== \w+:OnScene(\d+)\s")
 FUNCTION = re.compile(r"^== \w+:(\w+)\s")
 CONSTANT = re.compile(r'R0\["(SEQ_\w+|ACTOR\d+)"\]')
 # A Talk's text constant names its speaker: TEXT_GAIUSC605_01005_SLAFBORN_000_005.
-SPEAKER = re.compile(r"^TEXT_[A-Z0-9]+_\d{5}_([A-Z0-9]+)_\d+_\d+$")
+# (or ..._ENPCA_000_AFTER: the last part isn't always a number.)
+SPEAKER = re.compile(r"^TEXT_[A-Z0-9]+_\d{5}_([A-Z0-9]+)_\d+_\w+$")
 NOT_SPEAKERS = re.compile(r"^(Q|A)\d+$|^SYSTEM$")
 
 

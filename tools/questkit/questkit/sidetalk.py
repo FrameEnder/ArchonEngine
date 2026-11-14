@@ -39,6 +39,11 @@ from . import repo, travel
 OUT = repo.ROOT / "resources" / "data" / "quest_side_talks.json"
 # The talks no line could be given to yet, each to be written by hand in its quest's script (`--update-known`).
 KNOWN = Path(__file__).resolve().parent.parent / "sidetalk_known.json"
+# The talks read by hand from the client's script where the scenes alone don't settle whose they are:
+# {quest: {"why": the reading, "lines": {NPC: {sequence: line}}}}. A line is a scene; null for an NPC with nothing to
+# say; or {"scene", "flags" (when not HIDE_HOTBAR), "after", "var", "mask"}: `after` is played in place of `scene`
+# once the quest's variable `var` has a bit of `mask` set (a line for before an emote and one for after it).
+HAND = Path(__file__).resolve().parent.parent / "sidetalk_hand.json"
 # Retail played this kind of talk with HIDE_HOTBAR (quest 466's, Bob's Chronofoil captures; `quests.md`).
 FLAGS = 0x2000
 # What a plain talk is made of.
@@ -97,7 +102,10 @@ def pins_of(fixtures: list[dict]) -> dict[int, tuple[int, int | None]]:
         for step in fixture.get("steps", []):
             expect = step.get("expect") or {}
             after = expect.get("sequence", before) if expect.get("accepted", True) is not False else None
-            base = step.get("talk") or (step.get("emote") or [None, None])[1]
+            # Who the step was with: talked to, emoted at, an action or a key item used on, an enemy felled.
+            base = (step.get("talk") or (step.get("emote") or [None, None])[1]
+                    or (step.get("action") or [None, None])[1] or (step.get("event_item") or [None, None])[1]
+                    or (step.get("kill") or [None])[0])
             for scene in step.get("scenes") or []:
                 pins.setdefault(scene["scene"], (before if before is not None else 0, base))
             before = after
@@ -176,7 +184,8 @@ def infer(sheet: dict, client: travel.ClientScript, fixtures: list[dict], script
     speaker = {scene: client.speaker(scene) if is_theirs(client.scenes[scene][0]) else None
                for scene in scenes}
     played = set(pins) | answered | {int(n) for n in PLAYED.findall(script_text)}
-    failed = [f"sequence {s}: {b}: the client's scenes and the Quest sheet's listeners don't line up" for s, b in wanted]
+    failed = [f"sequence {s}: {b}: the client's scenes and the Quest sheet's listeners don't line up"
+              for s, b in wanted]
 
     pinned: dict[int, set[int]] = {}
     for scene, (sequence, base) in pins.items():
@@ -303,16 +312,33 @@ def build(roots=(travel.DUMPS,), result: dict | None = None) -> dict:
     for quest, sequence, _, base in result["silent_talks"]:
         if not any(e["actor"] == base and str(sequence) in e["scenes"] for e in rides.get(str(quest), [])):
             wanted.setdefault(quest, []).append((sequence, base))
-    data, left, undumped, count, nothing = {}, [], [], 0, 0
+    data, left, undumped, count, nothing, by_hand, built = {}, [], [], 0, 0, 0, []
+    hand = json.loads(HAND.read_text()) if HAND.exists() else {}
     for quest, talks in sorted(wanted.items()):
         script = scripts[quest]
         sheet = sheets.get(script.stem)
         if sheet is None:
             undumped.append(quest)
             continue
+        built.append(quest)
         client = travel.read_client_script(found[script.stem].read_text(errors="replace"))
-        scenes, why, _ = infer(json.loads(sheet.read_text()), client, travel.fixtures_for(quest), script.read_text(),
-                               set(result["answered"].get(quest, ())), talks)
+        # The talks read by hand, then the rest worked out.
+        read = (hand.get(str(quest)) or {}).get("lines", {})
+        scenes = {}
+        for sequence, base in talks:
+            if str(sequence) in read.get(str(base), {}):
+                line = read[str(base)][str(sequence)]
+                for scene in ([line] if isinstance(line, int) else
+                              [line[k] for k in ("scene", "after") if k in line] if line else []):
+                    if scene not in client.scenes:
+                        left.append(f"quest {quest}: sequence {sequence}: {base}: the hand's scene {scene} isn't in "
+                                    "the client's script")
+                scenes[(sequence, base)] = line
+                by_hand += 1
+        rest = [talk for talk in talks if talk not in scenes]
+        worked, why, _ = infer(json.loads(sheet.read_text()), client, travel.fixtures_for(quest), script.read_text(),
+                               set(result["answered"].get(quest, ())), rest)
+        scenes.update(worked)
         left += [f"quest {quest}: {line}" for line in why]
         by_actor: dict[int, dict[str, int]] = {}
         for (sequence, base), scene in sorted(scenes.items()):
@@ -324,7 +350,7 @@ def build(roots=(travel.DUMPS,), result: dict | None = None) -> dict:
         if by_actor:
             data[str(quest)] = [{"actor": base, "scenes": by_actor[base]} for base in sorted(by_actor)]
     return {"quests": data, "given": count, "nothing": nothing, "left": left, "undumped": undumped,
-            "talks": result["silent_talks"]}
+            "talks": result["silent_talks"], "by_hand": by_hand, "built": built}
 
 
 def left_order(line: str) -> tuple:
@@ -334,6 +360,8 @@ def left_order(line: str) -> tuple:
 def merged(result: dict, out: Path = OUT) -> dict:
     """The file's quests with this build's over them: a quest whose dump isn't at hand keeps what it had."""
     kept = json.loads(out.read_text()) if out.exists() else {}
+    for quest in result.get("built", []):
+        kept.pop(str(quest), None)
     kept.update(result["quests"])
     return dict(sorted(kept.items(), key=lambda kv: int(kv[0])))
 
@@ -366,17 +394,23 @@ def played_problems(out: Path = OUT) -> list[str]:
             if re.fullmatch(rf"{quest}(-[\w-]+)?", path.stem):
                 params = json.loads(path.read_text()).get("params") or params
         for entry in entries:
-            for sequence, scene in entry["scenes"].items():
+            for sequence, line in entry["scenes"].items():
                 tag = f"quest {quest}: sequence {sequence}: {entry['actor']}"
-                try:
-                    probe = harness.Harness(scripts[quest], quest, params)
-                    if int(sequence):
-                        probe.world.quests[quest] = harness.Quest(int(sequence), [0] * 6)
-                    outcome = probe.talk(entry["actor"], {}, [])
-                except Exception as error:
-                    problems.append(f"{tag}: {error}")
-                    continue
-                played = [(p["scene"], p["flags"]) for p in outcome["played"]]
-                if played != [(scene, FLAGS)] or not outcome["finished"]:
-                    problems.append(f"{tag}: played {played}, not scene {scene}")
+                line = line if isinstance(line, dict) else {"scene": line}
+                # With the variables at zero, and with the line's bit set when it has one for after.
+                cases = [([0] * 6, line["scene"])]
+                if "after" in line:
+                    cases.append(([line["mask"] if i == line["var"] else 0 for i in range(6)], line["after"]))
+                for variables, scene in cases:
+                    try:
+                        probe = harness.Harness(scripts[quest], quest, params)
+                        if int(sequence):
+                            probe.world.quests[quest] = harness.Quest(int(sequence), list(variables))
+                        outcome = probe.talk(entry["actor"], {}, [])
+                    except Exception as error:
+                        problems.append(f"{tag}: {error}")
+                        continue
+                    played = [(p["scene"], p["flags"]) for p in outcome["played"]]
+                    if played != [(scene, line.get("flags", FLAGS))] or not outcome["finished"]:
+                        problems.append(f"{tag}: played {played}, not scene {scene}")
     return problems

@@ -707,8 +707,8 @@ def _sidetalk(args) -> int:
     for line in (result["left"] if args.left else new):
         print(f"by hand: {line}")
     print(f"{result['given']} lines given to talks the scripts leave unanswered, {result['nothing']} NPCs with "
-          f"nothing to say, {len(result['left'])} talks left to write by hand ({len(new)} not in "
-          f"{sidetalk.KNOWN.name}; --left lists them all)")
+          f"nothing to say ({result['by_hand']} of both read by hand, {sidetalk.HAND.name}), "
+          f"{len(result['left'])} talks left ({len(new)} not in {sidetalk.KNOWN.name}; --left lists them all)")
     if result["undumped"]:
         print(f"no quest.json in the dumps of quests {result['undumped']}")
     if args.check:
