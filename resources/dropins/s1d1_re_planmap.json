@@ -3,6 +3,7 @@
     "layers": [
         {
             "name": "LVD_bnpc_00",
+            "territories": [1036],
             "objects": [
                 {
                     "data": {

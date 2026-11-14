@@ -3,6 +3,7 @@
     "layers": [
         {
             "name": "GATHERING_RETAIL",
+            "territories": [141],
             "objects": [
                 {
                     "data": {

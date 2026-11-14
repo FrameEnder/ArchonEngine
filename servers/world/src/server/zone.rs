@@ -264,6 +264,8 @@ impl Zone {
                             Ok(mut dropin) => {
                                 if lvb.sections[0].lgb_paths.contains(&dropin.appends) {
                                     tracing::info!("Loaded dropin from {:?}", entry.path());
+                                    // Only the layers that are this territory's (`DropInLayer::territories`.)
+                                    dropin.layers.retain(|layer| layer.is_for(id));
                                     zone.dropin_layers.append(&mut dropin.layers);
                                     loaded_any = true;
                                 }
@@ -327,7 +329,15 @@ impl Zone {
                                 scale: scale.into(),
                                 duel: object.instance_id == 6445254, // From the LVD_duel_01 layer in Wolves Den Pier
                                 instance_id: object.instance_id,
-                                fate: game_data.find_fate_by_event_range(object.instance_id),
+                                // A FATE is its territory's: only from a layer of this territory's layer
+                                // set. Mor Dhona's (layers FATE_..., territory 156's set only) began in Castrum
+                                // Centri as Escape from Castrum Centri has it (335, the same level): "FATE 521
+                                // isn't scripted yet!" five times as Bob went in, 2026-11-14.
+                                fate: fate_layer(zone.layer_set, |set| {
+                                    layer.header.has_layer_set(set)
+                                })
+                                .then(|| game_data.find_fate_by_event_range(object.instance_id))
+                                .flatten(),
                                 ..Default::default()
                             });
                         }
@@ -1986,6 +1996,12 @@ pub fn handle_zone_messages(
     }
 }
 
+/// Whether an event range's layer is one a territory's FATEs come from: any layer when the territory's layer set
+/// isn't known (0), else one of that set (`has_layer_set`).
+pub fn fate_layer(layer_set: i32, has_layer_set: impl Fn(u32) -> bool) -> bool {
+    layer_set == 0 || has_layer_set(layer_set as u32)
+}
+
 /// The file a territory's navmesh and collision are kept in, from the one its layer set names (`path`): its own
 /// (`l1f1.t309.nvm`) when the level's other layer sets name the same file (`shared`), since each is built from its
 /// territory's own layers (FrameEnder fork, 2026-11-14).
@@ -2007,6 +2023,17 @@ pub fn territory_navmesh_path(path: &str, territory: u16, shared: bool) -> Strin
 #[cfg(test)]
 mod navmesh_path_tests {
     use super::territory_navmesh_path;
+
+    /// Mor Dhona's FATE layers are of territory 156's layer set (73541) only.
+    #[test]
+    fn a_fate_is_its_territory_s() {
+        let of_mor_dhona = |set: u32| set == 73541;
+        assert!(super::fate_layer(73541, of_mor_dhona));
+        // Castrum Centri as Escape from Castrum Centri has it: another layer set of the same level.
+        assert!(!super::fate_layer(92260, of_mor_dhona));
+        // A territory whose layer set isn't known keeps what it had.
+        assert!(super::fate_layer(0, of_mor_dhona));
+    }
 
     #[test]
     fn a_territory_sharing_a_level_has_its_own_file() {

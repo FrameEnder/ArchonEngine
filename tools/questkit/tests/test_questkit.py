@@ -508,6 +508,30 @@ class BattleSimSpawnTest(unittest.TestCase):
         self.assertEqual(battle_sim.spawn_problems(fixture, too_many), ["brings 7 out 4 times, retail 3"])
 
 
+class LintLayerTerritoryTest(unittest.TestCase):
+    """Bob's mark of 2026-11-14: Mor Dhona's enemies (recorded in territory 156) stood in Castrum Centri as Escape
+    from Castrum Centri has it (335, the same level), where retail has no battle NPC."""
+
+    def test_a_retail_layer_of_battle_npcs_names_its_territory(self):
+        npc = {"layout_id": 4296110, "data": {"type": "battle_npc", "base_id": 63}}
+        node = {"layout_id": 1, "data": {"type": "gathering_point", "base_id": 30001}}
+        dropins = {
+            "lak.json": {"layers": [{"name": "BNPCS_RETAIL", "objects": [npc]},
+                                    {"name": "QB_ManFst407_001", "objects": [npc]}]},
+            "ok.json": {"layers": [{"name": "BNPCS_RETAIL", "territories": [156], "objects": [npc]},
+                                   {"name": "GATHERING_RETAIL", "objects": [node]}]},
+        }
+        problems = lint.unplaced_layers(dropins)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("lak.json layer BNPCS_RETAIL", problems[0])
+
+    def test_the_drop_in_maker_names_the_territory(self):
+        from questkit import chronofoil_dropin
+        dropin, _ = chronofoil_dropin.build({}, "bg/x/level/planmap.lgb", territory=156)
+        self.assertEqual(dropin["layers"][0]["territories"], [156])
+        self.assertEqual(list(dropin["layers"][0])[:2], ["name", "territories"])
+
+
 class BattleSimLineUpTest(unittest.TestCase):
     """Every Little Thing She Does Is Magitek (quest battle 64), Bob's mark of 2026-11-14: retail's reaper never moved
     or acted in three runs and two event NPCs stood beside it; the script had the reaper as a tank and no one standing

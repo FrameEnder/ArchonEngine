@@ -513,7 +513,7 @@ def _chronofoil(args) -> int:
         numbers = range(len(captures)) if args.which == "all" else [int(n) for n in args.which.split(",")]
         if args.gathering:
             points = chronofoil_dropin.gathering_points([captures[n] for n in numbers], tables, args.dropin)
-            dropin, skipped = chronofoil_dropin.build_gathering(points, args.appends)
+            dropin, skipped = chronofoil_dropin.build_gathering(points, args.appends, territory=args.dropin)
             out = args.out or f"dropin-gathering-{args.dropin}.json"
             chronofoil_dropin.write(dropin, out)
             objects = dropin["layers"][0]["objects"]
@@ -522,7 +522,7 @@ def _chronofoil(args) -> int:
             return 0
         seen = chronofoil_dropin.sightings([captures[n] for n in numbers], tables, args.dropin)
         dropin, skipped = chronofoil_dropin.build(seen, args.appends, exclude_bases=set(args.exclude_base),
-                                                  one_spot=set(args.one_spot))
+                                                  one_spot=set(args.one_spot), territory=args.dropin)
         out = args.out or f"dropin-{args.dropin}.json"
         chronofoil_dropin.write(dropin, out)
         objects = dropin["layers"][0]["objects"]

@@ -3,6 +3,7 @@
     "layers": [
         {
             "name": "BNPCS_RETAIL",
+            "territories": [134],
             "objects": [
                 {
                     "data": {

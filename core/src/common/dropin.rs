@@ -17,7 +17,21 @@ pub struct DropIn {
 #[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
 pub struct DropInLayer {
     name: String,
+    /// The territories this layer is for; none: every territory whose level has the LGB (FrameEnder fork,
+    /// 2026-11-14). A level's LGB is shared by the territories made from it, so the open world's enemies and
+    /// gathering points recorded in one (Mor Dhona, 156) came out in the others too: Castrum Centri as Escape from
+    /// Castrum Centri has it (335) held 18 hostile imperials where retail's holds no battle NPC at all (Bob's mark of
+    /// 2026-11-14; three captures, five visits.)
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub territories: Vec<u16>,
     pub objects: Vec<DropInObject>,
+}
+
+impl DropInLayer {
+    /// Whether this layer's objects are `territory`'s.
+    pub fn is_for(&self, territory: u16) -> bool {
+        self.territories.is_empty() || self.territories.contains(&territory)
+    }
 }
 
 /// Drop-in object that can add new objects to a zone.
@@ -164,6 +178,7 @@ mod tests {
             DropIn {
                 appends: "bg/ffxiv/sea_s1/fld/s1f1/level/planlive.lgb".to_string(),
                 layers: vec![DropInLayer {
+                    territories: Vec::new(),
                     name: "CRF_MINING_LV20".to_string(),
                     objects: vec![DropInObject {
                         layout_id: 4001271,
@@ -179,6 +194,28 @@ mod tests {
         );
     }
 
+    /// Mor Dhona's open-world enemies (recorded in territory 156) aren't Castrum Centri's as Escape from Castrum
+    /// Centri has it (335, the same level), where retail has no battle NPC (Bob's mark of 2026-11-14.)
+    #[test]
+    fn a_layer_is_for_the_territories_it_names() {
+        let json = r#"{"appends": "bg/ffxiv/lak_l1/fld/l1f1/level/planmap.lgb", "layers": [
+            {"name": "BNPCS_RETAIL", "territories": [156], "objects": []},
+            {"name": "QB_ManFst407_001", "objects": []}]}"#;
+        let dropin: DropIn = serde_json::from_str(json).unwrap();
+        assert!(dropin.layers[0].is_for(156));
+        assert!(!dropin.layers[0].is_for(335));
+        // One that names none is every territory's of the level, as before.
+        assert!(dropin.layers[1].is_for(335));
+        // And it's written back out as it was read.
+        let again: DropIn = serde_json::from_str(&serde_json::to_string(&dropin).unwrap()).unwrap();
+        assert_eq!(again, dropin);
+        assert!(
+            !serde_json::to_string(&dropin.layers[1])
+                .unwrap()
+                .contains("territories")
+        );
+    }
+
     #[test]
     fn test_serverpath_example() {
         let json =
@@ -191,6 +228,7 @@ mod tests {
             DropIn {
                 appends: "bg/ffxiv/sea_s1/fld/s1f1/level/planlive.lgb".to_string(),
                 layers: vec![DropInLayer {
+                    territories: Vec::new(),
                     name: "CRF_MINING_LV20".to_string(),
                     objects: vec![DropInObject {
                         layout_id: 4001271,

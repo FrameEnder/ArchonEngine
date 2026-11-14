@@ -3,6 +3,7 @@
     "layers": [
         {
             "name": "LVD_kakashi",
+            "territories": [148],
             "objects": [
                 {
                     "data": {

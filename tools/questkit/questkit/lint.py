@@ -115,6 +115,15 @@ def run() -> Report:
     # Quest battle NPCs against how retail spawned them.
     report.errors.extend(spawn_differences())
 
+    # What was recorded in one territory comes out in that one only.
+    report.errors.extend(unplaced_layers())
+    anywhere = [path.name for path in sorted(DROPINS.glob("*.json"))
+                for layer in json.loads(path.read_text()).get("layers", [])
+                if layer["name"].endswith("_RETAIL") and not layer.get("territories")]
+    if anywhere:
+        report.notes.append(f"{len(anywhere)} gathering layers name no territory, so they come out in every "
+                            f"territory of their level: {', '.join(anywhere)}")
+
     # Scripts CI doesn't check against retail.
     fixtures = {int(p.stem) for p in repo.FIXTURES.glob("*.json") if p.stem.isdigit()}
     for path in sorted(repo.QUEST_SCRIPTS.rglob("*.lua")):
@@ -137,6 +146,20 @@ def run() -> Report:
             if "todo" in step:
                 report.errors.append(f"{path.relative_to(repo.ROOT)} step {n}: still todo ({step['todo']})")
     return report
+
+
+def unplaced_layers(dropins: dict | None = None) -> list[str]:
+    """Drop-in layers made from a retail territory's spawns (`..._RETAIL`) that don't say which territory
+    (`"territories"`). A level's LGB is shared by every territory made from it, so such a layer comes out in all of
+    them: Mor Dhona's enemies stood in Castrum Centri as Escape from Castrum Centri has it (territory 335), where
+    retail has no battle NPC (Bob's mark of 2026-11-14)."""
+    if dropins is None:
+        dropins = {p.name: json.loads(p.read_text()) for p in sorted(DROPINS.glob("*.json"))}
+    return [f"resources/dropins/{file} layer {layer['name']}: battle NPCs recorded on retail, but names no territory "
+            '("territories": [the TerritoryType it was recorded in]), so they come out in every territory of its level'
+            for file, data in dropins.items() for layer in data.get("layers", [])
+            if layer["name"].endswith("_RETAIL") and not layer.get("territories")
+            and any(obj.get("data", {}).get("type") == "battle_npc" for obj in layer.get("objects", []))]
 
 
 def spawn_differences(registry: dict | None = None, dropins: dict | None = None) -> list[str]:

@@ -161,8 +161,18 @@ def stationary_spots(seen: dict[int, list[dict]]) -> set[int]:
     return still
 
 
+def _layer(name: str, territory: int | None, objects: list) -> dict:
+    """A drop-in layer for the territory it was recorded in (`"territories"`): the level's other territories share
+    the LGB and would get it too."""
+    layer: dict = {"name": name}
+    if territory:
+        layer["territories"] = [territory]
+    layer["objects"] = objects
+    return layer
+
+
 def build(seen: dict[int, list[dict]], appends: str, layer: str = "BNPCS_RETAIL", exclude_bases=(),
-          one_spot=()) -> tuple[dict, dict]:
+          one_spot=(), territory: int | None = None) -> tuple[dict, dict]:
     """The drop-in, and how many spawn points were left out for each reason."""
     objects, skipped, placed = [], {}, set()
     still = stationary_spots(seen)
@@ -218,7 +228,7 @@ def build(seen: dict[int, list[dict]], appends: str, layer: str = "BNPCS_RETAIL"
                 "position": {axis: round(best["position"][i], 3) for i, axis in enumerate("xyz")},
                 "rotation": round(best["rotation"], 4),
             })
-    return {"appends": appends, "layers": [{"name": layer, "objects": objects}]}, skipped
+    return {"appends": appends, "layers": [_layer(layer, territory, objects)]}, skipped
 
 
 def write(dropin: dict, out: str | Path) -> None:
@@ -251,7 +261,8 @@ def gathering_points(captures, tables: dict, territory: int) -> dict[int, dict]:
     return seen
 
 
-def build_gathering(seen: dict[int, dict], appends: str, layer: str = "GATHERING_RETAIL") -> tuple[dict, dict]:
+def build_gathering(seen: dict[int, dict], appends: str, layer: str = "GATHERING_RETAIL",
+                    territory: int | None = None) -> tuple[dict, dict]:
     """The drop-in, and how many points were left out for each reason. Points sent with no integrity (levequest
     points, a spearfishing spot) only appear for their leve or quest, so they're left out."""
     objects, skipped = [], {}
@@ -266,4 +277,4 @@ def build_gathering(seen: dict[int, dict], appends: str, layer: str = "GATHERING
             "position": {axis: round(point["position"][i], 3) for i, axis in enumerate("xyz")},
             "rotation": 0.0,
         })
-    return {"appends": appends, "layers": [{"name": layer, "objects": objects}]}, skipped
+    return {"appends": appends, "layers": [_layer(layer, territory, objects)]}, skipped

@@ -416,6 +416,24 @@ zone's (`field_enemy_base_hp`, by TerritoryType's ExVersion):
 Kawari only spawns battle NPCs that a zone's drop-in lists (`resources/dropins/`, matched to the zone by `appends`,
 the LGB they add to): retail's LGBs don't have them.
 
+**A drop-in's layer is its territory's** (2026-11-14). A level's LGB belongs to every territory made from the level:
+Mor Dhona's (`lak_l1/fld/l1f1`) is the open world's (156) and its story and quest battle copies' (299, 300, 305,
+308, 309, 315, 335...). A layer recorded in one territory names it, `"territories": [156]`
+(`DropInLayer::territories`; none named means every territory with the LGB, as the quest battles' `QB_` layers, which
+only come out when a script asks), and `zone.rs` keeps a drop-in's layers that are the territory's
+(`DropInLayer::is_for`). Until then they came out in all of them: Castrum Centri as Escape from Castrum Centri has it
+(335) held 18 hostile level 46-47 imperials of Mor Dhona's and its gathering points, where retail's holds **no
+battle NPC at all** (Bob's mark of 2026-11-14, "there was no hostile NPCs at this point"; three captures, five
+visits: only the player, three event objects, and the soldiers one salutes, which the client makes from the level).
+The 39 layers recorded from Bob's and Connor's captures name theirs (each layer's layout IDs were seen in exactly
+one territory, `cc/layer_territories.py` in the session's scratchpad); ten gathering layers that came with upstream
+(`a2f2`, `d2f1-3`, `n4f1-4`, `n4f6`, `r2f1`) name none yet (`questkit lint` notes them, and fails on a `_RETAIL`
+layer of battle NPCs that names none). `questkit chronofoil --dropin` writes the territory it was given.
+
+**A FATE is its territory's** too: an event range gives its FATE only from a layer of the territory's own layer set
+(`zone.rs` `fate_layer`). The zone's ranges are read from every layer (pop ranges need that), so Mor Dhona's FATEs
+(layers `FATE_...`, territory 156's set) began in 335 as well, five of them as Bob went in.
+
 | Zone | Drop-in | Where it came from |
 |---|---|---|
 | Central Shroud (148) | `fst_f1_planmap.json`, layer `LVD_kakashi` (834) | upstream, HP from the per-level table |

@@ -3,6 +3,18 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Story copies of open-world territories (2026-11-14)
+
+* Unplayed: Castrum Centri as Escape from Castrum Centri has it (335) with no battle NPCs, gathering points or FATEs
+  (`combat.md`, "A drop-in's layer is its territory's"). The quest's own steps there (four salutes, the talk that
+  moves the player, the door's cast bar into the battle) match three retail captures step for step
+  (`questkit replay`, fixtures `521*.json`), but Bob stopped at the hostiles, so none has been seen in game.
+* What else of the open world a story copy might still get isn't known: the fix covers what's keyed by the level
+  (drop-in layers, FATE ranges). Anything keyed by the level's map ranges (sanctuaries, discoveries) is still shared.
+* Retail's ZoneInit for 335 named the pop range the player arrived at (4304063) and flags 0xaa; Kawari's names
+  neither (as everywhere).
+* Ten upstream gathering drop-ins name no territory and still come out in every territory of their level.
+
 ## A territory's own navmesh (2026-11-14)
 
 * The territories of Mor Dhona's level do differ (309's own collision is 15,815 triangles smaller than 156's, Bob's
