@@ -1,0 +1,47 @@
+{
+ "quest": 522,
+ "script": "ManFst408_00522",
+ "source": "Elyenora, Ul'dah's airship ticketer, before The Black Wolf's Ultimatum is accepted (scene 2 of the client's quest script); unseen on retail: she takes the player up to Ul'dah's landing as her ride in Reclamation (520) did",
+ "travel": true,
+ "params": {
+  "ACTOR0": 1006573,
+  "ACTOR1": 1004433,
+  "ACTOR2": 1001821,
+  "ACTOR3": 1006690,
+  "TERRITORYTYPE0": 130,
+  "POPRANGE0": 4103351,
+  "CUT_MANFST40810": 115,
+  "CUT_MANFST40820": 116,
+  "QST_CHECK_01": 66236,
+  "QST_CHECK_02": 66237,
+  "QST_CHECK_03": 66238,
+  "HOW_TO_JOB": 94
+ },
+ "steps": [
+  {
+   "territory": 130,
+   "talk": 1004433,
+   "what": "ACTOR1",
+   "scenes": [
+    {
+     "scene": 2,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "effects": [
+    {
+     "zone": 130
+    }
+   ],
+   "expect": {
+    "accepted": false
+   }
+  }
+ ]
+}

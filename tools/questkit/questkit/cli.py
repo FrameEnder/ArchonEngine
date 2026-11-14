@@ -670,6 +670,29 @@ def _clientcheck(args) -> int:
     return 0
 
 
+def _travel(args) -> int:
+    from . import travel
+
+    roots = [Path(d) for d in args.dumps] or [travel.DUMPS]
+    result = travel.build(roots)
+    for kind in ("inferred", "unknown", "questions") + (("silent",) if args.silent else ()):
+        for line in result[kind]:
+            print(f"{kind}: {line}")
+    print(f"{len(result['silent'])} talks the client offers go unanswered by their scripts (--silent lists them)")
+    rides = sum(len(e["scenes"]) for entries in result["quests"].values() for e in entries)
+    if args.check:
+        import json
+        current = json.loads(travel.OUT.read_text()) if travel.OUT.exists() else {}
+        if current != result["quests"]:
+            print("quest_travel.json isn't what the dumps give: run questkit travel")
+            return 1
+        print(f"quest_travel.json: ok ({rides} rides)")
+        return 0
+    out = travel.save(result)
+    print(f"{rides} rides for {len(result['quests'])} quests written to {out}")
+    return 0
+
+
 def _lint(args) -> int:
     from . import lint
 
@@ -859,6 +882,16 @@ def main(argv=None) -> int:
     p.add_argument("--out", help="write the report to this file (keep it out of the repository)")
     p.add_argument("--all", action="store_true", help="list every script checked, not just the ones with findings")
     p.set_defaults(run=_clientcheck)
+
+    p = commands.add_parser("travel", help="the NPCs quests offer rides with, in every sequence the client offers "
+                                           "them: writes resources/data/quest_travel.json and reports the questions "
+                                           "with no known ride")
+    p.add_argument("dumps", nargs="*", help="folders of kawari-questdump output (default: quest-dumps/)")
+    p.add_argument("--check", action="store_true", help="fail if quest_travel.json isn't what the dumps give")
+    p.add_argument("--silent", action="store_true",
+                   help="also list every talk the client offers that the quest's script doesn't answer (probed with "
+                        "the variables at zero: mostly NPCs' lines for each sequence)")
+    p.set_defaults(run=_travel)
 
     p = commands.add_parser("lint", help="find what fails silently in game: unscripted NPC actions, quest battle "
                                          "NPCs without timelines, checked scripts without fixtures, quest "

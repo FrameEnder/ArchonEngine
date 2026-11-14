@@ -1,0 +1,79 @@
+{
+ "quest": 1005,
+ "script": "GaiUsc605_01005",
+ "source": "Bob's bundle 20261114-024122 (Slafborn, outside Cid's workshop, talked to before Every Little Thing She Does Is Magitek was accepted); the scene from the client's quest script (scenes 2, 4, 8 and 51 are one question), unseen on retail; where he takes the player is his ride in sequence 3 (Connor's Chronofoil capture e834e436)",
+ "travel": true,
+ "params": {
+  "ACTOR0": 1006555,
+  "ACTOR1": 1006530,
+  "ACTOR2": 1006557,
+  "ACTOR3": 1004093,
+  "ITEM0": 2000772,
+  "ACTOR4": 1006559,
+  "MOUNT0": 14,
+  "ACTOR5": 1006558,
+  "ACTOR6": 1006560,
+  "ACTOR7": 1006561,
+  "EVENTRANGE0": 4322856,
+  "EOBJECT0": 2002523,
+  "EVENT_ACTION_SEARCH": 1,
+  "EVENTRANGE1": 4322857,
+  "EOBJECT1": 2002524,
+  "EVENTRANGE2": 4322858,
+  "EOBJECT2": 2002525,
+  "EOBJECT3": 2002531,
+  "TERRITORYTYPE0": 156,
+  "POPRANGE0": 4321644,
+  "POPRANGE1": 4322935,
+  "TERRITORYTYPE1": 309,
+  "QUESTBATTLE0": 64,
+  "LOC_ACTOR0": 1002908,
+  "LOC_ACTOR1": 1003837,
+  "LOC_ACTOR2": 1003855,
+  "LOC_ACTOR3": 1003836,
+  "LOC_ACTOR9": 1003075,
+  "LOC_POS_ACTOR0": 4330073,
+  "LOC_POS_ACTOR1": 4330075,
+  "LOC_SE1": 46,
+  "LOC_ACTION0": 1015,
+  "LOC_ACTION1": 858,
+  "LOC_ACTION2": 112,
+  "LOC_ACTION3": 1005,
+  "LOC_FACE0": 604,
+  "LOC_FACE1": 605,
+  "LOC_FACE2": 620,
+  "LEVEL_ARMOR_ID": 4265706,
+  "LINK_TALKSHAPE1": 6,
+  "LINK_SE1": 42,
+  "LEVEL_WEDGE_ID": 4265704,
+  "LEVEL_BIGGS_ID": 4265705,
+  "LEVEL_CID_ID": 4265703
+ },
+ "steps": [
+  {
+   "territory": 156,
+   "talk": 1006530,
+   "what": "ACTOR1",
+   "scenes": [
+    {
+     "scene": 2,
+     "flags": "0x2000",
+     "results": [
+      1,
+      0,
+      0
+     ],
+     "yield": true
+    }
+   ],
+   "effects": [
+    {
+     "zone": 156
+    }
+   ],
+   "expect": {
+    "accepted": false
+   }
+  }
+ ]
+}

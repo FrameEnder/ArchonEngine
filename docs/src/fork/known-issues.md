@@ -1740,12 +1740,20 @@ Fixed in code and by test or simulation; none played yet.
 * "Moving sometimes stutters" on the airship (bundle 20261111-112150): nothing on the server's side shows it (every
   PingSync answered within a millisecond, no position sent to the player there.)
 
-## Airship landings behind the ticketers (2026-11-11)
+## Quest travel (2026-11-14; the airship ticketers of 2026-11-11)
 
-* The ticketers take you up to a landing only through a quest's own script: Lady of the Vortex (519) and Reclamation
-  (520) before they're accepted, and the quests that list a ticketer in a sequence. Their pre-acceptance questions are
-  from the client's scripts (unseen on retail). A quest not yet scripted whose NPC stands on a landing can't be reached
-  from below until it's scripted the same way.
+Rides are answered in every sequence the client offers them ([Quests](quests.md), Quest travel). None played in game
+yet; all unseen on retail (where they go is a recorded ride's).
+
+* Only quests with a script and a client script listing in the dumps `questkit travel` was given are covered (774
+  listings, 305 scripted quests); a quest scripted later needs `questkit travel` run again with the dumps (CI has
+  none, so it can't).
+* Questions no recording shows the way of: Grehfarr's in 107 (scenes 5 and 13), Cid's in 521 (14, 26, 31, 36), and
+  1000460's in 1189, 1191 and 1448's sequence 255 (no copy of the question left for it). L'nophlo, Limsa Lominsa's
+  ticketer, has no recorded ride in any quest.
+* A quest not yet scripted can't be travelled through at all.
+* 577 talks the client offers go unanswered by their scripts (`questkit travel --silent`, 73 quests): mostly NPCs'
+  lines for each sequence, which retail plays. Nothing blocks on them.
 
 ## Bob's marks of 2026-11-11 (quest battle 86, cast aims)
 

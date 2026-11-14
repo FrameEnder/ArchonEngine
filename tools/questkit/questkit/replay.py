@@ -17,6 +17,7 @@ class StepResult:
     problems: list[str] = field(default_factory=list)
     got: dict = field(default_factory=dict)
     trace: list[str] = field(default_factory=list)
+    outcome: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -147,7 +148,7 @@ def run(fixture: dict, script: Path | None = None) -> QuestResult:
         if "spawns" in step and not problems:
             if outcome.get("spawned", []) != step["spawns"]:
                 problems.append(f"spawned {outcome.get('spawned', [])}, expected {step['spawns']}")
-        result.steps.append(StepResult(index, step, not problems, problems, state, trace))
+        result.steps.append(StepResult(index, step, not problems, problems, state, trace, outcome))
         if problems:
             break
     return result

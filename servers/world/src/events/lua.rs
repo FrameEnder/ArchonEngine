@@ -61,7 +61,32 @@ impl LuaEventHandler {
         }
         lua.0.globals().set("GAME_DATA", game_data).unwrap();
 
+        // The NPCs this quest offers rides with, answered in every sequence the client offers them
+        // (`quest_travel.rs`, `events/quest/Travel.lua` after the quest's own script.)
+        if id.handler_type() == HandlerType::Quest
+            && let Some(entries) = crate::quest_travel::entries(id.0 & 0xFFFF)
+        {
+            Self::load_travel(&lua.0, entries, &file_name);
+        }
+
         Some(Self { file_name, lua })
+    }
+
+    /// Sets `QUEST_TRAVEL` and runs `events/quest/Travel.lua`, which wraps the quest script's onTalk, onYield and
+    /// onReturn to answer its rides.
+    fn load_travel(lua: &Lua, entries: &serde_json::Value, script: &str) {
+        use mlua::LuaSerdeExt;
+        let travel = get_config()
+            .filesystem
+            .locate_script_file("events/quest/Travel.lua");
+        let result = lua.to_value(entries).and_then(|table| {
+            lua.globals().set("QUEST_TRAVEL", table)?;
+            let code = std::fs::read(&travel).map_err(mlua::Error::external)?;
+            lua.load(code).set_name("@".to_string() + &travel).exec()
+        });
+        if let Err(err) = result {
+            tracing::warn!("Couldn't load quest travel for {script}: {err:?}");
+        }
     }
 
     /// Injects any applicable Lua parameters from Excel, such as from `Opening`.

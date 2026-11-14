@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from questkit import battle, battle_sim, capture, chronofoil, chronofoil_battle, chronofoil_quest, compare, duty_sim, duty_sources, fixtures, ledger, ledger_facts, lint, public_sources, recording, replay, rotation_sim, scaffold, transcribe, triage  # noqa: E402
-from questkit import autoduty, fishing_data, questionable  # noqa: E402
+from questkit import autoduty, fishing_data, questionable, repo  # noqa: E402
 from questkit.bundle import Bundle  # noqa: E402
 
 QUEST = 9999
@@ -1834,6 +1834,71 @@ class LintTest(unittest.TestCase):
         report = lint.run()
         self.assertTrue(report.ok, lint.format_report(report))
         self.assertIn(870, lint.scripted_actions())
+
+
+class TravelTest(unittest.TestCase):
+    # Every Little Thing She Does Is Magitek (1005), as kawari-questdump lists the client's script: Slafborn's question
+    # is scenes 2, 4 and 8 (and 51), the client accepts him in sequences 0, 1, 3 and 255; Connor's capture e834e436
+    # recorded his ride in 3 only, and before the quest was accepted he wouldn't take Bob in (bundle 20261114-024122).
+    LISTING = """
+== GaiUsc605:OnScene00002  [function 0.0.2, 3 params]
+   methods  LookAt, PlayActionTimeline, Talk, YesNo
+   fields   ACTION_TIMELINE_EVENT_ADD_TALK, TEXT_GAIUSC605_01005_SLAFBORN_000_005, TEXT_GAIUSC605_01005_Q1_000_000
+== GaiUsc605:OnScene00003  [function 0.0.3, 3 params]
+   methods  Talk
+   fields   TEXT_GAIUSC605_01005_WEDGE_000_010
+== GaiUsc605:OnScene00004  [function 0.0.4, 3 params]
+   methods  LookAt, PlayActionTimeline, Talk, YesNo
+   fields   ACTION_TIMELINE_EVENT_ADD_TALK, TEXT_GAIUSC605_01005_SLAFBORN_000_005, TEXT_GAIUSC605_01005_Q1_000_000
+== GaiUsc605:OnScene00008  [function 0.0.8, 3 params]
+   methods  LookAt, PlayActionTimeline, Talk, YesNo
+   fields   ACTION_TIMELINE_EVENT_ADD_TALK, TEXT_GAIUSC605_01005_SLAFBORN_000_005, TEXT_GAIUSC605_01005_Q1_000_000
+== GaiUsc605:IsAcceptEvent  [function 0.1.1, 5 params]
+      6  GETTABLE   R7 = R0["SEQ_0"]
+      9  GETTABLE   R7 = R0["ACTOR0"]
+     30  GETTABLE   R7 = R0["ACTOR1"]
+     35  GETTABLE   R7 = R0["SEQ_1"]
+     38  GETTABLE   R7 = R0["ACTOR2"]
+     59  GETTABLE   R7 = R0["ACTOR1"]
+     64  GETTABLE   R7 = R0["SEQ_3"]
+     70  GETTABLE   R7 = R0["ACTOR1"]
+== GaiUsc605:IsAnnounce  [function 0.1.2, 5 params]
+"""
+
+    def test_client_script(self):
+        from questkit import travel
+        client = travel.read_client_script(self.LISTING)
+        self.assertEqual(client.copies(8), [2, 4, 8])
+        self.assertTrue(client.asks(8))
+        self.assertFalse(client.asks(3))
+        self.assertEqual(client.speaker(8), "SLAFBORN")
+        self.assertEqual(client.accepted, {0: ["ACTOR0", "ACTOR1"], 1: ["ACTOR2", "ACTOR1"], 3: ["ACTOR1"]})
+
+    def test_recorded_ride_and_its_copies(self):
+        from questkit import travel
+        fixture = {"steps": [
+            {"talk": 1006555, "what": "ACTOR0", "scenes": [{"scene": 0, "flags": "0x2000", "results": [1]}],
+             "expect": {"sequence": 1, "vars": "000000000000", "notices": []}},
+            {"talk": 1006530, "what": "ACTOR1", "scenes": [{"scene": 8, "flags": "0x2000", "results": [1, 0, 0]}],
+             "effects": [{"zone": 156}], "expect": {"sequence": 1, "vars": "000000000000", "notices": []}},
+            {"talk": 1006557, "what": "ACTOR2", "scenes": [{"scene": 3, "flags": "0x2000", "results": [0]}],
+             "effects": [{"zone": 156}], "expect": {"sequence": 2, "vars": "000000000000", "notices": [[0, []]]}},
+        ]}
+        rides = travel.recorded_travel(fixture)
+        self.assertEqual([(r["actor"], r["sequence"], r["scene"], r["flags"]) for r in rides],
+                         [("ACTOR1", 1, 8, 0x2000)])  # a step that moves the quest on isn't a ride
+        # The copies to the sequences the script doesn't answer, in order; too few: by numbering.
+        self.assertEqual(travel.assign([2, 4], [0, 1]), ({0: 2, 1: 4}, []))
+        self.assertEqual(travel.assign([4], [0, 1]), ({0: 4}, [1]))
+
+    def test_shipped_rides_replay(self):
+        # The rides in resources/data/quest_travel.json each have a fixture of theirs ("travel": true) that replays.
+        from questkit import travel
+        data = json.loads(travel.OUT.read_text())
+        travel_fixtures = {json.loads(p.read_text())["quest"] for p in repo.FIXTURES.glob("*.json")
+                           if json.loads(p.read_text()).get("travel")}
+        for quest in data:
+            self.assertIn(int(quest), travel_fixtures, f"quest {quest}'s rides have no travel fixture")
 
 
 class ClientCheckTest(unittest.TestCase):

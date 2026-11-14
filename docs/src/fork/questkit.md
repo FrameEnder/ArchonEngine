@@ -608,6 +608,16 @@ forty in order, the actions for enemies on the global cooldown it never used, an
   actions on the global cooldown a minute. `RotationSimTest` runs it in CI (12 s). Its first run found the
   Thaumaturge's rotation idle at level 1 ([Party bots](party-bots.md)).
 
+## travel
+
+`questkit travel <dump folders>` writes `resources/data/quest_travel.json`: the NPCs quests offer rides with, in every
+sequence the client offers them, answered by `events/quest/Travel.lua` ([Quests](quests.md), Quest travel). It reads
+the client scripts from kawari-questdump's output, replays each recorded ride for its move, and probes each quest's
+script for what it answers. It prints the rides given from another quest's (`inferred`), questions with no known way
+(`questions`), sequences left without a copy (`unknown`) and, with `--silent`, every talk the client offers that the
+script doesn't answer. `--check` fails if the file isn't what the dumps give. A fixture with `"travel": true` tests a
+ride it gave and isn't read as a recording.
+
 ## lint
 
 `questkit lint` finds what fails silently in game:

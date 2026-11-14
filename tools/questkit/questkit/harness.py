@@ -25,6 +25,7 @@ Needs lupa (pip install lupa) for Lua 5.4, which the server uses too.
 from __future__ import annotations
 
 import copy
+import json
 from pathlib import Path
 from dataclasses import dataclass, field
 
@@ -79,9 +80,41 @@ def _values(table) -> list:
     if table is None:
         return []
     try:
-        return [table[i] for i in range(1, len(table) + 1)]
+        values = [table[i] for i in range(1, len(table) + 1)]
     except TypeError:
         return list(table.values())
+    if not values and hasattr(table, "items"):
+        # A table with names (a position's x, y and z): its entries, not its (empty) list.
+        keyed = {str(k): v for k, v in table.items()}
+        if keyed:
+            return keyed
+    return values
+
+
+MOVES = ("change_territory", "change_territory_pop_range", "move_to_pop_range")
+QUEST_TRAVEL = repo.ROOT / "resources" / "data" / "quest_travel.json"
+
+
+def _quest_travel() -> dict:
+    return json.loads(QUEST_TRAVEL.read_text()) if QUEST_TRAVEL.exists() else {}
+
+
+def _lua_value(lua, value):
+    """A JSON value as the server's `to_value` makes it: lists as sequences, objects as tables with string keys."""
+    if isinstance(value, list):
+        return lua.table_from([_lua_value(lua, v) for v in value])
+    if isinstance(value, dict):
+        return lua.table_from({k: _lua_value(lua, v) for k, v in value.items()})
+    return value
+
+
+def _plain(value):
+    """A Lua value as JSON's: a table as a dict, numbers rounded as the scripts write them."""
+    if hasattr(value, "items"):
+        return {str(k): _plain(v) for k, v in value.items()}
+    if isinstance(value, float):
+        return round(value, 3)
+    return value
 
 
 def _effect(task: Task, territory: int | None = None) -> dict | None:
@@ -238,6 +271,11 @@ class Harness:
             globals_[name] = value
         lua.execute(self._source)
         globals_.EVENT_ID = repo.QUEST_HANDLER_BASE + self.quest
+        # As the server does (`events/lua.rs`): the quest's rides, answered by Travel.lua after its script.
+        travel = _quest_travel().get(str(self.quest))
+        if travel:
+            globals_.QUEST_TRAVEL = _lua_value(lua, travel)
+            lua.execute((repo.QUEST_SCRIPTS / "Travel.lua").read_text())
         if base_id is not None:
             globals_.BASE_ID = base_id
         self.lua = lua
@@ -321,6 +359,9 @@ class Harness:
                 elif task.kind in ("call", "join_battle"):
                     outcome["calls"].append(task.kind if task.kind != "call" else task.args[0])
                     # The items it gives and the quest's log lines, in order (a fixture's "items" and "logs".)
+                    # Where the player was moved, as the script called it (`questkit travel` reads these.)
+                    if task.kind == "call" and task.args[0] in MOVES:
+                        outcome.setdefault("moves", []).append([task.args[0]] + [_plain(a) for a in task.args[1:]])
                     if task.kind == "call" and task.args[0] == "obtain_item":
                         outcome.setdefault("items", []).append([task.args[1], task.args[2]])
                     elif task.kind == "call" and task.args[0] == "event_log_message":

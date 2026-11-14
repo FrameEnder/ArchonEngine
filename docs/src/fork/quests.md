@@ -849,6 +849,46 @@ three runs, every step from the city's last quests to We Come in Peace):
   Kawari's My Little Chocobo ended the event first and its name stayed under the guide once done (Bob's bundle
   20261029-152644), so `process_lua_player` now ends an event after the quests finished in the same batch.
 
+## Quest travel
+
+An NPC who offers to take the player somewhere (a Talk and a yes/no: Slafborn outside Cid's workshop, the airship
+ticketers at the cities' gates) is usually offered by the client in several sequences of a quest, sequence 0 (before
+it's accepted) included, each with its own scene, all copies of one scene. A recording catches one, so a transcribed
+script answered only that one: Bob left Cid's workshop before accepting Every Little Thing She Does Is Magitek (1005)
+and Slafborn's "Every Little Thing She Does Is Magitek" did nothing (bundle 20261114-024122), as the ticketers had
+before Lady of the Vortex (bundle 20261111-101422, fixed then in 519's and 520's scripts alone).
+
+Since 2026-11-14 it's answered structurally:
+
+* **`questkit travel <dump folders>`** (`tools/questkit/questkit/travel.py`) reads each scripted quest's client script
+  (kawari-questdump's listing): the scenes that are copies of one another (same methods and constants), the NPCs
+  `IsAcceptEvent` accepts in each sequence, and each scene's speaker (its text constant's name). From the fixtures it
+  takes each recorded ride (a talk, one question, yes, a zone change, nothing else changed) and replays it through the
+  quest's script for the move it makes (`change_territory`, `change_territory_pop_range` or `move_to_pop_range`, with
+  the numbers). It then **asks the script** what it answers: the quest in each sequence (or not accepted), a talk to
+  each NPC the client accepts, through the replay harness. Each copy of a recorded ride's question goes to a sequence
+  where the script plays nothing, in order. A question the quest never recorded goes the way the same NPC's ride went
+  in another quest (matched by the speaker's name): a ticketer always goes to its landing.
+* It writes **`resources/data/quest_travel.json`** (numbers only: quest, NPC, sequence → scene, flags, move, and
+  `from` when the ride is another quest's) and reports what it can't give: questions no recording shows the way of.
+* **The server** (`servers/world/src/quest_travel.rs`, `events/lua.rs`) loads **`events/quest/Travel.lua`** after a
+  quest's script when the quest has entries: it answers those talks (the scene, then on yes the move) and hands
+  everything else to the script. The replay harness does the same, so CI holds it: each ride has a fixture marked
+  `"travel": true` (`1005-slafborn*.json`, `521-slafborn.json`, `521-elyenora.json`, `522-elyenora.json`,
+  `1360-travel.json`), which fail without it.
+
+Its first run (774 client scripts from Bob's dumps, 305 scripted quests) gave 7 rides in 4 quests: Slafborn in 1005
+before it's accepted, in sequence 1 and in 255 (into the workshop, where his recorded ride in 3 went); Slafborn
+before Escape from Castrum Centri (521) is accepted, the same trap one quest later (his ride in Fool Me Twice,
+1004); Elyenora, Ul'dah's ticketer, before The Black Wolf's Ultimatum (522) is accepted and in 521's sequence 255 (up
+to Ul'dah's landing, her ride in Reclamation, 520); 1360's ACTOR2 in its sequence 2. The probe found 528's and 546's
+ticketers already answered by their scripts in every sequence (their tables match what the copies would have given).
+Unseen on retail, all of them; where they go is retail's.
+
+`questkit travel --silent` lists every talk the client offers that a script doesn't answer (577 in 73 quests, probed
+with the variables at zero): mostly the lines NPCs have for each sequence (Biggs and Wedge in 1005), which retail plays
+and Kawari's transcribed scripts leave out. They don't block anything; see [Known issues](known-issues.md).
+
 ## Map markers
 
 Retail tells the client which quests can be taken up in the zone and from whom: ActorControlSelf 511

@@ -882,3 +882,20 @@ fn a_split_main_scenario_moves_on_to_its_other_branch() {
         Some((1001, vec![1002]))
     );
 }
+
+/// Bob's bundle 20261114-024122: he left Cid's workshop before accepting Every Little Thing She Does Is Magitek (1005),
+/// and Slafborn's "go back in?" did nothing: the transcribed script answered him only in sequence 3, where Connor's
+/// capture saw it. The client asks the same question (scenes 2, 4, 51) before the quest is accepted, in sequence 1 and
+/// in 255; `quest_travel.json` gives each its scene and retail's ride, which Travel.lua answers.
+#[test]
+fn slafborn_takes_you_back_in_before_the_quest_is_accepted() {
+    let entries = crate::quest_travel::entries(1005).expect("1005 has its rides");
+    let slafborn = entries
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["actor"] == 1006530)
+        .expect("Slafborn's");
+    assert_eq!(slafborn["scenes"]["0"], 2, "before it's accepted");
+    assert_eq!(slafborn["move"][1], 156, "into Cid's workshop (Mor Dhona)");
+}

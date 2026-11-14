@@ -66,6 +66,7 @@ pub use common::{
 pub mod collision;
 pub mod entrance_facing;
 pub mod event_item_effects;
+pub mod quest_travel;
 pub mod layer_filters;
 mod navmesh;
 pub use navmesh::{Navmesh, NavmeshParams, NavmeshTile};
