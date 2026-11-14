@@ -3,6 +3,16 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Quest battles' line-ups (2026-11-14)
+
+* Not played: 64's still reaper and its two event NPCs, 65's seven event NPCs and held generators, 22's and 24's
+  watcher. Each event NPC is brought out with `director:spawn_bnpc` from its layer, as 59's and 60's onlookers.
+* 65's bound Scions stay through the second part; retail deleted them 232 s into Bob's run (why isn't known: the
+  player far off, or the script).
+* `battle-sim`'s line-up check knows only what the captures have: a battle with one run can't tell a watcher who is
+  always there from one who was that time, and "never moved or acted" in one short run may be an NPC no one reached.
+  Duties aren't checked this way yet (`duty-sim`).
+
 ## Stability (2026-11-14)
 
 * **Not played yet** (`stability.md`): panics kept to a connection or a step of the world, `kawari-run` restarting a

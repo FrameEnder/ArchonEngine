@@ -107,6 +107,10 @@ LOG_FIELD_DOWN = 3216
 
 -- Who's talking (DirectorPopupMessage), with retail's names and portraits; the Scions bound and Biggs at the end as
 -- event NPCs (kind 3.)
+-- The event NPCs retail had standing there (layouts; ENpcBases 1007077, 1007078, 1007084, 1007083 from the start,
+-- 1007079-1007081 from the cutscene's end.)
+ENPCS_BOUND = { 4278275, 4278277, 4307929, 4307930 }
+ENPCS_SECOND_PART = { 4288515, 4288517, 4288518 }
 SPEAKER_MINFILIA_BOUND = { layout = 4278275, name = 1007077, icon = 73177, kind = 3 }
 SPEAKER_URIANGER_BOUND = { layout = 4307929, name = 1007084, icon = 73178, kind = 3 }
 SPEAKER_PAPALYMO_BOUND = { layout = 4307930, name = 1007083, icon = 73164, kind = 3 }
@@ -207,6 +211,13 @@ function bringOut(director, layouts)
         end
     end
     BATTLE:spawn(director, layouts)
+    -- A generator only stands: retail's three never moved or acted in five runs (waiting, they'd have fought back
+    -- once hit.)
+    for _, layout in ipairs(layouts) do
+        if GENERATORS[layout] then
+            director:hold_bnpc(layout)
+        end
+    end
     -- A vanguard takes no damage while one of its generators stands.
     for _, layout in ipairs(layouts) do
         if SHIELDS[layout] ~= nil then
@@ -222,6 +233,11 @@ end
 
 function onSetup(director)
     director:set_sequence(1)
+    -- The Scions bound, standing there from the start in all five retail runs (event NPCs; they had no one standing
+    -- for them until 2026-11-14.)
+    for _, layout in ipairs(ENPCS_BOUND) do
+        director:spawn_bnpc(layout)
+    end
 end
 
 function onCommence(director)
@@ -364,6 +380,10 @@ function onSceneFinished(director, scene)
         return
     end
     sequence(director, SEQUENCE_SECOND_PART)
+    -- The three watching the second part, out as the cutscene ends (0.3 s after it in Bob's run of 2026-11-12.)
+    for _, layout in ipairs(ENPCS_SECOND_PART) do
+        director:spawn_bnpc(layout)
+    end
     after(SECOND_PART_AFTER, function(d)
         BATTLE:spawn(d, { BNPC_URIANGER, BNPC_PAPALYMO })
         bringOut(d, WAVE_1)

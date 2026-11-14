@@ -43,7 +43,10 @@ DEATH_NOTICED_AFTER = 4
 TALK_START_AFTER = 10
 
 -- The battle talk (the content's text IDs, retail's.)
-SPEAKER_WATCHER = { layout = 0, name = 1004411, icon = 0, kind = 3 }
+-- The one watching stands there (layout 4065824, retail's spawn at the start of Bob's run; no one stood for it
+-- until 2026-11-14.)
+ENPC_WATCHER = 4065824
+SPEAKER_WATCHER = { layout = ENPC_WATCHER, name = 1004411, icon = 0, kind = 3 }
 SPEAKER_PUGILIST = { layout = BNPC_PUGILIST, name = 698, icon = 0 }
 TALK_START = 124
 
@@ -79,6 +82,7 @@ end
 
 function onSetup(director)
     director:set_sequence(1)
+    director:spawn_bnpc(ENPC_WATCHER)
 end
 
 function onCommence(director)

@@ -508,6 +508,51 @@ class BattleSimSpawnTest(unittest.TestCase):
         self.assertEqual(battle_sim.spawn_problems(fixture, too_many), ["brings 7 out 4 times, retail 3"])
 
 
+class BattleSimLineUpTest(unittest.TestCase):
+    """Every Little Thing She Does Is Magitek (quest battle 64), Bob's mark of 2026-11-14: retail's reaper never moved
+    or acted in three runs and two event NPCs stood beside it; the script had the reaper as a tank and no one standing
+    for the two, and passed."""
+
+    REGISTRY = {"309": {
+        "4277127": {"base": 1958, "visits": 3, "moved": True, "acted": True},
+        "4277157": {"base": 1877, "visits": 3, "moved": False, "acted": False},
+        "4277249": {"kind": 3, "base": 1007075, "visits": 3},
+        "4277250": {"kind": 3, "base": 1007076, "visits": 3, "late": True},
+        "4277999": {"kind": 3, "base": 1007099, "visits": 1},  # in one run only: not asked for
+    }}
+    FIXTURE = {"npcs": {"4277127": {}, "4277157": {}}, "events": [[60.0, "won"]]}
+
+    def test_event_npcs_and_still_npcs(self):
+        start = battle_sim.SETUP_CLOCK
+        calls = [(start, "spawn_bnpc", (4277127,)), (start, "spawn_bnpc", (4277157,))]
+        problems = battle_sim.line_up_problems(self.FIXTURE, calls, self.REGISTRY)
+        self.assertEqual(len(problems), 3, problems)
+        self.assertIn("event NPC 4277249 (ENpcBase 1007075)", problems[0])
+        self.assertIn("event NPC 4277250", problems[1])
+        self.assertIn("4277157 never moved or acted (3 runs)", problems[2])
+        calls += [(start, "hold_bnpc", (4277157,)), (start, "spawn_bnpc", (4277249,)),
+                  (40.0, "spawn_bnpc", (4277250,))]
+        self.assertEqual(battle_sim.line_up_problems(self.FIXTURE, calls, self.REGISTRY), [])
+        # Let go again, it isn't held.
+        self.assertEqual(len(battle_sim.line_up_problems(
+            self.FIXTURE, calls + [(5.0, "hold_bnpc", (4277157, False))], self.REGISTRY)), 1)
+
+    def test_someone_who_comes_later_isn_t_asked_of_a_lost_run(self):
+        lost = dict(self.FIXTURE, events=[])
+        calls = [(0.0, "spawn_bnpc", (4277157,)), (0.0, "hold_bnpc", (4277157,)), (0.0, "spawn_bnpc", (4277249,))]
+        self.assertEqual(battle_sim.line_up_problems(lost, calls, self.REGISTRY), [])
+        self.assertEqual(len(battle_sim.line_up_problems(self.FIXTURE, calls, self.REGISTRY)), 1)
+
+    def test_still_role_holds(self):
+        # The framework's `still = true`: held as it comes out, never sent after anyone.
+        script = repo.ROOT / "resources" / "scripts" / "content" / "questbattle" / "64.lua"
+        text = script.read_text()
+        self.assertIn("BATTLE:ally(BNPC_WORN, { still = true })", text)
+        fixture = json.loads((repo.ROOT / "tools" / "questkit" / "battles" / "64.json").read_text())
+        result = battle_sim.simulate(fixture)
+        self.assertTrue(result.ok, result.problems)
+
+
 class BattleSimPlayerTest(unittest.TestCase):
     """battle-sim gives a script the player's health as retail's last seen value (it jumps, so no interpolating), and
     a fixture can give one event more slack than the rest."""

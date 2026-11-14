@@ -5526,6 +5526,34 @@
                         "z": -626.907
                     },
                     "rotation": -0.8995
+                },
+                {
+                    "data": {
+                        "base_id": 1007075,
+                        "type": "event_npc",
+                        "nonpop": true
+                    },
+                    "layout_id": 4277249,
+                    "position": {
+                        "x": -56.49,
+                        "y": 3.754,
+                        "z": -641.916
+                    },
+                    "rotation": -1.0963
+                },
+                {
+                    "data": {
+                        "base_id": 1007076,
+                        "type": "event_npc",
+                        "nonpop": true
+                    },
+                    "layout_id": 4277250,
+                    "position": {
+                        "x": -57.152,
+                        "y": 3.63,
+                        "z": -642.134
+                    },
+                    "rotation": -0.8541
                 }
             ]
         },
@@ -7994,6 +8022,104 @@
                         "z": -267.455
                     },
                     "rotation": -0.0587
+                },
+                {
+                    "data": {
+                        "base_id": 1007077,
+                        "type": "event_npc",
+                        "nonpop": true
+                    },
+                    "layout_id": 4278275,
+                    "position": {
+                        "x": -393.985,
+                        "y": -1.59,
+                        "z": -274.197
+                    },
+                    "rotation": -1.2957
+                },
+                {
+                    "data": {
+                        "base_id": 1007078,
+                        "type": "event_npc",
+                        "nonpop": true
+                    },
+                    "layout_id": 4278277,
+                    "position": {
+                        "x": -394.4,
+                        "y": -1.602,
+                        "z": -267.536
+                    },
+                    "rotation": -2.0898
+                },
+                {
+                    "data": {
+                        "base_id": 1007084,
+                        "type": "event_npc",
+                        "nonpop": true
+                    },
+                    "layout_id": 4307929,
+                    "position": {
+                        "x": -393.118,
+                        "y": -1.602,
+                        "z": -270.375
+                    },
+                    "rotation": -1.8192
+                },
+                {
+                    "data": {
+                        "base_id": 1007083,
+                        "type": "event_npc",
+                        "nonpop": true
+                    },
+                    "layout_id": 4307930,
+                    "position": {
+                        "x": -393.546,
+                        "y": -1.602,
+                        "z": -268.666
+                    },
+                    "rotation": -1.631
+                },
+                {
+                    "data": {
+                        "base_id": 1007079,
+                        "type": "event_npc",
+                        "nonpop": true
+                    },
+                    "layout_id": 4288515,
+                    "position": {
+                        "x": -472.822,
+                        "y": -4.001,
+                        "z": -268.806
+                    },
+                    "rotation": -1.6658
+                },
+                {
+                    "data": {
+                        "base_id": 1007080,
+                        "type": "event_npc",
+                        "nonpop": true
+                    },
+                    "layout_id": 4288517,
+                    "position": {
+                        "x": -471.214,
+                        "y": -4.002,
+                        "z": -268.574
+                    },
+                    "rotation": -2.0679
+                },
+                {
+                    "data": {
+                        "base_id": 1007081,
+                        "type": "event_npc",
+                        "nonpop": true
+                    },
+                    "layout_id": 4288518,
+                    "position": {
+                        "x": -470.848,
+                        "y": -4.002,
+                        "z": -269.158
+                    },
+                    "rotation": -3.0314
                 }
             ]
         }

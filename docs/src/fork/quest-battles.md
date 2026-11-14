@@ -172,6 +172,10 @@ The tank's pull uses who each enemy is targeting (`info[layout].target`). In Cha
 (`protect = false`); Papalymo (a thaumaturge) plays a ranged **DPS** with some support (his Cure on you), taking the adds
 and staying within 15 yalms of both Yda and you. That's why the pair is put together as it is.
 
+An ally with `still = true` only stands: held (`director:hold_bnpc`) as it comes out and never sent after anyone,
+while enemies can be sent after it (`attacks`) and its health still reaches the script. Every Little Thing She Does
+Is Magitek's reaper (2026-11-14).
+
 Allies are re-pointed whenever an enemy arrives or falls, roles change, and every 2 s (for highest-HP and nearest);
 only an ally whose target changed gets new enmity, each time more than the last (`ALLY_ENMITY`), so it switches and
 stays. Chasing Shadows and To Guard a Guardian run on it; simulated against their previous scripts (lupa), every
@@ -329,6 +333,10 @@ a quest's entering event, 0 for every other event (228 events across the capture
   effects were; neither had a script. How long the stun and bind last isn't recorded (6 s).
 
 ### Quest battle 22 — On Holy Ground (`content/questbattle/22.lua`)
+
+* The one watching stands there since 2026-11-14 (event NPC 4065824, ENpcBase 1004411, at (-517.86, -21.59, 122.10),
+  retail's spawn at the start of the run; in layer `QB_ClsGla250_002`, brought out in `onSetup`): found by
+  `battle-sim`'s line-up check, its lines came from no one. Not played.
 
 * Quest 264 (ClsGla250_00264, the Gladiators' level 25 quest) enters it (scene 6, Aldis' YesNoQuestBattle in Eastern
   Thanalan; territory 256, duty 317). Territory 256 is a copy of Eastern Thanalan (the run's positions within 0.02
@@ -511,8 +519,16 @@ a quest's entering event, 0 for every other event (228 events across the capture
   `QB_GaiUsc605_001` of `lak_l1f1_planmap.json` (6 NPCs, `nonpop`; character data flags 3, 1 for the ally the enemies
   wear down), from one run: Connor's Chronofoil capture e834e436 (`--battle 9.202`, won, level 48). Start (-78.43,
   1.89, -627.73, facing -1.159), opening flags 0xF841AEFB.
-* **Allies**: one who fights (4277164, base 1876: 870, and 1170 every 6.6 s) and one the enemies wear down (4277157,
-  base 1877, 11193 HP, never seen acting). **Enemies**, all out from the start: the boss (4277127, base 1958: 526 and
+* **Bob's mark of 2026-11-14** ("the magitek reaper shouldn't move, and Biggs, and Wedge are gone they should be
+  background set npcs"; his capture, read through the harness: the reaper sent 26 ActorMoves and no event NPC was
+  spawned). All three retail runs: the reaper (4277157) at (-59.6, 3.3, -637.6) with **no ActorMove and no action**
+  from it, and two **event NPCs** spawned at the start beside it, 4277249 (ENpcBase 1007075) at (-56.49, 3.75,
+  -641.92) and 4277250 (1007076) at (-57.15, 3.63, -642.13). The script had the reaper as a tank after the boss and
+  the two as voices with no one there (the battle export and the spawn registry both kept battle NPCs only). Now the
+  reaper is `still`, the two are in the layer (8 NPCs) and brought out in `onSetup`, and their lines come from
+  them. `questkit battle-sim` checks both in every battle since ([questkit](questkit.md#battle-sim)). Not played.
+* **Allies**: one who fights (4277164, base 1876: 870, and 1170 every 6.6 s) and the reaper the enemies wear down
+  (4277157, base 1877, 11193 HP: it never moved or acted). **Enemies**, all out from the start: the boss (4277127, base 1958: 526 and
   525, an area that caught both allies, every 20 s) and three others (4277134-4277136; 4277136 cures itself at 6 %).
   Two event NPCs talk (1007075 and 1007076: kind 3, no actor, as Victory in Peril's watcher).
 * **Flow**: sequence 2, talks 122 (4277136) and 123 (the one who fights) at 5.1 and 10.1; the worn-down ally under 90 %:
@@ -1321,6 +1337,10 @@ retail runs. Since 2026-10-28 (the Maelstrom's, Bob's Chronofoil capture cc62ad9
 
 ### Quest battle 24 — Victory in Peril (`content/questbattle/24.lua`)
 
+* The watcher stands there since 2026-11-14 (event NPC 4103652, ENpcBase 1002702, at (247.35, 14.16, 611.86),
+  retail's spawn at the start of both runs; in layer `QB_SubSea117_001`, brought out in `onSetup`): found by
+  `battle-sim`'s line-up check. Not played.
+
 * Territory 249, taken to be a copy of Lower La Noscea, so its NPCs are layer `QB_SubSea117_001` of the `sea_s1f2`
   drop-in (15 NPCs, display flags 0x40000); the player starts at (165.01, 14.1, 676.28), facing -2.727. Bob's
   Chronofoil capture of 2026-10-21, two runs (`--battle 0.20`, lost as he fell, and `0.22`, won; territory 249, duty
@@ -1620,6 +1640,14 @@ early on and their carbuncle comes 7.3 s after the cast began (the director's `o
   `81.json` (won), `81-lost.json`.
 
 ### Quest battle 65 — Escape from Castrum Centri (`content/questbattle/65.lua`)
+
+* Since 2026-11-14 (found by `battle-sim`'s line-up check; five retail runs agree): the four bound Scions stand
+  there from the start (event NPCs 4278275, 4278277, 4307929, 4307930; ENpcBases 1007077, 1007078, 1007084, 1007083,
+  round (-394, -1.6, -270)), the three watching the second part come as the cutscene ends (4288515, 4288517,
+  4288518; 1007079-1007081, round (-471.5, -4.0, -268.8); 0.3 s after scene 8's end in Bob's run), all in the layer
+  now; and the three Magitek Field Generators (4286888, 4286889, 4286891) are held: retail's never moved or acted,
+  where the script's waited and would have fought back once hit. Retail deleted the bound four 232 s into Bob's run
+  with the first part's objects (not looked into: they stay). Not played.
 
 * Quest 521 (ManFst407_00521) enters it (the steel door; territory 305, Mor Dhona's level, layer
   `QB_ManFst407_001` of lak_l1f1), from Bob's two Kawari Recorder runs of 2026-11-12 (lost in the first part, then

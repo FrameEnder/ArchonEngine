@@ -375,6 +375,7 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
     # (fixtures made before 2026-11-08: The Lominsan Way's fight came as its scene 2 ended.)
     start = round(fixture.get("lead_in_from", -sum(lead_in.values())) * 2) / 2
     known = dropin_layouts()
+    standing, _ = retail_line_up(fixture)  # the event NPCs retail had there, which a fixture's NPCs don't list
     cast_heard: set[tuple] = set()
     eobjs: set[int] = set()  # the event objects the script brought out (spawn_eobj), by base
     talks_due = [list(talk) for talk in fixture.get("object_talks", [])]
@@ -392,7 +393,7 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
                     not_yet.add(layout)
                 if layout not in known:
                     result.problems.append(f"spawns {layout}, which no drop-in has")
-                elif layout not in npcs and not any(
+                elif layout not in npcs and layout not in standing and not any(
                         other in npcs for other, root in pooled.items() if layout in pooled and root == pooled[layout]):
                     # (One of a pool counts as retail's when another of it is: retail drew one at random each time,
                     # Austerities of Wind's plumes.)
@@ -491,6 +492,7 @@ def simulate(fixture: dict, script: Path | None = None) -> SimResult:
         return result
 
     result.problems += spawn_problems(fixture, calls)
+    result.problems += line_up_problems(fixture, calls)
     result.problems += compare(fixture, calls, result)
     result.ok = not result.problems
     return result
@@ -503,6 +505,64 @@ def pool_of(fixture: dict) -> dict[int, int]:
         for layout in pool:
             pools[int(layout)] = int(pool[0])
     return pools
+
+
+RETAIL_SPAWNS = repo.ROOT / "tools" / "questkit" / "retail_spawns.json"
+EVENT_NPC = 3
+
+
+def retail_line_up(fixture: dict, registry: dict | None = None) -> tuple[dict[int, int], dict[int, int]]:
+    """What every retail run of this battle's territory had that a fixture made from one run's battle NPCs doesn't
+    say (`retail_spawns.json`, from every capture): the event NPCs standing there (layout -> ENpcBase), and the battle
+    NPCs that never moved or acted (layout -> how many runs). Only those seen in as many runs as the fixture's own
+    NPCs, so someone who is there in some runs only isn't asked for.
+
+    Every Little Thing She Does Is Magitek (quest battle 64) passed with neither: its two event NPCs had no one
+    standing for them, and its reaper, which retail never moved, walked up to the boss as a tank (Bob's mark of
+    2026-11-14)."""
+    if registry is None:
+        registry = json.loads(RETAIL_SPAWNS.read_text()) if RETAIL_SPAWNS.exists() else {}
+    mine = set(fixture.get("npcs", {}))
+    zone = max(registry.values(), key=lambda spots: len(mine & set(spots)), default={})
+    runs = max((zone[layout]["visits"] for layout in mine & set(zone)), default=0)
+    if not runs:
+        return {}, {}
+    standing = {int(layout): entry["base"] for layout, entry in zone.items()
+                if entry.get("kind") == EVENT_NPC and entry["visits"] >= runs}
+    still = {int(layout): entry["visits"] for layout, entry in zone.items()
+             if entry.get("kind") != EVENT_NPC and entry["visits"] >= runs
+             and entry.get("moved") is False and entry.get("acted") is False}
+    return standing, still
+
+
+def line_up_problems(fixture: dict, calls: list[tuple], registry: dict | None = None) -> list[str]:
+    """The script against `retail_line_up`: every event NPC brought out, every battle NPC that never moved or acted
+    held (`director:hold_bnpc`, which a role's `still = true` does) and not let go."""
+    standing, still = retail_line_up(fixture, registry)
+    out = {int(args[0]) for _, name, args in calls if name == "spawn_bnpc" and args}
+    held: set[int] = set()
+    for _, name, args in calls:
+        if name == "hold_bnpc" and args and args[0] is not None:
+            if len(args) > 1 and args[1] is False:
+                held.discard(int(args[0]))
+            else:
+                held.add(int(args[0]))
+    problems = []
+    # Someone who only comes later (the registry's `late`: as a cutscene ends, say) isn't asked of a run that may not
+    # have got there: one that was lost.
+    registry = registry if registry is not None else (
+        json.loads(RETAIL_SPAWNS.read_text()) if RETAIL_SPAWNS.exists() else {})
+    late = {int(layout) for spots in registry.values() for layout, entry in spots.items() if entry.get("late")}
+    won = any(event[1] == "won" for event in fixture.get("events", []))
+    for layout, base in sorted(standing.items()):
+        if layout not in out and (won or layout not in late):
+            problems.append(f"retail had event NPC {layout} (ENpcBase {base}) standing there in every run: the "
+                            "script never brings it out")
+    for layout, runs in sorted(still.items()):
+        if layout in out and layout not in held:
+            problems.append(f"retail's {layout} never moved or acted ({runs} runs): the script doesn't hold it "
+                            "(director:hold_bnpc, or `still = true` in its role)")
+    return problems
 
 
 def spawn_problems(fixture: dict, calls: list[tuple]) -> list[str]:
@@ -558,7 +618,10 @@ def compare(fixture: dict, calls: list[tuple], result: SimResult) -> list[str]:
     tolerance = fixture.get("tolerance", DEFAULT_TOLERANCE)
     pooled = pool_of(fixture)
     # A pool's spawns are one kind of event (see `pools`.)
-    mine = [[e[0], e[1], pooled.get(e[2], e[2])] if e[1] == "spawn" else e for e in script_events(calls)]
+    # (The event NPCs standing by aren't in a fixture's events: `line_up_problems` holds the script to them.)
+    standing, _ = retail_line_up(fixture)
+    mine = [[e[0], e[1], pooled.get(e[2], e[2])] if e[1] == "spawn" else e for e in script_events(calls)
+            if not (e[1] == "spawn" and e[2] in standing)]
     initial = {int(k) for k, v in fixture["npcs"].items() if v.get("spawn") is None}
     mine = [e for e in mine if not (e[1] == "spawn" and e[2] in initial and e[0] <= 0.0)]
     used = [False] * len(mine)

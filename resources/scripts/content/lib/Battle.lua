@@ -120,7 +120,11 @@ end
 -- An NPC on the player's side. role: focus (the groups it goes for, in order; "any" is every enemy, "mine" the ones
 -- after it), order (which
 -- one of a group: "oldest", "newest", "highest_hp", "lowest_hp", "nearest"), range (how close it gets, in yalms),
--- keep_near ({ anchor = layout ID or nil for the player, within = yalms }), heals (see Battle:heal.)
+-- keep_near ({ anchor = layout ID or nil for the player, within = yalms }), heals (see Battle:heal), still (true: it
+-- stands where it's put and does nothing: it's held (director:hold_bnpc) as it comes out and never sent after anyone,
+-- while the enemies can still be sent after it. Retail's Magitek Reaper in Every Little Thing She Does Is Magitek
+-- never moved or acted in three runs while the enemies wore it down; as a tank it walked up to the boss, Bob's mark of
+-- 2026-11-14. `questkit battle-sim` asks for it wherever retail's NPC did neither in any run.)
 function Battle:ally(layout, role)
     local preset = role and role.role and Battle.ROLES[role.role] or {}
     self.roles[layout] = merge(merge({ side = "ally", focus = { "any" }, order = "oldest" }, preset), role)
@@ -226,6 +230,9 @@ function Battle:spawn(director, layouts, at)
             director:spawn_bnpc(layout)
         end
         self.alive[layout] = true
+        if role.still then
+            director:hold_bnpc(layout)
+        end
         if role.side == "enemy" then
             table.insert(self.arrived, layout)
             self.arrival[layout] = #self.arrived
@@ -458,7 +465,8 @@ end
 -- Points every ally at its target, changing only those whose target changed (so enmity doesn't pile up.)
 function Battle:retarget(director)
     for layout, role in pairs(self.roles) do
-        if role.side == "ally" and self.alive[layout] and (self.hold[layout] or 0) <= self.updates then
+        if role.side == "ally" and not role.still and self.alive[layout]
+            and (self.hold[layout] or 0) <= self.updates then
             local target = self:targetFor(layout)
             if target ~= nil and target ~= self.targets[layout] then
                 self.priority = self.priority + Battle.ALLY_ENMITY

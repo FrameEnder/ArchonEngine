@@ -55,7 +55,9 @@ ALLIES = { BNPC_ALLY_MARAUDER, BNPC_ALLY_CONJURER }
 -- Who's talking, by name (BNpcName, or the ENpcResident for the one not in the fight) and portrait, as retail sent
 -- them. The watcher isn't in the fight, so retail names it as an EventNpc (kind 3; the client crashes looking an
 -- ENpcResident up as a BNpcName, Bob's bundle of 2026-10-22.)
-SPEAKER_WATCHER = { layout = 0, name = 1002702, icon = 73237, kind = 3 }
+-- It stands there (layout 4103652, retail's spawn at the start of both runs; no one stood for it until 2026-11-14.)
+ENPC_WATCHER = 4103652
+SPEAKER_WATCHER = { layout = ENPC_WATCHER, name = 1002702, icon = 73237, kind = 3 }
 SPEAKER_BOSS = { layout = BNPC_BOSS, name = 811, icon = 73238 }
 SPEAKER_MARAUDER = { layout = BNPC_ALLY_MARAUDER, name = 815, icon = 73239 }
 SPEAKER_CORSAIR = { layout = 3970684, name = 814, icon = 73240 }
@@ -233,6 +235,7 @@ end
 
 function onSetup(director)
     director:set_sequence(SEQUENCE_START)
+    director:spawn_bnpc(ENPC_WATCHER)
 end
 
 function onCommence(director)

@@ -356,7 +356,7 @@ reads, chat left out), so `compare` and the rest can use it.
   | `--actions [--all]` | Per action the capturing player used: cast time, animation lock, the shortest gap between uses (the fifth percentile: its recast), request-to-effect time, the most it hit at once |
   | `--areas` | Enemies' cones as Boss Mod has them against who they hit: how far off the caster's facing the people hit stood ([Combat](combat.md)) |
   | `--controls [--all] [--sapphire CommonActorControl.h]` | The ActorControl and ClientTrigger categories Kawari's enums don't have (or all), with counts, an example's arguments, how many values each argument took, and Sapphire's name for the category when its header is given |
-  | `--spawns` | Every instanced territory's battle NPCs as retail spawned them (BNpcBase, BNpcName, level, HP, character data flags, display flags, Mount, ModelChara; first sighting, visits), merged into `tools/questkit/retail_spawns.json` (numbers only), which `lint` holds the quest battle layers to |
+  | `--spawns` | Every instanced territory's battle NPCs as retail spawned them (BNpcBase, BNpcName, level, HP, character data flags, display flags, Mount, ModelChara; first sighting, visits; since 2026-11-14 whether it ever `moved` or `acted` in any visit, and the event NPCs with a layout ID: `kind` 3, their ENpcBase, `late` when never there as a visit began), merged into `tools/questkit/retail_spawns.json` (numbers only), which `lint` holds the quest battle layers to |
   | `--registry` | Each capture: version, start, minutes, visits, duties, the capturing player's jobs and levels, their own actions (`notes/captures.json` in the diagnostics repository) |
 
   `--battle`, `--hits`, `--quest` and `--dropin` still read the capture themselves (see [Known issues](known-issues.md)).
@@ -464,6 +464,22 @@ one the script brings out more often than retail did (`spawn_problems`; the time
 so Like Mother, Like Daughter's first wave, written the wrong way round, passed until 2026-11-01). NPCs the script spawns
 in `onSetup` count as there from the start (since 2026-11-06: The Rematch's 39, out before its opening cutscene,
 as retail had them).
+
+**The line-up every run had** (`retail_line_up`, `line_up_problems`, since 2026-11-14). A fixture is one run's battle
+NPCs, so it can't say who stood by or who never stirred; `retail_spawns.json` (every capture, `chronofoil --spawns`)
+can, for the territory the fixture's NPCs are in. `battle-sim` fails when:
+
+* retail had an **event NPC** (ObjectKind 3, with a layout ID) standing there in every run and the script never
+  brings it out (`director:spawn_bnpc` of its layout, from the battle's drop-in layer). One who is never there as a
+  visit begins (the registry's `late`: the three who come as Escape from Castrum Centri's cutscene ends) isn't
+  asked of a lost run;
+* a battle NPC **never moved and never acted** in any run and the script brings it out without holding it
+  (`director:hold_bnpc`, which a role's `still = true` does), or lets it go again.
+
+The first run found 17 in four battles that had passed: Every Little Thing She Does Is Magitek (64: two event NPCs,
+the reaper), Escape from Castrum Centri (65: seven event NPCs, three field generators), On Holy Ground (22) and
+Victory in Peril (24), one event NPC each ([Quest battles](quest-battles.md)). Bob's mark of 2026-11-14 in 64 ("the
+magitek reaper shouldn't move, and Biggs, and Wedge are gone") is what it would have caught.
 
 `--make` takes an NPC's death from its ActorControl 2 with 2 (its status: dead) when no HP of 0 came first (since
 2026-11-12: Notorious Biggs's boss stood at 25 HP until it, and fell 2.1 s before Defeated, in Bob's capture da424662;

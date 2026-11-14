@@ -5,9 +5,13 @@
 -- QB_GaiUsc605_001 of lak_l1f1. Layout IDs, levels, HP, positions,
 -- display and character data flags, looks and the start spot are retail's (Connor's Chronofoil capture e834e436 of
 -- 2026-11-07, `questkit chronofoil --battle 9.202`: one run, won; a level 48 player.) On your side: an ally who fights
--- (4277164, base 1876) and one the enemies wear down (4277157, base 1877, 11193 HP). Against you: the boss (4277127,
--- base 1958, 5450 HP) and three others (4277134-4277136, bases 1873-1875), all out from the start. Two event NPCs talk
--- (1007075 and 1007076, as EventNpcs: kind 3, no actor.)
+-- (4277164, base 1876) and the Magitek Reaper the enemies wear down (4277157, base 1877, 11193 HP), which stands
+-- where it is: in three retail runs (Connor's and Bob's two of 2026-11-12) it never moved and never acted. Against
+-- you: the boss (4277127, base 1958, 5450 HP) and three others (4277134-4277136, bases 1873-1875), all out from the
+-- start. Two event NPCs stand beside the reaper and talk (4277249, ENpcBase 1007075, and 4277250, 1007076: retail
+-- spawned them at the start of all three runs, 3 and 5 yalms from it.) Until 2026-11-14 the reaper was a tank that
+-- walked up to the boss and the two had no one standing for them (Bob's mark: "the magitek reaper shouldn't move, and
+-- Biggs, and Wedge are gone they should be background set npcs").
 --
 -- Retail's flow (seconds from the fight starting, the director's scene 60000):
 --   0       sequence 2; battle talks 122 (4277136) and 123 (the ally who fights) at 5.1 and 10.1
@@ -30,6 +34,8 @@ BNPC_FIGHTER = 4277164
 BNPC_WORN = 4277157
 BNPC_BOSS = 4277127
 BNPC_FIRST = 4277136
+ENPC_A = 4277249
+ENPC_B = 4277250
 ENEMIES = { BNPC_BOSS, 4277134, 4277135, BNPC_FIRST }
 
 QUEST_SEQUENCE_AFTER_WIN = 255
@@ -56,19 +62,19 @@ TALK_128_AFTER = 11
 WON_AFTER_DEATH = 5
 
 -- Who's talking (DirectorPopupMessage, by whom it came from), with retail's names and portraits. The two event NPCs
--- aren't battle NPCs: kind 3 and no actor, as Victory in Peril's watcher.
+-- aren't battle NPCs: kind 3.
 SPEAKER_FIRST = { layout = BNPC_FIRST, name = 1812, icon = 73183 }
 SPEAKER_FIGHTER = { layout = BNPC_FIGHTER, name = 1486, icon = 73184 }
-SPEAKER_ENPC_A = { layout = 0, name = 1007075, icon = 73181, kind = 3 }
-SPEAKER_ENPC_B = { layout = 0, name = 1007076, icon = 73182, kind = 3 }
+SPEAKER_ENPC_A = { layout = ENPC_A, name = 1007075, icon = 73181, kind = 3 }
+SPEAKER_ENPC_B = { layout = ENPC_B, name = 1007076, icon = 73182, kind = 3 }
 
 ACTION_SELF_HEAL = 57
 
 BATTLE = Battle.new()
--- On retail the one who fights took 4277136 first, then the boss, then the other two; the worn-down one held the boss,
--- then 4277136, then 4277135, without being seen to act.
+-- On retail the one who fights took 4277136 first, then the boss, then the other two; the reaper only stood (its
+-- target went from the boss to 4277136 to 4277135 as they hit it, with no move and no action of its own.)
 BATTLE:ally(BNPC_FIGHTER, { role = "dps", focus = { "first", "boss", "adds" }, order = "oldest" })
-BATTLE:ally(BNPC_WORN, { role = "tank", focus = { "boss", "first", "adds" }, order = "oldest", protect = false })
+BATTLE:ally(BNPC_WORN, { still = true })
 -- Whom each went for first on retail (nil: you.)
 BATTLE:enemy(BNPC_BOSS, { group = "boss", attacks = nil })
 BATTLE:enemy(BNPC_FIRST, {
@@ -115,6 +121,8 @@ function onSetup(director)
     end
     BATTLE:spawn(director, { BNPC_FIGHTER, BNPC_WORN })
     BATTLE:spawn(director, ENEMIES)
+    director:spawn_bnpc(ENPC_A)
+    director:spawn_bnpc(ENPC_B)
 end
 
 function onCommence(director)

@@ -9529,6 +9529,20 @@
                         "z": 109.759
                     },
                     "rotation": -0.8032
+                },
+                {
+                    "data": {
+                        "base_id": 1004411,
+                        "type": "event_npc",
+                        "nonpop": true
+                    },
+                    "layout_id": 4065824,
+                    "position": {
+                        "x": -517.86,
+                        "y": -21.589,
+                        "z": 122.098
+                    },
+                    "rotation": 2.6296
                 }
             ]
         },
