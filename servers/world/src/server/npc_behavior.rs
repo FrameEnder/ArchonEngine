@@ -237,6 +237,33 @@ fn flat_distance(a: Vec3A, b: Vec3A) -> f32 {
 /// someone, as retail's keep to their navmesh. Bots, pets and everyone in duties go down as far as a player would.
 const OPEN_WORLD_MAX_DROP: f32 = 3.0;
 
+/// The most a walker held up at a wall goes up in one step where only the navmesh has ground (`up_the_navmesh`),
+/// yalms: half a second's run up the steepest bank it's been seen to take, and some. Retail's lancer rose 1.4 yalms in
+/// 1.2 across (Every Little Thing She Does Is Magitek, three runs.)
+const NAVMESH_RISE: f32 = 4.0;
+
+/// Where a walker held up at `here`, with no floor of the collision to go on to (`past_a_wall`), goes on to all the
+/// same: the navmesh's ground where its path leads (`ground`: `Navmesh::ground_under` its path's next point), unless
+/// a gimmick the director put up is between (`sealed`), it's more than `NAVMESH_RISE` up, or more than `max_drop`
+/// down.
+///
+/// The collision takes a bank steeper than the zone's slope limit for a wall and has no floor on it; Recast makes
+/// ground of it where each cell is no more than a step over the last, which is how retail's navmesh takes its NPCs up
+/// one. In Every Little Thing She Does Is Magitek the reaper stands on a rise (3.3 over the enemies' -0.3): retail's
+/// lancer ran straight up its bank to it in three runs, from 1.1 to 2.5 in 1.2 yalms; Kawari's, its path up the same
+/// bank, stood at the foot of it for the whole battle, the only one of the six with a reason to go up (Bob's marks of
+/// 2026-11-14: "still getting stuck on the wall ... he is the only one doing it").
+pub fn up_the_navmesh(
+    ground: Option<Vec3A>,
+    sealed: bool,
+    here: Vec3A,
+    max_drop: f32,
+) -> Option<Vec3A> {
+    let ground = ground?;
+    (!sealed && ground.y <= here.y + NAVMESH_RISE && ground.y >= here.y - max_drop)
+        .then_some(ground)
+}
+
 /// How far below its path a walker that goes anywhere (bots, pets, NPCs in duties) may step down: as far as its path
 /// goes down, and this much more (a guess, the open world's.) Off the path's height it stopped there instead of
 /// dropping, so it no longer fell where the collision has no floor under its way: Bob's Haukke Manor bundle of
@@ -695,7 +722,15 @@ pub fn npc_behavior(
                         let past =
                             (walk.blocked && !walk.sealed && walled_for >= NPC_WALL_PATIENCE_TICKS)
                                 .then(|| {
-                                    past_a_wall(collision, spawn.common.position.0, along, max_drop)
+                                    let here = spawn.common.position.0;
+                                    past_a_wall(collision, here, along, max_drop).or_else(|| {
+                                        up_the_navmesh(
+                                            instance.navmesh.ground_under(along),
+                                            collision.crosses_sealed(here, along),
+                                            here,
+                                            max_drop,
+                                        )
+                                    })
                                 })
                                 .flatten();
                         if walk.blocked && walled_for == NPC_WALL_PATIENCE_TICKS {
@@ -708,7 +743,7 @@ pub fn npc_behavior(
                                 if past.is_some() {
                                     "walking on through"
                                 } else {
-                                    "it stays (a gimmick the director put up, or no floor it would step onto, there)"
+                                    "it stays (a gimmick the director put up, or no floor and no navmesh it would step onto, there)"
                                 }
                             );
                         }
@@ -2354,6 +2389,36 @@ mod wall_tests {
         assert!(out_of_action_range(25, 40.0, player, player, true));
         // One centred on its user has no range to be out of.
         assert!(!out_of_action_range(0, 33.0, player, player, false));
+    }
+
+    /// Bob's marks of 2026-11-14: the lancer stood at the foot of the bank the reaper is on, at (-80.7, 1.7, -638.1),
+    /// "no floor it would step onto"; the navmesh has ground up it (its path went that way, and retail's ran up it.)
+    #[test]
+    fn a_walker_goes_up_a_bank_only_the_navmesh_has_ground_on() {
+        let here = Vec3A::new(-80.7, 1.7, -638.1);
+        let up_the_bank = Vec3A::new(-78.0, 2.9, -637.9);
+        assert_eq!(
+            up_the_navmesh(Some(up_the_bank), false, here, PATH_DROP_MARGIN),
+            Some(up_the_bank)
+        );
+        // No navmesh where its path leads (the straight stretch past the mesh's end): it stays.
+        assert_eq!(up_the_navmesh(None, false, here, PATH_DROP_MARGIN), None);
+        // A gimmick the director put up between.
+        assert_eq!(
+            up_the_navmesh(Some(up_the_bank), true, here, PATH_DROP_MARGIN),
+            None
+        );
+        // Ground a storey up or down isn't the next step.
+        let above = Vec3A::new(-78.0, 8.0, -637.9);
+        assert_eq!(
+            up_the_navmesh(Some(above), false, here, PATH_DROP_MARGIN),
+            None
+        );
+        let below = Vec3A::new(-78.0, -6.0, -637.9);
+        assert_eq!(
+            up_the_navmesh(Some(below), false, here, PATH_DROP_MARGIN),
+            None
+        );
     }
 
     #[test]

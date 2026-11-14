@@ -5,10 +5,12 @@ add one when something is found.
 
 ## A territory's own navmesh (2026-11-14)
 
-* **Inferred and unplayed** (`combat.md`, "A territory's own navmesh and collision"): that the walls which stopped
-  NPCs in territory 309 came from other territories' layers of Mor Dhona's level. If the lancer still goes round by
-  the south once `l1f1.t309.nvm` is made, it's something else (the log's "held up by a wall" lines and the tool's
-  "layers ... left out" say). The first battle after this build still uses the old file while the new one is made.
+* The territories of Mor Dhona's level do differ (309's own collision is 15,815 triangles smaller than 156's, Bob's
+  server), but no run has yet started on 309's own navmesh: whether the lancer's way from its spawn is straight now
+  isn't seen. A battle entered before its territory's file is made still starts on the old one (about 30 s).
+* A walker goes up a bank only the navmesh has ground on after waiting 2 s at its foot (`up_the_navmesh`, unplayed);
+  retail's doesn't stop. The collision's walk and the navmesh disagree about steep ground everywhere, not only
+  there: the walk should take a bank Recast would, rather than be let through afterwards.
 * A layer whose layer-set reference is of a kind physis doesn't know (`has_layer_set` says no) is left out of the
   collision now, as it already was of the spawns; if such a layer holds walls, NPCs walk through them.
 * Every territory of a shared level makes and keeps its own navmesh and collision (disk, and a background build the
