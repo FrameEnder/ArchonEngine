@@ -270,6 +270,12 @@ commands; **Set up a character** (logged out, snapshot first: completes prerequi
 of" — the quest's own city — raises the class to the quest level, leaves the quest ready, at a sequence, completed or
 never started); a zip bundle of dumps, scripts and `Global.lua` with a manifest. Dumps stay private.
 
+**Stored data** (2.30.0, `questlab.py`'s `STORED`, `stored_data`, `/quests/clear`): each kind of extracted data under
+`<data>/quest-dumps/` with its files and size and its own *Clear*: the dumped quests (each folder with a `quest.json`,
+and `index.txt`), `extracted/` (Any game file, Scripts that mention), `client-scripts/` (Script Check), `quest-index.json`
+(search, Progress, prerequisites) and `item-index.json` (Marketboard, Shop); *Clear all extracted data* takes them all.
+Refused while a Quest Lab job runs. Before, the extracted files went only with *Delete dumps* and every dump.
+
 ### Test this quest (2.13.0)
 
 `kawari_web/questtest.py`, the *Test this quest* card on each quest's page:
@@ -463,6 +469,14 @@ the client draws it, who hit whom for how much, knockbacks, deaths and the playe
   with an action index built from exported sheets; not yet on Bob's server with its own game install.
 
 ## Diagnostics (Dashboard → Diagnostics)
+
+**Downloading a bundle** (2.30.0, `diagnostics.py`'s `bundle_zip`, `keep_bundle`, `/diagnostics/download`): *Download
+bundle* builds what *Send diagnostics* sends (`build_bundle`, the same window, characters and note) as one zip, its
+files under the bundle's folder name (`20261114-084500-note/README.md`; `latest.txt` left out, captures stored as
+gzipped), with no repository or token needed: for troubleshooting by hand, or by someone without the repository. Each
+bundle built, sent or downloaded, is kept in `<web>/diag/bundles` (the newest 20, `KEEP_BUNDLES`) and listed under
+**Bundles** to download again (`/diagnostics/bundle/<name>`) or delete. The page says what a bundle holds (characters'
+names and saved state, the server log, what the captures recorded, chat included) before it's shared.
 
 **Marks** (2.25.0): the bundle's README lists every `!mark` in its captures (time, file, line, what was seen), under the
 packet captures ([Recorder and diagnostics](recorder-and-diagnostics.md#mark)).
