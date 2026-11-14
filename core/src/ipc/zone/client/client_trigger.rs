@@ -177,6 +177,13 @@ pub enum ClientTriggerCommand {
     #[brw(magic = 400u32)]
     SetRetainerMarketPrice { slot: u32, price: u32 },
 
+    /// The player looked at a rank of a Hunting Log (the log, 0-11; the rank, 0-based: only 0 was seen). The server
+    /// keeps which were, and the log's last field shows it from then (Bob's Chronofoil captures b23b91ef, `[5, 0]`
+    /// with the Conjurer's first open: its mask 0xFFFFFFFF before, 0xFFFFFFFE in the next HuntingLog; c99fe374,
+    /// `[10, 0]` for the Immortal Flames'). No reply on retail.
+    #[brw(magic = 401u32)]
+    ViewHuntingLog { index: u32, rank: u32 },
+
     /// The client asks for one inventory slot again (after entrusting to or withdrawing from a retainer, the source
     /// slot); answered with that slot's UpdateInventorySlot.
     #[brw(magic = 419u32)]
@@ -816,6 +823,22 @@ mod tests {
 
     /// A summoning bell asking for one retainer's entry (client trigger 9003, command 3), as retail's client sent it
     /// (Bob's Chronofoil capture of 2026-09-15.)
+    /// Retail's as Bob opened the Conjurer's Hunting Log (Chronofoil capture b23b91ef: the log 5, the rank 0), and
+    /// the Immortal Flames' (c99fe374: `0a 00 00 00` in the log's place).
+    #[test]
+    fn read_view_hunting_log() {
+        let bytes: Vec<u8> = [
+            0x91, 0x01, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x80, 0x3e, 0x80,
+            0x3e, 0, 0, 0, 0, 0, 0, 0, 0,
+        ]
+        .to_vec();
+        let trigger = ClientTrigger::read_le(&mut Cursor::new(&bytes)).unwrap();
+        assert_eq!(
+            trigger.trigger,
+            ClientTriggerCommand::ViewHuntingLog { index: 5, rank: 0 }
+        );
+    }
+
     #[test]
     fn read_retainer_entry_request() {
         let bytes: Vec<u8> = [

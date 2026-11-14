@@ -1154,6 +1154,9 @@ async fn process_packet(
                         }
                         ClientZoneIpcData::ClientTrigger(trigger) => {
                             match trigger.trigger {
+                                ClientTriggerCommand::ViewHuntingLog { index, rank } => {
+                                    connection.view_hunting_log(index, rank);
+                                }
                                 ClientTriggerCommand::RequestTitleList => {
                                     // With the titles of achievements completed before they were given out.
                                     connection.unlock_owed_titles();

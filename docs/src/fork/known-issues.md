@@ -678,9 +678,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 
 ## Hunting Log
 
-* Built 2026-10-27 ([Hunting Log](hunting-log.md)): finishing a rank, the Grand Companies' logs, party kills and 543's
-  second number are guesses or not done (see its page). Auracite (Kawari) backups and ArchonEngine ControlPanel don't
-  carry it.
+* Whole since 2026-11-14 ([Hunting Log](hunting-log.md)): the classes' five ranks, the Grand Companies' logs, rank
+  bonuses, the ranks looked at. Not played in game yet. Not seen on retail, so built from the sheets and the wiki: what
+  a finished rank and a company's entry send, and a company's ranks waiting on a promotion. Party members' kills and
+  the "Bump on a Log" achievements aren't done. Auracite (Kawari) backups and ArchonEngine ControlPanel don't carry
+  the log.
 
 ## Achievement Certificates
 
@@ -1249,8 +1251,8 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
 * **The companies' first steps** (683-685, Grand Company enlistment, 2026-10-28): untested in game (684 replays
   against an arcanist's run, Bob's capture cc62ad94). An achievement's ActorControl 518 (2026-10-28, after 515, to
   the player and those around) is sent as retail did; what the client does with it isn't known. A company's Hunting Log
-  stays locked after enlisting (retail sent nothing for it then; when it opens isn't recorded), and the seals aren't
-  capped by rank.
+  is kept since 2026-11-14 ([Hunting Log](hunting-log.md)), and seals from it and from quests are capped by rank
+  (`give_company_seals`); other ways of getting seals aren't.
 
 * **NPC shouts** (`Timeline::shouts`, combat.md): the lines are retail's for the battles in Bob's captures, from one to
   seven runs each. Where a line came with a later use (Garibald's fifth Heavy Swing, Yda's (249) fifth 70, Miraudont's

@@ -71,6 +71,7 @@
   - [The Gold Saucer](fork/gold-saucer.md)
   - [Fork Opcodes](fork/opcodes.md)
   - [Packet Layouts from the Client](fork/packet-layouts.md)
+  - [Networking: Where the Time Goes](fork/networking.md)
   - [What Retail Sends That Kawari Doesn't](fork/unfilled-fields.md)
   - [Tools and Debug Commands](fork/tools.md)
   - [questkit and CI](fork/questkit.md)

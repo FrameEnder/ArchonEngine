@@ -95,7 +95,7 @@ u32 was 0 in all nine rides.
 | StartEmoteEvent | client → server | 713 | 401 (10.16) | 16 | An emote a quest listens for: who it was used on (an NPC, or the player's own actor in the quest's area), the quest's event, the emote; the server starts the quest's Emote event (every quest emote in Bob's Chronofoil captures; 744's on the player, capture 9df4ff01). See [Quests](quests.md#emotes-on-an-npc). Finder. |
 | ChocoboTaxiStart | server → client | 424 | 538 (10.16) | 16 | A chocobo porter's ride begins: the ChocoboTaxi row, its Location, 8 bytes of 0 (Bob's Chronofoil captures cc62ad94, 1fac2416, 2528a32d: nine rides). See [Travel](travel.md#chocobo-porters). |
 | ChocoboTaxiCheckpoint | client → server | 679 | 534 (10.16) | 8 | A point of the porter's route passed: the ChocoboTaxi row, the point's number (the same captures). |
-| HuntingLog | server → client | 980 | 385 (10.16) | 64 | One Hunting Log: its rank and index, the rank's kill counts, the targets and entries done, the ranks open; twelve at login, one after each kill that counts (Bob's Chronofoil captures). Finder: its handler. See [Hunting Log](hunting-log.md). |
+| HuntingLog | server → client | 980 | 385 (10.16) | 64 | One Hunting Log: its rank and index, the rank's kill counts, the targets and entries done, the ranks not yet looked at; twelve at login, one after each kill that counts (Bob's Chronofoil captures). Finder: its handler. See [Hunting Log](hunting-log.md). |
 | ChocoboTaxiArrived | client → server | 779 | 518 (10.16) | 8 | The route's end: the last point's number, then 0 (the same captures). |
 
 The client picks the event return packet by result count (2, 4, 8, 16…); EventReturnHandler16's finder looks for its
@@ -177,7 +177,8 @@ others (the retainer requests, and the server packets other than the notices and
 | DirectorPopupMessage (162) | The battle talk window, see [Quest battles](quest-battles.md#director-script). Its kind is one byte. |
 | PortraitsInformation (182) | The adventurer plate's portrait (BannerData), the reply to client trigger 3200. |
 | Actor controls 514, 515, 538, 600 | Achievement progress, completion, near-completion lists; see [Achievements](character-windows.md). |
-| Actor controls 542, 543 | A Hunting Log target counted (note, target, count) and an entry finished (note, class); see [Hunting Log](hunting-log.md). |
+| Actor controls 542, 543 | A Hunting Log target counted (note, target, count) and an entry finished (note, the note over 10,000: its class); see [Hunting Log](hunting-log.md). |
+| Client trigger 401 | The player looked at a rank of a Hunting Log (log, rank): the server keeps it, and the log's last field shows it; see [Hunting Log](hunting-log.md). |
 | Client triggers 1000, 1001, 1002 | Achievement progress, the completed list, the near-completion lists. |
 | QuestActiveList / UpdateQuest | Entry layout, see [Quests](quests.md#what-the-server-keeps-for-a-quest). |
 | AoeEffect8/16/24/32 | Bob's captures (39,333 packets): the effects start at byte 42 as in ActionEffect (40-byte header, bytes 34–41 zero), 64 bytes a target, the target list at the next multiple of 8, then a packed position (0x7FFF ×3 for none) and 6 zero bytes: `align8(42 + 64N) + 8N + 12` = 636, 1212, 1788, 2364 bytes. Kawari's struct had them at 48 (fixed; it isn't sent yet: area actions show one target plus flying text). 2026.10.06's AoeEffect16/24/32 are 912/158/630 per FFXIVOpcodes. Retail also sends AoeEffect8 with no targets for area actions that hit nobody. |

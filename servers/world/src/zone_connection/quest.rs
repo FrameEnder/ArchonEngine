@@ -519,8 +519,6 @@ impl ZoneConnection {
     /// A quest's currency reward. A Grand Company's seals go in their own slot of the currency (1-3), with retail's
     /// log line (LogMessage 1300: the company, the count); anything else as an obtained item.
     async fn give_quest_currency(&mut self, quest_id: u32, currency_id: u32, count: u32) {
-        const LOG_MESSAGE_SEALS: u32 = 1300;
-        const LOG_MESSAGE: u32 = 517;
         let company = match CurrencyKind::from_repr(currency_id) {
             Some(CurrencyKind::StormSeal) => 1,
             Some(CurrencyKind::SerpentSeal) => 2,
@@ -542,10 +540,39 @@ impl ZoneConnection {
             }
             return;
         }
+        self.give_company_seals(company, count).await;
+    }
+
+    /// Seals of a Grand Company (1 the Maelstrom, 2 the Twin Adder, 3 the Immortal Flames), in their slot of the
+    /// currency, with retail's log line (LogMessage 1300: the company, the count; a quest's reward in Bob's captures).
+    /// Up to what the player's rank in it holds (GrandCompanyRank's MaxSeals: 10,000 at the first), as retail caps
+    /// them. A quest's reward and the Hunting Log's (`zone_connection/hunting_log.rs`) both come through here.
+    pub async fn give_company_seals(&mut self, company: u32, count: u32) {
+        const LOG_MESSAGE_SEALS: u32 = 1300;
+        const LOG_MESSAGE: u32 = 517;
+        let currency = match company {
+            1 => CurrencyKind::StormSeal,
+            2 => CurrencyKind::SerpentSeal,
+            3 => CurrencyKind::FlameSeal,
+            _ => return,
+        };
+        let cap = self
+            .player_data
+            .grand_company
+            .company_ranks
+            .0
+            .get(company as usize - 1)
+            .copied()
+            .and_then(|rank| self.game_data.lock().get_gc_rank_seals(rank))
+            .map(|(max, _)| max)
+            .filter(|max| *max > 0);
         let slot = company as u16;
         let seals = self.player_data.inventory.currency.get_slot_mut(slot);
-        seals.item_id = currency_id;
+        seals.item_id = currency as u32;
         seals.quantity = seals.quantity.saturating_add_unsigned(count);
+        if let Some(cap) = cap {
+            seals.quantity = seals.quantity.min(cap as i32);
+        }
         self.send_inventory_ack(u32::MAX, INVENTORY_ACTION_ACK_GENERAL, 0)
             .await;
         self.send_inventory_slot(ContainerType::Currency, slot)

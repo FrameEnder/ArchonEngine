@@ -224,6 +224,8 @@ pub struct GameData {
     achievement_rewards: Option<HashMap<u32, (u16, u32)>>,
     /// The Hunting Log's entries (MonsterNote rows, their targets' BNpcNames), read the first time a kill needs them.
     monster_notes: Option<HashMap<u32, MonsterNoteEntry>>,
+    /// The Grand Company ranks whose promotion asks for a Hunting Log rank (rank, the log's rank), read once.
+    company_hunting_log_ranks: Option<Vec<(u32, u8)>>,
     /// Each map's DiscoveryIndex, DiscoveryArrayByte and DiscoveryFlag, read the first time they're needed: the
     /// achievement check asks for hundreds at once, and reading the Map sheet each time took long enough (seconds)
     /// to desync the client's connection.
@@ -232,12 +234,23 @@ pub struct GameData {
     marketboard: Option<std::sync::Arc<MarketIndex>>,
 }
 
+/// How many ranks of a Grand Company's Hunting Log are open at a rank in the company: one, and one more for each
+/// rank reached whose promotion asked for a log rank (`asked`: the company rank, the log's rank it asked for.)
+pub fn company_log_ranks_open(asked: &[(u32, u8)], company_rank: u8) -> u8 {
+    asked
+        .iter()
+        .filter(|(rank, _)| *rank <= company_rank as u32)
+        .map(|(_, log_rank)| log_rank + 1)
+        .max()
+        .unwrap_or(1)
+}
+
 /// One Hunting Log entry (a MonsterNote row).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct MonsterNoteEntry {
     /// Up to four kinds to defeat: their BNpcName and how many (0 for an unused slot.)
     pub targets: [(u32, u8); 4],
-    /// The EXP for completing it.
+    /// What completing it gives: EXP (a class's), seals (a Grand Company's).
     pub reward: u32,
 }
 
@@ -1075,6 +1088,7 @@ impl GameData {
             achievement_rules: None,
             achievement_rewards: None,
             monster_notes: None,
+            company_hunting_log_ranks: None,
             map_discovery: None,
             marketboard: None,
             dawn_content_sheet,
@@ -1875,6 +1889,57 @@ impl GameData {
             self.monster_notes = Some(notes);
         }
         self.monster_notes.as_ref()?.get(&id).copied()
+    }
+
+    /// What finishing a Hunting Log's rank gives (the rank 0-based): EXP for a class's (ParamGrow's
+    /// HuntingLogExpReward, on rows 1, 10, 20, 30 and 40: 2,500, 10,000, 20,000, 30,000, 40,000), seals for a Grand
+    /// Company's (MonsterNoteSeals, on rows 1, 10 and 20: 1,181, 2,141, 3,603). The nth row that has one.
+    pub fn hunting_log_rank_reward(&self, rank: u8, company: bool) -> u32 {
+        self.param_grow_sheet
+            .into_iter()
+            .flatten_subrows()
+            .map(|(_, row)| {
+                if company {
+                    row.MonsterNoteSeals
+                } else {
+                    row.HuntingLogExpReward
+                }
+            })
+            .filter(|reward| *reward > 0)
+            .nth(rank as usize)
+            .unwrap_or_default() as u32
+    }
+
+    /// How many ranks of their Grand Company's Hunting Log a player of this rank in it can work on. The first is open
+    /// from enlisting; each next one from the rank whose promotion asked for the one before it (GrandCompanyRank's
+    /// RequiredHuntingLogRank: 1 for rank 5, Sergeant Third Class; 2 for rank 9, Second Lieutenant), as the
+    /// community's guides have it ("requires completion of Rank 1 and ... Sergeant Third Class or higher").
+    pub fn company_hunting_log_ranks(&mut self, company_rank: u8) -> u8 {
+        if self.company_hunting_log_ranks.is_none() {
+            let asked = icarus::GrandCompanyRank::GrandCompanyRankSheet::read_from(
+                &mut self.resource,
+                Language::None,
+            )
+            .map(|sheet| {
+                sheet
+                    .into_iter()
+                    .flatten_subrows()
+                    .filter(|(_, row)| row.RequiredHuntingLogRank > 0)
+                    .map(|(id, row)| (id, row.RequiredHuntingLogRank))
+                    .collect()
+            })
+            .unwrap_or_else(|err| {
+                tracing::warn!("Couldn't read the GrandCompanyRank sheet: {err:?}");
+                Vec::new()
+            });
+            self.company_hunting_log_ranks = Some(asked);
+        }
+        company_log_ranks_open(
+            self.company_hunting_log_ranks
+                .as_deref()
+                .unwrap_or_default(),
+            company_rank,
+        )
     }
 
     /// Gets the array index used in EXP & levels.

@@ -885,8 +885,9 @@ pub enum ActorControlCategory {
     #[brw(magic = 542u32)]
     HuntingLogTargetCounted { note: u32, target: u32, count: u32 },
 
-    /// A Hunting Log entry was completed: its MonsterNote row and the class (6 for the Conjurer's entries: it could as
-    /// well be the log's index plus one), then retail gives its EXP.
+    /// A Hunting Log entry was completed: its MonsterNote row and that row over 10,000 (1 for the Gladiator's entries,
+    /// 6 for the Conjurer's: their classes; Bob's and Connor's Chronofoil captures, nine of them), then retail gives its
+    /// EXP.
     #[brw(magic = 543u32)]
     HuntingLogEntryCompleted { note: u32, class: u32 },
 
