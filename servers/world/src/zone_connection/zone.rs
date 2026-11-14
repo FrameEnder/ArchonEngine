@@ -159,8 +159,6 @@ impl ZoneConnection {
                 seed3: !self.obsfucation_data.seed3,
             });
             self.send_ipc_self(ipc).await;
-            // In a frame that ends with it: what follows is written with the keys it tells the client to make.
-            self.flush_segments().await;
         } else {
             let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::InitializeObfuscation {
                 unk_before: [0; 6],

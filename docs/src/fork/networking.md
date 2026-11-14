@@ -69,13 +69,34 @@ None of it has been played yet: built, unit-tested, and waiting for Bob's server
 | # | What | Where |
 |---|---|---|
 | 1 | `TCP_NODELAY` on every game connection the world and the lobby accept. The login server is HTTP (axum), not a game connection, and is left alone. | `servers/world/src/main.rs`, `servers/lobby/src/main.rs` (after `accept`) |
-| 2 | **What one turn of a connection's loop sends is one frame.** `send_segment` queues (`OutgoingFrame`) while the loop runs (`ZoneConnection::batching`); the loop sends the frame at the top of its next turn (`flush_segments`), so a client packet's answers, a server message's packets, or a timer's go out together, in order. A frame stops at 16,000 bytes (`FRAME_BYTES`, retail's largest in da424662 was 16,312) and the rest starts another. Sent first, so order holds: before a keep-alive's reply (it writes to the socket itself), before new obfuscation keys are made at a zone change, and after `InitializeObfuscation` (what follows is written with the keys it announces). Before the loop starts and after it ends, segments go one a frame as before. | `servers/world/src/zone_connection/mod.rs` (`OutgoingFrame`, `send_segment`, `flush_segments`), `zone.rs`, the loop in `main.rs` |
+| 2 | **What one turn of a connection's loop sends is one frame.** `send_segment` queues (`OutgoingFrame`) while the loop runs (`ZoneConnection::batching`); the loop sends the frame at the top of its next turn (`flush_segments`), so a client packet's answers, a server message's packets, or a timer's go out together, in order. A frame stops at 16,000 bytes (`FRAME_BYTES`, retail's largest in da424662 was 16,312) and the rest starts another. **What isn't an IPC segment is a frame by itself** (`OutgoingFrame::goes_alone`; see below). Sent first, so order holds: before a keep-alive's reply (it writes to the socket itself) and before new obfuscation keys are made at a zone change. Before the loop starts and after it ends, segments go one a frame as before. | `servers/world/src/zone_connection/mod.rs` (`OutgoingFrame`, `send_segment`, `flush_segments`), `zone.rs`, the loop in `main.rs` |
 | 4 | **The capture's write is off the send path.** A packet's line waits in the writer's buffer; the loop writes it out when 250 ms have passed (`capture::FLUSH_INTERVAL`, `flush_if_due`), or after that long with nothing else happening (a branch of the loop's `select!`). A note (`!mark`) is written at once with what waited, and everything when the connection ends. A bundle made from a running server can miss a connection's last 250 ms; a server that's killed, the same. | `servers/world/src/capture.rs`, the loop in `main.rs` |
 | 5 | **Sheets read once** for the lookups that read one per call on the world's task or often: EventItem, ItemAction (using an item), EventAction (an event's cast bar), Emote, NpcYell, QuestBattle, ContentDirectorManagedSG (a duty's map effects) and GrandCompanyRank (seals). `GameData::kept_sheet` reads a sheet the first time it's asked for and keeps it. About seventy other lookups still read per call (shops, aetherytes, recipes, housing, the Gold Saucer: once per click, on the connection's task); they take `kept_sheet` the same way when one shows up as slow. | `servers/world/src/gamedata.rs` |
 | 6 | The world's inbox holds 4,096 messages (`CLIENT_QUEUE_SIZE`), not 64. | `servers/world/src/main.rs` (`spawn_main_loop`) |
 
 Tests: `zone_connection::outgoing_frame_tests` (a handler's segments are one frame in order; a full frame goes
 first), `capture::tests::lines_are_written_out_on_a_timer_not_per_packet`.
+
+### Initialize is a frame by itself (found the same day)
+
+The first build with frames (`63a5f8c`) never got past the loading screen. Read through the ControlPanel's harness
+(Bob's capture zone-1794666511-ClientId2): the login's first frames went as before and the client answered; then the
+zone-in went out as one frame of 34 segments beginning with the Initialize segment (then InitializeObfuscation,
+InitResponse, OwnedHousing, ZoneInit, the quest lists...), and the client sent nothing but a keep-alive every 11 s
+for the five minutes after: no FinishLoading. It reads nothing after an Initialize in a frame.
+
+Retail (da424662, every frame of the zone connection, `net/zonein_frames.py` in the session's scratchpad):
+
+| Segment | Frames it's alone in | Frames it shares |
+|---|---|---|
+| Initialize (segment type 2) | 38 | 0 |
+| keep-alive request and reply | 392 | 0 |
+| InitializeObfuscation, InitResponse | 0 | 38 (the head of a frame of 128 to 176: the inventory, ActorControlSelfs) |
+| ZoneInit | 0 | 38 (17 to 186 segments) |
+
+So segments that aren't IPC go out alone, after what was queued; IPC segments share frames, InitializeObfuscation
+included (the flush after it that the first build had is gone: retail has none). Test:
+`outgoing_frame_tests::what_isn_t_ipc_is_a_frame_by_itself`.
 
 ### Not built: others' movement every 300 ms (3)
 

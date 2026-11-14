@@ -386,6 +386,16 @@ impl<T: kawari::packet::ReadWriteIpcSegment> OutgoingFrame<T> {
         full
     }
 
+    /// Whether a segment is a frame by itself: everything that isn't an IPC segment. Retail's Initialize is alone in
+    /// its frame every time (38 of 38 zone-ins in Bob's Chronofoil capture da424662), as its keep-alives are (392 of
+    /// 392), while InitializeObfuscation, InitResponse and ZoneInit share theirs with up to 185 others. With
+    /// Initialize at the head of a frame, the client read nothing after it: ZoneInit never arrived, and it sat on
+    /// the loading screen sending keep-alives (Bob, 2026-11-14, on `63a5f8c`: "an unusually long amount of time to
+    /// load into the world"; his capture's last packet from the client before them is InitRequest).
+    pub fn goes_alone(segment: &PacketSegment<T>) -> bool {
+        !matches!(segment.data, SegmentData::Ipc(_))
+    }
+
     /// The frame so far, leaving none.
     pub fn take(&mut self) -> Vec<PacketSegment<T>> {
         self.bytes = 0;
@@ -434,6 +444,30 @@ mod outgoing_frame_tests {
         assert_eq!(ids(&frame.take()), (0..113).collect::<Vec<_>>());
         assert!(frame.is_empty());
         assert!(frame.take().is_empty());
+    }
+
+    /// Bob's capture of 2026-11-14 (zone-1794666511-ClientId2): Initialize, InitializeObfuscation, InitResponse,
+    /// ZoneInit and 30 more went out as one frame, and the client never sent FinishLoading.
+    #[test]
+    fn what_isn_t_ipc_is_a_frame_by_itself() {
+        let initialize = PacketSegment::<ServerZoneIpcSegment> {
+            segment_type: SegmentType::Initialize,
+            data: SegmentData::Initialize {
+                actor_id: ObjectId(1),
+                timestamp: 0,
+            },
+            ..Default::default()
+        };
+        assert!(OutgoingFrame::goes_alone(&initialize));
+        assert!(OutgoingFrame::goes_alone(&segment(1)));
+        let zone_init = PacketSegment {
+            segment_type: SegmentType::Ipc,
+            data: SegmentData::Ipc(ServerZoneIpcSegment::new(ServerZoneIpcData::InitResponse {
+                actor_id: ObjectId(1),
+            })),
+            ..Default::default()
+        };
+        assert!(!OutgoingFrame::goes_alone(&zone_init));
     }
 
     /// A frame stops at retail's largest, well under what one read takes (`RECEIVE_BUFFER_SIZE`.)
@@ -596,16 +630,10 @@ impl ZoneConnection {
     pub async fn send_segment(&mut self, segment: PacketSegment<ServerZoneIpcSegment>) {
         self.capture.record_outgoing(&segment);
 
-        if !self.batching {
-            // Ditto as above
-            Box::pin(send_packet(
-                &mut self.socket,
-                &mut self.state,
-                ConnectionType::Zone,
-                self.config.compression(),
-                &[segment],
-            ))
-            .await;
+        if !self.batching || OutgoingFrame::goes_alone(&segment) {
+            // In order with what's queued, then by itself.
+            self.flush_segments().await;
+            self.send_frame(&[segment]).await;
             return;
         }
         if let Some(full) = self.outgoing.push(segment) {

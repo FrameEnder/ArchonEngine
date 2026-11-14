@@ -21,6 +21,9 @@ add one when something is found.
 
 ## Networking (2026-11-14)
 
+* The first build with frames (`63a5f8c`) didn't load into the world: Initialize shared a frame (fixed the same
+  day, `networking.md`). The fix is unplayed too; whether any other packet needs a frame of its own shows only in
+  play (retail's frames say none does).
 * **Not played yet**: segments sent as one frame per turn of a connection's loop, `TCP_NODELAY`, the capture written
   out every 250 ms, sheets kept, the world's larger inbox (`networking.md`). The first thing to watch is a login and
   a zone change (the largest bursts, now a few frames instead of hundreds), and a zone change with packet obfuscation

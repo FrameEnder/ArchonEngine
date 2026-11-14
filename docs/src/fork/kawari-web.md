@@ -561,6 +561,8 @@ text. A redirect to the sign-in page means Bob isn't signed in there. The Diagno
 
 Checked with Flask's test client against a made-up data folder (signed out: redirected; not an administrator: 403;
 each route; a bad pattern, a capture name with a path in it, a POST) and the two pure parts (`problems_in`,
-`filter_lines`) against log lines from Bob's bundles and this change's new messages. Not yet read from Bob's server:
-it needs 2.31.0 deployed there.
+`filter_lines`) against log lines from Bob's bundles and this change's new messages. First read from Bob's server the same
+day (2.31.0, signed in in his Chrome): `status`, `log/problems`, `log?grep=` and a capture's records (fetched from the
+page with the browser's JavaScript and summarised there, since a whole capture is too long to read as text) found why
+the first build with frames never loaded in (`networking.md`).
 

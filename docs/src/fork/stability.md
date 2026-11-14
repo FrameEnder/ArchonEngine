@@ -70,8 +70,8 @@ Support party's gear) read the whole Item sheet (`best_gear`), EquipRaceCategory
 ClassJobCategory (`classjob_categories_with`) and CharaMakeType with CharaMakeCustomize (`creator_looks`), with the
 world's turn held. They're read once now and kept on `GameData` (`bot_gear_rows`, `bot_wearable`,
 `bot_class_categories`, `bot_creator_looks`; nothing is kept when a sheet can't be read, so it's tried again). The 45 s
-at each start should be about a second; **it needs Bob's server to say so** (the game's files aren't in the test
-environment), by the "World bots: N made" line's time after "World bots: on".
+at each start is 1.4 s on Bob's server (`63a5f8c`, 2026-11-14: "World bots: on" at 14:21:38.34, "927 made" at
+14:21:39.73, and no "stuck" line; read through the harness).
 
 ### Quieter
 
