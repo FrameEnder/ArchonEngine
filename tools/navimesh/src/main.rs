@@ -129,8 +129,10 @@ fn main() {
             }
         }
     }
-    // Which layers are this territory's (its LVB layer set), as the world server spawns from: counted only, to see
-    // how much collision comes from the others.
+    // Which layers are this territory's (its LVB layer set), as the world server spawns from and the client shows:
+    // only those are built from (FrameEnder fork, 2026-11-14). With every layer of the level, each territory had the
+    // walls of the others' set pieces: Mor Dhona's quest battle copies stopped NPCs on open ground (Bob's marks of
+    // 2026-11-14 in territory 309.) The world server keeps a file a territory (`territory_navmesh_path`.)
     let layer_set = scene
         .layer_sets
         .layer_sets
@@ -155,7 +157,11 @@ fn main() {
                     continue;
                 }
 
-                let before = geometry.triangles.len();
+                if layer_set.is_some_and(|id| !layer.header.has_layer_set(id as u32)) {
+                    outside_layer_set += 1;
+                    continue;
+                }
+
                 let transform = Affine3A::default();
                 walk_layer(
                     &mut resolver,
@@ -166,9 +172,6 @@ fn main() {
                     false,
                     &mut geometry,
                 );
-                if layer_set.is_some_and(|id| !layer.header.has_layer_set(id as u32)) {
-                    outside_layer_set += geometry.triangles.len() - before;
-                }
             }
         }
     }
@@ -182,7 +185,7 @@ fn main() {
     gimmicks.sort_unstable();
     gimmicks.dedup();
     tracing::info!(
-        "{} collision triangles from {} vertices; {gimmick_triangles} of them the gimmicks of {} event objects {gimmicks:?} (left out of the navmesh); {outside_layer_set} from layers outside the territory's layer set {layer_set:?}; {} collision boxes of open doors left out",
+        "{} collision triangles from {} vertices; {gimmick_triangles} of them the gimmicks of {} event objects {gimmicks:?} (left out of the navmesh); {outside_layer_set} layers outside the territory's layer set {layer_set:?} left out; {} collision boxes of open doors left out",
         geometry.triangles.len(),
         geometry.vertices.len(),
         gimmicks.len(),

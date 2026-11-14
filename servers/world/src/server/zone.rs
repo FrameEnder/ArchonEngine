@@ -104,6 +104,9 @@ pub struct Zone {
     pub intended_use: TerritoryIntendedUse,
     pub layer_groups: Vec<Lgb>,
     pub navimesh_path: String,
+    /// The file the territory's navmesh was in before each territory had its own (`territory_navmesh_path`), when
+    /// that's another one: used until its own is made.
+    pub shared_navimesh_path: String,
     pub map_id: u16,
     cached_npc_base_ids: HashMap<ObjectId, u32>,
     pub map_ranges: Vec<MapRange>,
@@ -208,11 +211,16 @@ impl Zone {
             for layer_set in &lvb.sections[0].layer_sets.layer_sets {
                 if layer_set.territory_type_id == id {
                     zone.layer_set = layer_set.id;
-                    zone.navimesh_path = layer_set
-                        .nvm_path
-                        .value
-                        .replace("/server/data/", "")
-                        .to_string();
+                    let shared_path = layer_set.nvm_path.value.replace("/server/data/", "");
+                    // The level's other territories name the same file (Mor Dhona and its quest battles' copies):
+                    // each has its own layers, so each gets its own.
+                    let shared = lvb.sections[0].layer_sets.layer_sets.iter().any(|other| {
+                        other.id != layer_set.id && other.nvm_path.value == layer_set.nvm_path.value
+                    });
+                    zone.navimesh_path = territory_navmesh_path(&shared_path, id, shared);
+                    if zone.navimesh_path != shared_path {
+                        zone.shared_navimesh_path = shared_path;
+                    }
 
                     break;
                 }
@@ -1975,6 +1983,44 @@ pub fn handle_zone_messages(
             true
         }
         _ => false,
+    }
+}
+
+/// The file a territory's navmesh and collision are kept in, from the one its layer set names (`path`): its own
+/// (`l1f1.t309.nvm`) when the level's other layer sets name the same file (`shared`), since each is built from its
+/// territory's own layers (FrameEnder fork, 2026-11-14).
+///
+/// One file a level, built from every layer of it, had the walls of each territory's own set pieces in all of them:
+/// in Every Little Thing She Does Is Magitek (territory 309, Mor Dhona's level) an enemy's way to the reaper it was
+/// sent after went round by the south and stopped at a wall, and the boss was held up twice following the player
+/// across open ground (Bob's marks of 2026-11-14), where retail's ran 35 yalms straight (three runs.)
+pub fn territory_navmesh_path(path: &str, territory: u16, shared: bool) -> String {
+    if !shared {
+        return path.to_string();
+    }
+    match path.rsplit_once('.') {
+        Some((stem, extension)) => format!("{stem}.t{territory}.{extension}"),
+        None => format!("{path}.t{territory}"),
+    }
+}
+
+#[cfg(test)]
+mod navmesh_path_tests {
+    use super::territory_navmesh_path;
+
+    #[test]
+    fn a_territory_sharing_a_level_has_its_own_file() {
+        let shared = "bg/ffxiv/lak_l1/fld/l1f1/navimesh/l1f1.nvm";
+        assert_eq!(
+            territory_navmesh_path(shared, 309, true),
+            "bg/ffxiv/lak_l1/fld/l1f1/navimesh/l1f1.t309.nvm"
+        );
+        assert_eq!(
+            territory_navmesh_path(shared, 156, true),
+            "bg/ffxiv/lak_l1/fld/l1f1/navimesh/l1f1.t156.nvm"
+        );
+        // The only territory of its level keeps the file it has.
+        assert_eq!(territory_navmesh_path(shared, 156, false), shared);
     }
 }
 

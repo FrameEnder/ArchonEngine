@@ -357,8 +357,23 @@ impl Instance {
         } else if instance.zone.navimesh_path.is_empty() {
             tracing::warn!("No navimesh path for this zone, skipping generation!");
         } else {
-            let mut nvm_path = PathBuf::from(config.filesystem.navimesh_path);
+            let mut nvm_path = PathBuf::from(&config.filesystem.navimesh_path);
             nvm_path.push(instance.zone.navimesh_path.clone());
+            // Its own file isn't made yet (`Zone::territory_navmesh_path`, 2026-11-14): the level's old one, built
+            // from every territory's layers, serves until it is, so no one stands about meanwhile.
+            let mut old_path = PathBuf::from(&config.filesystem.navimesh_path);
+            old_path.push(instance.zone.shared_navimesh_path.clone());
+            let stand_in = !instance.zone.shared_navimesh_path.is_empty()
+                && !nvm_path.exists()
+                && old_path.exists();
+            let wanted_path = nvm_path.clone();
+            if stand_in {
+                tracing::info!(
+                    "{wanted_path:?} (territory {}'s own navmesh) isn't made yet: using {old_path:?} until it is",
+                    instance.zone.id
+                );
+                nvm_path = old_path;
+            }
 
             if let Ok(nvm_bytes) = std::fs::read(&nvm_path) {
                 if let Some(navmesh) = Navmesh::from_existing(&nvm_bytes) {
@@ -415,6 +430,10 @@ impl Instance {
                 tracing::warn!(
                     "Failed to read {nvm_path:?}, monsters will not function correctly!"
                 );
+            }
+            if stand_in && config.world.generate_navmesh {
+                instance.generate_navmesh =
+                    NavmeshGenerationStep::Needed(wanted_path.to_str().unwrap().to_string());
             }
         }
 

@@ -3,6 +3,18 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## A territory's own navmesh (2026-11-14)
+
+* **Inferred and unplayed** (`combat.md`, "A territory's own navmesh and collision"): that the walls which stopped
+  NPCs in territory 309 came from other territories' layers of Mor Dhona's level. If the lancer still goes round by
+  the south once `l1f1.t309.nvm` is made, it's something else (the log's "held up by a wall" lines and the tool's
+  "layers ... left out" say). The first battle after this build still uses the old file while the new one is made.
+* A layer whose layer-set reference is of a kind physis doesn't know (`has_layer_set` says no) is left out of the
+  collision now, as it already was of the spawns; if such a layer holds walls, NPCs walk through them.
+* Every territory of a shared level makes and keeps its own navmesh and collision (disk, and a background build the
+  first time each is entered). The old shared files (`l1f1.nvm`, `l1f1.col`...) stay on disk unused.
+* A timeline action left out for range isn't used later: an NPC kept from its target misses those actions.
+
 ## Quest battles' line-ups (2026-11-14)
 
 * Not played: 64's still reaper and its two event NPCs, 65's seven event NPCs and held generators, 22's and 24's

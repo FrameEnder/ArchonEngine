@@ -347,6 +347,36 @@ pub fn pending_action_ready(
     None
 }
 
+/// The range of an action the Action sheet gives as -1: its user's weapon's, a melee one's (yalms.)
+const WEAPON_RANGE: f32 = 3.0;
+/// How much further than an action's range, edge to edge, an NPC still uses it (yalms): where it stops isn't exact.
+const ACTION_RANGE_SLACK: f32 = 1.0;
+
+/// Whether a pull-relative timeline's action on someone else is left out because they're beyond the action's own
+/// range (the Action sheet's, between the two hitboxes' edges as the client measures it; -1 is a weapon's reach, 0 an
+/// action centred on its user, which has no such range) or out of sight. These actions were used on their second
+/// "whether in reach or not": an enemy lancer that a wall kept 33 yalms from the reaper it was sent after used its
+/// weaponskills (range 3) on it from there, facing the wall (Every Little Thing She Does Is Magitek, Bob's marks of
+/// 2026-11-14: "Eques is attacking something but he's facing the wall?"); retail's used every one from 4.5 yalms
+/// (three runs). A boss's spell on a tank who has stepped back still comes: its range is the spell's.
+pub fn out_of_action_range(
+    range: i8,
+    distance: f32,
+    own_hitbox: f32,
+    target_hitbox: f32,
+    in_sight: bool,
+) -> bool {
+    if range == 0 {
+        return false;
+    }
+    let range = if range < 0 {
+        WEAPON_RANGE
+    } else {
+        range as f32
+    };
+    !in_sight || distance > range + own_hitbox + target_hitbox + ACTION_RANGE_SLACK
+}
+
 /// Updates NPCs in this instance.
 pub fn npc_behavior(
     network: Arc<Mutex<NetworkState>>,
@@ -1350,7 +1380,8 @@ pub fn npc_behavior(
             // and closing) runs whether or not the NPC is fighting; its actions still need a target. Nothing read the
             // flag before, so the clams never moved (Bob's bundle of 2026-10-23.)
             // A pull-relative timeline (`Timeline::from_pull`): every point due since it last looked, to the half
-            // second, on whom it says, whether in reach or not.
+            // second, on whom it says. One on someone else needs them within the action's range and in sight
+            // (`out_of_action_range`.)
             let mut used_timeline = false;
             if timeline.from_pull
                 && !paralysed
@@ -1426,6 +1457,28 @@ pub fn npc_behavior(
                                     fastrand::choice(&others).copied().unwrap_or(fighting)
                                 }
                             });
+                            // Too far from whom it's for, or a wall between them: left out
+                            // (`out_of_action_range`.)
+                            if forced_on.is_none()
+                                && reach.is_none()
+                                && on != *id
+                                && let Some(there) = positions.get(&on).copied()
+                            {
+                                let range = game_data
+                                    .lock()
+                                    .get_action_info(action_id)
+                                    .map_or(0, |info| info.range);
+                                let player = crate::server::action::PLAYER_HITBOX_RADIUS;
+                                if out_of_action_range(
+                                    range,
+                                    flat_distance(spawn.common.position.0, there),
+                                    timeline.hitbox_radius.max(player),
+                                    big_hitboxes.get(&on).copied().unwrap_or(player),
+                                    in_sight(sight.as_deref(), spawn.common.position.0, there),
+                                ) {
+                                    continue;
+                                }
+                            }
                             // Out of its reach: it walks there first (`PendingAction`.)
                             if forced_on.is_none()
                                 && let Some(reach) = reach
@@ -2285,6 +2338,23 @@ mod notice_tests {
 mod wall_tests {
     use super::*;
     use crate::collision::Collision;
+
+    /// Bob's marks of 2026-11-14 (Every Little Thing She Does Is Magitek): the lancer used range-3 weaponskills on
+    /// the reaper from 33 yalms, through a wall. Retail's stood 4.5 from it.
+    #[test]
+    fn a_timeline_action_needs_whom_it_s_for_in_its_range_and_sight() {
+        let player = crate::server::action::PLAYER_HITBOX_RADIUS;
+        // The lancer's weaponskills (Action.Range -1: its weapon's) at 33 yalms, and at retail's 4.5.
+        assert!(out_of_action_range(-1, 33.0, player, 1.5, true));
+        assert!(!out_of_action_range(-1, 4.5, player, 1.5, true));
+        // In range but through a wall.
+        assert!(out_of_action_range(-1, 4.5, player, 1.5, false));
+        // A spell of 25 yalms on someone 20 off still comes; beyond its range it doesn't.
+        assert!(!out_of_action_range(25, 20.0, player, player, true));
+        assert!(out_of_action_range(25, 40.0, player, player, true));
+        // One centred on its user has no range to be out of.
+        assert!(!out_of_action_range(0, 33.0, player, player, false));
+    }
 
     #[test]
     fn going_on_past_a_wall_keeps_off_a_drop_and_a_shut_door() {
