@@ -1,11 +1,35 @@
 # ArchonEngine ControlPanel
 
-ArchonEngine ControlPanel (`FrameEnder/Kawari-Web`, Flask, currently **2.28.0** on the `UI-Redesign` branch, **2.24.2**
-on `main`; it was Kawari Web until 2.26.0) runs beside the server in its own container. Its README is the user guide
+ArchonEngine ControlPanel (`FrameEnder/Kawari-Web`, Flask, currently **2.30.0** on `main`, which `UI-Redesign` was
+merged into on 2026-11-14, and on `Windows`; it was Kawari Web until 2.26.0) runs beside the server in its own container. Its README is the user guide
 (setup, pages, service, forges, builds); this page is about **how its features work** and how they depend on the fork.
 Code: `kawari_core/` (logic, no Flask) and `kawari_web/` (blueprints, templates). The repository, the Python packages
 (`kawari_web`, `kawari_core`), the container and the systemd unit keep their `kawari-web` names, so nothing installed
 has to move.
+
+## The Windows branch (2026-11-14)
+
+`Windows` is the same ControlPanel on Windows, still in Podman, kept feature for feature with `main`: every change on
+`main` is merged into it in the same session (both branches' `CLAUDE.md` say so; the Windows one says how). Podman for
+Windows runs containers in a Linux VM (`podman machine`, WSL2), so everything in a container is shared and unchanged:
+the ControlPanel's image, the game server, the source build, kawari-questdump. What runs outside a container differs:
+
+* **`run.ps1`** (for `run.sh`): starts the machine, finds its API socket with `podman info`'s RemoteSocket (rootless
+  `/run/user/1000/podman/podman.sock`, rootful `/run/podman/podman.sock`) and mounts it, builds for uid 1000 (the
+  machine's user), keep-id only on a rootless machine, and passes the data folder as the machine sees it:
+  `KAWARI_HOST_DATA_DIR=/mnt/c/Users/<you>/.kawari`.
+* **Paths** (`kawari_web/winpaths.py`): the API resolves bind mounts in the machine, which doesn't know `C:\...`; the CLI
+  would translate them, the API doesn't. `machine_path` turns `C:\x` into `/mnt/c/x` for every mount source
+  (`podman_api.container_spec`, so the server's game folder from Setup, the build's and questdump's mounts), for
+  settings.conf's `DATA_DIR` and for `KAWARI_HOST_DATA_DIR`.
+* **`install-service.ps1`** (for `install-service.sh` and the Quadlet unit): a log-on scheduled task starts the machine
+  and the container; `podman-restart` enabled in the machine brings back every `unless-stopped` container (the
+  ControlPanel and the game server); `-Firewall` adds Windows Firewall rules for the ControlPanel's port and 21058-21063.
+* **`diagnose.ps1`** (for `diagnose.sh`), the pages' Linux instructions given in PowerShell (Overview, Setup's game
+  path), `os.getuid` and `AF_UNIX` guarded for Python run on Windows itself.
+
+Checked with Flask's test client (a Windows game path and data folder from settings.conf reach the server's container
+spec as `/mnt/c/...`; the pages render). Not run on Windows yet; the PowerShell scripts were reviewed, not executed.
 
 ## What it touches on the server
 
