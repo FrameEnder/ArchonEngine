@@ -356,6 +356,7 @@ reads, chat left out), so `compare` and the rest can use it.
   | `--actions [--all]` | Per action the capturing player used: cast time, animation lock, the shortest gap between uses (the fifth percentile: its recast), request-to-effect time, the most it hit at once |
   | `--areas` | Enemies' cones as Boss Mod has them against who they hit: how far off the caster's facing the people hit stood ([Combat](combat.md)) |
   | `--controls [--all] [--sapphire CommonActorControl.h]` | The ActorControl and ClientTrigger categories Kawari's enums don't have (or all), with counts, an example's arguments, how many values each argument took, and Sapphire's name for the category when its header is given |
+  | `--spawns` | Every instanced territory's battle NPCs as retail spawned them (BNpcBase, BNpcName, level, HP, character data flags, display flags, Mount, ModelChara; first sighting, visits), merged into `tools/questkit/retail_spawns.json` (numbers only), which `lint` holds the quest battle layers to |
   | `--registry` | Each capture: version, start, minutes, visits, duties, the capturing player's jobs and levels, their own actions (`notes/captures.json` in the diagnostics repository) |
 
   `--battle`, `--hits`, `--quest` and `--dropin` still read the capture themselves (see [Known issues](known-issues.md)).
@@ -616,6 +617,10 @@ forty in order, the actions for enemies on the global cooldown it never used, an
   numbers in quest battle scripts;
 * a battle NPC in a quest battle's drop-in layer (`QB_*`) with no timeline (it fights with the defaults); open-world
   layers are only counted;
+* a battle NPC in a quest battle layer unlike retail's spawn of it (`retail_spawns.json`: BNpcBase, BNpcName, level,
+  HP, character data flags, display flags, Mount), and an NPC retail spawned in that territory that no drop-in has;
+  `lint --fix-spawns` writes retail's values in (Fool Me Twice's boss rode a Magitek Reaper on retail and stood on
+  foot in Kawari: Bob's bundle 20261114-015635);
 * a fork quest script whose header says what it was "Checked against" with no fixture, a quest battle script with no
   battle fixture, and fixture steps still marked `todo`.
 

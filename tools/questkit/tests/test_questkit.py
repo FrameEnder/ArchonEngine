@@ -1791,6 +1791,45 @@ class LintTest(unittest.TestCase):
                     "rotation": {"actions": [{"action": 9}]}, "recorded_amounts": {"21": {"npcs": 1}}}
         self.assertEqual(lint.timeline_actions(timeline), {870, 739, 9, 21})
 
+    def test_quest_battle_npcs_against_retail_spawns(self):
+        # Fool Me Twice (quest battle 63): retail's boss rode a Magitek Reaper (Mount 14, Bob's Chronofoil capture
+        # da424662); the layer had no mount and Kawari's stood on foot (Bob's bundle 20261114-015635).
+        boss = {"base": 1988, "name": 2092, "level": 46, "hp": 6540, "flags": 3, "display": 262146, "mount": 14,
+                "model_chara": 0, "visits": 3}
+        lancer = {"base": 1990, "name": 1811, "level": 42, "hp": 572, "flags": 3, "display": 262146, "mount": 0,
+                  "model_chara": 0, "visits": 3}
+        registry = {"308": {"4270036": boss, "4270060": lancer}}
+        data = {"base_id": 1988, "name_id": 2092, "level": 46, "hp": 6540, "hostile": True, "type": "battle_npc",
+                "character_data_flags": 3, "display_flags": 262146}
+        dropins = {"lak_l1f1_planmap.json": {"layers": [{"name": "QB_GaiUsc604_001", "objects": [
+            {"layout_id": 4270036, "data": data}]}]}}
+        problems = lint.spawn_differences(registry, dropins)
+        self.assertEqual(len(problems), 2, problems)
+        self.assertIn("4270036 has mount 0, retail spawned it with 14", problems[0])
+        self.assertIn("retail spawned battle NPC 4270060", problems[1])
+
+        data["mount"] = 14
+        dropins["lak_l1f1_planmap.json"]["layers"][0]["objects"].append(
+            {"layout_id": 4270060, "data": dict(data, base_id=1990, name_id=1811, level=42, hp=572, mount=None)})
+        self.assertEqual(lint.spawn_differences(registry, dropins), [])
+        # Not hostile in the layer, aggressive on retail.
+        data["character_data_flags"], data["hostile"] = 0, False
+        self.assertIn("has flags 0, retail spawned it with 3", lint.spawn_differences(registry, dropins)[0])
+
+    def test_spawn_fields_read_retail_offsets(self):
+        from questkit import chronofoil_spawns
+        import struct
+        data = bytearray(16 + 620)
+        data[8] = 3
+        struct.pack_into("<III", data, 16 + 48, 1988, 2092, 4270036)
+        struct.pack_into("<I", data, 16 + 76, 6540)
+        struct.pack_into("<I", data, 16 + 84, 262146)
+        struct.pack_into("<H", data, 16 + 100, 14)
+        data[16 + 118] = 46
+        self.assertEqual(chronofoil_spawns.spawn_fields(bytes(data)),
+                         {"base": 1988, "name": 2092, "level": 46, "hp": 6540, "flags": 3, "display": 262146,
+                          "mount": 14, "model_chara": 0})
+
     def test_repository_is_clean(self):
         report = lint.run()
         self.assertTrue(report.ok, lint.format_report(report))

@@ -5,8 +5,9 @@
 -- the start spot are retail's (Connor's Chronofoil capture e834e436 of 2026-11-07, `questkit chronofoil --battle
 -- 9.195` and `9.197`: two runs, the first lost when the ally fell, the second won; a level 47 player.) On your side:
 -- one ally you must keep alive (4270049, base 1987, 10560 HP). Against you: the boss (4270036, base 1988, 6540 HP)
--- and a first wave beside him (a gladiator 4270011, two lancers 4270007-8, two archers 4270002-3), all out from the
--- start; then a second wave (an archer 4270061, a lancer 4270060, a conjurer 4270059.)
+-- riding a Magitek Reaper (Mount 14: the drop-in's `mount`, as retail's SpawnNpc), and a first wave beside him (a
+-- gladiator 4270011, two lancers 4270007-8, two archers 4270002-3), all out from the start; then a second wave (an
+-- archer 4270061, a lancer 4270060, a conjurer 4270059.)
 --
 -- Retail's flow (seconds from the fight starting, the director's scene 60000):
 --   0       sequence 2; battle talks 101 and 102 (the ally) at 5.1 and 10.1

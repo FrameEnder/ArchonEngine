@@ -17,7 +17,8 @@
                         "name_id": 991,
                         "nonpop": true,
                         "type": "battle_npc",
-                        "display_flags": 262145
+                        "display_flags": 262145,
+                        "character_data_flags": 3
                     },
                     "layout_id": 4094987,
                     "position": {
@@ -31,7 +32,7 @@
                     "data": {
                         "base_id": 961,
                         "gimmick_id": 0,
-                        "hostile": true,
+                        "hostile": false,
                         "hp": 288,
                         "level": 10,
                         "link_family": 0,
@@ -40,7 +41,8 @@
                         "name_id": 989,
                         "nonpop": true,
                         "type": "battle_npc",
-                        "display_flags": 262144
+                        "display_flags": 262144,
+                        "character_data_flags": 1
                     },
                     "layout_id": 4094990,
                     "position": {
@@ -54,7 +56,7 @@
                     "data": {
                         "base_id": 962,
                         "gimmick_id": 0,
-                        "hostile": true,
+                        "hostile": false,
                         "hp": 134,
                         "level": 10,
                         "link_family": 0,
@@ -63,7 +65,8 @@
                         "name_id": 990,
                         "nonpop": true,
                         "type": "battle_npc",
-                        "display_flags": 262144
+                        "display_flags": 262144,
+                        "character_data_flags": 1
                     },
                     "layout_id": 4094992,
                     "position": {
@@ -82,7 +85,7 @@
                     "data": {
                         "base_id": 629,
                         "gimmick_id": 0,
-                        "hostile": false,
+                        "hostile": true,
                         "hp": 5178,
                         "level": 50,
                         "link_family": 0,

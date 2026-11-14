@@ -7,7 +7,7 @@ FATE spawns them), NPCs owned by someone (pets, chocobos), spawns without a layo
 (quest NPCs), and anything in `exclude_bases`. Monsters wander, so each one goes where it was seen nearest the average
 of its sightings. A base in `one_spot` (e.g. a hunt mark that moves between spawn points) keeps only its first spot.
 
-Humanoids (ModelChara 0) keep how retail drew them (`appearance`: class, weapons, gear, customize). Guards (character
+An NPC riding something keeps its Mount (`mount`). Humanoids (ModelChara 0) keep how retail drew them (`appearance`: class, weapons, gear, customize). Guards (character
 data flags 0x4) keep that flag and their Behavior row (`character_data_flags`, `behavior`). Each
 sighting also records whether the NPC moved while it was idle (an ActorMove more than `MOVED` yalms from where it
 appeared, while it wasn't fighting: no target, cast or action of its own), and for how long it was seen: a spot is
@@ -78,6 +78,7 @@ def _spawn(data: bytes) -> dict:
         "event_npc": struct.unpack_from("<I", data, 4)[0],
         "flags": data[8],
         "model_chara": struct.unpack_from("<H", data, c + 96)[0],
+        "mount": struct.unpack_from("<H", data, c + 100)[0],
         "appearance": _appearance(data),
         "max_links": data[11],
         "link_family": data[12],
@@ -204,6 +205,10 @@ def build(seen: dict[int, list[dict]], appends: str, layer: str = "BNPCS_RETAIL"
             # (`director:appear_bnpc`, ActorControl 36 and 54; the Copperbell Mines' ambushing gigas.)
             if last["display"]:
                 data["display_flags"] = last["display"]
+            # What it rides (CommonSpawn's current_mount): Fool Me Twice's boss on a Magitek Reaper (Mount 14) stood
+            # on foot until 2026-11-14, its layer written without it (Bob's bundle 20261114-015635).
+            if last.get("mount"):
+                data["mount"] = last["mount"]
             # A humanoid (ModelChara 0) as retail drew it: its BNpcBase's customize and gear can differ (Trial by
             # Wind's conjurer, base 1661, came out a Miqo'te from them; retail's was a Hyur.)
             if last.get("model_chara") == 0 and last.get("appearance"):

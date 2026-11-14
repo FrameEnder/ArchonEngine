@@ -452,6 +452,13 @@ def _chronofoil(args) -> int:
         print("No Chronofoil captures found")
         return 1
     tables = chronofoil.load_opcodes()
+    if args.spawns:
+        from . import chronofoil_spawns
+
+        registry = chronofoil_spawns.collect(captures, tables)
+        out = chronofoil_spawns.save(registry)
+        print(f"{sum(len(v) for v in registry.values())} battle NPCs in {len(registry)} territories merged into {out}")
+        return 0
     fact = next((name for name in ("coverage", "uses", "statuses", "gauges", "actions", "controls", "registry", "areas")
                  if getattr(args, name)), None)
     if fact or args.ledger:
@@ -666,6 +673,9 @@ def _clientcheck(args) -> int:
 def _lint(args) -> int:
     from . import lint
 
+    if args.fix_spawns:
+        for file, count in lint.fix_spawns().items():
+            print(f"resources/dropins/{file}: {count} battle NPCs set to retail's spawn")
     report = lint.run()
     print(lint.format_report(report))
     return 0 if report.ok else 1
@@ -788,6 +798,9 @@ def main(argv=None) -> int:
                    help="the ActorControl and ClientTrigger categories Kawari has no name for (--all: every one)")
     p.add_argument("--areas", action="store_true",
                    help="enemies' cones as Boss Mod has them against who they hit in the captures")
+    p.add_argument("--spawns", action="store_true",
+                   help="each instanced territory's battle NPCs as retail spawned them, merged into "
+                        "tools/questkit/retail_spawns.json (what `questkit lint` holds the quest battle drop-ins to)")
     p.add_argument("--registry", action="store_true",
                    help="each capture's version, date and visits, with the capturing player's job and level")
     p.add_argument("--sapphire", metavar="CommonActorControl.h",
@@ -848,7 +861,11 @@ def main(argv=None) -> int:
     p.set_defaults(run=_clientcheck)
 
     p = commands.add_parser("lint", help="find what fails silently in game: unscripted NPC actions, quest battle "
-                                         "NPCs without timelines, checked scripts without fixtures")
+                                         "NPCs without timelines, checked scripts without fixtures, quest "
+                                         "battle NPCs unlike retail's spawns")
+    p.add_argument("--fix-spawns", action="store_true",
+                   help="first write retail's spawns (tools/questkit/retail_spawns.json) into the quest battle "
+                        "drop-in layers: BNpcBase, BNpcName, level, HP, character data and display flags, Mount")
     p.set_defaults(run=_lint)
 
     p = commands.add_parser("sources", help="what Boss Mod and cactbot know about duties: audit the fork's, draft a "

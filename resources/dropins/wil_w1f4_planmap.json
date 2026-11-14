@@ -10227,7 +10227,7 @@
                     "data": {
                         "base_id": 1984,
                         "gimmick_id": 0,
-                        "hostile": false,
+                        "hostile": true,
                         "hp": 1861,
                         "level": 27,
                         "link_family": 0,
@@ -10344,7 +10344,7 @@
                     "data": {
                         "base_id": 1985,
                         "gimmick_id": 0,
-                        "hostile": false,
+                        "hostile": true,
                         "hp": 891,
                         "level": 25,
                         "link_family": 0,
@@ -10461,7 +10461,7 @@
                     "data": {
                         "base_id": 1986,
                         "gimmick_id": 0,
-                        "hostile": false,
+                        "hostile": true,
                         "hp": 891,
                         "level": 25,
                         "link_family": 0,
@@ -10578,7 +10578,7 @@
                     "data": {
                         "base_id": 1982,
                         "gimmick_id": 0,
-                        "hostile": false,
+                        "hostile": true,
                         "hp": 7108,
                         "level": 27,
                         "link_family": 0,
@@ -10695,7 +10695,7 @@
                     "data": {
                         "base_id": 1983,
                         "gimmick_id": 0,
-                        "hostile": false,
+                        "hostile": true,
                         "hp": 2708,
                         "level": 27,
                         "link_family": 0,
@@ -14209,7 +14209,8 @@
                                 0,
                                 0
                             ]
-                        }
+                        },
+                        "character_data_flags": 3
                     },
                     "layout_id": 4296937,
                     "position": {
@@ -14325,7 +14326,8 @@
                                 0,
                                 1
                             ]
-                        }
+                        },
+                        "character_data_flags": 3
                     },
                     "layout_id": 4296942,
                     "position": {
@@ -14441,7 +14443,8 @@
                                 0,
                                 1
                             ]
-                        }
+                        },
+                        "character_data_flags": 3
                     },
                     "layout_id": 4296943,
                     "position": {
@@ -14557,7 +14560,8 @@
                                 0,
                                 1
                             ]
-                        }
+                        },
+                        "character_data_flags": 3
                     },
                     "layout_id": 4296944,
                     "position": {
@@ -14673,7 +14677,8 @@
                                 0,
                                 1
                             ]
-                        }
+                        },
+                        "character_data_flags": 3
                     },
                     "layout_id": 4296945,
                     "position": {

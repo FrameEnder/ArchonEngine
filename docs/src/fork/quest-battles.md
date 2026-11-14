@@ -22,7 +22,16 @@ Guardian, Underneath the Sultantree). The fork added them on top of upstream's c
    is where it's fought, so ZoneInit names it and the player is synced to it ([Level Sync](level-sync.md)). ZoneInit
    also carries where the player starts, as retail's does (every zone change; Kawari sent the origin).
 5. Its NPCs come from the territory's drop-in (`resources/dropins/fst_f1_planmap.json` layers named
-   `QB_<quest script>_001`), with positions, levels and HP from Sapphire or a retail recording.
+   `QB_<quest script>_001`), with positions, levels and HP from Sapphire or a retail recording. **Each NPC is held to
+   how retail spawned it** (2026-11-14): `tools/questkit/retail_spawns.json` (`questkit chronofoil <captures>
+   --spawns`, every instanced territory's battle NPCs from every capture: BNpcBase, BNpcName, level, HP, character
+   data flags, display flags, Mount, ModelChara) and `questkit lint` (CI) fails on any field a layer has otherwise,
+   and on an NPC retail spawned there that no layer has; `lint --fix-spawns` writes retail's in. Layers had been
+   written once from an export, by hand or by script, and what they left out showed only when Bob played: Fool Me
+   Twice's boss and Escape from Castrum Centri's Wedge ride Magitek Reapers (Mount 14) and stood on foot (Bob's
+   bundle 20261114-015635). Its first run set 329 NPCs in 13 drop-ins to retail's: character data flags 3 (0x1 with
+   hostile, the passive bit on retail's quest battle enemies) for most, 114 made hostile and 21 passive as retail
+   had them, display flags 0x40000 (`UNK1`) on most, 8 HPs, and the two mounts.
 
 ## Director script
 
@@ -526,7 +535,9 @@ a quest's entering event, 0 for every other event (228 events across the capture
   duty 357). Territory 308 is taken to be a copy of Mor Dhona: its spots are a few yalms from where the item is used
   in Mor Dhona and where retail let the player out (-129.6, -2.7, -629.2), so its NPCs are layer `QB_GaiUsc604_001` of
   `lak_l1f1_planmap.json` (10 NPCs from `questkit chronofoil --dropin 308`, all `nonpop`, character data flags 3 as
-  retail's SpawnNpc), with retail's layout IDs, levels, HP, positions, display flags and looks from Connor's Chronofoil
+  retail's SpawnNpc; the boss rides a Magitek Reaper, Mount 14, as retail's spawn had him: on foot until 2026-11-14,
+  Bob's bundle 20261114-015635), with retail's layout IDs, levels, HP, positions, display flags and looks from
+  Connor's Chronofoil
   capture e834e436 (2026-11-07, `--battle 9.195` lost and `9.197` won; a level 47 player). Start spot (-127.58, -2.66,
   -630.68, facing -0.719) and the opening's flags (0xF8412EF3) are both runs'.
 * **The ally to keep alive** (4270049, base 1987, 10560 HP) goes for whoever is after you, the adds before the boss,
@@ -1612,7 +1623,8 @@ early on and their carbuncle comes 7.3 s after the cast began (the director's `o
 
 * Quest 521 (ManFst407_00521) enters it (the steel door; territory 305, Mor Dhona's level, layer
   `QB_ManFst407_001` of lak_l1f1), from Bob's two Kawari Recorder runs of 2026-11-12 (lost in the first part, then
-  won; `65-lost.json`, `65.json`). **First part**: Wedge and Biggs (4278227, 4278226) on your side, a signifer, an
+  won; `65-lost.json`, `65.json`). **First part**: Wedge and Biggs (4278227, 4278226) on your side (Wedge in a
+  Magitek Reaper, Mount 14, as retail's spawn in Bob's Chronofoil captures; since 2026-11-14), a signifer, an
   eques and an optio (4278232, 2169, 8793 HP) against you, by the bound Scions, whose talks (event NPCs, with
   portraits) come at 5, 15 and 20 s. **The optio down**: sequence 8 and the battle's scene 8 (0xF8402EFB) at once,
   the first part's NPCs gone.

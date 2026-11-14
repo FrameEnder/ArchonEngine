@@ -9104,7 +9104,7 @@
                     "data": {
                         "base_id": 1739,
                         "gimmick_id": 0,
-                        "hostile": false,
+                        "hostile": true,
                         "hp": 3787,
                         "level": 38,
                         "link_family": 0,
@@ -10201,7 +10201,7 @@
                     "data": {
                         "base_id": 1750,
                         "gimmick_id": 0,
-                        "hostile": false,
+                        "hostile": true,
                         "hp": 2401,
                         "level": 40,
                         "link_family": 0,
@@ -10318,7 +10318,7 @@
                     "data": {
                         "base_id": 1751,
                         "gimmick_id": 0,
-                        "hostile": false,
+                        "hostile": true,
                         "hp": 1587,
                         "level": 39,
                         "link_family": 0,
@@ -10435,7 +10435,7 @@
                     "data": {
                         "base_id": 1752,
                         "gimmick_id": 0,
-                        "hostile": false,
+                        "hostile": true,
                         "hp": 1587,
                         "level": 39,
                         "link_family": 0,
@@ -10818,7 +10818,7 @@
                     "data": {
                         "base_id": 1651,
                         "gimmick_id": 0,
-                        "hostile": false,
+                        "hostile": true,
                         "hp": 11650,
                         "level": 50,
                         "link_family": 0,
@@ -10935,7 +10935,7 @@
                     "data": {
                         "base_id": 1650,
                         "gimmick_id": 0,
-                        "hostile": false,
+                        "hostile": true,
                         "hp": 15534,
                         "level": 50,
                         "link_family": 0,
@@ -11052,7 +11052,7 @@
                     "data": {
                         "base_id": 1656,
                         "gimmick_id": 0,
-                        "hostile": false,
+                        "hostile": true,
                         "hp": 5109,
                         "level": 41,
                         "link_family": 0,
