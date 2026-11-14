@@ -344,6 +344,8 @@ pub struct ZoneConnection {
     pub capture: crate::capture::PacketCapture,
     /// Segments waiting to go out together as one frame (`send_segment`, `flush_segments`.)
     pub outgoing: OutgoingFrame<ServerZoneIpcSegment>,
+    /// How many of the client's packets in a row couldn't be read (`contain::out_of_step`.)
+    pub unparsed_packets: u8,
     /// Whether segments wait in `outgoing` for the end of what's being handled (the connection's loop turns it on),
     /// or go out one a frame as they're sent (before the loop and after it.)
     pub batching: bool,

@@ -188,6 +188,12 @@ pub struct GameData {
     omen_sheet: Option<OmenSheet>,
     model_chara_sheet: Option<ModelCharaSheet>,
     model_skeleton_sheet: Option<ModelSkeletonSheet>,
+    /// What making a bot looks up, read once (`party_bot.rs`: `best_gear`, `wearable_restrictions`,
+    /// `classjob_categories_with`, `creator_looks`); each was read from the game's files for every bot.
+    pub(crate) bot_gear_rows: Option<std::sync::Arc<Vec<crate::server::GearRow>>>,
+    pub(crate) bot_wearable: HashMap<(u8, u8), std::collections::HashSet<u8>>,
+    pub(crate) bot_class_categories: HashMap<u8, std::collections::HashSet<u8>>,
+    pub(crate) bot_creator_looks: Option<std::sync::Arc<Vec<crate::server::CreatorLook>>>,
     /// Sheets read whole the first time a lookup asks for one, and kept (`kept_sheet`.)
     kept_sheets: HashMap<std::any::TypeId, std::sync::Arc<dyn std::any::Any + Send + Sync>>,
     /// Which of `HITBOX_FORMULAS` matches what Kawari Recorder measured on retail (None: none does), found once.
@@ -1068,6 +1074,10 @@ impl GameData {
             model_chara_sheet: None,
             model_skeleton_sheet: None,
             kept_sheets: HashMap::new(),
+            bot_gear_rows: None,
+            bot_wearable: HashMap::new(),
+            bot_class_categories: HashMap::new(),
+            bot_creator_looks: None,
             hitbox_formula: None,
             quest_issuers: None,
             combo_starters: None,

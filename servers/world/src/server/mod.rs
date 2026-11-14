@@ -95,6 +95,7 @@ mod network;
 mod paralysis;
 mod party;
 mod party_bot;
+pub(crate) use party_bot::{CreatorLook, GearRow};
 mod party_npc;
 mod periodic;
 mod pet;
@@ -1810,8 +1811,8 @@ pub async fn server_main_loop(
             interval.tick().await;
             let ticks_per_logic_tick = SERVER_TICK_MILLISECONDS / TASK_TICK_MILLISECONDS;
             let mut ticks_until_logic = ticks_per_logic_tick;
-            loop {
-                interval.tick().await;
+            // One tick. A panic in it ends that tick, not the server (`contain::step`): the loop below runs the next.
+            let mut tick = || {
                 // Held for the whole tick: the logic and the queued tasks (nothing in them awaits.)
                 let _turn = turn.take(world_turn::Step::Tick);
 
@@ -2327,11 +2328,19 @@ pub async fn server_main_loop(
                         }
                     }
                 }
+            };
+            loop {
+                interval.tick().await;
+                crate::contain::step("the tick", &mut tick);
             }
         });
     }
 
-    while let Some(msg) = recv.recv().await {
+    // One message from a connection. A panic handling it drops that message, not the server (`contain::step`); so
+    // what was the loop's body is a closure, and what skipped to the next message (`continue`) returns from it.
+    let fatal = Arc::new(Mutex::new(None));
+    let fatal_error = fatal.clone();
+    let handle_message = |msg: ToServer| {
         // Held while the message is handled (nothing here awaits.)
         let _turn = turn.take(world_turn::Step::Message);
         let mut to_remove = Vec::new();
@@ -2950,7 +2959,7 @@ pub async fn server_main_loop(
                         }
                         ClientTriggerCommand::ToggleSign { sign_id, .. } => {
                             let ClientTriggerTarget::Actor(target_actor) = trigger.target else {
-                                continue;
+                                return;
                             };
 
                             let mut network = network.lock();
@@ -2991,7 +3000,7 @@ pub async fn server_main_loop(
                             {
                                 let Some((handle, _)) = network.get_by_actor_mut(from_actor_id)
                                 else {
-                                    continue;
+                                    return;
                                 };
                                 account_id = handle.account_id;
                             }
@@ -3001,18 +3010,18 @@ pub async fn server_main_loop(
                             let opponent_name;
                             {
                                 let Some((handle, _)) = network.get_by_actor_mut(*actor_id) else {
-                                    continue;
+                                    return;
                                 };
                                 opponent_content_id = handle.content_id;
                                 opponent_object_id = *actor_id;
 
                                 let data = data.lock();
                                 let Some(instance) = data.find_actor_instance(*actor_id) else {
-                                    continue;
+                                    return;
                                 };
 
                                 let Some(actor) = instance.find_actor(*actor_id) else {
-                                    continue;
+                                    return;
                                 };
 
                                 opponent_name = actor.get_common_spawn().name.clone();
@@ -3038,13 +3047,13 @@ pub async fn server_main_loop(
 
                             let mut data = data.lock();
                             let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                                continue;
+                                return;
                             };
 
                             // Update our player
                             {
                                 let Some(actor) = instance.find_actor_mut(from_actor_id) else {
-                                    continue;
+                                    return;
                                 };
 
                                 match actor {
@@ -3059,7 +3068,7 @@ pub async fn server_main_loop(
                             // Update the opponent
                             {
                                 let Some(actor) = instance.find_actor_mut(*actor_id) else {
-                                    continue;
+                                    return;
                                 };
 
                                 match actor {
@@ -3076,7 +3085,7 @@ pub async fn server_main_loop(
                                 let mut data = data.lock();
                                 let Some(instance) = data.find_actor_instance_mut(from_actor_id)
                                 else {
-                                    continue;
+                                    return;
                                 };
 
                                 let other_actor_id;
@@ -3084,7 +3093,7 @@ pub async fn server_main_loop(
                                 // Update our player
                                 {
                                     let Some(actor) = instance.find_actor_mut(from_actor_id) else {
-                                        continue;
+                                        return;
                                     };
 
                                     match actor {
@@ -3103,7 +3112,7 @@ pub async fn server_main_loop(
                                 {
                                     let Some(actor) = instance.find_actor_mut(other_actor_id)
                                     else {
-                                        continue;
+                                        return;
                                     };
 
                                     match actor {
@@ -3120,11 +3129,11 @@ pub async fn server_main_loop(
 
                                 let data = data.lock();
                                 let Some(instance) = data.find_actor_instance(from_actor_id) else {
-                                    continue;
+                                    return;
                                 };
 
                                 let Some(actor) = instance.find_actor(from_actor_id) else {
-                                    continue;
+                                    return;
                                 };
 
                                 let dueling_opponent_id = match actor {
@@ -3140,7 +3149,7 @@ pub async fn server_main_loop(
                                     let Some((handle, _)) =
                                         network.get_by_actor_mut(*dueling_opponent_id)
                                     else {
-                                        continue;
+                                        return;
                                     };
                                     account_id = handle.account_id;
                                 }
@@ -3151,7 +3160,7 @@ pub async fn server_main_loop(
                                 {
                                     let Some((handle, _)) = network.get_by_actor_mut(from_actor_id)
                                     else {
-                                        continue;
+                                        return;
                                     };
                                     opponent_content_id = handle.content_id;
                                     opponent_object_id = from_actor_id;
@@ -3197,11 +3206,11 @@ pub async fn server_main_loop(
                             if !*decline {
                                 let data = data.lock();
                                 let Some(instance) = data.find_actor_instance(from_actor_id) else {
-                                    continue;
+                                    return;
                                 };
 
                                 let Some(actor) = instance.find_actor(from_actor_id) else {
-                                    continue;
+                                    return;
                                 };
 
                                 let dueling_opponent_id = match actor {
@@ -3281,11 +3290,11 @@ pub async fn server_main_loop(
                         ClientTriggerCommand::ResetStrikingDummy { id } => {
                             let mut data = data.lock();
                             let Some(instance) = data.find_actor_instance_mut(*id) else {
-                                continue;
+                                return;
                             };
 
                             let Some(actor) = instance.find_actor_mut(*id) else {
-                                continue;
+                                return;
                             };
 
                             let NetworkedActor::Npc {
@@ -3296,7 +3305,7 @@ pub async fn server_main_loop(
                                 ..
                             } = actor
                             else {
-                                continue;
+                                return;
                             };
 
                             // Forget everyone who attacked it, otherwise it goes straight back to whoever it hated most.
@@ -3325,7 +3334,7 @@ pub async fn server_main_loop(
                         ClientTriggerCommand::LoopingEmoteInterrupted => {
                             let mut data = data.lock();
                             let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                                continue;
+                                return;
                             };
 
                             let mut network = network.lock();
@@ -3435,15 +3444,15 @@ pub async fn server_main_loop(
                     let mut data = data.lock();
 
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
 
                     let Some(actor) = instance.find_actor_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
 
                     let NetworkedActor::Player { spawn, .. } = actor else {
-                        continue;
+                        return;
                     };
 
                     // update their stored state so it's correctly sent on new spawns
@@ -3472,15 +3481,15 @@ pub async fn server_main_loop(
                     let mut data = data.lock();
 
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
 
                     let Some(actor) = instance.find_actor_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
 
                     let NetworkedActor::Player { spawn, .. } = actor else {
-                        continue;
+                        return;
                     };
 
                     // update their stored state so it's correctly sent on new spawns
@@ -3705,15 +3714,15 @@ pub async fn server_main_loop(
                     let mut data = data.lock();
 
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
 
                     let Some(actor) = instance.find_actor_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
 
                     let NetworkedActor::Player { conditions, .. } = actor else {
-                        continue;
+                        return;
                     };
 
                     *conditions = new_conditions;
@@ -3721,18 +3730,18 @@ pub async fn server_main_loop(
                 ToServer::Kill(_from_id, from_actor_id) => {
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
                     kill_actor(network.clone(), instance, from_actor_id)
                 }
                 ToServer::SetHP(_from_id, from_actor_id, hp) => {
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
 
                     let Some(actor) = instance.find_actor_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
 
                     actor.get_common_spawn_mut().health_points = hp;
@@ -3742,11 +3751,11 @@ pub async fn server_main_loop(
                 ToServer::SetMP(_from_id, from_actor_id, mp) => {
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
 
                     let Some(actor) = instance.find_actor_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
 
                     actor.get_common_spawn_mut().resource_points = mp;
@@ -3756,10 +3765,10 @@ pub async fn server_main_loop(
                 ToServer::RestoreResourcePoints(from_actor_id, amount) => {
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
                     let Some(actor) = instance.find_actor_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
                     let common = actor.get_common_spawn_mut();
                     common.resource_points = common
@@ -3777,19 +3786,19 @@ pub async fn server_main_loop(
                 ) => {
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
 
                     // Only one at a time: searching again while it's still around doesn't bring out another.
                     if instance.find_npc(layout_id).is_some() {
-                        continue;
+                        return;
                     }
 
                     let Some(mut npc) = instance.zone.get_battle_npc(layout_id) else {
                         tracing::warn!(
                             "A quest tried to spawn battle NPC {layout_id}, but it isn't in this zone's drop-ins!"
                         );
-                        continue;
+                        return;
                     };
                     // As retail's (Bob's Chronofoil capture b23b91ef, Trial by Earth's): what brought it out, the
                     // quest, and the player as its owner, target and claimant (the client script's
@@ -3829,7 +3838,7 @@ pub async fn server_main_loop(
                 ) => {
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
                     let mut spawn = spawn;
                     // At the bell's spot, facing the player, as on retail; without one, in front of the player.
@@ -3858,7 +3867,7 @@ pub async fn server_main_loop(
                     let mut network = network.lock();
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
                     if instance.find_actor(retainer_id).is_some() {
                         network.remove_actor(instance, retainer_id);
@@ -3869,11 +3878,11 @@ pub async fn server_main_loop(
                     {
                         let mut data = data.lock();
                         let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                            continue;
+                            return;
                         };
 
                         let Some(actor) = instance.find_actor_mut(from_actor_id) else {
-                            continue;
+                            return;
                         };
 
                         // Job gauges don't carry over between classes, and retail empties them on a level sync too.
@@ -3909,7 +3918,7 @@ pub async fn server_main_loop(
                     // paralysis interrupts it first (see interrupt_event_action.)
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
                     instance.insert_task(
                         from_client_id,
@@ -3921,7 +3930,7 @@ pub async fn server_main_loop(
                 ToServer::Fish(from_client_id, from_actor_id) => {
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
 
                     instance.insert_task(
@@ -3942,10 +3951,10 @@ pub async fn server_main_loop(
                     let mut network = network.lock();
                     let mut data = data.lock();
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
                     let Some(actor) = instance.find_actor_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
                     let common = actor.get_common_spawn_mut();
                     common.current_mount = mount;
@@ -4022,7 +4031,7 @@ pub async fn server_main_loop(
                     let mut network = network.lock();
 
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
 
                     set_character_mode(instance, &mut network, from_actor_id, mode, arg, false);
@@ -4042,18 +4051,18 @@ pub async fn server_main_loop(
                     let mut data = data.lock();
 
                     let Some(instance) = data.find_actor_instance_mut(actor_id) else {
-                        continue;
+                        return;
                     };
 
                     let Some(actor) = instance.find_actor_mut(actor_id) else {
-                        continue;
+                        return;
                     };
 
                     let NetworkedActor::Player {
                         remove_cooldowns, ..
                     } = actor
                     else {
-                        continue;
+                        return;
                     };
 
                     *remove_cooldowns = true;
@@ -4097,15 +4106,15 @@ pub async fn server_main_loop(
                     let mut data = data.lock();
 
                     let Some(instance) = data.find_actor_instance_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
 
                     let Some(actor) = instance.find_actor_mut(from_actor_id) else {
-                        continue;
+                        return;
                     };
 
                     let NetworkedActor::Player { spawn, .. } = actor else {
-                        continue;
+                        return;
                     };
 
                     // update their stored state so it's correctly sent on new spawns
@@ -4153,7 +4162,10 @@ pub async fn server_main_loop(
                         );
                     }
                 }
-                ToServer::FatalError(err) => return Err(err),
+                ToServer::FatalError(err) => {
+                    *fatal_error.lock() = Some(err);
+                    return;
+                }
                 _ => {
                     tracing::error!("Received a ToServer message we don't handle yet: {msg:#?}");
                 }
@@ -4210,6 +4222,12 @@ pub async fn server_main_loop(
                 );
                 network.commit_parties = false;
             }
+        }
+    };
+    while let Some(msg) = recv.recv().await {
+        crate::contain::step("a message", || handle_message(msg));
+        if let Some(err) = fatal.lock().take() {
+            return Err(err);
         }
     }
     Ok(())

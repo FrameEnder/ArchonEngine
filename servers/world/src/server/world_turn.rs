@@ -30,6 +30,8 @@ use std::{
 /// How long a step may hold the turn before the watchdog says the world is stuck. A tick takes milliseconds; loading
 /// a zone's navmesh and collision a few seconds.
 pub const STUCK_AFTER: Duration = Duration::from_secs(15);
+/// A step held this long won't end: the server ends itself to be started again (`watch`.)
+const GIVE_UP_AFTER: Duration = Duration::from_secs(180);
 /// How often the watchdog looks.
 const WATCH_EVERY: Duration = Duration::from_secs(5);
 
@@ -112,7 +114,22 @@ impl WorldTurn {
                 let mut reported: Option<u64> = None;
                 loop {
                     std::thread::sleep(WATCH_EVERY);
-                    match turn.stuck(STUCK_AFTER, now_ms()) {
+                    let stuck = turn.stuck(STUCK_AFTER, now_ms());
+                    if let Some((step, since, held)) = stuck
+                        && held >= GIVE_UP_AFTER
+                    {
+                        // A step that long isn't going to end (a loop that never finishes): nothing moves and no one
+                        // can log in until a restart, so it restarts itself (`kawari-run` starts the server again).
+                        // Characters were saved by their connections within the last 30 s (the autosave.)
+                        tracing::error!(
+                            "The world server has been stuck in {step} for {} s (since {} UTC): ending it, to be \
+                             started again.",
+                            held.as_secs(),
+                            clock(since)
+                        );
+                        std::process::exit(102);
+                    }
+                    match stuck {
                         Some((step, since, held)) if reported != Some(since) => {
                             tracing::error!(
                                 "The world server is stuck: {step} has held it for {} s (since {} UTC). Nothing in \

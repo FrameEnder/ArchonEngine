@@ -526,3 +526,41 @@ bundle's README names the battles received in its window. `/api/diag/ping` answe
 diag-battle/1`. Can also point
 `filesystem.navimesh_path` at `<data>/navimesh` so navmeshes survive rebuilds. Bundle format:
 [Recorder and diagnostics](recorder-and-diagnostics.md).
+
+## The harness (`/dashboard/harness`, 2.31.0)
+
+Bob, 2026-11-14: "we should work on building an API or harness of some kind for Claude". A Claude session has no
+route to the server (it runs in Anthropic's cloud; the server is on Bob's network), but it can open pages in Bob's
+Chrome, which is on that network: `http://192.168.1.7:7301` answers there. The harness is what it reads through
+that: the server's state as JSON, as it is now, without a bundle being made, pushed and pulled.
+
+`kawari_web/harness.py`, on the dashboard's blueprint, every route `@auth.admin_required`:
+
+| Route | Gives | From |
+|---|---|---|
+| `/dashboard/harness` | the list of routes and their parameters | — |
+| `/dashboard/harness/status` | the container's state and start time, the active build, capture on or off and its files, who's online, whether a job runs | `podman().inspect`, `diagnostics._build_info`, `capture_status`, `dbtools.characters` |
+| `/dashboard/harness/log?lines=&grep=&since=` | the server's log: `lines` is how far back to read (400 by default, 20,000 at most), `grep` a regular expression, `since` a time of day (`HH:MM[:SS]`, UTC as the log's); the newest 2,000 matches | `diagnostics._server_log` |
+| `/dashboard/harness/log/problems` | the lines that say something went wrong, counted by kind (`PROBLEMS`: panic, restarted, stuck, unstuck, out_of_step, dropped, error; the lines [Stability](stability.md) says to look for) | the same |
+| `/dashboard/harness/captures` | the capture files, newest first | the server's capture folder |
+| `/dashboard/harness/captures/<file>?lines=&name=&dir=` | a capture's last records (200 by default), by packet name or note text (a regular expression) and direction; read from the file's last 8 MB | `tail_jsonl` |
+| `/dashboard/harness/characters`, `/characters/<content id>` | the characters; one's rows and quest summary as a bundle's `characters.json` | `diagnostics._character_state` |
+| `/dashboard/harness/config` | the server's config with secrets removed | `diagnostics._sanitised_config` |
+| `/dashboard/harness/bundles` | the kept bundles | `diagnostics.kept_bundles` |
+
+What it holds to:
+
+* **It only reads.** Every route is a GET that changes nothing. A restart, a build, a deploy and sending a bundle
+  stay on the dashboard's pages behind their forms and CSRF token: a session asks Bob before pressing one.
+* **The dashboard's sign-in is the only way in**: Bob signs in in the browser the session uses. There's no token
+  (one would have to be handed to the session and typed by it, which it doesn't do, and would sit in a URL).
+* **Capped**: lines read and returned, a line's length (4,000), a capture's tail (8 MB), a pattern's length (200).
+
+How a session uses it: open `http://192.168.1.7:7301/dashboard/harness/status` in Bob's Chrome and read the page's
+text. A redirect to the sign-in page means Bob isn't signed in there. The Diagnostics page links to it.
+
+Checked with Flask's test client against a made-up data folder (signed out: redirected; not an administrator: 403;
+each route; a bad pattern, a capture name with a path in it, a POST) and the two pure parts (`problems_in`,
+`filter_lines`) against log lines from Bob's bundles and this change's new messages. Not yet read from Bob's server:
+it needs 2.31.0 deployed there.
+

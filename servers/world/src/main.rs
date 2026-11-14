@@ -152,6 +152,10 @@ async fn initial_setup(
     let mut buf = vec![0; RECEIVE_BUFFER_SIZE];
 
     match socket.read(&mut buf).await {
+        // Opened and closed with nothing sent (a port check, such as the ControlPanel's): nothing to parse. It was
+        // logged as two errors each time ("failed to fill whole buffer", "Connection type is None"), 44 times in
+        // Bob's bundles, among the errors that matter.
+        Ok(0) => {}
         Ok(n) => {
             let header = parse_packet_header(&buf[..n]);
             if header.connection_type == ConnectionType::KawariIpc {
@@ -276,6 +280,7 @@ async fn initial_setup(
                     position_sequence: 0,
                     capture: kawari_world::capture::PacketCapture::new(&get_config().world, id),
                     outgoing: Default::default(),
+                    unparsed_packets: 0,
                     batching: false,
                 };
 
@@ -439,11 +444,17 @@ async fn start_chat_connection(my_handle: oneshot::Receiver<ClientHandle>, data:
     // communication channel between client_loop and client_server_loop
     let (internal_send, internal_recv) = unbounded_channel();
 
-    let _ = join!(
+    let (mut handle, id) = (connection.handle.clone(), connection.id);
+    let (ended, _) = join!(
         tokio::spawn(client_chat_loop(connection, internal_recv, my_handle)),
         // TODO: It should be okay to reuse the zone connection's client_server_loop for ToServer & FromServer stuff since it gives us our own comms channel, right?
         tokio::spawn(client_server_loop(recv, internal_send))
     );
+    // A panic in the chat connection ends it, and no more (`kawari_world::contain`): the world is told it's gone.
+    if ended.is_err_and(|err| err.is_panic()) {
+        tracing::error!("The chat connection of {id:?} panicked: it's dropped.");
+        handle.send(ToServer::ChatDisconnected(id)).await;
+    }
 }
 
 /// The client's chat connection loop, which allows them to communicate with other players in channels that span across the entire world.
@@ -602,10 +613,22 @@ async fn start_client(my_handle: oneshot::Receiver<ClientHandle>, data: ClientZo
     // communication channel between client_loop and client_server_loop
     let (internal_send, internal_recv) = unbounded_channel();
 
-    let _ = join!(
+    // Should the loop's task end in a panic all the same (in the saving itself), the world is still told.
+    let (mut handle, id, actor_id) = (
+        connection.handle.clone(),
+        connection.id,
+        connection.player_data.character.actor_id,
+    );
+    let (ended, _) = join!(
         tokio::spawn(client_loop(connection, internal_recv, my_handle)),
         tokio::spawn(client_server_loop(recv, internal_send))
     );
+    if ended.is_err_and(|err| err.is_panic()) {
+        tracing::error!(
+            "The connection of {id:?} panicked as it ended: the world is told they left, but they weren't saved."
+        );
+        handle.send(ToServer::Disconnected(id, actor_id)).await;
+    }
 }
 
 async fn client_server_loop(
@@ -656,10 +679,28 @@ async fn process_packet(
         // after a busy moment on the server (a new instance of Coerthas loading as Bob came out of the Brayflox's
         // Longstop) every later packet failed to parse and the client was dropped (bundle 20261110-111747.)
         pending.extend_from_slice(&buf[..n]);
-        let segments: Vec<_> = take_packets(pending)
-            .iter()
-            .flat_map(|packet| connection.parse_packet(packet))
-            .collect();
+        let mut segments = Vec::new();
+        for packet in take_packets(pending) {
+            let parsed = connection.parse_packet(&packet);
+            let expected = parse_packet_header(&packet).segment_count;
+            if kawari_world::contain::out_of_step(
+                &mut connection.unparsed_packets,
+                expected,
+                parsed.len(),
+            ) {
+                // Nothing the client sends will parse again (its compression is a stream the server has lost its
+                // place in), and it isn't told: it stayed frozen or loading until it gave up (Bob's bundles
+                // 20261016-194440, -195257, -202100, 20261110-111747: up to 316 packets unread). Dropped, it shows
+                // the connection as lost at once and can log back in.
+                tracing::error!(
+                    "Dropping zone connection from {:?}: {} packets in a row couldn't be read, so its stream is out of step.",
+                    client_handle.id,
+                    connection.unparsed_packets
+                );
+                return false;
+            }
+            segments.extend(parsed);
+        }
         for segment in &segments {
             match &segment.data {
                 SegmentData::None() => {}
@@ -5679,8 +5720,32 @@ fn until_unix_time(at: u64) -> std::time::Duration {
         + std::time::Duration::from_millis(50)
 }
 
+/// A player's zone connection, from its first turn to the player being saved and the world told they left. A panic
+/// in a turn (a bug in some packet's handling) ends the connection the way a lost one ends, and no one else's:
+/// until 2026-11-14 it ended the server (`kawari_world::contain`).
 async fn client_loop(
     mut connection: ZoneConnection,
+    internal_recv: UnboundedReceiver<FromServer>,
+    client_handle: ClientHandle,
+) {
+    let turns = client_turns(&mut connection, internal_recv, client_handle.clone());
+    if let Err(panic) = kawari_world::contain::Contained::new(turns).await {
+        tracing::error!(
+            "The connection of {:?} ({}) panicked: {}. They're disconnected and saved as if the connection was lost; \
+             no one else is affected. This is a bug: please report it with the log above.",
+            client_handle.id,
+            connection.player_data.character.name,
+            kawari_world::contain::message(panic.as_ref())
+        );
+        // What was waiting to be sent may be half of something.
+        connection.outgoing.take();
+    }
+    client_ended(&mut connection, client_handle).await;
+}
+
+/// The connection's turns: what the client sends, what the world sends it, and its timers, until it ends.
+async fn client_turns(
+    connection: &mut ZoneConnection,
     mut internal_recv: UnboundedReceiver<FromServer>,
     client_handle: ClientHandle,
 ) {
@@ -5723,7 +5788,7 @@ async fn client_loop(
             n = connection.socket.read(&mut buf) => {
                 match n {
                     Ok(n) => {
-                        if !process_packet(&mut connection, &mut lua_player, &mut events, client_handle.clone(), n, &buf, &mut pending).await {
+                        if !process_packet(connection, &mut lua_player, &mut events, client_handle.clone(), n, &buf, &mut pending).await {
                             break;
                         }
                     },
@@ -5733,7 +5798,7 @@ async fn client_loop(
                     },
                 }
             }
-            msg = internal_recv.recv() => process_server_msg(&mut connection, &mut lua_player, &mut events, client_handle.clone(), msg).await,
+            msg = internal_recv.recv() => process_server_msg(connection, &mut lua_player, &mut events, client_handle.clone(), msg).await,
             _ = autosave.tick() => {
                 if connection.player_data.character.actor_id.is_valid() && !connection.gracefully_logged_out {
                     connection.autosave();
@@ -5764,7 +5829,10 @@ async fn client_loop(
             }
         }
     }
+}
 
+/// The end of a zone connection, however it ended: the player logged out and saved if they hadn't, the world told.
+async fn client_ended(connection: &mut ZoneConnection, client_handle: ClientHandle) {
     // What's left goes out, and the rest as it's sent.
     connection.flush_segments().await;
     connection.batching = false;

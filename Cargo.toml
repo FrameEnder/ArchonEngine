@@ -35,7 +35,9 @@ lto = true
 strip = true
 opt-level = "z"
 codegen-units = 1
-panic = "abort"
+# Unwinding, not "abort" (FrameEnder fork, 2026-11-14): a panic then ends the connection or the step of the world it
+# happened in, not the whole server (`servers/world/src/contain.rs`).
+panic = "unwind"
 
 [workspace.dependencies]
 # Used to read game data

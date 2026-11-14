@@ -3,6 +3,22 @@
 What is known to be missing, approximated or wrong in the fork. Remove an entry in the same commit that fixes it, and
 add one when something is found.
 
+## Stability (2026-11-14)
+
+* **Not played yet** (`stability.md`): panics kept to a connection or a step of the world, `kawari-run` restarting a
+  server that ends, a stream out of step dropped after three unreadable packets, the world ending itself after 180 s
+  stuck, bots made without reading the game's files. The release build with `panic = "unwind"` builds here (without
+  Oodle), and `kawari-run`'s restarting was run with stand-in servers; the world server itself hasn't run (no game
+  files here), so a real panic in a release build is first seen on Bob's server.
+* After a panic in a step of the world, what that step was doing is half done (an actor half spawned, a message with
+  no answer). The player it concerned may need to log out and in; the log says which step.
+* A panic while one of the three `std::sync` locks is held (`collision.rs`'s loaded list, `bot_rotation.rs`,
+  `core/src/packet/remap.rs`) poisons it: collision and rotations then answer as if they had nothing until a restart.
+* The world bots' start-up (45 s with no one able to log in, every start) should be about a second now; unmeasured.
+* Why a busy connection loses its place in the client's Oodle stream is still unknown; only the consequences are
+  shorter now.
+* The client's own crashes with no cause found: the Stone Vigil's exit (2026-11-07) and the teleport of 2026-10-27.
+
 ## Networking (2026-11-14)
 
 * **Not played yet**: segments sent as one frame per turn of a connection's loop, `TCP_NODELAY`, the capture written
@@ -1456,8 +1472,9 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   2026-10-22): Kawari sent warp type 1 where retail sends 4 (see [Travel](travel.md#teleporting)); fixed 2026-10-22,
   untested in game. Retail's ActorControlSelf 263/253 around the warp still aren't sent.
 * Anything that keeps a player's connection busy for a second or so (a slow sheet read in a loop, say) desyncs the
-  client's Oodle stream: every later packet from it fails to parse and the player is stuck (frozen, endless loading)
-  until they reconnect. Why a delay breaks the stream, rather than only slowing it, isn't known.
+  client's Oodle stream: every later packet from it fails to parse. Since 2026-11-14 the connection is dropped after
+  three such packets (`stability.md`), so the client shows the connection lost instead of freezing. Why a delay
+  breaks the stream, rather than only slowing it, isn't known.
 
 ## Items
 
@@ -1620,8 +1637,8 @@ furniture; market board, trade, retainers, blacklist and fellowships are placeho
 * The message loop and the tick no longer deadlock ([Timing](timing.md#the-worlds-turn-2026-11-05)), but the locks
   inside a step are still taken in either order (`data` then `network` in about 75 places, the other way in about 45);
   that's only safe while those two tasks are the only ones that take them, each holding the turn. A new task that
-  touches the world must take the turn too. A step that never ends (a loop that doesn't finish) still stops the world:
-  the watchdog only logs it.
+  touches the world must take the turn too. A step that never ends (a loop that doesn't finish) stops the world for
+  180 s, then the server ends itself and `kawari-run` starts it again (`stability.md`, 2026-11-14).
 
 ## ArchonEngine ControlPanel
 

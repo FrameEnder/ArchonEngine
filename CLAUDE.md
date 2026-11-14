@@ -4,6 +4,14 @@ Bob's fork of Kawari (an FFXIV server emulator). Companion projects: ArchonEngin
 (`FrameEnder/Kawari-Web`, Kawari Web before 2.26.0) and the private `FrameEnder/kawari-diagnostics` (bundles,
 recordings' analyses, the Dalamud plugins).
 
+## The running server
+
+The ControlPanel's harness (`/dashboard/harness`, 2.31.0 on) is the server's state as JSON: status, the log
+(filtered), the log's problem lines, the captures, a character's quest state. A session reads it through Bob's
+Chrome (`http://192.168.1.7:7301/dashboard/harness`, once he's signed in there) instead of waiting for a bundle. It
+only reads; ask Bob before pressing anything on the dashboard that changes the server
+(`docs/src/fork/kawari-web.md`, "The harness").
+
 ## Read first
 
 The fork's documentation is `docs/src/fork/` (an mdbook section, start at `overview.md`). It describes every fork

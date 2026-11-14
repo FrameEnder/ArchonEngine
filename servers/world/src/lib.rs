@@ -2,6 +2,9 @@ mod chat_connection;
 
 /// Optional packet capture for debugging.
 pub mod capture;
+
+/// Keeping a panic to the connection or the step of the world it happened in.
+pub mod contain;
 pub use chat_connection::{ChatConnection, ChatConnectionChannels, ChatPlayerData};
 
 mod zone_connection;

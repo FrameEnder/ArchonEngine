@@ -672,25 +672,35 @@ impl GameData {
         let wears = self.classjob_categories_with(classjob);
         let mut best: HashMap<u8, (u16, u8, u32)> = HashMap::new();
         let mut second_ring: Option<(u16, u8, u32)> = None;
-        let rows: Vec<(u32, u8, u8, u8, u16, u8, bool, bool)> = self
-            .item_sheet
-            .into_iter()
-            .flatten_subrows()
-            .filter(|(_, row)| row.LevelEquip > 0 && row.EquipSlotCategory > 0)
-            .filter(|(_, row)| can_wear(wearable, row.EquipRestriction))
-            .map(|(id, row)| {
-                (
-                    id,
-                    row.EquipSlotCategory,
-                    row.ClassJobCategory,
-                    row.LevelEquip,
-                    row.LevelItem,
-                    row.Rarity,
-                    row.IsPvP,
-                    row.IsUnique,
-                )
-            })
-            .collect();
+        // The Item sheet's gear, read through once and kept: reading every row for each bot made took about 45 ms a
+        // bot with the sheets below (the world's first tick held it for 45 s making 927 world bots, with no one able
+        // to log in: Bob's bundles of 2026-11-14, "The world server is stuck"), and a Duty Finder party's bots or a
+        // marketboard's stalled everyone the same way in play.
+        let rows = match &self.bot_gear_rows {
+            Some(rows) => rows.clone(),
+            None => {
+                let rows: std::sync::Arc<Vec<GearRow>> = std::sync::Arc::new(
+                    self.item_sheet
+                        .into_iter()
+                        .flatten_subrows()
+                        .filter(|(_, row)| row.LevelEquip > 0 && row.EquipSlotCategory > 0)
+                        .map(|(id, row)| GearRow {
+                            id,
+                            slot: row.EquipSlotCategory,
+                            category: row.ClassJobCategory,
+                            level_equip: row.LevelEquip,
+                            item_level: row.LevelItem,
+                            rarity: row.Rarity,
+                            pvp: row.IsPvP,
+                            unique: row.IsUnique,
+                            restriction: row.EquipRestriction,
+                        })
+                        .collect(),
+                );
+                self.bot_gear_rows = Some(rows.clone());
+                rows
+            }
+        };
         // Up to level 50 (A Realm Reborn's gear) an item's level is its equip level, and nothing better is worn at that
         // level: later items that any level may wear (LevelEquip 1-50) come with item levels far above it. Taken as
         // the best, they gave level-43 Duty Finder bots in the Stone Vigil 5736, 4345 and 3919 HP, where retail's
@@ -701,8 +711,23 @@ impl GameData {
         } else {
             u16::MAX
         };
-        for (id, slot, category, level_equip, item_level, rarity, pvp, unique) in rows {
-            if pvp || level_equip > level || item_level > item_level_cap {
+        for &GearRow {
+            id,
+            slot,
+            category,
+            level_equip,
+            item_level,
+            rarity,
+            pvp,
+            unique,
+            restriction,
+        } in rows.iter()
+        {
+            if pvp
+                || level_equip > level
+                || item_level > item_level_cap
+                || !can_wear(wearable, restriction)
+            {
                 continue;
             }
             let slot = if slot == TWO_HANDED { MAIN_HAND } else { slot };
@@ -776,6 +801,19 @@ impl GameData {
 
     /// Every ClassJobCategory row that includes `classjob` (its column, after the row's name), reading the sheet once.
     fn classjob_categories_with(&mut self, classjob: u8) -> HashSet<u8> {
+        if let Some(categories) = self.bot_class_categories.get(&classjob) {
+            return categories.clone();
+        }
+        let categories = self.read_classjob_categories_with(classjob);
+        // Not kept when the sheet couldn't be read (empty), so it's tried again.
+        if !categories.is_empty() {
+            self.bot_class_categories
+                .insert(classjob, categories.clone());
+        }
+        categories
+    }
+
+    fn read_classjob_categories_with(&mut self, classjob: u8) -> HashSet<u8> {
         let config = get_config();
         let Ok(sheet) = self
             .resource
@@ -1113,6 +1151,19 @@ impl GameData {
     /// The EquipRaceCategory rows (items' EquipRestriction) this race and sex may wear: each row says which of the
     /// races, and which sexes, may wear its items (all of them, one sex, or one race's own gear.)
     pub fn wearable_restrictions(&mut self, race: Race, gender: Gender) -> HashSet<u8> {
+        let key = (race as u8, gender as u8);
+        if let Some(wearable) = self.bot_wearable.get(&key) {
+            return wearable.clone();
+        }
+        let wearable = self.read_wearable_restrictions(race, gender);
+        // Not kept when the sheet couldn't be read (empty), so it's tried again.
+        if !wearable.is_empty() {
+            self.bot_wearable.insert(key, wearable.clone());
+        }
+        wearable
+    }
+
+    fn read_wearable_restrictions(&mut self, race: Race, gender: Gender) -> HashSet<u8> {
         // A sheet with no text is in no language (its file has no `_en`): read with the server's, it wasn't found, so
         // every bot could wear anything (Bob's 2026-10-27 bundle: a Hyur woman in Miqo'te women's legs, item 3303,
         // EquipRestriction 11.)
@@ -1308,13 +1359,39 @@ pub struct CreatorLook {
     pub race_features: Vec<u8>,
 }
 
+/// An Item row that's gear, as `GameData::best_gear` needs it (kept: `GameData::bot_gear_rows`.)
+#[derive(Debug, Clone, Copy)]
+pub struct GearRow {
+    pub id: u32,
+    pub slot: u8,
+    pub category: u8,
+    pub level_equip: u8,
+    pub item_level: u16,
+    pub rarity: u8,
+    pub pvp: bool,
+    pub unique: bool,
+    pub restriction: u8,
+}
+
 impl GameData {
     /// Every race, clan and sex the character creator offers, with the faces, hairstyles and ears or tails it lists
     /// for each: CharaMakeType's rows, each menu's options for those three bytes (a menu's `Customize` is the byte it
     /// sets), the hairstyles' through CharaMakeCustomize (a hairstyle option is a row of it, whose FeatureID is the
     /// byte). A menu whose options aren't the byte's values (an icon's ID, over 255) counts 1 up to its number of
     /// options. Empty if the sheets can't be read.
-    pub fn creator_looks(&mut self) -> Vec<CreatorLook> {
+    pub fn creator_looks(&mut self) -> std::sync::Arc<Vec<CreatorLook>> {
+        if let Some(looks) = &self.bot_creator_looks {
+            return looks.clone();
+        }
+        let looks = std::sync::Arc::new(self.read_creator_looks());
+        // Not kept when the sheets couldn't be read (empty), so they're tried again.
+        if !looks.is_empty() {
+            self.bot_creator_looks = Some(looks.clone());
+        }
+        looks
+    }
+
+    fn read_creator_looks(&mut self) -> Vec<CreatorLook> {
         let language = get_config().world.language();
         let Ok(types) =
             icarus::CharaMakeType::CharaMakeTypeSheet::read_from(&mut self.resource, language)
