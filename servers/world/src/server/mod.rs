@@ -88,6 +88,7 @@ mod glamour;
 mod instance;
 mod job_gauge;
 mod keybound;
+mod keybound_mechanics;
 pub(crate) use keybound::{
     ITEM_COFFER as KEYBOUND_COFFER, ITEM_MGC as KEYBOUND_MGC, rewards as keybound_rewards,
 };
@@ -3464,6 +3465,16 @@ pub async fn server_main_loop(
                             handler_id,
                             trigger,
                         } => {
+                            // Keybound Brawler's client asking for its player's lock (`keybound.rs`.)
+                            if let kawari::common::DirectorTrigger::Unknown { id, unk3, .. } =
+                                trigger
+                            {
+                                let mut data = data.lock();
+                                if let Some(instance) = data.find_actor_instance_mut(from_actor_id)
+                                {
+                                    keybound::player_trigger(instance, from_actor_id, *id, *unk3);
+                                }
+                            }
                             handle_director_trigger(
                                 network.clone(),
                                 game_data.clone(),

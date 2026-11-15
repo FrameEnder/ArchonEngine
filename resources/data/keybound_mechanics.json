@@ -1,0 +1,279 @@
+{
+ "format": 1,
+ "comment": "Keybound Brawler's casters, big enemies and summoned enemies as retail played them (Connor's Chronofoil captures of 2026-11-03 to 11-09, 223 runs; the working notes: notes/keybound-brawler.md in kawari-diagnostics). `casters`: what an enemy casts once it has its words (`after` seconds later; `actions` one each among those of its kind on the field; `counter` the stacks of status 5354 a word takes one off, the cast broken at none; `damage` to the barrier as it completes; `warn` the status every player gets for 2 s as it completes and `lock` the parameter of status 5347 a player's client then asks for; `then` what the caster does after: walk on (nothing), `fall`, `leave`, or `become` another kind). `adds`: a summoned enemy's first moments, in seconds from its SpawnNpc (`appear` [action, when, effect kind]; `hit` [action, damage, when] at the barrier; `words` when it gets its words; `blast` [action, damage] as it reaches the barrier, and it's gone; `death` its own action as it falls; `control` an ActorControl as it gets its words; `spots` where its kind stands, [x, z]; `charge` a barrier's-words object, filled by words instead of felled). `scripts`: a big enemy's rotation from `start` seconds after it gets its words: one of `paths` (block names in order, from `loop_from` again at the end; a path listed twice is picked twice as often: the last boss's first part was `three` 82 times, `one_again` 64, `one` and `two` 36 each, and its second one of the other pair), each block `length` seconds of steps (`cast` with its `time`, and `helper` [action, damage, [seconds after it completes]] the blows that follow from the helper 9020; `act` an action at once, with an `effect` of that kind on itself or none; a cast's own `effect` is of kind 27 unless said; `spawn` with its `rule`: `columns` one in each column, each in a different row; `front` one in the front row; `all` every spot; `free` spots no one stands on; `state` [notice, its argument, switch] for so many seconds; `words` the barrier's-words object; `shield_off` the barrier's shield gone); `every` a spawn repeated.",
+ "helper": {"base": 9020, "layout": 12572305, "hp": 44},
+ "status": {"counter": 5354, "lock": 5347, "lock_seconds": 7.0, "warn_seconds": 2.0, "warn_after": 0.45, "lock_after": 1.4, "lock_notice": [17839, 17840], "lock_trigger": [268435458, 365], "interrupted": [1522, 6]},
+ "shield": {"notice": [17841, 17842]},
+ "casters": {
+  "19589": {"actions": [49524], "time": [6.7], "after": 0.09, "counter": 4, "damage": 2000},
+  "19590": {"actions": [49526, 49527, 49528], "time": [5.7, 8.2, 10.7], "after": 0.09, "damage": 1500, "then": "fall"},
+  "19591": {"actions": [49529], "time": [4.7], "after": 0.09, "warn": 5346, "lock": 25},
+  "19827": {"actions": [49542, 49543, 49544, 49545], "time": [19.7, 19.7, 19.7, 19.7], "after": 0.09, "then": "become", "become": 19828, "become_after": 0.7},
+  "19829": {"actions": [49552], "time": [6.7], "after": 0.75, "damage": 1500, "then": "leave"},
+  "19923": {"actions": [49706], "time": [19.7], "after": 1.6, "damage": 3000, "then": "leave"}
+ },
+ "adds": {
+  "19592": {"status": [2056, 1169], "arrive": 49531},
+  "19825": {
+   "appear": [49534, 0.75, 72],
+   "words": 1.8,
+   "blast": [49535, 3000],
+   "death": 49537,
+   "spots": [
+    [-7.5, -18],
+    [-7.5, -13],
+    [-7.5, -8],
+    [-7.5, -3],
+    [-2.5, -18],
+    [-2.5, -13],
+    [-2.5, -8],
+    [-2.5, -3],
+    [2.5, -18],
+    [2.5, -13],
+    [2.5, -8],
+    [2.5, -3],
+    [7.5, -18],
+    [7.5, -13],
+    [7.5, -8],
+    [7.5, -3]
+   ],
+   "control": [62, 0, 1]
+  },
+  "19826": {
+   "appear": [49534, 0.75, 72],
+   "words": 1.8,
+   "blast": [49536, 3000],
+   "death": 49537,
+   "spots": [
+    [-7.5, -18],
+    [-7.5, -13],
+    [-7.5, -8],
+    [-7.5, -3],
+    [-2.5, -18],
+    [-2.5, -13],
+    [-2.5, -8],
+    [-2.5, -3],
+    [2.5, -18],
+    [2.5, -13],
+    [2.5, -8],
+    [2.5, -3],
+    [7.5, -18],
+    [7.5, -13],
+    [7.5, -8],
+    [7.5, -3]
+   ],
+   "control": [62, 0, 1]
+  },
+  "19827": {"words": 2.76, "spots": [[-8, 0], [-4, 5], [4, 5], [8, 0]]},
+  "19828": {"words": 2.7},
+  "19829": {"hit": [49551, 670, 0.76], "words": 2.05, "death": 49553, "spots": [[-9, 5], [-8, 13.5], [-6, 9], [-2.5, 12.5], [2.5, 15], [6.5, 10], [9, 5], [9, 13.5]]},
+  "19923": {
+   "appear": [49705, 0.76, 27],
+   "words": 1.25,
+   "spots": [
+    [-9.5, -4],
+    [-9.5, 14],
+    [-5.9, -13],
+    [-5.9, 5],
+    [-4.4, -4],
+    [-4.4, 14],
+    [-0.8, -13],
+    [-0.8, 5],
+    [0.8, -4],
+    [0.8, 14],
+    [4.4, -13],
+    [4.4, 5],
+    [5.9, -4],
+    [5.9, 14],
+    [9.5, -13],
+    [9.5, 5]
+   ]
+  },
+  "19824": {"charge": true, "words": 0.0, "spots": [[0, 18.5]]},
+  "20079": {"charge": true, "words": 0.0, "spots": [[0, 18.5]]}
+ },
+ "scripts": {
+  "19593": {
+   "start": 5.1,
+   "paths": [["a", "b"]],
+   "loop_from": 0,
+   "blocks": {
+    "a": {
+     "length": 36.5,
+     "steps": [
+      {"at": 0, "cast": 49533, "time": 2.7},
+      {"at": 5.2, "act": 50651, "effect": 27},
+      {"at": 6.3, "spawn": 19825, "rule": "columns", "count": 4},
+      {"at": 13.3, "cast": 49532, "time": 4.7, "warn": 5437, "lock": 1170},
+      {"at": 29.4, "act": 50650}
+     ]
+    },
+    "b": {
+     "length": 46.5,
+     "steps": [
+      {"at": 0, "cast": 49533, "time": 2.7},
+      {"at": 5.2, "act": 50651, "effect": 27},
+      {"at": 6.3, "spawn": 19825, "rule": "columns", "count": 4},
+      {"at": 13.3, "cast": 49538, "time": 11.7, "counter": 4, "damage": 3000},
+      {"at": 29.4, "act": 50650}
+     ]
+    }
+   }
+  },
+  "19594": {
+   "start": 0.1,
+   "paths": [["first", "later"]],
+   "loop_from": 1,
+   "blocks": {
+    "first": {
+     "length": 36.4,
+     "steps": [
+      {"at": 0, "cast": 49547, "time": 2.7, "effect": 1},
+      {"at": 4.7, "state": [17837, 5348, 3071], "for": 28.0},
+      {"at": 5.1, "cast": 49541, "time": 2.7},
+      {"at": 9.8, "spawn": 19827, "rule": "all", "count": 4},
+      {"at": 16.3, "cast": 49548, "time": 11.7, "counter": 4, "damage": 6000}
+     ]
+    },
+    "later": {
+     "length": 46.3,
+     "steps": [
+      {"at": 0, "cast": 49547, "time": 2.7, "effect": 1},
+      {"at": 4.7, "state": [17837, 5348, 3071], "for": 28.0},
+      {"at": 5.1, "cast": 49541, "time": 2.7},
+      {"at": 9.8, "spawn": 19827, "rule": "all", "count": 4},
+      {"at": 16.3, "cast": 49548, "time": 11.7, "counter": 4, "damage": 6000}
+     ]
+    }
+   }
+  },
+  "19595": {
+   "start": 0.1,
+   "paths": [["summon", "first", "words", "words", "last", "end"]],
+   "loop_from": 1,
+   "every": {"spawn": 19829, "rule": "free", "from": 4.2, "interval": 5.0},
+   "blocks": {
+    "summon": {"length": 14.2, "steps": [{"at": 0, "cast": 49550, "time": 2.7}]},
+    "first": {
+     "length": 23.1,
+     "steps": [
+      {"at": 0, "cast": 49554, "time": 11.7, "damage": 3000},
+      {"at": 0.3, "words": 19824},
+      {"at": 14.0, "shield_off": true}
+     ]
+    },
+    "words": {
+     "length": 29.1,
+     "steps": [
+      {"at": 0, "cast": 49554, "time": 11.7, "damage": 3000},
+      {"at": 0.3, "words": 19824},
+      {"at": 14.0, "shield_off": true}
+     ]
+    },
+    "last": {
+     "length": 20.0,
+     "steps": [
+      {"at": 0, "cast": 49554, "time": 11.7, "damage": 3000},
+      {"at": 0.3, "words": 19824},
+      {"at": 14.0, "shield_off": true}
+     ]
+    },
+    "end": {"length": 35.0, "steps": [{"at": 0, "cast": 49555, "time": 29.7}]}
+   }
+  },
+  "19596": {
+   "start": 5.2,
+   "paths": [
+    ["open", "one", "rest", "open", "two", "end", "last"],
+    ["open", "one", "rest", "open", "three", "end", "last"],
+    ["open", "two", "rest", "open", "one", "end", "last"],
+    ["open", "two", "rest", "open", "one_again", "end", "last"],
+    ["open", "three", "rest", "open", "one", "end", "last"],
+    ["open", "three", "rest", "open", "one_again", "end", "last"],
+    ["open", "three", "rest", "open", "one", "end", "last"],
+    ["open", "three", "rest", "open", "one_again", "end", "last"],
+    ["open", "one_again", "rest", "open", "two", "end", "last"],
+    ["open", "one_again", "rest", "open", "three", "end", "last"],
+    ["open", "one_again", "rest", "open", "two", "end", "last"],
+    ["open", "one_again", "rest", "open", "three", "end", "last"]
+   ],
+   "loop_from": 6,
+   "blocks": {
+    "open": {
+     "length": 42.1,
+     "steps": [
+      {"at": 0, "cast": 49699, "time": 29.7, "helper": [49700, 6000, [1.9, 2.9, 3.8]]},
+      {"at": 0.2, "words": 20079},
+      {"at": 35.0, "shield_off": true}
+     ]
+    },
+    "one": {
+     "length": 56.6,
+     "steps": [
+      {"at": 0, "cast": 49710, "time": 2.7},
+      {"at": 5.2, "act": 50652, "effect": 27},
+      {"at": 6.2, "spawn": 19826, "rule": "columns", "count": 4},
+      {"at": 11.4, "spawn": 19826, "rule": "front", "count": 1},
+      {"at": 13.3, "cast": 49702, "time": 4.7, "warn": 5437, "lock": 1170},
+      {"at": 16.6, "spawn": 19826, "rule": "front", "count": 1},
+      {"at": 21.4, "spawn": 19826, "rule": "front", "count": 1},
+      {"at": 22.4, "cast": 49701, "time": 2.7, "effect": 1},
+      {"at": 26.6, "spawn": 19826, "rule": "front", "count": 1},
+      {"at": 27.1, "state": [17837, 5472, 3072], "for": 30.0},
+      {"at": 31.4, "spawn": 19826, "rule": "front", "count": 1},
+      {"at": 56.6, "act": 49713}
+     ]
+    },
+    "one_again": {
+     "length": 56.6,
+     "steps": [
+      {"at": 0, "cast": 49710, "time": 2.7},
+      {"at": 5.2, "act": 50652, "effect": 27},
+      {"at": 6.3, "spawn": 19826, "rule": "columns", "count": 4},
+      {"at": 7.3, "cast": 49701, "time": 2.7, "effect": 1},
+      {"at": 11.1, "spawn": 19826, "rule": "front", "count": 1},
+      {"at": 11.9, "state": [17837, 5472, 3072], "for": 30.0},
+      {"at": 16.3, "spawn": 19826, "rule": "front", "count": 1},
+      {"at": 34.4, "cast": 49703, "time": 11.7, "counter": 4, "damage": 3000},
+      {"at": 56.6, "act": 49713}
+     ]
+    },
+    "two": {
+     "length": 62.8,
+     "steps": [
+      {"at": 0, "act": 50652, "effect": 27},
+      {"at": 2.1, "cast": 49701, "time": 2.7, "effect": 1},
+      {"at": 6.8, "state": [17837, 5472, 3072], "for": 30.0},
+      {"at": 7.3, "cast": 49704, "time": 2.7},
+      {"at": 12.5, "spawn": 19923, "rule": "free", "count": 3},
+      {"at": 17.4, "cast": 49704, "time": 2.7},
+      {"at": 22.5, "spawn": 19923, "rule": "free", "count": 4},
+      {"at": 34.6, "cast": 49704, "time": 2.7},
+      {"at": 39.8, "spawn": 19923, "rule": "free", "count": 3},
+      {"at": 46.7, "cast": 49703, "time": 11.7, "counter": 4, "damage": 3000},
+      {"at": 62.8, "act": 49713}
+     ]
+    },
+    "three": {
+     "length": 62.8,
+     "steps": [
+      {"at": 0, "act": 50652, "effect": 27},
+      {"at": 2.1, "cast": 49704, "time": 2.7},
+      {"at": 7.3, "spawn": 19923, "rule": "free", "count": 3},
+      {"at": 12.2, "cast": 49702, "time": 4.7, "warn": 5437, "lock": 1170},
+      {"at": 21.4, "cast": 49704, "time": 2.7},
+      {"at": 26.5, "cast": 49701, "time": 2.7, "effect": 1},
+      {"at": 26.5, "spawn": 19923, "rule": "free", "count": 4},
+      {"at": 31.1, "state": [17837, 5472, 3072], "for": 30.0},
+      {"at": 34.6, "cast": 49704, "time": 2.7},
+      {"at": 39.8, "spawn": 19923, "rule": "free", "count": 3},
+      {"at": 62.8, "act": 49713}
+     ]
+    },
+    "rest": {"length": 8.2, "steps": []},
+    "end": {"length": 10.2, "steps": [{"at": 8.1, "act": 49713}]},
+    "last": {"length": 12.15, "steps": [{"at": 0, "cast": 49711, "time": 4.7, "helper": [49712, 600, [1.8, 2.8, 3.8, 4.8, 5.8]]}]}
+   }
+  }
+ }
+}

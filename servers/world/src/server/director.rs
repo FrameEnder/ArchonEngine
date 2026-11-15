@@ -4368,6 +4368,8 @@ pub fn handle_director_messages(
             if let Some(director) = instance.directors.first_mut() {
                 director.scene_finished(*scene);
             }
+            // Keybound Brawler's result and way out (`keybound.rs`.)
+            crate::server::keybound::scene_finished(&network, instance, *from_actor_id, *scene);
 
             true
         }

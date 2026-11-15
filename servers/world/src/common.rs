@@ -334,6 +334,15 @@ pub enum FromServer {
     PlayDirectorCutscene(u32, HandlerId, Vec<u32>),
     /// Plays one of the director's scenes, with these scene flags.
     PlayDirectorScene(HandlerId, u16, u32),
+    /// A director's scene with parameters, in a GameProgress event with this argument (Keybound Brawler's cutscene
+    /// and result, `server/keybound.rs`); its end comes back as `ToServer::DirectorSceneFinished` too.
+    PlayDirectorSceneWith {
+        handler: HandlerId,
+        scene: u16,
+        flags: u32,
+        params: Vec<u32>,
+        arg: u32,
+    },
     /// Inform the client that another player has placed a piece of furniture.
     FurniturePlaced(ContainerType, u16, u16, u8, Position, bool, f32, u8),
     /// Inform the client that another player has moved or rotated a piece of furniture.

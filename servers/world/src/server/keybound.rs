@@ -23,17 +23,23 @@
 //!
 //! **A hit** (the client's ActionRequest): the ActionEffect for 100 damage, the player's score (`SCORE`; 100 a word,
 //! 200 for the second wave's big enemy's, 300 for the last boss's, times 1.0 to 2.0 by the player's bonus level), the
-//! bonus gauge (15 times the word's worth more; from 0.535 s later it drains) and the enemy's next words. The gauge's
-//! own packet (opcode 330 in patch 7.57: whether it's held, its value, the server's time) isn't sent: its opcode
-//! in 7.58 isn't known, so the client's gauge doesn't move, but the levels it stands for are counted here. An enemy at 0: ActorControls 14 and 2 `[2]`, `DEFEATED` and `WORDS_GONE` for the one whose word did
-//! it, `ENEMY_DOWN [enemy, 3068]`, `KILLS`; 2.0 s later its words go for everyone (`WORDS_GONE`, ActorControl 54
-//! `[0]`), at 3.04 s ActorControl 607 `[enemy, 1, 0, 100]`, at 4.32 s it's deleted.
+//! bonus gauge (15 times the word's worth more; from 0.535 s later it drains) and the enemy's next words. The gauge
+//! is the client's to draw from its own packet (`KeyboundGauge`: whether it's held, its value, the server's time),
+//! sent with each word and as it starts to drain. An enemy at 0: ActorControls 14 and 2 `[2]`, `DEFEATED` and
+//! `WORDS_GONE` for the one whose word did it, `ENEMY_DOWN [enemy, 3068]`, `KILLS`; 2.0 s later its words go for
+//! everyone (`WORDS_GONE`, ActorControl 54 `[0]`), at 3.04 s ActorControl 607 `[enemy, 1, 0, 100]`, at 4.32 s it's
+//! deleted.
 //!
-//! **The end**: the barrier at 0 loses it; the last boss's fall wins it. Either way each player gets MGP and MGC by
-//! their score (`rewards`) and, for a win, a Keybound Coffer.
+//! **Impassioned Inputs**: a 19592's fall gives everyone 20 s of words worth 1,000 with the gauge held
+//! (`begin_fever`.) **The casters, the big enemies and what they summon** are in `keybound/play.rs`, from
+//! `resources/data/keybound_mechanics.json`: casts (and the four words that break one with the counter), each big
+//! enemy's rotation, its summons, the barrier's words and the shield they raise, the special states, and the lock a
+//! client asks for its player.
 //!
-//! What isn't built is in `docs/src/fork/known-issues.md`: the big enemies' own attacks and summons, the casters'
-//! spells, Impassioned Inputs, the words over the barrier, the cutscene before the last wave and the result window.
+//! **The end**: the barrier at 0 loses it; the last boss's fall wins it (`finish`: the result's packet and scenes.)
+//! Either way each player gets MGP and MGC by their score (`rewards`) and, for a win, a Keybound Coffer.
+//!
+//! What isn't known is in `docs/src/fork/known-issues.md`.
 
 use std::{
     collections::HashMap,
@@ -46,28 +52,44 @@ use kawari::{
     config::get_config,
     ipc::zone::{
         ActionEffect, ActionRequest, ActionType, ActorControlCategory, DamageElement, DamageKind,
-        DamageType, EventLogMessage, TargetEffect, TargetEffectKind,
+        DamageType, EventLogMessage, ServerZoneIpcData, ServerZoneIpcSegment, TargetEffect,
+        TargetEffectKind,
     },
 };
 use parking_lot::Mutex;
 use serde_json::Value;
 
 use crate::{
-    FromServer, GameData,
+    ClientId, FromServer, GameData,
     server::{
         actor::{NetworkedActor, create_npc_common_spawn, kill_actor},
         director::LuaDirectorTask,
+        effect::{gain_effect_instance, lose_effect_instance},
         instance::Instance,
+        keybound_mechanics::{
+            Add, MAP_ABSORB, MAP_BLOW, MAP_CHARGE, MAP_FALLEN, MAP_LOOK, MAP_SHIELD, Place, Spell,
+            Then, What, barrier_look, mechanics, stand,
+        },
         network::{DestinationNetwork, NetworkState},
     },
 };
 
+mod play;
+
 /// The duty (its ContentFinderCondition.)
 pub const DUTY: u16 = 1095;
 
-/// A word that hit (the client alternates the two) and one nobody carried.
-pub const ACTION_HITS: [u32; 2] = [49516, 49517];
+/// A word that hit (the client alternates the two; under Impassioned Inputs it sends 51027 and 51028 instead) and
+/// one nobody carried.
+pub const ACTION_HITS: [u32; 4] = [49516, 49517, 51027, 51028];
 pub const ACTION_MISS: u32 = 49520;
+/// A word on the barrier's words (the client alternates these two as well): it fills them instead of hurting them.
+pub const ACTION_CHARGES: [u32; 2] = [49518, 49519];
+
+/// Whether an action is one of the game's words.
+pub fn is_word(action: u32) -> bool {
+    ACTION_HITS.contains(&action) || ACTION_CHARGES.contains(&action) || action == ACTION_MISS
+}
 
 /// The director's commands (ActorControlSelf 109 `[director, command, …]`), as retail sent them.
 const WAVE_ON: u32 = 0x1000_0001;
@@ -86,16 +108,29 @@ const DEFEATED: u32 = 0x1000_0012;
 const PHASE: u32 = 0x1000_0013;
 const WAVE_CLEARED: u32 = 0x1000_0014;
 const ENEMY_DOWN: u32 = 0x1000_0016;
+/// The result (the two numbers retail sent with it), a special state's notice and its switch, and the lost game's.
+const RESULT: u32 = 0x1000_0005;
+const RESULT_ARGS: [u32; 2] = [12_782_296, 12_782_297];
+const STATE_NOTICE: u32 = 0x1000_0011;
+const STATE_SWITCH: u32 = 0x1000_0017;
+const LOST: u32 = 0x1000_0018;
+/// The music (the content director's own command) and the duty's end and its two time flags, as numbers.
+const SET_BGM: u32 = 0x8000_0001;
+const DUTY_COMPLETED: u32 = 0x4000_0002;
+const DUTY_FLAG: u32 = 0x4000_0007;
 
 /// `PHASE`'s values: between waves, the enemies appearing, the wave on, the game over.
 const PHASE_BETWEEN: u32 = 0;
 const PHASE_APPEAR: u32 = 1;
 const PHASE_ON: u32 = 2;
 const PHASE_OVER: u32 = 4;
+const PHASE_LOST: u32 = 5;
 
 /// `PLAYER`'s numbers: `[player, 12609, 12610]` once before the first wave, `[player, 708]` after each wave.
 const PLAYER_AT_START: [u32; 2] = [12609, 12610];
 const PLAYER_AFTER_WAVE: u32 = 708;
+/// And `[player, 718, 3]` to each after a lost game.
+const PLAYER_LOST: [u32; 2] = [718, 3];
 /// `ENEMY_DOWN`'s second number (7,254 of 7,372; 3069 the rest.)
 const ENEMY_DOWN_ARG: u32 = 3068;
 /// `WORDS`: the list's ID is this plus the group, and the last number.
@@ -145,9 +180,10 @@ const FALLEN_CONTROL_AFTER: f32 = 3.04;
 const CONTROL_FALLEN: u32 = 607;
 const DELETE_AFTER: f32 = 4.32;
 
-/// A hit's damage, and what a word is worth by its group.
+/// A hit's damage, and what a word is worth by its group (the barrier's own words, group 3: 400, 574 of them at
+/// the first level.)
 const HIT_DAMAGE: u32 = 100;
-const WORD_POINTS: [u32; 3] = [100, 200, 300];
+const WORD_POINTS: [u32; 4] = [100, 200, 300, 400];
 /// The bonus gauge: full at this; a hit adds 15 times the word's worth; it drains by about this a second (586 to 702
 /// in the clean stretches) from 0.535 s after a hit. Full, it goes round, and 1.2 s later it's set full again; going
 /// round after that is a bonus level (each a fifth more a word, five at most.)
@@ -157,6 +193,56 @@ const GAUGE_DRAIN: f32 = 620.0;
 const GAUGE_HOLD: f32 = 0.535;
 const GAUGE_REFILL_AFTER: f32 = 1.2;
 const MOST_LEVELS: u32 = 5;
+/// Impassioned Inputs (the client's "fever"): as a 19592 falls, for 20.0 s (67 of 67), every word is worth 1,000
+/// (533 of 548; the rest 3,000, taken to be the big enemy's words), the gauge is held as it stood and the client
+/// sends its words as 51027 and 51028. Its notice `[17835, 5342]` and switch `[3078, 1]` as it begins, `[17836, 5342]`
+/// and `[3078, 0]` as it ends.
+const FEVER_BASE: u32 = 19592;
+const FEVER_SECONDS: f32 = 20.0;
+const FEVER_POINTS: [u32; 3] = [1000, 3000, 3000];
+const FEVER_NOTICE: [u32; 2] = [17835, 17836];
+const FEVER_STATUS: u32 = 5342;
+/// The status's parameter on each player (27 of 27.)
+const FEVER_STATUS_PARAM: u16 = 1180;
+const FEVER_SWITCH: u32 = 3078;
+/// The scenes: before the last wave (cutscene 4024, then the music 20301) and the result (4025, 20302), both scene 3
+/// of a GameProgress event with argument 1; the way out, scene 11 with argument 7 (as Air Force One's).
+const SCENE: u16 = 3;
+const CUTSCENE_FLAGS: u32 = 0x0850_2401;
+const CUTSCENE_PARAMS: [u32; 5] = [4024, 3, 20301, 0, 0];
+const RESULT_FLAGS: u32 = 0x0850_2403;
+const RESULT_PARAMS: [u32; 5] = [4025, 1, 20302, 0, 0];
+const SCENE_ARG: u32 = 1;
+const LEAVE_SCENE: u16 = 11;
+const LEAVE_FLAGS: u32 = 0x0C00_2001;
+const LEAVE_ARG: u32 = 7;
+/// The music: 1 as the cutscene nears and as a game is lost, then the last wave's and the lost game's.
+const BGM_NONE: u32 = 1;
+const BGM_LAST_WAVE: u32 = 20301;
+const BGM_LOST: u32 = 20303;
+/// Seconds after the second wave's end: the cutscene, and the last wave's music (retail's came as the cutscene ended,
+/// 15.9 s after it began.)
+const CUTSCENE_AT: f32 = 10.1;
+const LAST_WAVE_BGM_AT: f32 = 26.0;
+/// Seconds after a win: the result's numbers and the duty's completion. After a loss: the music and the players'
+/// numbers, then the duty's end, the rewards and the way out.
+const RESULT_AT: f32 = 8.05;
+const LOST_AT: [f32; 2] = [3.05, 6.1];
+
+/// A cast's effect lands this long after its bar ends (2.7 s casts landed 3.0 s after they began, 11.7 s ones 12.0.)
+const CAST_LANDS_AFTER: f32 = 0.3;
+/// One whose own action shows its fall (a bomb, a 19829) dies this long after it; a caster that falls by its own cast
+/// the same.
+const DIES_AFTER: f32 = 1.0;
+/// An enemy that leaves without falling: ActorControl 607 and its DeleteActor come this much sooner than a felled
+/// one's (its words go at once.)
+const LEAVES_SOONER: f32 = WORDS_GONE_AFTER;
+/// A summoned enemy appearing: ActorControl 36 `[0]` with its first action, then ActorControl 54 `[1]`.
+const CONTROL_APPEAR: u32 = 36;
+/// An action's effect of kind 27 (the action's own ID with it) and its fifth byte, as retail's had them.
+const EFFECT_OWN: u8 = 27;
+const EFFECT_FLAG: u8 = 0x80;
+
 /// A wave's bonus for a whole barrier.
 const WAVE_BONUS: u32 = 10_000;
 
@@ -374,6 +460,13 @@ impl Bonus {
         (points, round)
     }
 
+    /// A word under Impassioned Inputs: ten times its worth, whatever the level, and the gauge stays as it is.
+    pub fn fever_hit(&mut self, group: u32) -> u32 {
+        let points = FEVER_POINTS[(group as usize).min(FEVER_POINTS.len() - 1)];
+        self.score += points;
+        points
+    }
+
     /// The gauge set full after going round.
     pub fn refill(&mut self) {
         self.gauge = GAUGE_FULL;
@@ -395,7 +488,8 @@ impl Bonus {
 struct Player {
     bonus: Bonus,
     last_hit: Option<Instant>,
-    /// When the gauge is set full again after going round.
+    /// When the client is told the gauge drains (0.535 s after a hit), and when it's set full again after going round.
+    drain_at: Option<Instant>,
     refill_at: Option<Instant>,
 }
 
@@ -415,23 +509,111 @@ struct Enemy {
     fallen: Option<Instant>,
     /// What's been sent since its fall: its words gone, ActorControl 607.
     after_fall: u8,
+    /// Its SpawnNpc, and what's been done of a summoned enemy's first moments (its appearing, its first blow.)
+    spawned_at: Instant,
+    appeared: bool,
+    hit: bool,
+    /// The cast it begins once it has its words, and when; the cast it's in.
+    to_cast: Option<(Spell, Then, Instant)>,
+    casting: Option<Casting>,
+    /// A big enemy's rotation: when it begins, then where it stands.
+    script_at: Option<Instant>,
+    script: Option<Place>,
+    /// Its own action showed its fall: it dies then.
+    dying: Option<Instant>,
+    /// The barrier's words: filled to `full` by words (each player has their own.)
+    full: u32,
+    own_words: HashMap<ObjectId, (u32, u32)>,
+}
+
+/// A cast under way.
+#[derive(Debug, Clone)]
+struct Casting {
+    spell: Spell,
+    then: Then,
+    begun: Instant,
+    /// The counter's stacks left.
+    stacks: u32,
+}
+
+/// What's still to come at a set time.
+#[derive(Debug, Clone)]
+enum Pending {
+    /// A blow at the barrier from the helper (or whoever cast it.)
+    Blow {
+        from: ObjectId,
+        action: u32,
+        damage: u32,
+    },
+    StateOff {
+        notice: u32,
+        arg: u32,
+        switch: u32,
+    },
+    /// Every player's warning status, a player's lock and its end.
+    Warn {
+        status: u16,
+    },
+    Lock {
+        player: ObjectId,
+        param: u16,
+    },
+    Unlock {
+        player: ObjectId,
+    },
+    /// Another kind where one stood.
+    Become {
+        base: u32,
+        x: f32,
+        z: f32,
+    },
+}
+
+/// A status given or taken, done once the network isn't held.
+#[derive(Debug, Clone)]
+enum StatusChange {
+    Gain(ObjectId, u16, u16, f32),
+    Lose(ObjectId, u16),
+}
+
+impl Enemy {
+    fn new(base: u32, hp: u32, now: Instant) -> Self {
+        Self {
+            base,
+            hp,
+            words: None,
+            active_at: None,
+            ready_sent: true,
+            arrived: false,
+            next_attack: None,
+            boss: false,
+            fallen: None,
+            after_fall: 0,
+            spawned_at: now,
+            appeared: false,
+            hit: false,
+            to_cast: None,
+            casting: None,
+            script_at: None,
+            script: None,
+            dying: None,
+            full: 0,
+            own_words: HashMap::new(),
+        }
+    }
 }
 
 #[derive(Debug)]
 enum Stage {
     /// Before the first wave: the players' numbers, then the enemies.
-    Start {
-        players_sent: bool,
-    },
+    Start { players_sent: bool },
     /// A wave's enemies come and the wave runs; `on` once `WAVE_ON` went out.
-    Wave {
-        on: bool,
-    },
+    Wave { on: bool },
     /// After a wave: the two `BETWEEN`s, then the next.
-    Between {
-        sent: u8,
-    },
-    Over,
+    Between { sent: u8 },
+    /// The game over, won or lost: what's still to come (`step` counts what's been sent), then the players leave from
+    /// their result.
+    Ending { won: bool, step: u8 },
 }
 
 /// A run of the game.
@@ -455,6 +637,24 @@ pub struct Game {
     party: usize,
     /// Whether the wave's `APPEAR` has gone out.
     appear_sent: bool,
+    /// Impassioned Inputs, until then.
+    fever_until: Option<Instant>,
+    /// Before the last wave: the cutscene played, its music set.
+    cutscene: u8,
+    /// The barrier's shield is up (its words were filled.)
+    shield: bool,
+    /// The barrier's words on the field.
+    barrier_words: Option<ObjectId>,
+    /// The helper the big enemies' blows come from.
+    helper: Option<ObjectId>,
+    pending: Vec<(Instant, Pending)>,
+    statuses: Vec<StatusChange>,
+    /// A cast that warns is under way or just over: until when a client may ask for its lock, and the lock's
+    /// parameter.
+    warned: Option<(Instant, u16)>,
+    locked: Vec<ObjectId>,
+    /// Kinds to take another's place this turn: `(base, x, z)`.
+    becoming: Vec<(u32, f32, f32)>,
 }
 
 fn elapsed(since: Instant, now: Instant) -> f32 {
@@ -540,27 +740,81 @@ fn blow(
     damage: u32,
     sequence: u16,
 ) {
+    act(
+        network,
+        instance,
+        from,
+        action,
+        Some(target),
+        TargetEffectKind::Damage {
+            damage_kind: DamageKind::default(),
+            damage_type: DamageType::Unique,
+            damage_element: DamageElement::Unaspected,
+            bonus_percent: 0,
+            unk3: 0,
+            unk4: 0,
+            amount: damage.min(u16::MAX as u32) as u16,
+        },
+        sequence,
+    );
+}
+
+/// An action's effect of this kind with the action's own ID (retail's kind 27 on the enemies' own actions, 72 on the
+/// bombs' appearing.)
+fn own_effect(kind: u8, action: u32) -> TargetEffectKind {
+    match kind {
+        0 => TargetEffectKind::None,
+        1 => TargetEffectKind::Miss,
+        EFFECT_OWN => TargetEffectKind::ExecuteCombo {
+            sequence: 0,
+            unk2: 0,
+            unk3: 0,
+            unk4: 0,
+            unk5: EFFECT_FLAG,
+            action_id: action as u16,
+        },
+        // The bombs' 49534: `48 01 00 00 00 80 00 00`.
+        _ => TargetEffectKind::Unknown {
+            magic: kind,
+            param0: 1,
+            param1: 0,
+            param2: 0,
+            param3: 0,
+            param4: EFFECT_FLAG,
+            value: 0,
+        },
+    }
+}
+
+/// One actor's action with this effect on a target (or on no one), as everyone sees it.
+fn act(
+    network: &mut NetworkState,
+    instance: &Instance,
+    from: ObjectId,
+    action: u32,
+    target: Option<ObjectId>,
+    effect: TargetEffectKind,
+    sequence: u16,
+) {
     let rotation = instance
         .find_actor(from)
         .map(|actor| actor.rotation())
         .unwrap_or(0.0);
-    let target = ObjectTypeId {
-        object_id: target,
-        object_type: ObjectTypeKind::None,
-    };
+    let targets: Vec<ObjectTypeId> = target
+        .into_iter()
+        .map(|object_id| ObjectTypeId {
+            object_id,
+            object_type: ObjectTypeKind::None,
+        })
+        .collect();
     let mut effects = [TargetEffect::default(); 8];
-    effects[0] = TargetEffect(TargetEffectKind::Damage {
-        damage_kind: DamageKind::default(),
-        damage_type: DamageType::Unique,
-        damage_element: DamageElement::Unaspected,
-        bonus_percent: 0,
-        unk3: 0,
-        unk4: 0,
-        amount: damage.min(u16::MAX as u32) as u16,
-    });
+    effects[0] = TargetEffect(effect);
     let ipc = ActionEffect {
-        animation_target_id: target,
-        targets: vec![target],
+        animation_target_id: targets.first().copied().unwrap_or(ObjectTypeId {
+            object_id: from,
+            object_type: ObjectTypeKind::None,
+        }),
+        targets,
         action_id: action,
         animation_lock: 0.11,
         rotation,
@@ -582,6 +836,85 @@ fn blow(
     );
 }
 
+/// One of the duty's map effects, to everyone.
+fn map_effect(
+    network: &mut NetworkState,
+    instance: &Instance,
+    director: HandlerId,
+    (state, timeline_id, index): (u16, u16, u8),
+) {
+    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::DirectorMapEffect {
+        handler_id: director,
+        state,
+        timeline_id,
+        index,
+    });
+    network.send_to_instance(
+        ObjectId::default(),
+        instance,
+        FromServer::PacketSegment(ipc, ObjectId::default()),
+        DestinationNetwork::ZoneClients,
+    );
+}
+
+/// A player's bonus gauge as the client is told it (`KeyboundGauge`): held, or draining from now.
+fn send_gauge(network: &mut NetworkState, to: ObjectId, gauge: f32, held: bool) {
+    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::KeyboundGauge {
+        held: held as u32,
+        gauge: gauge.clamp(0.0, GAUGE_FULL) as u32,
+        time: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|since| since.as_millis() as u64)
+            .unwrap_or(0),
+    });
+    network.send_to_by_actor_id(
+        to,
+        FromServer::PacketSegment(ipc, to),
+        DestinationNetwork::ZoneClients,
+    );
+}
+
+/// One of the director's scenes for a player, in a GameProgress event with this argument.
+fn play_scene(
+    network: &mut NetworkState,
+    director: HandlerId,
+    to: ObjectId,
+    scene: u16,
+    flags: u32,
+    params: &[u32],
+    arg: u32,
+) {
+    network.send_to_by_actor_id(
+        to,
+        FromServer::PlayDirectorSceneWith {
+            handler: director,
+            scene,
+            flags,
+            params: params.to_vec(),
+            arg,
+        },
+        DestinationNetwork::ZoneClients,
+    );
+}
+
+/// The four places of the result: each player's place (1 the highest score), score, content ID and account ID, in
+/// the order of their content IDs (retail's; places without a player are zeros.)
+pub fn result_places(mut players: Vec<(u64, u64, u32)>) -> ([u8; 4], [u32; 4], [u64; 4], [u64; 4]) {
+    players.sort();
+    players.truncate(4);
+    let mut places = [0u8; 4];
+    let mut scores = [0u32; 4];
+    let mut content_ids = [0u64; 4];
+    let mut account_ids = [0u64; 4];
+    for (index, (content_id, account_id, score)) in players.iter().enumerate() {
+        places[index] = 1 + players.iter().filter(|other| other.2 > *score).count() as u8;
+        scores[index] = *score;
+        content_ids[index] = *content_id;
+        account_ids[index] = *account_id;
+    }
+    (places, scores, content_ids, account_ids)
+}
+
 impl Game {
     fn new(director: HandlerId, now: Instant, party: usize) -> Self {
         Self {
@@ -601,6 +934,16 @@ impl Game {
             kills: 0,
             party: party.max(1),
             appear_sent: false,
+            fever_until: None,
+            cutscene: 0,
+            shield: false,
+            barrier_words: None,
+            helper: None,
+            pending: Vec::new(),
+            statuses: Vec::new(),
+            warned: None,
+            locked: Vec::new(),
+            becoming: Vec::new(),
         }
     }
 
@@ -659,6 +1002,7 @@ fn spawn_piece(
     name: u32,
     layout: u32,
     hp: u32,
+    hp_now: u32,
     position: Position,
 ) -> Option<ObjectId> {
     // A game install without the event's rows (before patch 7.57) can't show it.
@@ -669,7 +1013,7 @@ fn spawn_piece(
     npc.common.position = position;
     npc.common.rotation = 0.0;
     npc.common.max_health_points = hp;
-    npc.common.health_points = hp;
+    npc.common.health_points = hp_now;
     let actor_id = Instance::generate_actor_id();
     instance.insert_npc(actor_id, npc, &get_config(), game_data);
     // The game moves it and has it hit the barrier; it has no fight of its own.
@@ -709,6 +1053,7 @@ pub fn tick(
                     ENEMY_NAME,
                     BARRIER_LAYOUT,
                     BARRIER_PIECE_HP,
+                    BARRIER_PIECE_HP,
                     Position(glam::Vec3A::new(x, 0.0, BARRIER_Z)),
                 ) {
                     game.barrier.push(id);
@@ -722,6 +1067,7 @@ pub fn tick(
                 base,
                 ENEMY_NAME,
                 layout,
+                BARRIER_PIECE_HP,
                 BARRIER_PIECE_HP,
                 Position(glam::Vec3A::new(0.0, 0.0, z)),
             ) {
@@ -766,11 +1112,16 @@ impl Game {
             self.players.entry(player).or_insert(Player {
                 bonus: Bonus::default(),
                 last_hit: None,
+                drain_at: None,
                 refill_at: None,
             });
         }
-        self.gauges(now);
+        self.gauges(&mut network.lock(), instance, now);
         self.fallen(network, instance, now);
+        self.timed(network, instance, now);
+        for (base, x, z) in std::mem::take(&mut self.becoming) {
+            self.summon(instance, game_data, base, x, z, now);
+        }
 
         match self.stage {
             Stage::Start { players_sent } => {
@@ -818,7 +1169,7 @@ impl Game {
                     command_all(&mut network, instance, self.director, PHASE, &[PHASE_ON]);
                     self.stage = Stage::Wave { on: true };
                 }
-                self.enemies_turn(network, instance, now, step);
+                self.enemies_turn(network, instance, game_data, now, step);
                 if self.barrier_hp == 0 {
                     self.finish(network, instance, false, now);
                 } else if matches!(self.stage, Stage::Wave { on: true }) && self.wave_cleared() {
@@ -843,6 +1194,10 @@ impl Game {
                             FromServer::PacketSegment(ipc, ObjectId::default()),
                             DestinationNetwork::ZoneClients,
                         );
+                        // Whole again, and looking it (retail's map effect came only when it didn't.)
+                        if barrier_look(self.barrier_hp) != 0 {
+                            map_effect(&mut network, instance, self.director, MAP_LOOK[0]);
+                        }
                         self.barrier_hp = BARRIER_HP;
                         command_all(
                             &mut network,
@@ -863,7 +1218,41 @@ impl Game {
                     }
                     self.stage = Stage::Between { sent: sent + 1 };
                 }
-                let appear = if self.wave + 1 == waves().waves.len() - 1 {
+                let before_last = self.wave + 1 == waves().waves.len() - 1;
+                if before_last {
+                    // The music stops with the second `BETWEEN`, the cutscene plays, and the last wave's music
+                    // begins.
+                    let mut network = network.lock();
+                    if self.cutscene == 0 && clock >= BETWEEN_AFTER[1] {
+                        self.cutscene = 1;
+                        command_all(&mut network, instance, self.director, SET_BGM, &[BGM_NONE]);
+                    }
+                    if self.cutscene == 1 && clock >= CUTSCENE_AT {
+                        self.cutscene = 2;
+                        for player in players_in(instance) {
+                            play_scene(
+                                &mut network,
+                                self.director,
+                                player,
+                                SCENE,
+                                CUTSCENE_FLAGS,
+                                &CUTSCENE_PARAMS,
+                                SCENE_ARG,
+                            );
+                        }
+                    }
+                    if self.cutscene == 2 && clock >= LAST_WAVE_BGM_AT {
+                        self.cutscene = 3;
+                        command_all(
+                            &mut network,
+                            instance,
+                            self.director,
+                            SET_BGM,
+                            &[BGM_LAST_WAVE],
+                        );
+                    }
+                }
+                let appear = if before_last {
                     LAST_APPEAR
                 } else {
                     NEXT_APPEAR
@@ -872,8 +1261,9 @@ impl Game {
                     self.begin_wave(self.wave + 1, now + seconds(appear - clock));
                 }
             }
-            Stage::Over => {}
+            Stage::Ending { won, step } => self.ending(network, instance, won, step, clock),
         }
+        self.give_statuses(network, instance);
     }
 
     fn begin_wave(&mut self, wave: usize, appear_at: Instant) {
@@ -911,6 +1301,7 @@ impl Game {
                 kind.name,
                 kind.layout,
                 hp,
+                hp,
                 Position(glam::Vec3A::new(entry.x, 0.0, entry.z)),
             ) else {
                 continue;
@@ -931,8 +1322,7 @@ impl Game {
                     arrived: false,
                     next_attack: None,
                     boss,
-                    fallen: None,
-                    after_fall: 0,
+                    ..Enemy::new(entry.base, hp, Instant::now())
                 },
             );
         }
@@ -952,6 +1342,7 @@ impl Game {
         &mut self,
         network: &Arc<Mutex<NetworkState>>,
         instance: &mut Instance,
+        game_data: &Arc<Mutex<GameData>>,
         now: Instant,
         step: f32,
     ) {
@@ -971,6 +1362,7 @@ impl Game {
             if fallen {
                 continue;
             }
+            self.first_moments(network, instance, id, now);
             if let Some(at) = active_at {
                 if !ready_sent && now + seconds(READY_BEFORE) >= at {
                     control(
@@ -992,9 +1384,19 @@ impl Game {
                 let enemy = self.enemies.get_mut(&id).unwrap();
                 enemy.words = Some((first, second));
                 enemy.active_at = None;
-                let mut network = network.lock();
-                self.send_words(&mut network, instance, id);
-                control(&mut network, instance, id, CONTROL_WORDS, [1, 0, 0, 0]);
+                self.set_off(network, instance, game_data, id, now);
+            }
+
+            // Its cast and its rotation; one casting neither marches nor hits.
+            self.casts(network, instance, id, now);
+            self.rotation(network, instance, game_data, id, now, step);
+            match self.enemies.get(&id) {
+                Some(enemy) if enemy.fallen.is_none() => {
+                    if enemy.casting.is_some() || enemy.to_cast.is_some() {
+                        continue;
+                    }
+                }
+                _ => continue,
             }
 
             // The march, straight at the barrier.
@@ -1007,6 +1409,9 @@ impl Game {
                     let enemy = self.enemies.get_mut(&id).unwrap();
                     enemy.arrived = true;
                     enemy.next_attack = Some(now);
+                    if kind.speed > 0.0 && self.arrived(network, instance, id, now) {
+                        continue;
+                    }
                 } else {
                     let z = (position.z + kind.speed * step).min(kind.stop);
                     let to = Position(glam::Vec3A::new(position.x, position.y, z));
@@ -1058,14 +1463,7 @@ impl Game {
                     kind.damage,
                     0,
                 );
-                self.barrier_hp = self.barrier_hp.saturating_sub(kind.damage);
-                command_all(
-                    &mut network,
-                    instance,
-                    self.director,
-                    BARRIER_NOW,
-                    &[self.barrier_hp],
-                );
+                self.hurt_barrier(&mut network, instance, kind.damage);
             }
         }
     }
@@ -1096,6 +1494,19 @@ impl Game {
             .get(&enemy.base)
             .map(|kind| kind.group)
             .unwrap_or(0);
+        // The barrier's words are each player's own.
+        if enemy.full != 0 {
+            for (player, (word, next)) in &enemy.own_words {
+                command(
+                    network,
+                    self.director,
+                    *player,
+                    WORDS,
+                    &[id.0, group, WORD_LIST + group, *word, *next, WORDS_LAST],
+                );
+            }
+            return;
+        }
         command_all(
             network,
             instance,
@@ -1105,15 +1516,92 @@ impl Game {
         );
     }
 
-    /// The players' gauges: one that went round is set full again a moment later.
-    fn gauges(&mut self, now: Instant) {
-        for player in self.players.values_mut() {
+    /// The players' gauges (one starts to drain, one that went round is set full again), and Impassioned Inputs'
+    /// end.
+    fn gauges(&mut self, network: &mut NetworkState, instance: &Instance, now: Instant) {
+        let fever = self.fever_until.is_some();
+        for (id, player) in self.players.iter_mut() {
+            if fever {
+                continue;
+            }
+            if player.drain_at.is_some_and(|at| now >= at) {
+                player.drain_at = None;
+                send_gauge(network, *id, player.bonus.gauge, false);
+            }
             if player.refill_at.is_some_and(|at| now >= at) {
                 player.refill_at = None;
                 player.bonus.refill();
                 // The drain counts from here.
                 player.last_hit = Some(now - seconds(GAUGE_HOLD));
+                send_gauge(network, *id, GAUGE_FULL, false);
+                send_gauge(network, *id, GAUGE_FULL, false);
             }
+        }
+        if self.fever_until.is_some_and(|until| now >= until) {
+            self.end_fever(network, instance, now);
+        }
+    }
+
+    /// Impassioned Inputs begins: everyone's gauge is held as it stands.
+    fn begin_fever(&mut self, network: &mut NetworkState, instance: &Instance, now: Instant) {
+        if self.fever_until.is_none() {
+            for (id, player) in self.players.iter_mut() {
+                let idle = player
+                    .last_hit
+                    .map(|at| elapsed(at, now))
+                    .unwrap_or(f32::MAX);
+                player.bonus.gauge = player.bonus.drained(idle);
+                player.drain_at = None;
+                send_gauge(network, *id, player.bonus.gauge, true);
+            }
+            command_all(
+                network,
+                instance,
+                self.director,
+                STATE_NOTICE,
+                &[FEVER_NOTICE[0], FEVER_STATUS],
+            );
+            command_all(
+                network,
+                instance,
+                self.director,
+                STATE_SWITCH,
+                &[FEVER_SWITCH, 1],
+            );
+        }
+        for player in players_in(instance) {
+            self.statuses.push(StatusChange::Gain(
+                player,
+                FEVER_STATUS as u16,
+                FEVER_STATUS_PARAM,
+                FEVER_SECONDS,
+            ));
+        }
+        self.fever_until = Some(now + seconds(FEVER_SECONDS));
+    }
+
+    /// Impassioned Inputs ends: the gauges drain again from here.
+    fn end_fever(&mut self, network: &mut NetworkState, instance: &Instance, now: Instant) {
+        if self.fever_until.take().is_none() {
+            return;
+        }
+        command_all(
+            network,
+            instance,
+            self.director,
+            STATE_NOTICE,
+            &[FEVER_NOTICE[1], FEVER_STATUS],
+        );
+        command_all(
+            network,
+            instance,
+            self.director,
+            STATE_SWITCH,
+            &[FEVER_SWITCH, 0],
+        );
+        for (id, player) in self.players.iter_mut() {
+            player.last_hit = Some(now - seconds(GAUGE_HOLD));
+            send_gauge(network, *id, player.bonus.gauge, false);
         }
     }
 
@@ -1125,10 +1613,25 @@ impl Game {
         now: Instant,
     ) {
         let mut gone = Vec::new();
+        let dead: Vec<ObjectId> = self
+            .enemies
+            .iter_mut()
+            .filter(|(_, enemy)| enemy.dying.is_some_and(|at| now >= at))
+            .map(|(id, enemy)| {
+                enemy.dying = None;
+                *id
+            })
+            .collect();
+        for id in dead {
+            kill_actor(network.clone(), instance, id);
+        }
         for (id, enemy) in self.enemies.iter_mut() {
             let Some(at) = enemy.fallen else {
                 continue;
             };
+            if now < at {
+                continue;
+            }
             let since = elapsed(at, now);
             if enemy.after_fall == 0 && since >= WORDS_GONE_AFTER {
                 enemy.after_fall = 1;
@@ -1154,6 +1657,9 @@ impl Game {
             self.enemies.remove(&id);
             instance.held_npcs.remove(&id);
             network.lock().remove_actor(instance, id);
+            if self.barrier_words == Some(id) {
+                self.barrier_words = None;
+            }
         }
     }
 
@@ -1167,6 +1673,8 @@ impl Game {
         let last = self.wave + 1 >= waves().waves.len();
         {
             let mut network = network.lock();
+            self.end_fever(&mut network, instance, now);
+            self.states_off(&mut network, instance);
             command_all(
                 &mut network,
                 instance,
@@ -1192,6 +1700,7 @@ impl Game {
         command_all(&mut network.lock(), instance, self.director, WAVE_OVER, &[]);
         self.clear_field(network, instance);
         self.clock = now;
+        self.cutscene = 0;
         self.stage = Stage::Between { sent: 0 };
     }
 
@@ -1201,8 +1710,10 @@ impl Game {
             command(network, self.director, *id, SCORE, &[player.bonus.score]);
             player.bonus.wave_over(self.barrier_hp);
             command(network, self.director, *id, SCORE, &[player.bonus.score]);
+            player.drain_at = None;
             player.refill_at = None;
             player.last_hit = None;
+            send_gauge(network, *id, 0.0, false);
         }
     }
 
@@ -1214,65 +1725,214 @@ impl Game {
             instance.held_npcs.remove(&id);
             network.lock().remove_actor(instance, id);
         }
+        self.barrier_words = None;
+        self.pending.clear();
+        self.warned = None;
     }
 
-    /// The game over: won as the last boss falls, lost as the barrier breaks. Each player's rewards go to their
-    /// connection (`FromServer::KeyboundResult`), and the duty is complete or left.
+    /// The result's packet for each player: what they won (nothing shown for a lost game, as retail's) and the
+    /// four places.
+    fn send_result(&self, network: &mut NetworkState, instance: &Instance, won: bool) {
+        let entries: Vec<(u64, u64, u32)> = self
+            .players
+            .iter()
+            .filter_map(|(id, player)| match instance.find_actor(*id) {
+                Some(NetworkedActor::Player { spawn, .. }) => {
+                    Some((spawn.content_id, spawn.account_id, player.bonus.score))
+                }
+                _ => None,
+            })
+            .collect();
+        let (places, scores, content_ids, account_ids) = result_places(entries);
+        for (id, player) in &self.players {
+            let (mgp, mgc) = rewards(player.bonus.score);
+            let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::KeyboundResult {
+                unk1: won as u32,
+                currency_item: ITEM_MGC,
+                currency: if won { mgc } else { 0 },
+                coffer_item: ITEM_COFFER,
+                coffers: won as u32,
+                mgp: if won { mgp } else { 0 },
+                places,
+                scores,
+                content_ids,
+                account_ids,
+            });
+            network.send_to_by_actor_id(
+                *id,
+                FromServer::PacketSegment(ipc, *id),
+                DestinationNetwork::ZoneClients,
+            );
+        }
+    }
+
+    /// Each player's rewards: the director's lines, then the MGP, MGC and coffer themselves (their connection's,
+    /// `FromServer::KeyboundResult`.)
+    fn send_rewards(&self, network: &mut NetworkState, won: bool) {
+        for (id, player) in &self.players {
+            let (mgp, mgc) = rewards(player.bonus.score);
+            let mut logs = vec![(LOG_MGP, vec![mgp, 0]), (LOG_MGC, vec![ITEM_MGC, mgc])];
+            if won {
+                logs.push((LOG_COFFER, vec![ITEM_COFFER, 1]));
+            }
+            for (message_type, params) in logs {
+                let ipc = EventLogMessage {
+                    handler_id: self.director,
+                    message_type,
+                    params,
+                }
+                .package()
+                .unwrap();
+                network.send_to_by_actor_id(
+                    *id,
+                    FromServer::PacketSegment(ipc, *id),
+                    DestinationNetwork::ZoneClients,
+                );
+            }
+            network.send_to_by_actor_id(
+                *id,
+                FromServer::KeyboundResult {
+                    score: player.bonus.score,
+                    won,
+                },
+                DestinationNetwork::ZoneClients,
+            );
+        }
+    }
+
+    /// The game over, as retail's ended. **Won** (the last boss's fall): phase 4, the rewards' lines, the result's
+    /// packet and its scene (3, `[4025, 1, 20302]`), `WAVE_OVER` and three `BETWEEN`s; 8.05 s later the result's
+    /// numbers and the duty's completion; a player closing the result gets the way out (scene 11) and leaves as that
+    /// ends. **Lost** (the barrier at 0): phase 5, the result's packet with nothing won, `WAVE_OVER`, the gauge held
+    /// at 0 and the music stopped; 3.05 s later the lost game's music, `LOST` and `[player, 718, 3]` for each; at
+    /// 6.1 s the duty's end, the MGP and MGC and the way out.
     fn finish(
         &mut self,
         network: &Arc<Mutex<NetworkState>>,
         instance: &mut Instance,
         won: bool,
-        _now: Instant,
+        now: Instant,
     ) {
         {
             let mut network = network.lock();
-            command_all(&mut network, instance, self.director, PHASE, &[PHASE_OVER]);
-            for (id, player) in &self.players {
-                let (mgp, mgc) = rewards(player.bonus.score);
-                let mut logs = vec![(LOG_MGP, vec![mgp, 0]), (LOG_MGC, vec![ITEM_MGC, mgc])];
-                if won {
-                    logs.push((LOG_COFFER, vec![ITEM_COFFER, 1]));
-                }
-                for (message_type, params) in logs {
-                    let ipc = EventLogMessage {
-                        handler_id: self.director,
-                        message_type,
-                        params,
-                    }
-                    .package()
-                    .unwrap();
-                    network.send_to_by_actor_id(
-                        *id,
-                        FromServer::PacketSegment(ipc, *id),
-                        DestinationNetwork::ZoneClients,
+            self.end_fever(&mut network, instance, now);
+            self.states_off(&mut network, instance);
+            if won {
+                command_all(&mut network, instance, self.director, PHASE, &[PHASE_OVER]);
+                self.send_rewards(&mut network, true);
+                self.send_result(&mut network, instance, true);
+                for player in players_in(instance) {
+                    play_scene(
+                        &mut network,
+                        self.director,
+                        player,
+                        SCENE,
+                        RESULT_FLAGS,
+                        &RESULT_PARAMS,
+                        SCENE_ARG,
                     );
                 }
-                network.send_to_by_actor_id(
-                    *id,
-                    FromServer::KeyboundResult {
-                        score: player.bonus.score,
-                        won,
-                    },
-                    DestinationNetwork::ZoneClients,
-                );
+                command_all(&mut network, instance, self.director, WAVE_OVER, &[]);
+                for _ in 0..3 {
+                    command_all(&mut network, instance, self.director, BETWEEN, &[]);
+                }
+            } else {
+                command_all(&mut network, instance, self.director, PHASE, &[PHASE_LOST]);
+                self.send_result(&mut network, instance, false);
+                command_all(&mut network, instance, self.director, WAVE_OVER, &[]);
+                for id in self.players.keys() {
+                    send_gauge(&mut network, *id, 0.0, true);
+                }
+                command_all(&mut network, instance, self.director, SET_BGM, &[BGM_NONE]);
             }
-            command_all(&mut network, instance, self.director, WAVE_OVER, &[]);
         }
         self.clear_field(network, instance);
-        self.stage = Stage::Over;
-        // The duty's own ending: complete (the exit and its window), or failed.
-        if let Some(director) = instance.directors.first_mut() {
-            if won {
-                director.tasks.push(LuaDirectorTask::ShowExits);
-                director.tasks.push(LuaDirectorTask::CompleteDuty);
-            } else {
-                for actor_id in self.players.keys().copied() {
-                    director
-                        .tasks
-                        .push(LuaDirectorTask::AbandonDuty { actor_id });
+        self.clock = now;
+        self.stage = Stage::Ending { won, step: 0 };
+    }
+
+    /// What follows the game's end (`finish`.)
+    fn ending(
+        &mut self,
+        network: &Arc<Mutex<NetworkState>>,
+        instance: &mut Instance,
+        won: bool,
+        step: u8,
+        clock: f32,
+    ) {
+        if won {
+            if step == 0 && clock >= RESULT_AT {
+                command_all(
+                    &mut network.lock(),
+                    instance,
+                    self.director,
+                    RESULT,
+                    &RESULT_ARGS,
+                );
+                // The duty's completion (DutyCompleted, its time flags cleared, the clear counted.)
+                if let Some(director) = instance.directors.first_mut() {
+                    director.tasks.push(LuaDirectorTask::CompleteDuty);
                 }
+                self.stage = Stage::Ending { won, step: 1 };
             }
+            return;
+        }
+        let mut network = network.lock();
+        if step == 0 && clock >= LOST_AT[0] {
+            command_all(&mut network, instance, self.director, SET_BGM, &[BGM_LOST]);
+            command_all(&mut network, instance, self.director, LOST, &[]);
+            for player in players_in(instance) {
+                command_all(
+                    &mut network,
+                    instance,
+                    self.director,
+                    PLAYER,
+                    &[player.0, PLAYER_LOST[0], PLAYER_LOST[1]],
+                );
+            }
+            self.stage = Stage::Ending { won, step: 1 };
+        } else if step == 1 && clock >= LOST_AT[1] {
+            command_all(&mut network, instance, self.director, DUTY_COMPLETED, &[]);
+            command_all(&mut network, instance, self.director, DUTY_FLAG, &[0]);
+            command_all(&mut network, instance, self.director, DUTY_FLAG, &[1]);
+            self.send_rewards(&mut network, false);
+            for player in players_in(instance) {
+                play_scene(
+                    &mut network,
+                    self.director,
+                    player,
+                    LEAVE_SCENE,
+                    LEAVE_FLAGS,
+                    &[],
+                    LEAVE_ARG,
+                );
+            }
+            self.stage = Stage::Ending { won, step: 2 };
+        }
+    }
+
+    /// A player finished one of the game's scenes: the result's is followed by the way out, and that by leaving. The
+    /// cutscene before the last wave is followed by nothing.
+    fn scene_over(&self, network: &mut NetworkState, player: ObjectId, scene: u16) {
+        if !matches!(self.stage, Stage::Ending { .. }) {
+            return;
+        }
+        if scene == SCENE {
+            play_scene(
+                network,
+                self.director,
+                player,
+                LEAVE_SCENE,
+                LEAVE_FLAGS,
+                &[],
+                LEAVE_ARG,
+            );
+        } else if scene == LEAVE_SCENE {
+            network.send_to_by_actor_id(
+                player,
+                FromServer::LeaveContent,
+                DestinationNetwork::ZoneClients,
+            );
         }
     }
 
@@ -1299,10 +1959,11 @@ impl Game {
             );
             return;
         }
-        let live = self
-            .enemies
-            .get(&target)
-            .is_some_and(|enemy| enemy.fallen.is_none() && enemy.words.is_some());
+        // The barrier's words take their own action, and the enemies theirs.
+        let charge = ACTION_CHARGES.contains(&request.action_id);
+        let live = self.enemies.get(&target).is_some_and(|enemy| {
+            enemy.fallen.is_none() && enemy.words.is_some() && (enemy.full != 0) == charge
+        });
         if !live || !matches!(self.stage, Stage::Wave { on: true }) {
             // Someone else's word got there first: the blow lands for nothing (retail's effect of kind 1.)
             blow(
@@ -1322,6 +1983,12 @@ impl Game {
             .map(|kind| kind.group)
             .unwrap_or(0);
 
+        if charge {
+            self.charge(network, instance, from, target, request, group, now);
+            self.give_statuses(network, instance);
+            return;
+        }
+
         // The blow, and the enemy's HP.
         let hp = {
             let enemy = self.enemies.get_mut(&target).unwrap();
@@ -1340,32 +2007,86 @@ impl Game {
             HIT_DAMAGE,
             request.sequence,
         );
+        let death = mechanics()
+            .adds
+            .get(&self.enemies[&target].base)
+            .map(|add| add.death)
+            .unwrap_or(0);
         if hp == 0 {
-            kill_actor(network.clone(), instance, target);
+            // A cast it was in is cut off (ActorControl 15 `[540, 1, the action, 1]`, as any caster's that dies.)
+            if let Some(casting) = self.enemies.get_mut(&target).unwrap().casting.take() {
+                network.lock().send_ac_in_range_instance(
+                    instance,
+                    target,
+                    ActorControlCategory::CancelCast {
+                        unk1: 540,
+                        unk2: 1,
+                        action_id: casting.spell.action,
+                        unk3: 1,
+                    },
+                );
+            }
+            self.enemies.get_mut(&target).unwrap().to_cast = None;
+            if death != 0 {
+                // Its own action shows its fall (ActorControl 2 `[2, 2]` with it), and it dies a second later.
+                let mut network = network.lock();
+                act(
+                    &mut network,
+                    instance,
+                    target,
+                    death,
+                    Some(target),
+                    own_effect(EFFECT_OWN, death),
+                    0,
+                );
+                control(&mut network, instance, target, 2, [2, 2, 0, 0]);
+                self.enemies.get_mut(&target).unwrap().dying = Some(now + seconds(DIES_AFTER));
+            } else {
+                kill_actor(network.clone(), instance, target);
+            }
+        } else {
+            self.counter(network, instance, from, target, now);
         }
 
         // The player's score and gauge.
+        let fever = self.fever_until.is_some();
         let player = self.players.entry(from).or_insert(Player {
             bonus: Bonus::default(),
             last_hit: None,
+            drain_at: None,
             refill_at: None,
         });
-        let idle = player
-            .last_hit
-            .map(|at| elapsed(at, now))
-            .unwrap_or(f32::MAX);
-        let (_, round) = player.bonus.hit(group, idle);
-        player.last_hit = Some(now);
-        if round {
-            player.refill_at = Some(now + seconds(GAUGE_REFILL_AFTER));
+        if fever {
+            // Impassioned Inputs: ten times the word, and the gauge stays held.
+            player.bonus.fever_hit(group);
+        } else {
+            let idle = player
+                .last_hit
+                .map(|at| elapsed(at, now))
+                .unwrap_or(f32::MAX);
+            let (_, round) = player.bonus.hit(group, idle);
+            player.last_hit = Some(now);
+            player.drain_at = Some(now + seconds(GAUGE_HOLD));
+            if round {
+                player.refill_at = Some(now + seconds(GAUGE_REFILL_AFTER));
+            }
         }
-        let score = player.bonus.score;
-        command(&mut network.lock(), self.director, from, SCORE, &[score]);
+        let (score, gauge) = (player.bonus.score, player.bonus.gauge);
+        {
+            let mut network = network.lock();
+            command(&mut network, self.director, from, SCORE, &[score]);
+            send_gauge(&mut network, from, gauge, true);
+        }
 
         if hp == 0 {
             let boss = {
                 let enemy = self.enemies.get_mut(&target).unwrap();
-                enemy.fallen = Some(now);
+                // One that dies a second after its own action is a second later in all that follows.
+                enemy.fallen = Some(if death != 0 {
+                    now + seconds(DIES_AFTER)
+                } else {
+                    now
+                });
                 enemy.words = None;
                 enemy.boss
             };
@@ -1386,6 +2107,10 @@ impl Game {
             if self.wave == 0 || boss {
                 command_all(&mut network, instance, self.director, KILLS, &[self.kills]);
             }
+            // A 19592's fall is Impassioned Inputs for everyone.
+            if self.enemies[&target].base == FEVER_BASE {
+                self.begin_fever(&mut network, instance, now);
+            }
         } else {
             // Its next word moves up, and a new one comes behind it.
             let most = waves()
@@ -1401,6 +2126,28 @@ impl Game {
             self.enemies.get_mut(&target).unwrap().words = Some((next, new));
             self.send_words(&mut network.lock(), instance, target);
         }
+        self.give_statuses(network, instance);
+    }
+}
+
+/// A player finished one of the director's scenes in the duty.
+pub fn scene_finished(
+    network: &Arc<Mutex<NetworkState>>,
+    instance: &Instance,
+    player: ObjectId,
+    scene: u16,
+) {
+    if let Some(game) = instance.keybound.as_ref() {
+        game.scene_over(&mut network.lock(), player, scene);
+    }
+}
+
+/// A player's director trigger in the duty (`Game::trigger`.)
+pub fn player_trigger(instance: &mut Instance, player: ObjectId, id: u32, value: u32) {
+    if instance.content_finder_condition_id == DUTY
+        && let Some(game) = instance.keybound.as_mut()
+    {
+        game.trigger(player, id, value, Instant::now());
     }
 }
 
@@ -1411,9 +2158,7 @@ pub fn player_action(
     from: ObjectId,
     request: &ActionRequest,
 ) -> bool {
-    if instance.content_finder_condition_id != DUTY
-        || !(ACTION_HITS.contains(&request.action_id) || request.action_id == ACTION_MISS)
-    {
+    if instance.content_finder_condition_id != DUTY || !is_word(request.action_id) {
         return false;
     }
     let Some(mut game) = instance.keybound.take() else {
@@ -1586,16 +2331,8 @@ mod tests {
         game.enemies.insert(
             target,
             Enemy {
-                base: 19587,
-                hp: 300,
                 words: Some((20, 186)),
-                active_at: None,
-                ready_sent: true,
-                arrived: false,
-                next_attack: None,
-                boss: false,
-                fallen: None,
-                after_fall: 0,
+                ..Enemy::new(19587, 300, now)
             },
         );
         world.instance.keybound = Some(game);
@@ -1708,20 +2445,150 @@ mod tests {
         ));
     }
 
+    /// The result's four places, as retail's packet had them (in the order of the content IDs; equal scores share a
+    /// place.)
+    #[test]
+    fn the_result_s_places() {
+        let (places, scores, content_ids, account_ids) =
+            result_places(vec![(30, 3, 500), (10, 1, 900), (20, 2, 900)]);
+        assert_eq!(places, [1, 1, 3, 0]);
+        assert_eq!(scores, [900, 900, 500, 0]);
+        assert_eq!(content_ids, [10, 20, 30, 0]);
+        assert_eq!(account_ids, [1, 2, 3, 0]);
+    }
+
+    /// Impassioned Inputs: 1,000 a word (retail's 533 of 548; 3,000 the rest) whatever the level, and the gauge held.
+    #[test]
+    fn a_word_under_impassioned_inputs() {
+        let mut bonus = Bonus {
+            gauge: 4_000.0,
+            level: 3,
+            ..Default::default()
+        };
+        assert_eq!(bonus.fever_hit(0), 1000);
+        assert_eq!(bonus.fever_hit(1), 3000);
+        assert_eq!((bonus.score, bonus.gauge, bonus.level), (4000, 4_000.0, 3));
+    }
+
+    /// As a 19592 falls: the gauge held where it stood (`KeyboundGauge` with `held` 1), the notice `[17835, 5342]` and
+    /// switch `[3078, 1]`, and status 5342 `[1180]` for 20 s on each player; a word then is worth 1,000 and comes as
+    /// 51027 or 51028; 20 s later the notice `[17836, 5342]`, the switch off and the gauge draining again.
+    #[test]
+    fn impassioned_inputs_begins_and_ends() {
+        use crate::server::test_world::{TestWorld, packet_from};
+        let mut world = TestWorld::new();
+        let player = world.player(1, [4.5, 0.0, 26.0]);
+        let target = world.enemy(2, [0.0, 0.0, -18.0], 400);
+        let other = world.enemy(3, [4.0, 0.0, -18.0], 300);
+        world.instance.content_finder_condition_id = DUTY;
+        let now = Instant::now();
+        let mut game = Game::new(HandlerId(0x8003_DEA9), now, 4);
+        game.stage = Stage::Wave { on: true };
+        for (id, base, hp) in [(target, FEVER_BASE, 100), (other, 19587, 300)] {
+            game.enemies.insert(
+                id,
+                Enemy {
+                    words: Some((1, 2)),
+                    ..Enemy::new(base, hp, now)
+                },
+            );
+        }
+        world.instance.keybound = Some(game);
+        world.sent(player);
+        let request = |action_id, target: ObjectId| ActionRequest {
+            action_id,
+            action_type: ActionType::Action,
+            target: ObjectTypeId {
+                object_id: target,
+                object_type: ObjectTypeKind::None,
+            },
+            ..Default::default()
+        };
+        let commands = |messages: &[FromServer]| -> Vec<(u32, [u32; 2])> {
+            messages
+                .iter()
+                .filter_map(|message| match message {
+                    FromServer::ActorControlSelf(ActorControlCategory::DirectorEvent {
+                        event: DirectorEvent::Raw { id, args },
+                        ..
+                    }) => Some((*id, [args[0], args[1]])),
+                    _ => None,
+                })
+                .collect()
+        };
+        let gauges = |messages: &[FromServer]| -> Vec<(u32, u32)> {
+            messages
+                .iter()
+                .filter_map(|message| match message {
+                    FromServer::PacketSegment(segment, _) => match &segment.data {
+                        ServerZoneIpcData::KeyboundGauge { held, gauge, .. } => {
+                            Some((*held, *gauge))
+                        }
+                        _ => None,
+                    },
+                    _ => None,
+                })
+                .collect()
+        };
+
+        player_action(
+            &world.network,
+            &mut world.instance,
+            player,
+            &request(ACTION_HITS[0], target),
+        );
+        let sent = world.sent(player);
+        // The word's own gauge (1,500 for its 100), then held as it stands.
+        assert_eq!(gauges(&sent), [(1, 1500), (1, 1500)]);
+        let director = commands(&sent);
+        assert!(director.contains(&(STATE_NOTICE, [FEVER_NOTICE[0], FEVER_STATUS])));
+        assert!(director.contains(&(STATE_SWITCH, [FEVER_SWITCH, 1])));
+        assert!(sent.iter().any(|message| matches!(
+            message,
+            FromServer::ActorControlSelf(ActorControlCategory::GainEffect {
+                effect_id: 5342,
+                param: 1180,
+                ..
+            })
+        )));
+
+        player_action(
+            &world.network,
+            &mut world.instance,
+            player,
+            &request(ACTION_HITS[2], other),
+        );
+        let sent = world.sent(player);
+        assert!(sent.iter().any(|message| packet_from(message, player, |data| {
+            matches!(data, ServerZoneIpcData::ActionEffect1(effect) if effect.action_id == 51027)
+        })));
+        assert_eq!(commands(&sent)[0], (SCORE, [1100, 0]));
+        assert_eq!(gauges(&sent), [(1, 1500)]);
+
+        let mut game = world.instance.keybound.take().unwrap();
+        game.gauges(
+            &mut world.network.lock(),
+            &world.instance,
+            now + seconds(FEVER_SECONDS + 0.5),
+        );
+        let sent = world.sent(player);
+        assert_eq!(
+            commands(&sent),
+            [
+                (STATE_NOTICE, [FEVER_NOTICE[1], FEVER_STATUS]),
+                (STATE_SWITCH, [FEVER_SWITCH, 0])
+            ]
+        );
+        assert_eq!(gauges(&sent), [(0, 1500)]);
+        assert!(game.fever_until.is_none());
+    }
+
     #[test]
     fn a_word_nobody_carries() {
         let mut game = Game::new(HandlerId(0x8003_DEA9), Instant::now(), 1);
         let enemy = |words| Enemy {
-            base: 19587,
-            hp: 300,
             words,
-            active_at: None,
-            ready_sent: true,
-            arrived: false,
-            next_attack: None,
-            boss: false,
-            fallen: None,
-            after_fall: 0,
+            ..Enemy::new(19587, 300, Instant::now())
         };
         game.enemies.insert(ObjectId(1), enemy(Some((3, 4))));
         game.enemies.insert(ObjectId(2), enemy(Some((5, 6))));

@@ -5527,6 +5527,31 @@ async fn process_server_msg(
                     lua_player.play_scene(scene, SceneFlags::from_bits_retain(flags), Vec::new());
                 }
             }
+            FromServer::PlayDirectorSceneWith {
+                handler,
+                scene,
+                flags,
+                params,
+                arg,
+            } => {
+                // As PlayDirectorScene, with the scene's parameters and the event's argument.
+                connection
+                    .start_event(
+                        ObjectTypeId {
+                            object_id: connection.player_data.character.actor_id,
+                            object_type: ObjectTypeKind::None,
+                        },
+                        handler,
+                        EventType::GameProgress,
+                        arg,
+                        events,
+                        lua_player,
+                    )
+                    .await;
+                if events.last_mut().is_some() {
+                    lua_player.play_scene(scene, SceneFlags::from_bits_retain(flags), params);
+                }
+            }
             FromServer::PlayDirectorCutscene(cutscene_id, content_handler_id, params) => {
                 connection
                     .start_event(

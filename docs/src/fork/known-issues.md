@@ -8,18 +8,19 @@ add one when something is found.
 None of it played yet.
 
 * **Keybound Brawler's duty has never run against a client.** It's built from retail's packets (`events.md`), with
-  unit tests for its rules, but whether the client shows the game from Kawari's commands hasn't been seen. Not built:
-  * the **bonus gauge's packet** (opcode 330 in 7.57; 7.58's isn't known): the gauge on screen won't move, though the
-    levels are counted;
-  * the **big enemies' own attacks and summons** (19593's 49533/50651/49538, 19594's 49541/49547, 19595's
-    49550/49554, the last boss's 49699-49713 and 50652, the adds 19824-19829, 19923, 9020) and the **casters'
-    spells** (19590's 49526/49527, 19589's 49524, 19592's 49531): interruptible casts, Letterlock, Cryptic
-    Communications, the 3,000 and 6,000 blows;
-  * **Impassioned Inputs** (commands 0x10000011 and 0x10000017, ten times the bonus) and the **words over the
-    barrier** (20079, list 2000013, command 0x10000018);
-  * the **cutscene before wave 3** (EventScene 3 `[4024, 3, 20301]`), the music changes, DirectorMapEffects, the
-    **result window** (opcode 173 in 7.57, EventScene 3 `[4025, 1, 20302]` and scene 11) and the commands at the end
-    (0x10000005 `[12782296, 12782297]`): a win is the duty's ordinary completion, a loss puts the players out;
+  unit tests for its rules and its packets, but whether the client shows the game from Kawari's hasn't been seen:
+  the gauge and result packets' opcodes for 7.58 (436 and 961) were found by their place in the client's code, not
+  from a 7.58 recording (`opcodes.md`). Not known, so not built:
+  * **what catches a player** in a warning cast (49529, 49532, 49702): the client says so itself and Kawari answers
+    as retail did, but which of the two is "Letterlock" and which "Cryptic Communications", and what a player does
+    to avoid it, isn't known; nor what the big enemies' states (switches 3071 and 3072) change on screen;
+  * **19595's 49555** (29.7 s) never landed in retail's 75 runs: Kawari's does nothing as it lands, and the rotation
+    goes back to 49554. **19593's and 19594's rotations** past their second and fourth rounds, and the last boss's
+    49711 past the third, weren't seen: Kawari repeats the last;
+  * the last boss's four parts have the timings of retail's six longest runs (*one again* as it came second);
+  * a cast's ActorControl 1522 has retail's commonest second number (6; 2 to 8 seen, meaning unknown);
+  * the barrier's words go to each player after their SpawnNpc; retail's first came 0.3 s before it;
+  * the helper (9020) is one actor from the first rotation that needs it; retail spawned three as the last wave began;
   * commands **0x10000015** `[0x400017, n]` (one per player as the duty loads) and the statuses and ActorControls
     retail gave the players (183, 123, 1610, 198/199);
   * **HP for one or two players** is extrapolated from three and four; the **MGC cap** (10,000) isn't kept;

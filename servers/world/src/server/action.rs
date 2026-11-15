@@ -857,8 +857,7 @@ pub fn execute_action(
 ) {
     // A word typed in Keybound Brawler is the game's (`keybound.rs`), not a fight's.
     if request.action_type == ActionType::Action
-        && (crate::server::keybound::ACTION_HITS.contains(&request.action_id)
-            || request.action_id == crate::server::keybound::ACTION_MISS)
+        && crate::server::keybound::is_word(request.action_id)
     {
         let mut data = data.lock();
         if let Some(instance) = data.find_actor_instance_mut(from_actor_id)

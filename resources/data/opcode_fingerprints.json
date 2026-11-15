@@ -2349,21 +2349,21 @@
     {
       "kind": "ServerZoneIpcType",
       "name": "EventNotice2",
-      "opcode": 392,
+      "opcode": 633,
       "case": "b2c8306d5f4671427558f345573cfaea7871f1bf10e705ae",
       "case_group": 5,
       "handler_at": 11746992,
       "end": "b2c8306d5f4671427558f345573cfaea7871f1bf10e705ae",
       "end_group": 5,
       "sub": {
-        "end": "76032e8734390c396cea595cc5e35ac9",
-        "group": 1
+        "end": "752c2c7c76032e8734390c396cea595cc5e35ac9",
+        "group": 4
       }
     },
     {
       "kind": "ServerZoneIpcType",
       "name": "EventNotice4",
-      "opcode": 584,
+      "opcode": 921,
       "case": "b2c8306d5f4671427558f345573cfaea7871f1bf10e705ae",
       "case_group": 5,
       "handler_at": 11746992,
@@ -2451,6 +2451,34 @@
       "handler_at": 11854240,
       "end": "de23b881b3c5db4410e705ae",
       "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "KeyboundGauge",
+      "opcode": 436,
+      "case": "9644a2886790068710e705ae",
+      "case_group": 3,
+      "handler_at": 11862656,
+      "end": "9644a2886790068710e705ae",
+      "end_group": 3,
+      "sub": {
+        "end": "18c21f66757d96cb8e479bea757d96cbb8708bdcc096f96d9be2dc2d526a6968fcaa9efce6f34e86970496ecc8142c53cb8dbca6e33705283a2351f751ea2e590bca1f0ca69faae298f8d6a11438466eb2249e04c1daabefcfb977c531e8f2f5764c0c083b713a4d9a559be1506641451b163579cb8dbca64c31035eceda2fdba470e8d770a8801c38bcb8996cea595cc5e35ac9",
+        "group": 1
+      }
+    },
+    {
+      "kind": "ServerZoneIpcType",
+      "name": "KeyboundResult",
+      "opcode": 961,
+      "case": "9644a2886790068710e705ae",
+      "case_group": 3,
+      "handler_at": 11862656,
+      "end": "9644a2886790068710e705ae",
+      "end_group": 3,
+      "sub": {
+        "end": "5a69c4b8414e10ae9090d3c9bd3d03a98553ca8b605686daae3de09848ad4bc9317faeabebc6cefab2c18cf8570c03e9ddab92cbfa25871a0695a8d8e27c4c09aea30e38d3a4422819667aae502fbd691a9e62cae361edba02f527b9fc5ba189a60eaaea3736099a8e656fd9f7d7f529b46d630a8b0a257a9cc427f9a403d9493fddab2aa470e8d770a8801c38bcb8996cea595cc5e35ac9",
+        "group": 1
+      }
     }
   ],
   "client": [

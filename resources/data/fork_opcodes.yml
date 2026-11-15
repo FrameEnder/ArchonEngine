@@ -769,3 +769,21 @@ ServerZoneIpcType:
   # Its handler (0xB4E320 on 2026.10.16), unique there; it reads 772 on 2026.10.06 (no 10.06 capture to check it with.)
   - handler:
       pattern: 48 8B 15 ?? ?? ?? ?? 48 85 D2 74 0C 48 8D 0D ?? ?? ?? ?? E9 ?? ?? ?? ?? C3
+- name: KeyboundGauge
+  comment: Keybound Brawler's bonus gauge - whether it's held (1 as a word lands) or draining (0), its value (0 to 10000) and the server's time in milliseconds.
+  # 330 on 2026.10.16 (Connor's Chronofoil captures of Keybound Brawler: 64,734 in 223 runs, 24 bytes, right after each
+  # score and 0.535 s later.)
+  # 436 on 2026.11.03 (7.58): by its place in the client's second switch over server opcodes (0x20F12C0), whose 775
+  # cases stand in the same order in both executables (docs/src/fork/opcodes.md); no finder yet.
+  opcode: 436
+  size: 24
+  found_on: 2026.11.03.0000.0000
+  how_to_find: On retail with Chronofoil, type a word in Keybound Brawler - the 24-byte packet right after the director's score (ActorControlSelf 109, 0x1000000A).
+- name: KeyboundResult
+  comment: Keybound Brawler's result window - the MGC, the coffer and the MGP won, the four players' places and scores, their content and account IDs.
+  # 173 on 2026.10.16 (the same captures: once a run, 240 bytes, with the result's LogMessages.)
+  # 961 on 2026.11.03 (7.58): by its place in the client's second switch, as KeyboundGauge; no finder yet.
+  opcode: 961
+  size: 240
+  found_on: 2026.11.03.0000.0000
+  how_to_find: On retail with Chronofoil, finish a game of Keybound Brawler - the 240-byte packet beginning 1, 52322.

@@ -1,6 +1,6 @@
 {
  "format": 1,
- "comment": "Keybound Brawler's waves as retail played them: Connor's Chronofoil captures of 2026-11-03 to 11-09, 223 runs (the working notes: notes/keybound-brawler.md in kawari-diagnostics). Times are seconds from the wave's enemies appearing (the director's 0x10000006). An entry is [BNpcBase, x, z, when its SpawnNpc came, when it got its words and set off]. Wave 1 is one of three line-ups (77, 73 and 73 runs), every one of its spawns and starts the same to the tenth of a second in every run; it ends at 25 kills. Wave 2 is one of three line-ups (85, 71 and 67 runs) with one of three big enemies, which got its words 78 s in (70.6 to 93.5); the line-ups' three 19590s stood at three of twelve spots picked at random (x -6.75, -2.25, 2.25 or 6.75; z 2, 4 or 6): here the commonest. Wave 3 is the last boss, spawned 20.2 s before and given its words 5.0 s in. An enemy: its layout ID, its HP with four players and with three (0: not seen with three), how fast it walks (yalms a second; 0: it stands), the action it hits the barrier with and for how much, every `interval` seconds (3.0 unless said); `group` is its words' list (0 the common one, 1 the big enemies', 2 the last boss's), `words` the highest word of the list it was given when not the whole list.",
+ "comment": "Keybound Brawler's waves as retail played them: Connor's Chronofoil captures of 2026-11-03 to 11-09, 223 runs (the working notes: notes/keybound-brawler.md in kawari-diagnostics). Times are seconds from the wave's enemies appearing (the director's 0x10000006). An entry is [BNpcBase, x, z, when its SpawnNpc came, when it got its words and set off]. Wave 1 is one of three line-ups (77, 73 and 73 runs), every one of its spawns and starts the same to the tenth of a second in every run; it ends at 25 kills. Wave 2 is one of three line-ups (85, 71 and 67 runs) with one of three big enemies, which got its words 78 s in (70.6 to 93.5); the line-ups' three 19590s stood at three of twelve spots picked at random (x -6.75, -2.25, 2.25 or 6.75; z 2, 4 or 6): here the commonest. Wave 3 is the last boss, spawned 20.2 s before and given its words 5.0 s in. An enemy: its layout ID, its HP with four players and with three (0: not seen with three), how fast it walks (yalms a second; 0: it stands), the action it hits the barrier with and for how much, every `interval` seconds (3.0 unless said); `group` is its words' list (0 the common one, 1 the big enemies', 2 the last boss's, 3 the barrier's), `words` the highest word of the list it was given when not the whole list. From 19825 on: the enemies the big ones summon and the barrier's-words objects (what they do is in keybound_mechanics.json); a bomb (19825, 19826) walks 1.44 yalms a second to z 14.2 (its blast came 13.9, 17.4, 20.9 and 24.3 s after its SpawnNpc from z -3, -8, -13 and -18).",
  "kills_to_clear_wave_1": 25,
  "waves": [
   {
@@ -299,6 +299,14 @@
    "damage": 400,
    "interval": 4.0,
    "group": 2
-  }
+  },
+  "19825": {"layout": 12467038, "hp": [500, 400], "speed": 1.44, "stop": 14.2, "action": 0, "damage": 0},
+  "19826": {"layout": 12467039, "hp": [500, 400], "speed": 1.44, "stop": 14.2, "action": 0, "damage": 0},
+  "19827": {"layout": 12467040, "hp": [200, 0], "speed": 0, "action": 0, "damage": 0, "group": 1},
+  "19828": {"layout": 12467041, "hp": [500, 0], "speed": 2.75, "action": 49546, "damage": 1000},
+  "19829": {"layout": 12467042, "hp": [200, 0], "speed": 0, "action": 0, "damage": 0},
+  "19923": {"layout": 12532984, "hp": [500, 400], "speed": 0, "action": 0, "damage": 0},
+  "19824": {"layout": 12664312, "hp": [500, 400], "speed": 0, "action": 0, "damage": 0},
+  "20079": {"layout": 12664311, "hp": [700, 600], "speed": 0, "action": 0, "damage": 0, "group": 3, "words": 45}
  }
 }

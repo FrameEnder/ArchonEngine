@@ -56,6 +56,8 @@ u32 was 0 in all nine rides.
 | EventReturnHandler16 | client → server | 256 | 856 (09.15), 200 (10.06), 555 (10.16) | 72 | A scene finished with up to 16 results, e.g. a three-item NPC trade returns 12 (Surveying the Damage). Finder. |
 | EventNotice2 | server → client | 633 | 386 (10.06), 834 (10.16) | 16 | A quest/event notice with 0–2 arguments: the progress pop-up. Finder (confirms only, see below); 10.16's from a retail capture; 633 is retail's on 7.58 (Bob's Kawari Recorder export of 2026-11-12, 108 notices; 392 until then). |
 | EventNotice4 | server → client | 921 | 210 (10.06), 467 (10.16) | 24 | The same with 3–4 arguments. Finder (confirms only); 10.16's from a retail capture; 921 is retail's on 7.58 (the same export, 10 notices of 3 arguments; 584 until then). |
+| KeyboundGauge | server → client | 436 | 330 (10.16) | 24 | Keybound Brawler's bonus gauge: whether it's held, its value, the server's time in ms (Connor's Chronofoil captures of 7.57, 223 runs). 436 by its place in the client's second dispatcher (below); no finder. See [Events](events.md#the-duty). |
+| KeyboundResult | server → client | 961 | 173 (10.16) | 240 | Keybound Brawler's result: what was won and the four players' places, scores and IDs (the same captures). 961 the same way; no finder. |
 | SetAdventurerPlatePortrait | client → server | 557 | 107 (10.06), 431 (10.16) | 56 | The client sets its adventurer plate's portrait. Finder: the sender writing the opcode and the 72-byte size. |
 | UpdateAdventurerPlate | client → server | 448 | 795 (10.06), 350 (10.16) | 200 | The client saves its adventurer plate (CharaCardData). Finder: the sender writing the opcode, then the 216-byte size. See [Adventurer Plate](character-windows.md#adventurer-plate). |
 | MarketBoardOpened | client → server | 839 | 156 (09.15), 683 (10.06), 319 (10.16) | 8 | The marketboard window opened; answered with an empty search result. Seen in Bob's 2026-10-20 bundle as the window opened. Finder. |
@@ -133,6 +135,20 @@ From Bob's 2026.11.03 `ffxiv_dx11.exe` (2026-11-11) and his 2026.10.16 one, with
   version to the next, and the order (a new packet's handler, 494's, was put in among them) did the rest. Since
   2026-11-11 a number equal to a lone packet's own opcode is fingerprinted as "its opcode" (`OWN_OPCODE_FORMAT`): the
   same executables then give **0 wrong** both ways (below).
+
+### By its place in the second dispatcher (2026-11-15)
+
+Keybound Brawler's two packets (opcodes 330 and 173 in Connor's 7.57 captures, 10.16's executable) have no finder: each
+is one case of the client's second server-opcode switch, calling a handler that reads the packet and nothing that
+names it. Their 7.58 opcodes came from the cases' order instead. For every opcode from 100 to 1000,
+`kawari-opcodescan <exe> case <the switch's address> <opcode>` gives the address its case jumps to (the switch is at
+0x20F0DF4 in 10.16's executable and 0x20F17C4 in 11.03's); the distinct addresses, sorted, are 775 on both, and the
+compiler laid the cases out in the same order in both builds. The opcode whose case is nth on 10.16 is the one whose
+case is nth on 11.03: 330 → **436**, 173 → **961**. The same pairing gives 233 of the 234 packets whose 7.58 opcode is
+known from upstream or a finder (the other shares its case with a neighbour), and 665 → 281, 503 → 413, 560 → 879,
+820 → 243 for the duty's unnamed ones. `opcode_fingerprints.json` was recorded again on 11.03 with them (and with
+EventNotice2 and 4 at retail's 633 and 921, which the old recording had at 392 and 584:
+`shipped_fingerprints_cover_every_opcode` failed until then).
 
 ## Finding them on 7.57h1
 

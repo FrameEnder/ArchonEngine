@@ -1310,6 +1310,36 @@ pub enum ServerZoneIpcData {
         bonus: [u16; 4],
         unk8: u32,
     },
+    /// Keybound Brawler's bonus gauge (Connor's Chronofoil captures, 64,734 of them): `held` 1 as a word lands, 0 when
+    /// it starts to drain 0.535 s later; `gauge` 0 to 10,000; `time` the server's clock in milliseconds, from which
+    /// the client drains it by itself.
+    KeyboundGauge {
+        #[brw(pad_after = 4)]
+        held: u32,
+        #[brw(pad_after = 4)]
+        gauge: u32,
+        time: u64,
+    },
+    /// Keybound Brawler's result window (the same captures, once a run): what the player won, each of the four
+    /// players' place (1 the highest score) and score, then their content IDs and account IDs (as SpawnPlayer's);
+    /// places without a player are zeros.
+    KeyboundResult {
+        /// 1 in every one.
+        unk1: u32,
+        /// The MGC (item 52322) and how many.
+        currency_item: u32,
+        currency: u32,
+        /// The Keybound Coffer (item 52450) and how many.
+        coffer_item: u32,
+        coffers: u32,
+        mgp: u32,
+        places: [u8; 4],
+        #[brw(pad_after = 4)]
+        scores: [u32; 4],
+        content_ids: [u64; 4],
+        #[brw(pad_after = 128)]
+        account_ids: [u64; 4],
+    },
     /// The answer to the player's `LootRoll` (the same capture): `result` 1 with the `roll` (need or greed), 4 passed,
     /// 8 refused (a unique item they had already.)
     LootRollResult {
