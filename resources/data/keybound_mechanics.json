@@ -1,9 +1,10 @@
 {
  "format": 1,
- "comment": "Keybound Brawler's casters, big enemies and summoned enemies as retail played them (Connor's Chronofoil captures of 2026-11-03 to 11-09, 223 runs; the working notes: notes/keybound-brawler.md in kawari-diagnostics). `casters`: what an enemy casts once it has its words (`after` seconds later; `actions` one each among those of its kind on the field; `counter` the stacks of status 5354 a word takes one off, the cast broken at none; `damage` to the barrier as it completes; `warn` the status every player gets for 2 s as it completes and `lock` the parameter of status 5347 a player's client then asks for; `then` what the caster does after: walk on (nothing), `fall`, `leave`, or `become` another kind). `adds`: a summoned enemy's first moments, in seconds from its SpawnNpc (`appear` [action, when, effect kind]; `hit` [action, damage, when] at the barrier; `words` when it gets its words; `blast` [action, damage] as it reaches the barrier, and it's gone; `death` its own action as it falls; `control` an ActorControl as it gets its words; `spots` where its kind stands, [x, z]; `charge` a barrier's-words object, filled by words instead of felled). `scripts`: a big enemy's rotation from `start` seconds after it gets its words: one of `paths` (block names in order, from `loop_from` again at the end; a path listed twice is picked twice as often: the last boss's first part was `three` 82 times, `one_again` 64, `one` and `two` 36 each, and its second one of the other pair), each block `length` seconds of steps (`cast` with its `time`, and `helper` [action, damage, [seconds after it completes]] the blows that follow from the helper 9020; `act` an action at once, with an `effect` of that kind on itself or none; a cast's own `effect` is of kind 27 unless said; `spawn` with its `rule`: `columns` one in each column, each in a different row; `front` one in the front row; `all` every spot; `free` spots no one stands on; `state` [notice, its argument, switch] for so many seconds; `words` the barrier's-words object; `shield_off` the barrier's shield gone); `every` a spawn repeated.",
+ "comment": "Keybound Brawler's casters, big enemies and summoned enemies as retail played them (Connor's Chronofoil captures of 2026-11-03 to 11-09, 223 runs; the working notes: notes/keybound-brawler.md in kawari-diagnostics). `casters`: what an enemy casts once it has its words (`after` seconds later; `actions` one each among those of its kind on the field; `counter` the stacks of status 5354 a word takes one off, the cast broken at none; `damage` to the barrier as it completes; `warn` the status every player gets for 2 s as it completes and `lock` the parameter of status 5347 a player's client then asks for; `then` what the caster does after: walk on (nothing), `fall`, `leave`, or `become` another kind). `adds`: a summoned enemy's first moments, in seconds from its SpawnNpc (`appear` [action, when, effect kind]; `hit` [action, damage, when] at the barrier; `words` when it gets its words; `blast` [action, damage] as it reaches the barrier, and it's gone; `death` its own action as it falls; `control` an ActorControl as it gets its words; `spots` where its kind stands, [x, z]; `charge` a barrier's-words object, filled by words instead of felled). `scripts`: a big enemy's rotation from `start` seconds after it gets its words: one of `paths` (block names in order, from `loop_from` again at the end; a path listed twice is picked twice as often: the last boss's first part was `three` 82 times, `one_again` 64, `one` and `two` 36 each, and its second one of the other pair), each block `length` seconds of steps (`cast` with its `time`, and `helper` [action, damage, [seconds after it completes]] the blows that follow from the helper 9020; `act` an action at once, with an `effect` of that kind on itself or none; a cast's own `effect` is of kind 27 unless said; `spawn` with its `rule`: `columns` one in each column, each in a different row; `front` one in the front row; `all` every spot; `free` spots no one stands on; `state` [notice, its argument, switch] for so many seconds; `words` the barrier's-words object; `shield_off` the barrier's shield gone); `every` a spawn repeated. A `state`'s fourth number is the parameter of the status (its argument) every player has while it lasts: retail gave it with the notice (EffectResult from the cast 1.6 s before: 5348 [1171] for 28 s after 49547, 5472 [1172] for 30 s after 49701, every one of 340). `effect_after`: how long after an action's effect packet its result came (EffectResult or EffectResultBasic with the same sequence; the commonest of each action's, within 0.02 s of each other): the barrier's HP (the director's 0x10000004) came 0.045 s before that. Actions not listed had no result packet, and their damage came with the effect.",
  "helper": {"base": 9020, "layout": 12572305, "hp": 44},
  "status": {"counter": 5354, "lock": 5347, "lock_seconds": 7.0, "warn_seconds": 2.0, "warn_after": 0.45, "lock_after": 1.4, "lock_notice": [17839, 17840], "lock_trigger": [268435458, 365], "interrupted": [1522, 6]},
  "shield": {"notice": [17841, 17842]},
+ "effect_after": {"49521": 1.07, "49522": 1.56, "49523": 0.85, "49524": 0.31, "49525": 0.31, "49526": 0.62, "49527": 0.67, "49528": 0.67, "49530": 1.02, "49535": 0.18, "49536": 0.18, "49538": 0.45, "49540": 0.8, "49546": 0.8, "49547": 1.6, "49548": 2.14, "49549": 0.98, "49551": 0.71, "49552": 0.22, "49554": 0.8, "49556": 0.85, "49700": 0.18, "49701": 1.6, "49703": 1.16, "49706": 0.49, "49712": 0.18, "49715": 1.07},
  "casters": {
   "19589": {"actions": [49524], "time": [6.7], "after": 0.09, "counter": 4, "damage": 2000},
   "19590": {"actions": [49526, 49527, 49528], "time": [5.7, 8.2, 10.7], "after": 0.09, "damage": 1500, "then": "fall"},
@@ -129,7 +130,7 @@
      "length": 36.4,
      "steps": [
       {"at": 0, "cast": 49547, "time": 2.7, "effect": 1},
-      {"at": 4.7, "state": [17837, 5348, 3071], "for": 28.0},
+      {"at": 4.7, "state": [17837, 5348, 3071, 1171], "for": 28.0},
       {"at": 5.1, "cast": 49541, "time": 2.7},
       {"at": 9.8, "spawn": 19827, "rule": "all", "count": 4},
       {"at": 16.3, "cast": 49548, "time": 11.7, "counter": 4, "damage": 6000}
@@ -139,7 +140,7 @@
      "length": 46.3,
      "steps": [
       {"at": 0, "cast": 49547, "time": 2.7, "effect": 1},
-      {"at": 4.7, "state": [17837, 5348, 3071], "for": 28.0},
+      {"at": 4.7, "state": [17837, 5348, 3071, 1171], "for": 28.0},
       {"at": 5.1, "cast": 49541, "time": 2.7},
       {"at": 9.8, "spawn": 19827, "rule": "all", "count": 4},
       {"at": 16.3, "cast": 49548, "time": 11.7, "counter": 4, "damage": 6000}
@@ -219,7 +220,7 @@
       {"at": 21.4, "spawn": 19826, "rule": "front", "count": 1},
       {"at": 22.4, "cast": 49701, "time": 2.7, "effect": 1},
       {"at": 26.6, "spawn": 19826, "rule": "front", "count": 1},
-      {"at": 27.1, "state": [17837, 5472, 3072], "for": 30.0},
+      {"at": 27.1, "state": [17837, 5472, 3072, 1172], "for": 30.0},
       {"at": 31.4, "spawn": 19826, "rule": "front", "count": 1},
       {"at": 56.6, "act": 49713}
      ]
@@ -232,7 +233,7 @@
       {"at": 6.3, "spawn": 19826, "rule": "columns", "count": 4},
       {"at": 7.3, "cast": 49701, "time": 2.7, "effect": 1},
       {"at": 11.1, "spawn": 19826, "rule": "front", "count": 1},
-      {"at": 11.9, "state": [17837, 5472, 3072], "for": 30.0},
+      {"at": 11.9, "state": [17837, 5472, 3072, 1172], "for": 30.0},
       {"at": 16.3, "spawn": 19826, "rule": "front", "count": 1},
       {"at": 34.4, "cast": 49703, "time": 11.7, "counter": 4, "damage": 3000},
       {"at": 56.6, "act": 49713}
@@ -243,7 +244,7 @@
      "steps": [
       {"at": 0, "act": 50652, "effect": 27},
       {"at": 2.1, "cast": 49701, "time": 2.7, "effect": 1},
-      {"at": 6.8, "state": [17837, 5472, 3072], "for": 30.0},
+      {"at": 6.8, "state": [17837, 5472, 3072, 1172], "for": 30.0},
       {"at": 7.3, "cast": 49704, "time": 2.7},
       {"at": 12.5, "spawn": 19923, "rule": "free", "count": 3},
       {"at": 17.4, "cast": 49704, "time": 2.7},
@@ -264,7 +265,7 @@
       {"at": 21.4, "cast": 49704, "time": 2.7},
       {"at": 26.5, "cast": 49701, "time": 2.7, "effect": 1},
       {"at": 26.5, "spawn": 19923, "rule": "free", "count": 4},
-      {"at": 31.1, "state": [17837, 5472, 3072], "for": 30.0},
+      {"at": 31.1, "state": [17837, 5472, 3072, 1172], "for": 30.0},
       {"at": 34.6, "cast": 49704, "time": 2.7},
       {"at": 39.8, "spawn": 19923, "rule": "free", "count": 3},
       {"at": 62.8, "act": 49713}

@@ -52,8 +52,8 @@ use kawari::{
     config::get_config,
     ipc::zone::{
         ActionEffect, ActionRequest, ActionType, ActorControlCategory, DamageElement, DamageKind,
-        DamageType, EventLogMessage, ServerZoneIpcData, ServerZoneIpcSegment, TargetEffect,
-        TargetEffectKind,
+        DamageType, DisplayFlag, EventLogMessage, ServerZoneIpcData, ServerZoneIpcSegment,
+        TargetEffect, TargetEffectKind,
     },
 };
 use parking_lot::Mutex;
@@ -206,6 +206,51 @@ const LAST_APPEAR: f32 = 30.5;
 const BETWEEN_AFTER: [f32; 2] = [3.0, 8.0];
 /// The LogMessage with the first `BETWEEN` (0x2D2C.)
 const LOG_WAVE_OVER: u32 = 11564;
+/// How an enemy's SpawnNpc shows it (its display flags), by kind, in retail's 223 runs: the barrier's helper and
+/// pieces, the barrier's-words objects, the last boss (spawned as its cutscene begins, and seen in it), the summoned
+/// ones that appear with ActorControl 36; every other kind `SPAWN_SHOWN`, with `SPAWN_HIDDEN` more when it waits
+/// for its words (those are told 2.0 s before with ActorControl 407 `[7750]`, where they show; 1,700 of the 2,300
+/// SpawnNpcs looked at had exactly these, the rest were respawns seen mid-life.)
+///
+/// Kawari sent no flags, so every enemy stood in view from its SpawnNpc (Bob, 2026-11-15: "monsters are visible
+/// before they enter their combative mode").
+const SPAWN_FLAGS: [(u32, u32); 9] = [
+    (9020, 0x4_0008),
+    (19585, 0x4_0208),
+    (19596, 0x44_0208),
+    (19824, 0x4_0203),
+    (20079, 0x4_0203),
+    (19825, 0x4_0228),
+    (19826, 0x4_0228),
+    (19829, 0x4_0228),
+    (19923, 0x4_0228),
+];
+const SPAWN_SHOWN: u32 = 0x4_0208;
+const SPAWN_HIDDEN: u32 = 0x2_0000;
+/// The last boss's SpawnNpc comes this long after the second wave's end (10.2 to 10.5 s; the cutscene begins at
+/// 10.1), and it tells everyone as the cutscene ends (ActorControl 3402, 26.0 s after; the client had answered the
+/// cutscene's announcement with trigger 832.)
+const LAST_BOSS_SPAWN_AT: f32 = 10.3;
+const CONTROL_CUTSCENE_OVER: u32 = 3402;
+/// The barrier's HP (`BARRIER_NOW`) comes this long before an action's result (`effect_after` in the mechanics.)
+const BARRIER_BEFORE_RESULT: f32 = 0.045;
+
+/// A kind's display flags in its SpawnNpc; `hidden` for one that waits for its words.
+fn spawn_flags(base: u32, hidden: bool) -> u32 {
+    SPAWN_FLAGS.iter().find(|(kind, _)| *kind == base).map_or(
+        SPAWN_SHOWN | if hidden { SPAWN_HIDDEN } else { 0 },
+        |(_, flags)| *flags,
+    )
+}
+
+/// How long after an action's effect the barrier takes its damage.
+fn lands_after(action: u32) -> f32 {
+    mechanics()
+        .effect_after
+        .get(&action)
+        .map_or(0.0, |after| (after - BARRIER_BEFORE_RESULT).max(0.0))
+}
+
 /// An enemy getting its words is told 2.0 s before (ActorControl 407 `[7750]`), when it has waited.
 const READY_BEFORE: f32 = 2.0;
 const CONTROL_READY: (u32, u32) = (407, 7750);
@@ -608,6 +653,10 @@ enum Pending {
     StatusOff {
         player: ObjectId,
     },
+    /// An action's damage reaching the barrier.
+    Land {
+        damage: u32,
+    },
 }
 
 /// A status given or taken, done once the network isn't held.
@@ -682,6 +731,8 @@ pub struct Game {
     fever_until: Option<Instant>,
     /// Before the last wave: the cutscene played, its music set.
     cutscene: u8,
+    /// The last boss is on the field already (it comes with its cutscene.)
+    boss_came: bool,
     /// The barrier's shield is up (its words were filled.)
     shield: bool,
     /// The barrier's words on the field.
@@ -995,6 +1046,7 @@ impl Game {
             appear_sent: false,
             fever_until: None,
             cutscene: 0,
+            boss_came: false,
             shield: false,
             barrier_words: None,
             helper: None,
@@ -1060,7 +1112,8 @@ impl Game {
                 base,
                 x,
                 z,
-                // Wave 2's came with the first enemies; the last boss 20.2 s before its wave, during the cutscene.
+                // Wave 2's came with the first enemies. The last boss's comes as the cutscene begins, before its
+                // wave has (`LAST_BOSS_SPAWN_AT`), and `begin_wave` takes it out of the line-up then.
                 spawn: -4.3,
                 active: wave.boss_active,
             });
@@ -1103,6 +1156,7 @@ fn spawn_piece(
     hp: u32,
     hp_now: u32,
     position: Position,
+    hidden: bool,
 ) -> Option<ObjectId> {
     // A game install without the event's rows (before patch 7.57) can't show it.
     game_data.find_bnpc(base)?;
@@ -1113,6 +1167,7 @@ fn spawn_piece(
     npc.common.rotation = 0.0;
     npc.common.max_health_points = hp;
     npc.common.health_points = hp_now;
+    npc.common.display_flags = DisplayFlag(spawn_flags(base, hidden));
     let actor_id = Instance::generate_actor_id();
     instance.insert_npc(actor_id, npc, &get_config(), game_data);
     // The game moves it and has it hit the barrier; it has no fight of its own.
@@ -1154,6 +1209,7 @@ pub fn tick(
                     BARRIER_PIECE_HP,
                     BARRIER_PIECE_HP,
                     Position(glam::Vec3A::new(x, 0.0, BARRIER_Z)),
+                    false,
                 ) {
                     game.barrier.push(id);
                 }
@@ -1169,6 +1225,7 @@ pub fn tick(
                 BARRIER_PIECE_HP,
                 BARRIER_PIECE_HP,
                 Position(glam::Vec3A::new(0.0, 0.0, z)),
+                false,
             ) {
                 game.barrier.push(id);
             }
@@ -1380,6 +1437,11 @@ impl Game {
                     }
                     if self.cutscene == 2 && clock >= LAST_WAVE_BGM_AT {
                         self.cutscene = 3;
+                        for (id, enemy) in &self.enemies {
+                            if enemy.boss {
+                                control(&mut network, instance, *id, CONTROL_CUTSCENE_OVER, [0; 4]);
+                            }
+                        }
                         banner(&mut network, instance, IMAGE_WAVE[2]);
                         command_all(
                             &mut network,
@@ -1395,6 +1457,23 @@ impl Game {
                 } else {
                     NEXT_APPEAR
                 };
+                // The last boss comes as its cutscene begins, and stands in it (Bob, 2026-11-15: "he is invisible
+                // during the cutscene of wave 3"; Kawari's came 4.3 s before the wave.)
+                if before_last && !self.boss_came && clock >= LAST_BOSS_SPAWN_AT {
+                    self.boss_came = true;
+                    let next = &waves().waves[self.wave + 1];
+                    if let Some((base, x, z)) = next.bosses.first().copied() {
+                        let entry = Entry {
+                            base,
+                            x,
+                            z,
+                            spawn: 0.0,
+                            active: next.boss_active,
+                        };
+                        let active_at = now + seconds(appear - clock + next.boss_active);
+                        self.spawn_entry(instance, game_data, &entry, self.wave + 1, active_at);
+                    }
+                }
                 if clock >= appear - 4.5 {
                     self.begin_wave(self.wave + 1, now + seconds(appear - clock));
                 }
@@ -1410,6 +1489,10 @@ impl Game {
         };
         self.wave = wave;
         self.entries = Self::line_up(data, |below| fastrand::usize(..below));
+        if std::mem::take(&mut self.boss_came) {
+            self.entries
+                .retain(|entry| !data.bosses.iter().any(|(base, _, _)| *base == entry.base));
+        }
         self.spawned = 0;
         self.kills = 0;
         self.clock = appear_at;
@@ -1427,42 +1510,72 @@ impl Game {
         while self.spawned < self.entries.len() && self.entries[self.spawned].spawn <= wave_clock {
             let entry = self.entries[self.spawned].clone();
             self.spawned += 1;
-            let Some(kind) = waves().enemies.get(&entry.base) else {
-                continue;
-            };
-            let hp = kind.hp_for(self.party);
-            let Some(id) = spawn_piece(
-                instance,
-                &mut game_data.lock(),
-                self.director,
-                entry.base,
-                kind.name,
-                kind.layout,
+            let active_at = self.clock + seconds(entry.active.max(0.0));
+            self.spawn_entry(instance, game_data, &entry, self.wave, active_at);
+        }
+    }
+
+    /// One of a line-up's enemies comes: its SpawnNpc, hidden if it waits for its words.
+    fn spawn_entry(
+        &mut self,
+        instance: &mut Instance,
+        game_data: &Arc<Mutex<GameData>>,
+        entry: &Entry,
+        wave: usize,
+        active_at: Instant,
+    ) -> Option<ObjectId> {
+        let kind = waves().enemies.get(&entry.base)?;
+        let hp = kind.hp_for(self.party);
+        // The first to set off, as the wave begins, weren't told beforehand (and were in view from the start.)
+        let waits = entry.active > WAVE_ON_AFTER;
+        let id = spawn_piece(
+            instance,
+            &mut game_data.lock(),
+            self.director,
+            entry.base,
+            kind.name,
+            kind.layout,
+            hp,
+            hp,
+            Position(glam::Vec3A::new(entry.x, 0.0, entry.z)),
+            waits,
+        )?;
+        let boss = waves().waves[wave]
+            .bosses
+            .iter()
+            .any(|(base, _, _)| *base == entry.base);
+        self.enemies.insert(
+            id,
+            Enemy {
+                base: entry.base,
                 hp,
-                hp,
-                Position(glam::Vec3A::new(entry.x, 0.0, entry.z)),
-            ) else {
-                continue;
-            };
-            let boss = waves().waves[self.wave]
-                .bosses
-                .iter()
-                .any(|(base, _, _)| *base == entry.base);
-            self.enemies.insert(
-                id,
-                Enemy {
-                    base: entry.base,
-                    hp,
-                    words: None,
-                    active_at: Some(self.clock + seconds(entry.active.max(0.0))),
-                    // The first to set off, as the wave begins, weren't told beforehand.
-                    ready_sent: entry.active <= WAVE_ON_AFTER,
-                    arrived: false,
-                    next_attack: None,
-                    boss,
-                    ..Enemy::new(entry.base, hp, Instant::now())
-                },
-            );
+                words: None,
+                active_at: Some(active_at),
+                ready_sent: !waits,
+                arrived: false,
+                next_attack: None,
+                boss,
+                ..Enemy::new(entry.base, hp, Instant::now())
+            },
+        );
+        Some(id)
+    }
+
+    /// An action's damage to the barrier: at once, or when retail's result came (`lands_after`.)
+    pub(super) fn strike(
+        &mut self,
+        network: &mut NetworkState,
+        instance: &Instance,
+        action: u32,
+        damage: u32,
+        now: Instant,
+    ) {
+        let after = lands_after(action);
+        if after > 0.0 {
+            self.pending
+                .push((now + seconds(after), Pending::Land { damage }));
+        } else {
+            self.hurt_barrier(network, instance, damage);
         }
     }
 
@@ -1601,7 +1714,7 @@ impl Game {
                     kind.damage,
                     0,
                 );
-                self.hurt_barrier(&mut network, instance, kind.damage);
+                self.strike(&mut network, instance, kind.action, kind.damage, now);
             }
         }
     }

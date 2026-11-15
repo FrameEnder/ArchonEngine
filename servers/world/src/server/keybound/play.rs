@@ -56,7 +56,7 @@ impl Game {
             let mut network = network.lock();
             control(&mut network, instance, id, CONTROL_APPEAR, [0; 4]);
             blow(&mut network, instance, id, action, piece, damage, 0);
-            self.hurt_barrier(&mut network, instance, damage);
+            self.strike(&mut network, instance, action, damage, now);
             control(&mut network, instance, id, CONTROL_WORDS, [1, 0, 0, 0]);
         }
     }
@@ -164,6 +164,7 @@ impl Game {
                     hp,
                     hp,
                     Position(glam::Vec3A::ZERO),
+                    false,
                 );
             }
         }
@@ -282,7 +283,7 @@ impl Game {
                         spell.damage,
                         0,
                     );
-                    self.hurt_barrier(&mut network, instance, spell.damage);
+                    self.strike(&mut network, instance, spell.action, spell.damage, now);
                 }
                 _ => act(
                     &mut network,
@@ -477,8 +478,21 @@ impl Game {
                     notice,
                     arg,
                     switch,
+                    param,
                     seconds: lasting,
                 } => {
+                    // The state is a status on every player while it lasts (retail's EffectResult with the notice:
+                    // 5348 `[1171]` for 28 s, 5472 `[1172]` for 30 s). Kawari sent the notice and the switch alone,
+                    // and nothing hid the words (Bob, 2026-11-15: "the effect for obscuring parts of phrases aren't
+                    // working at all".)
+                    for player in players_in(instance) {
+                        self.statuses.push(StatusChange::Gain(
+                            player,
+                            arg as u16,
+                            param as u16,
+                            lasting,
+                        ));
+                    }
                     let mut network = network.lock();
                     command_all(
                         &mut network,
@@ -556,6 +570,7 @@ impl Game {
             hp,
             hp_now,
             Position(glam::Vec3A::new(x, 0.0, z)),
+            false,
         )?;
         self.enemies.insert(
             id,
@@ -588,7 +603,7 @@ impl Game {
             if let Some(piece) = self.nearest_piece(instance, id) {
                 let mut network = network.lock();
                 blow(&mut network, instance, id, action, piece, damage, 0);
-                self.hurt_barrier(&mut network, instance, damage);
+                self.strike(&mut network, instance, action, damage, now);
             }
         } else if add.arrive != 0 {
             act(
@@ -823,7 +838,10 @@ impl Game {
                     };
                     let mut network = network.lock();
                     blow(&mut network, instance, from, action, piece, damage, 0);
-                    self.hurt_barrier(&mut network, instance, damage);
+                    self.strike(&mut network, instance, action, damage, now);
+                }
+                Pending::Land { damage } => {
+                    self.hurt_barrier(&mut network.lock(), instance, damage);
                 }
                 Pending::StateOff {
                     notice,
@@ -918,7 +936,13 @@ impl Game {
                     notice,
                     arg,
                     switch,
-                } => self.state_off(network, instance, notice, arg, switch),
+                } => {
+                    self.state_off(network, instance, notice, arg, switch);
+                    // Cut short by the wave's end: the players' status goes with it.
+                    for player in players_in(instance) {
+                        self.statuses.push(StatusChange::Lose(player, arg as u16));
+                    }
+                }
                 Pending::Unlock { player } => {
                     self.unlock(network, player, false);
                     self.statuses
@@ -1146,7 +1170,7 @@ mod tests {
         assert!(commands(&world.sent(player)).is_empty());
     }
 
-    /// Retail's 19590 (69 casts that landed): 1,500 off the barrier 0.3 s after the bar, ActorControl 2 `[2, 2]` and
+    /// Retail's 19590 (69 casts that landed): its blow 0.3 s after the bar and 1,500 off the barrier 0.58 s after that, ActorControl 2 `[2, 2]` and
     /// its words gone with it, and dead a second later.
     #[test]
     fn a_cast_that_lands_hurts_the_barrier() {
@@ -1189,6 +1213,19 @@ mod tests {
             caster,
             now + seconds(6.05),
         );
+        // The barrier's HP comes with the blow's result, 0.58 s after its effect (49526's result: 0.62 s, 49 of 49.)
+        assert_eq!(game.barrier_hp, BARRIER_HP);
+        game.timed(
+            &world.network,
+            &mut world.instance,
+            now + seconds(6.05 + 0.5),
+        );
+        assert_eq!(game.barrier_hp, BARRIER_HP);
+        game.timed(
+            &world.network,
+            &mut world.instance,
+            now + seconds(6.05 + 0.58),
+        );
         assert_eq!(game.barrier_hp, BARRIER_HP - 1500);
         let sent = world.sent(player);
         assert!(sent.iter().any(|message| packet_from(message, caster, |data| matches!(
@@ -1201,8 +1238,8 @@ mod tests {
         assert_eq!(
             commands(&sent),
             [
-                (BARRIER_NOW, vec![BARRIER_HP - 1500]),
-                (WORDS_GONE, vec![caster.0])
+                (WORDS_GONE, vec![caster.0]),
+                (BARRIER_NOW, vec![BARRIER_HP - 1500])
             ]
         );
         assert!(
@@ -1468,6 +1505,55 @@ mod tests {
                 _ => None,
             })
             .collect()
+    }
+
+    /// Bob, 2026-11-15 (a won run on `15f6019`): enemies stood in view before they set off, the last boss wasn't in
+    /// its cutscene, a blow's damage came before the blow was seen to land, and nothing hid the words.
+    #[test]
+    fn enemies_show_and_blows_land_as_retail_s() {
+        // The display flags of retail's SpawnNpcs.
+        assert_eq!(spawn_flags(19587, false), 0x4_0208);
+        assert_eq!(spawn_flags(19587, true), 0x6_0208);
+        assert_eq!(spawn_flags(19594, true), 0x6_0208);
+        assert_eq!(spawn_flags(19596, false), 0x44_0208);
+        assert_eq!(spawn_flags(19825, false), 0x4_0228);
+        assert_eq!(spawn_flags(19585, false), 0x4_0208);
+
+        // A common enemy's blow (49715): the barrier's HP 1.02 s after it (the result at 1.07 s.)
+        let (mut world, player, _, now) = world();
+        let mut game = world.instance.keybound.take().unwrap();
+        assert!((lands_after(49715) - 1.025).abs() < 0.001);
+        assert_eq!(lands_after(49705), 0.0);
+        let hp = game.barrier_hp;
+        game.strike(&mut world.network.lock(), &world.instance, 49715, 100, now);
+        assert_eq!(game.barrier_hp, hp);
+        game.timed(&world.network, &mut world.instance, now + seconds(1.0));
+        assert_eq!(game.barrier_hp, hp);
+        game.timed(&world.network, &mut world.instance, now + seconds(1.03));
+        assert_eq!(game.barrier_hp, hp - 100);
+        assert!(commands(&world.sent(player)).contains(&(BARRIER_NOW, vec![hp - 100])));
+
+        // The big enemies' states are statuses on the players: 5348 `[1171]` for 28 s, 5472 `[1172]` for 30 s.
+        let states: Vec<(u32, u32, u32)> = [19594u32, 19596]
+            .iter()
+            .flat_map(|base| mechanics().scripts[base].blocks.values())
+            .flat_map(|block| block.steps.iter())
+            .filter_map(|step| match step.what {
+                What::State {
+                    arg,
+                    param,
+                    seconds,
+                    ..
+                } => Some((arg, param, seconds as u32)),
+                _ => None,
+            })
+            .collect();
+        assert!(!states.is_empty());
+        assert!(
+            states
+                .iter()
+                .all(|state| [(5348, 1171, 28), (5472, 1172, 30)].contains(state))
+        );
     }
 
     /// A player with a score that pays.

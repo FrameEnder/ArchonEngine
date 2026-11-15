@@ -88,11 +88,13 @@ pub enum What {
         rule: Rule,
         count: usize,
     },
-    /// `[notice, its argument, switch]` on for so many seconds.
+    /// `[notice, its argument, switch]` on for so many seconds, with the argument a status every player has
+    /// meanwhile (its parameter the fourth number.)
     State {
         notice: u32,
         arg: u32,
         switch: u32,
+        param: u32,
         seconds: f32,
     },
     Words(u32),
@@ -136,6 +138,8 @@ pub struct Mechanics {
     /// The ActorControl a broken cast is told with, and its second number.
     pub interrupted: (u32, u32),
     pub shield_notice: [u32; 2],
+    /// How long after an action's effect its result came, by action (retail's; none: at once.)
+    pub effect_after: HashMap<u32, f32>,
     pub casters: HashMap<u32, Caster>,
     pub adds: HashMap<u32, Add>,
     pub scripts: HashMap<u32, Script>,
@@ -198,6 +202,7 @@ fn step(value: &Value) -> Option<Step> {
             notice: whole(&state[0]),
             arg: whole(&state[1]),
             switch: whole(&state[2]),
+            param: whole(&state[3]),
             seconds: number(&value["for"]),
         }
     } else if let Some(base) = value["words"].as_u64() {
@@ -253,6 +258,10 @@ pub fn mechanics() -> &'static Mechanics {
                 whole(&status["interrupted"][1]),
             ),
             shield_notice: pair(&value["shield"]["notice"]),
+            effect_after: keyed(&value["effect_after"])
+                .into_iter()
+                .map(|(action, after)| (action, number(&after)))
+                .collect(),
             casters: keyed(&value["casters"])
                 .into_iter()
                 .map(|(base, caster)| {

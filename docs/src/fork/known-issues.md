@@ -11,20 +11,23 @@ None of it played yet.
   (status 239) doubles the player's HP from the zone-in, not as the battle commences (retail's came with the role
   status, 4 s in), and its damage over time wasn't measured (the hit is doubled, the tick as the script works it
   out). **Lethargy's** second and third on the same player last 12 s, not retail's 6 and 3.
-* **Keybound Brawler's HUD after the duty** (gone on every build of 2026-11-15, the last `0a95974`): not found. The
-  ending has every packet of retail's up to scene 11's end and the arrival back matches retail's, and the two
-  packets hoped for turned out, in the client's code, to have nothing to do with the HUD (`events.md`). Needs a
-  diagnostics bundle taken while the HUD is gone. The rewards' path (`keybound_rewards`) has no unit test: there is
-  no test harness for a connection. Retail also sent UnkContentFinder2 (`[duty, 0, …]`, `[duty, 4]` at the zone-in, `[duty, 5]` on the way out)
-  and PrepareZoning before the zone change, and its Condition during a director's scenes has bit 8, not Kawari's
-  bit 7: these are every duty's, not this one's, and Kawari sends them for none (`events.md`).
+* **Keybound Brawler** (Bob's won run on `15f6019`, 2026-11-15: the HUD comes back): which of that build's three
+  changes did it isn't known (`events.md`). Its rewards weren't said to have come; their path
+  (`keybound_rewards`) has no unit test, there being no test harness for a connection. Retail also sent
+  UnkContentFinder2 (`[duty, 0, …]`, `[duty, 4]` at the zone-in, `[duty, 5]` on the way out) and PrepareZoning before
+  the zone change, and its Condition during a director's scenes has bit 8, not Kawari's bit 7: every duty's, and
+  Kawari sends them for none. From the same run, built and not seen yet: the enemies' display flags (hidden until
+  they set off), the last boss in its cutscene, a blow's damage at its result's time, and the big enemies' states
+  as statuses on the players. Retail's EffectResult and EffectResultBasic for each blow (the barrier's piece, the
+  players) still aren't sent, only their timing kept.
 * **Keybound Brawler's duty** loads, plays and takes typing on Bob's client (2026-11-15), and nothing more of it
   has been confirmed. It's built from retail's packets (`events.md`), with unit tests for its rules and its packets:
   the gauge and result packets' opcodes for 7.58 (436 and 961) were found by their place in the client's code, not
   from a 7.58 recording (`opcodes.md`). Not known, so not built:
   * **what catches a player** in a warning cast (49529, 49532, 49702): the client says so itself and Kawari answers
     as retail did, but which of the two is "Letterlock" and which "Cryptic Communications", and what a player does
-    to avoid it, isn't known; nor what the big enemies' states (switches 3071 and 3072) change on screen;
+    to avoid it, isn't known; the big enemies' states (switches 3071 and 3072) come with statuses 5348 and 5472 on
+    every player now, as retail's, on the reading that the status is what hides the words;
   * **19595's 49555** (29.7 s) never landed in retail's 75 runs: Kawari's does nothing as it lands, and the rotation
     goes back to 49554. **19593's and 19594's rotations** past their second and fourth rounds, and the last boss's
     49711 past the third, weren't seen: Kawari repeats the last;

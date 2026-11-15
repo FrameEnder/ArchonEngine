@@ -349,9 +349,35 @@ chat"). Retail's runs against his:
   * Kawari sent `0x10000002` once more as a player left after the game's end (retail: nothing of the game's after
     the way out). Gone.
 
-  The server's side of the exit now differs from retail's only in what's listed below, so what holds the HUD is
-  most likely in the client's own state, which a capture doesn't show: **a diagnostics bundle taken while the HUD
-  is gone** (Kawari Probe's snapshot has the client's conditions and character mode) is what would say.
+  **That build (`15f6019`) gave the HUD back** (Bob, a won run, the same day). It changed three things at once (the
+  ZoneInit's flag 4 after a duty, no game festival in the duty's ZoneInit, no second `0x10000002` on leaving), so
+  which one did it isn't known; the festival is the likeliest (it was the one thing wrong from the zone-in on, in
+  every build that lost the HUD).
+
+**What the same run showed wrong, and retail's numbers for each** (Bob: "the timing of enemy actions vs their effect
+taking place", "the effect for obscuring parts of phrases aren't working at all", "monsters are visible before they
+enter their combative mode", the last boss "invisible during the cutscene of wave 3"):
+* **An enemy's display flags** (its SpawnNpc's, 2,300 looked at): `0x40208` for one that sets off as its wave
+  begins, **`0x60208` for one that waits** (bit `0x20000`; it gets ActorControl 407 `[7750]` 2.0 s before its words,
+  and no other packet between), `0x440208` for the last boss, `0x40228` for the summoned kinds that appear with
+  ActorControl 36 (19825, 19826, 19829, 19923), `0x40208` for 19827, 19828 and the barrier's pieces, `0x40203` for
+  the barrier's-words objects, `0x40008` for the helper. Kawari sent 0 for all (`keybound::SPAWN_FLAGS`,
+  `spawn_flags`).
+* **The last boss's SpawnNpc** comes 10.2 to 10.5 s after the second wave's end, as the cutscene begins (10.1 s),
+  and it sends ActorControl 3402 as the cutscene ends (26.0 s); its words come 35.5 s after (5.0 s into its wave).
+  Kawari's came 4.3 s before the wave, after the cutscene (`LAST_BOSS_SPAWN_AT`, `Game::spawn_entry`).
+* **A blow's damage** comes with its result, not its effect: the EffectResult (or EffectResultBasic) carrying the
+  effect packet's sequence comes a set time after it for each action, within 0.02 s over hundreds of each (49715
+  1.07 s, 49549 0.98, 49540 0.80, 49551 0.71, 49521 1.07, 49522 1.56, 49523 0.85, 49526 0.62, 49706 0.49, 49700 and
+  49712 0.18, …: `effect_after` in `keybound_mechanics.json`), and the barrier's HP (`0x10000004`) 0.045 s before
+  that. Actions with no result packet (the helper's 49705, the bombs' 49534 and 49537, …) have their damage with the
+  effect. Kawari took the barrier's HP with the effect (`Game::strike`, `Pending::Land`). The casts themselves were
+  right (the effect 0.29 s after the bar's time).
+* **The big enemies' states are statuses on the players.** With the notice and the switch (`[17837, 5348]` and
+  `[3071, 1]`; `[17837, 5472]` and `[3072, 1]`) every player gets an EffectResult giving that status: 5348 with
+  parameter 1171 for 28.0 s (from 19594's 49547, 1.6 s before), 5472 with 1172 for 30.0 s (the last boss's 49701),
+  340 of 340. Kawari sent the notice and the switch alone. Now the status too (a `state`'s fourth number in the
+  mechanics is its parameter), taken off if the wave ends first.
 
   Still different from retail on the way out, and not built here because they aren't this duty's: UnkContentFinder2
   (`[1095, 0, …]` and `[1095, 4]` at the zone-in, `[1095, 5]` on the way out: every duty's, and Kawari sends it for
