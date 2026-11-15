@@ -703,6 +703,16 @@ pub enum ClientTriggerCommand {
         num_sides: u32,
     },
 
+    /// The quest battle prompt's difficulty (the client's command 823, `StartSoloQuestBattle`): 0 Normal, 1 Easy,
+    /// 2 Very Easy. The prompt sends 0 as it opens and what was picked as it's confirmed (Bob's and Connor's
+    /// Chronofoil captures: 0 before every first attempt; 2 before the retries of quest battle 65 that came with
+    /// the Echo, status 239).
+    #[brw(magic = 823u32)]
+    SoloQuestBattleDifficulty {
+        #[brw(pad_after = 16)]
+        difficulty: u32,
+    },
+
     /// The client opens the Mogpendium or interacts with the Retainer Bell. A ServerRequestCallbackManager request:
     /// unk1 is the callback slot and unk2 the command. At a summoning bell (Bob's Chronofoil captures of retail): 2
     /// asks for the retainer list, 3 for one retainer's entry (unk3 and unk4 are their ID, high half first), 4 is

@@ -1067,3 +1067,52 @@ fn an_attack_leaves_no_status_on_one_that_can_t_be_hurt() {
     assert_eq!(kinds(&shown), [14]);
     assert!(!statuses_gone);
 }
+
+/// Bob's mark of 2026-11-15 ("I'm taking far too much damage, and/or not healing enough back", quest battle 65
+/// through the harness): a signifer cast Fire at the player for 500 to 720 every 4 to 8 s and nothing else, 8,285
+/// in the run where retail's four did 4,051 (his Chronofoil capture d1c46dff, the lost run). Its rotation had Fire
+/// first with no `every`, so Fire was always the first one ready. Now every action waits its own time, at retail's
+/// pace, with retail's amounts.
+#[test]
+fn the_signifers_cast_more_than_fire() {
+    let timeline: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../resources/timelines/QB65Signifer_2171.json"
+    ))
+    .unwrap();
+    let rotation = &timeline["rotation"];
+    assert_eq!(rotation["pace"].as_f64(), Some(5.5));
+    let actions = rotation["actions"].as_array().unwrap();
+    assert!(actions.len() >= 12);
+    let mut a_minute = 0.0;
+    for action in actions {
+        let every = action["every"].as_f64().unwrap_or_else(|| {
+            panic!(
+                "{}: no `every`, so it's cast whenever nothing else is ready",
+                action["action"]
+            )
+        });
+        assert!(every >= 30.0, "{}", action["action"]);
+        a_minute += 60.0 / every;
+    }
+    // About eleven actions a minute, as retail's (113 in 603 s.)
+    assert!((10.5..12.0).contains(&a_minute), "{a_minute}");
+    let fire = timeline["recorded_amounts"]["141"]["players"]
+        .as_f64()
+        .unwrap();
+    assert!((330.0..370.0).contains(&fire));
+}
+
+/// The quest battle prompt's difficulty (the same mark: retail's win of quest battle 65 was a retry at Very Easy
+/// with the Echo, which Kawari never gave): only Very Easy, and only after a loss.
+#[test]
+fn an_easier_quest_battle_comes_after_a_loss() {
+    use crate::{QUEST_BATTLE_VERY_EASY, quest_battle_difficulty};
+    assert_eq!(quest_battle_difficulty(0, QUEST_BATTLE_VERY_EASY), 0);
+    assert_eq!(
+        quest_battle_difficulty(1, QUEST_BATTLE_VERY_EASY),
+        QUEST_BATTLE_VERY_EASY
+    );
+    assert_eq!(quest_battle_difficulty(3, 0), 0);
+    // Easy is in no capture: Normal.
+    assert_eq!(quest_battle_difficulty(1, 1), 0);
+}

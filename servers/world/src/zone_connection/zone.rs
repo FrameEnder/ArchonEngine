@@ -722,6 +722,9 @@ impl ZoneConnection {
         self.old_zone_id = self.player_data.volatile.zone_id as u16;
         self.old_position = self.player_data.volatile.position;
         self.old_rotation = self.player_data.volatile.rotation as f32;
+        // Very Easy, asked after a loss: the battle begins with the Echo.
+        self.quest_battle_echo = self.quest_battle_difficulty == crate::QUEST_BATTLE_VERY_EASY;
+        self.quest_battle_difficulty = 0;
 
         self.handle
             .send(ToServer::JoinQuestBattle(
@@ -729,6 +732,7 @@ impl ZoneConnection {
                 self.player_data.character.actor_id,
                 quest_battle_id,
                 zone_id,
+                self.quest_battle_echo,
             ))
             .await;
     }

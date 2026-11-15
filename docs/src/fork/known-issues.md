@@ -7,6 +7,10 @@ add one when something is found.
 
 None of it played yet.
 
+* **A quest battle's Easy** (the prompt's difficulty 1) is in no capture: it begins as Normal. Very Easy's Echo
+  (status 239) doubles the player's HP from the zone-in, not as the battle commences (retail's came with the role
+  status, 4 s in), and its damage over time wasn't measured (the hit is doubled, the tick as the script works it
+  out). **Lethargy's** second and third on the same player last 12 s, not retail's 6 and 3.
 * **Keybound Brawler's duty has never run against a client.** It's built from retail's packets (`events.md`), with
   unit tests for its rules and its packets, but whether the client shows the game from Kawari's hasn't been seen:
   the gauge and result packets' opcodes for 7.58 (436 and 961) were found by their place in the client's code, not

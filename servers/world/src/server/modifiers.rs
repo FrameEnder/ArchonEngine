@@ -46,6 +46,10 @@ const DAMAGE_DEALT: &[(u16, f32, f32)] = &[
     // left the Arcanist's damage as it was.
     (1264, 1.30, 1.30),
     (1041, 1.30, 1.30),
+    // The Echo of a quest battle begun at Very Easy after a loss (`director::QUEST_BATTLE_ECHO`): twice the damage. Bob's
+    // White Mage in quest battle 65, the lost run against the next with it (Chronofoil capture d1c46dff): Stone II
+    // 289 a hit (25) against 575 (27), Holy 190 (40) against 405 (26), Aero II 70 against 149.
+    (239, 2.0, 2.0),
     // On an enemy, from players:
     (1195, 0.90, 0.95), // Feint
     (1203, 0.95, 0.90), // Addle
@@ -113,6 +117,10 @@ const HEALING_RECEIVED: &[(u16, f32)] = &[
     (2620, 1.10), // Physis II
     (2710, 1.10), // Protraction
 ];
+
+/// Statuses on whoever heals: (status, multiplier.) The quest battles' Echo: Bob's Cure II 767 a cast without it
+/// (4) and 1552 with it (4), the same capture.
+const HEALING_DEALT: &[(u16, f32)] = &[(239, 2.0)];
 
 /// Classes and jobs whose Tank Mastery takes 20 % off the damage they take from level 1 (GLA, MRD, PLD, WAR, DRK,
 /// GNB.)
@@ -232,6 +240,15 @@ pub fn damage_taken_multiplier(statuses: &[u16], classjob: u8, is_player: bool) 
         1.0
     };
     from_statuses * tank
+}
+
+/// How much more someone with these statuses heals for.
+pub fn healing_dealt_multiplier(statuses: &[u16]) -> f32 {
+    HEALING_DEALT
+        .iter()
+        .filter(|(id, _)| statuses.contains(id))
+        .map(|(_, multiplier)| *multiplier)
+        .product()
 }
 
 pub fn healing_received_multiplier(statuses: &[u16]) -> f32 {
@@ -375,7 +392,8 @@ pub fn apply_player_hit(effects: &mut [TargetEffect], hit: &PlayerHit) {
                 if *amount == 0 {
                     continue;
                 }
-                let mut heal = *amount as f32 * variance;
+                let mut heal =
+                    *amount as f32 * variance * healing_dealt_multiplier(hit.caster_statuses);
                 if unk1[4] & EFFECT_ON_SOURCE == 0 {
                     if critical {
                         heal *= hit.chances.critical_multiplier;
@@ -480,6 +498,13 @@ mod tests {
         assert_eq!(damage_dealt_multiplier(&[1041], DamageType::Magic), 1.3);
         assert_eq!(damage_dealt_multiplier(&[1264], DamageType::Slashing), 1.3);
         assert_eq!(damage_dealt_multiplier(&[1265], DamageType::Magic), 1.0);
+        // The Echo doubles what its player deals and heals, on top of the healer's 30 %.
+        assert_eq!(
+            damage_dealt_multiplier(&[239, 1041], DamageType::Magic),
+            2.6
+        );
+        assert_eq!(healing_dealt_multiplier(&[239]), 2.0);
+        assert_eq!(healing_dealt_multiplier(&[1041]), 1.0);
     }
 
     #[test]

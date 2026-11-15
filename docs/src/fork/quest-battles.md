@@ -15,8 +15,19 @@ Guardian, Underneath the Sultantree). The fork added them on top of upstream's c
    prompt's level sync from, and **how many times the player has lost it** (0 the first time, 1 after a loss, up to
    5 over five losses of battle 59). Kawari answered `[0, 10, 0, 0]` until 2026-11-14 and every prompt said "Level:
    1" (Bob's screenshot of Escape from Castrum Centri's, which syncs to 50). The losses are counted since logging in
-   and cleared by a win (what clears them on retail isn't known); what the client offers for them (an easier
-   battle) isn't acted on. Outside quests, 9003 still gets upstream's retainer list. (Found with Kawari Probe in
+   and cleared by a win (what clears them on retail isn't known). **The prompt's difficulty** (2026-11-15) is client
+   trigger **823** (`ClientTriggerCommand::SoloQuestBattleDifficulty`; the client's `StartSoloQuestBattle`: 0 Normal,
+   1 Easy, 2 Very Easy): the prompt sends 0 as it opens and what was picked as it's confirmed. Retail took no notice
+   of 2 before a first attempt (Questionable asks for Very Easy every time: Bob's capture d1c46dff has `[0, 2, 0]`
+   before battles 63, 64 and 65, each begun as any other) and, after a loss, began the battle with **the Echo**:
+   as it commences ActorControl 20 `[239, 0]`, the director's LogMessage 3212 and the player's HP full at twice its
+   maximum (1962 → 3924, 2198 → 4396), and for the battle twice the damage dealt and twice the healing done (Bob's
+   White Mage in battle 65, the lost run against the one with it: Stone II 289 → 575 a hit, Holy 190 → 405, Cure II
+   767 → 1552; what it took was unchanged). Both retail wins of battle 65 by a White Mage (Bob's and Connor's
+   e834e436) were such retries; of 60 prompts no other came with 2 after a loss, and none with 1.
+   `quest_battle_difficulty` (only Very Easy, only after a loss), `ZoneConnection::quest_battle_echo` (the HP, in
+   `base_parameters`), `director::give_quest_battle_echo`, `modifiers::DAMAGE_DEALT` and `HEALING_DEALT` (status
+   239). Outside quests, 9003 still gets upstream's retainer list. (Found with Kawari Probe in
    `f4e7ad8`; the first attempt used Sapphire's EventBattleDialog, actor control 924.) The server always allows entry;
    retail presumably checks something first.
 2. The scene returns `1` if the player agreed; the quest script calls
@@ -1646,6 +1657,36 @@ early on and their carbuncle comes 7.3 s after the cast began (the director's `o
   `81.json` (won), `81-lost.json`.
 
 ### Quest battle 65 — Escape from Castrum Centri (`content/questbattle/65.lua`)
+
+* **Bob's mark of 2026-11-15** (on `da8ad1c`, through the harness: "I use Questionable to test the predictable
+  patterns of a duty, and I'm dying in this duty with it when I didn't in retail"; a White Mage, level 46, 2058 HP,
+  dead 200 s in, in the second wave). The run against his three retail runs with the same plugin (Chronofoil
+  da424662 visit 0.33, a Paladin, won; d1c46dff visit 1.19, the White Mage, **lost 190 s in, in the second wave**;
+  visit 1.21, won):
+  * *Retail's Normal killed him too.* The win was the retry at Very Easy with the Echo ("Entering one", above), which
+    Kawari didn't have: twice the HP, damage and healing. Built.
+  * *The signifers.* Kawari's cast Fire at the player for 500 to 720 every 4 to 8 s and nothing else (18 hits,
+    8,285 in the run; retail's lost run 11 hits, 4,051). Their rotation (`QB65Signifer_2171.json`, from the two
+    Recorder runs) had Fire first with no `every`, so it was always the first ready. Retail's twelve signifers
+    (603 s, 113 actions) did one thing every 5.5 s in no fixed order: Fire II 19, Dark Blizzard III 17, Fire 16,
+    Fire III 12, Thunder II 10, Lethargy 9, Manaward, Scathe and Blizzard III 6 each, Blizzard 5, Thunder 4,
+    Thunder III 3; 58 of their 82 casts were at the player, 7 at the Scions. On the player: Fire 352 (279-490),
+    Blizzard 303, Thunder 206, Fire II 189, Thunder II 84, Fire III 818 (550-1132), Thunder III 182, Blizzard III
+    475, Scathe 229, Dark Blizzard III 339. The timeline has that pace, each action's `every` (603 s over its
+    uses) and those amounts now.
+  * *Lethargy* (151) gave Slow the 20 and Heavy 0, for 10 s; retail's is Slow (9) with 0 and Heavy (14) with 20 for
+    12 s (6 s the second time on the same player, 3 s the third: not done). `QuestBattleNpc_00151.lua`.
+  * *Not the server's*: the plugin fought differently. On retail it began Cure II 44 times (5 landed, 50 casts
+    cancelled), Holy 12 times, auto-attacked 26 times and never cast Esuna (three runs, with Lethargy on him five
+    times); on Kawari Cure II 13 times, Holy 4, no auto-attack, **Esuna 16 times**, and it never asked for Very Easy
+    (client trigger 823 `[2]`), which it sent before every retail attempt and to Kawari on 2026-11-11. Questionable
+    hands a quest battle to BossMod's AI only when it's set to (`IsConfiguredToRunSoloInstance`: BossMod there,
+    "run solo instances with BossMod" on, the duty not blacklisted) and asks for Very Easy in the same step, so it
+    looks as if another combat module fought here. Only his client's log says.
+  * *Left as it is*: the rest of the damage was near retail's or under it (the optio 16 hits for 1,782 against 11
+    for 2,411; the eques 9 for 1,019 against 2 for 274 and 5 for 533; the second wave's vanguards and eques never
+    reached the player, where retail's did 15 hits for 2,587 in the lost run); the Scions' Cures on the player 4
+    for 2,930 against 5 for 3,724.
 
 * **Bob's mark of 2026-11-14, 21:33** (on `4ac0154`, through the harness: "something is causing loading issues
   during this quest battle"), and the whole battle gone over against retail's packets (every packet kind of the won

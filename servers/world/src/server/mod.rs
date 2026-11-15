@@ -105,6 +105,7 @@ pub(crate) use party_bot::{CreatorLook, GearRow};
 mod party_npc;
 mod periodic;
 mod pet;
+pub(crate) use director::QUEST_BATTLE_ECHO_HP;
 pub use paralysis::STATUS_PARALYSIS;
 use paralysis::paralysis_tick;
 pub use party::{Party, PartyMember};
@@ -3689,7 +3690,13 @@ pub async fn server_main_loop(
                         tracing::warn!("Failed to find zone id for content?!");
                     }
                 }
-                ToServer::JoinQuestBattle(from_id, from_actor_id, quest_battle_id, zone_id) => {
+                ToServer::JoinQuestBattle(
+                    from_id,
+                    from_actor_id,
+                    quest_battle_id,
+                    zone_id,
+                    echo,
+                ) => {
                     let mut data = data.lock();
                     let mut network = network.lock();
 
@@ -3704,6 +3711,7 @@ pub async fn server_main_loop(
                         &lua,
                     );
                     target_instance.insert_empty_actor(from_actor_id);
+                    target_instance.quest_battle_echo = echo;
 
                     let start = target_instance.quest_battle_start;
                     if start.is_some() {

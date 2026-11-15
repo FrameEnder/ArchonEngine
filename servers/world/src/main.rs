@@ -261,6 +261,8 @@ async fn initial_setup(
                     quest_battle_stay: false,
                     quest_battle_asked: None,
                     quest_battle_losses: std::collections::HashMap::new(),
+                    quest_battle_difficulty: 0,
+                    quest_battle_echo: false,
                     quest_battle_finish_scene: None,
                     quest_battle_finish_log: None,
                     quest_battle_finish_flags: QUEST_BATTLE_SCENE_FINISH_FLAGS,
@@ -1722,6 +1724,7 @@ async fn process_packet(
                                     // TODO: retail probably checks whether the player can enter, we always allow it.
                                     let (argument, result) = if unk2 == QUEST_BATTLE_PROMPT {
                                         connection.quest_battle_asked = Some(unk3);
+                                        connection.quest_battle_difficulty = 0;
                                         kawari_world::quest_battle_prompt(
                                             &connection.quest_battle_losses,
                                             unk3,
@@ -1739,6 +1742,18 @@ async fn process_packet(
                                             },
                                         )
                                         .await;
+                                }
+                                ClientTriggerCommand::SoloQuestBattleDifficulty { difficulty } => {
+                                    // What the quest battle prompt has picked; an easier battle only after a loss
+                                    // of it (`quest_battle_difficulty`.)
+                                    let losses = connection
+                                        .quest_battle_asked
+                                        .and_then(|battle| {
+                                            connection.quest_battle_losses.get(&battle).copied()
+                                        })
+                                        .unwrap_or(0);
+                                    connection.quest_battle_difficulty =
+                                        kawari_world::quest_battle_difficulty(losses, difficulty);
                                 }
                                 ClientTriggerCommand::OpenUnk1 {
                                     unk1,
@@ -5026,6 +5041,7 @@ async fn process_server_msg(
                 connection.keybound_rewards(score, won).await;
             }
             FromServer::LeaveContent => {
+                connection.quest_battle_echo = false;
                 // Retail moved Sastasha's quest along as the player left the cleared duty (Bob's capture, 2026-10-23).
                 if let Some(content_id) = connection.duty_cleared.take() {
                     connection
@@ -5266,6 +5282,7 @@ async fn process_server_msg(
                 quest_log,
             ) => {
                 // Won: its prompt counts no losses the next time.
+                connection.quest_battle_echo = false;
                 connection
                     .quest_battle_losses
                     .remove(&handler_id.event_id());
@@ -5352,6 +5369,7 @@ async fn process_server_msg(
                 }
             }
             FromServer::QuestBattleFailed => {
+                connection.quest_battle_echo = false;
                 // The next prompt for this battle counts the loss, as retail's did.
                 if let Some(battle) = connection.quest_battle_asked {
                     *connection.quest_battle_losses.entry(battle).or_insert(0) += 1;

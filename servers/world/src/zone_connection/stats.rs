@@ -1041,6 +1041,11 @@ impl ZoneConnection {
             base_parameters.cp += 180;
         }
         base_parameters.calculate_potencies(&param_grow, Some(&modifiers));
+        // A quest battle begun with the Echo: twice the HP (retail's 1962 became 3924 and 2198 became 4396; Bob's
+        // Chronofoil capture d1c46dff and Connor's e834e436.)
+        if self.quest_battle_echo {
+            base_parameters.hp *= crate::server::QUEST_BATTLE_ECHO_HP;
+        }
         // Retail's PlayerStats has the weapon's delay here (2400 for a Maple Wand.)
         if let Some(weapon) = &weapon {
             base_parameters.delay = weapon.delay_ms as u32;

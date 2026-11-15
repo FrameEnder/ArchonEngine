@@ -4019,6 +4019,48 @@ pub fn director_tick(
 const QUEST_BATTLE_ROLE_STATUSES: [(u8, u16); 2] = [(1, 1264), (4, 1041)];
 const QUEST_BATTLE_DPS_STATUS: u16 = 1265;
 
+/// The Echo of a quest battle begun at Very Easy after a loss, and what it does to its player's HP
+/// (`modifiers::DAMAGE_DEALT` and `HEALING_DEALT` have the rest.)
+pub const QUEST_BATTLE_ECHO: u16 = 239;
+pub const QUEST_BATTLE_ECHO_HP: u32 = 2;
+/// "The Echo grants you strength beyond your limits!"
+const QUEST_BATTLE_ECHO_LOG: u32 = 3212;
+
+/// The Echo as a quest battle begun with it commences, as retail's two came (Bob's Chronofoil capture d1c46dff and
+/// Connor's e834e436, quest battle 65 after a loss, with the role status): ActorControl 20 `[239, 0]`, the director's
+/// LogMessage 3212, and the player's HP full at its doubled maximum (1962 of 3924, then 3924.)
+fn give_quest_battle_echo(
+    network: &Arc<Mutex<NetworkState>>,
+    instance: &mut Instance,
+    player: ObjectId,
+) {
+    if !instance.quest_battle_echo {
+        return;
+    }
+    gain_effect_instance(
+        network.clone(),
+        ClientId::default(),
+        instance,
+        player,
+        QUEST_BATTLE_ECHO,
+        0,
+        0.0,
+        ObjectId::default(),
+        true,
+    );
+    if let Some(director) = instance.directors.first_mut() {
+        director.tasks.push(LuaDirectorTask::LogMessage {
+            id: QUEST_BATTLE_ECHO_LOG,
+            params: Vec::new(),
+        });
+    }
+    if let Some(actor) = instance.find_actor_mut(player) {
+        let common = actor.get_common_spawn_mut();
+        common.health_points = common.max_health_points;
+    }
+    crate::server::effect::process_effects_list(network.clone(), instance, player);
+}
+
 fn give_quest_battle_role_status(
     network: &Arc<Mutex<NetworkState>>,
     game_data: &Arc<Mutex<GameData>>,
@@ -4411,6 +4453,7 @@ pub fn handle_director_messages(
                     director.commence();
                 }
                 give_quest_battle_role_status(&network, &game_data, instance, *from_actor_id);
+                give_quest_battle_echo(&network, instance, *from_actor_id);
                 return true;
             }
 

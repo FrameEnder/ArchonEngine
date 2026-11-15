@@ -301,6 +301,11 @@ pub struct ZoneConnection {
     /// How many times each QuestBattle has been lost since logging in, for its prompt's reply (retail counted 0 to 5
     /// over five losses of one; whether a win or a logout clears it there isn't known: a win does here.)
     pub quest_battle_losses: std::collections::HashMap<u32, u32>,
+    /// The difficulty the prompt asked for the battle about to begin (`quest_battle_difficulty`), and whether the
+    /// battle the player is in was begun with the Echo (`crate::server::director::QUEST_BATTLE_ECHO`): their HP is
+    /// doubled while it is.
+    pub quest_battle_difficulty: u32,
+    pub quest_battle_echo: bool,
     /// The scene a won quest battle plays before sending us back (`QUEST_BATTLE_SCENE_FINISH` unless its director
     /// picks another), or `None` while it hasn't been won.
     pub quest_battle_finish_scene: Option<u16>,

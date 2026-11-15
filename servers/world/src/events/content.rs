@@ -58,6 +58,22 @@ pub fn quest_battle_prompt(
     (battle, losses.get(&battle).copied().unwrap_or(0))
 }
 
+/// The quest battle prompt's Very Easy.
+pub const QUEST_BATTLE_VERY_EASY: u32 = 2;
+
+/// The difficulty a quest battle begins at, from what its prompt asked (the client's command 823: 0 Normal, 1 Easy,
+/// 2 Very Easy) and how many times the player has lost it. Retail took no notice of an easier one before a loss:
+/// Bob's capture d1c46dff has Questionable asking for 2 before the first attempts of battles 63, 64 and 65, and each
+/// began as any other (no status, the usual HP). After a loss, 2 began the battle with the Echo (the same capture and
+/// Connor's e834e436, both battle 65). Easy (1) is in no capture, so what it gives isn't known: it's begun as Normal.
+pub fn quest_battle_difficulty(losses: u32, asked: u32) -> u32 {
+    if losses > 0 && asked == QUEST_BATTLE_VERY_EASY {
+        asked
+    } else {
+        0
+    }
+}
+
 /// Plays `QUEST_BATTLE_SCENE_NOT_TALK` in the talk event the player started.
 pub fn play_not_talk(player: &mut LuaPlayer) {
     // Retail played it with 0x2000 (HIDE_HOTBAR) when Bob talked to In the Eyes of Gods and Men's onlooker (Chronofoil

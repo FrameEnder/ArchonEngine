@@ -584,7 +584,8 @@ pub enum ToServer {
     /// after this many seconds.
     QuestEventAction(ClientId, ObjectId, u8, u32),
     /// The client is entering a quest battle: the QuestBattle ID, and the territory it takes place in.
-    JoinQuestBattle(ClientId, ObjectId, u32, u16),
+    /// The last is whether it begins with the Echo (Very Easy after a loss.)
+    JoinQuestBattle(ClientId, ObjectId, u32, u16, bool),
     /// This player is in a duty they haven't cleared before (`Instance::newcomers`.)
     DutyNewcomer(ObjectId),
     /// The c lient is requesting to leave their current content, the connection is in charge of keeping track of the old position.

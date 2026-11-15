@@ -330,6 +330,8 @@ pub struct Instance {
     pub party_wipe: Option<crate::server::wipe::PartyWipe>,
     /// Where players start in a quest battle, and which way they face.
     pub quest_battle_start: Option<(Position, f32)>,
+    /// The quest battle begins with the Echo (Very Easy after a loss: `director::give_quest_battle_echo`.)
+    pub quest_battle_echo: bool,
     /// Where the players go when they leave a won quest battle, if not back where they came from (the script's
     /// `EXIT_AFTER_WIN`: territory, position, rotation.)
     pub quest_battle_win_exit: Option<(u16, Position, f32)>,
