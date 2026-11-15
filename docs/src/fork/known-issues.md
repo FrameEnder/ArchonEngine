@@ -18,7 +18,7 @@ None of it played yet.
     goes back to 49554. **19593's and 19594's rotations** past their second and fourth rounds, and the last boss's
     49711 past the third, weren't seen: Kawari repeats the last;
   * the last boss's four parts have the timings of retail's six longest runs (*one again* as it came second);
-  * a cast's ActorControl 1522 has retail's commonest second number (6; 2 to 8 seen, meaning unknown);
+  * a cast's ActorControl 1522 has retail's commonest second number (6; 2 to 10 seen, meaning unknown);
   * the barrier's words go to each player after their SpawnNpc; retail's first came 0.3 s before it;
   * the helper (9020) is one actor from the first rotation that needs it; retail spawned three as the last wave began;
   * commands **0x10000015** `[0x400017, n]` (one per player as the duty loads) and the statuses and ActorControls

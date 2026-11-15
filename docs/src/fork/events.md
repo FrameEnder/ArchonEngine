@@ -201,8 +201,8 @@ kind 27 with the action's own ID (kind 1 for 49547 and 49701). A caster that fal
 
 * **The counter**: a cast that can be broken begins with status 5354 with four stacks on the caster (ActorControl 20
   `[5354, 4]`, 0.09 s before the bar). Each word on it takes a stack off (`[5354, 3]`, `[5354, 2]`, `[5354, 1]`), and
-  the fourth breaks the cast: ActorControl 21 `[5354, 1]`, then 1522 `[the action, n, the player]` (n was 2 to 8 in
-  550 breaks, 6 the commonest: Kawari sends 6). 19589's 49524 (6.7 s; 2,000 to the barrier, landed 5 times in 383),
+  the fourth breaks the cast: ActorControl 21 `[5354, 1]`, then 1522 `[the action, n, the player]` (n was 2 to 10 in
+  665 breaks, 6 in 230 of them: Kawari sends 6). 19589's 49524 (6.7 s; 2,000 to the barrier, landed 5 times in 383),
   19593's 49538 (11.7 s; 3,000), 19594's 49548 (11.7 s; 6,000), the last boss's 49703 (11.7 s; 3,000).
 * **19589** casts as it gets its words and walks only once the cast is broken or has landed. **19590** (three a
   line-up) cast 49526 (5.7 s), 49527 (8.2 s) and 49528 (10.7 s), one each in any order (all six orders, 38 to 53

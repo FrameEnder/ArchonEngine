@@ -373,7 +373,7 @@ impl Game {
 
     /// A word on a caster with the counter: a stack off (ActorControl 20 `[5354, stacks left]`), and at none the
     /// cast is broken (ActorControl 21 for the status, then 1522 `[the action, 6, the player]`; the second number
-    /// was 2 to 8 in retail's 550, 6 the commonest.)
+    /// was 2 to 10 in retail's 665, 6 the commonest.)
     pub(super) fn counter(
         &mut self,
         network: &Arc<Mutex<NetworkState>>,
@@ -1143,7 +1143,7 @@ mod tests {
         assert!(commands(&world.sent(player)).is_empty());
     }
 
-    /// Retail's 19590 (49 casts that landed): 1,500 off the barrier 0.3 s after the bar, ActorControl 2 `[2, 2]` and
+    /// Retail's 19590 (69 casts that landed): 1,500 off the barrier 0.3 s after the bar, ActorControl 2 `[2, 2]` and
     /// its words gone with it, and dead a second later.
     #[test]
     fn a_cast_that_lands_hurts_the_barrier() {
