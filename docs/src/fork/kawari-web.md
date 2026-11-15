@@ -54,7 +54,7 @@ over the database, so direct edits only happen while the character is logged out
 
 Home, How to Connect, Feed (called Community in the top bar from 2.19.0) and profiles (character tile boards, private by default), Notifications, Settings,
 **Shop**, and the admin **Dashboard**: server control, config editor, database health/migrations, backups, accounts,
-Auracite import/inspect/export (extended backups from 2.22.0), branding, Quest Lab, Progress, Marketboard, Bot glamours (2.21.0), Drop rates (2.27.0, redone 2.32.0), Events (2.33.0), World bots (2.28.0), Diagnostics, Battle replay (2.25.0), Updates (which fork/forge/commit the server is
+Auracite import/inspect/export (extended backups from 2.22.0), branding, Quest Lab, Progress, Marketboard, Bot glamours (2.21.0), Drop rates (2.27.0, redone 2.32.0), Events (2.33.0, 2.33.1), World bots (2.28.0), Diagnostics, Battle replay (2.25.0), Updates (which fork/forge/commit the server is
 built from), container logs.
 
 ## Auracite backups (2.22.0)
@@ -447,16 +447,17 @@ Checked with Flask's view on a made-up index (two expansions, a dungeon, a trial
 rendered and looked at in Chromium; a form saved as format 2 with the right placeholders after; a format 1 file read;
 what the page can't show kept. Not used against the running server.
 
-## Events (Dashboard → Events, 2.33.0)
+## Events (Dashboard → Events, 2.33.1)
 
 `kawari_core/events.py` (the file and the rule), `kawari_web/events.py`, `templates/dashboard/events.html`. Turns the
 seasonal and special events the fork has built on, off, or on for a time ([Events](events.md): an event is a festival
 the server puts in every ZoneInit while it's on.)
 
-* **What's listed** is the active build's `resources/data/fork_events.json`; an event's name is its festival's in
-  the build's `resources/data/festivals.yml`, its quests' names come from `quest-index.json` and its duties' from
-  `content-index.json` (numbers when those haven't been made). A build without the file (before 2026-11-15) lists
-  nothing and says so.
+* **What's listed** is the active build's `resources/events/fork_events.json` (2.33.1; 2.33.0 read
+  `resources/data/fork_events.json`, which no build has: a build's files leave `resources/data` out, so the page
+  said the build had no events, Bob's screenshots of 2026-11-15). An event's name is its `label` there, its quests'
+  names come from `quest-index.json` and its duties' from `content-index.json` (numbers when those haven't been
+  made). A build without the file (`f9e4b0f` or older) lists nothing and says to build again.
 * **Each event**: Off, On, or Scheduled with a start and an end (datetime boxes, **UTC**; the page says what time it
   is in UTC); what it's doing now (On, Off, "Starts …", "Ended …", "On until …"); when retail ran it, with a button
   that fills the boxes with retail's dates. A schedule whose end isn't after its start isn't saved (it would never be
@@ -466,7 +467,7 @@ the server puts in every ZoneInit while it's on.)
   seconds}}}`; an event that's off isn't in it. An event the page doesn't list (another build's) keeps its setting.
   The server reads it again when it changes and watches the schedule itself: no restart.
 
-Checked with Flask's view against this repository's `fork_events.json` and `festivals.yml`: the page rendered and
+Checked with Flask's view against a copy of this repository's `resources` without its `data` folder, as a build has it: the page rendered and
 looked at in Chromium; on, off, scheduled, a schedule with only a start or only an end, an end before its start, and
 nonsense dates saved as above. Not used against the running server.
 

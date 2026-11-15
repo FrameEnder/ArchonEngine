@@ -5,7 +5,7 @@
 //! Brawler as festival 257 (Connor's Chronofoil captures of 2026-11-03 to 11-09: every ZoneInit had the game's
 //! festivals `[257, 256, 120]` with phases `[0, 2, 0]`.)
 //!
-//! * `resources/data/fork_events.json` lists the events this fork has built (their festival, phase, quests and
+//! * `resources/events/fork_events.json` lists the events this fork has built (their festival, phase, quests and
 //!   duties.)
 //! * `events.json` in the server's data folder (`$KAWARI_DATA`, beside `drop-rates.json`) is the owner's:
 //!   `{"format": 1, "events": {"keybound_brawler": {"mode": "on"}}}`, a mode of `off` (the default), `on`, or
@@ -39,13 +39,14 @@ pub struct GameEvent {
     pub content_entries: Vec<(u32, u16)>,
 }
 
-/// The events built (`resources/data/fork_events.json`.)
+/// The events built (`resources/events/fork_events.json`.)
 pub fn built() -> &'static [GameEvent] {
     static BUILT: OnceLock<Vec<GameEvent>> = OnceLock::new();
     BUILT.get_or_init(|| {
-        let value: Value =
-            serde_json::from_str(include_str!("../../../../resources/data/fork_events.json"))
-                .expect("resources/data/fork_events.json doesn't read");
+        let value: Value = serde_json::from_str(include_str!(
+            "../../../../resources/events/fork_events.json"
+        ))
+        .expect("resources/events/fork_events.json doesn't read");
         let numbers = |value: &Value| -> Vec<u64> {
             value
                 .as_array()

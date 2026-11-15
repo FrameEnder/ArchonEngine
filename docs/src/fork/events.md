@@ -7,8 +7,8 @@ implemented Events to be turned on or scheduled."
 
 ## Turning an event on (2026-11-15)
 
-Where it lives: `servers/world/src/server/game_events.rs`, `resources/data/fork_events.json`, and ArchonEngine
-ControlPanel's Dashboard → Events ([ArchonEngine ControlPanel](kawari-web.md#events-dashboard--events-2330)).
+Where it lives: `servers/world/src/server/game_events.rs`, `resources/events/fork_events.json`, and ArchonEngine
+ControlPanel's Dashboard → Events ([ArchonEngine ControlPanel](kawari-web.md#events-dashboard--events-2331)).
 
 **An event is a festival to the client.** ZoneInit's game festivals (eight IDs, each with a phase) decide which of a
 zone's layers are out: an event's NPCs, decorations and objects sit on layers with its festival ID. The UI festivals
@@ -19,10 +19,13 @@ with phase 2 on 256. In the duty the game festivals were all 0 and the UI ones `
 ActorControlSelfs right after its ZoneInit set them one at a time: `[257]`, `[257, 131328]`, `[257, 131328, 120]`
 (131328 = 256 with phase 2 in its upper half; category 924 in that version, SetFestival.)
 
-* **`resources/data/fork_events.json`** lists the events the fork has built: `key`, `festival`, `phase`, `quests`,
-  `duties`, `territories`, `content_entries` (the ContentEntry events that put a duty in the Duty Finder), and when
-  retail ran it (`retail_start`, `retail_end`: Unix seconds, null when not over). No names: the ControlPanel reads the
-  festival's from `festivals.yml` and the quests' and duties' from the game. **A new event gets an entry here** and
+* **`resources/events/fork_events.json`** lists the events the fork has built: `key`, `festival`, `phase`, `quests`,
+  `label` (the festival's name in upstream's `festivals.yml`, for the ControlPanel's page), `duties`, `territories`, `content_entries` (the ContentEntry events that put a duty in the Duty Finder), and when
+  retail ran it (`retail_start`, `retail_end`: Unix seconds, null when not over). The quests' and duties' names the
+  ControlPanel reads from the game. **It's in `resources/events/`, not `resources/data/`**: a build's files leave
+  `resources/data` out (the ControlPanel's source build and CI's artifact: `rsync --exclude /data/`), and the page
+  reads the list from the build. It was in `resources/data` for three commits (`399192f` to `f9e4b0f`), and the
+  page listed nothing (Bob, 2026-11-15). **A new event gets an entry here** and
   nothing else to be listed and switched.
 * **`events.json`** in the server's data folder (`$KAWARI_DATA`, beside `drop-rates.json`) is the owner's:
   `{"format": 1, "events": {"keybound_brawler": {"mode": "on"}}}`. `mode` is `off` (the same as not there), `on`, or
