@@ -552,9 +552,11 @@ See [Duty Finder Settings](duty-finder.md). Untested in game (2026-10-28).
   ControlPanel) could put the guide on an earlier step. Steps before the city's last quests and after We Come in Peace
   weren't in a capture. We Come in Peace (3856) isn't scripted.
 
-* **The Waking Sands' layer filter** (2026-10-26) is known from The Scions of the Seventh Dawn (90338) to
-  Sylph-management (90342, 2026-10-28); later visits get 90342 until their keys are recorded (a capture of retail
-  there, or the zone's filter log matched to the story). 90341 is keyed to Wood's Will Be Done (683) and the other
+* **The Waking Sands' layer filter** is known from The Scions of the Seventh Dawn (90338) to The Black Wolf's
+  Ultimatum (92221, at its sequence 255; what a visit with it at sequence 1 shows wasn't captured); later visits
+  keep 92221 until their keys are in a capture read with `questkit chronofoil --layers --save`. That check only
+  knows the captures it has been run on (the 86 in hand on 2026-11-15), and only the moments a capture visits: a
+  key retail would give at a moment nobody captured can't be found by it. 90341 is keyed to Wood's Will Be Done (683) and the other
   companies' 684 (untested) and 685 (Bob's capture c99fe374, 2026-10-28); whether accepting 680 or 682 already brings
   it isn't recorded. Other zones with several layer filters send 0, as before.
   The server's own event objects there still follow the first filter for the territory, not the key. Untested in

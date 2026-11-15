@@ -423,6 +423,11 @@ reads, chat left out), so `compare` and the rest can use it.
   (position at 12); before, your position only changed when the server moved you, so a run's player stood at their
   spawn. It has no names (no game data here: NPCs show as `base N [layout]`), no Action sheet (shapes, omens, class kits) and no
   layout layers; positions only change when a packet moves someone.
+* **`--layers`** prints every layer filter key the captures' servers named (ZoneInit's and the player's
+  ActorSetPos'), with the quest change before it, and checks `resources/data/layer_filters.json` gives each back for
+  the quests the character had then (`chronofoil_layers.py`; exit 1 and a `MISSING` line otherwise). `--save` keeps
+  them in `questkit/data/layer_keys.json`, which the tests check on every push
+  (`LayerKeys.test_the_table_gives_every_key_retail_named`). Run it on every new capture ([Travel](travel.md)).
 * **`--quest Q[,Q]`** prints what those quests did (`chronofoil_quest.py`): talks, scenes with their flags and the
   client's answers (yield or return, results, error code), notices, quest updates, and the zone changes, attunements
   and unlocks while their events were open. `questkit fixture --chronofoil` makes fixtures from the same reading.

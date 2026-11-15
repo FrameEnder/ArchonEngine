@@ -49,5 +49,8 @@ when no code changes.
 * A fix from one of Bob's bundles gets a test that would have caught it (`docs/src/fork/testing.md`): the server's side
   in `servers/world/src/server/bundle_tests.rs`, a script's as a fixture (`replay`, `battle-sim`, `duty-sim`). A duty
   script change keeps `questkit duty-sim` passing (`--update-known` only for what's really still wrong).
+* New Chronofoil captures are read with `python3 tools/questkit chronofoil <captures> --layers --save` when they
+  come in: it fails where `resources/data/layer_filters.json` doesn't give a key retail named (The Black Wolf's
+  Ultimatum's sat in two captures for three days, 2026-11-15), and keeps the keys for the tests.
 * Quest scripts follow the pattern in `docs/src/fork/quests.md` and are checked against the client's script and a
   retail recording (simulate with lupa before Bob tests).

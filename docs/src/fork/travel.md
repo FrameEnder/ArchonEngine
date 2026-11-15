@@ -218,6 +218,21 @@ same event), so the entry asks for that: an entry's `completed` takes only its q
 anyone to accept the next quest"). Kawari's 520 script completes the quest before its warp, so that ActorSetPos
 carries the new key as retail's did; a character already past 520 gets it at the next zone-in or event there.
 
+**The Black Wolf's Ultimatum** (522; Bob's Chronofoil captures da424662 and d1c46dff of 2026-11-12): **92221** in
+ZoneInit with it at sequence 255, the only visits there during the quest, and at login in a later capture
+(0abe6734). The table had nothing for it, so the Sands stayed on 92220 (Bob, 2026-11-15); the entry waits for
+sequence 255, a visit at sequence 1 not having been captured.
+
+**Checked against every capture.** The key had been in two captures for three days when Bob found it missing in
+game: each key until then was added by hand when a bundle showed the Sands wrong. `questkit chronofoil <captures>
+--layers` reads every key a capture's server named (ZoneInit and the player's ActorSetPos) with the quests as the
+character had them then (the active list, the completed list at login, each accept, update and finish after), and
+asks the table for each; it fails when the table gives another key, has no entry for one, or doesn't have the
+territory. `--save` keeps the observations (numbers only: `tools/questkit/questkit/data/layer_keys.json`, 77 from
+the 86 captures read on 2026-11-15) and questkit's test suite, which CI runs on every push, checks the table
+against all of them. **Captures of a quest are read with `--layers --save` when they come in**, like making its
+fixtures.
+
 Kawari reads the key from `resources/data/layer_filters.json` (`layer_filters.rs`: per territory, the last entry whose
 quest has been accepted (as far as its `sequence`, if it has one) or completed (only completed, with `completed`); an
 entry without a quest is the default), puts it in ZoneInit, and fills it in

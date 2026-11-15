@@ -119,6 +119,22 @@ mod tests {
         };
         assert_eq!(filter_key(212, reclamation(false)), 92219);
         assert_eq!(filter_key(212, reclamation(true)), 92220);
+        // The Black Wolf's Ultimatum (522): 92221 with it at sequence 255 (Bob's Chronofoil captures da424662 and
+        // d1c46dff), not at 1; and after it's done. Missing until 2026-11-15 (Bob: the quest "didn't shift the
+        // waking sands layer"); every key the captures name is checked against the table now (questkit's
+        // `chronofoil --layers` and its test.)
+        let ultimatum = |at: Option<u8>| {
+            move |quest: u32, sequence: Option<u8>, only_completed: bool| {
+                quest <= 520
+                    || quest == 683
+                    || quest == 876
+                    || (quest == 522
+                        && at.is_none_or(|at| !only_completed && sequence.is_none_or(|s| at >= s)))
+            }
+        };
+        assert_eq!(filter_key(212, ultimatum(Some(1))), 92220);
+        assert_eq!(filter_key(212, ultimatum(Some(255))), 92221);
+        assert_eq!(filter_key(212, ultimatum(None)), 92221);
         assert_eq!(filter_key(140, |_, _, _| true), 0);
     }
 }

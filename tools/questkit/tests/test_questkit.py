@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from questkit import battle, battle_sim, capture, chronofoil, chronofoil_battle, chronofoil_quest, compare, duty_sim, duty_sources, fixtures, ledger, ledger_facts, lint, public_sources, recording, replay, rotation_sim, scaffold, transcribe, triage  # noqa: E402
 from questkit import autoduty, fishing_data, questionable, repo  # noqa: E402
+from questkit import chronofoil_layers  # noqa: E402
 from questkit.bundle import Bundle  # noqa: E402
 
 QUEST = 9999
@@ -1426,6 +1427,43 @@ class DropinTest(unittest.TestCase):
         self.assertAlmostEqual(spawn["rotation"], 3.14159, places=4)
         self.assertEqual(spawn["position"], [-213.5, -28.5, 128.0])
         self.assertEqual((spawn["flags"], spawn["max_links"], spawn["link_range"]), (2, 4, 20))
+
+
+class LayerKeys(unittest.TestCase):
+    """Bob, 2026-11-15: The Black Wolf's Ultimatum (522) didn't move the Waking Sands on. Its key (92221) had been
+    in two captures for three days; nothing compared the keys retail named with the table."""
+
+    def test_the_table_gives_every_key_retail_named(self):
+        observations = chronofoil_layers.load()
+        self.assertTrue(observations, "tools/questkit/questkit/data/layer_keys.json is empty")
+        self.assertEqual(chronofoil_layers.check(observations), [])
+        # The observation that was missed.
+        self.assertTrue(any(seen["territory"] == 212 and seen["key"] == 92221 and seen["after"] == ["update", 522, 255]
+                            for seen in observations))
+
+    def test_a_key_the_table_lacks_is_reported(self):
+        seen = {"capture": "made-up", "territory": 212, "key": 99999, "where": "ZoneInit", "active": {"522": 255},
+                "completed": [509], "after": ["update", 522, 255]}
+        problems = chronofoil_layers.check([seen])
+        self.assertEqual(len(problems), 1)
+        self.assertIn("99999", problems[0])
+        self.assertIn("522", problems[0])
+        # A key the table has, at a moment the table gives another.
+        early = dict(seen, key=92221, active={"522": 1}, completed=[509, 510, 511, 520])
+        self.assertIn("the table gives 92220", chronofoil_layers.check([early])[0])
+        # A territory the table doesn't have at all.
+        self.assertIn("no territory", chronofoil_layers.check([dict(seen, territory=9999)])[0])
+
+    def test_the_table_as_the_server_reads_it(self):
+        entries = [{"key": 1}, {"key": 2, "quest": 10}, {"key": 3, "quest": 11, "sequence": 255},
+                   {"key": 4, "quest": 12, "completed": True}]
+        key = lambda active, completed: chronofoil_layers.table_key(1, active, completed, entries)  # noqa: E731
+        self.assertEqual(key({}, []), 1)
+        self.assertEqual(key({10: 0}, []), 2)
+        self.assertEqual(key({10: 0, 11: 3}, []), 2)
+        self.assertEqual(key({11: 255}, [10]), 3)
+        self.assertEqual(key({12: 255}, [10, 11]), 3)
+        self.assertEqual(key({}, [10, 11, 12]), 4)
 
 if __name__ == "__main__":
     unittest.main()

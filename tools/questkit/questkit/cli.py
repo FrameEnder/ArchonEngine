@@ -459,6 +459,22 @@ def _chronofoil(args) -> int:
         out = chronofoil_spawns.save(registry)
         print(f"{sum(len(v) for v in registry.values())} battle NPCs in {len(registry)} territories merged into {out}")
         return 0
+    if args.layers:
+        from . import chronofoil_layers
+
+        seen = []
+        for capture in captures:
+            seen += chronofoil_layers.observe(capture, tables)
+        print(chronofoil_layers.report(seen) or "No layer filter keys in these captures")
+        if args.save:
+            kept = chronofoil_layers.merge(chronofoil_layers.load(), seen)
+            chronofoil_layers.save(kept)
+            print(f"{len(kept)} observations in {chronofoil_layers.OBSERVATIONS}")
+        problems = chronofoil_layers.check(seen)
+        for problem in problems:
+            print("MISSING " + problem)
+        print(f"{len(seen)} keys named, {len(problems)} the table (resources/data/layer_filters.json) doesn't give")
+        return 1 if problems else 0
     fact = next((name for name in ("coverage", "uses", "statuses", "gauges", "actions", "controls", "registry", "areas")
                  if getattr(args, name)), None)
     if fact or args.ledger:
@@ -849,6 +865,11 @@ def main(argv=None) -> int:
                    help="leave out this BNpcBase (repeatable)")
     p.add_argument("--one-spot", type=int, action="append", default=[],
                    help="keep only one spawn point of this BNpcBase, e.g. a hunt mark (repeatable)")
+    p.add_argument("--layers", action="store_true",
+                   help="every layer filter key the server named (ZoneInit, ActorSetPos) with the quests then, "
+                        "checked against resources/data/layer_filters.json; fails when the table gives another")
+    p.add_argument("--save", action="store_true",
+                   help="with --layers: keep the observations (numbers only) for the test suite's check")
     p.add_argument("--coverage", action="store_true",
                    help="how much of the captures the opcode tables name, by game version")
     p.add_argument("--uses", action="store_true",
