@@ -197,6 +197,23 @@ impl EventHandler for ContentEventHandler {
             }
         }
 
+        // Keybound Brawler's own scenes (the cutscene before its last wave, the result, the way out: `keybound.rs`) are
+        // an instanced duty's, not a quest battle's: the game carries on from their end too. Until 2026-11-15 only a
+        // quest battle's were told, so the way out's end sent no one out (Bob: "I just stand there in the map".)
+        if event.event_type == EventType::GameProgress
+            && connection.content_finder_condition_id == crate::server::KEYBOUND_DUTY
+        {
+            player.finish_event();
+            connection
+                .handle
+                .send(ToServer::DirectorSceneFinished(
+                    connection.player_data.character.actor_id,
+                    scene,
+                ))
+                .await;
+            return;
+        }
+
         player.finish_event();
     }
 }

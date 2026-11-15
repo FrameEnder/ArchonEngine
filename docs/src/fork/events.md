@@ -303,6 +303,14 @@ chat"). Retail's runs against his:
   ShowScreenImage `[image, 0xE0000000]`): 1620 2.0 s after the duty commences, 1624 with the first wave's
   `0x10000002`, 1621 8.05 s after, 1625 with the second's, 1628 8.05 s after, 1622 as the cutscene ends (26.0 s
   after), 1627 3.0 s into a loss (1,340 in 223 runs, always in that order).
+* **The way out** (Bob, 2026-11-15, on `7c23f85`: "after finishing a game whether winning, or loosing I just stand
+  there in the map"; his capture: scene 11 played and came back 17 s later, EventFinish, and nothing more). The end
+  of one of the director's own scenes was only passed on for a quest battle's director
+  (`ContentEventHandler::on_return`), so neither the result's end nor the way out's reached the game. Now Keybound
+  Brawler's are too (`ToServer::DirectorSceneFinished` → `keybound::scene_finished`: the result's end plays the
+  way out, the way out's end sends the player back). The same capture showed the first of the two conditions gone a
+  tick after zoning in: the world's check for statuses that hold a player took it off (it wasn't one of those); it
+  leaves a player with status 5373 alone now.
 * **Leaving early** was in no retail run. Kawari turns the leaver's typing off first (`0x10000002`,
   `keybound::player_leaves`), a guess at what keeps the keyboard the game's after the zone change.
 

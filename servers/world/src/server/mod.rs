@@ -1075,7 +1075,15 @@ fn server_logic_tick(
                 let incapacitated = actor
                     .status_effects()
                     .is_some_and(modifiers::is_incapacitated);
-                if incapacitated != conditions.has_condition(Condition::SufferingStatusAffliction) {
+                // Keybound Brawler's players keep the first of the two for the whole duty, with its status
+                // (`keybound::PLAYER_STATUS`); this took it off them a tick after they came in.
+                let keybound = actor
+                    .status_effects()
+                    .is_some_and(|statuses| statuses.get(keybound::PLAYER_STATUS.0).is_some());
+                if !keybound
+                    && incapacitated
+                        != conditions.has_condition(Condition::SufferingStatusAffliction)
+                {
                     for condition in [
                         Condition::SufferingStatusAffliction,
                         Condition::SufferingStatusAffliction2,
