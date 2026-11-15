@@ -160,8 +160,55 @@ COFFERS = {
     },
 }
 
+-- Coffers that hold one thing out of many, the same for every class (`player:open_loot_coffer`): each row is
+-- { item, how many, 1 if it's high quality, how often it came }.
+--
+-- 52450, Keybound Brawler's coffer (docs/src/fork/events.md): the 40 openings in Connor's Chronofoil captures of
+-- 2026-11-03 to 11-09 and what each gave (ActorControlSelf 527 `[1232, 0, item]`, a high-quality one as the item ID
+-- plus 1,000,000; `[1233, 0, 41708, 3]` for the three of 41708.) Retail's own table and odds aren't known: 30 things
+-- in 40 openings says there are more than these.
+LOOT_COFFERS = {
+    [52450] = {
+        { 5827, 1, 0, 4 },
+        { 52447, 1, 0, 4 },
+        { 41708, 3, 0, 3 },
+        { 39562, 1, 0, 2 },
+        { 46253, 1, 1, 2 },
+        { 7975, 1, 0, 1 },
+        { 8143, 1, 0, 1 },
+        { 13114, 1, 0, 1 },
+        { 13115, 1, 0, 1 },
+        { 13116, 1, 0, 1 },
+        { 13711, 1, 0, 1 },
+        { 13714, 1, 0, 1 },
+        { 17025, 1, 0, 1 },
+        { 17954, 1, 0, 1 },
+        { 35561, 1, 0, 1 },
+        { 40404, 1, 0, 1 },
+        { 40409, 1, 0, 1 },
+        { 41593, 1, 0, 1 },
+        { 41594, 1, 0, 1 },
+        { 41601, 1, 0, 1 },
+        { 41610, 1, 0, 1 },
+        { 41762, 1, 0, 1 },
+        { 41769, 1, 0, 1 },
+        { 44977, 1, 0, 1 },
+        { 44987, 1, 0, 1 },
+        { 46254, 1, 1, 1 },
+        { 49239, 1, 1, 1 },
+        { 49240, 1, 1, 1 },
+        { 49243, 1, 1, 1 },
+        { 49248, 1, 1, 1 },
+    },
+}
+
 function doAction(player, item_id)
     local effects = EffectsBuilder()
+    local loot = LOOT_COFFERS[item_id]
+    if loot ~= nil then
+        player:open_loot_coffer(item_id, loot)
+        return effects
+    end
     local contents = COFFERS[item_id]
     if contents == nil then
         player:send_message("What coffer " .. item_id .. " holds isn't known yet")

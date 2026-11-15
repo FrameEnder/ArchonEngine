@@ -374,6 +374,12 @@ pub enum LuaTask {
         item_id: u32,
         contents: Vec<Vec<u32>>,
     },
+    /// A coffer of one thing out of many opened (`ZoneConnection::open_loot_coffer`): its rows of item, quantity,
+    /// high quality and weight.
+    OpenLootCoffer {
+        item_id: u32,
+        loot: Vec<(u32, u32, bool, u32)>,
+    },
     RemoveCooldowns,
     ToggleHowTo {
         value: bool,

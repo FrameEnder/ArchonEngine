@@ -263,6 +263,7 @@ async fn initial_setup(
                     quest_battle_losses: std::collections::HashMap::new(),
                     quest_battle_difficulty: 0,
                     quest_battle_echo: false,
+                    next_scene_flags_high: 0,
                     quest_battle_finish_scene: None,
                     quest_battle_finish_log: None,
                     quest_battle_finish_flags: QUEST_BATTLE_SCENE_FINISH_FLAGS,
@@ -5553,10 +5554,12 @@ async fn process_server_msg(
                 handler,
                 scene,
                 flags,
+                flags_high,
                 params,
                 arg,
             } => {
                 // As PlayDirectorScene, with the scene's parameters and the event's argument.
+                connection.next_scene_flags_high = flags_high;
                 connection
                     .start_event(
                         ObjectTypeId {

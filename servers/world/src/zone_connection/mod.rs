@@ -64,7 +64,7 @@ mod mender;
 mod party;
 mod player_currency;
 pub(crate) mod quest;
-pub use player_currency::{ACHIEVEMENT_CERTIFICATES_TOTAL, PLAYER_CURRENCIES, certificates_owed};
+pub use player_currency::{ACHIEVEMENT_CERTIFICATES_TOTAL, certificates_owed, is_player_currency};
 pub use quest::RETAINER_UNLOCK_LINK;
 mod retainer;
 mod ride_shooting;
@@ -307,6 +307,9 @@ pub struct ZoneConnection {
     /// doubled while it is.
     pub quest_battle_difficulty: u32,
     pub quest_battle_echo: bool,
+    /// The upper half of the next scene's flags (the u32 after EventScene's flags), taken by that scene: Keybound
+    /// Brawler's cutscene before the last wave has 0x20 there (`FromServer::PlayDirectorSceneWith`.)
+    pub next_scene_flags_high: u32,
     /// The scene a won quest battle plays before sending us back (`QUEST_BATTLE_SCENE_FINISH` unless its director
     /// picks another), or `None` while it hasn't been won.
     pub quest_battle_finish_scene: Option<u16>,

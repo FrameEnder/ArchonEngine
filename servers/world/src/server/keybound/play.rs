@@ -843,6 +843,27 @@ impl Game {
                 Pending::Land { damage } => {
                     self.hurt_barrier(&mut network.lock(), instance, damage);
                 }
+                Pending::Engage { enemy } => {
+                    let Some(piece) = self.barrier.first().copied() else {
+                        continue;
+                    };
+                    let mut network = network.lock();
+                    control(&mut network, instance, enemy, 0, [1, 1, 0, 0]);
+                    control(&mut network, instance, enemy, 4, [1, 0, 0, 0]);
+                    network.send_in_range_instance(
+                        enemy,
+                        instance,
+                        FromServer::ActorControlTarget(
+                            enemy,
+                            ObjectTypeId {
+                                object_id: piece,
+                                object_type: ObjectTypeKind::None,
+                            },
+                            ActorControlCategory::SetTarget,
+                        ),
+                        DestinationNetwork::ZoneClients,
+                    );
+                }
                 Pending::StateOff {
                     notice,
                     arg,
@@ -1554,6 +1575,65 @@ mod tests {
                 .iter()
                 .all(|state| [(5348, 1171, 28), (5472, 1172, 30)].contains(state))
         );
+    }
+
+    /// Bob, 2026-11-15 (on `0a85433`): the last boss still wasn't in its cutscene. Retail's EventScene for it has
+    /// 0x20 after its flags (220 of 220), the result's scene 0; and the boss turns on the barrier 0.8 s after its
+    /// SpawnNpc (ActorControl 0 `[1, 1]`, 4 `[1]`, ActorControlTarget 50 at a piece.)
+    #[test]
+    fn the_last_boss_s_cutscene_is_retail_s() {
+        let (mut world, player, piece, now) = world();
+        let mut game = world.instance.keybound.take().unwrap();
+        let high = |world: &mut TestWorld| -> Vec<u32> {
+            world
+                .sent(player)
+                .iter()
+                .filter_map(|message| match message {
+                    FromServer::PlayDirectorSceneWith { flags_high, .. } => Some(*flags_high),
+                    _ => None,
+                })
+                .collect()
+        };
+        play_scene(
+            &mut world.network.lock(),
+            DIRECTOR,
+            player,
+            SCENE,
+            CUTSCENE_FLAGS,
+            &CUTSCENE_PARAMS,
+            SCENE_ARG,
+        );
+        assert_eq!(high(&mut world), [0x20]);
+        play_scene(
+            &mut world.network.lock(),
+            DIRECTOR,
+            player,
+            SCENE,
+            RESULT_FLAGS,
+            &RESULT_PARAMS,
+            SCENE_ARG,
+        );
+        assert_eq!(high(&mut world), [0]);
+
+        let boss = world.enemy(3, [0.0, 0.0, 0.0], 3000);
+        game.pending.push((now, Pending::Engage { enemy: boss }));
+        game.timed(&world.network, &mut world.instance, now);
+        let sent = world.sent(player);
+        assert!(sent.iter().any(|message| matches!(
+            message,
+            FromServer::ActorControlTarget(from, target, ActorControlCategory::SetTarget)
+                if *from == boss && target.object_id == piece
+        )));
+        for (category, first) in [(0, 1), (4, 1)] {
+            assert!(
+                sent.iter()
+                    .any(|message| control_from(message, boss, |sent| matches!(
+                        sent,
+                        ActorControlCategory::Unknown { category: c, param1, .. }
+                            if *c == category && *param1 == first
+                    )))
+            );
+        }
     }
 
     /// A player with a score that pays.

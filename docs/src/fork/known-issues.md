@@ -11,6 +11,12 @@ None of it played yet.
   (status 239) doubles the player's HP from the zone-in, not as the battle commences (retail's came with the role
   status, 4 s in), and its damage over time wasn't measured (the hit is doubled, the tick as the script works it
   out). **Lethargy's** second and third on the same player last 12 s, not retail's 6 and 3.
+* **The event's items** (2026-11-15): using one no longer takes the tick down, the coffer gives one of retail's 40
+  recorded draws (its real table isn't known), and the MGC trader takes MGC; none seen in game yet, and the MGC
+  trader's cost is read from the sheet's first cost, unchecked. What retail's other event items do when used
+  (51997: ActorControlSelf 942 `[345, 1, item]`; the mount 52261: 903 `[345, 1, 430]`) wasn't compared with
+  Kawari's. A bought piece of gear goes to the bags, where retail's went to the armoury chest. The last boss in its
+  cutscene: built from the scene's packet, not seen.
 * **Keybound Brawler** (Bob's won run on `15f6019`, 2026-11-15: the HUD comes back): which of that build's three
   changes did it isn't known (`events.md`). Its rewards weren't said to have come; their path
   (`keybound_rewards`) has no unit test, there being no test harness for a connection. Retail also sent

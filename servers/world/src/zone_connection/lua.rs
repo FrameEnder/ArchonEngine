@@ -1031,6 +1031,9 @@ impl ZoneConnection {
                 LuaTask::OpenCoffer { item_id, contents } => {
                     self.open_coffer(*item_id, contents).await;
                 }
+                LuaTask::OpenLootCoffer { item_id, loot } => {
+                    self.open_loot_coffer(*item_id, loot).await;
+                }
                 LuaTask::RemoveCooldowns => {
                     self.handle
                         .send(ToServer::RemoveCooldowns(

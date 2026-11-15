@@ -1481,6 +1481,23 @@ impl UserData for LuaPlayer {
                 Ok(())
             },
         );
+        // A coffer of one thing out of many (items/Coffer.lua's LOOT_COFFERS): one of its rows given, the coffer used
+        // up.
+        methods.add_method_mut(
+            "open_loot_coffer",
+            |_, this, (item_id, rows): (u32, Vec<Vec<u32>>)| {
+                let loot = rows
+                    .iter()
+                    .filter_map(|row| match row[..] {
+                        [item, quantity, hq, weight] => Some((item, quantity, hq != 0, weight)),
+                        _ => None,
+                    })
+                    .collect();
+                this.queued_tasks
+                    .push(LuaTask::OpenLootCoffer { item_id, loot });
+                Ok(())
+            },
+        );
         // An aetheryte ticket's teleport (items/TeleportTicket.lua): the ticket used up, then to the pop range.
         methods.add_method_mut(
             "redeem_mgp_voucher",

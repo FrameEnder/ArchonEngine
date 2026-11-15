@@ -373,6 +373,14 @@ enter their combative mode", the last boss "invisible during the cutscene of wav
   that. Actions with no result packet (the helper's 49705, the bombs' 49534 and 49537, …) have their damage with the
   effect. Kawari took the barrier's HP with the effect (`Game::strike`, `Pending::Land`). The casts themselves were
   right (the effect 0.29 s after the bar's time).
+* **The last boss still wasn't in its cutscene** with its SpawnNpc at retail's moment (Bob on `0a85433`). His
+  capture against retail's: the client answered the cutscene with trigger **831** `[4024]`, as for the opening, where
+  retail's answered **832** in every run; and retail's EventScene for this cutscene has **0x20 in the u32 after its
+  flags** (220 of 220; the opening, the result's scene and the way out have 0), which Kawari's EventScene never set
+  (`FromServer::PlayDirectorSceneWith::flags_high`, `ZoneConnection::next_scene_flags_high`). Also from retail, 220
+  of 220: 0.6 to 0.9 s after its SpawnNpc the boss gets ActorControl 0 `[1, 1]`, 4 `[1]` and ActorControlTarget 50
+  at one of the barrier's pieces (`Pending::Engage`). Its SpawnNpc has 3, 1, 0, 20 in its first fields (flags, icon,
+  scaling, links) and 10,000 of 10,000 resource points where Kawari's has zeros: not changed.
 * **The big enemies' states are statuses on the players.** With the notice and the switch (`[17837, 5348]` and
   `[3071, 1]`; `[17837, 5472]` and `[3072, 1]`) every player gets an EffectResult giving that status: 5348 with
   parameter 1171 for 28.0 s (from 19594's 49547, 1.6 s before), 5472 with 1172 for 30.0 s (the last boss's 49701),
@@ -403,6 +411,18 @@ and MGC, the result's packet again with them, and scene 11.
 **Rewards** (223 results, to the unit): MGP = score × 0.046 (2,800 at most), MGC = score × 0.0058 (350 at most), and
 a Keybound Coffer for a win; LogMessages 11598 `[MGP, 0]`, 11601 `[52322, MGC]`, 11595 `[52450, 1]` from the
 director. A lost game (the barrier at 0) pays the MGP and MGC without the coffer.
+
+**The Keybound Coffer** (52450) is opened like a gear coffer (action 4647, a 2.0 s cast) and gives one thing: in
+Connor's 40 openings, 30 different things (ActorControlSelf 527 `[1232, 0, item]`, a high-quality one as its ID plus
+1,000,000, `[1233, 0, 41708, 3]` for three of 41708; then the coffer's slot emptied, the ack and the item's slot,
+1.65 to 1.7 s after the cast's effect). Retail's table and odds aren't known, so Kawari's coffer gives one of those
+40 draws (`LOOT_COFFERS` in `items/Coffer.lua`, `ZoneConnection::open_loot_coffer`; [Items](items.md)).
+
+**The MGC trader** (SpecialShop 1549, 54 purchases): the client returns `[0, the item's place]`; retail sends the
+MGC's new count (378), the ack, the item's slot, the event's LogMessage 750 `[item]` and the shop's scene 0 again
+(flags 0x2001, `[100, 0, 0, 0]`). Kawari took gil (the item's price: only the certificates counted as a currency a
+SpecialShop takes), now MGC (`is_player_currency`; should the sheet's cost not name the MGC's item, the trader's
+is taken as MGC anyway and the log says what the sheet had).
 
 How retail hands them over (every run): an InventoryActionAck (`FFFFFFFF`, type 6) and the MGP's slot
 (UpdateInventorySlot, container 2000 slot 9); an ack and **ActorControlSelf 378 `[0, 52322, 10000, the new count,

@@ -42,6 +42,7 @@ impl ZoneConnection {
             handler_id: event.id,
             scene,
             scene_flags,
+            unk1: std::mem::take(&mut self.next_scene_flags_high),
             params,
             ..Default::default()
         };

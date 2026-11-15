@@ -21,6 +21,12 @@ const LOG_MESSAGE_CERTIFICATES_GIVEN: u32 = 750;
 /// The count when the Item sheet has no stack size (retail sent 65000 for both, their StackSize.)
 const DEFAULT_MAX_COUNT: u32 = 65000;
 
+/// Whether `item_id` is a currency the client counts outside the inventory (what a SpecialShop takes it from):
+/// the certificates, and Keybound Brawler's MGC.
+pub fn is_player_currency(item_id: u32) -> bool {
+    PLAYER_CURRENCIES.contains(&item_id) || item_id == crate::server::KEYBOUND_MGC
+}
+
 /// How many certificates `points` achievement points are worth beyond the `given` already handed out.
 pub fn certificates_owed(points: u32, given: u32) -> u32 {
     (points / ACHIEVEMENT_POINTS_PER_CERTIFICATE).saturating_sub(given)
@@ -150,5 +156,20 @@ mod tests {
         assert_eq!(certificates_owed(50, 0), 1);
         assert_eq!(certificates_owed(175, 1), 2);
         assert_eq!(certificates_owed(100, 3), 0);
+    }
+}
+
+#[cfg(test)]
+mod shop_currency_tests {
+    use super::*;
+
+    /// Bob, 2026-11-15: the MGC trader took gil. What a SpecialShop takes from the client's own counts: the
+    /// certificates and the MGC, and not gil or an ordinary item.
+    #[test]
+    fn the_mgc_is_a_currency_shops_take() {
+        assert!(is_player_currency(crate::server::KEYBOUND_MGC));
+        assert!(is_player_currency(ACHIEVEMENT_CERTIFICATE));
+        assert!(!is_player_currency(1));
+        assert!(!is_player_currency(52_450));
     }
 }

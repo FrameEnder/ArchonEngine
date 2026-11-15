@@ -341,6 +341,8 @@ pub enum FromServer {
         handler: HandlerId,
         scene: u16,
         flags: u32,
+        /// The u32 after the flags in EventScene.
+        flags_high: u32,
         params: Vec<u32>,
         arg: u32,
     },

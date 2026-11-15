@@ -231,6 +231,9 @@ const SPAWN_HIDDEN: u32 = 0x2_0000;
 /// 10.1), and it tells everyone as the cutscene ends (ActorControl 3402, 26.0 s after; the client had answered the
 /// cutscene's announcement with trigger 832.)
 const LAST_BOSS_SPAWN_AT: f32 = 10.3;
+/// 0.6 to 0.9 s after its SpawnNpc the last boss draws on the barrier (220 of 220: ActorControl 0 `[1, 1]`, 4 `[1]`
+/// and ActorControlTarget 50 at one of the barrier's pieces.)
+const LAST_BOSS_ENGAGES_AFTER: f32 = 0.8;
 const CONTROL_CUTSCENE_OVER: u32 = 3402;
 /// The barrier's HP (`BARRIER_NOW`) comes this long before an action's result (`effect_after` in the mechanics.)
 const BARRIER_BEFORE_RESULT: f32 = 0.045;
@@ -291,6 +294,7 @@ const FEVER_SWITCH: u32 = 3078;
 /// of a GameProgress event with argument 1; the way out, scene 11 with argument 7 (as Air Force One's).
 const SCENE: u16 = 3;
 const CUTSCENE_FLAGS: u32 = 0x0850_2401;
+const CUTSCENE_FLAGS_HIGH: u32 = 0x20;
 const CUTSCENE_PARAMS: [u32; 5] = [4024, 3, 20301, 0, 0];
 const RESULT_FLAGS: u32 = 0x0850_2403;
 const RESULT_PARAMS: [u32; 5] = [4025, 1, 20302, 0, 0];
@@ -657,6 +661,10 @@ enum Pending {
     Land {
         damage: u32,
     },
+    /// The last boss turns on the barrier in its cutscene.
+    Engage {
+        enemy: ObjectId,
+    },
 }
 
 /// A status given or taken, done once the network isn't held.
@@ -994,12 +1002,22 @@ fn play_scene(
     params: &[u32],
     arg: u32,
 ) {
+    // The cutscene before the last wave has 0x20 in the u32 after its flags (220 of 220; the result's scene, the
+    // way out and the opening have 0). With it retail's client answered trigger 832 `[4024]` as the cutscene began;
+    // without it Bob's answered 831, as for the opening, and the last boss wasn't in the cutscene (2026-11-15, on
+    // `0a85433`, where its SpawnNpc already came as retail's.)
+    let flags_high = if flags == CUTSCENE_FLAGS {
+        CUTSCENE_FLAGS_HIGH
+    } else {
+        0
+    };
     network.send_to_by_actor_id(
         to,
         FromServer::PlayDirectorSceneWith {
             handler: director,
             scene,
             flags,
+            flags_high,
             params: params.to_vec(),
             arg,
         },
@@ -1471,7 +1489,14 @@ impl Game {
                             active: next.boss_active,
                         };
                         let active_at = now + seconds(appear - clock + next.boss_active);
-                        self.spawn_entry(instance, game_data, &entry, self.wave + 1, active_at);
+                        if let Some(enemy) =
+                            self.spawn_entry(instance, game_data, &entry, self.wave + 1, active_at)
+                        {
+                            self.pending.push((
+                                now + seconds(LAST_BOSS_ENGAGES_AFTER),
+                                Pending::Engage { enemy },
+                            ));
+                        }
                     }
                 }
                 if clock >= appear - 4.5 {

@@ -21,6 +21,20 @@ whose switch is at `0x868890`), with the ID where the client reads it:
 | 37312 | Facewear (a Glasses row; its `Style` is what's unlocked) | the item's AdditionalData | `unlock.glasses_styles` |
 | 2136, 4107 | Secret recipe book, folklore tome | Data[0] | not kept yet |
 
+## Items newer than the last action
+
+An item's use reaches `execute_action` with the item's ID as the request's action, and that looked the ID up in
+the Action sheet for its combo (`GameData::get_combo_action`, an `unwrap`). Older items' IDs happen to be actions'
+too; an item past the sheet's last action (the 7.5x event's: the Keybound Coffer 52450, an emote's item 52291) has
+no row, and **every use took the world's tick down** ("The world server panicked handling the tick", `gamedata.rs`),
+leaving the cast bar and nothing after it (Bob, 2026-11-15: the coffer "completely non-functional", the emote not
+learned). The lookups return nothing for a missing row now, and the combo is asked only for actions. Retail's use of
+52291 (ItemAction 2633): ActorControlSelf 41 `[641, 1]`, the slot emptied, the InventoryTransaction and
+ActorControlSelf 946 with the item.
+
+Coffers that hold one thing out of many (the Keybound Coffer) are in `items/Coffer.lua`'s `LOOT_COFFERS`: rows of
+item, quantity, high quality and how often it came (`player:open_loot_coffer`, [Events](events.md)).
+
 ## Using one
 
 `Items.lua` calls `player:learn_from_item(kind, id, item_id)` (LuaTask::LearnFromItem); the connection

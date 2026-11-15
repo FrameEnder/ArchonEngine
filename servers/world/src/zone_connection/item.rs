@@ -8,8 +8,9 @@ use crate::{
 };
 use kawari::{
     common::{
-        ContainerType, ERR_INVENTORY_ADD_FAILED, INVENTORY_ACTION_ACK_GENERAL, ItemOperationKind,
-        LegacyEquipmentModelId, ObjectId, WeaponModelId,
+        ContainerType, ERR_INVENTORY_ADD_FAILED, INVENTORY_ACTION_ACK_GENERAL,
+        INVENTORY_ACTION_ACK_SHOP, ItemOperationKind, LegacyEquipmentModelId, ObjectId,
+        WeaponModelId,
     },
     ipc::zone::{
         ActorControlCategory, ContainerInfo, CurrencyInfo, Equip, ItemInfo, ItemOperation,
@@ -532,6 +533,77 @@ impl ZoneConnection {
         }
     }
 
+    /// A coffer of one thing out of many opened (`items/Coffer.lua`'s LOOT_COFFERS; Keybound Brawler's, 52450): one
+    /// row drawn by its weight, the coffer used up. As retail's 40 openings went (Connor's Chronofoil captures of
+    /// 2026-11-03 to 11-09), 1.65 to 1.7 s after the cast's ActionEffect: ActorControlSelf 527 `[1232, 0, item]` (a
+    /// high-quality item as its ID plus 1,000,000; `[1233, 0, item, quantity]` for more than one), the coffer's
+    /// slot emptied, the ack (0xFFFFFFFF, 6), the item's slot (its high-quality flag set); no pop-up's LogMessage.
+    /// Until 2026-11-15 the coffer wasn't in any table and said so in chat (Bob: "completely non-functional").
+    pub async fn open_loot_coffer(&mut self, coffer_id: u32, loot: &[(u32, u32, bool, u32)]) {
+        const COFFER_OBTAINED: u32 = 527;
+        const COFFER_OBTAINED_ONE: u32 = 1232;
+        const COFFER_OBTAINED_SEVERAL: u32 = 1233;
+        const HQ_ITEM: u32 = 1_000_000;
+        const ITEM_FLAG_HQ: u8 = 1;
+        if self.content_finder_condition_id != 0 || self.content_handler_id.is_some() {
+            tracing::info!("Coffer {coffer_id} not opened: in instanced content");
+            return;
+        }
+        if self.player_data.inventory.count_in_bags(coffer_id) == 0 {
+            tracing::warn!("Coffer {coffer_id} opened, but there's none in the bags");
+            return;
+        }
+        let Some((id, quantity, hq)) = draw_loot(loot, |below| fastrand::u32(..below)) else {
+            return;
+        };
+        let item = self
+            .game_data
+            .lock()
+            .get_item_info(ItemInfoQuery::ById(id))
+            .map(|info| {
+                let mut item = Item::new(&info, quantity as i32);
+                if hq {
+                    item.item_flags |= ITEM_FLAG_HQ;
+                }
+                item
+            });
+        let Some(item) = item else {
+            tracing::warn!("Coffer {coffer_id}: item {id} isn't in the game's data");
+            return;
+        };
+        // Room for it, tried on a copy first (the coffer's own slot isn't freed until it's opened.)
+        if !self
+            .player_data
+            .inventory
+            .clone()
+            .add_obtained_item(item.clone())
+        {
+            self.send_notice(ERR_INVENTORY_ADD_FAILED).await;
+            return;
+        }
+        tracing::info!("Coffer {coffer_id} opened: {quantity} of {id} (high quality: {hq})");
+        let several = quantity > 1;
+        self.actor_control_self(ActorControlCategory::Unknown {
+            category: COFFER_OBTAINED,
+            param1: if several {
+                COFFER_OBTAINED_SEVERAL
+            } else {
+                COFFER_OBTAINED_ONE
+            },
+            param2: 0,
+            param3: id + if hq { HQ_ITEM } else { 0 },
+            param4: if several { quantity } else { 0 },
+            param5: 0,
+        })
+        .await;
+        self.item_used_up(coffer_id).await;
+        if let Some((container, slot)) = self.player_data.inventory.add_obtained_item_at(item) {
+            self.send_inventory_ack(u32::MAX, INVENTORY_ACTION_ACK_SHOP, 0)
+                .await;
+            self.send_inventory_slot(container, slot).await;
+        }
+    }
+
     /// An item won from a coffer (`server/loot.rs`): the LootMessages went to the party already; retail then sent the
     /// winner the ack (0xFFFFFFFF, 6), the item's slot and ActorControlSelf LogMessage 789 with the item (the "obtained"
     /// pop-up), the same for a roll won in a Duty Finder party and a Duty Support coffer's item (Bob's Chronofoil capture
@@ -1016,3 +1088,64 @@ const LOOT_MESSAGE_OBTAINED: u32 = 3;
 const LOOT_MESSAGE_ALREADY_HAVE: u32 = 8;
 const LOOT_ALREADY_HAVE_REASON: u32 = 8;
 const LOOT_MESSAGE_LOST: u32 = 2;
+
+/// One of a loot coffer's rows (item, quantity, high quality, weight) by its weight: `pick(total)` is a number below
+/// the weights' sum.
+pub fn draw_loot(
+    loot: &[(u32, u32, bool, u32)],
+    pick: impl FnOnce(u32) -> u32,
+) -> Option<(u32, u32, bool)> {
+    let total: u32 = loot.iter().map(|row| row.3).sum();
+    if total == 0 {
+        return None;
+    }
+    let mut left = pick(total);
+    for (id, quantity, hq, weight) in loot {
+        if left < *weight {
+            return Some((*id, *quantity, *hq));
+        }
+        left -= weight;
+    }
+    None
+}
+
+#[cfg(test)]
+mod loot_coffer_tests {
+    use super::draw_loot;
+
+    /// Bob, 2026-11-15: the Keybound Coffer "completely non-functional". Its rows are retail's 40 openings: each is
+    /// drawn as often as it came.
+    #[test]
+    fn a_loot_coffer_s_rows_come_by_their_weight() {
+        let loot = [
+            (5827, 1, false, 4),
+            (41708, 3, false, 3),
+            (46253, 1, true, 2),
+        ];
+        let drawn: Vec<_> = (0..9).map(|n| draw_loot(&loot, |_| n).unwrap().0).collect();
+        assert_eq!(
+            drawn,
+            [5827, 5827, 5827, 5827, 41708, 41708, 41708, 46253, 46253]
+        );
+        assert_eq!(draw_loot(&loot, |_| 8), Some((46253, 1, true)));
+        assert_eq!(draw_loot(&[], |_| 0), None);
+    }
+
+    /// The script's table for 52450 is the 40 openings.
+    #[test]
+    fn the_keybound_coffer_s_table_is_the_forty_openings() {
+        let script = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../resources/scripts/items/Coffer.lua"
+        ))
+        .unwrap();
+        let table = script.split("[52450] = {").nth(1).unwrap();
+        let table = table.split("\n    },").next().unwrap();
+        let weights: u32 = table
+            .lines()
+            .filter_map(|line| line.trim().strip_prefix("{ ")?.strip_suffix(" },"))
+            .filter_map(|row| row.rsplit(", ").next()?.parse::<u32>().ok())
+            .sum();
+        assert_eq!(weights, 40);
+    }
+}

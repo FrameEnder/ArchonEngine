@@ -28,6 +28,10 @@ impl SpecialShopEventHandler {
     pub const SCENE_ITEM_BOUGHT: u16 = 0;
     /// Displays shop interface
     pub const SCENE_SHOW_SHOP: u16 = 10;
+    /// Keybound Square's MGC trader (SpecialShop 1549's event ID.)
+    const MGC_TRADER: u32 = 1_771_021;
+    /// The event's LogMessage for what was bought (retail's MGC trader: 750 with the item.)
+    const LOG_MESSAGE_OBTAINED: u32 = 750;
     /// Seems to be an event termination scene? When used standalone without the proper event sequence, it softlocks.
     pub const SCENE_SHOP_END: u16 = 255;
 
@@ -59,9 +63,23 @@ impl SpecialShopEventHandler {
             cost = game_data.get_specialshop_cost(event.id.0, item_index as u16);
         }
 
-        // Paid with a currency the client counts outside the inventory (Jonathas' Achievement Certificates.)
+        // The MGC trader takes MGC for everything (retail's 54 purchases each took it); should the sheet name the
+        // cost some other way than the MGC's item, it's still MGC, and the log says what the sheet had.
+        let cost = cost.map(|(cost_item, cost_count)| {
+            if event.id.0 == Self::MGC_TRADER && !crate::zone_connection::is_player_currency(cost_item) {
+                tracing::warn!(
+                    "The MGC trader's item {item_index} costs {cost_count} of {cost_item} by the sheet: taken as MGC"
+                );
+                (crate::server::KEYBOUND_MGC, cost_count)
+            } else {
+                (cost_item, cost_count)
+            }
+        });
+
+        // Paid with a currency the client counts outside the inventory (Jonathas' Achievement Certificates, Keybound
+        // Brawler's MGC: until 2026-11-15 the MGC trader took gil, the item's price, Bob's 99,999 for an emote.)
         if let (Some(item_info), Some((cost_item, cost_count))) = (&result, cost)
-            && crate::zone_connection::PLAYER_CURRENCIES.contains(&cost_item)
+            && crate::zone_connection::is_player_currency(cost_item)
         {
             let held = connection.player_currency(cost_item);
             if held < cost_count {
@@ -85,6 +103,28 @@ impl SpecialShopEventHandler {
                 .set_player_currency(cost_item, held - cost_count)
                 .await;
             ShopEventHandler::send_gilshop_item_update(connection, add_result).await;
+            if cost_item == crate::server::KEYBOUND_MGC {
+                // As retail's MGC trader (SpecialShop 1549, 54 purchases in Connor's Chronofoil captures of
+                // 2026-11-03 to 11-09): the MGC's new count, the ack, the item's slot, then the event's LogMessage
+                // 750 with the item and the shop's scene 0 again (flags 0x2001, `[100, 0, 0, 0]`.)
+                let ipc = EventLogMessage {
+                    handler_id: HandlerId(event.id.0),
+                    message_type: Self::LOG_MESSAGE_OBTAINED,
+                    params: vec![item_info.id],
+                }
+                .package()
+                .unwrap();
+                connection.send_ipc_self(ipc).await;
+                connection
+                    .event_scene(
+                        event,
+                        Self::SCENE_ITEM_BOUGHT,
+                        SceneFlags::from_bits(8193).unwrap(),
+                        vec![100, 0, 0, 0],
+                    )
+                    .await;
+                return false;
+            }
             Self::send_gilshop_ack(
                 connection,
                 event.id.0,

@@ -990,7 +990,12 @@ pub fn execute_action(
     let takes_part_in_combos;
     {
         let mut game_data = game_data.lock();
-        combo_action_id = game_data.get_combo_action(request.action_id);
+        // An item's ID isn't an action's (`GameData::get_combo_action`.)
+        combo_action_id = if request.action_type == ActionType::Action {
+            game_data.get_combo_action(request.action_id)
+        } else {
+            0
+        };
         takes_part_in_combos = request.action_type == ActionType::Action
             && game_data.takes_part_in_combos(request.action_id);
 

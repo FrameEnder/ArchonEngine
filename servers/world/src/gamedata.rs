@@ -4433,9 +4433,7 @@ impl GameData {
     }
 
     pub fn get_action_cooldown_group(&mut self, id: u32) -> u8 {
-        let row = self.action_sheet.row(id).unwrap();
-
-        row.CooldownGroup
+        self.action_sheet.row(id).map_or(0, |row| row.CooldownGroup)
     }
 
     /// Returns the targeting and cost information for an action, used for area-of-effect and MP costs.
@@ -4817,14 +4815,21 @@ impl GameData {
 
     /// Returns the damage element of this action.
     pub fn get_action_damage_element(&mut self, id: u32) -> DamageElement {
-        let row = self.action_sheet.row(id).unwrap();
-        DamageElement::from_repr(row.Aspect).unwrap() // Should never fail under normal circumstances
+        // No row: an item's ID asked as an action's (see `get_combo_action`.)
+        self.action_sheet
+            .row(id)
+            .and_then(|row| DamageElement::from_repr(row.Aspect))
+            .unwrap_or_default()
     }
 
     /// Returns the id of the action this action comboes with.
+    ///
+    /// 0 for an ID the Action sheet doesn't have. An item's use comes through here with the item's ID
+    /// (`execute_action`), and an item newer than the sheet's last action has no row there: the unwrap that stood
+    /// here took the world's tick down each time one was used, and nothing came of the item (Bob, 2026-11-15: the
+    /// Keybound Coffer, 52450, and an emote's item, 52291; older items' IDs happen to be actions' too.)
     pub fn get_combo_action(&mut self, id: u32) -> u16 {
-        let row = self.action_sheet.row(id).unwrap();
-        row.ActionCombo
+        self.action_sheet.row(id).map_or(0, |row| row.ActionCombo)
     }
 
     /// Returns the ContentFinderCondition for a given IKDRoute.
