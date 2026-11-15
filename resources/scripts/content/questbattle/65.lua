@@ -18,8 +18,8 @@
 --           hoplomachus's talk 265 5.1 s after, Urianger's Amber Carbuncle 12.6 s after, Urianger's 266 and
 --           Papalymo's 267 25.1 and 30.1 s after
 --   the first generator down (107.7): sequence 10 at once and "The magitek field surrounding the vanguard is
---           deactivated." (LogMessage 3216) from the director, as with every generator; the vanguard takes damage only
---           once its generators are down
+--           deactivated." (LogMessage 3216) from the director, as with every generator; a vanguard takes damage only
+--           once its own generator is down (`SHIELDS`)
 --   the first wave's vanguard (4278569) under 30 % (122.8: 33.4 → 18.8 %): sequence 11 and the second wave 0.4 s
 --           later; Papalymo's 268 and Urianger's 269 10.1 and 15.1 s after (15.0 s after sequence 10 here and 15.4 s in
 --           Bob's Chronofoil run of 2026-11-12, but 13.3 s in his second, `65-d1c46dff.json`, each time as it went
@@ -66,11 +66,14 @@ WAVE_2_DOWN_FOR_LAST = 6
 -- The first wave's vanguard and its health mark (percent) for sequence 11.
 BNPC_FIRST_VANGUARD = 4278569
 FIRST_VANGUARD_SECOND_WAVE = 30
--- Each vanguard and the generators that shield it.
+-- Each vanguard and the generator that shields it: one each (Bob, 2026-11-15: "only one field generator is tied to
+-- one magitek vanguard h-1 unit"). Connor's Chronofoil run (e834e436) shows which: generator 4286891 fell first, and
+-- 8.6 s later vanguard 4285261 took 384 with 4286889 still standing; 4285260 took nothing until 4286889 fell 52 s
+-- after (67, 1.8 s on). Both generators shielded both vanguards here until then.
 SHIELDS = {
     [4278569] = { 4286888 },
-    [4285260] = { 4286889, 4286891 },
-    [4285261] = { 4286889, 4286891 },
+    [4285260] = { 4286889 },
+    [4285261] = { 4286891 },
 }
 GENERATORS = { [4286888] = true, [4286889] = true, [4286891] = true }
 -- Who each one goes for first (nil: you), and who waits until someone comes at them.

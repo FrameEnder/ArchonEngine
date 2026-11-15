@@ -1006,3 +1006,64 @@ fn a_summoned_pet_comes_into_view() {
     };
     assert!(spawn.common.display_flags.is_empty());
 }
+
+/// Bob's mark of 2026-11-15, in Escape from Castrum Centri's battle: "the magitek vanguard h-1 should be invulnerable
+/// untill the requisite magitek field generator is destroyed". The hits on it did show "Invincible", but Thunder
+/// (144) still left its damage over time (status 161), which took 226 and 218 a tick off it behind its generator. On
+/// retail an attack on a target that can't be hurt showed effect 7 (and the combo's 27) and no status, 1,270 times.
+#[test]
+fn an_attack_leaves_no_status_on_one_that_can_t_be_hurt() {
+    use crate::server::action::shown_to_the_invulnerable;
+    use kawari::ipc::zone::{
+        DamageElement, DamageKind, DamageType, TargetEffect, TargetEffectKind,
+    };
+    let damage = TargetEffect(TargetEffectKind::Damage {
+        damage_kind: DamageKind::default(),
+        damage_type: DamageType::Magic,
+        damage_element: DamageElement::Unaspected,
+        bonus_percent: 0,
+        unk3: 0,
+        unk4: 0,
+        amount: 466,
+    });
+    let status = TargetEffect(TargetEffectKind::GainEffect {
+        unk1: 0,
+        unk2: 0,
+        param: 0,
+        unk3: 0,
+        effect_id: 161,
+        duration: 18.0,
+    });
+    let combo = TargetEffect(TargetEffectKind::ExecuteCombo {
+        sequence: 0,
+        unk2: 0,
+        unk3: 0,
+        unk4: 0,
+        unk5: 128,
+        action_id: 144,
+    });
+    let kinds = |effects: &[TargetEffect]| -> Vec<u8> {
+        effects
+            .iter()
+            .map(|effect| match effect.0 {
+                TargetEffectKind::Invincible => 7,
+                TargetEffectKind::GainEffect { .. } => 14,
+                TargetEffectKind::ExecuteCombo { .. } => 27,
+                TargetEffectKind::Damage { .. } => 3,
+                _ => 0,
+            })
+            .collect()
+    };
+    // Thunder on a shielded vanguard: retail's (7, 27).
+    let (shown, statuses_gone) = shown_to_the_invulnerable(&[damage, status, combo], true);
+    assert_eq!(kinds(&shown), [7, 27]);
+    assert!(statuses_gone);
+    // A status alone from the other side doesn't land either.
+    let (shown, statuses_gone) = shown_to_the_invulnerable(&[status], true);
+    assert!(shown.is_empty());
+    assert!(statuses_gone);
+    // A friend's on someone just raised (who can't be hurt either) does.
+    let (shown, statuses_gone) = shown_to_the_invulnerable(&[status], false);
+    assert_eq!(kinds(&shown), [14]);
+    assert!(!statuses_gone);
+}

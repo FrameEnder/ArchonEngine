@@ -1714,8 +1714,7 @@ early on and their carbuncle comes 7.3 s after the cast began (the director's `o
   Urianger's Amber Carbuncle 12.6 s later; a wave with a Magitek Vanguard H-1 shielded by a Magitek Field Generator
   (`set_invulnerable` while it stands; the generators and the signifers by them wait until someone comes at them).
   **The first generator down**: sequence 10, "The magitek field surrounding the vanguard is deactivated." (LogMessage
-  3216, with every generator), and, **the first wave's vanguard (4278569) under 30 %**, sequence 11 and the second wave (two vanguards, both shielded until
-  both its generators fall). **Six of the second wave's seven down**: sequence 12, a Magitek Colossus and an optio,
+  3216, with every generator), and, **the first wave's vanguard (4278569) under 30 %**, sequence 11 and the second wave (two vanguards, **each shielded by its own generator**: 4285260 by 4286889, 4285261 by 4286891. Connor's Chronofoil run e834e436: generator 4286891 fell, vanguard 4285261 took 384 8.6 s later with 4286889 still up, and 4285260 took nothing until 4286889 fell 52 s after. Until 2026-11-15 both generators shielded both; Bob's mark: "only one field generator is tied to one magitek vanguard h-1 unit"). **Six of the second wave's seven down**: sequence 12, a Magitek Colossus and an optio,
   talks 270-272 10, 15 and 20 s after; **the colossus under 60 %**: sequence 13, talk 273 5 s
   after; **the colossus under 20 %**: talk 274. Everyone down: "Duty Complete" 1-2 s later (sequence 14), scene 14
   (0x2001); the quest to sequence 6, and the player goes on to Ul'dah - Steps of Nald (`EXIT_AFTER_WIN`), where the

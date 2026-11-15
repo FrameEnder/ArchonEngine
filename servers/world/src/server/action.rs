@@ -1423,11 +1423,11 @@ pub fn execute_action(
             }
             // One that can't be hurt shows it (effect 7) and takes nothing, as a target does.
             if cannot_be_hurt(bystander) {
-                for effect in effects.iter_mut() {
-                    if matches!(effect.0, TargetEffectKind::Damage { .. }) {
-                        *effect = TargetEffect(TargetEffectKind::Invincible {});
-                    }
-                }
+                // Nor an attack's statuses (`shown_to_the_invulnerable`.)
+                let attack = effects
+                    .iter()
+                    .any(|effect| matches!(effect.0, TargetEffectKind::Damage { .. }));
+                *effects = shown_to_the_invulnerable(effects, attack).0;
             }
         }
 
@@ -1737,16 +1737,23 @@ pub fn execute_action(
                 }
 
                 if cannot_be_hurt(actor) {
-                    effects_builder.effects = effects_builder
+                    // An attack leaves nothing on it, its statuses neither (`shown_to_the_invulnerable`): one from
+                    // the other side, or anything that would have hurt it.
+                    let target_side = area_side(actor, &players_enemies);
+                    let attack = effects_builder
                         .effects
                         .iter()
-                        .map(|effect| match effect.0 {
-                            TargetEffectKind::Damage { .. } => {
-                                TargetEffect(TargetEffectKind::Invincible {})
-                            }
-                            _ => *effect,
-                        })
-                        .collect();
+                        .any(|effect| matches!(effect.0, TargetEffectKind::Damage { .. }))
+                        || instance
+                            .find_actor(from_actor_id)
+                            .and_then(|caster| area_side(caster, &players_enemies))
+                            .is_some_and(|caster| Some(caster) != target_side);
+                    let (effects, statuses_gone) =
+                        shown_to_the_invulnerable(&effects_builder.effects, attack);
+                    effects_builder.effects = effects;
+                    if statuses_gone {
+                        effects_builder.periodic.retain(|spec| spec.on_self);
+                    }
                 }
             }
 
@@ -2832,6 +2839,10 @@ fn apply_area_of_effect(
     let status_receivers = if has_damage { &hostiles } else { &friendlies };
     let mut status_targets = Vec::new();
     for target_id in status_receivers {
+        // One that can't be hurt takes none of an attack's statuses either (`shown_to_the_invulnerable`.)
+        if has_damage && instance.find_actor(*target_id).is_some_and(cannot_be_hurt) {
+            continue;
+        }
         for effect in &effects_builder.effects {
             if let TargetEffectKind::GainEffect {
                 effect_id,
@@ -3184,6 +3195,34 @@ pub fn cannot_be_hurt(actor: &NetworkedActor) -> bool {
             ..
         }
     ) || status_ids(actor).contains(&STATUS_RAISED)
+}
+
+/// What an action shows on a target that can't be hurt, and whether statuses meant for it went: each hit is
+/// "Invincible" (effect 7), and an attack's statuses don't land. Retail, every Chronofoil capture at hand (Bob's and
+/// Connor's, 1,270 actions on an invulnerable target): the effects were 7 alone (600), 7 with the combo's 27 (660) or
+/// 7 twice, never a status, for actions that otherwise give one every time: Aero (121: 73 times 7 and 27; 1,965 times
+/// damage, status, 27 elsewhere), Aero II (132: 101), Thunder (144), Thunder II (148), the Stone Vigil's and Castrum
+/// Centri's shielded enemies among them. Kawari turned only the damage into 7, so Thunder's damage over time went on
+/// a Magitek Vanguard H-1 behind its field generator and wore it down (Bob's mark of 2026-11-15: 226 and 218 a tick
+/// through the shield.) Statuses on the caster stay; a friend's status on one that can't be hurt (`attack` false: a
+/// heal's or a buff's on someone just raised) lands as ever.
+pub(crate) fn shown_to_the_invulnerable(
+    effects: &[TargetEffect],
+    attack: bool,
+) -> (Vec<TargetEffect>, bool) {
+    let mut statuses_gone = false;
+    let shown = effects
+        .iter()
+        .filter_map(|effect| match effect.0 {
+            TargetEffectKind::Damage { .. } => Some(TargetEffect(TargetEffectKind::Invincible {})),
+            TargetEffectKind::GainEffect { .. } if attack => {
+                statuses_gone = true;
+                None
+            }
+            _ => Some(*effect),
+        })
+        .collect();
+    (shown, statuses_gone)
 }
 
 /// Acting ends a raised one's protection (`STATUS_RAISED`): it's taken off, shown to everyone near as any status
