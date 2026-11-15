@@ -131,6 +131,12 @@ const IMAGE_WAVE: [u32; 3] = [1620, 1621, 1622];
 const IMAGE_WAVE_OVER: [u32; 2] = [1624, 1625];
 const IMAGE_BEFORE_LAST: u32 = 1628;
 const IMAGE_LOST: u32 = 1627;
+/// The game's status comes off a player this long into the way out (scene 11): their StatusEffectList without it,
+/// 1.3 to 1.4 s after the scene began, in the won run and the lost one read through.
+const STATUS_OFF_AFTER: f32 = 1.4;
+/// The cutscene before the last wave is announced with the second wave's `WAVE_CLEARED` (ActorControlSelf 3400
+/// `[4024]` at the same moment in all 220 runs that got that far; the client answers with trigger 832.)
+const CUTSCENE_ANNOUNCED: (u32, u32) = (3400, 4024);
 const SCORE: u32 = 0x1000_000A;
 const WORDS_GONE: u32 = 0x1000_000B;
 const BETWEEN: u32 = 0x1000_000C;
@@ -597,6 +603,10 @@ enum Pending {
         base: u32,
         x: f32,
         z: f32,
+    },
+    /// The game's status off a player on their way out.
+    StatusOff {
+        player: ObjectId,
     },
 }
 
@@ -1818,6 +1828,22 @@ impl Game {
                     WAVE_CLEARED,
                     &[self.wave as u32 + 1],
                 );
+                if self.wave + 2 == waves().waves.len() {
+                    for player in players_in(instance) {
+                        network.send_to_by_actor_id(
+                            player,
+                            FromServer::ActorControlSelf(ActorControlCategory::Unknown {
+                                category: CUTSCENE_ANNOUNCED.0,
+                                param1: CUTSCENE_ANNOUNCED.1,
+                                param2: 0,
+                                param3: 0,
+                                param4: 0,
+                                param5: 0,
+                            }),
+                            DestinationNetwork::ZoneClients,
+                        );
+                    }
+                }
             }
         }
         self.wave_bonus(&mut network.lock());
@@ -1866,7 +1892,14 @@ impl Game {
 
     /// The result's packet for each player: what they won (nothing shown for a lost game, as retail's) and the
     /// four places.
-    fn send_result(&self, network: &mut NetworkState, instance: &Instance, won: bool) {
+    fn send_result(
+        &self,
+        network: &mut NetworkState,
+        instance: &Instance,
+        won: bool,
+        with_rewards: bool,
+        to: Option<ObjectId>,
+    ) {
         let entries: Vec<(u64, u64, u32)> = self
             .players
             .iter()
@@ -1879,14 +1912,17 @@ impl Game {
             .collect();
         let (places, scores, content_ids, account_ids) = result_places(entries);
         for (id, player) in &self.players {
+            if to.is_some_and(|to| to != *id) {
+                continue;
+            }
             let (mgp, mgc) = rewards(player.bonus.score);
             let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::KeyboundResult {
                 unk1: won as u32,
                 currency_item: ITEM_MGC,
-                currency: if won { mgc } else { 0 },
+                currency: if with_rewards { mgc } else { 0 },
                 coffer_item: ITEM_COFFER,
                 coffers: won as u32,
-                mgp: if won { mgp } else { 0 },
+                mgp: if with_rewards { mgp } else { 0 },
                 places,
                 scores,
                 content_ids,
@@ -1954,7 +1990,7 @@ impl Game {
             if won {
                 command_all(&mut network, instance, self.director, PHASE, &[PHASE_OVER]);
                 self.send_rewards(&mut network, true);
-                self.send_result(&mut network, instance, true);
+                self.send_result(&mut network, instance, true, true, None);
                 for player in players_in(instance) {
                     play_scene(
                         &mut network,
@@ -1972,7 +2008,8 @@ impl Game {
                 }
             } else {
                 command_all(&mut network, instance, self.director, PHASE, &[PHASE_LOST]);
-                self.send_result(&mut network, instance, false);
+                // Nothing paid in a loss's first result; its second (6.1 s on) has what the loss still paid.
+                self.send_result(&mut network, instance, false, false, None);
                 command_all(&mut network, instance, self.director, WAVE_OVER, &[]);
                 for id in self.players.keys() {
                     send_gauge(&mut network, *id, 0.0, true);
@@ -1996,13 +2033,11 @@ impl Game {
     ) {
         if won {
             if step == 0 && clock >= RESULT_AT {
-                command_all(
-                    &mut network.lock(),
-                    instance,
-                    self.director,
-                    RESULT,
-                    &RESULT_ARGS,
-                );
+                {
+                    let mut network = network.lock();
+                    command_all(&mut network, instance, self.director, RESULT, &RESULT_ARGS);
+                    duty_end(&mut network, instance);
+                }
                 // The duty's completion (DutyCompleted, its time flags cleared, the clear counted.)
                 if let Some(director) = instance.directors.first_mut() {
                     director.tasks.push(LuaDirectorTask::CompleteDuty);
@@ -2027,11 +2062,15 @@ impl Game {
             }
             self.stage = Stage::Ending { won, step: 1 };
         } else if step == 1 && clock >= LOST_AT[1] {
+            duty_end(&mut network, instance);
             command_all(&mut network, instance, self.director, DUTY_COMPLETED, &[]);
             command_all(&mut network, instance, self.director, DUTY_FLAG, &[0]);
             command_all(&mut network, instance, self.director, DUTY_FLAG, &[1]);
             self.send_rewards(&mut network, false);
+            self.send_result(&mut network, instance, false, true, None);
+            let off = Instant::now() + seconds(STATUS_OFF_AFTER);
             for player in players_in(instance) {
+                self.pending.push((off, Pending::StatusOff { player }));
                 play_scene(
                     &mut network,
                     self.director,
@@ -2048,11 +2087,23 @@ impl Game {
 
     /// A player finished one of the game's scenes: the result's is followed by the way out, and that by leaving. The
     /// cutscene before the last wave is followed by nothing.
-    fn scene_over(&self, network: &mut NetworkState, player: ObjectId, scene: u16) {
-        if !matches!(self.stage, Stage::Ending { .. }) {
+    fn scene_over(
+        &mut self,
+        network: &mut NetworkState,
+        instance: &Instance,
+        player: ObjectId,
+        scene: u16,
+    ) {
+        let Stage::Ending { won, .. } = self.stage else {
             return;
-        }
+        };
         if scene == SCENE {
+            // The result once more as its scene ends (retail's second, the same as its first), then the way out.
+            self.send_result(network, instance, won, true, Some(player));
+            self.pending.push((
+                Instant::now() + seconds(STATUS_OFF_AFTER),
+                Pending::StatusOff { player },
+            ));
             play_scene(
                 network,
                 self.director,
@@ -2063,6 +2114,13 @@ impl Game {
                 LEAVE_ARG,
             );
         } else if scene == LEAVE_SCENE {
+            // Retail's last to the player before the zone change (once a run, 223 of 223.)
+            let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::KeyboundOver { unk: 0 });
+            network.send_to_by_actor_id(
+                player,
+                FromServer::PacketSegment(ipc, player),
+                DestinationNetwork::ZoneClients,
+            );
             network.send_to_by_actor_id(
                 player,
                 FromServer::LeaveContent,
@@ -2268,13 +2326,35 @@ impl Game {
 /// A player finished one of the director's scenes in the duty.
 pub fn scene_finished(
     network: &Arc<Mutex<NetworkState>>,
-    instance: &Instance,
+    instance: &mut Instance,
     player: ObjectId,
     scene: u16,
 ) {
-    if let Some(game) = instance.keybound.as_ref() {
-        game.scene_over(&mut network.lock(), player, scene);
+    if let Some(mut game) = instance.keybound.take() {
+        game.scene_over(&mut network.lock(), instance, player, scene);
+        instance.keybound = Some(game);
     }
+}
+
+/// The packet retail sends right before a duty of this kind is completed (`RideShootingEnd`, named for Air Force
+/// One, where it was first seen: the same 40 bytes there and here, at the same moment as `0x40000002` in all 223
+/// runs: with the result's `0x10000005` in a win, 6.1 s into a loss.) Kawari sent it in Air Force One and not here,
+/// and Bob came out of this duty three times on 2026-11-15 with only the chat left of his HUD.
+fn duty_end(network: &mut NetworkState, instance: &Instance) {
+    for player in players_in(instance) {
+        duty_end_for(network, player);
+    }
+}
+
+fn duty_end_for(network: &mut NetworkState, player: ObjectId) {
+    let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::RideShootingEnd {
+        unk: crate::zone_connection::RIDE_SHOOTING_END,
+    });
+    network.send_to_by_actor_id(
+        player,
+        FromServer::PacketSegment(ipc, player),
+        DestinationNetwork::ZoneClients,
+    );
 }
 
 /// A player's director trigger in the duty: the client's as it loads (`loaded`), or one of the game's
@@ -2304,6 +2384,21 @@ pub fn player_trigger(
     }
 }
 
+/// The game's status off a player who leaves with it still on (retail took it off 1.4 s into the way out, so no
+/// player left with it; one who leaves early, or before that, would take it to the next zone.)
+pub fn status_off(network: &Arc<Mutex<NetworkState>>, instance: &mut Instance, player: ObjectId) {
+    if instance.content_finder_condition_id != DUTY {
+        return;
+    }
+    let has = instance
+        .find_actor(player)
+        .and_then(|actor| actor.status_effects())
+        .is_some_and(|statuses| statuses.get(PLAYER_STATUS.0).is_some());
+    if has {
+        lose_effect_instance(network.clone(), instance, player, PLAYER_STATUS.0);
+    }
+}
+
 /// A player leaves the duty before its end: their typing is turned off first (`WAVE_OVER`.) Bob left mid-wave on
 /// 2026-11-15 and came out with the keyboard still the game's: "I can't use esc, can only type in chat, and can't see
 /// anything else of my HUD". Nobody left a retail run early, so what retail sends then isn't known.
@@ -2313,6 +2408,11 @@ pub fn player_leaves(network: &mut NetworkState, instance: &Instance, player: Ob
     }
     if let Some(game) = instance.keybound.as_ref() {
         command(network, game.director, player, WAVE_OVER, &[]);
+        // Unless the game's own end already sent it. (A guess for a player who leaves early: it is what ends the
+        // game for the client everywhere retail was seen to end it.)
+        if !matches!(game.stage, Stage::Ending { .. }) {
+            duty_end_for(network, player);
+        }
     }
 }
 

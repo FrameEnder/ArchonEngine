@@ -1320,6 +1320,11 @@ pub enum ServerZoneIpcData {
         gauge: u32,
         time: u64,
     },
+    /// Keybound Brawler's last packet to a player (the same captures, once a run, 223 of 223: 8 zero bytes after the
+    /// way out's EventFinish and Condition, before the zone change's.) What the client does with it isn't known.
+    KeyboundOver {
+        unk: u64,
+    },
     /// Keybound Brawler's set-up, the server's answer to the client's director trigger `0x10000001 [1]` as it loads
     /// (the same captures, once a run, right before the director's `0x10000009`): the places no player has (4 less
     /// the players), then 6, 12743016 and 12743021 in every one, a number that differs each run, the barrier's HP

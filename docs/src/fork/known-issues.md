@@ -11,8 +11,13 @@ None of it played yet.
   (status 239) doubles the player's HP from the zone-in, not as the battle commences (retail's came with the role
   status, 4 s in), and its damage over time wasn't measured (the hit is doubled, the tick as the script works it
   out). **Lethargy's** second and third on the same player last 12 s, not retail's 6 and 3.
-* **Keybound Brawler's duty has never run against a client.** It's built from retail's packets (`events.md`), with
-  unit tests for its rules and its packets, but whether the client shows the game from Kawari's hasn't been seen:
+* **Keybound Brawler's HUD after the duty** (gone three times on 2026-11-15): the ending now has every packet of
+  retail's up to scene 11's end, `RideShootingEnd` among them, but that this is what gives the HUD back hasn't been
+  seen. Retail also sent UnkContentFinder2 (`[duty, 0, …]`, `[duty, 4]` at the zone-in, `[duty, 5]` on the way out)
+  and PrepareZoning before the zone change, and its Condition during a director's scenes has bit 8, not Kawari's
+  bit 7: these are every duty's, not this one's, and Kawari sends them for none (`events.md`).
+* **Keybound Brawler's duty** loads, plays and takes typing on Bob's client (2026-11-15), and nothing more of it
+  has been confirmed. It's built from retail's packets (`events.md`), with unit tests for its rules and its packets:
   the gauge and result packets' opcodes for 7.58 (436 and 961) were found by their place in the client's code, not
   from a 7.58 recording (`opcodes.md`). Not known, so not built:
   * **what catches a player** in a warning cast (49529, 49532, 49702): the client says so itself and Kawari answers

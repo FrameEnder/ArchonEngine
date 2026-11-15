@@ -2482,6 +2482,16 @@
     },
     {
       "kind": "ServerZoneIpcType",
+      "name": "KeyboundOver",
+      "opcode": 243,
+      "case": "9e3cbd1e22f7ed0927e28f88cac81bf110e705ae",
+      "case_group": 1,
+      "handler_at": 26082512,
+      "end": "9e3cbd1e22f7ed0927e28f88cac81bf110e705ae",
+      "end_group": 1
+    },
+    {
+      "kind": "ServerZoneIpcType",
       "name": "KeyboundResult",
       "opcode": 961,
       "case": "9644a2886790068710e705ae",

@@ -311,7 +311,34 @@ chat"). Retail's runs against his:
   way out, the way out's end sends the player back). The same capture showed the first of the two conditions gone a
   tick after zoning in: the world's check for statuses that hold a player took it off (it wasn't one of those); it
   leaves a player with status 5373 alone now.
-* **Leaving early** was in no retail run. Kawari turns the leaver's typing off first (`0x10000002`,
+* **The HUD after the duty** (Bob, 2026-11-15, three times: the duty timing out, leaving mid-wave, and on `9f5cfda`
+  after a loss and the way out: "my entire hud is now gone", "I can only type in chat"). His capture of the loss was
+  laid beside a retail loss packet by packet, and a won run beside a retail win. What retail's endings had and
+  Kawari's didn't:
+  * **`RideShootingEnd`** (opcode 138, the 40 bytes Air Force One ends with) at the same moment as `0x40000002` in
+    223 of 223 runs: right after the result's `0x10000005` in a win, first of all 6.1 s into a loss. It is the one
+    packet of the game's own ending Kawari never sent, and what ends Air Force One for the client, so it is taken
+    to be what gives the HUD back (not proven: no client has run this build). `keybound::duty_end`.
+  * **the result's packet twice**: a loss's first (with phase 5) pays nothing, its second (6.1 s on, after the
+    rewards' lines, before scene 11) has the MGC and MGP the loss still paid; a win's second, the same as its
+    first, comes as the result's scene ends, before scene 11.
+  * **status 5373 off** 1.3 to 1.4 s into scene 11 (the player's StatusEffectList without it). Kawari's player kept
+    it to the zone change (the list after it was already empty in Bob's capture, so this isn't the HUD's cause).
+    `Pending::StatusOff`, and `keybound::status_off` for a player who leaves before that.
+  * the first condition (bit 3) stays to the zone change on retail, after the status has gone: the world's check
+    leaves a player in this duty alone by the duty now, not by the status.
+  * **ActorControlSelf 3400 `[4024]`** with the second wave's `0x10000014` (220 of the 220 runs that got there; the
+    client answers with trigger 832 `[4024]`): it announces the cutscene before the last wave.
+
+  * **`KeyboundOver`** (820 in 7.57, 243 in 7.58 by its place in the client's switch; 8 zero bytes) once a run,
+    223 of 223, after scene 11's EventFinish and Condition: sent as the way out ends, before the player is sent back.
+
+  Still different from retail on the way out, and not built here because they aren't this duty's: UnkContentFinder2
+  (`[1095, 0, …]` and `[1095, 4]` at the zone-in, `[1095, 5]` on the way out: every duty's, and Kawari sends it for
+  none) and PrepareZoning before the zone change; while one of the director's scenes plays retail's Condition has
+  bit 8 where Kawari's has bit 7 (every director's scenes).
+* **Leaving early** was in no retail run. It gets `RideShootingEnd` too (a guess, as it is what ends the game for
+  the client wherever retail ended it), and the status taken off. Kawari turns the leaver's typing off first (`0x10000002`,
   `keybound::player_leaves`), a guess at what keeps the keyboard the game's after the zone change.
 
 **The cutscene and the end.** 8.0 s after wave 2 the music is set to 1 (the content director's 0x80000001), at
@@ -320,11 +347,12 @@ chat"). Retail's runs against his:
 (opcode 173 in 7.57, 961 in 7.58; 240 bytes: `1, 52322, MGC, 52450, coffers, MGP`, then four places, four scores,
 four content IDs and four account IDs in the order of the content IDs, a place being 1 + the number of higher
 scores), scene 3 with flags 0x08502403 and `[4025, 1, 20302, 0, 0]`, `0x10000002` and three `0x1000000C`; 8.05 s
-later `0x10000005` and the duty's completion. A player closing the result gets scene 11 (flags 0x0C002001, argument
+later `0x10000005`, `RideShootingEnd` and the duty's completion. A player closing the result gets the result's
+packet again and scene 11 (flags 0x0C002001, argument
 7, as Air Force One's way out) and leaves as it ends. **A loss** (the barrier at 0): phase 5, the result's packet
 with nothing won, `0x10000002`, the gauge held at 0, the music 1; 3.05 s later the music 20303, `0x10000018` and
-`0x10000007 [player, 718, 3]` for each; at 6.1 s the duty's end (0x40000002, 0x40000007 `[0]` and `[1]`), the MGP
-and MGC, and scene 11.
+`0x10000007 [player, 718, 3]` for each; at 6.1 s `RideShootingEnd`, the duty's end (0x40000002, 0x40000007 `[0]` and `[1]`), the MGP
+and MGC, the result's packet again with them, and scene 11.
 
 **Rewards** (223 results, to the unit): MGP = score × 0.046 (2,800 at most), MGC = score × 0.0058 (350 at most), and
 a Keybound Coffer for a win; LogMessages 11598 `[MGP, 0]`, 11601 `[52322, MGC]`, 11595 `[52450, 1]` from the

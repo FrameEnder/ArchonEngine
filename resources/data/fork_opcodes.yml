@@ -788,6 +788,15 @@ ServerZoneIpcType:
   size: 48
   found_on: 2026.11.03.0000.0000
   how_to_find: On retail with Chronofoil, enter Keybound Brawler - the 48-byte packet right before the director's begin (ActorControlSelf 109, 0x10000009).
+- name: KeyboundOver
+  comment: Keybound Brawler's last packet to a player - 8 zero bytes after the way out's scene ends, before the zone change.
+  # 820 on 2026.10.16 (the same captures: once a run, 8 bytes, after scene 11's EventFinish and the Condition that
+  # follows it.)
+  # 243 on 2026.11.03 (7.58): by its place in the client's second switch, as KeyboundGauge; no finder yet.
+  opcode: 243
+  size: 8
+  found_on: 2026.11.03.0000.0000
+  how_to_find: On retail with Chronofoil, finish a game of Keybound Brawler - the 8-byte packet of zeros right after the last scene's EventFinish and Condition.
 - name: KeyboundResult
   comment: Keybound Brawler's result window - the MGC, the coffer and the MGP won, the four players' places and scores, their content and account IDs.
   # 173 on 2026.10.16 (the same captures: once a run, 240 bytes, with the result's LogMessages.)

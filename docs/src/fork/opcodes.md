@@ -147,7 +147,7 @@ names it. Their 7.58 opcodes came from the cases' order instead. For every opcod
 compiler laid the cases out in the same order in both builds. The opcode whose case is nth on 10.16 is the one whose
 case is nth on 11.03: 330 → **436**, 173 → **961**. The same pairing gives 233 of the 234 packets whose 7.58 opcode is
 known from upstream or a finder (the other shares its case with a neighbour), and 665 → 281, 503 → 413, 560 → 879,
-820 → 243 for the duty's unnamed ones. `opcode_fingerprints.json` was recorded again on 11.03 with them (and with
+820 → 243 for the duty's unnamed ones (503 is `KeyboundSetup`, 820 `KeyboundOver`: 8 zero bytes as the way out ends). `opcode_fingerprints.json` was recorded again on 11.03 with them (and with
 EventNotice2 and 4 at retail's 633 and 921, which the old recording had at 392 and 584:
 `shipped_fingerprints_cover_every_opcode` failed until then).
 

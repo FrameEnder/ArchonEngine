@@ -868,6 +868,9 @@ impl Game {
                     self.unlock(&mut network.lock(), player, on);
                 }
                 Pending::Become { base, x, z } => self.becoming.push((base, x, z)),
+                Pending::StatusOff { player } => self
+                    .statuses
+                    .push(StatusChange::Lose(player, PLAYER_STATUS.0)),
             }
         }
     }
@@ -1439,7 +1442,122 @@ mod tests {
 
         // Leaving mid-wave turns the player's typing off first.
         player_leaves(&mut world.network.lock(), &world.instance, player);
-        assert_eq!(commands(&world.sent(player)), [(WAVE_OVER, vec![])]);
+        let sent = world.sent(player);
+        assert_eq!(commands(&sent), [(WAVE_OVER, vec![])]);
+        assert_eq!(order(&sent), [format!("{WAVE_OVER:x}"), "end".to_string()]);
+    }
+
+    /// The game's end, in the order it came: the director's commands by number, the result's packet (with what it
+    /// paid) and `RideShootingEnd`.
+    fn order(messages: &[FromServer]) -> Vec<String> {
+        messages
+            .iter()
+            .filter_map(|message| match message {
+                FromServer::ActorControlSelf(ActorControlCategory::DirectorEvent {
+                    event: DirectorEvent::Raw { id, .. },
+                    ..
+                }) => Some(format!("{id:x}")),
+                FromServer::PacketSegment(segment, _) => match &segment.data {
+                    ServerZoneIpcData::KeyboundResult { unk1, currency, .. } => {
+                        Some(format!("result {unk1} {}", *currency > 0))
+                    }
+                    ServerZoneIpcData::RideShootingEnd { .. } => Some("end".to_string()),
+                    ServerZoneIpcData::KeyboundOver { .. } => Some("over".to_string()),
+                    _ => None,
+                },
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// A player with a score that pays.
+    fn scorer() -> Player {
+        let mut bonus = Bonus::default();
+        bonus.score = 100_000;
+        Player {
+            bonus,
+            last_hit: None,
+            drain_at: None,
+            refill_at: None,
+        }
+    }
+
+    /// Bob, 2026-11-15, out of a lost game: "my entire hud is now gone", "I can only type in chat". Retail's lost
+    /// runs: phase 5 and a result that pays nothing; 6.1 s on `RideShootingEnd`, then `0x40000002`, the flags, the
+    /// rewards and a second result with what the loss paid, then the way out, with the game's status off 1.4 s into
+    /// it. Kawari sent neither `RideShootingEnd` nor the second result, and left the status on.
+    #[test]
+    fn a_lost_game_ends_as_retail_s() {
+        let (mut world, player, _, now) = world();
+        let mut game = world.instance.keybound.take().unwrap();
+        game.players.insert(player, scorer());
+        game.finish(&world.network, &mut world.instance, false, now);
+        let sent = order(&world.sent(player));
+        assert_eq!(
+            sent[..2],
+            [format!("{PHASE:x}"), "result 0 false".to_string()]
+        );
+        assert!(!sent.contains(&"end".to_string()));
+        game.ending(&world.network, &mut world.instance, false, 0, LOST_AT[0]);
+        world.sent(player);
+        game.ending(&world.network, &mut world.instance, false, 1, LOST_AT[1]);
+        let sent = order(&world.sent(player));
+        assert_eq!(
+            sent,
+            [
+                "end".to_string(),
+                format!("{DUTY_COMPLETED:x}"),
+                format!("{DUTY_FLAG:x}"),
+                format!("{DUTY_FLAG:x}"),
+                "result 0 true".to_string(),
+            ]
+        );
+        assert!(matches!(
+            game.pending.last(),
+            Some((_, Pending::StatusOff { player: off })) if *off == player
+        ));
+        game.timed(
+            &world.network,
+            &mut world.instance,
+            Instant::now() + seconds(2.0),
+        );
+        assert!(matches!(
+            game.statuses.last(),
+            Some(StatusChange::Lose(off, status)) if *off == player && *status == PLAYER_STATUS.0
+        ));
+    }
+
+    /// Retail's won runs: `RideShootingEnd` right after the result's `0x10000005` (8.05 s on), and the result's
+    /// packet a second time as its scene ends, before the way out.
+    #[test]
+    fn a_won_game_ends_as_retail_s() {
+        let (mut world, player, _, now) = world();
+        let mut game = world.instance.keybound.take().unwrap();
+        game.players.insert(player, scorer());
+        game.finish(&world.network, &mut world.instance, true, now);
+        let sent = order(&world.sent(player));
+        assert!(sent.contains(&"result 1 true".to_string()));
+        assert!(!sent.contains(&"end".to_string()));
+        game.ending(&world.network, &mut world.instance, true, 0, RESULT_AT);
+        assert_eq!(
+            order(&world.sent(player)),
+            [format!("{RESULT:x}"), "end".to_string()]
+        );
+        game.scene_over(&mut world.network.lock(), &world.instance, player, SCENE);
+        assert_eq!(order(&world.sent(player)), ["result 1 true"]);
+        game.scene_over(
+            &mut world.network.lock(),
+            &world.instance,
+            player,
+            LEAVE_SCENE,
+        );
+        let sent = world.sent(player);
+        assert_eq!(order(&sent), ["over"]);
+        assert!(matches!(sent.last(), Some(FromServer::LeaveContent)));
+        assert!(matches!(
+            game.pending.last(),
+            Some((_, Pending::StatusOff { .. }))
+        ));
     }
 
     /// A big enemy's state (retail's 19594: notice `[17837, 5348]` and switch `[3071, 1]`, 28.0 s later `[17838, 5348]`

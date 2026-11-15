@@ -68,6 +68,7 @@ pub use player_currency::{ACHIEVEMENT_CERTIFICATES_TOTAL, PLAYER_CURRENCIES, cer
 pub use quest::RETAINER_UNLOCK_LINK;
 mod retainer;
 mod ride_shooting;
+pub(crate) use ride_shooting::RIDE_SHOOTING_END;
 pub use ride_shooting::{
     OPENING_SCENE_FLAGS as RIDE_SHOOTING_OPENING_FLAGS,
     OPENING_SCENE_VALUE as RIDE_SHOOTING_OPENING_VALUE,

@@ -1077,9 +1077,7 @@ fn server_logic_tick(
                     .is_some_and(modifiers::is_incapacitated);
                 // Keybound Brawler's players keep the first of the two for the whole duty, with its status
                 // (`keybound::PLAYER_STATUS`); this took it off them a tick after they came in.
-                let keybound = actor
-                    .status_effects()
-                    .is_some_and(|statuses| statuses.get(keybound::PLAYER_STATUS.0).is_some());
+                let keybound = instance.content_finder_condition_id == keybound::DUTY;
                 if !keybound
                     && incapacitated
                         != conditions.has_condition(Condition::SufferingStatusAffliction)
@@ -3760,6 +3758,10 @@ pub async fn server_main_loop(
                     old_rotation,
                 ) => {
                     let mut data = data.lock();
+                    // Keybound Brawler's status doesn't leave the duty with its player.
+                    if let Some(instance) = data.find_actor_instance_mut(from_actor_id) {
+                        keybound::status_off(&network, instance, from_actor_id);
+                    }
                     let mut network = network.lock();
 
                     // The bots the Duty Finder added and Duty Support's members stay behind (and go with the

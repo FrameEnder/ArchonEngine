@@ -27,7 +27,7 @@ pub const OPENING_SCENE_FLAGS: u32 = 0x0C00_2001;
 pub const OPENING_SCENE_VALUE: u32 = 1_793_225_644;
 
 /// `RideShootingEnd` as retail sent it, both times.
-const RIDE_SHOOTING_END: [u8; 40] = [
+pub(crate) const RIDE_SHOOTING_END: [u8; 40] = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x32, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x08, 0x0b, 0x2e,
     0x18, 0x0d, 0x10, 0x11, 0x14, 0x17, 0x35, 0x43, 0x56, 0x3a, 0x1e, 0x02, 0, 0, 0, 0, 0, 0,
 ];
