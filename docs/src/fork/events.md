@@ -286,6 +286,26 @@ through the harness): Kawari sent `0x10000009` with ZoneInit and nothing for the
 45 s, sent its EnterTerritoryEvent without the 801, got no variables and never played the opening scene it was
 sent. `keybound::player_trigger` → `loaded`, `Game::list_players`; test `a_loading_client_is_answered`.
 
+**What a player has in the duty** (Bob's marks of 2026-11-15 on `4470363`, read through the harness: "typing
+anything didn't send anything … I typed something slowly and correctly and got a can't use yet warning", and no
+ActionRequest came in 52 s; then "leaving the event duty leaves my UI disabled I can't use esc, can only type in
+chat"). Retail's runs against his:
+* **status 5373 with 505**, from no one and with no end, in the first StatusEffectList of the duty (80 of 80 runs
+  looked at); Kawari gave none. `keybound::PLAYER_STATUS`, given with the players' list.
+* **two conditions**, bits 3 and 66 of Condition (`SufferingStatusAffliction` and `Unknown96` in Kawari's names),
+  from ZoneInit to the way out (`08 02 00 10 | 00 00 00 00 | 04`, 223 of 223, and nowhere else in the captures of
+  the square or of a quest battle); Kawari's Condition had neither. `KEYBOUND_CONDITIONS` (`zone_connection/zone.rs`).
+* **the director's sequence 1** (DirectorVars' first byte) and **the map effects' states 1, 1**
+  (DirectorSetupMapEffects64 `05 00 | 01 00 | 01 00`); Kawari's were 0 and 4, 4 (4 is the barrier's fall).
+* `0x10000015` had gone out as `[0, 0]`: the player's spawn has no content ID until their client has loaded, so the
+  list now waits for it.
+* `0x10000013 [0]` as the duty commences (with its timer), and **the banners** (ActorControlSelf 123,
+  ShowScreenImage `[image, 0xE0000000]`): 1620 2.0 s after the duty commences, 1624 with the first wave's
+  `0x10000002`, 1621 8.05 s after, 1625 with the second's, 1628 8.05 s after, 1622 as the cutscene ends (26.0 s
+  after), 1627 3.0 s into a loss (1,340 in 223 runs, always in that order).
+* **Leaving early** was in no retail run. Kawari turns the leaver's typing off first (`0x10000002`,
+  `keybound::player_leaves`), a guess at what keeps the keyboard the game's after the zone change.
+
 **The cutscene and the end.** 8.0 s after wave 2 the music is set to 1 (the content director's 0x80000001), at
 10.1 s every player gets scene 3 (GameProgress with argument 1, flags 0x08502401, `[4024, 3, 20301, 0, 0]`), and at
 26.0 s the music is 20301. **A win** (the last boss's fall): phase 4, the rewards' three lines, **`KeyboundResult`**

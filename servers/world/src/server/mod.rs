@@ -89,6 +89,7 @@ mod instance;
 mod job_gauge;
 mod keybound;
 mod keybound_mechanics;
+pub(crate) use keybound::DUTY as KEYBOUND_DUTY;
 pub(crate) use keybound::{
     ITEM_COFFER as KEYBOUND_COFFER, ITEM_MGC as KEYBOUND_MGC, rewards as keybound_rewards,
 };
@@ -3756,6 +3757,9 @@ pub async fn server_main_loop(
                     // The bots the Duty Finder added and Duty Support's members stay behind (and go with the
                     // instance), and the party list empties, as retail disbands a Duty Finder party; the bots of the
                     // player's own party go with them (`party_bot::pack_for_travel`) and are listed again there.
+                    if let Some(instance) = data.find_actor_instance_mut(from_actor_id) {
+                        keybound::player_leaves(&mut network, instance, from_actor_id);
+                    }
                     if party_bot::dismiss_duty_members(&mut data, &mut network, from_actor_id) > 0 {
                         network.send_to(
                             from_client_id,

@@ -113,6 +113,24 @@ const TRIGGER_LOADED: (u32, u32) = (0x1000_0001, 1);
 const SETUP: [u32; 3] = [6, 12_743_016, 12_743_021];
 /// The game's places.
 const PLACES: u32 = 4;
+/// The status every player has from the first StatusEffectList of the duty to its end, from no one (80 of 80 runs
+/// looked at: 5373 with 505), and the two conditions retail's Condition had for as long (`KEYBOUND_CONDITIONS` in
+/// `zone_connection/zone.rs`.) Without them the client took no typing: "I typed something slowly and correctly and
+/// got a can't use yet warning" (Bob, 2026-11-15.)
+pub const PLAYER_STATUS: (u16, u16) = (5373, 505);
+/// The director's sequence (DirectorVars' first byte) and the map effects' states as the duty loads
+/// (DirectorSetupMapEffects64 `05 00 | 01 00 | 01 00`): retail's, 223 of 223. Kawari's were 0 and 4, 4 (4 is the
+/// barrier fallen.)
+const SEQUENCE: u8 = 1;
+pub const OPENING_MAP_EFFECTS: [u16; 2] = [1, 1];
+/// The banners (ActorControlSelf 123, ShowScreenImage `[image, 0xE0000000]`; 1,340 in 223 runs, in this order): each
+/// wave's as it's announced (the first 2.0 s after the duty commences, the second 8.05 s after the first wave's end,
+/// the last as the cutscene ends, 26.0 s after the second's), a wave's end with its `WAVE_OVER`, the one before the
+/// cutscene (8.05 s after the second wave's end) and a loss's (3.0 s after its `WAVE_OVER`.)
+const IMAGE_WAVE: [u32; 3] = [1620, 1621, 1622];
+const IMAGE_WAVE_OVER: [u32; 2] = [1624, 1625];
+const IMAGE_BEFORE_LAST: u32 = 1628;
+const IMAGE_LOST: u32 = 1627;
 const SCORE: u32 = 0x1000_000A;
 const WORDS_GONE: u32 = 0x1000_000B;
 const BETWEEN: u32 = 0x1000_000C;
@@ -670,6 +688,8 @@ pub struct Game {
     becoming: Vec<(u32, f32, f32)>,
     /// The players told who's in the game.
     listed: Vec<ObjectId>,
+    /// The duty has commenced and its first phase gone out.
+    begun: bool,
 }
 
 fn elapsed(since: Instant, now: Instant) -> f32 {
@@ -872,6 +892,20 @@ fn map_effect(
     );
 }
 
+/// A banner, to everyone (`IMAGE_WAVE`.)
+fn banner(network: &mut NetworkState, instance: &Instance, image: u32) {
+    for player in players_in(instance) {
+        network.send_to_by_actor_id(
+            player,
+            FromServer::ActorControlSelf(ActorControlCategory::ShowScreenImage {
+                screen_image: image,
+                target_actor_id: ObjectId::default(),
+            }),
+            DestinationNetwork::ZoneClients,
+        );
+    }
+}
+
 /// A player's bonus gauge as the client is told it (`KeyboundGauge`): held, or draining from now.
 fn send_gauge(network: &mut NetworkState, to: ObjectId, gauge: f32, held: bool) {
     let ipc = ServerZoneIpcSegment::new(ServerZoneIpcData::KeyboundGauge {
@@ -960,16 +994,21 @@ impl Game {
             locked: Vec::new(),
             becoming: Vec::new(),
             listed: Vec::new(),
+            begun: false,
         }
     }
 
     /// Each player not yet told gets who's in the game (their own content ID first), and those already told the
     /// newcomer.
-    fn list_players(&mut self, network: &mut NetworkState, instance: &Instance) {
+    fn list_players(&mut self, network: &mut NetworkState, instance: &Instance) -> Vec<ObjectId> {
+        // A player still loading has no content ID here yet (theirs went out as 0, 0.)
         let content_id = |player: ObjectId| match instance.find_actor(player) {
-            Some(NetworkedActor::Player { spawn, .. }) => Some(spawn.content_id),
+            Some(NetworkedActor::Player { spawn, .. }) if spawn.content_id != 0 => {
+                Some(spawn.content_id)
+            }
             _ => None,
         };
+        let mut new = Vec::new();
         let players = players_in(instance);
         for player in &players {
             if self.listed.contains(player) {
@@ -992,7 +1031,9 @@ impl Game {
                 }
             }
             self.listed.push(*player);
+            new.push(*player);
         }
+        new
     }
 
     /// The wave's line-up: one of its sets and, with a big enemy, one of those (`pick` gives a number below its
@@ -1128,11 +1169,28 @@ pub fn tick(
             );
         }
         instance.keybound = Some(game);
+        if let Some(director) = instance.directors.first_mut() {
+            director.flag = SEQUENCE;
+        }
     }
-    // Who's in the game, to each player as they come (`PLAYERS`.)
+    // Who's in the game, to each player as they come (`PLAYERS`), and the game's status on them.
     if let Some(mut game) = instance.keybound.take() {
-        game.list_players(&mut network.lock(), instance);
+        let new = game.list_players(&mut network.lock(), instance);
         instance.keybound = Some(game);
+        for player in new {
+            gain_effect_instance(
+                network.clone(),
+                ClientId::default(),
+                instance,
+                player,
+                PLAYER_STATUS.0,
+                PLAYER_STATUS.1,
+                0.0,
+                ObjectId::default(),
+                false,
+            );
+            crate::server::effect::process_effects_list(network.clone(), instance, player);
+        }
     }
     if instance.awaiting_commence {
         if let Some(game) = instance.keybound.as_mut() {
@@ -1177,6 +1235,11 @@ impl Game {
 
         match self.stage {
             Stage::Start { players_sent } => {
+                // As the duty commences, with its timer (223 of 223: `0x10000013 [0]`.)
+                if !self.begun {
+                    self.begun = true;
+                    command_all(&mut network.lock(), instance, self.director, PHASE, &[0]);
+                }
                 if !players_sent && clock >= PLAYERS_AT {
                     let mut network = network.lock();
                     for player in players_in(instance) {
@@ -1188,6 +1251,7 @@ impl Game {
                             &[player.0, PLAYER_AT_START[0], PLAYER_AT_START[1]],
                         );
                     }
+                    banner(&mut network, instance, IMAGE_WAVE[0]);
                     self.stage = Stage::Start { players_sent: true };
                 }
                 // The first enemies' SpawnNpcs come up to 4.2 s before they appear.
@@ -1232,6 +1296,17 @@ impl Game {
                 if (sent as usize) < BETWEEN_AFTER.len() && clock >= BETWEEN_AFTER[sent as usize] {
                     let mut network = network.lock();
                     command_all(&mut network, instance, self.director, BETWEEN, &[]);
+                    if sent == 1 {
+                        banner(
+                            &mut network,
+                            instance,
+                            if self.wave == 0 {
+                                IMAGE_WAVE[1]
+                            } else {
+                                IMAGE_BEFORE_LAST
+                            },
+                        );
+                    }
                     if sent == 0 {
                         let ipc = EventLogMessage {
                             handler_id: self.director,
@@ -1295,6 +1370,7 @@ impl Game {
                     }
                     if self.cutscene == 2 && clock >= LAST_WAVE_BGM_AT {
                         self.cutscene = 3;
+                        banner(&mut network, instance, IMAGE_WAVE[2]);
                         command_all(
                             &mut network,
                             instance,
@@ -1749,7 +1825,13 @@ impl Game {
             self.finish(network, instance, true, now);
             return;
         }
-        command_all(&mut network.lock(), instance, self.director, WAVE_OVER, &[]);
+        {
+            let mut network = network.lock();
+            command_all(&mut network, instance, self.director, WAVE_OVER, &[]);
+            if let Some(image) = IMAGE_WAVE_OVER.get(self.wave) {
+                banner(&mut network, instance, *image);
+            }
+        }
         self.clear_field(network, instance);
         self.clock = now;
         self.cutscene = 0;
@@ -1933,6 +2015,7 @@ impl Game {
         if step == 0 && clock >= LOST_AT[0] {
             command_all(&mut network, instance, self.director, SET_BGM, &[BGM_LOST]);
             command_all(&mut network, instance, self.director, LOST, &[]);
+            banner(&mut network, instance, IMAGE_LOST);
             for player in players_in(instance) {
                 command_all(
                     &mut network,
@@ -2218,6 +2301,18 @@ pub fn player_trigger(
         }
     } else if let Some(game) = instance.keybound.as_mut() {
         game.trigger(player, id, value, Instant::now());
+    }
+}
+
+/// A player leaves the duty before its end: their typing is turned off first (`WAVE_OVER`.) Bob left mid-wave on
+/// 2026-11-15 and came out with the keyboard still the game's: "I can't use esc, can only type in chat, and can't see
+/// anything else of my HUD". Nobody left a retail run early, so what retail sends then isn't known.
+pub fn player_leaves(network: &mut NetworkState, instance: &Instance, player: ObjectId) {
+    if instance.content_finder_condition_id != DUTY {
+        return;
+    }
+    if let Some(game) = instance.keybound.as_ref() {
+        command(network, game.director, player, WAVE_OVER, &[]);
     }
 }
 

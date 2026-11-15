@@ -1384,8 +1384,27 @@ mod tests {
             spawn.content_id = 0x0040_0017_4C4D_3B08;
         }
         let mut game = world.instance.keybound.take().unwrap();
-        game.list_players(&mut world.network.lock(), &world.instance);
-        game.list_players(&mut world.network.lock(), &world.instance);
+        // Nothing for a player whose content ID isn't there yet (still loading.)
+        let mut early = Game::new(DIRECTOR, Instant::now(), 4);
+        if let Some(NetworkedActor::Player { spawn, .. }) = world.instance.find_actor_mut(player) {
+            spawn.content_id = 0;
+        }
+        assert!(
+            early
+                .list_players(&mut world.network.lock(), &world.instance)
+                .is_empty()
+        );
+        if let Some(NetworkedActor::Player { spawn, .. }) = world.instance.find_actor_mut(player) {
+            spawn.content_id = 0x0040_0017_4C4D_3B08;
+        }
+        assert_eq!(
+            game.list_players(&mut world.network.lock(), &world.instance),
+            [player]
+        );
+        assert!(
+            game.list_players(&mut world.network.lock(), &world.instance)
+                .is_empty()
+        );
         world.instance.keybound = Some(game);
         // Once, and no begin yet.
         assert_eq!(
@@ -1417,6 +1436,10 @@ mod tests {
             )
         ));
         assert_eq!(commands(&sent), [(BEGIN, vec![])]);
+
+        // Leaving mid-wave turns the player's typing off first.
+        player_leaves(&mut world.network.lock(), &world.instance, player);
+        assert_eq!(commands(&world.sent(player)), [(WAVE_OVER, vec![])]);
     }
 
     /// A big enemy's state (retail's 19594: notice `[17837, 5348]` and switch `[3071, 1]`, 28.0 s later `[17838, 5348]`

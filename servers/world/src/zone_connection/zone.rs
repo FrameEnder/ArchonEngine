@@ -21,6 +21,10 @@ use kawari::{
     packet::{ConnectionState, PacketSegment, ScramblerKeyGenerator, SegmentData, SegmentType},
 };
 
+/// The conditions a player has throughout Keybound Brawler (bits 3 and 66 of retail's Condition.)
+const KEYBOUND_CONDITIONS: [Condition; 2] =
+    [Condition::SufferingStatusAffliction, Condition::Unknown96];
+
 impl ZoneConnection {
     /// Request the global server state to change our zone.
     pub async fn change_zone(
@@ -473,6 +477,12 @@ impl ZoneConnection {
             .toggle_condition(Condition::BoundByDuty, bound_by_duty);
         self.conditions
             .toggle_condition(Condition::BoundByDuty56, bound_by_duty);
+        // Keybound Brawler's two conditions, for as long as the player is in it (retail's Condition from ZoneInit to
+        // the way out: `08 02 00 10 | 00 00 00 00 | 04`, 223 of 223 runs, and in no other place captured.)
+        let keybound = content_finder_condition_id == crate::server::KEYBOUND_DUTY;
+        for condition in KEYBOUND_CONDITIONS {
+            self.conditions.toggle_condition(condition, keybound);
+        }
         // No one arrives in a zone fighting or casting: the new zone's enemies set InCombat again if any are after
         // them. A player who lost a quest battle came out with InCombat still set (the server's copy of their
         // conditions starts empty in the new zone, so nothing there ever cleared it), and the client refused to
